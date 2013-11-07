@@ -29,13 +29,12 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Initiazition of fundamental flow sturctures.                                              
 ****************************************************************** */
-void Flow_PK::Init(Teuchos::ParameterList& global_list, Teuchos::RCP<State> S)
+void Flow_PK::Init(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
 {
   S_ = S;
 
   mesh_ = S->GetMesh();
   dim = mesh_->space_dimension();
-  MyPID = 0;
 
   T_physics = dT = 0.0;
 
@@ -49,65 +48,44 @@ void Flow_PK::Init(Teuchos::ParameterList& global_list, Teuchos::RCP<State> S)
   ti_phase_counter = 0;
 
   // Fundamental physical quantities
-  rho_ = *(FS_MPC->fluid_density());
-  mu_ = *(FS_MPC->fluid_viscosity());
+  double* gravity_data;
+  S->GetConstantVectorData("gravity")->ExtractView(&gravity_data);
   gravity_.init(dim);
-  for (int k = 0; k < dim; k++) gravity_[k] = (*(FS_MPC->gravity()))[k];
+  for (int k = 0; k < dim; k++) gravity_[k] = gravity_data[k];
 
-  // Fundamental global sublists
-  if (global_list.isSublist("Preconditioners")) {
-    preconditioner_list_ = global_list.sublist("Preconditioners");
+  // Miscaleneous sublists
+  if (glist.isSublist("Preconditioners")) {
+    preconditioner_list_ = glist.sublist("Preconditioners");
   } else {
     Errors::Message msg("Flow PK: input parameter list does not have <Preconditioners> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
-  if (global_list.isSublist("Solvers")) {
-    solver_list_ = global_list.sublist("Solvers");
+  if (glist.isSublist("Solvers")) {
+    linear_operator_list_ = glist.sublist("Solvers");
   } else {
     Errors::Message msg("Flow PK: input parameter list does not have <Solvers> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
-  if (global_list.isSublist("Nonlinear solvers")) {
-    nonlin_solver_list_ = global_list.sublist("Nonlinear solvers");
+  if (glist.isSublist("Nonlinear solvers")) {
+    solver_list_ = glist.sublist("Nonlinear solvers");
   } else {
     //Errors::Message msg("Flow PK: input parameter list does not have <Nonlinear solvers> sublist.");
     //Exceptions::amanzi_throw(msg);
   }
 
-}
-
-
-/* ******************************************************************
-* Super-map combining cells and faces.                                                  
-****************************************************************** */
-Epetra_Map* Flow_PK::CreateSuperMap()
-{
-  const Epetra_Map& cmap = mesh_->cell_map(false);
-  const Epetra_Map& fmap = mesh_->face_map(false);
-
-  int ndof = ncells_owned + nfaces_owned;
-  int ndof_global_cell = cmap.NumGlobalElements();
-  int ndof_global = ndof_global_cell + fmap.NumGlobalElements();
-
-  int* gids = new int[ndof];
-  cmap.MyGlobalElements(&(gids[0]));
-  fmap.MyGlobalElements(&(gids[ncells_owned]));
-
-  for (int f = 0; f < nfaces_owned; f++) gids[ncells_owned + f] += ndof_global_cell;
-  Epetra_Map* map = new Epetra_Map(ndof_global, ndof, gids, 0, cmap.Comm());
-
-  delete [] gids;
-  return map;
+  MyPID = 0;
+#ifdef HAVE_MPI
+  MyPID = mesh_->cell_map(false).Comm().MyPID();
+#endif
 }
 
 
 /* ******************************************************************
 * Populate data needed by submodels.
 ****************************************************************** */
-void Flow_PK::ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
-                                       std::vector<double>& rainfall_factor)
+void Flow_PK::ProcessBCs()
 {
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_submodel[f] & FLOW_BC_SUBMODEL_RAINFALL) {
@@ -123,15 +101,11 @@ void Flow_PK::ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
 * WARNING: we can skip update of ghost boundary faces, b/c they 
 * should be always owned. 
 ****************************************************************** */
-void Flow_PK::ProcessBoundaryConditions(
-    Functions::FlowBoundaryFunction* bc_pressure, Functions::FlowBoundaryFunction* bc_head,
-    Functions::FlowBoundaryFunction* bc_flux, Functions::FlowBoundaryFunction* bc_seepage,
-    const Epetra_Vector& pressure_cells, 
-    const Epetra_Vector& pressure_faces, const double atm_pressure,
-    const std::vector<double>& rainfall_factor,
-    const std::vector<int>& bc_submodel,
-    std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
+void Flow_PK::ComputeBCs(const CompositeVector& pressure)
 {
+  const Epetra_MultiVector& pressure_cells = *(pressure.ViewComponent("cell"));
+  const Epetra_MultiVector& pressure_faces = *(pressure.ViewComponent("face"));
+  
   int flag_essential_bc = 0;
   bc_tuple zero = {0.0, 0.0};
   for (int n = 0; n < bc_model.size(); n++) {
@@ -166,17 +140,17 @@ void Flow_PK::ProcessBoundaryConditions(
     int f = bc->first;
 
     if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {  // Model I.
-      if (pressure_faces[f] < atm_pressure) {
+      if (pressure_faces[0][f] < atm_pressure_) {
         bc_model[f] = FLOW_BC_FACE_FLUX;
         bc_values[f][0] = bc->second * rainfall_factor[f];
       } else {
         int c = BoundaryFaceGetCell(f);
-        if (pressure_cells[c] < pressure_faces[f]) {
+        if (pressure_cells[0][c] < pressure_faces[0][f]) {
           bc_model[f] = FLOW_BC_FACE_FLUX;
           bc_values[f][0] = bc->second * rainfall_factor[f];
         } else {
           bc_model[f] = FLOW_BC_FACE_PRESSURE;
-          bc_values[f][0] = atm_pressure;
+          bc_values[f][0] = atm_pressure_;
           flag_essential_bc = 1;
           nseepage++;
           area_seepage += mesh_->face_area(f);
@@ -190,13 +164,13 @@ void Flow_PK::ProcessBoundaryConditions(
       double pcmin = 3 * pcreg / 2;
       double pcmax = pcreg / 2;
 
-      double pc = pressure_faces[f] - atm_pressure;
+      double pc = pressure_faces[0][f] - atm_pressure_;
       if (pc < pcmin) {
         bc_model[f] = FLOW_BC_FACE_FLUX;
         bc_values[f][0] = influx;
       } else if (pc >= pcmax) {
         bc_model[f] = FLOW_BC_FACE_MIXED;
-        bc_values[f][0] = I * atm_pressure;
+        bc_values[f][0] = I * atm_pressure_;
         bc_values[f][1] = -I;  // Impedance I should be positive.
         flag_essential_bc = 1;
         nseepage++;
@@ -212,7 +186,7 @@ void Flow_PK::ProcessBoundaryConditions(
       double influx = bc->second * rainfall_factor[f];
       double pcreg = -FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
 
-      double pc = pressure_faces[f] - atm_pressure;
+      double pc = pressure_faces[0][f] - atm_pressure_;
       if (pc < pcreg) {
         bc_model[f] = FLOW_BC_FACE_FLUX;
         bc_values[f][0] = influx;
@@ -223,7 +197,7 @@ void Flow_PK::ProcessBoundaryConditions(
           bc_values[f][0] = influx;
         } else {
           bc_model[f] = FLOW_BC_FACE_PRESSURE;
-          bc_values[f][0] = atm_pressure;
+          bc_values[f][0] = atm_pressure_;
           flag_essential_bc = 1;
           nseepage++;
           area_seepage += mesh_->face_area(f);
@@ -281,15 +255,48 @@ void Flow_PK::ProcessBoundaryConditions(
 
 
 /* ******************************************************************
+*  Temporary convertion from double to tensor.                                               
+****************************************************************** */
+void Flow_PK::SetAbsolutePermeabilityTensor()
+{
+  const Epetra_MultiVector& perm = *(S_->GetFieldData("permeability")->ViewComponent("cell"));
+  if (dim == 2) {
+    for (int c = 0; c < K.size(); c++) {
+      if (perm[0][c] == perm[1][c]) {
+	K[c].init(dim, 1);
+	K[c](0, 0) = perm[0][c];
+      } else {
+	K[c].init(dim, 2);
+	K[c](0, 0) = perm[0][c];
+	K[c](1, 1) = perm[1][c];
+      }
+    }    
+  } else if (dim == 3) {
+    for (int c = 0; c < K.size(); c++) {
+      if (perm[0][c] == perm[1][c] && perm[0][c] == perm[2][c]) {
+	K[c].init(dim, 1);
+	K[c](0, 0) = perm[0][c];
+      } else {
+	K[c].init(dim, 2);
+	K[c](0, 0) = perm[0][c];
+	K[c](1, 1) = perm[1][c];
+	K[c](2, 2) = perm[2][c];
+      }
+    }        
+  }
+}
+
+
+/* ******************************************************************
 *  Calculate inner product e^T K e in each cell.                                               
 ****************************************************************** */
-void Flow_PK::CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy)
+void Flow_PK::CalculatePermeabilityFactorInWell()
 {
   for (int c = 0; c < ncells_owned; c++) {
-    Kxy[c] = 0.0;
+    (*Kxy)[c] = 0.0;
     int idim = std::max(1, K[c].size() - 1);
-    for (int i = 0; i < idim; i++) Kxy[c] += K[c](i, i);
-    Kxy[c] /= idim;
+    for (int i = 0; i < idim; i++) (*Kxy)[c] += K[c](i, i);
+    (*Kxy)[c] /= idim;
   }
 }
 
@@ -297,12 +304,14 @@ void Flow_PK::CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Ten
 /* ******************************************************************
 * Add source and sink terms.                                   
 ****************************************************************** */
-void Flow_PK::AddSourceTerms(Functions::FlowDomainFunction* src_sink, Epetra_Vector& rhs)
+void Flow_PK::AddSourceTerms(CompositeVector& rhs)
 {
+  Epetra_MultiVector& rhs_cells = *(rhs.ViewComponent("cell"));
   Functions::FlowDomainFunction::Iterator src;
+
   for (src = src_sink->begin(); src != src_sink->end(); ++src) {
     int c = src->first;
-    rhs[c] += mesh_->cell_volume(c) * src->second;
+    rhs_cells[0][c] += mesh_->cell_volume(c) * src->second;
   }
 }
 
@@ -312,11 +321,12 @@ void Flow_PK::AddSourceTerms(Functions::FlowDomainFunction* src_sink, Epetra_Vec
 * called before applying boundary conditions and global assembling. 
 * simplified implementation for single phase flow.                                            
 ****************************************************************** */
-void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,                                    
-                                    Matrix_MFD* matrix_operator)
+void Flow_PK::AddGravityFluxes_MFD(Matrix_MFD* matrix_operator)
 {
+  double rho = *(S_->GetScalarData("fluid_density"));
+
   AmanziGeometry::Point rho_gravity(gravity_);
-  rho_gravity *= rho_;
+  rho_gravity *= rho;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -344,12 +354,13 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
 * Routine updates elemental discretization matrices and must be 
 * called before applying boundary conditions and global assembling.                                             
 ****************************************************************** */
-void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
-                                    Matrix_MFD* matrix_operator,
-                                    RelativePermeability& rel_perm) 
+void Flow_PK::AddGravityFluxes_MFD(Matrix_MFD* matrix_operator,
+                                   RelativePermeability& rel_perm) 
 {
+  double rho = *(S_->GetScalarData("fluid_density"));
+
   AmanziGeometry::Point rho_gravity(gravity_);
-  rho_gravity *= rho_;
+  rho_gravity *= rho;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -384,20 +395,17 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
   }
 }
 
+
 /* ******************************************************************
 * Add gravity fluxes to RHS of TPFA approximation                                            
 ****************************************************************** */
-
-void Flow_PK::AddGravityFluxes_TPFA(const Epetra_Vector& Krel_faces, const Epetra_Vector& Grav_term,
-    std::vector<int>& bc_model, Matrix_MFD* matrix_operator)
+void Flow_PK::AddGravityFluxes_TPFA(const Epetra_Vector& Krel_faces, 
+                                    const Epetra_Vector& Grav_term,
+                                    Matrix_MFD* matrix_operator)
 {
-
   AmanziMesh::Entity_ID_List cells;
   std::vector<int> dirs;
-  Teuchos::RCP<Epetra_Vector>& rhs_cells = matrix_operator->rhs_cells();
-
-  // cout<<"Before rhs AddGravityFluxes_TPFA\n";
-  // std::cout<<(*rhs_cells)<<endl;
+  Epetra_MultiVector& rhs_cells = *matrix_operator->rhs()->ViewComponent("cell");
 
   for (int f = 0; f < nfaces_wghost; f++) {
     if (bc_model[f] == FLOW_BC_FACE_FLUX) continue;
@@ -406,18 +414,10 @@ void Flow_PK::AddGravityFluxes_TPFA(const Epetra_Vector& Krel_faces, const Epetr
     for (int i = 0; i < ncells; i++){
       int c = cells[i];
       if (c >= ncells_owned) continue;
-      (*rhs_cells)[c] -= pow(-1.0, i)*Grav_term[f]*Krel_faces[f];  
-      //if ((f==84)||(f==86)) cout<<"Gravity flux "<<f<<" "<<Grav_term[f]*Krel_faces[f]<<endl;
+      rhs_cells[0][c] -= pow(-1.0, i)*Grav_term[f]*Krel_faces[f];  
     }
   }
-
-  // cout<<"rhs AddGravityFluxes_TPFA\n";
-  // std::cout<<(*rhs_cells)<<endl;
-  //cin >> tmp;
-  //exit(0);
-
 }
-
 
 
 /* ******************************************************************
@@ -486,9 +486,10 @@ void Flow_PK::AddNewtonFluxes_MFD(
 * Updates global Darcy vector calculated by a discretization method.
 * simplified implementation for a single phase flow.                                            
 ****************************************************************** */
-void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, 
-                                          Epetra_Vector& darcy_mass_flux)
+void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_Vector& darcy_mass_flux)
 {
+  double rho = *(S_->GetScalarData("fluid_density"));
+
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   std::vector<int> flag(nfaces_wghost, 0);
@@ -503,7 +504,7 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
       if (f < nfaces_owned && !flag[f]) {
-        darcy_mass_flux[f] += rho_ * (Kg * normal);
+        darcy_mass_flux[f] += rho * (Kg * normal);
         flag[f] = 1;
       }
     }
@@ -514,10 +515,11 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
 /* ******************************************************************
 * Updates global Darcy vector calculated by a discretization method.                                             
 ****************************************************************** */
-void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, 
-                                          Epetra_Vector& darcy_mass_flux,
-                                          RelativePermeability& rel_perm) 
+void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_Vector& darcy_mass_flux,
+                                         RelativePermeability& rel_perm) 
 {
+  double rho = *(S_->GetScalarData("fluid_density"));
+
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   std::vector<int> flag(nfaces_wghost, 0);
@@ -538,13 +540,13 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
 
       if (f < nfaces_owned && !flag[f]) {
         if (method == FLOW_RELATIVE_PERM_NONE) {
-          darcy_mass_flux[f] += rho_ * (Kg * normal);
+          darcy_mass_flux[f] += rho * (Kg * normal);
         } else if (method == FLOW_RELATIVE_PERM_CENTERED) {
-          darcy_mass_flux[f] += rho_ * (Kg * normal) * Krel_cells[c];
+          darcy_mass_flux[f] += rho * (Kg * normal) * Krel_cells[c];
         } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
-          darcy_mass_flux[f] += rho_ * (Kg * normal) * krel[n];
+          darcy_mass_flux[f] += rho * (Kg * normal) * krel[n];
         } else {
-          darcy_mass_flux[f] += rho_ * (Kg * normal) * Krel_faces[f];
+          darcy_mass_flux[f] += rho * (Kg * normal) * Krel_faces[f];
         }
         flag[f] = 1;
       }
@@ -560,7 +562,8 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
 * Probability that this assumption is violated is close to zero. 
 * Even when it happens, the code will not crash.
 ****************************************************************** */
-void Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
+void Flow_PK::DeriveFaceValuesFromCellValues(
+    const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces)
 {
   AmanziMesh::Entity_ID_List cells;
 
@@ -570,8 +573,8 @@ void Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra
     int ncells = cells.size();
 
     double face_value = 0.0;
-    for (int n = 0; n < ncells; n++) face_value += ucells[cells[n]];
-    ufaces[f] = face_value / ncells;
+    for (int n = 0; n < ncells; n++) face_value += ucells[0][cells[n]];
+    ufaces[0][f] = face_value / ncells;
   }
 }
 
@@ -629,16 +632,12 @@ int Flow_PK::FindPosition(int f, AmanziMesh::Entity_ID_List faces)
 /* ****************************************************************
 * DEBUG: creating GMV file 
 **************************************************************** */
-void Flow_PK::WriteGMVfile(Teuchos::RCP<Flow_State> FS) const
+void Flow_PK::WriteGMVfile(Teuchos::RCP<State> FS) const
 {
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = FS->mesh();
-
-  GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+  GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
   GMV::start_data();
-  GMV::write_cell_data(FS->ref_pressure(), "pressure");
-  GMV::write_cell_data(FS->ref_water_saturation(), "saturation");
-  // GMV::write_cell_data(FS->ref_darcy_velocity(), 0, "velocity_h");
-  // GMV::write_cell_data(FS->ref_darcy_velocity(), dim-1, "velocity_v");
+  GMV::write_cell_data(*(S_->GetFieldData("pressure")->ViewComponent("cell")), 0, "pressure");
+  GMV::write_cell_data(*(S_->GetFieldData("water_saturation")->ViewComponent("cell")), 0, "saturation");
   GMV::close_data_file();
 }
 

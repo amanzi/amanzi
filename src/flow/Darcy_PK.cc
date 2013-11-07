@@ -34,7 +34,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * each variable initialization
 ****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
+Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
 {
   // initialize pointers (Do we need smart pointers here? lipnikov@lanl.gov)
   bc_pressure = NULL; 
@@ -43,13 +43,12 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   bc_seepage = NULL; 
   src_sink = NULL;
 
-  Flow_PK::Init(global_list, FS_MPC);  // sets up default parameters
-  FS = FS_MPC;
+  Flow_PK::Init(glist, S);  // sets up default parameters
 
   // extract important sublists
   Teuchos::ParameterList flow_list;
-  if (global_list.isSublist("Flow")) {
-    flow_list = global_list.sublist("Flow");
+  if (glist.isSublist("Flow")) {
+    flow_list = glist.sublist("Flow");
   } else {
     Errors::Message msg("Flow PK: input parameter list does not have <Flow> sublist.");
     Exceptions::amanzi_throw(msg);
@@ -61,25 +60,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
     Errors::Message msg("Flow PK: input parameter list does not have <Darcy Problem> sublist.");
     Exceptions::amanzi_throw(msg);
   }
-
-  mesh_ = FS->mesh();
-  dim = mesh_->space_dimension();
-
-  // Create the combined cell/face DoF map.
-  super_map_ = Teuchos::rcp(CreateSuperMap());
-
-#ifdef HAVE_MPI
-  const Epetra_Comm& comm = mesh_->cell_map(false).Comm();
-  MyPID = comm.MyPID();
-
-  const Epetra_Map& source_cmap = mesh_->cell_map(false);
-  const Epetra_Map& target_cmap = mesh_->cell_map(true);
-
-  const Epetra_Map& source_fmap = mesh_->face_map(false);
-  const Epetra_Map& target_fmap = mesh_->face_map(true);
-
-  face_importer_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
-#endif
 
   // time control
   ResetPKtimes(0.0, FLOW_INITIAL_DT);
@@ -121,28 +101,26 @@ void Darcy_PK::InitPK()
   rainfall_factor.resize(nfaces_owned, 1.0);
 
   // Read flow list and populate various structures. 
-  ProcessParameterList();
+  ProcessParameterList(dp_list_);
 
   // Select a proper matrix class. No optionos at the moment.
-  matrix_ = Teuchos::rcp(new Matrix_MFD(mesh_, super_map_));
+  matrix_ = Teuchos::rcp(new Matrix_MFD(mesh_));
   matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
   matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
 
-  // Create the solution vectors.
-  solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
-  solution_cells = Teuchos::rcp(FS->CreateCellView(*solution));
-  solution_faces = Teuchos::rcp(FS->CreateFaceView(*solution));
+  // Create auxiliary data for time history.
+  solution = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("pressure"))));
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
   
   // Initialize times.
-  double time = FS->get_time();
+  double time = S_->time();
   if (time >= 0.0) T_physics = time;
 
   // Initialize actions on boundary condtions. 
-  ProcessShiftWaterTableList(dp_list_, bc_head, shift_water_table_);
+  ProcessShiftWaterTableList(dp_list_);
 
   time = T_physics;
   bc_pressure->Compute(time);
@@ -153,15 +131,13 @@ void Darcy_PK::InitPK()
   else
     bc_head->ComputeShift(time, shift_water_table_->Values());
 
-  ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
-      *solution_cells, *solution_faces, atm_pressure, 
-      rainfall_factor, bc_submodel, bc_model, bc_values);
+  const CompositeVector& pressure = *S_->GetFieldData("pressure");
+  ComputeBCs(pressure);
 
   // Process other fundamental structures
   K.resize(ncells_owned);
   matrix_->SetSymmetryProperty(true);
-  matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
+  matrix_->SymbolicAssembleGlobalMatrices();
 
   // Allocate memory for wells
   if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
@@ -178,16 +154,21 @@ void Darcy_PK::InitPK()
 void Darcy_PK::InitializeAuxiliaryData()
 {
   // pressures (lambda is not important when solver is very accurate)
-  Epetra_Vector& pressure = FS->ref_pressure();
-  Epetra_Vector& lambda = FS->ref_lambda();
+  CompositeVector& cv = *S_->GetFieldData("pressure", passwd_);
+  const Epetra_MultiVector& pressure = *(cv.ViewComponent("cell"));
+  Epetra_MultiVector& lambda = *(cv.ViewComponent("face"));
+
   DeriveFaceValuesFromCellValues(pressure, lambda);
 
   // saturations
-  Epetra_Vector& ws = FS->ref_water_saturation();
-  Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
-
-  ws_prev.PutScalar(1.0);
-  ws.PutScalar(1.0);
+  if (!S_->GetField("water_saturation", passwd_)->initialized()) {
+    S_->GetFieldData("water_saturation", passwd_)->PutScalar(1.0);
+    S_->GetField("water_saturation", passwd_)->set_initialized();
+  }
+  if (!S_->GetField("prev_water_saturation", passwd_)->initialized()) {
+    S_->GetFieldData("prev_water_saturation", passwd_)->PutScalar(1.0);
+    S_->GetField("prev_water_saturation", passwd_)->set_initialized();
+  }
 
   // miscalleneous
   UpdateSpecificYield();
@@ -203,7 +184,7 @@ void Darcy_PK::InitializeSteadySaturated()
     Teuchos::OSTab tab = vo_->getOSTab();
     *(vo_->os()) << "initializing with a saturated steady state..." << endl;
   }
-  double T = FS->get_time();
+  double T = S_->time();
   SolveFullySaturatedProblem(T, *solution);
 }
 
@@ -265,20 +246,25 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 
   // set up new preconditioner
   // matrix_->DestroyPreconditionerNew();
-  matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
+  matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->InitPreconditioner(ti_specs.preconditioner_name, preconditioner_list_);
 
   // set up initial guess for solution
-  Epetra_Vector& pressure = FS->ref_pressure();
-  *solution_cells = pressure;
+  Epetra_MultiVector& p = *S_->GetFieldData("pressure", passwd_)->ViewComponent("cell");
+  Epetra_MultiVector& p_cells = *solution->ViewComponent("cell");
+  p_cells = p;
 
   ResetPKtimes(T0, dT0);
   dT_desirable_ = dT0;  // The minimum desirable time step from now on.
   ti_specs.num_itrs = 0;
 
   // initialize mass matrices
-  SetAbsolutePermeabilityTensor(K);
-  for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
+  double rho = *S_->GetScalarData("fluid_density");
+  double mu = *S_->GetScalarData("fluid_viscosity");
+
+  SetAbsolutePermeabilityTensor();
+  for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
+
   matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -291,7 +277,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 
   // Well modeling (one-time call)
   if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    CalculatePermeabilityFactorInWell(K, *Kxy);
+    CalculatePermeabilityFactorInWell();
   }
 
   // Initialize source
@@ -306,9 +292,12 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   // make initial guess consistent with boundary conditions
   if (ti_specs.initialize_with_darcy) {
     ti_specs.initialize_with_darcy = false;
-    DeriveFaceValuesFromCellValues(pressure, *solution_faces);
+
+    Epetra_MultiVector& p_faces = *solution->ViewComponent("face", true);
+    DeriveFaceValuesFromCellValues(p, p_faces);
+
     SolveFullySaturatedProblem(T0, *solution);
-    pressure = *solution_cells;
+    p = p_cells;
   }
 }
 
@@ -331,7 +320,7 @@ int Darcy_PK::AdvanceToSteadyState(double T0, double dT0)
 int Darcy_PK::Advance(double dT_MPC) 
 {
   dT = dT_MPC;
-  double time = FS->get_time();
+  double time = S_->time();
   if (time >= 0.0) T_physics = time;
 
   // update boundary conditions and source terms
@@ -352,34 +341,33 @@ int Darcy_PK::Advance(double dT_MPC)
     }
   }
 
-  ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage, 
-      *solution_cells, *solution_faces, atm_pressure,
-      rainfall_factor, bc_submodel, bc_model, bc_values);
+  ComputeBCs(*solution);
 
   // calculate and assemble elemental stifness matrices
+  Epetra_MultiVector& p_cells = *solution->ViewComponent("cell");
+
   matrix_->CreateMFDstiffnessMatrices();
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, &*matrix_);
-  AddTimeDerivativeSpecificStorage(*solution_cells, dT, &*matrix_);
-  AddTimeDerivativeSpecificYield(*solution_cells, dT, &*matrix_);
+  AddGravityFluxes_MFD(&*matrix_);
+  AddTimeDerivativeSpecificStorage(p_cells, dT, &*matrix_);
+  AddTimeDerivativeSpecificYield(p_cells, dT, &*matrix_);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->AssembleGlobalMatrices();
   matrix_->AssembleSchurComplement(bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 
-  Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();
-  if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
+  CompositeVector& rhs = *matrix_->rhs();
+  if (src_sink != NULL) AddSourceTerms(rhs);
 
   // create linear solver
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
   AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, CompositeVector, Epetra_BlockMap> >
      solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-  solver->ApplyInverse(*rhs, *solution);
+  solver->ApplyInverse(rhs, *solution);
 
   ti_specs->num_itrs++;
 
@@ -394,7 +382,7 @@ int Darcy_PK::Advance(double dT_MPC)
 
   // calculate time derivative and 2nd-order solution approximation
   if (ti_specs->dT_method == FLOW_DT_ADAPTIVE) {
-    Epetra_Vector& pressure = FS->ref_pressure();  // pressure at t^n
+    Epetra_MultiVector& pressure = S_->GetFieldData("pressure")->ViewComponent("cell");  // pressure at t^n
 
     for (int c = 0; c < ncells_owned; c++) {
       (*pdot_cells)[c] = ((*solution)[c] - pressure[c]) / dT; 
@@ -440,46 +428,6 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
   // DEBUG
   // WriteGMVfile(FS_MPC);
-}
-
-
-/* ******************************************************************
-*  Temporary convertion from double to tensor.                                               
-****************************************************************** */
-void Darcy_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
-{
-  if (dim == 2) {
-    const Epetra_Vector& permeability_x = *(*FS->permeability())(0);
-    const Epetra_Vector& permeability_y = *(*FS->permeability())(1);
-
-    for (int c = 0; c < K.size(); c++) {
-      if (permeability_x[c] == permeability_y[c]) {
-	K[c].init(dim, 1);
-	K[c](0, 0) = permeability_x[c];
-      } else {
-	K[c].init(dim, 2);
-	K[c](0, 0) = permeability_x[c];
-	K[c](1, 1) = permeability_y[c];
-      }
-    }    
-    
-  } else if (dim == 3) {
-    const Epetra_Vector& permeability_x = *(*FS->permeability())(0);
-    const Epetra_Vector& permeability_y = *(*FS->permeability())(1);
-    const Epetra_Vector& permeability_z = *(*FS->permeability())(2);
-    
-    for (int c = 0; c < K.size(); c++) {
-      if (permeability_x[c] == permeability_y[c]  && permeability_y[c] == permeability_z[c]) {
-	K[c].init(dim, 1);
-	K[c](0, 0) = permeability_x[c];
-      } else {
-	K[c].init(dim, 2);
-	K[c](0, 0) = permeability_x[c];
-	K[c](1, 1) = permeability_y[c];
-	K[c](2, 2) = permeability_z[c];
-      }
-    }        
-  }
 }
 
 

@@ -23,7 +23,120 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 namespace Amanzi {
 namespace AmanziFlow {
 
-/* ****************************************************************
+/* ******************************************************************
+* Routine processes parameter list. It needs to be called only once
+* on each processor.                                                     
+****************************************************************** */
+void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
+{
+  double rho = *(S_->GetScalarData("fluid_density"));
+
+  // create verbosity object
+  vo_ = new VerboseObject("Amanzi::Richards", plist); 
+
+  // Process main one-line options (not sublists)
+  atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
+ 
+  string mfd3d_method_name = plist.get<string>("discretization method", "mfd scaled");
+  ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_); 
+
+  // Create the BC objects.
+  Teuchos::RCP<Teuchos::ParameterList>
+      bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));
+  FlowBCFactory bc_factory(mesh_, bc_list);
+
+  bc_pressure = bc_factory.CreatePressure(bc_submodel);
+  bc_head = bc_factory.CreateStaticHead(atm_pressure_, rho, gravity_, bc_submodel);
+  bc_flux = bc_factory.CreateMassFlux(bc_submodel);
+  bc_seepage = bc_factory.CreateSeepageFace(bc_submodel);
+
+  ValidateBCs();
+  ProcessBCs();
+
+  // Create the source object if any
+  if (plist.isSublist("source terms")) {
+    string distribution_method_name = plist.get<string>("source and sink distribution method", "none");
+    ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution); 
+
+    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(plist.sublist("source terms", true));
+    FlowSourceFactory src_factory(mesh_, src_list);
+    src_sink = src_factory.createSource();
+    src_sink_distribution = src_sink->CollectActionsList();
+  }
+
+  // experimental solver (NKA is default)
+  // string experimental_solver_name = plist.get<string>("experimental solver", "nka");
+  string solver_name = solver_list_.get<string>("solver", "nka");
+  ProcessStringExperimentalSolver(solver_name, &experimental_solver_);
+
+  // Time integrator for period I, temporary called initial guess initialization
+  if (plist.isSublist("initial guess pseudo time integrator")) {
+    Teuchos::ParameterList& igs_list = plist.sublist("initial guess pseudo time integrator");
+
+    std::string ti_method_name = igs_list.get<string>("time integration method", "none");
+    ProcessStringTimeIntegration(ti_method_name, &ti_specs_igs_.ti_method);
+    ProcessSublistTimeIntegration(igs_list, ti_method_name, ti_specs_igs_);
+    ti_specs_igs_.ti_method_name = "initial guess pseudo time integrator";
+
+    ti_specs_igs_.preconditioner_name = FindStringPreconditioner(igs_list);
+    ProcessStringPreconditioner(ti_specs_igs_.preconditioner_name, &ti_specs_igs_.preconditioner_method);
+
+    std::string linear_solver_name = FindStringLinearSolver(igs_list, linear_operator_list_);
+    ProcessStringLinearSolver(linear_solver_name, &ti_specs_igs_.ls_specs);
+
+    ProcessStringPreconditioner(ti_specs_igs_.preconditioner_name, &ti_specs_igs_.preconditioner_method);
+    ProcessStringErrorOptions(igs_list, &ti_specs_igs_.error_control_options);
+  }
+
+  // Time integrator for period II, temporary called steady-state time integrator
+  if (plist.isSublist("steady state time integrator")) {
+    Teuchos::ParameterList& sss_list = plist.sublist("steady state time integrator");
+
+    std::string ti_method_name = sss_list.get<string>("time integration method", "none");
+    ProcessStringTimeIntegration(ti_method_name, &ti_specs_sss_.ti_method);
+    ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss_);
+    ti_specs_sss_.ti_method_name = "steady state time integrator";
+
+    ti_specs_sss_.preconditioner_name = FindStringPreconditioner(sss_list);
+    ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
+
+    ti_specs_sss_.ls_specs.solver_name = FindStringLinearSolver(sss_list, linear_operator_list_);
+    ProcessStringLinearSolver(ti_specs_sss_.ls_specs.solver_name, &ti_specs_sss_.ls_specs);
+
+    ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
+    ProcessStringErrorOptions(sss_list, &ti_specs_sss_.error_control_options);
+
+  } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "mandatory sublist for steady-state calculations is missing." << endl;
+  }
+
+  // Time integrator for period III, called transient time integrator
+  if (plist.isSublist("transient time integrator")) {
+    Teuchos::ParameterList& trs_list = plist.sublist("transient time integrator");
+
+    string ti_method_name = trs_list.get<string>("time integration method", "none");
+    ProcessStringTimeIntegration(ti_method_name, &ti_specs_trs_.ti_method);
+    ProcessSublistTimeIntegration(trs_list, ti_method_name, ti_specs_trs_);
+    ti_specs_trs_.ti_method_name = "transient time integrator";
+
+    ti_specs_trs_.preconditioner_name = FindStringPreconditioner(trs_list);
+    ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
+
+    std::string linear_solver_name = FindStringLinearSolver(trs_list, linear_operator_list_);
+    ProcessStringLinearSolver(linear_solver_name, &ti_specs_trs_.ls_specs);
+
+    ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
+    ProcessStringErrorOptions(trs_list, &ti_specs_trs_.error_control_options);
+
+  } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "missing sublist '\"transient time integrator'\"" << endl;
+  }
+}
+
+
+/* ******************************************************************
 * Process time integration sublist.
 **************************************************************** */
 void Flow_PK::ProcessSublistTimeIntegration(
@@ -62,7 +175,7 @@ void Flow_PK::ProcessSublistTimeIntegration(
       ti_specs.clip_saturation = ini_list.get<double>("clipping saturation value", -1.0);
       ti_specs.clip_pressure = ini_list.get<double>("clipping pressure value", -1e+10);
 
-      std::string linear_solver_name = FindStringLinearSolver(ini_list, solver_list_);
+      std::string linear_solver_name = FindStringLinearSolver(ini_list, linear_operator_list_);
       ProcessStringLinearSolver(linear_solver_name, &ti_specs.ls_specs_ini);
     }
 
@@ -70,7 +183,7 @@ void Flow_PK::ProcessSublistTimeIntegration(
       Teuchos::ParameterList& pl_list = list.sublist("pressure-lambda constraints");
       ti_specs.pressure_lambda_constraints = true;
 
-      std::string linear_solver_name = FindStringLinearSolver(pl_list, solver_list_);
+      std::string linear_solver_name = FindStringLinearSolver(pl_list, linear_operator_list_);
       ProcessStringLinearSolver(linear_solver_name, &ti_specs.ls_specs_constraints);
     }
 
@@ -152,12 +265,12 @@ void Flow_PK::ProcessStringLinearSolver(const std::string& name, LinearSolver_Sp
 {
   Errors::Message msg;
 
-  if (! solver_list_.isSublist(name)) {
+  if (! linear_operator_list_.isSublist(name)) {
     msg << "Flow PK: linear solver does not exist for a time integrator.";
     Exceptions::amanzi_throw(msg);
   }
 
-  Teuchos::ParameterList& tmp_list = solver_list_.sublist(name);
+  Teuchos::ParameterList& tmp_list = linear_operator_list_.sublist(name);
   ls_specs->max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
   ls_specs->convergence_tol = tmp_list.get<double>("error tolerance", 1e-14);
 
@@ -230,6 +343,48 @@ std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list,
     Exceptions::amanzi_throw(msg);
   }
   return name;
+}
+
+
+/* ****************************************************************
+* Process string for the relative permeability
+**************************************************************** */
+void Flow_PK::ProcessStringExperimentalSolver(const std::string name, int* method)
+{
+  if (name == "newton") {
+    *method = AmanziFlow::FLOW_SOLVER_NEWTON;
+  } else if (name == "picard-newton") {
+    *method = AmanziFlow::FLOW_SOLVER_PICARD_NEWTON;
+  } else {
+    *method = AmanziFlow::FLOW_SOLVER_NKA;
+  }
+}
+
+
+/* ****************************************************************
+* Process string for error control options
+**************************************************************** */
+void Flow_PK::ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control)
+{
+  *control = 0;
+  if (list.isParameter("error control options")){
+    std::vector<std::string> options;
+    options = list.get<Teuchos::Array<std::string> >("error control options").toVector();
+
+    for (int i=0; i < options.size(); i++) {
+      if (options[i] == "pressure") {
+        *control += FLOW_TI_ERROR_CONTROL_PRESSURE;
+      } else if (options[i] == "saturation") {
+        *control += FLOW_TI_ERROR_CONTROL_SATURATION;
+      } else if (options[i] == "residual") {
+        *control += FLOW_TI_ERROR_CONTROL_RESIDUAL;
+      } else {
+        Errors::Message msg;
+        msg << "Flow PK: unknown error control option has been specified.";
+        Exceptions::amanzi_throw(msg);
+      }
+    }
+  }
 }
 
 

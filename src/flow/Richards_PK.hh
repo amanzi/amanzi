@@ -21,15 +21,10 @@ Authors: Neil Carlson (version 1)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "flow_boundary_function.hh"
-#include "flow_domain_function.hh"
-
 #include "BDF2_TI.hh"
 #include "BDF1_TI.hh"
 
 #include "Flow_PK.hh"
-#include "Flow_BC_Factory.hh"
-#include "Flow_SourceFactory.hh"
 #include "Matrix_MFD.hh"
 #include "WaterRetentionModel.hh"
 #include "RelativePermeability.hh"
@@ -102,12 +97,6 @@ class Richards_PK : public Flow_PK {
   void SolveFullySaturatedProblem(double T, Epetra_Vector& u, LinearSolver_Specs& ls_specs);
   void EnforceConstraints_MFD(double Tp, Epetra_Vector& u);
 
-  // io members
-  void ProcessParameterList();
-  void ProcessStringExperimentalSolver(const std::string name, int* method);
-  void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
-  void AnalysisTI_Specs();
-
   // water retention models
   void DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
   void DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
@@ -143,11 +132,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::ParameterList rp_list_;
 
  private:
-  double atm_pressure;
-  Teuchos::RCP<Epetra_Map> super_map_;
-
-  Teuchos::RCP<Epetra_Import> face_importer_;
-
   Teuchos::RCP<Matrix_MFD> matrix_;
   Teuchos::RCP<Matrix_MFD> preconditioner_;
 
@@ -159,32 +143,12 @@ class Richards_PK : public Flow_PK {
   double functional_max_norm;
   int functional_max_cell;
 
-  TI_Specs ti_specs_igs_;  // Three time integration phases
-  TI_Specs ti_specs_sss_;
-  TI_Specs ti_specs_trs_;
-  TI_Specs* ti_specs;
-
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
   Teuchos::RCP<Epetra_Vector> solution_faces;  // face-base pressures
 
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
-
-  Functions::FlowBoundaryFunction* bc_pressure;  // Pressure BC.
-  Functions::FlowBoundaryFunction* bc_head;  // Static pressure head BC.
-  Functions::FlowBoundaryFunction* bc_flux;  // Outward mass flux BC.
-  Functions::FlowBoundaryFunction* bc_seepage;  // Seepage face BC.
-  std::vector<int> bc_model, bc_submodel; 
-  std::vector<bc_tuple> bc_values;
-  Teuchos::RCP<Epetra_Vector> shift_water_table_;
-  std::vector<double> rainfall_factor;
-
-  Functions::FlowDomainFunction* src_sink;  // Source and sink terms
-  int src_sink_distribution; 
-
-  std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
-  Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
   Teuchos::RCP<RelativePermeability> rel_perm;
 
@@ -193,10 +157,7 @@ class Richards_PK : public Flow_PK {
 
   std::string flow_solver;
 
-
-  int mfd3d_method_, mfd3d_method_preconditioner_;
   bool is_matrix_symmetric;
-  int experimental_solver_; 
 
   double mass_bc, mass_amanzi;
 

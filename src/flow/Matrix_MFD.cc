@@ -27,8 +27,8 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Constructor                                      
 ****************************************************************** */
-Matrix_MFD::Matrix_MFD(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, Teuchos::RCP<const Epetra_Map> map)
-    : mesh_(mesh), map_(map)
+Matrix_MFD::Matrix_MFD(Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : mesh_(mesh)
 { 
   actions_ = 0;
 }
@@ -407,7 +407,7 @@ void Matrix_MFD::ApplyBoundaryConditions(
 * If matrix is non-symmetric, we generate transpose of the matrix 
 * block Afc to reuse cf_graph; otherwise, pointer Afc = Acf.   
 ****************************************************************** */
-void Matrix_MFD::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
+void Matrix_MFD::SymbolicAssembleGlobalMatrices()
 {
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);

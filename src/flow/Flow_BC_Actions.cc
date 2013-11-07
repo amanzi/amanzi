@@ -26,9 +26,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Process parameter for special treatment of static head b.c.                                           
 ****************************************************************** */
-void Flow_PK::ProcessShiftWaterTableList(
-    const Teuchos::ParameterList& list, Functions::FlowBoundaryFunction* bc_head,
-    Teuchos::RCP<Epetra_Vector>& shift_water_table_)
+void Flow_PK::ProcessShiftWaterTableList(const Teuchos::ParameterList& list)
 {
   std::string name("relative position of water table");
   if (list.isParameter(name)) {
@@ -49,7 +47,7 @@ void Flow_PK::ProcessShiftWaterTableList(
     int method = actions[i].second;
 
     if (method == Functions::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE)
-        CalculateShiftWaterTable(actions[i].first, shift_water_table_);
+        CalculateShiftWaterTable(actions[i].first);
   }
 }
 
@@ -59,8 +57,7 @@ void Flow_PK::ProcessShiftWaterTableList(
 * table is set up. 
 * WARNING: works only in 3D.                                            
 ****************************************************************** */
-void Flow_PK::CalculateShiftWaterTable(
-    const std::string region, Teuchos::RCP<Epetra_Vector> shift_water_table_)
+void Flow_PK::CalculateShiftWaterTable(const std::string region)
 {
   double tol = 1e-6;
   Errors::Message msg;
@@ -165,10 +162,9 @@ void Flow_PK::CalculateShiftWaterTable(
 #endif
 
   // calculate head shift
-  double rho = FS->ref_fluid_density();
-  const AmanziGeometry::Point& gravity = FS->ref_gravity();
+  double rho = *(S_->GetScalarData("fluid_density"));
   double edge_length, tol_edge, a, b;
-  double rho_g = -rho * gravity[dim - 1];
+  double rho_g = -rho * gravity_[dim - 1];
 
   for (int i = 0; i < n; i++) {
     int f = ss_faces[i];

@@ -42,7 +42,7 @@ namespace AmanziFlow {
 class Matrix_MFD {
  public:
   Matrix_MFD() {};
-  Matrix_MFD(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, Teuchos::RCP<const Epetra_Map> map);
+  Matrix_MFD(Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~Matrix_MFD();
 
   // main methods
@@ -52,7 +52,7 @@ class Matrix_MFD {
 
   void CreateMFDstiffnessMatrices();
   virtual void CreateMFDstiffnessMatrices(RelativePermeability& rel_perm);
-  virtual void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
+  virtual void SymbolicAssembleGlobalMatrices();
   virtual void AssembleGlobalMatrices();
   virtual void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
@@ -98,9 +98,7 @@ class Matrix_MFD {
   std::vector<double>& Acc_cells() { return Acc_cells_; }
   std::vector<Epetra_SerialDenseVector>& Ff_cells() { return Ff_cells_; }
   std::vector<double>& Fc_cells() { return Fc_cells_; }
-  Teuchos::RCP<Epetra_Vector>& rhs() { return rhs_; }
-  Teuchos::RCP<Epetra_Vector>& rhs_faces() { return rhs_faces_; }
-  Teuchos::RCP<Epetra_Vector>& rhs_cells() { return rhs_cells_; }
+  Teuchos::RCP<CompositeVector>& rhs() { return rhs_; }
 
   Teuchos::RCP<Epetra_FECrsMatrix>& Aff() { return Aff_; }
   Teuchos::RCP<Epetra_FECrsMatrix>& Sff() { return Sff_; }
@@ -113,7 +111,6 @@ class Matrix_MFD {
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<const Epetra_Map> map_;
 
   bool flag_symmetry_;
   int actions_;  // applly, apply inverse, or both
@@ -133,9 +130,7 @@ class Matrix_MFD {
   Teuchos::RCP<Epetra_FECrsMatrix> Sff_;  // Schur complement
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
 
-  Teuchos::RCP<Epetra_Vector> rhs_;
-  Teuchos::RCP<Epetra_Vector> rhs_cells_;
-  Teuchos::RCP<Epetra_Vector> rhs_faces_;
+  Teuchos::RCP<CompositeVector> rhs_;
 
   int nokay_, npassed_;  // performance of algorithms generating mass matrices 
 
