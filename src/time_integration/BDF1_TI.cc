@@ -431,8 +431,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // evaluate nonlinear functional
     fn.fun(t, u, u_tmp, du, h);
 
-
-
     // apply preconditioner to the nonlinear residual
     fn.precon(du, u_tmp);
 
@@ -457,6 +455,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     
     // apply damping
     du.Scale(state.damp);
+    if (state.ntol_multiplier_current != 1.0) du.Scale(0.5); 
 
     bool clip;
     if (fn.IsPureNewton()) {
@@ -562,9 +561,6 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
-//   u0.Print(std::cout);
-//   u.Print(std::cout);
-  
   NOX::Epetra::Vector nox_u(u);
 
   // Begin Nonlinear Solver ************************************
