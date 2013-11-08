@@ -95,7 +95,7 @@ void OverlandHeadFlow::fun( double t_old,
   // accumulation term
   AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
-  db_->WriteVector("res (adv)", res.ptr(), true);
+  db_->WriteVector("res (acc)", res.ptr(), true);
 #endif
 
   // add rhs load value
