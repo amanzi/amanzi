@@ -59,6 +59,7 @@ void EnergyBase::AddAdvection_(const Teuchos::Ptr<State>& S,
   // but for now we'll leave it there and assume it has been updated. --etc
   //  S->GetFieldEvaluator(flux_key_)->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(flux_key_);
+  db_->WriteVector(" adv flux", flux.ptr(), true);
   advection_->set_flux(flux);
 
   // put the advected quantity in cells

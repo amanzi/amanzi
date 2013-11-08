@@ -51,7 +51,7 @@ void AdvectionDonorUpwind::Apply(const Teuchos::RCP<Functions::BoundaryFunction>
   Epetra_MultiVector& field_c = *field_->ViewComponent("cell", true);
 
   Teuchos::RCP<const CompositeVector> flux_const(flux_);
-  const Epetra_MultiVector& flux = *flux_const->ViewComponent("face",false);
+  const Epetra_MultiVector& flux = *flux_const->ViewComponent("face",true);
 
   for (int f=f_begin_; f != f_end_; ++f) {  // loop over master and slave faces
     int c1 = (*upwind_cell_)[f];
@@ -87,12 +87,12 @@ void AdvectionDonorUpwind::Apply(const Teuchos::RCP<Functions::BoundaryFunction>
     int c2 = (*downwind_cell_)[f];
 
     if (c1 >=0 && c1 < c_owned_) {
-      for (int i=0; i<num_dofs_; i++) {
+      for (int i=0; i!=num_dofs_; ++i) {
         field_c[i][c1] -= field_f[i][f];
       }
     }
     if (c2 >=0 && c2 < c_owned_) {
-      for (int i=0; i<num_dofs_; i++) {
+      for (int i=0; i!=num_dofs_; ++i) {
         field_c[i][c2] += field_f[i][f];
       }
     }

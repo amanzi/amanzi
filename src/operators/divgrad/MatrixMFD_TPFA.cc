@@ -292,13 +292,16 @@ int MatrixMFD_TPFA::Apply(const CompositeVector& X,
   int ierr = (*Spp_).Multiply(false, *X.ViewComponent("cell",false),
           *Y.ViewComponent("cell",false));
 
+  if (Y.HasComponent("face")) {
+    Epetra_MultiVector& Yf = *Y.ViewComponent("face",false);
+    ierr |= Afc_->Multiply(true, *X.ViewComponent("cell",false), Yf);
+    ierr |= Yf.Multiply(1., *Dff_->ViewComponent("face",false), *X.ViewComponent("face",false), 1.);
+  }
+
   if (ierr) {
     Errors::Message msg("MatrixMFD_TPFA::Apply has failed to calculate y = A*x.");
     Exceptions::amanzi_throw(msg);
   }
-
-  // Yf = Xf;
-  Y.ViewComponent("face",false)->PutScalar(0.);
   return ierr;
 }
 
