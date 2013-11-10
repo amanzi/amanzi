@@ -3080,6 +3080,9 @@ PorousMedia::advance_saturated_transport_dt()
   }
 }
 
+static Real ssum=0;
+static Real ssum0=0;
+
 bool
 PorousMedia::advance_richards_transport_chemistry (Real  t,
 						   Real  dt,
@@ -3188,6 +3191,17 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       MultiFab Fext(grids,ntracers,nGrowF);
       bool do_rho_scale = 0;
       getForce(Fext,nGrowF,ncomps,ntracers,t_subtr,do_rho_scale);
+
+      if (level==1) {
+        for (MFIter mfi(Fext); mfi.isValid(); ++mfi) {
+          ssum += Fext[mfi].sum(mfi.validbox(),0,1) * dt_subtr * geom.CellSize()[0] * geom.CellSize()[1];
+        }
+      }
+      if (level==0) {
+        for (MFIter mfi(Fext); mfi.isValid(); ++mfi) {
+          ssum0 += Fext[mfi].sum(mfi.validbox(),0,1) * dt_subtr * geom.CellSize()[0] * geom.CellSize()[1];
+        }
+      }
 
       if (advect_tracers) {
 	// Initialize flux registers
@@ -5148,7 +5162,6 @@ LinSolver<MFVector,DiffuserOp<MFVector,TensorOp> >::Solve(MFVector& X, const MFV
   DiffuserOp<MFVector,TensorOp>& diffuse_op = DiffuseOp();
   if (diffuse_op.isValid()) {
     MCMultiGrid mg(diffuse_op.LinOp());
-    //mg.setVerbose(2);
     Real abs_tol_Rhs = get_scaled_abs_tol(Rhs,rel_tol);
     verify_is_clean("X into solve",X,0,1,1,true);
     mg.solve(X,Rhs,rel_tol,std::min(abs_tol,abs_tol_Rhs));
@@ -5264,7 +5277,7 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
   int Wflag = 2;
   MultiFab* Whalf = 0;
   MultiFab* alpha = 0;
-  int op_maxOrder = 3;
+  int op_maxOrder = 4;
   
   Real a_old = 0;
   Real a_new = 1;
@@ -5308,12 +5321,16 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
     } else {
       BndryRegister crse_br(cgrids,0,1,2,1);
       crse_br.copyFrom(Sc_old,Sc_old.nGrow(),n,0,1);
-      crse_br.copyFrom(Sc_new,Sc_new.nGrow(),n,0,1);
       if (tensor_tracer_diffusion) {  
         tbd_old->setBndryValues(crse_br,0,S_old,first_tracer+n,0,1,crse_ratio[0],tracer_bc);
-        tbd_new->setBndryValues(crse_br,0,S_new,first_tracer+n,0,1,crse_ratio[0],tracer_bc);
       } else {
         vbd_old->setBndryValues(crse_br,0,S_old,first_tracer+n,0,1,crse_ratio[0],tracer_bc[0]);
+      }
+
+      crse_br.copyFrom(Sc_new,Sc_new.nGrow(),n,0,1);
+      if (tensor_tracer_diffusion) {  
+        tbd_new->setBndryValues(crse_br,0,S_new,first_tracer+n,0,1,crse_ratio[0],tracer_bc);
+      } else {
         vbd_new->setBndryValues(crse_br,0,S_new,first_tracer+n,0,1,crse_ratio[0],tracer_bc[0]);
       }
     }
@@ -5346,6 +5363,7 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
     else {
       scalar_diffuser->Diffuse(&old_state,new_state,Rhs,prev_time,cur_time,visc_abs_tol,visc_tol);
     }
+
     MultiFab::Copy(S_new,new_state,0,first_tracer+n,1,0);
     verify_is_clean("S_new after tracer diffusion",S_new,first_tracer+n,1,S_new.nGrow());
 
@@ -5368,6 +5386,27 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
         }
       }
 
+
+
+#if 0
+      IntVect ivC(23,32), ivw(ivC), ive(ivC+IntVect(1,0)), ivs(ivC), ivn(ivC+IntVect(0,1));
+      Real xfluxowAx, xfluxoeAx, yfluxosAy, yfluxonAy, SumDFoA;
+      for (MFIter mfi(Rhs); mfi.isValid(); ++mfi) {
+        if (mfi.validbox().contains(ivC)) {
+          xfluxowAx = flux[0][mfi](ivw,0) / (1-be_cn_theta_trac);
+          xfluxoeAx = flux[0][mfi](ive,0) / (1-be_cn_theta_trac);
+          yfluxosAy = flux[1][mfi](ivs,0) / (1-be_cn_theta_trac);
+          yfluxonAy = flux[1][mfi](ivn,0) / (1-be_cn_theta_trac);
+          
+          SumDFoA = xfluxoeAx - xfluxowAx + yfluxonAy - yfluxosAy;
+        }
+      }
+#endif
+
+
+
+
+
       if (tensor_tracer_diffusion) {
         tensor_linop_new->compFlux(D_DECL(flux[0],flux[1],flux[2]),S_new,MCInhomogeneous_BC,first_tracer+n,0,1,0);
       }
@@ -5385,6 +5424,47 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
           getLevel(level+1).getViscFluxReg().CrseInit(flux[d],d,0,first_tracer+n,1,-dt,FluxRegister::ADD);
         }
       }
+
+
+#if 0
+      Real xfluxnwAx, xfluxneAx, yfluxnsAy, yfluxnnAy, SumDFnA;
+      S_new.FillBoundary(first_tracer,ntracers);
+      S_old.FillBoundary(first_tracer,ntracers);
+      for (MFIter mfi(Rhs); mfi.isValid(); ++mfi) {
+        if (mfi.validbox().contains(ivC)) {
+
+          xfluxnwAx = flux[0][mfi](ivw,0) / be_cn_theta_trac;
+          xfluxneAx = flux[0][mfi](ive,0) / be_cn_theta_trac;
+          yfluxnsAy = flux[1][mfi](ivs,0) / be_cn_theta_trac;
+          yfluxnnAy = flux[1][mfi](ivn,0) / be_cn_theta_trac;
+          
+          SumDFnA = xfluxneAx - xfluxnwAx + yfluxnnAy - yfluxnsAy;
+
+          Real snew = S_new[mfi](ivC,0) / density[0];
+          Real sold = S_old[mfi](ivC,0) / density[0];
+
+          Real cnew = S_new[mfi](ivC,ncomps);
+          Real cold = S_old[mfi](ivC,ncomps);
+
+          Real phi = (*rock_phi)[mfi](ivC,0);
+          Real vol = volume[0](ivC,0);
+          Real rhs = Rhs[mfi](ivC,0);
+
+          Real term_1 = (phi*snew*cnew - phi*sold*cold)*vol;
+          Real term_2a = b_old*SumDFoA;
+          Real term_2b = b_new*SumDFnA;
+          Real term_3 = rhs*dt*vol;
+          
+          std::cout << "   1.  (phi.snew.cnew - phi.sold.cold).vol: " << term_1 << std::endl;
+          std::cout << "   2a. dt.( (1-theta).Sum(DFo.A) ): " << term_2a << std::endl;
+          std::cout << "   2b. dt.( theta.Sum(DFn.A)): " << term_2b << std::endl;
+          std::cout << "   3.  Rhs.dt.vol: " << term_3 << std::endl;
+          std::cout << "        check 1 + 2a + 2b - 3: " << term_1 + term_2a + term_2b - term_3 << std::endl;            
+        }
+      }
+#endif
+
+
     }
     
     delete tensor_diffuser;
@@ -8597,81 +8677,68 @@ PorousMedia::post_init_estDT (Real&        dt_init_local,
 int
 PorousMedia::okToContinue ()
 {
-    bool ret = true;
-    std::string reason_for_stopping = "n/a";
-    bool successfully_completed = false;
+  bool ret = true;
+  std::string reason_for_stopping = "n/a";
+  bool successfully_completed = false;
 
-    if (level == 0) {
-        if (parent->dtLevel(0) <= dt_cutoff) {
-            ret = false; reason_for_stopping = "Dt at level 0 too small";
-        }
+  if (level == 0) {
+    if (parent->dtLevel(0) <= dt_cutoff) {
+      ret = false; reason_for_stopping = "Dt at level 0 too small";
+    }
 
-        int max_step = PMParent()->MaxStep();
-        if (parent->levelSteps(0) >= max_step) {
-            ret = false; reason_for_stopping = "Hit maximum allowed time steps";
-            successfully_completed = true;
-        }
+    int max_step = PMParent()->MaxStep();
+    if (parent->levelSteps(0) >= max_step) {
+      ret = false; reason_for_stopping = "Hit maximum allowed time steps";
+      successfully_completed = true;
+    }
 
-        Real stop_time = PMParent()->StopTime();
-        if (parent->cumTime() >= stop_time) {
-            ret = false; reason_for_stopping = "Hit maximum allowed time";
-            successfully_completed = true;
-        }
+    Real stop_time = PMParent()->StopTime();
+    if (parent->cumTime() >= stop_time) {
+      ret = false; reason_for_stopping = "Hit maximum allowed time";
+      successfully_completed = true;
+    }
 
-        if (!ret) {
-            //
-            // Print final solutions
-            //
-          if (verbose && ParallelDescriptor::IOProcessor()) {
-            std::cout << "Reason for stopping: " << reason_for_stopping << std::endl;
+    if (!ret) {
+      //
+      // Print final solutions
+      //
+      if (verbose > 3) {      
+        for (int lev = 0; lev <= parent->finestLevel(); lev++) {
+          if (ParallelDescriptor::IOProcessor()) {
+            std::cout << "Final solutions at level = " << lev << '\n';
           }
-
-            if (verbose > 3)
-            {      
-                for (int lev = 0; lev <= parent->finestLevel(); lev++)
-                {
-                    if (ParallelDescriptor::IOProcessor())
-                        std::cout << "Final solutions at level = " 
-                                  << lev << '\n';
-                    
-                    getLevel(lev).check_minmax(); 
-                    
-                }
-            }
-            
-            //
-            // Compute observations
-            //
-            Observation::setPMAmrPtr(PMParent());
-            PArray<Observation>& observations = PMParent()->TheObservations();
-            if (successfully_completed  &&  ParallelDescriptor::IOProcessor()) 
-            {
-                if (verbose>1)
-                {
-                    std::cout << "Computed observations:\n";
-                    for (int i=0; i<observations.size(); ++i)
-                    {
-                        const std::map<int,Real> vals = observations[i].vals;
-                        for (std::map<int,Real>::const_iterator it=vals.begin();it!=vals.end(); ++it) 
-                        {
-                            int j = it->first;
-                            std::string& name = AMR_to_Amanzi_label_map[observations[i].name];
-                            std::cout << i << ", " << name << ", " 
-                                      << j << ", " << observations[i].times[j] << ", "
-                                      << it->second << std::endl;
-                        }
-                    }
-                    std::cout << "\n";
-
-                }
-            }
+          getLevel(lev).check_minmax();                     
         }
+      }
+            
+      //
+      // Compute observations
+      //
+      Observation::setPMAmrPtr(PMParent());
+      PArray<Observation>& observations = PMParent()->TheObservations();
+      if (successfully_completed  &&  ParallelDescriptor::IOProcessor()) {
+        if (observations.size()) {
+          std::cout << "Computed observations:\n";
+          for (int i=0; i<observations.size(); ++i) {
+            const std::map<int,Real> vals = observations[i].vals;
+            for (std::map<int,Real>::const_iterator it=vals.begin();it!=vals.end(); ++it) {
+              int j = it->first;
+              std::string& name = AMR_to_Amanzi_label_map[observations[i].name];
+              std::cout << i << ", " << name << ", " 
+                        << j << ", " << observations[i].times[j] << ", "
+                        << it->second << std::endl;
+            }
+          }
+          std::cout << "\n";
+        }
+      }
     }
     
     if (!ret && verbose > 1 && ParallelDescriptor::IOProcessor()) {
-        std::cout << "Stopping simulation: " << reason_for_stopping << std::endl;
+      std::cout << "Stopping simulation: " << reason_for_stopping << std::endl;
     }
     return ret;
+  }
 }
 
 //
@@ -9743,7 +9810,7 @@ PorousMedia::mac_sync ()
   const Real curr_time = state[State_Type].curTime();
   const Real dt        = parent->dtLevel(level);
   MultiFab& S_new = get_new_data(State_Type);
-  
+
   bool any_diffusive = false;
   if (do_explicit_tracer_sync_only) {
     //
@@ -9804,9 +9871,9 @@ PorousMedia::mac_sync ()
       Ssync->mult(-dt,Ssync->nGrow());
       MultiFab::Copy(S_new,*Ssync,0,ncomps+ntracers+1,1,1);
     
-    //
-    // Diffusion solve for Ssync
-    //    
+      //
+      // Diffusion solve for Ssync
+      //    
       for (int kk  = 0; kk < ncomps; kk++)
         if (is_diffusive[kk])
           any_diffusive = true;
@@ -10064,6 +10131,12 @@ PorousMedia::mac_sync ()
         }
       }
 
+      //  Solve for increment to C:
+      //
+      //  phi.sat.delc.Vol + theta.dt.Sum(DF.Area) = Rhs.dt.Vol
+      //
+      //  Here, Rhs = refluxed flux registers = -Div(DF_cf)/(dt.Vol)
+      //
       int first_tracer = ncomps;
       MFVector phi(*rock_phi);
       MFVector sphi_new(sat_new,0,1,1); sphi_new.MULTAY(phi,1);
@@ -10072,7 +10145,7 @@ PorousMedia::mac_sync ()
       int Wflag = 2;
       MultiFab* Whalf = 0;
       MultiFab* alpha = 0;
-      int op_maxOrder = 3;
+      int op_maxOrder = 4;
   
       Real a_new = 1;
       Real b_new = be_cn_theta_trac*dt;
@@ -10084,6 +10157,7 @@ PorousMedia::mac_sync ()
       ABecHelper *scalar_linop = 0;
       TensorOp *tensor_linop = 0;
 
+      calcDiffusivity(cur_time,first_tracer,1);
       if (tensor_tracer_diffusion) {
         int rati = rat[0];
         for (int d=1; d<BL_SPACEDIM; ++d) {
@@ -10091,6 +10165,7 @@ PorousMedia::mac_sync ()
         }
         TensorDiffusionBndry tbd(grids,1,geom);
         tbd.setHomogValues(tracer_bc,rati);
+        getTensorDiffusivity(betanp1, beta1np1, cur_time);
         tensor_linop = getOp(a_new,b_new,tbd,0,1,&(sphi_new.multiFab()),0,1,Whalf,0,
                              Wflag,betanp1,0,1,beta1np1,0,1,volume,area,alpha,0);
         tensor_linop->maxOrder(op_maxOrder);
@@ -10106,15 +10181,15 @@ PorousMedia::mac_sync ()
         scalar_diffuser = new Diffuser<MFVector,ABecHelper>(0,scalar_linop,Volume,0,&sphi_new);
       }
 
-      Ssync->mult(-1,first_tracer,ntracers);
-
       MFVector new_state(*Ssync,first_tracer,1,1);
       MFVector Rhs(*Ssync,first_tracer,1,1);
       MultiFab& S_new = get_new_data(State_Type);
       MultiFab& S_old = get_old_data(State_Type);
+
       for (int n=0; n<ntracers; ++n) {
         new_state.setVal(0);
         MultiFab::Copy(Rhs,*Ssync,first_tracer+n,0,1,0);
+
         if (tensor_tracer_diffusion) {
           tensor_diffuser->Diffuse(0,new_state,Rhs,prev_time,cur_time,visc_abs_tol,visc_tol);
         }
@@ -10122,16 +10197,15 @@ PorousMedia::mac_sync ()
           scalar_diffuser->Diffuse(0,new_state,Rhs,prev_time,cur_time,visc_abs_tol,visc_tol);
         }
 
-        MultiFab::Copy(*Ssync,new_state,0,first_tracer+n,1,0);
-
         if (tensor_tracer_diffusion) {
-          tensor_linop->compFlux(D_DECL(*betanp1[0],*betanp1[1],*betanp1[2]),*Ssync,
-                                 MCInhomogeneous_BC,first_tracer+n,0,1,0);
+          tensor_linop->compFlux(D_DECL(*betanp1[0],*betanp1[1],*betanp1[2]),new_state,
+                                 MCHomogeneous_BC,0,0,1,0);
         }
         else {
-          scalar_linop->compFlux(D_DECL(*betanp1[0],*betanp1[1],*betanp1[2]),*Ssync,
-                                 LinOp::Inhomogeneous_BC,first_tracer+n,0,1,0);
+          scalar_linop->compFlux(D_DECL(*betanp1[0],*betanp1[1],*betanp1[2]),new_state,
+                                 LinOp::Homogeneous_BC,0,0,1,0);
         }
+        
         for (int d = 0; d < BL_SPACEDIM; d++) {
           betanp1[d]->mult(be_cn_theta_trac/geom.CellSize()[d]);
           if (level > 0) {
@@ -10140,10 +10214,54 @@ PorousMedia::mac_sync ()
             }
           }
         }
+
+#if 0
+        IntVect ivC(23,32), ivw(ivC), ive(ivC+IntVect(1,0)), ivs(ivC), ivn(ivC+IntVect(0,1));
+        for (MFIter mfi(Rhs); mfi.isValid(); ++mfi) {
+          if (mfi.validbox().contains(ivC)) {
+            Real vol = volume[0](ivC,0);
+            Real xfluxwAx = (*betanp1[0])[mfi](ivw,0) / be_cn_theta_trac;
+            Real xfluxeAx = (*betanp1[0])[mfi](ive,0) / be_cn_theta_trac;
+            Real yfluxsAy = (*betanp1[1])[mfi](ivs,0) / be_cn_theta_trac;
+            Real yfluxnAy = (*betanp1[1])[mfi](ivn,0) / be_cn_theta_trac;
+                        
+            Real SumDFA = xfluxeAx - xfluxwAx + yfluxnAy - yfluxsAy;
+            Real delc = new_state[mfi](ivC,0);
+            Real a = tensor_linop->get_alpha();
+            Real b = tensor_linop->get_beta();
+            Real sphi = sphi_new[mfi](ivC,0);
+            
+            std::cout << std::endl;
+            std::cout << " At idx: " << ivC << std::endl;
+            std::cout << "   xfluxwAx: " << xfluxwAx << std::endl;
+            std::cout << "   xfluxeAx: " << xfluxeAx << std::endl;
+            std::cout << "   yfluxsAy: " << yfluxsAy << std::endl;
+            std::cout << "   yfluxnAy: " << yfluxnAy << std::endl;
+
+            std::cout << "   1. phi.s.delc.vol: " << sphi*delc*vol << std::endl;
+            std::cout << "   2. theta.dt.Sum(DF.A): " << b*SumDFA << std::endl;
+            std::cout << "   3. Rhs.dt.vol: " << Rhs[mfi](ivC,0)*dt*vol << std::endl;
+            std::cout << "       check 1 + 2 - 3: " << sphi*delc*vol + b*SumDFA - Rhs[mfi](ivC,0)*dt*vol << std::endl;            
+          }
+        }
+
+        ParallelDescriptor::ReduceRealSum(ssum);
+        ParallelDescriptor::ReduceRealSum(ssum0);
+        if (ParallelDescriptor::IOProcessor()) {
+          std::cout << "Total moles sourced in at level 0: " << ssum0 << std::endl;
+          std::cout << "Total moles sourced in at level 1: " << ssum << std::endl;
+        }
+        std::cout << std::endl;
+#endif
+
+        // Increment state at coarse level
+        MultiFab::Add(S_new,new_state,0,first_tracer+n,1,0);
+
+        // Form phi.sat.C in order to interpolate to finer levels
+        new_state.MULTAY(sphi_new,1);        
+        MultiFab::Copy(*Ssync,new_state,0,first_tracer+n,1,0);
       }
-      for (MFIter mfi(S_new); mfi.isValid(); ++mfi) {
-        S_new[mfi].plus((*Ssync)[mfi],first_tracer,first_tracer,ntracers);
-      }
+
       delete tensor_diffuser;
       delete scalar_diffuser;
       delete scalar_linop;
@@ -10154,9 +10272,44 @@ PorousMedia::mac_sync ()
           delete beta1np1[d];
         }
       }
+
+      //
+      // Get boundary conditions.
+      //
+      Array<int*>         sync_bc(grids.size());
+      Array< Array<int> > sync_bc_array(grids.size());
+      
+      for (int i = 0; i < grids.size(); i++) {
+        sync_bc_array[i] = getBCArray(State_Type,i,ncomps,ntracers);
+        sync_bc[i]       = sync_bc_array[i].dataPtr();
+      }
+
+      //
+      // Interpolate the sync correction to the finer levels.
+      //
+      IntVect    ratio = IntVect::TheUnitVector();
+      const Real mult  = 1.0;
+      for (int lev = level+1; lev <= parent->finestLevel(); lev++) {
+        ratio                     *= parent->refRatio(lev-1);
+        PorousMedia&     fine_lev  = getLevel(lev);
+        const BoxArray& fine_grids = fine_lev.boxArray();
+        MultiFab sync_incr(fine_grids,ntracers,0);
+        sync_incr.setVal(0.0);
+        
+        SyncInterp(*Ssync,level,sync_incr,lev,ratio,ncomps,0,
+                   ntracers,1,mult,sync_bc.dataPtr());
+
+        MultiFab& S_new_fine = fine_lev.get_new_data(State_Type);
+        const MultiFab& fine_phi = *fine_lev.rock_phi;
+        for (int n=0; n<ntracers; ++n) {
+          MultiFab::Divide(sync_incr,fine_phi,0,n,1,0);
+          MultiFab::Divide(sync_incr,S_new_fine,0,n,1,0);
+        }
+        MultiFab::Add(S_new_fine,sync_incr,0,ncomps,ntracers,0);
+      }
     }
   }
-    
+
   if (idx_dominant > -1)
     scalar_adjust_constraint(0,ncomps-1);
   //
@@ -10670,8 +10823,8 @@ PorousMedia::getForce (MultiFab& force,
   force.setVal(0);
   if (do_source_term) {
     const Real* dx = geom.CellSize();
-    MultiFab mask(grids,num_comp,nGrow);
-    MultiFab tmp(grids,num_comp,nGrow); tmp.setVal(0);
+    MultiFab mask(grids,num_comp,0);
+    MultiFab tmp(grids,num_comp,0); tmp.setVal(0);
 
     for (int i=0; i<source_array.size(); ++i) {
       mask.setVal(0);
@@ -10680,25 +10833,32 @@ PorousMedia::getForce (MultiFab& force,
 	source_array[i].apply(tmp[mfi],dx,0,snum_comp,time);	
 	const PArray<Region>& regions = source_array[i].Regions();
 	for (int j=0; j<regions.size(); ++j) {
+	  if (snum_comp > 0) {
+	    source_array[i].apply(tmp[mfi],dx,0,snum_comp,time);
+	  }
 	  regions[j].setVal(mask[mfi],1,0,dx,0);
 	}
       }
 
       const std::string& stype = source_array[i].Type();
-      if (stype == "volume_weighted") {
-	// Scale all values set by this source function so they sum to 
-	// user specified value
-	Real cellVol = 1;
-	for (int d=0; d<BL_SPACEDIM; ++d) {
-	  cellVol *= dx[d];
-	}
-	Real num_cells=0;
-	for (MFIter mfi(mask); mfi.isValid(); ++mfi) {
-	  num_cells += mask[mfi].sum(mfi.validbox(),0,1);
-	}
-	ParallelDescriptor::ReduceRealSum(num_cells);
-	Real total_volume_this_level = num_cells * cellVol;
-	mask.mult(1/total_volume_this_level,0,1,nGrow);
+      Real total_volume_this_level = 1;
+
+      Real cellVol = 1;
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        cellVol *= dx[d];
+      }
+      Real num_cells=0;
+      for (MFIter mfi(mask); mfi.isValid(); ++mfi) {
+        num_cells += mask[mfi].sum(mfi.validbox(),0,1);
+      }
+      ParallelDescriptor::ReduceRealSum(num_cells);
+
+      total_volume_this_level = num_cells * cellVol;
+
+      // Scale all values set by this source function so they sum to 
+      // user specified value
+      if (stype == "volume_weighted" || stype == "point") {
+        mask.mult(1/total_volume_this_level,0,1,0);
       }
       else {
 	if (stype != "uniform") {
@@ -10706,16 +10866,13 @@ PorousMedia::getForce (MultiFab& force,
 	}
       }
 
-      mask.FillBoundary(0,1);
-      geom.FillPeriodicBoundary(mask,0,1);
-
       if (strt_comp+num_comp > ncomps) {
 	int tstrt_comp = std::max(ncomps,strt_comp);
 	int tnum_comp = num_comp - snum_comp;
 
 	for (int it=0; it<tnum_comp; ++it) {
 	  const RegionData& tsource = tsource_array[i][it];
-	  if (tsource.Type()=="uniform") {
+	  if (tsource.Type()=="uniform" || tsource.Type()=="point") {
 	    for (MFIter mfi(force); mfi.isValid(); ++mfi) {
 	      tsource.apply(tmp[mfi],dx,it+snum_comp,1,time);
 	    }
@@ -10726,15 +10883,14 @@ PorousMedia::getForce (MultiFab& force,
 	}
       }
 
-      // FIXME: If this is to fill component sources, this ignores strt_comp, assuming it is zero
       for (MFIter mfi(mask); mfi.isValid(); ++mfi) {
-	const Box& box = mfi.validbox();
 	const FArrayBox& maskfab = mask[mfi];
+	FArrayBox& f = force[mfi];
+	const FArrayBox& t = tmp[mfi];
+	const Box& box = mfi.validbox();
 	for (IntVect iv=box.smallEnd(), End=box.bigEnd(); iv<=End; box.next(iv)) {
 	  Real m = maskfab(iv,0);
 	  if (m > 0) {
-	    FArrayBox& f = force[mfi];
-	    const FArrayBox& t = tmp[mfi];
 	    for (int n=0; n<num_comp; ++n) {
 	      f(iv,n) = m * t(iv,n); // NOTE: volume-weighting of component source impacts solute sources
 	    }
@@ -10742,6 +10898,9 @@ PorousMedia::getForce (MultiFab& force,
 	}
       }
 
+      force.FillBoundary(0,num_comp);
+      geom.FillPeriodicBoundary(force,0,num_comp);
+	
       if (do_rho_scale) {
 	for (int i=0; i<snum_comp; ++i) {
 	  force.mult(density[strt_comp+i],i,1);
