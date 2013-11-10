@@ -2,6 +2,8 @@
 #include <TensorOp.H>
 #include <TensorOp_F.H>
 #include <MCLO_F.H>
+#include <VisMF.H>
+#include <Utility.H>
 
 Real TensorOp::a_def     = 0.0;
 Real TensorOp::b_def     = 1.0;
@@ -373,10 +375,12 @@ TensorOp::applyBC (MultiFab&      inout,
 
   const bool cross = false;
   const bool do_corners = true;
+
+  inout.setBndry(1.e30,src_comp,num_comp);
   inout.FillBoundary(src_comp,num_comp,local,cross);
   prepareForLevel(level);
-
   geomarray[level].FillPeriodicBoundary(inout,src_comp,num_comp,do_corners,local);
+
   //
   // Fill boundary cells.
   //
@@ -439,7 +443,6 @@ TensorOp::applyBC (MultiFab&      inout,
         tdfab.dataPtr(bndryComp),    ARLIM(tdfab.loVect()),    ARLIM(tdfab.hiVect()),
         inout.box(gn).loVect(), inout.box(gn).hiVect(),
         &num_comp, h[level]);
-
 #elif BL_SPACEDIM==3
       const Mask& mn = *msk[Orientation(1,Orientation::high)];
       const Mask& me = *msk[Orientation(0,Orientation::high)];
@@ -462,89 +465,6 @@ TensorOp::applyBC (MultiFab&      inout,
         inout.box(gn).loVect(), inout.box(gn).hiVect(),
         &nc, h[level]);
 #endif
-    }
-  }
-
-  // Clean up corners:
-  // The problem here is that APPLYBC fills only grow cells normal to the boundary.
-  // As a result, any corner cell on the boundary (either coarse-fine or fine-fine)
-  // is not filled.  For coarse-fine, the operator adjusts itself, sliding away from
-  // the box edge to avoid referencing that corner point.  On the physical boundary
-  // though, the corner point is needed.  Particularly if a fine-fine boundary intersects
-  // the physical boundary, since we want the stencil to be independent of the box
-  // blocking.  FillBoundary operations wont fix the problem because the "good"
-  // data we need is living in the grow region of adjacent fabs.  So, here we play 
-  // the usual games to treat the newly filled grow cells as "valid" data.
-
-  // Note that we only need to do something where the grids touch the physical boundary.
-
-  const Geometry& geom = geomarray[level];
-  const BoxArray& grids = inout.boxArray();
-  const Box& domain = geom.Domain();
-  int nGrow = 1;
-
-  // Lets do a quick check to see if we need to do anything at all here
-  BoxArray BIGba = BoxArray(grids).grow(nGrow);
-
-  if (! (domain.contains(BIGba.minimalBox())) ) {
-
-    BoxArray boundary_pieces;
-    Array<int> proc_idxs;
-    Array<Array<int> > old_to_new(grids.size());
-    const DistributionMapping& dmap=inout.DistributionMap();
-
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-      if (! (geom.isPeriodic(d)) ) {
-
-        BoxArray gba = BoxArray(grids).grow(d,nGrow);
-        for (int i=0; i<gba.size(); ++i) {
-          BoxArray new_pieces = BoxLib::boxComplement(gba[i],domain);
-          int size_new = new_pieces.size();
-          if (size_new>0) {
-            int size_old = boundary_pieces.size();
-            boundary_pieces.resize(size_old+size_new);
-            proc_idxs.resize(boundary_pieces.size());
-            for (int j=0; j<size_new; ++j) {
-              boundary_pieces.set(size_old+j,new_pieces[j]);
-              proc_idxs[size_old+j] = dmap[i];
-              old_to_new[i].push_back(size_old+j);
-            }
-          }
-        }
-      }
-    }
-
-    proc_idxs.push_back(ParallelDescriptor::MyProc());
-
-    MultiFab boundary_data(boundary_pieces,num_comp,nGrow,
-                           DistributionMapping(proc_idxs));
-
-    for (MFIter mfi(inout); mfi.isValid(); ++mfi) {
-      const FArrayBox& src_fab = inout[mfi];
-      for (int j=0; j<old_to_new[mfi.index()].size(); ++j) {
-        int new_box_idx = old_to_new[mfi.index()][j];
-        boundary_data[new_box_idx].copy(src_fab,src_comp,0,num_comp);
-      }
-    }
-
-    boundary_data.FillBoundary();
-
-    for (MFIter mfi(inout); mfi.isValid(); ++mfi) {
-      int idx = mfi.index();
-      FArrayBox& dst_fab = inout[mfi];
-      for (int j=0; j<old_to_new[idx].size(); ++j) {
-        int new_box_idx = old_to_new[mfi.index()][j];
-        const FArrayBox& src_fab = boundary_data[new_box_idx];
-        const Box& src_box = src_fab.box();
-
-        BoxArray pieces_outside_domain = BoxLib::boxComplement(src_box,domain);
-        for (int k=0; k<pieces_outside_domain.size(); ++k) {
-          const Box& outside = pieces_outside_domain[k] & dst_fab.box();
-          if (outside.ok()) {
-            dst_fab.copy(src_fab,outside,0,outside,src_comp,num_comp);
-          }
-        }
-      }
     }
   }
 }
@@ -603,11 +523,11 @@ TensorOp::Fsmooth (MultiFab&       solnL,
   BL_ASSERT(nc>=nComp());
   BL_ASSERT(nc==1);
 
-  for (MFIter solnLmfi(solnL); solnLmfi.isValid(); ++solnLmfi)
+  for (MFIter mfi(solnL); mfi.isValid(); ++mfi)
   {
     oitr.rewind();
 
-    const int gn = solnLmfi.index();
+    const int gn = mfi.index();
 
     const MCLinOp::MaskTuple& mtuple = maskvals[level][gn];
 
@@ -668,7 +588,7 @@ TensorOp::Fsmooth (MultiFab&       solnL,
       tdefab.dataPtr(bndryComp), ARLIM(tdefab.loVect()), ARLIM(tdefab.hiVect()),
       tdwfab.dataPtr(bndryComp), ARLIM(tdwfab.loVect()), ARLIM(tdwfab.hiVect()),
       tdsfab.dataPtr(bndryComp), ARLIM(tdsfab.loVect()), ARLIM(tdsfab.hiVect()),
-      solnLmfi.validbox().loVect(), solnLmfi.validbox().hiVect(),
+      mfi.validbox().loVect(), mfi.validbox().hiVect(),
       h[level], phaseflag);
 #else
     FORT_TOGSRB(
@@ -700,7 +620,7 @@ TensorOp::Fsmooth (MultiFab&       solnL,
       tdsfab.dataPtr(bndryComp), ARLIM(tdsfab.loVect()), ARLIM(tdsfab.hiVect()),
       tdtfab.dataPtr(bndryComp), ARLIM(tdtfab.loVect()), ARLIM(tdtfab.hiVect()),
       tdbfab.dataPtr(bndryComp), ARLIM(tdbfab.loVect()), ARLIM(tdbfab.hiVect()),
-      solnLmfi.validbox().loVect(), solnLmfi.validbox().hiVect(),
+      mfi.validbox().loVect(), mfi.validbox().hiVect(),
       h[level], phaseflag);
 #endif
   }
@@ -713,7 +633,9 @@ TensorOp::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
                     int sComp, int dComp, int nComp, int bndComp)
 {
   const int level   = 0;
-  applyBC(x,level,bc_mode);
+  bool local = false;
+  applyBC(x,sComp,nComp,level,bc_mode,local,bndComp);
+
   BL_ASSERT(x.nComp()>=sComp+nComp);
   BL_ASSERT(xflux.nComp()>=dComp+nComp);
   BL_ASSERT(yflux.nComp()>=dComp+nComp);

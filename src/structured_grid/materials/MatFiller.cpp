@@ -349,6 +349,7 @@ MatFiller::SetProperty(Real               t,
       BoxArray ba_fillable(bl_fillable);
       MultiFab fillData(ba_fillable,nComp,0);
       MultiFab fillID(ba_fillable,1,0); 
+      BL_ASSERT(level<materialID.size() && materialID[level].ok() && materialID[level].nComp()>=1);
       fillID.copy(materialID[level]); // guaranteed to be filled completely
       for (MFIter mfi(fillData); mfi.isValid(); ++mfi) {
 	const Box& ovlp = mfi.validbox();
