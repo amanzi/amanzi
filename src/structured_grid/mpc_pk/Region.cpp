@@ -67,12 +67,51 @@ Region::setVal(FArrayBox&  fab,
 bool 
 PointRegion::inRegion (const Array<Real>& x) const
 {
-    bool inflag = true;
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-        inflag &= (x[d]>=coor[d]);
-    }
-    return inflag;
+  return false; // This test is simply not appropriate for pt regions
 }
+
+void
+PointRegion::setVal(FArrayBox&         fab, 
+                    const Array<Real>& val, 
+                    const Real*        dx, 
+                    int                ng,
+                    int                scomp,
+                    int                ncomp) const
+{
+  int nval = val.size();
+  BL_ASSERT(ncomp-scomp <= nval);
+
+  const Box& box = fab.box();
+  const IntVect& se = box.smallEnd();
+  const IntVect& be = box.bigEnd();
+  Real xlo[BL_SPACEDIM] = {D_DECL(domlo[0]  +  se[0]*dx[0],domlo[1]  +  se[1]*dx[1],domlo[2]  +  se[2]*dx[2])};
+  Real xhi[BL_SPACEDIM] = {D_DECL(domlo[0]+(be[0]+1)*dx[0],domlo[1]+(be[1]+1)*dx[1],domhi[2]+(be[2]+1)*dx[2])};
+
+  bool not_below = D_TERM(coor[0]>=xlo[0], && coor[1]>=xlo[1], && coor[2]>=xlo[2]);
+  bool not_above = D_TERM(coor[0]<=xhi[0], && coor[1]<=xhi[1], && coor[2]<=xhi[2]);
+
+  bool in_domain = not_below && not_above;
+  if (in_domain) {
+    IntVect idx(D_DECL((coor[0]-domlo[0])/dx[0],(coor[1]-domlo[1])/dx[1],(coor[2]-domlo[2])/dx[2]));
+    if (fab.box().contains(idx)) {
+      for (int n=scomp; n<scomp+ncomp;n++) {
+        fab(idx,n) = val[n-scomp];
+      }
+    }
+  }
+}
+
+
+void
+PointRegion::setVal(FArrayBox&  fab,
+                    const Real  val, 
+                    const int   idx,
+                    const Real* dx, 
+                    int         ng) const
+{
+  setVal(fab,Array<Real>(1,val),dx,ng,idx,1);
+}
+
 
 bool 
 BoxRegion::inRegion(const Array<Real>& x) const

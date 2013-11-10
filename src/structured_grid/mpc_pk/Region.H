@@ -37,19 +37,19 @@ public:
          const std::string& r_type);
   virtual ~Region() {}
 
-  void setVal(FArrayBox&         fab, 
-	      const Array<Real>& val, 
-	      const Real*        dx, 
-	      int                ng,
-	      int                scomp,
-	      int                ncomp) const;
+  virtual void setVal(FArrayBox&         fab, 
+                      const Array<Real>& val, 
+                      const Real*        dx, 
+                      int                ng,
+                      int                scomp,
+                      int                ncomp) const;
 
-  void setVal(FArrayBox&  fab,
-              const Real  val, 
-              const int   idx,
-	      const Real* dx, 
-              int         ng) const;
-
+  virtual void setVal(FArrayBox&  fab,
+                      const Real  val, 
+                      const int   idx,
+                      const Real* dx, 
+                      int         ng) const;
+  
   virtual bool inRegion (const Array<Real>& x) const = 0;
   virtual std::ostream& print (std::ostream& os) const;
 
@@ -72,6 +72,20 @@ public:
                const std::string& r_purpose,
                const Array<Real>& coor)
       : Region(r_name,r_purpose,"point"), coor(coor) {} ;
+
+  virtual void setVal(FArrayBox&         fab, 
+                      const Array<Real>& val, 
+                      const Real*        dx, 
+                      int                ng,
+                      int                scomp,
+                      int                ncomp) const;
+
+  virtual void setVal(FArrayBox&  fab,
+                      const Real  val, 
+                      const int   idx,
+                      const Real* dx, 
+                      int         ng) const;
+  
   virtual ~PointRegion() {}
 
   virtual bool inRegion (const Array<Real>& x) const;

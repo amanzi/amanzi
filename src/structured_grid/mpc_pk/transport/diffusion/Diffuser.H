@@ -64,7 +64,7 @@
           Volume(volume), X(volume), Y(volume) {}
       ~Diffuser() {delete opOld; delete opNew;}
       void Diffuse(const Vector* Sold, Vector& Snew, const Vector& dRhs, Real t_old, Real t_new, Real abs_tol, Real rel_tol) {
-
+#if 1
         Real dt = t_new - t_old;
         if (Sold != 0) {
           X.COPY(*Sold);                     // S (=X) = Cn
@@ -79,11 +79,27 @@
           Y.COPY(dRhs);
           Y.MULTAY(Volume,dt);
         }
-        Real scale = opNew->ScaleOperator(); //   a <- a/scale
+        Real scale = opNew->ScaleOperator(); // a,b <- a,b/scale
         Y.SCALE(scale);                      // Rhs <- Rhs.scale 
         LinSolver<Vector, DiffuserOp<Vector, Op> > solver(*opNew);
-        solver.Solve(Snew,Y,abs_tol,rel_tol);// Cnp1: Lnp1(Cnp1) =  Ln(Cn) + (phi.s.Cn + dt * dRhs ) * Vol
-        opNew->UnscaleOperator(scale);       // a <- a.scale
+        solver.Solve(Snew,Y,abs_tol,rel_tol);// Cnp1: phi.s.Cnp1.Vol + Lnp1(Cnp1) =  Ln(Cn) + (phi.s.Cn + dt * dRhs ) * Vol
+        opNew->UnscaleOperator(scale);       // a,b <- a,b.scale
+#else
+        Real dt = t_new - t_old;
+        Y.COPY(dRhs);
+        Y.MULTAY(Volume,dt);
+
+        if (Sold != 0  &&  opOld->isValid()) {
+          Vector *Sold_c = const_cast<Vector *>(Sold);
+          opOld->ApplyOperator(X,*Sold_c);   // X = phi.s.Cn.Vol - dt.(1-theta).Div(Fn)
+          Y.AXPBY(X,1,1);                    // Y = phi.s.Cn.Vol - dt.(1-theta).Div(Fn) + dt.dRhs.Vol
+        }
+        Real scale = opNew->ScaleOperator(); // a,b <- a,b/scale
+        Y.SCALE(scale);                      // Rhs <- Rhs.scale 
+        LinSolver<Vector, DiffuserOp<Vector, Op> > solver(*opNew);
+        solver.Solve(Snew,Y,abs_tol,rel_tol);// phi.s.Cnp1.Vol+dt.theta.Div(Fnp1)=phi.s.Cn.Vol-dt.(1-theta).Div(Fn)+dt.dRhs.Vol
+        opNew->UnscaleOperator(scale);       // a,b <- a,b.scale
+#endif
       }
     protected:
       DiffuserOp<Vector,Op> *opOld, *opNew;
