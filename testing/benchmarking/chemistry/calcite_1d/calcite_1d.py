@@ -94,7 +94,7 @@ if __name__ == "__main__":
     # path_to_pflotran = "/home/scratch/smolins/amanzi/examples/phase2/chemistry/1d-calcite/pflotran-run/"
 
      # hardwired for 1d-calcite: time and comp
-    times = ['Time:  0.00000E+00 y','Time:  1.00000E+01 y','Time:  2.00000E+01 y','Time:  3.00000E+01 y','Time:  4.00000E+01 y','Time:  5.00000E+01 y']
+    times = ['Time:  1.00000E+01 y','Time:  2.00000E+01 y','Time:  3.00000E+01 y','Time:  4.00000E+01 y','Time:  5.00000E+01 y']
 
     comp = 'Total_Ca++ [M]'
     Ca_pflotran = []
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     path_to_pflotran = "pflotran/os"
 
      # hardwired for 1d-calcite: time and comp
-    times = ['Time:  0.00000E+00 y','Time:  1.00000E+01 y','Time:  2.00000E+01 y','Time:  3.00000E+01 y','Time:  4.00000E+01 y','Time:  5.00000E+01 y']
+    times = ['Time:  1.00000E+01 y','Time:  2.00000E+01 y','Time:  3.00000E+01 y','Time:  4.00000E+01 y','Time:  5.00000E+01 y']
 
     comp = 'Total_Ca++ [M]'
     Ca_pflotran_OS = []
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     
     try:
         # hardwired for 1d-calcite: Ca = component 2, last time = '71'
-        times = ['0','31','41','51','61','71']
+        times = ['31','41','51','61','71']
 
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-calcite.xml")
