@@ -250,12 +250,12 @@ void SurfaceEnergyBalance::GroundEnergyCalc (LocalData& seb) {
     Sqig = 0.;
   } else {
     double Ri = ((seb.st_energy.gZr*(seb.st_energy.air_temp-seb.st_energy.Tb))/(seb.st_energy.air_temp*std::pow(seb.st_energy.Us,2)));
-   if (Ri<0){ // Unstable condtition 
-       Sqig = (1-10*Ri);
-    }else{// Stable Condition
+      if (Ri<0) {// Unstable condition
+          Sqig = (1-10*Ri);
+      }else{// Stable Condition
     Sqig = (1/(1+10*Ri));
-    }
-  } 
+      }
+  }
 
   seb.st_energy.fQh = seb.st_energy.rowaCp*seb.st_energy.Dhe*Sqig*(seb.st_energy.air_temp-seb.st_energy.Tb);
 
@@ -332,7 +332,6 @@ void SurfaceEnergyBalance::DeltaSnowPack (EnergyBalance& eb) {
   if (eb.SublL >= 0) { //Changing SublL back to SWE *** This is for sublimation ****
     eb.SublL = eb.SublL * eb.density_snow / eb.density_w;
   }
-    
 }
 
 
@@ -351,7 +350,6 @@ void SurfaceEnergyBalance::WaterMassCorr(EnergyBalance& eb) {
   double TZs = eb.density_snow/eb.density_w;
   if (eb.Ml>0) {
     if (eb.SublL>0) {               // When SublL is great then 0 Sublimation! Find the ratio of water atributed to SublL and subtract it from the water delivered to ATS
-
       eb.SublL=(eb.SublL*(Tswe)/std::abs(eb.TotwLoss));  //SublL is temporarily changed to snow length
       eb.SublL=eb.SublL*eb.ht_snow*(TZs);  //SublL is changed back to SWE & ratio of avaialbe snowpack for sublimation is found
       eb.Ml=(eb.ht_snow+eb.Ps+(eb.SublL*(Tswe)))*(TZs);
@@ -397,36 +395,49 @@ void SurfaceEnergyBalance::WaterMassCorr(EnergyBalance& eb) {
 // FUNCTION TO ADDS UP ALL THE CHANGES TO THE SNOWPACK
 void SurfaceEnergyBalance::SnowPackCalc (EnergyBalance& eb) {
   // Zs = Zs + Ps - TotwLoss;    // New formate
-  eb.ht_snow = eb.ht_snow + eb.Ps - eb.TotwLoss;  //DELTz is the new snowpack depth
+    
+    if (eb.ht_snow>0) {
+  eb.ht_snow = eb.ht_Zs_settled + eb.Ps - eb.TotwLoss;  //DELTz is the new snowpack depth
+    }else{
+      eb.ht_snow = eb.ht_snow + eb.Ps - eb.TotwLoss;  
+    }
 //  ASSERT(eb.ht_snow >= 0.);
 }
 
 
 // FUNCTION TO TRACKS THE TIME (IN DAYS) WHERE NO NEW SNOW AS FALLEN ~> USED IN SNOW DENSITY
 void SurfaceEnergyBalance::TrackSnowDays (EnergyBalance& eb) {
-  if (eb.Ps < 0.0001) {//If less then a mm of snow
-    eb.nosnowdays += eb.Dt / 86400;
-  } else {
-    eb.nosnowdays = 0;
+    double Beta=((eb.ht_snow*eb.density_snow)+(eb.Ps*eb.density_freshsnow)+(eb.CiL*eb.density_frost));
+    if (eb.ht_snow>0) {        
+        eb.nosnowdays=(((eb.nosnowdays + (eb.Dt / 86400))*eb.ht_snow*eb.density_snow) + ((eb.Dt / 86400)*eb.Ps*eb.density_freshsnow)+((eb.NDSfrost + (eb.Dt / 86400))*eb.CiL*eb.density_frost))/Beta;
+    }else{
+     eb.nosnowdays = 0;   
+    }
+  //if (eb.Ps < 0.0001) {//If less then a mm of snow
+  //  eb.nosnowdays += eb.Dt / 86400;
+  //} else {
+  //  eb.nosnowdays = 0;
+ // }
   }
-}
 
+// CALCULATES SNOW DEFORMATION ~> NEW DENSITY AND HEIGHT OFF AGED SNOW 'LAYER' (Martinec, 1977)
+void SurfaceEnergyBalance::SnowDeformationModel (EnergyBalance& eb) {
+    // Track days with now snow and formulate snow deformation
+    double ndensity = std::pow((eb.nosnowdays+1),0.3);
+    eb.density_snow=eb.density_freshsnow*ndensity;// New Density of settled snow
+    eb.ht_Zs_settled = eb.ht_snow * (eb.HoldROWs / eb.density_snow); // New Height of settled snow
+}
 
 // FUNCTION TO CALCULATE SNOWPACK DENSITY ~> WEIGHTED AVERAGE OVER THREE POTEINTAL LAYERS OF SNOW
 void SurfaceEnergyBalance::SnowPackDensity (EnergyBalance& eb) {
-//  ASSERT(eb.ht_snow >= 0.);
-
   if (eb.ht_snow == 0.) {
     eb.density_snow=100;
     eb.HoldROWs=100;
   } else {
-    // Track days with now snow and formulate snow deformation
-    double ndensity = std::pow((eb.nosnowdays+1),0.3);
-    eb.density_snow=eb.density_freshsnow*ndensity;
     //Weighted average of the three layers of the snowpack
-    //ROWs=((Ps*ROWfs)+(Zs*ROWs)+(CiL*ROWfrost))/(Ps+Zs+CiL);  // Wt. average for snow density
-    double denominator=eb.Ps+eb.ht_snow+eb.CiL;
-    eb.density_snow=((eb.Ps*eb.density_freshsnow)+(eb.ht_snow*eb.density_snow)+(eb.CiL*eb.density_frost))/(denominator);
+    //ROWs=((Ps*ROWfs)+(Zs_settled*ROWs)+(CiL*ROWfrost))/(Ps+Zs_settled+CiL);  // Wt. average for snow density
+    double denominator=eb.Ps+eb.ht_Zs_settled+eb.CiL;
+    eb.density_snow=((eb.Ps*eb.density_freshsnow)+(eb.ht_Zs_settled*eb.density_snow)+(eb.CiL*eb.density_frost))/(denominator);
     if (eb.density_snow>950) {// Capping snow density ~> it should NEVER get this dense anyway.
       eb.density_snow=950.1;
     }
@@ -512,12 +523,12 @@ void SurfaceEnergyBalance::SnowEnergyBalance (LocalData& seb) {
     EvapCalc(seb.st_energy);
     seb.st_energy.TotwLoss = 0.; // no snow to melt
   }
-
-  // Update days since last snow for snow pack deformation
-  TrackSnowDays(seb.st_energy);
+    
+  //Calculate Snow Deformation
+  seb.st_energy.HoldROWs=seb.st_energy.density_snow;
+  SnowDeformationModel(seb.st_energy);
 
   // Update snowpack density
-  seb.st_energy.HoldROWs=seb.st_energy.density_snow;
   SnowPackDensity(seb.st_energy);
 
   // Update snow height
@@ -525,6 +536,9 @@ void SurfaceEnergyBalance::SnowEnergyBalance (LocalData& seb) {
   if (seb.st_energy.ht_snow<=0.0000001) {
     seb.st_energy.ht_snow=0.0;
   }
+  
+  // Update days since last snow for snow pack deformation
+  TrackSnowDays(seb.st_energy);
 
   // Calculate water temperature
   WaterTemp(seb.st_energy);

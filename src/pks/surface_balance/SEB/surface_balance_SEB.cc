@@ -217,7 +217,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
 
   data.st_energy.density_w = 1000;         // Density of Water ----------------- [kg/m^3]
   double density_air = 1.275;       // Density of Air ------------------- [kg/m^3]
-  data.st_energy.density_frost = 800;      // Density of Frost (condensation) -- [kg/m^3]
+  data.st_energy.density_frost = 200;      // Density of Frost (condensation) -- [kg/m^3]
   data.st_energy.density_freshsnow = 100;  // Density of Freshly fallebn snow -- [kg/m^3]
 
   data.st_energy.gZr = 9.807*data.st_energy.Zr;
@@ -231,6 +231,8 @@ bool SurfaceBalanceSEB::advance(double dt) {
   data.st_energy.Dt = dt;
   data.st_energy.AlbedoTrans = albedo_trans_;
   data.st_energy.snow_groundTrans = snow_ground_trans_;
+//Calculating which Day frost density matched snow Defermation fucntion from (Martinec, 1977)
+  data.st_energy.NDSfrost = pow((data.st_energy.density_frost /data.st_energy.density_freshsnow),(1/0.3))-1;
 
   // Get all data
   // ATS CALCULATED
