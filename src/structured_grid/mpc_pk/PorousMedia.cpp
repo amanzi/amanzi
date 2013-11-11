@@ -8737,8 +8737,8 @@ PorousMedia::okToContinue ()
     if (!ret && verbose > 1 && ParallelDescriptor::IOProcessor()) {
       std::cout << "Stopping simulation: " << reason_for_stopping << std::endl;
     }
-    return ret;
   }
+  return ret;
 }
 
 //
