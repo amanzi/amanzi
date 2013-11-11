@@ -92,6 +92,9 @@ struct EnergyBalance {
 
   double AlbedoTrans;
   double snow_groundTrans;
+  double ht_Zs_settled;
+  double NDSfrost;
+
 
   double varvar;
   std::string funcall;
@@ -184,6 +187,11 @@ void WaterMassCorr(EnergyBalance& eb);
      **  Otherwise Snow Energy Balance is calucalted ** */
 void TeenyTinySnowPack (LocalData& tiny);
 
+// CALCULATES SNOW DEFORMATION  ~> NEW DENSITY AND HEIGHT OFF AGED SNOW 'LAYER'
+void SnowDeformationModel(EnergyBalance& eb);
+
+// FUNCTION TO CALCULATE SNOWPACK DENSITY ~> WEIGHTED AVERAGE OVER THREE POTEINTAL LAYERS OF SNOW
+void SnowPackDensity (EnergyBalance& eb);
 
 // FUNCTION TO ADDS UP ALL THE CHANGES TO THE SNOWPACK
 void SnowPackCalc (EnergyBalance& eb);
@@ -192,14 +200,8 @@ void SnowPackCalc (EnergyBalance& eb);
 // FUNCTION TO TRACKS THE TIME (IN DAYS) WHERE NO NEW SNOW AS FALLEN ~> USED IN SNOW DENSITY
 void TrackSnowDays (EnergyBalance& eb);
 
-
-// FUNCTION TO CALCULATE SNOWPACK DENSITY ~> WEIGHTED AVERAGE OVER THREE POTEINTAL LAYERS OF SNOW
-void SnowPackDensity (EnergyBalance& eb);
-
-
 // FUNCTION TO CONVERT TO SWE TO FRESHLY FALLEN SNOW DEPTH
 void SWE (EnergyBalance& eb);
-
 
 // FUNCTION TO CALCULATE WATER TEMPURATER
 void WaterTemp (EnergyBalance& eb);
