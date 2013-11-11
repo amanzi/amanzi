@@ -114,6 +114,8 @@ void TwoPhase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S,
 
   Epetra_MultiVector& enth_f = *enth->ViewComponent("face",false);
 
+  bool include_work = plist_->sublist("enthalpy evaluator").get<bool>("include work term", true);
+  
   AmanziMesh::Entity_ID_List cells;
   int nfaces = enth_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
@@ -124,7 +126,7 @@ void TwoPhase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S,
       double p = pres[0][f];
       double dens = eos_liquid_->MolarDensity(T,p);
       double int_energy = iem_liquid_->InternalEnergy(T);
-      double enthalpy = int_energy + p/dens;
+      double enthalpy = include_work ? int_energy + p/dens : int_energy;
 
       enth_f[0][f] = enthalpy * fabs(flux[0][f]);
     }
