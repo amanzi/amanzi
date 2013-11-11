@@ -52,6 +52,14 @@ class MPCPermafrost2 : public StrongMPC<PKPhysicalBDFBase> {
   UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const TreeVector>& u,
           const Teuchos::RCP<TreeVector>& Pu);
 
+
+  int
+  ModifyCorrection_FrozenSurface_(double h, Teuchos::RCP<const TreeVector> res,
+          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
+  
+  // void
+  // IteratateFlow_(double h, const Teuchos::RCP<TreeVector>& u);
+
  protected:
 
   // sub PKs

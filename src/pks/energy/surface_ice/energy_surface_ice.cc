@@ -204,6 +204,8 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
   const Epetra_MultiVector& temp_f = *S->GetFieldData("surface_temperature")
       ->ViewComponent("face",false);
 
+  bool include_work = plist_->sublist("enthalpy evaluator").get<bool>("include work term", true);
+
   AmanziMesh::Entity_ID_List cells;
   unsigned int nfaces = enth_f.MyLength();
   for (unsigned int f=0; f!=nfaces; ++f) {
@@ -214,11 +216,12 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
       double p = pres_c[0][cells[0]];
       double dens = eos_liquid_->MolarDensity(T,p);
       double int_energy = iem_liquid_->InternalEnergy(T);
-      double enthalpy = int_energy;// + p/dens;
+      double enthalpy = include_work ? int_energy + p/dens : int_energy;
 
       enth_f[0][f] = enthalpy * fabs(flux[0][f]);
     }
   }
+
 }
 
 
