@@ -42,7 +42,7 @@ About
 Introduction
 ------------
 
-This problem intends to demonstrate the ASCEM capability of modeling complex geochemical reactions and contaminant transport. The model is based on the one developed at the Savannah River Site F-Area for predicting the uranium and acidic plume migration in the groundwater [Bea2012]_. 
+This problem intends to demonstrate the ASCEM capability of modeling complex geochemical reactions and contaminant transport. The model is based on the one developed at the Savannah River Site F-Area for predicting the uranium and acidic plume migration in the groundwater [Bea2013]_. 
 
 The SRS is located in south-central South Carolina, near Aiken, approximately 100 miles from the Atlantic Coast. The SRS F-Area seepage basins received approximately 7.1 billion litters of acidic, low-level waste solutions from 1950 through 1989 [Millings2012]_. After the basins were closed and capped in 1991, the site has been under active remediation, including the pump-and-treat and hybrid funnel-and-gate system. 
 
@@ -59,7 +59,7 @@ See the :doc:`../tracer_1d/amanzi_u-1d-tracer` example.
 Geochemistry
 ~~~~~~~~~~~~
 
-The primary geochemical system consists of 13 reactive chemical components and 8 minerals [Bea2012]_. A detailed list of reactions and geochemical parameters is included in the tables below. Further detail can be found in [Freshley2012]_.
+The primary geochemical system consists of 13 reactive chemical components and 8 minerals [Bea2013]_. A detailed list of reactions and geochemical parameters is included in the tables below. Further detail can be found in [Freshley2012]_.
 
 The geochemical processes include:
 
@@ -310,7 +310,7 @@ Simulation results
 References
 ----------
 
-.. [Bea2012] Sergio A. Bea, Haruko Wainwright, Nicolas Spycher, Boris Faybishenko, Susan S. Hubbard, Miles E. Denham (2013) Identifying key controls on the behavior of an acidic-U(VI) plume in the Savannah River Site using reactive transport modeling, Journal of Contaminant Hydrology, 151:34-54. 
+.. [Bea2013] Sergio A. Bea, Haruko Wainwright, Nicolas Spycher, Boris Faybishenko, Susan S. Hubbard, Miles E. Denham (2013) Identifying key controls on the behavior of an acidic-U(VI) plume in the Savannah River Site using reactive transport modeling, Journal of Contaminant Hydrology, 151:34-54. 
 
 .. [Davis1998] Davis, J.A., J.A. Coston, D.B. Kent, and C. C. Fuller (1998). Application of the Surface Complexation Concept to Complex Mineral Assemblages, Environmental Science & Technology, Vo. 32, No. 19, 2820-2828.
 

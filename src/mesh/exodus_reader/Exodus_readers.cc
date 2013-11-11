@@ -11,6 +11,8 @@ namespace bl = boost::lambda;
 
 #include <exodusII.h>
 
+// MAX_STR_LENGTH AND MAX_LINE_LENGTH are defined in exodusII.h
+
 namespace 
 {
 
@@ -176,7 +178,7 @@ AmanziMesh::Data::Node_set* read_node_set (Exodus_file file, int set_id)
     // when no node set name is stored with the node set
     // Since amanzi is not using names to identify node sets, it is disabled
     
-    char name_data [MAX_STR_LENGTH] = "";
+    char name_data [2*MAX_STR_LENGTH] = "";
     //    ret_val = ex_get_name (file.id, EX_NODE_SET, set_id, name_data);
     //    if (ret_val < 0) {
     //       std::string msg =
@@ -224,7 +226,7 @@ AmanziMesh::Data::Side_set* read_side_set (Exodus_file file, int set_id)
     // when no side set name is stored for the side set
     // Since amanzi is not using names to identify side sets, it is disabled
     
-    char name_data [MAX_STR_LENGTH] = "";
+    char name_data [2*MAX_STR_LENGTH] = "";
     //    ret_val = ex_get_name (file.id, EX_SIDE_SET, set_id, name_data);
     //    if (ret_val < 0) {
     //        std::string msg =
@@ -260,7 +262,7 @@ AmanziMesh::Data::Element_block* read_element_block(Exodus_file file, int block_
     int num_elements;
     int num_nodes_per_element;
     int num_attributes;
-    char element_name_data [MAX_STR_LENGTH];
+    char element_name_data [2*MAX_STR_LENGTH];
     int ret_val = ex_get_elem_block (file.id, block_id, element_name_data,
                                      &num_elements, &num_nodes_per_element, &num_attributes);
     if (ret_val < 0) {
@@ -297,7 +299,7 @@ AmanziMesh::Data::Element_block* read_element_block(Exodus_file file, int block_
 
     AmanziMesh::Cell_type element_type = read_element_type(element_name_data);
 
-    char element_block_name [MAX_STR_LENGTH];
+    char element_block_name [2*MAX_STR_LENGTH];
     ret_val = ex_get_name (file.id, EX_ELEM_BLOCK, block_id, element_block_name);
 
     // make node indexes 0-based

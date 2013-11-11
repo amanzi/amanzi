@@ -16,7 +16,6 @@ Usage:
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "errors.hh"
 
 #include "mfd3d.hh"
 #include "tensor.hh"
