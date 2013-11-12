@@ -1,40 +1,20 @@
 1D Conservative tracer transport
 ================================
 
-Overview
---------
+Overview and Capabilities tested
+--------------------------------
 
-This test example performs the simulation of advective transport of a single conservative tracer component.
-
-Capabilities tested
-~~~~~~~~~~~~~~~~~~~
+This test example performs the simulation of advective transport of a single conservative tracer component, testing the following capabilities:
 
 * 1D flow
 * 1D advective (single-component) transport 
 
-About
-~~~~~
+For details on this test, see About_.
 
-* Test case ID: 1SSConTran-tracer
-* Test type: Benchmark
-* Benchmark simulators: PFlotran, CrunchFlow
-* Files: 
-  
-  * Amanzi input file: amanzi-u-1d-tracer.xml
-  * Benchmark simulator input file: 
+Background
+----------
 
-    * PFloTran: 1d-tracer.in, pflotran/1d-tracer.h5
-    * CrunchFlow: ../calcite_1d/calcite_1d_CF.in, crunchflow/gimrt/'*', crunchflow/os/'*'
-
-* Location: testing/benchmarking/chemistry/tracer_1d
-* Author: B. Andre, G. Hammond
-* Testing and Documentation: S. Molins
-* Last tested on: Oct 3, 2013
-
-Introduction
-------------
-
-When running a reactive transport problem, it is good practice to include a non-reactive component or tracer. Results obtained for this conservative tracer can be compared to results for reactive components. This comparison can provide insights into the effects of reactions on the fate of the reactive species, e.g. retardation of species subject to sorption. The problem presented here simulates the conservative (advective) transport of a single component in a 1D domain. The flow and transport components of this test problem are used as basis to develope the following reactive transport test problems: :doc:`../tritium_1d/amanzi_u-1d-tritium`, :doc:`../calcite_1d/amanzi_u-1d-calcite`, :doc:`../ion_exchange_1d/amanzi_u-1d-ion-exchange`.
+When running a reactive transport problem, it is good practice to include a non-reactive component or tracer. Results obtained for this conservative tracer can be compared to results for reactive components. This comparison can provide insights into the effects of reactions on the fate of the reactive species, e.g. retardation of species subject to sorption. The problem presented here simulates the conservative (advective) transport of a single component in a 1D domain. The flow and transport components of this test problem are used as basis to develop the following reactive transport test problems: :doc:`../tritium_1d/amanzi_u-1d-tritium`, :doc:`../calcite_1d/amanzi_u-1d-calcite`, :doc:`../ion_exchange_1d/amanzi_u-1d-ion-exchange`.
 
 ..  These are commented out because they don't exist yet.
    :doc:`../surface_complexation_1d/amanzi_u-1d-surface-complexation`, 
@@ -89,14 +69,32 @@ Expected results
 ~~~~~~~~~~~~~~~~
 
 The flow solution is trivial and is independent of the choice of permeability. The flow velocity everywhere in the domain should be
-:math:`7.927 \cdot 10{-9} \text{ m}^3 \text{/s}`
-
-The advective front moves with the flow velocity. In the simulation time (50 years), the front moves half way through the domain. In the absence of diffusion, spreading of the front can be attributed to numerical dispersion added by the numerical scheme employed.
+:math:`7.927 \cdot 10{-9} \text{ m}^3 \text{/s}`. The advective front moves with the flow velocity. In the simulation time (50 years), the front moves half way through the domain. In the absence of diffusion, spreading of the front can be attributed to numerical dispersion added by the numerical scheme employed.
 
 Simulation results
 ~~~~~~~~~~~~~~~~~~
 
-In the figure below, the solution by Amanzi at time 50 years is compared to results obtained with PFloTran and CrunchFlow along the length of the domain. Amanzi, PFloTran and CrunchFLow GIMRT (the benchmark simulators used in the example) add a moderate amount of numerical dispersion to the solution. The TVD scheme used in CrunchFlow OS3D does a good job in minimizing numerical dispersion.
+In the figure below, the solution by Amanzi at time 50 years is compared to results obtained with PFloTran and CrunchFlow along the length of the domain. Amanzi, PFloTran and CrunchFlow GIMRT (the benchmark simulators used in the example) add a moderate amount of numerical dispersion to the solution. The TVD scheme used in CrunchFlow OS3D does a good job in minimizing numerical dispersion.
 
 .. plot:: prototype/chemistry/tracer_1d/tracer_1d.py
-   :align: left
+
+..   :align: left
+
+.. _About:
+
+About
+-----
+
+* Benchmark simulators: PFlotran, CrunchFlow
+* Files: 
+  
+  * Amanzi input file: amanzi-u-1d-tracer.xml
+  * Benchmark simulator input file: 
+
+    * PFloTran: 1d-tracer.in, pflotran/1d-tracer.h5
+    * CrunchFlow: ../calcite_1d/calcite_1d_CF.in, crunchflow/gimrt/, crunchflow/os/
+
+* Location: testing/benchmarking/chemistry/tracer_1d
+* Author: B. Andre, G. Hammond
+* Testing and Documentation: S. Molins
+* Last tested on: Oct 3, 2013
