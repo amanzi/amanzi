@@ -16,7 +16,7 @@ import optparse
 install={}
 install['index']={'index_title' : 'Building Amanzi',
                    'index_file' : 'doc/user_guide/install/index.rst',
-                   'index_list' : ['tpls','amanzi','bootstrap','quickstart'],
+                   'index_list' : ['bootstrap','tpls','amanzi','quickstart'],
                    }
     
    

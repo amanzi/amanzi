@@ -311,7 +311,7 @@ if (NOT MPI_EXEC)
     set(MPI_EXEC "${MPIEXEC}" CACHE STRING "Select MPI executable from FindMPI results")
   else()
     find_program(MPI_EXEC
-                 NAMES mpirun mpiexec aprun
+                 NAMES mpirun mpiexec aprun openmpirun
                  HINTS ENV MPI_ROOT ENV MPIROOT ENV MPI_PREFIX ENV MPI_HOME ENV MPIHOME
                 )
   endif()
