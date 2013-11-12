@@ -144,7 +144,12 @@ MatFiller::Initialize()
     fbl.simplify(); fbl.maxSize(max_grid_size);
     BoxArray fba(fbl);
     BL_ASSERT(fba.isDisjoint());
-    materialID.set(lev+1,new MultiFab(fba, 1, nGrow));
+    if (fba.size()!=0) { 
+      materialID.set(lev+1,new MultiFab(fba, 1, nGrow));
+    }
+    else {
+      materialID.set(lev+1,new MultiFab);
+    }
   }
   for (int lev=0; lev<materialID.size(); ++lev) {
     SetMaterialID(lev,materialID[lev],0);
