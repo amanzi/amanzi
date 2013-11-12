@@ -3080,9 +3080,6 @@ PorousMedia::advance_saturated_transport_dt()
   }
 }
 
-static Real ssum=0;
-static Real ssum0=0;
-
 bool
 PorousMedia::advance_richards_transport_chemistry (Real  t,
 						   Real  dt,
@@ -3191,17 +3188,6 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       MultiFab Fext(grids,ntracers,nGrowF);
       bool do_rho_scale = 0;
       getForce(Fext,nGrowF,ncomps,ntracers,t_subtr,do_rho_scale);
-
-      if (level==1) {
-        for (MFIter mfi(Fext); mfi.isValid(); ++mfi) {
-          ssum += Fext[mfi].sum(mfi.validbox(),0,1) * dt_subtr * geom.CellSize()[0] * geom.CellSize()[1];
-        }
-      }
-      if (level==0) {
-        for (MFIter mfi(Fext); mfi.isValid(); ++mfi) {
-          ssum0 += Fext[mfi].sum(mfi.validbox(),0,1) * dt_subtr * geom.CellSize()[0] * geom.CellSize()[1];
-        }
-      }
 
       if (advect_tracers) {
 	// Initialize flux registers
@@ -5183,8 +5169,6 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::tracer_diffusion()");
   BL_ASSERT(diffuse_tracers);
 
-  // FIXME: incorporate "tensor_tracer_diffusion" to select more efficient solver if appropriate
-
   if (verbose > 2 && ParallelDescriptor::IOProcessor())
     std::cout << "... diffuse scalars\n";
 
@@ -5386,27 +5370,6 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
         }
       }
 
-
-
-#if 0
-      IntVect ivC(23,32), ivw(ivC), ive(ivC+IntVect(1,0)), ivs(ivC), ivn(ivC+IntVect(0,1));
-      Real xfluxowAx, xfluxoeAx, yfluxosAy, yfluxonAy, SumDFoA;
-      for (MFIter mfi(Rhs); mfi.isValid(); ++mfi) {
-        if (mfi.validbox().contains(ivC)) {
-          xfluxowAx = flux[0][mfi](ivw,0) / (1-be_cn_theta_trac);
-          xfluxoeAx = flux[0][mfi](ive,0) / (1-be_cn_theta_trac);
-          yfluxosAy = flux[1][mfi](ivs,0) / (1-be_cn_theta_trac);
-          yfluxonAy = flux[1][mfi](ivn,0) / (1-be_cn_theta_trac);
-          
-          SumDFoA = xfluxoeAx - xfluxowAx + yfluxonAy - yfluxosAy;
-        }
-      }
-#endif
-
-
-
-
-
       if (tensor_tracer_diffusion) {
         tensor_linop_new->compFlux(D_DECL(flux[0],flux[1],flux[2]),S_new,MCInhomogeneous_BC,first_tracer+n,0,1,0);
       }
@@ -5424,47 +5387,6 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
           getLevel(level+1).getViscFluxReg().CrseInit(flux[d],d,0,first_tracer+n,1,-dt,FluxRegister::ADD);
         }
       }
-
-
-#if 0
-      Real xfluxnwAx, xfluxneAx, yfluxnsAy, yfluxnnAy, SumDFnA;
-      S_new.FillBoundary(first_tracer,ntracers);
-      S_old.FillBoundary(first_tracer,ntracers);
-      for (MFIter mfi(Rhs); mfi.isValid(); ++mfi) {
-        if (mfi.validbox().contains(ivC)) {
-
-          xfluxnwAx = flux[0][mfi](ivw,0) / be_cn_theta_trac;
-          xfluxneAx = flux[0][mfi](ive,0) / be_cn_theta_trac;
-          yfluxnsAy = flux[1][mfi](ivs,0) / be_cn_theta_trac;
-          yfluxnnAy = flux[1][mfi](ivn,0) / be_cn_theta_trac;
-          
-          SumDFnA = xfluxneAx - xfluxnwAx + yfluxnnAy - yfluxnsAy;
-
-          Real snew = S_new[mfi](ivC,0) / density[0];
-          Real sold = S_old[mfi](ivC,0) / density[0];
-
-          Real cnew = S_new[mfi](ivC,ncomps);
-          Real cold = S_old[mfi](ivC,ncomps);
-
-          Real phi = (*rock_phi)[mfi](ivC,0);
-          Real vol = volume[0](ivC,0);
-          Real rhs = Rhs[mfi](ivC,0);
-
-          Real term_1 = (phi*snew*cnew - phi*sold*cold)*vol;
-          Real term_2a = b_old*SumDFoA;
-          Real term_2b = b_new*SumDFnA;
-          Real term_3 = rhs*dt*vol;
-          
-          std::cout << "   1.  (phi.snew.cnew - phi.sold.cold).vol: " << term_1 << std::endl;
-          std::cout << "   2a. dt.( (1-theta).Sum(DFo.A) ): " << term_2a << std::endl;
-          std::cout << "   2b. dt.( theta.Sum(DFn.A)): " << term_2b << std::endl;
-          std::cout << "   3.  Rhs.dt.vol: " << term_3 << std::endl;
-          std::cout << "        check 1 + 2a + 2b - 3: " << term_1 + term_2a + term_2b - term_3 << std::endl;            
-        }
-      }
-#endif
-
-
     }
     
     delete tensor_diffuser;
@@ -8737,8 +8659,8 @@ PorousMedia::okToContinue ()
     if (!ret && verbose > 1 && ParallelDescriptor::IOProcessor()) {
       std::cout << "Stopping simulation: " << reason_for_stopping << std::endl;
     }
-    return ret;
   }
+  return ret;
 }
 
 //
@@ -9788,6 +9710,7 @@ PorousMedia::SyncEAvgDown (MultiFab* u_mac_crse[],
     }
 }
 
+
 //
 // The Mac Sync correction function
 //
@@ -10215,51 +10138,11 @@ PorousMedia::mac_sync ()
           }
         }
 
-#if 0
-        IntVect ivC(23,32), ivw(ivC), ive(ivC+IntVect(1,0)), ivs(ivC), ivn(ivC+IntVect(0,1));
-        for (MFIter mfi(Rhs); mfi.isValid(); ++mfi) {
-          if (mfi.validbox().contains(ivC)) {
-            Real vol = volume[0](ivC,0);
-            Real xfluxwAx = (*betanp1[0])[mfi](ivw,0) / be_cn_theta_trac;
-            Real xfluxeAx = (*betanp1[0])[mfi](ive,0) / be_cn_theta_trac;
-            Real yfluxsAy = (*betanp1[1])[mfi](ivs,0) / be_cn_theta_trac;
-            Real yfluxnAy = (*betanp1[1])[mfi](ivn,0) / be_cn_theta_trac;
-                        
-            Real SumDFA = xfluxeAx - xfluxwAx + yfluxnAy - yfluxsAy;
-            Real delc = new_state[mfi](ivC,0);
-            Real a = tensor_linop->get_alpha();
-            Real b = tensor_linop->get_beta();
-            Real sphi = sphi_new[mfi](ivC,0);
-            
-            std::cout << std::endl;
-            std::cout << " At idx: " << ivC << std::endl;
-            std::cout << "   xfluxwAx: " << xfluxwAx << std::endl;
-            std::cout << "   xfluxeAx: " << xfluxeAx << std::endl;
-            std::cout << "   yfluxsAy: " << yfluxsAy << std::endl;
-            std::cout << "   yfluxnAy: " << yfluxnAy << std::endl;
-
-            std::cout << "   1. phi.s.delc.vol: " << sphi*delc*vol << std::endl;
-            std::cout << "   2. theta.dt.Sum(DF.A): " << b*SumDFA << std::endl;
-            std::cout << "   3. Rhs.dt.vol: " << Rhs[mfi](ivC,0)*dt*vol << std::endl;
-            std::cout << "       check 1 + 2 - 3: " << sphi*delc*vol + b*SumDFA - Rhs[mfi](ivC,0)*dt*vol << std::endl;            
-          }
-        }
-
-        ParallelDescriptor::ReduceRealSum(ssum);
-        ParallelDescriptor::ReduceRealSum(ssum0);
-        if (ParallelDescriptor::IOProcessor()) {
-          std::cout << "Total moles sourced in at level 0: " << ssum0 << std::endl;
-          std::cout << "Total moles sourced in at level 1: " << ssum << std::endl;
-        }
-        std::cout << std::endl;
-#endif
-
-        // Increment state at coarse level
-        MultiFab::Add(S_new,new_state,0,first_tracer+n,1,0);
+        MultiFab::Copy(*Ssync,new_state,0,first_tracer+n,1,0);
+        MultiFab::Add(S_new,*Ssync,first_tracer+n,first_tracer+n,1,0);
 
         // Form phi.sat.C in order to interpolate to finer levels
-        new_state.MULTAY(sphi_new,1);        
-        MultiFab::Copy(*Ssync,new_state,0,first_tracer+n,1,0);
+        MultiFab::Multiply(*Ssync,sphi_new,0,first_tracer+n,1,0);
       }
 
       delete tensor_diffuser;
@@ -10294,18 +10177,18 @@ PorousMedia::mac_sync ()
         PorousMedia&     fine_lev  = getLevel(lev);
         const BoxArray& fine_grids = fine_lev.boxArray();
         MultiFab sync_incr(fine_grids,ntracers,0);
-        sync_incr.setVal(0.0);
         
-        SyncInterp(*Ssync,level,sync_incr,lev,ratio,ncomps,0,
-                   ntracers,1,mult,sync_bc.dataPtr());
+        SyncInterp(*Ssync,level,sync_incr,lev,ratio,first_tracer,0,
+                   ntracers,0,mult,sync_bc.dataPtr());
 
         MultiFab& S_new_fine = fine_lev.get_new_data(State_Type);
         const MultiFab& fine_phi = *fine_lev.rock_phi;
         for (int n=0; n<ntracers; ++n) {
           MultiFab::Divide(sync_incr,fine_phi,0,n,1,0);
           MultiFab::Divide(sync_incr,S_new_fine,0,n,1,0);
+	      sync_incr.mult(density[0],n,1);
         }
-        MultiFab::Add(S_new_fine,sync_incr,0,ncomps,ntracers,0);
+        MultiFab::Add(S_new_fine,sync_incr,0,first_tracer,ntracers,0);
       }
     }
   }
