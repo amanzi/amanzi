@@ -94,7 +94,7 @@ CHEMISTRY
       : acid
         RATE_CONSTANT -12.967 mol/cm^2-sec
         PREFACTOR_SPECIES H+
-          ALPHA 0.777
+          ALPHA 1.0
         /
       /
     /
