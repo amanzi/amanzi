@@ -86,9 +86,7 @@ namespace Amanzi {
           const FArrayBox& fabY = Y[mfi];
           t.resize(mfi.validbox(),nComp());
           t.copy(fabY,0,0,nComp());
-          if (a!=1) {
-            t.mult(a,0,nComp());
-          }
+          t.mult(a,0,nComp());
           fabX.mult(t,0,0,nComp());
         }
       }
@@ -112,7 +110,7 @@ namespace Amanzi {
 
   void
   MFVector::COPY(const MFVector& rhs) {
-    MultiFab::Copy(*this,rhs,0,0,nComp(),nGrow());
+    MultiFab::Copy(*this,rhs,0,0,nComp(),0);
   }
 
   void

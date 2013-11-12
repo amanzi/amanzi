@@ -1,5 +1,6 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
+  <Parameter name="Structured Native Input File" type="string" value="ppfile"/>
 
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Off"/>
@@ -20,7 +21,7 @@
       <ParameterList name="Basic Algorithm Control">
         <ParameterList name="Expert Settings">
 	  <Parameter name="cfl" type="double" value="1"/>
-	  <Parameter name="visc_tol" type="double" value="1.e-12"/>
+	  <Parameter name="visc_tol" type="double" value="1.e-10"/>
 	  <Parameter name="be_cn_theta_trac" type="double" value="0.5"/>
 	</ParameterList>
       </ParameterList>
@@ -34,10 +35,25 @@
       </ParameterList>
 
       <ParameterList name="Adaptive Mesh Refinement Control">
-        <Parameter name="Blocking Factor" type="Array(int)" value="{2}"/>
-        <Parameter name="Maximum Grid Size" type="Array(int)" value="{32}"/>
-      </ParameterList>
+        <Parameter name="Number Of AMR Levels" type="int" value="2"/>
+        <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 2, 4, 4}"/>
+        <Parameter name="Regrid Interval" type="Array(int)" value="{2000}"/>
+        <Parameter name="Blocking Factor" type="Array(int)" value="{16, 16, 16, 16, 16}"/>
+        <Parameter name="Maximum Grid Size" type="Array(int)" value="{32, 32, 32, 32, 32}"/>
+        <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{6, 4, 4, 4, 4}"/>
+	<Parameter name="Refinement Indicators" type="Array(string)" value="{Well ref}"/>
 
+        <ParameterList name="Well ref">
+          <Parameter name="Regions" type="Array(string)" value="{Well}"/>
+          <Parameter name="Inside Region" type="bool" value="TRUE"/>
+          <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+        </ParameterList>
+
+	<ParameterList name="Expert Settings">
+	  <Parameter name="v" type="int" value="3"/>
+	</ParameterList>
+
+      </ParameterList>
     </ParameterList>
 
     <Parameter name="Verbosity" type="string" value="High"/>
@@ -52,15 +68,19 @@
       <Parameter name="Domain Low Corner"  type="Array(double)" value="{-270,-300}"/>
       <Parameter name="Domain High Corner" type="Array(double)" value="{ 930, 300}"/>
       <Parameter name="Number of Cells"    type="Array(int)"    value="{ 256, 128}"/>
+      <Parameter name="Number of Cells"    type="Array(int)"    value="{ 128,  64}"/>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="Regions">
     <ParameterList name="Well">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-5,-5}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{5, 5}"/>
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{0,0}"/>
       </ParameterList>
+      <!-- <ParameterList name="Region: Box"> -->
+      <!--   <Parameter name="Low Coordinate" type="Array(double)" value="{-5,-5}"/> -->
+      <!--   <Parameter name="High Coordinate" type="Array(double)" value="{5, 5}"/> -->
+      <!-- </ParameterList> -->
     </ParameterList>
 
     <ParameterList name="Upstrm210">
@@ -327,14 +347,14 @@
   <ParameterList name="Sources">
     <ParameterList name="Pumping Well">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Well}"/>
-      <ParameterList name="Source: Volume Weighted">
+      <ParameterList name="Source: Point">
         <Parameter name="Values" type="Array(double)" value="{0}"/>
       </ParameterList>
       <ParameterList name="Solute SOURCE">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tc-99">
-              <ParameterList name="Source: Uniform Concentration">
+              <ParameterList name="Source: Point">
                 <Parameter name="Values" type="Array(double)" value="{8.1483e-08}"/>
               </ParameterList>
             </ParameterList>
