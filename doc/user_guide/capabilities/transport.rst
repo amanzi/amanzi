@@ -1,7 +1,7 @@
 Transport Models
 ----------------
 
-Transport component of Amanzi models a set of physical processes 
+The transport component of *Amanzi* models a set of physical processes 
 that lead to movement of dissolved and solid contaminants in the subsurface, 
 treating the chemical and microbiological reactions that can affect the transport 
 rate through a retardation effect as a separate set of processes.  
@@ -63,7 +63,7 @@ tensor has the well-known form:
     \frac{\boldsymbol{v} \boldsymbol{v}}{\|\boldsymbol{v}\|},
 
 characterized by the two parameters :math:`\alpha_L` [m] and :math:`\alpha_T` [m] 
-referred to the longitudinal and transverse dispersivity, respectively. 
+referred to as the longitudinal and transverse dispersivity, respectively. 
 The vector :math:`\boldsymbol{v}` [m/s] denotes the average pore velocity,
 and :math:`\boldsymbol{I}` is the identity matrix.  
 
@@ -122,7 +122,7 @@ A second-type or Neumann boundary condition involves specification of the flux
 
 where :math:`J_{i,0}` is a given flux function. 
 The Dirichlet boundary condition on the outflow part of the computational domain may 
-result in parabolic and/or exponential boundary layers; therefore should be used
+result in parabolic and/or exponential boundary layers; therefore it should be used
 with caution.
 
 

@@ -1,7 +1,7 @@
 Chemistry Models
 ----------------
 
-The chemistry component of Amanzi models a set of geochemical processes that lead to the transformation of reactant species to product species. Amanzi can simulate a comprehensive set of reaction types.  These reactions can be classified into homogeneous if they occur within the aqueous phase or heterogeneous if in addition to the aqueous phase they involve the solid phase. These reactions can also be classified into equilibrium or kinetic depending on whether local equilibrium can be assumed. The following table summarizes the reactions available by type.
+The chemistry component of Amanzi models a set of geochemical processes that lead to the transformation of reactant species to product species. Amanzi can simulate a comprehensive set of reaction types.  These reactions can be classified into *homogeneous* if they occur within the aqueous phase or *heterogeneous* if, in addition to the aqueous phase, they involve the solid phase. These reactions can also be classified into equilibrium or kinetic depending on whether local equilibrium can be assumed. The following table summarizes the reactions available by type.
 
 +--------------------+----------------------------+---------------------------------------+
 | *Reaction Types*   | Homogeneous                | Heterogeneous                         |

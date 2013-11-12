@@ -28,10 +28,15 @@ provide data and feedback to developers and to ensure that the
 software is developed in a manner that will engage users and benefit
 DOE EM’s remediation obligations.
 
-\emph{Amanzi} is the flexible and extensible computational engine for
+*Amanzi* is the flexible and extensible computational engine for
 ASCEM that will simulate the coupled processes described by the
-conceptual models developed using the ASCEM Platform, \emph{Akuna}.
+conceptual models developed using the ASCEM Platform, *Akuna*.
 These conceptual models span a range of process complexity in flow and
 reactive-transport.  Detailed mathematical descriptions of these
-models are provided in \cite{ASCEM-HPC-ProcessModels_2011}.
+models are provided in the document entitled 
+"*Mathematical Formulation Requirements and Specifications
+for the Process Models*"`ASCEM-HPC-ProcessModels_2011`__.
+
+
+.. _ASCEM-HPC-ProcessModels_2011: https://software.lanl.gov/ascem/trac/attachment/wiki/Documents/ASCEM-HPC-ProcessModels_2011-01-0a.pdf
 

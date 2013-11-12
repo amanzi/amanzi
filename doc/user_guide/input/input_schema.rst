@@ -5,9 +5,17 @@ Amanzi Input File XML Schema
 Overview
 ++++++++
 
-The Amanzi simulator evolves a system of conservation equations for reacting flows in porous media, as detailed in the ASCEM report entitled "Mathematical Formulation Requirements and Specifications for the Process Models".  The purpose of the present document is to specify the data required to execute Amanzi.  This specification should be regarded as a companion to the MRD, and parameterizations of the individual submodels are consistent between Amanzi, the MRD and this document. 
+The present document describes how to specify the data required to
+execute Amanzi and perform a simulation.  This specification should
+be regarded as a companion to the mathematical requirements document
+entitled "*Mathematical Formulation Requirements and Specifications
+for the Process Models*"`ASCEM-HPC-ProcessModels_2011`__, and
+parameterizations of the individual submodels are consistent between
+Amanzi, the mathematical requirements document and this document.
 
-Models can be setup and valid, human-readable XML input files can be generated using Akuna.  Example input files are available in the Amanzi source repository.   
+Models can be setup and valid, human-readable XML input files can be
+generated using Akuna.  Example input files are available in the
+Amanzi source repository.
 
 XML Schema 2.0
 ++++++++++++++
