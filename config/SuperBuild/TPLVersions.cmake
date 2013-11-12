@@ -344,9 +344,10 @@ set(SEACAS_MD5_SUM        edd4cbb84ff5874dc96e846ceeab50b7)
 # TPL: PFlotran
 #
 set(PFLOTRAN_VERSION_MAJOR 0)
-set(PFLOTRAN_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-07032013-clean.tgz)
-set(PFLOTRAN_MD5_SUM        f81f285837e4490992e9dda2159e1baa)
+#set(PFLOTRAN_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(PFLOTRAN_URL_STRING     "file:///Users/loaner/projects/ascem")
+set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-1afe88d.tar.gz)
+set(PFLOTRAN_MD5_SUM        92a157f947f6508ac701358d77cd0412)
 
 #
 # TPL: Alquimia
