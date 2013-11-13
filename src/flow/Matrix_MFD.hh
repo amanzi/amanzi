@@ -80,6 +80,12 @@ class Matrix_MFD {
   // required methods
   virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  const Epetra_Map& DomainMap() const {
+    return *map_;
+  }
+  const Epetra_Map& RangeMap() const {
+    return *map_;
+  }
 
   // control methods
   void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }

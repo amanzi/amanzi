@@ -16,28 +16,46 @@ using namespace Amanzi;
 SUITE(SOLVERS) {
   class Matrix {
    public:
-    Matrix() {};
+    Matrix() {}
+    Matrix(const Teuchos::RCP<Epetra_Map>& map) : map_(map) {};
     ~Matrix() {};
-
-    void Apply(const Epetra_Vector& v, Epetra_Vector& mv) const { 
+    Matrix(const Matrix& other) :
+        map_(other.map_) {}
+    
+    Teuchos::RCP<Matrix> Clone() const {
+      return Teuchos::rcp(new Matrix(*this));
+    }
+    
+    virtual int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const { 
       for (int i = 0; i < 5; i++) mv[i] = 2 * v[i];
       for (int i = 1; i < 5; i++) mv[i] -= v[i - 1];
       for (int i = 0; i < 4; i++) mv[i] -= v[i + 1];
     }
-    void ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
+    virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
       for (int i = 0; i < 5; i++) hv[i] = v[i];
     }
+
+    virtual const Epetra_Map& DomainMap() const {
+      return *map_;
+    }
+    virtual const Epetra_Map& RangeMap() const {
+      return *map_;
+    }
+
+   private:
+    Teuchos::RCP<Epetra_Map> map_;
   };
 
   TEST(PCG_SOLVER) {
     std::cout << "Checking PCG solver..." << std::endl;
 
     Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-    Epetra_Map* map = new Epetra_Map(5, 0, *comm);
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(5, 0, *comm));
 
     // create the pcg operator
-    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
-    AmanziSolvers::LinearOperatorPCG<Matrix, Epetra_Vector, Epetra_Map> pcg(m, m);
+    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+    Teuchos::RCP<Matrix> h = m;
+    AmanziSolvers::LinearOperatorPCG<Matrix, Epetra_Vector, Epetra_Map> pcg(m, h);
 
     // initial guess
     Epetra_Vector u(*map);
@@ -59,10 +77,10 @@ SUITE(SOLVERS) {
     std::cout << "Checking GMRES solver..." << std::endl;
 
     Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-    Epetra_Map* map = new Epetra_Map(5, 0, *comm);
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(5, 0, *comm));
 
     // create the pcg operator
-    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
+    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
     AmanziSolvers::LinearOperatorGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
 
     // initial guess
@@ -85,11 +103,13 @@ SUITE(SOLVERS) {
     std::cout << "Checking NKA solver..." << std::endl;
 
     Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-    Epetra_Map* map = new Epetra_Map(5, 0, *comm);
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(5, 0, *comm));
 
     // create the pcg operator
-    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
-    AmanziSolvers::LinearOperatorNKA<Matrix, Epetra_Vector, Epetra_BlockMap> nka(m, m);
+    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+    AmanziSolvers::LinearOperatorNKA<Matrix, Epetra_Vector, Epetra_Map> nka(m, m);
+    Teuchos::ParameterList plist;
+    nka.Init(plist);
 
     // initial guess
     Epetra_Vector u(*map);
@@ -111,16 +131,16 @@ SUITE(SOLVERS) {
     std::cout << "Checking solver factory..." << std::endl;
 
     Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-    Epetra_Map* map = new Epetra_Map(5, 0, *comm);
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(5, 0, *comm));
 
     Teuchos::ParameterList plist;
     Teuchos::ParameterList& slist = plist.sublist("pcg");
     slist.set<string>("iterative method", "pcg");
 
     // create the pcg operator
-    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
-    AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_BlockMap> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_BlockMap> > 
+    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+    AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_Map> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_Map> > 
         solver = factory.Create("pcg", plist, m);
 
     // initial guess
@@ -143,7 +163,7 @@ SUITE(SOLVERS) {
     std::cout << "Checking verbosity object..." << std::endl;
 
     Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-    Epetra_Map* map = new Epetra_Map(5, 0, *comm);
+    Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(5, 0, *comm));
 
     Teuchos::ParameterList plist;
     Teuchos::ParameterList& slist = plist.sublist("gmres");
@@ -152,9 +172,9 @@ SUITE(SOLVERS) {
     vlist.set("Verbosity Level", "extreme");
 
     // create the pcg operator
-    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
-    AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_BlockMap> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_BlockMap> > 
+    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+    AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_Map> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_Map> > 
         solver = factory.Create("gmres", plist, m);
 
     // initial guess

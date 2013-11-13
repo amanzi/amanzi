@@ -15,6 +15,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Preconditioner.hh"
+#include "PreconditionerFactory.hh"
 
 namespace Amanzi {
 namespace AmanziPreconditioners {
@@ -24,8 +25,9 @@ class PreconditionerFactory {
   PreconditionerFactory() {};
   ~PreconditionerFactory() {};
 
-  Teuchos::RCP<Preconditioner> Create(
-      const string& name, const Teuchos::ParameterList& prec_list);
+  Teuchos::RCP<Preconditioner> Create(const string& name,
+          const Teuchos::ParameterList& prec_list);
+  Teuchos::RCP<Preconditioner> Create(Teuchos::ParameterList& prec_list);
 };
 
 }  // namespace AmanziPreconditioners

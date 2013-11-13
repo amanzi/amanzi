@@ -28,22 +28,31 @@ namespace AmanziSolvers {
 
 template<class Matrix, class Vector, class VectorSpace>
 class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
+
  public:
-  LinearOperatorNKA(const Teuchos::RCP<const Matrix>& m, const Teuchos::RCP<const Matrix>& h) :
-      LinearOperator<Matrix, Vector, VectorSpace>(m, h) {
-    tol_ = 1e-8;
-    overflow_tol_ = 3.0e+50;  // mass of the Universe (J.Hopkins)
-    max_itrs_ = 100;
-    nka_dim_ = 10;
-    criteria_ = LIN_SOLVER_RELATIVE_RHS;
-    initialized_ = false;
-  }
+  LinearOperatorNKA(const Teuchos::RCP<const Matrix>& m,
+                    const Teuchos::RCP<const Matrix>& h) :
+      LinearOperator<Matrix, Vector, VectorSpace>(m, h),
+      tol_(1e-6),
+      overflow_tol_(3.0e+50),  // mass of the Universe (J.Hopkins)
+      max_itrs_(100),
+      nka_dim_(10),
+      criteria_(LIN_SOLVER_RELATIVE_RHS),
+      initialized_(false) {}
+
+  LinearOperatorNKA(const LinearOperatorNKA& other) :
+      LinearOperator<Matrix,Vector,VectorSpace>(other),
+      tol_(other.tol_),
+      overflow_tol_(other.overflow_tol_),
+      max_itrs_(other.max_itrs_),
+      nka_dim_(other.nka_dim_),
+      criteria_(other.criteria_),
+      initialized_(other.initialized_) {}
 
   void Init(Teuchos::ParameterList& plist);
 
-  Teuchos::RCP<Matrix> Clone() const { return Teuchos::rcp(new LinearOperatorNKA(*this)); }
-
-  int ApplyInverse(const Vector& v, Vector& hv) const;
+  virtual Teuchos::RCP<Matrix> Clone() const {
+    return Teuchos::rcp(new LinearOperatorNKA(*this)); }
 
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
@@ -59,6 +68,9 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
   Teuchos::RCP<VerboseObject> vo_;
 
  private:
+  int ApplyInverse_(const Vector& v, Vector& hv) const;
+
+ private:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
   using LinearOperator<Matrix, Vector, VectorSpace>::h_;
   using LinearOperator<Matrix, Vector, VectorSpace>::name_;
@@ -68,16 +80,19 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
   mutable int num_itrs_;
   mutable double residual_;
   mutable bool initialized_;
+
+  Teuchos::RCP<NKA_Base<Vector,VectorSpace> > nka_;
 };
 
 
 
 // Apply the inverse, x <-- A^-1 b
 template<class Matrix, class Vector, class VectorSpace>
-int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& f, Vector& x) const 
+int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse_(const Vector& f, Vector& x) const 
 {
-  NKA_Base<Vector, VectorSpace> nka(nka_dim_, nka_tol_, f.Map());
-  nka.Restart();
+  ASSERT(f.Map().SameAs(m_->RangeMap()));
+  ASSERT(x.Map().SameAs(m_->DomainMap()));
+  nka_->Restart();
 
   residual_ = 0.0;
   num_itrs_ = 0;
@@ -122,7 +137,7 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& f
   bool done = false;
   while (!done) {
     h_->ApplyInverse(*r, *dxp);
-    nka.Correction(*dxp, *dx);
+    nka_->Correction(*dxp, *dx);
     x.Update(1.0, *dx, 1.0);
 
     m_->Apply(x, *r);  // r = f - A * x
@@ -203,6 +218,10 @@ void LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList
   nka_dim_ = plist.get<int>("max nka vectors", 10);
   nka_dim_ = std::min<int>(nka_dim_, max_itrs_);
   nka_tol_ = plist.get<double>("nka vector tolerance", 0.05);
+
+  // NKA
+  nka_ = Teuchos::rcp(new NKA_Base<Vector,VectorSpace>(nka_dim_, nka_tol_, m_->DomainMap()));
+  nka_->Init(plist);
 }
 
 } // namespace

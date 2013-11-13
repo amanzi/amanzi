@@ -120,9 +120,9 @@ void Dispersion_TPFA::AssembleMatrix(const Epetra_Vector& p)
 /* *******************************************************************
 * Collect time-dependent boundary data in face-based arrays.                               
 ******************************************************************* */
-void Dispersion_TPFA::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
+int Dispersion_TPFA::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
 {
-  App_->Apply(v, av);
+  return App_->Apply(v, av);
 }
 
 

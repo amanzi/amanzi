@@ -19,9 +19,9 @@ namespace AmanziPreconditioners {
 /* ******************************************************************
  * Apply the preconditioner.
  ****************************************************************** */
-void PreconditionerML::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
+int PreconditionerML::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
 {
-  ML_->ApplyInverse(v, hv);
+  return ML_->ApplyInverse(v, hv);
 }
 
 
