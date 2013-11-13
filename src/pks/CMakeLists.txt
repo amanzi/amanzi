@@ -15,6 +15,8 @@ add_library(pk_bases
   pk_default_base.cc
   pk_factory.cc)
 
+install(TARGETS pk_bases DESTINATION lib)
+
 add_subdirectory(bc_factory)
 add_subdirectory(mpc)
 add_subdirectory(test_pks)
@@ -23,6 +25,7 @@ add_subdirectory(flow)
 #add_subdirectory(transport)
 add_subdirectory(deform)
 add_subdirectory(surface_balance)
+
 
 
 

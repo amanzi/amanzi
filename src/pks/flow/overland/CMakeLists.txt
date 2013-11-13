@@ -17,6 +17,8 @@ add_library(
 #  surface_coupler_via_source_evaluator.cc
   )
 
+install(TARGETS pk_flow_overland DESTINATION lib)
+
 # if ( BUILD_TESTS )
 #     # Add UnitTest includes
 #     include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})

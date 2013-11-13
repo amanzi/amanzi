@@ -2,7 +2,10 @@
 
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
+
 add_library(pk_transport_passive_tracer passive_tracer.cc passive_tracer_ti.cc passive_tracer_physics.cc)
+
+install(TARGETS pk_transport_passive_tracer DESTINATION lib)
 
 if ( BUILD_TESTS )
   set(pk_factory -Wl,--whole-archive pk_factory -Wl,--no-whole-archive)
