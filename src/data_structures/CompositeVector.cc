@@ -106,7 +106,7 @@ CompositeVector::CompositeVector(const CompositeVectorSpace& space) :
     ghost_are_current_(space.NumComponents(),false),
     ghosted_(space.ghosted_)
 {
-  Init_(*map_);
+  InitMap_(*map_);
   CreateData_();
 }
 
@@ -118,36 +118,40 @@ CompositeVector::CompositeVector(const CompositeVectorSpace& space, bool ghosted
     ghost_are_current_(space.NumComponents(),false),
     ghosted_(ghosted)
 {
-  Init_(*map_);
+  InitMap_(*map_);
   CreateData_();
 }
 
 
-CompositeVector::CompositeVector(const CompositeVector& other) :
+CompositeVector::CompositeVector(const CompositeVector& other,
+                                 InitMode mode) :
     map_(Teuchos::rcp(new CompositeVectorSpace(*other.map_))),
     names_(other.names_),
     indexmap_(other.indexmap_),
     ghost_are_current_(other.map_->NumComponents(),false),
     ghosted_(other.ghosted_)
 {
-  Init_(*map_);
+  InitMap_(*map_);
   CreateData_();
+  InitData_(other, mode);
 }
 
-CompositeVector::CompositeVector(const CompositeVector& other, bool ghosted) :
+CompositeVector::CompositeVector(const CompositeVector& other, bool ghosted,
+                                 InitMode mode) :
     map_(Teuchos::rcp(new CompositeVectorSpace(*other.map_,ghosted))),
     names_(other.names_),
     indexmap_(other.indexmap_),
     ghost_are_current_(other.map_->NumComponents(),false),
     ghosted_(ghosted)
 {
-  Init_(*map_);
+  InitMap_(*map_);
   CreateData_();
+  InitData_(other, mode);
 }
 
 
 
-void CompositeVector::Init_(const CompositeVectorSpace& space) {
+void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
   // generate the master's maps
   std::vector<Teuchos::RCP<const Epetra_Map> > mastermaps;
   for (CompositeVectorSpace::name_iterator name=space.begin(); name!=space.end(); ++name) {
@@ -191,6 +195,14 @@ void CompositeVector::Init_(const CompositeVectorSpace& space) {
 };
 
 
+// Initialize data
+void CompositeVector::InitData_(const CompositeVector& other, InitMode mode) {
+  if (mode == INIT_MODE_ZERO) {
+    PutScalar(0.);
+  } else if (mode == INIT_MODE_COPY) {
+    *this = other;
+  }
+}
 
 // Sets sizes of vectors, instantiates Epetra_Vectors, and preps for lazy
 // creation of everything else.

@@ -43,10 +43,10 @@ class TreeVector {
 
   // Basic constructors of a TreeVector
   TreeVector();
-  explicit TreeVector(const TreeVectorSpace& space);
+  explicit TreeVector(const TreeVectorSpace& space, InitMode mode=INIT_MODE_NONE);
 
   // copy constructors
-  TreeVector(const TreeVector& other);
+  TreeVector(const TreeVector& other, InitMode mode=INIT_MODE_COPY);
 
   // Assignment operator.
   TreeVector& operator=(const TreeVector& other);
@@ -125,7 +125,7 @@ class TreeVector {
  private:
   // Init's version of PushBack, which does not add to the space.
   void InitPushBack_(const Teuchos::RCP<TreeVector>& subvec);
-  void Init_();
+  void InitMap_();
 
  private:
   Teuchos::RCP<TreeVectorSpace> map_;

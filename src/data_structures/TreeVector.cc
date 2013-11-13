@@ -23,20 +23,28 @@ TreeVector::TreeVector() :
     map_(Teuchos::rcp(new TreeVectorSpace()))
 {}
 
-TreeVector::TreeVector(const TreeVectorSpace& space)
+TreeVector::TreeVector(const TreeVectorSpace& space, InitMode mode)
 {
   map_ = Teuchos::rcp(new TreeVectorSpace(space));
-  Init_();
+  InitMap_();
+  if (mode == INIT_MODE_ZERO) {
+    PutScalar(0.);
+  }
 }
 
-TreeVector::TreeVector(const TreeVector& other)
+TreeVector::TreeVector(const TreeVector& other, InitMode mode)
 {
   map_ = Teuchos::rcp(new TreeVectorSpace(*other.map_));
-  Init_();
+  InitMap_();
+  if (mode == INIT_MODE_ZERO) {
+    PutScalar(0.);
+  } else if (mode == INIT_MODE_COPY) {
+    *this = other;
+  }
 }
 
 
-void TreeVector::Init_() {
+void TreeVector::InitMap_() {
   if (map_->Data() != Teuchos::null) {
     data_ = Teuchos::rcp(new CompositeVector(*map_->Data()));
   }

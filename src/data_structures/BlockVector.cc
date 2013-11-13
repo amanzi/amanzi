@@ -51,7 +51,7 @@ BlockVector::BlockVector(const Epetra_MpiComm& comm,
 
 
 // copy constructor
-BlockVector::BlockVector(const BlockVector& other, ConstructMode mode) :
+BlockVector::BlockVector(const BlockVector& other) :
     comm_(other.comm_),
     names_(other.names_),
     maps_(other.maps_),
@@ -61,15 +61,8 @@ BlockVector::BlockVector(const BlockVector& other, ConstructMode mode) :
     indexmap_(other.indexmap_) {
 
   data_.resize(num_components_);
-
-  if (mode == CONSTRUCT_WITH_NEW_DATA) {
-    for (int i=0; i != num_components_; ++i) {
-      data_[i] = Teuchos::rcp(new Epetra_MultiVector(*other.data_[i]));
-    }
-  } else if (mode == CONSTRUCT_WITH_OLD_DATA) {
-    for (int i=0; i != num_components_; ++i) {
-      data_[i] = other.data_[i];
-    }
+  for (int i=0; i != num_components_; ++i) {
+    data_[i] = Teuchos::rcp(new Epetra_MultiVector(*other.data_[i]));
   }
 };
 

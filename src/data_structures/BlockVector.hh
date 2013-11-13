@@ -33,7 +33,7 @@ public:
               std::vector<int> num_dofs);
 
   // copy constructor
-  BlockVector(const BlockVector& other, ConstructMode mode=CONSTRUCT_WITH_NEW_DATA);
+  BlockVector(const BlockVector& other);
 
   // Constructor just does maps, this creates data.
   void CreateData();

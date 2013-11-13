@@ -149,8 +149,9 @@ public:
   CompositeVector(const CompositeVectorSpace& space, bool ghosted);
 
   // Copy constructor.
-  CompositeVector(const CompositeVector& other);
-  CompositeVector(const CompositeVector& other, bool ghosted);
+  CompositeVector(const CompositeVector& other, InitMode mode=INIT_MODE_COPY);
+  CompositeVector(const CompositeVector& other, bool ghosted,
+                  InitMode mode=INIT_MODE_COPY);
 
   // Assignment operator.
   CompositeVector& operator=(const CompositeVector& other);
@@ -353,7 +354,8 @@ public:
   void Print(ostream &os) const;
 
  private:
-  void Init_(const CompositeVectorSpace& space);
+  void InitMap_(const CompositeVectorSpace& space);
+  void InitData_(const CompositeVector& other, InitMode mode);
   void CreateData_();
 
   int Index_(std::string name) const {
