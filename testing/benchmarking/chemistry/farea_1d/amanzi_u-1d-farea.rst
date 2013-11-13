@@ -19,7 +19,7 @@ This test example performs the simulation of a complex geochemical network in a 
 	* Ion exchange
 	* Surface complexation
 
-For details on this test, see About_.
+For details on this test, see :ref:`about_farea`.
 
 Background
 ----------
@@ -151,6 +151,7 @@ The sorption model is based on a single-site equilibrium, pH-dependent surface c
 +----------------------------------------------------------------------------------+------------------------------------------+
 | :math:`\ce{H^+X <=> H^+ + X^-}`                                                  |  0.025                                   |
 +----------------------------------------------------------------------------------+------------------------------------------+
+
 (*) Bulk site concentration = 0.1801 :math:`\text{moles sites m}^{-3}`
 
 **Table 3. Mineral dissolution/precipitation reactions**
@@ -313,7 +314,7 @@ References
 .. [YangSteefel2008] Yang, L. and C.I. Steefel. (2008) Kaolinite dissolution and precipitation kinetics at 22°C and pH 4. Geochimica Cosmochimica Acta 72(1), 99-116. 
 
 
-.. _About:
+.. _about_farea:
 
 About
 -----

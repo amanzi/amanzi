@@ -13,7 +13,7 @@ This test example performs the simulation of calcite dissolution in a 1D flow do
 	* Aqueous complexation reactions (equilibrium)
 	* Mineral dissolution
 
-For details on this test, see About_.
+For details on this test, see :ref:`about_calcite`.
 	
 Background
 ----------
@@ -123,7 +123,7 @@ The figure shows the concentration of total calcium, pH and Calcite volume fract
 
 ..   :align: left
 
-.. _About:
+.. _about_calcite:
 
 About
 -----

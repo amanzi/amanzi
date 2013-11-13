@@ -62,7 +62,7 @@ important details on file structure and data entry syntax.
 
 
 Running *Amanzi*
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 After building *Amanzi*, the executable ``amanzi`` is installed in the specified
 ``<prefix>/bin/`` directory.  *Amanzi* can be run in serial or parallel, but it
