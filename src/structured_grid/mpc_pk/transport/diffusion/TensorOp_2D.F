@@ -312,12 +312,12 @@ c     ::: case 3c: south-west corner, minus i, minus j
       else
          dudxn = (U(i+1,j  ) + U(i+1,j+1) - U(i-1,j  ) - U(i-1,j+1))*hx4
       endif
-      if( masks(i  ,j-1).gt.0 .or. masks(i+1,j-1).gt.0 ) then
-         dudye = (-U(i-1,j+2) + 4*U(i-1,j+1) - 3*U(i-1,j  )
+      if( masks(i+1,j-1).gt.0 .or. masks(i,j-1).gt.0 ) then
+         dudye = (-U(i+1,j+2) + 4*U(i+1,j+1) - 3*U(i+1,j  )
      &        -    U(i  ,j+2) + 4*U(i  ,j+1) - 3*U(i  ,j  ))*hy4
       else
-         dudye = (U(i-1,j+1) + U(i  ,j+1) - U(i-1,j-1) - U(i  ,j-1))*hy4
-      endif
+         dudye = (U(i+1,j+1) + U(i  ,j+1) - U(i+1,j-1) - U(i  ,j-1))*hy4
+      endif            
       
       xfluxw = - dudxw*muX(i  ,j) - dudyw*mu1X(i  ,j)
       xfluxe = - dudxe*muX(i+1,j) - dudye*mu1X(i+1,j)
@@ -582,7 +582,7 @@ c ::: case 3d: north-west corner, , do fluxes at (i-1/2,j), (i,j-1/2), (i+1/2,j)
       else
          dudxs = (U(i+1,j  ) + U(i+1,j-1) - U(i-1,j  ) - U(i-1,j-1))*hx4
       endif
-      if( maskn(i-1,j+1).gt.0 .or. maskn(i,j+1).gt.0 ) then
+      if( maskn(i+1,j+1).gt.0 .or. maskn(i,j+1).gt.0 ) then
          dudye = (U(i+1,j-2) - 4*U(i+1,j-1) + 3*U(i+1,j  )
      &        +   U(i  ,j-2) - 4*U(i  ,j-1) + 3*U(i  ,j  ))*hy4
       else
@@ -1073,11 +1073,11 @@ c ::: case 3c: south-west corner
             dn = 0.d0
          endif
          if( masks(i  ,j-1).gt.0 .or. masks(i+1,j-1).gt.0 ) then
-            dudye = (-U(i-1,j+2) + 4*U(i-1,j+1) - 3*U(i-1,j  )
+            dudye = (-U(i+1,j+2) + 4*U(i+1,j+1) - 3*U(i+1,j  )
      &           -    U(i  ,j+2) + 4*U(i  ,j+1) - 3*U(i  ,j  ))*hy4
             de = - 3*hy4
          else
-            dudye = (U(i-1,j+1) + U(i  ,j+1) - U(i-1,j-1) - U(i  ,j-1))*hy4
+            dudye = (U(i+1,j+1) + U(i  ,j+1) - U(i+1,j-1) - U(i  ,j-1))*hy4
             de = 0.d0
          endif
          if( maskw(i-1,j  ).gt. 0) then
