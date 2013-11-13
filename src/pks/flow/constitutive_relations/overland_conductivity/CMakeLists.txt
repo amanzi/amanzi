@@ -13,3 +13,5 @@ add_library(flow_relations_overland_conductivity
   unfrozen_effective_depth_evaluator.cc
   )
 
+install(TARGETS flow_relations_overland_conductivity DESTINATION lib)
+

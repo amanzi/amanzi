@@ -15,6 +15,7 @@ add_library(relations_ewc
   permafrost_model.cc
   )
 
+install(TARGETS relations_ewc DESTINATION lib )
 
 
 

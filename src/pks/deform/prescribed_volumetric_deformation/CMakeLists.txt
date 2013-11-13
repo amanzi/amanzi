@@ -9,6 +9,8 @@ add_definitions("-DMSTK_HAVE_MPI")
 
 add_library(pk_prescribed_volumetric_deformation prescribed_volumetric_deformation.cc)
 
+install(TARGETS pk_prescribed_volumetric_deformation DESTINATION lib)
+
 if ( BUILD_TESTS )
 
 endif()

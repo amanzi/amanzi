@@ -14,8 +14,15 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 
-
 include_directories(${ATS_SOURCE_DIR}/src/coordinator)
+
+#------------------------------------------------------------------------------#
+# ATS F90 includes.
+#------------------------------------------------------------------------------#
+
+include_directories(${ATS_SOURCE_DIR}/src/xlib)
+include_directories(${ATS_BINARY_DIR}/src/xlib)
+
 
 include_evaluators_directories(LISTNAME ATS_POROSITY_EVAL_INCLUDES)
 include_evaluators_directories(LISTNAME CONSTITUTIVE_RELATIONS_EOS_EVALUATORS_INCLUDES)
@@ -43,15 +50,12 @@ include_evaluators_directories(LISTNAME TEST_PKS_DIVGRAD_TEST_REG_INCLUDES)
 include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 #include_evaluators_directories(LISTNAME TRANSPORT_PASSIVE_TRACER_REG_INCLUDES)
 
-
 add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
 
-
-target_link_libraries(ats
-                      coordinator
-                      mpc
+set(ATS_LIBS
+		     coordinator
+                     mpc
                       pk_test_divgrad
-#                      pk_transport_passive_tracer
                       pk_energy_constant_temperature
                       pk_energy_advection_diffusion
 		              pk_energy_two_phase
@@ -85,10 +89,13 @@ target_link_libraries(ats
                       advection
                       divgrad
                       deformation_operator
+)
+
+set(AMANZI_LIBS
                       amanzi_state
-		              amanzi_whetstone
+	              amanzi_whetstone
                       amanzi_time_integration
-		              amanzi_solvers
+	              amanzi_solvers
                       amanzi_mesh
                       amanzi_mesh_audit
                       amanzi_mesh_functions
@@ -98,6 +105,42 @@ target_link_libraries(ats
                       amanzi_interface
                       amanzi_output
                       amanzi_stk_mesh
-                      )
+)
+
+target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS})
+
 
 install(TARGETS ats DESTINATION bin)
+
+#------------------------------------------------------------------------------#
+# ATS F90 test program
+#------------------------------------------------------------------------------#
+
+if (Amanzi_DISABLE_MPI_CXX_BINDINGS)  
+
+   add_executable(ats_f90 main.f90)
+
+   target_link_libraries(
+        # Target
+	ats_f90
+
+        # ATS cross lib
+	atsx
+
+	${AMANZI_LIBS}
+	${Amanzi_TPL_Trilinos_LIBRARIES}
+
+        # MPI
+	${Amanzi_MPI_Fortran_LIBRARIES}
+	${Amanzi_MPI_C_LIBRARIES}
+   )
+
+   set_target_properties(ats_f90 PROPERTIES LINKER_LANGUAGE Fortran)
+
+   #---------------------------------------------------------------------------#
+   # Install rule
+   #---------------------------------------------------------------------------#
+
+   install(TARGETS ats_f90 DESTINATION bin)
+
+endif()

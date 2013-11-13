@@ -16,6 +16,8 @@ add_library(flow_relations_elevation
   standalone_elevation_evaluator.cc
   )
 
+install(TARGETS flow_relations_elevation DESTINATION lib)
+
 
 
 
