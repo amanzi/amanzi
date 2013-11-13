@@ -43,7 +43,11 @@ if (ENABLE_Unstructured)
   add_subdirectory(solvers)
 
   # Time integration
-  add_subdirectory(time_integration)
+  if (ENABLE_NewTimeIntegrators)
+    add_subdirectory(time_integration_new)
+  else()
+    add_subdirectory(time_integration)
+  endif()
 
   # Build State
   add_subdirectory(state)
