@@ -29,8 +29,10 @@
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
-        <Parameter name="linear solver tolerance" type="double" value="1e-16"/>
-        <Parameter name="linear solver maximum iterations" type="int" value="1000"/>
+        <ParameterList name="Linear Solver">
+          <Parameter name="linear solver tolerance" type="double" value="1e-16"/>
+          <Parameter name="linear solver maximum iterations" type="int" value="1000"/>
+        </ParameterList>
 	<ParameterList name="Transient Implicit Time Integration">
 	  <Parameter name="Transient Time Step Increase Factor" type="double" value="1.1"/>
 	</ParameterList>
