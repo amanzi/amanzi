@@ -26,25 +26,27 @@ XML Schema 2.0
 
 Amanzi solves a set of parameterized models for multiphase flow in porous media. An Amanzi simulation is specified by providing:
 
-* values for a parameterized PDE-based transport model, including boundary and initial conditions, constitutive laws, and parameterized/phenomenological models for fluid and chemical sources and characterizations of the porous medium,
+* values for a parameterized PDE-based transport model, including
+  boundary and initial conditions, constitutive laws, and
+  parameterized/phenomenological models for fluid and chemical sources
+  and characterizations of the porous medium,
 * parameters controlling the selection of key algorithmic options and output,
 * a description of the (discrete) state of the computational system, including a list of the independent variables and instructions for obtaining or generating the discrete mesh, and a characterization of the (parallel) computing environment.
 
-The primary software interface to Amanzi is a compiled C++ function,
-and much of the input data required is communicated through the input
-file. The Amanzi input format is defined in terms of the XML schema.
-The schema can be found in the Amanzi source code repository.  Users
-can construct models and generate compliant XML input files using the
-Akuna tool suite.  Users can also choose to generate compliant file
-using a text editor or other method.
+The primary input to *Amanzi* is through an XML file. The Amanzi input
+XML format is defined in terms of the XML schema that can found in the
+Amanzi source code repository.  Users can construct models and
+generate compliant XML input files using the Akuna_ tool suite.  Users
+can also choose to generate compliant file using a text editor or
+other method.
 
-In practice, Amanzi is called by a "simulation coordinator" which
-manages the simulation instructions and orchestrates the flow of
-data. A basic simulation coordinator is provided with the Amanzi
-source code distribution. This simple stand-alone coordinator can be
-used to drive a simple sequence of Amanzi runs, or can serve as a
-template for user-generated extensions supporting more intricate
-workflows.
+.. In practice, Amanzi is called by a "simulation coordinator" which
+.. manages the simulation instructions and orchestrates the flow of
+.. data. A basic simulation coordinator is provided with the Amanzi
+.. source code distribution. This simple stand-alone coordinator can be
+.. used to drive a simple sequence of Amanzi runs, or can serve as a
+.. template for user-generated extensions supporting more intricate
+.. workflows.
 
 The following is a description of each of the sections with the XML
 input schema.  Each section includes a short description of what is
@@ -61,7 +63,7 @@ Model Description
 This section allows the user to provide information about the model
 being developed and how and when it was developed.  Default units for
 the model are also stored in this section.  This entire section is
-optional but encourage for documentation.
+optional but encouraged for documentation purposes.
 
 The opening tag ``model_description`` accepts an attribute ``name`` in
 which the user may give the current model a name.  The available
@@ -176,7 +178,7 @@ Execution Control
 
 The ``execution_controls`` section defines the general execution of
 the Amanzi simulation.  Amanzi can execute in three modes: steady
-state, transient, and initialize to a steady state and then continue
+state, transient or initialize to a steady state and then continue
 it transient.  Default values for execution are defined in the
 ``execution_control_defaults`` element.  These values are used for any
 time period during the simulation for which the controls were not
@@ -335,7 +337,7 @@ Here is an overall example for the ``numerical_controls`` element.
 	                       	<hypre_tolerance>0.1</hypre_tolerance>
 	                       	<hypre_strong_threshold>0.4</hypre_strong_threshold>
 	                 </preconditioner>
-		</linear_solver>
+ 		</linear_solver>
 
 	</numerical_controls>
 
@@ -365,10 +367,10 @@ generated internally, a ``generate`` element is specified with details
 about the number of cells in each direction and the low and high
 coordinates of the bounding box. If the mesh is to be read from a
 file, a ``file`` element is specified with the file name and file
-format (currently only Exodus II). The file may be pre-partitioned
-across multiple processors. Finally, as in other sections, a
-``comments`` element is provide to include any comments or
-documentation the user wishes.
+format. Currently only Exodus II files are supported with the
+extension of *.exo*.  Finally, as in other sections, a ``comments``
+element is provide to include any comments or documentation the user
+wishes.
 
 Here is an example specification for a structured ``mesh`` element.
 
@@ -413,12 +415,14 @@ Regions
 
 Regions are geometrical constructs used in Amanzi to define subsets of
 the computational domain in order to specify the problem to be solved,
-and the output desired. Regions may represents zero-, one-, two- or
-three-dimensional subsets of physical space. For a three-dimensional
-problem, the simulation domain will be a three-dimensional region
-bounded by a set of two-dimensional regions. If the simulation domain
-is N-dimensional, the boundary conditions must be specified over a set
-of regions are (N-1)-dimensional.
+and the output desired. Regions are commonly used to specify material
+properties, boundary conditions and obervation domains. Regions may
+represent zero-, one-, two- or three-dimensional subsets of physical
+space. For a three-dimensional problem, the simulation domain will be
+a three-dimensional region bounded by a set of two-dimensional
+regions. If the simulation domain is N-dimensional, the boundary
+conditions must be specified over a set of regions are
+(N-1)-dimensional.
 
 Amanzi automatically defines the special region labeled "All", which
 is the entire simulation domain. Under the "Structured" option, Amanzi
@@ -429,9 +433,10 @@ that bound the domain, using the following labels: "XLOBC", "XHIBC",
 The ``regions`` block is required.  Within the region block no regions are
 required to be defined.  The optional elements include ``region``, ``box``, ``point``, and ``plane``.  As in other sections there is also an options ``comments`` element.
 
-The elements ``box``, ``point``, and ``plane`` allow for inline description of regions.
-The ``region`` element uses a subelement to either define a ``box`` or ``plane`` region or
-specify a region file.  Below are further descriptions of these elements.
+The elements ``box``, ``point``, and ``plane`` allow for inline
+description of regions.  The ``region`` element uses a subelement to
+either define a ``box`` or ``plane`` region or specify a region file.
+Below are further descriptions of these elements.
 
 Box
 ---
