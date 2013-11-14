@@ -18,6 +18,11 @@
 
 #include "boost/mpi.hpp"
 
+// Support for manipulating floating point exception handling.
+#define AMANZI_USE_FENV
+#include <fenv.h>
+#endif
+
 // For now, we use the "interim" chemistry input spec, in which the 
 // initial and boundary conditions are specified within the Chemistry
 // parameter list.
@@ -222,6 +227,11 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
   // Read the rest of the XML parameters from our input file.
   XMLParameters();
 
+#ifdef AMANZI_USE_FENV
+  // Disable floating point exceptions for dividing by zero.
+  int fpe_mask = fedisableexcept(FE_DIVBYZERO);
+#endif 
+
   // FIXME: This is unnecessary--sizes given by the engine file should suffice.
   // NOTE: we need to perform the initialization on the first cell to determine 
   // NOTE: the number of secondary activity coefficients, which we'll stash in 
@@ -286,6 +296,11 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
     msg << "Error in Alquimia_Chemistry_PK::InitializeChemistry 1";
     Exceptions::amanzi_throw(msg); 
   }  
+
+#ifdef AMANZI_USE_FENV
+  // Re-enable pre-existing floating point exceptions.
+  fpe_mask = feenableexcept(fpe_mask);
+#endif 
 
 //  chem_out->Write(kVerbose, "ChemistryPK::InitializeChemistry(): initialization was successful.\n");
 
@@ -983,6 +998,11 @@ void Alquimia_Chemistry_PK::advance(
   // Now loop through all the regions and advance the chemistry.
   int ierr = 0;
 
+#ifdef AMANZI_USE_FENV
+  // Disable floating point exceptions for dividing by zero.
+  int fpe_mask = fedisableexcept(FE_DIVBYZERO);
+#endif 
+
   // First, we advance all cells for which we have boundary conditions.
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
   std::set<int> boundary_cells; // Keep track of boundary cells.
@@ -1065,6 +1085,11 @@ void Alquimia_Chemistry_PK::advance(
       ierr = 1;
     }
   }
+
+#ifdef AMANZI_USE_FENV
+  // Re-enable pre-existing floating point exceptions.
+  fpe_mask = feenableexcept(fpe_mask);
+#endif 
 
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) 
