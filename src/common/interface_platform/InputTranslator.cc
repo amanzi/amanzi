@@ -610,7 +610,8 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 		}
 		if (strcmp(attrName,"restart")==0) {
 		    hasRestart = true;
-		    name = attrName;
+		    //name = attrName;
+	            ecsPL.sublist("restart") = ecPL;
 		}
 	      }
 	      ecsPL.sublist(name) = ecPL;
