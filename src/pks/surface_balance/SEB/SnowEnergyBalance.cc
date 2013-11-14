@@ -285,19 +285,32 @@ void SurfaceEnergyBalance::CalcQc (LocalData& seb){
 
 
 //  FUNCTION TO CALCULATE & SUBLIMATION RATE & MELT WHEN SNOW IS PRESSENT
-void SurfaceEnergyBalance::MeltSublRateCalc (LocalData& seb) {
-  seb.st_energy.SublR=-seb.st_energy.fQe/(seb.st_energy.density_w*seb.st_energy.Ls); // SublR=-fQe/(ROWw*Ls);  // SublR is a rate [m/s]
-  seb.st_energy.SublL=seb.st_energy.SublR*seb.st_energy.Dt;
-if ((seb.st_energy.Ts==273.15)&&(seb.st_energy.SublL<0)){
-// Snow is melting, surface temp = 0 C and condensation is applied as water and drains through snow.  Therefore added directly to Melt 
-   seb.st_energy.Mr= -seb.st_energy.SublR;
-   seb.st_energy.SublL=0;
-}else{
-seb.st_energy.Mr=0;
-}
-  // Calculate water melted  *** Equation from UEB (49)
-  seb.st_energy.Mr=seb.st_energy.Mr + seb.st_energy.Qm/(seb.st_energy.density_w*seb.st_energy.Hf); 
-  seb.st_energy.Ml=seb.st_energy.Mr*seb.st_energy.Dt;                                // Ml=Mr*Dt;
+void SurfaceEnergyBalance::MeltSublRateCalc (EnergyBalance& eb) {
+    eb.SublR=-eb.fQe/(eb.density_w*eb.Ls); // SublR=-fQe/(ROWw*Ls);  // SublR is a rate [m/s]
+    eb.SublL=eb.SublR*eb.Dt;
+    if ((eb.Ts==273.15)&&(eb.SublL<0)){// Snow is melting, surface temp = 0 C and condensation is applied as water and drains through snow.  Therefore added directly to Melt
+        eb.Mr= -eb.SublR;  //### if CiL is neglected REMOVE THIS LINE AND SET Mr to 0. !!!!!!!!!!!!!
+        std::cout<<"IN condinsation to Mr Sublr: "<<eb.SublR<<std::endl;
+        eb.SublL=0;
+    }else{
+        eb.Mr=0;
+    }
+  // CALCULATING CONDINSATION LENGHT OF FROST ON SNOW
+  //if (SublL<0) {    //briefly changing SublL into snow (frost) lenght units *** This is for condensation ****
+  //    CiL=-SublL*ROWw/ROWfrost, SublL=0 };  // I assume that ice is condensing on the snow surface therefore density is near that of ice
+  //if (SublL>=0) {   //briefly changing SublL into snow lengh units *** This is for sublimation ****
+  //    SublL=SublL*ROWw/ROWs };
+    if (eb.SublL<0) {    //briefly changing SublL into snow (frost) lenght units *** This is for condensation ****
+        eb.CiL = -eb.SublL * eb.density_w / eb.density_frost;  // Assume ice is condensing on snow surface with a density near ice ~> 800[kg/m^3]
+        eb.SublL = 0;
+    } else {   //briefly changing SublL into snow lengh units *** This is for sublimation ****
+        eb.SublL = eb.SublL * eb.density_w / eb.density_snow;
+        eb.CiL = 0.;
+    }
+    // Calculate water melted  *** Equation from UEB (49)
+    eb.Mr=eb.Mr + eb.Qm/(eb.density_w*eb.Hf);      // Change Mr = Qm/(ROWw*Hf) to --> Mr = Qm/(ROWw*Hf) + (Pr/Dt); ** this will mean changing DeltaSnowPack & WaterMassCorr
+    std::cout<<" In MeltCalc-Mr: "<<eb.Mr<<std::endl;
+    eb.Ml=eb.Mr*eb.Dt;                                // Ml=Mr*Dt;
 }
 
 
@@ -320,19 +333,8 @@ void SurfaceEnergyBalance::EvapCalc (EnergyBalance& eb) {
     SublL, Ml, Are always in SWE
 */
 void SurfaceEnergyBalance::DeltaSnowPack (EnergyBalance& eb) {
-  //if (SublL<0) {    //briefly changing SublL into snow (frost) lenght units *** This is for condensation ****
-  //    CiL=-SublL*ROWw/ROWfrost, SublL=0 };  // I assume that ice is condensing on the snow surface therefore density is near that of ice
-  //if (SublL>=0) {   //briefly changing SublL into snow lengh units *** This is for sublimation ****
-  //    SublL=SublL*ROWw/ROWs };
   //TotwLoss = Ml*(ROWw/ROWs) + SublL - CiL;  //Calculate change in snow pack
   //if (SublL>=0) {  SublL=SublL*ROWs/ROWw };                     //Changing SublL back to SWE *** This is for sublimation ****
-  if (eb.SublL<0) {    //briefly changing SublL into snow (frost) lenght units *** This is for condensation ****
-    eb.CiL = -eb.SublL * eb.density_w / eb.density_frost;  // Assume ice is condensing on snow surface with a density near ice ~> 800[kg/m^3]
-    eb.SublL = 0;
-  } else {   //briefly changing SublL into snow lengh units *** This is for sublimation ****
-    eb.SublL = eb.SublL * eb.density_w / eb.density_snow;
-    eb.CiL = 0.;
-  }
    double MLl= eb.Ml * (eb.density_w / eb.density_snow);
   eb.TotwLoss = eb.Ml * (eb.density_w / eb.density_snow) + eb.SublL - eb.CiL;  //Calculate change in snow pack
 
@@ -498,7 +500,7 @@ void SurfaceEnergyBalance::SnowEnergyBalance (LocalData& seb) {
       seb.st_energy.funcall="MELT";
     }
     // Calculating melt, sublimation, and condensation rate.
-    MeltSublRateCalc(seb);
+    MeltSublRateCalc(seb.st_energy);
     // Calculate the change in snowpack depth.
     DeltaSnowPack(seb.st_energy);
 

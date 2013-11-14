@@ -158,7 +158,7 @@ void GroundEnergyCalc (LocalData& dat);
 void CalcQc (LocalData& dat);
 
 //  FUNCTION TO CALCULATE MELT & SUBLIMATION RATE WHEN SNOW IS PRESSENT
-void MeltSublRateCalc (LocalData& dat);
+void MeltSublRateCalc (EnergyBalance& eb);
 
 
 //  FUNCTION TO CALCULATE MELT & SUBLIMATION RATE WHEN *NO* SNOW IS PRESSENT
