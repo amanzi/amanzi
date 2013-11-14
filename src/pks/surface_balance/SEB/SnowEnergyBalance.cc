@@ -290,7 +290,6 @@ void SurfaceEnergyBalance::MeltSublRateCalc (EnergyBalance& eb) {
     eb.SublL=eb.SublR*eb.Dt;
     if ((eb.Ts==273.15)&&(eb.SublL<0)){// Snow is melting, surface temp = 0 C and condensation is applied as water and drains through snow.  Therefore added directly to Melt
         eb.Mr= -eb.SublR;  //### if CiL is neglected REMOVE THIS LINE AND SET Mr to 0. !!!!!!!!!!!!!
-        std::cout<<"IN condinsation to Mr Sublr: "<<eb.SublR<<std::endl;
         eb.SublL=0;
     }else{
         eb.Mr=0;
@@ -309,7 +308,6 @@ void SurfaceEnergyBalance::MeltSublRateCalc (EnergyBalance& eb) {
     }
     // Calculate water melted  *** Equation from UEB (49)
     eb.Mr=eb.Mr + eb.Qm/(eb.density_w*eb.Hf);      // Change Mr = Qm/(ROWw*Hf) to --> Mr = Qm/(ROWw*Hf) + (Pr/Dt); ** this will mean changing DeltaSnowPack & WaterMassCorr
-    std::cout<<" In MeltCalc-Mr: "<<eb.Mr<<std::endl;
     eb.Ml=eb.Mr*eb.Dt;                                // Ml=Mr*Dt;
 }
 
