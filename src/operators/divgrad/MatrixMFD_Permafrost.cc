@@ -1,17 +1,17 @@
 #include "EpetraExt_RowMatrixOut.h"
 
-#include "MatrixMFD_Coupled_Surf.hh"
+#include "MatrixMFD_Permafrost.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(Teuchos::ParameterList& plist,
+MatrixMFD_Permafrost::MatrixMFD_Permafrost(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     MatrixMFD_Coupled(plist,mesh),
     scaling_(1.)
 {}
 
-MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(const MatrixMFD_Coupled_Surf& other) :
+MatrixMFD_Permafrost::MatrixMFD_Permafrost(const MatrixMFD_Permafrost& other) :
     MatrixMFD_Coupled(other),
     surface_mesh_(other.surface_mesh_),
     surface_A_(other.surface_A_),
@@ -20,7 +20,7 @@ MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(const MatrixMFD_Coupled_Surf& oth
 {}
 
 
-void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
+void MatrixMFD_Permafrost::ComputeSchurComplement() {
   // Base ComputeSchurComplement() gets the standard face parts
   MatrixMFD_Coupled::ComputeSchurComplement();
 
@@ -53,9 +53,26 @@ void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
 
   int ierr(0);
   
+  // First, clobber the surface face entries that are frozen, but above zero.
+  Epetra_Vector scaling(P2f2f_->RowMap());
+  Epetra_Vector App_diag(App.RowMap());
+  ierr = App.ExtractDiagonalCopy(App_diag);
+  ASSERT(!ierr);
+  scaling.PutScalar(1.);
+
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
+    AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
+    if ((*blockA_sc_->Krel_)[frow] == 0 && std::abs(App_diag[sc]) > 1.e-11) {
+      // Krel == 0 --> frozen, App_diag[sc] > 0 --> p_surf > p_atm
+      scaling[frow] = 0.;
+    }
+  }
+  ierr = P2f2f_->LeftScale(scaling);
+  ASSERT(!ierr);
+
   // Now, add in the contributions from App
   // Loop over surface cells (subsurface faces)
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     // Access the row from the surfaces
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
@@ -81,6 +98,21 @@ void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
       if (sc == indicesA[m]) diag = m; // save the diagonal index
       indicesA[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,indicesA[m]);
       indicesA[m] = fmap_wghost.GID(indicesA[m]);
+    }
+    
+    // Adjust for Krel factor.
+    if ((*blockA_sc_->Krel_)[frow] > 0.) {
+      // If not frozen surface, Krel > 0, and we can use the scaled constraint.
+      for (int m=0; m!=entriesA; ++m) {
+        // SCALING: -- divide by rel perm to keep constraint equation consistent
+        if (std::abs(valuesA[m]) > 0.) {
+          valuesA[m] /= (*blockA_sc_->Krel_)[frow];
+        }
+      }
+    } else {
+      // One of two cases is possible for Krel == 0
+      //  - p_surf > p_atm, and we want the full values (hence the Row scaling done previously)
+      //  - p_surf < p_atm, and so App's row is identically zero
     }
 
     // Add the entries

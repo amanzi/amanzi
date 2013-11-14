@@ -34,7 +34,8 @@ add_library(mpc
   mpc_delegate_water.cc
   mpc_subsurface.cc
   mpc_permafrost.cc
-  mpc_permafrost2.cc)
+  mpc_permafrost2.cc
+  mpc_permafrost3.cc)
 
 install(TARGETS mpc DESTINATION lib)
 
