@@ -325,7 +325,7 @@ About
   * Amanzi input file: amanzi-u-1d-farea.xml
   * Benchmark simulator input file: 1d-farea.in
 
-* Location: amanzi/examples/examples/phase2/chemistry/1d-farea
+* Location: testing/benchmarking/chemistry/farea_1d
 * Author: B. Andre, G. Hammond
 * Testing and Documentation: S. Molins, H.M. Wainright
 * Last tested on: November 1, 2013

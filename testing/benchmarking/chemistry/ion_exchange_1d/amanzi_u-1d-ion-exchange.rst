@@ -102,7 +102,7 @@ About
   * Amanzi input file/s (Alquimia chemistry): amanzi-1d-ion-exchange-alq.xml, 1d-ion-exchange.in, ion-exchange.dat 
   * Benchmark simulator input file: 1d-ion-exchange.in, ion-exchange.dat
 
-* Location: amanzi/examples/examples/phase2/chemistry/1d-ion-exchange
+* Location: testing/benchmarking/chemistry/ion_exchange_1d
 * Author: B. Andre, G. Hammond
 * Testing and Documentation: S. Molins
 * Last tested on Oct 4, 2013
