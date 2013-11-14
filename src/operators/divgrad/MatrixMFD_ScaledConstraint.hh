@@ -58,6 +58,7 @@ class MatrixMFD_ScaledConstraint : virtual public MatrixMFD {
   Teuchos::RCP<Epetra_Vector> Krel_;
 
   friend class MatrixMFD_Coupled;
+  friend class MatrixMFD_Permafrost;
 
 };
 

@@ -13,20 +13,22 @@
 
 #include "MatrixMFD_TPFA.hh"
 #include "MatrixMFD_Coupled.hh"
+#include "MatrixMFD_Surf_ScaledConstraint.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
+class MatrixMFD_Permafrost : public MatrixMFD_Coupled {
 
  public:
-  MatrixMFD_Coupled_Surf(Teuchos::ParameterList& plist,
+  MatrixMFD_Permafrost(Teuchos::ParameterList& plist,
                          const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
-  MatrixMFD_Coupled_Surf(const MatrixMFD_Coupled_Surf& other);
+  MatrixMFD_Permafrost(const MatrixMFD_Permafrost& other);
 
-  virtual void SetSubBlocks(const Teuchos::RCP<MatrixMFD>& blockA,
+  virtual void SetSubBlocks(const Teuchos::RCP<MatrixMFD_Surf_ScaledConstraint>& blockA,
                             const Teuchos::RCP<MatrixMFD>& blockB) {
     MatrixMFD_Coupled::SetSubBlocks(blockA, blockB);
+    blockA_sc_ = blockA;
   }
 
   virtual void ComputeSchurComplement();
@@ -66,6 +68,8 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
   Teuchos::RCP<const Epetra_MultiVector> Ccc_surf_;
   Teuchos::RCP<const Epetra_MultiVector> Dcc_surf_;
 
+  Teuchos::RCP<MatrixMFD_Surf_ScaledConstraint> blockA_sc_;
+  
   double scaling_;
 };
 

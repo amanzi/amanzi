@@ -238,7 +238,7 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
   double enorm_face(0.);
   unsigned int nfaces = res_f.MyLength();
   for (unsigned int f=0; f!=nfaces; ++f) {
-    double tmp = 1.e-4 * std::abs(res_f[0][f]) / (atol_+rtol_*273.15);
+    double tmp = flux_tol_ * std::abs(res_f[0][f]) / (atol_+rtol_*273.15);
     enorm_face = std::max<double>(enorm_face, tmp);
   }
 

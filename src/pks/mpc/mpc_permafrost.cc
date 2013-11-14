@@ -72,7 +72,8 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Operators::MatrixMFD_TPFA> pcA_surf = pcA->GetSurfaceOperator();
   Teuchos::RCP<Operators::MatrixMFD_TPFA> pcB_surf = pcB->GetSurfaceOperator();
 
-  mfd_surf_preconditioner_->SetSubBlocks(pcA, pcB);
+  ASSERT(0); // FIX THE BELOW LINE!
+  //  mfd_surf_preconditioner_->SetSubBlocks(pcA, pcB);
   mfd_surf_preconditioner_->SetSurfaceOperators(pcA_surf, pcB_surf);
 
   // setup and initialize the preconditioner
