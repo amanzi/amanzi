@@ -284,13 +284,20 @@ void SurfaceEnergyBalance::CalcQc (LocalData& seb){
 }
 
 
-//  FUNCTION TO CALCULATE MELT & SUBLIMATION RATE WHEN SNOW IS PRESSENT
+//  FUNCTION TO CALCULATE & SUBLIMATION RATE & MELT WHEN SNOW IS PRESSENT
 void SurfaceEnergyBalance::MeltSublRateCalc (LocalData& seb) {
-  // Calculate water melted  *** Equation from UEB (49)
-  seb.st_energy.Mr=seb.st_energy.Qm/(seb.st_energy.density_w*seb.st_energy.Hf);      // Change Mr = Qm/(ROWw*Hf) to --> Mr = Qm/(ROWw*Hf) + (Pr/Dt); ** this will mean changing DeltaSnowPack & WaterMassCorr
-  seb.st_energy.Ml=seb.st_energy.Mr*seb.st_energy.Dt;                                        // Ml=Mr*Dt;
   seb.st_energy.SublR=-seb.st_energy.fQe/(seb.st_energy.density_w*seb.st_energy.Ls); // SublR=-fQe/(ROWw*Ls);  // SublR is a rate [m/s]
-  seb.st_energy.SublL=seb.st_energy.SublR*seb.st_energy.Dt;                                  // SublL=SublR*Dt; // SublL is a swe lenght [m]
+  seb.st_energy.SublL=seb.st_energy.SublR*seb.st_energy.Dt;
+if ((seb.st_energy.Ts==273.15)&&(seb.st_energy.SublL<0)){
+// Snow is melting, surface temp = 0 C and condensation is applied as water and drains through snow.  Therefore added directly to Melt 
+   seb.st_energy.Mr= -seb.st_energy.SublR;
+   seb.st_energy.SublL=0;
+}else{
+seb.st_energy.Mr=0;
+}
+  // Calculate water melted  *** Equation from UEB (49)
+  seb.st_energy.Mr=seb.st_energy.Mr + seb.st_energy.Qm/(seb.st_energy.density_w*seb.st_energy.Hf); 
+  seb.st_energy.Ml=seb.st_energy.Mr*seb.st_energy.Dt;                                // Ml=Mr*Dt;
 }
 
 
@@ -326,7 +333,7 @@ void SurfaceEnergyBalance::DeltaSnowPack (EnergyBalance& eb) {
     eb.SublL = eb.SublL * eb.density_w / eb.density_snow;
     eb.CiL = 0.;
   }
-
+   double MLl= eb.Ml * (eb.density_w / eb.density_snow);
   eb.TotwLoss = eb.Ml * (eb.density_w / eb.density_snow) + eb.SublL - eb.CiL;  //Calculate change in snow pack
 
   if (eb.SublL >= 0) { //Changing SublL back to SWE *** This is for sublimation ****
@@ -354,7 +361,7 @@ void SurfaceEnergyBalance::WaterMassCorr(EnergyBalance& eb) {
       eb.SublL=eb.SublL*eb.ht_snow*(TZs);  //SublL is changed back to SWE & ratio of avaialbe snowpack for sublimation is found
       eb.Ml=(eb.ht_snow+eb.Ps+(eb.SublL*(Tswe)))*(TZs);
     } else {
-      eb.Ml=(eb.ht_snow+eb.Ps+(eb.SublL*-1))*(TZs); //SublL is less then 0, Frost! Add it to water delivered to ATS
+      eb.Ml=(eb.ht_snow+eb.Ps+(eb.SublL*-1))*(TZs); //SublL is less then 0, Frost! Add it to water delivered to ATS  ***THIS SHOULD BE TAKEN OUT IF CiL IS NEGELTEDTED!!!!!!!!!!!!!*********
     }
   }
   if (eb.Ml==0) {
@@ -452,7 +459,7 @@ void SurfaceEnergyBalance::SWE (EnergyBalance& eb) {
 
 // FUNCTION TO FIND TEMPURATURE OF WATER FLOWING INTP ATS
 void SurfaceEnergyBalance::WaterTemp(EnergyBalance& eb) {
-  if (eb.Ml<=0.0) {
+  if (eb.ht_snow<=0.0000001)  {
     eb.Trw=eb.air_temp;
   } else {
     eb.Trw=273.15;
@@ -490,10 +497,8 @@ void SurfaceEnergyBalance::SnowEnergyBalance (LocalData& seb) {
       MeltEnergyCalc(seb); // Recaculating Energy Balance when melt in occuring
       seb.st_energy.funcall="MELT";
     }
-
     // Calculating melt, sublimation, and condensation rate.
     MeltSublRateCalc(seb);
-
     // Calculate the change in snowpack depth.
     DeltaSnowPack(seb.st_energy);
 
@@ -502,10 +507,8 @@ void SurfaceEnergyBalance::SnowEnergyBalance (LocalData& seb) {
       WaterMassCorr(seb.st_energy);
       seb.st_energy.funcall="Melt too small";
     }
-      
     // Rain on Snow = Rain water flows through snowpack added to water delivered to ATS & Assinged temperarture of 0 Celcius
       seb.st_energy.Mr = seb.st_energy.Mr + (seb.st_energy.Pr / seb.st_energy.Dt);
-      
     // Correct Qc & check for small snowpack
       CalcQc(seb);
       
@@ -516,6 +519,7 @@ void SurfaceEnergyBalance::SnowEnergyBalance (LocalData& seb) {
     //    TeenyTinySnowPack(seb);
     //  }
     //}
+
 
   } else { // no snow
     GroundEnergyCalc(seb);
@@ -533,7 +537,7 @@ void SurfaceEnergyBalance::SnowEnergyBalance (LocalData& seb) {
 
   // Update snow height
   SnowPackCalc(seb.st_energy);
-  if (seb.st_energy.ht_snow<=0.0000001) {
+  if (seb.st_energy.ht_snow<=0.0) {
     seb.st_energy.ht_snow=0.0;
   }
   
@@ -542,5 +546,4 @@ void SurfaceEnergyBalance::SnowEnergyBalance (LocalData& seb) {
 
   // Calculate water temperature
   WaterTemp(seb.st_energy);
-
 }
