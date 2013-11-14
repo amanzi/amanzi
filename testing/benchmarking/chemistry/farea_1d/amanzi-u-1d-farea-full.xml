@@ -125,17 +125,27 @@
 
       <ParameterList name="Mineralogy">
 
-	<ParameterList name="Gibbsite">
-	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
-	  <Parameter name="Specific Surface Area" type="double" value="10."/>
-	</ParameterList>
-
 	<ParameterList name="Quartz">
 	  <Parameter name="Volume Fraction" type="double" value="0.88"/>
 	  <Parameter name="Specific Surface Area" type="double" value="326230."/>
 	</ParameterList>
 
-	<ParameterList name="Opal">
+	<ParameterList name="Goethite">
+	  <Parameter name="Volume Fraction" type="double" value="0.016"/>
+	  <Parameter name="Specific Surface Area" type="double" value="1107630."/>
+	</ParameterList>
+
+	<ParameterList name="Kaolinite">
+	  <Parameter name="Volume Fraction" type="double" value="0.11"/>
+	  <Parameter name="Specific Surface Area" type="double" value="5909390."/>
+	</ParameterList>
+
+	<ParameterList name="Schoepite">
+	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
+	  <Parameter name="Specific Surface Area" type="double" value="10."/>
+	</ParameterList>
+
+	<ParameterList name="Gibbsite">
 	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
 	  <Parameter name="Specific Surface Area" type="double" value="10."/>
 	</ParameterList>
@@ -150,19 +160,9 @@
 	  <Parameter name="Specific Surface Area" type="double" value="10."/>
 	</ParameterList>
 
-	<ParameterList name="Kaolinite">
-	  <Parameter name="Volume Fraction" type="double" value="0.11"/>
-	  <Parameter name="Specific Surface Area" type="double" value="5909390."/>
-	</ParameterList>
-
-	<ParameterList name="Schoepite">
+	<ParameterList name="Opal">
 	  <Parameter name="Volume Fraction" type="double" value="0.0"/>
 	  <Parameter name="Specific Surface Area" type="double" value="10."/>
-	</ParameterList>
-
-	<ParameterList name="Goethite">
-	  <Parameter name="Volume Fraction" type="double" value="0.016"/>
-	  <Parameter name="Specific Surface Area" type="double" value="1107630."/>
 	</ParameterList>
 
       </ParameterList> <!-- Mineralogy -->
