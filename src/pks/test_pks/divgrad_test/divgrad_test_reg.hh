@@ -1,0 +1,18 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+
+/* -------------------------------------------------------------------------
+  A high level test class for the MatrixMFD operator.
+
+  License: BSD
+  Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
+------------------------------------------------------------------------- */
+
+#include "divgrad_test.hh"
+
+namespace Amanzi {
+namespace TestPKs {
+
+RegisteredPKFactory<DivGradTest> DivGradTest::reg_("div-grad operator test");
+
+} // namespace
+} // namespace

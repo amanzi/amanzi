@@ -1,0 +1,332 @@
+// Delegate for heuristic corrections based upon coupled surface/subsurface water.
+
+#include "mpc_delegate_water.hh"
+
+namespace Amanzi {
+
+MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+    plist_(plist)
+{
+  // predictor control
+  modify_predictor_heuristic_ =
+      plist_->get<bool>("modify predictor with heuristic", false);
+  modify_predictor_spurt_damping_ =
+      plist_->get<bool>("modify predictor damp and cap the water spurt", false);
+  modify_predictor_tempfromsource_ =
+      plist_->get<bool>("modify predictor surface temperature from source", false);
+  
+  // precon control
+  face_limiter_ = plist_->get<double>("global water face limiter", -1.0);
+  cap_the_spurt_ = plist_->get<bool>("cap the water spurt", false);
+  damp_the_spurt_ = plist_->get<bool>("damp the water spurt", false);
+  bool damp_and_cap_the_spurt = plist_->get<bool>("damp and cap the water spurt", false);
+  if (damp_and_cap_the_spurt) {
+    damp_the_spurt_ = true;
+    cap_the_spurt_ = true;
+  }
+
+  // set the size of the caps
+  if (cap_the_spurt_ || damp_the_spurt_ ||
+      modify_predictor_heuristic_ || modify_predictor_spurt_damping_) {
+    cap_size_ = plist_->get<double>("cap over atmospheric", 100.0);
+  }
+
+  // create the VO
+  vo_ = Teuchos::rcp(new VerboseObject(plist->name(), *plist_));
+}
+
+// bool
+// MPCDelegateWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+//         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
+//   bool modified = false;
+
+//   int n_modified = 0;
+//   if (face_limiter_ > 0.) {
+//     n_modified += ModifyCorrection_WaterFaceLimiter_(h, res, u, du);
+//   }
+
+//   if (cap_the_spurt_ || damp_the_spurt_) {
+//     n_modified += ModifyCorrection_WaterSpurt_(h, res, u, du);
+//   }
+
+//   if (cap_the_spurt_ || damp_the_spurt_ || face_limiter_ > 0.) {
+//     int n_modified_l = n_modified;
+//     u->SubVector(i_domain_)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
+//     if (n_modified > 0) modified = true;
+//   }
+
+//   return modified;
+// }
+
+// Approach 1: global face limiter on the correction size
+int
+MPCDelegateWater::ModifyCorrection_WaterFaceLimiter(double h, Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+  int n_modified = 0;
+  if (face_limiter_ > 0.) {
+    Epetra_MultiVector& domain_Pu_f = *Pu->SubVector(i_domain_)->Data()
+        ->ViewComponent("face",false);
+
+    for (int f=0; f!=domain_Pu_f.MyLength(); ++f) {
+      if (std::abs(domain_Pu_f[0][f]) > face_limiter_) {
+        if (vo_->os_OK(Teuchos::VERB_HIGH))
+          *vo_->os() << "  LIMITING: dp_old = " << domain_Pu_f[0][f];
+        domain_Pu_f[0][f] = domain_Pu_f[0][f] > 0. ? face_limiter_ : -face_limiter_;
+        if (vo_->os_OK(Teuchos::VERB_HIGH))
+          *vo_->os() << ", dp_new = " << domain_Pu_f[0][f] << std::endl;
+        n_modified++;
+      }
+    }
+  }
+
+  return n_modified;
+}
+
+
+// Approach 2: damping of the spurt -- limit the max oversaturated pressure
+//  using a global damping term.
+// Approach 3: capping of the spurt -- limit the max oversaturated pressure
+//  if coming from undersaturated.
+double
+MPCDelegateWater::ModifyCorrection_WaterSpurtDamp(double h, Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+  const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+
+  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =
+      u->SubVector(i_surf_)->Data()->Mesh();
+  int ncells_surf = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  const Epetra_MultiVector& domain_p_f = *u->SubVector(i_domain_)->Data()
+      ->ViewComponent("face",false);
+  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(i_domain_)->Data();
+  Epetra_MultiVector& domain_Pu_f = *domain_Pu->ViewComponent("face",false);
+
+  // Approach 2
+  double damp = 1.;
+  if (damp_the_spurt_) {
+    for (int cs=0; cs!=ncells_surf; ++cs) {
+      AmanziMesh::Entity_ID f =
+          surf_mesh->entity_get_parent(AmanziMesh::CELL, cs);
+      double p_old = domain_p_f[0][f];
+      double p_new = p_old - domain_Pu_f[0][f];
+      if ((p_new > patm + cap_size_) && (p_old < patm)) {
+        double my_damp = ((patm + cap_size_) - p_old) / (p_new - p_old);
+        damp = std::min(damp, my_damp);
+      }
+    }
+
+    double proc_damp = damp;
+    domain_Pu_f.Comm().MinAll(&proc_damp, &damp, 1);
+    if (damp < 1.0) {
+      if (vo_->os_OK(Teuchos::VERB_HIGH))
+        *vo_->os() << "  DAMPING THE SPURT!, coef = " << damp << std::endl;
+      domain_Pu->Scale(damp);
+    }
+  }
+  return damp;
+}
+
+
+int
+MPCDelegateWater::ModifyCorrection_WaterSpurtCap(double h, Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu, double damp) {
+  const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+
+  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =
+      u->SubVector(i_surf_)->Data()->Mesh();
+  int ncells_surf = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  const Epetra_MultiVector& domain_p_f = *u->SubVector(i_domain_)->Data()
+      ->ViewComponent("face",false);
+  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(i_domain_)->Data();
+  Epetra_MultiVector& domain_Pu_f = *domain_Pu->ViewComponent("face",false);
+
+  // Approach 3
+  int n_modified = 0;
+  if (cap_the_spurt_) {
+    for (int cs=0; cs!=ncells_surf; ++cs) {
+      AmanziMesh::Entity_ID f = surf_mesh->entity_get_parent(AmanziMesh::CELL, cs);
+
+      double p_old = domain_p_f[0][f];
+      double p_new = p_old - domain_Pu_f[0][f] / damp;
+      if ((p_new > patm + cap_size_) && (p_old < patm)) {
+        domain_Pu_f[0][f] = p_old - (patm + cap_size_);
+        n_modified++;
+        if (vo_->os_OK(Teuchos::VERB_HIGH))
+          *vo_->os() << "  CAPPING THE SPURT: p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << p_old - domain_Pu_f[0][f] << std::endl;
+      }
+    }
+  }
+
+  return n_modified;
+}
+
+
+// modify predictor via heuristic stops spurting in the surface flow
+bool
+MPCDelegateWater::ModifyPredictor_Heuristic(double h, const Teuchos::RCP<TreeVector>& u) {
+  bool modified = false;
+  if (modify_predictor_heuristic_) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH))
+      *vo_->os() << "  MPCWaterCoupler: Modifying predictor with water heuristic" << std::endl;
+    
+    Epetra_MultiVector& domain_u_f =
+        *u->SubVector(i_domain_)->Data()->ViewComponent("face",false);
+    Epetra_MultiVector& surf_u_c =
+        *u->SubVector(i_surf_)->Data()->ViewComponent("cell",false);
+
+    Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =
+        u->SubVector(i_surf_)->Data()->Mesh();
+
+    const Epetra_MultiVector& surf_u_prev_c =
+        *S_->GetFieldData("surface_pressure")->ViewComponent("cell",false);
+    const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+    int ncells = surf_u_c.MyLength();
+    for (int c=0; c!=ncells; ++c) {
+      int f = surf_mesh->entity_get_parent(AmanziMesh::CELL, c);
+
+      double dp = surf_u_c[0][c] - surf_u_prev_c[0][c];
+      double pnew = surf_u_c[0][c] - patm;
+      double pold = surf_u_prev_c[0][c] - patm;
+
+      if (pnew > 0) {
+        if (dp > pnew) {
+          if (vo_->os_OK(Teuchos::VERB_HIGH))
+            *vo_->os() << "CHANGING (first over?): p = " << surf_u_c[0][c]
+                  << " to " << patm + cap_size_ << std::endl;
+          surf_u_c[0][c] = patm + cap_size_;
+          domain_u_f[0][f] = surf_u_c[0][c];
+
+        } else if (pold > 0 && dp > pold) {
+          if (vo_->os_OK(Teuchos::VERB_HIGH))
+            *vo_->os() << "CHANGING (second over?): p = " << surf_u_c[0][c]
+                       << " to " << patm + 2*pold << std::endl;
+          surf_u_c[0][c] = patm + 2*pold;
+          domain_u_f[0][f] = surf_u_c[0][c];
+        }
+      }
+    }
+    modified = true;
+  }
+
+  return modified;
+}
+
+// Approach 2: damping of the spurt -- limit the max oversaturated pressure
+//  using a global damping term.
+// Approach 3: capping of the spurt -- limit the max oversaturated pressure
+//  if coming from undersaturated.
+bool
+MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
+        const Teuchos::RCP<TreeVector>& u) {
+
+  // Approach 2
+  if (modify_predictor_spurt_damping_) {
+    const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+
+    Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =
+        u->SubVector(i_surf_)->Data()->Mesh();
+    int ncells_surf = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+    Epetra_MultiVector& surf_pnew_c = *u->SubVector(i_surf_)->Data()
+        ->ViewComponent("cell",false);
+    Epetra_MultiVector& domain_pnew_f = *u->SubVector(i_domain_)->Data()
+        ->ViewComponent("face",false);
+    const Epetra_MultiVector& domain_pold_f =
+        *S_->GetFieldData("pressure")->ViewComponent("face",false);
+
+
+    double damp = 1.;
+    for (unsigned int cs=0; cs!=ncells_surf; ++cs) {
+      AmanziMesh::Entity_ID f =
+          surf_mesh->entity_get_parent(AmanziMesh::CELL, cs);
+      double p_old = domain_pold_f[0][f];
+      double p_new = domain_pnew_f[0][f];
+      if ((p_new > patm + cap_size_) && (p_old < patm)) {
+        // first over
+        double my_damp = ((patm + cap_size_) - p_old) / (p_new - p_old);
+        damp = std::min(damp, my_damp);
+      } else if ((p_old > patm) && (p_new - p_old > p_old - patm)) {
+        // second over
+        double my_damp = ((patm + 2*(p_old - patm)) - p_old) / (p_new - p_old);
+        damp = std::min(damp, my_damp);
+      }
+    }
+
+    double proc_damp = damp;
+    domain_pnew_f.Comm().MinAll(&proc_damp, &damp, 1);
+    if (damp < 1.0) {
+      if (vo_->os_OK(Teuchos::VERB_HIGH))
+        *vo_->os() << "  DAMPING THE SPURT!, coef = " << damp << std::endl;
+
+      // apply the damping
+      Teuchos::RCP<const CompositeVector> domain_pold = S_->GetFieldData("pressure");
+      Teuchos::RCP<CompositeVector> domain_pnew = u->SubVector(i_domain_)->Data();
+      domain_pnew->Update(1. - damp, *domain_pold, damp);
+      
+      // undamp and cap the surface
+      for (unsigned int cs=0; cs!=ncells_surf; ++cs) {
+        AmanziMesh::Entity_ID f =
+            surf_mesh->entity_get_parent(AmanziMesh::CELL, cs);
+        double p_old = domain_pold_f[0][f];
+        double p_new = (domain_pnew_f[0][f] - p_old) / damp + p_old;
+        if ((p_new > patm + cap_size_) && (p_old < patm)) {
+          // first over
+          domain_pnew_f[0][f] = patm + cap_size_;
+          surf_pnew_c[0][cs] = domain_pnew_f[0][f];
+        } else if ((p_old > patm) && (p_new - p_old > p_old - patm)) {
+          // second over
+          domain_pnew_f[0][f] = patm + 2*(p_old - patm);
+          surf_pnew_c[0][cs] = domain_pnew_f[0][f];
+        } else {
+          surf_pnew_c[0][cs] = domain_pnew_f[0][f];
+        }
+      }
+    }    
+
+    return damp < 1.0;
+  }
+
+  return false;
+}
+
+
+// modify predictor via heuristic stops spurting in the surface flow
+bool
+MPCDelegateWater::ModifyPredictor_TempFromSource(double h, const Teuchos::RCP<TreeVector>& u) {
+  bool modified = false;
+  if (modify_predictor_tempfromsource_) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH))
+      *vo_->os() << "  MPCWaterCoupler: Modifying predictor, taking surface temperature from source." << std::endl;
+
+    Epetra_MultiVector& surf_Tnew_c = *u->SubVector(i_Tsurf_)->Data()
+        ->ViewComponent("cell",false);
+    Epetra_MultiVector& domain_Tnew_f = *u->SubVector(i_Tdomain_)->Data()
+        ->ViewComponent("face",false);
+    const Epetra_MultiVector& Told = *S_->GetFieldData("surface_temperature")
+        ->ViewComponent("cell",false);
+    const Epetra_MultiVector& Tsource = *S_next_->GetFieldData("surface_mass_source_temperature")
+        ->ViewComponent("cell",false);    
+    const Epetra_MultiVector& hold = *S_->GetFieldData("ponded_depth")
+        ->ViewComponent("cell",false);
+    const Epetra_MultiVector& dhsource = *S_->GetFieldData("surface_mass_source")
+        ->ViewComponent("cell",false);
+
+    Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =
+        u->SubVector(i_surf_)->Data()->Mesh();
+
+    for (unsigned int c=0; c!=surf_Tnew_c.MyLength(); ++c) {
+      // take a weighted average of old and source temps, weighted by height
+      surf_Tnew_c[0][c] = (Told[0][c] * hold[0][c]
+                           + Tsource[0][c] * dhsource[0][c] * h) /
+          (hold[0][c] + dhsource[0][c] * h);
+      AmanziMesh::Entity_ID f =
+          surf_mesh->entity_get_parent(AmanziMesh::CELL, c);
+      domain_Tnew_f[0][f] = surf_Tnew_c[0][c];
+    }
+    modified = true;
+  }
+  return modified;
+}
+
+} // namespace
