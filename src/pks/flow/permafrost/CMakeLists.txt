@@ -9,7 +9,10 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm/mo
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/richards)
+
 add_library(pk_flow_permafrost permafrost_pk.cc permafrost_water_content.cc)
+
+install(TARGETS pk_flow_permafrost DESTINATION lib)
 
 # if ( BUILD_TESTS )
 #     # Add UnitTest includes

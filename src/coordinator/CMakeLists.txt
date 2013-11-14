@@ -13,3 +13,5 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/deform)
 
 add_library(coordinator coordinator.cc)
 
+install(TARGETS coordinator DESTINATION lib)
+

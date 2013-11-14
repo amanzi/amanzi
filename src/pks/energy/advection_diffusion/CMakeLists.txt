@@ -5,7 +5,10 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/bc_factory)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/bc_factory)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
+
 add_library(pk_energy_advection_diffusion advection_diffusion_pk.cc advection_diffusion_ti.cc advection_diffusion_physics.cc)
+
+install(TARGETS pk_energy_advection_diffusion DESTINATION lib)
 
 # if ( BUILD_TESTS )
 #   set(pk_factory -Wl,--whole-archive pk_factory -Wl,--no-whole-archive)

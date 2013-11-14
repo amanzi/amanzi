@@ -13,3 +13,6 @@ add_library(pk_flow_icy_overland
     icy_height_evaluator.cc
     overland_head_icy_water_content_evaluator.cc)
 
+install(TARGETS pk_flow_icy_overland DESTINATION lib)
+
+

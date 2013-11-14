@@ -22,6 +22,7 @@ add_library(relations_eos
   effective_pressure_evaluator.cc
  )
 
+install(TARGETS relations_eos DESTINATION lib )
 
 #add_library(relations_eos_factory eos_factory.cc)
 #add_library(relations_eos eos_water.cc eos_ideal_gas.cc )

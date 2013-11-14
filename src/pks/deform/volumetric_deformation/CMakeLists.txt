@@ -9,3 +9,5 @@ include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
 add_definitions("-DMSTK_HAVE_MPI")
 
 add_library(pk_volumetric_deformation volumetric_deformation.cc)
+
+install(TARGETS pk_volumetric_deformation DESTINATION lib)

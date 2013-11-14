@@ -36,6 +36,7 @@ add_library(mpc
   mpc_permafrost.cc
   mpc_permafrost2.cc)
 
+install(TARGETS mpc DESTINATION lib)
 
 
 # register factories

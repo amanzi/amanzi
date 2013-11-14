@@ -20,4 +20,6 @@ include_directories(${ATS_SOURCE_DIR}/src/pks)
 #
 add_library(darcy DarcyProblem.cc DarcyPK.cc)
 
+install(TARGETS darcy DESTINATION lib)
+
 

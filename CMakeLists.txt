@@ -6,7 +6,7 @@
 #
 
 # Require cmake 2.8 or higher
-cmake_minimum_required(VERSION 2.8.2)
+cmake_minimum_required(VERSION 2.8.8)
 
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
@@ -16,8 +16,11 @@ set(BUILD_TESTS true)
 # This command will define
 #     ATS_SOURCE_DIR
 #     ATS_BINARY_DIR
-project(ATS)
+project(ATS CXX C Fortran)
 message(STATUS "in ats_dir: ATS_SOURCE_DIR=${ATS_SOURCE_DIR}")
+
+set(ATS_MODULE_PATH "${ATS_SOURCE_DIR}/tools/cmake")
+set(CMAKE_MODULE_PATH ${ATS_MODULE_PATH})
 
 # --------------------------------------------------------------------------- #
 # Search for Amanzi
@@ -39,12 +42,14 @@ endif()
 # --------------------------------------------------------------------------- #
 #  Define the compilers
 # --------------------------------------------------------------------------- #
+
 set(CMAKE_C_COMPILER ${Amanzi_C_COMPILER})
 set(CMAKE_CXX_COMPILER ${Amanzi_CXX_COMPILER})
 set(CMAKE_Fortran_COMPILER ${Amanzi_Fortran_COMPILER})
 set(CMAKE_C_FLAGS ${Amanzi_C_COMPILER_FLAGS})
 set(CMAKE_CXX_FLAGS ${Amanzi_CXX_COMPILER_FLAGS})
 set(CMAKE_Fortran_FLAGS ${Amanzi_Fortran_COMPILER_FLAGS})
+
 if (${PROFILE_FLAGS})
   set(CMAKE_BUILD_TYPE Release)
   add_definitions("-g -O3")
@@ -53,6 +58,22 @@ endif()
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   add_definitions(-DENABLE_DBC)
 endif()
+
+message(STATUS " --- CMAKE_C_COMPILER ${CMAKE_C_COMPILER} ")
+message(STATUS " --- CMAKE_CXX_COMPILER ${CMAKE_CXX_COMPILER} ")
+message(STATUS " --- CMAKE_Fortran_COMPILER ${CMAKE_Fortran_COMPILER} ")
+
+if (Amanzi_DISABLE_MPI_CXX_BINDINGS)
+  add_definitions("-DOMPI_SKIP_MPICXX -DMPICH_SKIP_MPICXX")
+endif()
+
+# Should pass this from Amanzi as well (but flags should be set already).
+option(FORTRAN_SINGLE_UNDERSCORE "Use single-underscore in Fortran name-mangling" FALSE)
+if (DISABLE_MPI_CXX_BINDINGS)
+  set(FORTRAN_SINGLE_UNDERSCORE TRUE)
+endif()
+
+#find_package(MPI QUIET)
 
 # --------------------------------------------------------------------------- #
 #  Define the include paths
@@ -87,7 +108,6 @@ if ( Amanzi_TPL_STK_ENABLED )
   add_definitions(-DENABLE_STK_Mesh)
 endif()
 
-
 # enable structured/unstructured
 if ( Amanzi_ENABLE_UNSTRUCTURED )
   add_definitions(-DENABLE_Unstructured)
@@ -110,6 +130,9 @@ link_directories(${Amanzi_TPL_Trilinos_LIBRARY_DIRS})
 
 # add the macros that help with registration of factories
 include(${Amanzi_LIBRARY_DIR}/RegisterEvaluators.cmake)
+
+
+
 
 # --------------------------------------------------------------------------- #
 #  Building against Amanzi

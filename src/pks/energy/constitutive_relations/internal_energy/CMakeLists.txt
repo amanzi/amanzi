@@ -14,3 +14,6 @@ add_library(energy_relations_internal_energy
              iem_water_vapor_evaluator.cc
              iem_water_vapor.cc
              )
+
+install(TARGETS energy_relations_internal_energy DESTINATION lib)
+
