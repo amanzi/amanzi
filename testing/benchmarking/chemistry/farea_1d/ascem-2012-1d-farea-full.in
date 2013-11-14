@@ -68,8 +68,8 @@ CHEMISTRY
 
   MINERALS
     Quartz
-    Kaolinite
     Goethite
+    Kaolinite
     Schoepite
     Gibbsite
     Jurbanite
@@ -150,8 +150,8 @@ CHEMISTRY
     primary_species
     total_sorbed
     Quartz
-    Kaolinite
     Goethite
+    Kaolinite
     Schoepite
     Gibbsite
     Jurbanite
@@ -278,13 +278,14 @@ CONSTRAINT background
   /
   MINERALS : volume_fraction   SSA [cm^2 mineral/cm^3 bulk]
     Quartz        0.88      3262.3 cm^2/cm^3
-    Kaolinite     0.11     59093.9 cm^2/cm^3
     Goethite      0.016    11076.3 cm^2/cm^3
+    Kaolinite     0.11     59093.9 cm^2/cm^3
     Schoepite     0.0      0.1 cm^2/cm^3
     Gibbsite      0.0      0.1 cm^2/cm^3
+    Jurbanite     0.0      0.1 cm^2/cm^3
     Basaluminite  0.0      0.1 cm^2/cm^3
     Opal          0.0      0.1 cm^2/cm^3
-    Jurbanite     0.0      0.1 cm^2/cm^3
+
   /
 
 END
@@ -309,13 +310,13 @@ CONSTRAINT seepage
   /
   MINERALS : volume_fraction   SSA [cm^2 mineral/cm^3 bulk]
     Quartz        0.88      3262.3 cm^2/cm^3
-    Kaolinite     0.11     59093.9 cm^2/cm^3
     Goethite      0.016    11076.3 cm^2/cm^3
+    Kaolinite     0.11     59093.9 cm^2/cm^3
     Schoepite     0.0      0.1 cm^2/cm^3
     Gibbsite      0.0      0.1 cm^2/cm^3
+    Jurbanite     0.0      0.1 cm^2/cm^3
     Basaluminite  0.0      0.1 cm^2/cm^3
     Opal          0.0      0.1 cm^2/cm^3
-    Jurbanite     0.0      0.1 cm^2/cm^3
   /
 
 END

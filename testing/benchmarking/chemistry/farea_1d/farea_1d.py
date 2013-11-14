@@ -92,11 +92,11 @@ if __name__ == "__main__":
     timesama  = ['71']
     
     # hardwired selected components / add or remove here
-    search = ['UO2++'] # ['Ca++','Mg++','K+','Cl-'] # ['Ca++', 'Mg++','SiO2(aq)']
+    search = ['Ca++','Mg++','K+','Cl-'] # ['UO2++'] # ['Ca++','Mg++','K+','Cl-'] # ['Ca++', 'Mg++','SiO2(aq)']
     index = [components.index(comp) for comp in search]
 
     # hardwired selected minerals / add or remove here
-    searchm = ['Kaolinite'] #['Goethite', 'Kaolinite', 'Gibbsite']
+    searchm = ['Kaolinite'] #, 'Goethite', 'Kaolinite', 'Schoepite'] # ['Goethite'] #['Goethite', 'Kaolinite', 'Gibbsite']
     indexm = [minerals.index(min) for min in searchm] 
 
     # pflotran selected output
@@ -189,11 +189,11 @@ if __name__ == "__main__":
               v_amanzi_alquimia[i][j] = c_amanzi_alquimia
 
         # mineral volume fraction
-        v_amanzi_alquimia = [[[] for x in range(len(vfama))] for x in range(len(timesama))]
+        w_amanzi_alquimia = [[[] for x in range(len(vfama))] for x in range(len(timesama))]
         for i, time in enumerate(timesama):
            for j, vf in enumerate(vfama):
               x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,"farea-1d",time,vf)
-              v_amanzi_alquimia[i][j] = c_amanzi_alquimia
+              w_amanzi_alquimia[i][j] = c_amanzi_alquimia
 
         alq = True
 
