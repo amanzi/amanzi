@@ -41,7 +41,7 @@
         <Parameter name="Verify Mesh" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="Read Mesh File">
-        <Parameter name="File" type="string" value="../amanzi_dispersion_aligned_point_2d.exo"/>
+        <Parameter name="File" type="string" value="amanzi_dispersion_aligned_point_2d.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
       </ParameterList>
     </ParameterList>
