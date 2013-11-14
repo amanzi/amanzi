@@ -341,6 +341,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
         SurfaceEnergyBalance::SnowEnergyBalance(data);
         // Snow covered data 
         QcSnow = theta * data.st_energy.fQc;
+       
         MrSnow = data.st_energy.Mr - (data.st_energy.Pr / data.st_energy.Dt) + theta*(data.st_energy.Pr / data.st_energy.Dt);
         TrwSnow = data.st_energy.Trw * MrSnow;
        // Saving Snow data for next timestep
@@ -357,7 +358,6 @@ bool SurfaceBalanceSEB::advance(double dt) {
         }else{
            TrwGrnd = data.st_energy.Trw * MrGrnd;
         }
-
         // Calculating Data for ATS
         data.st_energy.fQc =  QcSnow + QcGrnd;
         data.st_energy.Mr = MrSnow + MrGrnd;
@@ -384,7 +384,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
     days_of_nosnow[0][c]=data.st_energy.nosnowdays;
 
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "Snow depth, temp = " << data.st_energy.ht_snow << ", " << data.vp_snow.temp << std::endl;
+      *vo_->os() << "Snow depth, snowtemp = " << data.st_energy.ht_snow << ", " << data.st_energy.Ts << std::endl;
     }
 
   }
