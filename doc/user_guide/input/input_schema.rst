@@ -347,16 +347,18 @@ Mesh
 A mesh must be defined for the simulation to be conducted on.  The
 mesh can be structured or unstructured.  Structured meshes are always
 internally generated while unstructured meshes may be generated
-internally or imported from an existing Exodus II file. Generated
+internally or imported from an existing `Exodus II
+<http://sourceforge.net/projects/exodusii/>`_ file. Generated
 meshes in both frameworks are always regular uniformly spaced meshes.
 
 Mesh parameters are specified in the ``mesh`` section. If the mesh is
 unstructured the opening tag of the ``mesh`` section takes an
-attribute called called ``framework`` which can take the value of
-``mstk``, ``moab`` or ``exodus ii``. This specifies which mesh
-infrastructure library is to be used for managing the mesh queries
-under-the-hood. In the case of a structure mesh this attribute is not
-used.
+*optional* expert attribute called called ``framework`` which can take
+the value of ``mstk``, ``stk::mesh``, ``moab`` or ``simple``. This
+specifies which mesh infrastructure library is to be used for managing
+the mesh queries under-the-hood. *Most users will not need to specify
+this attribute*. In the case of a structured mesh this attribute is
+not used.
 
 The ``mesh`` section takes a ``dimension`` element which indicates if
 the mesh is 2D or 3D. A 2D mesh can be given in 3D space with a third
