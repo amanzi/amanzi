@@ -19,7 +19,7 @@
 #include "boost/mpi.hpp"
 
 // Support for manipulating floating point exception handling.
-#define AMANZI_USE_FENV
+#ifdef AMANZI_USE_FENV
 #include <fenv.h>
 #endif
 
