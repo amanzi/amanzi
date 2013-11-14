@@ -12,8 +12,11 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/inte
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/enthalpy)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
+
 add_library(pk_energy_surface_ice
   surface_ice_energy_evaluator.cc
   energy_surface_ice.cc)
+
+install(TARGETS pk_energy_surface_ice DESTINATION lib)
 
 

@@ -11,8 +11,11 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
+
 add_library(pk_energy_three_phase three_phase_energy_evaluator.cc
   three_phase.cc)
+
+install(TARGETS pk_energy_three_phase DESTINATION lib)
 
 # if ( BUILD_TESTS )
 #   set(pk_factory -Wl,--whole-archive pk_factory -Wl,--no-whole-archive)
