@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 
-#include "dbc.hh"
+//#include "dbc.hh"
 #include "SnowEnergyBalance.hh"
 
 /* THIS CODE WILL CALCULATE THE SNOWSURFACE ENERGY BALANCE THE SNOW SURFACE TEMPERUATURE.
@@ -49,7 +49,12 @@ void SurfaceEnergyBalance::CalcEFluxTempDependent (LocalData& seb, double T) {
   seb.st_energy.fQe = seb.st_energy.rowaLs*seb.st_energy.Dhe*Sqig*0.622*((seb.vp_air.actual_vaporpressure-seb.vp_snow.saturated_vaporpressure)/seb.st_energy.Apa);
 
   // Calculate heat conducted to ground
-  seb.st_energy.fQc = seb.st_energy.snow_conduct_value*(T-seb.st_energy.Tb)/seb.st_energy.ht_snow;
+       // if (seb.st_energy.ht_snow<=0.009) { // if Zs really really small Qc = -Ks*(Ts-Tb)/Zs;  --> blows up
+       //     seb.st_energy.fQc = seb.st_energy.snow_conduct_value*(T-seb.st_energy.Tb)/seb.st_energy.snow_groundTrans;
+       // }else{
+       //seb.st_energy.fQc = seb.st_energy.snow_conduct_value*(T-seb.st_energy.Tb)/seb.st_energy.ht_snow;
+       //  }
+    seb.st_energy.fQc = seb.st_energy.snow_conduct_value*(T-seb.st_energy.Tb);
 }
 
 
@@ -70,25 +75,57 @@ void SurfaceEnergyBalance::VaporCalc (VaporPressure& vp) {
 
 
 // #### FUNCTIONS TO CALCULATE ALBEDO
+//void SurfaceEnergyBalance::AlbedoCalc (EnergyBalance& eb) {
+//  // If snow is present
+//  if (eb.ht_snow>0.0) {
+//    // Albedo -- Ling and Zhang (2004) Method
+//    if (eb.density_snow<=432.238) {
+//      eb.albedo_value=1.0-0.247*(std::pow((0.16+110*std::pow((eb.density_snow/1000),4)),0.5));
+//    } else {
+//      eb.albedo_value=0.6-(eb.density_snow/4600);
+//    }
+//  } else {
+//    //If no snow is present Calculate Surface Albedo
+//    if (eb.water_depth>0.0) {// Checking for standing water oughta be deeper then the plants that stand say 10 cm
+//      eb.albedo_value=0.6; // ******* Refine the albedo calculation using clm *****
+//    }
+//    if (eb.water_depth<=0.0) {
+//      eb.albedo_value=0.15; // Albedo for Tundra heather  Dingman Table D-2
+//    }
+//  }
+//}
+
+// #### FUNCTIONS TO CALCULATE ALBEDO
 void SurfaceEnergyBalance::AlbedoCalc (EnergyBalance& eb) {
-  // If snow is present
-  if (eb.ht_snow>0.0) {
-    // Albedo -- Ling and Zhang (2004) Method
-    if (eb.density_snow<=450) {
-      eb.albedo_value=1.0-0.247*(std::pow((0.16+110*std::pow((eb.density_snow/1000),4)),0.5));
+    double perSnow = 0.0, perTundra=0.0, perWater=0.0;
+    double AlTundra=0.15, AlWater=0.6;
+    double AlSnow = 0.0;
+    double TransitionVal=eb.AlbedoTrans;  // Set to 2 cm
+
+    if (eb.density_snow<=432.238) {
+        AlSnow=1.0-0.247*(std::pow((0.16+110*std::pow((eb.density_snow/1000),4)),0.5));
     } else {
-      eb.albedo_value=0.6-(eb.density_snow/4600);
+        AlSnow=0.6-(eb.density_snow/4600);
     }
-  } else {
-    //If no snow is present Calculate Surface Albedo
-    if (eb.water_depth>0.0) {// Checking for standing water oughta be deeper then the plants that stand say 10 cm
-      eb.albedo_value=0.6; // ******* Refine the albedo calculation using clm *****
+    if (eb.ht_snow>TransitionVal) {
+        perSnow = 1;  // Snow is too deep for albedo wt ave
+    }else{
+        if (eb.water_depth<=0.0) {  // dry ground
+            perSnow = pow((eb.ht_snow/TransitionVal),2); // Transition to dry ground
+            perTundra = 1-perSnow;
+        }else {
+            if (eb.ht_snow>TransitionVal) { // Transition for surface water albedo = 1cm
+                perSnow = 1;  // Snow is too deep over surface water for albedo wt ave
+            }else{
+               perSnow = eb.ht_snow/TransitionVal;  // Transitions to surface water
+               perWater = 1-perSnow;
+            }
+        }
     }
-    if (eb.water_depth<=0.0) {
-      eb.albedo_value=0.15; // Albedo for Tundra heather  Dingman Table D-2
-    }
-  }
+    // weighted vaverage function for surface albedo
+    eb.albedo_value = ((AlSnow*perSnow)+(AlTundra*perTundra)+(AlWater*perWater))/(perSnow + perTundra + perWater);
 }
+
 
 
 // ### FUNCTION TO CALCULATE THERMAL CONDUCTIVITY OF SNOW
@@ -113,8 +150,8 @@ double SurfaceEnergyBalance::BisectionZeroFunction(LocalData& seb, double Xx) {
   CalcEFluxTempDependent(seb, Xx);
 
   // BALANCE EQUATION
-  double ZERO = seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut + seb.st_energy.fQh
-      + seb.st_energy.fQe - seb.st_energy.fQc;
+  double ZERO = seb.st_energy.ht_snow * (seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut + seb.st_energy.fQh
+      + seb.st_energy.fQe) - seb.st_energy.fQc;
   return ZERO;
 }
 
@@ -125,7 +162,6 @@ void SurfaceEnergyBalance::BisectionEnergyCalc (LocalData& seb) {
 
   double Xx = seb.st_energy.air_temp;
   double FXx = BisectionZeroFunction(seb, Xx);
-
   // NOTE: decreasing function
   double a,b,Fa,Fb;
   if (FXx > 0) {
@@ -152,7 +188,7 @@ void SurfaceEnergyBalance::BisectionEnergyCalc (LocalData& seb) {
     }
   }
 
-  ASSERT(Fa*Fb < 0);
+ // ASSERT(Fa*Fb < 0);
 
   int maxIterations = 200;
   double res;
@@ -173,8 +209,7 @@ void SurfaceEnergyBalance::BisectionEnergyCalc (LocalData& seb) {
   }//End Bisection Interatiion Loop  Solve for Ts using Energy balance equation ##################################
 
   if (std::abs(res) >= tol) {
-    std::cout << "Bisection failed to converge: interval=[" << b << "," << a << "], res = " << res << std::endl;
-    ASSERT(0);
+  //  ASSERT(0);
   }
   seb.st_energy.Ts=Xx;
 }
@@ -190,8 +225,14 @@ void SurfaceEnergyBalance::MeltEnergyCalc (LocalData& seb) {
   CalcEFluxTempDependent(seb, seb.st_energy.Ts);
 
   // Melt energy is the balance
-  seb.st_energy.Qm = seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut
-      + seb.st_energy.fQh + seb.st_energy.fQe - seb.st_energy.fQc;
+  seb.st_energy.Qm = seb.st_energy.ht_snow * (seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut
+      + seb.st_energy.fQh + seb.st_energy.fQe) - seb.st_energy.fQc;
+    
+    if (seb.st_energy.ht_snow<=seb.st_energy.snow_groundTrans) { // if Zs really really small Qc = -Ks*(Ts-Tb)/Zs;  --> blows up
+         seb.st_energy.Qm = seb.st_energy.Qm/seb.st_energy.snow_groundTrans;
+     }else{
+    seb.st_energy.Qm = seb.st_energy.Qm/seb.st_energy.ht_snow;
+      }
 }
 
 
@@ -209,7 +250,11 @@ void SurfaceEnergyBalance::GroundEnergyCalc (LocalData& seb) {
     Sqig = 0.;
   } else {
     double Ri = ((seb.st_energy.gZr*(seb.st_energy.air_temp-seb.st_energy.Tb))/(seb.st_energy.air_temp*std::pow(seb.st_energy.Us,2)));
+      if (Ri<0) {// Unstable condition
+          Sqig = (1-10*Ri);
+      }else{// Stable Condition
     Sqig = (1/(1+10*Ri));
+      }
   }
 
   seb.st_energy.fQh = seb.st_energy.rowaCp*seb.st_energy.Dhe*Sqig*(seb.st_energy.air_temp-seb.st_energy.Tb);
@@ -226,13 +271,44 @@ void SurfaceEnergyBalance::GroundEnergyCalc (LocalData& seb) {
 }
 
 
-//  FUNCTION TO CALCULATE MELT & SUBLIMATION RATE WHEN SNOW IS PRESSENT
-void SurfaceEnergyBalance::MeltSublRateCalc (LocalData& seb) {
-  // Calculate water melted  *** Equation from UEB (49)
-  seb.st_energy.Mr=seb.st_energy.Qm/(seb.st_energy.density_w*seb.st_energy.Hf);      // Mr=Qm/(ROWw*Hf);
-  seb.st_energy.Ml=seb.st_energy.Mr*seb.st_energy.Dt;                                        // Ml=Mr*Dt;
-  seb.st_energy.SublR=-seb.st_energy.fQe/(seb.st_energy.density_w*seb.st_energy.Ls); // SublR=-fQe/(ROWw*Ls);  // SublR is a rate [m/s]
-  seb.st_energy.SublL=seb.st_energy.SublR*seb.st_energy.Dt;                                  // SublL=SublR*Dt; // SublL is a swe lenght [m]
+// FUNCTION TO CALCULATE Qc CONDUCTIVE HEAT FLUX THROUGH THE SNOW PACK
+// This value needs to be calculated here because Zs was multiblied through Energy balance equation
+// in order to avoid    Qc = -Ks*(Ts-Tb)/Zs;  --> blowing up when Zs is really small
+void SurfaceEnergyBalance::CalcQc (LocalData& seb){
+    // Calculate heat conducted to ground
+     if (seb.st_energy.ht_snow<=seb.st_energy.snow_groundTrans) { // if Zs really really small Qc = -Ks*(Ts-Tb)/Zs;  --> blows up
+         seb.st_energy.fQc = seb.st_energy.snow_conduct_value*(seb.st_energy.Ts-seb.st_energy.Tb)/seb.st_energy.snow_groundTrans;
+     }else{
+    seb.st_energy.fQc = seb.st_energy.snow_conduct_value*(seb.st_energy.Ts-seb.st_energy.Tb)/seb.st_energy.ht_snow;
+      }
+}
+
+
+//  FUNCTION TO CALCULATE & SUBLIMATION RATE & MELT WHEN SNOW IS PRESSENT
+void SurfaceEnergyBalance::MeltSublRateCalc (EnergyBalance& eb) {
+    eb.SublR=-eb.fQe/(eb.density_w*eb.Ls); // SublR=-fQe/(ROWw*Ls);  // SublR is a rate [m/s]
+    eb.SublL=eb.SublR*eb.Dt;
+    if ((eb.Ts==273.15)&&(eb.SublL<0)){// Snow is melting, surface temp = 0 C and condensation is applied as water and drains through snow.  Therefore added directly to Melt
+        eb.Mr= -eb.SublR;  //### if CiL is neglected REMOVE THIS LINE AND SET Mr to 0. !!!!!!!!!!!!!
+        eb.SublL=0;
+    }else{
+        eb.Mr=0;
+    }
+  // CALCULATING CONDINSATION LENGHT OF FROST ON SNOW
+  //if (SublL<0) {    //briefly changing SublL into snow (frost) lenght units *** This is for condensation ****
+  //    CiL=-SublL*ROWw/ROWfrost, SublL=0 };  // I assume that ice is condensing on the snow surface therefore density is near that of ice
+  //if (SublL>=0) {   //briefly changing SublL into snow lengh units *** This is for sublimation ****
+  //    SublL=SublL*ROWw/ROWs };
+    if (eb.SublL<0) {    //briefly changing SublL into snow (frost) lenght units *** This is for condensation ****
+        eb.CiL = -eb.SublL * eb.density_w / eb.density_frost;  // Assume ice is condensing on snow surface with a density near ice ~> 800[kg/m^3]
+        eb.SublL = 0;
+    } else {   //briefly changing SublL into snow lengh units *** This is for sublimation ****
+        eb.SublL = eb.SublL * eb.density_w / eb.density_snow;
+        eb.CiL = 0.;
+    }
+    // Calculate water melted  *** Equation from UEB (49)
+    eb.Mr=eb.Mr + eb.Qm/(eb.density_w*eb.Hf);      // Change Mr = Qm/(ROWw*Hf) to --> Mr = Qm/(ROWw*Hf) + (Pr/Dt); ** this will mean changing DeltaSnowPack & WaterMassCorr
+    eb.Ml=eb.Mr*eb.Dt;                                // Ml=Mr*Dt;
 }
 
 
@@ -255,24 +331,13 @@ void SurfaceEnergyBalance::EvapCalc (EnergyBalance& eb) {
     SublL, Ml, Are always in SWE
 */
 void SurfaceEnergyBalance::DeltaSnowPack (EnergyBalance& eb) {
-  //if (SublL<0) {    //briefly changing SublL into snow (frost) lenght units *** This is for condensation ****
-  //    CiL=-SublL*ROWw/ROWfrost, SublL=0 };  // I assume that ice is condensing on the snow surface therefore density is near that of ice
-  //if (SublL>=0) {   //briefly changing SublL into snow lengh units *** This is for sublimation ****
-  //    SublL=SublL*ROWw/ROWs };
   //TotwLoss = Ml*(ROWw/ROWs) + SublL - CiL;  //Calculate change in snow pack
   //if (SublL>=0) {  SublL=SublL*ROWs/ROWw };                     //Changing SublL back to SWE *** This is for sublimation ****
-  if (eb.SublL<0) {    //briefly changing SublL into snow (frost) lenght units *** This is for condensation ****
-    eb.CiL = -eb.SublL * eb.density_w / eb.density_frost;  // Assume ice is condensing on snow surface with a density near ice ~> 800[kg/m^3]
-    eb.SublL = 0;
-  } else {   //briefly changing SublL into snow lengh units *** This is for sublimation ****
-    eb.SublL = eb.SublL * eb.density_w / eb.density_snow;
-    eb.CiL = 0.;
-  }
-
+   double MLl= eb.Ml * (eb.density_w / eb.density_snow);
   eb.TotwLoss = eb.Ml * (eb.density_w / eb.density_snow) + eb.SublL - eb.CiL;  //Calculate change in snow pack
 
   if (eb.SublL >= 0) { //Changing SublL back to SWE *** This is for sublimation ****
-    eb.SublL = eb.SublL * eb.density_freshsnow / eb.density_w;
+    eb.SublL = eb.SublL * eb.density_snow / eb.density_w;
   }
 }
 
@@ -292,12 +357,11 @@ void SurfaceEnergyBalance::WaterMassCorr(EnergyBalance& eb) {
   double TZs = eb.density_snow/eb.density_w;
   if (eb.Ml>0) {
     if (eb.SublL>0) {               // When SublL is great then 0 Sublimation! Find the ratio of water atributed to SublL and subtract it from the water delivered to ATS
-
       eb.SublL=(eb.SublL*(Tswe)/std::abs(eb.TotwLoss));  //SublL is temporarily changed to snow length
       eb.SublL=eb.SublL*eb.ht_snow*(TZs);  //SublL is changed back to SWE & ratio of avaialbe snowpack for sublimation is found
       eb.Ml=(eb.ht_snow+eb.Ps+(eb.SublL*(Tswe)))*(TZs);
     } else {
-      eb.Ml=(eb.ht_snow+eb.Ps+(eb.SublL*-1))*(TZs); //SublL is less then 0, Frost! Add it to water delivered to ATS
+      eb.Ml=(eb.ht_snow+eb.Ps+(eb.SublL*-1))*(TZs); //SublL is less then 0, Frost! Add it to water delivered to ATS  ***THIS SHOULD BE TAKEN OUT IF CiL IS NEGELTEDTED!!!!!!!!!!!!!*********
     }
   }
   if (eb.Ml==0) {
@@ -315,54 +379,72 @@ void SurfaceEnergyBalance::WaterMassCorr(EnergyBalance& eb) {
      When Zs < 0.009 [m] or 1 cm we callcualte energy balance fromt he soil surface
      *****  This is ONLY done with the snow is melting ******
      **  Otherwise Snow Energy Balance is calucalted **
+        ***** THIS IS NOW TURNED OFF ****** 
+ BECAUSE IT CAN NOT HANDLE WHEN SNOW ACCUMULATION IS REALLY SMALL
+ WHEN FOR EXAMPLE THE TIME STEP BECOMES REALLY SMALL ON A SNOW DAY
+   Maybe fix this if you got nothing better to do.
+ Now Zs can be no smaller then 0.009 *just for caluclating Qc*
      */
-void SurfaceEnergyBalance::TeenyTinySnowPack (LocalData& seb) {
-  seb.st_energy.Qm=seb.st_energy.Mr*(seb.st_energy.density_w*seb.st_energy.Hf); //Recalculating Qm based off of Snowpack limit
-  double ZsHold = seb.st_energy.ht_snow;
-  seb.st_energy.ht_snow=0.0;
-  AlbedoCalc(seb.st_energy); // Calculating Surface Albedo (No Snow)
-  seb.st_energy.fQswIn=(1-seb.st_energy.albedo_value)*seb.st_energy.QswIn;
-  GroundEnergyCalc(seb); //  Solving Energy balance for the ground
-  seb.st_energy.funcall="BARE-teenyseb";
-  seb.st_energy.ht_snow=ZsHold;
-  EvapCalc(seb.st_energy);//Calculating Evaporation from bare-ground "ht_snow" is keyed to *NOT* recalculate Ml because WaterMassCorr has already done that
-  seb.st_energy.Ml=seb.st_energy.Ml+seb.st_energy.Pr+seb.st_energy.EvL;
-}
+//void SurfaceEnergyBalance::TeenyTinySnowPack (LocalData& seb) {
+//  seb.st_energy.Qm=seb.st_energy.Mr*(seb.st_energy.density_w*seb.st_energy.Hf); //Recalculating Qm based off of Snowpack limit
+//  double ZsHold = seb.st_energy.ht_snow;
+//  seb.st_energy.ht_snow=0.0;
+//  AlbedoCalc(seb.st_energy); // Calculating Surface Albedo (No Snow)
+//  seb.st_energy.fQswIn=(1-seb.st_energy.albedo_value)*seb.st_energy.QswIn;
+//  GroundEnergyCalc(seb); //  Solving Energy balance for the ground
+//  seb.st_energy.funcall="BARE-teenyseb";
+//  seb.st_energy.ht_snow=ZsHold;
+//  EvapCalc(seb.st_energy);//Calculating Evaporation from bare-ground "ht_snow" is keyed to *NOT* recalculate Ml because WaterMassCorr has already done that
+//  seb.st_energy.Ml=seb.st_energy.Ml+seb.st_energy.Pr+seb.st_energy.EvL;
+//}
 
 
 // FUNCTION TO ADDS UP ALL THE CHANGES TO THE SNOWPACK
 void SurfaceEnergyBalance::SnowPackCalc (EnergyBalance& eb) {
   // Zs = Zs + Ps - TotwLoss;    // New formate
-  eb.ht_snow = eb.ht_snow + eb.Ps - eb.TotwLoss;  //DELTz is the new snowpack depth
-  ASSERT(eb.ht_snow >= 0.);
+    
+    if (eb.ht_snow>0) {
+  eb.ht_snow = eb.ht_Zs_settled + eb.Ps - eb.TotwLoss;  //DELTz is the new snowpack depth
+    }else{
+      eb.ht_snow = eb.ht_snow + eb.Ps - eb.TotwLoss;  
+    }
+//  ASSERT(eb.ht_snow >= 0.);
 }
 
 
 // FUNCTION TO TRACKS THE TIME (IN DAYS) WHERE NO NEW SNOW AS FALLEN ~> USED IN SNOW DENSITY
 void SurfaceEnergyBalance::TrackSnowDays (EnergyBalance& eb) {
-  if (eb.Ps < 0.0001) {//If less then a mm of snow
-    eb.nosnowdays += eb.Dt / 86400;
-  } else {
-    eb.nosnowdays = 0;
+    double Beta=((eb.ht_snow*eb.density_snow)+(eb.Ps*eb.density_freshsnow)+(eb.CiL*eb.density_frost));
+    if (eb.ht_snow>0) {        
+        eb.nosnowdays=(((eb.nosnowdays + (eb.Dt / 86400))*eb.ht_snow*eb.density_snow) + ((eb.Dt / 86400)*eb.Ps*eb.density_freshsnow)+((eb.NDSfrost + (eb.Dt / 86400))*eb.CiL*eb.density_frost))/Beta;
+    }else{
+     eb.nosnowdays = 0;   
+    }
+  //if (eb.Ps < 0.0001) {//If less then a mm of snow
+  //  eb.nosnowdays += eb.Dt / 86400;
+  //} else {
+  //  eb.nosnowdays = 0;
+ // }
   }
-}
 
+// CALCULATES SNOW DEFORMATION ~> NEW DENSITY AND HEIGHT OFF AGED SNOW 'LAYER' (Martinec, 1977)
+void SurfaceEnergyBalance::SnowDeformationModel (EnergyBalance& eb) {
+    // Track days with now snow and formulate snow deformation
+    double ndensity = std::pow((eb.nosnowdays+1),0.3);
+    eb.density_snow=eb.density_freshsnow*ndensity;// New Density of settled snow
+    eb.ht_Zs_settled = eb.ht_snow * (eb.HoldROWs / eb.density_snow); // New Height of settled snow
+}
 
 // FUNCTION TO CALCULATE SNOWPACK DENSITY ~> WEIGHTED AVERAGE OVER THREE POTEINTAL LAYERS OF SNOW
 void SurfaceEnergyBalance::SnowPackDensity (EnergyBalance& eb) {
-  ASSERT(eb.ht_snow >= 0.);
-
   if (eb.ht_snow == 0.) {
     eb.density_snow=100;
     eb.HoldROWs=100;
   } else {
-    // Track days with now snow and formulate snow deformation
-    double ndensity = std::pow((eb.nosnowdays+1),0.3);
-    eb.density_snow=eb.density_freshsnow*ndensity;
     //Weighted average of the three layers of the snowpack
-    //ROWs=((Ps*ROWfs)+(Zs*ROWs)+(CiL*ROWfrost))/(Ps+Zs+CiL);  // Wt. average for snow density
-    double denominator=eb.Ps+eb.ht_snow+eb.CiL;
-    eb.density_snow=((eb.Ps*eb.density_freshsnow)+(eb.ht_snow*eb.density_snow)+(eb.CiL*eb.density_frost))/(denominator);
+    //ROWs=((Ps*ROWfs)+(Zs_settled*ROWs)+(CiL*ROWfrost))/(Ps+Zs_settled+CiL);  // Wt. average for snow density
+    double denominator=eb.Ps+eb.ht_Zs_settled+eb.CiL;
+    eb.density_snow=((eb.Ps*eb.density_freshsnow)+(eb.ht_Zs_settled*eb.density_snow)+(eb.CiL*eb.density_frost))/(denominator);
     if (eb.density_snow>950) {// Capping snow density ~> it should NEVER get this dense anyway.
       eb.density_snow=950.1;
     }
@@ -377,7 +459,7 @@ void SurfaceEnergyBalance::SWE (EnergyBalance& eb) {
 
 // FUNCTION TO FIND TEMPURATURE OF WATER FLOWING INTP ATS
 void SurfaceEnergyBalance::WaterTemp(EnergyBalance& eb) {
-  if (eb.Ml<=0.0) {
+  if (eb.ht_snow<=0.0000001)  {
     eb.Trw=eb.air_temp;
   } else {
     eb.Trw=273.15;
@@ -415,10 +497,8 @@ void SurfaceEnergyBalance::SnowEnergyBalance (LocalData& seb) {
       MeltEnergyCalc(seb); // Recaculating Energy Balance when melt in occuring
       seb.st_energy.funcall="MELT";
     }
-
     // Calculating melt, sublimation, and condensation rate.
-    MeltSublRateCalc(seb);
-
+    MeltSublRateCalc(seb.st_energy);
     // Calculate the change in snowpack depth.
     DeltaSnowPack(seb.st_energy);
 
@@ -427,14 +507,19 @@ void SurfaceEnergyBalance::SnowEnergyBalance (LocalData& seb) {
       WaterMassCorr(seb.st_energy);
       seb.st_energy.funcall="Melt too small";
     }
-
+    // Rain on Snow = Rain water flows through snowpack added to water delivered to ATS & Assinged temperarture of 0 Celcius
+      seb.st_energy.Mr = seb.st_energy.Mr + (seb.st_energy.Pr / seb.st_energy.Dt);
+    // Correct Qc & check for small snowpack
+      CalcQc(seb);
+      
     // Check for small melting snowpack, which can cause super high Qc:
     // Qc = -Ks*(Ts-Tb)/Zs;  --> blows up
-    if (seb.st_energy.ht_snow<=0.009) {
-      if (seb.st_energy.Ts==273.15) {
-        TeenyTinySnowPack(seb);
-      }
-    }
+    //if (seb.st_energy.ht_snow<=0.009) {
+    //  if (seb.st_energy.Ts==273.15) {
+    //    TeenyTinySnowPack(seb);
+    //  }
+    //}
+
 
   } else { // no snow
     GroundEnergyCalc(seb);
@@ -442,22 +527,23 @@ void SurfaceEnergyBalance::SnowEnergyBalance (LocalData& seb) {
     EvapCalc(seb.st_energy);
     seb.st_energy.TotwLoss = 0.; // no snow to melt
   }
-
-  // Update days since last snow for snow pack deformation
-  TrackSnowDays(seb.st_energy);
+    
+  //Calculate Snow Deformation
+  seb.st_energy.HoldROWs=seb.st_energy.density_snow;
+  SnowDeformationModel(seb.st_energy);
 
   // Update snowpack density
-  seb.st_energy.HoldROWs=seb.st_energy.density_snow;
   SnowPackDensity(seb.st_energy);
 
   // Update snow height
-  seb.st_energy.HoldZs=seb.st_energy.ht_snow;
   SnowPackCalc(seb.st_energy);
-  if (seb.st_energy.ht_snow<=0.0000001) {
+  if (seb.st_energy.ht_snow<=0.0) {
     seb.st_energy.ht_snow=0.0;
   }
+  
+  // Update days since last snow for snow pack deformation
+  TrackSnowDays(seb.st_energy);
 
   // Calculate water temperature
   WaterTemp(seb.st_energy);
-
 }

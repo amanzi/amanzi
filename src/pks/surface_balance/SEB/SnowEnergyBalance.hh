@@ -90,6 +90,12 @@ struct EnergyBalance {
   double CiL;
   double TotwLoss;
 
+  double AlbedoTrans;
+  double snow_groundTrans;
+  double ht_Zs_settled;
+  double NDSfrost;
+
+
   double varvar;
   std::string funcall;
 
@@ -146,8 +152,13 @@ void MeltEnergyCalc (LocalData& dat);
 void GroundEnergyCalc (LocalData& dat);
 
 
+// FUNCTION TO CALCULATE Qc CONDUCTIVE HEAT FLUX THROUGH THE SNOW PACK
+// This value needs to be calculated here because Zs was multiblied through Energy balance equation
+// in order to avoid    Qc = -Ks*(Ts-Tb)/Zs;  --> blowing up when Zs is really small
+void CalcQc (LocalData& dat);
+
 //  FUNCTION TO CALCULATE MELT & SUBLIMATION RATE WHEN SNOW IS PRESSENT
-void MeltSublRateCalc (LocalData& dat);
+void MeltSublRateCalc (EnergyBalance& eb);
 
 
 //  FUNCTION TO CALCULATE MELT & SUBLIMATION RATE WHEN *NO* SNOW IS PRESSENT
@@ -176,6 +187,11 @@ void WaterMassCorr(EnergyBalance& eb);
      **  Otherwise Snow Energy Balance is calucalted ** */
 void TeenyTinySnowPack (LocalData& tiny);
 
+// CALCULATES SNOW DEFORMATION  ~> NEW DENSITY AND HEIGHT OFF AGED SNOW 'LAYER'
+void SnowDeformationModel(EnergyBalance& eb);
+
+// FUNCTION TO CALCULATE SNOWPACK DENSITY ~> WEIGHTED AVERAGE OVER THREE POTEINTAL LAYERS OF SNOW
+void SnowPackDensity (EnergyBalance& eb);
 
 // FUNCTION TO ADDS UP ALL THE CHANGES TO THE SNOWPACK
 void SnowPackCalc (EnergyBalance& eb);
@@ -184,14 +200,8 @@ void SnowPackCalc (EnergyBalance& eb);
 // FUNCTION TO TRACKS THE TIME (IN DAYS) WHERE NO NEW SNOW AS FALLEN ~> USED IN SNOW DENSITY
 void TrackSnowDays (EnergyBalance& eb);
 
-
-// FUNCTION TO CALCULATE SNOWPACK DENSITY ~> WEIGHTED AVERAGE OVER THREE POTEINTAL LAYERS OF SNOW
-void SnowPackDensity (EnergyBalance& eb);
-
-
 // FUNCTION TO CONVERT TO SWE TO FRESHLY FALLEN SNOW DEPTH
 void SWE (EnergyBalance& eb);
-
 
 // FUNCTION TO CALCULATE WATER TEMPURATER
 void WaterTemp (EnergyBalance& eb);

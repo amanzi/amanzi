@@ -21,6 +21,7 @@ add_library(pk_flow_richards
     richards_steadystate.cc
 )
 
+install(TARGETS pk_flow_richards DESTINATION lib)
 
 # if ( BUILD_TESTS )
 #     Add UnitTest includes

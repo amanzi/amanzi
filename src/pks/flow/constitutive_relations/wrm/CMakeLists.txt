@@ -18,3 +18,4 @@ add_library(flow_relations_wrm
   pc_ice_evaluator.cc
   )
 
+install(TARGETS flow_relations_wrm DESTINATION lib)

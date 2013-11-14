@@ -20,6 +20,7 @@ add_library(flow_relations_wrm_models
   wrm_fpd_permafrost_model.cc
   )
 
+install(TARGETS flow_relations_wrm_models DESTINATION lib)
 
 if ( BUILD_TESTS )
     include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})

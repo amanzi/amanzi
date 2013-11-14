@@ -16,3 +16,4 @@ add_library(pk_flow_overland_head
         effective_height_evaluator.cc
         overland_head_water_content_evaluator.cc)
 
+install(TARGETS pk_flow_overland_head DESTINATION lib)

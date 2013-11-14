@@ -85,6 +85,9 @@ class SurfaceBalanceSEB : public PKPhysicalBase {
 
   double dt_;
   double min_wind_speed_;
+  double albedo_trans_;
+  double snow_ground_trans_;
+
 
  private:
   // factory registration

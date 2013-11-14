@@ -10,9 +10,12 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/enth
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
+
 add_library(pk_energy_two_phase
   two_phase_energy_evaluator.cc
   two_phase.cc)
+
+install(TARGETS pk_energy_two_phase DESTINATION lib)
 
 # if ( BUILD_TESTS )
 #   set(pk_factory -Wl,--whole-archive pk_factory -Wl,--no-whole-archive)

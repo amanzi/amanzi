@@ -70,7 +70,14 @@ SurfaceBalanceSEB::SurfaceBalanceSEB(const Teuchos::RCP<Teuchos::ParameterList>&
   dt_ = plist_->get<double>("max time step", 1.e99);
 
   // min wind speed
-  min_wind_speed_ = plist_->get<double>("minimum wind speed", 0.5);
+  min_wind_speed_ = plist_->get<double>("minimum wind speed", 1.0);
+
+  // transition snow depth
+  snow_ground_trans_ = plist_->get<double>("minimum snow depth", 0.02);
+
+  // albedo transition depth
+  albedo_trans_ = plist_->get<double>("albedo transition depth", 0.02);
+
 }
 
 
@@ -210,7 +217,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
 
   data.st_energy.density_w = 1000;         // Density of Water ----------------- [kg/m^3]
   double density_air = 1.275;       // Density of Air ------------------- [kg/m^3]
-  data.st_energy.density_frost = 800;      // Density of Frost (condensation) -- [kg/m^3]
+  data.st_energy.density_frost = 200;      // Density of Frost (condensation) -- [kg/m^3]
   data.st_energy.density_freshsnow = 100;  // Density of Freshly fallebn snow -- [kg/m^3]
 
   data.st_energy.gZr = 9.807*data.st_energy.Zr;
@@ -222,6 +229,10 @@ bool SurfaceBalanceSEB::advance(double dt) {
   data.vp_ground.relative_humidity = 1.;
 
   data.st_energy.Dt = dt;
+  data.st_energy.AlbedoTrans = albedo_trans_;
+  data.st_energy.snow_groundTrans = snow_ground_trans_;
+//Calculating which Day frost density matched snow Defermation fucntion from (Martinec, 1977)
+  data.st_energy.NDSfrost = pow((data.st_energy.density_frost /data.st_energy.density_freshsnow),(1/0.3))-1;
 
   // Get all data
   // ATS CALCULATED
@@ -317,7 +328,49 @@ bool SurfaceBalanceSEB::advance(double dt) {
     data.st_energy.density_snow = snow_density[0][c];
     data.st_energy.nosnowdays = days_of_nosnow[0][c];
 
-    SurfaceEnergyBalance::SnowEnergyBalance(data);//.........);
+//     SurfaceEnergyBalance::SnowEnergyBalance(data);//.........);
+    // Snow-ground Smoothing 
+        if ((data.st_energy.ht_snow > data.st_energy.snow_groundTrans)||(data.st_energy.ht_snow <= 0)) {
+         SurfaceEnergyBalance::SnowEnergyBalance(data); // Running the Snow Energy Balance Model
+    }else{ // Transition between Snow and bare ground
+        double theta=0.0;
+        double QcSnow=0.0, QcGrnd=0.0, MrSnow=0.0, MrGrnd=0.0, TrwSnow=0.0, TrwGrnd=0.0;
+        double ZsHold=0.0, ROWsHold=0.0, nosnowdayHold=0.0;
+        // Fraction of snow covered ground
+        theta = pow ((data.st_energy.ht_snow / data.st_energy.snow_groundTrans),2);
+        SurfaceEnergyBalance::SnowEnergyBalance(data);
+        // Snow covered data 
+        QcSnow = theta * data.st_energy.fQc;
+       
+        MrSnow = data.st_energy.Mr - (data.st_energy.Pr / data.st_energy.Dt) + theta*(data.st_energy.Pr / data.st_energy.Dt);
+        TrwSnow = data.st_energy.Trw * MrSnow;
+       // Saving Snow data for next timestep
+        ZsHold = data.st_energy.ht_snow;
+        data.st_energy.ht_snow = 0;
+        ROWsHold = data.st_energy.density_snow;
+        nosnowdayHold = data.st_energy.nosnowdays;
+        SurfaceEnergyBalance::SnowEnergyBalance(data); // Running the Snow Energy Balance Model for groundcover portion
+        // Ground Cover Data
+        QcGrnd = (1-theta)*data.st_energy.fQc;
+        MrGrnd = (1-theta)*data.st_energy.Mr;
+        if (MrGrnd <= 0) {
+           TrwGrnd = 0; // No water
+        }else{
+           TrwGrnd = data.st_energy.Trw * MrGrnd;
+        }
+        // Calculating Data for ATS
+        data.st_energy.fQc =  QcSnow + QcGrnd;
+        data.st_energy.Mr = MrSnow + MrGrnd;
+        if ((MrSnow + MrGrnd) <= 0) {
+            data.st_energy.Trw = 0.0; // No Water delivered to ATS, therefore temperature of water is irrelevant. This also avoids dividing by 0
+        }else{
+            data.st_energy.Trw = (TrwSnow + TrwGrnd)/(MrSnow + MrGrnd); // Temperature of water delivered to ATS is averaged by rate/mass of water from snow and no snow areas
+        }
+        // Putting saved snow data back in place        
+        data.st_energy.ht_snow = ZsHold;
+        data.st_energy.density_snow = ROWsHold;
+        data.st_energy.nosnowdays = nosnowdayHold;
+      }
 
     // STUFF ATS WANTS
     // *** Ask Ethan about "surf_water_flux" naming convention ***
@@ -331,7 +384,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
     days_of_nosnow[0][c]=data.st_energy.nosnowdays;
 
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "Snow depth, temp = " << data.st_energy.ht_snow << ", " << data.vp_snow.temp << std::endl;
+      *vo_->os() << "Snow depth, snowtemp = " << data.st_energy.ht_snow << ", " << data.st_energy.Ts << std::endl;
     }
 
   }

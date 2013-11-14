@@ -9,3 +9,6 @@ add_definitions("-DMSTK_HAVE_MPI")
 
 add_library(deform_relations_porosity porosity_evaluator.cc)
 
+install(TARGETS deform_relations_porosity DESTINATION lib)
+
+

@@ -25,6 +25,8 @@ add_library(divgrad MatrixMFD.cc
                     upwind_scheme/upwind_potential_difference.cc
                     upwind_scheme/upwind_gravity_flux.cc)
 
+install(TARGETS divgrad DESTINATION lib)
+
 if (BUILD_TESTS)
     # Add UnitTest includes
     include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})

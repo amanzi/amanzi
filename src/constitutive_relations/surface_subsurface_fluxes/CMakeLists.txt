@@ -9,4 +9,6 @@ add_library(flow_relations_surface_subsurface_fluxes
   surface_top_cells_evaluator.cc
   )
 
+install(TARGETS flow_relations_surface_subsurface_fluxes DESTINATION lib )
+
 
