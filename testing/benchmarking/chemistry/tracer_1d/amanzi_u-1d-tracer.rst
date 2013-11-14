@@ -9,7 +9,7 @@ This test example performs the simulation of advective transport of a single con
 * 1D flow
 * 1D advective (single-component) transport 
 
-For details on this test, see About_.
+For details on this test, see :ref:`about_tracer`.
 
 Background
 ----------
@@ -80,7 +80,7 @@ In the figure below, the solution by Amanzi at time 50 years is compared to resu
 
 ..   :align: left
 
-.. _About:
+.. _about_tracer:
 
 About
 -----

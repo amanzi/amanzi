@@ -12,7 +12,7 @@ This test example performs the simulation of cation exchange on a single exchang
 
 	* Ion exchange (equilibrium)
 
-For details on this test, see About_.
+For details on this test, see :ref:`about_ion_exchange`.
 
 Background
 ----------
@@ -90,7 +90,7 @@ The figure below shows both the aqueous and sorbed concentrations of :math:`\ce{
 
 ..   :align: left
 
-.. _About:
+.. _about_ion_exchange:
 
 About
 -----

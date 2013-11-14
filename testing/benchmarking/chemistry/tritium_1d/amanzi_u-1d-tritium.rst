@@ -12,7 +12,7 @@ This test example performs the simulation of decay of tritium, a radioactive iso
 
 	* First order decay (aqueous kinetics)
 
-For details on this test, see About_.
+For details on this test, see :ref:`about_tritium`.
 
 Background
 ----------
@@ -77,7 +77,7 @@ In the figure below, the solution by Amanzi at time 50 years is compared to resu
 
 ..   :align: left
 
-.. _About:
+.. _about_tritium:
 
 About
 -----
