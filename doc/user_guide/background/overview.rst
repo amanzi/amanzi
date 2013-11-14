@@ -1,3 +1,4 @@
+.. _ASCEM Overview:
 ASCEM Overview
 --------------
 
@@ -11,9 +12,9 @@ Management (EM) to provide scientifically defensible and standardized
 assessments of the uncertainties and risks associated with the
 environmental cleanup and closure of its waste sites.
 
-The ASCEM program is organized into three Thrust Areas: 1) High
-Performance Computing (HPC) Multi-Process Simulator, 2) Platform and
-Integrated Toolsets, and 3) Site Applications. The HPC Thrust includes
+The ASCEM program is organized into three Thrust Areas: 1) *High
+Performance Computing (HPC) Multi-Process Simulator*, 2) *Platform and
+Integrated Toolsets*, and 3) *Site Applications*. The HPC Thrust includes
 structured and unstructured meshing approaches; new solvers for
 coupled physical and geo-biochemical processes; advanced methods of
 discretization in time and space; and capabilities to select, and
@@ -30,13 +31,12 @@ DOE EM’s remediation obligations.
 
 *Amanzi* is the flexible and extensible computational engine for
 ASCEM that will simulate the coupled processes described by the
-conceptual models developed using the ASCEM Platform, *Akuna*.
+conceptual models developed using the ASCEM user environment platform, *Akuna*.
 These conceptual models span a range of process complexity in flow and
 reactive-transport.  Detailed mathematical descriptions of these
-models are provided in the document entitled 
-"*Mathematical Formulation Requirements and Specifications
-for the Process Models*"`ASCEM-HPC-ProcessModels_2011`__.
+models are provided in the ASCEM document entitled `Mathematical
+Formulation Requirements and Specifications for the Process Models`_
 
+.. _Mathematical Formulation Requirements and Specifications for the Process Models: http://software.lanl.gov/ascem/trac/attachment/wiki/Documents/ASCEM-HPC-ProcessModels_2011-01-0a.pdf
 
-.. _ASCEM-HPC-ProcessModels_2011: https://software.lanl.gov/ascem/trac/attachment/wiki/Documents/ASCEM-HPC-ProcessModels_2011-01-0a.pdf
 
