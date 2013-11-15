@@ -1,4 +1,5 @@
 .. _Amanzi XML Schema :
+
 ============================================================
 Input File XML Schema 
 ============================================================
@@ -471,23 +472,34 @@ direction of the plane
 
   <plane name="plane name" location="x,y,z" normal="dx,dy,dz" />
 
+Labeled Set
+-----------
+
+A labeled set region is a predefined set of mesh entities defined in the Exodus II mesh file. This type of region is useful when applying boundary conditions on an irregular surface that has been tagged in the external mesh generator
+
+.. code-block:: xml
+
+  <region name="region name">
+      <region_file label="integer label" name="filename" type="labeled set" format="exodus ii" />
+  </region>
+
+Color function
+--------------
+
+A color function region defines a region based on a specified integer color in a structured color function file. The color values may be specified at the nodes or cells of the color function grid. A computational cell is assigned the color of the data grid cell containing its cell centroid or the data grid nearest its cell-centroid. Computational cell sets are then build from all cells with the specified color value. In order to avoid gaps and overlaps in specifying materials, it is strongly recommended that regions be defined using a single color function file.  At this time, Exodus II is the only file format available.
+
+.. code-block:: xml
+
+  <region name="region name">
+      <region_file label="integer label" name="filename" type="color" format="exodus ii" />
+  </region>
+
 .. EIB:  The following are not exposed through the current XML Schema, only the OLD input spec.  I've commented out the text until a future date when they might be exposed.
 
 .. Polygon
 .. -------
 
 .. A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points
-
-.. Labeled Set
-.. -----------
-
-.. A labeled set region is a predefined set of mesh entities defined in the Exodus II mesh file. This type of region is useful when applying boundary conditions on an irregular surface that has been tagged in the external mesh generator
-
-.. .. _Color Function Region:
-.. Color function
-.. --------------
-
-.. A color function region defines a region based on a specified integer color in a structured color function file. The color values may be specified at the nodes or cells of the color function grid. A computational cell is assigned the color of the data grid cell containing its cell centroid or the data grid nearest its cell-centroid. Computational cell sets are then build from all cells with the specified color value. In order to avoid gaps and overlaps in specifying materials, it is strongly recommended that regions be defined using a single color function file.
 
 .. Logical
 .. -------

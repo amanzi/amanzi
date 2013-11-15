@@ -25,11 +25,13 @@ install['tpls']={'from_file' : 'config/SuperBuild/INSTALL',
                  'index_entry' : 'building_tpls.rst',
                  }
 
-install['amanzi']={'from_dir' : 'doc/build_instructions',
-                   'dest_dir' : 'doc/user_guide/install',
+install['amanzi']={'from_file' : 'doc/build_instructions/build_instructions.rst',
+                   'dest_file' : 'doc/user_guide/install/build_instructions.rst',
                    'index_entry' : 'build_instructions.rst',
                   }
-install['bootstrap']={'index_entry' : 'building_bootstrap.rst', }
+install['bootstrap']={'from_file' : 'doc/build_instructions/building_bootstrap.rst',
+                      'dest_file' : 'doc/user_guide/install/building_bootstrap.rst',
+                      'index_entry' : 'building_bootstrap.rst', }
 
     
 #
@@ -229,7 +231,7 @@ sections={}
 #
 toc_user_guide = {'index_list' : [ 'background', 'quickstart', 'capabilities', 'input' ],
                   'background'   : { 'index_entry' : 'background/index.rst' },
-                  'quickstart'   : { 'index_entry' : 'install/getting_started.rst'},
+                  'quickstart'   : { 'index_entry' : 'background/getting_started.rst'},
                   'capabilities' : { 'index_entry' : 'capabilities/index.rst' },
                   'input'        : { 'index_entry' : 'input/index.rst'  },
             }

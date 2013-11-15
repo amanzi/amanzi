@@ -29,7 +29,7 @@ build.  The script can be found under the *config* subdirectory in the
 the requirements for the compilers, message passing interface (MPI)
 libraries, and the build tool CMake are satisfied.  Details for the
 requirements, optional components, and build scripts are provide in
-:ref:`Installation`
+:ref:`Quickstart Using Bootstrap <bootstrap>`
 
 Input Files
 ~~~~~~~~~~~
