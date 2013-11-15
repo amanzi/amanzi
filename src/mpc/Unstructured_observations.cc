@@ -16,6 +16,12 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
 						     Epetra_MpiComm* comm):
     observation_data(observation_data_)
 {
+
+  
+  Teuchos::ParameterList tmp_list;
+  tmp_list.set<std::string>("Verbosity Level","high");
+  vo_ = new VerboseObject("Amanzi::Unstructured_observations", tmp_list);
+
   // interpret paramerter list
   // loop over the sublists and create an observation for each
   for (Teuchos::ParameterList::ConstIterator i = observations_plist_.begin(); i != observations_plist_.end(); i++) {
@@ -145,10 +151,14 @@ void Unstructured_observations::make_observations(State& state)
       int dummy = mesh_block_size; 
       int global_mesh_block_size(0);
       state.GetMesh()->get_comm()->SumAll(&dummy,&global_mesh_block_size,1);
-      if (global_mesh_block_size == 0) {
-	Exceptions::amanzi_throw(Errors::Message("Cannot make an observation on an empty region: " + (i->second).region));
-      }
       
+      if (global_mesh_block_size == 0) {
+	// warn that this region is empty and bail
+	Teuchos::OSTab tab = vo_->getOSTab();
+	*(vo_->os()) << "Cannot make an observation on an empty region: " << (i->second).region << ", skipping" << endl;
+	continue;
+      }
+
       // is the user asking for a component concentration?
       int comp_index(0);
       if (comp_names_.size() > 0) {
