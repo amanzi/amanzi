@@ -32,6 +32,7 @@
 #   0.91.8       - updated Alquimia to licensed version 0.1
 #   0.91.9       - updated CCSE to version 1.2.4
 #   0.91.10      - updated MSTK to verion 2.10rc5
+#   0.91.11      - updated PFlotran to commit 1afe88d.
 #
 
 include(CMakeParseArguments)
@@ -82,7 +83,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 91)
-set (AMANZI_TPLS_VERSION_PATCH 10)
+set (AMANZI_TPLS_VERSION_PATCH 11)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -347,8 +348,8 @@ set(SEACAS_MD5_SUM        edd4cbb84ff5874dc96e846ceeab50b7)
 #
 set(PFLOTRAN_VERSION_MAJOR 0)
 set(PFLOTRAN_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-07032013-clean.tgz)
-set(PFLOTRAN_MD5_SUM        f81f285837e4490992e9dda2159e1baa)
+set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-1afe88d.tar.gz)
+set(PFLOTRAN_MD5_SUM        92a157f947f6508ac701358d77cd0412)
 
 #
 # TPL: Alquimia
