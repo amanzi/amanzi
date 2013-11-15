@@ -19,7 +19,8 @@
 #include "boost/mpi.hpp"
 
 // Support for manipulating floating point exception handling.
-#ifdef AMANZI_USE_FENV
+#ifdef _GNU_SOURCE
+#define AMANZI_USE_FENV
 #include <fenv.h>
 #endif
 
@@ -228,8 +229,10 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
   XMLParameters();
 
 #ifdef AMANZI_USE_FENV
-  // Disable floating point exceptions for dividing by zero.
-  int fpe_mask = fedisableexcept(FE_DIVBYZERO);
+  // Retrieve the currently set floating point exceptions.
+  int fpe_mask = fegetexcept();
+  // Disable floating point exceptions.
+  fedisableexcept(FE_DIVBYZERO);
 #endif 
 
   // FIXME: This is unnecessary--sizes given by the engine file should suffice.
@@ -999,8 +1002,10 @@ void Alquimia_Chemistry_PK::advance(
   int ierr = 0;
 
 #ifdef AMANZI_USE_FENV
-  // Disable floating point exceptions for dividing by zero.
-  int fpe_mask = fedisableexcept(FE_DIVBYZERO);
+  // Retrieve the currently set floating point exceptions.
+  int fpe_mask = fegetexcept();
+  // Disable floating point exceptions.
+  fedisableexcept(FE_DIVBYZERO);
 #endif 
 
   // First, we advance all cells for which we have boundary conditions.
