@@ -31,6 +31,7 @@
 #   0.91.7       - updated MSTK to version 2.10rc3
 #   0.91.8       - updated Alquimia to licensed version 0.1
 #   0.91.9       - updated CCSE to version 1.2.4
+#   0.91.10      - updated MSTK to verion 2.10rc5
 #
 
 include(CMakeParseArguments)
@@ -81,7 +82,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 91)
-set (AMANZI_TPLS_VERSION_PATCH 9)
+set (AMANZI_TPLS_VERSION_PATCH 10)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -249,11 +250,11 @@ set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
 #
 set(MSTK_VERSION_MAJOR 2)
 set(MSTK_VERSION_MINOR 10)
-set(MSTK_VERSION_PATCH rc3)
+set(MSTK_VERSION_PATCH rc5)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        9b7515af0e2895f97d483c0291546ef6)
+set(MSTK_MD5_SUM        9baf10c1cb3797d23d1d460bd39d66a8)    
 
 #
 # TPL: MOAB
