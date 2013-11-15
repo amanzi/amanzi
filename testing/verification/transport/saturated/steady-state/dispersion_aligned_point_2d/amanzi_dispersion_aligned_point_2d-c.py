@@ -17,7 +17,7 @@ input_filename = "amanzi_dispersion_aligned_point_2d.xml"
 overwrite=False
 
 [obs_slices, subtests, analytic] = utils_dispersion_aligned_point_2d.SetupTests()
-[obs_xml, obs_data, obs_scatter] = utils_dispersion_aligned_point_2d.AmanziResults(input_filename,subtests,obs_slices)
+[obs_xml, obs_data, obs_scatter] = utils_dispersion_aligned_point_2d.AmanziResults(input_filename,subtests,obs_slices,overwrite)
 analytic_soln = utils_dispersion_aligned_point_2d.AnalyticSolutions(analytic,overwrite)
 
 #
