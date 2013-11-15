@@ -209,6 +209,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
   data.st_energy.Ls = 2834000.0;           // Latent heat of sublimation ------- [J/kg]
   data.st_energy.Le = 2497848.;            // Latent heat of vaporization ------ [J/kg]
   data.st_energy.SEs = 0.98;               // Surface Emissivity for snow  ----- [-] ** From P. ReVelle (Thesis)
+  data.st_energy.SEtun = 0.92;             // Surface Emissivity for tundray --- [-] ** From P. ReVelle (Thesis)
   data.st_energy.Zr = 2.0;                 // Referance ht of wind speed ------- [m]
   data.st_energy.Zo = 0.005;               // Roughness length  ---------------- [m]
   data.st_energy.VKc = 0.41;               // Von Karman Constant -------------- [-]

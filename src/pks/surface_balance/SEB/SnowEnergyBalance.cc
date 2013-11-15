@@ -243,7 +243,7 @@ void SurfaceEnergyBalance::MeltEnergyCalc (LocalData& seb) {
      ####################################################################################################
 */
 void SurfaceEnergyBalance::GroundEnergyCalc (LocalData& seb) {
-  seb.st_energy.fQlwOut = -seb.st_energy.SEs*seb.st_energy.stephB*(std::pow(seb.st_energy.Tb,4));
+  seb.st_energy.fQlwOut = -seb.st_energy.SEtun*seb.st_energy.stephB*(std::pow(seb.st_energy.Tb,4));
 
   double Sqig;
   if (seb.st_energy.Us == 0.) {
