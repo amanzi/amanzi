@@ -16,7 +16,7 @@ import optparse
 install={}
 install['index']={'index_title' : 'Building Amanzi',
                    'index_file' : 'doc/user_guide/install/index.rst',
-                   'index_list' : ['tpls','amanzi','bootstrap','quickstart'],
+                   'index_list' : ['bootstrap','tpls','amanzi'],
                    }
     
    
@@ -30,7 +30,6 @@ install['amanzi']={'from_dir' : 'doc/build_instructions',
                    'index_entry' : 'build_instructions.rst',
                   }
 install['bootstrap']={'index_entry' : 'building_bootstrap.rst', }
-install['quickstart']={'index_entry' : 'cmake_quickstart.rst', }
 
     
 #
@@ -156,7 +155,7 @@ benchmark['chemistry']={'index_entry' : 'chemistry/index.rst',
                         'index' : 
                         {'index_title' : 'Chemistry',
                          'index_file' : 'doc/user_guide/benchmarking/chemistry/index.rst',
-                         'index_list' : ['tracer', 'tritium', 'calcite', 'ion_exchange', 'farea']
+                         'index_list' : ['tracer', 'tritium', 'calcite', 'isotherms', 'ion_exchange', 'farea']
                          },
                         'tracer' : 
                             {'from_dir' : 'testing/benchmarking/chemistry/tracer_1d',
@@ -167,6 +166,11 @@ benchmark['chemistry']={'index_entry' : 'chemistry/index.rst',
                             {'from_dir' : 'testing/benchmarking/chemistry/calcite_1d',
                              'dest_dir' : 'doc/user_guide/benchmarking/chemistry/calcite_1d',
                              'index_entry' : 'calcite_1d/amanzi_u-1d-calcite.rst'
+                             },
+                        'isotherms' : 
+                            {'from_dir' : 'testing/benchmarking/chemistry/isotherms_1d',
+                             'dest_dir' : 'doc/user_guide/benchmarking/chemistry/isotherms_1d',
+                             'index_entry' : 'isotherms_1d/amanzi_u-1d-isotherms.rst'
                              },
                         'ion_exchange' : 
                              {'from_dir' : 'testing/benchmarking/chemistry/ion_exchange_1d',
@@ -223,10 +227,11 @@ sections={}
 #
 #  Table of Contents (Top Level)
 #
-toc_user_guide = {'index_list' : [ 'background', 'capabilities', 'input' ],
+toc_user_guide = {'index_list' : [ 'background', 'quickstart', 'capabilities', 'input' ],
                   'background'   : { 'index_entry' : 'background/index.rst' },
+                  'quickstart'   : { 'index_entry' : 'install/getting_started.rst'},
                   'capabilities' : { 'index_entry' : 'capabilities/index.rst' },
-                  'input'        : { 'index_entry' : 'input/input_schema.rst'  },
+                  'input'        : { 'index_entry' : 'input/index.rst'  },
             }
 
 if ( opts.install or opts.full_guide ):

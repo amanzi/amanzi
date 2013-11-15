@@ -95,14 +95,14 @@ and :math:`\boldsymbol{q}` is the Darcy velocity:
   \boldsymbol{q} 
   = -\frac{\boldsymbol{K}}{\mu} (\boldsymbol{\nabla} p - \rho \boldsymbol{g}).
 
-The specific storage controls the amount of water that the aquifer reaseles from
+The specific storage controls the amount of water that the aquifer releases from
 storage while remaining fully saturated.
-For cells at the water table where confining coditions do not exists, specific 
+For cells at the water table where confining conditions do not exist, specific 
 yield is used instead of specific storage.
 Specific yield is the drainable porosity when the water table moves (e.g.
 during pumping), indicating the fraction of the aquifer volume that will be drained 
 under the force of gravity.
-It is implemented in Amanzi using the characteristic vertical size 
+It is implemented in *Amanzi* using the characteristic vertical size 
 :math:`L` of a yield cell. 
 In the case of a structured mesh, :math:`L` is the cell height. 
 
@@ -148,7 +148,7 @@ leaves the ground surface and continues to flow in a thin film along its surface
 The seepage face boundary condition becomes the atmospheric pressure condition there.
 This is a nonlinear condition since 
 the geometry of the seepage face is defined by the solution and may vary with time. 
-In Amanzi, this boundary condition is simulated using a dynamic switch from the
+In *Amanzi*, this boundary condition is simulated using a dynamic switch from the
 prescribed pressure boundary condition to a prescribed flux boundary condition 
 representing the recharge.
 

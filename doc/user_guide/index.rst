@@ -12,8 +12,13 @@ Contents:
    :maxdepth: 2
    
    background/index.rst
+   install/getting_started.rst
    capabilities/index.rst
-   input/input_schema.rst
+   input/index.rst
+   install/index.rst
+   tutorial/index.rst
+   verification/index.rst
+   benchmarking/index.rst
 
 Indices and tables
 ==================

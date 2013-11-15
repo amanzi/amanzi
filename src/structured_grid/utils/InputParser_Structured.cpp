@@ -2910,12 +2910,14 @@ namespace Amanzi {
       const std::string Source_Uniform_str = "Source: Uniform";
       const std::string Source_Volume_Weighted_str = "Source: Volume Weighted";
       const std::string Source_Permeability_Weighted_str = "Source: Permeability Weighted";
+      const std::string Source_Point_str = "Source: Point";
 
       Array<std::string> nullList, reqP;
 
       if (Amanzi_type == Source_Uniform_str
 	  || Amanzi_type == Source_Volume_Weighted_str
-	  || Amanzi_type == Source_Permeability_Weighted_str) {
+	  || Amanzi_type == Source_Permeability_Weighted_str
+	  || Amanzi_type == Source_Point_str) {
         const std::string val_name="Values"; reqP.push_back(val_name);
         const std::string time_name="Times"; reqP.push_back(time_name);
         const std::string form_name="Time Functions"; reqP.push_back(form_name);
@@ -2930,12 +2932,14 @@ namespace Amanzi {
 	  fPLout.set<std::string>("type","uniform");
 	} else if (Amanzi_type == Source_Volume_Weighted_str) {
 	  fPLout.set<std::string>("type","volume_weighted");
+	} else if (Amanzi_type == Source_Point_str) {
+	  fPLout.set<std::string>("type","point");
 	} else {
 	  fPLout.set<std::string>("type","permeability_weighted");
 	}
       }
       else {
-        MyAbort("Unrecognized solute source function: "+Amanzi_type);
+        MyAbort("Unrecognized component source function: "+Amanzi_type);
       }
     }
 
@@ -2945,10 +2949,12 @@ namespace Amanzi {
     {
       const std::string Source_Uniform_str = "Source: Uniform Concentration";
       const std::string Source_Flow_Weighted_str = "Source: Flow Weighted Concentration";
+      const std::string Source_Point_str = "Source: Point";
 
       Array<std::string> nullList, reqP;
       if (Amanzi_type == Source_Uniform_str 
-	  || Amanzi_type == Source_Flow_Weighted_str) {
+	  || Amanzi_type == Source_Flow_Weighted_str
+	  || Amanzi_type == Source_Point_str) {
         const std::string val_name="Values"; reqP.push_back(val_name);
         const std::string time_name="Times"; reqP.push_back(time_name);
         const std::string form_name="Time Functions"; reqP.push_back(form_name);
@@ -2961,9 +2967,14 @@ namespace Amanzi {
         }
 	if (Amanzi_type == Source_Uniform_str) {
 	  fPLout.set<std::string>("type","uniform");
-	} else {
+	} else if (Amanzi_type == Source_Flow_Weighted_str) {
 	  fPLout.set<std::string>("type","flow_weighted");
+        } else if (Amanzi_type == Source_Point_str) {
+	  fPLout.set<std::string>("type","point");
 	}
+        else {
+          MyAbort("Unrecognized solute source function: "+Amanzi_type);
+        }
       }
     }
 
@@ -3139,7 +3150,7 @@ namespace Amanzi {
           Array<std::string> src_label_reqd_params; src_label_reqd_params.push_back(Assigned_Regions_str);
           PLoptions sl_opt(src_label_pl,nullList,src_label_reqd_params,false,true);
           const Array<std::string>& regions = src_label_pl.get<Array<std::string> >(Assigned_Regions_str);
-          struct_src_label_list.set("regions",regions);
+          struct_src_label_list.set("regions",underscore(regions));
           bool function_set = false;
           const Array<std::string>& src_f_or_s_labels = sl_opt.OptLists(); // must be a known src func or "Solute SOURCE"
           for (int j=0; j<src_f_or_s_labels.size(); ++j) {
@@ -3815,7 +3826,7 @@ namespace Amanzi {
       // 
       convert_to_structured_output(parameter_list, struc_list,stateDef,do_chem);
 
-      std::string dump_str = "Dump ParmParse Table";
+      std::string dump_str = "Structured Native Input File";
       if (parameter_list.isParameter(dump_str)) {
         struc_list.set<std::string>("dump_parmparse_table",parameter_list.get<std::string>(dump_str));
       }

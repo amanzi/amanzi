@@ -1063,6 +1063,15 @@ Godunov::edge_states_tracer (const Box&  grd,
   const int *stz_hi     = stz.hiVect();
 #endif
 
+  // NOTE: nHACK is used down in the tracing to select how to handle inlet flows.
+  // If the fields being advected are pre-projected velocities, the code allows
+  // for some slop in the definition of "inflowing".  Here though, we want to be
+  // crystal clear that the (externally computed) velocity determines the direction
+  // of flow.  "HACK" is part of the label here because the slop version relies on
+  // the component advected to correspond to n=1,2,... (ie, the first components
+  // are assumed to be those of the velocity).  We guarantee to never be one of
+  // those by setting n > BL_SPACEDIM
+  const int nHACK = BL_SPACEDIM+1; 
   for (int n=0; n<nCompC; ++n) {
 
     const Real *co_dat = C_old.dataPtr(sCompC+n);
@@ -1090,7 +1099,7 @@ Godunov::edge_states_tracer (const Box&  grd,
 		       stz_dat,    ARLIM(stz_lo),    ARLIM(stz_hi),
 #endif
 		       ARLIM(ww_lo),ARLIM(ww_hi),
-		       bc, lo, hi, &dt, dx, &use_forces_in_trans, &iconserv, &tracer_eps);
+		       bc, lo, hi, &dt, dx, &nHACK, &use_forces_in_trans, &iconserv, &tracer_eps);
   }
 }
 
