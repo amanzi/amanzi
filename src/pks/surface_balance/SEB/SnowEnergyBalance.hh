@@ -53,6 +53,7 @@ struct EnergyBalance {
   double stephB;
   double Apa;
   double SEs;
+  double SEtun;
   double Dhe;
   double gZr;
   double rowaCp;
