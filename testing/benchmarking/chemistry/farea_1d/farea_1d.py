@@ -96,7 +96,7 @@ if __name__ == "__main__":
     index = [components.index(comp) for comp in search]
 
     # hardwired selected minerals / add or remove here
-    searchm = ['Kaolinite'] #, 'Goethite', 'Kaolinite', 'Schoepite'] # ['Goethite'] #['Goethite', 'Kaolinite', 'Gibbsite']
+    searchm = ['Kaolinite'] #['Goethite'] #['Kaolinite'] #, 'Goethite', 'Kaolinite', 'Schoepite'] # ['Goethite'] #['Goethite', 'Kaolinite', 'Gibbsite']
     indexm = [minerals.index(min) for min in searchm] 
 
     # pflotran selected output
