@@ -98,7 +98,7 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> > 
      solver = factory.Create("gmres", plist, preconditioner_, preconditioner_);
    
-   solver->ApplyInverse(X,Y);
+   solver->ApplyInverse(X, Y);
  }
 }
 

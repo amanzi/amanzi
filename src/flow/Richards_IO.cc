@@ -111,9 +111,9 @@ void Richards_PK::ProcessParameterList()
     ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
     ProcessStringErrorOptions(sss_list, &ti_specs_sss_.error_control_options);
 
-  } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+  } else if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "mandatory sublist for steady-state calculations is missing." << endl;
+    *(vo_->os()) << "sublist for steady-state calculations is missing." << endl;
   }
 
   // Time integrator for period III, called transient time integrator
@@ -134,7 +134,7 @@ void Richards_PK::ProcessParameterList()
     ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
     ProcessStringErrorOptions(trs_list, &ti_specs_trs_.error_control_options);
 
-  } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+  } else if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *(vo_->os()) << "missing sublist '\"transient time integrator'\"" << endl;
   }

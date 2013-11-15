@@ -177,11 +177,13 @@ def SetupTests():
 
     subtests = { 'amanzi_first' : 
                  { 'directory'  : 'amanzi-output-first-order',
+                   'mesh_file'  : '../amanzi_dispersion_aligned_point_2d.exo',
                    'parameters' : { 'Transport Integration Algorithm': 'Explicit First-Order' },
                    'plot_props' : { 'marker':'s', 'color':'r', 'label': 'Amanzi: First Order' } 
                  },
                  'amanzi_second' : 
                  { 'directory'  : 'amanzi-output-second-order',
+                   'mesh_file'  : '../amanzi_dispersion_aligned_point_2d.exo',
                    'parameters' : { 'Transport Integration Algorithm': "Explicit Second-Order" },
                    'plot_props' : { 'marker':'o', 'color':'b', 'label': 'Amanzi: Second Order' }
                  },
@@ -209,7 +211,7 @@ def SetupTests():
     return obs_slices, subtests, analytic
 
 
-def AmanziResults(input_filename,subtests,obs_slices):
+def AmanziResults(input_filename,subtests,obs_slices,overwrite=False):
     
     import run_amanzi
 
@@ -224,7 +226,7 @@ def AmanziResults(input_filename,subtests,obs_slices):
 
         for st in subtests:
 
-            run_amanzi.run_amanzi(input_filename, subtests[st]['directory'], subtests[st]['parameters'])
+            run_amanzi.run_amanzi(input_filename, subtests[st]['directory'], subtests[st]['parameters'], subtests[st]['mesh_file'],overwrite)
             obs_xml[st]=loadInputXML(input_filename)
             obs_data[st]=loadDataFile(obs_xml[st],subtests[st]['directory'])
 
@@ -236,7 +238,7 @@ def AmanziResults(input_filename,subtests,obs_slices):
 
     return obs_xml, obs_data, obs_scatter
 
-def AnalyticSolutions(analytic,overwrite):
+def AnalyticSolutions(analytic,overwrite=False):
 
     import run_at123d_at
 
