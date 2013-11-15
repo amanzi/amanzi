@@ -2890,6 +2890,8 @@ Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 
   // get list of Source
   xercesc::DOMNodeList* SCList = elementSC->getElementsByTagName(XMLString::transcode("source"));
+  std::string phase("Aqueous"); //NOTE:: EIB: currently only support this, add checks later
+  std::string component("Water");
   for (int i=0; i<SCList->getLength(); i++) {
     xercesc::DOMNode* cur = SCList->item(i) ;
     if (xercesc::DOMNode::ELEMENT_NODE == cur->getNodeType()) {
@@ -2909,15 +2911,24 @@ Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 	    XMLString::release(&textContent2);
           } else if (strcmp(tagName,"liquid_phase")==0) {
             attrMap = SCNode->getAttributes();
+            nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+            char* phaseName = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
             xercesc::DOMNodeList* compList = SCNode->getChildNodes();
             for (int k=0; k<compList->getLength(); k++) {
-              xercesc::DOMNode* compNode = compList->item(k) ;
+	      xercesc::DOMNode* compNode = compList->item(k) ;
               char* compName  = xercesc::XMLString::transcode(compNode->getNodeName());
+              xercesc::DOMNamedNodeMap* attrMap2 = compNode->getAttributes();
               if (strcmp(compName,"liquid_component")==0) {
 	        Teuchos::Array<double> vals;
 	        Teuchos::Array<double> times;
 	        Teuchos::Array<std::string> funcs;
 	        std::string scname;
+		// get component name
+                attrMap = compNode->getAttributes();
+                nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+                char* compName2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+		component = std::string(compName2);
+		// loop over children
                 xercesc::DOMNodeList* scChildList = compNode->getChildNodes();
                 for (int l=0; l<scChildList->getLength(); l++) {
                   xercesc::DOMNode* scChildNode = scChildList->item(l) ;
@@ -2928,37 +2939,102 @@ Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 		    } else if (strcmp(scChildName,"permeability_weighted")==0){
 		     scname = "Source: Permeability Weighted";
 		    }
-                    xercesc::DOMElement* scElem = static_cast<xercesc::DOMElement*>(scChildNode);
-                    char* textContent2 = xercesc::XMLString::transcode(scElem->getAttribute(
-		                    xercesc::XMLString::transcode("function")));
-		    if (strcmp(textContent2,"linear")==0) {
-		      funcs.append("Linear");
-		    } else if (strcmp(textContent2,"constant")==0) {
-		      funcs.append("Constant");
-		    } else if (strcmp(textContent2,"uniform")==0) {
-		      funcs.append("Uniform");
+		    // loop over any attributes that may exist
+                    xercesc::DOMNamedNodeMap* attrMap2 = scChildNode->getAttributes();
+                    for (int l=0; l<attrMap2->getLength(); l++) {
+                      xercesc::DOMNode* attrNode = attrMap2->item(l) ;
+                      if (xercesc::DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+                        char* attrName = xercesc::XMLString::transcode(attrNode->getNodeName());
+                        char* attrValue = xercesc::XMLString::transcode(attrNode->getNodeValue());
+			if (strcmp(attrName,"function")==0) {
+		          if (strcmp(attrValue,"linear")==0) {
+		            funcs.append("Linear");
+		          } else if (strcmp(attrValue,"constant")==0) {
+		            funcs.append("Constant");
+		          } else if (strcmp(attrValue,"uniform")==0) {
+		            funcs.append("Uniform");
+		          }
+			} else if (strcmp(attrName,"start")==0) {
+		          times.append(get_time_value(attrValue, def_list));
+			} else if (strcmp(attrName,"value")==0) {
+		          vals.append(get_time_value(attrValue, def_list));
+			}
+		      }
 		    }
-                    textContent2 = xercesc::XMLString::transcode(scElem->getAttribute(
-		                   xercesc::XMLString::transcode("start")));
-                    double time = get_time_value(textContent2, def_list);
-		    times.append(time);
-                    textContent2 = xercesc::XMLString::transcode(scElem->getAttribute(
-		                   xercesc::XMLString::transcode("value")));
-                    time = get_time_value(textContent2, def_list);
-		    vals.append(time);
 		  }
 		}
 	        if (times.length()==1 ){
 	  	  times.append(times[0]+1.);
 		  vals.append(vals[0]);
 	        }
+	        //EIB - this is iffy!!! Talked with Ellen, this is consistent with her assumptions in Akuna, for now
+	        if (times.length()==funcs.length() && funcs.length()>0) funcs.remove(funcs.length()-1); 
 	        Teuchos::ParameterList newsclist;
-	        newsclist.set<Teuchos::Array<double> >("Times",times);
-	        newsclist.set<Teuchos::Array<std::string> >("Time Functions",funcs);
-	        newsclist.set<Teuchos::Array<double> >("Values",vals);
+		if (times.length() > 0) {
+	          newsclist.set<Teuchos::Array<double> >("Times",times);
+	          newsclist.set<Teuchos::Array<std::string> >("Time Functions",funcs);
+	          newsclist.set<Teuchos::Array<double> >("Values",vals);
+		}
 	        sclist.sublist(scname) = newsclist;
+	      } else if (strcmp(compName,"solute_component")==0) {
+	        Teuchos::Array<double> vals;
+	        Teuchos::Array<double> times;
+	        Teuchos::Array<std::string> funcs;
+	        std::string scname;
+	        std::string soluteName;
+                xercesc::DOMNodeList* scChildList = compNode->getChildNodes();
+                for (int l=0; l<scChildList->getLength(); l++) {
+                  xercesc::DOMNode* scChildNode = scChildList->item(l) ;
+                  if (xercesc::DOMNode::ELEMENT_NODE == scChildNode->getNodeType()) {
+                    char* scChildName  = xercesc::XMLString::transcode(scChildNode->getNodeName());
+		    if (strcmp(scChildName,"flow_weighted_conc")==0){
+		     scname = "Source: Flow Weighted Concentration";
+		    } else if (strcmp(scChildName,"uniform_conc")==0){
+		     scname = "Source: Uniform Concentration";
+		    }
+		    // loop over any attributes that may exist
+                    xercesc::DOMNamedNodeMap* attrMap2 = scChildNode->getAttributes();
+                    for (int l=0; l<attrMap2->getLength(); l++) {
+                      xercesc::DOMNode* attrNode = attrMap2->item(l) ;
+                      if (xercesc::DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+                        char* attrName = xercesc::XMLString::transcode(attrNode->getNodeName());
+                        char* attrValue = xercesc::XMLString::transcode(attrNode->getNodeValue());
+			if (strcmp(attrName,"function")==0) {
+		          if (strcmp(attrValue,"linear")==0) {
+		            funcs.append("Linear");
+		          } else if (strcmp(attrValue,"constant")==0) {
+		            funcs.append("Constant");
+		          } else if (strcmp(attrValue,"uniform")==0) {
+		            funcs.append("Uniform");
+		          }
+			} else if (strcmp(attrName,"start")==0) {
+		          times.append(get_time_value(attrValue, def_list));
+			} else if (strcmp(attrName,"value")==0) {
+		          vals.append(get_time_value(attrValue, def_list));
+			} else if (strcmp(attrName,"name")==0) {
+		          soluteName = attrValue;
+			}
+                        XMLString::release(&attrName);
+                        XMLString::release(&attrValue);
+		      }
+		    }
+		  }
+		}
+	        if (times.length()==1 ){
+	  	  times.append(times[0]+1.);
+		  vals.append(vals[0]);
+	        }
+	        //EIB - this is iffy!!! Talked with Ellen, this is consistent with her assumptions in Akuna, for now
+	        if (times.length()==funcs.length() && funcs.length()>0) funcs.remove(funcs.length()-1); 
+	        Teuchos::ParameterList newsclist;
+	          newsclist.set<Teuchos::Array<double> >("Times",times);
+	          newsclist.set<Teuchos::Array<std::string> >("Time Functions",funcs);
+	          newsclist.set<Teuchos::Array<double> >("Values",vals);
+	        //sclist.sublist(scname) = newsclist;
+	        sclist.sublist("Solute SOURCE").sublist(phase).sublist(component).sublist(soluteName).sublist(scname) = newsclist;
 	      }
 	    }
+            XMLString::release(&phaseName);
 	  }
 	}
       }

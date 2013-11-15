@@ -16,7 +16,7 @@ import optparse
 install={}
 install['index']={'index_title' : 'Building Amanzi',
                    'index_file' : 'doc/user_guide/install/index.rst',
-                   'index_list' : ['bootstrap','tpls','amanzi','quickstart'],
+                   'index_list' : ['bootstrap','tpls','amanzi'],
                    }
     
    
@@ -30,7 +30,6 @@ install['amanzi']={'from_dir' : 'doc/build_instructions',
                    'index_entry' : 'build_instructions.rst',
                   }
 install['bootstrap']={'index_entry' : 'building_bootstrap.rst', }
-install['quickstart']={'index_entry' : 'cmake_quickstart.rst', }
 
     
 #
