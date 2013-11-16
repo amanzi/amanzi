@@ -318,9 +318,11 @@ MPCPermafrost3::update_precon(double t,
 // -- Modify the predictor.
 bool
 MPCPermafrost3::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
-  bool modified = water_->ModifyPredictor_Heuristic(h, u);
+  bool modified = false;
+  modified |= water_->ModifyPredictor_Heuristic(h, u);
   modified |= water_->ModifyPredictor_WaterSpurtDamp(h, u);
   modified |= water_->ModifyPredictor_TempFromSource(h, u);
+  modified |= ewc_->modify_predictor(h,u);
 
   modified |= StrongMPC<PKPhysicalBDFBase>::modify_predictor(h, u);
   return modified;
@@ -392,12 +394,12 @@ MPCPermafrost3::modify_correction(double h, Teuchos::RCP<const TreeVector> res,
   // }
 
   // modify correction for dumping water onto a frozen surface
-  n_modified = ModifyCorrection_FrozenSurface_(h, res, u, du);
+  //  n_modified = ModifyCorrection_FrozenSurface_(h, res, u, du);
   // -- accumulate globally
-  n_modified_l = n_modified;
-  u->SubVector(0)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
-  modified |= (n_modified > 0) || (damping < 1.);
-  
+  // n_modified_l = n_modified;
+  // u->SubVector(0)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
+  // modified |= (n_modified > 0) || (damping < 1.);
+
   if (modified) {
     // Derive surface face corrections.
     UpdateConsistentFaceCorrectionWater_(res, du);
