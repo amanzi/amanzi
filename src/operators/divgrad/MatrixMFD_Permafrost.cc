@@ -65,7 +65,7 @@ void MatrixMFD_Permafrost::ComputeSchurComplement() {
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     if ((*blockA_sc_->Krel_)[frow] == 0 && std::abs(App_diag[sc]) > 1.e-11) {
       // Krel == 0 --> frozen, App_diag[sc] > 0 --> p_surf > p_atm
-      scaling[frow] = 0.;
+      scaling[2*frow] = 0.;
     }
   }
   ierr = P2f2f_->LeftScale(scaling);

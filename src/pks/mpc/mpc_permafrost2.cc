@@ -391,13 +391,13 @@ MPCPermafrost2::modify_correction(double h, Teuchos::RCP<const TreeVector> res,
   //   du->SubVector(3)->Scale(damping);
   // }
 
-  // modify correction for dumping water onto a frozen surface
-  n_modified = ModifyCorrection_FrozenSurface_(h, res, u, du);
-  // -- accumulate globally
-  n_modified_l = n_modified;
-  u->SubVector(0)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
-  modified |= (n_modified > 0) || (damping < 1.);
-  
+  // // modify correction for dumping water onto a frozen surface
+  // n_modified = ModifyCorrection_FrozenSurface_(h, res, u, du);
+  // // -- accumulate globally
+  // n_modified_l = n_modified;
+  // u->SubVector(0)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
+  // modified |= (n_modified > 0) || (damping < 1.);
+
   if (modified) {
     // Derive surface face corrections.
     UpdateConsistentFaceCorrectionWater_(res, du);

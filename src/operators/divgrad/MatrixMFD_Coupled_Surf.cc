@@ -52,7 +52,7 @@ void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
   Epetra_SerialDenseMatrix block(2,2);
 
   int ierr(0);
-  
+
   // Now, add in the contributions from App
   // Loop over surface cells (subsurface faces)
   int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -94,7 +94,7 @@ void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
       //   std::cout << "  val from B = " << valuesB[m] << std::endl;
       // }
 
-      block(0,0) = valuesA[m];
+      block(0,0) = std::max(valuesA[m], 1.e-10);
       block(1,1) = valuesB[m];
 
       // if (frow_global == indicesA[m]) {
