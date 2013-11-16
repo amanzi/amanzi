@@ -22,7 +22,7 @@ void SurfaceEnergyBalance::CalcEFluxTempIndependent (LocalData& seb) {
   seb.st_energy.fQlwIn = 1.08*(1-std::exp(-0.01*(std::pow(std::pow(10,11.4-(2353/seb.vp_air.dewpoint_temp)),(seb.st_energy.air_temp/2016)))))*seb.st_energy.stephB*(std::pow(seb.st_energy.air_temp,4));
 
   // Calculate D_h, D_e
-  seb.st_energy.Dhe=(((std::pow(seb.st_energy.VKc,2)*seb.st_energy.Us))/(std::pow(log(seb.st_energy.Zr/seb.st_energy.Zo),2)));
+  seb.st_energy.Dhe=(((std::pow(seb.st_energy.VKc,2)*seb.st_energy.Us))/(std::pow(std::log(seb.st_energy.Zr/seb.st_energy.Zo),2)));
 }
 
 
@@ -258,6 +258,7 @@ void SurfaceEnergyBalance::GroundEnergyCalc (LocalData& seb) {
   }
 
   seb.st_energy.fQh = seb.st_energy.rowaCp*seb.st_energy.Dhe*Sqig*(seb.st_energy.air_temp-seb.st_energy.Tb);
+  std::cout << "GroundECalc: Sqig = " << Sqig << ", dT = " << seb.st_energy.air_temp-seb.st_energy.Tb << std::endl;
 
   if (seb.st_energy.water_depth>0.0) {// Checking for standing water
     VaporCalc (seb.vp_ground);
