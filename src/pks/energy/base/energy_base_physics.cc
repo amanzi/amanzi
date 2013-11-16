@@ -142,9 +142,16 @@ void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& source1 =
         *S_next_->GetFieldData(source_key_)->ViewComponent("cell",false);
 
-    unsigned int ncells = g_c.MyLength();
-    for (unsigned int c=0; c!=ncells; ++c) {
-      g_c[0][c] -= 0.5* (source0[0][c] + source1[0][c]);
+    if (S_inter_->cycle() == 0) {
+      unsigned int ncells = g_c.MyLength();
+      for (unsigned int c=0; c!=ncells; ++c) {
+        g_c[0][c] -= source1[0][c];
+      }
+    } else {
+      unsigned int ncells = g_c.MyLength();
+      for (unsigned int c=0; c!=ncells; ++c) {
+        g_c[0][c] -= 0.5* (source0[0][c] + source1[0][c]);
+      }
     }
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
