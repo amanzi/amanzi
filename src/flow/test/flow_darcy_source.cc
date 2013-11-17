@@ -361,9 +361,9 @@ TEST(FLOW_DARCY_NODAL) {
   matrix.SymbolicAssembleGlobalMatrices();
   preconditioner.SymbolicAssembleGlobalMatrices();
 
-  for (int n = 0; n < 240; n+=50) {
-    double factor = pow(10.0, (double)(n - 50) / 100.0);
-    // double factor = pow(10.0, (double)(n - 150) / 100.0);
+  for (int n = 0; n < 400; n+=100) {
+    // double factor = pow(10.0, (double)(n - 50) / 100.0);
+    double factor = pow(10.0, (double)(n - 150) / 100.0);
 
     // populate matrix
     matrix.CreateMFDstiffnessMatrices(K, factor);
