@@ -200,41 +200,6 @@ bool SurfaceBalanceSEB::advance(double dt) {
                << "Advancing: t0 = " << S_inter_->time()
                << " t1 = " << S_next_->time() << " h = " << dt << std::endl
                << "----------------------------------------------------------------" << std::endl;
-  // Create the SEB data structure
-  SurfaceEnergyBalance::LocalData data;
-
-  // Populate the SEB data structure with constants
-  data.st_energy.stephB = 0.00000005670373;// Stephan-boltzmann Constant ------- [W/m^2 K^4]
-  data.st_energy.Hf = 333500.0;            // Heat of fusion for melting snow -- [J/kg]
-  data.st_energy.Ls = 2834000.0;           // Latent heat of sublimation ------- [J/kg]
-  data.st_energy.Le = 2497848.;            // Latent heat of vaporization ------ [J/kg]
-  data.st_energy.SEs = 0.98;               // Surface Emissivity for snow  ----- [-] ** From P. ReVelle (Thesis)
-  data.st_energy.SEtun = 0.92;             // Surface Emissivity for tundray --- [-] ** From P. ReVelle (Thesis)
-  data.st_energy.Zr = 2.0;                 // Referance ht of wind speed ------- [m]
-  data.st_energy.Zo = 0.005;               // Roughness length  ---------------- [m]
-  data.st_energy.VKc = 0.41;               // Von Karman Constant -------------- [-]
-  double Cp = 1004.0;               // Specific heat of air ------------- [J/K kg]
-  data.st_energy.Apa = 100;                // Atmospheric Pressure ------------- [KPa]
-
-  data.st_energy.density_w = 1000;         // Density of Water ----------------- [kg/m^3]
-  double density_air = 1.275;       // Density of Air ------------------- [kg/m^3]
-  data.st_energy.density_frost = 200;      // Density of Frost (condensation) -- [kg/m^3]
-  data.st_energy.density_freshsnow = 100;  // Density of Freshly fallebn snow -- [kg/m^3]
-
-  data.st_energy.gZr = 9.807*data.st_energy.Zr;
-  data.st_energy.rowaCp = density_air*Cp;
-  data.st_energy.rowaLs = density_air*data.st_energy.Ls;
-  data.st_energy.rowaLe = density_air*data.st_energy.Le;
-
-  data.vp_snow.relative_humidity = 1.;
-  data.vp_ground.relative_humidity = 1.;
-
-  data.st_energy.Dt = dt;
-  data.st_energy.AlbedoTrans = albedo_trans_;
-  data.st_energy.snow_groundTrans = snow_ground_trans_;
-//Calculating which Day frost density matched snow Defermation fucntion from (Martinec, 1977)
-  data.st_energy.NDSfrost = pow((data.st_energy.density_frost /data.st_energy.density_freshsnow),(1/0.3))-1;
-
   // Get all data
   // ATS CALCULATED
   S_inter_->GetFieldEvaluator("surface_temperature")->HasFieldChanged(S_inter_.ptr(), name_);
@@ -304,77 +269,104 @@ bool SurfaceBalanceSEB::advance(double dt) {
   Epetra_MultiVector& days_of_nosnow =
       *S_next_->GetFieldData("days_of_nosnow", name_)->ViewComponent("cell", false);
 
+  // Create the SEB data structure
+  SurfaceEnergyBalance::LocalData data;
+  data.st_energy.dt = dt;
+  data.st_energy.AlbedoTrans = albedo_trans_;
+
+  SurfaceEnergyBalance::LocalData data_bare;
+  data_bare.st_energy.dt = dt;
+  data_bare.st_energy.AlbedoTrans = albedo_trans_;
 
   // loop over all cells and call CalculateSEB_
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
     // ATS Calcualted Data
-    data.st_energy.Tb = surf_temp[0][c];
+    double density_air = 1.275;       // Density of Air ------------------- [kg/m^3]
     data.st_energy.water_depth = ponded_depth[0][c];
-    data.st_energy.por = surf_porosity[0][c];
+    data.st_energy.temp_ground = surf_temp[0][c];
     data.vp_ground.temp = surf_temp[0][c];
     data.vp_ground.actual_vaporpressure = soil_vapor_pressure[0][c]; // FIX THIS   FIX THIS FIX THIS    FIX THIS 11111111
-    data.st_energy.porrowaLe = data.st_energy.por*density_air*data.st_energy.Le;
+    data.st_energy.porrowaLe = surf_porosity[0][c] * density_air * data.st_energy.Le;
     // MET station data
-    data.st_energy.air_temp = air_temp[0][c];
+    data.st_energy.temp_air = air_temp[0][c];
     data.st_energy.QswIn = incoming_shortwave[0][c];
     data.st_energy.Us = std::max(wind_speed[0][c], min_wind_speed_);
     data.st_energy.Pr = precip_rain[0][c] * dt; // SEB expects total precip, not rate
     data.st_energy.Ps = precip_snow[0][c] * dt; // SEB expects total precip, not rate
     data.vp_air.temp = air_temp[0][c];
     data.vp_air.relative_humidity = relative_humidity[0][c];
-
     // STORED INFO FOR SnowEnergyBalanc Model
     data.st_energy.ht_snow = snow_depth[0][c];
     data.st_energy.density_snow = snow_density[0][c];
-    data.st_energy.nosnowdays = days_of_nosnow[0][c];
+    data.st_energy.age_snow = days_of_nosnow[0][c];
 
-//     SurfaceEnergyBalance::SnowEnergyBalance(data);//.........);
-    // Snow-ground Smoothing 
-        if ((data.st_energy.ht_snow > data.st_energy.snow_groundTrans)||(data.st_energy.ht_snow <= 0)) {
-         SurfaceEnergyBalance::SnowEnergyBalance(data); // Running the Snow Energy Balance Model
-    }else{ // Transition between Snow and bare ground
-        double theta=0.0;
-        double QcSnow=0.0, QcGrnd=0.0, MrSnow=0.0, MrGrnd=0.0, TrwSnow=0.0, TrwGrnd=0.0;
-        double ZsHold=0.0, ROWsHold=0.0, nosnowdayHold=0.0;
-        // Fraction of snow covered ground
-        theta = pow ((data.st_energy.ht_snow / data.st_energy.snow_groundTrans),2);
-        SurfaceEnergyBalance::SnowEnergyBalance(data);
-        // Snow covered data 
-        QcSnow = theta * data.st_energy.fQc;
-       
-        MrSnow = data.st_energy.Mr - (data.st_energy.Pr / data.st_energy.Dt) + theta*(data.st_energy.Pr / data.st_energy.Dt);
-        TrwSnow = data.st_energy.Trw * MrSnow;
-       // Saving Snow data for next timestep
-        ZsHold = data.st_energy.ht_snow;
-        data.st_energy.ht_snow = 0;
-        ROWsHold = data.st_energy.density_snow;
-        nosnowdayHold = data.st_energy.nosnowdays;
-        SurfaceEnergyBalance::SnowEnergyBalance(data); // Running the Snow Energy Balance Model for groundcover portion
-        // Ground Cover Data
-        QcGrnd = (1-theta)*data.st_energy.fQc;
-        MrGrnd = (1-theta)*data.st_energy.Mr;
-        if (MrGrnd <= 0) {
-           TrwGrnd = 0; // No water
-        }else{
-           TrwGrnd = data.st_energy.Trw * MrGrnd;
-        }
-        // Calculating Data for ATS
-        data.st_energy.fQc =  QcSnow + QcGrnd;
-        data.st_energy.Mr = MrSnow + MrGrnd;
-        if ((MrSnow + MrGrnd) <= 0) {
-            data.st_energy.Trw = 0.0; // No Water delivered to ATS, therefore temperature of water is irrelevant. This also avoids dividing by 0
-        }else{
-            data.st_energy.Trw = (TrwSnow + TrwGrnd)/(MrSnow + MrGrnd); // Temperature of water delivered to ATS is averaged by rate/mass of water from snow and no snow areas
-        }
-        // Putting saved snow data back in place        
-        data.st_energy.ht_snow = ZsHold;
-        data.st_energy.density_snow = ROWsHold;
-        data.st_energy.nosnowdays = nosnowdayHold;
+    // Snow-ground Smoothing
+    if ((data.st_energy.ht_snow > snow_ground_trans_) ||
+        (data.st_energy.ht_snow <= 0)) {
+      SurfaceEnergyBalance::SnowEnergyBalance(data);
+    } else { // Transition between Snow and bare ground
+      double theta=0.0;
+
+      // Fraction of snow covered ground
+      //      theta = pow ((data.st_energy.ht_snow / snow_ground_trans_),2);
+      theta = data.st_energy.ht_snow / snow_ground_trans_;
+
+      // Calculate as if ht_snow is the min value.
+      data.st_energy.ht_snow = snow_ground_trans_;
+      SurfaceEnergyBalance::SnowEnergyBalance(data);
+
+      // Calculate as if bare ground
+      // ATS Calcualted Data
+      data_bare.st_energy.water_depth = ponded_depth[0][c];
+      data_bare.st_energy.temp_ground = surf_temp[0][c];
+      data_bare.vp_ground.temp = surf_temp[0][c];
+      data_bare.vp_ground.actual_vaporpressure = soil_vapor_pressure[0][c]; // FIX THIS   FIX THIS FIX THIS    FIX THIS 11111111
+      data_bare.st_energy.porrowaLe = surf_porosity[0][c] * density_air * data_bare.st_energy.Le;
+      // MET station data
+      data_bare.st_energy.temp_air = air_temp[0][c];
+      data_bare.st_energy.QswIn = incoming_shortwave[0][c];
+      data_bare.st_energy.Us = std::max(wind_speed[0][c], min_wind_speed_);
+      data_bare.st_energy.Pr = precip_rain[0][c] * dt; // SEB expects total precip, not rate
+      data_bare.st_energy.Ps = precip_snow[0][c] * dt; // SEB expects total precip, not rate
+      data_bare.vp_air.temp = air_temp[0][c];
+      data_bare.vp_air.relative_humidity = relative_humidity[0][c];
+      // STORED INFO FOR SnowEnergyBalanc Model
+      data_bare.st_energy.ht_snow = snow_depth[0][c];
+      data_bare.st_energy.density_snow = snow_density[0][c];
+      data_bare.st_energy.age_snow = days_of_nosnow[0][c];
+      data_bare.st_energy.ht_snow = 0.;
+      SurfaceEnergyBalance::SnowEnergyBalance(data_bare);
+
+      // Calculating Data for ATS
+      data.st_energy.fQc = data.st_energy.fQc * theta + data_bare.st_energy.fQc * (1.-theta);
+      data.st_energy.Mr = data.st_energy.Mr * theta + data_bare.st_energy.Mr * (1.-theta);
+      data.st_energy.Trw = data.st_energy.Trw * theta + data_bare.st_energy.Trw * (1.-theta);
+
+      // slightly different averaging
+      double avg_dens, avg_age, ht;
+      if (data_bare.st_energy.ht_snow > 0) {
+        avg_dens += data_bare.st_energy.density_snow * data_bare.st_energy.ht_snow;
+        avg_age += data_bare.st_energy.age_snow * data_bare.st_energy.ht_snow;
+        ht += data_bare.st_energy.ht_snow;
+      }
+      if (data.st_energy.ht_snow > 0) {
+        avg_dens += data.st_energy.density_snow * data.st_energy.ht_snow;
+        avg_age += data.st_energy.age_snow * data.st_energy.ht_snow;
+        ht += data.st_energy.ht_snow;
+      }
+      if (ht > 0.) {
+        data.st_energy.density_snow = avg_dens / ht;
+        data.st_energy.age_snow = avg_age / ht;
+      } else {
+        data.st_energy.density_snow = data.st_energy.density_frost;
+        data.st_energy.age_snow = 0.;
       }
 
+      data.st_energy.ht_snow = data.st_energy.ht_snow * theta + data_bare.st_energy.ht_snow * (1.-theta);
+    }
+
     // STUFF ATS WANTS
-    // *** Ask Ethan about "surf_water_flux" naming convention ***
     surf_energy_flux[0][c] = data.st_energy.fQc;
     surface_water_flux[0][c]  = data.st_energy.Mr;
     surf_water_temp[0][c]  = data.st_energy.Trw;
@@ -382,10 +374,10 @@ bool SurfaceBalanceSEB::advance(double dt) {
     // STUFF SnowEnergyBalance NEEDS STORED FOR NEXT TIME STEP
     snow_depth[0][c]=data.st_energy.ht_snow;
     snow_density[0][c]=data.st_energy.density_snow;
-    days_of_nosnow[0][c]=data.st_energy.nosnowdays;
+    days_of_nosnow[0][c]=data.st_energy.age_snow;
 
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "Snow depth, snowtemp = " << data.st_energy.ht_snow << ", " << data.st_energy.Ts << std::endl;
+      *vo_->os() << "Snow depth, snowtemp = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;
       *vo_->os() << "Latent heat = " << data.st_energy.fQe << std::endl;
       *vo_->os() << "Sensible heat = " << data.st_energy.fQh << std::endl;
     }

@@ -8,12 +8,17 @@
  * ------------------------------------------------------------------------- */
 
 
+#include "surface_balance_evaluator.hh"
 #include "surface_balance_SEB.hh"
 
 namespace Amanzi {
 namespace SurfaceBalance {
 
-RegisteredPKFactory<SurfaceBalanceSEB> SurfaceBalanceSEB::reg_("surface balance SEB");
+RegisteredPKFactory<SurfaceBalanceSEB>
+SurfaceBalanceSEB::reg_("surface balance SEB");
+
+//Utils::RegisteredFactory<FieldEvaluator,SurfaceBalanceEvaluator>
+//SurfaceBalanceEvaluator::reg_("surface balance SEB");
 
 } // namespace
 } // namespace
