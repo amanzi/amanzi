@@ -96,8 +96,8 @@ void SurfaceEnergyBalance::UpdateGroundEnergy(LocalData& seb) {
     }
   }
 
-  //  seb.st_energy.fQh = seb.st_energy.rowaCp * seb.st_energy.Dhe * Sqig * (seb.st_energy.temp_air - seb.st_energy.temp_ground);
-  seb.st_energy.fQh = 0.;
+  seb.st_energy.fQh = seb.st_energy.rowaCp * seb.st_energy.Dhe * Sqig * (seb.st_energy.temp_air - seb.st_energy.temp_ground);
+  //  seb.st_energy.fQh = 0.;
 
   if (seb.st_energy.water_depth > 0.0) {
     // Checking for standing water
@@ -281,6 +281,7 @@ void SurfaceEnergyBalance::WaterMassCorrection(EnergyBalance& eb) {
     double swe_change = (eb.MIr + eb.Ps) * eb.dt;
     if (swe + swe_change < 0) {
       // No more snow!  Take the rest out of the ground.
+      // -- AA re-visit: should we take some from sublimation?
       eb.Mr += (swe + swe_change) / eb.dt;
     }
   }
@@ -325,7 +326,6 @@ void SurfaceEnergyBalance::UpdateSnow(EnergyBalance& eb) {
   } else {
     eb.age_snow = 0;
   }
-
 }
 
 

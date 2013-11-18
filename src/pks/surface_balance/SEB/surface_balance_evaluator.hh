@@ -9,7 +9,7 @@
 #define AMANZI_SURFACEBALANCE_EVALUATOR_HH_
 
 #include "factory.hh"
-#include "secondary_variables_field_evaluator.hh"
+#include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 
@@ -17,7 +17,7 @@ class Debugger;
 
 namespace SurfaceBalance {
 
-class SurfaceBalanceEvaluator : public SecondaryVariablesFieldEvaluator {
+class SurfaceBalanceEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   // constructor format for all derived classes
@@ -27,15 +27,13 @@ class SurfaceBalanceEvaluator : public SecondaryVariablesFieldEvaluator {
   SurfaceBalanceEvaluator(const SurfaceBalanceEvaluator& other);
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
-  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
-
  protected:
 
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const std::vector<Teuchos::Ptr<CompositeVector> >& results);
+          const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results);
+          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
   double min_wind_speed_;
