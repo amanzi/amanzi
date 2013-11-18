@@ -48,10 +48,10 @@ SurfaceBalanceSEB::SurfaceBalanceSEB(const Teuchos::RCP<Teuchos::ParameterList>&
 
   // set up additional primary variables
   // -- surface energy source
-  Teuchos::ParameterList& esource_sublist =
-      FElist.sublist("surface_conducted_energy_source");
-  esource_sublist.set("evaluator name", "surface_conducted_energy_source");
-  esource_sublist.set("field evaluator type", "primary variable");
+  // Teuchos::ParameterList& esource_sublist =
+  //     FElist.sublist("surface_conducted_energy_source");
+  // esource_sublist.set("evaluator name", "surface_conducted_energy_source");
+  // esource_sublist.set("field evaluator type", "primary variable");
 
   // -- surface mass source
   Teuchos::ParameterList& wsource_sublist =
@@ -88,16 +88,17 @@ void SurfaceBalanceSEB::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField(key_, name_)->SetMesh(mesh_)->
       SetComponent("cell", AmanziMesh::CELL, 1);
 
-  // requirements: other primary variables
-  S->RequireField("surface_conducted_energy_source", name_)->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("surface_conducted_energy_source");
-  Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator("surface_conducted_energy_source");
-  pvfe_esource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  if (pvfe_esource_ == Teuchos::null) {
-    Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
-    Exceptions::amanzi_throw(message);
-  }
+  Teuchos::RCP<FieldEvaluator> fm;  
+  // // requirements: other primary variables
+  // S->RequireField("surface_conducted_energy_source", name_)->SetMesh(mesh_)
+  //     ->SetComponent("cell", AmanziMesh::CELL, 1);
+  // S->RequireFieldEvaluator("surface_conducted_energy_source");
+  // fm = S->GetFieldEvaluator("surface_conducted_energy_source");
+  // pvfe_esource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+  // if (pvfe_esource_ == Teuchos::null) {
+  //   Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
+  //   Exceptions::amanzi_throw(message);
+  // }
 
   S->RequireField("surface_mass_source", name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -151,6 +152,9 @@ void SurfaceBalanceSEB::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("days_of_nosnow", name_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
+  S->RequireField("snow_temperature", name_)->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   // information from ATS data
   S->RequireFieldEvaluator("surface_temperature");
   S->RequireField("surface_temperature")->SetMesh(mesh_)
@@ -182,9 +186,13 @@ void SurfaceBalanceSEB::initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData("days_of_nosnow",name_)->PutScalar(0.);
   S->GetField("days_of_nosnow", name_)->set_initialized();
 
+  // initialize snow temp
+  S->GetFieldData("snow_temperature",name_)->PutScalar(0.);
+  S->GetField("snow_temperature", name_)->set_initialized();
+
   // initialize sources, temps
-  S->GetFieldData("surface_conducted_energy_source",name_)->PutScalar(0.);
-  S->GetField("surface_conducted_energy_source",name_)->set_initialized();
+  //  S->GetFieldData("surface_conducted_energy_source",name_)->PutScalar(0.);
+  //  S->GetField("surface_conducted_energy_source",name_)->set_initialized();
   S->GetFieldData("surface_mass_source",name_)->PutScalar(0.);
   S->GetField("surface_mass_source",name_)->set_initialized();
   S->GetFieldData("surface_mass_source_temperature",name_)->PutScalar(273.15);
@@ -251,8 +259,8 @@ bool SurfaceBalanceSEB::advance(double dt) {
 
 
   // Get output data
-  Epetra_MultiVector& surf_energy_flux =
-      *S_next_->GetFieldData("surface_conducted_energy_source", name_)->ViewComponent("cell", false);
+  // Epetra_MultiVector& surf_energy_flux =
+  //     *S_next_->GetFieldData("surface_conducted_energy_source", name_)->ViewComponent("cell", false);
 
   Epetra_MultiVector& surface_water_flux =
       *S_next_->GetFieldData("surface_mass_source", name_)->ViewComponent("cell", false);
@@ -269,6 +277,9 @@ bool SurfaceBalanceSEB::advance(double dt) {
   Epetra_MultiVector& days_of_nosnow =
       *S_next_->GetFieldData("days_of_nosnow", name_)->ViewComponent("cell", false);
 
+  Epetra_MultiVector& snow_temp =
+      *S_next_->GetFieldData("snow_temperature", name_)->ViewComponent("cell", false);
+  
   // Create the SEB data structure
   SurfaceEnergyBalance::LocalData data;
   data.st_energy.dt = dt;
@@ -367,15 +378,16 @@ bool SurfaceBalanceSEB::advance(double dt) {
     }
 
     // STUFF ATS WANTS
-    surf_energy_flux[0][c] = data.st_energy.fQc;
-    surface_water_flux[0][c]  = data.st_energy.Mr;
-    surf_water_temp[0][c]  = data.st_energy.Trw;
+    //    surf_energy_flux[0][c] = data.st_energy.fQc;
+    surface_water_flux[0][c] = data.st_energy.Mr;
+    surf_water_temp[0][c] = data.st_energy.Trw;
 
     // STUFF SnowEnergyBalance NEEDS STORED FOR NEXT TIME STEP
-    snow_depth[0][c]=data.st_energy.ht_snow;
-    snow_density[0][c]=data.st_energy.density_snow;
-    days_of_nosnow[0][c]=data.st_energy.age_snow;
-
+    snow_depth[0][c] = data.st_energy.ht_snow;
+    snow_density[0][c] = data.st_energy.density_snow;
+    days_of_nosnow[0][c] = data.st_energy.age_snow;
+    snow_temp[0][c] = data.st_energy.temp_snow;
+    
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "Snow depth, snowtemp = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;
       *vo_->os() << "Latent heat = " << data.st_energy.fQe << std::endl;
@@ -386,7 +398,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
 
   // Mark primary variables as changed.
   solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
-  pvfe_esource_->SetFieldAsChanged(S_next_.ptr());
+  //  pvfe_esource_->SetFieldAsChanged(S_next_.ptr());
   pvfe_wsource_->SetFieldAsChanged(S_next_.ptr());
   pvfe_wtemp_->SetFieldAsChanged(S_next_.ptr());
 

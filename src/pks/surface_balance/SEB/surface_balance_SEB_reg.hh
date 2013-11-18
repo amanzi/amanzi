@@ -17,8 +17,8 @@ namespace SurfaceBalance {
 RegisteredPKFactory<SurfaceBalanceSEB>
 SurfaceBalanceSEB::reg_("surface balance SEB");
 
-//Utils::RegisteredFactory<FieldEvaluator,SurfaceBalanceEvaluator>
-//SurfaceBalanceEvaluator::reg_("surface balance SEB");
+Utils::RegisteredFactory<FieldEvaluator,SurfaceBalanceEvaluator>
+SurfaceBalanceEvaluator::reg_("surface balance SEB");
 
 } // namespace
 } // namespace
