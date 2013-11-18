@@ -39,7 +39,7 @@ namespace WhetStone {
 
 class MFD3D_Diffusion : public MFD3D { 
  public:
-  explicit MFD3D_Diffusion(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :MFD3D(mesh) {};
+  explicit MFD3D_Diffusion(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MFD3D(mesh) {};
   ~MFD3D_Diffusion() {};
 
   int L2consistency(int cell, const Tensor& T,
@@ -56,6 +56,8 @@ class MFD3D_Diffusion : public MFD3D {
   int MassMatrixInverse(int cell, const Tensor& permeability, DenseMatrix& W);
 
   int StiffnessMatrix(int cell, const Tensor& permeability, DenseMatrix& A);
+
+  int StiffnessMatrixMMatrix(int cell, const Tensor& permeability, DenseMatrix& A);
 
   // experimental methods
   int L2consistencyInverseScaled(int cell, const Tensor& permeability,
@@ -89,6 +91,10 @@ class MFD3D_Diffusion : public MFD3D {
                                       const std::vector<double>& solution, 
                                       AmanziGeometry::Point& gradient);
 
+  // access
+  double simplex_functional() { return simplex_functional_; }
+  int simplex_num_itrs() { return simplex_num_itrs_; }
+
  private:  
   // stability methods (add matrix Ms in M = Mc + Ms)
   int StabilityMMatrixHex_(int cell, const Tensor& T, DenseMatrix& Mc, DenseMatrix& M);
@@ -100,6 +106,9 @@ class MFD3D_Diffusion : public MFD3D {
   int SimplexFindFeasibleSolution_(DenseMatrix& T, int m1, int m2, int m3, int* izrow, int* iypos);
   void SimplexPivotElement_(DenseMatrix& T, int kp, int* ip);
   void SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip);
+
+  double simplex_functional_;
+  int simplex_num_itrs_;
 };
 
 }  // namespace WhetStone

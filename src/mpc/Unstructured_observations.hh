@@ -9,6 +9,7 @@
 #include "io_event.hh"
 
 #include "TimeStepManager.hh"
+#include "VerboseObject.hh"
 
 namespace Amanzi {
 
@@ -53,6 +54,9 @@ class Unstructured_observations {
   bool DumpRequested(const int, const double);
      
   void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm);
+
+ protected:
+  VerboseObject* vo_;
   
 
  private:

@@ -518,6 +518,8 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
   Teuchos::ParameterList defPL;
   bool hasSteady = false;
   bool hasTrans = false;
+  bool hasRestart = false;
+  int numControlPeriods = 0;
   Teuchos::Array<double> start_times;
   double sim_start=-1.;
   double sim_end=-1.;
@@ -532,7 +534,6 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
         xercesc::DOMNode* currentNode = children->item(j) ;
         if (xercesc::DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
     	  char* tagname = xercesc::XMLString::transcode(currentNode->getNodeName());
-
           if (strcmp(tagname,"verbosity")==0) {
               attrMap = currentNode->getAttributes();
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("level"));
@@ -548,16 +549,18 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 		attrName =xercesc::XMLString::transcode(nodeAttr->getNodeName());
 		textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 		defPL.set<std::string>(attrName,textContent);
-		if (strcmp(attrName,"mode")==0) {
-		  if (strcmp(textContent,"steady")==0) {
-		    hasSteady = true;
-		  } else {
-		    hasTrans = true;
-		  }
-		}
+		// EIB:: only include default mode if > 1 EC
+		//if (strcmp(attrName,"mode")==0) {
+		//  if (strcmp(textContent,"steady")==0) {
+		//    hasSteady = true;
+		//  } else {
+		//    hasTrans = true;
+		//  }
+		//}
 	      }
 	  } else if (strcmp(tagname,"execution_control")==0) {
               Teuchos::ParameterList ecPL;
+	      numControlPeriods++;
               attrMap = currentNode->getAttributes();
 	      char* name;
               for (int k=0; k<attrMap->getLength(); k++) {
@@ -605,6 +608,11 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 		    hasTrans = true;
 		  }
 		}
+		if (strcmp(attrName,"restart")==0) {
+		    hasRestart = true;
+		    //name = attrName;
+	            ecsPL.sublist("restart") = ecPL;
+		}
 	      }
 	      ecsPL.sublist(name) = ecPL;
 	  }
@@ -622,12 +630,35 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
   //ecsPL.sublist("simulation") = simPL;
   def_list->sublist("simulation") = simPL;
 
+  // If > 1 EC, then include default mode
+  if (numControlPeriods > 1) {
+    if (defPL.isParameter("mode")) {
+	if (defPL.get<std::string>("mode") == "steady") hasSteady = true;
+	if (defPL.get<std::string>("mode") == "transient") hasTrans = true;
+    }
+  }
+
   // Now, go back and sort things out
   bool haveSSF = false; // have steady-steady incr/red factors for later
   bool haveTF = false;  // have transient incr/red factors for later
   
+  // Restart
+  if (hasRestart) {
+      std::string value = ecsPL.sublist("restart").get<std::string>("restart");
+      Teuchos::ParameterList restartPL;
+      restartPL.set<std::string>("Checkpoint Data File Name",value);
+      list.sublist("Restart from Checkpoint Data File") = restartPL;
+  }
+
   // Steady case
   if (hasSteady && !hasTrans) {
+    if (def_list->sublist("simulation").isParameter("verbosity")) {
+      std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
+      if (verbosity == "extreme") {
+	    std::cout << "Amanzi::InputTranslator: Creating Steady State Execution Control."<< std::endl;
+      }
+    }
+    // NOTE:: if you edit the Steady case, it is repeated under the Initialize to Steady case, so edit there too!!!!
     Teuchos::ParameterList steadyPL;
     // look for values from default list
     // if not there, grab from ec list
@@ -729,6 +760,12 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
   } else {
     if (!hasSteady) {
     // Transient case
+    if (def_list->sublist("simulation").isParameter("verbosity")) {
+      std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
+      if (verbosity == "extreme") {
+	    std::cout << "Amanzi::InputTranslator: Creating Transient Execution Control."<< std::endl;
+      }
+    }
       Teuchos::ParameterList transPL;
       // loop over ecs to set up, TPC lists
       Teuchos::Array<double> start_times;
@@ -806,74 +843,188 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
       }
     } else {
     // Initialize to Steady case
-      Teuchos::Array<double> start_times;
-      Teuchos::Array<double> init_steps;
-      Teuchos::Array<double> max_steps;
-      Teuchos::ParameterList timesPL;
-      Teuchos::ParameterList initPL;
-      std::string value;
-      bool gotValue = false;
-      for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-	std::string mode("none");
-	if (defPL.isParameter("mode")) mode = defPL.get<std::string>("mode");
-        if (ecsPL.sublist(it->first).isParameter("mode")) mode = ecsPL.sublist(it->first).get<std::string>("mode");
-	if (strcmp(mode.c_str(),"steady")==0) {
-	  if (ecsPL.sublist(it->first).isParameter("start")) {
-            value = ecsPL.sublist(it->first).get<std::string>("start");
-	    double time = get_time_value(value,*def_list);
-	    initPL.set<double>("Start",time);
-	  }
-	  if (ecsPL.sublist(it->first).isParameter("end")) {
-            value = ecsPL.sublist(it->first).get<std::string>("end");
-	    double time = get_time_value(value,*def_list);
-	    initPL.set<double>("Switch",time);
-	  }
-	  if (ecsPL.sublist(it->first).isParameter("init_dt")) {
-            value = ecsPL.sublist(it->first).get<std::string>("init_dt");
-	    initPL.set<double>("Steady Initial Time Step",get_time_value(value,*def_list));
-	  } 
-	  if (ecsPL.sublist(it->first).isParameter("method")) {
-            value = ecsPL.sublist(it->first).get<std::string>("method");
-	    if (strcmp(value.c_str(),"true")==0) 
-	      initPL.set<bool>("Use Picard",true);
-	  } 
-	  if (ecsPL.sublist(it->first).isParameter("reduction_factor")) {
-            haveSSF = true;
-	  } 
-	  if (ecsPL.sublist(it->first).isParameter("increase_factor")) {
-            haveSSF = true;
-	  } 
-	} else {
-	  if (ecsPL.sublist(it->first).isParameter("start")) {
-            value = ecsPL.sublist(it->first).get<std::string>("start");
-	    double time = get_time_value(value,*def_list);
-	    start_times.append(time);
-	  }
-	  if (ecsPL.sublist(it->first).isParameter("end")) {
-            value = ecsPL.sublist(it->first).get<std::string>("end");
-	    double time = get_time_value(value,*def_list);
-	    initPL.set<double>("End",time);
-	  }
-	  if (ecsPL.sublist(it->first).isParameter("init_dt")) {
-            value = ecsPL.sublist(it->first).get<std::string>("init_dt");
-	    gotValue = true;
+      if (numControlPeriods==1) {
+        // user screwed up and really meant Steady case
+        if (def_list->sublist("simulation").isParameter("verbosity")) {
+          std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
+          if (verbosity == "extreme") {
+	    std::cout << "Amanzi::InputTranslator: Creating Steady State Execution Control."<< std::endl;
+          }
+        }
+	Teuchos::ParameterList steadyPL;
+        // look for values from default list
+        // if not there, grab from ec list
+        std::string value;
+        std::string method;
+        bool gotValue;
+        if (defPL.isParameter("start")) {
+          value = defPL.get<std::string>("start");
+          gotValue = true;
+        } else {
+          for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
+            if (ecsPL.sublist(it->first).isParameter("start")) {
+              value = ecsPL.sublist(it->first).get<std::string>("start");
+              gotValue = true;
+	    }
+          }
+        }
+        if (gotValue) {
+          double time = get_time_value(value, *def_list);
+          steadyPL.set<double>("Start",time);
+          gotValue = false;
+        } else {
+          // ERROR - for unstructured, optional for structured;
+        }
+        if (defPL.isParameter("end")) {
+          value = defPL.get<std::string>("end");
+          gotValue = true;
+        } else {
+          for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
+            if (ecsPL.sublist(it->first).isParameter("end")) {
+              value = ecsPL.sublist(it->first).get<std::string>("end");
+              gotValue = true;
+	    }
+          }
+        }
+        if (gotValue) {
+          double time = get_time_value(value, *def_list);
+          steadyPL.set<double>("End",time);
+          gotValue = false;
+        } else {
+          // ERROR ;
+        }
+        if (defPL.isParameter("init_dt")) {
+          value = defPL.get<std::string>("init_dt");
+          gotValue = true;
+        } else {
+          for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
+            if (ecsPL.sublist(it->first).isParameter("init_dt")) {
+              value = ecsPL.sublist(it->first).get<std::string>("init_dt");
+              gotValue = true;
+	    }
+          }
+        }
+        if (gotValue) {
+          steadyPL.set<double>("Initial Time Step",get_time_value(value,*def_list));
+          gotValue = false;
+        } else {
+          // default value to 0.0
+          steadyPL.set<double>("Initial Time Step",0.0);
+        }
+        if (defPL.isParameter("method")) {
+          method = defPL.get<std::string>("method");
+          gotValue = true;
+        } else {
+          for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
+            if (ecsPL.sublist(it->first).isParameter("method")) {
+              method = ecsPL.sublist(it->first).get<std::string>("method");
+              gotValue = true;
+	    }
+          }
+        }
+        if (gotValue && strcmp(method.c_str(),"picard")==0) {
+          steadyPL.set<bool>("Use Picard","true");
+          gotValue = false;
+        } else {
+          // ERROR ;
+        }
+        if (defPL.isParameter("reduction_factor")) {
+          haveSSF = true;
+        } else {
+          for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
+            if (ecsPL.sublist(it->first).isParameter("reduction_factor")) {
+              value = ecsPL.sublist(it->first).get<std::string>("reduction_factor");
+              haveSSF = true;
+	    }
+          }
+        }
+        if (defPL.isParameter("increase_factor")) {
+          haveSSF = true;
+        } else {
+          for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
+            if (ecsPL.sublist(it->first).isParameter("increase_factor")) {
+              haveSSF = true;
+    	    }
+          }
+        }
+        list.sublist("Time Integration Mode").sublist("Steady") = steadyPL;
+      } else {
+        // proceed, user really meant Initialize toSteady case
+        if (def_list->sublist("simulation").isParameter("verbosity")) {
+          std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
+          if (verbosity == "extreme") {
+	    std::cout << "Amanzi::InputTranslator: Creating Initialize to Steady Execution Control."<< std::endl;
+          }
+        }
+        Teuchos::Array<double> start_times;
+        Teuchos::Array<double> init_steps;
+        Teuchos::Array<double> max_steps;
+        Teuchos::ParameterList timesPL;
+        Teuchos::ParameterList initPL;
+        std::string value;
+        bool gotValue = false;
+        for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
+	  std::string mode("none");
+	  if (defPL.isParameter("mode")) mode = defPL.get<std::string>("mode");
+          if (ecsPL.sublist(it->first).isParameter("mode")) mode = ecsPL.sublist(it->first).get<std::string>("mode");
+	  if (strcmp(mode.c_str(),"steady")==0) {
+	    if (ecsPL.sublist(it->first).isParameter("start")) {
+              value = ecsPL.sublist(it->first).get<std::string>("start");
+	      double time = get_time_value(value,*def_list);
+	      initPL.set<double>("Start",time);
+	    }
+	    if (ecsPL.sublist(it->first).isParameter("end")) {
+              value = ecsPL.sublist(it->first).get<std::string>("end");
+	      double time = get_time_value(value,*def_list);
+	      initPL.set<double>("Switch",time);
+	    }
+	    if (ecsPL.sublist(it->first).isParameter("init_dt")) {
+              value = ecsPL.sublist(it->first).get<std::string>("init_dt");
+	      initPL.set<double>("Steady Initial Time Step",get_time_value(value,*def_list));
+	    } 
+	    if (ecsPL.sublist(it->first).isParameter("method")) {
+              value = ecsPL.sublist(it->first).get<std::string>("method");
+	      if (strcmp(value.c_str(),"true")==0) 
+	        initPL.set<bool>("Use Picard",true);
+	    } 
+	    if (ecsPL.sublist(it->first).isParameter("reduction_factor")) {
+              haveSSF = true;
+	    } 
+	    if (ecsPL.sublist(it->first).isParameter("increase_factor")) {
+              haveSSF = true;
+	    } 
 	  } else {
-	    if (defPL.isParameter("init_dt")) {
-              value = defPL.get<std::string>("init_dt");
+	    if (ecsPL.sublist(it->first).isParameter("start")) {
+              value = ecsPL.sublist(it->first).get<std::string>("start");
+	      double time = get_time_value(value,*def_list);
+	      start_times.append(time);
+	    }
+	    if (ecsPL.sublist(it->first).isParameter("end")) {
+              value = ecsPL.sublist(it->first).get<std::string>("end");
+	      double time = get_time_value(value,*def_list);
+	      initPL.set<double>("End",time);
+	    }
+	    if (ecsPL.sublist(it->first).isParameter("init_dt")) {
+              value = ecsPL.sublist(it->first).get<std::string>("init_dt");
 	      gotValue = true;
+	    } else {
+	      if (defPL.isParameter("init_dt")) {
+                value = defPL.get<std::string>("init_dt");
+	        gotValue = true;
+	      }
+	    }
+	    if (gotValue) {
+	      init_steps.append(get_time_value(value,*def_list));
+	      gotValue = false;
 	    }
 	  }
-	  if (gotValue) {
-	    init_steps.append(get_time_value(value,*def_list));
-	    gotValue = false;
-	  }
-	}
+        }
+        initPL.set<double>("Transient Initial Time Step",init_steps[0]);
+        list.sublist("Time Integration Mode").sublist("Initialize To Steady") = initPL;
+        timesPL.set<Teuchos::Array<double> >("Start Times",start_times);
+        timesPL.set<Teuchos::Array<double> >("Initial Time Step",init_steps);
+        list.sublist("Time Period Control") = timesPL;
       }
-      initPL.set<double>("Transient Initial Time Step",init_steps[0]);
-      list.sublist("Time Integration Mode").sublist("Initialize To Steady") = initPL;
-      timesPL.set<Teuchos::Array<double> >("Start Times",start_times);
-      timesPL.set<Teuchos::Array<double> >("Initial Time Step",init_steps);
-      list.sublist("Time Period Control") = timesPL;
     }
   }
   /*
@@ -975,6 +1126,12 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
   bool transportON=false;
   bool chemistryON=false;
   // get process kernels node
+  if (def_list->sublist("simulation").isParameter("verbosity")) {
+    std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
+    if (verbosity == "extreme") {
+	    std::cout << "Amanzi::InputTranslator: Getting Process Kernels."<< std::endl;
+    }
+  }
   nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("process_kernels"));
   for (int i=0; i<nodeList->getLength(); i++) {
     xercesc::DOMNode* pkNode = nodeList->item(i);
@@ -1090,6 +1247,12 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
     }
   }
   // get numerical controls node
+  if (def_list->sublist("simulation").isParameter("verbosity")) {
+    std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
+    if (verbosity == "extreme") {
+	    std::cout << "Amanzi::InputTranslator: Getting Numerical Controls."<< std::endl;
+    }
+  }
   Teuchos::ParameterList ncPL;
   nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("numerical_controls"));
   for (int i=0; i<nodeList->getLength(); i++) {
@@ -2039,25 +2202,47 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
 	      // loop over attributes to get x,y,z
 	      char *x,*y,*z;
               attrMap = curkid->getAttributes();
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("x"));
-              x = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("y"));
-              y = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("z"));
-              z = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	      Teuchos::ParameterList perm;
-	      if (strcmp(x,y)==0 && strcmp(y,z)==0) {
-		perm.set<double>("Value",get_double_constant(x,def_list));
+	      Teuchos::ParameterList permTmp;
+	      for (int k=0; k<attrMap->getLength(); k++) {
+                xercesc::DOMNode* attrNode = attrMap->item(k) ;
+                if (xercesc::DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+                  char* attrName = xercesc::XMLString::transcode(attrNode->getNodeName());
+	          if (strcmp("x",attrName)==0){
+                      x = xercesc::XMLString::transcode(attrNode->getNodeValue());
+		      permTmp.set<double>("x",get_double_constant(x,def_list));
+	              XMLString::release(&x);
+		  } else if (strcmp("y",attrName)==0){
+                      y = xercesc::XMLString::transcode(attrNode->getNodeValue());
+		      permTmp.set<double>("y",get_double_constant(y,def_list));
+	              XMLString::release(&y);
+		  } else if (strcmp("z",attrName)==0){
+                      z = xercesc::XMLString::transcode(attrNode->getNodeValue());
+		      permTmp.set<double>("z",get_double_constant(z,def_list));
+	              XMLString::release(&z);
+		  }
+		}
+	      }
+	      bool checkY = true , checkZ = true;
+	      if (permTmp.isParameter("y")) {
+		if (permTmp.get<double>("x") != permTmp.get<double>("y")) checkY = false;
+	      } 
+	      if (permTmp.isParameter("z")) {
+		if (permTmp.get<double>("x") != permTmp.get<double>("z")) checkZ = false;
+	      } 
+	      if (checkY && checkZ) {
+		perm.set<double>("Value",permTmp.get<double>("x"));
 	        matlist.sublist("Intrinsic Permeability: Uniform") = perm;
 	      } else {
-		perm.set<double>("x",get_double_constant(x,def_list));
-	        perm.set<double>("y",get_double_constant(y,def_list));
-	        perm.set<double>("z",get_double_constant(z,def_list));
+		perm.set<double>("x",permTmp.get<double>("x"));
+	        if (permTmp.isParameter("y")) {
+		    perm.set<double>("y",permTmp.get<double>("y")) ;
+		}
+	        if (permTmp.isParameter("z")) {
+		    perm.set<double>("z",permTmp.get<double>("z")) ;
+		}
 	        matlist.sublist("Intrinsic Permeability: Anisotropic Uniform") = perm;
 	      }
-	      XMLString::release(&x);
-	      XMLString::release(&y);
-	      XMLString::release(&z);
 	    } else if  (strcmp("cap_pressure",tagName)==0){
               attrMap = curkid->getAttributes();
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("model"));
@@ -2705,6 +2890,8 @@ Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 
   // get list of Source
   xercesc::DOMNodeList* SCList = elementSC->getElementsByTagName(XMLString::transcode("source"));
+  std::string phase("Aqueous"); //NOTE:: EIB: currently only support this, add checks later
+  std::string component("Water");
   for (int i=0; i<SCList->getLength(); i++) {
     xercesc::DOMNode* cur = SCList->item(i) ;
     if (xercesc::DOMNode::ELEMENT_NODE == cur->getNodeType()) {
@@ -2724,15 +2911,24 @@ Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 	    XMLString::release(&textContent2);
           } else if (strcmp(tagName,"liquid_phase")==0) {
             attrMap = SCNode->getAttributes();
+            nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+            char* phaseName = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
             xercesc::DOMNodeList* compList = SCNode->getChildNodes();
             for (int k=0; k<compList->getLength(); k++) {
-              xercesc::DOMNode* compNode = compList->item(k) ;
+	      xercesc::DOMNode* compNode = compList->item(k) ;
               char* compName  = xercesc::XMLString::transcode(compNode->getNodeName());
+              xercesc::DOMNamedNodeMap* attrMap2 = compNode->getAttributes();
               if (strcmp(compName,"liquid_component")==0) {
 	        Teuchos::Array<double> vals;
 	        Teuchos::Array<double> times;
 	        Teuchos::Array<std::string> funcs;
 	        std::string scname;
+		// get component name
+                attrMap = compNode->getAttributes();
+                nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+                char* compName2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+		component = std::string(compName2);
+		// loop over children
                 xercesc::DOMNodeList* scChildList = compNode->getChildNodes();
                 for (int l=0; l<scChildList->getLength(); l++) {
                   xercesc::DOMNode* scChildNode = scChildList->item(l) ;
@@ -2743,37 +2939,102 @@ Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 		    } else if (strcmp(scChildName,"permeability_weighted")==0){
 		     scname = "Source: Permeability Weighted";
 		    }
-                    xercesc::DOMElement* scElem = static_cast<xercesc::DOMElement*>(scChildNode);
-                    char* textContent2 = xercesc::XMLString::transcode(scElem->getAttribute(
-		                    xercesc::XMLString::transcode("function")));
-		    if (strcmp(textContent2,"linear")==0) {
-		      funcs.append("Linear");
-		    } else if (strcmp(textContent2,"constant")==0) {
-		      funcs.append("Constant");
-		    } else if (strcmp(textContent2,"uniform")==0) {
-		      funcs.append("Uniform");
+		    // loop over any attributes that may exist
+                    xercesc::DOMNamedNodeMap* attrMap2 = scChildNode->getAttributes();
+                    for (int l=0; l<attrMap2->getLength(); l++) {
+                      xercesc::DOMNode* attrNode = attrMap2->item(l) ;
+                      if (xercesc::DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+                        char* attrName = xercesc::XMLString::transcode(attrNode->getNodeName());
+                        char* attrValue = xercesc::XMLString::transcode(attrNode->getNodeValue());
+			if (strcmp(attrName,"function")==0) {
+		          if (strcmp(attrValue,"linear")==0) {
+		            funcs.append("Linear");
+		          } else if (strcmp(attrValue,"constant")==0) {
+		            funcs.append("Constant");
+		          } else if (strcmp(attrValue,"uniform")==0) {
+		            funcs.append("Uniform");
+		          }
+			} else if (strcmp(attrName,"start")==0) {
+		          times.append(get_time_value(attrValue, def_list));
+			} else if (strcmp(attrName,"value")==0) {
+		          vals.append(get_time_value(attrValue, def_list));
+			}
+		      }
 		    }
-                    textContent2 = xercesc::XMLString::transcode(scElem->getAttribute(
-		                   xercesc::XMLString::transcode("start")));
-                    double time = get_time_value(textContent2, def_list);
-		    times.append(time);
-                    textContent2 = xercesc::XMLString::transcode(scElem->getAttribute(
-		                   xercesc::XMLString::transcode("value")));
-                    time = get_time_value(textContent2, def_list);
-		    vals.append(time);
 		  }
 		}
 	        if (times.length()==1 ){
 	  	  times.append(times[0]+1.);
 		  vals.append(vals[0]);
 	        }
+	        //EIB - this is iffy!!! Talked with Ellen, this is consistent with her assumptions in Akuna, for now
+	        if (times.length()==funcs.length() && funcs.length()>0) funcs.remove(funcs.length()-1); 
 	        Teuchos::ParameterList newsclist;
-	        newsclist.set<Teuchos::Array<double> >("Times",times);
-	        newsclist.set<Teuchos::Array<std::string> >("Time Functions",funcs);
-	        newsclist.set<Teuchos::Array<double> >("Values",vals);
+		if (times.length() > 0) {
+	          newsclist.set<Teuchos::Array<double> >("Times",times);
+	          newsclist.set<Teuchos::Array<std::string> >("Time Functions",funcs);
+	          newsclist.set<Teuchos::Array<double> >("Values",vals);
+		}
 	        sclist.sublist(scname) = newsclist;
+	      } else if (strcmp(compName,"solute_component")==0) {
+	        Teuchos::Array<double> vals;
+	        Teuchos::Array<double> times;
+	        Teuchos::Array<std::string> funcs;
+	        std::string scname;
+	        std::string soluteName;
+                xercesc::DOMNodeList* scChildList = compNode->getChildNodes();
+                for (int l=0; l<scChildList->getLength(); l++) {
+                  xercesc::DOMNode* scChildNode = scChildList->item(l) ;
+                  if (xercesc::DOMNode::ELEMENT_NODE == scChildNode->getNodeType()) {
+                    char* scChildName  = xercesc::XMLString::transcode(scChildNode->getNodeName());
+		    if (strcmp(scChildName,"flow_weighted_conc")==0){
+		     scname = "Source: Flow Weighted Concentration";
+		    } else if (strcmp(scChildName,"uniform_conc")==0){
+		     scname = "Source: Uniform Concentration";
+		    }
+		    // loop over any attributes that may exist
+                    xercesc::DOMNamedNodeMap* attrMap2 = scChildNode->getAttributes();
+                    for (int l=0; l<attrMap2->getLength(); l++) {
+                      xercesc::DOMNode* attrNode = attrMap2->item(l) ;
+                      if (xercesc::DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+                        char* attrName = xercesc::XMLString::transcode(attrNode->getNodeName());
+                        char* attrValue = xercesc::XMLString::transcode(attrNode->getNodeValue());
+			if (strcmp(attrName,"function")==0) {
+		          if (strcmp(attrValue,"linear")==0) {
+		            funcs.append("Linear");
+		          } else if (strcmp(attrValue,"constant")==0) {
+		            funcs.append("Constant");
+		          } else if (strcmp(attrValue,"uniform")==0) {
+		            funcs.append("Uniform");
+		          }
+			} else if (strcmp(attrName,"start")==0) {
+		          times.append(get_time_value(attrValue, def_list));
+			} else if (strcmp(attrName,"value")==0) {
+		          vals.append(get_time_value(attrValue, def_list));
+			} else if (strcmp(attrName,"name")==0) {
+		          soluteName = attrValue;
+			}
+                        XMLString::release(&attrName);
+                        XMLString::release(&attrValue);
+		      }
+		    }
+		  }
+		}
+	        if (times.length()==1 ){
+	  	  times.append(times[0]+1.);
+		  vals.append(vals[0]);
+	        }
+	        //EIB - this is iffy!!! Talked with Ellen, this is consistent with her assumptions in Akuna, for now
+	        if (times.length()==funcs.length() && funcs.length()>0) funcs.remove(funcs.length()-1); 
+	        Teuchos::ParameterList newsclist;
+	          newsclist.set<Teuchos::Array<double> >("Times",times);
+	          newsclist.set<Teuchos::Array<std::string> >("Time Functions",funcs);
+	          newsclist.set<Teuchos::Array<double> >("Values",vals);
+	        //sclist.sublist(scname) = newsclist;
+	        sclist.sublist("Solute SOURCE").sublist(phase).sublist(component).sublist(soluteName).sublist(scname) = newsclist;
 	      }
 	    }
+            XMLString::release(&phaseName);
 	  }
 	}
       }

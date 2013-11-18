@@ -347,7 +347,7 @@ extern "C"
 #endif
 				ARLIM_P(ww_lo),ARLIM_P(ww_hi),
 				const int* bc, const int* lo, const int* hi, 
-				Real* dt, const Real* dx,
+				Real* dt, const Real* dx, const int* nComp,
 				const int* use_forces_in_trans, const int* iconserv, const Real* eps);
 #else  
    void FORT_ESTATE_TRACER(const Real* s_dat,   ARLIM_P(s_lo),ARLIM_P(s_hi),

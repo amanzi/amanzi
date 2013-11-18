@@ -241,13 +241,25 @@ void MPC::mpc_init() {
 
   // then check if indeed we are
   if (mpc_parameter_list.isSublist("Restart from Checkpoint Data File")) {
-    restart_requested = true;
+
+    restart_requested = ! mpc_parameter_list.sublist("Restart from Checkpoint Data File").get<bool>("initialize from checkpoint data file and do not restart",false);
 
     Teuchos::ParameterList& restart_parameter_list =
         mpc_parameter_list.sublist("Restart from Checkpoint Data File");
 
     restart_from_filename = restart_parameter_list.get<string>("Checkpoint Data File Name");
 
+    if (restart_requested) {
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+	*out << "Restarting from checkpoint file: " << restart_from_filename << std::endl;
+      }
+    } else {
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+	*out << "Initializing data from checkpoint file: " << restart_from_filename << std::endl;
+	*out << "    (Ignoring all initial conditions.)" << std::endl; 
+      }      
+    }
+  
     // make sure that the restart file actually exists, if not throw an error
     boost::filesystem::path restart_from_filename_path(restart_from_filename);
     if (!boost::filesystem::exists(restart_from_filename_path)) {

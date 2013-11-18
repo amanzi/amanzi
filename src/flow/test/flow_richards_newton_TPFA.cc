@@ -69,9 +69,8 @@ TEST(NEWTON_RICHARD_STEADY) {
   S.RegisterDomainMesh(mesh);
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
   S.Setup();
-
-  FS->Initialize();
   S.Initialize();
+  FS->Initialize();
 
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);

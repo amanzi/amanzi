@@ -11,6 +11,30 @@ import optparse
 #
 
 #
+# Install
+#
+install={}
+install['index']={'index_title' : 'Building Amanzi',
+                   'index_file' : 'doc/user_guide/install/index.rst',
+                   'index_list' : ['bootstrap','tpls','amanzi'],
+                   }
+    
+   
+install['tpls']={'from_file' : 'config/SuperBuild/INSTALL',
+                 'dest_file' : 'doc/user_guide/install/building_tpls.rst',
+                 'index_entry' : 'building_tpls.rst',
+                 }
+
+install['amanzi']={'from_file' : 'doc/build_instructions/build_instructions.rst',
+                   'dest_file' : 'doc/user_guide/install/build_instructions.rst',
+                   'index_entry' : 'build_instructions.rst',
+                  }
+install['bootstrap']={'from_file' : 'doc/build_instructions/building_bootstrap.rst',
+                      'dest_file' : 'doc/user_guide/install/building_bootstrap.rst',
+                      'index_entry' : 'building_bootstrap.rst', }
+
+    
+#
 # Tutorials
 #
 tutorial={}
@@ -133,7 +157,7 @@ benchmark['chemistry']={'index_entry' : 'chemistry/index.rst',
                         'index' : 
                         {'index_title' : 'Chemistry',
                          'index_file' : 'doc/user_guide/benchmarking/chemistry/index.rst',
-                         'index_list' : ['tracer', 'calcite', 'ion_exchange', 'tritium']
+                         'index_list' : ['tracer', 'tritium', 'calcite', 'isotherms', 'ion_exchange', 'farea']
                          },
                         'tracer' : 
                             {'from_dir' : 'testing/benchmarking/chemistry/tracer_1d',
@@ -145,6 +169,11 @@ benchmark['chemistry']={'index_entry' : 'chemistry/index.rst',
                              'dest_dir' : 'doc/user_guide/benchmarking/chemistry/calcite_1d',
                              'index_entry' : 'calcite_1d/amanzi_u-1d-calcite.rst'
                              },
+                        'isotherms' : 
+                            {'from_dir' : 'testing/benchmarking/chemistry/isotherms_1d',
+                             'dest_dir' : 'doc/user_guide/benchmarking/chemistry/isotherms_1d',
+                             'index_entry' : 'isotherms_1d/amanzi_u-1d-isotherms.rst'
+                             },
                         'ion_exchange' : 
                              {'from_dir' : 'testing/benchmarking/chemistry/ion_exchange_1d',
                               'dest_dir' : 'doc/user_guide/benchmarking/chemistry/ion_exchange_1d',
@@ -154,6 +183,11 @@ benchmark['chemistry']={'index_entry' : 'chemistry/index.rst',
                             {'from_dir' : 'testing/benchmarking/chemistry/tritium_1d',
                              'dest_dir' : 'doc/user_guide/benchmarking/chemistry/tritium_1d',
                              'index_entry' : 'tritium_1d/amanzi_u-1d-tritium.rst'
+                             },
+                        'farea':
+                            {'from_dir' : 'testing/benchmarking/chemistry/farea_1d',
+                             'dest_dir' : 'doc/user_guide/benchmarking/chemistry/farea_1d',
+                             'index_entry' : 'farea_1d/amanzi_u-1d-farea.rst'
                              },
                         }
 
@@ -180,6 +214,7 @@ mycase['newcase']={'from_dir' : 'testing/verification/flow/saturated/transient/h
 p = optparse.OptionParser()
 p.add_option('--full-guide', help='Build the full User Guide', default=False, dest='full_guide', action='store_true')
 p.add_option('--mycase', help='Build the "mycase" test', default=False, dest='mycase', action='store_true')
+p.add_option('--install', default=False, dest='install', action='store_true')
 p.add_option('--tutorial', default=False, dest='tutorial', action='store_true')
 p.add_option('--verification', default=False, dest='verification', action='store_true')
 p.add_option('--benchmarking', default=False, dest='benchmarking', action='store_true')
@@ -194,11 +229,17 @@ sections={}
 #
 #  Table of Contents (Top Level)
 #
-toc_user_guide = {'index_list' : [ 'background', 'capabilities', 'input' ],
+toc_user_guide = {'index_list' : [ 'background', 'quickstart', 'capabilities', 'input' ],
                   'background'   : { 'index_entry' : 'background/index.rst' },
+                  'quickstart'   : { 'index_entry' : 'background/getting_started.rst'},
                   'capabilities' : { 'index_entry' : 'capabilities/index.rst' },
-                  'input'        : { 'index_entry' : 'input/input_schema.rst'  },
+                  'input'        : { 'index_entry' : 'input/index.rst'  },
             }
+
+if ( opts.install or opts.full_guide ):
+    toc_user_guide['index_list'].append('install')
+    toc_user_guide['install'] = { 'index_entry' : 'install/index.rst' }
+    sections['install'] = install
 
 if ( opts.tutorial or opts.full_guide ):
     toc_user_guide['index_list'].append('tutorial')

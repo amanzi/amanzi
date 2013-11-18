@@ -69,8 +69,8 @@ TEST(FLOW_RICHARDS_PICARD) {
   S.RegisterDomainMesh(mesh);
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
   S.Setup();
-  FS->Initialize();
   S.Initialize();
+  FS->Initialize();
 
   // create Richards process kernel
   Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, FS));

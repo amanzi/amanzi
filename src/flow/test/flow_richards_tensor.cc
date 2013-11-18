@@ -68,8 +68,8 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   S->RegisterDomainMesh(mesh);
   RCP<Flow_State> FS = Teuchos::rcp(new AmanziFlow::Flow_State(*S));
   S->Setup();
-  FS->Initialize();
   S->Initialize();
+  FS->Initialize();
 
   // create Richards problem
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);

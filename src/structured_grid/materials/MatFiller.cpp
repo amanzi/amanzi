@@ -144,7 +144,12 @@ MatFiller::Initialize()
     fbl.simplify(); fbl.maxSize(max_grid_size);
     BoxArray fba(fbl);
     BL_ASSERT(fba.isDisjoint());
-    materialID.set(lev+1,new MultiFab(fba, 1, nGrow));
+    if (fba.size()!=0) { 
+      materialID.set(lev+1,new MultiFab(fba, 1, nGrow));
+    }
+    else {
+      materialID.set(lev+1,new MultiFab);
+    }
   }
   for (int lev=0; lev<materialID.size(); ++lev) {
     SetMaterialID(lev,materialID[lev],0);
@@ -349,6 +354,7 @@ MatFiller::SetProperty(Real               t,
       BoxArray ba_fillable(bl_fillable);
       MultiFab fillData(ba_fillable,nComp,0);
       MultiFab fillID(ba_fillable,1,0); 
+      BL_ASSERT(level<materialID.size() && materialID[level].ok() && materialID[level].nComp()>=1);
       fillID.copy(materialID[level]); // guaranteed to be filled completely
       for (MFIter mfi(fillData); mfi.isValid(); ++mfi) {
 	const Box& ovlp = mfi.validbox();

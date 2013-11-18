@@ -26,7 +26,7 @@ TEST(MAPS) {
   Mm.node_set_coordinates(7,xc);
 
   int expcellnodes[8] = {0,1,3,2,4,5,7,6};
-  int expnodecoords[8][3] = {{0.0,0.0,0.0},
+  double expnodecoords[8][3] = {{0.0,0.0,0.0},
                              {1.0,0.0,0.0},
                              {0.0,1.0,0.0},
                              {1.0,1.0,0.0},

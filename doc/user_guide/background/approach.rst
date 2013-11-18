@@ -1,11 +1,17 @@
-Amanzi: Goals and Approach
+Goals and Approach
 --------------------------
 
 Discuss the following and include references.  Each can be pretty short.
 
- * High-level goals and approach, 
- * Requirements (mathematical modeling document)
- * High-level design, short discussion reference design document
+High-level goals and approach
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Requirements (mathematical modeling document)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+High-level design
+~~~~~~~~~~~~~~~~~
+short discussion reference design document
 
 Quality Assurance
 ~~~~~~~~~~~~~~~~~
@@ -29,3 +35,4 @@ However, at this early stage only the R&D code branch (Basic Phase)
 exists.  This release of Amanzi is from the R&D branch and is intended
 to open communication and build collaborations with potential users at
 DOE waste sites, universities and industry.
+

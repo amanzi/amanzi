@@ -85,8 +85,8 @@ class DarcyProblem {
 
     FS = Teuchos::rcp(new Flow_State(*S));
     S->Setup();
-    FS->Initialize();
     S->Initialize();
+    FS->Initialize();
 
     DPK = new Darcy_PK(parameter_list, FS);
 

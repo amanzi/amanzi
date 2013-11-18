@@ -230,15 +230,14 @@ PMAmr::init (Real t_start,
     SetUpMaterialServer();
     InitializeControlEvents();
 
-    if (!restart_file.empty() && restart_file != "init")
+    Amr::init(t_start, t_stop);
+
+    if (!restart_chkfile.empty() && restart_chkfile != "init")
     {
-        restart(restart_file);
         setStartTime(0); // FIXME: This needs to be written to the checkpoint
     }
     else
     {
-        initialInit(t_start,t_stop);
-
         bool write_plot, write_check, begin_tpc;
         Array<int> initial_observations;
 
@@ -417,7 +416,7 @@ PMAmr::pm_timeStep (int  level,
     // Check to see if should write plotfile.
     // This routine is here so it is done after the restart regrid.
     //
-    if (plotfile_on_restart && !(restart_file.empty()) )
+    if (plotfile_on_restart && !(restart_chkfile.empty()) )
     {
 	plotfile_on_restart = 0;
         writePlotFile();

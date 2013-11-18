@@ -26,17 +26,17 @@ The following pacakges are required before executing ``bootstrap.sh``
     * The build directory will need approximately 2.1 Gb of space and the 
       install directory tree requires 300 Mb.
 
-The Amanzi build system utilized CMake (version 2.8.6 or higher).  If ``boostrap.sh`` does not find the cmake executable, it will download and install CMake 2.8.8.
+The Amanzi build system utilizes CMake (version 2.8.8 or higher).  If ``boostrap.sh`` does not find the cmake executable, it will download and install CMake 2.8.8.
 
 Amanzi is a parallel project; therefore, a working MPI installation is required.  MPI installation directory and compiler wrapper locations can be specified through ``bootstrap.sh`` options.  If the MPI location is not specified the script will search common locations.  If working mpi wrappers are not found, the script will download and install OpenMPI 1.4.4.  See the :ref:`MPI` section on how to obtain and install other mpi implementations.
 
-At this time, the script does not build compilers, ``LAPACK``, or ``BLAS``.  See the :ref:`compilers` section on how to obtaion a supported compiler and the :ref:`LAPACK` ``LAPACK`` and ``BLAS`` suggestions.
+At this time, the script does not build compilers, ``LAPACK``, or ``BLAS``.  See the :ref:`compilers` section on how to obtaion a supported compiler and the :ref:`LAPACK` section for ``LAPACK`` and ``BLAS`` suggestions.
 
 
 Bootstrap.sh Execution
 --------------------------
 
-After obtaining the Amanzi source code, the TPLs and source can be built utilizing the script ``bootstrap.sh`` located in ``<amanzi source root>/config/``.  The script will create two directories in the current directory.  The first is TPL_BUILD for downloading and building the TPLs.  The second is amanzi-build, where the Amanzi source code will be built and the test suite executed if enabled.  The TPLs and Amanzi will be installed in location specified by the option ``--prefix``.  All options and defaults can be printed using the ``--help`` option.
+After obtaining the Amanzi source code, the TPLs and source can be built utilizing the script ``bootstrap.sh`` located in ``<amanzi source root>/config/``.  The script will create two directories in the current working directory.  The first is ``TPL_BUILD`` for downloading and building the TPLs.  The second is ``amanzi-build``, where the Amanzi source code will be built and the test suite executed, if enabled.  The TPLs and Amanzi will be installed in the location specified by the option ``--prefix``, $HOME/amanzi by default.  All options and defaults can be printed using the ``--help`` option.
 
 
 Building TPLs and Amanzi
@@ -70,7 +70,7 @@ Enable/Disable capabilities, mesh toolkits, and the test suite::
     --enable-unstructured or disable-unstructured
     --enable-stk_mesh 
 
-Disabling the test suite is recommended on HPC clusters.  The test suite can be manually run on commute nodes using ``make test`` in the amanzi-build directory.::
+Disabling the test suite is recommended on HPC clusters.  The test suite can be manually run on commute nodes using ``make test`` in the ``amanzi-build`` directory.::
 
     --disable-test_suite
 

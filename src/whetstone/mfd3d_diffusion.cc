@@ -1,14 +1,13 @@
 /*
-This is the mimetic discretization component of the Amanzi code. 
+  This is the mimetic discretization component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Release name: ara-to.
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-Usage: 
+  Release name: ara-to.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cmath>
@@ -26,9 +25,9 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Consistency condition for inner product in space of Darcy fluxes. 
+* Consistency condition for inner product in space of fluxes. 
 * Only upper triangular part of Mc is calculated.
-* Darcy flux is scaled by area!
+* Darcy flux is scaled by the area!
 ****************************************************************** */
 int MFD3D_Diffusion::L2consistency(int cell, const Tensor& T,
                                    DenseMatrix& N, DenseMatrix& Mc)
@@ -72,9 +71,9 @@ int MFD3D_Diffusion::L2consistency(int cell, const Tensor& T,
 
 
 /* ******************************************************************
-* Consistency condition for inverse of mass matrix in space of Darcy 
+* Consistency condition for inverse of mass matrix in space of
 * fluxes. Only the upper triangular part of Wc is calculated.
-* Darcy flux is scaled by area!
+* Darcy flux is scaled by the area!
 ****************************************************************** */
 int MFD3D_Diffusion::L2consistencyInverse(int cell, const Tensor& T,
                                           DenseMatrix& R, DenseMatrix& Wc)
@@ -200,7 +199,7 @@ int MFD3D_Diffusion::H1consistency(int cell, const Tensor& T,
 
 
 /* ******************************************************************
-* Darcy mass matrix: a wrapper for other low-level routines
+* Darcy mass matrix: the standard algorithm
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrix(int cell, const Tensor& permeability, DenseMatrix& M)
 {
@@ -222,7 +221,7 @@ int MFD3D_Diffusion::MassMatrix(int cell, const Tensor& permeability, DenseMatri
 
 
 /* ******************************************************************
-* Darcy mass matrix: a wrapper for other low-level routines
+* Darcy inverse mass matrix: the standard algorithm
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverse(int cell, const Tensor& permeability, 
                                        DenseMatrix& W)
@@ -242,7 +241,7 @@ int MFD3D_Diffusion::MassMatrixInverse(int cell, const Tensor& permeability,
 
 
 /* ******************************************************************
-* Darcy mass matrix: a wrapper for other low-level routines
+* Darcy stiffness matrix: the standard algorithm.
 ****************************************************************** */
 int MFD3D_Diffusion::StiffnessMatrix(int cell, const Tensor& permeability, 
                                      DenseMatrix& A)
@@ -261,10 +260,30 @@ int MFD3D_Diffusion::StiffnessMatrix(int cell, const Tensor& permeability,
 }
 
 
+/* ******************************************************************
+* Darcy stiffness matrix: the M-matrix approach
+****************************************************************** */
+int MFD3D_Diffusion::StiffnessMatrixMMatrix(int cell, const Tensor& permeability, 
+                                            DenseMatrix& A)
+{
+  int d = mesh_->space_dimension();
+  int nnodes = A.NumRows();
+
+  DenseMatrix N(nnodes, d + 1);
+  DenseMatrix Ac(nnodes, nnodes);
+
+  int ok = H1consistency(cell, permeability, N, Ac);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  StabilityMMatrix_(cell, N, Ac, A);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
 /* *****************************************************************
-*  Recover gradient from solution, which is either the edge-based 
-*  fluxes of node-based pressures. The algorithm is common if both
-*  N and R are used. Here we use simplified versions.
+* Recover gradient from solution, which is either the edge-based 
+* fluxes of node-based pressures. The algorithm is common if both
+* N and R are used. Here we use simplified versions.
 ***************************************************************** */
 int MFD3D_Diffusion::RecoverGradient_MassMatrix(int cell,
                                                 const std::vector<double>& solution, 
@@ -296,9 +315,9 @@ int MFD3D_Diffusion::RecoverGradient_MassMatrix(int cell,
 
 
 /* *****************************************************************
-*  Recover gradient from solution, which is either the edge-based 
-*  fluxes of node-based pressures. The algorithm is common if both
-*  N and R are used. Here we use simplified versions.
+* Recover gradient from solution, which is either the edge-based 
+* fluxes of node-based pressures. The algorithm is common if both
+* N and R are used. Here we use simplified versions.
 ***************************************************************** */
 int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(int cell,
                                                      const std::vector<double>& solution, 
@@ -433,7 +452,6 @@ int MFD3D_Diffusion::L2consistencyInverseScaled(int cell, const Tensor& T,
       }
     }
   }
-  cout << cell << " " << NtR << endl;
   */
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
@@ -771,7 +789,8 @@ int MFD3D_Diffusion::StabilityMMatrix_(
   int izrow[mx + 1], iypos[m12 + 1], itrs;
   itrs = SimplexFindFeasibleSolution_(T, m1, m2, 0, izrow, iypos);
   if (itrs < 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
-cout << "number of itrs=" << itrs << " functional=" << T(0,0) << endl;
+  simplex_functional_ = T(0,0); 
+  simplex_num_itrs_ = itrs; 
 
   double u[mx];
   for (int i = 0; i < mx; i++) u[i] = 0.0;

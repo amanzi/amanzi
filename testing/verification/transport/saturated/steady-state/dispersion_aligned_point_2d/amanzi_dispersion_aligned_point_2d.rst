@@ -113,32 +113,27 @@ The plume structure is characterized by three line cuts.
 The first cut is given by line :math:`y=0` that goes through the well.
 The two other cuts are given by lines :math:`x=0` and :math:`x=424`.
 
-.. figure:: figures/plume_centerline.png 
-    :figclass: align-center
-    :width: 600 px
+.. plot:: amanzi_dispersion_aligned_point_2d-a.py
+   :align: center
 
-    **Concentration along plume centerline (y=0) from upgradient to downgradient**
 
 .. include:: table_values_centerline.txt
 
 The analytic data were computed with the AT123DAT software package.
-A difference observed near downstream boundary for the Amanzi with the 
-first-order transport scheme (Amanzi(1st)).
-The second-order transport scheme provides excellent match.
+A difference is observed near the downstream boundary for Amanzi with 
+the first-order transport scheme (boxes), while the second-order transport 
+scheme provides excellent match (circles).
 
-.. figure:: figures/plume_transverse_well.png 
-    :figclass: align-center
-    :width: 600 px
+.. plot:: amanzi_dispersion_aligned_point_2d-b.py
+   :align: center
 
-    **Concentration transverse to the flow field from plume centerline at x=0.**
 
 .. include:: table_values_cross_a.txt
 
-.. figure:: figures/plume_transverse_dnwind.png 
-    :figclass: align-center
-    :width: 600 px
 
-    **Concentration transverse to the flow field from plume centerline at x=420.**
+.. plot:: amanzi_dispersion_aligned_point_2d-c.py
+   :align: center
+	   
 
 .. include:: table_values_cross_b.txt
 

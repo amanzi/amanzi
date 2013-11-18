@@ -160,6 +160,19 @@ int main(int argc, char* argv[])
     std::cout << "Test 7 fail: fab.sum(): " << fab.sum(0) << std::endl;
   }
 
+  Real test_sum = 0;
+  for (int i=0; i<10; ++i) {
+    Array<Real> coord(BL_SPACEDIM,2);
+    coord[0]=10*i - .001;
+    PointRegion ptReg("myPt","source",coord);
+    fab.setVal(0);
+    ptReg.setVal(fab,1,0,dx.dataPtr(),0);
+    test_sum += fab.sum(0,1);
+  }
+  pass &= test_sum == 3;
+  if (ioproc && !pass) {
+    std::cout << "Test 8 fail" << std::endl;
+  }
   BoxLib::Finalize();  
   return 0;
 }

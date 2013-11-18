@@ -2,6 +2,8 @@
 #include <TensorOp.H>
 #include <TensorOp_F.H>
 #include <MCLO_F.H>
+#include <VisMF.H>
+#include <Utility.H>
 
 Real TensorOp::a_def     = 0.0;
 Real TensorOp::b_def     = 1.0;
@@ -373,10 +375,12 @@ TensorOp::applyBC (MultiFab&      inout,
 
   const bool cross = false;
   const bool do_corners = true;
+
+  inout.setBndry(1.e30,src_comp,num_comp);
   inout.FillBoundary(src_comp,num_comp,local,cross);
   prepareForLevel(level);
-
   geomarray[level].FillPeriodicBoundary(inout,src_comp,num_comp,do_corners,local);
+
   //
   // Fill boundary cells.
   //
@@ -439,7 +443,6 @@ TensorOp::applyBC (MultiFab&      inout,
         tdfab.dataPtr(bndryComp),    ARLIM(tdfab.loVect()),    ARLIM(tdfab.hiVect()),
         inout.box(gn).loVect(), inout.box(gn).hiVect(),
         &num_comp, h[level]);
-
 #elif BL_SPACEDIM==3
       const Mask& mn = *msk[Orientation(1,Orientation::high)];
       const Mask& me = *msk[Orientation(0,Orientation::high)];
@@ -464,7 +467,7 @@ TensorOp::applyBC (MultiFab&      inout,
 #endif
     }
   }
-
+#if 1
   // Clean up corners:
   // The problem here is that APPLYBC fills only grow cells normal to the boundary.
   // As a result, any corner cell on the boundary (either coarse-fine or fine-fine)
@@ -473,14 +476,14 @@ TensorOp::applyBC (MultiFab&      inout,
   // though, the corner point is needed.  Particularly if a fine-fine boundary intersects
   // the physical boundary, since we want the stencil to be independent of the box
   // blocking.  FillBoundary operations wont fix the problem because the "good"
-  // data we need is living in the grow region of adjacent fabs.  So, here we play 
+  // data we need is living in the grow region of adjacent fabs.  So, here we play
   // the usual games to treat the newly filled grow cells as "valid" data.
 
   // Note that we only need to do something where the grids touch the physical boundary.
 
-  const Geometry& geom = geomarray[level];
+  const Geometry& geomlev = geomarray[level];
   const BoxArray& grids = inout.boxArray();
-  const Box& domain = geom.Domain();
+  const Box& domain = geomlev.Domain();
   int nGrow = 1;
 
   // Lets do a quick check to see if we need to do anything at all here
@@ -494,7 +497,7 @@ TensorOp::applyBC (MultiFab&      inout,
     const DistributionMapping& dmap=inout.DistributionMap();
 
     for (int d=0; d<BL_SPACEDIM; ++d) {
-      if (! (geom.isPeriodic(d)) ) {
+      if (! (geomlev.isPeriodic(d)) ) {
 
         BoxArray gba = BoxArray(grids).grow(d,nGrow);
         for (int i=0; i<gba.size(); ++i) {
@@ -529,6 +532,28 @@ TensorOp::applyBC (MultiFab&      inout,
 
     boundary_data.FillBoundary();
 
+    // Use a hacked Geometry object to handle the periodic intersections for us.
+    // Here, the "domain" is the plane of cells on non-periodic boundary faces.
+    // and there may be cells over the periodic boundary in the remaining directions.
+    // We do a Geometry::PFB on each non-periodic face to sync these up.
+    if (geomlev.isAnyPeriodic()) {
+      Array<int> is_per(BL_SPACEDIM,0);
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        is_per[d] = geomlev.isPeriodic(d);
+      }
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        if (! is_per[d]) {
+          Box tmpLo = BoxLib::adjCellLo(geomlev.Domain(),d,1);
+          Geometry tmpGeomLo(tmpLo,&(geomlev.ProbDomain()),(int)geomlev.Coord(),is_per.dataPtr());
+          tmpGeomLo.FillPeriodicBoundary(boundary_data);
+
+          Box tmpHi = BoxLib::adjCellHi(geomlev.Domain(),d,1);
+          Geometry tmpGeomHi(tmpHi,&(geomlev.ProbDomain()),(int)geomlev.Coord(),is_per.dataPtr());
+          tmpGeomHi.FillPeriodicBoundary(boundary_data);
+        }
+      }
+    }
+
     for (MFIter mfi(inout); mfi.isValid(); ++mfi) {
       int idx = mfi.index();
       FArrayBox& dst_fab = inout[mfi];
@@ -547,6 +572,7 @@ TensorOp::applyBC (MultiFab&      inout,
       }
     }
   }
+#endif
 }
 
 //
@@ -603,11 +629,11 @@ TensorOp::Fsmooth (MultiFab&       solnL,
   BL_ASSERT(nc>=nComp());
   BL_ASSERT(nc==1);
 
-  for (MFIter solnLmfi(solnL); solnLmfi.isValid(); ++solnLmfi)
+  for (MFIter mfi(solnL); mfi.isValid(); ++mfi)
   {
     oitr.rewind();
 
-    const int gn = solnLmfi.index();
+    const int gn = mfi.index();
 
     const MCLinOp::MaskTuple& mtuple = maskvals[level][gn];
 
@@ -668,7 +694,7 @@ TensorOp::Fsmooth (MultiFab&       solnL,
       tdefab.dataPtr(bndryComp), ARLIM(tdefab.loVect()), ARLIM(tdefab.hiVect()),
       tdwfab.dataPtr(bndryComp), ARLIM(tdwfab.loVect()), ARLIM(tdwfab.hiVect()),
       tdsfab.dataPtr(bndryComp), ARLIM(tdsfab.loVect()), ARLIM(tdsfab.hiVect()),
-      solnLmfi.validbox().loVect(), solnLmfi.validbox().hiVect(),
+      mfi.validbox().loVect(), mfi.validbox().hiVect(),
       h[level], phaseflag);
 #else
     FORT_TOGSRB(
@@ -700,7 +726,7 @@ TensorOp::Fsmooth (MultiFab&       solnL,
       tdsfab.dataPtr(bndryComp), ARLIM(tdsfab.loVect()), ARLIM(tdsfab.hiVect()),
       tdtfab.dataPtr(bndryComp), ARLIM(tdtfab.loVect()), ARLIM(tdtfab.hiVect()),
       tdbfab.dataPtr(bndryComp), ARLIM(tdbfab.loVect()), ARLIM(tdbfab.hiVect()),
-      solnLmfi.validbox().loVect(), solnLmfi.validbox().hiVect(),
+      mfi.validbox().loVect(), mfi.validbox().hiVect(),
       h[level], phaseflag);
 #endif
   }
@@ -713,7 +739,9 @@ TensorOp::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
                     int sComp, int dComp, int nComp, int bndComp)
 {
   const int level   = 0;
-  applyBC(x,level,bc_mode);
+  bool local = false;
+  applyBC(x,sComp,nComp,level,bc_mode,local,bndComp);
+
   BL_ASSERT(x.nComp()>=sComp+nComp);
   BL_ASSERT(xflux.nComp()>=dComp+nComp);
   BL_ASSERT(yflux.nComp()>=dComp+nComp);

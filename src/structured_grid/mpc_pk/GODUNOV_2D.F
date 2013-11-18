@@ -1102,7 +1102,7 @@ c
      &     ylo, yhi, sy, slyscr, stylo, styhi,
      &     vedge, DIMS(vedge), ystate, DIMS(ystate),
      &     DIMS(work),
-     &     bc,lo,hi,dt,dx,use_minion,iconserv,seps)
+     &     bc,lo,hi,dt,dx,n,use_minion,iconserv,seps)
       implicit none
 
       integer i,j,n
@@ -4605,7 +4605,7 @@ c
              if (uad(imin,j) .ge. zero) then
                 do i = ARG_L1(xx),imin
                    xlo(i,j) = s(imin-1,j)
-                   xlo(i,j) = s(imin-1,j)
+                   xhi(i,j) = s(imin-1,j)
                 enddo
               else 
                 do i = ARG_L1(xx),imin
@@ -4614,13 +4614,13 @@ c
               end if
             end do
          else
-           do j = jmin-1,jmax+1
-              ltest = uad(imin,j).le.eps
-              stx   = merge(xhi(imin,j),s(imin-1,j),ltest)
-              do i = ARG_L1(xx),imin
-                 xhi(i,j) = stx
-                 xlo(i,j) = stx
-              enddo
+            do j = jmin-1,jmax+1
+               ltest = uad(imin,j).le.eps
+               stx   = merge(xhi(imin,j),s(imin-1,j),ltest)
+               do i = ARG_L1(xx),imin
+                  xhi(i,j) = stx
+                  xlo(i,j) = stx
+               enddo
             end do
          end if
 

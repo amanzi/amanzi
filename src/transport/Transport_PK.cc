@@ -629,9 +629,9 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
 
     // corrector step
     Epetra_Vector*& tcc_next_component = (*tcc_next)(i);
-    TS_nextBIG->CopyMasterCell2GhostCell(*tcc_next_component, *component_);
+    TS_nextBIG->CopyMasterCell2GhostCell(*tcc_next_component);
 
-    fun(T, *component_, f_component);
+    fun(T, *tcc_next_component, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
       double value = ((*tcc)[i][c] + dT * f_component[c]) * ws_ratio[c];

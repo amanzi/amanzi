@@ -17,7 +17,6 @@
 #include <vector>
 #include <cmath>
 
-
 namespace Amanzi {
 namespace AmanziGeometry {
 
@@ -178,9 +177,8 @@ class Point {
 
 typedef std::vector<Point> Point_List;
 
-
-}  // end namespace AmanziGeometry
-}  // end namespace Amanzi
+}  // namespace AmanziGeometry
+}  // namespace Amanzi
 
 #endif
 

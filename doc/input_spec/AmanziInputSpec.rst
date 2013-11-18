@@ -1232,6 +1232,8 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
 * [SU] `"Initial Conditions`" [list] accepts labels, IC, of named initial condition specifications 
 
+ * [U] `"Init from Checkpoint File`" [string] (optional) specify the checkpoint file that all fields are to be initialized from. If this parameter is present, all initial conditions are ignored.
+
  * [SU] IC [list] label for an initial condition, accepts initial condition function names, and parameters to specify assigned regions and solute initial conditions
 
   * [SU] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: Uniform Velocity`" (see below)

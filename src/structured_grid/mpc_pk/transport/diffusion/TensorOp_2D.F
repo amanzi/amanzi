@@ -132,10 +132,10 @@ c     ::: ::: case 2a: north side
          xfluxe = - dudxe*muX(i+1,j) - dudye*mu1X(i+1,j)
          yfluxs = - dudys*muY(i  ,j) - dudxs*mu1Y(i,j  )
          yfluxn = - dudyn*muY(i,j+1) - dudxn*mu1Y(i,j+1)
-         
+
          out(i,j) = alpha*a(i,j)*U(i,j) + beta*(hx*(xfluxe-xfluxw)+hy*(yfluxn-yfluxs))
       enddo
-      
+
 c     ::: case 2b south side
       j=lo(2)
       do i=lo(1)+1,hi(1)-1
@@ -312,12 +312,12 @@ c     ::: case 3c: south-west corner, minus i, minus j
       else
          dudxn = (U(i+1,j  ) + U(i+1,j+1) - U(i-1,j  ) - U(i-1,j+1))*hx4
       endif
-      if( masks(i  ,j-1).gt.0 .or. masks(i+1,j-1).gt.0 ) then
-         dudye = (-U(i-1,j+2) + 4*U(i-1,j+1) - 3*U(i-1,j  )
+      if( masks(i+1,j-1).gt.0 .or. masks(i,j-1).gt.0 ) then
+         dudye = (-U(i+1,j+2) + 4*U(i+1,j+1) - 3*U(i+1,j  )
      &        -    U(i  ,j+2) + 4*U(i  ,j+1) - 3*U(i  ,j  ))*hy4
       else
-         dudye = (U(i-1,j+1) + U(i  ,j+1) - U(i-1,j-1) - U(i  ,j-1))*hy4
-      endif
+         dudye = (U(i+1,j+1) + U(i  ,j+1) - U(i+1,j-1) - U(i  ,j-1))*hy4
+      endif            
       
       xfluxw = - dudxw*muX(i  ,j) - dudyw*mu1X(i  ,j)
       xfluxe = - dudxe*muX(i+1,j) - dudye*mu1X(i+1,j)
@@ -582,7 +582,7 @@ c ::: case 3d: north-west corner, , do fluxes at (i-1/2,j), (i,j-1/2), (i+1/2,j)
       else
          dudxs = (U(i+1,j  ) + U(i+1,j-1) - U(i-1,j  ) - U(i-1,j-1))*hx4
       endif
-      if( maskn(i-1,j+1).gt.0 .or. maskn(i,j+1).gt.0 ) then
+      if( maskn(i+1,j+1).gt.0 .or. maskn(i,j+1).gt.0 ) then
          dudye = (U(i+1,j-2) - 4*U(i+1,j-1) + 3*U(i+1,j  )
      &        +   U(i  ,j-2) - 4*U(i  ,j-1) + 3*U(i  ,j  ))*hy4
       else
@@ -737,6 +737,7 @@ c ::: case 1
      $           +      ( muY(i,j) + muY(i,j+1) )*hyy )
 
             oper = alpha*a(i,j)*U(i,j) + beta*(hx*(xfluxe-xfluxw)+hy*(yfluxn-yfluxs))
+
             U(i,j) = U(i,j) + fac*(rhs(i,j) - oper)/diag
          enddo
       enddo
@@ -786,6 +787,7 @@ c ::: case 2a, north side
      $           +      muX(i+1,j)*hxx + mu1X(i+1,j)*hx*de
      $           +      muY(i,j  )*hyy
      $           +      muY(i,j+1)*hyy*(1.d0 + dn) )
+
             U(i,j) = U(i,j) + fac*(rhs(i,j) - oper)/diag
          enddo
       endif
@@ -835,6 +837,7 @@ c ::: case 2b, south side
      $           +      muX(i+1,j)*hxx + mu1X(i+1,j)*hx*de
      $           +      muY(i,j  )*hyy*(1.d0 + ds)
      $           +      muY(i,j+1)*hyy )
+
             U(i,j) = U(i,j) + fac*(rhs(i,j) - oper)/diag
          enddo
       endif
@@ -885,6 +888,7 @@ c ::: case 2c: west side
      $           +      muX(i+1,j)*hxx
      $           +      muY(i,j  )*hyy - mu1Y(i  ,j)*hy*ds
      $           +      muY(i,j+1)*hyy + mu1Y(i,j+1)*hy*dn)
+
             U(i,j) = U(i,j) + fac*(rhs(i,j) - oper)/diag
          enddo
       endif
@@ -934,6 +938,7 @@ c ::: case 2d: east side
      $           +      muX(i+1,j)*hxx*(1.d0 + de)
      $           +      muY(i,j  )*hyy - mu1Y(i  ,j)*hy*ds
      $           +      muY(i,j+1)*hyy + mu1Y(i,j+1)*hy*dn)
+
             U(i,j) = U(i,j) + fac*(rhs(i,j) - oper)/diag
          enddo
       endif
@@ -988,6 +993,7 @@ c ::: case 3a: north-east corner
      $        +      muX(i+1,j)*hxx*(1.d0 + de)
      $        +      muY(i,j  )*hyy - mu1Y(i  ,j)*hy*ds
      $        +      muY(i,j+1)*hyy*(1.d0 + dn))
+
          U(i,j) = U(i,j) + fac*(rhs(i,j) - oper)/diag
       endif
 
@@ -1042,6 +1048,7 @@ c ::: case 3b: south-east corner
      $        +      muX(i+1,j)*hxx*(1.d0 + de)
      $        +      muY(i,j  )*hyy*(1.d0 + ds)
      $        +      muY(i,j+1)*hyy + mu1Y(i,j+1)*hy*dn)
+
          U(i,j) = U(i,j) + fac*(rhs(i,j) - oper)/diag
       endif
 
@@ -1066,11 +1073,11 @@ c ::: case 3c: south-west corner
             dn = 0.d0
          endif
          if( masks(i  ,j-1).gt.0 .or. masks(i+1,j-1).gt.0 ) then
-            dudye = (-U(i-1,j+2) + 4*U(i-1,j+1) - 3*U(i-1,j  )
+            dudye = (-U(i+1,j+2) + 4*U(i+1,j+1) - 3*U(i+1,j  )
      &           -    U(i  ,j+2) + 4*U(i  ,j+1) - 3*U(i  ,j  ))*hy4
             de = - 3*hy4
          else
-            dudye = (U(i-1,j+1) + U(i  ,j+1) - U(i-1,j-1) - U(i  ,j-1))*hy4
+            dudye = (U(i+1,j+1) + U(i  ,j+1) - U(i+1,j-1) - U(i  ,j-1))*hy4
             de = 0.d0
          endif
          if( maskw(i-1,j  ).gt. 0) then
@@ -1095,6 +1102,7 @@ c ::: case 3c: south-west corner
      $        +      muX(i+1,j)*hxx + mu1X(i+1,j)*hx*de
      $        +      muY(i,j  )*hyy*(1.d0 + ds)
      $        +      muY(i,j+1)*hyy + mu1Y(i,j+1)*hy*dn)
+
          U(i,j) = U(i,j) + fac*(rhs(i,j) - oper)/diag
       endif
 
@@ -1148,6 +1156,7 @@ c ::: case 3d: north-west corner
      $        +      muX(i+1,j)*hxx + mu1X(i+1,j)*hx*de
      $        +      muY(i,j  )*hyy - mu1Y(i,j  )*hy*ds
      $        +      muY(i,j+1)*hyy*(1.d0 + dn))        
+
          U(i,j) = U(i,j) + fac*(rhs(i,j) - oper)/diag
       endif
       end
