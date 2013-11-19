@@ -6,3 +6,5 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 
 add_library(pk_test_divgrad divgrad_test.cc)
 
+install(TARGETS pk_test_divgrad DESTINATION lib)
+
