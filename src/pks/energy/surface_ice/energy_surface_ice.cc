@@ -8,6 +8,7 @@ Author: Ethan Coon
 
 Process kernel for energy equation for overland flow.
 ------------------------------------------------------------------------- */
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Debugger.hh"
 #include "eos_evaluator.hh"
@@ -71,7 +72,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- energy, the conserved quantity
   S->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList ee_plist = plist_->sublist("energy evaluator");
+  Teuchos::ParameterList& ee_plist = plist_->sublist("energy evaluator");
   ee_plist.set("energy key", energy_key_);
   Teuchos::RCP<SurfaceIceEnergyEvaluator> ee =
     Teuchos::rcp(new SurfaceIceEnergyEvaluator(ee_plist));
@@ -80,9 +81,8 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- advection of enthalpy
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList enth_plist = plist_->sublist("enthalpy evaluator");
+  Teuchos::ParameterList& enth_plist = plist_->sublist("enthalpy evaluator", true);
   enth_plist.set("enthalpy key", enthalpy_key_);
-  enth_plist.set("include work term", false);
   Teuchos::RCP<EnthalpyEvaluator> enth =
     Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
   S->SetFieldEvaluator(enthalpy_key_, enth);
@@ -90,7 +90,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- thermal conductivity
   S->RequireField(conductivity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList tcm_plist =
+  Teuchos::ParameterList& tcm_plist =
     plist_->sublist("thermal conductivity evaluator");
   Teuchos::RCP<EnergyRelations::ThermalConductivitySurfaceEvaluator> tcm =
     Teuchos::rcp(new EnergyRelations::ThermalConductivitySurfaceEvaluator(tcm_plist));
@@ -140,7 +140,7 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
   EnergyBase::initialize(S);
 
   // Set the cell initial condition if it is taken from the subsurface
-  Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
+  Teuchos::ParameterList& ic_plist = plist_->sublist("initial condition");
   if (ic_plist.get<bool>("initialize surface temperature from subsurface",false)) {
     Teuchos::RCP<CompositeVector> surf_temp_cv = S->GetFieldData(key_, name_);
     Epetra_MultiVector& surf_temp = *surf_temp_cv->ViewComponent("cell",false);
@@ -204,7 +204,10 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
   const Epetra_MultiVector& temp_f = *S->GetFieldData("surface_temperature")
       ->ViewComponent("face",false);
 
-  bool include_work = plist_->sublist("enthalpy evaluator").get<bool>("include work term", true);
+
+  //  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
+  Teuchos::ParameterList& enth_plist = plist_->sublist("enthalpy evaluator", true);
+  bool include_work = enth_plist.get<bool>("include work term");
 
   AmanziMesh::Entity_ID_List cells;
   unsigned int nfaces = enth_f.MyLength();

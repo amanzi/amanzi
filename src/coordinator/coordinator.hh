@@ -40,8 +40,15 @@ public:
 
   // PK methods
   void initialize();
-  void cycle_driver();
+  void finalize();
+  bool advance(double dt);
+  void visualize(bool force=false);
+  void checkpoint(double dt, bool force=false);
   double get_dt();
+  Teuchos::RCP<State> get_next_state() { return S_next_; }
+
+  // one stop shopping
+  void cycle_driver();
 
 private:
   void coordinator_init();
@@ -61,7 +68,7 @@ private:
 
   // misc setup information
   Teuchos::RCP<Teuchos::ParameterList> parameter_list_;
-  Teuchos::RCP<Teuchos::ParameterList> coordinator_plist_;
+  Teuchos::RCP<Teuchos::ParameterList> coordinator_list_;
 
   double t0_, t1_;
   double max_dt_, min_dt_;

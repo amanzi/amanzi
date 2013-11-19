@@ -4,9 +4,6 @@
 #  ATS
 #    Executable
 #
-
-include_directories(${ATS_SOURCE_DIR}/src/data_structures)
-include_directories(${ATS_SOURCE_DIR}/src/state)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/pks/mpc)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
@@ -127,6 +124,7 @@ if (Amanzi_DISABLE_MPI_CXX_BINDINGS)
         # ATS cross lib
 	atsx
 
+    ${ATS_LIBS}
 	${AMANZI_LIBS}
 	${Amanzi_TPL_Trilinos_LIBRARIES}
 
