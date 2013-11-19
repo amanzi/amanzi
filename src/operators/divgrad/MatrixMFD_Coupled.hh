@@ -68,10 +68,10 @@ class MatrixMFD_Coupled : public TreeMatrix {
 
   void InitializeFromPList_();
 
-  void SetSubBlocks(const Teuchos::RCP<MatrixMFD>& blockA,
+  virtual void SetSubBlocks(const Teuchos::RCP<MatrixMFD>& blockA,
                     const Teuchos::RCP<MatrixMFD>& blockB);
 
-  void SetOffDiagonals(const Teuchos::RCP<const Epetra_MultiVector>& Ccc,
+  virtual void SetOffDiagonals(const Teuchos::RCP<const Epetra_MultiVector>& Ccc,
                        const Teuchos::RCP<const Epetra_MultiVector>& Dcc,
                        double scaling=1.) {
     scaling_ = scaling;
@@ -133,7 +133,6 @@ class MatrixMFD_Coupled : public TreeMatrix {
   double scaling_;
 
   // local matrices
-  std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
   std::vector<Teuchos::SerialDenseMatrix<int, double> > A2c2c_cells_Inv_;
 
   // global matrices

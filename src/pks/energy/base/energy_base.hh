@@ -137,6 +137,9 @@ protected:
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   // note PC is in PKPhysicalBDFBase
 
+  // custom enorm tolerances
+  double flux_tol_;
+
   // flags and control
   double dT_max_;
   FluxUpdateMode update_flux_;

@@ -4,17 +4,16 @@
 
 namespace Amanzi {
 
-MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        int i_domain, int i_surf) :
-    plist_(plist),
-    i_domain_(i_domain),
-    i_surf_(i_surf)
+MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+    plist_(plist)
 {
   // predictor control
   modify_predictor_heuristic_ =
       plist_->get<bool>("modify predictor with heuristic", false);
   modify_predictor_spurt_damping_ =
       plist_->get<bool>("modify predictor damp and cap the water spurt", false);
+  modify_predictor_tempfromsource_ =
+      plist_->get<bool>("modify predictor surface temperature from source", false);
   
   // precon control
   face_limiter_ = plist_->get<double>("global water face limiter", -1.0);
@@ -291,5 +290,43 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
   return false;
 }
 
+
+// modify predictor via heuristic stops spurting in the surface flow
+bool
+MPCDelegateWater::ModifyPredictor_TempFromSource(double h, const Teuchos::RCP<TreeVector>& u) {
+  bool modified = false;
+  if (modify_predictor_tempfromsource_) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH))
+      *vo_->os() << "  MPCWaterCoupler: Modifying predictor, taking surface temperature from source." << std::endl;
+
+    Epetra_MultiVector& surf_Tnew_c = *u->SubVector(i_Tsurf_)->Data()
+        ->ViewComponent("cell",false);
+    Epetra_MultiVector& domain_Tnew_f = *u->SubVector(i_Tdomain_)->Data()
+        ->ViewComponent("face",false);
+    const Epetra_MultiVector& Told = *S_->GetFieldData("surface_temperature")
+        ->ViewComponent("cell",false);
+    const Epetra_MultiVector& Tsource = *S_next_->GetFieldData("surface_mass_source_temperature")
+        ->ViewComponent("cell",false);    
+    const Epetra_MultiVector& hold = *S_->GetFieldData("ponded_depth")
+        ->ViewComponent("cell",false);
+    const Epetra_MultiVector& dhsource = *S_->GetFieldData("surface_mass_source")
+        ->ViewComponent("cell",false);
+
+    Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =
+        u->SubVector(i_surf_)->Data()->Mesh();
+
+    for (unsigned int c=0; c!=surf_Tnew_c.MyLength(); ++c) {
+      // take a weighted average of old and source temps, weighted by height
+      surf_Tnew_c[0][c] = (Told[0][c] * hold[0][c]
+                           + Tsource[0][c] * dhsource[0][c] * h) /
+          (hold[0][c] + dhsource[0][c] * h);
+      AmanziMesh::Entity_ID f =
+          surf_mesh->entity_get_parent(AmanziMesh::CELL, c);
+      domain_Tnew_f[0][f] = surf_Tnew_c[0][c];
+    }
+    modified = true;
+  }
+  return modified;
+}
 
 } // namespace

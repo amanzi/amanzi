@@ -1,19 +1,24 @@
+/*
+  Functions for calculating the snow-surface energy balance.
+
+  Incoming Longwave radation is cacualted in this version, but if data is
+  available we could incorporate it with the available met data.
+
+  Atmospheric pressure is often used in snow models, If data is available we
+  could incorperate it but for now Pa is held constant at 100 Pa.
+
+  *** Equation for saturated vapor pressure over water is taken from Bolton,
+      1980 'Monthly Weather Review'
+
+  *** Equation for saturated vaport pressure over snow is taken from Buck,
+      1996 'Buck Research Manual'
+
+  *** See: http://cires.colorado.edu/~voemel/vp.html
+
+*/
+
 #ifndef SNOW_ENERGY_BALANCE_
 #define SNOW_ENERGY_BALANCE_
-#include <sstream>
-#include "SnowEnergyBalance.hh"
-
-/* THIS CODE WILL CALCULATE THE SNOWSURFACE ENERGY BALANCE THE SNOW SURFRACE TEMPERUATURE.
-
-**** Incomming Longwave radation is cacualted in this version, but if data is avaialbe we could incoroerate it with the avialable met data****
-
-+++Atmospheric pressure is often used in snow models, If data is available we could incorperate it but for now Pa is held constant at
-100 pa++++
-
-*** Equation for saturated vapor pressure over water is taken from Bolton, 1980 'Monthly Weather Review'
-*** Equation for saturated vaport pressure over snow is taken from Buck, 1996 'Buck Research Manual'
-See: http://cires.colorado.edu/~voemel/vp.html
-***************************** */
 
 namespace SurfaceEnergyBalance {
 
@@ -26,33 +31,32 @@ struct VaporPressure {
 };
 
 struct EnergyBalance {
-  double air_temp;
-  double relative_rumidity;
-  double Us;
   double fQswIn;
-  double Ps;
-  double Pr;
 
-  double Tb;
-  double Dt;
+  double Ps;                    // precip snow
+  double Pr;                    // precip rain
+
+  double temp_ground;           // ground temperature
+  double temp_air;              // air temperature
+  double temp_snow;
+  double Us;                    // wind speed
+
+  double dt;
+
   double water_depth;
-  double por;
-
   double ht_snow;
-  double HoldZs;
   double density_snow;
-  double HoldROWs;
-  double nosnowdays;
+  double age_snow;
 
   double air_vaporpressure;
   double snow_vaporpressure;
   double dewpoint_temp;
-  double snow_conduct_value;
   double albedo_value;
 
   double stephB;
   double Apa;
   double SEs;
+  double SEtun;
   double Dhe;
   double gZr;
   double rowaCp;
@@ -78,26 +82,44 @@ struct EnergyBalance {
   double fQe;
   double fQc;
   double Qm;
-  double Ts;
   double Trw;
 
-  double Ml;
   double Mr;
-  double SublL;
-  double SublR;
-  double EvR;
-  double EvL;
-  double CiL;
-  double TotwLoss;
+  double MIr;
 
-  double varvar;
-  std::string funcall;
-
+  double AlbedoTrans;
 
 };
 
-//vapor_pressure * vp_pointer;
 struct LocalData {
+  LocalData() {
+    st_energy.stephB = 0.00000005670373;// Stephan-boltzmann Constant ------- [W/m^2 K^4]
+    st_energy.Hf = 333500.0;            // Heat of fusion for melting snow -- [J/kg]
+    st_energy.Ls = 2834000.0;           // Latent heat of sublimation ------- [J/kg]
+    st_energy.Le = 2497848.;            // Latent heat of vaporization ------ [J/kg]
+    st_energy.SEs = 0.98;               // Surface Emissivity for snow  ----- [-] ** From P. ReVelle (Thesis)
+    st_energy.SEtun = 0.92;             // Surface Emissivity for tundray --- [-] ** From P. ReVelle (Thesis)
+    st_energy.Zr = 2.0;                 // Referance ht of wind speed ------- [m]
+    st_energy.Zo = 0.005;               // Roughness length  ---------------- [m]
+    st_energy.VKc = 0.41;               // Von Karman Constant -------------- [-]
+    double Cp = 1004.0;               // Specific heat of air ------------- [J/K kg]
+    st_energy.Apa = 100;                // Atmospheric Pressure ------------- [KPa]
+
+    st_energy.density_w = 1000;         // Density of Water ----------------- [kg/m^3]
+    double density_air = 1.275;       // Density of Air ------------------- [kg/m^3]
+    st_energy.density_frost = 200;      // Density of Frost (condensation) -- [kg/m^3]
+    st_energy.density_freshsnow = 100;  // Density of Freshly fallebn snow -- [kg/m^3]
+
+    st_energy.gZr = 9.807*st_energy.Zr;
+    st_energy.rowaCp = density_air*Cp;
+    st_energy.rowaLs = density_air*st_energy.Ls;
+    st_energy.rowaLe = density_air*st_energy.Le;
+
+    vp_snow.relative_humidity = 1.;
+    vp_ground.relative_humidity = 1.;
+  }
+
+
   VaporPressure vp_air;
   VaporPressure vp_ground;
   VaporPressure vp_snow;
@@ -105,99 +127,26 @@ struct LocalData {
 
 };
 
-void CalcEFluxTempIndependent (LocalData& seb);
-void CalcEFluxTempDependent (LocalData& seb, double T);
 
-// #### FUNCTIONS TO CALCULATE SATURATION VAPOR PRESSURE & ACTUALL VAPOR PRESSURE
-void VaporCalc (VaporPressure& vp);
+void UpdateIncomingRadiation(LocalData& seb);
+void UpdateEFluxesSnow(LocalData& seb, double T);
+double CalcMeltEnergy(LocalData& seb);
+void UpdateGroundEnergy(LocalData& seb);
 
+void UpdateVaporPressure(VaporPressure& vp);
+double CalcAlbedo(EnergyBalance& eb);
+double EnergyBalanceResidual(LocalData& seb, double Xx);
+double CalcSnowTemperature(LocalData& seb);
 
-// #### FUNCTIONS TO CALCULATE ALBEDO
-void AlbedoCalc (EnergyBalance& eb);
+void UpdateMassMelt(EnergyBalance& eb);
+void UpdateMassSublCond(EnergyBalance& eb);
+void UpdateMassEvap(EnergyBalance& eb);
+void WaterMassCorrection(EnergyBalance& eb);
+void UpdateSnow(EnergyBalance& eb);
 
-
-// ### FUNCTION TO CALCULATE THERMAL CONDUCTIVITY OF SNOW
-void ThermalConductSnow (EnergyBalance& eb);
-
-
-/*  FUNCTION TO SOLVE SNOW SURFACE ENERGY BALANCE FOR SURFACE TEMP (Ts)
-    ###############################################################################################*
-    Bisection Method
-    (1-albedo)QswIn + Qlwin + QlwOut(Ts) + Qh(Ts) + Qc(Ts) +  Qe(Ts) = 0
-    Substitute Xx for all Ts
-    ############################################################################################## */
-double BisectionZeroFunction(LocalData& dat, double Xx);
-void BisectionEnergyCalc (LocalData& dat);
-
-
-/*   FUNCTION TO SOLVE ENERGY BALANCE FOR MELT CONDITIONS (Qm)
-     SOLVE ENERGY EQUATION
-     (1-albedo)QswIn + Qlwin + QlwOut(Ts) + Qh(Ts) + Qc(Ts) +  Qe(Ts) = Qm
-     Substitute Xx for all Ts
-     ############################################################################################### */
-void MeltEnergyCalc (LocalData& dat);
-
-
-/*   FUNCTION TO SOLVE ENERGY BALANCE FOR NO SNOW CONDITIONS (Zs==0)
-     SOLVE ENERGY EQUATION
-     (1-albedo)QswIn + Qlwin + QlwOut(Ts) + Qh(Ts) +  Qe(Ts) = Qex
-     #############   Qex is the Qc term   ##################
-     ############################################################################################### */
-void GroundEnergyCalc (LocalData& dat);
-
-
-//  FUNCTION TO CALCULATE MELT & SUBLIMATION RATE WHEN SNOW IS PRESSENT
-void MeltSublRateCalc (LocalData& dat);
-
-
-//  FUNCTION TO CALCULATE MELT & SUBLIMATION RATE WHEN *NO* SNOW IS PRESSENT
-void EvapCalc (EnergyBalance& eb);
-
-
-/*  ####     FUNCTION TO  CALCULATE THE CHANGE IN SNOWPACK DEPTH
-    All Input variables are in (SWE) Snow Water equivialnce ***Even Ps (Precipitation as Snow) In the input files ***
-    Here Ps gets converted to Snowpack dpeth and stays that way
-    Zs, DELTz, TotwLoss is the Snowpack depth, ***NOT IN SWE EVER***
-    To Convert from SWE to Snow pack depth (Zs) Multiply by density of water (ROWw) and Devide by Density of Snow (ROWs) or (ROWFs)
-    SublL, Ml, Are always in SWE
-*/
-void DeltaSnowPack (EnergyBalance& eb);
-
-
-// FUNCTION TO MAKE SURE PROPER MASS OF WATER IS DELEVERED TO ATS WHEN SNOWPACK DISAPEARS
-void WaterMassCorr(EnergyBalance& eb);
-
-
-/*   FUNCTION TO CALCULATE ENERGY BALANCE AND Ml WHEN SNOWPACK IS TEENY TINY
-     This section is for to trim the enery deleiverd/taken from the soil with the snowpack is really really small
-     Qc = -Ks*(Ts-Tb)/Zs;  --> blows up.  Boom!
-     When Zs < 0.009 [m] or 1 cm we callcualte energy balance fromt he soil surface
-     *****  This is ONLY done with the snow is melting ******
-     **  Otherwise Snow Energy Balance is calucalted ** */
-void TeenyTinySnowPack (LocalData& tiny);
-
-
-// FUNCTION TO ADDS UP ALL THE CHANGES TO THE SNOWPACK
-void SnowPackCalc (EnergyBalance& eb);
-
-
-// FUNCTION TO TRACKS THE TIME (IN DAYS) WHERE NO NEW SNOW AS FALLEN ~> USED IN SNOW DENSITY
-void TrackSnowDays (EnergyBalance& eb);
-
-
-// FUNCTION TO CALCULATE SNOWPACK DENSITY ~> WEIGHTED AVERAGE OVER THREE POTEINTAL LAYERS OF SNOW
-void SnowPackDensity (EnergyBalance& eb);
-
-
-// FUNCTION TO CONVERT TO SWE TO FRESHLY FALLEN SNOW DEPTH
-void SWE (EnergyBalance& eb);
-
-
-// FUNCTION TO CALCULATE WATER TEMPURATER
-void WaterTemp (EnergyBalance& eb);
-
-// MAIN SNOW ENERGY BALANCE FUNCTION
-void SnowEnergyBalance (LocalData& seb);
+// Main "public" methods.
+void SnowEnergyBalance(LocalData& seb);
+void UpdateEnergyBalance(LocalData& seb);
 
 }// Namespace
 

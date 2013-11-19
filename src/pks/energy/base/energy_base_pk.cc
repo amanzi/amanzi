@@ -30,6 +30,8 @@ void EnergyBase::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::setup(S);
   SetupEnergy_(S);
   SetupPhysicalEvaluators_(S);
+
+  flux_tol_ = plist_->get<double>("flux tolerance", 1.e-4);
 };
 
 

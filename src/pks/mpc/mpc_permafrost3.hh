@@ -1,10 +1,10 @@
 // Rewrite of permafrost PK to simplify
 //
 
-#ifndef PKS_MPC_PERMAFROST_TWO_HH_
-#define PKS_MPC_PERMAFROST_TWO_HH_
+#ifndef PKS_MPC_PERMAFROST_THREE_HH_
+#define PKS_MPC_PERMAFROST_THREE_HH_
 
-#include "MatrixMFD_Permafrost.hh"
+#include "MatrixMFD_Coupled_Surf.hh"
 #include "MatrixMFD_Surf.hh"
 #include "MatrixMFD_TPFA.hh"
 #include "mpc_delegate_ewc.hh"
@@ -15,10 +15,10 @@
 
 namespace Amanzi {
 
-class MPCPermafrost2 : public StrongMPC<PKPhysicalBDFBase> {
+class MPCPermafrost3 : public StrongMPC<PKPhysicalBDFBase> {
  public:
 
-  MPCPermafrost2(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  MPCPermafrost3(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                  Teuchos::ParameterList& FElist,
                  const Teuchos::RCP<TreeVector>& soln);
 
@@ -73,8 +73,8 @@ class MPCPermafrost2 : public StrongMPC<PKPhysicalBDFBase> {
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
 
   // coupled preconditioner
-  Teuchos::RCP<Operators::MatrixMFD_Permafrost> precon_;
-  Teuchos::RCP<Operators::MatrixMFD_Surf_ScaledConstraint> pc_flow_;
+  Teuchos::RCP<Operators::MatrixMFD_Coupled_Surf> precon_;
+  Teuchos::RCP<Operators::MatrixMFD_Surf> pc_flow_;
   Teuchos::RCP<Operators::MatrixMFD_Surf> pc_energy_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> pc_surf_flow_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> pc_surf_energy_;
@@ -93,7 +93,7 @@ class MPCPermafrost2 : public StrongMPC<PKPhysicalBDFBase> {
 
  private:
   // factory registration
-  static RegisteredPKFactory<MPCPermafrost2> reg_;
+  static RegisteredPKFactory<MPCPermafrost3> reg_;
 
 };
 

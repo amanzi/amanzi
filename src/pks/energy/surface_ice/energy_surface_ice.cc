@@ -235,9 +235,39 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
   // General source term (covers advection from mass precip and air-surface
   // conduction).
-  EnergyBase::AddSources_(S,g);
-
+  //  EnergyBase::AddSources_(S,g);
   Teuchos::OSTab tab = vo_->getOSTab();
+
+  // General source term (covers advection from mass precip and air-surface
+  // conduction).
+  // external sources of energy
+  if (is_source_term_) {
+    Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
+
+    // Add in external source term.
+    // MAJOR HACK!!!
+    Teuchos::RCP<CompositeVector> surf_temp_prev = Teuchos::rcp(new CompositeVector(*S_inter_->GetFieldData("surface_temperature")));
+    *surf_temp_prev = *S_inter_->GetFieldData("surface_temperature");
+    *S_inter_->GetFieldData("surface_temperature", name_)
+        = *S_next_->GetFieldData("surface_temperature");
+    Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(S_inter_->GetFieldEvaluator("surface_temperature"))
+        ->SetFieldAsChanged(S_inter_.ptr());
+    S_inter_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+    *S_inter_->GetFieldData("surface_temperature", name_) = *surf_temp_prev;
+
+    const Epetra_MultiVector& source0 =
+        *S_inter_->GetFieldData(source_key_)->ViewComponent("cell",false);
+    unsigned int ncells = g_c.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
+      g_c[0][c] -= source0[0][c];
+    }
+
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_->os() << "Adding external source term" << std::endl;
+      db_->WriteVector("  Q_ext", S_next_->GetFieldData(source_key_).ptr(), false);
+      db_->WriteVector("res (src)", g, false);
+    }
+  }
 
   Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 

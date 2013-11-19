@@ -3,11 +3,11 @@
 #include "mpc_surface_subsurface_helpers.hh"
 #include "permafrost_model.hh"
 
-#include "mpc_permafrost2.hh"
+#include "mpc_permafrost3.hh"
 
 namespace Amanzi {
 
-MPCPermafrost2::MPCPermafrost2(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+MPCPermafrost3::MPCPermafrost3(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& soln) :
     PKDefaultBase(plist, FElist, soln),
@@ -15,7 +15,7 @@ MPCPermafrost2::MPCPermafrost2(const Teuchos::RCP<Teuchos::ParameterList>& plist
 
 
 void
-MPCPermafrost2::setup(const Teuchos::Ptr<State>& S) {
+MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   // tweak the sub-PK parameter lists
   Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
 
@@ -59,9 +59,9 @@ MPCPermafrost2::setup(const Teuchos::Ptr<State>& S) {
 
   // create the preconditioner
   Teuchos::ParameterList& pc_sublist = plist_->sublist("Coupled PC");
-  precon_ = Teuchos::rcp(new Operators::MatrixMFD_Permafrost(pc_sublist, domain_mesh_));
+  precon_ = Teuchos::rcp(new Operators::MatrixMFD_Coupled_Surf(pc_sublist, domain_mesh_));
 
-  pc_flow_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf_ScaledConstraint>(
+  pc_flow_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(
       domain_flow_pk_->preconditioner());
   ASSERT(pc_flow_ != Teuchos::null);
   pc_energy_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(
@@ -103,7 +103,7 @@ MPCPermafrost2::setup(const Teuchos::Ptr<State>& S) {
 }
 
 void
-MPCPermafrost2::initialize(const Teuchos::Ptr<State>& S) {
+MPCPermafrost3::initialize(const Teuchos::Ptr<State>& S) {
   // initialize coupling terms
   S->GetFieldData("surface_subsurface_flux", name_)->PutScalar(0.);
   S->GetField("surface_subsurface_flux", name_)->set_initialized();
@@ -127,7 +127,7 @@ MPCPermafrost2::initialize(const Teuchos::Ptr<State>& S) {
 }
 
 void
-MPCPermafrost2::set_states(const Teuchos::RCP<const State>& S,
+MPCPermafrost3::set_states(const Teuchos::RCP<const State>& S,
                            const Teuchos::RCP<State>& S_inter,
                            const Teuchos::RCP<State>& S_next) {
   StrongMPC<PKPhysicalBDFBase>::set_states(S,S_inter,S_next);
@@ -138,7 +138,7 @@ MPCPermafrost2::set_states(const Teuchos::RCP<const State>& S,
 // -- computes the non-linear functional g = g(t,u,udot)
 //    By default this just calls each sub pk fun().
 void
-MPCPermafrost2::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+MPCPermafrost3::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // propagate updated info into state
   solution_to_state(u_new, S_next_);
@@ -209,7 +209,7 @@ MPCPermafrost2::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
 // -- Apply preconditioner to u and returns the result in Pu.
 void
-MPCPermafrost2::precon(Teuchos::RCP<const TreeVector> u,
+MPCPermafrost3::precon(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> Pu) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -272,7 +272,7 @@ MPCPermafrost2::precon(Teuchos::RCP<const TreeVector> u,
 
 // -- Update the preconditioner.
 void
-MPCPermafrost2::update_precon(double t,
+MPCPermafrost3::update_precon(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
@@ -317,10 +317,12 @@ MPCPermafrost2::update_precon(double t,
 
 // -- Modify the predictor.
 bool
-MPCPermafrost2::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
-  bool modified = water_->ModifyPredictor_Heuristic(h, u);
+MPCPermafrost3::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+  bool modified = false;
+  modified |= water_->ModifyPredictor_Heuristic(h, u);
   modified |= water_->ModifyPredictor_WaterSpurtDamp(h, u);
   modified |= water_->ModifyPredictor_TempFromSource(h, u);
+  modified |= ewc_->modify_predictor(h,u);
 
   modified |= StrongMPC<PKPhysicalBDFBase>::modify_predictor(h, u);
   return modified;
@@ -328,7 +330,7 @@ MPCPermafrost2::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
 
 // -- Modify the correction.
 bool
-MPCPermafrost2::modify_correction(double h, Teuchos::RCP<const TreeVector> res,
+MPCPermafrost3::modify_correction(double h, Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
   // dump to screen
@@ -391,9 +393,9 @@ MPCPermafrost2::modify_correction(double h, Teuchos::RCP<const TreeVector> res,
   //   du->SubVector(3)->Scale(damping);
   // }
 
-  // // modify correction for dumping water onto a frozen surface
-  // n_modified = ModifyCorrection_FrozenSurface_(h, res, u, du);
-  // // -- accumulate globally
+  // modify correction for dumping water onto a frozen surface
+  //  n_modified = ModifyCorrection_FrozenSurface_(h, res, u, du);
+  // -- accumulate globally
   // n_modified_l = n_modified;
   // u->SubVector(0)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
   // modified |= (n_modified > 0) || (damping < 1.);
@@ -435,7 +437,7 @@ MPCPermafrost2::modify_correction(double h, Teuchos::RCP<const TreeVector> res,
 }
 
 void
-MPCPermafrost2::UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const TreeVector>& u,
+MPCPermafrost3::UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const TreeVector>& u,
         const Teuchos::RCP<TreeVector>& Pu) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -474,7 +476,7 @@ MPCPermafrost2::UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const Tr
 
 // // Iterate the flow sub-PKs once.
 // void
-// MPCPermafrost2::IterateFlow_(double h, const Teuchos::RCP<TreeVector>& u) {
+// MPCPermafrost3::IterateFlow_(double h, const Teuchos::RCP<TreeVector>& u) {
 //   // create a new, copied TV that is just flow
 //   Teuchos::RCP<TreeVector> u_flow = Teuchos::rcp(new TreeVector());
 //   u_flow->PushBack(u->SubVector(0));
@@ -488,7 +490,7 @@ MPCPermafrost2::UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const Tr
 // }
 
 int
-MPCPermafrost2::ModifyCorrection_FrozenSurface_(double h, Teuchos::RCP<const TreeVector> res,
+MPCPermafrost3::ModifyCorrection_FrozenSurface_(double h, Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   const Epetra_MultiVector& res_surf_c = *res->SubVector(2)->Data()->ViewComponent("cell",false);
   const Epetra_MultiVector& u_surf_c = *u->SubVector(2)->Data()->ViewComponent("cell",false);
