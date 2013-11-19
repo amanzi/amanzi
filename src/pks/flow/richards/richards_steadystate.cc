@@ -129,14 +129,6 @@ void RichardsSteadyState::update_precon(double t, Teuchos::RCP<const TreeVector>
   EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
   *vo_->os() << "updated precon " << S_next_->cycle() << std::endl;
 
-  // print the rel perm
-  Teuchos::RCP<const CompositeVector> cell_rel_perm =
-      S_next_->GetFieldData("relative_permeability");
-  *vo_->os() << "REL PERM: " << std::endl;
-  cell_rel_perm->Print(*vo_->os());
-  *vo_->os() << std::endl;
-  *vo_->os() << "UPWINDED REL PERM: " << std::endl;
-  rel_perm->Print(*vo_->os());
   */
 
 };
