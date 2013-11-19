@@ -254,7 +254,7 @@ set(MSTK_VERSION_MAJOR 2)
 set(MSTK_VERSION_MINOR 10)
 set(MSTK_VERSION_PATCH )
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
-set(MSTK_URL_STRING     "file://../Downloads")
+set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
 set(MSTK_MD5_SUM        6e284d8d7e93f5c45f6230ada0a5eb7a)
 
