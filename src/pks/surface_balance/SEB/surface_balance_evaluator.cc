@@ -39,7 +39,7 @@ SurfaceBalanceEvaluator::SurfaceBalanceEvaluator(Teuchos::ParameterList& plist) 
   //  dependencies_.insert("snow_density");
   //  dependencies_.insert("days_of_nosnow");
   //  dependencies_.insert("snow_temperature");
-  
+
 };
 
 
@@ -106,6 +106,7 @@ SurfaceBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   data_bare.st_energy.dt = 0.;
   data_bare.st_energy.AlbedoTrans = albedo_trans_;
 
+  
   int count = Qe.MyLength();
   for (unsigned int c=0; c!=count; ++c) {
     // ATS Calcualted Data
@@ -129,11 +130,16 @@ SurfaceBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     // Extras just for the evaluator
     data.st_energy.temp_snow = snow_temp[0][c];
 
+    std::cout << "Updating SEB: ht_snow, tmp_snow = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;
+
     // Snow-ground Smoothing 
     if ((data.st_energy.ht_snow > snow_ground_trans_) ||
         (data.st_energy.ht_snow <= 0)) {
       // Run the Snow Energy Balance Model as normal.
       SurfaceEnergyBalance::UpdateEnergyBalance(data);
+
+      std::cout << "  SEB, non-averaged: ht_snow, tmp_snow = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;
+
     } else {
       double theta=0.0;
 
@@ -166,6 +172,8 @@ SurfaceBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       SurfaceEnergyBalance::UpdateEnergyBalance(data_bare);
 
       // Calculating Data for ATS
+      std::cout << "  SEB, averaged: ht_snow, tmp_snow = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;
+      std::cout << "  Averaging fQc (theta=" << theta << "): " << data.st_energy.fQc << ", " << data_bare.st_energy.fQc << std::endl;
       data.st_energy.fQc = data.st_energy.fQc * theta + data_bare.st_energy.fQc * (1.-theta);
     }
 

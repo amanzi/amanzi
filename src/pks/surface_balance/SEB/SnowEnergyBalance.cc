@@ -262,7 +262,9 @@ void SurfaceEnergyBalance::UpdateMassSublCond(EnergyBalance& eb) {
     // water and drains through snow.  Therefore add directly to melt.
     eb.Mr += -SublR;
   } else {
-    eb.MIr += -SublR;
+    //    if (SublR > 0) {
+      eb.MIr += -SublR;
+      //    }
   }
 }
 
@@ -391,8 +393,27 @@ void SurfaceEnergyBalance::SnowEnergyBalance(LocalData& seb) {
 // Main energy-only function.
 void SurfaceEnergyBalance::UpdateEnergyBalance(LocalData& seb) {
   if (seb.st_energy.ht_snow > 0.) {
-    double Ks = 2.9e-6 * std::pow(seb.st_energy.density_snow,2);
-    seb.st_energy.fQc = Ks * (seb.st_energy.temp_snow - seb.st_energy.temp_ground) / seb.st_energy.ht_snow;
+    // Caculate Vapor pressure and dewpoint temperature from Air
+    UpdateVaporPressure(seb.vp_air);
+
+    // Find effective Albedo
+    seb.st_energy.albedo_value = CalcAlbedo(seb.st_energy);
+
+    // Update temperature-independent fluxes, the short- and long-wave incoming
+    // radiation.
+    UpdateIncomingRadiation(seb);
+
+    seb.st_energy.temp_snow = CalcSnowTemperature(seb);
+
+    if (seb.st_energy.temp_snow <= 273.15) { // Snow is not melting
+      seb.st_energy.Qm = 0; //  no water leaving snowpack as melt water
+    } else {
+      seb.st_energy.temp_snow = 273.15; // Set snow temperature to zero
+      UpdateEFluxesSnow(seb, seb.st_energy.temp_snow);
+    }
+
+    //    double Ks = 2.9e-6 * std::pow(seb.st_energy.density_snow,2);
+    //    seb.st_energy.fQc = Ks * (seb.st_energy.temp_snow - seb.st_energy.temp_ground) / seb.st_energy.ht_snow;
   } else {
     // Caculate Vapor pressure and dewpoint temperature from Air
     UpdateVaporPressure(seb.vp_air);
