@@ -36,6 +36,8 @@ const double WHETSTONE_SIMPLEX_MAX_ITERATIONS = 100;  // factor of number of unk
 const double WHETSTONE_SIMPLEX_NO_FEASIBLE_SET = -1;
 const double WHETSTONE_SIMPLEX_NO_CONVERGENCE = -2;
 const double WHETSTONE_SIMPLEX_UNBOUNDED_PROBLEM = -3;
+const int WHETSTONE_SIMPLEX_FUNCTIONAL_SUMALL = 1;
+const int WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE = 2;
 
 }  // namespace WhetStone
 }  // namespace Amanzi
