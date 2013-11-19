@@ -85,94 +85,29 @@ Alquimia_Chemistry_PK::Alquimia_Chemistry_PK(const Teuchos::ParameterList& param
 
 Alquimia_Chemistry_PK::~Alquimia_Chemistry_PK() 
 {
+  // Destroy ansilary data structures.
+  chem_engine_->DeleteAuxiliaryOutputData(alq_aux_output_);
+  chem_engine_->DeleteAuxiliaryData(alq_aux_data_);
+  chem_engine_->DeleteMaterialProperties(alq_mat_props_);
+  chem_engine_->DeleteState(alq_state_);
 }  // end ~Alquimia_Chemistry_PK()
 
 // This helper performs initialization on a single cell within Amanzi's state.
 // It returns an error code that indicates success (0) or failure (1).
 int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex, const std::string& condition) 
 {
-  // Here, we create arrays for transferring state information to the chemistry engine.
-  int N_primary = chem_engine_->NumPrimarySpecies();
-  int N_sorbed = chem_engine_->NumSorbedSpecies();
-  int N_minerals = chem_engine_->NumMinerals();
-  int N_surf_sites = chem_engine_->NumSurfaceSites();
-  int N_ion_exch = chem_engine_->NumIonExchangeSites();
-  int N_free_ions = chem_engine_->NumFreeIonSpecies();
-  int N_isotherm_species = chem_engine_->NumIsothermSpecies();
-  std::vector<double> component_concentrations(N_primary), sorbed_components(N_sorbed),
-                      mineral_volume_fractions(N_minerals), mineral_specific_surface_areas(N_minerals),
-                      cation_exchange_capacity(N_ion_exch), sorption_sites(N_surf_sites),
-                      free_ion_species(N_free_ions), primary_activity_coeffs(N_primary), // FIXME: correct size?
-                      secondary_activity_coeffs(N_primary), // FIXME: correct size?
-                      ion_exchange_ref_cation_concs(N_ion_exch), // FIXME: correct size?
-                      surface_complex_free_site_concs(N_surf_sites), // FIXME: correct size?
-                      isotherm_kd(N_isotherm_species), 
-                      isotherm_freundlich_n(N_isotherm_species),
-                      isotherm_langmuir_b(N_isotherm_species);
-  double water_density, porosity, volume, saturation, pH;
-
   // Copy the state and material information from Amanzi's state within 
   // this cell to Alquimia.
-  CopyAmanziStateToBuffers(cellIndex, 
-                           chemistry_state_->total_component_concentration(), 
-                           component_concentrations,
-                           sorbed_components,
-                           mineral_volume_fractions,
-                           mineral_specific_surface_areas,
-                           cation_exchange_capacity,
-                           sorption_sites,
-                           water_density,
-                           porosity,
-                           volume,
-                           saturation,
-                           isotherm_kd,
-                           isotherm_freundlich_n,
-                           isotherm_langmuir_b);
+  CopyAmanziStateToAlquimia(cellIndex, 
+                            chemistry_state_->total_component_concentration(), 
+                            alq_state_, alq_mat_props_, alq_aux_data_);
 
   // Do the initializætion.
-  chem_engine_->EnforceCondition(condition,
-                                 current_time_,
-                                 &component_concentrations[0],
-                                 &sorbed_components[0],
-                                 &mineral_volume_fractions[0],
-                                 &mineral_specific_surface_areas[0],
-                                 &cation_exchange_capacity[0],
-                                 &sorption_sites[0],
-                                 water_density,
-                                 porosity,
-                                 volume,
-                                 saturation,
-                                 &isotherm_kd[0],
-                                 &isotherm_freundlich_n[0],
-                                 &isotherm_langmuir_b[0],
-                                 &free_ion_species[0],
-                                 &primary_activity_coeffs[0],
-                                 &secondary_activity_coeffs[0],
-                                 &ion_exchange_ref_cation_concs[0],
-                                 &surface_complex_free_site_concs[0],
-                                 pH);
+  chem_engine_->EnforceCondition(condition, current_time_, alq_state_,
+                                 alq_mat_props_, alq_aux_data_, alq_aux_output_);
 
   // Move the information back into Amanzi's state.
-  CopyBuffersToAmanziState(cellIndex, 
-                           component_concentrations,
-                           sorbed_components,
-                           mineral_volume_fractions,
-                           mineral_specific_surface_areas,
-                           cation_exchange_capacity,
-                           sorption_sites,
-                           water_density,
-                           porosity,
-                           volume,
-                           saturation,
-                           isotherm_kd,
-                           isotherm_freundlich_n,
-                           isotherm_langmuir_b,
-                           free_ion_species,
-                           primary_activity_coeffs,
-                           secondary_activity_coeffs,
-                           ion_exchange_ref_cation_concs,
-                           surface_complex_free_site_concs,
-                           pH);
+  CopyAlquimiaStateToAmanzi(cellIndex, alq_state_, alq_mat_props_, alq_aux_data_, alq_aux_output_);
 
   return 0;
 }
@@ -190,8 +125,16 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
 
   chemistry_state_->AllocateAdditionalChemistryStorage(number_aqueous_components());
 
-  // Make storage within Amanzi for auxiliary output.
-  SetupAuxiliaryOutput();
+  // Create the data structures that we will use to traffic data between 
+  // Amanzi and Alquimia.
+  alq_state_ = chem_engine_->NewState();
+  alq_mat_props_ = chem_engine_->NewMaterialProperties();
+  alq_aux_data_ = chem_engine_->NewAuxiliaryData();
+  alq_aux_output_ = chem_engine_->NewAuxiliaryOutputData();
+
+  // create the Epetra_MultiVector that will hold the auxiliary data.
+  int num_aux_data = alq_aux_data_->aux_ints.size + alq_aux_data_->aux_doubles.size;
+  aux_data_ = Teuchos::rcp(new Epetra_MultiVector(chemistry_state_->mesh_maps()->cell_map(false), num_aux_data));
 
   // Now loop through all the regions and initialize.
   int ierr = 0;
@@ -329,13 +272,56 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
       {
         aux_names_.push_back(*name);
       } 
-//      else 
-//      {
-//        std::stringstream message;
-//        message << "ChemistryPK::XMLParameters(): unknown value in 'Auxiliary Data' list: " 
-//                << *name << std::endl;
-//        chem_out->Write(kWarning, message);
-//      }
+      else if ((*name == "mineral_saturation_index") || (*name == "mineral_reaction_rate"))
+      {
+        // We need one of these for each mineral.
+        std::vector<std::string> mineralNames;
+        chem_engine_->GetMineralNames(mineralNames);
+        for (int i = 0; i < mineralNames.size(); ++i)
+        {
+          std::string aux_name = *name + string("_") + mineralNames[i];
+          aux_names_.push_back(*name);
+        }
+      }
+      else if ((*name == "primary_free_ion_concentration") || (*name == "primary_activity_coeff"))
+      {
+        // We need one of these for each primary species.
+        std::vector<std::string> primaryNames;
+        chem_engine_->GetPrimarySpeciesNames(primaryNames);
+        for (int i = 0; i < primaryNames.size(); ++i)
+        {
+          std::string aux_name = *name + string("_") + primaryNames[i];
+          aux_names_.push_back(*name);
+        }
+      }
+      else if ((*name == "secondary_free_ion_concentration") || (*name == "secondary_activity_coeff"))
+      {
+        // We need one of these for each secondary species, which aren't named.
+        for (int i = 0; i < chem_engine_->NumAqueousComplexes(); ++i)
+        {
+          char num_str[16];
+          snprintf(num_str, 15, "%d", i);
+          std::string aux_name = *name + string("_") + string(num_str);
+          aux_names_.push_back(*name);
+        }
+        aux_names_.push_back(*name);
+      } 
+      else 
+      {
+        std::stringstream message;
+        message << "ChemistryPK::XMLParameters(): unknown value in 'Auxiliary Data' list: " 
+                << *name << std::endl;
+        chem_out->Write(kWarning, message);
+      }
+    }
+    if (names.size() > 0)
+    {
+      aux_output_ = Teuchos::rcp(new Epetra_MultiVector(
+           chemistry_state_->mesh_maps()->cell_map(false), names.size()));
+    }
+    else
+    {
+      aux_output_ = Teuchos::null;
     }
   }
 
@@ -369,165 +355,125 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
 
 }  // end XMLParameters()
 
-void Alquimia_Chemistry_PK::SetupAuxiliaryOutput(void) 
+void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
+                                                      Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
+                                                      AlquimiaState* state,
+                                                      AlquimiaMaterialProperties* mat_props,
+                                                      AlquimiaAuxiliaryData* aux_data)
 {
-  // requires that Alquimia's Setup method has already been called!
-  if (debug()) 
-  {
-    std::cout << "  Alquimia_Chemistry_PK::SetupAuxiliaryOutput()" << std::endl;
-  }
-  // TODO(bandre): this indexing scheme will not be appropriate when
-  // additional types of aux data are requested, e.g. mineral SI.....
-  unsigned int nvars = aux_names_.size();
-  std::string name;
-  for (unsigned int i = 0; i < nvars; i++) 
-  {
-    if (aux_names_.at(i) == "pH") 
-    {
-      name = "H+";
-    } 
-    else 
-    {
-      Errors::Message msg;
-      msg << "ChemistryPK::SetupAuxiliaryOutput() : "
-          << "Output was requested for '" << aux_names_.at(i) 
-          << "' (" << name
-          << ") but no auxiliary chemistry varibles of this name were found.\n";
-      Exceptions::amanzi_throw(msg);
-    } 
-  }
-
-  // create the Epetra_MultiVector that will hold the data
-  if (nvars > 0) 
-  {
-    aux_data_ =
-        Teuchos::rcp(new Epetra_MultiVector(
-            chemistry_state_->mesh_maps()->cell_map(false), nvars));
-  } 
-  else 
-  {
-    aux_data_ = Teuchos::null;
-  }
-}  // end SetupAuxiliaryOutput()
-
-void Alquimia_Chemistry_PK::CopyAmanziStateToBuffers(const int cell_id,
-                                                     Teuchos::RCP<const Epetra_MultiVector> aqueous_components, 
-                                                     std::vector<double>& component_concentrations,
-                                                     std::vector<double>& sorbed_components,
-                                                     std::vector<double>& mineral_volume_fractions,
-                                                     std::vector<double>& mineral_specific_surface_areas,
-                                                     std::vector<double>& cation_exchange_capacity,
-                                                     std::vector<double>& sorption_sites,
-                                                     double& water_density,
-                                                     double& porosity,
-                                                     double& volume,
-                                                     double& saturation,
-                                                     std::vector<double>& isotherm_kd,
-                                                     std::vector<double>& isotherm_freundlich_n,
-                                                     std::vector<double>& isotherm_langmuir_b)
-{
-  water_density = (*chemistry_state_->water_density())[cell_id];
-  porosity = (*chemistry_state_->porosity())[cell_id];
+  state->water_density = (*chemistry_state_->water_density())[cell_id];
+  state->porosity = (*chemistry_state_->porosity())[cell_id];
 
   for (unsigned int c = 0; c < number_aqueous_components(); c++) 
   {
     double* cell_components = (*aqueous_components)[c];
     double total_mobile = cell_components[cell_id];
-    component_concentrations[c] = total_mobile;
+    state->total_mobile.data[c] = total_mobile;
     if (using_sorption()) 
     {
       double* cell_total_sorbed = (*chemistry_state_->total_sorbed())[c];
       double immobile = cell_total_sorbed[cell_id];
-      sorbed_components[c] = immobile;
+      state->total_immobile.data[c] = immobile;
     }  // end if(using_sorption)
   }
 
+  //
   // minerals
+  //
+  assert(state->mineral_volume_fraction.size == number_minerals());
+  assert(state->mineral_specific_surface_area.size == number_minerals());
   for (unsigned int m = 0; m < number_minerals(); m++) 
   {
     double* cell_minerals = (*chemistry_state_->mineral_volume_fractions())[m];
-    mineral_volume_fractions[m] = cell_minerals[cell_id];
+    state->mineral_volume_fraction.data[m] = cell_minerals[cell_id];
     if (chemistry_state_->mineral_specific_surface_area() != Teuchos::null) 
     {
       double* cells_ssa = (*chemistry_state_->mineral_specific_surface_area())[m];
-      mineral_specific_surface_areas[m] = cells_ssa[cell_id];
+      state->mineral_specific_surface_area.data[m] = cells_ssa[cell_id];
     }
   }
 
+  //
   // ion exchange
+  //
+  assert(state->cation_exchange_capacity.size == number_ion_exchange_sites());
   if (number_ion_exchange_sites() > 0) 
   {
     for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) 
     {
       double* cell_ion_exchange_sites = (*chemistry_state_->ion_exchange_sites())[i];
-      cation_exchange_capacity[i] = cell_ion_exchange_sites[cell_id];
+      state->cation_exchange_capacity.data[i] = cell_ion_exchange_sites[cell_id];
     }
   }
   
+  //
   // surface complexation
+  //
   if (number_sorption_sites() > 0) 
   {
+    assert(number_sorption_sites() == state->surface_site_density.size);
     for (int s = 0; s < number_sorption_sites(); ++s) 
     {
       // FIXME: Need site density names, too?
       double* cell_sorption_sites = (*chemistry_state_->sorption_sites())[s];
-      sorption_sites[s] = cell_sorption_sites[cell_id];
+      state->surface_site_density.data[s] = cell_sorption_sites[cell_id];
       // TODO(bandre): need to save surface complexation free site conc here!
     }
   }
 
-  // Material properties.
-  volume = (*chemistry_state_->volume())[cell_id];
-  saturation = (*chemistry_state_->water_saturation())[cell_id];
+  // Auxiliary data -- block copy.
+  if (aux_data_ != Teuchos::null) 
+  {
+    int num_aux_ints = aux_data->aux_ints.size;
+    int num_aux_doubles = aux_data->aux_doubles.size;
+    for (int i = 0; i < num_aux_ints; i++) 
+    {
+      double* cell_aux_ints = (*aux_data_)[i];
+      aux_data->aux_ints.data[i] = (int)cell_aux_ints[cell_id];
+    }
+    for (int i = 0; i < num_aux_doubles; i++) 
+    {
+      double* cell_aux_doubles = (*aux_data_)[i + num_aux_ints];
+      aux_data->aux_doubles.data[i] = cell_aux_doubles[cell_id];
+    }
+  }
 
+  mat_props->volume = (*chemistry_state_->volume())[cell_id];
+  mat_props->saturation = (*chemistry_state_->water_saturation())[cell_id];
+
+  //
   // sorption isotherms
+  //
   if (using_sorption_isotherms()) 
   {
     for (unsigned int i = 0; i < number_aqueous_components(); ++i) 
     {
       double* cell_data = (*chemistry_state_->isotherm_kd())[i];
-      isotherm_kd[i] = cell_data[cell_id];
+      mat_props->isotherm_kd.data[i] = cell_data[cell_id];
       
       cell_data = (*chemistry_state_->isotherm_freundlich_n())[i];
-      isotherm_freundlich_n[i] = cell_data[cell_id];
+      mat_props->freundlich_n.data[i] = cell_data[cell_id];
       
       cell_data = (*chemistry_state_->isotherm_langmuir_b())[i];
-      isotherm_langmuir_b[i] = cell_data[cell_id];
+      mat_props->langmuir_b.data[i] = cell_data[cell_id];
     }
   }
+}  // end CopyAmanziStateToAlquimia()
 
-}  // end CopyAmanziStateToBuffers()
-
-void Alquimia_Chemistry_PK::CopyBuffersToAmanziState(const int cell_id,
-                                                     const std::vector<double>& component_concentrations,
-                                                     const std::vector<double>& sorbed_components,
-                                                     const std::vector<double>& mineral_volume_fractions,
-                                                     const std::vector<double>& mineral_specific_surface_areas,
-                                                     const std::vector<double>& cation_exchange_capacity,
-                                                     const std::vector<double>& sorption_sites,
-                                                     double water_density,
-                                                     double porosity,
-                                                     double volume,
-                                                     double saturation,
-                                                     const std::vector<double>& isotherm_kd,
-                                                     const std::vector<double>& isotherm_freundlich_n,
-                                                     const std::vector<double>& isotherm_langmuir_b,
-                                                     const std::vector<double>& free_ion_species,
-                                                     const std::vector<double>& primary_activity_coeffs,
-                                                     const std::vector<double>& secondary_activity_coeffs,
-                                                     const std::vector<double>& ion_exchange_ref_cation_concs,
-                                                     const std::vector<double>& surface_complex_free_site_concs,
-                                                     double pH)
+void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
+                                                      const AlquimiaState* state,
+                                                      const AlquimiaMaterialProperties* mat_props,
+                                                      const AlquimiaAuxiliaryData* aux_data,
+                                                      const AlquimiaAuxiliaryOutputData* aux_output)
 {
-  // If the chemistry has modified the porosity and/or density, it needs to 
+    // If the chemistry has modified the porosity and/or density, it needs to 
   // be updated here.
   // NOTE: At the moment, these accessors are const-only in Chemistry_State.
-  //(*chemistry_state_->water_density())[cell_id] = water_density;
-  //(*chemistry_state_->porosity())[cell_id] = porosity;
-
+  //(*chemistry_state_->water_density())[cell_id] = state->water_density;
+  //(*chemistry_state_->porosity())[cell_id] = state->porosity;
   for (unsigned int c = 0; c < number_aqueous_components(); c++) 
   {
-    double mobile = component_concentrations[c];
+    double mobile = state->total_mobile.data[c];
 
     // NOTE: We place our mobile concentrations into the chemistry state's
     // NOTE: total component concentrations, not the aqueous concentrations.
@@ -538,110 +484,176 @@ void Alquimia_Chemistry_PK::CopyBuffersToAmanziState(const int cell_id,
 
     if (using_sorption())
     {
-      double immobile = sorbed_components[c];
+      double immobile = state->total_immobile.data[c];
       double* cell_total_sorbed = (*chemistry_state_->total_sorbed())[c];
       cell_total_sorbed[cell_id] = immobile;
     }
   }
 
+  //
   // minerals
+  //
   for (unsigned int m = 0; m < number_minerals(); m++) 
   {
     double* cell_minerals = (*chemistry_state_->mineral_volume_fractions())[m];
-    cell_minerals[cell_id] = mineral_volume_fractions[m];
+    cell_minerals[cell_id] = state->mineral_volume_fraction.data[m];
     if (chemistry_state_->mineral_specific_surface_area() != Teuchos::null) 
     {
       cell_minerals = (*chemistry_state_->mineral_specific_surface_area())[m];
-      cell_minerals[cell_id] = mineral_specific_surface_areas[m];
+      cell_minerals[cell_id] = state->mineral_specific_surface_area.data[m];
     }
   }
 
+  //
   // ion exchange
+  //
   for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) 
   {
     double* cell_ion_exchange_sites = (*chemistry_state_->ion_exchange_sites())[i];
-    cell_ion_exchange_sites[cell_id] = cation_exchange_capacity[i];
+    cell_ion_exchange_sites[cell_id] = state->cation_exchange_capacity.data[i];
   }
 
+  //
   // surface complexation
+  //
   if (number_sorption_sites() > 0)
   {
     for (unsigned int i = 0; i < number_sorption_sites(); i++) 
     {
       double* cell_sorption_sites = (*chemistry_state_->sorption_sites())[i];
-      cell_sorption_sites[cell_id] = sorption_sites[i];
-    }
-  }
-
-  // free ion concentrations
-  int offset = 0;
-  for (int i = 0; i < number_aqueous_components(); ++i, ++offset) 
-  {
-    double* cell_free_ion = (*chemistry_state_->free_ion_species())[i];
-    cell_free_ion[cell_id] = free_ion_species[i];
-  }
-
-  // activity coefficients
-  for (int i = 0; i < number_aqueous_components(); ++i, ++offset) 
-  {
-    double* cells = (*chemistry_state_->primary_activity_coeff())[i];
-    cells[cell_id] = primary_activity_coeffs[i];
-  }
-  for (int i = 0; i < number_aqueous_components(); ++i, ++offset) 
-  {
-    double* cells = (*chemistry_state_->secondary_activity_coeff())[i];
-    cells[cell_id] = secondary_activity_coeffs[i];
-  }
-
-  // ion exchange ref cation concentrations
-  for (int i = 0; i < chemistry_state_->number_of_ion_exchange_sites(); ++i, ++offset) 
-  {
-    double* cells = (*chemistry_state_->ion_exchange_ref_cation_conc())[i];
-    cells[cell_id] = ion_exchange_ref_cation_concs[i];
-  }
-
-  // surface complexation
-  if (using_sorption())
-  {
-    for (int i = 0; i < chemistry_state_->number_of_sorption_sites(); ++i, ++offset) 
-    {
-      double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
-      cells[cell_id] = surface_complex_free_site_concs[i];
+      cell_sorption_sites[cell_id] = state->surface_site_density.data[i];
     }
   }
 
   // Auxiliary output.
-  if (aux_data_ != Teuchos::null) 
+  if (aux_output_ != Teuchos::null) 
   {
+    std::vector<std::string> mineralNames, primaryNames;
+    chem_engine_->GetMineralNames(mineralNames);
+    chem_engine_->GetPrimarySpeciesNames(primaryNames);
+    int numAqueousComplexes = chem_engine_->NumAqueousComplexes();
     for (unsigned int i = 0; i < aux_names_.size(); i++) 
     {
       if (aux_names_.at(i) == "pH") 
       {
-        double* cell_aux_data = (*aux_data_)[i];
-        cell_aux_data[cell_id] = pH;
+        double* cell_aux_output = (*aux_output_)[i];
+        cell_aux_output[cell_id] = aux_output->pH;
       }
-      // FIXME: For now, we don't support mineral saturation index or 
-      // FIXME: mineral reaction rate, but when we do, these need to 
-      // FIXME: be updated here as well.
+      else if (aux_names_.at(i).find("mineral_saturation_index") != std::string::npos)
+      {
+        for (int j = 0; j < mineralNames.size(); ++j)
+        {
+          std::string full_name = string("mineral_saturation_index_") + mineralNames[j];
+          if (aux_names_.at(i) == full_name)
+          {
+            double* cell_aux_output = (*aux_output_)[i];
+            cell_aux_output[cell_id] = aux_output->mineral_saturation_index.data[j];
+          }
+        }
+      }
+      else if (aux_names_.at(i).find("mineral_reaction_rate") != std::string::npos)
+      {
+        for (int j = 0; j < mineralNames.size(); ++j)
+        {
+          std::string full_name = string("mineral_reaction_rate_") + mineralNames[j];
+          if (aux_names_.at(i) == full_name)
+          {
+            double* cell_aux_output = (*aux_output_)[i];
+            cell_aux_output[cell_id] = aux_output->mineral_reaction_rate.data[j];
+          }
+        }
+      }
+      else if (aux_names_.at(i) == "primary_free_ion_concentration")
+      {
+        for (int j = 0; j < primaryNames.size(); ++j)
+        {
+          std::string full_name = string("primary_free_ion_concentration_") + primaryNames[j];
+          if (aux_names_.at(i) == full_name)
+          {
+            double* cell_aux_output = (*aux_output_)[i];
+            cell_aux_output[cell_id] = aux_output->primary_free_ion_concentration.data[j];
+          }
+        }
+      }
+      else if (aux_names_.at(i) == "primary_activity_coeff")
+      {
+        for (int j = 0; j < primaryNames.size(); ++j)
+        {
+          std::string full_name = string("primary_activity_coeff_") + primaryNames[j];
+          if (aux_names_.at(i) == full_name)
+          {
+            double* cell_aux_output = (*aux_output_)[i];
+            cell_aux_output[cell_id] = aux_output->primary_activity_coeff.data[j];
+          }
+        }
+      }
+      else if (aux_names_.at(i) == "secondary_free_ion_concentration")
+      {
+        for (int j = 0; j < numAqueousComplexes; ++j)
+        {
+          char num_str[16];
+          snprintf(num_str, 15, "%d", j);
+          std::string full_name = string("secondary_free_ion_concentration_") + string(num_str);
+          if (aux_names_.at(i) == full_name)
+          {
+            double* cell_aux_output = (*aux_output_)[i];
+            cell_aux_output[cell_id] = aux_output->secondary_free_ion_concentration.data[j];
+          }
+        }
+      }
+      else if (aux_names_.at(i) == "secondary_activity_coeff")
+      {
+        for (int j = 0; j < numAqueousComplexes; ++j)
+        {
+          char num_str[16];
+          snprintf(num_str, 15, "%d", j);
+          std::string full_name = string("secondary_activity_coeff_") + string(num_str);
+          if (aux_names_.at(i) == full_name)
+          {
+            double* cell_aux_output = (*aux_output_)[i];
+            cell_aux_output[cell_id] = aux_output->secondary_activity_coeff.data[j];
+          }
+        }
+      }
     }
   }
 
+  // Auxiliary data -- block copy.
+  if (aux_data_ != Teuchos::null) 
+  {
+    int num_aux_ints = aux_data->aux_ints.size;
+    int num_aux_doubles = aux_data->aux_doubles.size;
+    for (int i = 0; i < num_aux_ints; i++) 
+    {
+      double* cell_aux_ints = (*aux_data_)[i];
+      cell_aux_ints[cell_id] = (double)aux_data->aux_ints.data[i];
+    }
+    for (int i = 0; i < num_aux_doubles; i++) 
+    {
+      double* cell_aux_doubles = (*aux_data_)[i + num_aux_ints];
+      cell_aux_doubles[cell_id] = aux_data->aux_doubles.data[i];
+    }
+  }
+
+  // NOTE: volume and water saturation are read-only from the chemistry state, so they can't be 
+  // NOTE: altered by Alquimia.
+
+  // sorption isotherms
   if (using_sorption_isotherms()) 
   {
     for (unsigned int i = 0; i < number_aqueous_components(); ++i) 
     {
       double* cell_data = (*chemistry_state_->isotherm_kd())[i];
-      cell_data[cell_id] = isotherm_kd[i];
+      cell_data[cell_id] = mat_props->isotherm_kd.data[i];
 
       cell_data = (*chemistry_state_->isotherm_freundlich_n())[i];
-      cell_data[cell_id] = isotherm_freundlich_n[i];
+      cell_data[cell_id] = mat_props->freundlich_n.data[i];
 
       cell_data = (*chemistry_state_->isotherm_langmuir_b())[i];
-      cell_data[cell_id] = isotherm_langmuir_b[i];
+      cell_data[cell_id] = mat_props->langmuir_b.data[i];
     }
   }
-
-}  // end CopyBuffersToAmanziState()
+}  // end CopyAlquimiaStateToAmanzi()
 
 /*******************************************************************************
  **
@@ -661,89 +673,19 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time,
                                              Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star,
                                              int cellIndex)
 {
-  // Here, we create arrays for transferring state information to the chemistry engine.
-  int N_primary = chem_engine_->NumPrimarySpecies();
-  int N_sorbed = chem_engine_->NumSorbedSpecies();
-  int N_minerals = chem_engine_->NumMinerals();
-  int N_surf_sites = chem_engine_->NumSurfaceSites();
-  int N_ion_exch = chem_engine_->NumIonExchangeSites();
-  int N_free_ions = chem_engine_->NumFreeIonSpecies();
-  int N_isotherm_species = chem_engine_->NumIsothermSpecies();
-  std::vector<double> component_concentrations(N_primary), sorbed_components(N_sorbed),
-                      mineral_volume_fractions(N_minerals), mineral_specific_surface_areas(N_minerals),
-                      cation_exchange_capacity(N_ion_exch), sorption_sites(N_surf_sites),
-                      free_ion_species(N_free_ions), primary_activity_coeffs(N_primary), // FIXME: correct size?
-                      secondary_activity_coeffs(N_primary), // FIXME: correct size?
-                      ion_exchange_ref_cation_concs(N_ion_exch), // FIXME: correct size?
-                      surface_complex_free_site_concs(N_surf_sites), // FIXME: correct size?
-                      isotherm_kd(N_isotherm_species), 
-                      isotherm_freundlich_n(N_isotherm_species),
-                      isotherm_langmuir_b(N_isotherm_species);
-  double water_density, porosity, volume, saturation, pH;
-
   // Copy the state and material information from Amanzi's state within 
   // this cell to Alquimia.
-  CopyAmanziStateToBuffers(cellIndex, 
-                           total_component_concentration_star, 
-                           component_concentrations,
-                           sorbed_components,
-                           mineral_volume_fractions,
-                           mineral_specific_surface_areas,
-                           cation_exchange_capacity,
-                           sorption_sites,
-                           water_density,
-                           porosity,
-                           volume,
-                           saturation,
-                           isotherm_kd,
-                           isotherm_freundlich_n,
-                           isotherm_langmuir_b);
+  CopyAmanziStateToAlquimia(cellIndex, 
+                            chemistry_state_->total_component_concentration(), 
+                            alq_state_, alq_mat_props_, alq_aux_data_);
 
   // Do the reaction.
   int num_iterations;
-  chem_engine_->Advance(delta_time,
-                        &component_concentrations[0],
-                        &sorbed_components[0],
-                        &mineral_volume_fractions[0],
-                        &mineral_specific_surface_areas[0],
-                        &cation_exchange_capacity[0],
-                        &sorption_sites[0],
-                        water_density,
-                        porosity,
-                        volume,
-                        saturation,
-                        &isotherm_kd[0],
-                        &isotherm_freundlich_n[0],
-                        &isotherm_langmuir_b[0],
-                        &free_ion_species[0],
-                        &primary_activity_coeffs[0],
-                        &secondary_activity_coeffs[0],
-                        &ion_exchange_ref_cation_concs[0],
-                        &surface_complex_free_site_concs[0],
-                        pH,
-                        num_iterations);
+  chem_engine_->Advance(delta_time, alq_state_, alq_mat_props_, 
+                        alq_aux_data_, alq_aux_output_, num_iterations);
 
   // Move the information back into Amanzi's state.
-  CopyBuffersToAmanziState(cellIndex, 
-                           component_concentrations,
-                           sorbed_components,
-                           mineral_volume_fractions,
-                           mineral_specific_surface_areas,
-                           cation_exchange_capacity,
-                           sorption_sites,
-                           water_density,
-                           porosity,
-                           volume,
-                           saturation,
-                           isotherm_kd,
-                           isotherm_freundlich_n,
-                           isotherm_langmuir_b,
-                           free_ion_species,
-                           primary_activity_coeffs,
-                           secondary_activity_coeffs,
-                           ion_exchange_ref_cation_concs,
-                           surface_complex_free_site_concs,
-                           pH);
+  CopyAlquimiaStateToAmanzi(cellIndex, alq_state_, alq_mat_props_, alq_aux_data_, alq_aux_output_);
 
   return num_iterations;
 }

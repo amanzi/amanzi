@@ -13,6 +13,12 @@ This implements the Alquimia chemistry engine.
 #include "errors.hh"
 #include "exceptions.hh"
 
+// Support for manipulating floating point exception handling.
+#ifdef _GNU_SOURCE
+#define AMANZI_USE_FENV
+#include <fenv.h>
+#endif
+
 namespace Amanzi {
 namespace AmanziChemistry {
 
@@ -114,6 +120,11 @@ int Chemistry_Engine::NumPrimarySpecies() const
   return chem_data_.sizes.num_primary;
 }
 
+int Chemistry_Engine::NumAqueousComplexes() const
+{
+  return chem_data_.sizes.num_aqueous_complexes;
+}
+
 int Chemistry_Engine::NumSorbedSpecies() const
 {
   return chem_data_.sizes.num_sorbed;
@@ -189,186 +200,12 @@ int Chemistry_Engine::NumFreeIonSpecies() const
   return chem_data_.aux_output.primary_free_ion_concentration.size;
 }
 
-void Chemistry_Engine::CopyFromBuffersToAlquimia(const double* component_concentrations,
-                                                 const double* sorbed_components,
-                                                 const double* mineral_volume_fractions,
-                                                 const double* mineral_specific_surface_areas,
-                                                 const double* cation_exchange_capacity,
-                                                 const double* sorption_sites,
-                                                 double water_density,
-                                                 double porosity,
-                                                 double volume,
-                                                 double saturation,
-                                                 const double* isotherm_kd,
-                                                 const double* isotherm_freundlich_n,
-                                                 const double* isotherm_langmuir_b)
-{
-  AlquimiaState* alquimia_state = &chem_data_.state;
-  AlquimiaMaterialProperties* alquimia_mat_props = &chem_data_.material_properties;
-  
-  // Chemical composition.
-  for (int c = 0; c < alquimia_state->total_mobile.size; ++c)
-  {
-    alquimia_state->total_mobile.data[c] = component_concentrations[c];
-    if (this->NumSorbedSpecies() > 0)
-      alquimia_state->total_immobile.data[c] = sorbed_components[c];
-  }
-
-  // Mineral information.
-  for (int m = 0; m < alquimia_state->mineral_volume_fraction.size; ++m) 
-  {
-    alquimia_state->mineral_volume_fraction.data[m] = mineral_volume_fractions[m];
-    alquimia_state->mineral_specific_surface_area.data[m] = mineral_specific_surface_areas[m];
-  }
-
-  // Ion exchange.
-  for (int i = 0; i < alquimia_state->cation_exchange_capacity.size; ++i)
-    alquimia_state->cation_exchange_capacity.data[i] = cation_exchange_capacity[i];
-
-  // Surface complexation.
-  for (int s = 0; s < alquimia_state->surface_site_density.size; ++s)
-    alquimia_state->surface_site_density.data[s] = sorption_sites[s];
-
-  // "Geometry."
-  alquimia_state->water_density = water_density; 
-  alquimia_state->porosity = porosity; 
-
-  // Material properties.
-  alquimia_mat_props->volume = volume;
-  alquimia_mat_props->saturation = saturation;
-  for (int i = 0; i < alquimia_mat_props->isotherm_kd.size; ++i)
-    alquimia_mat_props->isotherm_kd.data[i] = isotherm_kd[i];
-  for (int i = 0; i < alquimia_mat_props->freundlich_n.size; ++i)
-    alquimia_mat_props->freundlich_n.data[i] = isotherm_kd[i];
-  for (int i = 0; i < alquimia_mat_props->langmuir_b.size; ++i)
-    alquimia_mat_props->langmuir_b.data[i] = isotherm_kd[i];
-}
-
-void Chemistry_Engine::CopyFromAlquimiaToBuffers(double* component_concentrations,
-                                                 double* sorbed_components,
-                                                 double* mineral_volume_fractions,
-                                                 double* mineral_specific_surface_areas,
-                                                 double* cation_exchange_capacity,
-                                                 double* sorption_sites,
-                                                 double& water_density,
-                                                 double& porosity,
-                                                 double& volume,
-                                                 double& saturation,
-                                                 double* isotherm_kd,
-                                                 double* isotherm_freundlich_n,
-                                                 double* isotherm_langmuir_b,
-                                                 double* free_ion_species,
-                                                 double* primary_activity_coeffs,
-                                                 double* secondary_activity_coeffs,
-                                                 double* ion_exchange_ref_cation_concs,
-                                                 double* surface_complex_free_site_concs,
-                                                 double& pH) const
-{
-  const AlquimiaState* alquimia_state = &chem_data_.state;
-
-  // Chemical composition.
-  for (int c = 0; c < alquimia_state->total_mobile.size; ++c)
-  {
-    component_concentrations[c] = alquimia_state->total_mobile.data[c];
-    if (this->NumSorbedSpecies() > 0)
-      sorbed_components[c] = alquimia_state->total_immobile.data[c];
-  }
-
-  // Mineral information.
-  for (int m = 0; m < alquimia_state->mineral_volume_fraction.size; ++m) 
-  {
-    mineral_volume_fractions[m] = alquimia_state->mineral_volume_fraction.data[m];
-    mineral_specific_surface_areas[m] = alquimia_state->mineral_specific_surface_area.data[m];
-  }
-
-  // Ion exchange.
-  for (int i = 0; i < alquimia_state->cation_exchange_capacity.size; ++i)
-    cation_exchange_capacity[i] = alquimia_state->cation_exchange_capacity.data[i];
-
-  // Surface complexation.
-  for (int s = 0; s < alquimia_state->surface_site_density.size; ++s)
-    sorption_sites[s] = alquimia_state->surface_site_density.data[s];
-
-  // "Geometry."
-  water_density = alquimia_state->water_density;
-  porosity = alquimia_state->porosity;
-
-  // Material properties.
-  const AlquimiaMaterialProperties* alquimia_mat_props = &chem_data_.material_properties;
-  volume = alquimia_mat_props->volume;
-  saturation = alquimia_mat_props->saturation;
-  for (int i = 0; i < alquimia_mat_props->isotherm_kd.size; ++i)
-    isotherm_kd[i] = alquimia_mat_props->isotherm_kd.data[i];
-  for (int i = 0; i < alquimia_mat_props->freundlich_n.size; ++i)
-    isotherm_kd[i] = alquimia_mat_props->freundlich_n.data[i];
-  for (int i = 0; i < alquimia_mat_props->langmuir_b.size; ++i)
-    isotherm_kd[i] = alquimia_mat_props->langmuir_b.data[i];
-  
-  // Auxiliary data follows.
-  const AlquimiaAuxiliaryOutputData* aux_output = &chem_data_.aux_output;
-
-  // Free ion concentrations.
-  for (int i = 0; i < aux_output->primary_free_ion_concentration.size; ++i)
-    free_ion_species[i] = aux_output->primary_free_ion_concentration.data[i];
-
-  // Activity coefficients.
-  for (int i = 0; i < aux_output->primary_activity_coeff.size; ++i)
-    primary_activity_coeffs[i] = aux_output->primary_activity_coeff.data[i];
-  for (int i = 0; i < aux_output->secondary_activity_coeff.size; ++i)
-    secondary_activity_coeffs[i] = aux_output->secondary_activity_coeff.data[i];
-
-  // pH.
-  pH = aux_output->pH;
-
-  // The ion exchange reference cation sorbed concentration and surface complexation 
-  // free site concentrations are not made available in an engine-neutral format and 
-  // are not implemented currently. We can do this for the PFlotran engine, but 
-  // this doesn't seem like a good approach looking forward.
-#if 0
-  // The layout of auxiliary 
-  //   free ion conc <N_primary>
-  //   primary_activity_coeff <N_primary>
-  //   secondary_activity_coeff <N_aqueous_complexes>
-  //   ion exchange ref cation sorbed conc <N_ion_exchange_sites>
-  //   surface complexation free site conc <N_surface_sites>
-
-  for (int i = 0; i < this->NumPrimarySpecies(); ++i, ++offset) 
-    free_ion_species[i] = chem_data_.aux_data.aux_doubles.data[offset];
-
-  // Ion exchange ref cation concentrations.
-  for (int i = 0; i < this->NumIonExchangeSites(); ++i, ++offset) 
-    ion_exchange_ref_cation_concs[i] = chem_data_.aux_data.aux_doubles.data[offset];
-
-  // Surface complexation.
-  if (this->NumSorbedSpecies() > 0)
-  {
-    for (int i = 0; i < this->NumSurfaceSites(); ++i, ++offset) 
-      surface_complex_free_site_concs[i] = chem_data_.aux_data.aux_doubles.data[offset];
-  }
-#endif
-}
-
 void Chemistry_Engine::EnforceCondition(const std::string& conditionName,
                                         double time,
-                                        double* component_concentrations,
-                                        double* sorbed_components,
-                                        double* mineral_volume_fractions,
-                                        double* mineral_specific_surface_areas,
-                                        double* cation_exchange_capacity,
-                                        double* sorption_sites,
-                                        double& water_density,
-                                        double& porosity,
-                                        double& volume,
-                                        double& saturation,
-                                        double* isotherm_kd,
-                                        double* isotherm_freundlich_n,
-                                        double* isotherm_langmuir_b,
-                                        double* free_ion_species,
-                                        double* primary_activity_coeffs,
-                                        double* secondary_activity_coeffs,
-                                        double* ion_exchange_ref_cation_concs,
-                                        double* surface_complex_free_site_concs,
-                                        double& pH)
+                                        AlquimiaState* chem_state,
+                                        AlquimiaMaterialProperties* mat_props,
+                                        AlquimiaAuxiliaryData* aux_data,
+                                        AlquimiaAuxiliaryOutputData* aux_output)
 {
   Errors::Message msg;
 
@@ -381,19 +218,12 @@ void Chemistry_Engine::EnforceCondition(const std::string& conditionName,
   }
 
   // Copy stuff into Alquimia.
-  this->CopyFromBuffersToAlquimia(component_concentrations,
-                                  sorbed_components,
-                                  mineral_volume_fractions,
-                                  mineral_specific_surface_areas,
-                                  cation_exchange_capacity,
-                                  sorption_sites,
-                                  water_density,
-                                  porosity,
-                                  volume,
-                                  saturation,
-                                  isotherm_kd,
-                                  isotherm_freundlich_n,
-                                  isotherm_langmuir_b);
+  CopyIn(chem_state, mat_props, aux_data);
+
+#ifdef AMANZI_USE_FENV
+  // Disable divide-by-zero floating point exceptions.
+  int fpe_mask = fedisableexcept(FE_DIVBYZERO);
+#endif 
 
   // Process the condition on the given array at the given time.
   // FIXME: Time is ignored for the moment.
@@ -405,6 +235,11 @@ void Chemistry_Engine::EnforceCondition(const std::string& conditionName,
                          &chem_data_.state,
                          &chem_data_.aux_data,
                          &chem_status_);
+
+#ifdef AMANZI_USE_FENV
+  // Re-enable pre-existing floating point exceptions.
+  fpe_mask = feenableexcept(fpe_mask);
+#endif 
 
 // FIXME: Figure out a neutral parallel-friendly way to report errors.
   assert(chem_status_.error == 0);
@@ -424,63 +259,22 @@ void Chemistry_Engine::EnforceCondition(const std::string& conditionName,
 #endif
 
   // Copy stuff out again.
-  this->CopyFromAlquimiaToBuffers(component_concentrations,
-                                  sorbed_components,
-                                  mineral_volume_fractions,
-                                  mineral_specific_surface_areas,
-                                  cation_exchange_capacity,
-                                  sorption_sites,
-                                  water_density,
-                                  porosity,
-                                  volume,
-                                  saturation,
-                                  isotherm_kd,
-                                  isotherm_freundlich_n,
-                                  isotherm_langmuir_b,
-                                  free_ion_species,
-                                  primary_activity_coeffs,
-                                  secondary_activity_coeffs,
-                                  ion_exchange_ref_cation_concs,
-                                  surface_complex_free_site_concs,
-                                  pH);
+  CopyOut(chem_state, mat_props, aux_data, aux_output);
 }
 
 void Chemistry_Engine::Advance(double delta_time,
-                               double* component_concentrations,
-                               double* sorbed_components,
-                               double* mineral_volume_fractions,
-                               double* mineral_specific_surface_areas,
-                               double* cation_exchange_capacity,
-                               double* sorption_sites,
-                               double& water_density,
-                               double& porosity,
-                               double& volume,
-                               double& saturation,
-                               double* isotherm_kd,
-                               double* isotherm_freundlich_n,
-                               double* isotherm_langmuir_b,
-                               double* free_ion_species,
-                               double* primary_activity_coeffs,
-                               double* secondary_activity_coeffs,
-                               double* ion_exchange_ref_cation_concs,
-                               double* surface_complex_free_site_concs,
-                               double& pH,
+                               AlquimiaState* chem_state,
+                               AlquimiaMaterialProperties* mat_props,
+                               AlquimiaAuxiliaryData* aux_data,
+                               AlquimiaAuxiliaryOutputData* aux_output,
                                int& num_iterations)
 {
-  // Copy stuff into Alquimia.
-  this->CopyFromBuffersToAlquimia(component_concentrations,
-                                  sorbed_components,
-                                  mineral_volume_fractions,
-                                  mineral_specific_surface_areas,
-                                  cation_exchange_capacity,
-                                  sorption_sites,
-                                  water_density,
-                                  porosity,
-                                  volume,
-                                  saturation,
-                                  isotherm_kd,
-                                  isotherm_freundlich_n,
-                                  isotherm_langmuir_b);
+  CopyIn(chem_state, mat_props, aux_data);
+
+#ifdef AMANZI_USE_FENV
+  // Disable divide-by-zero floating point exceptions.
+  int fpe_mask = fedisableexcept(FE_DIVBYZERO);
+#endif 
 
   // Advance the chemical reaction all operator-split-like.
   chem_.ReactionStepOperatorSplit(&chem_data_.engine_state,
@@ -489,6 +283,11 @@ void Chemistry_Engine::Advance(double delta_time,
                                   &chem_data_.state,
                                   &chem_data_.aux_data,
                                   &chem_status_);
+
+#ifdef AMANZI_USE_FENV
+  // Re-enable pre-existing floating point exceptions.
+  fpe_mask = feenableexcept(fpe_mask);
+#endif 
 
 // FIXME: Figure out a neutral parallel-friendly way to report errors.
   assert(chem_status_.error == 0);
@@ -511,25 +310,7 @@ void Chemistry_Engine::Advance(double delta_time,
   num_iterations = chem_status_.num_newton_iterations;
 
   // Copy stuff out again.
-  this->CopyFromAlquimiaToBuffers(component_concentrations,
-                                  sorbed_components,
-                                  mineral_volume_fractions,
-                                  mineral_specific_surface_areas,
-                                  cation_exchange_capacity,
-                                  sorption_sites,
-                                  water_density,
-                                  porosity,
-                                  volume,
-                                  saturation,
-                                  isotherm_kd,
-                                  isotherm_freundlich_n,
-                                  isotherm_langmuir_b,
-                                  free_ion_species,
-                                  primary_activity_coeffs,
-                                  secondary_activity_coeffs,
-                                  ion_exchange_ref_cation_concs,
-                                  surface_complex_free_site_concs,
-                                  pH);
+  CopyOut(chem_state, mat_props, aux_data, aux_output);
 }
 
 void Chemistry_Engine::ParseChemicalConditions(const Teuchos::ParameterList& param_list,
@@ -685,6 +466,175 @@ void Chemistry_Engine::ReadXMLParameters()
        
 }  // end ReadXMLParameters()
 
+const AlquimiaSizes& Chemistry_Engine::Sizes() const
+{
+  return chem_data_.sizes;
+}
+
+AlquimiaState* Chemistry_Engine::NewState() const
+{
+  AlquimiaState* state = new AlquimiaState;
+  AllocateAlquimiaState(&chem_data_.sizes, state);
+  return state;
+}
+
+void Chemistry_Engine::DeleteState(AlquimiaState* state)
+{
+  FreeAlquimiaState(state);
+  delete state;
+}
+
+AlquimiaMaterialProperties* Chemistry_Engine::NewMaterialProperties() const
+{
+  AlquimiaMaterialProperties* mat_props = new AlquimiaMaterialProperties;
+  AllocateAlquimiaMaterialProperties(&chem_data_.sizes, mat_props);
+  return mat_props;
+}
+
+void Chemistry_Engine::DeleteMaterialProperties(AlquimiaMaterialProperties* mat_props)
+{
+  FreeAlquimiaMaterialProperties(mat_props);
+  delete mat_props;
+}
+
+AlquimiaAuxiliaryData* Chemistry_Engine::NewAuxiliaryData() const
+{
+  AlquimiaAuxiliaryData* aux_data = new AlquimiaAuxiliaryData;
+  AllocateAlquimiaAuxiliaryData(&chem_data_.sizes, aux_data);
+  return aux_data;
+}
+
+void Chemistry_Engine::DeleteAuxiliaryData(AlquimiaAuxiliaryData* aux_data)
+{
+  FreeAlquimiaAuxiliaryData(aux_data);
+  delete aux_data;
+}
+
+AlquimiaAuxiliaryOutputData* Chemistry_Engine::NewAuxiliaryOutputData() const
+{
+  AlquimiaAuxiliaryOutputData* aux_output = new AlquimiaAuxiliaryOutputData;
+  AllocateAlquimiaAuxiliaryOutputData(&chem_data_.sizes, aux_output);
+  return aux_output;
+}
+
+void Chemistry_Engine::DeleteAuxiliaryOutputData(AlquimiaAuxiliaryOutputData* aux_output)
+{
+  FreeAlquimiaAuxiliaryOutputData(aux_output);
+  delete aux_output;
+}
+
+void Chemistry_Engine::CopyIn(AlquimiaState* chem_state, AlquimiaMaterialProperties* mat_props, AlquimiaAuxiliaryData* aux_data)
+{
+  AlquimiaState* alquimia_state = &chem_data_.state;
+  AlquimiaMaterialProperties* alquimia_mat_props = &chem_data_.material_properties;
+  AlquimiaAuxiliaryData* alquimia_aux_data = &chem_data_.aux_data;
+
+  // Chemical composition.
+  for (int c = 0; c < alquimia_state->total_mobile.size; ++c)
+    alquimia_state->total_mobile.data[c] = chem_state->total_mobile.data[c];
+  for (int c = 0; c < alquimia_state->total_immobile.size; ++c)
+    alquimia_state->total_immobile.data[c] = chem_state->total_immobile.data[c];
+
+  // Mineral information.
+  for (int m = 0; m < alquimia_state->mineral_volume_fraction.size; ++m) 
+  {
+    alquimia_state->mineral_volume_fraction.data[m] = chem_state->mineral_volume_fraction.data[m];
+    alquimia_state->mineral_specific_surface_area.data[m] = chem_state->mineral_specific_surface_area.data[m];
+  }
+
+  // Ion exchange.
+  for (int i = 0; i < alquimia_state->cation_exchange_capacity.size; ++i)
+    alquimia_state->cation_exchange_capacity.data[i] = chem_state->cation_exchange_capacity.data[i];
+
+  // Surface complexation.
+  for (int s = 0; s < alquimia_state->surface_site_density.size; ++s)
+    alquimia_state->surface_site_density.data[s] = chem_state->surface_site_density.data[s];
+
+  // "Geometry."
+  alquimia_state->water_density = chem_state->water_density; 
+  alquimia_state->porosity = chem_state->porosity; 
+
+  // Material properties.
+  alquimia_mat_props->volume = mat_props->volume;
+  alquimia_mat_props->saturation = mat_props->saturation;
+  for (int i = 0; i < alquimia_mat_props->isotherm_kd.size; ++i)
+    alquimia_mat_props->isotherm_kd.data[i] = mat_props->isotherm_kd.data[i];
+  for (int i = 0; i < alquimia_mat_props->freundlich_n.size; ++i)
+    alquimia_mat_props->freundlich_n.data[i] = mat_props->isotherm_kd.data[i];
+  for (int i = 0; i < alquimia_mat_props->langmuir_b.size; ++i)
+    alquimia_mat_props->langmuir_b.data[i] = mat_props->isotherm_kd.data[i];
+
+  // Auxiliary data.
+  for (int i = 0; i < alquimia_aux_data->aux_ints.size; ++i)
+    alquimia_aux_data->aux_ints.data[i] = aux_data->aux_ints.data[i];
+  for (int i = 0; i < alquimia_aux_data->aux_doubles.size; ++i)
+    alquimia_aux_data->aux_doubles.data[i] = aux_data->aux_doubles.data[i];
+}
+
+void Chemistry_Engine::CopyOut(AlquimiaState* chem_state, AlquimiaMaterialProperties* mat_props, 
+                               AlquimiaAuxiliaryData* aux_data, AlquimiaAuxiliaryOutputData* aux_output)
+{
+  AlquimiaState* alquimia_state = &chem_data_.state;
+  AlquimiaMaterialProperties* alquimia_mat_props = &chem_data_.material_properties;
+  AlquimiaAuxiliaryData* alquimia_aux_data = &chem_data_.aux_data;
+
+  // Chemical composition.
+  for (int c = 0; c < alquimia_state->total_mobile.size; ++c)
+    chem_state->total_mobile.data[c] = alquimia_state->total_mobile.data[c];
+  for (int c = 0; c < alquimia_state->total_immobile.size; ++c)
+    chem_state->total_immobile.data[c] = alquimia_state->total_immobile.data[c];
+
+  // Mineral information.
+  for (int m = 0; m < alquimia_state->mineral_volume_fraction.size; ++m) 
+  {
+    chem_state->mineral_volume_fraction.data[m] = alquimia_state->mineral_volume_fraction.data[m];
+    chem_state->mineral_specific_surface_area.data[m] = alquimia_state->mineral_specific_surface_area.data[m];
+  }
+
+  // Ion exchange.
+  for (int i = 0; i < alquimia_state->cation_exchange_capacity.size; ++i)
+    chem_state->cation_exchange_capacity.data[i] = alquimia_state->cation_exchange_capacity.data[i];
+
+  // Surface complexation.
+  for (int s = 0; s < alquimia_state->surface_site_density.size; ++s)
+    chem_state->surface_site_density.data[s] = alquimia_state->surface_site_density.data[s];
+
+  // "Geometry."
+  chem_state->water_density = alquimia_state->water_density;
+  chem_state->porosity = alquimia_state->porosity;
+
+  // Material properties.
+  mat_props->volume = alquimia_mat_props->volume;
+  mat_props->saturation = alquimia_mat_props->saturation;
+  for (int i = 0; i < alquimia_mat_props->isotherm_kd.size; ++i)
+    mat_props->isotherm_kd.data[i] = alquimia_mat_props->isotherm_kd.data[i];
+  for (int i = 0; i < alquimia_mat_props->freundlich_n.size; ++i)
+    mat_props->isotherm_kd.data[i] = alquimia_mat_props->freundlich_n.data[i];
+  for (int i = 0; i < alquimia_mat_props->langmuir_b.size; ++i)
+    mat_props->isotherm_kd.data[i] = alquimia_mat_props->langmuir_b.data[i];
+
+  // Auxiliary data.
+  for (int i = 0; i < alquimia_aux_data->aux_ints.size; ++i)
+    aux_data->aux_ints.data[i] = alquimia_aux_data->aux_ints.data[i];
+  for (int i = 0; i < alquimia_aux_data->aux_doubles.size; ++i)
+    aux_data->aux_doubles.data[i] = alquimia_aux_data->aux_doubles.data[i];
+
+  // Auxiliary output data.
+  const AlquimiaAuxiliaryOutputData* alquimia_aux_output = &chem_data_.aux_output;
+
+  // Free ion concentrations.
+  for (int i = 0; i < alquimia_aux_output->primary_free_ion_concentration.size; ++i)
+    aux_output->primary_free_ion_concentration.data[i] = alquimia_aux_output->primary_free_ion_concentration.data[i];
+
+  // Activity coefficients.
+  for (int i = 0; i < alquimia_aux_output->primary_activity_coeff.size; ++i)
+    aux_output->primary_activity_coeff.data[i] = alquimia_aux_output->primary_activity_coeff.data[i];
+  for (int i = 0; i < alquimia_aux_output->secondary_activity_coeff.size; ++i)
+    aux_output->secondary_activity_coeff.data[i] = alquimia_aux_output->secondary_activity_coeff.data[i];
+
+  // pH.
+  aux_output->pH = alquimia_aux_output->pH;
+}
 
 } // namespace
 } // namespace

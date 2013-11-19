@@ -108,6 +108,12 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   // Chemistry engine.
   Teuchos::RCP<Chemistry_Engine> chem_engine_;
 
+  // Alquimia data structures.
+  AlquimiaState* alq_state_;
+  AlquimiaMaterialProperties* alq_mat_props_;
+  AlquimiaAuxiliaryData* alq_aux_data_;
+  AlquimiaAuxiliaryOutputData* alq_aux_output_;
+
   // Mapping of region names to geochemical condition names. A region is identified 
   // by a string, and all cells within a region will have all geochemical 
   // conditions in the corresponding condition vector applied to them. 
@@ -132,46 +138,21 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   void ParseChemicalConditions(const Teuchos::ParameterList& param_list,
                                std::map<std::string, std::string>& conditions);
   void XMLParameters(void);
-  void SetupAuxiliaryOutput(void);
 
   // These helpers copy data back and forth between a set of buffers and the chemistry state.
   // given cell.
-  void CopyAmanziStateToBuffers(const int cell_id,
-                                Teuchos::RCP<const Epetra_MultiVector> aqueous_components, 
-                                std::vector<double>& component_concentrations,
-                                std::vector<double>& sorbed_components,
-                                std::vector<double>& mineral_volume_fractions,
-                                std::vector<double>& mineral_specific_surface_areas,
-                                std::vector<double>& cation_exchange_capacity,
-                                std::vector<double>& sorption_sites,
-                                double& water_density,
-                                double& porosity,
-                                double& volume,
-                                double& saturation,
-                                std::vector<double>& isotherm_kd,
-                                std::vector<double>& isotherm_freundlich_n,
-                                std::vector<double>& isotherm_langmuir_b);
+  void CopyAmanziStateToAlquimia(const int cell_id,
+                                 Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
+                                 AlquimiaState* state,
+                                 AlquimiaMaterialProperties* mat_props,
+                                 AlquimiaAuxiliaryData* aux_data);
 
-  void CopyBuffersToAmanziState(const int cell_id,
-                                const std::vector<double>& component_concentrations,
-                                const std::vector<double>& sorbed_components,
-                                const std::vector<double>& mineral_volume_fractions,
-                                const std::vector<double>& mineral_specific_surface_areas,
-                                const std::vector<double>& cation_exchange_capacity,
-                                const std::vector<double>& sorption_sites,
-                                double water_density,
-                                double porosity,
-                                double volume,
-                                double saturation,
-                                const std::vector<double>& isotherm_kd,
-                                const std::vector<double>& isotherm_freundlich_n,
-                                const std::vector<double>& isotherm_langmuir_b,
-                                const std::vector<double>& free_ion_species,
-                                const std::vector<double>& primary_activity_coeffs,
-                                const std::vector<double>& secondary_activity_coeffs,
-                                const std::vector<double>& ion_exchange_ref_cation_concs,
-                                const std::vector<double>& surface_complex_free_site_concs,
-                                double pH);
+  void CopyAlquimiaStateToAmanzi(const int cell_id,
+                                 const AlquimiaState* state,
+                                 const AlquimiaMaterialProperties* mat_props,
+                                 const AlquimiaAuxiliaryData* aux_data,
+                                 const AlquimiaAuxiliaryOutputData* aux_output);
+
 };
 
 }  // namespace AmanziChemistry
