@@ -1,14 +1,13 @@
 /*
-This is the mimetic discretization component of the Amanzi code. 
+  This is the mimetic discretization component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Release name: ara-to.
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-Usage: 
+  Release name: ara-to.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cmath>
@@ -222,6 +221,29 @@ int MFD3D_Elasticity::StiffnessMatrix(int cell, const Tensor& deformation,
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   StabilityScalar(cell, N, Ac, A);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Darcy mass matrix: a wrapper for other low-level routines
+****************************************************************** */
+int MFD3D_Elasticity::StiffnessMatrixMMatrix(
+    int cell, const Tensor& deformation, DenseMatrix& A)
+{
+  int d = mesh_->space_dimension();
+  int nd = d * (d + 1);
+  int nrows = A.NumRows();
+
+  DenseMatrix N(nrows, nd);
+  DenseMatrix Ac(nrows, nrows);
+
+  int ok = H1consistency(cell, deformation, N, Ac);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE;
+  ok = StabilityMMatrix_(cell, N, Ac, A, objective);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

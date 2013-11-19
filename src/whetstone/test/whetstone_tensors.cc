@@ -1,7 +1,7 @@
 /*
-The transport component of the Amanzi code, serial unit tests.
-License: BSD
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  The idcsretization component of Amanzi.
+  License: BSD
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
