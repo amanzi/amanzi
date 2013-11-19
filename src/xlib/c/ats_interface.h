@@ -24,9 +24,16 @@ extern "C" {
 
 /*
  */
-int32_t ats_init(MPI_Comm comm);
+int32_t ats_init(MPI_Comm mpi_comm, int32_t * type_ids,
+	int32_t num_type_ids, int32_t num_types);
 
 int32_t ats_finalize();
+
+int32_t ats_set_init_clm_data(double * T, double * Sl, double * Si);
+int32_t ats_set_clm_data(double * e_flux, double * w_flux);
+int32_t ats_get_clm_data(double * T, double * Sl, double * Si);
+
+int32_t ats_advance(double dt, int32_t force_viz);
 
 #if defined(__cplusplus)
 } // extern

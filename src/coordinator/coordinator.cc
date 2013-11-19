@@ -50,12 +50,10 @@ Coordinator::Coordinator(Teuchos::ParameterList& parameter_list,
   verbosity_ = getVerbLevel();
   out_ = getOStream();
 
-  // the time step manager coordinates all non-physical timesteps
-  tsm_ = Teuchos::rcp(new TimeStepManager());
 };
 
 void Coordinator::coordinator_init() {
-  coordinator_plist_ = Teuchos::rcpFromRef(parameter_list_->sublist("coordinator"));
+  coordinator_list_ = Teuchos::sublist(parameter_list_, "coordinator");
   read_parameter_list();
 
   // create the top level PK
@@ -91,10 +89,16 @@ void Coordinator::coordinator_init() {
           ->AddComponent("node", AmanziMesh::NODE, mesh->second.first->space_dimension());
     }
   }
+
+  // create the time step manager
+  tsm_ = Teuchos::rcp(new TimeStepManager());
 }
 
+
 void Coordinator::initialize() {
-  // Set up the state, creating all data structures.
+  // Set up the states, creating all data structures.
+  S_->set_time(t0_);
+  S_->set_cycle(cycle0_);
   S_->Setup();
 
   // Restart from checkpoint, part 1.
@@ -170,13 +174,58 @@ void Coordinator::initialize() {
       visualization_.push_back(vis);
     }
   }
+
+  // make observations
+  observations_->MakeObservations(*S_);
+
+  S_->set_time(t0_); // in case steady state solve changed this
+  S_->set_cycle(cycle0_);
+
+  // set up the TSM
+  // -- register visualization times
+  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+       vis!=visualization_.end(); ++vis) {
+    (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
+  }
+
+  // -- register observation times
+  observations_->RegisterWithTimeStepManager(tsm_.ptr());
+
+  // -- register the final time
+  tsm_->RegisterTimeEvent(t1_);
+
+  // Create an intermediate state that will store the updated solution until
+  // we know it has succeeded.
+  S_next_ = Teuchos::rcp(new State(*S_));
+  *S_next_ = *S_;
+  S_inter_ = Teuchos::rcp(new State(*S_));
+  *S_inter_ = *S_;
+
+  // set the states in the PKs
+  //Teuchos::RCP<const State> cS = S_; // ensure PKs get const reference state
+  pk_->set_states(S_, S_inter_, S_next_); // note this does not allow subcycling
 }
 
+void Coordinator::finalize() {
+  // Force checkpoint at the end of simulation.
+  // Only do if the checkpoint was not already written, or we would be writing
+  // the same file twice.
+  // This really should be removed, but for now is left to help stupid developers.
+  if (!checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
+    pk_->calculate_diagnostics(S_next_);
+    WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), 0.0);
+  }
+
+  // flush observations to make sure they are saved
+  observations_->Flush();
+}
+
+
 void Coordinator::read_parameter_list() {
-  t0_ = coordinator_plist_->get<double>("start time");
-  t1_ = coordinator_plist_->get<double>("end time");
-  string t0_units = coordinator_plist_->get<string>("start time units", "s");
-  string t1_units = coordinator_plist_->get<string>("end time units", "s");
+  t0_ = coordinator_list_->get<double>("start time");
+  t1_ = coordinator_list_->get<double>("end time");
+  string t0_units = coordinator_list_->get<string>("start time units", "s");
+  string t1_units = coordinator_list_->get<string>("end time units", "s");
 
   if (t0_units == "s") {
     // internal units in s
@@ -200,15 +249,15 @@ void Coordinator::read_parameter_list() {
     Exceptions::amanzi_throw(message);
   }
 
-  max_dt_ = coordinator_plist_->get<double>("max time step size", 1.0e99);
-  min_dt_ = coordinator_plist_->get<double>("min time step size", 1.0e-12);
-  cycle0_ = coordinator_plist_->get<int>("start cycle",0);
-  cycle1_ = coordinator_plist_->get<int>("end cycle",-1);
+  max_dt_ = coordinator_list_->get<double>("max time step size", 1.0e99);
+  min_dt_ = coordinator_list_->get<double>("min time step size", 1.0e-12);
+  cycle0_ = coordinator_list_->get<int>("start cycle",0);
+  cycle1_ = coordinator_list_->get<int>("end cycle",-1);
 
   // restart control
-  restart_ = coordinator_plist_->isParameter("restart from checkpoint file");
+  restart_ = coordinator_list_->isParameter("restart from checkpoint file");
   if (restart_) {
-    restart_filename_ = coordinator_plist_->get<std::string>("restart from checkpoint file");
+    restart_filename_ = coordinator_list_->get<std::string>("restart from checkpoint file");
     // likely should ensure the file exists here? --etc
   }
 }
@@ -239,56 +288,77 @@ double Coordinator::get_dt() {
 }
 
 
+
+// This is used by CLM
+bool Coordinator::advance(double dt) {
+  S_next_->advance_time(dt);
+  bool fail = pk_->advance(dt);
+
+  // advance the iteration count and timestep size
+  S_next_->advance_cycle();
+
+  if (!fail) {
+    // make observations, vis, and checkpoints
+    observations_->MakeObservations(*S_next_);
+    visualize();
+    checkpoint(dt);
+
+    // we're done with this time step, copy the state
+    *S_ = *S_next_;
+    *S_inter_ = *S_next_;
+
+  } else {
+    // Failed the timestep.  The timestep sizes have been updated, so we can
+    // try again.
+    *S_next_ = *S_;
+  }
+  return fail;
+}
+
+void Coordinator::visualize(bool force) {
+  // write visualization if requested
+  bool dump = force;
+  if (!dump) {
+    for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+         vis!=visualization_.end(); ++vis) {
+      if ((*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
+        dump = true;
+      }
+    }
+  }
+
+  if (dump) {
+    pk_->calculate_diagnostics(S_next_);
+  }
+
+  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+       vis!=visualization_.end(); ++vis) {
+    if (force || (*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
+      WriteVis((*vis).ptr(), S_next_.ptr());
+    }
+  }
+}
+
+void Coordinator::checkpoint(double dt, bool force) {
+  if (force || checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
+    WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), dt);
+  }
+}
+
+
 // -----------------------------------------------------------------------------
 // timestep loop
 // -----------------------------------------------------------------------------
 void Coordinator::cycle_driver() {
-  // start at time t = t0 and initialize the state.  In a flow steady-state
-  // problem, this should include advancing flow to steady state (which should
-  // be done by flow_pk->initialize_state(S)
-  S_->set_time(t0_);
-  S_->set_cycle(cycle0_);
+  // start at time t = t0 and initialize the state.
   initialize();
-  S_->set_time(t0_); // in case steady state solve changed this
-  S_->set_cycle(cycle0_);
-
-  // register times with the tsm_
-  // -- register visualization times
-  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
-       vis!=visualization_.end(); ++vis) {
-    (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
-  }
-
-  // -- register observation times
-  if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_.ptr());
-
-  // -- register the final time
-  tsm_->RegisterTimeEvent(t1_);
-
-  // we need to create an intermediate state that will store the updated
-  // solution until we know it has succeeded
-  S_next_ = Teuchos::rcp(new State(*S_));
-  *S_next_ = *S_;
-  S_inter_ = Teuchos::rcp(new State(*S_));
-  *S_inter_ = *S_;
-
-  // set the states in the PKs
-  //Teuchos::RCP<const State> cS = S_; // ensure PKs get const reference state
-  pk_->set_states(S_, S_inter_, S_next_); // note this does not allow subcycling
 
   // get the intial timestep -- note, this would have to be fixed for a true restart
   double dt = get_dt();
 
-  // make observations
-  observations_->MakeObservations(*S_);
-
-  // write visualization if requested at IC
-  pk_->calculate_diagnostics(S_);
-  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
-       vis!=visualization_.end(); ++vis) {
-    WriteVis((*vis).ptr(), S_.ptr());
-  }
-  WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt);
+  // visualization at IC
+  visualize();
+  checkpoint(dt);
 
   // iterate process kernels
 #if !DEBUG_MODE
@@ -307,91 +377,8 @@ void Coordinator::cycle_driver() {
                   << std::endl;
       }
 
-      S_next_->advance_time(dt);
-      fail = pk_->advance(dt);
-
-      // advance the iteration count and timestep size
-      S_next_->advance_cycle();
+      fail = advance(dt);
       dt = get_dt();
-
-      if (!fail) {
-        // make observations
-        observations_->MakeObservations(*S_next_);
-
-        // write visualization if requested
-        // this needs to be fixed...
-        bool dump = false;
-        for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
-             vis!=visualization_.end(); ++vis) {
-          if ((*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
-            dump = true;
-          }
-        }
-        if (dump) {
-          pk_->calculate_diagnostics(S_next_);
-        }
-
-        for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
-             vis!=visualization_.end(); ++vis) {
-          if ((*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
-            WriteVis((*vis).ptr(), S_next_.ptr());
-          }
-        }
-
-        if (checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
-          WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), dt);
-        }
-
-        // write restart dump if requested
-        // restart->dump_state(*S_next_);
-
-        // we're done with this time step, copy the state
-        *S_ = *S_next_;
-        *S_inter_ = *S_next_;
-
-      } else {
-        // Failed the timestep.  The timestep sizes have been updated, so we can
-        // try again.
-
-        // un-deform the mesh
-        for (State::mesh_iterator mesh=S_->mesh_begin();
-             mesh!=S_->mesh_end(); ++mesh) {
-          if (mesh->second.second) { // deformable!
-            std::string node_key = std::string("vertex_coordinate_")+mesh->first;
-            Teuchos::RCP<const CompositeVector> vert_pos =
-                S_->GetFieldData(node_key);
-            vert_pos->ScatterMasterToGhosted(); // required by a bug in MSTK! --etc
-            const Epetra_MultiVector& vert_pos_n =
-                *vert_pos->ViewComponent("node",true);
-
-            // set up the data for new position and ids
-            unsigned int nnodes = mesh->second.first->num_entities(AmanziMesh::NODE,
-                    AmanziMesh::USED);
-            AmanziMesh::Entity_ID_List nodeids(nnodes,-1);
-            AmanziGeometry::Point_List newlocs(nnodes);
-            int dim = mesh->second.first->space_dimension();
-
-            for (AmanziMesh::Entity_ID n=0; n!=nnodes; ++n) {
-              nodeids[n] = n;
-              if (dim == 2) {
-                newlocs[n].init(dim);
-                newlocs[n].set(vert_pos_n[0][n],vert_pos_n[1][n]);
-              } else if (dim == 3) {
-                newlocs[n].init(dim);
-                newlocs[n].set(vert_pos_n[0][n],vert_pos_n[1][n],vert_pos_n[2][n]);
-              } else {
-                ASSERT(0);
-              }
-            }
-
-            // un-deform
-            AmanziGeometry::Point_List final_locs;
-            mesh->second.first->deform(nodeids, newlocs, false, &final_locs);
-          }
-        }
-
-        *S_next_ = *S_;
-      }
     } // while not finished
 
 
@@ -401,10 +388,7 @@ void Coordinator::cycle_driver() {
   catch (Exceptions::Amanzi_exception &e) {
     // write one more vis for help debugging
     S_next_->advance_cycle();
-    for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
-         vis!=visualization_.end(); ++vis) {
-      WriteVis((*vis).ptr(), S_next_.ptr());
-    }
+    visualize(true); // force vis
 
     // flush observations to make sure they are saved
     observations_->Flush();
@@ -419,17 +403,7 @@ void Coordinator::cycle_driver() {
   }
 #endif
 
-  // Force checkpoint at the end of simulation.
-  // Only do if the checkpoint was not already written, or we would be writing
-  // the same file twice.
-  // This really should be removed, but for now is left to help stupid developers.
-  if (!checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
-    pk_->calculate_diagnostics(S_next_);
-    WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), dt);
-  }
-
-  // flush observations to make sure they are saved
-  observations_->Flush();
+  finalize();
 
 } // cycle driver
 

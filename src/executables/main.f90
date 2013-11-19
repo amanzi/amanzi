@@ -27,7 +27,7 @@ program main
    ! Initialize ATS layer.
    !---------------------------------------------------------------------------!
 
-   call ats_init(MPI_COMM_WORLD, ierr)
+!   call ats_init(MPI_COMM_WORLD, ierr)
 
    !---------------------------------------------------------------------------!
    ! Shut down ATS layer.

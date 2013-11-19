@@ -14,6 +14,7 @@
 #define ats_state_hh
 
 #include <ats_data.hh>
+#include <ats_clm_driver.hh>
 
 /*----------------------------------------------------------------------------*
  * ats_state_t
@@ -47,6 +48,8 @@ public:
 	const int32_t & mpi_size() const { return mpi_data_.cached_size; }
 	int32_t & mpi_size() { return mpi_data_.cached_size; }
 
+	Amanzi::ATSCLMDriver & clm_driver() { return clm_driver_; }
+
 private:
 
 	/*-------------------------------------------------------------------------*
@@ -63,6 +66,7 @@ private:
 	 *-------------------------------------------------------------------------*/
 
 	mpi_data_t mpi_data_;	
+	Amanzi::ATSCLMDriver clm_driver_;
 
 }; // class ats_state_t
 
