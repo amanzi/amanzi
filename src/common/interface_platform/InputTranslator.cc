@@ -1340,6 +1340,20 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     ssPL.set<double>("steady error abs tol",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
+                } else if (strcmp(tagname,"restart_tolerance_factor")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent()); 
+                    ssPL.set<double>("steady restart tolerance relaxation factor",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                } else if (strcmp(tagname,"restart_tolerance_relaxation_factor")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent()); 
+                    ssPL.set<double>("steady restart tolerance relaxation factor damping",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                } else if (strcmp(tagname,"initialize_with_darcy")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+		    bool iwd(false);
+		    std::string(textContent) == "true" ? iwd = true : iwd = false;  
+		    ssPL.set<bool>("steady initialize with darcy",iwd);
+                    XMLString::release(&textContent);
                 } else if (strcmp(tagname,"pseudo_time_integrator")==0) {
                     Teuchos::ParameterList ptiPL;
                     xercesc::DOMNodeList* kids = currentNode->getChildNodes();
