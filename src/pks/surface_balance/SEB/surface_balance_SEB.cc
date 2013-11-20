@@ -414,7 +414,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
     vnames.push_back("soil vapor pressure"); vecs.push_back(S_inter_->GetFieldData("surface_vapor_pressure").ptr());
     vnames.push_back("T_ground"); vecs.push_back(S_inter_->GetFieldData("surface_temperature").ptr());
     vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source").ptr());
-    vnames.push_back("e_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
+    //    vnames.push_back("e_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
     db_->WriteVectors(vnames, vecs, true);
   }
 
