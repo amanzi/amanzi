@@ -3,15 +3,10 @@
 
 #include <tTensorDiffusion_PK_F.H>
 
-#define aT (0.d0)
-#define aL (1.d0)
-#define u (-1.d0)
-#define v (1.d0)
-
       subroutine FORT_FILLCRSE (
      $     crse, DIMS(crse),
-     $     h, nc, dlo, dhi, plo
-     $     )
+     $     h, nc, dlo, dhi, plo,
+     $     flag)
       implicit none
       integer nc
       integer DIMDEC(crse)
@@ -19,6 +14,7 @@
       REAL_T crse(DIMV(crse),nc)
       REAL_T h(BL_SPACEDIM)
       REAL_T plo(BL_SPACEDIM)
+      integer flag
 c
       integer  i, j, n
       REAL_T x, y
@@ -32,7 +28,13 @@ c
             if (i.lt.dlo(1)) x = plo(1)
             if (i.gt.dhi(1)) x = plo(1)+(dhi(1)-dlo(1)+1)*h(1)
             do n=1,nc
-               crse(i,j,n)=-(x-0.5d0)**2
+               if (flag.eq.0) then
+                  crse(i,j,n)=-(x-0.5d0)**2
+               else if (flag.eq.1) then
+                  crse(i,j,n)=-(y-0.5d0)**2
+               else
+                  call bl_abort('dont know this coarse flag')
+               endif
             enddo
          enddo
       enddo
@@ -43,15 +45,17 @@ c
       
       subroutine FORT_FILLFINE (
      $     fine, DIMS(fine),
-     $     h, nc, dlo, dhi, plo
-     $     )
+     $     h, nc, dlo, dhi, plo,
+     $     lo, hi, flag)
       implicit none
       integer nc
       integer DIMDEC(fine)
       integer dlo(BL_SPACEDIM), dhi(BL_SPACEDIM)
+      integer lo(BL_SPACEDIM), hi(BL_SPACEDIM)
       REAL_T fine(DIMV(fine),nc)
       REAL_T h(BL_SPACEDIM)
       REAL_T plo(BL_SPACEDIM)
+      integer flag
 
       integer  i, j, n
       REAL_T x, y
@@ -64,9 +68,20 @@ c
             x = (i + 0.5)*h(1)
             if (i.lt.dlo(1)) x = plo(1)
             if (i.gt.dhi(1)) x = plo(1)+(dhi(1)-dlo(1)+1)*h(1)
-            do n=1,nc
-               fine(i,j,n)=-(x-0.5d0)**2
-            enddo
+
+            if (i.lt.lo(1) .or. i.gt.hi(1) .or. j.lt.lo(2) .or. j.gt.hi(2)) then
+c     Leave as input
+            else
+               do n=1,nc
+                  if (flag.eq.0) then
+                     fine(i,j,n)=-(x-0.5d0)**2
+                  else if (flag.eq.1) then
+                     fine(i,j,n)=-(y-0.5d0)**2
+                  else
+                     call bl_abort('dont know this fine flag')
+                  endif
+               enddo
+            endif
          enddo
       enddo
       end
@@ -87,12 +102,13 @@ c
 
       subroutine FORT_MAKEMU(
      $     mu,DIMS(mu),
-     $     h, idir )
+     $     h, idir, aT, aL, u, v )
       implicit none
       integer idir
       integer DIMDEC(mu)
       REAL_T mu(DIMV(mu))
       REAL_T h(BL_SPACEDIM)
+      REAL_T aT, aL, u, v
 
       integer i,j
       REAL_T x,y
@@ -134,12 +150,13 @@ c     \end{array}
 
       subroutine FORT_MAKEMU1(
      $     mu1,DIMS(mu1),
-     $     h, idir )
+     $     h, idir, aT, aL, u, v )
       implicit none
       integer idir
       integer DIMDEC(mu1)
       REAL_T mu1(DIMV(mu1))
       REAL_T h(BL_SPACEDIM)
+      REAL_T aT, aL, u, v
 
       integer i,j
       REAL_T x,y
