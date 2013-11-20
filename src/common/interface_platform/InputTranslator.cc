@@ -3307,6 +3307,8 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
 	              obPL.set<std::string>("Variable","Aqueous mass flow rate");
                     } else if (strcmp(obsType,"aqueous_volumetric_flow_rate")==0) {
 	              obPL.set<std::string>("Variable","Aqueous volumetric flow rate");
+		    } else if (strcmp(obsType,"aqueous_saturation")==0) {
+		      obPL.set<std::string>("Variable","Aqueous saturation");
                     } else if (strcmp(obsType,"aqueous_conc")==0) {
 	              // get solute name
                       xercesc::DOMNamedNodeMap* attrMap = curObs->getAttributes();
