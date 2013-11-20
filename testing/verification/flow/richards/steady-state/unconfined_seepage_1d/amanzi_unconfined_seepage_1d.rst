@@ -5,9 +5,10 @@ Consider the following scenario involving steady-state groundwater flow in an
 unconfined aquifer that discharges to a sloped ground surface along a seepage face
 (Aleman 2007, Section 4.4): 
 
-	.. image:: schematic/porflow_4.4.1.png
-		:scale: 35 %
-		:align: center
+.. image:: schematic/porflow_4.4.1.png
+   :width: 5in
+   :align: center
+
 
 The ground elevation slopes from 100 ft at :math:`x=0` to 50 ft at :math:`x=L`, and
 the location of the seepline is unknown *a priori*. 
@@ -71,9 +72,9 @@ Amanzi verification test problem
 To conform to the physical domain depicted in the test problem schematic, a conformal
 grid is used for the *Amanzi* simulation:
 
-	.. image:: mesh/porflow_4.4.3.png
-		:scale: 35 %
-		:align: center
+.. image:: mesh/porflow_4.4.3.png
+   :width: 5in
+   :align: center
 
 With the Dupuit approximation the analytic solution given by Equation 
 :eq:`unconfinedLeft`
@@ -132,6 +133,6 @@ Amanzi verification test results
 .... plot:: prototype/steady-linear/amanzi_steady_linear.py
 
 .. image:: figures/hydraulic_head.png
-   :scale: 80%
+   :width: 5in
    :align: center
 
