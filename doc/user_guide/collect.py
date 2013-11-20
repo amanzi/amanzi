@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, utils
+import os, sys, utils, shutil
 import optparse
 
 #  Create dictionary that describes:
