@@ -386,6 +386,7 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
 
     // loop over child nodes
     xercesc::DOMNodeList* children = nodeMesh->getChildNodes();
+    // first figure out what the dimension is
     for (int i=0; i<children->getLength(); i++) {
       xercesc::DOMNode* currentNode = children->item(i) ;
       if (xercesc::DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
@@ -393,7 +394,15 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
 	if (strcmp(tagname,"dimension")==0) {
 	  char* temp = xercesc::XMLString::transcode(currentNode->getTextContent());
 	  dimension_ = get_int_constant(temp,def_list);
-	} else if (strcmp(tagname,"generate")==0) {
+	}
+      }
+    }
+    // now we can properly parse the generate list
+    for (int i=0; i<children->getLength(); i++) {
+      xercesc::DOMNode* currentNode = children->item(i) ;
+      if (xercesc::DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+	char* tagname = xercesc::XMLString::transcode(currentNode->getNodeName());   
+	if (strcmp(tagname,"generate")==0) {
 	  generate = true;
 	  file = false;
 	  xercesc::DOMElement* elementGen = static_cast<xercesc::DOMElement*>(currentNode);
@@ -414,10 +423,12 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
 	  temp = xercesc::XMLString::transcode(namednode->getNodeValue());
 	  ncells.append(get_int_constant(temp,def_list));
 	  XMLString::release(&temp);
-	  namednode = attrMap->getNamedItem(XMLString::transcode("nz"));
-	  temp = xercesc::XMLString::transcode(namednode->getNodeValue());
-	  ncells.append(get_int_constant(temp,def_list));
-	  XMLString::release(&temp);
+	  if (dimension_>2) {
+	    namednode = attrMap->getNamedItem(XMLString::transcode("nz"));
+	    temp = xercesc::XMLString::transcode(namednode->getNodeValue());
+	    ncells.append(get_int_constant(temp,def_list));
+	    XMLString::release(&temp);
+	  }
           mesh_list.set<Teuchos::Array<int> >("Number of Cells",ncells);
 
 	  // get Box - generalize
