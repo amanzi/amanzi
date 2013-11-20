@@ -1,5 +1,5 @@
 /*
-  The transport component of the Amanzi code, serial unit tests.
+  The discretization component of Amanzi.
   License: BSD
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
@@ -204,7 +204,7 @@ TEST(DARCY_FULL_TENSOR) {
   T(1, 2) = T(2, 1) = 1.0;
 
   DenseMatrix W(nfaces, nfaces);
-  for (int method = 0; method < 5; method++) {
+  for (int method = 0; method < 6; method++) {
     if (method == 0) {
       mfd.MassMatrixInverse(cell, T, W);
     } else if (method == 1) {
@@ -215,6 +215,10 @@ TEST(DARCY_FULL_TENSOR) {
       mfd.MassMatrixInverseSO(cell, T, W);
     } else if (method == 4) {
       mfd.MassMatrixInverseMMatrixHex(cell, T, W);
+    } else if (method == 5) {
+      mfd.MassMatrixInverseMMatrix(cell, T, W);
+      cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << endl;
+      cout << "Functional value=" << mfd.simplex_functional() << endl;
     }
 
     printf("Inverse of mass matrix for method=%d\n", method);
