@@ -164,8 +164,9 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
   }
   DenseMatrix AcAc(nrows, nrows);
   MatrixMatrixProduct_(RT, R, true, AcAc);
-  for (int i = 0; i < nrows; i++)
-  for (int j = 0; j < nrows; j++) Ac(i, j) = AcAc(i, j);
+  for (int i = 0; i < nrows; i++) {
+    for (int j = 0; j < nrows; j++) Ac(i, j) = AcAc(i, j);
+  }
 
   // calculate matrix N
   N.PutScalar(0.0);
@@ -205,7 +206,7 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
 
 
 /* ******************************************************************
-* Darcy mass matrix: a wrapper for other low-level routines
+* Lame stiffness matrix: a wrapper for other low-level routines
 ****************************************************************** */
 int MFD3D_Elasticity::StiffnessMatrix(int cell, const Tensor& deformation,
                                       DenseMatrix& A)
@@ -226,7 +227,28 @@ int MFD3D_Elasticity::StiffnessMatrix(int cell, const Tensor& deformation,
 
 
 /* ******************************************************************
-* Darcy mass matrix: a wrapper for other low-level routines
+* Lame stiffness matrix: a wrapper for other low-level routines
+****************************************************************** */
+int MFD3D_Elasticity::StiffnessMatrixOptimized(
+    int cell, const Tensor& deformation, DenseMatrix& A)
+{
+  int d = mesh_->space_dimension();
+  int nd = d * (d + 1);
+  int nrows = A.NumRows();
+
+  DenseMatrix N(nrows, nd);
+  DenseMatrix Ac(nrows, nrows);
+
+  int ok = H1consistency(cell, deformation, N, Ac);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  StabilityOptimized(deformation, N, Ac, A);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Lame stiffness matrix: a wrapper for other low-level routines
 ****************************************************************** */
 int MFD3D_Elasticity::StiffnessMatrixMMatrix(
     int cell, const Tensor& deformation, DenseMatrix& A)
