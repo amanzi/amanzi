@@ -35,13 +35,14 @@ extern "C"
     void FORT_FILLCRSE (
 	Real* crse, ARLIM_P(crse_lo), ARLIM_P(crse_hi),
 	const Real* h, const int* nc,
-	const int* dlo, const int* dhi, const Real* plo
-	);
+	const int* dlo, const int* dhi, const Real* plo,
+	const int* flag);
     void FORT_FILLFINE (
 	Real* fine, ARLIM_P(fine_lo), ARLIM_P(fine_hi),
 	const Real* h, const int* nc,
-	const int* dlo, const int* dhi, const Real* plo
-	);
+	const int* dlo, const int* dhi, const Real* plo,
+	const int* lo, const int* hi,
+	const int* flag);
     void FORT_FILLRHS (
 	Real* fine, ARLIM_P(fine_lo), ARLIM_P(fine_hi),
 	const Real* h, const int* nc,
@@ -49,10 +50,14 @@ extern "C"
 	);
     void FORT_MAKEMU(
 	Real*mu, ARLIM_P(mulo),ARLIM_P(muhi),
-	const Real* h, int&idir );
+	const Real* h, int&idir,
+	const Real* aT,	const Real* aL,
+	const Real* u, const Real* v);
     void FORT_MAKEMU1(
 	Real*mu1, ARLIM_P(mu1lo),ARLIM_P(mu1hi),
-	const Real* h, int&idir );
+	const Real* h, int&idir,
+	const Real* aT,	const Real* aL,
+	const Real* u, const Real* v);
 };
 
 #endif
