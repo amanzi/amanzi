@@ -78,9 +78,9 @@ User Guide
 ==========
 
 The User Guide is available 
-`[PDF] <https://software.lanl.gov/ascem/amanzi/Amanzi.pdf>`_
+`[PDF] <https://software.lanl.gov/ascem/internal/amanzi/AmanziUserGuide.pdf>`_
 or can be viewed directly on the web 
-`[html] <https://software.lanl.gov/ascem/amanzi/UserGuide>`_.
+`[html] <https://software.lanl.gov/ascem/internal/amanzi/UserGuide>`_.
 
 
 Download
