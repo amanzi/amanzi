@@ -67,8 +67,8 @@ clean:
 	rm -rf $(BUILDDIR)/*  ;\
 	echo "Removing the section subdirectories: verification, tutorial, benchmarking, install, mycase" ;\
 	rm -rf verification tutorial benchmarking install mycase  ;\
-	echo "Reverting ./index.rst"   ;\
-	hg revert ./index.rst
+	echo "Removing the generated ./index.rst"   ;\
+	rm -f ./index.rst
 
 html: 
 	python collect.py $(AMANZI_SECTION_OPTIONS) 
