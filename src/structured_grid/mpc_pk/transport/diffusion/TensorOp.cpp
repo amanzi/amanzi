@@ -62,6 +62,8 @@ TensorOp::initConstruct (const Real* _h)
 
   undrrelxr.resize(1);
   undrrelxr[level] = new BndryRegister(gbox[level], 1, 0, 0, nComp());
+  undrrelxrt.resize(1);
+  undrrelxrt[level] = new BndryRegister(gbox[level], 1, 0, 0, nComp()); // FIXME: For 3D probably need n*(1+3)...
   tangderiv.resize(1);
 #if BL_SPACEDIM==2
   tangderiv[level] = new BndryRegister(gbox[level], 0, 1, 0, nComp());
@@ -90,6 +92,8 @@ TensorOp::clearToLevel (int level)
 {
   BL_ASSERT(level >= -1);
 
+  MCLinOp::clearToLevel(level);
+  undrrelxrt.resize(level+1);
   for (int i = level+1; i < numLevels(); ++i)
   {
     delete acoefs[i];
@@ -107,7 +111,15 @@ TensorOp::prepareForLevel (int level)
   MCLinOp::prepareForLevel(level);
   if (level == 0)
     return;
-  prepareForLevel(level-1);
+
+  TensorOp::prepareForLevel(level-1);
+  //
+  // Add the BndryRegister of relax values to the new coarser level.
+  //
+  if (undrrelxrt.size() <= level) {
+    undrrelxrt.resize(level+1);
+    undrrelxrt[level] = new BndryRegister(gbox[level], 1, 0, 0, numcomp);
+  }
   //
   // If coefficients were marked invalid, or if not yet made, make new ones
   // (Note: makeCoefficients is a MCLinOp routine, and it allocates AND
@@ -403,6 +415,7 @@ TensorOp::applyBC (MultiFab&      inout,
     {
       const Orientation face = oitr();
       FabSet& f  = (*undrrelxr[level])[face];
+      FabSet& ft = (*undrrelxrt[level])[face];
       FabSet& td = (*tangderiv[level])[face];
       int cdr(face);
       const FabSet& fs = bgb.bndryValues(face);
@@ -419,6 +432,7 @@ TensorOp::applyBC (MultiFab&      inout,
       const int* fshi      = fsfab.hiVect();
       FArrayBox& inoutfab  = inout[gn];
       FArrayBox& denfab    = f[gn];
+      FArrayBox& dentfab   = ft[gn];
       FArrayBox& tdfab     = td[gn];
 #if BL_SPACEDIM==2
       int cdir = face.coordDir(), perpdir = -1;
@@ -432,13 +446,14 @@ TensorOp::applyBC (MultiFab&      inout,
       const Mask& m    = *msk[face];
       const Mask& mphi = *msk[Orientation(perpdir,Orientation::high)];
       const Mask& mplo = *msk[Orientation(perpdir,Orientation::low)];
-      FORT_APPLYBC( &flagden, &flagbc, &maxorder,
+      FORT_TOAPPLYBC( &flagden, &flagbc, &maxorder,
         inoutfab.dataPtr(src_comp),  ARLIM(inoutfab.loVect()), ARLIM(inoutfab.hiVect()), &cdr, bct, &bcl,
         bcvalptr,                    ARLIM(fslo),              ARLIM(fshi),
         m.dataPtr(),                 ARLIM(m.loVect()),        ARLIM(m.hiVect()),
         mphi.dataPtr(),              ARLIM(mphi.loVect()),     ARLIM(mphi.hiVect()),
         mplo.dataPtr(),              ARLIM(mplo.loVect()),     ARLIM(mplo.hiVect()),
         denfab.dataPtr(),            ARLIM(denfab.loVect()),   ARLIM(denfab.hiVect()),
+        dentfab.dataPtr(),           ARLIM(dentfab.loVect()),  ARLIM(dentfab.hiVect()),
         exttdptr,                    ARLIM(fslo),              ARLIM(fshi),
         tdfab.dataPtr(bndryComp),    ARLIM(tdfab.loVect()),    ARLIM(tdfab.hiVect()),
         inout.box(gn).loVect(), inout.box(gn).hiVect(),
@@ -450,7 +465,7 @@ TensorOp::applyBC (MultiFab&      inout,
       const Mask& ms = *msk[Orientation(1,Orientation::low)];
       const Mask& mt = *msk[Orientation(2,Orientation::high)];
       const Mask& mb = *msk[Orientation(2,Orientation::low)];
-      FORT_APPLYBC( &flagden, &flagbc, &maxorder,
+      FORT_TOAPPLYBC( &flagden, &flagbc, &maxorder,
         inoutfab.dataPtr(src_comp),  ARLIM(inoutfab.loVect()), ARLIM(inoutfab.hiVect()), &cdr, bct, &bcl,
         bcvalptr,                    ARLIM(fslo),              ARLIM(fshi),
         mn.dataPtr(),                ARLIM(mn.loVect()),       ARLIM(mn.hiVect()),
@@ -460,6 +475,7 @@ TensorOp::applyBC (MultiFab&      inout,
         mt.dataPtr(),                ARLIM(mt.loVect()),       ARLIM(mt.hiVect()),
         mb.dataPtr(),                ARLIM(mb.loVect()),       ARLIM(mb.hiVect()),
         denfab.dataPtr(),            ARLIM(denfab.loVect()),   ARLIM(denfab.hiVect()),
+        dentfab.dataPtr(),           ARLIM(dentfab.loVect()),  ARLIM(dentfab.hiVect()),
         exttdptr,                    ARLIM(fslo),              ARLIM(fshi),
         tdfab.dataPtr(bndryComp),    ARLIM(tdfab.loVect()),    ARLIM(tdfab.hiVect()),
         inout.box(gn).loVect(), inout.box(gn).hiVect(),
@@ -594,24 +610,30 @@ TensorOp::Fsmooth (MultiFab&       solnL,
   OrientationIter oitr;
 
   const FabSet& fw  = (*undrrelxr[level])[oitr()]; 
+  const FabSet& ftw = (*undrrelxrt[level])[oitr()]; 
   const FabSet& tdw = (*tangderiv[level])[oitr()];
   oitr++;
   const FabSet& fs  = (*undrrelxr[level])[oitr()]; 
+  const FabSet& fts = (*undrrelxrt[level])[oitr()]; 
   const FabSet& tds = (*tangderiv[level])[oitr()];
   oitr++;
 #if BL_SPACEDIM>2
   const FabSet& fb  = (*undrrelxr[level])[oitr()]; 
+  const FabSet& ftb = (*undrrelxrt[level])[oitr()]; 
   const FabSet& tdb = (*tangderiv[level])[oitr()];
   oitr++;
 #endif
   const FabSet& fe  = (*undrrelxr[level])[oitr()]; 
+  const FabSet& fte = (*undrrelxrt[level])[oitr()]; 
   const FabSet& tde = (*tangderiv[level])[oitr()];
   oitr++;
   const FabSet& fn  = (*undrrelxr[level])[oitr()]; 
+  const FabSet& ftn = (*undrrelxrt[level])[oitr()]; 
   const FabSet& tdn = (*tangderiv[level])[oitr()];
   oitr++;
 #if BL_SPACEDIM>2
   const FabSet& ft  = (*undrrelxr[level])[oitr()]; 
+  const FabSet& ftt = (*undrrelxrt[level])[oitr()]; 
   const FabSet& tdt = (*tangderiv[level])[oitr()];
   oitr++;
 #endif
@@ -648,21 +670,30 @@ TensorOp::Fsmooth (MultiFab&       solnL,
     FArrayBox&       solfab = solnL[gn];
     const FArrayBox& rhsfab = rhsL[gn];
     const FArrayBox& afab   = a[gn];
-    const FArrayBox& fnfab  = fn[gn];
-    const FArrayBox& fefab  = fe[gn];
-    const FArrayBox& fwfab  = fw[gn];
-    const FArrayBox& fsfab  = fs[gn];
-    const FArrayBox& tdnfab = tdn[gn];
-    const FArrayBox& tdefab = tde[gn];
-    const FArrayBox& tdwfab = tdw[gn];
-    const FArrayBox& tdsfab = tds[gn];
 
-#if BL_SPACEDIM>2
-    const FArrayBox& ftfab  = ft[gn];
-    const FArrayBox& fbfab  = fb[gn];
-    const FArrayBox& tdtfab = tdt[gn];
-    const FArrayBox& tdbfab = tdb[gn];
-#endif
+    D_TERM(const FArrayBox& fwfab  = fw[gn];,
+	   const FArrayBox& fsfab  = fs[gn];,
+	   const FArrayBox& fbfab  = fb[gn];);
+
+    D_TERM(const FArrayBox& ftwfab = ftw[gn];,
+	   const FArrayBox& ftsfab = fts[gn];,
+	   const FArrayBox& ftbfab = ftb[gn];);
+
+    D_TERM(const FArrayBox& tdwfab  = tdw[gn];,
+	   const FArrayBox& tdsfab  = tds[gn];,
+	   const FArrayBox& tdbfab  = tdb[gn];);
+
+    D_TERM(const FArrayBox& fefab  = fe[gn];,
+	   const FArrayBox& fnfab  = fn[gn];,
+	   const FArrayBox& ftfab  = ft[gn];);
+
+    D_TERM(const FArrayBox& ftefab = fte[gn];,
+	   const FArrayBox& ftnfab = ftn[gn];,
+	   const FArrayBox& fttfab = ftt[gn];);
+
+    D_TERM(const FArrayBox& tdefab  = tde[gn];,
+	   const FArrayBox& tdnfab  = tdn[gn];,
+	   const FArrayBox& tdtfab  = tdt[gn];);
 
     D_TERM(const FArrayBox& bxfab = bX[gn];,
            const FArrayBox& byfab = bY[gn];,
@@ -684,12 +715,16 @@ TensorOp::Fsmooth (MultiFab&       solnL,
       b1yfab.dataPtr(beta1Comp), ARLIM(b1yfab.loVect()), ARLIM(b1yfab.hiVect()),
       mn.dataPtr(),              ARLIM(mn.loVect()),     ARLIM(mn.hiVect()),
       fnfab.dataPtr(),           ARLIM(fnfab.loVect()),  ARLIM(fnfab.hiVect()),
+      ftnfab.dataPtr(),          ARLIM(ftnfab.loVect()), ARLIM(ftnfab.hiVect()),
       me.dataPtr(),              ARLIM(me.loVect()),     ARLIM(me.hiVect()),
       fefab.dataPtr(),           ARLIM(fefab.loVect()),  ARLIM(fefab.hiVect()),
+      ftefab.dataPtr(),          ARLIM(ftefab.loVect()), ARLIM(ftefab.hiVect()),
       mw.dataPtr(),              ARLIM(mw.loVect()),     ARLIM(mw.hiVect()),
       fwfab.dataPtr(),           ARLIM(fwfab.loVect()),  ARLIM(fwfab.hiVect()),
+      ftwfab.dataPtr(),          ARLIM(ftwfab.loVect()), ARLIM(ftwfab.hiVect()),
       ms.dataPtr(),              ARLIM(ms.loVect()),     ARLIM(ms.hiVect()),
       fsfab.dataPtr(),           ARLIM(fsfab.loVect()),  ARLIM(fsfab.hiVect()),
+      ftsfab.dataPtr(),          ARLIM(ftsfab.loVect()), ARLIM(ftsfab.hiVect()),
       tdnfab.dataPtr(bndryComp), ARLIM(tdnfab.loVect()), ARLIM(tdnfab.hiVect()),
       tdefab.dataPtr(bndryComp), ARLIM(tdefab.loVect()), ARLIM(tdefab.hiVect()),
       tdwfab.dataPtr(bndryComp), ARLIM(tdwfab.loVect()), ARLIM(tdwfab.hiVect()),
@@ -710,16 +745,22 @@ TensorOp::Fsmooth (MultiFab&       solnL,
       b1zfab.dataPtr(beta1Comp), ARLIM(b1zfab.loVect()), ARLIM(b1zfab.hiVect()),
       mn.dataPtr(),              ARLIM(mn.loVect()),     ARLIM(mn.hiVect()),
       fnfab.dataPtr(),           ARLIM(fnfab.loVect()),  ARLIM(fnfab.hiVect()),
+      ftnfab.dataPtr(),          ARLIM(ftnfab.loVect()), ARLIM(ftnfab.hiVect()),
       me.dataPtr(),              ARLIM(me.loVect()),     ARLIM(me.hiVect()),
       fefab.dataPtr(),           ARLIM(fefab.loVect()),  ARLIM(fefab.hiVect()),
+      ftefab.dataPtr(),          ARLIM(ftefab.loVect()), ARLIM(ftefab.hiVect()),
       mw.dataPtr(),              ARLIM(mw.loVect()),     ARLIM(mw.hiVect()),
       fwfab.dataPtr(),           ARLIM(fwfab.loVect()),  ARLIM(fwfab.hiVect()),
+      ftwfab.dataPtr(),          ARLIM(ftwfab.loVect()), ARLIM(ftwfab.hiVect()),
       ms.dataPtr(),              ARLIM(ms.loVect()),     ARLIM(ms.hiVect()),
       fsfab.dataPtr(),           ARLIM(fsfab.loVect()),  ARLIM(fsfab.hiVect()),
+      ftsfab.dataPtr(),          ARLIM(ftsfab.loVect()), ARLIM(ftsfab.hiVect()),
       mt.dataPtr(),              ARLIM(mt.loVect()),     ARLIM(mt.hiVect()),
       ftfab.dataPtr(),           ARLIM(ftfab.loVect()),  ARLIM(ftfab.hiVect()),
+      fttfab.dataPtr(),          ARLIM(fttfab.loVect()), ARLIM(fttfab.hiVect()),
       mb.dataPtr(),              ARLIM(mb.loVect()),     ARLIM(mb.hiVect()),
       fbfab.dataPtr(),           ARLIM(fbfab.loVect()),  ARLIM(fbfab.hiVect()),
+      ftbfab.dataPtr(),          ARLIM(ftbfab.loVect()), ARLIM(ftbfab.hiVect()),
       tdnfab.dataPtr(bndryComp), ARLIM(tdnfab.loVect()), ARLIM(tdnfab.hiVect()),
       tdefab.dataPtr(bndryComp), ARLIM(tdefab.loVect()), ARLIM(tdefab.hiVect()),
       tdwfab.dataPtr(bndryComp), ARLIM(tdwfab.loVect()), ARLIM(tdwfab.hiVect()),

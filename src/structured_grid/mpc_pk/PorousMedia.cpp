@@ -5110,6 +5110,7 @@ PorousMedia::diffuse_adjust_dominant(MultiFab&              Phi_new,
 #include <Diffuser.H>
 #include <TensorOp.H>
 #include <MCMultiGrid.H>
+#include <MCCGSolver.H>
 #include <MFVector.H>
 #include <TensorDiffusion_PK.H>
 #include <ABecHelper.H>
@@ -5234,6 +5235,7 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
   BoxArray cgrids;
   MultiFab& S_old = get_old_data(State_Type);
   MultiFab& S_new = get_new_data(State_Type);
+
   if (level > 0) {
     cgrids = BoxArray(grids).coarsen(crse_ratio);
     PorousMedia& pmc = getLevel(level-1);
@@ -5250,18 +5252,18 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
     }
   }
 
+  int nBndComp = MCLinOp::bcComponentsNeeded(1);
+  Array<BCRec> tracer_bc(nBndComp,defaultBC());
+
   MFVector phi(*rock_phi);
   MFVector sphi_old(sat_old,0,1,1); sphi_old.MULTAY(phi,1);
   MFVector sphi_new(sat_new,0,1,1); sphi_new.MULTAY(phi,1);
   MFVector Volume(volume);
 
-  int nBndComp = MCLinOp::bcComponentsNeeded(1);
-  Array<BCRec> tracer_bc(nBndComp,defaultBC());
-  
   int Wflag = 2;
   MultiFab* Whalf = 0;
   MultiFab* alpha = 0;
-  int op_maxOrder = 4;
+  int op_maxOrder = 3;
   
   Real a_old = 0;
   Real a_new = 1;
@@ -5395,6 +5397,7 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
     delete scalar_linop_new;
     delete tensor_linop_old;
     delete tensor_linop_new;
+
     delete tbd_old;
     delete tbd_new;
     delete vbd_old;
@@ -10068,7 +10071,7 @@ PorousMedia::mac_sync ()
       int Wflag = 2;
       MultiFab* Whalf = 0;
       MultiFab* alpha = 0;
-      int op_maxOrder = 4;
+      int op_maxOrder = 3;
   
       Real a_new = 1;
       Real b_new = be_cn_theta_trac*dt;
