@@ -38,8 +38,24 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
           double scaling=1.) {
     scaling_ = scaling;
     MatrixMFD_Coupled::SetOffDiagonals(Ccc,Dcc,scaling);
-    Ccc_surf_ = Ccc_surf;
-    Dcc_surf_ = Dcc_surf;
+    if (Ccc_surf == Teuchos::null) {
+      Teuchos::RCP<Epetra_MultiVector> Ccc_s = 
+          Teuchos::rcp(new Epetra_MultiVector(surface_mesh_->cell_map(false),1));
+      Ccc_s->PutScalar(0.);
+      Ccc_surf_ = Ccc_s;
+    } else {
+      Ccc_surf_ = Ccc_surf;
+    }
+
+    if (Dcc_surf == Teuchos::null) {
+      Teuchos::RCP<Epetra_MultiVector> Dcc_s = 
+          Teuchos::rcp(new Epetra_MultiVector(surface_mesh_->cell_map(false),1));
+      Dcc_s->PutScalar(0.);
+      Dcc_surf_ = Dcc_s;
+    } else {
+      Dcc_surf_ = Dcc_surf;
+    }
+
   }
 
   
