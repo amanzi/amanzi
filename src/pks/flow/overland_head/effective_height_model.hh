@@ -6,8 +6,8 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_HEIGHT_MODEL_
-#define AMANZI_FLOWRELATIONS_HEIGHT_MODEL_
+#ifndef AMANZI_FLOWRELATIONS_EFFECTIVE_HEIGHT_MODEL_
+#define AMANZI_FLOWRELATIONS_EFFECTIVE_HEIGHT_MODEL_
 
 #include "Teuchos_ParameterList.hpp"
 
