@@ -153,38 +153,39 @@ MPCPermafrost3::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
           name_)->ViewComponent("cell",false);
   source = *g->SubVector(2)->Data()->ViewComponent("cell",false);
   
-  // The exception to this is if the surface unfrozen fraction is 0 and the
-  // flux direction is inward, in which case the rel perm will be zero, and no
-  // flux is allowed.
-  const Epetra_MultiVector& uf_frac = *S_next_->GetFieldData("unfrozen_fraction")
-      ->ViewComponent("cell",false);
-  for (unsigned int sc=0; sc!=source.MyLength(); ++sc) {
-    if (uf_frac[0][sc] == 0. && source[0][sc] < 0.) {
-      source[0][sc] = 0.;
-    }
-  }
+  // // The exception to this is if the surface unfrozen fraction is 0 and the
+  // // flux direction is inward, in which case the rel perm will be zero, and no
+  // // flux is allowed.
+  // const Epetra_MultiVector& uf_frac = *S_next_->GetFieldData("unfrozen_fraction")
+  //     ->ViewComponent("cell",false);
+  // for (unsigned int sc=0; sc!=source.MyLength(); ++sc) {
+  //   if (uf_frac[0][sc] == 0. && source[0][sc] < 0.) {
+  //     source[0][sc] = 0.;
+  //   }
+  // }
 
   // Evaluate the subsurface residual, which uses this flux as a Neumann BC.
   domain_flow_pk_->fun(t_old, t_new, u_old->SubVector(0),
                        u_new->SubVector(0), g->SubVector(0));
 
-  // Clobber the subsurface face's residual if it gets hit with zero rel perm,
-  // or else clobber the surface cell's residual as it is taken as a flux into
-  // the subsurface.
-  Epetra_MultiVector& domain_g_f = *g->SubVector(0)
-      ->Data()->ViewComponent("face",false);
-  Epetra_MultiVector& surf_g_c = *g->SubVector(2)
-      ->Data()->ViewComponent("cell",false);
-  for (unsigned int sc=0; sc!=source.MyLength(); ++sc) {
-    if (uf_frac[0][sc] == 0.) {
-      AmanziMesh::Entity_ID f =
-          surf_mesh_->entity_get_parent(AmanziMesh::CELL, sc);
-      domain_g_f[0][f] = 0.;
-    } else {
-      surf_g_c[0][sc] = 0.;
-    }
-  }
-  
+  // // Clobber the subsurface face's residual if it gets hit with zero rel perm,
+  // // or else clobber the surface cell's residual as it is taken as a flux into
+  // // the subsurface.
+  // Epetra_MultiVector& domain_g_f = *g->SubVector(0)
+  //     ->Data()->ViewComponent("face",false);
+  // Epetra_MultiVector& surf_g_c = *g->SubVector(2)
+  //     ->Data()->ViewComponent("cell",false);
+  // for (unsigned int sc=0; sc!=source.MyLength(); ++sc) {
+  //   if (uf_frac[0][sc] == 0.) {
+  //     AmanziMesh::Entity_ID f =
+  //         surf_mesh_->entity_get_parent(AmanziMesh::CELL, sc);
+  //     domain_g_f[0][f] = 0.;
+  //   } else {
+  //     surf_g_c[0][sc] = 0.;
+  //   }
+  // }
+  g->SubVector(2)->PutScalar(0.);
+
   // Now that fluxes are done, do energy.
   // Evaluate the surface energy residual
   surf_energy_pk_->fun(t_old, t_new, u_old->SubVector(3),
@@ -292,10 +293,11 @@ MPCPermafrost3::update_precon(double t,
   Teuchos::RCP<const CompositeVector> dEdp_domain =
       S_next_->GetFieldData("denergy_dpressure");
 
-  S_next_->GetFieldEvaluator("surface_water_content")
-      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "surface_temperature");
-  Teuchos::RCP<const CompositeVector> dWCdT_surf =
-      S_next_->GetFieldData("dsurface_water_content_dsurface_temperature");
+  // ALWAYS 0!
+  // S_next_->GetFieldEvaluator("surface_water_content")
+  //     ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "surface_temperature");
+  // Teuchos::RCP<const CompositeVector> dWCdT_surf =
+  //     S_next_->GetFieldData("dsurface_water_content_dsurface_temperature");
 
   S_next_->GetFieldEvaluator("surface_energy")
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "surface_pressure");
@@ -304,10 +306,9 @@ MPCPermafrost3::update_precon(double t,
 
   precon_->SetOffDiagonals(dWCdT_domain->ViewComponent("cell",false),
                            dEdp_domain->ViewComponent("cell",false),
-                           //                           dWCdT_surf->ViewComponent("cell",false),
-                           //                           dEdp_surf->ViewComponent("cell",false),
+                           //                           dWCdT_surf->ViewComponent("cell",false), // ALWAYS 0!
                            Teuchos::null,
-                           Teuchos::null,
+                           dEdp_surf->ViewComponent("cell",false),
                            1./h);
 
   // Assemble the PC

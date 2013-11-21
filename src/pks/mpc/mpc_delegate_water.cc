@@ -296,12 +296,15 @@ bool
 MPCDelegateWater::ModifyPredictor_TempFromSource(double h, const Teuchos::RCP<TreeVector>& u) {
   bool modified = false;
   if (modify_predictor_tempfromsource_) {
+    modified = true;
     if (vo_->os_OK(Teuchos::VERB_HIGH))
       *vo_->os() << "  MPCWaterCoupler: Modifying predictor, taking surface temperature from source." << std::endl;
 
     Epetra_MultiVector& surf_Tnew_c = *u->SubVector(i_Tsurf_)->Data()
         ->ViewComponent("cell",false);
-    Epetra_MultiVector& domain_Tnew_f = *u->SubVector(i_Tdomain_)->Data()
+    Epetra_MultiVector& surf_pnew_c = *u->SubVector(i_surf_)->Data()
+        ->ViewComponent("cell",false);
+    Epetra_MultiVector& domain_pnew_f = *u->SubVector(i_domain_)->Data()
         ->ViewComponent("face",false);
     const Epetra_MultiVector& Told = *S_->GetFieldData("surface_temperature")
         ->ViewComponent("cell",false);
@@ -316,15 +319,16 @@ MPCDelegateWater::ModifyPredictor_TempFromSource(double h, const Teuchos::RCP<Tr
         u->SubVector(i_surf_)->Data()->Mesh();
 
     for (unsigned int c=0; c!=surf_Tnew_c.MyLength(); ++c) {
-      // take a weighted average of old and source temps, weighted by height
-      surf_Tnew_c[0][c] = (Told[0][c] * hold[0][c]
-                           + Tsource[0][c] * dhsource[0][c] * h) /
-          (hold[0][c] + dhsource[0][c] * h);
-      AmanziMesh::Entity_ID f =
-          surf_mesh->entity_get_parent(AmanziMesh::CELL, c);
-      domain_Tnew_f[0][f] = surf_Tnew_c[0][c];
+      if (surf_Tnew_c[0][c] < 271.15) {
+        // frozen, modify predictor to ensure surface is ready to accept ice
+        if (surf_pnew_c[0][c] < 101325.) {
+          surf_pnew_c[0][c] = 101325.1;
+          AmanziMesh::Entity_ID f =
+              surf_mesh->entity_get_parent(AmanziMesh::CELL, c);
+          domain_pnew_f[0][f] = surf_pnew_c[0][c];
+        }
+      }
     }
-    modified = true;
   }
   return modified;
 }
