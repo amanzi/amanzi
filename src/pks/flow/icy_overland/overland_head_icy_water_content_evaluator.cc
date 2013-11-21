@@ -91,21 +91,26 @@ void OverlandHeadIcyWaterContentEvaluator::EvaluateFieldPartialDerivative_(const
     int ncells = res.MyLength();
     for (int c=0; c!=ncells; ++c) {
       res[0][c] = cv[0][c] * (eta[0][c] * dens_l[0][c] + (1.-eta[0][c]) * dens_i[0][c]);
+      std::cout << "dWC: with h=" << height[0][c] << ", eta=" << eta[0][c] << ", dens_l=" << dens_l[0][c] << ", dens_i=" << dens_i[0][c] << std::endl;
+      std::cout << "dWC_surf_dh = " << res[0][c] << std::endl;
     }
   } else if (wrt_key == dens_key_) {
     int ncells = res.MyLength();
     for (int c=0; c!=ncells; ++c) {
       res[0][c] = cv[0][c] * height[0][c] * eta[0][c];
+      std::cout << "dWC_surf_dn_l = " << res[0][c] << std::endl;
     }
   } else if (wrt_key == dens_ice_key_) {
     int ncells = res.MyLength();
     for (int c=0; c!=ncells; ++c) {
       res[0][c] = cv[0][c] * height[0][c] * (1. - eta[0][c]);
+      std::cout << "dWC_surf_dn_i = " << res[0][c] << std::endl;
     }
   } else if (wrt_key == unfrozen_frac_key_) {
     int ncells = res.MyLength();
     for (int c=0; c!=ncells; ++c) {
       res[0][c] = cv[0][c] * height[0][c] * (dens_l[0][c] - dens_i[0][c]);
+      std::cout << "dWC_surf_deta = " << res[0][c] << std::endl;
     }
   }
 }

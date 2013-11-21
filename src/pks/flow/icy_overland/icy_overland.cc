@@ -22,7 +22,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "icy_height_evaluator.hh"
 
 
-#include "overland_head_icy_water_content_evaluator.hh"
+#include "overland_head_icy_water_content_evaluator2.hh"
 #include "icy_overland.hh"
 
 namespace Amanzi {
@@ -89,8 +89,8 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("surface_water_content")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList wc_plist = plist_->sublist("overland water content evaluator");
-  Teuchos::RCP<FlowRelations::OverlandHeadIcyWaterContentEvaluator> wc_evaluator =
-      Teuchos::rcp(new FlowRelations::OverlandHeadIcyWaterContentEvaluator(wc_plist));
+  Teuchos::RCP<FlowRelations::OverlandHeadIcyWaterContentEvaluator2> wc_evaluator =
+      Teuchos::rcp(new FlowRelations::OverlandHeadIcyWaterContentEvaluator2(wc_plist));
   S->SetFieldEvaluator("surface_water_content", wc_evaluator);
 
   // -- ponded depth
