@@ -88,6 +88,15 @@ void OverlandHeadFlow::fun( double t_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
 #if DEBUG_FLAG
+  if (S_next_->HasField("unfrozen_fraction")) {
+    vnames.resize(2);
+    vecs.resize(2);
+    vnames[0] = "uf_frac_old";
+    vnames[1] = "uf_frac_old";
+    vecs[0] = S_inter_->GetFieldData("unfrozen_fraction").ptr();
+    vecs[1] = S_next_->GetFieldData("unfrozen_fraction").ptr();
+    db_->WriteVectors(vnames, vecs, false);
+  }
   db_->WriteVector("k_s", S_next_->GetFieldData("upwind_overland_conductivity").ptr(), true);
   db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
@@ -279,19 +288,12 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     ASSERT(precon_tpfa != Teuchos::null);
     Teuchos::RCP<Epetra_FECrsMatrix> Spp = precon_tpfa->TPFA();
 
-    // Scale Spp by -dh/dp
+    // Scale Spp by dh/dp
     // if (vo_->os_OK(Teuchos::VERB_EXTREME))
     //   *vo_->os() << "  scaling by dh/dp" << std::endl;
-
-    // NOTE: dh/dp to take it to p variable, the negative sign is due to the
-    //       equation being K/dz ( p - lambda ) = q = dwc/dt - div q_surf - Q,
-    //     ---> K/dz * (p - lambda) - (dwc/dt - div q_surf - Q) = 0,
-    //                              ^^ this sign is critical!
-    // EpetraExt::RowMatrixToMatlabFile("TPFAbefore.txt", *Spp);
     Epetra_Vector dh_dp0(*dh_dp(0));
     for (unsigned int sc=0; sc!=ncells; ++sc) {
       dh_dp0[sc] = head[0][sc] > p_atm ? dh_dp[0][sc] : 0.;
-      //      *vo_->os() << " scaling by = " << dh_dp0[sc] << std::endl;
     }
     int ierr = Spp->RightScale(dh_dp0);
     ASSERT(!ierr);
