@@ -454,13 +454,13 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
 	  generate = false;
 	  char* filename = XMLString::transcode(currentNode->getTextContent());
           mesh_list.set<std::string>("File",filename);
+	  mesh_list.set<std::string>("Format","Exodus II");
 	}
       }
     }
-
-    if (generate) {
+    
+    if (generate || file) {
       if (unstructured) {
-        list.sublist("Unstructured").sublist("Generate Mesh").sublist("Uniform Structured") = mesh_list;
         if (strcmp(framework,"mstk")==0) {
           list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","MSTK");
         } else if (strcmp(framework,"moab")==0) {
@@ -472,13 +472,21 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
         } else {
           list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","MSTK");
 	}
+      }
+    }
+
+    if (generate) {
+      if (unstructured) {
+        list.sublist("Unstructured").sublist("Generate Mesh").sublist("Uniform Structured") = mesh_list;
       } else {
         list.sublist("Structured") = mesh_list;
       }
     }
     else if (file) {
-      mesh_list.set<std::string>("Format",framework);
-      list.sublist("Unstructured").sublist("Read Mesh File") = mesh_list;
+      if (unstructured) {
+	mesh_list.set<std::string>("Format","Exodus II");
+	list.sublist("Unstructured").sublist("Read Mesh File") = mesh_list;
+      }
     }
     else {
       // bad mesh, again if validated shouldn't need this
