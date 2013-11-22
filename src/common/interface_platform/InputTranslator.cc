@@ -62,15 +62,36 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
   parser->setValidationScheme(xercesc::XercesDOMParser::Val_Always);
   parser->setDoNamespaces(true);
   parser->setDoSchema(true);
+  parser->setValidationConstraintFatal(true);
+
   bool errorsOccured = false;
+
+      parser->parse(xmlfilename.c_str());
+  std::cout << "  EIB>> first errors = " << parser->getErrorCount() << " and occurred = " << errorsOccured<< std::endl;
+  std::cout << "EIB>> outside try" << std::endl;
   try{
       parser->parse(xmlfilename.c_str());
+      std::cout << "  EIB>> found " << parser->getErrorCount() << " errors " << std::endl;
   }
   catch (const xercesc::OutOfMemoryException&)
   {
       std::cerr << "OutOfMemoryException" << std::endl;
       errorsOccured = true;
   }
+  catch (const xercesc::XMLException& e)
+  {
+      std::cerr << "Amanzi::InputTranslator:  An error occurred during parsing" << std::endl;
+      std::cerr << "                          " << e.getMessage() << std::endl;
+      errorsOccured = true;
+  }
+  catch (const xercesc::DOMException& e)
+  {
+      std::cerr << "Amanzi::InputTranslator:  An error occurred during parsing" << std::endl;
+      std::cerr << "                          " << e.code << std::endl;
+      errorsOccured = true;
+  }
+  std::cout << "  EIB>> rechecking errors = " << parser->getErrorCount() << " and occurred = " << errorsOccured<< std::endl;
+  std::cout << "EIB>> done try" << std::endl;
 
   // check that it's validating here
 
@@ -1173,6 +1194,9 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
             list.set<std::string>("Flow Model","Single Phase");
 	  } else if (strcmp(textContent2,"richards")==0) {
             list.set<std::string>("Flow Model","Richards");
+      } else if (strcmp(textContent2,"constant")==0) {
+          //NOTE: EIB - this will need updating
+          list.set<std::string>("Flow Model","Off");
 	  }
           XMLString::release(&textContent2);
         }
@@ -2131,6 +2155,7 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
   char* char_array;
   char* attrName;
   char* attrValue;
+  bool hasPerm = false;
 
   if (def_list.sublist("simulation").isParameter("verbosity")) {
     std::string verbosity = def_list.sublist("simulation").get<std::string>("verbosity") ;
@@ -2163,13 +2188,14 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
             tagName  = xercesc::XMLString::transcode(curkid->getNodeName());
 	    if (strcmp("assigned_regions",tagName)==0){
 	      //TODO: EIB - if this is more than 1 region -> assuming comma seperated list of strings????
-              textContent2 = xercesc::XMLString::transcode(curkid->getTextContent());
+          textContent2 = xercesc::XMLString::transcode(curkid->getTextContent());
 	      Teuchos::Array<std::string> regs = make_regions_list(textContent2);
 	      matlist.set<Teuchos::Array<std::string> >("Assigned Regions",regs);
 	      XMLString::release(&textContent2);
-	    } else if  (strcmp("mechanical_properties",tagName)==0){
+	    }
+        else if  (strcmp("mechanical_properties",tagName)==0){
               xercesc::DOMNodeList* list = curkid->getChildNodes();
-	      // loop over child: deal with porosity and density
+	          // loop over child: deal with porosity and density
               for (int k=0; k<list->getLength(); k++) {
                 xercesc::DOMNode* curkiddy = list->item(k) ;
                 if (xercesc::DOMNode::ELEMENT_NODE == curkiddy->getNodeType()) {
@@ -2183,46 +2209,46 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("particle_density",propName)==0){
 	            // TODO: EIB - assuming value, implement file later
-		    // TODO: EIB - should be check value >= 0.
+		        // TODO: EIB - should be check value >= 0.
                     attrMap = curkiddy->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Particle Density: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("specific_storage",propName)==0){
-		    // TODO: EIB - not handling file case
+		         // TODO: EIB - not handling file case
                     attrMap = curkiddy->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Specific Storage: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("specific_yield",propName)==0){
-		    // TODO: EIB - not handling file case
+		        // TODO: EIB - not handling file case
                     attrMap = curkiddy->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Specific Yield: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("dispersion_tensor",propName)==0){
-		    // TODO: EIB - not handling file case
+		        // TODO: EIB - not handling file case
                     attrMap = curkiddy->getAttributes();
-                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("alphaL"));
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("alpha_l"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Dispersion Tensor: Uniform Isotropic").set<double>("alphaL",get_double_constant(textContent2,def_list));
 	            XMLString::release(&textContent2);
-                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("alphaT"));
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("alpha_t"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Dispersion Tensor: Uniform Isotropic").set<double>("alphaT",get_double_constant(textContent2,def_list));
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("molecular_diffusion",propName)==0){
-		    // TODO: EIB - not handling file case
+		        // TODO: EIB - not handling file case
                     attrMap = curkiddy->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Molecular Diffusion: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("tortuosity",propName)==0){
-		    // TODO: EIB - not handling file case
+		        // TODO: EIB - not handling file case
                     attrMap = curkiddy->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
@@ -2231,8 +2257,10 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
 	          }
 		}
 	      }
-	    } else if  (strcmp("permeability",tagName)==0){
+	    }
+        else if  (strcmp("permeability",tagName)==0){
 	      // loop over attributes to get x,y,z
+	      hasPerm = true;
 	      char *x,*y,*z;
               attrMap = curkid->getAttributes();
 	      Teuchos::ParameterList perm;
@@ -2276,7 +2304,8 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
 		}
 	        matlist.sublist("Intrinsic Permeability: Anisotropic Uniform") = perm;
 	      }
-	    } else if  (strcmp("cap_pressure",tagName)==0){
+	    }
+        else if  (strcmp("cap_pressure",tagName)==0){
               attrMap = curkid->getAttributes();
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("model"));
               textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
@@ -2332,7 +2361,8 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
 		  capname = "Capillary Pressure: Brooks Corey";
 	      }
 	      XMLString::release(&textContent2);
-	    } else if  (strcmp("rel_perm",tagName)==0){
+	    }
+        else if  (strcmp("rel_perm",tagName)==0){
 	      // TODO: EIB - how to handle if cappress=false? ie, caplist not setup yet?
               attrMap = curkid->getAttributes();
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("model"));
@@ -2362,10 +2392,16 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
       }
       if(cappressON) matlist.sublist(capname) = caplist;
       list.sublist(textContent) = matlist;
-      XMLString::release(&textContent2);
+      list.print(std::cout,true,false);
     }
 
   }
+  if (!hasPerm){
+    Teuchos::ParameterList perm;
+    perm.set<double>("Value",0.0);
+    list.sublist(textContent).sublist("Intrinsic Permeability: Uniform") = perm;
+  }
+  XMLString::release(&textContent);
 
   return list;
   
