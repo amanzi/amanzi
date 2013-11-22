@@ -140,7 +140,7 @@ function( CREATE_TPL_EXPORT_FILE )
     file(APPEND ${BUILD_TPL_OUTFILE} "# ------------------------------------------------------------------------------\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "# TPL Config File Directory\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "# ------------------------------------------------------------------------------\n")
-    file(APPEND ${BUILD_TPL_OUTFILE} "GET_FILENAME_COMPONENT(SELF_DIR "\${CMAKE_CURRENT_LIST_FILE}" PATH)\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "GET_FILENAME_COMPONENT(SELF_DIR \${CMAKE_CURRENT_LIST_FILE} PATH)\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "\n")
 
     file(APPEND ${BUILD_TPL_OUTFILE} "# ------------------------------------------------------------------------------\n")
