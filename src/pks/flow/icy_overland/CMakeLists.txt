@@ -10,9 +10,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland_head)
 
 add_library(pk_flow_icy_overland
     icy_overland.cc
-    icy_height_evaluator.cc
-    overland_head_icy_water_content_evaluator.cc
-    overland_head_icy_water_content_evaluator2.cc)
+    icy_height_evaluator.cc)
 
 install(TARGETS pk_flow_icy_overland DESTINATION lib)
 

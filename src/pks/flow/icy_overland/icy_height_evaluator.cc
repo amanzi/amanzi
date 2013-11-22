@@ -52,7 +52,8 @@ void IcyHeightEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // this is rather hacky.  surface_pressure is a mixed field vector -- it has
   // pressure on cells and ponded depth on faces.
   // -- copy the faces over directly
-  *result->ViewComponent("face",false) = *pres->ViewComponent("face",false);
+  if (result->HasComponent("face"))
+    *result->ViewComponent("face",false) = *pres->ViewComponent("face",false);
 
   // -- cells need the function eval
   const Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
@@ -69,9 +70,17 @@ void IcyHeightEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   double gz = -gravity[2];  // check this
 
   int ncells = res_c.MyLength();
-  for (int c=0; c!=ncells; ++c) {
-    res_c[0][c] = pres_c[0][c] < p_atm ? 0. :
-        icy_model_->Height(pres_c[0][c], eta[0][c], rho_l[0][c], rho_i[0][c], p_atm, gz);
+  if (bar_) {
+    for (int c=0; c!=ncells; ++c) {
+      res_c[0][c] = icy_model_->Height(pres_c[0][c], eta[0][c],
+              rho_l[0][c], rho_i[0][c], p_atm, gz);
+    }
+  } else {
+    for (int c=0; c!=ncells; ++c) {
+      res_c[0][c] = pres_c[0][c] < p_atm ? 0. :
+          icy_model_->Height(pres_c[0][c], eta[0][c],
+                             rho_l[0][c], rho_i[0][c], p_atm, gz);
+    }
   }
 }
 
@@ -100,32 +109,66 @@ void IcyHeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Stat
 
   // For derivatives, the height is always assumed to be non-negative.  If it
   // is negative, the term gets zeroed later.
-  if (wrt_key == pres_key_) {
-    int ncells = res_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
-      res_c[0][c] = icy_model_->DHeightDPressure(pres_c[0][c], eta[0][c],
-              rho_l[0][c], rho_i[0][c], p_atm, gz);
-    }
-  } else if (wrt_key == dens_key_) {
-    int ncells = res_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
-      res_c[0][c] = icy_model_->DHeightDRho_l(pres_c[0][c], eta[0][c],
-              rho_l[0][c], rho_i[0][c], p_atm, gz);
-    }
-  } else if (wrt_key == dens_ice_key_) {
-    int ncells = res_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
-      res_c[0][c] = icy_model_->DHeightDRho_i(pres_c[0][c], eta[0][c],
-              rho_l[0][c], rho_i[0][c], p_atm, gz);
-    }
-  } else if (wrt_key == unfrozen_frac_key_) {
-    int ncells = res_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
-      res_c[0][c] = icy_model_->DHeightDEta(pres_c[0][c], eta[0][c],
-              rho_l[0][c], rho_i[0][c], p_atm, gz);
+  if (bar_) {
+    if (wrt_key == pres_key_) {
+      int ncells = res_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        res_c[0][c] = icy_model_->DHeightDPressure(pres_c[0][c], eta[0][c],
+                rho_l[0][c], rho_i[0][c], p_atm, gz);
+      }
+    } else if (wrt_key == dens_key_) {
+      int ncells = res_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        res_c[0][c] = icy_model_->DHeightDRho_l(pres_c[0][c], eta[0][c],
+                rho_l[0][c], rho_i[0][c], p_atm, gz);
+      }
+    } else if (wrt_key == dens_ice_key_) {
+      int ncells = res_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        res_c[0][c] = icy_model_->DHeightDRho_i(pres_c[0][c], eta[0][c],
+                rho_l[0][c], rho_i[0][c], p_atm, gz);
+      }
+    } else if (wrt_key == unfrozen_frac_key_) {
+      int ncells = res_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        res_c[0][c] = icy_model_->DHeightDEta(pres_c[0][c], eta[0][c],
+                rho_l[0][c], rho_i[0][c], p_atm, gz);
+      }
+    } else {
+      ASSERT(0);
     }
   } else {
-    ASSERT(0);
+    if (wrt_key == pres_key_) {
+      int ncells = res_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        res_c[0][c] =  pres_c[0][c] < p_atm ? 0. :
+            icy_model_->DHeightDPressure(pres_c[0][c], eta[0][c],
+                rho_l[0][c], rho_i[0][c], p_atm, gz);
+      }
+    } else if (wrt_key == dens_key_) {
+      int ncells = res_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        res_c[0][c] =  pres_c[0][c] < p_atm ? 0. :
+            icy_model_->DHeightDRho_l(pres_c[0][c], eta[0][c],
+                rho_l[0][c], rho_i[0][c], p_atm, gz);
+      }
+    } else if (wrt_key == dens_ice_key_) {
+      int ncells = res_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        res_c[0][c] =  pres_c[0][c] < p_atm ? 0. :
+            icy_model_->DHeightDRho_i(pres_c[0][c], eta[0][c],
+                rho_l[0][c], rho_i[0][c], p_atm, gz);
+      }
+    } else if (wrt_key == unfrozen_frac_key_) {
+      int ncells = res_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        res_c[0][c] =  pres_c[0][c] < p_atm ? 0. :
+            icy_model_->DHeightDEta(pres_c[0][c], eta[0][c],
+                rho_l[0][c], rho_i[0][c], p_atm, gz);
+      }
+    } else {
+      ASSERT(0);
+    }
   }
 }
 

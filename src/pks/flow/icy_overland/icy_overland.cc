@@ -22,7 +22,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "icy_height_evaluator.hh"
 
 
-#include "overland_head_icy_water_content_evaluator2.hh"
+#include "overland_head_water_content_evaluator.hh"
 #include "icy_overland.hh"
 
 namespace Amanzi {
@@ -42,8 +42,8 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   names_bf[1] = "boundary_face";
 
   // -- evaluator for surface geometry.
-  S->RequireField("elevation")->SetMesh(mesh_)->SetGhosted()
-      ->SetComponents(names2, locations2, num_dofs2);
+  S->RequireField("elevation")->SetMesh(S->GetMesh("surface"))->SetGhosted()
+      ->AddComponents(names2, locations2, num_dofs2);
   S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
       ->AddComponents(names_bf, locations_bf, num_dofs2);
 
@@ -51,11 +51,9 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   if (standalone_mode_) {
     ASSERT(plist_->isSublist("elevation evaluator"));
     Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
-    elev_plist.set("manage communication", true);
     elev_evaluator = Teuchos::rcp(new FlowRelations::StandaloneElevationEvaluator(elev_plist));
   } else {
     Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
-    elev_plist.set("manage communication", true);
     elev_evaluator = Teuchos::rcp(new FlowRelations::MeshedElevationEvaluator(elev_plist));
   }
   S->SetFieldEvaluator("elevation", elev_evaluator);
@@ -63,15 +61,13 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   // -- evaluator for potential field, h + z
   S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
-      ->AddComponents(names2, locations2, num_dofs2);
-
+                ->AddComponents(names2, locations2, num_dofs2);
   Teuchos::ParameterList pres_elev_plist = plist_->sublist("potential evaluator");
-  pres_elev_plist.set("manage communication", true);
   Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval =
       Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);
 
-  // -- source term evaluator
+  // -- evaluator for source term
   is_source_term_ = plist_->get<bool>("source term");
   if (is_source_term_) {
     // source term itself [m/s]
@@ -88,19 +84,34 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- water content
   S->RequireField("surface_water_content")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList wc_plist = plist_->sublist("overland water content evaluator");
-  Teuchos::RCP<FlowRelations::OverlandHeadIcyWaterContentEvaluator2> wc_evaluator =
-      Teuchos::rcp(new FlowRelations::OverlandHeadIcyWaterContentEvaluator2(wc_plist));
+  Teuchos::ParameterList& wc_plist =
+      plist_->sublist("overland water content evaluator");
+  Teuchos::RCP<FlowRelations::OverlandHeadWaterContentEvaluator> wc_evaluator =
+      Teuchos::rcp(new FlowRelations::OverlandHeadWaterContentEvaluator(wc_plist));
   S->SetFieldEvaluator("surface_water_content", wc_evaluator);
+
+  // -- water content bar (can be negative)
+  S->RequireField("surface_water_content_bar")->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList wcbar_plist(wc_plist);
+  wcbar_plist.set<bool>("water content bar", true);
+  wc_evaluator = Teuchos::rcp(
+      new FlowRelations::OverlandHeadWaterContentEvaluator(wcbar_plist));
+  S->SetFieldEvaluator("surface_water_content_bar", wc_evaluator);
 
   // -- ponded depth
   S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
                 ->AddComponents(names2, locations2, num_dofs2);
   Teuchos::RCP<FieldEvaluator> pd_fe_eval = S->RequireFieldEvaluator("ponded_depth");
-  Teuchos::RCP<FlowRelations::IcyHeightEvaluator> pd_eval =
-      Teuchos::rcp_dynamic_cast<FlowRelations::IcyHeightEvaluator>(pd_fe_eval);
+  Teuchos::RCP<FlowRelations::HeightEvaluator> pd_eval =
+      Teuchos::rcp_dynamic_cast<FlowRelations::HeightEvaluator>(pd_fe_eval);
   ASSERT(pd_eval != Teuchos::null);
   height_model_ = pd_eval->get_Model();
+
+  // -- ponded depth bar
+  S->RequireField("ponded_depth_bar")->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator("ponded_depth_bar");
 
   // -- conductivity evaluator
   S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()
@@ -124,7 +135,7 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  
+
   // -- temperature -- fix me!
   S->RequireField("surface_temperature")->SetMesh(mesh_)
       ->AddComponents(names2, locations2, num_dofs2);

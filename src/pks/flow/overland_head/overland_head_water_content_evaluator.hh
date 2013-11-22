@@ -36,8 +36,10 @@ class OverlandHeadWaterContentEvaluator : public SecondaryVariableFieldEvaluator
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-  Key dens_key_;
-  Key height_key_;
+  Key pres_key_;
+  double M_;
+  bool bar_;  // bar'd variable indicates this is potentially negative for
+              // pressures less than atmospheric
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,OverlandHeadWaterContentEvaluator> factory_;

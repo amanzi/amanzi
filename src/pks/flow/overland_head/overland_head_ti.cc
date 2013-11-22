@@ -173,64 +173,63 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
-  Teuchos::RCP<const CompositeVector> eff_p = S_next_->GetFieldData("surface_effective_pressure");
-  Teuchos::RCP<const CompositeVector> surf_p = S_next_->GetFieldData("surface_pressure");
-
-
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PKDefaultBase::solution_to_state(up, S_next_);
 
-  // update boundary conditions
+  // calculating the operator is done in 3 steps:
+  // 1. Diffusion components
+
+  // 1.a: Pre-assembly updates.
+  // -- update boundary condition markers, which set the BC type
   UpdateBoundaryConditionsMarkers_(S_next_.ptr());
 
-  // update the rel perm according to the scheme of choice
+  // -- update the rel perm according to the boundary info and upwinding
+  // -- scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
-
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
 
-  // calculating the operator is done in 3 steps:
-  // 1. Create all local matrices.
+  // 1.b: Create all local matrices.
   mfd_preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
   mfd_preconditioner_->CreateMFDrhsVectors();
 
-  // Patch up BCs in the case of zero conductivity
-  FixBCsForPrecon_(S_next_.ptr());
-
-  // 2.a: scale the cell by dh_dp
-  S_next_->GetFieldEvaluator("ponded_depth")
+  // 2. Accumulation shift
+  //    The desire is to keep this matrix invertible for pressures less than
+  //    atmospheric.  To do that, we keep the accumulation derivative
+  //    non-zero, calculating dWC_bar / dh_bar, where bar indicates (p -
+  //    p_atm), not max(p - p_atm,0).  Note that this operator is in h
+  //    coordinates, not p coordinates, as the diffusion operator is applied
+  //    to h.
+  //
+  // -- update dh_bar / dp
+  S_next_->GetFieldEvaluator("ponded_depth_bar")
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
   const Epetra_MultiVector& dh_dp =
-      *S_next_->GetFieldData("dponded_depth_d"+key_)->ViewComponent("cell",false);
+      *S_next_->GetFieldData("dponded_depth_bar_d"+key_)
+      ->ViewComponent("cell",false);
   const double& p_atm = *S_next_->GetScalarData("atmospheric_pressure");
 
-  // 2.b Update local matrices diagonal with the accumulation terms.
   // -- update the accumulation derivatives
-  S_next_->GetFieldEvaluator("surface_water_content")
+  S_next_->GetFieldEvaluator("surface_water_content_bar")
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
   const Epetra_MultiVector& dwc_dp =
-      *S_next_->GetFieldData("dsurface_water_content_d"+key_)
+      *S_next_->GetFieldData("dsurface_water_content_bar_d"+key_)
       ->ViewComponent("cell",false);
 
-  // -- get other pieces
-  const Epetra_MultiVector& head =
-      *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
-
+  // -- pull out other needed data
   std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
-  unsigned int ncells = head.MyLength();
-
+  unsigned int ncells = Acc_cells.size();
   for (unsigned int c=0; c!=ncells; ++c) {
-    // - add accumulation terms, treating h as h_bar, which is allowed to go
-    // - negative.  This results in a non-zero preconditioner when p < p_atm,
-    // - resulting in a correction that should take p >= p_atm.
     Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] / h;
   }
 
-  // Assemble and precompute the Schur complement for inversion.
-  // Note boundary conditions are in height variables.
+  // 3. Assemble and precompute the Schur complement for inversion.
+  // 3.a: Patch up BCs in the case of zero conductivity
+  FixBCsForPrecon_(S_next_.ptr());
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
+  // 3.b: Assemble the operator if requested
   if (coupled_to_subsurface_via_head_ ||
       coupled_to_subsurface_via_flux_ || assemble_preconditioner_) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -238,18 +237,19 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     mfd_preconditioner_->AssembleGlobalMatrices();
   }
 
+  // 3.c: Add in full Jacobian terms
   if (tpfa_ && full_jacobian_) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "    including full Jacobian terms" << std::endl;
 
-    // JACOBIAN?
-    // These are already updated for UpdatePerm
     Teuchos::RCP<const CompositeVector> depth =
         S_next_->GetFieldData("ponded_depth");
     Teuchos::RCP<const CompositeVector> pres_elev =
         S_next_->GetFieldData("pres_elev");
 
-    // conducitivity and dcond_dh
+    // Update conductivity.  Note the change of variables from pressure to
+    // height.
+    // -- Krel_face gets conductivity
     S_next_->GetFieldEvaluator("overland_conductivity")
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
     Teuchos::RCP<const CompositeVector> cond =
@@ -260,8 +260,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     dcond_dh.ViewComponent("cell",false)->ReciprocalMultiply(1., dh_dp,
             *dcond_dp->ViewComponent("cell",false), 0.);
 
-
-    // Krel_cell gets n_liq
+    // -- Krel_cell gets n_liq
     Teuchos::RCP<const CompositeVector> uw_cond =
         S_next_->GetFieldData("upwind_overland_conductivity");
     CompositeVector duw_cond_cell_dh(*uw_cond);
@@ -275,12 +274,12 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     duw_cond_cell_dh.ViewComponent("cell",false)
         ->ReciprocalMultiply(1., dh_dp, dn_liq_dp, 0.);
 
-    // Add in the Jacobian
+    // -- Add in the Jacobian
     tpfa_preconditioner_->AnalyticJacobian(*depth, *pres_elev, *cond, dcond_dh,
             *uw_cond, duw_cond_cell_dh);
   }
 
-  // rescale to use as a pressure matrix if used in a coupler
+  // 3.d: Rescale to use as a pressure matrix if used in a coupler
   if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
     ASSERT(tpfa_);
     Teuchos::RCP<Operators::MatrixMFD_TPFA> precon_tpfa =
@@ -288,18 +287,15 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     ASSERT(precon_tpfa != Teuchos::null);
     Teuchos::RCP<Epetra_FECrsMatrix> Spp = precon_tpfa->TPFA();
 
-    // Scale Spp by dh/dp
-    // if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    //   *vo_->os() << "  scaling by dh/dp" << std::endl;
-    Epetra_Vector dh_dp0(*dh_dp(0));
-    for (unsigned int sc=0; sc!=ncells; ++sc) {
-      dh_dp0[sc] = head[0][sc] > p_atm ? dh_dp[0][sc] : 0.;
-    }
-    int ierr = Spp->RightScale(dh_dp0);
+    // Scale Spp by dh/dp (h, NOT h_bar), clobbering rows with p < p_atm
+    S_next_->GetFieldEvaluator("ponded_depth")
+        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+    const Epetra_MultiVector& dh0_dp =
+        *S_next_->GetFieldData("dponded_depth_d"+key_)
+        ->ViewComponent("cell",false);
+    int ierr = Spp->RightScale(*dh0_dp(0));
     ASSERT(!ierr);
-    // EpetraExt::RowMatrixToMatlabFile("TPFAafter.txt", *Spp);
   }
-
 
   if (assemble_preconditioner_) {
     mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);

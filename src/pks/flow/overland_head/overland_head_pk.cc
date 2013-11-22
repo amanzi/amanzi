@@ -270,10 +270,20 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- water content
   S->RequireField("surface_water_content")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList wc_plist = plist_->sublist("overland water content evaluator");
+  Teuchos::ParameterList& wc_plist =
+      plist_->sublist("overland water content evaluator");
   Teuchos::RCP<FlowRelations::OverlandHeadWaterContentEvaluator> wc_evaluator =
       Teuchos::rcp(new FlowRelations::OverlandHeadWaterContentEvaluator(wc_plist));
   S->SetFieldEvaluator("surface_water_content", wc_evaluator);
+
+  // -- water content bar (can be negative)
+  S->RequireField("surface_water_content_bar")->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList wcbar_plist(wc_plist);
+  wcbar_plist.set<bool>("water content bar", true);
+  wc_evaluator = Teuchos::rcp(
+      new FlowRelations::OverlandHeadWaterContentEvaluator(wcbar_plist));
+  S->SetFieldEvaluator("surface_water_content_bar", wc_evaluator);
 
   // -- ponded depth
   S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
@@ -283,6 +293,11 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp_dynamic_cast<FlowRelations::HeightEvaluator>(pd_fe_eval);
   ASSERT(pd_eval != Teuchos::null);
   height_model_ = pd_eval->get_Model();
+
+  // -- ponded depth bar
+  S->RequireField("ponded_depth_bar")->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator("ponded_depth_bar");
 
   // -- conductivity evaluator
   S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()

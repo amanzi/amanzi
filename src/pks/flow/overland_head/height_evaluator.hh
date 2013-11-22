@@ -35,6 +35,8 @@ class HeightEvaluator : public SecondaryVariableFieldEvaluator {
 
   Teuchos::RCP<HeightModel> get_Model() { return model_; }
 
+  void set_bar(bool bar) { bar_ = bar; }
+
  protected:
 
   // Required methods from SecondaryVariableFieldEvaluator
@@ -48,6 +50,7 @@ class HeightEvaluator : public SecondaryVariableFieldEvaluator {
   Key pres_key_;
   Key gravity_key_;
   Key patm_key_;
+  bool bar_;
 
   Teuchos::RCP<HeightModel> model_;
 
