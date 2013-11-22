@@ -47,6 +47,13 @@ public:
       source_only_if_unfrozen_(false) {
     plist_->set("primary variable key", "surface_pressure");
     plist_->set("domain name", "surface");
+
+    // clone the ponded_depth parameter list for ponded_depth bar
+    Teuchos::ParameterList& pd_list = FElist.sublist("ponded_depth");
+    Teuchos::ParameterList pdbar_list(pd_list);
+    pdbar_list.set("ponded depth bar", true);
+    pdbar_list.set("height key", "ponded_depth_bar");
+    FElist.set("ponded_depth_bar", pdbar_list);
   }
 
   // Virtual destructor

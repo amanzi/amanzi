@@ -306,8 +306,7 @@ MPCPermafrost3::update_precon(double t,
 
   precon_->SetOffDiagonals(dWCdT_domain->ViewComponent("cell",false),
                            dEdp_domain->ViewComponent("cell",false),
-                           //                           dWCdT_surf->ViewComponent("cell",false), // ALWAYS 0!
-                           Teuchos::null,
+                           Teuchos::null, // dWC_dT = 0
                            dEdp_surf->ViewComponent("cell",false),
                            1./h);
 

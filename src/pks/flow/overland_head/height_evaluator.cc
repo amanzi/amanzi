@@ -17,8 +17,11 @@ namespace FlowRelations {
 
 HeightEvaluator::HeightEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-  // my keys are for saturation and rel perm.
-  my_key_ = plist_.get<string>("height key", "ponded_depth");
+  bar_ = plist_.get<bool>("ponded depth bar", false);
+
+  my_key_ = "ponded_depth";
+  if (bar_) my_key_ += std::string("_bar");
+  my_key_ = plist_.get<string>("height key", my_key_);
 
   // my dependencies
   dens_key_ = plist_.get<string>("mass density key", "surface_mass_density_liquid");
@@ -42,7 +45,8 @@ HeightEvaluator::HeightEvaluator(const HeightEvaluator& other) :
     pres_key_(other.pres_key_),
     gravity_key_(other.gravity_key_),
     patm_key_(other.patm_key_),
-    model_(other.model_) {}
+    model_(other.model_),
+    bar_(other.bar_) {}
 
 
 Teuchos::RCP<FieldEvaluator>
@@ -157,7 +161,9 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
                      *tmp->ViewComponent("cell",false), 1.0);
     }
   }
-  dmy->ViewComponent("face",false)->PutScalar(1.0);
+
+  if (dmy->HasComponent("face"))
+    dmy->ViewComponent("face",false)->PutScalar(1.0);
 }
 
 
@@ -169,7 +175,8 @@ void HeightEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // this is rather hacky.  surface_pressure is a mixed field vector -- it has
   // pressure on cells and ponded depth on faces.
   // -- copy the faces over directly
-  *result->ViewComponent("face",false) = *pres->ViewComponent("face",false);
+  if (result->HasComponent("face"))
+    *result->ViewComponent("face",false) = *pres->ViewComponent("face",false);
 
   // -- cells need the function eval
   const Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
@@ -182,9 +189,15 @@ void HeightEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   double gz = -gravity[2];  // check this
 
   int ncells = res_c.MyLength();
-  for (int c=0; c!=ncells; ++c) {
-    res_c[0][c] = pres_c[0][c] < p_atm ? 0. :
-        model_->Height(pres_c[0][c], rho[0][c], p_atm, gz);
+  if (bar_) {
+    for (int c=0; c!=ncells; ++c) {
+      res_c[0][c] = model_->Height(pres_c[0][c], rho[0][c], p_atm, gz);
+    }
+  } else {
+    for (int c=0; c!=ncells; ++c) {
+      res_c[0][c] = pres_c[0][c] < p_atm ? 0. :
+          model_->Height(pres_c[0][c], rho[0][c], p_atm, gz);
+    }
   }
 }
 
@@ -205,21 +218,31 @@ void HeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>&
 
   if (wrt_key == pres_key_) {
     int ncells = res_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
-      res_c[0][c] = model_->DHeightDPressure(pres_c[0][c], rho[0][c], p_atm, gz);
+    if (bar_) {
+      for (int c=0; c!=ncells; ++c) {
+        res_c[0][c] = model_->DHeightDPressure(pres_c[0][c], rho[0][c], p_atm, gz);
+      }
+    } else {
+      for (int c=0; c!=ncells; ++c) {
+        res_c[0][c] =  pres_c[0][c] < p_atm ? 0. :
+            model_->DHeightDPressure(pres_c[0][c], rho[0][c], p_atm, gz);
+      }
     }
   } else if (wrt_key == dens_key_) {
     int ncells = res_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
-      res_c[0][c] = model_->DHeightDRho(pres_c[0][c], rho[0][c], p_atm, gz);
+    if (bar_) {
+      for (int c=0; c!=ncells; ++c) {
+        res_c[0][c] = model_->DHeightDRho(pres_c[0][c], rho[0][c], p_atm, gz);
+      }
+    } else {
+      for (int c=0; c!=ncells; ++c) {
+        res_c[0][c] =  pres_c[0][c] < p_atm ? 0. :
+            model_->DHeightDRho(pres_c[0][c], rho[0][c], p_atm, gz);
+      }
     }
   } else {
     ASSERT(0);
   }
-
-  // -- faces just get zero?
-  result->ViewComponent("face",false)->PutScalar(0.);
-
 }
 
 
