@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, utils
+import os, sys, utils, shutil
 import optparse
 
 #  Create dictionary that describes:
@@ -271,6 +271,9 @@ amanzi_home=utils.AmanziHome(logfile)
 
 # Set level counter
 level=1
+
+# Copy top-level base index file
+shutil.copyfile('index.in','index.rst')
 
 # Create index files
 utils.RecurseIndex(amanzi_home,sections,level,logfile)

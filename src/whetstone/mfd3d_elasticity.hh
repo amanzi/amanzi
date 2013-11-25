@@ -44,23 +44,22 @@ class MFD3D_Elasticity : public MFD3D {
   ~MFD3D_Elasticity() {};
 
   // required implementation of two consistency conditions
-  int L2consistency(int cell, const Tensor& deformation,
-                    DenseMatrix& N, DenseMatrix& Mc);
+  int L2consistency(int cell, const Tensor& deformation, DenseMatrix& N, DenseMatrix& Mc);
 
   int L2consistencyInverse(int cell, const Tensor& deformation,
                            DenseMatrix& R, DenseMatrix& Wc) { return WHETSTONE_ELEMENTAL_MATRIX_OK; }
 
-  int H1consistency(int cell, const Tensor& deformation,
-                    DenseMatrix& N, DenseMatrix& Mc);
+  int H1consistency(int cell, const Tensor& deformation, DenseMatrix& N, DenseMatrix& Mc);
 
-  int MassMatrix(int cell, const Tensor& deformation,
-                 DenseMatrix& M) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
-
-  int MassMatrixInverse(int cell, const Tensor& deformation,
-                        DenseMatrix& W) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
+  int MassMatrix(int cell, const Tensor& deformation, DenseMatrix& M) { 
+    return WHETSTONE_ELEMENTAL_MATRIX_OK; 
+  } 
+  int MassMatrixInverse(int cell, const Tensor& deformation, DenseMatrix& W) {
+    return WHETSTONE_ELEMENTAL_MATRIX_OK; 
+  } 
 
   int StiffnessMatrix(int cell, const Tensor& deformation, DenseMatrix& A);
-
+  int StiffnessMatrixOptimized(int cell, const Tensor& deformation, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int cell, const Tensor& deformation, DenseMatrix& A);
 
  private:

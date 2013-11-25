@@ -62,15 +62,36 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
   parser->setValidationScheme(xercesc::XercesDOMParser::Val_Always);
   parser->setDoNamespaces(true);
   parser->setDoSchema(true);
+  parser->setValidationConstraintFatal(true);
+
   bool errorsOccured = false;
+
+      parser->parse(xmlfilename.c_str());
+  std::cout << "  EIB>> first errors = " << parser->getErrorCount() << " and occurred = " << errorsOccured<< std::endl;
+  std::cout << "EIB>> outside try" << std::endl;
   try{
       parser->parse(xmlfilename.c_str());
+      std::cout << "  EIB>> found " << parser->getErrorCount() << " errors " << std::endl;
   }
   catch (const xercesc::OutOfMemoryException&)
   {
       std::cerr << "OutOfMemoryException" << std::endl;
       errorsOccured = true;
   }
+  catch (const xercesc::XMLException& e)
+  {
+      std::cerr << "Amanzi::InputTranslator:  An error occurred during parsing" << std::endl;
+      std::cerr << "                          " << e.getMessage() << std::endl;
+      errorsOccured = true;
+  }
+  catch (const xercesc::DOMException& e)
+  {
+      std::cerr << "Amanzi::InputTranslator:  An error occurred during parsing" << std::endl;
+      std::cerr << "                          " << e.code << std::endl;
+      errorsOccured = true;
+  }
+  std::cout << "  EIB>> rechecking errors = " << parser->getErrorCount() << " and occurred = " << errorsOccured<< std::endl;
+  std::cout << "EIB>> done try" << std::endl;
 
   // check that it's validating here
 
@@ -386,6 +407,7 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
 
     // loop over child nodes
     xercesc::DOMNodeList* children = nodeMesh->getChildNodes();
+    // first figure out what the dimension is
     for (int i=0; i<children->getLength(); i++) {
       xercesc::DOMNode* currentNode = children->item(i) ;
       if (xercesc::DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
@@ -393,7 +415,15 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
 	if (strcmp(tagname,"dimension")==0) {
 	  char* temp = xercesc::XMLString::transcode(currentNode->getTextContent());
 	  dimension_ = get_int_constant(temp,def_list);
-	} else if (strcmp(tagname,"generate")==0) {
+	}
+      }
+    }
+    // now we can properly parse the generate list
+    for (int i=0; i<children->getLength(); i++) {
+      xercesc::DOMNode* currentNode = children->item(i) ;
+      if (xercesc::DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+	char* tagname = xercesc::XMLString::transcode(currentNode->getNodeName());   
+	if (strcmp(tagname,"generate")==0) {
 	  generate = true;
 	  file = false;
 	  xercesc::DOMElement* elementGen = static_cast<xercesc::DOMElement*>(currentNode);
@@ -414,10 +444,12 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
 	  temp = xercesc::XMLString::transcode(namednode->getNodeValue());
 	  ncells.append(get_int_constant(temp,def_list));
 	  XMLString::release(&temp);
-	  namednode = attrMap->getNamedItem(XMLString::transcode("nz"));
-	  temp = xercesc::XMLString::transcode(namednode->getNodeValue());
-	  ncells.append(get_int_constant(temp,def_list));
-	  XMLString::release(&temp);
+	  if (dimension_>2) {
+	    namednode = attrMap->getNamedItem(XMLString::transcode("nz"));
+	    temp = xercesc::XMLString::transcode(namednode->getNodeValue());
+	    ncells.append(get_int_constant(temp,def_list));
+	    XMLString::release(&temp);
+	  }
           mesh_list.set<Teuchos::Array<int> >("Number of Cells",ncells);
 
 	  // get Box - generalize
@@ -443,13 +475,13 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
 	  generate = false;
 	  char* filename = XMLString::transcode(currentNode->getTextContent());
           mesh_list.set<std::string>("File",filename);
+	  mesh_list.set<std::string>("Format","Exodus II");
 	}
       }
     }
-
-    if (generate) {
+    
+    if (generate || file) {
       if (unstructured) {
-        list.sublist("Unstructured").sublist("Generate Mesh").sublist("Uniform Structured") = mesh_list;
         if (strcmp(framework,"mstk")==0) {
           list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","MSTK");
         } else if (strcmp(framework,"moab")==0) {
@@ -461,13 +493,21 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
         } else {
           list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","MSTK");
 	}
+      }
+    }
+
+    if (generate) {
+      if (unstructured) {
+        list.sublist("Unstructured").sublist("Generate Mesh").sublist("Uniform Structured") = mesh_list;
       } else {
         list.sublist("Structured") = mesh_list;
       }
     }
     else if (file) {
-      mesh_list.set<std::string>("Format",framework);
-      list.sublist("Unstructured").sublist("Read Mesh File") = mesh_list;
+      if (unstructured) {
+	mesh_list.set<std::string>("Format","Exodus II");
+	list.sublist("Unstructured").sublist("Read Mesh File") = mesh_list;
+      }
     }
     else {
       // bad mesh, again if validated shouldn't need this
@@ -1142,87 +1182,90 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
       xercesc::DOMNodeList* tmpList = pkElement->getElementsByTagName(XMLString::transcode("flow"));
       xercesc::DOMElement* flowElement = static_cast<xercesc::DOMElement*>(tmpList->item(0));
       if (flowElement->hasAttribute((XMLString::transcode("state")))) {
-	textContent = xercesc::XMLString::transcode(
+	      textContent = xercesc::XMLString::transcode(
 	              flowElement->getAttribute(xercesc::XMLString::transcode("state")));
-        if (strcmp(textContent,"off")==0){
-          list.set<std::string>("Flow Model","Off");
-        } else {
-	  flowON = true;
-	  char* textContent2 = xercesc::XMLString::transcode(
+          if (strcmp(textContent,"off")==0){
+              list.set<std::string>("Flow Model","Off");
+          } else {
+	          flowON = true;
+	          char* textContent2 = xercesc::XMLString::transcode(
 	              flowElement->getAttribute(xercesc::XMLString::transcode("model")));
-	  if (strcmp(textContent2,"saturated")==0) {
-            list.set<std::string>("Flow Model","Single Phase");
-	  } else if (strcmp(textContent2,"richards")==0) {
-            list.set<std::string>("Flow Model","Richards");
-	  }
-          XMLString::release(&textContent2);
-        }
-        XMLString::release(&textContent);
+	          if (strcmp(textContent2,"saturated")==0) {
+                  list.set<std::string>("Flow Model","Single Phase");
+	          } else if (strcmp(textContent2,"richards")==0) {
+                  list.set<std::string>("Flow Model","Richards");
+              } else if (strcmp(textContent2,"constant")==0) {
+                  //NOTE: EIB - this will need updating
+                  list.set<std::string>("Flow Model","Off");
+	          }
+              XMLString::release(&textContent2);
+          }
+          XMLString::release(&textContent);
       }
       // EIB: stubbing in for feature in spec, but not yet in schema
       if (flowElement->hasAttribute((XMLString::transcode("discretization_method")))) {
-	textContent = xercesc::XMLString::transcode(
+	      textContent = xercesc::XMLString::transcode(
 	              flowElement->getAttribute(xercesc::XMLString::transcode("discretization_method")));
-	fpkPL.set<std::string>("Discretization Method",textContent);
-        XMLString::release(&textContent);
+	      fpkPL.set<std::string>("Discretization Method",textContent);
+          XMLString::release(&textContent);
       }
       // EIB: stubbing in for feature in spec, but not yet in schema
       if (flowElement->hasAttribute((XMLString::transcode("relative_permeability")))) {
-	textContent = xercesc::XMLString::transcode(
+	      textContent = xercesc::XMLString::transcode(
 	              flowElement->getAttribute(xercesc::XMLString::transcode("relative_permeability")));
-	fpkPL.set<std::string>("Relative Permeability",textContent);
-        XMLString::release(&textContent);
+	      fpkPL.set<std::string>("Relative Permeability",textContent);
+          XMLString::release(&textContent);
       }
       // EIB: stubbing in for feature in spec, but not yet in schema
       if (flowElement->hasAttribute((XMLString::transcode("atmospheric_pressure")))) {
-	textContent = xercesc::XMLString::transcode(
+	      textContent = xercesc::XMLString::transcode(
 	              flowElement->getAttribute(xercesc::XMLString::transcode("atmospheric_pressure")));
-	fpkPL.set<double>("atmospheric pressure",get_double_constant(textContent,*def_list));
-        XMLString::release(&textContent);
+	      fpkPL.set<double>("atmospheric pressure",get_double_constant(textContent,*def_list));
+          XMLString::release(&textContent);
       }
 
       // get transport
       tmpList = pkElement->getElementsByTagName(XMLString::transcode("transport"));
       xercesc::DOMElement* transElement = static_cast<xercesc::DOMElement*>(tmpList->item(0));
       if (transElement->hasAttribute((XMLString::transcode("state")))) {
-	textContent = xercesc::XMLString::transcode(
+	      textContent = xercesc::XMLString::transcode(
 	              transElement->getAttribute(xercesc::XMLString::transcode("state")));
-        if (strcmp(textContent,"off")==0) {
-          list.set<std::string>("Transport Model","Off");
-        } else {
-          list.set<std::string>("Transport Model","On");
-  	  transportON=true;
-	}
-        XMLString::release(&textContent);
+          if (strcmp(textContent,"off")==0) {
+              list.set<std::string>("Transport Model","Off");
+          } else {
+              list.set<std::string>("Transport Model","On");
+  	          transportON=true;
+	      }
+          XMLString::release(&textContent);
       }
       if (transElement->hasAttribute((XMLString::transcode("algorithm")))) {
-	textContent = xercesc::XMLString::transcode(
+	      textContent = xercesc::XMLString::transcode(
 	              transElement->getAttribute(xercesc::XMLString::transcode("algorithm")));
-	if (strcmp(textContent,"explicit first-order")==0) {
-	  tpkPL.set<std::string>("Transport Integration Algorithm","Explicit First-Order");
-	} else if (strcmp(textContent,"explicit second-order")==0) {
-	  tpkPL.set<std::string>("Transport Integration Algorithm","Explicit Second-Order");
-	} else if (strcmp(textContent,"none")==0) {
-	  tpkPL.set<std::string>("Transport Integration Algorithm","None");
-	}
-        XMLString::release(&textContent);
+	      if (strcmp(textContent,"explicit first-order")==0) {
+              tpkPL.set<std::string>("Transport Integration Algorithm","Explicit First-Order");
+	      } else if (strcmp(textContent,"explicit second-order")==0) {
+	          tpkPL.set<std::string>("Transport Integration Algorithm","Explicit Second-Order");
+	      } else if (strcmp(textContent,"none")==0) {
+	          tpkPL.set<std::string>("Transport Integration Algorithm","None");
+	      }
+          XMLString::release(&textContent);
       }
       if (transElement->hasAttribute((XMLString::transcode("sub_cycling")))) {
-	textContent = xercesc::XMLString::transcode(
+     	  textContent = xercesc::XMLString::transcode(
 	              transElement->getAttribute(xercesc::XMLString::transcode("sub_cycling")));
-	if (strcmp(textContent,"on")==0) {
-	  tpkPL.set<bool>("transport subcycling",true);
-	} else  {
-	  tpkPL.set<bool>("transport subcycling",false);
-	}
-        XMLString::release(&textContent);
+	      if (strcmp(textContent,"on")==0) {
+	          tpkPL.set<bool>("transport subcycling",true);
+	      } else  {
+	          tpkPL.set<bool>("transport subcycling",false);
+	      }
+          XMLString::release(&textContent);
       }
       // EIB: stubbing in for feature in spec, but not yet in schema
       if (transElement->hasAttribute((XMLString::transcode("cfl")))) {
-	textContent = xercesc::XMLString::transcode(
+	       textContent = xercesc::XMLString::transcode(
 	              transElement->getAttribute(xercesc::XMLString::transcode("cfl")));
-	tpkPL.set<double>("CFL",atof(textContent));
-        XMLString::release(&textContent);
+	      tpkPL.set<double>("CFL",atof(textContent));
+          XMLString::release(&textContent);
       }
 
       // get chemisty - TODO: EIB - assuming this will be set to OFF!!!!!
@@ -1235,13 +1278,13 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
         list.set<std::string>("Chemistry Model","Off");
       } else {
         list.set<std::string>("Chemistry Model","On");
-	chemistryON=true;
-	//TODO: EIB - now get process model option
+    	chemistryON=true;
+    	//TODO: EIB - now get process model option
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("process_model"));
         textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	if (strcmp(textContent,"implicit operator split")==0) {
-	  cpkPL.set<double>("max chemistry to transport timestep ratio",get_double_constant(textContent,*def_list));
-	}
+	    if (strcmp(textContent,"implicit operator split")==0) {
+	      cpkPL.set<double>("max chemistry to transport timestep ratio",get_double_constant(textContent,*def_list));
+	    }
       }
       XMLString::release(&textContent);
     }
@@ -1328,6 +1371,20 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
                 } else if (strcmp(tagname,"error_abs_tol")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     ssPL.set<double>("steady error abs tol",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                } else if (strcmp(tagname,"restart_tolerance_factor")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent()); 
+                    ssPL.set<double>("steady restart tolerance relaxation factor",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                } else if (strcmp(tagname,"restart_tolerance_relaxation_factor")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent()); 
+                    ssPL.set<double>("steady restart tolerance relaxation factor damping",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                } else if (strcmp(tagname,"initialize_with_darcy")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+		    bool iwd(false);
+		    std::string(textContent) == "true" ? iwd = true : iwd = false;  
+		    ssPL.set<bool>("steady initialize with darcy",iwd);
                     XMLString::release(&textContent);
                 } else if (strcmp(tagname,"pseudo_time_integrator")==0) {
                     Teuchos::ParameterList ptiPL;
@@ -1563,7 +1620,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 	      } else if (strcmp(textContent,"block_ilu")==0) {
                 tcPL.set<std::string>("transient preconditioner","Block ILU");
                 xercesc::DOMNodeList* children = preconNode->getChildNodes();
-	        Teuchos::ParameterList preconPL;
+	            Teuchos::ParameterList preconPL;
                 for (int k=0; k<children->getLength(); k++) {
                   xercesc::DOMNode* currentNode = children->item(k) ;
                   if (xercesc::DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
@@ -1572,52 +1629,52 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
                       char* textContent2 = XMLString::transcode(currentNode->getTextContent());
                       preconPL.set<int>("Block ILU overlap",get_int_constant(textContent2,*def_list));
                       XMLString::release(&textContent2);
-		    } else if (strcmp(tagname,"ilu_relax")==0) {
+		        } else if (strcmp(tagname,"ilu_relax")==0) {
                       char* textContent2 = XMLString::transcode(currentNode->getTextContent());
                       preconPL.set<double>("Block ILU relax value",get_double_constant(textContent2,*def_list));
                       XMLString::release(&textContent2);
-		    } else if (strcmp(tagname,"ilu_rel_threshold")==0) {
+		        } else if (strcmp(tagname,"ilu_rel_threshold")==0) {
                       char* textContent2 = XMLString::transcode(currentNode->getTextContent());
                       preconPL.set<double>("Block ILU relative threshold",get_double_constant(textContent2,*def_list));
                       XMLString::release(&textContent2);
-		    } else if (strcmp(tagname,"ilu_abs_threshold")==0) {
+		        } else if (strcmp(tagname,"ilu_abs_threshold")==0) {
                       char* textContent2 = XMLString::transcode(currentNode->getTextContent());
                       preconPL.set<double>("Block ILU absolute threshold",get_double_constant(textContent2,*def_list));
                       XMLString::release(&textContent2);
-		    } else if (strcmp(tagname,"ilu_level_of_fill")==0) {
+		        } else if (strcmp(tagname,"ilu_level_of_fill")==0) {
                       char* textContent2 = XMLString::transcode(currentNode->getTextContent());
                       preconPL.set<int>("Block ILU level of fill",get_int_constant(textContent2,*def_list));
                     XMLString::release(&textContent2);
-		    }
-		  }
+		        }
+		      }
 	        }
 	        list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners").sublist("Block ILU") = preconPL;
  
-	      }
+	        }
               XMLString::release(&textContent);
 	    
-	    }
+	        }
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transient Implicit Time Integration") = tcPL;
-          }
-          else if (strcmp(nodeName,"nonlinear_solver")==0) {
-	    Teuchos::ParameterList nlPL;
-	    attrMap = tmpNode->getAttributes();
-            nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-            textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	    if (strcmp(textContent,"nka")==0) {
-              nlPL.set<std::string>("Nonlinear Solver Type","NKA");
-	    } else if (strcmp(textContent,"newton")==0) {
-              nlPL.set<std::string>("Nonlinear Solver Type","Newton");
-	    } else if (strcmp(textContent,"inexact newton")==0) {
-              nlPL.set<std::string>("Nonlinear Solver Type","inexact Newton");
-	    }
-            XMLString::release(&textContent);
-	    list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
-	  }
-          else if (strcmp(nodeName,"linear_solver")==0) {
-	    Teuchos::ParameterList lsPL;
-	    Teuchos::ParameterList pcPL;
-	    bool usePCPL=false;
+            }
+            else if (strcmp(nodeName,"nonlinear_solver")==0) {
+	            Teuchos::ParameterList nlPL;
+	            attrMap = tmpNode->getAttributes();
+                nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+                textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	            if (strcmp(textContent,"nka")==0) {
+                  nlPL.set<std::string>("Nonlinear Solver Type","NKA");
+	            } else if (strcmp(textContent,"newton")==0) {
+                  nlPL.set<std::string>("Nonlinear Solver Type","Newton");
+	            } else if (strcmp(textContent,"inexact newton")==0) {
+                  nlPL.set<std::string>("Nonlinear Solver Type","inexact Newton");
+	            }
+                XMLString::release(&textContent);
+	            list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
+	        }
+            else if (strcmp(nodeName,"linear_solver")==0) {
+	        Teuchos::ParameterList lsPL;
+	        Teuchos::ParameterList pcPL;
+	        bool usePCPL=false;
             // loop through children and deal with them
             xercesc::DOMNodeList* children = tmpNode->getChildNodes();
             for (int k=0; k<children->getLength(); k++) {
@@ -1636,13 +1693,17 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
                         textContent = XMLString::transcode(currentNode->getTextContent());
                         lsPL.set<double>("linear solver tolerance",get_double_constant(textContent,*def_list));
                         XMLString::release(&textContent);
+                } else if (strcmp(tagname,"cfl")==0) {
+                        textContent = XMLString::transcode(currentNode->getTextContent());
+                        tpkPL.set<double>("CFL",get_double_constant(textContent,*def_list));
+                        XMLString::release(&textContent);
                 } else if (strcmp(tagname,"preconditioner")==0) {
-		    // which precondition is stored in attribute, options are: trilinos_ml, hypre_amg, block_ilu
-	            attrMap = currentNode->getAttributes();
+		            // which precondition is stored in attribute, options are: trilinos_ml, hypre_amg, block_ilu
+	                attrMap = currentNode->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
                     textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-		    usePCPL = true;
-		    if (strcmp(textContent,"hypre_amg")==0) {
+		            usePCPL = true;
+		            if (strcmp(textContent,"hypre_amg")==0) {
                         // loop through children and deal with them
                         xercesc::DOMNodeList* preconChildren= currentNode->getChildNodes();
                         for (int l=0; l<preconChildren->getLength();l++) {
@@ -1668,7 +1729,8 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 			    }
 			  }
 			}
-		    } else if (strcmp(textContent,"trilinos_ml")==0) {
+		    }
+                    else if (strcmp(textContent,"trilinos_ml")==0) {
                         // loop through children and deal with them
                         xercesc::DOMNodeList* preconChildren= currentNode->getChildNodes();
                         for (int l=0; l<preconChildren->getLength();l++) {
@@ -1700,7 +1762,8 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 			    }
 			  }
 			}
-		    } else if (strcmp(textContent,"block_ilu")==0) {
+		    }
+                    else if (strcmp(textContent,"block_ilu")==0) {
                         // loop through children and deal with them
                         xercesc::DOMNodeList* preconChildren= currentNode->getChildNodes();
                         for (int l=0; l<preconChildren->getLength();l++) {
@@ -1736,18 +1799,18 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
               }
             }
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Linear Solver") = lsPL;
-	    if (usePCPL)
+	        if (usePCPL)
               list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners") = pcPL;
-	    if (flowON) 
-	      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Flow Process Kernel") = fpkPL;
-	    if (transportON) 
-	      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transport Process Kernel") = tpkPL;
-	    if (chemistryON) 
-	      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Chemistry Process Kernel") = cpkPL;
+	        if (flowON)
+	          list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Flow Process Kernel") = fpkPL;
+	        if (transportON)
+	          list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transport Process Kernel") = tpkPL;
+	        if (chemistryON)
+	          list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Chemistry Process Kernel") = cpkPL;
           }
-          else if (strcmp(nodeName,"nonlinear_solver")==0) {
+            else if (strcmp(nodeName,"nonlinear_solver")==0) {
             // EIB: creating sub for section that doesn't actually exist yet in the New Schema, but does in the Input Spec
-	    Teuchos::ParameterList nlsPL;
+	        Teuchos::ParameterList nlsPL;
             xercesc::DOMNodeList* children = tmpNode->getChildNodes();
             for (int k=0; k<children->getLength(); k++) {
               xercesc::DOMNode* currentNode = children->item(k) ;
@@ -1757,9 +1820,9 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
                    textContent = XMLString::transcode(currentNode->getTextContent());
                    nlsPL.set<std::string>("Nonlinear Solver Type",textContent);
                    XMLString::release(&textContent);
-		}
-	      }
-	    }
+		        }
+              }
+	        }
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlsPL;
           }
         }
@@ -2098,6 +2161,7 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
   char* char_array;
   char* attrName;
   char* attrValue;
+  bool hasPerm = false;
 
   if (def_list.sublist("simulation").isParameter("verbosity")) {
     std::string verbosity = def_list.sublist("simulation").get<std::string>("verbosity") ;
@@ -2130,13 +2194,14 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
             tagName  = xercesc::XMLString::transcode(curkid->getNodeName());
 	    if (strcmp("assigned_regions",tagName)==0){
 	      //TODO: EIB - if this is more than 1 region -> assuming comma seperated list of strings????
-              textContent2 = xercesc::XMLString::transcode(curkid->getTextContent());
+          textContent2 = xercesc::XMLString::transcode(curkid->getTextContent());
 	      Teuchos::Array<std::string> regs = make_regions_list(textContent2);
 	      matlist.set<Teuchos::Array<std::string> >("Assigned Regions",regs);
 	      XMLString::release(&textContent2);
-	    } else if  (strcmp("mechanical_properties",tagName)==0){
+	    }
+        else if  (strcmp("mechanical_properties",tagName)==0){
               xercesc::DOMNodeList* list = curkid->getChildNodes();
-	      // loop over child: deal with porosity and density
+	          // loop over child: deal with porosity and density
               for (int k=0; k<list->getLength(); k++) {
                 xercesc::DOMNode* curkiddy = list->item(k) ;
                 if (xercesc::DOMNode::ELEMENT_NODE == curkiddy->getNodeType()) {
@@ -2150,46 +2215,46 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("particle_density",propName)==0){
 	            // TODO: EIB - assuming value, implement file later
-		    // TODO: EIB - should be check value >= 0.
+		        // TODO: EIB - should be check value >= 0.
                     attrMap = curkiddy->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Particle Density: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("specific_storage",propName)==0){
-		    // TODO: EIB - not handling file case
+		         // TODO: EIB - not handling file case
                     attrMap = curkiddy->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Specific Storage: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("specific_yield",propName)==0){
-		    // TODO: EIB - not handling file case
+		        // TODO: EIB - not handling file case
                     attrMap = curkiddy->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Specific Yield: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("dispersion_tensor",propName)==0){
-		    // TODO: EIB - not handling file case
+		        // TODO: EIB - not handling file case
                     attrMap = curkiddy->getAttributes();
-                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("alphaL"));
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("alpha_l"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Dispersion Tensor: Uniform Isotropic").set<double>("alphaL",get_double_constant(textContent2,def_list));
 	            XMLString::release(&textContent2);
-                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("alphaT"));
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("alpha_t"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Dispersion Tensor: Uniform Isotropic").set<double>("alphaT",get_double_constant(textContent2,def_list));
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("molecular_diffusion",propName)==0){
-		    // TODO: EIB - not handling file case
+		        // TODO: EIB - not handling file case
                     attrMap = curkiddy->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Molecular Diffusion: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("tortuosity",propName)==0){
-		    // TODO: EIB - not handling file case
+		        // TODO: EIB - not handling file case
                     attrMap = curkiddy->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
@@ -2198,8 +2263,10 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
 	          }
 		}
 	      }
-	    } else if  (strcmp("permeability",tagName)==0){
+	    }
+        else if  (strcmp("permeability",tagName)==0){
 	      // loop over attributes to get x,y,z
+	      hasPerm = true;
 	      char *x,*y,*z;
               attrMap = curkid->getAttributes();
 	      Teuchos::ParameterList perm;
@@ -2243,7 +2310,8 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
 		}
 	        matlist.sublist("Intrinsic Permeability: Anisotropic Uniform") = perm;
 	      }
-	    } else if  (strcmp("cap_pressure",tagName)==0){
+	    }
+        else if  (strcmp("cap_pressure",tagName)==0){
               attrMap = curkid->getAttributes();
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("model"));
               textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
@@ -2299,7 +2367,8 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
 		  capname = "Capillary Pressure: Brooks Corey";
 	      }
 	      XMLString::release(&textContent2);
-	    } else if  (strcmp("rel_perm",tagName)==0){
+	    }
+        else if  (strcmp("rel_perm",tagName)==0){
 	      // TODO: EIB - how to handle if cappress=false? ie, caplist not setup yet?
               attrMap = curkid->getAttributes();
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("model"));
@@ -2329,10 +2398,16 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
       }
       if(cappressON) matlist.sublist(capname) = caplist;
       list.sublist(textContent) = matlist;
-      XMLString::release(&textContent2);
+      list.print(std::cout,true,false);
     }
 
   }
+  if (!hasPerm){
+    Teuchos::ParameterList perm;
+    perm.set<double>("Value",0.0);
+    list.sublist(textContent).sublist("Intrinsic Permeability: Uniform") = perm;
+  }
+  XMLString::release(&textContent);
 
   return list;
   
@@ -3307,6 +3382,8 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
 	              obPL.set<std::string>("Variable","Aqueous mass flow rate");
                     } else if (strcmp(obsType,"aqueous_volumetric_flow_rate")==0) {
 	              obPL.set<std::string>("Variable","Aqueous volumetric flow rate");
+		    } else if (strcmp(obsType,"aqueous_saturation")==0) {
+		      obPL.set<std::string>("Variable","Aqueous saturation");
                     } else if (strcmp(obsType,"aqueous_conc")==0) {
 	              // get solute name
                       xercesc::DOMNamedNodeMap* attrMap = curObs->getAttributes();

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy
-import model_linear_head_head_1d
+import model_linear_materials_serial_1d
 from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
@@ -44,28 +44,36 @@ def plotTestObservations(Obs_xml, Obs_data, axes1):
     for key in cmap.keys():
         scatter_data[key]={}
         scatter_data[key]['x']=[]
-        scatter_data[key]['pressure']=[]
+        scatter_data[key]['head']=[]
 
     # Collect observations in scatter_data
+    p_atm = 101325.0
+    rho = 998.2
+    g = 9.80665
     for obs in Obs_data.observations.itervalues(): 
         scatter_data[obs.coordinate[2]]['x'].append(obs.coordinate[0])
-        scatter_data[obs.coordinate[2]]['pressure'].append(obs.data)
+
+        # Convert from pressure to hydraulic head.
+        # This isn't really great, but it gets us there for the moment.
+        p = obs.data
+        h = [(p[i] - p_atm) / (rho*g) + obs.coordinate[2] for i in xrange(len(p))]
+        scatter_data[obs.coordinate[2]]['head'].append(h)
 
     # Plot the observations
     for key in cmap.keys():
-        axes1.scatter(scatter_data[key]['x'],scatter_data[key]['pressure'],c=cmap[key],marker='s',s=25,label='Amanzi')
+        axes1.scatter(scatter_data[key]['x'],scatter_data[key]['head'],c=cmap[key],marker='s',s=25,label='Amanzi')
 
     # Set labels and title
     axes1.set_xlabel('x-coordinate [m]')
-    axes1.set_ylabel('Pressure [Pa]')
-    axes1.set_title('Aqueous Pressure vs Distance')
+    axes1.set_ylabel('Head [m]')
+    axes1.set_title('Hydraulic head vs Distance')
     
     return cmap
 
 def plotTestModel(filename, cmap, axes1, Obs_xml, Obs_data):
 
     # Instantiate the analytic solution
-    mymodel = model_linear_head_head_1d.createFromXML(filename)
+    mymodel = model_linear_materials_serial_1d.createFromXML(filename)
     table_values = []
 
     # Create a set of points to plot the solution
@@ -76,27 +84,34 @@ def plotTestModel(filename, cmap, axes1, Obs_xml, Obs_data):
     # Plot a line for each z-coordinate in the observations
     for (z_val, color) in cmap.iteritems():
         coords[:,1] = z_val
-        pressure = mymodel.pressure(coords)
-        axes1.plot(x,pressure,color,label='$z = %0.2f $'%z_val)
+        head = mymodel.head(coords)
+        axes1.plot(x,head,color,label='$z = %0.2f $'%z_val)
         axes1.legend(loc="upper right" , fancybox = True , shadow = True)
           
 def MakeTable(Obs_data,Obs_xml,filename):
 
-    pressure_amanzi = []
+    head_amanzi = []
     coordinates = []
-    mymodel = model_linear_head_head_1d.createFromXML(filename)
+    mymodel = model_linear_materials_serial_1d.createFromXML(filename)
 
+    p_atm = 101325.0
+    rho = 998.2
+    g = 9.80665
     for obs in Obs_data.observations.itervalues():
         coordinates.append([obs.coordinate[0], obs.coordinate[2]])
-        pressure_amanzi.append(str(obs.data).rstrip(']').lstrip('['))
+        # Convert from pressure to hydraulic head.
+        # This isn't really great, but it gets us there for the moment.
+        p = obs.data
+        h = [(p[i] - p_atm) / (rho*g) + obs.coordinate[2] for i in xrange(len(p))]
+        head_amanzi.append(str(h).rstrip(']').lstrip('['))
 
-    pressure_analytic = list(mymodel.pressure(numpy.array(coordinates)))
+    head_analytic = list(mymodel.head(numpy.array(coordinates)))
 
-    x = prettytable.PrettyTable(["x [m]", "z [m]", "Analytic [Pa]","Amanzi [Pa]"])
+    x = prettytable.PrettyTable(["x [m]", "z [m]", "Analytic [m]","Amanzi [m]"])
     x.padding_width = 1
     x.hrules = 1
-    for coords, p_analytic, p_amanzi in zip(coordinates,pressure_analytic,pressure_amanzi):
-        x.add_row([coords[0],coords[1],"%.4f" % float(p_analytic),"%.4f" % float(p_amanzi)])
+    for coords, h_analytic, h_amanzi in zip(coordinates,head_analytic,head_amanzi):
+        x.add_row([coords[0],coords[1],"%.4f" % float(h_analytic),"%.4f" % float(h_amanzi)])
         
     if os.path.exists("table_values.txt"):
         os.remove("table_values.txt")
@@ -110,7 +125,7 @@ if __name__ == "__main__":
     import os
     import run_amanzi
 
-    input_filename = "amanzi_linear_head_head_1d.xml"
+    input_filename = "amanzi_linear_materials_serial_1d.xml"
     try: 
         run_amanzi.run_amanzi("../"+input_filename)
         obs_xml=loadInputXML(input_filename)
@@ -122,7 +137,6 @@ if __name__ == "__main__":
         cmap = plotTestObservations(obs_xml,obs_data,axes1)
         plotTestModel(input_filename,cmap,axes1,obs_xml,obs_data)
         #plt.show()
-
         MakeTable(obs_data,obs_xml,input_filename)
 
     finally:

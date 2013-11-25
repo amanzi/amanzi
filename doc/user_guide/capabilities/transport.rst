@@ -48,7 +48,7 @@ taken as the asymptotic limiting form of the dispersion tensor.
 The dispersive flux has the form
 
 .. math::
-  \boldsymbol{J}_i^\text{disp} = \phi s_l \boldsymbol{D} \nabla C_i,
+  \boldsymbol{J}_i^\text{disp} = - \phi s_l \boldsymbol{D} \nabla C_i,
 
 where :math:`\boldsymbol{D}` denotes the dispersion tensor.
 The dispersion tensor takes different forms depending on whether the media 
@@ -94,7 +94,7 @@ The diffusive flux, then, is given by
 
 .. math::
   \boldsymbol{J}_{i}^\text{diff} 
-  = \phi s_l D_i \tau_{L} \nabla C_i.
+  = - \phi s_l D_i \tau_{L} \nabla C_i.
 
 where :math:`D_i` is referred to as the diffusion coefficient and 
 is specific to the chemical component considered as indicated by the subscript :math:`i`. 

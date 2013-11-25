@@ -1,4 +1,4 @@
-2D Dispersive Transport in a Uniform Flow Field (alighed)
+2D Dispersive Transport in a Uniform Flow Field (aligned)
 =========================================================
 
 Introduction

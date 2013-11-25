@@ -1,7 +1,7 @@
 import numpy
 import matplotlib.pylab as plt
 
-class LinearFluxHead(object):
+class LinearMaterialsParallel(object):
 
     """
     Solves the system:
@@ -10,8 +10,8 @@ class LinearFluxHead(object):
 
     Boundary conditions are given by:
 
-       U(x_0,z,t) = U_0 [m/s]  =>  p(x_0,z,t)=(U_0 L / K + h_L - z) \rho g
-       h(x_1,z,t) = h_L [m]    =>  p(x_1,z,t)=(h_L-z) \rho g
+       h(x_0,z,t) = h_0 [m]
+       h(x_1,z,t) = h_L [m]
 
     Parameters are in units of:
 
@@ -31,47 +31,39 @@ class LinearFluxHead(object):
         params.setdefault("z_0",0)
         params.setdefault("z_1",10)
 
-        params.setdefault("k",1.0)
+        params.setdefault("k1",1.1847e-12)
+        params.setdefault("k2",1.1847e-11)
         params.setdefault("rho",998.2)
         params.setdefault("mu",1.002e-3)
 
-        params.setdefault("U_0",0.01)
-        params.setdefault("h_1",19.0)
+        params.setdefault("h_0",20.0)
+        params.setdefault("h_L",19.0)
 
         params.setdefault("g",9.80665)
         params.setdefault("p_atm",101325.0)
 
         self.__dict__.update(params)
 
-        self.K = self.k*self.g*self.rho / self.mu
-
     def head(self, coords):
 
         """
         Compute the head at the x-values given by coords[:]
 
-          h(x) = \frac{U_0 L}{K}(1 - \frac{x}{L}) + h_1
+          h(x) = (h_L - h_0)*(x/L) + h0, i = 1,2
 
         """
 
         head = numpy.zeros(len(coords))
-        head[:] = self.U_0 * self.x_1 / self.K * (1.0 - coords[:,0]/self.x_1) + self.h_1
-
+        # Compute the head at the interface.
+        h0 = self.h_0
+        hL = self.h_L
+        L = self.x_1 - self.x_0
+        K1 = self.rho * self.g * self.k1 / self.mu
+        K2 = self.rho * self.g * self.k2 / self.mu
+        for i in xrange(len(coords[:,0])):
+            x = coords[i,0]
+            head[i] = (hL - h0)*(x/L) + h0
         return head
-
-    def pressure(self, coords):
-
-        """
-        Compute the pressure at (x,z)-coordinates in the coords[:,:] array.
-        Note: coords has dimension len(coords) x 2.
-        """
-        
-        pressure = numpy.zeros((len(coords),),'d')
-        head = self.head(coords)
-
-        pressure[:]=self.p_atm+(head[:]-coords[:,1])*self.rho*self.g
-
-        return pressure
 
 def createFromXML(filename):
 
@@ -93,14 +85,15 @@ def createFromXML(filename):
     #
     #  Material Properties
     #
-    params["k"]   = search.getElementByPath(xml, "/Main/Material Properties/Soil/Intrinsic Permeability: Uniform/Value").value
+    params["k1"]  = search.getElementByPath(xml, "/Main/Material Properties/Front Material/Intrinsic Permeability: Uniform/Value").value
+    params["k2"]  = search.getElementByPath(xml, "/Main/Material Properties/Back Material/Intrinsic Permeability: Uniform/Value").value
     params["mu"]  = search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
     params["rho"] = search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
 
     #
     #  Boundary Conditions
     #
-    params["U_0"] = search.getElementByPath(xml, "/Main/Boundary Conditions/LeftBC/BC: Flux/Inward Mass Flux").value[0]/params["rho"]
+    params["h_0"] = search.getElementByPath(xml, "/Main/Boundary Conditions/LeftBC/BC: Hydrostatic/Water Table Height").value[0]
     params["h_L"] = search.getElementByPath(xml, "/Main/Boundary Conditions/RightBC/BC: Hydrostatic/Water Table Height").value[0] 
 
     #
@@ -109,15 +102,15 @@ def createFromXML(filename):
     params.setdefault("g",9.80665)
    
     # instantiate the class
-    return LinearFluxHead(params)
+    return LinearMaterialsParallel(params)
 
 if __name__ == "__main__":
 
     # Instantiate the class 
-    lfh = LinearFluxHead()
+    lhh = LinearMaterialsParallel()
 
     # Get 11 equally spaced points: dx=(x_1-x_0)/10
-    x = numpy.linspace(lfh.x_0,lfh.x_1,11)
+    x = numpy.linspace(lhh.x_0,lhh.x_1,11)
 
     # Create space for a set of (x,z) points
     coords = numpy.zeros((11,2))
@@ -126,22 +119,20 @@ if __name__ == "__main__":
     # set z
     coords[:,1]=3
     
-    # compute heads and pressures 
-    h1 = lfh.head(coords)
-    p1 = lfh.pressure(coords)
+    # compute head.
+    h1 = lhh.head(coords)
 
     # reset z
     coords[:,1]=7
 
-    # compute heads and pressures
-    h2 = lfh.head(coords)
-    p2 = lfh.pressure(coords)
+    # compute head.
+    h2 = lhh.head(coords)
 
     # plot 
     plt.plot(x,h1)
     plt.plot(x,h2)
     plt.xlabel('x-coordinate [m]')
-#    plt.ylabel('Pressure [Pa]')
+    plt.ylabel('Head [m]')
 
     # show the plot
     plt.show()

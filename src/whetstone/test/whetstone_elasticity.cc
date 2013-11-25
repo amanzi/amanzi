@@ -55,22 +55,23 @@ TEST(ELASTICITY_STIFFNESS_2D) {
   int nnodes = 5, nrows = nnodes * 2, cell = 0;
   DenseMatrix A(nrows, nrows);
 
-  for (int method = 0; method < 1; method++) {
+  for (int method = 0; method < 2; method++) {
     Tensor T;
     double lambda(1.0), mu(0.0);
     if (method == 0) {
       T.init(2, 1);
       T(0, 0) = 1.0;
     } else if (method == 1) {
-      mu = 0.0;
-      lambda = 1.0;
+      mu = 3.0;
+      lambda = 0.0;
       T.init(2, 4);
-      T(0, 0) = T(1, 1) = lambda + 2 * mu / 4;
+      T(0, 0) = T(1, 1) = lambda + 2 * mu;
       T(0, 1) = T(1, 0) = lambda;
-      T(2, 2) = mu / 4;
+      T(2, 2) = mu;
     }
 
-    mfd.StiffnessMatrix(cell, T, A);
+    // mfd.StiffnessMatrix(cell, T, A);
+    mfd.StiffnessMatrixOptimized(cell, T, A);
     // mfd.StiffnessMatrixMMatrix(cell, T, A);
     // cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << endl;
     // cout << "Functional value=" << mfd.simplex_functional() << endl;
