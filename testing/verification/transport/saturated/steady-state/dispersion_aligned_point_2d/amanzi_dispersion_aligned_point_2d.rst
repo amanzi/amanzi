@@ -116,8 +116,7 @@ The two other cuts are given by lines :math:`x=0` and :math:`x=424`.
 .. plot:: amanzi_dispersion_aligned_point_2d-a.py
    :align: center
 
-
-.. include:: table_values_centerline.txt
+.. include:: table_centerline.txt
 
 The analytic data were computed with the AT123DAT software package.
 A difference is observed near the downstream boundary for Amanzi with 
@@ -127,15 +126,14 @@ scheme provides excellent match (circles).
 .. plot:: amanzi_dispersion_aligned_point_2d-b.py
    :align: center
 
-
-.. include:: table_values_cross_a.txt
+.. include:: table_cross-section-b.txt
 
 
 .. plot:: amanzi_dispersion_aligned_point_2d-c.py
    :align: center
 	   
 
-.. include:: table_values_cross_b.txt
+.. include:: table_cross-section-c.txt
 
 
 References
