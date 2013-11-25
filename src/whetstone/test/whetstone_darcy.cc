@@ -1,7 +1,7 @@
 /*
-The transport component of the Amanzi code, serial unit tests.
-License: BSD
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  The discretization component of Amanzi.
+  License: BSD
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
@@ -122,16 +122,17 @@ TEST(DARCY_INVERSE_MASS_3D) {
 
   DenseMatrix W(nfaces, nfaces);
   for (int method = 0; method < 5; method++) {
-    if (method == 0) 
+    if (method == 0) {
       mfd.MassMatrixInverse(cell, T, W);
-    else if (method == 1)
+    } else if (method == 1) {
       mfd.MassMatrixInverseScaled(cell, T, W);
-    else if (method == 2)
+    } else if (method == 2) {
       mfd.MassMatrixInverseOptimizedScaled(cell, T, W);
-    else if (method == 3)
+    } else if (method == 3) {
       mfd.MassMatrixInverseSO(cell, T, W);
-    else if (method == 4)
+    } else if (method == 4) {
       mfd.MassMatrixInverseMMatrixHex(cell, T, W);
+    }
 
     printf("Inverse of mass matrix for method=%d\n", method);
     for (int i=0; i<6; i++) {
@@ -203,17 +204,22 @@ TEST(DARCY_FULL_TENSOR) {
   T(1, 2) = T(2, 1) = 1.0;
 
   DenseMatrix W(nfaces, nfaces);
-  for (int method = 0; method < 5; method++) {
-    if (method == 0) 
+  for (int method = 0; method < 6; method++) {
+    if (method == 0) {
       mfd.MassMatrixInverse(cell, T, W);
-    else if (method == 1)
+    } else if (method == 1) {
       mfd.MassMatrixInverseScaled(cell, T, W);
-    else if (method == 2)
+    } else if (method == 2) {
       mfd.MassMatrixInverseOptimizedScaled(cell, T, W);
-    else if (method == 3)
+    } else if (method == 3) {
       mfd.MassMatrixInverseSO(cell, T, W);
-    else if (method == 4)
+    } else if (method == 4) {
       mfd.MassMatrixInverseMMatrixHex(cell, T, W);
+    } else if (method == 5) {
+      mfd.MassMatrixInverseMMatrix(cell, T, W);
+      cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << endl;
+      cout << "Functional value=" << mfd.simplex_functional() << endl;
+    }
 
     printf("Inverse of mass matrix for method=%d\n", method);
     for (int i=0; i<6; i++) {
@@ -271,51 +277,60 @@ TEST(DARCY_STIFFNESS_2D) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  RCP<Mesh> mesh = meshfactory("test/one_cell2.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
-  int nnodes = 4, cell = 0;
+  int nnodes = 5, cell = 0;
   Tensor T(2, 1);
   T(0, 0) = 1;
 
   DenseMatrix A(nnodes, nnodes);
-  mfd.StiffnessMatrix(cell, T, A);
-
-  printf("Stiffness matrix for cell %3d\n", cell);
-  for (int i=0; i<nnodes; i++) {
-    for (int j=0; j<nnodes; j++ ) printf("%8.4f ", A(i, j)); 
-    printf("\n");
-  }
-
-  // verify SPD propery
-  for (int i=0; i<nnodes; i++) CHECK(A(i, i) > 0.0);
-
-  // verify exact integration property
-  AmanziMesh::Entity_ID_List nodes;
-  std::vector<int> dirs;
-  mesh->cell_get_nodes(cell, &nodes);
-    
-  int d = mesh->space_dimension();
-  Point p(d);
-
-  double xi, yi, xj;
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
-  for (int i = 0; i < nnodes; i++) {
-    int v = nodes[i];
-    mesh->node_get_coordinates(v, &p);
-    xi = p[0];
-    yi = p[1];
-    for (int j = 0; j < nnodes; j++) {
-      v = nodes[j];
-      mesh->node_get_coordinates(v, &p);
-      xj = p[0];
-      vxx += A(i, j) * xi * xj;
-      vxy += A(i, j) * yi * xj;
+  for (int method = 0; method < 2; method++) {
+    if (method == 0) {
+      mfd.StiffnessMatrix(cell, T, A);
+    } else if (method == 1) {
+      mfd.StiffnessMatrixMMatrix(cell, T, A);
+      cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << endl;
+      cout << "Functional value=" << mfd.simplex_functional() << endl;
     }
+
+    printf("Stiffness matrix for cell %3d\n", cell);
+    for (int i=0; i<nnodes; i++) {
+      for (int j=0; j<nnodes; j++ ) printf("%8.4f ", A(i, j)); 
+      printf("\n");
+    }
+
+    // verify SPD propery
+    for (int i=0; i<nnodes; i++) CHECK(A(i, i) > 0.0);
+
+    // verify exact integration property
+    AmanziMesh::Entity_ID_List nodes;
+    std::vector<int> dirs;
+    mesh->cell_get_nodes(cell, &nodes);
+    
+    int d = mesh->space_dimension();
+    Point p(d);
+
+    double xi, yi, xj;
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+    for (int i = 0; i < nnodes; i++) {
+      int v = nodes[i];
+      mesh->node_get_coordinates(v, &p);
+      xi = p[0];
+      yi = p[1];
+      for (int j = 0; j < nnodes; j++) {
+        v = nodes[j];
+        mesh->node_get_coordinates(v, &p);
+        xj = p[0];
+        vxx += A(i, j) * xi * xj;
+        vxy += A(i, j) * yi * xj;
+      }
+    }
+    CHECK_CLOSE(vxx, volume, 1e-10);
+    CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
-  CHECK_CLOSE(vxx, volume, 1e-10);
-  CHECK_CLOSE(vxy, 0.0, 1e-10);
 
   delete comm;
 }
@@ -524,7 +539,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
   factory.preference(pref);
   // RCP<Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
   // RCP<Mesh> mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
-  // RCP<Mesh> mesh = factory("test/one_cell2.exo"); 
+  // RCP<Mesh> mesh = factory("test/one_cell3.exo"); 
   RCP<Mesh> mesh = factory("test/dodecahedron.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
@@ -534,12 +549,14 @@ TEST(DARCY_INVERSE_MASS_2D) {
   T(0, 0) = 1.0;
   T(1, 1) = 1.0;
   T(2, 2) = 1.0;
-  T(0, 1) = T(1, 0) = 0.5;
+  T(0, 1) = T(1, 0) = 0.0;
 
   DenseMatrix W(nfaces, nfaces);
   for (int method = 0; method < 1; method++) {
     if (method == 0) {
       ok = mfd.MassMatrixInverseMMatrix(cell, T, W);
+      cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << endl;
+      cout << "Functional value=" << mfd.simplex_functional() << endl;
     }
 
     printf("Inverse of mass matrix for method=%d  ierr=%d\n", method, ok);
@@ -575,8 +592,8 @@ TEST(DARCY_INVERSE_MASS_2D) {
         vxy += W(i, j) * yi * xj;
       }
     }
-    CHECK_CLOSE(vxx, volume * T(0, 0), 1e-10);
-    CHECK_CLOSE(vxy, volume * T(0, 1), 1e-10);
+    CHECK_CLOSE(volume * T(0, 0), vxx, 1e-10);
+    CHECK_CLOSE(volume * T(0, 1), vxy, 1e-10);
   }
 
   delete comm;

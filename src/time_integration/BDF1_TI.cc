@@ -455,7 +455,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     
     // apply damping
     du.Scale(state.damp);
-    if (state.ntol_multiplier_current != 1.0) du.Scale(0.5); 
+    if (state.ntol_multiplier_current != 1.0) du.Scale(0.3); 
 
     bool clip;
     if (fn.IsPureNewton()) {

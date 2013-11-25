@@ -1,7 +1,7 @@
 /*
-The transport component of the Amanzi code, serial unit tests.
-License: BSD
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  The discretiation component of the Amanzi code.
+  License: BSD
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
@@ -47,11 +47,12 @@ TEST(ELASTICITY_STIFFNESS_2D) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  RCP<Mesh> mesh = meshfactory("test/one_cell2.exo"); 
  
   MFD3D_Elasticity mfd(mesh);
 
-  int nnodes = 4, nrows = 8, cell = 0;
+  int nnodes = 5, nrows = nnodes * 2, cell = 0;
   DenseMatrix A(nrows, nrows);
 
   for (int method = 0; method < 2; method++) {
@@ -61,23 +62,28 @@ TEST(ELASTICITY_STIFFNESS_2D) {
       T.init(2, 1);
       T(0, 0) = 1.0;
     } else if (method == 1) {
-      mu = 1.0;
+      mu = 3.0;
+      lambda = 0.0;
       T.init(2, 4);
       T(0, 0) = T(1, 1) = lambda + 2 * mu;
       T(0, 1) = T(1, 0) = lambda;
-      T(2, 2) = 4 * mu;
+      T(2, 2) = mu;
     }
 
-    mfd.StiffnessMatrix(cell, T, A);
+    // mfd.StiffnessMatrix(cell, T, A);
+    mfd.StiffnessMatrixOptimized(cell, T, A);
+    // mfd.StiffnessMatrixMMatrix(cell, T, A);
+    // cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << endl;
+    // cout << "Functional value=" << mfd.simplex_functional() << endl;
 
     printf("Stiffness matrix for cell %3d\n", cell);
-    for (int i=0; i<nrows; i++) {
-      for (int j=0; j<nrows; j++ ) printf("%8.4f ", A(i, j)); 
+    for (int i = 0; i < nrows; i++) {
+      for (int j = 0; j < nrows; j++ ) printf("%8.4f ", A(i, j)); 
       printf("\n");
     }
 
     // verify SPD propery
-    for (int i=0; i<nrows; i++) CHECK(A(i, i) > 0.0);
+    for (int i = 0; i < nrows; i++) CHECK(A(i, i) > 0.0);
 
     // verify exact integration property
     AmanziMesh::Entity_ID_List nodes;
@@ -87,23 +93,27 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     int d = mesh->space_dimension();
     Point p(d);
 
-    double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+    double xx[nrows], yy[nrows];
     for (int i = 0; i < nnodes; i++) {
       int v = nodes[i];
       mesh->node_get_coordinates(v, &p);
-      xi = p[0];
-      yi = p[1];
+      xx[i] = p[0];    
+      xx[i + nnodes] = 0.0;    
+
+      yy[i] = 0.0;    
+      yy[i + nnodes] = p[1];
+    }
+
+    double xi, yi, xj;
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+    for (int i = 0; i < nnodes; i++) {
       for (int j = 0; j < nnodes; j++) {
-        v = nodes[j];
-        mesh->node_get_coordinates(v, &p);
-        xj = p[0];
-        vxx += A(i, j) * xi * xj;
-        vxy += A(i, j) * yi * xj;
+        vxx += A(i, j) * xx[i] * xx[j];
+        vxy += A(i, j) * yy[i] * xx[j];
       }
     }
-    CHECK_CLOSE(vxx, (2 * mu + lambda) * volume, 1e-10);
-    CHECK_CLOSE(vxy, 0.0, 1e-10);
+    CHECK_CLOSE((2 * mu + lambda) * volume, vxx, 1e-10);
+    CHECK_CLOSE(0.0, vxy, 1e-10);
   }
 
   delete comm;

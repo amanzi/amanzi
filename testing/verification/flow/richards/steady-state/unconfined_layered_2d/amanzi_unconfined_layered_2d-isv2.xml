@@ -84,7 +84,7 @@
 			<comments>Confining unit left boundary</comments>
 			<box low_coordinates="0.0, 0.0, 30.48"    high_coordinates="0.0, 1.0, 33.528"/>
 		</region>
-		<region name ="Left Confined Aquifer">
+		<region name ="Left Unconfined Aquifer">
 			<comments>Unconfined aquifer left boundary</comments>
 			<box low_coordinates="0.0, 0.0, 33.528"   high_coordinates="0.0, 1.0, 64.008"/>
 		</region>
@@ -96,7 +96,7 @@
 			<comments>Confining unit right boundary</comments>
 			<box low_coordinates="304.8, 0.0, 30.48"  high_coordinates="304.8, 1.0, 33.528"/>
 		</region>
-		<region name ="Right Confined Aquifer">
+		<region name ="Right Unconfined Aquifer">
 			<comments>Unconfined aquifer right boundary</comments>
 			<box low_coordinates="304.8, 0.0, 33.528" high_coordinates="304.8, 1.0, 64.008"/>
 		</region>
@@ -347,7 +347,7 @@
 			<assigned_regions>Left Confined Aquifer</assigned_regions>
 			<liquid_phase name = "water">
 				<liquid_component name = "water">
-					<hydrostatic start="0.0" function= "constant" value="48.768"/>
+					<hydrostatic start="0.0" function="constant" value="48.768"/>
 				</liquid_component>
 			</liquid_phase>
 		</boundary_condition>
@@ -356,10 +356,11 @@
 			<assigned_regions>Left Unconfined Aquifer</assigned_regions>
 			<liquid_phase name = "water">
 				<liquid_component name = "water">
-					<hydrostatic start="0.0" function= "constant" value="51.816"/>
+					<hydrostatic start="0.0" function="constant" value="51.816"/>
 				</liquid_component>
 			</liquid_phase>
 		</boundary_condition>
+<!--
 		<boundary_condition name = "LeftBC Confining Unit">
 			<comments>Confining Unit at x=0</comments>
 			<assigned_regions>Left Confining Unit</assigned_regions>
@@ -369,13 +370,13 @@
 				</liquid_component>
 			</liquid_phase>
 		</boundary_condition>
-
+-->
 		<boundary_condition name = "RightBC Confined Aquifer">
 			<comments>Confined Aquifer at x=L</comments>
 			<assigned_regions>Right Confined Aquifer</assigned_regions>
 			<liquid_phase name = "water">
 				<liquid_component name = "water">
-					<hydrostatic start="0.0" function= "constant" value="36.576"/>
+					<hydrostatic start="0.0" function="constant" value="36.576"/>
 				</liquid_component>
 			</liquid_phase>
 		</boundary_condition>
@@ -384,10 +385,12 @@
 			<assigned_regions>Right Unconfined Aquifer</assigned_regions>
 			<liquid_phase name = "water">
 				<liquid_component name = "water">
-					<hydrostatic start="0.0" function= "constant" value="39.624"/>
+					<hydrostatic start="0.0" function="constant" value="39.624"/>
 				</liquid_component>
 			</liquid_phase>
 		</boundary_condition>
+
+<!--
 		<boundary_condition name = "RightBC Confining Unit">
 			<comments>Confining Unit at x=L</comments>
 			<assigned_regions>Right Confining Unit</assigned_regions>
@@ -397,6 +400,7 @@
 				</liquid_component>
 			</liquid_phase>
 		</boundary_condition>
+-->
 	</boundary_conditions>
 
 	<output>

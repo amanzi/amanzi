@@ -152,6 +152,18 @@ def RecurseCopy(amanzi_home,content,level,logfile):
         distutils.dir_util.copy_tree(content_from, content_dest)
 
         level=level-1
+
+    elif ('from_file' in content.keys()):
+        
+        content_from=amanzi_home+os.sep+content['from_file']
+        content_dest=amanzi_home+os.sep+content['dest_file']
+        if not os.path.exists(os.path.dirname(content_dest)):
+            os.makedirs(os.path.dirname(content_dest))
+
+        logfile.write('  %s\n  %s\n' % (content_from, content_dest) )
+        shutil.copyfile(content_from, content_dest)
+
+        level=level-1
         
     else:
 

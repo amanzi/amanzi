@@ -22,23 +22,26 @@
       <Parameter name="Verbosity" type="string" value="High"/>
       <ParameterList name="Numerical Control Parameters">
         <ParameterList name="Unstructured Algorithm">
-          <Parameter name="steady max iterations" type="int" value="15"/>
-          <Parameter name="steady min iterations" type="int" value="10"/>
-          <Parameter name="steady limit iterations" type="int" value="20"/>
-          <Parameter name="steady nonlinear tolerance" type="double" value="1e-6"/>
-          <Parameter name="steady max time step" type="double" value="3.16E11"  units="s"/>
-          <Parameter name="steady max preconditioner lag iterations" type="int" value="1"/>
-          <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
-          <Parameter name="steady time step increase factor" type="double" value="1.25"/>
-	  <!-- I replaced steady or Steady-State with transient -->
-          <Parameter name="transient max iterations" type="int" value="15"/>
-          <Parameter name="transient min iterations" type="int" value="10"/>
-          <Parameter name="transient limit iterations" type="int" value="20"/>
-          <Parameter name="transient nonlinear tolerance" type="double" value="1e-6"/>
-          <Parameter name="transient max time step" type="double" value="8.64E3"  units="s"/>
-          <Parameter name="transient max preconditioner lag iterations" type="int" value="1"/>
-          <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
-          <Parameter name="transient time step increase factor" type="double" value="1.25"/>
+          <ParameterList name="Steady-State Implicit Time Integration">
+            <Parameter name="steady max iterations" type="int" value="15"/>
+            <Parameter name="steady min iterations" type="int" value="10"/>
+            <Parameter name="steady limit iterations" type="int" value="20"/>
+            <Parameter name="steady nonlinear tolerance" type="double" value="1e-6"/>
+            <Parameter name="steady max time step" type="double" value="3.16E11"  units="s"/>
+            <Parameter name="steady max preconditioner lag iterations" type="int" value="1"/>
+            <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="steady time step increase factor" type="double" value="1.25"/>
+          </ParameterList>
+          <ParameterList name="Transient Implicit Time Integration">
+            <Parameter name="transient max iterations" type="int" value="15"/>
+            <Parameter name="transient min iterations" type="int" value="10"/>
+            <Parameter name="transient limit iterations" type="int" value="20"/>
+            <Parameter name="transient nonlinear tolerance" type="double" value="1e-6"/>
+            <Parameter name="transient max time step" type="double" value="8.64E3"  units="s"/>
+            <Parameter name="transient max preconditioner lag iterations" type="int" value="1"/>
+            <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="transient time step increase factor" type="double" value="1.25"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -87,8 +90,9 @@
           <Parameter name="Value" type="double" value="0.43" units="fraction"/>
         </ParameterList>
         <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-          <Parameter name="x" type="double" value="1.18472e-11"  units="m/s"/>
+          <Parameter name="x" type="double" value="1.18472e-11" units="m/s"/>
           <Parameter name="y" type="double" value="1.18472e-11" units="m/s"/>
+          <Parameter name="z" type="double" value="1.18472e-11" units="m/s"/>
         </ParameterList>
         <ParameterList name="Capillary Pressure: van Genuchten">
           <Parameter name="alpha" type="double" value="1.532333e-3" units="Pa^-1"/>

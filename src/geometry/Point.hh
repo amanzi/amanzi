@@ -17,7 +17,6 @@ Authors: Rao Garimella
 #include <vector>
 #include <cmath>
 
-
 namespace Amanzi {
 namespace AmanziGeometry {
 
@@ -178,9 +177,8 @@ inline double norm(const Point& p) { return sqrt(p*p); }
 
 typedef std::vector<Point> Point_List;
 
-
-}  // end namespace AmanziGeometry
-}  // end namespace Amanzi
+}  // namespace AmanziGeometry
+}  // namespace Amanzi
 
 #endif
 

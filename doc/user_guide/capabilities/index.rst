@@ -1,11 +1,11 @@
-Capability Overview
-===================
-
-Contents:
+.. _Features
+Amanzi Features and Capabilities
+=====================
 
 .. toctree::
    :maxdepth: 3
 
-   flow.rst
-   transport.rst
-   chemistry.rst
+   features.rst
+   process.rst
+
+

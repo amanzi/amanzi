@@ -2629,11 +2629,18 @@ void  PorousMedia::read_source()
 	std::string source_type; pps.get("type",source_type);
 	if (source_type == "uniform"
 	    || source_type == "volume_weighted"
-	    || source_type == "permeability_weighted")
+	    || source_type == "permeability_weighted"
+	    || source_type == "point")
 	  {
 	    int nvars = pps.countval("vals");
 	    BL_ASSERT(nvars>0);
 	    Array<Real> vals; pps.getarr("vals",vals,0,nvars);
+
+            if (source_type == "point") {
+              BL_ASSERT(source_regions.size() == 1);
+              BL_ASSERT(source_regions[0].type=="point");
+            }
+
 	    source_array.set(i, new RegionData(source_name,source_regions,source_type,vals));
 	  }
 	else {
@@ -2674,7 +2681,8 @@ void  PorousMedia::read_source()
 		if (pps_c_t.countval("type")) {
 		  std::string tsource_type; pps_c_t.get("type",tsource_type);              
 		  if (tsource_type == "uniform"
-		      || tsource_type == "flow_weighted")
+		      || tsource_type == "flow_weighted"
+		      || tsource_type == "point")
 		    {
 		      int ntvars = pps_c_t.countval("vals");
 		      BL_ASSERT(ntvars>0);

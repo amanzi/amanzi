@@ -65,11 +65,11 @@
 		</region>
 		<region name ="Left">
 			<comments>Left boundary</comments>
-			<box low_coordinates= "0.0, 0.0"   high_coordinates="-1.0, 0.0"/>
+			<plane location= "0.0, 0.0"   normal="-1.0, 0.0"/>
 		</region>
 		<region name ="Right">
 			<comments>Right boundary</comments>
-			<box low_coordinates= "30.48, 0.0" high_coordinates="1.0, 0.0"/>
+			<plane location= "30.48, 0.0" normal="1.0, 0.0"/>
 		</region>
 		<point name="Point0"   coordinate=" 0.1524, 0.1524"/>
 		<point name="Point10"  coordinate=" 3.2004, 0.1524"/>

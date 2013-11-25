@@ -64,7 +64,6 @@
           Volume(volume), X(volume), Y(volume) {}
       ~Diffuser() {delete opOld; delete opNew;}
       void Diffuse(const Vector* Sold, Vector& Snew, const Vector& dRhs, Real t_old, Real t_new, Real abs_tol, Real rel_tol) {
-
         Real dt = t_new - t_old;
         if (Sold != 0) {
           X.COPY(*Sold);                     // S (=X) = Cn
@@ -79,11 +78,11 @@
           Y.COPY(dRhs);
           Y.MULTAY(Volume,dt);
         }
-        Real scale = opNew->ScaleOperator(); //   a <- a/scale
+        Real scale = opNew->ScaleOperator(); // a,b <- a,b/scale
         Y.SCALE(scale);                      // Rhs <- Rhs.scale 
         LinSolver<Vector, DiffuserOp<Vector, Op> > solver(*opNew);
-        solver.Solve(Snew,Y,abs_tol,rel_tol);// Cnp1: Lnp1(Cnp1) =  Ln(Cn) + (phi.s.Cn + dt * dRhs ) * Vol
-        opNew->UnscaleOperator(scale);       // a <- a.scale
+        solver.Solve(Snew,Y,abs_tol,rel_tol);// Cnp1: phi.s.Cnp1.Vol + Lnp1(Cnp1) =  Ln(Cn) + (phi.s.Cn + dt * dRhs ) * Vol
+        opNew->UnscaleOperator(scale);       // a,b <- a,b.scale
       }
     protected:
       DiffuserOp<Vector,Op> *opOld, *opNew;

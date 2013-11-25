@@ -66,6 +66,8 @@ class MFD3D {
   // access members
   double scaling_factor() { return scaling_factor_; }
   double scalar_stability() { return scalar_stability_; }
+  double simplex_functional() { return simplex_functional_; }
+  int simplex_num_itrs() { return simplex_num_itrs_; }
 
   // extension of the mesh API (must be removed lipnikov@lanl.gov)
   int cell_get_face_adj_cell(const int cell, const int face);
@@ -81,6 +83,13 @@ class MFD3D {
   int StabilityMonotoneHex(int cell, const Tensor& T,
                            DenseMatrix& Mc, DenseMatrix& M);
 
+  int StabilityMMatrix_(int cell, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M, 
+                        int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_SUMALL);
+
+  int SimplexFindFeasibleSolution_(DenseMatrix& T, int m1, int m2, int m3, int* izrow, int* iypos);
+  void SimplexPivotElement_(DenseMatrix& T, int kp, int* ip);
+  void SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip);
+
   void GrammSchmidt(DenseMatrix& N);
 
  protected:
@@ -90,6 +99,9 @@ class MFD3D {
   double scalar_stability_, scaling_factor_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+
+  double simplex_functional_;
+  int simplex_num_itrs_;
 };
 
 }  // namespace WhetStone

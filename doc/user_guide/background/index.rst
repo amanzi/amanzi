@@ -7,6 +7,4 @@ Background
    purpose.rst
    overview.rst
    approach.rst
-   getting_started.rst
-   units.rst
 

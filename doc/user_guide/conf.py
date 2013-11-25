@@ -80,7 +80,7 @@ release = '0.2.0'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build','testing','prototype','viz','install']
+exclude_patterns = ['_build','testing','prototype','viz']
 # exclude_patterns = ['_build','testing','install']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
@@ -190,10 +190,10 @@ htmlhelp_basename = 'Amanzidoc'
 
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+'papersize': 'letterpaper',
 
 # The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+'pointsize': '11pt',
 
 # Additional stuff for the LaTeX preamble.
 'preamble': '\usepackage[version=3]{mhchem} \usepackage{amssymb,grffile}',
@@ -202,7 +202,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Amanzi.tex', u'Amanzi Documentation',
+  ('index', 'AmanziUserGuide.tex', u'Amanzi Documentation',
    u'Amanzi Development Team (LANL, LBNL, PNNL)', 'manual'),
 ]
 

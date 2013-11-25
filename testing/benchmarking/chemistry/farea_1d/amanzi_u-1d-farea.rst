@@ -1,17 +1,13 @@
 1D F-Area Full Geochemistry
 ===========================
 
-Overview
---------
+Overview and Capabilities tested
+--------------------------------
 
-This test example performs the simulation of a complex geochemical network in a simple 1D flow domain, combining reaction types described separately in :doc:`../tritium_1d/amanzi_u-1d-tritium`, :doc:`../calcite_1d/amanzi_u-1d-calcite`, and :doc:`../ion_exchange_1d/amanzi_u-1d-ion-exchange`. The reaction network is based on the Savannah River Site F-Area geochemistry. 
+This test example performs the simulation of a complex geochemical network in a simple 1D flow domain, combining reaction types described separately in :doc:`../tritium_1d/amanzi_u-1d-tritium`, :doc:`../calcite_1d/amanzi_u-1d-calcite`, and :doc:`../ion_exchange_1d/amanzi_u-1d-ion-exchange`. The reaction network is based on the Savannah River Site F-Area geochemistry. This example tests the following capabilities: 
 
 ..  comment out for now
     , and :doc:`../surface_complexation_1d/amanzi_u-1d-surface-complexation`
-
-
-Capabilities tested
-~~~~~~~~~~~~~~~~~~~
 
 * 1D flow
 * 1D advective transport 
@@ -23,24 +19,10 @@ Capabilities tested
 	* Ion exchange
 	* Surface complexation
 
-About
-~~~~~
+For details on this test, see :ref:`about_farea`.
 
-* Test case ID: 1SSConTran-farea-full
-* Test type: Benchmark
-* Benchmark simulator: PFlotran
-* Files
-
-  * Amanzi input file: amanzi-u-1d-farea.xml
-  * Benchmark simulator input file: 1d-farea.in
-
-* Location: amanzi/examples/examples/phase2/chemistry/1d-farea
-* Author: B. Andre, G. Hammond
-* Testing and Documentation: S. Molins, H.M. Wainright
-* Last tested on: November 1, 2013
-	
-Introduction
-------------
+Background
+----------
 
 This problem intends to demonstrate the ASCEM capability of modeling complex geochemical reactions and contaminant transport. The model is based on the one developed at the Savannah River Site F-Area for predicting the uranium and acidic plume migration in the groundwater [Bea2013]_. 
 
@@ -169,6 +151,7 @@ The sorption model is based on a single-site equilibrium, pH-dependent surface c
 +----------------------------------------------------------------------------------+------------------------------------------+
 | :math:`\ce{H^+X <=> H^+ + X^-}`                                                  |  0.025                                   |
 +----------------------------------------------------------------------------------+------------------------------------------+
+
 (*) Bulk site concentration = 0.1801 :math:`\text{moles sites m}^{-3}`
 
 **Table 3. Mineral dissolution/precipitation reactions**
@@ -331,6 +314,20 @@ References
 .. [YangSteefel2008] Yang, L. and C.I. Steefel. (2008) Kaolinite dissolution and precipitation kinetics at 22°C and pH 4. Geochimica Cosmochimica Acta 72(1), 99-116. 
 
 
+.. _about_farea:
 
+About
+-----
+
+* Benchmark simulator: PFlotran
+* Files
+
+  * Amanzi input file: amanzi-u-1d-farea.xml
+  * Benchmark simulator input file: 1d-farea.in
+
+* Location: testing/benchmarking/chemistry/farea_1d
+* Author: B. Andre, G. Hammond
+* Testing and Documentation: S. Molins, H.M. Wainright
+* Last tested on: November 1, 2013
 
 
