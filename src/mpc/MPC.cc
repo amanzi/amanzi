@@ -148,32 +148,6 @@ void MPC::mpc_init() {
 
   S->CheckInitialized();
  
-
-  if (transport_enabled) {
-    bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
-    transport_subcycling = (subcycling) ? 1 : 0;
-    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, TS));
-    TPK->InitPK();
-  }
-    
-  if (flow_enabled) { 
-    flow_model = mpc_parameter_list.get<string>("Flow model", "Darcy");
-    if (flow_model == "Darcy") {
-      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
-    } else if (flow_model == "Steady State Saturated") {
-      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
-    } else if (flow_model == "Richards") {
-      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
-    } else if (flow_model == "Steady State Richards") {
-      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
-    } else {
-      cout << "MPC: unknown flow model: " << flow_model << endl;
-      throw std::exception();
-    }   
-
-    FPK->InitPK();
-  }
-
   if (chemistry_enabled) {
     try {
       if (chemistry_model == "Alquimia") {
@@ -201,6 +175,35 @@ void MPC::mpc_init() {
       Exceptions::amanzi_throw(message);
     }   
   } 
+
+  if (transport_enabled) {
+    bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
+    transport_subcycling = (subcycling) ? 1 : 0;
+#ifdef ALQUIMIA_ENABLED
+    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, TS, chem_engine));
+#else
+    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, TS));
+#endif
+    TPK->InitPK();
+  }
+    
+  if (flow_enabled) { 
+    flow_model = mpc_parameter_list.get<string>("Flow model", "Darcy");
+    if (flow_model == "Darcy") {
+      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
+    } else if (flow_model == "Steady State Saturated") {
+      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
+    } else if (flow_model == "Richards") {
+      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
+    } else if (flow_model == "Steady State Richards") {
+      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
+    } else {
+      cout << "MPC: unknown flow model: " << flow_model << endl;
+      throw std::exception();
+    }   
+
+    FPK->InitPK();
+  }
   // done creating auxilary state objects and  process models
 
   // create the observations

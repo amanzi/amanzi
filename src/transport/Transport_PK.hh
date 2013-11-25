@@ -36,6 +36,9 @@
 #include "Transport_SourceFactory.hh"
 #include "Dispersion.hh"
 
+#ifdef ALQUIMIA_ENABLED
+#include "Chemistry_Engine.hh"
+#endif
 
 /*
 This is Amanzi Transport Process Kernel (PK).
@@ -56,8 +59,14 @@ double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
 class Transport_PK : public Explicit_TI::fnBase {
  public:
   Transport_PK();
+#ifdef ALQUIMIA_ENABLED
+  Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
+               Teuchos::RCP<Transport_State> TS_MPC,
+               Teuchos::RCP<AmanziChemistry::Chemistry_Engine> chem_engine = Teuchos::null);
+#else
   Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
                Teuchos::RCP<Transport_State> TS_MPC);
+#endif
   ~Transport_PK();
 
   // primary members
@@ -167,6 +176,10 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Transport_State> TS_nextBIG;  // involves both owned and ghost values
   Teuchos::RCP<Transport_State> TS_nextMPC;  // uses physical memory of TS_nextBIG
   
+#ifdef ALQUIMIA_ENABLED
+  Teuchos::RCP<AmanziChemistry::Chemistry_Engine> chem_engine_;
+#endif
+
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
 

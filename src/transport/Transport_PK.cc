@@ -39,10 +39,20 @@ namespace AmanziTransport {
 * We set up minimum default values and call Init() routine to 
 * complete initialization.
 ****************************************************************** */
+#ifdef ALQUIMIA_ENABLED
+Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
+                           Teuchos::RCP<Transport_State> TS_MPC,
+                           Teuchos::RCP<AmanziChemistry::Chemistry_Engine> chem_engine)
+#else
 Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
                            Teuchos::RCP<Transport_State> TS_MPC)
+#endif
 {
   status = TRANSPORT_NULL;
+
+#ifdef ALQUIMIA_ENABLED
+  chem_engine_ = chem_engine;
+#endif
 
   parameter_list = parameter_list_MPC.sublist("Transport");
   preconditioners_list = parameter_list_MPC.sublist("Preconditioners");
