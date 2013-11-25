@@ -17,6 +17,10 @@
 #include "Mesh.hh"
 #include "transport_boundary_function.hh"
 
+#ifdef ALQUIMIA_ENABLED
+#include "Chemistry_Engine.hh"
+#endif
+
 namespace Amanzi {
 namespace AmanziTransport {
 
@@ -25,6 +29,15 @@ class TransportBCFactory {
   TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                      const Teuchos::RCP<Teuchos::ParameterList>& list)
      : mesh_(mesh), list_(list) {};
+
+  // Alquimia-enabled constructor.
+#ifdef ALQUIMIA_ENABLED
+  TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                     const Teuchos::RCP<Teuchos::ParameterList>& list,
+                     const Teuchos::RCP<AmanziChemistry::Chemistry_Engine>& chem_engine)
+     : mesh_(mesh), list_(list), chem_engine_(chem_engine) {};
+#endif
+
   ~TransportBCFactory() {};
   
   void CreateConcentration(std::vector<Functions::TransportBoundaryFunction*>& bcs, 
@@ -34,6 +47,9 @@ class TransportBCFactory {
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
   const Teuchos::RCP<Teuchos::ParameterList>& list_;
+#ifdef ALQUIMIA_ENABLED
+  const Teuchos::RCP<AmanziChemistry::Chemistry_Engine>& chem_engine_;
+#endif
 };
 
 }  // namespace AmanziTransport
