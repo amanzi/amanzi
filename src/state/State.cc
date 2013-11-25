@@ -626,22 +626,22 @@ void State::Initialize() {
   InitializeFields_();
 
   // // Ensure that non-evaluator-based fields are initialized.
-  // CheckNotEvaluatedFieldsInitialized_();
+  CheckNotEvaluatedFieldsInitialized_();
 
   // Initialize other field evaluators.
   InitializeEvaluators_();
 
   // // Ensure everything is owned and initialized.
-  // CheckAllFieldsInitialized_();
+  CheckAllFieldsInitialized_();
 };
 
-void State::CheckInitialized() {
-  // Ensure that non-evaluator-based fields are initialized.
-  CheckNotEvaluatedFieldsInitialized_();
+// void State::CheckInitialized() {
+//   // Ensure that non-evaluator-based fields are initialized.
+//   CheckNotEvaluatedFieldsInitialized_();
 
-  // Ensure everything is owned and initialized.
-  CheckAllFieldsInitialized_();
-}
+//   // Ensure everything is owned and initialized.
+//   CheckAllFieldsInitialized_();
+// }
 
 void State::InitializeEvaluators_() {
   for (evaluator_iterator f_it = field_evaluator_begin();

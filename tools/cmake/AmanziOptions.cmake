@@ -80,3 +80,9 @@ option(TESTS_REQUIRE_FULLPATH "Append full path to test binaries" TRUE)
 # for how to use this
 include(RegisterEvaluators)
 
+# Two sets of maintained time integrators
+option(ENABLE_NewTimeIntegrators "Build Amanzi with dev time integrators" FALSE)
+
+# Turn off physics, just build the framework
+option(ENABLE_Physics "Build Amanzi with physics libraries" TRUE)
+

@@ -134,8 +134,6 @@ void MPC::mpc_init() {
 
   S->Setup();
 
-  S->Initialize();
-
   if (chemistry_enabled) {
     CS->Initialize();
   }
@@ -146,7 +144,9 @@ void MPC::mpc_init() {
     FS->Initialize();
   }
 
-  S->CheckInitialized();
+  S->Initialize();
+
+  //  S->CheckInitialized();
 
   if (transport_enabled) {
     bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);

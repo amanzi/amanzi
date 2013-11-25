@@ -84,8 +84,8 @@ class State {
   void Initialize();
 
   // Check that everything is initialized and owned.
-  void CheckInitialized();
- 
+  //  void CheckInitialized();
+
 
 
   // -----------------------------------------------------------------------------

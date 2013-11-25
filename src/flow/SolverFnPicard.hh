@@ -30,7 +30,7 @@ class SolverFnPicard : public AmanziSolvers::SolverFnBase<Vector> {
   ~SolverFnPicard() {};
 
   // computes the non-linear functional r = F(u)
-  void Residual(const Teuchos::RCP<Vector>& u, Teuchos::RCP<Vector>& r);
+  void Residual(const Teuchos::RCP<Vector>& u, const Teuchos::RCP<Vector>& r);
 
   // preconditioner toolkit
   void ApplyPreconditioner(const Teuchos::RCP<const Vector>& v,
@@ -58,7 +58,7 @@ class SolverFnPicard : public AmanziSolvers::SolverFnBase<Vector> {
 * Flow Picard residual.
 ****************************************************************** */
 template<class Vector>
-void SolverFnPicard<Vector>::Residual(const Teuchos::RCP<Vector>& u, Teuchos::RCP<Vector>& r)
+void SolverFnPicard<Vector>::Residual(const Teuchos::RCP<Vector>& u, const Teuchos::RCP<Vector>& r)
 {
   RPK_->AssembleMatrixMFD(*u, 0.0);
   RPK_->AssemblePreconditionerMFD(*u, 0.0, 0.0);

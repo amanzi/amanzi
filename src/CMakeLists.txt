@@ -11,10 +11,12 @@ add_subdirectory(functions)
 add_subdirectory(geometry)
 
 # Grid-option agnostic chemistry and interfaces
-add_subdirectory(chemistry)
-if (ENABLE_ALQUIMIA)
-  # Use Alquimia as a chemistry engine.
-  add_definitions(-DALQUIMIA_ENABLED)
+if (ENABLE_Physics)
+  add_subdirectory(chemistry)
+  if (ENABLE_ALQUIMIA)
+    # Use Alquimia as a chemistry engine.
+    add_definitions(-DALQUIMIA_ENABLED)
+  endif()
 endif()
 
 add_subdirectory(common/interface_platform)
@@ -54,7 +56,8 @@ if (ENABLE_Unstructured)
 
 endif()
 
-if (ENABLE_Unstructured)
+if (ENABLE_Unstructured AND ENABLE_Physics)
+
   add_subdirectory(chemistry_pk)
 
   add_subdirectory(flow)
@@ -64,15 +67,17 @@ if (ENABLE_Unstructured)
   add_subdirectory(mpc)
 endif()
 
-if (ENABLE_Unstructured)
+if (ENABLE_Unstructured AND ENABLE_Physics)
   # unstructured grid simualtion driver, and Amanzi binaries
   add_subdirectory(executables)
 endif()
 
 # structured grid
-if (ENABLE_Structured)
+if (ENABLE_Structured AND ENABLE_Physics)
   add_subdirectory(structured_grid)
 endif()
 
 # standalone driver (produces mesh-independent executable)
-add_subdirectory(common/standalone_simulation_coordinator)
+if (ENABLE_Physics)
+  add_subdirectory(common/standalone_simulation_coordinator)
+endif()
