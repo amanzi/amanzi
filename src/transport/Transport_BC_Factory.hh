@@ -28,7 +28,10 @@ class TransportBCFactory {
  public:
   TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                      const Teuchos::RCP<Teuchos::ParameterList>& list)
-     : mesh_(mesh), list_(list) {};
+     : mesh_(mesh), list_(list),
+#ifdef ALQUIMIA_ENABLED
+       chem_engine_(Teuchos::null) {};
+#endif
 
   // Alquimia-enabled constructor.
 #ifdef ALQUIMIA_ENABLED
