@@ -35,6 +35,8 @@ def loadDataFile(Obs_xml,directory):
 
 def CollectObservations(Obs_xml, Obs_data, Obs_lines):
 
+    ## FIXME:  This should collect whatever types of observations it finds, e.g., pressure, concentrations, etc.
+
     # Create dictionary for scatter plots
     Obs_scatter={}
     for key in Obs_lines:
@@ -157,7 +159,7 @@ def MakeTableCols(table_layout,slice,
             master_data=list(Obs_scatter[st][slice][var])
         master_data.sort()
         t.add_column(master_key, master_data)
-        t.float_format[master_key]="4.2"
+        t.float_format[master_key]="4.2f"
     else:
         t.add_column(master_column[master_key], master_column[master_data])
 
@@ -178,7 +180,7 @@ def MakeTableCols(table_layout,slice,
                 else:
                     amanzi_data.append("Unavailable")
             t.add_column(col_key, amanzi_data)
-            t.float_format[col_key]="10.8"
+            t.float_format[col_key]=".5e"
 
         elif ( table_layout[slice][col_key]['datasrc'] == 'Analytic' ):
             solution=analytic_soln[slice]
@@ -192,7 +194,7 @@ def MakeTableCols(table_layout,slice,
                 else:
                     analytic_data.append("Unavailable")
             t.add_column(col_key, analytic_data)
-            t.float_format[col_key]="10.8"
+            t.float_format[col_key]=".5e"
 
     #
     #  We could insert columns for particular error / differences here.
@@ -205,7 +207,9 @@ def MakeTableCols(table_layout,slice,
 
     # Write the table to a file
     table_file = open(table_layout[slice]['filename'], "w+")
+    table_file.write('.. tabularcolumns:: ' + table_layout[slice]['tabular'] + "\n")
     table_file.write(t.get_string())
+    table_file.write("\n")
     table_file.close()
 
     return
@@ -407,6 +411,7 @@ def SetupTests():
                    { 'filename' : 'table_centerline.txt',
                      'header'   : [ 'x [m]', 'Analytic (AT123D-AT)',
                                     'Amanzi First-Order', 'Amanzi Second-Order'],
+                     'tabular'  : '|R|C|C|C|',
                      'x [m]'    : 
                      { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_first', 'variable': 'distance' }, 
                      'Amanzi First-Order' :
@@ -420,6 +425,7 @@ def SetupTests():
                    { 'filename' : 'table_cross-section-b.txt',
                      'header'   : [ 'y [m]', 'Analytic (AT123D-AT)',
                                     'Amanzi First-Order', 'Amanzi Second-Order'],
+                     'tabular'  : '|R|p{1.5in}|p{1.5in}|p{1.5in}|',
                      'y [m]'    : 
                      { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_first', 'variable': 'distance' }, 
                      'Amanzi First-Order' :
@@ -433,6 +439,7 @@ def SetupTests():
                    { 'filename' : 'table_cross-section-c.txt',
                      'header'   : [ 'y [m]', 'Analytic (AT123D-AT)',
                                     'Amanzi First-Order', 'Amanzi Second-Order'],
+                     'tabular'  : '|C|p{1.5in}|p{1.5in}|p{1.5in}|',
                      'y [m]'    : 
                      { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_first', 'variable': 'distance' }, 
                      'Amanzi First-Order' :
