@@ -165,8 +165,8 @@ scheme provides excellent match (circles).
 
 .. plot:: amanzi_dispersion_aligned_point_2d-c.py
    :align: center
-	   
 
+	   
 .. include:: table_cross-section-c.txt
 
 
@@ -174,10 +174,10 @@ References
 ----------
 
 .. [Aleman2007] Aleman, S. 2007. PORFLOW Testing and Verification Document. Savannah River National 
-Laboratory technical report WSRC-STI-2007-00150 Rev 0. 193 p.
+		Laboratory technical report WSRC-STI-2007-00150 Rev 0. 193 p.
 
 .. [Yeh1981] Yeh, G.T. 1981. AT123D: Analytical transient one-, two-, and three-dimensional 
-simulation of transport in the aquifer system, Oak Ridge National Lab., Tennessee, Report No. ORNL-5602.
+	     simulation of transport in the aquifer system, Oak Ridge National Lab., Tennessee, Report No. ORNL-5602.
 
 .. _about_aligned_dispersion:
 

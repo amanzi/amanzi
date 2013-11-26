@@ -207,7 +207,7 @@ def MakeTableCols(table_layout,slice,
 
     # Write the table to a file
     table_file = open(table_layout[slice]['filename'], "w+")
-    table_file.write('.. tabularcolumns:: ' + table_layout[slice]['tabular'] + "\n")
+    table_file.write('.. tabularcolumns:: ' + table_layout[slice]['tabular'] + "\n\n")
     table_file.write(t.get_string())
     table_file.write("\n")
     table_file.close()
@@ -425,7 +425,7 @@ def SetupTests():
                    { 'filename' : 'table_cross-section-b.txt',
                      'header'   : [ 'y [m]', 'Analytic (AT123D-AT)',
                                     'Amanzi First-Order', 'Amanzi Second-Order'],
-                     'tabular'  : '|R|p{1.5in}|p{1.5in}|p{1.5in}|',
+                     'tabular'  : '|R|C|C|C|',
                      'y [m]'    : 
                      { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_first', 'variable': 'distance' }, 
                      'Amanzi First-Order' :
@@ -439,7 +439,7 @@ def SetupTests():
                    { 'filename' : 'table_cross-section-c.txt',
                      'header'   : [ 'y [m]', 'Analytic (AT123D-AT)',
                                     'Amanzi First-Order', 'Amanzi Second-Order'],
-                     'tabular'  : '|C|p{1.5in}|p{1.5in}|p{1.5in}|',
+                     'tabular'  : '|R|C|C|C|',
                      'y [m]'    : 
                      { 'datasrc' : 'Amanzi', 'subtest' : 'amanzi_first', 'variable': 'distance' }, 
                      'Amanzi First-Order' :

@@ -183,8 +183,15 @@ html_static_path = ['_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'Amanzidoc'
 
-#[extensions]
-#todo_include_todos=False
+# User control whether ''ToDo'' notes are included
+if (os.environ.get('AMANZI_INCLUDE_TODOS') == "0" or os.environ.get('AMANZI_INCLUDE_TODOS') == "False" ):
+    env_include_todos=False
+else:
+    env_include_todos=True
+#endif
+
+[extensions]
+todo_include_todos=env_include_todos
 
 # -- Options for LaTeX output --------------------------------------------------
 

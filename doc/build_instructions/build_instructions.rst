@@ -24,22 +24,22 @@ that defines all the required TPL directories and CMake variables to build Amanz
 Once the user has installed all the required TPLs, the process to build
 Amanzi from the command line is:
 
-   1. Generate build files (Makefile, XCode project files, etc.) using CMake ::
+  1. Generate build files (Makefile, XCode project files, etc.) using CMake ::
 
-    cmake -C <TPL install prefix>/share/cmake/amanzi-tpl-config.cmake \
-          -D CMAKE_C_COMPILER=/full/path/mpicc \
-	  -D CMAKE_CXX_COMPILER=/full/path/mpicxx \
-	  -D CMAKE_Fortran_COMPILER=/full/path/mpif90 \
-          [Addtional CMake variable definitions]
-          <Amanzi source directory>
+       cmake -C <TPL install prefix>/share/cmake/amanzi-tpl-config.cmake \
+             -D CMAKE_C_COMPILER=/full/path/mpicc \
+	     -D CMAKE_CXX_COMPILER=/full/path/mpicxx \
+	     -D CMAKE_Fortran_COMPILER=/full/path/mpif90 \
+             [Addtional CMake variable definitions]
+             <Amanzi source directory>
 
-   2. Use the build files to build Amanzi, i.e. ``make``, ::
+  2. Use the build files to build Amanzi, i.e. ``make``, ::
    
-    make [-j n]
+       make [-j n]
 
 or the user can run ``bootstrap.sh`` defining a previously built TPL configuration with ::
 
-    bootstrap.sh --tpl-config-file=<TPL install prefix>/share/cmake/amanzi-tpl-config.cmake
+  bootstrap.sh --tpl-config-file=<TPL install prefix>/share/cmake/amanzi-tpl-config.cmake
 
 
 Amanzi TPL Configuration Settings
