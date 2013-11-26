@@ -28,6 +28,7 @@ class MPCPermafrost3 : public StrongMPC<PKPhysicalBDFBase> {
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
 
   // -- computes the non-linear functional g = g(t,u,udot)
   //    By default this just calls each sub pk fun().
@@ -80,7 +81,8 @@ class MPCPermafrost3 : public StrongMPC<PKPhysicalBDFBase> {
   Teuchos::RCP<Operators::MatrixMFD_TPFA> pc_surf_energy_;
 
   // EWC delegate
-  Teuchos::RCP<MPCDelegateEWC> ewc_;
+  Teuchos::RCP<MPCDelegateEWC> surf_ewc_;
+  Teuchos::RCP<MPCDelegateEWC> sub_ewc_;
 
   // Water delegate
   Teuchos::RCP<MPCDelegateWater> water_;

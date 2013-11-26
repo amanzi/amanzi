@@ -25,7 +25,7 @@ class UnfrozenFractionModel {
  protected:
   double halfwidth_;
   double T0_;
-  double pi_;
+  const double pi_;
 
   Teuchos::ParameterList plist_;
 

@@ -31,6 +31,8 @@ add_library(mpc
   mpc_surface_subsurface_energy_coupler.cc
   mpc_water_flux_coupler.cc
   mpc_delegate_ewc.cc
+  mpc_delegate_ewc_surface.cc
+  mpc_delegate_ewc_subsurface.cc
   mpc_delegate_water.cc
   mpc_subsurface.cc
   mpc_permafrost.cc
