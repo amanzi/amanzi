@@ -15,10 +15,11 @@ namespace Flow {
 namespace FlowRelations {
 
 UnfrozenFractionModel::UnfrozenFractionModel(Teuchos::ParameterList& plist) :
-    plist_(plist) {
-  halfwidth_ = plist_.get<double>("transition width", 0.1) / 2.;
+    plist_(plist),
+    pi_(boost::math::constants::pi<double>())
+{
+  halfwidth_ = plist_.get<double>("transition width", 1.) / 2.;
   T0_ = plist_.get<double>("freezing point", 273.15);
-  pi_ = boost::math::constants::pi<double>();
 }
 
 double UnfrozenFractionModel::UnfrozenFraction(double temp) {

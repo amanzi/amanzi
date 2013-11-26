@@ -549,8 +549,8 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
       if (S->HasFieldEvaluator("unfrozen_fraction")) {
         Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
-        S->GetFieldEvaluator("unfrozen_fraction")->HasFieldChanged(S.ptr(), name_);
-        const Epetra_MultiVector& uf = *S->GetFieldData("unfrozen_fraction")
+        S->GetFieldEvaluator("unfrozen_fraction_relperm")->HasFieldChanged(S.ptr(), name_);
+        const Epetra_MultiVector& uf_krel = *S->GetFieldData("unfrozen_fraction_relperm")
             ->ViewComponent("cell",false);
         for (unsigned int c=0; c!=ncells_surface; ++c) {
           // -- get the surface cell's equivalent subsurface face
@@ -559,7 +559,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
           // -- set that value to the unfrozen fraction to ensure we
           // -- don't advect ice
-          uw_rel_perm_f[0][f] = uf[0][c];
+          uw_rel_perm_f[0][f] = uf_krel[0][c];
         }
       } else {
         Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);

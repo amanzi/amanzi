@@ -17,7 +17,7 @@
 #include "Point.hh"
 
 #include "wrm_partition.hh"
-#include "ewc_model.hh"
+#include "ewc_model_base.hh"
 
 namespace Amanzi {
 
@@ -33,15 +33,12 @@ namespace Energy { namespace EnergyRelations { class IEM; class IEMWaterVapor;} 
 namespace Relations { class EOS; class VaporPressureRelation; }
 
 
-class PermafrostModel : public EWCModel {
+class PermafrostModel : public EWCModelBase {
 
  public:
   PermafrostModel() {}
   virtual void InitializeModel(const Teuchos::Ptr<State>& S);
   virtual void UpdateModel(const Teuchos::Ptr<State>& S, int c);
-  virtual int Evaluate(double T, double p, double& energy, double& wc);
-  virtual int InverseEvaluate(double energy, double wc, double& T, double& p, bool verbose=false);
-  virtual int InverseEvaluateEnergy(double energy, double p, double& T);
   virtual int EvaluateSaturations(double T, double p, double& s_gas, double& s_liq, double& s_ice);
 
  protected:
@@ -49,12 +46,6 @@ class PermafrostModel : public EWCModel {
 
   int EvaluateEnergyAndWaterContent_(double T, double p,
           AmanziGeometry::Point& result);
-
-  int EvaluateEnergyAndWaterContentAndJacobian_(double T, double p,
-          AmanziGeometry::Point& result, WhetStone::Tensor& jac);
-
-  int EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, double p,
-          AmanziGeometry::Point& result, WhetStone::Tensor& jac);
 
  protected:
   Teuchos::RCP<Flow::FlowRelations::WRMPermafrostModelPartition> wrms_;

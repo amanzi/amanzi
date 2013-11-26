@@ -1,7 +1,10 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "mpc_delegate_ewc_surface.hh"
+#include "mpc_delegate_ewc_subsurface.hh"
 #include "mpc_surface_subsurface_helpers.hh"
 #include "permafrost_model.hh"
+#include "surface_ice_model.hh"
 
 #include "mpc_permafrost3.hh"
 
@@ -85,15 +88,29 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   precon_->SymbolicAssembleGlobalMatrices();
   precon_->InitPreconditioner();
 
-  // set up the EWC delegate
-  ewc_ = Teuchos::rcp(new MPCDelegateEWC(*plist_));
-  Teuchos::RCP<PermafrostModel> model = Teuchos::rcp(new PermafrostModel());
-  ewc_->set_model(model);
-  ewc_->setup(S);  
+  // set up the EWC delegates
+  Teuchos::RCP<Teuchos::ParameterList> sub_ewc_list = Teuchos::sublist(plist_, "subsurface ewc delegate");
+  sub_ewc_list->set("PK name", name_);
+  sub_ewc_list->set("domain key", "domain");
+  sub_ewc_ = Teuchos::rcp(new MPCDelegateEWCSubsurface(*sub_ewc_list));
+  Teuchos::RCP<PermafrostModel> sub_model = Teuchos::rcp(new PermafrostModel());
+  sub_ewc_->set_model(sub_model);
+  sub_ewc_->setup(S);  
 
+  Teuchos::RCP<Teuchos::ParameterList> surf_ewc_list = Teuchos::sublist(plist_, "surface ewc delegate");
+  surf_ewc_list->set("PK name", name_);
+  surf_ewc_list->set("domain key", "surface");
+  surf_ewc_ = Teuchos::rcp(new MPCDelegateEWCSurface(*surf_ewc_list));
+  Teuchos::RCP<SurfaceIceModel> surf_model = Teuchos::rcp(new SurfaceIceModel());
+  surf_ewc_->set_model(surf_model);
+  surf_ewc_->setup(S);  
+  
   // set up the Water delegate
-  water_ = Teuchos::rcp(new MPCDelegateWater(plist_));
+  Teuchos::RCP<Teuchos::ParameterList> water_list = Teuchos::sublist(plist_, "water delegate");
+  water_ = Teuchos::rcp(new MPCDelegateWater(water_list));
   water_->set_indices(0,2,1,3);
+
+  // set up our own predictors
   consistent_cells_ =
       plist_->get<bool>("ensure consistent cells after face updates", false);
   
@@ -120,7 +137,8 @@ MPCPermafrost3::initialize(const Teuchos::Ptr<State>& S) {
                           S->GetFieldData("temperature", sub_pks_[1]->name()).ptr());
 
   // initialize delegates
-  ewc_->initialize(S);
+  surf_ewc_->initialize(S);
+  sub_ewc_->initialize(S);
 
   // Initialize my timestepper.
   PKBDFBase::initialize(S);
@@ -131,9 +149,19 @@ MPCPermafrost3::set_states(const Teuchos::RCP<const State>& S,
                            const Teuchos::RCP<State>& S_inter,
                            const Teuchos::RCP<State>& S_next) {
   StrongMPC<PKPhysicalBDFBase>::set_states(S,S_inter,S_next);
-  ewc_->set_states(S,S_inter,S_next);
+  surf_ewc_->set_states(S,S_inter,S_next);
+  sub_ewc_->set_states(S,S_inter,S_next);
   water_->set_states(S,S_inter,S_next);
 }
+
+
+void
+MPCPermafrost3::commit_state(double dt, const Teuchos::RCP<State>& S) {
+  StrongMPC<PKPhysicalBDFBase>::commit_state(dt,S);
+  if (surf_ewc_ != Teuchos::null) surf_ewc_->commit_state(dt,S);
+  if (sub_ewc_ != Teuchos::null) sub_ewc_->commit_state(dt,S);
+}
+
 
 // -- computes the non-linear functional g = g(t,u,udot)
 //    By default this just calls each sub pk fun().
@@ -319,10 +347,29 @@ MPCPermafrost3::update_precon(double t,
 bool
 MPCPermafrost3::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   bool modified = false;
+
+  // Surface EWC
+  // -- make a new TreeVector that is just the surface values (by pointer).
+  Teuchos::RCP<TreeVector> surf_u = Teuchos::rcp(new TreeVector());
+  surf_u->PushBack(u->SubVector(2));
+  surf_u->PushBack(u->SubVector(3));
+  modified |= surf_ewc_->modify_predictor(h,surf_u);
+  // -- copy surf --> sub
+  if (modified) {
+    CopySurfaceToSubsurface(*u->SubVector(2)->Data(), u->SubVector(0)->Data().ptr());
+    CopySurfaceToSubsurface(*u->SubVector(3)->Data(), u->SubVector(1)->Data().ptr());
+  }
+
+  // Subsurface EWC
+  // -- make a new TreeVector that is just the subsurface values (by pointer).
+  Teuchos::RCP<TreeVector> sub_u = Teuchos::rcp(new TreeVector());
+  sub_u->PushBack(u->SubVector(0));
+  sub_u->PushBack(u->SubVector(1));
+  modified |= sub_ewc_->modify_predictor(h,sub_u);
+
   modified |= water_->ModifyPredictor_Heuristic(h, u);
   modified |= water_->ModifyPredictor_WaterSpurtDamp(h, u);
   modified |= water_->ModifyPredictor_TempFromSource(h, u);
-  modified |= ewc_->modify_predictor(h,u);
 
   modified |= StrongMPC<PKPhysicalBDFBase>::modify_predictor(h, u);
   return modified;

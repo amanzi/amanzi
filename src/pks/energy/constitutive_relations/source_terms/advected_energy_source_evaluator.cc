@@ -61,6 +61,7 @@ AdvectedEnergySourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     if (mass_source[0][c] > 0.) { // positive indicates increase of water in surface
       // upwind, take external values
       res[0][c] = cv[0][c] * mass_source[0][c] * ext_dens[0][c] * ext_enth[0][c];
+      std::cout << "Q_E advected in from mass source = " << cv[0][c] * mass_source[0][c] * ext_dens[0][c] * ext_enth[0][c] << std::endl;
     } else {
       // upwind, take internal values
       res[0][c] = cv[0][c] * mass_source[0][c] * int_dens[0][c] * int_enth[0][c];
@@ -72,6 +73,7 @@ AdvectedEnergySourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         ->ViewComponent("cell",false);
     for (unsigned int c=0; c!=ncells; ++c) {
       res[0][c] += cv[0][c] * cond[0][c];
+      std::cout << "Q_E conducted in from energy source = " << cv[0][c] * cond[0][c] << std::endl;
     }
   }
 }

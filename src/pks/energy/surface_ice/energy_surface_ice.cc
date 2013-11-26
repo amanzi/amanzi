@@ -81,7 +81,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- advection of enthalpy
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList& enth_plist = plist_->sublist("enthalpy evaluator", true);
+  Teuchos::ParameterList& enth_plist = plist_->sublist("enthalpy evaluator");
   enth_plist.set("enthalpy key", enthalpy_key_);
   Teuchos::RCP<EnthalpyEvaluator> enth =
     Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
@@ -207,7 +207,7 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
 
   //  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
   Teuchos::ParameterList& enth_plist = plist_->sublist("enthalpy evaluator", true);
-  bool include_work = enth_plist.get<bool>("include work term");
+  bool include_work = enth_plist.get<bool>("include work term", true);
 
   AmanziMesh::Entity_ID_List cells;
   unsigned int nfaces = enth_f.MyLength();
@@ -264,7 +264,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "Adding external source term" << std::endl;
-      db_->WriteVector("  Q_ext", S_next_->GetFieldData(source_key_).ptr(), false);
+      db_->WriteVector("  Q_ext", S_inter_->GetFieldData(source_key_).ptr(), false);
       db_->WriteVector("res (src)", g, false);
     }
   }
