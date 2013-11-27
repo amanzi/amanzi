@@ -26,6 +26,10 @@ class UnfrozenFractionRelPermModel {
 
  protected:
   Teuchos::ParameterList plist_;
+
+  int alpha_; // must be an even integer
+  double h_cutoff_;
+
   const double pi_;
 
 };

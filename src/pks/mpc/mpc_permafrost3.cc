@@ -1,4 +1,5 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "EpetraExt_RowMatrixOut.h"
 
 #include "mpc_delegate_ewc_surface.hh"
 #include "mpc_delegate_ewc_subsurface.hh"
@@ -60,16 +61,19 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("surface_subsurface_energy_flux", name_)
       ->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-  // create the preconditioner
+  // Create the preconditioner.
+  // -- Allocate matrix.
   Teuchos::ParameterList& pc_sublist = plist_->sublist("Coupled PC");
   precon_ = Teuchos::rcp(new Operators::MatrixMFD_Coupled_Surf(pc_sublist, domain_mesh_));
 
+  // -- Collect the sub-blocks.
   pc_flow_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(
       domain_flow_pk_->preconditioner());
   ASSERT(pc_flow_ != Teuchos::null);
   pc_energy_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(
       domain_energy_pk_->preconditioner());
   ASSERT(pc_energy_ != Teuchos::null);
+
   pc_surf_flow_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_TPFA>(
       surf_flow_pk_->preconditioner());
   ASSERT(pc_surf_flow_ != Teuchos::null);
@@ -77,21 +81,35 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
       surf_energy_pk_->preconditioner());
   ASSERT(pc_surf_energy_ != Teuchos::null);
 
+  // -- Subsurface blocks include their surface operators.
   pc_flow_->SetSurfaceOperator(pc_surf_flow_);
   pc_energy_->SetSurfaceOperator(pc_surf_energy_);
-  // must re-symbolic assemble surf operators, now that they have a surface operator
+
+  // -- must re-symbolic assemble surf operators, now that they have a surface operator
   pc_flow_->SymbolicAssembleGlobalMatrices();
   pc_energy_->SymbolicAssembleGlobalMatrices();
 
+  // -- finally, set the sub blocks in the coupled PC
   precon_->SetSubBlocks(pc_flow_, pc_energy_);
   precon_->SetSurfaceOperators(pc_surf_flow_, pc_surf_energy_);
   precon_->SymbolicAssembleGlobalMatrices();
   precon_->InitPreconditioner();
 
+  // Potential create the solver
+  // NOTE: for this to be enabled, we must first implement the forward
+  // operator's assembly for MatrixMFD_Coupled_Surf -- etc
+  // if (plist_->isSublist("Coupled Solver")) {
+  //   Teuchos::ParameterList linsolve_sublist = plist_->sublist("Coupled Solver");
+  //   AmanziSolvers::LinearOperatorFactory<TreeMatrix,TreeVector,TreeVectorSpace> fac;
+  //   lin_solver_ = fac.Create(linsolve_sublist, precon_);
+  // } else {
+    lin_solver_ = precon_;
+  // }
+  
   // set up the EWC delegates
   Teuchos::RCP<Teuchos::ParameterList> sub_ewc_list = Teuchos::sublist(plist_, "subsurface ewc delegate");
   sub_ewc_list->set("PK name", name_);
-  sub_ewc_list->set("domain key", "domain");
+  sub_ewc_list->set("domain key", "");
   sub_ewc_ = Teuchos::rcp(new MPCDelegateEWCSubsurface(*sub_ewc_list));
   Teuchos::RCP<PermafrostModel> sub_model = Teuchos::rcp(new PermafrostModel());
   sub_ewc_->set_model(sub_model);
@@ -180,41 +198,15 @@ MPCPermafrost3::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   Epetra_MultiVector& source = *S_next_->GetFieldData("surface_subsurface_flux",
           name_)->ViewComponent("cell",false);
   source = *g->SubVector(2)->Data()->ViewComponent("cell",false);
-  
-  // // The exception to this is if the surface unfrozen fraction is 0 and the
-  // // flux direction is inward, in which case the rel perm will be zero, and no
-  // // flux is allowed.
-  // const Epetra_MultiVector& uf_frac = *S_next_->GetFieldData("unfrozen_fraction")
-  //     ->ViewComponent("cell",false);
-  // for (unsigned int sc=0; sc!=source.MyLength(); ++sc) {
-  //   if (uf_frac[0][sc] == 0. && source[0][sc] < 0.) {
-  //     source[0][sc] = 0.;
-  //   }
-  // }
 
   // Evaluate the subsurface residual, which uses this flux as a Neumann BC.
   domain_flow_pk_->fun(t_old, t_new, u_old->SubVector(0),
                        u_new->SubVector(0), g->SubVector(0));
 
-  // // Clobber the subsurface face's residual if it gets hit with zero rel perm,
-  // // or else clobber the surface cell's residual as it is taken as a flux into
-  // // the subsurface.
-  // Epetra_MultiVector& domain_g_f = *g->SubVector(0)
-  //     ->Data()->ViewComponent("face",false);
-  // Epetra_MultiVector& surf_g_c = *g->SubVector(2)
-  //     ->Data()->ViewComponent("cell",false);
-  // for (unsigned int sc=0; sc!=source.MyLength(); ++sc) {
-  //   if (uf_frac[0][sc] == 0.) {
-  //     AmanziMesh::Entity_ID f =
-  //         surf_mesh_->entity_get_parent(AmanziMesh::CELL, sc);
-  //     domain_g_f[0][f] = 0.;
-  //   } else {
-  //     surf_g_c[0][sc] = 0.;
-  //   }
-  // }
+  // All fluxes have been taken by the subsurface.
   g->SubVector(2)->PutScalar(0.);
 
-  // Now that fluxes are done, do energy.
+  // Now that mass fluxes are done, do energy.
   // Evaluate the surface energy residual
   surf_energy_pk_->fun(t_old, t_new, u_old->SubVector(3),
                      u_new->SubVector(3), g->SubVector(3));
@@ -230,10 +222,8 @@ MPCPermafrost3::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   domain_energy_pk_->fun(t_old, t_new, u_old->SubVector(1),
                      u_new->SubVector(1), g->SubVector(1));
 
-  // Clobber the surface cell's energy residual, as it is taken as a diffusive
-  // flux into the subsurface.
+  // All energy fluxes have been taken by the subsurface.
   g->SubVector(3)->PutScalar(0.);
-
 }
 
 // -- Apply preconditioner to u and returns the result in Pu.
@@ -259,7 +249,7 @@ MPCPermafrost3::precon(Teuchos::RCP<const TreeVector> u,
   // call the operator's inverse
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Precon applying coupled subsurface operator." << std::endl;
-  precon_->ApplyInverse(*domain_u_tv, domain_Pu_tv.ptr());
+  lin_solver_->ApplyInverse(*domain_u_tv, *domain_Pu_tv);
 
   // Copy subsurface face corrections to surface cell corrections
   CopySubsurfaceToSurface(*Pu->SubVector(0)->Data(),
@@ -340,6 +330,13 @@ MPCPermafrost3::update_precon(double t,
 
   // Assemble the PC
   precon_->ComputeSchurComplement();
+
+  // // dump the schur complement
+  // Teuchos::RCP<const Epetra_FEVbrMatrix> sc = precon_->Schur();
+  // std::stringstream filename_s;
+  // filename_s << "schur_" << S_next_->cycle() << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+
   precon_->UpdatePreconditioner();
 }
 
@@ -520,21 +517,6 @@ MPCPermafrost3::UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const Tr
   sub_pks_[2]->changed_solution();
 }
 
-
-// // Iterate the flow sub-PKs once.
-// void
-// MPCPermafrost3::IterateFlow_(double h, const Teuchos::RCP<TreeVector>& u) {
-//   // create a new, copied TV that is just flow
-//   Teuchos::RCP<TreeVector> u_flow = Teuchos::rcp(new TreeVector());
-//   u_flow->PushBack(u->SubVector(0));
-//   u_flow->PushBack(u->SubVector(2));
-
-//   // Copy construct this, forming a residual vector.
-//   Teuchos::RCP<TreeVector> g_flow = Teuchos::rcp(new TreeVector(*u_flow));
-
-//   // Evalute the residual function.
-  
-// }
 
 int
 MPCPermafrost3::ModifyCorrection_FrozenSurface_(double h, Teuchos::RCP<const TreeVector> res,

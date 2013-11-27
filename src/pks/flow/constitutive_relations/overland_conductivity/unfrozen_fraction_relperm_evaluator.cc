@@ -27,7 +27,7 @@ UnfrozenFractionRelPermEvaluator::UnfrozenFractionRelPermEvaluator(Teuchos::Para
   }
 
   // create the model, hard-coded until we have a 2nd model
-  //  ASSERT(plist_.isSublist("unfrozen fraction relperm model"));
+  //  ASSERT(plist_.isSublist("unfrozen fraction rel perm model"));
   Teuchos::ParameterList sublist = plist_.sublist("unfrozen fraction rel perm model");
   model_ = Teuchos::rcp(new UnfrozenFractionRelPermModel(sublist));
 }

@@ -35,29 +35,6 @@ MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& p
   vo_ = Teuchos::rcp(new VerboseObject(plist->name(), *plist_));
 }
 
-// bool
-// MPCDelegateWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-//         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
-//   bool modified = false;
-
-//   int n_modified = 0;
-//   if (face_limiter_ > 0.) {
-//     n_modified += ModifyCorrection_WaterFaceLimiter_(h, res, u, du);
-//   }
-
-//   if (cap_the_spurt_ || damp_the_spurt_) {
-//     n_modified += ModifyCorrection_WaterSpurt_(h, res, u, du);
-//   }
-
-//   if (cap_the_spurt_ || damp_the_spurt_ || face_limiter_ > 0.) {
-//     int n_modified_l = n_modified;
-//     u->SubVector(i_domain_)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
-//     if (n_modified > 0) modified = true;
-//   }
-
-//   return modified;
-// }
-
 // Approach 1: global face limiter on the correction size
 int
 MPCDelegateWater::ModifyCorrection_WaterFaceLimiter(double h, Teuchos::RCP<const TreeVector> res,
@@ -81,7 +58,6 @@ MPCDelegateWater::ModifyCorrection_WaterFaceLimiter(double h, Teuchos::RCP<const
 
   return n_modified;
 }
-
 
 // Approach 2: damping of the spurt -- limit the max oversaturated pressure
 //  using a global damping term.
