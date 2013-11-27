@@ -78,57 +78,9 @@ def PlotObservations(Obs_scatter,slice_name,subtests,axes1):
 
     return
 
-def MakeTable(Obs_scatter,subtests,analytic_soln,analytic,slice):
-
-    #
-    #  API:  Missing
-    #
-    #  FileName for the output
-    #  Table Layout:
-    #     - column headings
-    #     - "master" column to use for data collection
-    #     - keys for data access (subtest,slice)
-    #     - Flag to include errors?
-    #  Format string for latex
-    #  Formatting for Scientific Notation
-    #  
-
-    t = prettytable.PrettyTable(["x [m]", "Analytic (AT123D-AT)", "Amanzi First-Order", "Amanzi Second-Order"])
-    t.padding_width = 1
-    t.hrules = 1
-    t.header=True
-    t.float_format="10.8"
-
-    table_analytic=[]
-    solution=analytic_soln[slice]
-
-    for d in Obs_scatter['amanzi_first']['centerline']['distance']:
-        if d in solution['distance']:
-            i = solution['distance'].index(d)
-            table_analytic.append(solution['c'][i])
-        else:
-            table_analytic.append("Unavailable")
-
-    tobs=zip( Obs_scatter['amanzi_first']['centerline']['distance'], 
-              table_analytic,
-              Obs_scatter['amanzi_first']['centerline']['Tc99'],
-              Obs_scatter['amanzi_second']['centerline']['Tc99'] )
-
-    tobs.sort(key = lambda t: t[0])
-
-    for x, c_analytic, c_amanzi_1, c_amanzi_2 in tobs:
-        t.add_row([ x, c_analytic, c_amanzi_1, c_amanzi_2 ])
-        
-    table_file = open("table_values.txt", "w+")
-    table_file.write(t.get_string())
-    table_file.close()
-
-    return
-
-
 def MakeTableCols(table_layout,slice,
                   Obs_scatter,subtests,analytic_soln,analytic,master_column=None):
-
+    
     #
     #  API:  Missing
     #
@@ -137,8 +89,8 @@ def MakeTableCols(table_layout,slice,
     #     D "master" column to use for data collection
     #     D keys for data access (subtest,slice)
     #     - Flag to include errors?
-    #  Format string for latex
-    #  Formatting for Scientific Notation
+    #  D Format string for latex
+    #  D Formatting for Scientific Notation
     #  
 
     #  Create the table
@@ -201,8 +153,10 @@ def MakeTableCols(table_layout,slice,
     #   
 
     # Set formatting options
-    t.padding_width = 1
-    t.hrules = 1
+    t.padding_width = 5
+    t.hrules = prettytable.ALL
+    t.horizontal_char="-"
+    t.horizontal_header_char="="
     t.header=True
 
     # Write the table to a file

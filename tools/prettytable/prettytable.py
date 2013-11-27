@@ -126,7 +126,7 @@ class PrettyTable(object):
         # Options
         self._options = "start end fields header border sortby reversesort sort_key attributes format hrules vrules".split()
         self._options.extend("int_format float_format padding_width left_padding_width right_padding_width".split())
-        self._options.extend("vertical_char horizontal_char junction_char header_style valign xhtml print_empty".split())
+        self._options.extend("vertical_char horizontal_char horizontal_header_char junction_char header_style valign xhtml print_empty".split())
         for option in self._options:
             if option in kwargs:
                 self._validate_option(option, kwargs[option])
@@ -164,6 +164,7 @@ class PrettyTable(object):
 
         self._vertical_char = kwargs["vertical_char"] or self._unicode("|")
         self._horizontal_char = kwargs["horizontal_char"] or self._unicode("-")
+        self._horizontal_header_char = ["horizontal_header_char"] or self._horizontal_char
         self._junction_char = kwargs["junction_char"] or self._unicode("+")
         
         if kwargs["print_empty"] in (True, False):
@@ -276,7 +277,7 @@ class PrettyTable(object):
             self._validate_int_format(option, val)
         elif option in ("float_format"):
             self._validate_float_format(option, val)
-        elif option in ("vertical_char", "horizontal_char", "junction_char"):
+        elif option in ("vertical_char", "horizontal_char", "horizontal_header_char", "junction_char"):
             self._validate_single_char(option, val)
         elif option in ("attributes"):
             self._validate_attributes(option, val)
@@ -680,6 +681,20 @@ class PrettyTable(object):
         self._horizontal_char = val
     horizontal_char = property(_get_horizontal_char, _set_horizontal_char)
 
+    def _get_horizontal_header_char(self):
+        """The charcter used when printing the horizontal line under the header
+
+        Arguments:
+
+        horizontal_header_char - single character string used to draw horizontal line under the header"""
+        return self._horizontal_header_char
+    def _set_horizontal_header_char(self, val):
+        val = self._unicode(val)
+        self._validate_option("horizontal_header_char", val)
+        self._horizontal_header_char = val
+    horizontal_header_char = property(_get_horizontal_header_char, _set_horizontal_header_char)
+
+
     def _get_junction_char(self):
         """The charcter used when printing table borders to draw line junctions
 
@@ -772,6 +787,7 @@ class PrettyTable(object):
         self.right_padding_width = 1
         self.vertical_char = "|"
         self.horizontal_char = "-"
+        self.horizontal_header_char = "-"
         self.junction_char = "+"
 
     def _set_msword_style(self):
@@ -803,6 +819,7 @@ class PrettyTable(object):
         self.right_padding_width = random.randint(0,5)
         self.vertical_char = random.choice("~!@#$%^&*()_+|-=\{}[];':\",./;<>?")
         self.horizontal_char = random.choice("~!@#$%^&*()_+|-=\{}[];':\",./;<>?")
+        self.horizontal_header_char = random.choice("~!@#$%^&*()_+|-=\{}[];':\",./;<>?")
         self.junction_char = random.choice("~!@#$%^&*()_+|-=\{}[];':\",./;<>?")
 
     ##############################
@@ -995,6 +1012,7 @@ class PrettyTable(object):
 
         # Add header or top of border
         self._hrule = self._stringify_hrule(options)
+        self._hrule_head = self._stringify_hrule(options, True)
         if options["header"]:
             lines.append(self._stringify_header(options))
         elif options["border"] and options["hrules"] in (ALL, FRAME):
@@ -1010,7 +1028,12 @@ class PrettyTable(object):
         
         return self._unicode("\n").join(lines)
 
-    def _stringify_hrule(self, options):
+    def _stringify_hrule(self, options, sub_header=False):
+
+        if (sub_header):
+            hchar=options["horizontal_header_char"]
+        else:
+            hchar=options["horizontal_char"]
 
         if not options["border"]:
             return ""
@@ -1018,7 +1041,7 @@ class PrettyTable(object):
         if options['vrules'] in (ALL, FRAME):
             bits = [options["junction_char"]]
         else:
-            bits = [options["horizontal_char"]]
+            bits = [hchar]
         # For tables with no data or fieldnames
         if not self._field_names:
                 bits.append(options["junction_char"])
@@ -1026,11 +1049,11 @@ class PrettyTable(object):
         for field, width in zip(self._field_names, self._widths):
             if options["fields"] and field not in options["fields"]:
                 continue
-            bits.append((width+lpad+rpad)*options["horizontal_char"])
+            bits.append((width+lpad+rpad)*hchar)
             if options['vrules'] == ALL:
                 bits.append(options["junction_char"])
             else:
-                bits.append(options["horizontal_char"])
+                bits.append(hchar)
         if options["vrules"] == FRAME:
             bits.pop()
             bits.append(options["junction_char"])
@@ -1080,7 +1103,8 @@ class PrettyTable(object):
             bits.append(options["vertical_char"])
         if options["border"] and options["hrules"] != NONE:
             bits.append("\n")
-            bits.append(self._hrule)
+            # this is the line below the header
+            bits.append(self._hrule_head)
         return "".join(bits)
 
     def _stringify_row(self, row, options):

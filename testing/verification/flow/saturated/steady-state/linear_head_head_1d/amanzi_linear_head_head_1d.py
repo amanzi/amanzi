@@ -93,7 +93,7 @@ def MakeTable(Obs_data,Obs_xml,filename):
     pressure_analytic = list(mymodel.pressure(numpy.array(coordinates)))
 
     x = prettytable.PrettyTable(["x [m]", "z [m]", "Analytic [Pa]","Amanzi [Pa]"])
-    x.padding_width = 1
+    x.padding_width = 2
     x.hrules = 1
     for coords, p_analytic, p_amanzi in zip(coordinates,pressure_analytic,pressure_amanzi):
         x.add_row([coords[0],coords[1],"%.4f" % float(p_analytic),"%.4f" % float(p_amanzi)])
@@ -102,7 +102,9 @@ def MakeTable(Obs_data,Obs_xml,filename):
         os.remove("table_values.txt")
 
     table_file = open("table_values.txt", "w+")
-    table_file.write(x.get_string())
+    table_file.write('.. tabularcolumns:: ' + '|R|C|C|C|' + '\n\n')
+    table_file.write(x.get_string(sortby="x [m]"))
+    table_file.write('\n')
     table_file.close()
         
 if __name__ == "__main__":
@@ -119,11 +121,11 @@ if __name__ == "__main__":
         fig1 = plt.figure()
         axes1=fig1.add_axes([.15,.15,.80,.80])
        
+        MakeTable(obs_data,obs_xml,input_filename)
+
         cmap = plotTestObservations(obs_xml,obs_data,axes1)
         plotTestModel(input_filename,cmap,axes1,obs_xml,obs_data)
         #plt.show()
-
-        MakeTable(obs_data,obs_xml,input_filename)
 
     finally:
         pass 
