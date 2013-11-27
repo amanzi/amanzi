@@ -74,7 +74,10 @@ class MPCPermafrost3 : public StrongMPC<PKPhysicalBDFBase> {
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
 
   // coupled preconditioner
+  Teuchos::RCP<TreeMatrix> lin_solver_;
   Teuchos::RCP<Operators::MatrixMFD_Coupled_Surf> precon_;
+
+  // subblocks of the preconditioner
   Teuchos::RCP<Operators::MatrixMFD_Surf> pc_flow_;
   Teuchos::RCP<Operators::MatrixMFD_Surf> pc_energy_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> pc_surf_flow_;
