@@ -27,7 +27,7 @@ import sys, os
 #
 #  Add path for custom extensions
 #
-#sys.path.append(os.path.abspath('.'))
+sys.path.append(os.path.abspath('.'))
 
 # 
 #  Extensions 
@@ -42,8 +42,8 @@ extensions = ['sphinx.ext.todo',
               'matplotlib.sphinxext.ipython_directive',
               'matplotlib.sphinxext.ipython_console_highlighting',
               'sphinxcontrib.tikz',
-#              'extensions.hello',
-#              'extensions.amanzi_xml',
+              'extensions.hello',
+              'extensions.amanzi_xml',
               ]
 
 
