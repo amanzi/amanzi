@@ -114,7 +114,7 @@ SurfaceBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     data.st_energy.water_depth = ponded_depth[0][c];
     data.st_energy.temp_ground = surf_temp[0][c];
     data.vp_ground.temp = surf_temp[0][c];
-    data.vp_ground.actual_vaporpressure = soil_vapor_pressure[0][c]; // FIX THIS   FIX THIS FIX THIS    FIX THIS 11111111
+    data.vp_ground.actual_vaporpressure = soil_vapor_pressure[0][c] * data.st_energy.Apa; //Converts Mole fraction to vapor pressure [moleFraction/atmosphericPressure] 
     data.st_energy.porrowaLe = surf_porosity[0][c] * density_air * data.st_energy.Le;
     // MET station data
     data.st_energy.temp_air = air_temp[0][c];
@@ -156,7 +156,7 @@ SurfaceBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       data_bare.st_energy.water_depth = ponded_depth[0][c];
       data_bare.st_energy.temp_ground = surf_temp[0][c];
       data_bare.vp_ground.temp = surf_temp[0][c];
-      data_bare.vp_ground.actual_vaporpressure = soil_vapor_pressure[0][c]; // FIX THIS   FIX THIS FIX THIS    FIX THIS 11111111
+      data_bare.vp_ground.actual_vaporpressure = soil_vapor_pressure[0][c] * data_bare.st_energy.Apa; //Converts Mole fraction to vapor pressure [moleFraction/atmosphericPressure]
       data_bare.st_energy.porrowaLe = surf_porosity[0][c] * density_air * data_bare.st_energy.Le;
       // MET station data
       data_bare.st_energy.temp_air = air_temp[0][c];
@@ -206,4 +206,4 @@ void SurfaceBalanceEvaluator::EvaluateFieldPartialDerivative_(
 }
 
 } // namespace
-} // namespace
+} // namespac
