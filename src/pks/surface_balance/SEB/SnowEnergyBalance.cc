@@ -106,8 +106,11 @@ void SurfaceEnergyBalance::UpdateGroundEnergy(LocalData& seb) {
         * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
   } else {
     // no standing water
+   UpdateVaporPressure(seb.vp_ground);
+  //  seb.st_energy.fQe = seb.st_energy.porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+  //      * (seb.vp_air.actual_vaporpressure-seb.vp_ground.actual_vaporpressure) / seb.st_energy.Apa;
     seb.st_energy.fQe = seb.st_energy.porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
-        * (seb.vp_air.actual_vaporpressure-seb.vp_ground.actual_vaporpressure) / seb.st_energy.Apa;
+        * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
   }
 
   // Heat flux to ground surface is the balance.
@@ -303,6 +306,11 @@ void SurfaceEnergyBalance::UpdateSnow(EnergyBalance& eb) {
   double dens_settled = eb.density_freshsnow*ndensity;
   double ht_settled = eb.ht_snow * eb.density_snow / dens_settled;
 
+  // Match Frost Age with Assinged density
+     //Calculating which Day frost density matched snow Defermation fucntion from (Martinec, 1977) 
+  double frost_age = pow((eb.density_frost /eb.density_freshsnow),(1/0.3))-1;
+  frost_age = frost_age + eb.dt / 86400.; 
+
   // determine heights of the sources
   double ht_precip = eb.Ps * eb.density_w / eb.density_freshsnow;
   double ht_frost = eb.MIr > 0. ? eb.MIr * eb.dt * eb.density_w / eb.density_frost : 0.;
@@ -322,10 +330,10 @@ void SurfaceEnergyBalance::UpdateSnow(EnergyBalance& eb) {
 
   // Take the mass-weighted average to determine new age
   if (eb.ht_snow > 0.) {
-    eb.age_snow = (eb.age_snow * ht_settled * dens_settled
-                   + eb.dt / 86400. * (ht_frost * eb.density_frost + ht_precip * eb.density_freshsnow))
-        / (ht_settled * dens_settled + ht_frost * eb.density_frost + ht_precip * eb.density_freshsnow);
-  } else {
+     eb.age_snow = (eb.age_snow * ht_settled * dens_settled
+                     + frost_age * ht_frost * eb.density_frost + eb.dt / 86400. * ht_precip * eb.density_freshsnow)
+      / (ht_settled * dens_settled + ht_frost * eb.density_frost + ht_precip * eb.density_freshsnow);    
+   } else {
     eb.age_snow = 0;
   }
 }

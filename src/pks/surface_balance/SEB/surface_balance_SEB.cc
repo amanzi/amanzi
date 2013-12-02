@@ -168,7 +168,7 @@ void SurfaceBalanceSEB::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("surface_porosity")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator("surface_vapor_pressure");
+  S->RequireFieldEvaluator("surface_vapor_pressure"); // atually mole_fraction not vapor pressure ~ AA
   S->RequireField("surface_vapor_pressure")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 };
@@ -222,8 +222,8 @@ bool SurfaceBalanceSEB::advance(double dt) {
   const Epetra_MultiVector& surf_porosity =
       *S_inter_->GetFieldData("surface_porosity")->ViewComponent("cell", false);
 
-  S_inter_->GetFieldEvaluator("surface_vapor_pressure")->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& soil_vapor_pressure =
+  S_inter_->GetFieldEvaluator("surface_vapor_pressure")->HasFieldChanged(S_inter_.ptr(), name_); // Actually mole_fraction not pressure ~AA
+  const Epetra_MultiVector& soil_vapor_mole_fraction =      //  THIS IS MOLE FRACTION OF GAS NEEDS TO BE CONVERTEDT TO VAPOR PRESSURE!
       *S_inter_->GetFieldData("surface_vapor_pressure")->ViewComponent("cell", false);
 
   // MET DATA
@@ -289,6 +289,9 @@ bool SurfaceBalanceSEB::advance(double dt) {
   data_bare.st_energy.dt = dt;
   data_bare.st_energy.AlbedoTrans = albedo_trans_;
 
+   data.vp_ground.relative_humidity=1;
+   data_bare.vp_ground.relative_humidity=1;
+
   // loop over all cells and call CalculateSEB_
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
@@ -297,7 +300,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
     data.st_energy.water_depth = ponded_depth[0][c];
     data.st_energy.temp_ground = surf_temp[0][c];
     data.vp_ground.temp = surf_temp[0][c];
-    data.vp_ground.actual_vaporpressure = soil_vapor_pressure[0][c]; // FIX THIS   FIX THIS FIX THIS    FIX THIS 11111111
+    data.vp_ground.actual_vaporpressure = soil_vapor_mole_fraction[0][c] * data.st_energy.Apa; // Converts Mole fraction to vapor pressure [moleFraction/atmosphericPressure]
     data.st_energy.porrowaLe = surf_porosity[0][c] * density_air * data.st_energy.Le;
     // MET station data
     data.st_energy.temp_air = air_temp[0][c];
@@ -332,7 +335,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
       data_bare.st_energy.water_depth = ponded_depth[0][c];
       data_bare.st_energy.temp_ground = surf_temp[0][c];
       data_bare.vp_ground.temp = surf_temp[0][c];
-      data_bare.vp_ground.actual_vaporpressure = soil_vapor_pressure[0][c]; // FIX THIS   FIX THIS FIX THIS    FIX THIS 11111111
+      data_bare.vp_ground.actual_vaporpressure = soil_vapor_mole_fraction[0][c] * data_bare.st_energy.Apa; //Converts Mole fraction to vapor pressure [moleFraction/atmosphericPressure] 
       data_bare.st_energy.porrowaLe = surf_porosity[0][c] * density_air * data_bare.st_energy.Le;
       // MET station data
       data_bare.st_energy.temp_air = air_temp[0][c];
@@ -411,7 +414,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
     vnames.push_back("Qsw_in"); vecs.push_back(S_inter_->GetFieldData("incoming_shortwave_radiation").ptr());
     vnames.push_back("precip_rain"); vecs.push_back(S_inter_->GetFieldData("precipitation_rain").ptr());
     vnames.push_back("precip_snow"); vecs.push_back(S_inter_->GetFieldData("precipitation_snow").ptr());
-    vnames.push_back("soil vapor pressure"); vecs.push_back(S_inter_->GetFieldData("surface_vapor_pressure").ptr());
+    vnames.push_back("soil vapor mole fraction"); vecs.push_back(S_inter_->GetFieldData("surface_vapor_pressure").ptr()); // Actually mole fracton not pressure ~AA
     vnames.push_back("T_ground"); vecs.push_back(S_inter_->GetFieldData("surface_temperature").ptr());
     vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source").ptr());
     //    vnames.push_back("e_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
