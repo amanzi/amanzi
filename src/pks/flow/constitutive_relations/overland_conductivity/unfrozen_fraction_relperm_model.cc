@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include "dbc.hh"
+#include "errors.hh"
 #include "unfrozen_fraction_relperm_model.hh"
 
 namespace Amanzi {
@@ -18,11 +19,24 @@ namespace FlowRelations {
 
 UnfrozenFractionRelPermModel::UnfrozenFractionRelPermModel(Teuchos::ParameterList& plist) :
     plist_(plist),
-    pi_(boost::math::constants::pi<double>()) {}
+    pi_(boost::math::constants::pi<double>()) {
+  alpha_ = plist_.get<int>("unfrozen rel perm alpha", 4);
+  if (alpha_ % 2 != 0) {
+    Errors::Message message("Unfrozen Fraction Rel Perm: alpha must be an even integer");
+    Exceptions::amanzi_throw(message);
+  }
+
+  h_cutoff_ = plist_.get<double>("unfrozen rel perm cutoff height", 0.01);
+}
 
 double
 UnfrozenFractionRelPermModel::UnfrozenFractionRelPerm(double uf, double h) {
-  return std::pow(std::sin(pi_ * uf / 2.), 4);
+  double kr = std::pow(std::sin(pi_ * uf / 2.), alpha_);
+  if (h < h_cutoff_) {
+    double fac = h / h_cutoff_;
+    kr = kr * fac + (1-fac); // kr --> 1  as h --> 0
+  }
+  return kr;
 }
 
 double

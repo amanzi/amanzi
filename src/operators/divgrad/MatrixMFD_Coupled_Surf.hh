@@ -55,7 +55,6 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
     } else {
       Dcc_surf_ = Dcc_surf;
     }
-
   }
 
   
