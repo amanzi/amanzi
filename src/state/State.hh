@@ -80,13 +80,14 @@ class State {
   // Create data structures, finalizing the structure of the state.
   void Setup();
 
-  // Initialize field evaluators using ICs set by PKs.
-  void Initialize();
+  // Sub-steps in the initialization process. (Used by Amanzi)
+  void InitializeEvaluators();
+  void InitializeFields();
+  bool CheckNotEvaluatedFieldsInitialized();
+  bool CheckAllFieldsInitialized();
 
-  // Check that everything is initialized and owned.
-  //  void CheckInitialized();
-
-
+  // Used by ATS.
+  //  void Initialize();
 
   // -----------------------------------------------------------------------------
   // State handles mesh management.
@@ -261,11 +262,6 @@ class State {
   void advance_cycle(int dcycle=1) { cycle_ += dcycle; }
 
 private:
-  // sub-steps in the initialization process.
-  void InitializeEvaluators_();
-  void InitializeFields_();
-  bool CheckNotEvaluatedFieldsInitialized_();
-  bool CheckAllFieldsInitialized_();
 
   // Accessors that return null if the Key does not exist.
   Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(Key key) const;

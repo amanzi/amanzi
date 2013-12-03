@@ -148,7 +148,7 @@ void Flow_State::Initialize() {
     S_->GetField("darcy_velocity",name_)->set_initialized();
     S_->GetField("hydraulic_head",name_)->set_initialized();
     S_->GetField("particle_density",name_)->set_initialized();
-    S_->Initialize();
+    S_->InitializeFields();
   } else {
     
     // fields that might be initialized through the input

@@ -169,7 +169,7 @@ void Transport_State::Initialize() {
     S_->GetField("water_saturation", name_)->set_initialized();
     S_->GetField("prev_water_saturation", name_)->set_initialized();
     S_->GetField("darcy_flux", name_)->set_initialized();
-    S_->Initialize();
+    S_->InitializeFields();
 
     // S_->GetFieldData("porosity", name_)->PutScalar(0.2);
     S_->GetFieldData("total_component_concentration", name_)->PutScalar(0.0);

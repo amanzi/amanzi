@@ -621,29 +621,22 @@ void State::Setup() {
 };
 
 
-void State::Initialize() {
-  // Initialize any other fields from state plist.
-  InitializeFields_();
+// void State::Initialize() {
+//   // Initialize any other fields from state plist.
+//   InitializeFields();
 
-  // // Ensure that non-evaluator-based fields are initialized.
-  CheckNotEvaluatedFieldsInitialized_();
-
-  // Initialize other field evaluators.
-  InitializeEvaluators_();
-
-  // // Ensure everything is owned and initialized.
-  CheckAllFieldsInitialized_();
-};
-
-// void State::CheckInitialized() {
 //   // Ensure that non-evaluator-based fields are initialized.
-//   CheckNotEvaluatedFieldsInitialized_();
+//   CheckNotEvaluatedFieldsInitialized();
+
+//   // Initialize other field evaluators.
+//   InitializeEvaluators();
 
 //   // Ensure everything is owned and initialized.
-//   CheckAllFieldsInitialized_();
-// }
+//   CheckAllFieldsInitialized();
+// };
 
-void State::InitializeEvaluators_() {
+
+void State::InitializeEvaluators() {
   for (evaluator_iterator f_it = field_evaluator_begin();
        f_it != field_evaluator_end(); ++f_it) {
     f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
@@ -652,7 +645,7 @@ void State::InitializeEvaluators_() {
 };
 
 
-void State::InitializeFields_() {
+void State::InitializeFields() {
   for (FieldMap::iterator f_it = fields_.begin();
        f_it != fields_.end(); ++f_it) {
     if (!f_it->second->initialized()) {
@@ -670,7 +663,7 @@ void State::InitializeFields_() {
 // Make sure all fields that are not evaluated by a FieldEvaluator are
 // initialized.  Such fields may be used by an evaluator field but are not in
 // the dependency tree due to poor design.
-bool State::CheckNotEvaluatedFieldsInitialized_() {
+bool State::CheckNotEvaluatedFieldsInitialized() {
   for (FieldMap::iterator f_it = fields_.begin();
        f_it != fields_.end(); ++f_it) {
     Teuchos::RCP<Field> field = f_it->second;
@@ -687,7 +680,7 @@ bool State::CheckNotEvaluatedFieldsInitialized_() {
 
 
 // Make sure all fields have gotten their IC, either from State or the owning PK.
-bool State::CheckAllFieldsInitialized_() {
+bool State::CheckAllFieldsInitialized() {
   for (FieldMap::iterator f_it = fields_.begin();
        f_it != fields_.end(); ++f_it) {
     Teuchos::RCP<Field> field = f_it->second;
