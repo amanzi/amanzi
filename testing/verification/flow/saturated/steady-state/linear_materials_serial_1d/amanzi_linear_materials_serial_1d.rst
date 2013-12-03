@@ -133,11 +133,7 @@ from Equation :eq:`domainDarcyVel`.
 Amanzi verification test results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-(TBD) somehow insert table comparing analytic and Amanzi hydraulic head
+.. include:: table_values.txt
 
-.... include:: table_values.txt
-
-(TBD) somehow insert plot comparing analytic and Amanzi hydraulic head
-
-.... plot:: prototype/steady-linear/amanzi_steady_linear.py
+.. plot:: amanzi_linear_materials_serial_1d.py
 
