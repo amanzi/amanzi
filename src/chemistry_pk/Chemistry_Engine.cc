@@ -40,6 +40,13 @@ Chemistry_Engine::~Chemistry_Engine()
 {
   if (chem_initialized_)
   {
+    // Delete the context objects for the geochemical conditions.
+    for (std::map<std::string, GeochemicalConditionContext*>::iterator 
+         iter = chem_contexts_.begin(); iter != chem_contexts_.end(); ++iter)
+    {
+      delete iter->second;
+    }
+
     chem_.Shutdown(&chem_data_.engine_state, &chem_status_);
     FreeAlquimiaData(&chem_data_);
 
@@ -311,6 +318,20 @@ void Chemistry_Engine::Advance(double delta_time,
 
   // Copy stuff out again.
   CopyOut(chem_state, mat_props, aux_data, aux_output);
+}
+
+GeochemicalConditionContext* Chemistry_Engine::ContextForCondition(const std::string& geochemical_condition_name)
+{
+  GeochemicalConditionContext* context = NULL;
+  std::map<std::string, GeochemicalConditionContext*>::iterator iter = chem_contexts_.find(geochemical_condition_name);
+  if (iter == chem_contexts_.end())
+  {
+    context = new GeochemicalConditionContext(this, geochemical_condition_name);
+    chem_contexts_[geochemical_condition_name] = context;
+  }
+  else
+    context = iter->second;
+  return context;
 }
 
 void Chemistry_Engine::ParseChemicalConditions(const Teuchos::ParameterList& param_list,
@@ -620,20 +641,105 @@ void Chemistry_Engine::CopyOut(AlquimiaState* chem_state, AlquimiaMaterialProper
     aux_data->aux_doubles.data[i] = alquimia_aux_data->aux_doubles.data[i];
 
   // Auxiliary output data.
-  const AlquimiaAuxiliaryOutputData* alquimia_aux_output = &chem_data_.aux_output;
+  if (aux_output != NULL)
+  {
+    const AlquimiaAuxiliaryOutputData* alquimia_aux_output = &chem_data_.aux_output;
 
-  // Free ion concentrations.
-  for (int i = 0; i < alquimia_aux_output->primary_free_ion_concentration.size; ++i)
-    aux_output->primary_free_ion_concentration.data[i] = alquimia_aux_output->primary_free_ion_concentration.data[i];
+    // Free ion concentrations.
+    for (int i = 0; i < alquimia_aux_output->primary_free_ion_concentration.size; ++i)
+      aux_output->primary_free_ion_concentration.data[i] = alquimia_aux_output->primary_free_ion_concentration.data[i];
 
-  // Activity coefficients.
-  for (int i = 0; i < alquimia_aux_output->primary_activity_coeff.size; ++i)
-    aux_output->primary_activity_coeff.data[i] = alquimia_aux_output->primary_activity_coeff.data[i];
-  for (int i = 0; i < alquimia_aux_output->secondary_activity_coeff.size; ++i)
-    aux_output->secondary_activity_coeff.data[i] = alquimia_aux_output->secondary_activity_coeff.data[i];
+    // Activity coefficients.
+    for (int i = 0; i < alquimia_aux_output->primary_activity_coeff.size; ++i)
+      aux_output->primary_activity_coeff.data[i] = alquimia_aux_output->primary_activity_coeff.data[i];
+    for (int i = 0; i < alquimia_aux_output->secondary_activity_coeff.size; ++i)
+      aux_output->secondary_activity_coeff.data[i] = alquimia_aux_output->secondary_activity_coeff.data[i];
 
-  // pH.
-  aux_output->pH = alquimia_aux_output->pH;
+    // pH.
+    aux_output->pH = alquimia_aux_output->pH;
+  }
+}
+
+// This subclass of Amanzi::Function provides an interface by which a geochemical condition can be 
+// enforced on a given species.
+class GeochemicalConcentrationFunction: public Function {
+
+ public:
+
+  // Constructs a GeochemicalConcentrationFunction that reports species concentrations 
+  // computed by a GeochemicalConditionContext.
+  explicit GeochemicalConcentrationFunction(int speciesIndex):
+    index_(speciesIndex)
+  {
+  }
+
+  // Destructor.
+  ~GeochemicalConcentrationFunction();
+
+  // Overridden methods.
+  Function* clone() const
+  {
+    return new GeochemicalConcentrationFunction(index_);
+  }
+
+  double operator() (const double* xt) const
+  {
+    // No space/time dependence -- we just reach into our context for the answer.
+    return value_;
+  }
+
+  double value_; // Updated by GeochemicalConditionContext.
+
+ private:
+
+  int index_;
+};
+
+GeochemicalConditionContext::GeochemicalConditionContext(Chemistry_Engine* chem_engine, 
+                                                         const std::string& geochem_condition):
+  chem_engine_(chem_engine_), condition_(geochem_condition), functions_(chem_engine->NumPrimarySpecies())
+{
+}
+
+GeochemicalConditionContext::~GeochemicalConditionContext()
+{
+}
+
+Teuchos::RCP<Function> GeochemicalConditionContext::speciesFunction(const std::string& species)
+{
+  // Find the index of the given species within the list kept in the chemistry engine.
+  int speciesIndex = -1;
+  std::vector<std::string> speciesNames;
+  chem_engine_->GetPrimarySpeciesNames(speciesNames);
+  for (size_t i = 0; i < speciesNames.size(); ++i)
+  {
+    if (species == speciesNames[i])
+    {
+      speciesIndex = (int)i;
+      break;
+    }
+  }
+  // FIXME: Check for speciesIndex == -1.
+  GeochemicalConcentrationFunction* function = new GeochemicalConcentrationFunction(speciesIndex);
+  functions_[speciesIndex] = Teuchos::RCP<Function>(function);
+  return functions_[speciesIndex];
+}
+
+void GeochemicalConditionContext::EnforceCondition(double t,
+                                                   AlquimiaState* chem_state,
+                                                   AlquimiaMaterialProperties* mat_props,
+                                                   AlquimiaAuxiliaryData* aux_data)
+{
+  // Enforce the condition.
+  chem_engine_->EnforceCondition(condition_, t, chem_state, mat_props, aux_data);
+
+  // Copy out the concentrations and broadcast them to our functions.
+  int N = chem_engine_->NumPrimarySpecies();
+  for (int i = 0; i < N; ++i)
+  {
+    Teuchos::RCP<GeochemicalConcentrationFunction> concFunc = functions_[i];
+    concFunc->value_ = chem_state->total_mobile.data[i];
+  }
 }
 
 } // namespace

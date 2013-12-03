@@ -47,6 +47,12 @@ class TransportBCFactory {
                            std::vector<std::string>& bcs_tcc_name) const;
   void ProcessConcentrationSpec(Teuchos::ParameterList& spec, Functions::TransportBoundaryFunction* bc) const;
 
+#ifdef ALQUIMIA_ENABLED
+  void ProcessGeochemicalCondition(const std::string& cond_name,
+                                   const Teuchos::ParameterList& cond_list, 
+                                   Functions::TransportBoundaryFunction* bc) const;
+#endif
+
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
   const Teuchos::RCP<Teuchos::ParameterList>& list_;
