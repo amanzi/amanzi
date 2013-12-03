@@ -67,11 +67,8 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
   bool errorsOccured = false;
 
       parser->parse(xmlfilename.c_str());
-  std::cout << "  EIB>> first errors = " << parser->getErrorCount() << " and occurred = " << errorsOccured<< std::endl;
-  std::cout << "EIB>> outside try" << std::endl;
   try{
       parser->parse(xmlfilename.c_str());
-      std::cout << "  EIB>> found " << parser->getErrorCount() << " errors " << std::endl;
   }
   catch (const xercesc::OutOfMemoryException&)
   {
@@ -90,8 +87,6 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
       std::cerr << "                          " << e.code << std::endl;
       errorsOccured = true;
   }
-  std::cout << "  EIB>> rechecking errors = " << parser->getErrorCount() << " and occurred = " << errorsOccured<< std::endl;
-  std::cout << "EIB>> done try" << std::endl;
 
   // check that it's validating here
 
@@ -744,14 +739,14 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
     if (defPL.isParameter("init_dt")) {
       value = defPL.get<std::string>("init_dt");
       gotValue = true;
-    } else {
+    } //else {
       for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
         if (ecsPL.sublist(it->first).isParameter("init_dt")) {
           value = ecsPL.sublist(it->first).get<std::string>("init_dt");
           gotValue = true;
 	}
       }
-    }
+    //}
     if (gotValue) {
       steadyPL.set<double>("Initial Time Step",get_time_value(value,*def_list));
       gotValue = false;
@@ -799,13 +794,13 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 
   } else {
     if (!hasSteady) {
-    // Transient case
-    if (def_list->sublist("simulation").isParameter("verbosity")) {
-      std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
-      if (verbosity == "extreme") {
+      // Transient case
+      if (def_list->sublist("simulation").isParameter("verbosity")) {
+        std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
+        if (verbosity == "extreme") {
 	    std::cout << "Amanzi::InputTranslator: Creating Transient Execution Control."<< std::endl;
+        }
       }
-    }
       Teuchos::ParameterList transPL;
       // loop over ecs to set up, TPC lists
       Teuchos::Array<double> start_times;
@@ -936,14 +931,14 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
         if (defPL.isParameter("init_dt")) {
           value = defPL.get<std::string>("init_dt");
           gotValue = true;
-        } else {
+        } //else {
           for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
             if (ecsPL.sublist(it->first).isParameter("init_dt")) {
               value = ecsPL.sublist(it->first).get<std::string>("init_dt");
               gotValue = true;
 	    }
           }
-        }
+        //}
         if (gotValue) {
           steadyPL.set<double>("Initial Time Step",get_time_value(value,*def_list));
           gotValue = false;
@@ -2398,7 +2393,6 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
       }
       if(cappressON) matlist.sublist(capname) = caplist;
       list.sublist(textContent) = matlist;
-      list.print(std::cout,true,false);
     }
 
   }

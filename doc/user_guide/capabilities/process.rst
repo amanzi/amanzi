@@ -1,6 +1,7 @@
 .. _Amanzi-Process-Models:
+
 Amanzi Process Capabilities
-=====================
+===========================
 
 The following pages describe the subsurface flow, transport and
 chemistry process models currently supported by this release of

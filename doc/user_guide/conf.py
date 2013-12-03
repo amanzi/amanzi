@@ -23,8 +23,15 @@ import sys, os
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
 
-# Add any Sphinx extension module names here, as strings. They can be extensions
-# coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
+
+#
+#  Add path for custom extensions
+#
+sys.path.append(os.path.abspath('.'))
+
+# 
+#  Extensions 
+#
 extensions = ['sphinx.ext.todo', 
               'sphinx.ext.mathjax', 
               'sphinx.ext.ifconfig',
@@ -35,6 +42,8 @@ extensions = ['sphinx.ext.todo',
               'matplotlib.sphinxext.ipython_directive',
               'matplotlib.sphinxext.ipython_console_highlighting',
               'sphinxcontrib.tikz',
+              'extensions.hello',
+              'extensions.amanzi_xml',
               ]
 
 
@@ -183,8 +192,15 @@ html_static_path = ['_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'Amanzidoc'
 
-#[extensions]
-#todo_include_todos=False
+# User control whether ''ToDo'' notes are included
+if (os.environ.get('AMANZI_INCLUDE_TODOS') == "0" or os.environ.get('AMANZI_INCLUDE_TODOS') == "False" ):
+    env_include_todos=False
+else:
+    env_include_todos=True
+#endif
+
+[extensions]
+todo_include_todos=env_include_todos
 
 # -- Options for LaTeX output --------------------------------------------------
 
