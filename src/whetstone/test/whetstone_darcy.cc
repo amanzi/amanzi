@@ -358,22 +358,25 @@ TEST(DARCY_STIFFNESS_3D) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
-  RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
+  // RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
+  RCP<Mesh> mesh = meshfactory("test/dodecahedron.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
-  int nnodes = 8, cell = 0;
+  int nnodes = 20, cell = 0;
   Tensor T(3, 1);
-  T(0, 0) = 1;
+  T(0, 0) = 1.0;
 
   DenseMatrix A(nnodes, nnodes);
-  mfd.StiffnessMatrix(cell, T, A);
+  mfd.StiffnessMatrixMMatrix(cell, T, A);
 
   printf("Stiffness matrix for cell %3d\n", cell);
   for (int i=0; i<nnodes; i++) {
     for (int j=0; j<nnodes; j++ ) printf("%8.4f ", A(i, j)); 
     printf("\n");
   }
+  cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << endl;
+  cout << "Functional value=" << mfd.simplex_functional() << endl;
 
   // verify SPD propery
   for (int i=0; i<nnodes; i++) CHECK(A(i, i) > 0.0);
