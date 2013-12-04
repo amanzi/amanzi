@@ -53,7 +53,7 @@ void PreconditionerHypre::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
 #ifdef HAVE_HYPRE
   IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A));
 
-  Teuchos::RCP<FunctionParameter> functs[8];
+  Teuchos::RCP<FunctionParameter> functs[9];
   functs[0] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCoarsenType, 0));
   functs[1] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel, verbosity_));
   functs[2] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNumSweeps, nsmooth_));
@@ -62,6 +62,7 @@ void PreconditionerHypre::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   functs[5] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetStrongThreshold, strong_threshold_));
   functs[6] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol, tol_));
   functs[7] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleType, 1));
+  functs[8] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxCoarseSize, 2));
 
   Teuchos::ParameterList hypre_list("Preconditioner List");
   hypre_list.set("Preconditioner", BoomerAMG);
@@ -70,12 +71,13 @@ void PreconditionerHypre::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   hypre_list.set("SetPreconditioner", true);
   //hypre_list.set("SetPreconditioner", false);
 
-  hypre_list.set("NumFunctions", 8);
+  hypre_list.set("NumFunctions", 9);
   hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
 
   IfpHypre_->SetParameters(hypre_list);
   IfpHypre_->Initialize();
   IfpHypre_->Compute();
+  //  exit(0);
 #endif
 }
 
