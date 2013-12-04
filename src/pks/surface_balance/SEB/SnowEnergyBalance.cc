@@ -303,6 +303,9 @@ void SurfaceEnergyBalance::UpdateSnow(EnergyBalance& eb) {
   // settle the pre-existing snow
   eb.age_snow += eb.dt / 86400.;
   double ndensity = std::pow(eb.age_snow,0.3);
+  if (ndensity < 1){// Formula only works from snow older the 1 day
+     ndensity = 1;
+   }
   double dens_settled = eb.density_freshsnow*ndensity;
   double ht_settled = eb.ht_snow * eb.density_snow / dens_settled;
 
