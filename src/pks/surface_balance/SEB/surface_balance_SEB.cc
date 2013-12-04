@@ -393,8 +393,14 @@ bool SurfaceBalanceSEB::advance(double dt) {
     
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "Snow depth, snowtemp = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;
+      *vo_->os() << "Melt heat = " << data.st_energy.Qm << std::endl;
+      *vo_->os() << "ShortWave = " << data.st_energy.fQswIn << std::endl;
+      *vo_->os() << "LongWave IN = " << data.st_energy.fQlwIn << std::endl;
+      *vo_->os() << "LongWave OUT = " << data.st_energy.fQlwOut << std::endl;
       *vo_->os() << "Latent heat = " << data.st_energy.fQe << std::endl;
       *vo_->os() << "Sensible heat = " << data.st_energy.fQh << std::endl;
+      *vo_->os() << "GROUND HEAT Qex = " << data.st_energy.fQc << std::endl;
+      *vo_->os() << "Ice condensation rate = " << data.st_energy.MIr << std::endl;
     }
 
   }
