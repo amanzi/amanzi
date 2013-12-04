@@ -25,9 +25,9 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Consistency condition for stifness matrix in geomechanics. 
+* Consistency condition for mass matrix in mechanics. 
 * Only the upper triangular part of Ac is calculated.
-* Requires mesh_get_edges to complete implementation.
+* Requires mesh_get_edges to complete the implementation.
 ****************************************************************** */
 int MFD3D_Elasticity::L2consistency(int cell, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Mc)
@@ -62,7 +62,7 @@ int MFD3D_Elasticity::L2consistency(int cell, const Tensor& T,
 
 
 /* ******************************************************************
-* Consistency condition for stifness matrix in geomechanics. 
+* Consistency condition for stiffness matrix in mechanics. 
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
 int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
