@@ -202,6 +202,11 @@ if (BUILD_TESTS)
                         KIND unit
                         SOURCE test/Main.cc test/flow_richards_newton_TPFA.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+        # Test: New Newton capabilities
+        add_amanzi_test(flow_richards_newton_new flow_richards_newton_new
+                        KIND unit
+                        SOURCE test/Main.cc test/flow_richards_newton_new.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
  
     set(amanzi_libs geometry mesh mesh_factory state flow whetstone data_structures)
