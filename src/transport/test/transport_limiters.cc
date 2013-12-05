@@ -92,7 +92,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   CompositeVectorSpace cv_space;
   cv_space.SetMesh(mesh);
   cv_space.SetGhosted(true);
-  cv_space.SetComponent("reconstructed_gradient", AmanziMesh::CELL, 3);
+  cv_space.SetComponent("cell", AmanziMesh::CELL, 3);
 
   RCP<CompositeVector> gradient = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
   RCP<Epetra_MultiVector> grad = gradient->ViewComponent("cell", false);

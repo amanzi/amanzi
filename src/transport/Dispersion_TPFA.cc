@@ -75,7 +75,7 @@ void Dispersion_TPFA::AssembleMatrix(const Epetra_MultiVector& p)
   CompositeVectorSpace cv_space;
   cv_space.SetMesh(mesh_);
   cv_space.SetGhosted(true);
-  cv_space.SetComponent("transmissibility", AmanziMesh::FACE, 1);
+  cv_space.SetComponent("face", AmanziMesh::FACE, 1);
 
   Teuchos::RCP<CompositeVector> T = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
   Teuchos::RCP<Epetra_MultiVector> Ttmp = T->ViewComponent("face", true);

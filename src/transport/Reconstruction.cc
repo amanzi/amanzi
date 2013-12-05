@@ -51,7 +51,7 @@ void Reconstruction::Init()
   CompositeVectorSpace cv_space;
   cv_space.SetMesh(mesh_);
   cv_space.SetGhosted(true);
-  cv_space.SetComponent("reconstructed_gradient", AmanziMesh::CELL, dim);
+  cv_space.SetComponent("cell", AmanziMesh::CELL, dim);
 
   gradient_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
 }
