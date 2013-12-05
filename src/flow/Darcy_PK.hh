@@ -66,7 +66,7 @@ class Darcy_PK : public Flow_PK {
 
   // linear solvers
   void SolveFullySaturatedProblem(double T, CompositeVector& u);
-  void SolveFullySaturatedProblem(double T, const Epetra_Vector& rhs, Epetra_Vector& u);
+  void SolveFullySaturatedProblem(double T, const CompositeVector& rhs, CompositeVector& u);
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; return 1; }
   void AssembleMatrixMFD();
 

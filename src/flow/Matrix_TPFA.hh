@@ -31,8 +31,8 @@ namespace AmanziFlow {
 class Matrix_TPFA : public Matrix_MFD {
  public:
   Matrix_TPFA() {};
-  Matrix_TPFA(Teuchos::RCP<const State>& S, Teuchos::RCP<const Epetra_Map> map);
-  Matrix_TPFA(Teuchos::RCP<const State>& S, Teuchos::RCP<const Epetra_Map> map,
+  Matrix_TPFA(Teuchos::RCP<State>& S, Teuchos::RCP<const Epetra_Map> map);
+  Matrix_TPFA(Teuchos::RCP<State>& S,
               Teuchos::RCP<Epetra_Vector> Krel_faces,
               Teuchos::RCP<Epetra_Vector> Trans_faces,
               Teuchos::RCP<Epetra_Vector> Grav_faces);

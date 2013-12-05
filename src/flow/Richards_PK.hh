@@ -40,7 +40,7 @@ class Flow_State;  // forward declarations
 
 class Richards_PK : public Flow_PK {
  public:
-  Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC);
+  Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<State> S);
   ~Richards_PK();
 
   // main methods
@@ -78,8 +78,6 @@ class Richards_PK : public Flow_PK {
   bool IsPureNewton() const;
 
   // other main methods
-  void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
-
   void AddTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
   void AddTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
 
@@ -88,18 +86,18 @@ class Richards_PK : public Flow_PK {
   void AssemblePreconditionerMFD(const Epetra_Vector &u, double Tp, double dTp);
   void ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_Vector& grav_faces);
 
-  void UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_cells, Epetra_Vector& p_faces);
+  void UpdateSourceBoundaryData(double Tp, CompositeVector& pressure);
   double AdaptiveTimeStepEstimate(double* dTfactor);
 
   // linear problems and solvers
   void AssembleSteadyStateMatrix_MFD(Matrix_MFD* matrix);
   void AssembleSteadyStatePreconditioner_MFD(Matrix_MFD* preconditioner);
-  void SolveFullySaturatedProblem(double T, Epetra_Vector& u, LinearSolver_Specs& ls_specs);
+  void SolveFullySaturatedProblem(double T, CompositeVector& u, LinearSolver_Specs& ls_specs);
   void EnforceConstraints_MFD(double Tp, Epetra_Vector& u);
 
   // water retention models
-  void DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
-  void DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
+  void DeriveSaturationFromPressure(const Epetra_MultiVector& p, Epetra_MultiVector& s);
+  void DerivePressureFromSaturation(const Epetra_MultiVector& s, Epetra_MultiVector& p);
 
   // initization members
   void ClipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
@@ -112,11 +110,8 @@ class Richards_PK : public Flow_PK {
   void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
   
   // access methods
-  const Epetra_Map& super_map() { return *super_map_; }
-  AmanziGeometry::Point& gravity() { return gravity_; }
   Teuchos::RCP<Matrix_MFD> matrix() { return matrix_; }
   Teuchos::RCP<Matrix_MFD> preconditioner() { return preconditioner_; }
-  Teuchos::RCP<Epetra_Vector> get_solution() { return solution; }
 
   // developement members
   bool SetSymmetryProperty();
@@ -143,10 +138,7 @@ class Richards_PK : public Flow_PK {
   double functional_max_norm;
   int functional_max_cell;
 
-  Teuchos::RCP<Epetra_Vector> solution;  // global solution
-  Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
-  Teuchos::RCP<Epetra_Vector> solution_faces;  // face-base pressures
-
+  Teuchos::RCP<CompositeVector> solution;
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
 
@@ -155,14 +147,8 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Transmis_faces;
   Teuchos::RCP<Epetra_Vector> Grav_term_faces;
 
-  std::string flow_solver;
-
   bool is_matrix_symmetric;
-
   double mass_bc, mass_amanzi;
-
-  // CPU statistics
-  // TimerManager timer;
 
  private:
   void operator=(const Richards_PK& RPK);

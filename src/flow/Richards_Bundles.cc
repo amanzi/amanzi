@@ -26,9 +26,11 @@ namespace AmanziFlow {
 /* ******************************************************************
 * A wrapper for updating boundary conditions.
 ****************************************************************** */
-void Richards_PK::UpdateSourceBoundaryData(
-    double Tp, Epetra_Vector& pressure, Epetra_Vector& lambda)
+void Richards_PK::UpdateSourceBoundaryData(double Tp, CompositeVector& pressure)
 {
+  const Epetra_MultiVector& p_cells = pressure->ViewComponent("cell");
+  Epetra_MultiVector& p_faces = pressure->ViewComponent("face"); 
+
   if (src_sink != NULL) {
     if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       src_sink->ComputeDistribute(Tp, Kxy->Values()); 

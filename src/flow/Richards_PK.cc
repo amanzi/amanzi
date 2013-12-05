@@ -1,19 +1,19 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Neil Carlson (nnc@lanl.gov), 
-         Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Neil Carlson (nnc@lanl.gov), 
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 
-Usage: Richards_PK FPK(parameter_list, state);
-       FPK->InitPK();
-       FPK->Initialize();  // optional
-       FPK->InitSteadyState(T, dT);
-       FPK->InitTransient(T, dT);
+  Usage: Richards_PK FPK(parameter_list, state);
+         FPK->InitPK();
+         FPK->Initialize();  // optional
+         FPK->InitSteadyState(T, dT);
+         FPK->InitTransient(T, dT);
 */
 
 #include <vector>
@@ -29,9 +29,7 @@ Usage: Richards_PK FPK(parameter_list, state);
 #include "Point.hh"
 #include "mfd3d_diffusion.hh"
 
-// #include "Matrix_MFD_PLambda.hh"
 #include "Matrix_TPFA.hh"
-
 #include "Flow_BC_Factory.hh"
 #include "Richards_PK.hh"
 
@@ -43,24 +41,18 @@ namespace AmanziFlow {
 * We set up only default values and call Init() routine to complete
 * each variable initialization
 ****************************************************************** */
-Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
+Richards_PK::Richards_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
 {
   // initialize pointers (Do we need smart pointers here? lipnikov@lanl.gov)
-  bc_pressure = NULL;
-  bc_head = NULL;
-  bc_flux = NULL;
-  bc_seepage = NULL;
-
   bdf2_dae = NULL;
   bdf1_dae = NULL;
 
-  Flow_PK::Init(global_list, FS_MPC);
-  FS = FS_MPC;
+  Flow_PK::Init(glist, S);
 
   // extract two critical sublists
   Teuchos::ParameterList flow_list;
-  if (global_list.isSublist("Flow")) {
-    flow_list = global_list.sublist("Flow");
+  if (glist.isSublist("Flow")) {
+    flow_list = glist.sublist("Flow");
   } else {
     Errors::Message msg("Flow PK: input parameter list does not have <Flow> sublist.");
     Exceptions::amanzi_throw(msg);
@@ -72,25 +64,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
     Errors::Message msg("Flow PK: input parameter list does not have <Richards Problem> sublist.");
     Exceptions::amanzi_throw(msg);
   }
-
-  mesh_ = FS->mesh();
-  dim = mesh_->space_dimension();
-
-  // Create the combined cell/face DoF map.
-  super_map_ = Teuchos::rcp(CreateSuperMap());
-
-#ifdef HAVE_MPI
-  const Epetra_Comm& comm = mesh_->cell_map(false).Comm();
-  MyPID = comm.MyPID();
-
-  const Epetra_Map& source_cmap = mesh_->cell_map(false);
-  const Epetra_Map& target_cmap = mesh_->cell_map(true);
-
-  const Epetra_Map& source_fmap = mesh_->face_map(false);
-  const Epetra_Map& target_fmap = mesh_->face_map(true);
-
-  face_importer_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
-#endif
 
   // miscalleneous default parameters
   ti_specs = NULL;
@@ -135,12 +108,12 @@ void Richards_PK::InitPK()
   rainfall_factor.resize(nfaces_owned, 1.0);
 
   // Read flow list and populate various structures. 
-  ProcessParameterList();
+  ProcessParameterList(rp_list_);
 
   // Create water retention models
   Teuchos::ParameterList& wrm_list = rp_list_.sublist("Water retention models");
   rel_perm = Teuchos::rcp(new RelativePermeability(mesh_, wrm_list));
-  rel_perm->Init(atm_pressure, FS_aux);
+  rel_perm->Init(atm_pressure_, S_);
   rel_perm->ProcessParameterList();
   rel_perm->PopulateMapC2MB();
   rel_perm->set_experimental_solver(experimental_solver_);
@@ -149,54 +122,45 @@ void Richards_PK::InitPK()
   rel_perm->ProcessStringRelativePermeability(krel_method_name);
 
   // Create the solution (pressure) vector.
-  solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
-  solution_cells = Teuchos::rcp(FS->CreateCellView(*solution));
-  solution_faces = Teuchos::rcp(FS->CreateFaceView(*solution));
+  solution = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("pressure"))));
   
-  const Epetra_BlockMap& cmap = mesh_->cell_map(false);
-  const Epetra_BlockMap& fmap_ghost = mesh_->face_map(true);
-
-  pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
-  pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
+  const Epetra_BlockMap& cmap_owned = mesh_->cell_map(false);
+  pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap_owned));
+  pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
   // Initialize times.
-  double time = FS->get_time();
+  double time = S_->time();
   if (time >= 0.0) T_physics = time;
 
   // Initialize actions on boundary condtions. 
-  ProcessShiftWaterTableList(rp_list_, bc_head, shift_water_table_);
+  ProcessShiftWaterTableList(rp_list_);
 
   // Process other fundamental structures.
   K.resize(ncells_wghost);
-  SetAbsolutePermeabilityTensor(K);
+  SetAbsolutePermeabilityTensor();
   rel_perm->CalculateKVectorUnit(K, gravity_);
-
-
 
   /// Initialize Transmisibillities and Gravity terms contribution
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    Transmis_faces = Teuchos::rcp(new Epetra_Vector(fmap_ghost));
-    Grav_term_faces = Teuchos::rcp(new Epetra_Vector(fmap_ghost));
-    ComputeTransmissibilities( *Transmis_faces, *Grav_term_faces);
+    const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
+    Transmis_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
+    Grav_term_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
+    ComputeTransmissibilities(*Transmis_faces, *Grav_term_faces);
   }
 
   // Allocate memory for wells
   if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    const Epetra_Map& cmap_owned = mesh_->cell_map(false);
     Kxy = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   }
 
 
   // Select a proper matrix class
-  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-    // matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
-    // preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
-  } else if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    matrix_ = Teuchos::rcp(new Matrix_TPFA(S_, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
-    preconditioner_ = Teuchos::rcp(new Matrix_TPFA(S_, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
+  if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
+    matrix_ = Teuchos::rcp(new Matrix_TPFA(S_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
+    preconditioner_ = Teuchos::rcp(new Matrix_TPFA(S_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
   } else {
-    matrix_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
-    preconditioner_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
+    matrix_ = Teuchos::rcp(new Matrix_MFD(mesh_));
+    preconditioner_ = Teuchos::rcp(new Matrix_MFD(mesh_));
   }
   matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
   preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
@@ -205,13 +169,12 @@ void Richards_PK::InitPK()
 
   is_matrix_symmetric = SetSymmetryProperty();
   matrix_->SetSymmetryProperty(is_matrix_symmetric);
-  matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
+  matrix_->SymbolicAssembleGlobalMatrices();
 
 
   // initialize boundary and source data 
-  Epetra_Vector& pressure = FS->ref_pressure();
-  Epetra_Vector& lambda = FS->ref_lambda();
-  UpdateSourceBoundaryData(time, pressure, lambda);
+  CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
+  UpdateSourceBoundaryData(time, pressure);
 
   // injected water mass
   mass_bc = 0.0;
@@ -226,18 +189,20 @@ void Richards_PK::InitPK()
 void Richards_PK::InitializeAuxiliaryData()
 {
   // pressures
-  Epetra_Vector& pressure = FS->ref_pressure();
-  Epetra_Vector& lambda = FS->ref_lambda();
-  DeriveFaceValuesFromCellValues(pressure, lambda);
+  CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
+  const Epetra_MultiVector& p_cells = *pressure.ViewComponent("cell");
+  Epetra_MultiVector& p_faces = *pressure.ViewComponent("face");
+
+  DeriveFaceValuesFromCellValues(p_cells, p_faces);
 
   double time = T_physics;
-  UpdateSourceBoundaryData(time, pressure, lambda);
+  UpdateSourceBoundaryData(time, pressure);
 
   // saturations
-  Epetra_Vector& ws = FS->ref_water_saturation();
-  Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
+  Epetra_MultiVector& ws = *S_->GetFieldData("water_saturation", passwd_)->ViewComponent("cell");
+  Epetra_MultiVector& ws_prev = *S_->GetFieldData("prev_water_saturation", passwd_)->ViewComponent("cell");
 
-  DeriveSaturationFromPressure(pressure, ws);
+  DeriveSaturationFromPressure(p_cells, ws);
   ws_prev = ws;
 }
 
@@ -251,7 +216,7 @@ void Richards_PK::InitializeSteadySaturated()
     Teuchos::OSTab tab = vo_->getOSTab();
     *(vo_->os()) << "initializing with a saturated steady state..." << endl;
   }
-  double T = FS->get_time();
+  double T = S_->time();
   SolveFullySaturatedProblem(T, *solution, ti_specs->ls_specs_ini);
 }
 
@@ -272,9 +237,11 @@ void Richards_PK::InitPicard(double T0)
   dT = ti_specs_igs_.dT0;
   AdvanceToSteadyState_Picard(ti_specs_igs_);
 
-  Epetra_Vector& ws = FS->ref_water_saturation();
-  Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
-  DeriveSaturationFromPressure(*solution_cells, ws);
+  const Epetra_MultiVector& p_cells = *S_->GetFieldData("pressure")->ViewComponent("cell");
+  Epetra_MultiVector& ws = *S_->GetFieldData("water_saturation", passwd_)->ViewComponent("cell");
+  Epetra_MultiVector& ws_prev = *S_->GetFieldData("prev_water_saturation", passwd_)->ViewComponent("cell");
+
+  DeriveSaturationFromPressure(p_cells, ws);
   ws_prev = ws;
 }
 
@@ -353,7 +320,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   // preconditioner_->DestroyPreconditioner();
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
-  preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
+  preconditioner_->SymbolicAssembleGlobalMatrices();
   preconditioner_->InitPreconditioner(ti_specs.preconditioner_name, preconditioner_list_);
 
   // set up new time integration or solver
@@ -364,7 +331,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
         tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(tmp_list));
-    if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this, *super_map_);
+    if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this);
     bdf2_dae->setParameterList(bdf2_list);
 
   } else if (ti_specs.ti_method == FLOW_TIME_INTEGRATION_BDF1) {
@@ -373,7 +340,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
         tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
     Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(tmp_list));
-    if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this, *super_map_);
+    if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this);
     bdf1_dae->setParameterList(bdf1_list);
   }
 
@@ -486,7 +453,7 @@ int Richards_PK::Advance(double dT_MPC)
   FS->CopyMasterFace2GhostFace(FS->ref_darcy_flux(), FS_aux->ref_darcy_flux());
 
   dT = dT_MPC;
-  double time = FS->get_time();
+  double time = S_->time();
   if (time >= 0.0) T_physics = time;
 
   // predict water mass change during time step

@@ -22,13 +22,15 @@ namespace AmanziFlow {
 ****************************************************************** */
 double Darcy_PK::ErrorEstimate(double* dTfactor)
 {
+  Epetra_MultiVector& p_cells = *solution->ViewComponent("cell");
+
   double tol, error, error_max = 0.0;
   double dTfactor_cell;
 
   *dTfactor = 100.0;
   for (int c = 0; c < ncells_owned; c++) {
     error = fabs((*pdot_cells)[c] - (*pdot_cells_prev)[c]) * dT / 2;
-    tol = ti_specs->rtol * fabs((*solution)[c]) + ti_specs->atol;
+    tol = ti_specs->rtol * fabs(p_cells[0][c]) + ti_specs->atol;
 
     dTfactor_cell = sqrt(tol / std::max(error, FLOW_DT_ADAPTIVE_ERROR_TOLERANCE));
     *dTfactor = std::min(*dTfactor, dTfactor_cell);

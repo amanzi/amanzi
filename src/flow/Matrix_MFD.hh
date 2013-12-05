@@ -60,17 +60,16 @@ class Matrix_MFD {
   virtual double ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
 
   virtual void AnalyticJacobian(const Epetra_Vector& solution, 
-				std::vector<int>& bc_markers, 
-				std::vector<bc_tuple>& bc_values,
-				RelativePermeability& rel_perm){};
+                                std::vector<int>& bc_markers, 
+                                std::vector<bc_tuple>& bc_values,
+                                RelativePermeability& rel_perm) {};
 
   int ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u);
 
-  virtual  void DeriveDarcyMassFlux(const Epetra_Vector& solution,
-				   const Epetra_Import& face_importer,
-				   std::vector<int>& bc_model, 
-				   std::vector<bc_tuple>& bc_values,
-				   Epetra_Vector& darcy_mass_flux);
+  virtual void DeriveDarcyMassFlux(const CompositeVector& solution,
+                                   std::vector<int>& bc_model, 
+                                   std::vector<bc_tuple>& bc_values,
+                                   Epetra_MultiVector& darcy_mass_flux);
 
 
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& prec_list);
@@ -78,8 +77,8 @@ class Matrix_MFD {
   void DestroyPreconditioner() { preconditioner_->Destroy(); }
 
   // required methods
-  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
   // control methods
   void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }

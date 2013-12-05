@@ -486,7 +486,7 @@ void Flow_PK::AddNewtonFluxes_MFD(
 * Updates global Darcy vector calculated by a discretization method.
 * simplified implementation for a single phase flow.                                            
 ****************************************************************** */
-void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_Vector& darcy_mass_flux)
+void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux)
 {
   double rho = *(S_->GetScalarData("fluid_density"));
 
@@ -504,7 +504,7 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_Vector& darcy_mass_flux)
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
       if (f < nfaces_owned && !flag[f]) {
-        darcy_mass_flux[f] += rho * (Kg * normal);
+        darcy_mass_flux[0][f] += rho * (Kg * normal);
         flag[f] = 1;
       }
     }
@@ -515,7 +515,7 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_Vector& darcy_mass_flux)
 /* ******************************************************************
 * Updates global Darcy vector calculated by a discretization method.                                             
 ****************************************************************** */
-void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_Vector& darcy_mass_flux,
+void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux,
                                          RelativePermeability& rel_perm) 
 {
   double rho = *(S_->GetScalarData("fluid_density"));
@@ -540,13 +540,13 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_Vector& darcy_mass_flux,
 
       if (f < nfaces_owned && !flag[f]) {
         if (method == FLOW_RELATIVE_PERM_NONE) {
-          darcy_mass_flux[f] += rho * (Kg * normal);
+          darcy_mass_flux[0][f] += rho * (Kg * normal);
         } else if (method == FLOW_RELATIVE_PERM_CENTERED) {
-          darcy_mass_flux[f] += rho * (Kg * normal) * Krel_cells[c];
+          darcy_mass_flux[0][f] += rho * (Kg * normal) * Krel_cells[c];
         } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
-          darcy_mass_flux[f] += rho * (Kg * normal) * krel[n];
+          darcy_mass_flux[0][f] += rho * (Kg * normal) * krel[n];
         } else {
-          darcy_mass_flux[f] += rho * (Kg * normal) * Krel_faces[f];
+          darcy_mass_flux[0][f] += rho * (Kg * normal) * Krel_faces[f];
         }
         flag[f] = 1;
       }

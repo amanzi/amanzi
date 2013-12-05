@@ -24,7 +24,7 @@ void Darcy_PK::AssembleMatrixMFD()
 {
   matrix_->CreateMFDstiffnessMatrices();
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, &*matrix_);
+  AddGravityFluxes_MFD(&*matrix_);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->AssembleGlobalMatrices();
   matrix_->AssembleSchurComplement(bc_model, bc_values);
@@ -37,12 +37,12 @@ void Darcy_PK::AssembleMatrixMFD()
 * does not depend on time. The boundary conditions are calculated
 * only once, during the initialization step.                                                
 ****************************************************************** */
-void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
+void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
 {
   // calculate and assemble elemental stifness matrices
   matrix_->CreateMFDstiffnessMatrices();
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, &*matrix_);
+  AddGravityFluxes_MFD(&*matrix_);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->AssembleGlobalMatrices();
   matrix_->AssembleSchurComplement(bc_model, bc_values);
@@ -51,12 +51,12 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   // create linear solver
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
-     solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_);
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, CompositeVector, Epetra_BlockMap> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, CompositeVector, Epetra_BlockMap> >
+     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
 
-  Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();
-  solver->ApplyInverse(*rhs, *solution);
+  CompositeVector& rhs = *matrix_->rhs();
+  solver->ApplyInverse(rhs, *solution);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->num_itrs();
@@ -73,13 +73,13 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 * Calculates steady-state solution using a user-given rhs vector. 
 * The matrix has to be assembled before this call.
 ****************************************************************** */
-void Darcy_PK::SolveFullySaturatedProblem(double Tp, const Epetra_Vector& rhs, Epetra_Vector& u)
+void Darcy_PK::SolveFullySaturatedProblem(double Tp, const CompositeVector& rhs, CompositeVector& u)
 {
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
-     solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_);
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, CompositeVector, Epetra_BlockMap> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, CompositeVector, Epetra_BlockMap> >
+     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
 
   solver->ApplyInverse(rhs, u);
 

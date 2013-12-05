@@ -76,8 +76,8 @@ class Flow_PK : public BDF2::fnBase {
   void AddGravityFluxes_MFD(Matrix_MFD* matrix, RelativePermeability& rel_perm);
   void AddGravityFluxes_TPFA(const Epetra_Vector& Krel_faces, const Epetra_Vector& Grav_term, Matrix_MFD* matrix_operator);
 
-  void AddGravityFluxes_DarcyFlux(Epetra_Vector& darcy_mass_flux);
-  void AddGravityFluxes_DarcyFlux(Epetra_Vector& darcy_mass_flux, RelativePermeability& rel_perm);
+  void AddGravityFluxes_DarcyFlux(Epetra_MultiVector& mass_flux);
+  void AddGravityFluxes_DarcyFlux(Epetra_MultiVector& mass_flux, RelativePermeability& rel_perm);
 
   // miscallenous members
   void ResetPKtimes(double T0, double dT0) { T_physics = T0; dT = dT0; }

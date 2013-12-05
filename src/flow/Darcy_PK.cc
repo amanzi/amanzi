@@ -362,9 +362,9 @@ int Darcy_PK::Advance(double dT_MPC)
   // create linear solver
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, CompositeVector, Epetra_BlockMap> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, CompositeVector, Epetra_BlockMap> >
-     solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_);
+     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
   solver->ApplyInverse(rhs, *solution);
@@ -382,11 +382,12 @@ int Darcy_PK::Advance(double dT_MPC)
 
   // calculate time derivative and 2nd-order solution approximation
   if (ti_specs->dT_method == FLOW_DT_ADAPTIVE) {
-    Epetra_MultiVector& pressure = S_->GetFieldData("pressure")->ViewComponent("cell");  // pressure at t^n
+    const Epetra_MultiVector& p = *S_->GetFieldData("pressure")->ViewComponent("cell");  // pressure at t^n
+    Epetra_MultiVector& p_cells = *solution->ViewComponent("cell");  // pressure at t^{n+1}
 
     for (int c = 0; c < ncells_owned; c++) {
-      (*pdot_cells)[c] = ((*solution)[c] - pressure[c]) / dT; 
-      (*solution)[c] = pressure[c] + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
+      (*pdot_cells)[c] = (p_cells[0][c] - p[0][c]) / dT; 
+      p_cells[0][c] = p[0][c] + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
     }
   }
 
@@ -411,17 +412,20 @@ int Darcy_PK::Advance(double dT_MPC)
 * Transfer data from the external flow state FS_MPC. MPC may request
 * to populate the original state FS. 
 ****************************************************************** */
-void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
+void Darcy_PK::CommitState(Teuchos::RCP<State> S)
 {
-  Epetra_Vector& pressure = FS_MPC->ref_pressure();
-  pressure = *solution_cells;
+  CompositeVector& p = *S_->GetFieldData("pressure", passwd_);
+  p = *solution;
 
   // calculate darcy mass flux
-  Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
+  double rho = *S_->GetScalarData("fluid_density");
+  Epetra_MultiVector& flux = *S_->GetFieldData("pressure", passwd_)->ViewComponent("face", true);
+
   matrix_->CreateMFDstiffnessMatrices();
-  matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, bc_model, bc_values, flux);
-  AddGravityFluxes_DarcyFlux(K, flux);
-  for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho_;
+  matrix_->DeriveDarcyMassFlux(*solution, bc_model, bc_values, flux);
+  AddGravityFluxes_DarcyFlux(flux);
+
+  for (int c = 0; c < nfaces_owned; c++) flux[0][c] /= rho;
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
@@ -436,19 +440,20 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 * part of MFD algebraic system. 
 ****************************************************************** */
 void Darcy_PK::AddTimeDerivativeSpecificStorage(
-    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix_operator)
+    Epetra_MultiVector& p_cells, double dTp, Matrix_MFD* matrix_operator)
 {
-  double g = fabs(gravity()[dim - 1]);
-  const Epetra_Vector& specific_storage = FS->ref_specific_storage();
+  double g = fabs(gravity_[dim - 1]);
+  const Epetra_MultiVector& 
+      specific_storage = *S_->GetFieldData("specific_storage")->ViewComponent("cell");
 
   std::vector<double>& Acc_cells = matrix_operator->Acc_cells();
   std::vector<double>& Fc_cells = matrix_operator->Fc_cells();
 
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
-    double factor = volume * specific_storage[c] / (g * dT_prec);
+    double factor = volume * specific_storage[0][c] / (g * dTp);
     Acc_cells[c] += factor;
-    Fc_cells[c] += factor * pressure_cells[c];
+    Fc_cells[c] += factor * p_cells[0][c];
   }
 }
 
@@ -459,14 +464,9 @@ void Darcy_PK::AddTimeDerivativeSpecificStorage(
 void Darcy_PK::UpdateSpecificYield()
 {
   // populate ghost cells
-#ifdef HAVE_MPI
-  Epetra_Vector specific_yield_wghost(mesh_->face_map(true));
-  for (int c = 0; c < ncells_owned; c++) specific_yield_wghost[c] = FS->ref_specific_yield()[c];
-
-  FS->CopyMasterCell2GhostCell(specific_yield_wghost);
-#else
-  Epetra_Vector& specific_yield_wghost = FS->ref_specific_yield();
-#endif
+  S_->GetFieldData("specific_yield", passwd_)->ScatterMasterToGhosted();
+  const Epetra_MultiVector& 
+      specific_yield = *S_->GetFieldData("specific_yield", passwd_)->ViewComponent("cell", true);
 
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
   AmanziMesh::Entity_ID_List faces;
@@ -474,7 +474,7 @@ void Darcy_PK::UpdateSpecificYield()
 
   int negative_yield = 0;
   for (int c = 0; c < ncells_owned; c++) {
-    if (specific_yield_wghost[c] > 0.0) {
+    if (specific_yield[0][c] > 0.0) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
       double area = 0.0;
@@ -484,11 +484,11 @@ void Darcy_PK::UpdateSpecificYield()
         int c2 = mfd3d.cell_get_face_adj_cell(c, f);
 
         if (c2 >= 0) {
-          if (specific_yield_wghost[c2] <= 0.0)  // cell in the fully saturated layer
+          if (specific_yield[0][c2] <= 0.0)  // cell in the fully saturated layer
             area -= (mesh_->face_normal(f))[dim - 1] * dirs[n];
         }
       }
-      FS->ref_specific_yield()[c] *= area;
+      specific_yield[0][c] *= area;
       if (area <= 0.0) negative_yield++;
     }
   }
@@ -510,18 +510,19 @@ void Darcy_PK::UpdateSpecificYield()
 * of MFD algebraic system. Area factor is alreafy inside Sy. 
 ****************************************************************** */
 void Darcy_PK::AddTimeDerivativeSpecificYield(
-    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix_operator)
+    Epetra_MultiVector& p_cells, double dTp, Matrix_MFD* matrix_operator)
 {
-  double g = fabs(gravity()[dim - 1]);
-  const Epetra_Vector& specific_yield = FS->ref_specific_yield();
+  double g = fabs(gravity_[dim - 1]);
+  const Epetra_MultiVector& 
+      specific_yield = *S_->GetFieldData("specific_yield")->ViewComponent("cell");
 
   std::vector<double>& Acc_cells = matrix_operator->Acc_cells();
   std::vector<double>& Fc_cells = matrix_operator->Fc_cells();
 
   for (int c = 0; c < ncells_owned; c++) {
-    double factor = specific_yield[c] / (g * dT_prec);
+    double factor = specific_yield[0][c] / (g * dTp);
     Acc_cells[c] += factor;
-    Fc_cells[c] += factor * pressure_cells[c];
+    Fc_cells[c] += factor * p_cells[0][c];
   }
 }
 

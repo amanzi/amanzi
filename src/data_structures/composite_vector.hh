@@ -84,6 +84,8 @@ public:
   Teuchos::RCP<const Epetra_Map> map(std::string name, bool ghosted=false) const {
     return ghosted ? ghostvec_->map(name) : mastervec_->map(name);
   }
+  const Epetra_Map& Map() const {};
+  CompositeVector(const Epetra_BlockMap& map) {};
 
   Teuchos::RCP<const Epetra_MultiVector>
   ViewComponent(std::string name, bool ghosted=false) const;
