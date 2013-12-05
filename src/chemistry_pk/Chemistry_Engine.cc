@@ -707,6 +707,8 @@ GeochemicalConditionContext::~GeochemicalConditionContext()
 
 Teuchos::RCP<Function> GeochemicalConditionContext::speciesFunction(const std::string& species)
 {
+  Errors::Message msg;
+
   // Find the index of the given species within the list kept in the chemistry engine.
   int speciesIndex = -1;
   std::vector<std::string> speciesNames;
@@ -719,7 +721,12 @@ Teuchos::RCP<Function> GeochemicalConditionContext::speciesFunction(const std::s
       break;
     }
   }
-  // FIXME: Check for speciesIndex == -1.
+  if (speciesIndex == -1)
+  {
+    msg << "Invalid species: " << species;
+    Exceptions::amanzi_throw(msg); 
+  }
+
   GeochemicalConcentrationFunction* function = new GeochemicalConcentrationFunction(speciesIndex);
   functions_[speciesIndex] = Teuchos::RCP<Function>(function);
   return functions_[speciesIndex];
