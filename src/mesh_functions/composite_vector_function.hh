@@ -19,7 +19,7 @@ of this function in a ComposteVector.
 
 #include "Teuchos_RCP.hpp"
 #include "mesh_function.hh"
-#include "composite_vector.hh"
+#include "CompositeVector.hh"
 
 namespace Amanzi {
 namespace Functions {

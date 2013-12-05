@@ -20,9 +20,9 @@ namespace AmanziPreconditioners {
 /* ******************************************************************
  * Apply the preconditioner.
  ****************************************************************** */
-void PreconditionerBlockILU::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
+int PreconditionerBlockILU::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
 {
-  IfpILU_->ApplyInverse(v, hv);
+  return IfpILU_->ApplyInverse(v, hv);
 }
 
 

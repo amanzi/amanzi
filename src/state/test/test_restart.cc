@@ -222,7 +222,7 @@ SUITE(RESTART) {
     S0->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);;
 
     S0->Setup();
-    S0->Initialize();
+    S0->InitializeFields();
     
     S0->set_time(1.02);
 
@@ -238,7 +238,7 @@ SUITE(RESTART) {
     S1->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);;
 
     S1->Setup();
-    S1->Initialize();    
+    S1->InitializeFields();    
 
     // fill with random data before reading checkpoint
     Teuchos::RCP<Epetra_Vector> s1p =  Teuchos::rcpFromRef(*(*S1->GetFieldData("celldata", "state")->ViewComponent("cell", false))(0)); 

@@ -53,11 +53,11 @@ Flow_State::Flow_State(const Flow_State& other,
     // Copy data, making new vector for Darcy flux with ghosted entries.
     ghosted_ = true;
 
-    CompositeVectorFactory fac;
+    CompositeVectorSpace fac;
     fac.SetMesh(mesh_);
     fac.SetComponent("face", AmanziMesh::FACE, 1);
-    Teuchos::RCP<CompositeVector> flux = fac.CreateVector(true);
-    flux->CreateData();
+    Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(fac));
+    //flux->CreateData();
     *flux->ViewComponent("face",false) = *other.darcy_flux();
     flux->ScatterMasterToGhosted();
     S_->SetData("darcy_flux", name_, flux);
@@ -148,7 +148,7 @@ void Flow_State::Initialize() {
     S_->GetField("darcy_velocity",name_)->set_initialized();
     S_->GetField("hydraulic_head",name_)->set_initialized();
     S_->GetField("particle_density",name_)->set_initialized();
-    S_->Initialize();
+    S_->InitializeFields();
   } else {
     
     // fields that might be initialized through the input

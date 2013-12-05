@@ -32,7 +32,7 @@ class PreconditionerHypre : public Preconditioner {
   void Update(const Teuchos::RCP<Epetra_RowMatrix>& A);
   void Destroy() {};
 
-  void ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv);
+  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv);
 
  private:
   Teuchos::ParameterList list_;

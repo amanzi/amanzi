@@ -29,43 +29,53 @@ Teuchos::RCP<Preconditioner> PreconditionerFactory::Create(
     const std::string& name, const Teuchos::ParameterList& prec_list)
 {
   if (prec_list.isSublist(name)) {
-    const Teuchos::ParameterList& slist = prec_list.sublist(name);
-    std::string type = "identity";
-    if (slist.isParameter("preconditioner type"))
-      type = slist.get<std::string>("preconditioner type");
-
-    if (type == "boomer amg") {
-      Teuchos::ParameterList hypre_list = slist.sublist("boomer amg parameters");
-      Teuchos::RCP<PreconditionerHypre> prec = Teuchos::rcp(new PreconditionerHypre());
-      prec->Init(name, hypre_list);
-      return prec;
-    } else if (type == "ml") {
-      Teuchos::ParameterList ml_list = slist.sublist("ml parameters");
-      Teuchos::RCP<PreconditionerML> prec = Teuchos::rcp(new PreconditionerML());
-      prec->Init(name, ml_list);
-      return prec;
-    } else if (type == "block ilu") {
-      Teuchos::ParameterList ilu_list = slist.sublist("block ilu parameters");
-      Teuchos::RCP<PreconditionerBlockILU> prec = Teuchos::rcp(new PreconditionerBlockILU());
-      prec->Init(name, ilu_list);
-    } else if (type == "identity") {  // Identity preconditioner is default.
-      Teuchos::RCP<PreconditionerIdentity> prec = Teuchos::rcp(new PreconditionerIdentity());
-      prec->Init(name, prec_list);
-      return prec;
-    } else {
-      std::stringstream msgstream;
-      msgstream << "PreconditionerFactory: Unknown preconditioner type " << type;
-      Errors::Message message(msgstream.str());
-      Exceptions::amanzi_throw(message);
-    }
+    Teuchos::ParameterList slist = prec_list.sublist(name);
+    return Create(slist);
   } else {
     Teuchos::RCP<PreconditionerIdentity> prec = Teuchos::rcp(new PreconditionerIdentity());
     prec->Init(name, prec_list);
     return prec;
   }
-
-  return Teuchos::null;  // This line should never be reached, but Intel spits a warning.
 }
+
+/* ******************************************************************
+ * Initialization of the preconditioner
+ ****************************************************************** */
+Teuchos::RCP<Preconditioner> 
+PreconditionerFactory::Create(Teuchos::ParameterList& slist)
+{
+  if (slist.isParameter("preconditioner type")) {
+    std::string type = slist.get<std::string>("preconditioner type");
+
+    if (type == "boomer amg") {
+      Teuchos::ParameterList hypre_list = slist.sublist("boomer amg parameters");
+      Teuchos::RCP<PreconditionerHypre> prec = Teuchos::rcp(new PreconditionerHypre());
+      prec->Init(type, hypre_list);
+      return prec;
+    } else if (type == "ml") {
+      Teuchos::ParameterList ml_list = slist.sublist("ml parameters");
+      Teuchos::RCP<PreconditionerML> prec = Teuchos::rcp(new PreconditionerML());
+      prec->Init(type, ml_list);
+      return prec;
+    } else if (type == "block ilu") {
+      Teuchos::ParameterList ilu_list = slist.sublist("block ilu parameters");
+      Teuchos::RCP<PreconditionerBlockILU> prec = Teuchos::rcp(new PreconditionerBlockILU());
+      prec->Init(type, ilu_list);
+      return prec;
+    } else if (type == "identity") {  // Identity preconditioner is default.
+      Teuchos::RCP<PreconditionerIdentity> prec = Teuchos::rcp(new PreconditionerIdentity());
+      prec->Init(type, slist);
+      return prec;
+    } else {
+      Errors::Message msg("PreconditionerFactory: wrong value of parameter `\"preconditioner type`\"");
+      Exceptions::amanzi_throw(msg);
+    }
+  } else {
+    Errors::Message msg("PreconditionerFactory: parameter `\"preconditioner type`\" is missing");
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
 
 }  // namespace AmanziPreconditioners
 }  // namespace Amanzi

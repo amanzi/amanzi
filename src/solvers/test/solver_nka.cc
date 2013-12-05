@@ -48,7 +48,8 @@ SUITE(SOLVERS) {
 
     // create the Solver
     Teuchos::RCP<AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap> > nka =
-        Teuchos::rcp(new AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap>(plist, fn, *map));
+        Teuchos::rcp(new AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap>(plist));
+    nka->Init(fn, *map);
 
     // initial guess
     Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
@@ -81,7 +82,8 @@ SUITE(SOLVERS) {
 
     // create the Solver
     Teuchos::RCP<AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap> > nka =
-        Teuchos::rcp(new AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap>(plist, fn, *map));
+        Teuchos::rcp(new AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap>(plist));
+    nka->Init(fn, *map);
 
     // initial guess
     Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
@@ -112,7 +114,8 @@ SUITE(SOLVERS) {
 
     // create the Solver
     Teuchos::RCP<AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap> > newton =
-        Teuchos::rcp(new AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>(plist, fn, *map));
+        Teuchos::rcp(new AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>(plist));
+    newton->Init(fn, *map);
 
     // initial guess
     Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));

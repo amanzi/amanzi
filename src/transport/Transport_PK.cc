@@ -417,7 +417,7 @@ void Transport_PK::Advance(double dT_MPC)
 
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
-    const Epetra_Map& map = dispersion_matrix_->Range();
+    const Epetra_Map& map = dispersion_matrix_->RangeMap();
     Epetra_Vector rhs(map), sol(map);
 
     double residual = 0.0;

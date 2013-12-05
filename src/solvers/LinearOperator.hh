@@ -14,24 +14,33 @@ Usage:
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
- 
+#include "dbc.hh"
+#include "errors.hh"
+
 namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Matrix, class Vector, class VectorSpace>
 class LinearOperator : public Matrix {
  public:
-  LinearOperator(Teuchos::RCP<const Matrix> m, Teuchos::RCP<const Matrix> h) : 
+  LinearOperator(const Teuchos::RCP<const Matrix>& m,
+                 const Teuchos::RCP<const Matrix>& h) : 
       m_(m), h_(h) {};
-  ~LinearOperator() {};
+
+  virtual ~LinearOperator() {};
 
   virtual void Init(Teuchos::ParameterList& plist) = 0;  
 
-  void Apply(const Vector& v, Vector& mv) { m_->Apply(v, mv); }
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const = 0;
+  virtual int Apply(const Vector& v, Vector& mv) const { return m_->Apply(v, mv); }
+  virtual int ApplyInverse(const Vector& v, Vector& hv) const {
+    int ierr = ApplyInverse_(v,hv);
+    if (ierr > 0) return 0;
+    else if (ierr < 0) return 1;
+    else ASSERT(1);
+  }
 
-  Teuchos::RCP<const VectorSpace> domain() const { return m_->domain(); }
-  Teuchos::RCP<const VectorSpace> range() const { return m_->range(); }
+  virtual const VectorSpace& DomainMap() const { return m_->DomainMap(); }
+  virtual const VectorSpace& RangeMap() const { return m_->RangeMap(); }
 
   double TrueResidual(const Vector& f, const Vector& v) const {
     Vector r(f);
@@ -46,7 +55,11 @@ class LinearOperator : public Matrix {
   virtual double residual() = 0;
   virtual int num_itrs() = 0;
   virtual void add_criteria(int criteria) = 0;
-  std::string& name() { return name_; }
+  std::string name() { return name_; }
+  void set_name(std::string name) { name_ = name; }
+
+ protected:
+  virtual int ApplyInverse_(const Vector& v, Vector& hv) const = 0;
 
  protected:
   Teuchos::RCP<const Matrix> m_;

@@ -26,8 +26,8 @@
 
 #include "Mesh.hh"
 
-#include "composite_vector.hh"
-#include "composite_vector_factory.hh"
+#include "CompositeVector.hh"
+#include "CompositeVectorSpace.hh"
 
 #include "state_defs.hh"
 
@@ -52,8 +52,9 @@ class State {
 
  private:
 
-  typedef std::map<Key, Teuchos::RCP<const AmanziMesh::Mesh> > MeshMap;
-  typedef std::map<Key, Teuchos::RCP<CompositeVectorFactory> > FieldFactoryMap;
+  typedef std::map<Key, std::pair<Teuchos::RCP<AmanziMesh::Mesh>,
+                                  bool> > MeshMap;
+  typedef std::map<Key, Teuchos::RCP<CompositeVectorSpace> > FieldFactoryMap;
   typedef std::map<Key, Teuchos::RCP<Field> > FieldMap;
   typedef std::map<Key, Teuchos::RCP<FieldEvaluator> > FieldEvaluatorMap;
 
@@ -66,7 +67,7 @@ class State {
   explicit State(Teuchos::ParameterList& state_plist);
 
   // Copy constructor, copies memory not pointers.
-  State(const State& other, StateConstructMode mode);
+  State(const State& other, StateConstructMode mode=STATE_CONSTRUCT_MODE_COPY_DATA);
 
   // Assignment operator, copies memory not pointers.  Note this
   // implementation requires the State being copied has the same structure (in
@@ -79,12 +80,14 @@ class State {
   // Create data structures, finalizing the structure of the state.
   void Setup();
 
-  // Initialize field evaluators using ICs set by PKs.
-  void Initialize();
+  // Sub-steps in the initialization process. (Used by Amanzi)
+  void InitializeEvaluators();
+  void InitializeFields();
+  bool CheckNotEvaluatedFieldsInitialized();
+  bool CheckAllFieldsInitialized();
 
-  // Check that everything is initialized and owned.
-  void CheckInitialized();
-
+  // Used by ATS.
+  //  void Initialize();
 
   // -----------------------------------------------------------------------------
   // State handles mesh management.
@@ -93,19 +96,26 @@ class State {
   // state.
   //
   // Register a mesh under the default key, "domain".
-  void RegisterDomainMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  void RegisterDomainMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+                          bool defoormable=false);
 
   // Register a mesh under a generic key.
-  void RegisterMesh(Key key, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  void RegisterMesh(Key key, const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+                    bool deformable=false);
+
+  // Alias a mesh to an existing mesh
+  void AliasMesh(Key target, Key alias);
 
   // Remove a mesh.
   void RemoveMesh(Key key);
 
   // Ensure a mesh exists.
   bool HasMesh(Key key) const { return GetMesh_(key) != Teuchos::null; }
+  bool IsDeformableMesh(Key key) const;
 
   // Mesh accessor.
   Teuchos::RCP<const AmanziMesh::Mesh> GetMesh(Key key=Key("domain")) const;
+  Teuchos::RCP<AmanziMesh::Mesh> GetDeformableMesh(Key key=Key("domain"));
 
   // Iterate over meshes.
   typedef MeshMap::const_iterator mesh_iterator;
@@ -141,10 +151,10 @@ class State {
   void RequireConstantVector(Key fieldname, int dimension=-1);
 
   // -- Require a vector field, either owned or not.
-  Teuchos::RCP<CompositeVectorFactory>
+  Teuchos::RCP<CompositeVectorSpace>
   RequireField(Key fieldname, Key owner="state");
 
-  Teuchos::RCP<CompositeVectorFactory>
+  Teuchos::RCP<CompositeVectorSpace>
   RequireField(Key fieldname, Key owner,
                const std::vector<std::vector<std::string> >& subfield_names);
 
@@ -193,6 +203,9 @@ class State {
   // like the Phalanx approach.  A directed acyclic graph of dependencies are
   // managed in State, where each node is a FieldEvaluator.
   //
+  // Access to the FEList -- this allows PKs to add to this list for custom evaluators.
+  Teuchos::ParameterList& FEList() { return state_plist_.sublist("field evaluators"); }
+
   // Require FieldEvaluators.
   Teuchos::RCP<FieldEvaluator> RequireFieldEvaluator(Key);
   Teuchos::RCP<FieldEvaluator> RequireFieldEvaluator(Key, Teuchos::ParameterList&);
@@ -231,7 +244,7 @@ class State {
   // Time accessor and mutators.
   double time() const { return time_; }
   void set_time(double new_time);  // note this also evaluates state-owned functions
-  void advance_time(double dT) { last_time_ = time(); set_time(time() + dT); }
+  void advance_time(double dT) { set_time(time() + dT); }
 
   double final_time() const { return final_time_; }
   void set_final_time(double new_time) { final_time_ = new_time; }
@@ -249,14 +262,9 @@ class State {
   void advance_cycle(int dcycle=1) { cycle_ += dcycle; }
 
 private:
-  // sub-steps in the initialization process.
-  void InitializeEvaluators_();
-  void InitializeFields_();
-  bool CheckNotEvaluatedFieldsInitialized_();
-  bool CheckAllFieldsInitialized_();
 
   // Accessors that return null if the Key does not exist.
-  Teuchos::RCP<const AmanziMesh::Mesh> GetMesh_(Key key) const;
+  Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(Key key) const;
   Teuchos::RCP<const Field> GetField_(Key fieldname) const;
   Teuchos::RCP<Field> GetField_(Key fieldname);
   Teuchos::RCP<FieldEvaluator> GetFieldEvaluator_(Key key);
@@ -282,11 +290,6 @@ private:
 
   // parameter list
   Teuchos::ParameterList state_plist_;
-
- private:
-  // un-defined!
-  State(const State& other);
-
 };
 
 

@@ -33,16 +33,13 @@ public:
               std::vector<int> num_dofs);
 
   // copy constructor
-  BlockVector(const BlockVector& other, ConstructMode mode=CONSTRUCT_WITH_NEW_DATA);
+  BlockVector(const BlockVector& other);
+
+  // Constructor just does maps, this creates data.
+  void CreateData();
 
   // assignment
   BlockVector& operator=(const BlockVector& other);
-
-  // Check consistency of meta-data and allocate data.
-  // Separating this from the object constructor is an active choice -- in
-  // this way the non-CreateData version can represent just the structure of
-  // the vector, much like an Epetra_Map.
-  void CreateData();
 
   // Accessors
 
@@ -51,15 +48,16 @@ public:
   typedef std::vector<std::string>::const_iterator name_iterator;
   name_iterator begin() { return names_.begin(); }
   name_iterator end() { return names_.end(); }
+  unsigned int size() const { return names_.size(); }
 
-  int num_components() const { return num_components_; }
-  int num_dofs(std::string name) const { return num_dofs_[index_(name)]; }
-  unsigned int size(std::string name) const { return sizes_[index_(name)]; }
-  Teuchos::RCP<const Epetra_Map> map(std::string name) const { return maps_[index_(name)]; }
-
+  int NumComponents() const { return num_components_; }
+  int NumVectors(std::string name) const { return num_dofs_[Index_(name)]; }
+  unsigned int size(std::string name) const { return sizes_[Index_(name)]; }
+  Teuchos::RCP<const Epetra_Map> ComponentMap(std::string name) const {
+    return maps_[Index_(name)]; }
 
   // Accessors to data.
-  bool IsComponent(std::string name) const {
+  bool HasComponent(std::string name) const {
     return indexmap_.find(name) != indexmap_.end();
   }
 
@@ -72,10 +70,10 @@ public:
 
   // -- View entries in the vectors.
   double operator()(std::string name, int i, int j) const {
-    return (*data_[index_(name)])[i][j];
+    return (*data_[Index_(name)])[i][j];
   }
   double operator()(std::string name, int j) const {
-    return (*data_[index_(name)])[0][j];
+    return (*data_[Index_(name)])[0][j];
   }
 
   // Mutators of data
@@ -83,10 +81,10 @@ public:
   void SetComponent(std::string name, const Teuchos::RCP<Epetra_MultiVector>& data);
 
   double& operator()(std::string name, int i, int j) {
-    return (*data_[index_(name)])[i][j];
+    return (*data_[Index_(name)])[i][j];
   }
   double& operator()(std::string name, int j) {
-    return (*data_[index_(name)])[0][j];
+    return (*data_[Index_(name)])[0][j];
   }
 
   // Vector operations.
@@ -143,7 +141,7 @@ public:
   const Epetra_MpiComm& Comm() const { return comm_; }
 
 private:
-  int index_(std::string name) const {
+  int Index_(std::string name) const {
     std::map<std::string, int>::const_iterator item = indexmap_.find(name);
     ASSERT(item != indexmap_.end());
     return item->second;

@@ -74,12 +74,12 @@ Transport_State::Transport_State(Transport_State& other,
     // Pointers for all but a copy on ghosted TCC and flux
     ghosted_ = true;
 
-    CompositeVectorFactory fac_tcc;
+    CompositeVectorSpace fac_tcc;
     fac_tcc.SetMesh(mesh_);
-    fac_tcc.SetComponent("cell", AmanziMesh::CELL, other.total_component_concentration()->NumVectors()   );
+    fac_tcc.SetGhosted(true);
+    fac_tcc.SetComponent("cell", AmanziMesh::CELL, other.total_component_concentration()->NumVectors());
 
-    Teuchos::RCP<CompositeVector> tcc = fac_tcc.CreateVector(true);
-    tcc->CreateData();
+    Teuchos::RCP<CompositeVector> tcc = Teuchos::rcp(new CompositeVector(fac_tcc));
     *tcc->ViewComponent("cell",false) = *other.total_component_concentration();
     tcc->ScatterMasterToGhosted();
 
@@ -93,12 +93,12 @@ Transport_State::Transport_State(Transport_State& other,
     Teuchos::RCP<Epetra_MultiVector> tcc_now = total_component_concentration();
     Teuchos::RCP<Epetra_MultiVector> tcc_other_now = other.total_component_concentration();
 
-    CompositeVectorFactory fac;
+    CompositeVectorSpace fac;
     fac.SetMesh(mesh_);
+    fac.SetGhosted(true);
     fac.SetComponent("face", AmanziMesh::FACE, 1);
 
-    Teuchos::RCP<CompositeVector> flux = fac.CreateVector(true);
-    flux->CreateData();
+    Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(fac));
     *flux->ViewComponent("face",false) = *other.darcy_flux();
     flux->ScatterMasterToGhosted();
 
@@ -169,7 +169,7 @@ void Transport_State::Initialize() {
     S_->GetField("water_saturation", name_)->set_initialized();
     S_->GetField("prev_water_saturation", name_)->set_initialized();
     S_->GetField("darcy_flux", name_)->set_initialized();
-    S_->Initialize();
+    S_->InitializeFields();
 
     // S_->GetFieldData("porosity", name_)->PutScalar(0.2);
     S_->GetFieldData("total_component_concentration", name_)->PutScalar(0.0);

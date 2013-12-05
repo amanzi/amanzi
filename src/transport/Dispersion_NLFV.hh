@@ -55,7 +55,7 @@ class Dispersion_NLFV : public Dispersion {
   ~Dispersion_NLFV() {};
 
   // primary members
-  void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const;
+  int Apply(const Epetra_Vector& v,  Epetra_Vector& av) const;
   int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
 
   void SymbolicAssembleMatrix();

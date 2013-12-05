@@ -13,13 +13,20 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "SolverFnBase.hh"
+
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector>
+template<class Vector, class VectorSpace>
 class Solver {
  public:
+
+  virtual void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
+                    const VectorSpace& map) = 0;
+
   virtual int Solve(const Teuchos::RCP<Vector>& u) = 0;
+
 };
 
 }  // namespace AmanziSolvers

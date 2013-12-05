@@ -125,9 +125,9 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
   locations[1] = AmanziMesh::FACE;
   std::vector<int> num_dofs(2,1);
 
-  Teuchos::RCP<CompositeVector> cv = Teuchos::rcp(new CompositeVector(mesh,
-          names, locations, num_dofs, false));
-  cv->CreateData();
+  Teuchos::RCP<CompositeVectorSpace> cv_sp = Teuchos::rcp(new CompositeVectorSpace());
+  cv_sp->SetMesh(mesh)->SetGhosted(false)->SetComponents(names, locations, num_dofs);
+  Teuchos::RCP<CompositeVector> cv = Teuchos::rcp(new CompositeVector(*cv_sp));
   cv->PutScalar(0.0);
 
   // apply the function to the vector

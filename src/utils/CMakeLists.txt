@@ -30,7 +30,7 @@ add_amanzi_library(atk
                    SOURCE Timer.cc TimerManager.cc TimeStepManager.cc XMLParameterListWriter.cc 
                            VerboseObject.cc
                    HEADERS Utils.hh Timer.hh TimerManager.hh TimeStepManager.hh XMLParameterListWriter.hh
-                           VerboseObject.hh
+                           VerboseObject.hh VerboseObject_objs.hh
                    )
 if (BUILD_TESTS)
   

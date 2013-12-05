@@ -45,13 +45,26 @@ class LinearOperatorFactory {
       Teuchos::RCP<const Matrix> m) {
     return Create(name, solvers_list, m, m);
   }
+
+  // pull name from single solver list
+  Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> > Create(
+      Teuchos::ParameterList& slist,
+      Teuchos::RCP<const Matrix> m,
+      Teuchos::RCP<const Matrix> h);
+
+  Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> > Create(
+      Teuchos::ParameterList& slist,
+      Teuchos::RCP<const Matrix> m) {
+    return Create(slist, m, m);
+  }
+
 };
 
 
 /* ******************************************************************
-* The following calls have to be supported: m->Apply(...) and
-* h->ApplyInverse(...).
-****************************************************************** */
+ * The following calls have to be supported: m->Apply(...) and
+ * h->ApplyInverse(...).
+ ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> >
 LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
@@ -61,40 +74,56 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
 {
   if (solvers_list.isSublist(name)) {
     Teuchos::ParameterList slist = solvers_list.sublist(name);
-    if (slist.isParameter("iterative method")) {
-      std::string method_name = slist.get<string>("iterative method");
+    return Create(slist, m, h);
+  } else {
+    std::stringstream msgstream;
+    msgstream << "LinearOperatorFactory: solver \"" << name << "\" is not on the list of solvers.";
+    Errors::Message msg(msgstream.str());
+    Exceptions::amanzi_throw(msg);
+  }
+}
 
-      if (method_name == "pcg") {
-        Teuchos::RCP<LinearOperatorPCG<Matrix, Vector, VectorSpace> >
-            lin_op = Teuchos::rcp(new LinearOperatorPCG<Matrix, Vector, VectorSpace>(m, h));
-        lin_op->Init(slist);
-        lin_op->name() = method_name;
-        return lin_op;
-      } else if (method_name == "gmres") {
-        Teuchos::RCP<LinearOperatorGMRES<Matrix, Vector, VectorSpace> >
-            lin_op = Teuchos::rcp(new LinearOperatorGMRES<Matrix, Vector, VectorSpace>(m, h));
-        lin_op->Init(slist);
-        lin_op->name() = method_name;
-        return lin_op;
-      } else if (method_name == "nka") {
-        Teuchos::RCP<LinearOperatorNKA<Matrix, Vector, VectorSpace> >
-            lin_op = Teuchos::rcp(new LinearOperatorNKA<Matrix, Vector, VectorSpace>(m, h));
-        lin_op->Init(slist);
-        lin_op->name() = method_name;
-        return lin_op;
-      } else {
-        Errors::Message msg("LinearOperatorFactory: wrong value of parameter `\"iterative method`\"");
-        Exceptions::amanzi_throw(msg);
-      }
+
+/* ******************************************************************
+ * The following calls have to be supported: m->Apply(...) and
+ * h->ApplyInverse(...).
+ ****************************************************************** */
+template<class Matrix, class Vector, class VectorSpace>
+Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> >
+LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
+    Teuchos::ParameterList& slist,
+    Teuchos::RCP<const Matrix> m,
+    Teuchos::RCP<const Matrix> h)
+{
+  if (slist.isParameter("iterative method")) {
+    std::string method_name = slist.get<string>("iterative method");
+
+    if (method_name == "pcg") {
+      Teuchos::RCP<LinearOperatorPCG<Matrix, Vector, VectorSpace> >
+          lin_op = Teuchos::rcp(new LinearOperatorPCG<Matrix, Vector, VectorSpace>(m, h));
+      lin_op->Init(slist);
+      lin_op->set_name(method_name);
+      return lin_op;
+    } else if (method_name == "gmres") {
+      Teuchos::RCP<LinearOperatorGMRES<Matrix, Vector, VectorSpace> >
+          lin_op = Teuchos::rcp(new LinearOperatorGMRES<Matrix, Vector, VectorSpace>(m, h));
+      lin_op->Init(slist);
+      lin_op->set_name(method_name);
+      return lin_op;
+    } else if (method_name == "nka") {
+      Teuchos::RCP<LinearOperatorNKA<Matrix, Vector, VectorSpace> >
+          lin_op = Teuchos::rcp(new LinearOperatorNKA<Matrix, Vector, VectorSpace>(m, h));
+      lin_op->Init(slist);
+      lin_op->set_name(method_name);
+      return lin_op;
     } else {
-      Errors::Message msg("LinearOperatorFactory: parameter `\"iterative method`\" is missing");
+      Errors::Message msg("LinearOperatorFactory: wrong value of parameter `\"iterative method`\"");
       Exceptions::amanzi_throw(msg);
     }
   } else {
-    Errors::Message msg("LinearOperatorFactory: solver is not on the list of solvers.");
+    Errors::Message msg("LinearOperatorFactory: parameter `\"iterative method`\" is missing");
     Exceptions::amanzi_throw(msg);
   }
-  return Teuchos::null;
 }
 
 }  // namespace AmanziSolvers
