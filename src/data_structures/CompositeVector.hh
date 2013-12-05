@@ -185,7 +185,6 @@ public:
           bool ghosted=false) const {
     return ghosted ? ghostvec_->ComponentMap(name) : mastervec_->ComponentMap(name);
   }
-  const Epetra_Map& Map() const {};
   CompositeVector(const Epetra_BlockMap& map) {};
 
   // -- View data. --

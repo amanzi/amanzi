@@ -71,7 +71,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     component_names.push_back("Component 0");
 
     RCP<State> S = rcp(new State());
-    S->RegisterDomainMesh(mesh);
+    S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
     Transport_PK TPK(plist, S, component_names);
     TPK.CreateDefaultState(mesh, 1);
@@ -180,7 +180,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     component_names.push_back("Component 0");
 
     RCP<State> S = rcp(new State());
-    S->RegisterDomainMesh(mesh);
+    S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
     Transport_PK TPK(plist, S, component_names);
     TPK.CreateDefaultState(mesh, 1);

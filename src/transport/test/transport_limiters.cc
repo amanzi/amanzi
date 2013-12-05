@@ -63,7 +63,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   component_names.push_back("Component 0");
 
   RCP<State> S = rcp(new State());
-  S->RegisterDomainMesh(mesh);
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Transport_PK TPK(plist, S, component_names);
   TPK.CreateDefaultState(mesh, 1);
@@ -89,8 +89,12 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   const Epetra_Map& cmap = mesh->cell_map(false);
   RCP<Epetra_Vector> scalar_field = rcp(new Epetra_Vector(cmap));
 
-  RCP<CompositeVector> gradient = CreateCompositeVector(mesh, AmanziMesh::CELL, 3, true);
-  gradient->CreateData();
+  CompositeVectorSpace cv_space;
+  cv_space.SetMesh(mesh);
+  cv_space.SetGhosted(true);
+  cv_space.SetComponent("reconstructed_gradient", AmanziMesh::CELL, 3);
+
+  RCP<CompositeVector> gradient = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
   RCP<Epetra_MultiVector> grad = gradient->ViewComponent("cell", false);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);

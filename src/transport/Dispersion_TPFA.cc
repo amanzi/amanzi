@@ -72,8 +72,12 @@ void Dispersion_TPFA::AssembleMatrix(const Epetra_MultiVector& p)
   // populate transmissibilities
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
-  Teuchos::RCP<CompositeVector> T = CreateCompositeVector(mesh_, AmanziMesh::FACE, 1, true);
-  T->CreateData();
+  CompositeVectorSpace cv_space;
+  cv_space.SetMesh(mesh_);
+  cv_space.SetGhosted(true);
+  cv_space.SetComponent("transmissibility", AmanziMesh::FACE, 1);
+
+  Teuchos::RCP<CompositeVector> T = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
   Teuchos::RCP<Epetra_MultiVector> Ttmp = T->ViewComponent("face", true);
 
   for (int c = 0; c < ncells_owned; c++) {

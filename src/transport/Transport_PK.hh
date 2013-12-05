@@ -23,7 +23,7 @@
 
 #include "VerboseObject.hh"
 
-#include "composite_vector.hh"
+#include "CompositeVector.hh"
 #include "tensor.hh"
 #include "Explicit_TI_FnBase.hh"
 #include "transport_boundary_function.hh"

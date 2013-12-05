@@ -70,7 +70,7 @@ SUITE(DISPERSION_MATRIX) {
       component_names.push_back("Component 0");
 
       S = rcp(new State());
-      S->RegisterDomainMesh(mesh);
+      S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
       TPK = rcp(new Transport_PK(plist, S, component_names));
       TPK->CreateDefaultState(mesh, 1);

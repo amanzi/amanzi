@@ -47,8 +47,13 @@ void Reconstruction::Init()
                                                  TRANSPORT_MAX_FACES);
 
   dim = mesh_->space_dimension();
-  gradient_ = CreateCompositeVector(mesh_, AmanziMesh::CELL, dim, true);
-  gradient_->CreateData();
+
+  CompositeVectorSpace cv_space;
+  cv_space.SetMesh(mesh_);
+  cv_space.SetGhosted(true);
+  cv_space.SetComponent("reconstructed_gradient", AmanziMesh::CELL, dim);
+
+  gradient_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
 }
 
 

@@ -73,7 +73,7 @@ void Transport_PK::CreateDefaultState(
   S_->GetFieldData("darcy_flux", name)->PutScalar(0.0);
   S_->GetField("darcy_flux", name)->set_initialized();
 
-  S_->Initialize();
+  S_->InitializeFields();
 }
 
 

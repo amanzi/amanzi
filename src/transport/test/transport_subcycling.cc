@@ -60,7 +60,7 @@ cout << "Test: Subcycling on a 2D square mesh" << endl;
   component_names.push_back("Component 1");
 
   RCP<State> S = rcp(new State());
-  S->RegisterDomainMesh(mesh);
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Transport_PK TPK(plist, S, component_names);
   TPK.CreateDefaultState(mesh, 2);
