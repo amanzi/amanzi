@@ -209,6 +209,7 @@ protected:
   //
   Array< Tuple< MultiFab*, BL_SPACEDIM> > bcoefs;
   Array< Tuple< MultiFab*, BL_SPACEDIM> > b1coefs;
+  Array< LnClassPtr< BndryRegister > > undrrelxrt;
   //
   // Scalar "alpha" coefficient
   //

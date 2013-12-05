@@ -1,22 +1,21 @@
 /*
-  This is the geometry component of the Amanzi code. 
+This is the geometry component of the Amanzi code. 
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided in the top-level COPYRIGHT file.
 
-  Authors: Rao Garimella
-           Konstantin Lipnikov (lipnikov@lanl.gov)
+Authors: Rao Garimella
+         Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef  AMANZI_POINT_HH_
-#define  AMANZI_POINT_HH_
+#ifndef   AMANZI_GEOMETRY_POINT_HH_
+#define   AMANZI_GEOMETRY_POINT_HH_
 
 #include <iostream>
 #include <vector>
 #include <cmath>
-
 
 namespace Amanzi {
 namespace AmanziGeometry {
@@ -161,10 +160,6 @@ class Point {
     return pq;
   }
 
-  /* miscellaneous */
-  inline friend double L22(const Point& p) { return p*p; }
-  inline friend double norm(const Point& p) { return sqrt(p*p); }
-
   friend std::ostream& operator<<(std::ostream& os, const Point& p) {
     os << p.x() << " " << p.y();
     if (p.d == 3) os << " " << p.z();
@@ -176,11 +171,14 @@ class Point {
   double *xyz;
 };  // end class Point
 
+/* miscellaneous */
+inline double L22(const Point& p) { return p*p; }
+inline double norm(const Point& p) { return sqrt(p*p); }
+
 typedef std::vector<Point> Point_List;
 
-
-}  // end namespace AmanziGeometry
-}  // end namespace Amanzi
+}  // namespace AmanziGeometry
+}  // namespace Amanzi
 
 #endif
 

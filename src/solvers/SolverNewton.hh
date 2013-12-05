@@ -21,12 +21,20 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Vector, class VectorSpace>
-class SolverNewton : public Solver<Vector> {
+class SolverNewton : public Solver<Vector,VectorSpace> {
  public:
+  SolverNewton(Teuchos::ParameterList& plist) :
+      plist_(plist) {}
+
   SolverNewton(Teuchos::ParameterList& plist,
-               const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-               const VectorSpace& map) : 
-      plist_(plist), fn_(fn) { Init_(); }
+            const Teuchos::RCP<SolverFnBase<Vector> >& fn,
+            const VectorSpace& map) :
+      plist_(plist) {
+    Init(fn,map);
+  }
+
+  void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
+       const VectorSpace& map);
 
   virtual int Solve(const Teuchos::RCP<Vector>& u);
 
@@ -54,6 +62,18 @@ class SolverNewton : public Solver<Vector> {
   ConvergenceMonitor monitor_;
 };
 
+
+/* ******************************************************************
+* Public Init method.
+****************************************************************** */
+template<class Vector, class VectorSpace>
+void
+SolverNewton<Vector, VectorSpace>::Init(
+    const Teuchos::RCP<SolverFnBase<Vector> >& fn,
+    const VectorSpace& map) {
+  fn_ = fn;
+  Init_();
+}
 
 /* ******************************************************************
 * Initialization of the Newton solver

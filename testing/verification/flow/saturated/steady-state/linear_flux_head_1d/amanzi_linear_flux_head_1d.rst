@@ -94,11 +94,8 @@ following Equations :eq:`specificSoln` and :eq:`DarcyVel`.
 Amanzi verification test results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-(TBD) somehow insert table comparing analytic and Amanzi hydraulic head
+.. plot:: amanzi_linear_flux_head_1d.py
+   :align: center
 
 .. include:: table_values.txt
-
-(TBD) somehow insert plot comparing analytic and Amanzi hydraulic head
-
-.. plot:: prototype/steady-linear/amanzi_linear_flux_head_1d.py
 

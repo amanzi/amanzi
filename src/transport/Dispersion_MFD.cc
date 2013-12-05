@@ -142,9 +142,9 @@ void Dispersion_MFD::AssembleMatrix(const Epetra_MultiVector& p)
 /* *******************************************************************
 * Collect time-dependent boundary data in face-based arrays.                               
 ******************************************************************* */
-void Dispersion_MFD::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
+int Dispersion_MFD::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
 {
-  App_->Apply(v, av);
+  return App_->Apply(v, av);
 }
 
 

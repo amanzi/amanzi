@@ -23,8 +23,15 @@ import sys, os
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
 
-# Add any Sphinx extension module names here, as strings. They can be extensions
-# coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
+
+#
+#  Add path for custom extensions
+#
+sys.path.append(os.path.abspath('.'))
+
+# 
+#  Extensions 
+#
 extensions = ['sphinx.ext.todo', 
               'sphinx.ext.mathjax', 
               'sphinx.ext.ifconfig',
@@ -35,6 +42,8 @@ extensions = ['sphinx.ext.todo',
               'matplotlib.sphinxext.ipython_directive',
               'matplotlib.sphinxext.ipython_console_highlighting',
               'sphinxcontrib.tikz',
+              'extensions.hello',
+              'extensions.amanzi_xml',
               ]
 
 
@@ -80,7 +89,7 @@ release = '0.2.0'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build','testing','prototype','viz','install']
+exclude_patterns = ['_build','testing','prototype','viz']
 # exclude_patterns = ['_build','testing','install']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
@@ -183,17 +192,24 @@ html_static_path = ['_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'Amanzidoc'
 
-#[extensions]
-#todo_include_todos=False
+# User control whether ''ToDo'' notes are included
+if (os.environ.get('AMANZI_INCLUDE_TODOS') == "0" or os.environ.get('AMANZI_INCLUDE_TODOS') == "False" ):
+    env_include_todos=False
+else:
+    env_include_todos=True
+#endif
+
+[extensions]
+todo_include_todos=env_include_todos
 
 # -- Options for LaTeX output --------------------------------------------------
 
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+'papersize': 'letterpaper',
 
 # The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+'pointsize': '11pt',
 
 # Additional stuff for the LaTeX preamble.
 'preamble': '\usepackage[version=3]{mhchem} \usepackage{amssymb,grffile}',
@@ -202,7 +218,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Amanzi.tex', u'Amanzi Documentation',
+  ('index', 'AmanziUserGuide.tex', u'Amanzi Documentation',
    u'Amanzi Development Team (LANL, LBNL, PNNL)', 'manual'),
 ]
 

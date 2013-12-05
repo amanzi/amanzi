@@ -34,7 +34,13 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 # Library: data_structures
 #
-file(GLOB data_structures_src_files "*.cc")
+#file(GLOB data_structures_src_files "*.cc")
+set(data_structures_src_files BlockVector.cc
+                              CompositeVectorSpace.cc
+                              CompositeVector.cc
+                              TreeVectorSpace.cc
+                              TreeVector.cc)
+
 file(GLOB data_structures_inc_files "*.hh")
 set(data_structures_tpl_list ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Thyra_LIBRARIES})
 add_amanzi_library(data_structures 
@@ -60,6 +66,7 @@ if (BUILD_TESTS)
 
     include_directories(${MESH_SOURCE_DIR})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
+    include_directories(${MSTK_SOURCE_DIR})
     include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
     # Copy test subdirectory for out of source builds
@@ -80,7 +87,7 @@ if (BUILD_TESTS)
 			     mesh
 			     geometry
 			     mesh_factory
-			     simple_mesh
+			     mstk_mesh
 			     ${UnitTest_LIBRARIES})
 
 #    add_amanzi_test(test_access test_access_times

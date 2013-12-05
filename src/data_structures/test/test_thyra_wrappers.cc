@@ -9,8 +9,8 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #include "MeshFactory.hh"
-#include "composite_vector.hh"
-#include "tree_vector.hh"
+#include "CompositeVector.hh"
+#include "TreeVector.hh"
 #include "amanzi_thyra_wrappers.hh"
 
 #include "dbc.hh"
@@ -27,7 +27,7 @@ struct test_data {
   Teuchos::RCP<TreeVector> tv2;
   Teuchos::RCP<CompositeVector> cv;
 
-  test_data() {
+  test_Data() {
     comm = new Epetra_MpiComm(MPI_COMM_SELF);
     AmanziMesh::MeshFactory mesh_fact(comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 2, 1, 1);
@@ -49,7 +49,7 @@ struct test_data {
     cv->PutScalar(1.0);
 
     tv1 = Teuchos::rcp(new TreeVector("TV with data"));
-    tv1->set_data(cv);
+    tv1->SetData(cv);
 
     tv2 = Teuchos::rcp(new TreeVector("TV with subvecs"));
     tv2->PushBack(tv1);
@@ -57,7 +57,7 @@ struct test_data {
 
   }
 
-  ~test_data() { delete comm; }
+  ~test_Data() { delete comm; }
 };
 
 

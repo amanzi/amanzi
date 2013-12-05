@@ -36,7 +36,7 @@ class SolverFnNLFV : public AmanziSolvers::SolverFnBase<Vector> {
   ~SolverFnNLFV() {};
 
   // computes the non-linear functional r = F(u)
-  void Residual(const Teuchos::RCP<Vector>& u, Teuchos::RCP<Vector>& r);
+  void Residual(const Teuchos::RCP<Vector>& u, const Teuchos::RCP<Vector>& r);
 
   // preconditioner toolkit
   void ApplyPreconditioner(const Teuchos::RCP<const Vector>& v,
@@ -64,7 +64,7 @@ class SolverFnNLFV : public AmanziSolvers::SolverFnBase<Vector> {
 * Nonliner residual in NLFV
 ****************************************************************** */
 template<class Vector>
-void SolverFnNLFV<Vector>::Residual(const Teuchos::RCP<Vector>& u, Teuchos::RCP<Vector>& r)
+void SolverFnNLFV<Vector>::Residual(const Teuchos::RCP<Vector>& u, const Teuchos::RCP<Vector>& r)
 {
   Teuchos::RCP<Dispersion> matrix = TPK_->dispersion_matrix();
   matrix->AssembleMatrix(*u);

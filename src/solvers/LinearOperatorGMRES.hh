@@ -27,25 +27,31 @@ namespace AmanziSolvers {
 template<class Matrix, class Vector, class VectorSpace>
 class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
  public:
-  LinearOperatorGMRES(const Teuchos::RCP<const Matrix>& m, const Teuchos::RCP<const Matrix>& h) :
-      LinearOperator<Matrix, Vector, VectorSpace>(m, h) {
-    tol_ = 1e-6;
-    overflow_tol_ = 3.0e+50;  // mass of the Universe (J.Hopkins)
-    max_itrs_ = 100;
-    krylov_dim_ = 10;
-    criteria_ = LIN_SOLVER_RELATIVE_RHS;
-    initialized_ = false;
-  }
-  ~LinearOperatorGMRES() {};
+  LinearOperatorGMRES(const Teuchos::RCP<const Matrix>& m,
+                      const Teuchos::RCP<const Matrix>& h) :
+      LinearOperator<Matrix, Vector, VectorSpace>(m, h),
+      tol_(1e-6),
+      overflow_tol_(3.0e+50),  // mass of the Universe (J.Hopkins)
+      max_itrs_(100),
+      krylov_dim_(10),
+      criteria_(LIN_SOLVER_RELATIVE_RHS),
+      initialized_(false) {}
+
+  LinearOperatorGMRES(const LinearOperatorGMRES& other) :
+      LinearOperator<Matrix,Vector,VectorSpace>(other),
+      tol_(other.tol_),
+      krylov_dim_(other.krylov_dim_),
+      overflow_tol_(other.overflow_tol_),
+      max_itrs_(other.max_itrs_),
+      num_itrs_(other.num_itrs_),
+      residual_(other.residual_),
+      criteria_(other.criteria_),
+      initialized_(other.initialized_) {}
+
+  virtual Teuchos::RCP<Matrix> Clone() const {
+    return Teuchos::rcp(new LinearOperatorGMRES(*this)); }
 
   void Init(Teuchos::ParameterList& plist);
-
-  int ApplyInverse(const Vector& v, Vector& hv) const {
-    int i = GMRESRestart_(v, hv, tol_, max_itrs_, criteria_);
-    return i;
-  }
-
-  Teuchos::RCP<LinearOperatorGMRES> Clone() const {};
 
   // access members
   void set_tolerance(double tol) { tol_ = tol; }
@@ -66,9 +72,16 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   Teuchos::RCP<VerboseObject> vo_;
 
  private:
+  int ApplyInverse_(const Vector& v, Vector& hv) const {
+    int i = GMRESRestart_(v, hv, tol_, max_itrs_, criteria_);
+    return i;
+  }
+
+
   int GMRESRestart_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
   int GMRES_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
-  void ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix& T, double* s, Vector** v) const;
+  void ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix& T, double* s,
+                        std::vector<Teuchos::RCP<Vector> >& v) const;
   void InitGivensRotation_( double& dx, double& dy, double& cs, double& sn) const;
   void ApplyGivensRotation_(double& dx, double& dy, double& cs, double& sn) const;
 
@@ -134,7 +147,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
   Vector w(f), r(f), p(f);  // construct empty vectors
-  Vector* v[krylov_dim_ + 1];
+  std::vector<Teuchos::RCP<Vector> > v(krylov_dim_ + 1);
 
   double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
   WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
@@ -168,7 +181,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     }
   }
 
-  v[0] = new Vector(r);
+  v[0] = Teuchos::rcp(new Vector(r));
   v[0]->Update(0.0, r, 1.0 / rnorm0);
 
   s[0] = rnorm0;
@@ -222,7 +235,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     }
 
     if (i < krylov_dim_ - 1) {
-      v[i + 1] = new Vector(w);
+      v[i + 1] = Teuchos::rcp(new Vector(w));
       if (tmp != 0.0) {  // zero occurs in exact arithmetic
         v[i + 1]->Update(0.0, r, 1.0 / tmp);
       }
@@ -315,7 +328,8 @@ void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ApplyGivensRotation_(
  ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ComputeSolution_(
-    Vector& x, int k, WhetStone::DenseMatrix& T, double* s, Vector** v) const
+    Vector& x, int k, WhetStone::DenseMatrix& T, double* s,
+    std::vector<Teuchos::RCP<Vector> >& v) const
 {
   for (int i = k; i >= 0; i--) {
     s[i] /= T(i, i);
@@ -328,8 +342,6 @@ void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ComputeSolution_(
   for (int j = 0; j <= k; j++) {
     x.Update(s[j], *(v[j]), 1.0);
   }
-
-  for (int i = 0; i < k + 1; i++) delete v[i];
 }
 
 }  // namespace AmanziSolvers

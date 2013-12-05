@@ -33,7 +33,7 @@ class Dispersion_TPFA : public Dispersion {
   ~Dispersion_TPFA() {};
 
   // primary members
-  void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const;
+  int Apply(const Epetra_Vector& v,  Epetra_Vector& av) const;
   int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
 
   void SymbolicAssembleMatrix();

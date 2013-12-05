@@ -31,7 +31,7 @@ class LinearFluxHead(object):
         params.setdefault("z_0",0)
         params.setdefault("z_1",10)
 
-        params.setdefault("K",1.0)
+        params.setdefault("k",1.0)
         params.setdefault("rho",998.2)
         params.setdefault("mu",1.002e-3)
 
@@ -43,6 +43,8 @@ class LinearFluxHead(object):
 
         self.__dict__.update(params)
 
+        self.K = self.k*self.g*self.rho / self.mu
+
     def head(self, coords):
 
         """
@@ -53,8 +55,7 @@ class LinearFluxHead(object):
         """
 
         head = numpy.zeros(len(coords))
-        K = 1.0 # hydraulic conductivity
-        head[:] = self.U_0 * self.x_1 / K * (1.0 - coords[:,0]/self.x_1) + self.h_1
+        head[:] = self.U_0 * self.x_1 / self.K * (1.0 - coords[:,0]/self.x_1) + self.h_1
 
         return head
 

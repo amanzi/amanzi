@@ -32,10 +32,12 @@ const int WHETSTONE_MAX_SPATIAL_DIMENSION = 3;
 const double WHETSTONE_TOLERANCE_DECOMPOSITION = 1e-12;
 
 const double WHETSTONE_SIMPLEX_TOLERANCE = 1e-10;
-const double WHETSTONE_SIMPLEX_MAX_ITERATIONS = 100;  // factor of number of unknwons
+const double WHETSTONE_SIMPLEX_MAX_ITERATIONS = 100;  // factor of number of unknowns
 const double WHETSTONE_SIMPLEX_NO_FEASIBLE_SET = -1;
 const double WHETSTONE_SIMPLEX_NO_CONVERGENCE = -2;
 const double WHETSTONE_SIMPLEX_UNBOUNDED_PROBLEM = -3;
+const int WHETSTONE_SIMPLEX_FUNCTIONAL_SUMALL = 1;
+const int WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE = 2;
 
 }  // namespace WhetStone
 }  // namespace Amanzi

@@ -43,8 +43,10 @@
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
-        <Parameter name="linear solver tolerance" type="double" value="1e-18"/>
-        <Parameter name="linear solver maximum iterations" type="int" value="10"/>
+        <ParameterList name="Linear Solver">
+          <Parameter name="linear solver tolerance" type="double" value="1e-18"/>
+          <Parameter name="linear solver maximum iterations" type="int" value="10"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   
@@ -1047,8 +1049,9 @@
       </ParameterList>
 -->
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="3.6109e-13"/>
-        <Parameter name="Vertical" type="double" value="3.6109e-12"/>
+        <Parameter name="x" type="double" value="3.6109e-13"/>
+        <Parameter name="y" type="double" value="3.6109e-13"/>
+        <Parameter name="z" type="double" value="3.6109e-12"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="1.46e-3"/>
@@ -1069,8 +1072,9 @@
       </ParameterList>
 -->
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="4.1059e-17"/>
-        <Parameter name="Vertical" type="double" value="4.1059e-16"/>
+        <Parameter name="x" type="double" value="4.1059e-17"/>
+        <Parameter name="y" type="double" value="4.1059e-17"/>
+        <Parameter name="z" type="double" value="4.1059e-16"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="1.46e-3"/>

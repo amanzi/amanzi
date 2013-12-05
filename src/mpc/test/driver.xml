@@ -109,6 +109,7 @@
 
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">
+      <Parameter name="preconditioner type" type="string" value="ml"/>
       <ParameterList name="ML Parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
@@ -130,16 +131,7 @@
     </ParameterList>
   </ParameterList> <!-- End Preconditioners -->
   
-
-
-
-
-
-
-
   <ParameterList name="State">
-
-    
     <ParameterList name="initial conditions">
 
       <ParameterList name="fluid_density">

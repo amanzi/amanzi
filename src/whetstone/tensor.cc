@@ -213,9 +213,7 @@ void Tensor::SpectralBounds(double* lower, double* upper) const
 ****************************************************************** */
 Tensor& Tensor::operator*=(const double& c)
 {
-  if (rank_ <= 2) {
-    for (int i = 0; i < size_*size_; i++) data_[i] *= c;
-  }
+  for (int i = 0; i < size_*size_; i++) data_[i] *= c;
   return *this;
 }
 

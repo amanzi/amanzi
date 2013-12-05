@@ -1,31 +1,28 @@
 /*
-This is the mimetic discretization component of the Amanzi code. 
+  This is the mimetic discretization component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Release name: naka-to.
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-Usage: 
+  Release name: naka-to.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __MFD3D_ELASTICITY_HH__
-#define __MFD3D_ELASTICITY_HH__
+#ifndef AMANZI_MFD3D_ELASTICITY_HH_
+#define AMANZI_MFD3D_ELASTICITY_HH_
 
 /*
-This is the discretization package.
+  The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
+  consistency condition (Mc N = R) and matrix Ms is build from a stability 
+  condition (Ms N = 0), to generate mass and stiffness matrices for a variety 
+  of physics packages: flow, transport, thermal, and geomechanics. 
+  The material properties are imbedded into the the matrix Mc. 
 
-The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
-consistency condition (Mc N = R) and matrix Ms is build from a stability 
-condition (Ms N = 0), to generate mass and stiffness matrices for a variety 
-of physics packages: flow, transport, thermal, and geomechanics. 
-The material properties are imbedded into the the matrix Mc. 
+  Notation used below: M (mass), W (inverse of M), A (stiffness).
 
-Notation used below: M (mass), W (inverse of M), A (stiffness).
-
-IMPORTANT: all matrices must be reshaped before calling member functions.
+  IMPORTANT: all matrices must be reshaped before calling member functions.
 */
 
 #include "Teuchos_RCP.hpp"
@@ -47,28 +44,27 @@ class MFD3D_Elasticity : public MFD3D {
   ~MFD3D_Elasticity() {};
 
   // required implementation of two consistency conditions
-  int L2consistency(int cell, const Tensor& deformation,
-                    DenseMatrix& N, DenseMatrix& Mc);
+  int L2consistency(int cell, const Tensor& deformation, DenseMatrix& N, DenseMatrix& Mc);
 
   int L2consistencyInverse(int cell, const Tensor& deformation,
                            DenseMatrix& R, DenseMatrix& Wc) { return WHETSTONE_ELEMENTAL_MATRIX_OK; }
 
-  int H1consistency(int cell, const Tensor& deformation,
-                    DenseMatrix& N, DenseMatrix& Mc);
+  int H1consistency(int cell, const Tensor& deformation, DenseMatrix& N, DenseMatrix& Mc);
 
-  int MassMatrix(int cell, const Tensor& deformation,
-                 DenseMatrix& M) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
+  int MassMatrix(int cell, const Tensor& deformation, DenseMatrix& M) { 
+    return WHETSTONE_ELEMENTAL_MATRIX_OK; 
+  } 
+  int MassMatrixInverse(int cell, const Tensor& deformation, DenseMatrix& W) {
+    return WHETSTONE_ELEMENTAL_MATRIX_OK; 
+  } 
 
-  int MassMatrixInverse(int cell, const Tensor& deformation,
-                        DenseMatrix& W) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
-
-  int StiffnessMatrix(int cell, const Tensor& deformation,
-                      DenseMatrix& A);
+  int StiffnessMatrix(int cell, const Tensor& deformation, DenseMatrix& A);
+  int StiffnessMatrixOptimized(int cell, const Tensor& deformation, DenseMatrix& A);
+  int StiffnessMatrixMMatrix(int cell, const Tensor& deformation, DenseMatrix& A);
 
  private:
   void MatrixMatrixProduct_(
-      const DenseMatrix& A, const DenseMatrix& B, bool transposeB,
-      DenseMatrix& AB);
+      const DenseMatrix& A, const DenseMatrix& B, bool transposeB, DenseMatrix& AB);
 };
 
 }  // namespace WhetStone

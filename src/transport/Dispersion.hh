@@ -57,7 +57,7 @@ class Dispersion {
   virtual void ModifySymbolicAssemble() {};  // It allows to tweak the stencil a little.
   virtual void AssembleMatrix(const Epetra_MultiVector& p) {};
 
-  virtual void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const {};
+  virtual int Apply(const Epetra_Vector& v,  Epetra_Vector& av) const { return 0; };
   virtual int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const { return 0; }
 
   // generic members
@@ -69,7 +69,8 @@ class Dispersion {
   void AddTimeDerivative(
       double dT, const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
-  const Epetra_Map& Range() { return App_->RowMap(); }
+  const Epetra_Map& RangeMap() const { return App_->RangeMap(); }
+  const Epetra_Map& DomainMap() const { return App_->DomainMap(); }
 
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& prec_list);
   void UpdatePreconditioner() { preconditioner_->Update(App_); }

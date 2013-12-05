@@ -25,24 +25,29 @@ namespace AmanziSolvers {
 template<class Matrix, class Vector, class VectorSpace>
 class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
  public:
-  LinearOperatorPCG(const Teuchos::RCP<const Matrix>& m, const Teuchos::RCP<const Matrix>& h) :
-      LinearOperator<Matrix, Vector, VectorSpace>(m, h) {
-    tol_ = 1e-6;
-    overflow_tol_ = 3.0e+50;  // mass of the Universe (J.Hopkins)
-    max_itrs_ = 100;
-    criteria_ = LIN_SOLVER_RELATIVE_RHS;
-    initialized_ = false;
-  }
-  ~LinearOperatorPCG() {};
+  LinearOperatorPCG(const Teuchos::RCP<const Matrix>& m,
+                    const Teuchos::RCP<const Matrix>& h) :
+      LinearOperator<Matrix, Vector, VectorSpace>(m, h),
+      tol_(1e-6),
+      overflow_tol_(3.0e+50),  // mass of the Universe (J.Hopkins)
+      max_itrs_(100),
+      criteria_(LIN_SOLVER_RELATIVE_RHS),
+      initialized_(false) {}
+
+  LinearOperatorPCG(const LinearOperatorPCG& other) :
+      LinearOperator<Matrix,Vector,VectorSpace>(other),
+      tol_(other.tol_),
+      overflow_tol_(other.overflow_tol_),
+      max_itrs_(other.max_itrs_),
+      num_itrs_(other.num_itrs_),
+      residual_(other.residual_),
+      criteria_(other.criteria_),
+      initialized_(other.initialized_) {}
+
+  virtual Teuchos::RCP<Matrix> Clone() const {
+    return Teuchos::rcp(new LinearOperatorPCG(*this)); }
 
   void Init(Teuchos::ParameterList& plist);
-
-  int ApplyInverse(const Vector& v, Vector& hv) const {
-    int ierr = PCG_(v, hv, tol_, max_itrs_, criteria_);
-    return ierr;
-  }
-
-  Teuchos::RCP<LinearOperatorPCG> Clone() const {};
 
   // access members
   void set_tolerance(double tol) { tol_ = tol; }
@@ -58,6 +63,11 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
   Teuchos::RCP<VerboseObject> vo_;
 
  private:
+  int ApplyInverse_(const Vector& v, Vector& hv) const {
+    int ierr = PCG_(v, hv, tol_, max_itrs_, criteria_);
+    return ierr;
+  }
+
   int PCG_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
 
  private:

@@ -2,7 +2,7 @@
 #
 
 AMANZI_UG_DIR = $(CURDIR)
-AMANZI_PYTHON = $(subst doc/user_guide,tools/amanzi_xml,$(CURDIR))
+AMANZI_PYTHON = $(subst doc/user_guide,tools/amanzi_xml,$(CURDIR)):$(subst doc/user_guide,tools/prettytable,$(CURDIR))
 
 ifndef PYTHONPATH
   NEW_PYTHONPATH=$(AMANZI_PYTHON)
@@ -59,16 +59,22 @@ help:
 	@echo ""
 	@echo "   AMANZI_SECTION_OPTIONS = $(AMANZI_SECTION_OPTIONS)"
 	@echo ""
-	@echo "This variable is passed to the collect.py script ... "
+	@echo "This variables are passed to the collect.py script ... "
 	@python collect.py --help
+	@echo ""
+	@echo "Use the variable AMANZI_INCLUDE_TODOS=(True|False) to include TODO elements,"
+	@echo ""
+	@echo "   AMANZI_INCLUDE_TODOS = $(AMANZI_INCLUDE_TODOS)"
+	@echo ""
+	@echo "Both of these variables are read by the Sphinx conf.py script."
 
 clean:
 	@echo "Removing the build directory: $(BUILDDIR)" ;\
 	rm -rf $(BUILDDIR)/*  ;\
-	echo "Removing the section subdirectories: verification, tutorial, benchmarking, mycase" ;\
-	rm -rf verification tutorial benchmarking mycase  ;\
-	echo "Reverting ./index.rst"   ;\
-	hg revert ./index.rst
+	echo "Removing the section subdirectories: verification, tutorial, benchmarking, install, mycase" ;\
+	rm -rf verification tutorial benchmarking install mycase  ;\
+	echo "Removing the generated ./index.rst"   ;\
+	rm -f ./index.rst
 
 html: 
 	python collect.py $(AMANZI_SECTION_OPTIONS) 

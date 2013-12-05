@@ -372,6 +372,7 @@ SUITE(DISPERSION_MATRIX) {
         Teuchos::rcp(new AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>(nlist, fn, map));
 
     picard->Solve(u);
+
   }
 }
 

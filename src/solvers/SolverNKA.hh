@@ -23,13 +23,22 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Vector, class VectorSpace>
-class SolverNKA : public Solver<Vector> {
+class SolverNKA : public Solver<Vector,VectorSpace> {
  public:
+  SolverNKA(Teuchos::ParameterList& plist) :
+      plist_(plist) {}
+
   SolverNKA(Teuchos::ParameterList& plist,
             const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map);
+            const VectorSpace& map) :
+      plist_(plist) {
+    Init(fn,map);
+  }
 
-  virtual int Solve(const Teuchos::RCP<Vector>& u);
+  void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
+       const VectorSpace& map);
+
+  int Solve(const Teuchos::RCP<Vector>& u);
 
   // access
   int num_itrs() { return num_itrs_; }
@@ -62,20 +71,21 @@ class SolverNKA : public Solver<Vector> {
 };
 
 
+
 /* ******************************************************************
-* Constructor.
+* Public Init method.
 ****************************************************************** */
 template<class Vector, class VectorSpace>
-SolverNKA<Vector, VectorSpace>::SolverNKA(Teuchos::ParameterList& plist,
-                                          const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-                                          const VectorSpace& map) :
-    plist_(plist), fn_(fn)
+void
+SolverNKA<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
+        const VectorSpace& map)
 {
+  fn_ = fn;
   Init_();
 
   // Allocate the NKA space
   nka_ = Teuchos::rcp(new NKA_Base<Vector, VectorSpace>(nka_dim_, nka_tol_, map));
-  nka_->Init(plist);
+  nka_->Init(plist_);
 }
 
 
@@ -196,11 +206,11 @@ int SolverNKA<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     } else {
       if (num_itrs_ <= nka_lag_iterations_) {
         // Lag NKA's iteration, but update the space with this Jacobian info.
-        nka_->Correction(*du_tmp, *du, du);
+        nka_->Correction(*du_tmp, *du, du.ptr());
         *du = *du_tmp;
       } else {
         // Take the standard NKA correction.
-        nka_->Correction(*du_tmp, *du, du);
+        nka_->Correction(*du_tmp, *du, du.ptr());
       }
     }
 

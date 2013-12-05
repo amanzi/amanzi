@@ -18,8 +18,10 @@
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
-        <Parameter name="linear solver tolerance" type="double" value="1e-20"/>
-        <Parameter name="linear solver maximum iterations" type="int" value="100"/> 
+        <ParameterList name="Linear Solver">
+          <Parameter name="linear solver tolerance" type="double" value="1e-20"/>
+          <Parameter name="linear solver maximum iterations" type="int" value="100"/> 
+        </ParameterList>
         <ParameterList name="Transport Process Kernel">
           <Parameter name="transport subcycling" type="bool" value="false"/>
           <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
@@ -41,7 +43,7 @@
         <Parameter name="Verify Mesh" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="Read Mesh File">
-        <Parameter name="File" type="string" value="../amanzi_dispersion_aligned_point_2d.exo"/>
+        <Parameter name="File" type="string" value="amanzi_dispersion_aligned_point_2d.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
       </ParameterList>
     </ParameterList>

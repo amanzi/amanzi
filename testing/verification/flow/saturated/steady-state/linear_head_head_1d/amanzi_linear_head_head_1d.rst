@@ -97,7 +97,7 @@ Amanzi verification test results
 The discretization is exact for linear solutions, and it is clear in the figure that
 Amanzi has reproduced the exact solution. 
 
-.. plot:: verification/flow/unconfined/linear_head_head_1d/amanzi_linear_head_head_1d.py
+.. plot:: amanzi_linear_head_head_1d.py
    :align: center
 
 

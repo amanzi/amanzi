@@ -1,14 +1,13 @@
 /*
-This is the mimetic discretization component of the Amanzi code. 
+  This is the mimetic discretization component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Release name: ara-to.
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-Usage: 
+  Release name: ara-to.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cmath>
@@ -26,9 +25,9 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Consistency condition for stifness matrix in geomechanics. 
+* Consistency condition for mass matrix in mechanics. 
 * Only the upper triangular part of Ac is calculated.
-* Requires mesh_get_edges to complete implementation.
+* Requires mesh_get_edges to complete the implementation.
 ****************************************************************** */
 int MFD3D_Elasticity::L2consistency(int cell, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Mc)
@@ -63,7 +62,7 @@ int MFD3D_Elasticity::L2consistency(int cell, const Tensor& T,
 
 
 /* ******************************************************************
-* Consistency condition for stifness matrix in geomechanics. 
+* Consistency condition for stiffness matrix in mechanics. 
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
 int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
@@ -165,8 +164,9 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
   }
   DenseMatrix AcAc(nrows, nrows);
   MatrixMatrixProduct_(RT, R, true, AcAc);
-  for (int i = 0; i < nrows; i++)
-  for (int j = 0; j < nrows; j++) Ac(i, j) = AcAc(i, j);
+  for (int i = 0; i < nrows; i++) {
+    for (int j = 0; j < nrows; j++) Ac(i, j) = AcAc(i, j);
+  }
 
   // calculate matrix N
   N.PutScalar(0.0);
@@ -206,7 +206,7 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
 
 
 /* ******************************************************************
-* Darcy mass matrix: a wrapper for other low-level routines
+* Lame stiffness matrix: a wrapper for other low-level routines
 ****************************************************************** */
 int MFD3D_Elasticity::StiffnessMatrix(int cell, const Tensor& deformation,
                                       DenseMatrix& A)
@@ -222,6 +222,50 @@ int MFD3D_Elasticity::StiffnessMatrix(int cell, const Tensor& deformation,
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   StabilityScalar(cell, N, Ac, A);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Lame stiffness matrix: a wrapper for other low-level routines
+****************************************************************** */
+int MFD3D_Elasticity::StiffnessMatrixOptimized(
+    int cell, const Tensor& deformation, DenseMatrix& A)
+{
+  int d = mesh_->space_dimension();
+  int nd = d * (d + 1);
+  int nrows = A.NumRows();
+
+  DenseMatrix N(nrows, nd);
+  DenseMatrix Ac(nrows, nrows);
+
+  int ok = H1consistency(cell, deformation, N, Ac);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  StabilityOptimized(deformation, N, Ac, A);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Lame stiffness matrix: a wrapper for other low-level routines
+****************************************************************** */
+int MFD3D_Elasticity::StiffnessMatrixMMatrix(
+    int cell, const Tensor& deformation, DenseMatrix& A)
+{
+  int d = mesh_->space_dimension();
+  int nd = d * (d + 1);
+  int nrows = A.NumRows();
+
+  DenseMatrix N(nrows, nd);
+  DenseMatrix Ac(nrows, nrows);
+
+  int ok = H1consistency(cell, deformation, N, Ac);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE;
+  ok = StabilityMMatrix_(cell, N, Ac, A, objective);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

@@ -140,7 +140,7 @@ function( CREATE_TPL_EXPORT_FILE )
     file(APPEND ${BUILD_TPL_OUTFILE} "# ------------------------------------------------------------------------------\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "# TPL Config File Directory\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "# ------------------------------------------------------------------------------\n")
-    file(APPEND ${BUILD_TPL_OUTFILE} "GET_FILENAME_COMPONENT(SELF_DIR "\${CMAKE_CURRENT_LIST_FILE}" PATH)\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "GET_FILENAME_COMPONENT(SELF_DIR \${CMAKE_CURRENT_LIST_FILE} PATH)\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "\n")
 
     file(APPEND ${BUILD_TPL_OUTFILE} "# ------------------------------------------------------------------------------\n")
@@ -371,6 +371,12 @@ install(EXPORT AmanziTargets
 	FILE AmanziTargets.cmake)
 
 install(FILES ${AMANZI_SOURCE_DIR}/doc/input_spec/schema/amanzi.xsd DESTINATION bin)
+
+# Write the evaluator registration macro file
+message(STATUS "Writing evaluator registration macro file")
+install(FILES tools/cmake/RegisterEvaluators.cmake
+        DESTINATION lib)
+
 
 endfunction()
 

@@ -21,8 +21,7 @@ indicated.
 Amanzi Input
 ============
 
-Here, the user specifies which version of the input the input file
-adheres to. 
+Here, the user specifies which version of the input the input file adheres to. 
 
 .. code-block:: xml
 
