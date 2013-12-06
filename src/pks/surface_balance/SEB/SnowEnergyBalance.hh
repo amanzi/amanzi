@@ -129,9 +129,11 @@ struct LocalData {
 
 
 void UpdateIncomingRadiation(LocalData& seb);
+void UpdateIncomingRadiationDerivatives(LocalData& seb);
 void UpdateEFluxesSnow(LocalData& seb, double T);
 double CalcMeltEnergy(LocalData& seb);
 void UpdateGroundEnergy(LocalData& seb);
+void UpdateGroundEnergyDerivatives(LocalData& seb);
 
 void UpdateVaporPressure(VaporPressure& vp);
 double CalcAlbedo(EnergyBalance& eb);
@@ -147,6 +149,7 @@ void UpdateSnow(EnergyBalance& eb);
 // Main "public" methods.
 void SnowEnergyBalance(LocalData& seb);
 void UpdateEnergyBalance(LocalData& seb);
+void UpdateEnergyBalanceDerivative(LocalData& seb);
 
 }// Namespace
 

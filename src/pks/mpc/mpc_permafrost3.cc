@@ -203,8 +203,8 @@ MPCPermafrost3::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   domain_flow_pk_->fun(t_old, t_new, u_old->SubVector(0),
                        u_new->SubVector(0), g->SubVector(0));
 
-  // All fluxes have been taken by the subsurface.
-  g->SubVector(2)->PutScalar(0.);
+  // All surface to subsurface fluxes have been taken by the subsurface.
+  g->SubVector(2)->Data()->ViewComponent("cell",false)->PutScalar(0.);
 
   // Now that mass fluxes are done, do energy.
   // Evaluate the surface energy residual
@@ -223,7 +223,7 @@ MPCPermafrost3::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                      u_new->SubVector(1), g->SubVector(1));
 
   // All energy fluxes have been taken by the subsurface.
-  g->SubVector(3)->PutScalar(0.);
+  g->SubVector(3)->Data()->ViewComponent("cell",false)->PutScalar(0.);
 }
 
 // -- Apply preconditioner to u and returns the result in Pu.

@@ -71,6 +71,11 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   // accumulation term
   AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
+  vnames[0] = "e_old";
+  vnames[1] = "e_new";
+  vecs[0] = S_inter_->GetFieldData(energy_key_).ptr();
+  vecs[1] = S_next_->GetFieldData(energy_key_).ptr();
+  db_->WriteVectors(vnames, vecs, true);
   db_->WriteVector("res (acc)", res.ptr());
 #endif
 

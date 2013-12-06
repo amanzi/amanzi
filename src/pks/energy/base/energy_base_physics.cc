@@ -134,25 +134,25 @@ void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
     // Add in external source term.
     S_next_->GetFieldEvaluator(source_key_)
         ->HasFieldChanged(S_next_.ptr(), name_);
-    S_inter_->GetFieldEvaluator(source_key_)
-        ->HasFieldChanged(S_inter_.ptr(), name_);
+    // S_inter_->GetFieldEvaluator(source_key_)
+    //     ->HasFieldChanged(S_inter_.ptr(), name_);
 
-    const Epetra_MultiVector& source0 =
-        *S_inter_->GetFieldData(source_key_)->ViewComponent("cell",false);
+    // const Epetra_MultiVector& source0 =
+    //     *S_inter_->GetFieldData(source_key_)->ViewComponent("cell",false);
     const Epetra_MultiVector& source1 =
         *S_next_->GetFieldData(source_key_)->ViewComponent("cell",false);
 
-    if (S_inter_->cycle() == 0) {
+    // if (S_inter_->cycle() == 0) {
       unsigned int ncells = g_c.MyLength();
       for (unsigned int c=0; c!=ncells; ++c) {
         g_c[0][c] -= source1[0][c];
       }
-    } else {
-      unsigned int ncells = g_c.MyLength();
-      for (unsigned int c=0; c!=ncells; ++c) {
-        g_c[0][c] -= 0.5* (source0[0][c] + source1[0][c]);
-      }
-    }
+    // } else {
+    //   unsigned int ncells = g_c.MyLength();
+    //   for (unsigned int c=0; c!=ncells; ++c) {
+    //     g_c[0][c] -= 0.5* (source0[0][c] + source1[0][c]);
+    //   }
+    // }
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "Adding external source term" << std::endl;
