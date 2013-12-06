@@ -51,8 +51,8 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
   // create linear solver
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, CompositeVector, Epetra_BlockMap> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, CompositeVector, Epetra_BlockMap> >
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
 
   CompositeVector& rhs = *matrix_->rhs();
@@ -77,8 +77,8 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, const CompositeVector& rhs,
 {
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, CompositeVector, Epetra_BlockMap> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, CompositeVector, Epetra_BlockMap> >
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
 
   solver->ApplyInverse(rhs, u);

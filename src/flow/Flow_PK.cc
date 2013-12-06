@@ -53,6 +53,10 @@ void Flow_PK::Init(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
   gravity_.init(dim);
   for (int k = 0; k < dim; k++) gravity_[k] = gravity_data[k];
 
+  // Other physical quantaties
+  rho_ = *(S_->GetScalarData("fluid_density"));
+  mu_ = *(S_->GetScalarData("fluid_viscosity"));
+
   // Miscaleneous sublists
   if (glist.isSublist("Preconditioners")) {
     preconditioner_list_ = glist.sublist("Preconditioners");

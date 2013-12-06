@@ -21,7 +21,6 @@ Authors: Neil Carlson (version 1)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "BDF2_TI.hh"
 #include "BDF1_TI.hh"
 
 #include "Flow_PK.hh"
@@ -59,7 +58,6 @@ class Richards_PK : public Flow_PK {
   int AdvanceToSteadyState_Picard(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BDF1(TI_Specs& ti_specs);
-  int AdvanceToSteadyState_BDF2(TI_Specs& ti_specs);
 
   void CommitState(Teuchos::RCP<Flow_State> FS);
 
@@ -130,8 +128,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Matrix_MFD> matrix_;
   Teuchos::RCP<Matrix_MFD> preconditioner_;
 
-  BDF2::Dae* bdf2_dae;  // Time integrators
-  BDF1Dae* bdf1_dae;
+  BDF1_TI<CompositeVector, CompositeVectorSpace>* bdf1_dae;  // Time integrators
   int block_picard;
 
   int error_control_;

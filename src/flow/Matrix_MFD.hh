@@ -79,11 +79,11 @@ class Matrix_MFD {
   // required methods
   virtual int Apply(const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
-  const Epetra_Map& DomainMap() const {
-    return *map_;
+  const CompositeVectorSpace& DomainMap() const {
+    // return *map_;
   }
-  const Epetra_Map& RangeMap() const {
-    return *map_;
+  const CompositeVectorSpace& RangeMap() const {
+    // return *map_;
   }
 
   // control methods

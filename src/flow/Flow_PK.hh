@@ -16,7 +16,8 @@
 #include "flow_boundary_function.hh"
 #include "flow_domain_function.hh"
 #include "unique_mesh_function.hh"
-#include "BDF_FnBase.hh"
+#include "BDFFnBase.hh"
+#include "CompositeVectorSpace.hh"
 #include "VerboseObject.hh"
 
 #include "TI_Specs.hh"
@@ -35,7 +36,7 @@ namespace AmanziFlow {
 
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 
-class Flow_PK : public BDF2::fnBase {
+class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
  public:
   Flow_PK() { passwd_ = "state"; }
   virtual ~Flow_PK() {};
@@ -141,7 +142,7 @@ public:
   // Stationary physical quantatities
   std::vector<WhetStone::Tensor> K; 
   AmanziGeometry::Point gravity_;
-  double atm_pressure_;
+  double rho_, mu_, atm_pressure_;
 
   Teuchos::RCP<Epetra_Vector> Kxy;
 

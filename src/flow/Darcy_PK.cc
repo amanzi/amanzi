@@ -362,8 +362,8 @@ int Darcy_PK::Advance(double dT_MPC)
   // create linear solver
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, CompositeVector, Epetra_BlockMap> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, CompositeVector, Epetra_BlockMap> >
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);

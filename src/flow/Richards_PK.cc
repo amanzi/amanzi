@@ -44,7 +44,6 @@ namespace AmanziFlow {
 Richards_PK::Richards_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
 {
   // initialize pointers (Do we need smart pointers here? lipnikov@lanl.gov)
-  bdf2_dae = NULL;
   bdf1_dae = NULL;
 
   Flow_PK::Init(glist, S);
@@ -84,7 +83,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
 ****************************************************************** */
 Richards_PK::~Richards_PK()
 {
-  delete bdf2_dae;
   delete bc_pressure;
   delete bc_flux;
   delete bc_head;
@@ -325,27 +323,18 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   // set up new time integration or solver
   std::string ti_method_name(ti_specs.ti_method_name);
-  if (ti_specs.ti_method == FLOW_TIME_INTEGRATION_BDF2) {
-    Teuchos::ParameterList tmp_list = rp_list_.sublist(ti_method_name).sublist("BDF2");
-    if (!tmp_list.isSublist("VerboseObject"))
-        tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
-    Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(tmp_list));
-    if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this);
-    bdf2_dae->setParameterList(bdf2_list);
+  if (ti_specs.ti_method == FLOW_TIME_INTEGRATION_BDF1) {
+    Teuchos::ParameterList bdf1_list = rp_list_.sublist(ti_method_name).sublist("BDF1");
+    if (! bdf1_list.isSublist("VerboseObject"))
+        bdf1_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
-  } else if (ti_specs.ti_method == FLOW_TIME_INTEGRATION_BDF1) {
-    Teuchos::ParameterList tmp_list = rp_list_.sublist(ti_method_name).sublist("BDF1");
-    if (! tmp_list.isSublist("VerboseObject"))
-        tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
-
-    Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(tmp_list));
-    if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this);
-    bdf1_dae->setParameterList(bdf1_list);
+    Teuchos::RCP<CompositeVector> cv = S_->GetFieldData("pressure", passwd_);
+    if (bdf1_dae == NULL) bdf1_dae = new BDF1_TI<CompositeVector, CompositeVectorSpace>(*this, bdf1_list, cv);
   }
 
   // initialize mass matrices
-  SetAbsolutePermeabilityTensor(K);
+  SetAbsolutePermeabilityTensor();
   for (int c = 0; c < ncells_wghost; c++) K[c] *= rho_ / mu_;
 
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
@@ -370,15 +359,13 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   // Well modeling
   if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    CalculatePermeabilityFactorInWell(K, *Kxy);
+    CalculatePermeabilityFactorInWell();
   }
 
   // initialize pressure and lambda
-  Epetra_Vector& pressure = FS->ref_pressure();
-  Epetra_Vector& lambda = FS->ref_lambda();
-
-  *solution_cells = pressure;
-  *solution_faces = lambda;
+  *solution = *S_->GetFieldData("pressure", passwd_);
+  Teuchos::RCP<Epetra_MultiVector> solution_cells = solution->ViewComponent("cell", false);
+  Teuchos::RCP<Epetra_MultiVector> solution_faces = solution->ViewComponent("face", false);
 
   if (ti_specs.initialize_with_darcy) {
     // Get a hydrostatic solution consistent with b.c.
@@ -463,10 +450,7 @@ int Richards_PK::Advance(double dT_MPC)
     // I do not know how to estimate du/dt in a robust manner.
     // ComputeUDot(time, *solution, udot);  
 
-    if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF2) {
-      bdf2_dae->set_initial_state(time, *solution, udot);
-
-    } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
+    if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
       bdf1_dae->set_initial_state(time, *solution, udot);
 
     } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_PICARD) {
@@ -481,14 +465,7 @@ int Richards_PK::Advance(double dT_MPC)
     ti_specs->num_itrs++;
   }
 
-  if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF2) {
-    bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
-    bdf2_dae->commit_solution(dT, *solution);
-    bdf2_dae->write_bdf2_stepping_statistics();
-
-    T_physics = bdf2_dae->most_recent_time();
-
-  } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
+  if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
     bdf1_dae->bdf1_step(dT, *solution, dTnext);
     bdf1_dae->commit_solution(dT, *solution);
     bdf1_dae->write_bdf1_stepping_statistics();
