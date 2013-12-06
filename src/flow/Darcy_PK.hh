@@ -51,11 +51,26 @@ class Darcy_PK : public Flow_PK {
   void CommitState(Teuchos::RCP<State> S);
 
   // methods required for time integration
-  void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0) {};
-  void precon(const Epetra_Vector& u, Epetra_Vector& Hu) {};
-  double enorm(const Epetra_Vector& u, const Epetra_Vector& du) { return 0.0; }
-  void update_precon(const double T, const Epetra_Vector& up, const double h, int& errc) {};
+  void fun(const double Told, double Tnew, 
+           Teuchos::RCP<CompositeVector> u, Teuchos::RCP<CompositeVector> udot, 
+           Teuchos::RCP<CompositeVector> rhs) {};
+  void precon(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu) {};
+  double enorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du) { 
+    return 0.0; 
+  }
+  void update_precon(double T, Teuchos::RCP<const CompositeVector> up, double h) {};
   void update_norm(double rtol, double atol) {};
+  bool is_admissible(Teuchos::RCP<const CompositeVector> up) { 
+   return false; 
+  }
+  bool modify_predictor(double h, Teuchos::RCP<CompositeVector> up) {
+    return false;
+  }
+  bool modify_correction(double h, Teuchos::RCP<const CompositeVector> res,
+                         Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du) {
+    return false;
+  }
+  void changed_solution() {};
 
   // other main methods
   void AddTimeDerivativeSpecificStorage(Epetra_MultiVector& p_cells, double dTp, Matrix_MFD* matrix_operator);

@@ -56,15 +56,15 @@ class Matrix_MFD {
   virtual void AssembleGlobalMatrices();
   virtual void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
-  virtual double ComputeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
-  virtual double ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
+  virtual double ComputeResidual(const CompositeVector& solution, CompositeVector& residual);
+  virtual double ComputeNegativeResidual(const CompositeVector& solution, CompositeVector& residual);
 
   virtual void AnalyticJacobian(const Epetra_Vector& solution, 
                                 std::vector<int>& bc_markers, 
                                 std::vector<bc_tuple>& bc_values,
                                 RelativePermeability& rel_perm) {};
 
-  int ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u);
+  int ReduceGlobalSystem2LambdaSystem(CompositeVector& u);
 
   virtual void DeriveDarcyMassFlux(const CompositeVector& solution,
                                    std::vector<int>& bc_model, 
@@ -80,10 +80,10 @@ class Matrix_MFD {
   virtual int Apply(const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
   const CompositeVectorSpace& DomainMap() const {
-    // return *map_;
+    return cvs_;
   }
   const CompositeVectorSpace& RangeMap() const {
-    // return *map_;
+    return cvs_;
   }
 
   // control methods
@@ -116,6 +116,7 @@ class Matrix_MFD {
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  CompositeVectorSpace cvs_;
 
   bool flag_symmetry_;
   int actions_;  // applly, apply inverse, or both

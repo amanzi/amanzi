@@ -409,6 +409,12 @@ void Matrix_MFD::ApplyBoundaryConditions(
 ****************************************************************** */
 void Matrix_MFD::SymbolicAssembleGlobalMatrices()
 {
+  // create map associated with the matrix
+  cvs_.SetMesh(mesh_);
+  cvs_.SetGhosted(false);
+  cvs_.SetComponent("cell", AmanziMesh::CELL, 1);
+  cvs_.AddComponent("face", AmanziMesh::CELL, 1);
+
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
@@ -449,14 +455,13 @@ void Matrix_MFD::SymbolicAssembleGlobalMatrices()
     Sff_->GlobalAssemble();
   }
 
-  if (flag_symmetry_)
+  if (flag_symmetry_) {
     Afc_ = Acf_;
-  else
+  } else {
     Afc_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
+  }
 
-  rhs_ = Teuchos::rcp(new Epetra_Vector(super_map));
-  rhs_cells_ = Teuchos::rcp(FS_->CreateCellView(*rhs_));
-  rhs_faces_ = Teuchos::rcp(FS_->CreateFaceView(*rhs_));
+  rhs_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, false));
 }
 
 
@@ -494,22 +499,20 @@ void Matrix_MFD::AssembleGlobalMatrices()
   Aff_->GlobalAssemble();
 
   // We repeat some of the loops for code clarity.
-  Epetra_Vector rhs_faces_wghost(fmap_wghost);
+  Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell", true);
+  Epetra_MultiVector& rhs_faces = *rhs_->ViewComponent("face", true);
 
   for (int c = 0; c < ncells; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    (*rhs_cells_)[c] = Fc_cells_[c];
+    rhs_cells[0][c] = Fc_cells_[c];
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      rhs_faces_wghost[f] += Ff_cells_[c][n];
+      rhs_faces[0][f] += Ff_cells_[c][n];
     }
   }
-  FS_->CombineGhostFace2MasterFace(rhs_faces_wghost, Add);
-
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  for (int f = 0; f < nfaces; f++) (*rhs_faces_)[f] = rhs_faces_wghost[f];
+  rhs_->GatherGhostedToMaster("cell");
 }
 
 
@@ -574,7 +577,7 @@ void Matrix_MFD::AssembleSchurComplement(
 /* ******************************************************************
 * Linear algebra operations with matrices: r = f - A * x                                                 
 ****************************************************************** */
-double Matrix_MFD::ComputeResidual(const Epetra_Vector& solution, Epetra_Vector& residual)
+double Matrix_MFD::ComputeResidual(const CompositeVector& solution, CompositeVector& residual)
 {
   Apply(solution, residual);
   residual.Update(1.0, *rhs_, -1.0);
@@ -588,7 +591,7 @@ double Matrix_MFD::ComputeResidual(const Epetra_Vector& solution, Epetra_Vector&
 /* ******************************************************************
 * Linear algebra operations with matrices: r = A * x - f                                                 
 ****************************************************************** */
-double Matrix_MFD::ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual)
+double Matrix_MFD::ComputeNegativeResidual(const CompositeVector& solution, CompositeVector& residual)
 {
   Apply(solution, residual);
 
@@ -613,32 +616,17 @@ void Matrix_MFD::InitPreconditioner(const std::string& prec_name, const Teuchos:
 /* ******************************************************************
 * Parallel matvec product A * X.                                              
 ****************************************************************** */
-int Matrix_MFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+int Matrix_MFD::Apply(const CompositeVector& X, CompositeVector& Y) const
 {
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nvectors = X.NumVectors();
+  Epetra_MultiVector Xc = *X.ViewComponent("cell");
+  Epetra_MultiVector Xf = *X.ViewComponent("face");
 
-  const Epetra_Map& cmap = mesh_->cell_map(false);
-  const Epetra_Map& fmap = mesh_->face_map(false);
-
-  // Create views Xc and Xf into the cell and face segments of X.
-  double **cvec_ptrs = X.Pointers();
-  double **fvec_ptrs = new double*[nvectors];
-  for (int i = 0; i < nvectors; i++) fvec_ptrs[i] = cvec_ptrs[i] + ncells;
-
-  Epetra_MultiVector Xc(View, cmap, cvec_ptrs, nvectors);
-  Epetra_MultiVector Xf(View, fmap, fvec_ptrs, nvectors);
-
-  // Create views Yc and Yf into the cell and face segments of Y.
-  cvec_ptrs = Y.Pointers();
-  for (int i = 0; i < nvectors; i++) fvec_ptrs[i] = cvec_ptrs[i] + ncells;
-
-  Epetra_MultiVector Yc(View, cmap, cvec_ptrs, nvectors);
-  Epetra_MultiVector Yf(View, fmap, fvec_ptrs, nvectors);
+  Epetra_MultiVector Yc = *Y.ViewComponent("cell");
+  Epetra_MultiVector Yf = *Y.ViewComponent("face");
 
   // Face unknowns:  Yf = Aff * Xf + Afc * Xc
   int ierr;
-  Epetra_MultiVector Tf(fmap, nvectors);
+  Epetra_MultiVector Tf(Xf.Map(), 1);
   ierr  = (*Aff_).Multiply(false, Xf, Yf);
   ierr |= (*Afc_).Multiply(true, Xc, Tf);  // Afc is kept in the transpose form
   Yf.Update(1.0, Tf, 1.0);
@@ -651,7 +639,6 @@ int Matrix_MFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     Errors::Message msg("Matrix_MFD::Apply has failed to calculate y = A*x.");
     Exceptions::amanzi_throw(msg);
   }
-  delete [] fvec_ptrs;
   return 0;
 }
 
@@ -660,32 +647,17 @@ int Matrix_MFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 * The OWNED cell-based and face-based d.o.f. are packed together into 
 * the X and Y Epetra vectors, with the cell-based in the first part.
 ****************************************************************** */
-int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+int Matrix_MFD::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nvectors = X.NumVectors();
+  Epetra_MultiVector Xc = *X.ViewComponent("cell");
+  Epetra_MultiVector Xf = *X.ViewComponent("face");
 
-  const Epetra_Map& cmap = mesh_->cell_map(false);
-  const Epetra_Map& fmap = mesh_->face_map(false);
-
-  // Create views Xc and Xf into the cell and face segments of X.
-  double **cvec_ptrs = X.Pointers();
-  double **fvec_ptrs = new double*[nvectors];
-  for (int i = 0; i < nvectors; i++) fvec_ptrs[i] = cvec_ptrs[i] + ncells;
-
-  Epetra_MultiVector Xc(View, cmap, cvec_ptrs, nvectors);
-  Epetra_MultiVector Xf(View, fmap, fvec_ptrs, nvectors);
-
-  // Create views Yc and Yf into the cell and face segments of Y.
-  cvec_ptrs = Y.Pointers();
-  for (int i = 0; i < nvectors; i++) fvec_ptrs[i] = cvec_ptrs[i] + ncells;
-
-  Epetra_MultiVector Yc(View, cmap, cvec_ptrs, nvectors);
-  Epetra_MultiVector Yf(View, fmap, fvec_ptrs, nvectors);
+  Epetra_MultiVector Yc = *Y.ViewComponent("cell");
+  Epetra_MultiVector Yf = *Y.ViewComponent("face");
 
   // Temporary cell and face vectors.
-  Epetra_MultiVector Tc(cmap, nvectors);
-  Epetra_MultiVector Tf(fmap, nvectors);
+  Epetra_MultiVector Tc(Xc.Map(), 1);
+  Epetra_MultiVector Tf(Xf.Map(), 1);
 
   // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
   int ierr;
@@ -705,7 +677,6 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
     Errors::Message msg("Matrix_MFD::ApplyInverse has failed in calculating y = inv(A)*x.");
     Exceptions::amanzi_throw(msg);
   }
-  delete [] fvec_ptrs;
   return 0;
 }
 
@@ -715,21 +686,13 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 * of the known pressure. Structure of the global system is preserved
 * but off-diagoal blocks are zeroed-out.                                               
 ****************************************************************** */
-int Matrix_MFD::ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u)
+int Matrix_MFD::ReduceGlobalSystem2LambdaSystem(CompositeVector& u)
 {
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  const Epetra_Map& cmap = mesh_->cell_map(false);
-  const Epetra_Map& fmap = mesh_->face_map(false);
-
-  // Create views of u and rhs
-  double **c_ptrs = u.Pointers();
-  double **f_ptrs = rhs_->Pointers();
-
-  Epetra_Vector uc(View, cmap, c_ptrs[0]);
-  Epetra_Vector gf(View, fmap, f_ptrs[0] + ncells);
+  Epetra_MultiVector uc = *u.ViewComponent("cell", false);
+  Epetra_MultiVector gf = *rhs_->ViewComponent("face", false);
 
   // Update RHS: rhs = rhs - Afc * uc
-  Epetra_Vector tf(fmap);
+  Epetra_MultiVector tf(gf.Map(), 1);
   Afc_->Multiply(true, uc, tf);  // Afc is kept in the transpose form.
   gf.Update(-1.0, tf, 1.0);
 
@@ -767,18 +730,14 @@ int Matrix_MFD::PopulatePreconditioner(Matrix_MFD& matrix)
 * once (using flag) and in exactly the same manner as in routine
 * Flow_PK::addGravityFluxes_DarcyFlux.
 ****************************************************************** */
-void Matrix_MFD::DeriveDarcyMassFlux(const Epetra_Vector& solution,
+void Matrix_MFD::DeriveDarcyMassFlux(const CompositeVector& solution,
 				     std::vector<int>& bc_model, 
 				     std::vector<bc_tuple>& bc_values,
-                                     Epetra_Vector& darcy_mass_flux)
+                                     Epetra_MultiVector& darcy_mass_flux)
 {
-  Teuchos::RCP<Epetra_Vector> solution_faces = Teuchos::rcp(FS_->CreateFaceView(solution));
-#ifdef HAVE_MPI
-  Epetra_Vector solution_faces_wghost(mesh_->face_map(true));
-  solution_faces_wghost.Import(*solution_faces, face_importer, Insert);
-#else
-  Epetra_Vector& solution_faces_wghost = *solution_faces;
-#endif
+  solution.ScatterMasterToGhosted("face");
+  Epetra_MultiVector solution_cells = *solution.ViewComponent("cell", false);
+  Epetra_MultiVector solution_faces = *solution.ViewComponent("face", false);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<double> dp;
@@ -796,7 +755,7 @@ void Matrix_MFD::DeriveDarcyMassFlux(const Epetra_Vector& solution,
     dp.resize(nfaces);
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      dp[n] = solution[c] - solution_faces_wghost[f];
+      dp[n] = solution_cells[0][c] - solution_faces[0][f];
     }
 
     for (int n = 0; n < nfaces; n++) {
@@ -804,7 +763,7 @@ void Matrix_MFD::DeriveDarcyMassFlux(const Epetra_Vector& solution,
       if (f < nfaces_owned && !flag[f]) {
         double s(0.0);
         for (int m = 0; m < nfaces; m++) s += Aff_cells_[c](n, m) * dp[m];
-        darcy_mass_flux[f] = s * dirs[n];
+        darcy_mass_flux[0][f] = s * dirs[n];
         flag[f] = 1;
       }
     }

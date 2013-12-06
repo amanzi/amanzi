@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <set>
@@ -17,6 +17,81 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 namespace Amanzi {
 namespace AmanziFlow {
+
+/* ****************************************************************
+* Construct default state for unit tests.
+**************************************************************** */
+void Flow_PK::CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
+{
+  std::string name("state"); 
+  S_->RequireScalar("fluid_density", name);
+  S_->RequireScalar("fluid_viscosity", name);
+  S_->RequireGravity();
+
+  int dim = mesh->space_dimension();
+  S_->RequireField("permeability", name)->SetMesh(mesh)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, dim);
+
+  S_->RequireField("porosity", name)->SetMesh(mesh)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+ 
+  S_->RequireField("water_saturation", name)->SetMesh(mesh)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  
+  S_->RequireField("prev_water_saturation", name)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+  std::vector<std::string> names;
+  names.push_back("cell");
+  names.push_back("face");
+
+  std::vector<AmanziMesh::Entity_kind> locations(2);
+  locations[0] = AmanziMesh::CELL;
+  locations[1] = AmanziMesh::FACE;
+
+  std::vector<int> dofs(2, 1);
+  S_->RequireField("pressure", name)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponents(names, locations, dofs);
+  
+  S_->RequireField("darcy_flux", name)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+  
+  // initialize fields
+  S_->Setup();
+
+  // set popular default values
+  S_->GetFieldData("porosity", name)->PutScalar(0.2);
+  S_->GetField("porosity", name)->set_initialized();
+
+  *(S_->GetScalarData("fluid_density", name)) = 1000.0;
+  S_->GetField("fluid_density", name)->set_initialized();
+
+  *(S_->GetScalarData("fluid_viscosity", name)) = 0.001;
+  S_->GetField("fluid_viscosity", name)->set_initialized();
+
+  Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", name);
+  gvec.PutScalar(0.0);
+  gvec[dim - 1] = -9.80;
+  S_->GetField("gravity", name)->set_initialized();
+
+  S_->GetFieldData("permeability", name)->PutScalar(1.0);
+  S_->GetField("permeability", name)->set_initialized();
+
+  S_->GetFieldData("water_saturation", name)->PutScalar(1.0);
+  S_->GetField("water_saturation", name)->set_initialized();
+
+  S_->GetFieldData("prev_water_saturation", name)->PutScalar(1.0);
+  S_->GetField("prev_water_saturation", name)->set_initialized();
+
+  S_->GetFieldData("pressure", name)->PutScalar(0.0);
+  S_->GetField("pressure", name)->set_initialized();
+
+  S_->GetFieldData("darcy_flux", name)->PutScalar(0.0);
+  S_->GetField("darcy_flux", name)->set_initialized();
+
+  S_->InitializeFields();
+}
+
 
 /* ******************************************************************
 * TODO: Verify that a BC has been applied to every boundary face.

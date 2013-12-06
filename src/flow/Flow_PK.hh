@@ -56,7 +56,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
 
   virtual void CommitState(Teuchos::RCP<State> S) = 0;
 
-  virtual void UpdateAuxilliaryData() = 0;  // auxilliary data management
+  void UpdateAuxilliaryData();  // auxilliary data management
 
   // boundary and source teerms
   void ProcessBCs();
@@ -81,6 +81,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   void AddGravityFluxes_DarcyFlux(Epetra_MultiVector& mass_flux, RelativePermeability& rel_perm);
 
   // miscallenous members
+  void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   void ResetPKtimes(double T0, double dT0) { T_physics = T0; dT = dT0; }
   void DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces);
   int FindPosition(int f, AmanziMesh::Entity_ID_List faces);

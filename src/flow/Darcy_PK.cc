@@ -36,14 +36,14 @@ namespace AmanziFlow {
 ****************************************************************** */
 Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
 {
+  Flow_PK::Init(glist, S);
+
   // initialize pointers (Do we need smart pointers here? lipnikov@lanl.gov)
   bc_pressure = NULL; 
   bc_head = NULL;
   bc_flux = NULL;
   bc_seepage = NULL; 
   src_sink = NULL;
-
-  Flow_PK::Init(glist, S);  // sets up default parameters
 
   // extract important sublists
   Teuchos::ParameterList flow_list;
@@ -92,6 +92,16 @@ Darcy_PK::~Darcy_PK()
 ****************************************************************** */
 void Darcy_PK::InitPK()
 {
+  // Fundamental physical quantities
+  double* gravity_data;
+  S_->GetConstantVectorData("gravity")->ExtractView(&gravity_data);
+  gravity_.init(dim);
+  for (int k = 0; k < dim; k++) gravity_[k] = gravity_data[k];
+
+  // Other physical quantaties
+  rho_ = *(S_->GetScalarData("fluid_density"));
+  mu_ = *(S_->GetScalarData("fluid_viscosity"));
+
   // Allocate memory for boundary data. It must go first.
   bc_tuple zero = {0.0, 0.0};
   bc_values.resize(nfaces_wghost, zero);
