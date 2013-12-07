@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <iostream>
@@ -23,7 +23,6 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "MeshAudit.hh"
 #include "Darcy_PK.hh"
 
 #include "exceptions.hh"
@@ -35,34 +34,33 @@ using namespace Amanzi::AmanziFlow;
 
 class DarcyProblem {
  public:
-  Epetra_MpiComm* comm;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh;
-  State* S;
-  Teuchos::ParameterList dp_list;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh;
+
+  Teuchos::RCP<State> S;
   AmanziFlow::Darcy_PK* DPK;
+  Teuchos::ParameterList dp_list;
+  std::string passwd;
+
+  Epetra_MpiComm* comm;
   int MyPID;
-  Teuchos::RCP<Flow_State> FS;
 
   DarcyProblem() {
+    passwd = "state"; 
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
     MyPID = comm->MyPID();    
   };
 
   ~DarcyProblem() {
     delete DPK;
-    delete S;
     delete comm;
   }
 
   void Init(const string xmlFileName, const char* meshExodus) {
-
-    Teuchos::ParameterList parameter_list;
-
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-    parameter_list = xmlreader.getParameters();
+    Teuchos::ParameterList plist = xmlreader.getParameters();
 
-    // create a MSTK mesh framework
-    Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+    /* create a MSTK mesh framework */
+    Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
 
     FrameworkPreference pref;
@@ -71,29 +69,23 @@ class DarcyProblem {
 
     MeshFactory meshfactory(comm);
     meshfactory.preference(pref);
-
     mesh = meshfactory(meshExodus, gm);
 
-    // MeshAudit audit(mesh);
-    // audit.Verify();
-
-    // create Darcy process kernel
-    Teuchos::ParameterList state_list = parameter_list.sublist("State");
-    S = new State(state_list);
-    S->RegisterDomainMesh(mesh);
+    /* create Darcy process kernel */
+    Teuchos::ParameterList state_list = plist.sublist("State");
+    S = Teuchos::rcp(new State(state_list));
+    S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
 
-    FS = Teuchos::rcp(new Flow_State(*S));
+    DPK = new Darcy_PK(plist, S);
     S->Setup();
     S->InitializeFields();
-    FS->Initialize();
+    DPK->CreateDefaultState(mesh);
+
     S->CheckAllFieldsInitialized();
 
-    DPK = new Darcy_PK(parameter_list, FS);
-
-    Teuchos::ParameterList& flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
+    Teuchos::ParameterList& flow_list = plist.get<Teuchos::ParameterList>("Flow");
     dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");
-
  }
 
   void createBClist(const char* type, const char* bc_x, 
@@ -118,54 +110,50 @@ class DarcyProblem {
   }
 
   double calculatePressureCellError(double p0, AmanziGeometry::Point& pressure_gradient) {
-    Epetra_Vector& pressure = DPK->flow_state()->ref_pressure();
+    Epetra_MultiVector& pressure = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
 
     double error_L2 = 0.0;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       double pressure_exact = p0 + pressure_gradient * xc;
-      //      if (MyPID==0) cout << c << " " << pressure[c] << " exact=" <<  pressure_exact << endl;
-      error_L2 += std::pow(pressure[c] - pressure_exact, 2.0);
+      //      if (MyPID==0) cout << c << " " << pressure[0][c] << " exact=" <<  pressure_exact << endl;
+      error_L2 += std::pow(pressure[0][c] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
   }
 
   double calculatePressureFaceError(double p0, AmanziGeometry::Point& pressure_gradient) {
-    Epetra_Vector& solution_faces = DPK->ref_solution_faces();
+    Epetra_MultiVector& lambda = *S->GetFieldData("pressure", passwd)->ViewComponent("face", false);
 
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       double pressure_exact = p0 + pressure_gradient * xf;
-      //      cout << f << " " << solution_faces[f] << " exact=" << pressure_exact << endl;
-      error_L2 += std::pow(solution_faces[f] - pressure_exact, 2.0);
+      //      cout << f << " " << lambda[0][f] << " exact=" << pressure_exact << endl;
+      error_L2 += std::pow(lambda[0][f] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
   }
 
   double calculateDarcyFluxError(AmanziGeometry::Point& velocity_exact) {
-    Epetra_Vector& darcy_flux = DPK->flow_state()->ref_darcy_flux();
+    Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      // cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
-      error_L2 += std::pow(darcy_flux[f] - velocity_exact * normal, 2.0);
+      // cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << endl;
+      error_L2 += std::pow(flux[0][f] - velocity_exact * normal, 2.0);
     }
     return sqrt(error_L2);
   }
 
   double calculateDarcyDivergenceError() {
-    Epetra_Vector& darcy_flux = DPK->flow_state()->ref_darcy_flux();
-#ifdef HAVE_MPI
-    Epetra_Vector darcy_flux_wghost(mesh->face_map(true));
-    darcy_flux_wghost.Import(darcy_flux, DPK->face_importer(), Insert);
-#else
-    Epetra_Vector& darcy_flux_wghost = darcy_flux;
-#endif
+    Teuchos::RCP<CompositeVector> cv = S->GetFieldData("darcy_flux", passwd);
+    cv->ScatterMasterToGhosted("face");
+    Epetra_MultiVector& flux = *cv->ViewComponent("face", true);
 
     double error_L2 = 0.0;
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -181,7 +169,7 @@ class DarcyProblem {
       double div = 0.0;
       for (int i = 0; i < nfaces; i++) {
         int f = faces[i];
-        div += darcy_flux_wghost[f] * dirs[i];
+        div += flux[0][f] * dirs[i];
       }
       error_L2 += div*div / mesh->cell_volume(c);
     }
@@ -195,7 +183,6 @@ SUITE(Darcy_PK) {
 * Testing the mesh of hexahedra.
 ****************************************************************** */
   TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
-
     Init("test/flow_darcy_misc.xml", "test/hexes.exo");
 
     if (MyPID == 0) std::cout <<"Darcy PK on hexes: Dirichlet-Dirichlet" << std::endl;
@@ -213,11 +200,10 @@ SUITE(Darcy_PK) {
     createBClist("pressure", "BC 2", regions, 1.0);
 
     DPK->ResetParameterList(dp_list);
-
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(DPK->flow_state());
+    DPK->CommitState(S);
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks
     CHECK(errorP < 1.0e-8);
@@ -252,7 +238,7 @@ SUITE(Darcy_PK) {
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(DPK->flow_state());
+    DPK->CommitState(S);
 
     double error = calculatePressureCellError(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
@@ -282,7 +268,7 @@ SUITE(Darcy_PK) {
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(DPK->flow_state());
+    DPK->CommitState(S);
 
     double error = calculatePressureCellError(p0, pressure_gradient);  // error checks
     CHECK(error < 1.0e-8);
@@ -315,7 +301,7 @@ SUITE(Darcy_PK) {
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(DPK->flow_state());
+    DPK->CommitState(S);
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks
     CHECK(errorP < 1.0e-8);
@@ -352,7 +338,7 @@ SUITE(Darcy_PK) {
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(DPK->flow_state());
+    DPK->CommitState(S);
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);
     CHECK(errorP < 1.0e-8);
@@ -387,7 +373,7 @@ SUITE(Darcy_PK) {
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(DPK->flow_state());
+    DPK->CommitState(S);
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks
     CHECK(errorP < 1.0e-8);

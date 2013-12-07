@@ -97,6 +97,16 @@ Richards_PK::~Richards_PK()
 ****************************************************************** */
 void Richards_PK::InitPK()
 {
+  // Fundamental physical quantities
+  double* gravity_data;
+  S_->GetConstantVectorData("gravity")->ExtractView(&gravity_data);
+  gravity_.init(dim);
+  for (int k = 0; k < dim; k++) gravity_[k] = gravity_data[k];
+
+  // Other physical quantaties
+  rho_ = *(S_->GetScalarData("fluid_density"));
+  mu_ = *(S_->GetScalarData("fluid_viscosity"));
+
   // Allocate memory for boundary data. It must go first.
   bc_tuple zero = {0.0, 0.0};
   bc_values.resize(nfaces_wghost, zero);

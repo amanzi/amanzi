@@ -42,7 +42,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   virtual ~Flow_PK() {};
 
   // main methods
-  void Init(Teuchos::ParameterList& glist, Teuchos::RCP<State> S);
+  void Init();
   virtual void InitPK() = 0;
   virtual void InitPicard(double T0) = 0;
   virtual void InitSteadyState(double T0, double dT0) = 0;
@@ -97,7 +97,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   void ProcessStringExperimentalSolver(const std::string name, int* method);
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
 
-  std::string FindStringLinearSolver(const Teuchos::ParameterList& plist, const Teuchos::ParameterList& solver_list);
+  std::string FindStringLinearSolver(const Teuchos::ParameterList& plist);
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
 
   void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dT_history);
@@ -119,11 +119,13 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
                         const std::vector<AmanziMesh::Entity_ID>& v2, 
                         std::vector<AmanziMesh::Entity_ID>* vv);
 
-public:
-  Teuchos::ParameterList linear_operator_list_;
-  Teuchos::ParameterList preconditioner_list_;
-  Teuchos::ParameterList solver_list_;
+  // access
+  double rho() { return rho_; }
+  double mu() { return mu_; }
+  AmanziGeometry::Point gravity() { return gravity_; }
+  double gravity_magnitude() { return fabs(gravity_[dim]); }
 
+public:
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
 
@@ -132,6 +134,12 @@ public:
   int MyPID;  // parallel information: will be moved to private
   int missed_bc_faces_;
   int ti_phase_counter;
+
+ protected:
+  Teuchos::ParameterList* glist_;
+  Teuchos::ParameterList linear_operator_list_;
+  Teuchos::ParameterList preconditioner_list_;
+  Teuchos::ParameterList solver_list_;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

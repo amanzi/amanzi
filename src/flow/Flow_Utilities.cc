@@ -56,7 +56,7 @@ void Flow_PK::CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz,
   }
 
   // STEP 1: recover velocity in cell centers
-  const Epetra_MultiVector& flux = *(S_->GetFieldData("darcy_flux")->ViewComponent("cell", true));
+  const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
   
   int d(dim);
   AmanziGeometry::Point local_velocity(d);

@@ -214,7 +214,6 @@ void Matrix_MFD::CreateMFDstiffnessMatrices()
 
       Bcf(n) = -rowsum;
       matsum += rowsum;
-
     }
 
     Aff_cells_.push_back(Bff);  // This the only place where memory can be allocated.
@@ -409,11 +408,12 @@ void Matrix_MFD::ApplyBoundaryConditions(
 ****************************************************************** */
 void Matrix_MFD::SymbolicAssembleGlobalMatrices()
 {
-  // create map associated with the matrix
+  // create the p-lambda map associated with the matrix
   cvs_.SetMesh(mesh_);
   cvs_.SetGhosted(false);
   cvs_.SetComponent("cell", AmanziMesh::CELL, 1);
-  cvs_.AddComponent("face", AmanziMesh::CELL, 1);
+  cvs_.SetOwned(false);
+  cvs_.AddComponent("face", AmanziMesh::FACE, 1);
 
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
@@ -499,6 +499,7 @@ void Matrix_MFD::AssembleGlobalMatrices()
   Aff_->GlobalAssemble();
 
   // We repeat some of the loops for code clarity.
+  rhs_->PutScalar(0.0);
   Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell", true);
   Epetra_MultiVector& rhs_faces = *rhs_->ViewComponent("face", true);
 
@@ -618,11 +619,11 @@ void Matrix_MFD::InitPreconditioner(const std::string& prec_name, const Teuchos:
 ****************************************************************** */
 int Matrix_MFD::Apply(const CompositeVector& X, CompositeVector& Y) const
 {
-  Epetra_MultiVector Xc = *X.ViewComponent("cell");
-  Epetra_MultiVector Xf = *X.ViewComponent("face");
+  const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
+  const Epetra_MultiVector& Xf = *X.ViewComponent("face");
 
-  Epetra_MultiVector Yc = *Y.ViewComponent("cell");
-  Epetra_MultiVector Yf = *Y.ViewComponent("face");
+  Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
+  Epetra_MultiVector& Yf = *Y.ViewComponent("face");
 
   // Face unknowns:  Yf = Aff * Xf + Afc * Xc
   int ierr;
@@ -649,11 +650,11 @@ int Matrix_MFD::Apply(const CompositeVector& X, CompositeVector& Y) const
 ****************************************************************** */
 int Matrix_MFD::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  Epetra_MultiVector Xc = *X.ViewComponent("cell");
-  Epetra_MultiVector Xf = *X.ViewComponent("face");
+  const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
+  const Epetra_MultiVector& Xf = *X.ViewComponent("face");
 
-  Epetra_MultiVector Yc = *Y.ViewComponent("cell");
-  Epetra_MultiVector Yf = *Y.ViewComponent("face");
+  Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
+  Epetra_MultiVector& Yf = *Y.ViewComponent("face");
 
   // Temporary cell and face vectors.
   Epetra_MultiVector Tc(Xc.Map(), 1);

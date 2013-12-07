@@ -104,7 +104,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   DPK->InitPK();
   DPK->InitSteadyState(0.0, 1e-8);
 
-  // transient solution
+  /* transient solution */
   double dT = 0.1;
   for (int n = 0; n < 10; n++) {
     DPK->Advance(dT);

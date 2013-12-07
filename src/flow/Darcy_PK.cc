@@ -36,40 +36,66 @@ namespace AmanziFlow {
 ****************************************************************** */
 Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
 {
-  Flow_PK::Init(glist, S);
+  S_ = S;
+  glist_ = &glist;  // We do want to carry around a huge XML list.
 
-  // initialize pointers (Do we need smart pointers here? lipnikov@lanl.gov)
-  bc_pressure = NULL; 
-  bc_head = NULL;
-  bc_flux = NULL;
-  bc_seepage = NULL; 
-  src_sink = NULL;
+  mesh_ = S_->GetMesh();
+  dim = mesh_->space_dimension();
 
-  // extract important sublists
-  Teuchos::ParameterList flow_list;
-  if (glist.isSublist("Flow")) {
-    flow_list = glist.sublist("Flow");
-  } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Flow> sublist.");
-    Exceptions::amanzi_throw(msg);
+  // for creating fields
+  std::vector<std::string> names(2);
+  names[0] = "cell"; 
+  names[1] = "face";
+
+  std::vector<AmanziMesh::Entity_kind> locations(2);
+  locations[0] = AmanziMesh::CELL; 
+  locations[1] = AmanziMesh::FACE;
+
+  std::vector<int> ndofs(2, 1);
+
+  // require state variables for the Darcy PK
+  if (!S_->HasField("fluid_density")) {
+    S_->RequireScalar("fluid_density", passwd_);
+  }
+  if (!S_->HasField("fluid_voscosity")) {
+    S_->RequireScalar("fluid_viscosity", passwd_);
+  }
+  if (!S_->HasField("gravity")) {
+    S_->RequireConstantVector("gravity", passwd_, dim);
   }
 
-  if (flow_list.isSublist("Darcy Problem")) {
-    dp_list_ = flow_list.sublist("Darcy Problem");
-  } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Darcy Problem> sublist.");
-    Exceptions::amanzi_throw(msg);
+  if (!S_->HasField("pressure")) {
+    S_->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponents(names, locations, ndofs);
+  }
+  if (!S_->HasField("hydraulic_head")) {
+    S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  // time control
-  ResetPKtimes(0.0, FLOW_INITIAL_DT);
-  dT_desirable_ = dT;
+  if (!S_->HasField("permeability")) {
+    S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, dim);
+  }
 
-  // miscalleneous
-  ti_specs = NULL;
-  mfd3d_method_ = FLOW_MFD3D_OPTIMIZED;
-  src_sink = NULL;
-  src_sink_distribution = 0;
+  if (!S_->HasField("porosity")) {
+    S_->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S_->HasField("specific_yield")) {
+    S_->RequireField("specific_yield", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S_->HasField("darcy_flux")) {
+    S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+  if (!S_->HasField("darcy_velocity")) {
+    S_->RequireField("darcy_velocity", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
+  }
 }
 
 
@@ -92,17 +118,26 @@ Darcy_PK::~Darcy_PK()
 ****************************************************************** */
 void Darcy_PK::InitPK()
 {
-  // Fundamental physical quantities
-  double* gravity_data;
-  S_->GetConstantVectorData("gravity")->ExtractView(&gravity_data);
-  gravity_.init(dim);
-  for (int k = 0; k < dim; k++) gravity_[k] = gravity_data[k];
+  // Initialize defaults
+  bc_pressure = NULL; 
+  bc_head = NULL;
+  bc_flux = NULL;
+  bc_seepage = NULL; 
+  src_sink = NULL;
 
-  // Other physical quantaties
-  rho_ = *(S_->GetScalarData("fluid_density"));
-  mu_ = *(S_->GetScalarData("fluid_viscosity"));
+  ti_specs = NULL;
+  mfd3d_method_ = FLOW_MFD3D_OPTIMIZED;
+  src_sink = NULL;
+  src_sink_distribution = 0;
 
-  // Allocate memory for boundary data. It must go first.
+  // Initilize various common data depending on mesh and state.
+  Flow_PK::Init();
+
+  // Time control specific to this PK.
+  ResetPKtimes(0.0, FLOW_INITIAL_DT);
+  dT_desirable_ = dT;
+
+  // Allocate memory for boundary data. 
   bc_tuple zero = {0.0, 0.0};
   bc_values.resize(nfaces_wghost, zero);
   bc_model.resize(nfaces_wghost, 0);
@@ -110,7 +145,22 @@ void Darcy_PK::InitPK()
 
   rainfall_factor.resize(nfaces_owned, 1.0);
 
-  // Read flow list and populate various structures. 
+  // Process Native XML.
+  Teuchos::ParameterList flow_list;
+  if (glist_->isSublist("Flow")) {
+    flow_list = glist_->sublist("Flow");
+  } else {
+    Errors::Message msg("Flow PK: input parameter list does not have <Flow> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (flow_list.isSublist("Darcy Problem")) {
+    dp_list_ = flow_list.sublist("Darcy Problem");
+  } else {
+    Errors::Message msg("Flow PK: input parameter list does not have <Darcy Problem> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
   ProcessParameterList(dp_list_);
 
   // Select a proper matrix class. No optionos at the moment.
@@ -153,7 +203,7 @@ void Darcy_PK::InitPK()
   if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
-};
+}
 
 
 /* ******************************************************************
@@ -256,7 +306,6 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 
   // set up new preconditioner
   // matrix_->DestroyPreconditionerNew();
-  matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->InitPreconditioner(ti_specs.preconditioner_name, preconditioner_list_);
 
   // set up initial guess for solution

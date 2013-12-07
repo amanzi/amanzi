@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
@@ -43,15 +43,12 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   if (MyPID == 0) cout << "Test: 3D transient Darcy, 3-layer model" << endl;
 
   /* read parameter list */
-  ParameterList parameter_list;
   string xmlFileName = "test/flow_darcy_3D.xml";
-  
-  // DEPRECATED  updateParametersFromXmlFile(xmlFileName, &parameter_list);
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
-  // create an SIMPLE mesh framework
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  /* create an SIMPLE mesh framework */
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
   FrameworkPreference pref;
@@ -60,43 +57,67 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory(0.0, 0.0, -2.0, 1.0, 2.0, 0.0, 18, 18, 18, gm);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, -2.0, 1.0, 2.0, 0.0, 18, 18, 18, gm);
 
-  // create and populate flow state
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
-  FS->Initialize();
-  FS->set_permeability_3D(0.1, 0.1, 2.0, "Material 1");
-  FS->set_permeability_3D(0.5, 0.5, 0.5, "Material 2");
-  FS->set_porosity(0.2);
-  FS->set_fluid_viscosity(1.0);
-  FS->set_fluid_density(1.0);
-  FS->set_gravity(-1.0);
-  FS->set_specific_storage(1.0);
+  /* create and populate flow state */
+  Amanzi::VerboseObject::hide_line_prefix = true;
 
-  // create Darcy process kernel
-  Darcy_PK* DPK = new Darcy_PK(parameter_list, FS);
-  DPK->InitPK();
+  RCP<State> S = rcp(new State());
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  // create new initial pressure function
-  Epetra_Vector& p = FS->ref_pressure();
+  Darcy_PK* DPK = new Darcy_PK(plist, S);
+  DPK->CreateDefaultState(mesh);
+
+  /* modify the default state for the problem at hand */
+  std::string passwd("state"); 
+  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
+  
+  AmanziMesh::Entity_ID_List block;
+  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  for (int i = 0; i != block.size(); ++i) {
+    int c = block[i];
+    K[0][c] = 0.1;
+    K[1][c] = 0.1;
+    K[2][c] = 2.0;
+  }
+
+  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  for (int i = 0; i != block.size(); ++i) {
+    int c = block[i];
+    K[0][c] = 0.5;
+    K[1][c] = 0.5;
+    K[2][c] = 0.5;
+  }
+
+  *S->GetScalarData("fluid_density", passwd) = 1.0;
+  *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  gravity[2] = -1.0;
+
+  S->GetFieldData("specific_storage", passwd)->PutScalar(1.0);
+
+  /* create the initial pressure function */
+  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
-    p[c] = xc[2] * (xc[2] + 2.0) * (xc[1] + 1.0) * (xc[0] - 1.0);
+    p[0][c] = xc[2] * (xc[2] + 2.0) * (xc[1] + 1.0) * (xc[0] - 1.0);
   }
-  
+
+  /* initialize the Darcy process kernel */
+  DPK->InitPK();
   DPK->InitSteadyState(0.0, 1e-8);
 
-  // transient solution
+  /* transient solution */
   double dT = 0.1;
   for (int n = 0; n < 5; n++) {
     DPK->Advance(dT);
-    DPK->CommitState(FS);
+    DPK->CommitState(S);
 
     if (MyPID == 0) {
       GMV::open_data_file(*mesh, (std::string)"flow.gmv");
       GMV::start_data();
-      GMV::write_cell_data(FS->ref_pressure(), 0, "pressure");
+      GMV::write_cell_data(p, 0, "pressure");
       GMV::close_data_file();
     }
   }

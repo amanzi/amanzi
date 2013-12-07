@@ -19,75 +19,119 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ****************************************************************
-* Construct default state for unit tests.
+* Construct default state for unit tests. It completes
+* initialization of all missed objects in the state.
 **************************************************************** */
 void Flow_PK::CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
 {
-  std::string name("state"); 
-  S_->RequireScalar("fluid_density", name);
-  S_->RequireScalar("fluid_viscosity", name);
-  S_->RequireGravity();
+  if (!S_->HasField("fluid_density")) {
+    S_->RequireScalar("fluid_density", passwd_);
+  }
+  if (!S_->HasField("fluid_voscosity")) {
+    S_->RequireScalar("fluid_viscosity", passwd_);
+  }
+  if (!S_->HasField("gravity")) {
+    S_->RequireConstantVector("gravity", passwd_, dim);
+  }
 
-  int dim = mesh->space_dimension();
-  S_->RequireField("permeability", name)->SetMesh(mesh)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
-
-  S_->RequireField("porosity", name)->SetMesh(mesh)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasField("permeability")) {
+    S_->RequireField("permeability", passwd_)->SetMesh(mesh)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, dim);
+  }
+  if (!S_->HasField("porosity")) {
+    S_->RequireField("porosity", passwd_)->SetMesh(mesh)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
  
-  S_->RequireField("water_saturation", name)->SetMesh(mesh)->SetGhosted(true)
+  if (!S_->HasField("water_saturation")) {
+    S_->RequireField("water_saturation", passwd_)->SetMesh(mesh)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("prev_water_saturation")) {
+    S_->RequireField("prev_water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S_->HasField("specific_storage")) {
+    S_->RequireField("specific_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("specific_yield")) {
+    S_->RequireField("specific_yield", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (!S_->HasField("pressure")) {
+    std::vector<std::string> names;  // pressure
+    names.push_back("cell");
+    names.push_back("face");
+
+    std::vector<AmanziMesh::Entity_kind> locations(2);
+    locations[0] = AmanziMesh::CELL;
+    locations[1] = AmanziMesh::FACE;
+
+    std::vector<int> dofs(2, 1);
+    S_->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponents(names, locations, dofs);
+  }
+  if (!S_->HasField("hydraulic_head")) {
+    S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
   
-  S_->RequireField("prev_water_saturation", name)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-
-  std::vector<std::string> names;
-  names.push_back("cell");
-  names.push_back("face");
-
-  std::vector<AmanziMesh::Entity_kind> locations(2);
-  locations[0] = AmanziMesh::CELL;
-  locations[1] = AmanziMesh::FACE;
-
-  std::vector<int> dofs(2, 1);
-  S_->RequireField("pressure", name)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponents(names, locations, dofs);
-  
-  S_->RequireField("darcy_flux", name)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
+  if (!S_->HasField("darcy_flux")) {
+    S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+  if (!S_->HasField("darcy_velocity")) {
+    S_->RequireField("darcy_velocity", passwd_)->SetMesh(mesh)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, dim);
+  }
   
   // initialize fields
   S_->Setup();
 
   // set popular default values
-  S_->GetFieldData("porosity", name)->PutScalar(0.2);
-  S_->GetField("porosity", name)->set_initialized();
+  S_->GetFieldData("porosity", passwd_)->PutScalar(0.2);
+  S_->GetField("porosity", passwd_)->set_initialized();
 
-  *(S_->GetScalarData("fluid_density", name)) = 1000.0;
-  S_->GetField("fluid_density", name)->set_initialized();
+  *(S_->GetScalarData("fluid_density", passwd_)) = 1000.0;
+  S_->GetField("fluid_density", passwd_)->set_initialized();
 
-  *(S_->GetScalarData("fluid_viscosity", name)) = 0.001;
-  S_->GetField("fluid_viscosity", name)->set_initialized();
+  *(S_->GetScalarData("fluid_viscosity", passwd_)) = 0.001;
+  S_->GetField("fluid_viscosity", passwd_)->set_initialized();
 
-  Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", name);
+  Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", passwd_);
   gvec.PutScalar(0.0);
   gvec[dim - 1] = -9.80;
-  S_->GetField("gravity", name)->set_initialized();
+  S_->GetField("gravity", passwd_)->set_initialized();
 
-  S_->GetFieldData("permeability", name)->PutScalar(1.0);
-  S_->GetField("permeability", name)->set_initialized();
+  S_->GetFieldData("permeability", passwd_)->PutScalar(1.0);
+  S_->GetField("permeability", passwd_)->set_initialized();
 
-  S_->GetFieldData("water_saturation", name)->PutScalar(1.0);
-  S_->GetField("water_saturation", name)->set_initialized();
+  S_->GetFieldData("water_saturation", passwd_)->PutScalar(1.0);
+  S_->GetField("water_saturation", passwd_)->set_initialized();
 
-  S_->GetFieldData("prev_water_saturation", name)->PutScalar(1.0);
-  S_->GetField("prev_water_saturation", name)->set_initialized();
+  S_->GetFieldData("prev_water_saturation", passwd_)->PutScalar(1.0);
+  S_->GetField("prev_water_saturation", passwd_)->set_initialized();
 
-  S_->GetFieldData("pressure", name)->PutScalar(0.0);
-  S_->GetField("pressure", name)->set_initialized();
+  S_->GetFieldData("specific_storage", passwd_)->PutScalar(0.0);
+  S_->GetField("specific_storage", passwd_)->set_initialized();
 
-  S_->GetFieldData("darcy_flux", name)->PutScalar(0.0);
-  S_->GetField("darcy_flux", name)->set_initialized();
+  S_->GetFieldData("specific_yield", passwd_)->PutScalar(0.0);
+  S_->GetField("specific_yield", passwd_)->set_initialized();
+
+  S_->GetFieldData("pressure", passwd_)->PutScalar(0.0);
+  S_->GetField("pressure", passwd_)->set_initialized();
+
+  S_->GetFieldData("hydraulic_head", passwd_)->PutScalar(0.0);
+  S_->GetField("hydraulic_head", passwd_)->set_initialized();
+
+  S_->GetFieldData("darcy_flux", passwd_)->PutScalar(0.0);
+  S_->GetField("darcy_flux", passwd_)->set_initialized();
+
+  S_->GetFieldData("darcy_velocity", passwd_)->PutScalar(0.0);
+  S_->GetField("darcy_velocity", passwd_)->set_initialized();
 
   S_->InitializeFields();
 }

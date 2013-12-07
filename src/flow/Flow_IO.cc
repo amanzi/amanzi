@@ -37,7 +37,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
   // Process main one-line options (not sublists)
   atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
  
-  string mfd3d_method_name = plist.get<string>("discretization method", "mfd scaled");
+  string mfd3d_method_name = plist.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_); 
 
   // Create the BC objects.
@@ -81,7 +81,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
     ti_specs_igs_.preconditioner_name = FindStringPreconditioner(igs_list);
     ProcessStringPreconditioner(ti_specs_igs_.preconditioner_name, &ti_specs_igs_.preconditioner_method);
 
-    std::string linear_solver_name = FindStringLinearSolver(igs_list, linear_operator_list_);
+    std::string linear_solver_name = FindStringLinearSolver(igs_list);
     ProcessStringLinearSolver(linear_solver_name, &ti_specs_igs_.ls_specs);
 
     ProcessStringPreconditioner(ti_specs_igs_.preconditioner_name, &ti_specs_igs_.preconditioner_method);
@@ -100,7 +100,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
     ti_specs_sss_.preconditioner_name = FindStringPreconditioner(sss_list);
     ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
 
-    ti_specs_sss_.ls_specs.solver_name = FindStringLinearSolver(sss_list, linear_operator_list_);
+    ti_specs_sss_.ls_specs.solver_name = FindStringLinearSolver(sss_list);
     ProcessStringLinearSolver(ti_specs_sss_.ls_specs.solver_name, &ti_specs_sss_.ls_specs);
 
     ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
@@ -123,7 +123,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
     ti_specs_trs_.preconditioner_name = FindStringPreconditioner(trs_list);
     ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
 
-    std::string linear_solver_name = FindStringLinearSolver(trs_list, linear_operator_list_);
+    std::string linear_solver_name = FindStringLinearSolver(trs_list);
     ProcessStringLinearSolver(linear_solver_name, &ti_specs_trs_.ls_specs);
 
     ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
@@ -175,7 +175,7 @@ void Flow_PK::ProcessSublistTimeIntegration(
       ti_specs.clip_saturation = ini_list.get<double>("clipping saturation value", -1.0);
       ti_specs.clip_pressure = ini_list.get<double>("clipping pressure value", -1e+10);
 
-      std::string linear_solver_name = FindStringLinearSolver(ini_list, linear_operator_list_);
+      std::string linear_solver_name = FindStringLinearSolver(ini_list);
       ProcessStringLinearSolver(linear_solver_name, &ti_specs.ls_specs_ini);
     }
 
@@ -183,7 +183,7 @@ void Flow_PK::ProcessSublistTimeIntegration(
       Teuchos::ParameterList& pl_list = list.sublist("pressure-lambda constraints");
       ti_specs.pressure_lambda_constraints = true;
 
-      std::string linear_solver_name = FindStringLinearSolver(pl_list, linear_operator_list_);
+      std::string linear_solver_name = FindStringLinearSolver(pl_list);
       ProcessStringLinearSolver(linear_solver_name, &ti_specs.ls_specs_constraints);
     }
 
@@ -325,8 +325,7 @@ void Flow_PK::ProcessStringPreconditioner(const std::string& name, int* precondi
 /* ****************************************************************
 * Find string for the preconditoner.
 **************************************************************** */
-std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list, 
-                                            const Teuchos::ParameterList& solver_list)
+std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list)
 {   
   Errors::Message msg;
   std::string name; 
@@ -338,7 +337,7 @@ std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list,
     Exceptions::amanzi_throw(msg);
   }
 
-  if (! solver_list.isSublist(name)) {
+  if (! linear_operator_list_.isSublist(name)) {
     msg << "Flow PK: linear solver \"" << name.c_str() << "\" does not exist.";
     Exceptions::amanzi_throw(msg);
   }

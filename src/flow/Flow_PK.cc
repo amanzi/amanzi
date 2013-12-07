@@ -29,13 +29,8 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Initiazition of fundamental flow sturctures.                                              
 ****************************************************************** */
-void Flow_PK::Init(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
+void Flow_PK::Init()
 {
-  S_ = S;
-
-  mesh_ = S->GetMesh();
-  dim = mesh_->space_dimension();
-
   T_physics = dT = 0.0;
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -48,27 +43,35 @@ void Flow_PK::Init(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
   ti_phase_counter = 0;
 
   // Miscaleneous sublists
-  if (glist.isSublist("Preconditioners")) {
-    preconditioner_list_ = glist.sublist("Preconditioners");
+  if (glist_->isSublist("Preconditioners")) {
+    preconditioner_list_ = glist_->sublist("Preconditioners");
   } else {
     Errors::Message msg("Flow PK: input parameter list does not have <Preconditioners> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
-  if (glist.isSublist("Solvers")) {
-    linear_operator_list_ = glist.sublist("Solvers");
+  if (glist_->isSublist("Solvers")) {
+    linear_operator_list_ = glist_->sublist("Solvers");
   } else {
     Errors::Message msg("Flow PK: input parameter list does not have <Solvers> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
-  if (glist.isSublist("Nonlinear solvers")) {
-    solver_list_ = glist.sublist("Nonlinear solvers");
-  } else {
-    //Errors::Message msg("Flow PK: input parameter list does not have <Nonlinear solvers> sublist.");
-    //Exceptions::amanzi_throw(msg);
+  if (glist_->isSublist("Nonlinear solvers")) {
+    solver_list_ = glist_->sublist("Nonlinear solvers");
   }
 
+  // Fundamental physical quantities
+  double* gravity_data;
+  S_->GetConstantVectorData("gravity")->ExtractView(&gravity_data);
+  gravity_.init(dim);
+  for (int k = 0; k < dim; k++) gravity_[k] = gravity_data[k];
+
+  // Other constant (temporarily) physical quantaties
+  rho_ = *(S_->GetScalarData("fluid_density"));
+  mu_ = *(S_->GetScalarData("fluid_viscosity"));
+
+  // parallel execution data
   MyPID = 0;
 #ifdef HAVE_MPI
   MyPID = mesh_->cell_map(false).Comm().MyPID();
