@@ -57,6 +57,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   virtual void CommitState(Teuchos::RCP<State> S) = 0;
 
   void UpdateAuxilliaryData();  // auxilliary data management
+  void InitializeFields();
 
   // boundary and source teerms
   void ProcessBCs();
@@ -81,7 +82,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   void AddGravityFluxes_DarcyFlux(Epetra_MultiVector& mass_flux, RelativePermeability& rel_perm);
 
   // miscallenous members
-  void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   void ResetPKtimes(double T0, double dT0) { T_physics = T0; dT = dT0; }
   void DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces);
   int FindPosition(int f, AmanziMesh::Entity_ID_List faces);
@@ -124,6 +124,8 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   double mu() { return mu_; }
   AmanziGeometry::Point gravity() { return gravity_; }
   double gravity_magnitude() { return fabs(gravity_[dim]); }
+  std::vector<WhetStone::Tensor>& get_K() { return K; }
+  std::vector<bc_tuple>& get_bc_values() { return bc_values; }
 
 public:
   int ncells_owned, ncells_wghost;
@@ -136,7 +138,6 @@ public:
   int ti_phase_counter;
 
  protected:
-  Teuchos::ParameterList* glist_;
   Teuchos::ParameterList linear_operator_list_;
   Teuchos::ParameterList preconditioner_list_;
   Teuchos::ParameterList solver_list_;

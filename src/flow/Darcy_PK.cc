@@ -37,10 +37,45 @@ namespace AmanziFlow {
 Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
 {
   S_ = S;
-  glist_ = &glist;  // We do want to carry around a huge XML list.
 
   mesh_ = S_->GetMesh();
   dim = mesh_->space_dimension();
+
+  // We need the flow list
+  Teuchos::ParameterList flow_list;
+  if (glist.isSublist("Flow")) {
+    flow_list = glist.sublist("Flow");
+  } else {
+    Errors::Message msg("Flow PK: input parameter list does not have <Flow> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (flow_list.isSublist("Darcy Problem")) {
+    dp_list_ = flow_list.sublist("Darcy Problem");
+  } else {
+    Errors::Message msg("Flow PK: input parameter list does not have <Darcy Problem> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // We also need iscaleneous sublists
+  if (glist.isSublist("Preconditioners")) {
+    preconditioner_list_ = glist.sublist("Preconditioners");
+  } else {
+    Errors::Message msg("Flow PK: input XML does not have <Preconditioners> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (glist.isSublist("Solvers")) {
+    linear_operator_list_ = glist.sublist("Solvers");
+  } else {
+    Errors::Message msg("Flow PK: input XML does not have <Solvers> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (glist.isSublist("Nonlinear solvers")) {
+    solver_list_ = glist.sublist("Nonlinear solvers");
+  }
+
 
   // for creating fields
   std::vector<std::string> names(2);
@@ -65,35 +100,39 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
   }
 
   if (!S_->HasField("pressure")) {
-    S_->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+    S_->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
   }
   if (!S_->HasField("hydraulic_head")) {
-    S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+    S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   if (!S_->HasField("permeability")) {
-    S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+    S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
   }
 
   if (!S_->HasField("porosity")) {
-    S_->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+    S_->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
+  if (!S_->HasField("specific_storage")) {
+    S_->RequireField("specific_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
   if (!S_->HasField("specific_yield")) {
-    S_->RequireField("specific_yield", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+    S_->RequireField("specific_yield", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   if (!S_->HasField("darcy_flux")) {
-    S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+    S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
   if (!S_->HasField("darcy_velocity")) {
-    S_->RequireField("darcy_velocity", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+    S_->RequireField("darcy_velocity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
   }
 }
@@ -146,21 +185,6 @@ void Darcy_PK::InitPK()
   rainfall_factor.resize(nfaces_owned, 1.0);
 
   // Process Native XML.
-  Teuchos::ParameterList flow_list;
-  if (glist_->isSublist("Flow")) {
-    flow_list = glist_->sublist("Flow");
-  } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Flow> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (flow_list.isSublist("Darcy Problem")) {
-    dp_list_ = flow_list.sublist("Darcy Problem");
-  } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Darcy Problem> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
   ProcessParameterList(dp_list_);
 
   // Select a proper matrix class. No optionos at the moment.
@@ -170,6 +194,7 @@ void Darcy_PK::InitPK()
 
   // Create auxiliary data for time history.
   solution = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("pressure"))));
+  solution->PutScalar(0.0);
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
@@ -278,7 +303,7 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 
   // DEBUG
   // SolveFullySaturatedProblem(0.0, *solution);
-  // CommitState(FS); WriteGMVfile(FS); exit(0);
+  // CommitState(S_); WriteGMVfile(S_); exit(0);
 }
 
 
@@ -477,14 +502,14 @@ void Darcy_PK::CommitState(Teuchos::RCP<State> S)
   p = *solution;
 
   // calculate darcy mass flux
-  double rho = *S_->GetScalarData("fluid_density");
-  Epetra_MultiVector& flux = *S_->GetFieldData("pressure", passwd_)->ViewComponent("face", true);
+  Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux", passwd_)->ViewComponent("face", true);
 
   matrix_->CreateMFDstiffnessMatrices();
   matrix_->DeriveDarcyMassFlux(*solution, bc_model, bc_values, flux);
   AddGravityFluxes_DarcyFlux(flux);
 
-  for (int c = 0; c < nfaces_owned; c++) flux[0][c] /= rho;
+  double r = rho();
+  for (int c = 0; c < nfaces_owned; c++) flux[0][c] /= r;
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;

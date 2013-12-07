@@ -273,6 +273,7 @@ void FlowBCFactory::ProcessStaticHeadList(
     if (list.isSublist(name)) {
       Teuchos::ParameterList& spec = list.sublist(name);
       try {
+cout << density << endl;
         ProcessStaticHeadSpec(p0, density, gravity, spec, submodel, bc);
       } catch (Errors::Message& msg) {
         Errors::Message m;

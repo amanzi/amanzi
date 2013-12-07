@@ -66,7 +66,8 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Darcy_PK* DPK = new Darcy_PK(plist, S);
-  DPK->CreateDefaultState(mesh);
+  S->Setup();
+  S->InitializeFields();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 

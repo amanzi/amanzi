@@ -42,25 +42,6 @@ void Flow_PK::Init()
   nseepage_prev = 0;
   ti_phase_counter = 0;
 
-  // Miscaleneous sublists
-  if (glist_->isSublist("Preconditioners")) {
-    preconditioner_list_ = glist_->sublist("Preconditioners");
-  } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Preconditioners> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (glist_->isSublist("Solvers")) {
-    linear_operator_list_ = glist_->sublist("Solvers");
-  } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Solvers> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (glist_->isSublist("Nonlinear solvers")) {
-    solver_list_ = glist_->sublist("Nonlinear solvers");
-  }
-
   // Fundamental physical quantities
   double* gravity_data;
   S_->GetConstantVectorData("gravity")->ExtractView(&gravity_data);

@@ -95,7 +95,7 @@
      <ParameterList name="AztecOO CG">
        <Parameter name="error tolerance" type="double" value="1e-16"/>
        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-       <Parameter name="maximum number of iterations" type="int" value="400"/>
+       <Parameter name="maximum number of iterations" type="int" value="100"/>
        <Parameter name="iterative method" type="string" value="pcg"/>
      </ParameterList>
    </ParameterList>

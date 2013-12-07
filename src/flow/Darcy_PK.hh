@@ -88,6 +88,10 @@ class Darcy_PK : public Flow_PK {
   // control methods (for unit tests)
   void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list_ = dp_list_new; }
 
+  // access
+  Teuchos::RCP<Matrix_MFD> matrix() { return matrix_; }
+  Teuchos::RCP<CompositeVector> get_solution() { return solution; }
+
  private:
   Teuchos::ParameterList dp_list_;
 

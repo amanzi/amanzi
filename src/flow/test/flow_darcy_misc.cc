@@ -80,8 +80,7 @@ class DarcyProblem {
     DPK = new Darcy_PK(plist, S);
     S->Setup();
     S->InitializeFields();
-    DPK->CreateDefaultState(mesh);
-
+    DPK->InitializeFields();
     S->CheckAllFieldsInitialized();
 
     Teuchos::ParameterList& flow_list = plist.get<Teuchos::ParameterList>("Flow");
@@ -117,7 +116,7 @@ class DarcyProblem {
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       double pressure_exact = p0 + pressure_gradient * xc;
-      //      if (MyPID==0) cout << c << " " << pressure[0][c] << " exact=" <<  pressure_exact << endl;
+      // if (MyPID==0) cout << c << " " << pressure[0][c] << " exact=" <<  pressure_exact << endl;
       error_L2 += std::pow(pressure[0][c] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
@@ -131,7 +130,7 @@ class DarcyProblem {
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       double pressure_exact = p0 + pressure_gradient * xf;
-      //      cout << f << " " << lambda[0][f] << " exact=" << pressure_exact << endl;
+      // cout << f << " " << lambda[0][f] << " exact=" << pressure_exact << endl;
       error_L2 += std::pow(lambda[0][f] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
@@ -187,11 +186,6 @@ SUITE(Darcy_PK) {
 
     if (MyPID == 0) std::cout <<"Darcy PK on hexes: Dirichlet-Dirichlet" << std::endl;
 
-    double p0 = 1.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
-
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
     createBClist("pressure", "BC 1", regions, 0.0);
@@ -205,7 +199,13 @@ SUITE(Darcy_PK) {
     DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(S);
 
-    double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks
+    // calculate errors
+    double p0 = 1.0;
+    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+    AmanziGeometry::Point velocity(3);
+    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
+
+    double errorP = calculatePressureCellError(p0, pressure_gradient);
     CHECK(errorP < 1.0e-8);
     double errorL = calculatePressureFaceError(p0, pressure_gradient);
     CHECK(errorL < 1.0e-8);
@@ -221,15 +221,9 @@ SUITE(Darcy_PK) {
     Init("test/flow_darcy_misc.xml", "test/hexes.exo");
     if (MyPID == 0) std::cout <<"Darcy PK on hexes: Dirichlet-Neumann" << std::endl;
 
-    double p0 = 1.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
-    double u0 = DPK->rho() * velocity * AmanziGeometry::Point(0.0, 0.0, 1.0);
-
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
-    createBClist("mass flux", "BC 1", regions, u0);
+    createBClist("mass flux", "BC 1", regions, -20.0);
 
     regions[0] = string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
@@ -240,22 +234,27 @@ SUITE(Darcy_PK) {
     DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(S);
 
-    double error = calculatePressureCellError(p0, pressure_gradient);
-    CHECK(error < 1.0e-8);
-    error = calculatePressureFaceError(p0, pressure_gradient);
-    CHECK(error < 1.0e-8);
-    error = calculateDarcyFluxError(velocity);
-    CHECK(error < 1.0e-8);
+    // calculate errors
+    double p0 = 1.0;
+    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+    AmanziGeometry::Point velocity(3);
+    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
+    double u0 = DPK->rho() * velocity * AmanziGeometry::Point(0.0, 0.0, 1.0);
+
+    double errorP = calculatePressureCellError(p0, pressure_gradient);
+    CHECK(errorP < 1.0e-8);
+    double errorL = calculatePressureFaceError(p0, pressure_gradient);
+    CHECK(errorL < 1.0e-8);
+    double errorU = calculateDarcyFluxError(velocity);
+    CHECK(errorU < 1.0e-8);
+    if (MyPID == 0)
+        std::cout << "Error: " << errorP << " " << errorL << " " << errorU << std::endl;
   }
+
 
   TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
     Init("test/flow_darcy_misc.xml", "test/hexes.exo");
     if (MyPID == 0) std::cout <<"Darcy PK on hexes: StaticHead-Dirichlet" << std::endl;
-
-    double p0 = 2.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
@@ -263,6 +262,7 @@ SUITE(Darcy_PK) {
 
     regions[0] = string("Bottom side");
     createBClist("static head", "BC 2", regions, 0.25);
+
     DPK->ResetParameterList(dp_list);
 
     DPK->InitPK();  // setup the problem
@@ -270,12 +270,20 @@ SUITE(Darcy_PK) {
     DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(S);
 
-    double error = calculatePressureCellError(p0, pressure_gradient);  // error checks
-    CHECK(error < 1.0e-8);
-    error = calculatePressureFaceError(p0, pressure_gradient);
-    CHECK(error < 1.0e-8);
-    error = calculateDarcyFluxError(velocity);
-    CHECK(error < 1.0e-8);
+    // calculate errors
+    double p0 = 2.0;
+    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+    AmanziGeometry::Point velocity(3);
+    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
+
+    double errorP = calculatePressureCellError(p0, pressure_gradient);
+    CHECK(errorP < 1.0e-8);
+    double errorL = calculatePressureFaceError(p0, pressure_gradient);
+    CHECK(errorL < 1.0e-8);
+    double errorU = calculateDarcyFluxError(velocity);
+    CHECK(errorU < 1.0e-8);
+    if (MyPID == 0)
+        std::cout << "Error: " << errorP << " " << errorL << " " << errorU << std::endl;
   }
 
 /* ******************************************************************
@@ -284,11 +292,6 @@ SUITE(Darcy_PK) {
   TEST_FIXTURE(DarcyProblem, DDprisms) {
     Init("test/flow_darcy_misc.xml", "test/prisms.exo");
     if (MyPID == 0) std::cout << "\nDarcy PK on prisms: Dirichlet-Dirichlet" << std::endl;
-
-    double p0 = 1.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
@@ -303,7 +306,13 @@ SUITE(Darcy_PK) {
     DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(S);
 
-    double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks
+    // calculate errors
+    double p0 = 1.0;
+    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+    AmanziGeometry::Point velocity(3);
+    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
+
+    double errorP = calculatePressureCellError(p0, pressure_gradient);
     CHECK(errorP < 1.0e-8);
     double errorL = calculatePressureFaceError(p0, pressure_gradient);
     CHECK(errorL < 1.0e-8);
@@ -321,15 +330,9 @@ SUITE(Darcy_PK) {
     Init("test/flow_darcy_misc.xml", "test/tetrahedra.exo");
     if (MyPID == 0) std::cout << "\nDarcy PK on tets: Dirichlet-Neumann" << std::endl;
 
-    double p0 = 1.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
-    double u0 = DPK->rho() * velocity * AmanziGeometry::Point(0.0, 0.0, 1.0);
-
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
-    createBClist("mass flux", "BC 1", regions, u0);
+    createBClist("mass flux", "BC 1", regions, -20.0);
 
     regions[0] = string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
@@ -339,6 +342,13 @@ SUITE(Darcy_PK) {
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(S);
+
+    // calculate errors
+    double p0 = 1.0;
+    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+    AmanziGeometry::Point velocity(3);
+    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
+    double u0 = DPK->rho() * velocity * AmanziGeometry::Point(0.0, 0.0, 1.0);
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);
     CHECK(errorP < 1.0e-8);
@@ -357,11 +367,6 @@ SUITE(Darcy_PK) {
     Init("test/flow_darcy_misc.xml", "test/mixed.exo");
     if (MyPID == 0) std::cout << "\nDarcy PK on mixed mesh: Dirichlet-Dirichlet" << std::endl;
 
-    double p0 = 1.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
-
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
     createBClist("pressure", "BC 1", regions, 0.0);
@@ -375,7 +380,13 @@ SUITE(Darcy_PK) {
     DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(S);
 
-    double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks
+    // calculate errors
+    double p0 = 1.0;
+    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+    AmanziGeometry::Point velocity(3);
+    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / DPK->mu();
+
+    double errorP = calculatePressureCellError(p0, pressure_gradient);
     CHECK(errorP < 1.0e-8);
     double errorL = calculatePressureFaceError(p0, pressure_gradient);
     CHECK(errorL < 1.0e-8);
@@ -385,7 +396,6 @@ SUITE(Darcy_PK) {
     if (MyPID == 0)
         std::cout << "Error: " << errorP << " " << errorL << " " << errorU << " " << errorDiv << std::endl;
   }
-
 }
 
 

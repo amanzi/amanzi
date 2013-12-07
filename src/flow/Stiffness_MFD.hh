@@ -14,8 +14,6 @@
 
 #include <strings.h>
 
-#include "Epetra_Map.h"
-#include "Epetra_Operator.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_CrsMatrix.h"
@@ -40,9 +38,10 @@
 namespace Amanzi {
 namespace AmanziFlow {
 
-class Stiffness_MFD : public Epetra_Operator {
+class Stiffness_MFD {
  public:
-   Stiffness_MFD(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map);
+  Stiffness_MFD() {};
+  Stiffness_MFD(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
   ~Stiffness_MFD() {};
 
   // main methods
@@ -59,16 +58,12 @@ class Stiffness_MFD : public Epetra_Operator {
   // required methods
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-  bool UseTranspose() const { return false; }
-  int SetUseTranspose(bool) { return 1; }
-
-  const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
-  const Epetra_Map& OperatorDomainMap() const { return map_; }
-  const Epetra_Map& OperatorRangeMap() const { return map_; }
-
-  const char* Label() const { return strdup("Matrix MFD"); }
-  double NormInf() const { return 0.0; }
-  bool HasNormInf() const { return false; }
+  const Epetra_BlockMap& DomainMap() const {
+    return *map_;
+  }
+  const Epetra_BlockMap& RangeMap() const {
+    return *map_;
+  }
 
   // access methods
   std::vector<WhetStone::DenseMatrix>& Avv_cells() { return Avv_cells_; }
@@ -81,10 +76,12 @@ class Stiffness_MFD : public Epetra_Operator {
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff() { return IfpHypre_Sff_; }
 #endif
 
+ private:
+  void CombineGhostNode2MasterNode_(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
+
  protected:
-  Teuchos::RCP<Flow_State> FS_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Epetra_Map map_;
+  Teuchos::RCP<const Epetra_Map> map_;
 
   std::vector<WhetStone::DenseMatrix> Avv_cells_;
   std::vector<Epetra_SerialDenseVector> Fv_cells_;

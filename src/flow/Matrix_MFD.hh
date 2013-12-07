@@ -15,7 +15,6 @@
 #include <strings.h>
 
 #include "Epetra_Map.h"
-#include "Epetra_Operator.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_CrsMatrix.h"
