@@ -104,13 +104,13 @@ void Richards_PK::AssembleSteadyStatePreconditioner_MFD(Matrix_MFD* precondition
 /* ******************************************************************
 * Gathers together routines to compute MFD matrices.                            
 ****************************************************************** */
-void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
+void Richards_PK::AssembleMatrixMFD(const CompositeVector& u, double Tp)
 {
-  Epetra_Vector* u_cells = FS->CreateCellView(u);
-  Epetra_Vector* u_faces = FS->CreateFaceView(u);
+  Epetra_MultiVector& u_cells = *u.ViewComponent("cell", false);
+  Epetra_MultiVector& u_faces = *u.ViewComponent("face", true);
 
   rel_perm->Compute(u, bc_model, bc_values);
-  UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
+  UpdateSourceBoundaryData(Tp, u_cells, u_faces);
   
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
     Teuchos::RCP<Epetra_Vector> rhs_cells_ = matrix_ -> rhs_cells();
@@ -217,7 +217,7 @@ void Richards_PK::ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_V
     const AmanziGeometry::Point& face_centr = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 
-    if (ncells == 2){
+    if (ncells == 2) {
       a_dist = mesh_->cell_centroid(cells[1]) - mesh_->cell_centroid(cells[0]);
     } else if (ncells == 1) {    
       a_dist = face_centr - mesh_->cell_centroid(cells[0]);
@@ -231,9 +231,6 @@ void Richards_PK::ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_V
 
       perm_test[i] = (rho/vis) * ((K[cells[i]] * normal) * a_dist);
       h_test[i] = pow(-1.0, i)*((face_centr - mesh_->cell_centroid(cells[i]))*normal) / area;
-      //perm[i] = ((K[cells[i]] * normal) * normal)/ area;
-      //cout<<i<<" "<<h[i]<<" "<<h_test[i]<<endl;
-      //cout<<i<<" "<<perm[i]<<" "<<perm_test[i]<<endl;
     }
     double factor, grav;
 

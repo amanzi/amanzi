@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_FLOW_MATRIX_BASE_HH_
@@ -14,78 +14,121 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include <strings.h>
 
-#include "Epetra_Map.h"
-#include "Epetra_Operator.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "Point.hh"
 #include "boundary_function.hh"
 
-#include "Flow_typedefs.hh"
+#include "FlowTypeDefs.hh"
 #include "RelativePermeability.hh"
 
 
 namespace Amanzi {
 namespace AmanziFlow {
 
-class Matrix : public Epetra_Operator {
+/*
+  This class is used in the factory of linear solvers and requires that 
+  all exposed members be defined. At the moment, I do not have a better design.
+*/
+template<class Vector, class VectorSpace>
+class Matrix {
  public:
-  Matrix(Teuchos::RCP<const AmanziMesh::Mesh> mesh, const Epetra_Map& map) : 
-      mesh_(mesh), map_(map) {};
-  ~Matrix();
+  Matrix() {};
+  Matrix(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
+  ~Matrix() {};
 
   // main methods
-  virtual void CreateMassMatrices(std::vector<WhetStone::Tensor>& K) = 0;
-  virtual void CreateStiffnessMatrices(std::vector<WhetStone::Tensor>& K) = 0;
+  virtual void CreateMassMatrices(int method, std::vector<WhetStone::Tensor>& K) {};
+  virtual void CreateStiffnessMatrices(int method, std::vector<WhetStone::Tensor>& K) {};
+  virtual void CreateStiffnessMatrices(RelativePermeability& rel_perm) {};
 
-  virtual void SymbolicAssemble();
-  virtual void Assemble();
+  virtual void SymbolicAssemble() {};
+  virtual void Assemble() {};
+  virtual void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) {};
 
-  virtual void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) = 0;
+  virtual void AddGravityFluxes(double rho, const AmanziGeometry::Point& gravity,
+                                std::vector<WhetStone::Tensor>& K) {};
+  virtual void AddGravityFluxes(double rho, const AmanziGeometry::Point& gravity,
+                                std::vector<WhetStone::Tensor>& K,
+                                RelativePermeability& rel_perm) {};
 
-  virtual int Apply(const Epetra_MultiVector& v, Epetra_MultiVector& av) const = 0;
-  virtual int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const = 0;
+  virtual void AddTimeDerivativeSpecificStorage(
+      Epetra_MultiVector& p, const Epetra_MultiVector& ss, double g, double dT) {};
+  virtual void AddTimeDerivativeSpecificYield(
+      Epetra_MultiVector& p, const Epetra_MultiVector& sy, double g, double dT) {};
 
-  virtual void InitPreconditioner(std::string prec_name, Teuchos::ParameterList& prec_list);
-  virtual void UpdatePreconditioner();
-  virtual void DestroyPreconditioner();
+  virtual void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) {};
 
-  virtual void DeriveDarcyMassFlux(const Epetra_Vector& v, Epetra_Vector& flux) = 0;
+  virtual int Apply(const Vector& v, Vector& av) const = 0;
+  virtual int ApplyInverse(const Vector& v, Vector& hv) const = 0;
 
-  virtual Teuchos::RCP<Epetra_FECrsMatrix>& matrix() const = 0;
-  virtual Teuchos::RCP<Epetra_Vector>& rhs() const = 0;
+  virtual const VectorSpace& DomainMap() const = 0;
+  virtual const VectorSpace& RangeMap() const = 0;
 
-  // universal members
-  int property() { return property_; }
+  virtual void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& prec_list) {};
+  virtual void UpdatePreconditioner() {};
+  virtual void DestroyPreconditioner() {};
 
-  bool UseTranspose() const { return false; }
-  int SetUseTranspose(bool) { return 1; }
+  virtual void DeriveMassFlux(const Vector& p, Vector& flux,
+                              std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) {};
 
-  const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
-  const Epetra_Map& OperatorDomainMap() const { return map_; }
-  const Epetra_Map& OperatorRangeMap() const { return map_; }
+  virtual void CreateRHSVectors() {};
 
-  const char* Label() const { return strdup("Flow Matrix"); }
-  double NormInf() const { return 0.0; }
-  bool HasNormInf() const { return false; }
+  // common members
+  void AddActionProperty(int action) { actions_ |= action; }
+  void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
+
+  double ComputeResidual(const Vector& v, Vector& r);
+  double ComputeNegativeResidual(const Vector& v, Vector& r);
+
+  Teuchos::RCP<Vector> rhs() { return rhs_; }
+
+  // members collecting statistics
+  int nokay() { return nokay_; }
+  int npassed() { return npassed_; }
 
  protected:
-  double ComputeResidual(const Epetra_Vector& v, Epetra_Vector& r) {};
-  double ComputeNegativeResidual(const Epetra_Vector& v, Epetra_Vector& r) {};
-
-  void AddProperty(int property) { property_ += property; }
-
- protected:
-  Epetra_Map map_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<Vector> rhs_;
 
-  int property_;
+  int actions_;  // aplly, apply inverse, or both
+  bool flag_symmetry_;
+  int nokay_, npassed_;  // performance of algorithms generating matrices 
 };
+
+
+typedef Matrix<CompositeVector, CompositeVectorSpace> FlowMatrix;
+
+
+/* ******************************************************************
+* Linear algebra operations with matrices: r = f - A * u
+****************************************************************** */
+template<class Vector, class VectorSpace>
+double Matrix<Vector, VectorSpace>::ComputeResidual(const Vector& u, Vector& r)
+{
+  Apply(u, r);
+  r.Update(1.0, *rhs_, -1.0);
+
+  double rnorm;
+  r.Norm2(&rnorm);
+  return rnorm;
+}
+
+
+/* ******************************************************************
+* Linear algebra operations with matrices: r = A * u - f                                                 
+****************************************************************** */
+template<class Vector, class VectorSpace>
+double Matrix<Vector, VectorSpace>::ComputeNegativeResidual(const Vector& u, Vector& r)
+{
+  Apply(u, r);
+  r.Update(-1.0, *rhs_, 1.0);
+
+  double rnorm;
+  r.Norm2(&rnorm);
+  return rnorm;
+}
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

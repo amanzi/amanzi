@@ -32,7 +32,7 @@
 #include "Point.hh"
 #include "flow_boundary_function.hh"
 
-#include "Flow_typedefs.hh"
+#include "FlowTypeDefs.hh"
 
 
 namespace Amanzi {

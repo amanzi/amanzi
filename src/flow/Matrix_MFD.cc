@@ -28,7 +28,7 @@ namespace AmanziFlow {
 * Constructor                                      
 ****************************************************************** */
 Matrix_MFD::Matrix_MFD(Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : mesh_(mesh)
+    : Matrix(mesh)
 { 
   actions_ = 0;
 }
@@ -50,7 +50,7 @@ Matrix_MFD::~Matrix_MFD()
 * Calculate elemental inverse mass matrices. 
 * WARNING: The original Aff matrices are destroyed.                                            
 ****************************************************************** */
-void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K)
+void Matrix_MFD::CreateMassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K)
 {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -118,7 +118,7 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
 /* ******************************************************************
 * Calculate elemental inverse mass matrices.                                           
 ****************************************************************** */
-void Matrix_MFD::CreateMFDmassMatrices_ScaledStability(
+void Matrix_MFD::CreateMassMatrices_ScaledStability(
     int mfd3d_method, double factor, std::vector<WhetStone::Tensor>& K)
 {
   int dim = mesh_->space_dimension();
@@ -182,7 +182,8 @@ void Matrix_MFD::CreateMFDmassMatrices_ScaledStability(
 /* ******************************************************************
 * Calculate elemental stiffness matrices (fully saturated flow)                                          
 ****************************************************************** */
-void Matrix_MFD::CreateMFDstiffnessMatrices()
+void Matrix_MFD::CreateStiffnessMatrices(
+    int mfd3d_method, std::vector<WhetStone::Tensor>& K)
 {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -225,9 +226,10 @@ void Matrix_MFD::CreateMFDstiffnessMatrices()
 
 
 /* ******************************************************************
-* Calculate elemental stiffness matrices.                                            
+* Calculate stiffness matrices for partially saturated flow.
+* Permeability class carries information on nonlinear coefficient.
 ****************************************************************** */
-void Matrix_MFD::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
+void Matrix_MFD::CreateStiffnessMatrices(RelativePermeability& rel_perm)
 {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -326,7 +328,7 @@ void Matrix_MFD::RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
 /* ******************************************************************
 * Simply allocates memory.                                           
 ****************************************************************** */
-void Matrix_MFD::CreateMFDrhsVectors()
+void Matrix_MFD::CreateRHSVectors()
 {
   Ff_cells_.clear();
   Fc_cells_.clear();
@@ -344,6 +346,86 @@ void Matrix_MFD::CreateMFDrhsVectors()
 
     Ff_cells_.push_back(Ff);
     Fc_cells_.push_back(Fc);
+  }
+}
+
+
+/* ******************************************************************
+* Routine updates elemental discretization matrices and must be 
+* called before applying boundary conditions and global assembling. 
+* simplified implementation for single phase flow.                                            
+****************************************************************** */
+void Matrix_MFD::AddGravityFluxes(double rho, const AmanziGeometry::Point& gravity,
+                                  std::vector<WhetStone::Tensor>& K)
+{
+  AmanziGeometry::Point rho_gravity(gravity);
+  rho_gravity *= rho;
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    Epetra_SerialDenseVector& Ff = Ff_cells_[c];
+    double& Fc = Fc_cells_[c];
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
+      double outward_flux = ((K[c] * rho_gravity) * normal) * dirs[n]; 
+      Ff[n] += outward_flux;
+      Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Routine updates elemental discretization matrices and must be 
+* called before applying boundary conditions and global assembling.                                             
+****************************************************************** */
+void Matrix_MFD::AddGravityFluxes(double rho, const AmanziGeometry::Point& gravity,
+                                  std::vector<WhetStone::Tensor>& K,
+                                  RelativePermeability& rel_perm)
+{
+  AmanziGeometry::Point rho_gravity(gravity);
+  rho_gravity *= rho;
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  Epetra_Vector& Krel_cells = rel_perm.Krel_cells();
+  Epetra_Vector& Krel_faces = rel_perm.Krel_faces();
+  int method = rel_perm.method();
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    Epetra_SerialDenseVector& Ff = Ff_cells_[c];
+    double& Fc = Fc_cells_[c];
+    std::vector<double>& krel = rel_perm.Krel_amanzi()[c];
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
+      double outward_flux = ((K[c] * rho_gravity) * normal) * dirs[n]; 
+      if (method == FLOW_RELATIVE_PERM_CENTERED) {
+        outward_flux *= Krel_cells[c];
+      } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
+        outward_flux *= krel[n]; 
+      } else {
+        outward_flux *= Krel_faces[f];
+      }
+      Ff[n] += outward_flux;
+      Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.
+    }
   }
 }
 
@@ -402,11 +484,45 @@ void Matrix_MFD::ApplyBoundaryConditions(
 
 
 /* ******************************************************************
+* Adds time derivative related to specific stroage to cell-based 
+* part of MFD algebraic system. 
+****************************************************************** */
+void Matrix_MFD::AddTimeDerivativeSpecificStorage(
+    Epetra_MultiVector& p, const Epetra_MultiVector& ss, double g, double dT)
+{
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells_owned; c++) {
+    double volume = mesh_->cell_volume(c);
+    double factor = volume * ss[0][c] / (g * dT);
+    Acc_cells_[c] += factor;
+    Fc_cells_[c] += factor * p[0][c];
+  }
+}
+
+
+
+/* ******************************************************************
+* Adds time derivative related to specific yiled to cell-based part 
+* of MFD algebraic system. Area factor is alreafy inside Sy. 
+****************************************************************** */
+void Matrix_MFD::AddTimeDerivativeSpecificYield(
+    Epetra_MultiVector& p, const Epetra_MultiVector& sy, double g, double dT)
+{
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells_owned; c++) {
+    double factor = sy[0][c] / (g * dT);
+    Acc_cells_[c] += factor;
+    Fc_cells_[c] += factor * p[0][c];
+  }
+}
+
+
+/* ******************************************************************
 * Initialize Trilinos matrices. It must be called only once. 
 * If matrix is non-symmetric, we generate transpose of the matrix 
 * block Afc to reuse cf_graph; otherwise, pointer Afc = Acf.   
 ****************************************************************** */
-void Matrix_MFD::SymbolicAssembleGlobalMatrices()
+void Matrix_MFD::SymbolicAssemble()
 {
   // create the p-lambda map associated with the matrix
   cvs_.SetMesh(mesh_);
@@ -469,7 +585,7 @@ void Matrix_MFD::SymbolicAssembleGlobalMatrices()
 * Assemble elemental mass matrices into four global matrices. 
 * We need an auxiliary GHOST-based vector to assemble the RHS.
 ****************************************************************** */
-void Matrix_MFD::AssembleGlobalMatrices()
+void Matrix_MFD::Assemble()
 {
   Aff_->PutScalar(0.0);
 
@@ -572,35 +688,6 @@ void Matrix_MFD::AssembleSchurComplement(
     }
   }
   (*Sff_).GlobalAssemble();
-}
-
-
-/* ******************************************************************
-* Linear algebra operations with matrices: r = f - A * x                                                 
-****************************************************************** */
-double Matrix_MFD::ComputeResidual(const CompositeVector& solution, CompositeVector& residual)
-{
-  Apply(solution, residual);
-  residual.Update(1.0, *rhs_, -1.0);
-
-  double norm_residual;
-  residual.Norm2(&norm_residual);
-  return norm_residual;
-}
-
-
-/* ******************************************************************
-* Linear algebra operations with matrices: r = A * x - f                                                 
-****************************************************************** */
-double Matrix_MFD::ComputeNegativeResidual(const CompositeVector& solution, CompositeVector& residual)
-{
-  Apply(solution, residual);
-
-  residual.Update(-1.0, *rhs_, 1.0);
-
-  double norm_residual;
-  residual.Norm2(&norm_residual);
-  return norm_residual;
 }
 
 
@@ -731,14 +818,15 @@ int Matrix_MFD::PopulatePreconditioner(Matrix_MFD& matrix)
 * once (using flag) and in exactly the same manner as in routine
 * Flow_PK::addGravityFluxes_DarcyFlux.
 ****************************************************************** */
-void Matrix_MFD::DeriveDarcyMassFlux(const CompositeVector& solution,
-				     std::vector<int>& bc_model, 
-				     std::vector<bc_tuple>& bc_values,
-                                     Epetra_MultiVector& darcy_mass_flux)
+void Matrix_MFD::DeriveMassFlux(
+    const CompositeVector& solution, CompositeVector& darcy_mass_flux,
+    std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
 {
   solution.ScatterMasterToGhosted("face");
-  Epetra_MultiVector solution_cells = *solution.ViewComponent("cell", false);
-  Epetra_MultiVector solution_faces = *solution.ViewComponent("face", false);
+
+  const Epetra_MultiVector& solution_cells = *solution.ViewComponent("cell", false);
+  const Epetra_MultiVector& solution_faces = *solution.ViewComponent("face", false);
+  Epetra_MultiVector& flux = *darcy_mass_flux.ViewComponent("face", true);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<double> dp;
@@ -764,7 +852,7 @@ void Matrix_MFD::DeriveDarcyMassFlux(const CompositeVector& solution,
       if (f < nfaces_owned && !flag[f]) {
         double s(0.0);
         for (int m = 0; m < nfaces; m++) s += Aff_cells_[c](n, m) * dp[m];
-        darcy_mass_flux[0][f] = s * dirs[n];
+        flux[0][f] = s * dirs[n];
         flag[f] = 1;
       }
     }

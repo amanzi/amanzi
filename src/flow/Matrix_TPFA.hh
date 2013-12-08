@@ -20,15 +20,17 @@
 #include <strings.h>
 
 #include "Teuchos_RCP.hpp"
+#include "Epetra_MultiVector.h"
+#include "Epetra_BlockMap.h"
 #include "Ifpack.h" 
 
-#include "Matrix_MFD.hh"
+#include "Matrix.hh"
 
 
 namespace Amanzi {
 namespace AmanziFlow {
 
-class Matrix_TPFA : public Matrix_MFD {
+class Matrix_TPFA : public Matrix<Epetra_MultiVector, Epetra_BlockMap> {
  public:
   Matrix_TPFA() {};
   Matrix_TPFA(Teuchos::RCP<State>& S, Teuchos::RCP<const Epetra_Map> map);
@@ -38,11 +40,15 @@ class Matrix_TPFA : public Matrix_MFD {
               Teuchos::RCP<Epetra_Vector> Grav_faces);
   ~Matrix_TPFA() {};
 
+  // main members (required members)
+
+  void UpdatePreconditioner() {};
+
+  // other main members
   void Set_Krel_faces (Teuchos::RCP<Epetra_Vector> Krel_faces) { Krel_faces_ = Krel_faces;}
   void Set_Trans_faces(Teuchos::RCP<Epetra_Vector> Trans_faces) { trans_on_faces_ = Trans_faces;}
   void Set_Grav_faces (Teuchos::RCP<Epetra_Vector> Grav_faces) { grav_on_faces_ = Grav_faces;}
 
-  // override main methods of the base class
   virtual void CreateMFDstiffnessMatrices(RelativePermeability& rel_perm);
   virtual void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
   virtual void AssembleGlobalMatrices();
@@ -50,7 +56,6 @@ class Matrix_TPFA : public Matrix_MFD {
   
   virtual double ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
 
-  virtual void UpdatePreconditioner() { preconditioner_->Update(Spp_); } 
 
   virtual void AnalyticJacobian(const Epetra_Vector& solution, 
                                 std::vector<int>& bc_markers, 
@@ -61,13 +66,15 @@ class Matrix_TPFA : public Matrix_MFD {
                                        std::vector<bc_tuple>& bc_values); 
 
   virtual void DeriveDarcyMassFlux(const Epetra_Vector& solution,
-                                   const Epetra_Import& face_importer,
                                    std::vector<int>& bc_model, 
                                    std::vector<bc_tuple>& bc_values,
                                    Epetra_Vector& darcy_mass_flux);
 
   virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+
+  const Epetra_BlockMap& DomainMap() const;
+  const Epetra_BlockMap& RangeMap() const;
 
  private:
   void ComputeJacobianLocal(int mcells,

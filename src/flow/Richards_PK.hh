@@ -59,29 +59,36 @@ class Richards_PK : public Flow_PK {
   int AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BDF1(TI_Specs& ti_specs);
 
-  void CommitState(Teuchos::RCP<Flow_State> FS);
+  void CommitState(Teuchos::RCP<State> S);
 
   // methods for experimental time integration
-  double ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du);
-  double ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du);
-  double ErrorNormPicardExperimental(const Epetra_Vector& uold, const Epetra_Vector& unew);
+  double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
+  double ErrorNormPicardExperimental(const CompositeVector& uold, const CompositeVector& unew);
  
   // methods required for time integration
-  void fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0);
-  void precon(const Epetra_Vector& u, Epetra_Vector& Hu);
-  double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
+  void fun(const double Told, double Tnew, 
+           Teuchos::RCP<CompositeVector> u, Teuchos::RCP<CompositeVector> udot, 
+           Teuchos::RCP<CompositeVector> rhs);
+  void precon(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu);
+  void update_precon(double T, Teuchos::RCP<const CompositeVector> u, double dT);
+  double enorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du);
   void update_norm(double rtol, double atol) {};
-  void update_precon(double T, const Epetra_Vector& u, double dT, int& ierr);
-  bool modify_update_step(double h, Epetra_Vector&u, Epetra_Vector& du );
-  bool IsPureNewton() const;
+  bool is_admissible(Teuchos::RCP<const CompositeVector> up) { 
+   return false; 
+  }
+  bool modify_predictor(double h, Teuchos::RCP<CompositeVector> up) {
+    return false;
+  }
+  bool modify_correction(double h, Teuchos::RCP<const CompositeVector> res,
+                         Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du);
 
   // other main methods
-  void AddTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
-  void AddTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
+  void AddTimeDerivative_MFD(Epetra_Vector& p, double dTp, Matrix_MFD* matrix_operator);
+  void AddTimeDerivative_MFDfake(Epetra_Vector& p, double dTp, Matrix_MFD* matrix_operator);
 
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void AssembleMatrixMFD(const Epetra_Vector &u, double Tp);
-  void AssemblePreconditionerMFD(const Epetra_Vector &u, double Tp, double dTp);
+  void AssembleMatrixMFD(const CompositeVector &u, double Tp);
+  void AssemblePreconditionerMFD(const CompositeVector &u, double Tp, double dTp);
   void ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_Vector& grav_faces);
 
   void UpdateSourceBoundaryData(double Tp, CompositeVector& pressure);
@@ -91,15 +98,15 @@ class Richards_PK : public Flow_PK {
   void AssembleSteadyStateMatrix_MFD(Matrix_MFD* matrix);
   void AssembleSteadyStatePreconditioner_MFD(Matrix_MFD* preconditioner);
   void SolveFullySaturatedProblem(double T, CompositeVector& u, LinearSolver_Specs& ls_specs);
-  void EnforceConstraints_MFD(double Tp, Epetra_Vector& u);
+  void EnforceConstraints_MFD(double Tp, CompositeVector& u);
 
   // water retention models
   void DeriveSaturationFromPressure(const Epetra_MultiVector& p, Epetra_MultiVector& s);
   void DerivePressureFromSaturation(const Epetra_MultiVector& s, Epetra_MultiVector& p);
 
   // initization members
-  void ClipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
-  void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& pressure_cells);
+  void ClipHydrostaticPressure(const double pmin, Epetra_MultiVector& p);
+  void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_MultiVector& p);
 
   double CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew);
 
@@ -113,11 +120,8 @@ class Richards_PK : public Flow_PK {
 
   // developement members
   bool SetSymmetryProperty();
-  void ImproveAlgebraicConsistency(const Epetra_Vector& flux, 
-                                   const Epetra_Vector& ws_prev, Epetra_Vector& ws);
+  void ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epetra_Vector& ws);
   
-  int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y);
-
   // auxilliary data management
   void UpdateAuxilliaryData();
 
@@ -132,6 +136,8 @@ class Richards_PK : public Flow_PK {
   int block_picard;
 
   int error_control_;
+  double dT_desirable_;
+
   double functional_max_norm;
   int functional_max_cell;
 

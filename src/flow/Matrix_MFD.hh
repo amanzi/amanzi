@@ -25,6 +25,8 @@
 #include "Teuchos_LAPACK.hpp"
 
 #include "Preconditioner.hh"
+#include "CompositeVector.hh"
+#include "CompositeVectorSpace.hh"
 
 #include "Mesh.hh"
 #include "Point.hh"
@@ -32,48 +34,58 @@
 #include "boundary_function.hh"
 
 #include "State.hh"
-#include "Flow_typedefs.hh"
+#include "Matrix.hh"
 #include "RelativePermeability.hh"
+
+#include "FlowTypeDefs.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
 
-class Matrix_MFD {
+class Matrix_MFD : public Matrix<CompositeVector, CompositeVectorSpace> {
  public:
   Matrix_MFD() {};
   Matrix_MFD(Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~Matrix_MFD();
 
-  // main methods
-  void CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
-  void CreateMFDrhsVectors();
-  virtual void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
+  // main methods (required methods)
+  void CreateMassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
+  void CreateRHSVectors();
 
-  void CreateMFDstiffnessMatrices();
-  virtual void CreateMFDstiffnessMatrices(RelativePermeability& rel_perm);
-  virtual void SymbolicAssembleGlobalMatrices();
-  virtual void AssembleGlobalMatrices();
-  virtual void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
+  void CreateStiffnessMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
+  void CreateStiffnessMatrices(RelativePermeability& rel_perm);
 
-  virtual double ComputeResidual(const CompositeVector& solution, CompositeVector& residual);
-  virtual double ComputeNegativeResidual(const CompositeVector& solution, CompositeVector& residual);
+  void SymbolicAssemble();
+  void Assemble();
+  void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
+  void AddGravityFluxes(double rho, const AmanziGeometry::Point& gravity,
+                        std::vector<WhetStone::Tensor>& K);
+  void AddGravityFluxes(double rho, const AmanziGeometry::Point& gravity,
+                        std::vector<WhetStone::Tensor>& K,
+                        RelativePermeability& rel_perm);
+
+  void AddTimeDerivativeSpecificStorage(
+    Epetra_MultiVector& p, const Epetra_MultiVector& ss, double g, double dT);
+  void AddTimeDerivativeSpecificYield(
+    Epetra_MultiVector& p, const Epetra_MultiVector& sy, double g, double dT);
+
+  void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
+
+  void InitPreconditioner(const std::string& name, const Teuchos::ParameterList& plist);
+  virtual void UpdatePreconditioner() { preconditioner_->Update(Sff_); } 
+  void DestroyPreconditioner() { preconditioner_->Destroy(); }
+
+  void DeriveMassFlux(const CompositeVector& solution, CompositeVector& darcy_mass_flux,
+                      std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
+
+  // other main methods
   virtual void AnalyticJacobian(const Epetra_Vector& solution, 
                                 std::vector<int>& bc_markers, 
                                 std::vector<bc_tuple>& bc_values,
                                 RelativePermeability& rel_perm) {};
 
   int ReduceGlobalSystem2LambdaSystem(CompositeVector& u);
-
-  virtual void DeriveDarcyMassFlux(const CompositeVector& solution,
-                                   std::vector<int>& bc_model, 
-                                   std::vector<bc_tuple>& bc_values,
-                                   Epetra_MultiVector& darcy_mass_flux);
-
-
-  void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& prec_list);
-  virtual void UpdatePreconditioner() { preconditioner_->Update(Sff_); } 
-  void DestroyPreconditioner() { preconditioner_->Destroy(); }
 
   // required methods
   virtual int Apply(const CompositeVector& X, CompositeVector& Y) const;
@@ -86,39 +98,22 @@ class Matrix_MFD {
   }
 
   // control methods
-  void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
-  void AddActionProperty(int action) { actions_ |= action; }
   bool CheckActionProperty(int action) { return actions_ & action; }
 
   // development methods
-  void CreateMFDmassMatrices_ScaledStability(int method, double factor, std::vector<WhetStone::Tensor>& K);
+  void CreateMassMatrices_ScaledStability(int method, double factor, std::vector<WhetStone::Tensor>& K);
   int PopulatePreconditioner(Matrix_MFD& matrix);
   void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
 
   // access methods
-  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() { return Aff_cells_; }
-  std::vector<Epetra_SerialDenseVector>& Acf_cells() { return Acf_cells_; }
-  std::vector<Epetra_SerialDenseVector>& Afc_cells() { return Afc_cells_; }
-  std::vector<double>& Acc_cells() { return Acc_cells_; }
-  std::vector<Epetra_SerialDenseVector>& Ff_cells() { return Ff_cells_; }
-  std::vector<double>& Fc_cells() { return Fc_cells_; }
-  Teuchos::RCP<CompositeVector>& rhs() { return rhs_; }
-
   Teuchos::RCP<Epetra_FECrsMatrix>& Aff() { return Aff_; }
   Teuchos::RCP<Epetra_FECrsMatrix>& Sff() { return Sff_; }
   Teuchos::RCP<Epetra_Vector>& Acc() { return Acc_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Acf() { return Acf_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Afc() { return Afc_; }
 
-  int nokay() { return nokay_; }
-  int npassed() { return npassed_; }
-
  protected:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   CompositeVectorSpace cvs_;
-
-  bool flag_symmetry_;
-  int actions_;  // applly, apply inverse, or both
 
   std::vector<WhetStone::DenseMatrix> Mff_cells_;
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
@@ -134,10 +129,6 @@ class Matrix_MFD {
   Teuchos::RCP<Epetra_FECrsMatrix> Aff_;
   Teuchos::RCP<Epetra_FECrsMatrix> Sff_;  // Schur complement
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
-
-  Teuchos::RCP<CompositeVector> rhs_;
-
-  int nokay_, npassed_;  // performance of algorithms generating mass matrices 
 
  private:
   void operator=(const Matrix_MFD& matrix);

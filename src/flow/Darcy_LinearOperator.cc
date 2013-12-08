@@ -22,11 +22,11 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Darcy_PK::AssembleMatrixMFD()
 {
-  matrix_->CreateMFDstiffnessMatrices();
-  matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(&*matrix_);
+  matrix_->CreateStiffnessMatrices(mfd3d_method_, K);
+  matrix_->CreateRHSVectors();
+  matrix_->AddGravityFluxes(rho_, gravity_, K);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
-  matrix_->AssembleGlobalMatrices();
+  matrix_->Assemble();
   matrix_->AssembleSchurComplement(bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 }
@@ -40,19 +40,19 @@ void Darcy_PK::AssembleMatrixMFD()
 void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
 {
   // calculate and assemble elemental stifness matrices
-  matrix_->CreateMFDstiffnessMatrices();
-  matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(&*matrix_);
+  matrix_->CreateStiffnessMatrices(mfd3d_method_, K);
+  matrix_->CreateRHSVectors();
+  matrix_->AddGravityFluxes(rho_, gravity_, K);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
-  matrix_->AssembleGlobalMatrices();
+  matrix_->Assemble();
   matrix_->AssembleSchurComplement(bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 
   // create linear solver
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, CompositeVector, CompositeVectorSpace> >
+  AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
 
   CompositeVector& rhs = *matrix_->rhs();
@@ -77,8 +77,8 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, const CompositeVector& rhs,
 {
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, CompositeVector, CompositeVectorSpace> >
+  AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
 
   solver->ApplyInverse(rhs, u);

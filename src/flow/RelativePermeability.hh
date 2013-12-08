@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_RELATIVE_PERMEABILITY_HH_
@@ -26,7 +26,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "State.hh"
 #include "WaterRetentionModel.hh"
-#include "Flow_typedefs.hh"
+#include "FlowTypeDefs.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -42,13 +42,13 @@ class RelativePermeability {
   void Init(double p0, Teuchos::RCP<State> S);
   void ProcessParameterList();
 
-  void Compute(const Epetra_Vector& p, 
+  void Compute(const Epetra_MultiVector& p, 
                const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
-  void ComputeInCells(const Epetra_Vector& p);
-  void ComputeOnFaces(const Epetra_Vector& p,
+  void ComputeInCells(const Epetra_MultiVector& p);
+  void ComputeOnFaces(const Epetra_MultiVector& p,
                       const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
   void ComputeDerivativeOnFaces(
-      const Epetra_Vector& p,
+      const Epetra_MultiVector& p,
       const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
 
   void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds);

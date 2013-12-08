@@ -73,8 +73,8 @@ class Darcy_PK : public Flow_PK {
   void changed_solution() {};
 
   // other main methods
-  void AddTimeDerivativeSpecificStorage(Epetra_MultiVector& p_cells, double dTp, Matrix_MFD* matrix_operator);
-  void AddTimeDerivativeSpecificYield(Epetra_MultiVector& p_cells, double dTp, Matrix_MFD* matrix_operator);
+  void AddTimeDerivativeSpecificStorage(Epetra_MultiVector& p, double dTp, Matrix_MFD* matrix_operator);
+  void AddTimeDerivativeSpecificYield(Epetra_MultiVector& p, double dTp, Matrix_MFD* matrix_operator);
   void UpdateSpecificYield();
 
   double ErrorEstimate(double* dTfactor);
@@ -89,13 +89,13 @@ class Darcy_PK : public Flow_PK {
   void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list_ = dp_list_new; }
 
   // access
-  Teuchos::RCP<Matrix_MFD> matrix() { return matrix_; }
+  Teuchos::RCP<FlowMatrix> matrix() { return matrix_; }
   Teuchos::RCP<CompositeVector> get_solution() { return solution; }
 
  private:
   Teuchos::ParameterList dp_list_;
 
-  Teuchos::RCP<Matrix_MFD> matrix_;
+  Teuchos::RCP<FlowMatrix> matrix_;
 
   int error_control_;
   double dT_desirable_;

@@ -47,6 +47,7 @@ void Flow_PK::Init()
   S_->GetConstantVectorData("gravity")->ExtractView(&gravity_data);
   gravity_.init(dim);
   for (int k = 0; k < dim; k++) gravity_[k] = gravity_data[k];
+  g_ = fabs(gravity_[dim - 1]);
 
   // Other constant (temporarily) physical quantaties
   rho_ = *(S_->GetScalarData("fluid_density"));
@@ -284,116 +285,12 @@ void Flow_PK::CalculatePermeabilityFactorInWell()
 ****************************************************************** */
 void Flow_PK::AddSourceTerms(CompositeVector& rhs)
 {
-  Epetra_MultiVector& rhs_cells = *(rhs.ViewComponent("cell"));
+  Epetra_MultiVector& rhs_cells = *rhs.ViewComponent("cell");
   Functions::FlowDomainFunction::Iterator src;
 
   for (src = src_sink->begin(); src != src_sink->end(); ++src) {
     int c = src->first;
     rhs_cells[0][c] += mesh_->cell_volume(c) * src->second;
-  }
-}
-
-
-/* ******************************************************************
-* Routine updates elemental discretization matrices and must be 
-* called before applying boundary conditions and global assembling. 
-* simplified implementation for single phase flow.                                            
-****************************************************************** */
-void Flow_PK::AddGravityFluxes_MFD(Matrix_MFD* matrix_operator)
-{
-  double rho = *(S_->GetScalarData("fluid_density"));
-
-  AmanziGeometry::Point rho_gravity(gravity_);
-  rho_gravity *= rho;
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    Epetra_SerialDenseVector& Ff = matrix_operator->Ff_cells()[c];
-    double& Fc = matrix_operator->Fc_cells()[c];
-
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-
-      double outward_flux = ((K[c] * rho_gravity) * normal) * dirs[n]; 
-      Ff[n] += outward_flux;
-      Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Routine updates elemental discretization matrices and must be 
-* called before applying boundary conditions and global assembling.                                             
-****************************************************************** */
-void Flow_PK::AddGravityFluxes_MFD(Matrix_MFD* matrix_operator,
-                                   RelativePermeability& rel_perm) 
-{
-  double rho = *(S_->GetScalarData("fluid_density"));
-
-  AmanziGeometry::Point rho_gravity(gravity_);
-  rho_gravity *= rho;
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  Epetra_Vector& Krel_cells = rel_perm.Krel_cells();
-  Epetra_Vector& Krel_faces = rel_perm.Krel_faces();
-  int method = rel_perm.method();
-
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    Epetra_SerialDenseVector& Ff = matrix_operator->Ff_cells()[c];
-    double& Fc = matrix_operator->Fc_cells()[c];
-    std::vector<double>& krel = rel_perm.Krel_amanzi()[c];
-
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-
-      double outward_flux = ((K[c] * rho_gravity) * normal) * dirs[n]; 
-      if (method == FLOW_RELATIVE_PERM_CENTERED) {
-        outward_flux *= Krel_cells[c];
-      } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
-        outward_flux *= krel[n]; 
-      } else {
-        outward_flux *= Krel_faces[f];
-      }
-      Ff[n] += outward_flux;
-      Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Add gravity fluxes to RHS of TPFA approximation                                            
-****************************************************************** */
-void Flow_PK::AddGravityFluxes_TPFA(const Epetra_Vector& Krel_faces, 
-                                    const Epetra_Vector& Grav_term,
-                                    Matrix_MFD* matrix_operator)
-{
-  AmanziMesh::Entity_ID_List cells;
-  std::vector<int> dirs;
-  Epetra_MultiVector& rhs_cells = *matrix_operator->rhs()->ViewComponent("cell");
-
-  for (int f = 0; f < nfaces_wghost; f++) {
-    if (bc_model[f] == FLOW_BC_FACE_FLUX) continue;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
-    for (int i = 0; i < ncells; i++){
-      int c = cells[i];
-      if (c >= ncells_owned) continue;
-      rhs_cells[0][c] -= pow(-1.0, i)*Grav_term[f]*Krel_faces[f];  
-    }
   }
 }
 
@@ -560,7 +457,8 @@ void Flow_PK::DeriveFaceValuesFromCellValues(
 /* ******************************************************************
 * Calculate change of water volume per second due to boundary flux.                                          
 ****************************************************************** */
-double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_model, Epetra_Vector& darcy_flux)
+double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_model,
+                                           Epetra_MultiVector& darcy_flux)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
@@ -573,9 +471,9 @@ double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_model, Epetra_Ve
       int f = faces[i];
       if (bc_model[f] != FLOW_BC_FACE_NULL && f < nfaces_owned) {
         if (fdirs[i] >= 0) {
-          volume -= darcy_flux[f];
+          volume -= darcy_flux[0][f];
         } else {
-          volume += darcy_flux[f];
+          volume += darcy_flux[0][f];
         }
       }
     }

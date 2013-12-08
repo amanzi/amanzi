@@ -1,13 +1,13 @@
 /*
-This is the flow component of the Amanzi code.
+  This is the flow component of the Amanzi code.
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Neil Carlson (version 1) 
-         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Authors: Neil Carlson (version 1) 
+           Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
 #include <vector>
@@ -25,14 +25,15 @@ Authors: Neil Carlson (version 1)
 #include "Darcy_PK.hh"
 #include "FlowDefs.hh"
 #include "Flow_SourceFactory.hh"
-#include "Matrix_MFD.hh"
-#include "Matrix_TPFA.hh"
+
+#include "Matrix.hh"
+#include "MatrixFactory.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* each variable initialization
+* Simplest possible constructor: extracts lists and requires fields.
 ****************************************************************** */
 Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
 {
@@ -75,7 +76,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
   if (glist.isSublist("Nonlinear solvers")) {
     solver_list_ = glist.sublist("Nonlinear solvers");
   }
-
 
   // for creating fields
   std::vector<std::string> names(2);
@@ -188,11 +188,16 @@ void Darcy_PK::InitPK()
   ProcessParameterList(dp_list_);
 
   // Select a proper matrix class. No optionos at the moment.
-  matrix_ = Teuchos::rcp(new Matrix_MFD(mesh_));
+  Teuchos::ParameterList mlist;
+  mlist.set<std::string>("matrix", "mfd");
+
+  MatrixFactory factory(mesh_);
+  matrix_ = factory.Create(mlist);
+
   matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
   matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
 
-  // Create auxiliary data for time history.
+  // Create solution and auxiliary data for time history.
   solution = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("pressure"))));
   solution->PutScalar(0.0);
 
@@ -222,7 +227,7 @@ void Darcy_PK::InitPK()
   // Process other fundamental structures
   K.resize(ncells_owned);
   matrix_->SetSymmetryProperty(true);
-  matrix_->SymbolicAssembleGlobalMatrices();
+  matrix_->SymbolicAssemble();
 
   // Allocate memory for wells
   if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
@@ -334,9 +339,10 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   matrix_->InitPreconditioner(ti_specs.preconditioner_name, preconditioner_list_);
 
   // set up initial guess for solution
-  Epetra_MultiVector& p = *S_->GetFieldData("pressure", passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& p_cells = *solution->ViewComponent("cell");
-  p_cells = p;
+  Epetra_MultiVector& pressure = *S_->GetFieldData("pressure", passwd_)->ViewComponent("cell");
+  Epetra_MultiVector& p = *solution->ViewComponent("cell");
+  Epetra_MultiVector& lambda = *solution->ViewComponent("face", true);
+  p = pressure;
 
   ResetPKtimes(T0, dT0);
   dT_desirable_ = dT0;  // The minimum desirable time step from now on.
@@ -349,7 +355,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   SetAbsolutePermeabilityTensor();
   for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
 
-  matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
+  matrix_->CreateMassMatrices(mfd3d_method_, K);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     int nokay = matrix_->nokay();
@@ -377,11 +383,10 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   if (ti_specs.initialize_with_darcy) {
     ti_specs.initialize_with_darcy = false;
 
-    Epetra_MultiVector& p_faces = *solution->ViewComponent("face", true);
-    DeriveFaceValuesFromCellValues(p, p_faces);
+    DeriveFaceValuesFromCellValues(p, lambda);
 
     SolveFullySaturatedProblem(T0, *solution);
-    p = p_cells;
+    pressure = p;
   }
 }
 
@@ -428,15 +433,17 @@ int Darcy_PK::Advance(double dT_MPC)
   ComputeBCs(*solution);
 
   // calculate and assemble elemental stifness matrices
-  Epetra_MultiVector& p_cells = *solution->ViewComponent("cell");
+  Epetra_MultiVector& p = *solution->ViewComponent("cell");
+  const Epetra_MultiVector& ss = *S_->GetFieldData("specific_storage")->ViewComponent("cell");
+  const Epetra_MultiVector& sy = *S_->GetFieldData("specific_yield")->ViewComponent("cell");
 
-  matrix_->CreateMFDstiffnessMatrices();
-  matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(&*matrix_);
-  AddTimeDerivativeSpecificStorage(p_cells, dT, &*matrix_);
-  AddTimeDerivativeSpecificYield(p_cells, dT, &*matrix_);
+  matrix_->CreateStiffnessMatrices(mfd3d_method_, K);
+  matrix_->CreateRHSVectors();
+  matrix_->AddGravityFluxes(rho_, gravity_, K);
+  matrix_->AddTimeDerivativeSpecificStorage(p, ss, g_, dT);
+  matrix_->AddTimeDerivativeSpecificYield(p, sy, g_, dT);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
-  matrix_->AssembleGlobalMatrices();
+  matrix_->Assemble();
   matrix_->AssembleSchurComplement(bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 
@@ -446,8 +453,8 @@ int Darcy_PK::Advance(double dT_MPC)
   // create linear solver
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, CompositeVector, CompositeVectorSpace> >
+  AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
@@ -502,43 +509,20 @@ void Darcy_PK::CommitState(Teuchos::RCP<State> S)
   p = *solution;
 
   // calculate darcy mass flux
-  Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux", passwd_)->ViewComponent("face", true);
+  CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+  Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
 
-  matrix_->CreateMFDstiffnessMatrices();
-  matrix_->DeriveDarcyMassFlux(*solution, bc_model, bc_values, flux);
+  matrix_->CreateStiffnessMatrices(mfd3d_method_, K);
+  matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
   AddGravityFluxes_DarcyFlux(flux);
 
-  double r = rho();
-  for (int c = 0; c < nfaces_owned; c++) flux[0][c] /= r;
+  for (int c = 0; c < nfaces_owned; c++) flux[0][c] /= rho_;
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
 
   // DEBUG
   // WriteGMVfile(FS_MPC);
-}
-
-
-/* ******************************************************************
-* Adds time derivative related to specific stroage to cell-based 
-* part of MFD algebraic system. 
-****************************************************************** */
-void Darcy_PK::AddTimeDerivativeSpecificStorage(
-    Epetra_MultiVector& p_cells, double dTp, Matrix_MFD* matrix_operator)
-{
-  double g = fabs(gravity_[dim - 1]);
-  const Epetra_MultiVector& 
-      specific_storage = *S_->GetFieldData("specific_storage")->ViewComponent("cell");
-
-  std::vector<double>& Acc_cells = matrix_operator->Acc_cells();
-  std::vector<double>& Fc_cells = matrix_operator->Fc_cells();
-
-  for (int c = 0; c < ncells_owned; c++) {
-    double volume = mesh_->cell_volume(c);
-    double factor = volume * specific_storage[0][c] / (g * dTp);
-    Acc_cells[c] += factor;
-    Fc_cells[c] += factor * p_cells[0][c];
-  }
 }
 
 
@@ -585,28 +569,6 @@ void Darcy_PK::UpdateSpecificYield()
     Errors::Message msg;
     msg << "Flow PK: configuration of the yield region leads to negative yield interfaces.";
     Exceptions::amanzi_throw(msg);
-  }
-}
-
-
-/* ******************************************************************
-* Adds time derivative related to specific yiled to cell-based part 
-* of MFD algebraic system. Area factor is alreafy inside Sy. 
-****************************************************************** */
-void Darcy_PK::AddTimeDerivativeSpecificYield(
-    Epetra_MultiVector& p_cells, double dTp, Matrix_MFD* matrix_operator)
-{
-  double g = fabs(gravity_[dim - 1]);
-  const Epetra_MultiVector& 
-      specific_yield = *S_->GetFieldData("specific_yield")->ViewComponent("cell");
-
-  std::vector<double>& Acc_cells = matrix_operator->Acc_cells();
-  std::vector<double>& Fc_cells = matrix_operator->Fc_cells();
-
-  for (int c = 0; c < ncells_owned; c++) {
-    double factor = specific_yield[0][c] / (g * dTp);
-    Acc_cells[c] += factor;
-    Fc_cells[c] += factor * p_cells[0][c];
   }
 }
 

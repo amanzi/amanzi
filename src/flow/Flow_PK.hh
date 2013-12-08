@@ -22,7 +22,7 @@
 
 #include "TI_Specs.hh"
 #include "FlowDefs.hh"
-#include "Flow_typedefs.hh"
+#include "FlowTypeDefs.hh"
 #include "Flow_BC_Factory.hh"
 #include "Flow_SourceFactory.hh"
 
@@ -74,9 +74,9 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   void CalculateShiftWaterTable(const std::string region);
 
   // gravity members
-  void AddGravityFluxes_MFD(Matrix_MFD* matrix);
-  void AddGravityFluxes_MFD(Matrix_MFD* matrix, RelativePermeability& rel_perm);
-  void AddGravityFluxes_TPFA(const Epetra_Vector& Krel_faces, const Epetra_Vector& Grav_term, Matrix_MFD* matrix_operator);
+  void AddGravityFluxes_TPFA(const Epetra_Vector& Krel_faces, 
+                             const Epetra_Vector& Grav_term, 
+			     Matrix_MFD* matrix_operator);
 
   void AddGravityFluxes_DarcyFlux(Epetra_MultiVector& mass_flux);
   void AddGravityFluxes_DarcyFlux(Epetra_MultiVector& mass_flux, RelativePermeability& rel_perm);
@@ -104,7 +104,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 
   // utilities
-  double WaterVolumeChangePerSecond(std::vector<int>& bc_model, Epetra_Vector& darcy_flux);
+  double WaterVolumeChangePerSecond(std::vector<int>& bc_model, Epetra_MultiVector& darcy_flux);
 
   void CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz, 
                               std::vector<AmanziGeometry::Point>& velocity);
@@ -123,7 +123,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   double rho() { return rho_; }
   double mu() { return mu_; }
   AmanziGeometry::Point gravity() { return gravity_; }
-  double gravity_magnitude() { return fabs(gravity_[dim]); }
   std::vector<WhetStone::Tensor>& get_K() { return K; }
   std::vector<bc_tuple>& get_bc_values() { return bc_values; }
 
@@ -152,7 +151,7 @@ public:
   // Stationary physical quantatities
   std::vector<WhetStone::Tensor> K; 
   AmanziGeometry::Point gravity_;
-  double rho_, mu_, atm_pressure_;
+  double g_, rho_, mu_, atm_pressure_;
 
   Teuchos::RCP<Epetra_Vector> Kxy;
 

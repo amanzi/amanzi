@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include "errors.hh"
@@ -58,9 +58,9 @@ void RelativePermeability::Init(double p0, Teuchos::RCP<State> S)
 /* ******************************************************************
 * A wrapper for updating relative permeabilities.
 ****************************************************************** */
-void RelativePermeability::Compute(const Epetra_Vector& p,
-                                    const std::vector<int>& bc_model,
-                                    const std::vector<bc_tuple>& bc_values)
+void RelativePermeability::Compute(const Epetra_MultiVector& p,
+                                   const std::vector<int>& bc_model,
+                                   const std::vector<bc_tuple>& bc_values)
 {
   if (method_ == FLOW_RELATIVE_PERM_UPWIND_GRAVITY ||
       method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
