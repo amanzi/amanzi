@@ -24,13 +24,10 @@ Authors: Neil Carlson (version 1)
 #include "BDF1_TI.hh"
 
 #include "Flow_PK.hh"
-#include "Matrix_MFD.hh"
+#include "Matrix.hh"
 #include "WaterRetentionModel.hh"
 #include "RelativePermeability.hh"
 #include "TI_Specs.hh"
-
-// #include "TimerManager.hh"
-
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -89,16 +86,15 @@ class Richards_PK : public Flow_PK {
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
   void AssembleMatrixMFD(const CompositeVector &u, double Tp);
   void AssemblePreconditionerMFD(const CompositeVector &u, double Tp, double dTp);
-  void ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_Vector& grav_faces);
 
-  void UpdateSourceBoundaryData(double Tp, CompositeVector& pressure);
+  void UpdateSourceBoundaryData(double Tp, const CompositeVector& pressure);
   double AdaptiveTimeStepEstimate(double* dTfactor);
 
   // linear problems and solvers
-  void AssembleSteadyStateMatrix_MFD(Matrix_MFD* matrix);
-  void AssembleSteadyStatePreconditioner_MFD(Matrix_MFD* preconditioner);
+  void AssembleSteadyStateMatrix(FlowMatrix* matrix);
+  void AssembleSteadyStatePreconditioner(FlowMatrix* preconditioner);
   void SolveFullySaturatedProblem(double T, CompositeVector& u, LinearSolver_Specs& ls_specs);
-  void EnforceConstraints_MFD(double Tp, CompositeVector& u);
+  void EnforceConstraints(double Tp, CompositeVector& u);
 
   // water retention models
   void DeriveSaturationFromPressure(const Epetra_MultiVector& p, Epetra_MultiVector& s);
@@ -108,15 +104,16 @@ class Richards_PK : public Flow_PK {
   void ClipHydrostaticPressure(const double pmin, Epetra_MultiVector& p);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_MultiVector& p);
 
-  double CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew);
+  double CalculateRelaxationFactor(const Epetra_MultiVector& uold,
+                                   const Epetra_MultiVector& unew);
 
   // control method
   void ResetErrorControl(int error) { error_control_ = error; }
   void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
   
   // access methods
-  Teuchos::RCP<Matrix_MFD> matrix() { return matrix_; }
-  Teuchos::RCP<Matrix_MFD> preconditioner() { return preconditioner_; }
+  Teuchos::RCP<FlowMatrix> matrix() { return matrix_; }
+  Teuchos::RCP<FlowMatrix> preconditioner() { return preconditioner_; }
 
   // developement members
   bool SetSymmetryProperty();
@@ -129,8 +126,8 @@ class Richards_PK : public Flow_PK {
   Teuchos::ParameterList rp_list_;
 
  private:
-  Teuchos::RCP<Matrix_MFD> matrix_;
-  Teuchos::RCP<Matrix_MFD> preconditioner_;
+  Teuchos::RCP<FlowMatrix> matrix_;
+  Teuchos::RCP<FlowMatrix> preconditioner_;
 
   BDF1_TI<CompositeVector, CompositeVectorSpace>* bdf1_dae;  // Time integrators
   int block_picard;

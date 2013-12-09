@@ -20,6 +20,8 @@
 #include "CompositeVectorSpace.hh"
 
 #include "Mesh.hh"
+#include "State.hh"
+#include "RelativePermeability.hh"
 #include "Matrix.hh"
 #include "Matrix_MFD.hh"
 #include "Matrix_TPFA.hh"
@@ -29,21 +31,22 @@ namespace AmanziFlow {
 
 class MatrixFactory {
  public:
-  MatrixFactory(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
+  MatrixFactory() {};
   ~MatrixFactory() {};
 
-  Teuchos::RCP<FlowMatrix> Create(Teuchos::ParameterList& plist)
+  Teuchos::RCP<FlowMatrix> Create(Teuchos::RCP<State> S,
+                                  Teuchos::RCP<RelativePermeability> rel_perm, 
+                                  Teuchos::ParameterList& plist)
   {
     std::string name = plist.get<std::string>("matrix", "mfd");
     if (name == "mfd") {
-      Teuchos::RCP<Matrix_MFD> matrix = Teuchos::rcp(new Matrix_MFD(mesh_));
-      // matrix->Init(...);
+      Teuchos::RCP<Matrix_MFD> matrix = Teuchos::rcp(new Matrix_MFD(S, rel_perm));
+      return matrix;
+    } else if (name == "tpfa") {
+      Teuchos::RCP<Matrix_TPFA> matrix = Teuchos::rcp(new Matrix_TPFA(S, rel_perm));
       return matrix;
     }
   };
-
- private:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
 }  // namespace AmanziFlow

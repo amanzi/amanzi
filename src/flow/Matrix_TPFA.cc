@@ -35,35 +35,25 @@ int FindPosition(const std::vector<T>& v, const T& value) {
 /* ******************************************************************
 * Constructor.                                           
 ****************************************************************** */
-Matrix_TPFA::Matrix_TPFA(Teuchos::RCP<const State>& S, Teuchos::RCP<const Epetra_Map> map) 
-   :  Matrix_MFD(S, map)
+Matrix_TPFA::Matrix_TPFA(Teuchos::RCP<State> S,
+                         Teuchos::RCP<RelativePermeability> rel_perm)
+    : Matrix(S, rel_perm)
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED); 
   Acc_cells_.resize(ncells);
   Fc_cells_.resize(ncells);
-}
-
-  Matrix_TPFA::Matrix_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map,
-				   Teuchos::RCP<Epetra_Vector> Krel_faces,
-				   Teuchos::RCP<Epetra_Vector> Trans_faces,
-				   Teuchos::RCP<Epetra_Vector> Grav_faces) 
-   :  Matrix_MFD(FS, map)
-{
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED); 
-  Acc_cells_.resize(ncells);
-  Fc_cells_.resize(ncells);
-
-  Krel_faces_ = Krel_faces;
-  trans_on_faces_ = Trans_faces;
-  grav_on_faces_ = Grav_faces;
 }
 
 
 /* ******************************************************************
-* Calculate elemental stiffness matrices.                                            
+* Constructor.                                           
 ****************************************************************** */
-void Matrix_TPFA::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
+void Matrix_TPFA::Init() 
 {
+  const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
+  Transmis_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
+  Grav_term_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
+  ComputeTransmissibilities(*Transmis_faces, *Grav_term_faces);
 }
 
 
@@ -72,10 +62,8 @@ void Matrix_TPFA::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
 * If matrix is non-symmetric, we generate transpose of the matrix 
 * block Afc to reuse cf_graph; otherwise, pointer Afc = Acf.   
 ****************************************************************** */
-void Matrix_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
+void Matrix_TPFA::SymbolicAssemble()
 {
-  Matrix_MFD::SymbolicAssembleGlobalMatrices(super_map);
-
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
@@ -111,9 +99,12 @@ void Matrix_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
 void Matrix_TPFA::AddGravityFluxes(const Epetra_Vector& Krel_faces, 
                                    const Epetra_Vector& Grav_term)
 {
+  /* TODO
   AmanziMesh::Entity_ID_List cells;
   std::vector<int> dirs;
-  Epetra_MultiVector& rhs_cells = rhs_->ViewComponent("cell");
+  Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell");
+
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   for (int f = 0; f < nfaces_wghost; f++) {
     if (bc_model[f] == FLOW_BC_FACE_FLUX) continue;
@@ -125,13 +116,14 @@ void Matrix_TPFA::AddGravityFluxes(const Epetra_Vector& Krel_faces,
       rhs_cells[0][c] -= pow(-1.0, i)*Grav_term[f]*Krel_faces[f];  
     }
   }
+  */
 }
 
 
 /* ******************************************************************
 * 
 ****************************************************************** */
-void Matrix_TPFA::AssembleGlobalMatrices()
+void Matrix_TPFA::Assemble()
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -163,30 +155,22 @@ void Matrix_TPFA::AssembleGlobalMatrices()
       }
     }
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Spp_local.values());
-
   }
+
+  Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell", true);
 
   for (int c = 0; c <= ncells_owned; c++){
     cells_GID[0] = cmap_wghost.GID(c);
     int mcells = 1;
     Spp_local(0,0) = Acc_cells_[c];
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Spp_local.values());
-    (*rhs_cells_)[c] += Fc_cells_[c];
+    rhs_cells[0][c] += Fc_cells_[c];
   }
 
   Spp_->GlobalAssemble();
 }
 
 
-/* ******************************************************************
-* Assembles preconditioner. It has same set of parameters as matrix.
-****************************************************************** */
-void Matrix_TPFA::AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
-{
-  AssembleGlobalMatrices();
-}
-
- 
 /* ******************************************************************
 * Computation of the part of the jacobian which depends on
 * analytical derivatives of relative permeabilities
@@ -317,35 +301,85 @@ void Matrix_TPFA::ComputeJacobianLocal(int mcells,
 
 
 /* ******************************************************************
+* Compute transmissibilities on faces 
+****************************************************************** */
+void Matrix_TPFA::ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_Vector& grav_faces)
+{
+  Trans_faces.PutScalar(0.0);
+
+  AmanziGeometry::Point gravity(dim);
+  for (int k = 0; k < dim; k++) gravity[k] = gravity_[k] * rho_;
+
+  AmanziMesh::Entity_ID_List faces;
+  AmanziMesh::Entity_ID_List cells;
+  AmanziGeometry::Point a_dist;
+  double h[2], perm[2], perm_test[2], h_test[2];
+  double trans_f;
+
+  std::vector<int> dirs;
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0]);
+    const AmanziGeometry::Point& face_centr = mesh_->face_centroid(f);
+    double area = mesh_->face_area(f);
+
+    if (ncells == 2) {
+      a_dist = mesh_->cell_centroid(cells[1]) - mesh_->cell_centroid(cells[0]);
+    } else if (ncells == 1) {    
+      a_dist = face_centr - mesh_->cell_centroid(cells[0]);
+    } 
+
+    a_dist *= 1./norm(a_dist);
+
+    for (int i=0; i<ncells; i++) {
+      h[i] = norm(face_centr - mesh_->cell_centroid(cells[i]));
+      perm[i] = (rho_/mu_) * ((K[cells[i]] * normal) * normal) / area;
+
+      perm_test[i] = (rho_/mu_) * ((K[cells[i]] * normal) * a_dist);
+      h_test[i] = pow(-1.0, i)*((face_centr - mesh_->cell_centroid(cells[i]))*normal) / area;
+    }
+
+    double factor, grav;
+    grav = (gravity * normal) / area;
+
+    if (ncells == 2){
+      factor = (perm[0]*perm[1]) / (h[0]*perm[1] + h[1]*perm[0]);
+      grav *= (h[0] + h[1]);
+    } else if (ncells == 1) {    
+      factor = perm[0] / h[0];
+      grav *= h[0];
+    } 
+
+    trans_f = 0.0;
+    for (int i = 0; i < ncells; i++) {
+      trans_f += h_test[i] / perm[i];
+    }
+
+    trans_f = 1.0 / trans_f;
+
+    Trans_faces[f] = trans_f;
+    grav_faces[f] = Trans_faces[f] * grav;
+  }
+
+  /* TODO 
+  FS->CopyMasterFace2GhostFace(Trans_faces);
+  FS->CopyMasterFace2GhostFace(grav_faces);
+  */
+}
+/* ******************************************************************
 * Parallel matvec product Spp * Xc.                                              
 ****************************************************************** */
-int Matrix_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+int Matrix_TPFA::Apply(const CompositeVector& X, CompositeVector& Y) const
 {
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nvectors = X.NumVectors();
+  const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
+  const Epetra_MultiVector& Xf = *X.ViewComponent("face");
 
-  const Epetra_Map& cmap = mesh_->cell_map(false);
-  const Epetra_Map& fmap = mesh_->face_map(false);
-
-  //cout<<"Matrix_TPFA::Apply\n";
-
-  // Create views Xc into the cell segments of X.
-  double **cvec_ptrs = X.Pointers();
-  double **fvec_ptrs = new double*[nvectors];
-  for (int i = 0; i < nvectors; i++) fvec_ptrs[i] = cvec_ptrs[i] + ncells;
-
-  Epetra_MultiVector Xc(View, cmap, cvec_ptrs, nvectors);
-  Epetra_MultiVector Xf(View, fmap, fvec_ptrs, nvectors);
-
-  // Create views Yc and Yf into the cell and face segments of Y.
-  cvec_ptrs = Y.Pointers();
-  for (int i = 0; i < nvectors; i++) fvec_ptrs[i] = cvec_ptrs[i] + ncells;
-
-  Epetra_MultiVector Yc(View, cmap, cvec_ptrs, nvectors);
-  Epetra_MultiVector Yf(View, fmap, fvec_ptrs, nvectors);
+  Epetra_MultiVector& Yc = *X.ViewComponent("cell");
+  Epetra_MultiVector& Yf = *X.ViewComponent("face");
 
   int ierr = (*Spp_).Multiply(false, Xc, Yc);
-
 
   if (ierr) {
     Errors::Message msg("Matrix_TPFA::Apply has failed to calculate y = A*x.");
@@ -354,7 +388,6 @@ int Matrix_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   Yf.PutScalar(0.0);
 
-  delete [] fvec_ptrs;
   return 0;
 }
 
@@ -363,45 +396,25 @@ int Matrix_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 * The OWNED cell-based and face-based d.o.f. are packed together into 
 * the X and Y Epetra vectors, with the cell-based in the first part.                                           
 ****************************************************************** */
-int Matrix_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+int Matrix_TPFA::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nvectors = X.NumVectors();
+  const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
+  const Epetra_MultiVector& Xf = *X.ViewComponent("face");
 
-  const Epetra_Map& cmap = mesh_->cell_map(false);
-  const Epetra_Map& fmap = mesh_->face_map(false);
+  Epetra_MultiVector& Yc = *X.ViewComponent("cell");
+  Epetra_MultiVector& Yf = *X.ViewComponent("face");
 
-  // Create views Xc into the cell segments of X.
-  double **cvec_ptrs = X.Pointers();
-  double **fvec_ptrs = new double*[nvectors];
-  for (int i = 0; i < nvectors; i++) fvec_ptrs[i] = cvec_ptrs[i] + ncells;
-
-  Epetra_MultiVector Xc(View, cmap, cvec_ptrs, nvectors);
-  Epetra_MultiVector Xf(View, fmap, fvec_ptrs, nvectors);
-
-  // Create views Yc and Yf into the cell and face segments of Y.
-  cvec_ptrs = Y.Pointers();
-  for (int i = 0; i < nvectors; i++) fvec_ptrs[i] = cvec_ptrs[i] + ncells;
-
-  Epetra_MultiVector Yc(View, cmap, cvec_ptrs, nvectors);
-  Epetra_MultiVector Yf(View, fmap, fvec_ptrs, nvectors);
-
-  //Solve the Schur complement system Spp * Yc = Xc. Since AztecOO may
-  //use the same memory for X and Y, we introduce auxiliaty vector Tc.
+  //Solve the Schur complement system Spp * Yc = Xc.
   int ierr = 0;
-  Epetra_Vector Tc(cmap);
-  preconditioner_->ApplyInverse(Xc, Tc);
-  Yc = Tc;
+  preconditioner_->ApplyInverse(Xc, Yc);
 
   if (ierr) {
     Errors::Message msg("Matrix_TPFA::ApplyInverse has failed in calculating y = inv(A)*x.");
     Exceptions::amanzi_throw(msg);
   }
 
-  Yf = Xf;
   Yf.PutScalar(0.0);
 
-  delete [] fvec_ptrs;
   return 0;
 }
 

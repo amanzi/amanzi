@@ -22,9 +22,9 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Darcy_PK::AssembleMatrixMFD()
 {
-  matrix_->CreateStiffnessMatrices(mfd3d_method_, K);
+  matrix_->CreateStiffnessMatricesDarcy(mfd3d_method_, K);
   matrix_->CreateRHSVectors();
-  matrix_->AddGravityFluxes(rho_, gravity_, K);
+  matrix_->AddGravityFluxesDarcy(rho_, gravity_, K);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->Assemble();
   matrix_->AssembleSchurComplement(bc_model, bc_values);
@@ -40,9 +40,9 @@ void Darcy_PK::AssembleMatrixMFD()
 void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
 {
   // calculate and assemble elemental stifness matrices
-  matrix_->CreateStiffnessMatrices(mfd3d_method_, K);
+  matrix_->CreateStiffnessMatricesDarcy(mfd3d_method_, K);
   matrix_->CreateRHSVectors();
-  matrix_->AddGravityFluxes(rho_, gravity_, K);
+  matrix_->AddGravityFluxesDarcy(rho_, gravity_, K);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->Assemble();
   matrix_->AssembleSchurComplement(bc_model, bc_values);

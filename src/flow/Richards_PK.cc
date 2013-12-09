@@ -29,7 +29,8 @@
 #include "Point.hh"
 #include "mfd3d_diffusion.hh"
 
-#include "Matrix_TPFA.hh"
+#include "Matrix.hh"
+#include "MatrixFactory.hh"
 #include "Flow_BC_Factory.hh"
 #include "Richards_PK.hh"
 
@@ -230,33 +231,32 @@ void Richards_PK::InitPK()
   SetAbsolutePermeabilityTensor();
   rel_perm->CalculateKVectorUnit(K, gravity_);
 
-  /// Initialize transmisibillity and gravity terms.
-  if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
-    Transmis_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
-    Grav_term_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
-    ComputeTransmissibilities(*Transmis_faces, *Grav_term_faces);
-  }
+  // Initialize transmisibillity and gravity terms.
+  matrix_->Init();
 
   // Allocate memory for wells.
   if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   }
 
-  // Select a proper matrix class.
+  // Select a proper matrix class. 
+  Teuchos::ParameterList mlist;
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    matrix_ = Teuchos::rcp(new Matrix_TPFA(S_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
-    preconditioner_ = Teuchos::rcp(new Matrix_TPFA(S_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
+    mlist.set<std::string>("matrix", "tpfa");
   } else {
-    matrix_ = Teuchos::rcp(new Matrix_MFD(mesh_));
-    preconditioner_ = Teuchos::rcp(new Matrix_MFD(mesh_));
+    mlist.set<std::string>("matrix", "mfd");
   }
+
+  MatrixFactory factory;
+  matrix_ = factory.Create(S_, rel_perm, mlist);
+  preconditioner_ = factory.Create(S_, rel_perm, mlist);
+
   matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
   preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
 
   is_matrix_symmetric = SetSymmetryProperty();
   matrix_->SetSymmetryProperty(is_matrix_symmetric);
-  matrix_->SymbolicAssembleGlobalMatrices();
+  matrix_->SymbolicAssemble();
 
   // Initialize boundary and source data. 
   CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
@@ -406,7 +406,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   // preconditioner_->DestroyPreconditioner();
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
-  preconditioner_->SymbolicAssembleGlobalMatrices();
+  preconditioner_->SymbolicAssemble();
   preconditioner_->InitPreconditioner(ti_specs.preconditioner_name, preconditioner_list_);
 
   // set up new time integration or solver
@@ -425,10 +425,8 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   SetAbsolutePermeabilityTensor();
   for (int c = 0; c < ncells_wghost; c++) K[c] *= rho_ / mu_;
 
-  if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
-    matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
-    preconditioner_->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
-  }
+  matrix_->CreateMassMatrices(mfd3d_method_, K);
+  preconditioner_->CreateMassMatrices(mfd3d_method_preconditioner_, K);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     int missed_tmp = missed_bc_faces_;
@@ -451,7 +449,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   }
 
   // Initialize pressure (p and lambda components of solution and State).
-  Epetra_MultiVector& pressure = *S_->GetFieldData("pressure", passwd_)->ViewComponent("cell");
+  Epetra_MultiVector& pstate = *S_->GetFieldData("pressure", passwd_)->ViewComponent("cell");
   Epetra_MultiVector& p = *solution->ViewComponent("cell");
   Epetra_MultiVector& lambda = *solution->ViewComponent("face", true);
 
@@ -467,38 +465,31 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
       ClipHydrostaticPressure(ti_specs.clip_pressure, p);
       DeriveFaceValuesFromCellValues(p, lambda);
     }
-    pressure = p;
+    pstate = p;
   }
 
   // initialize saturation
   Epetra_MultiVector& ws = *S_->GetFieldData("water_saturation", passwd_)->ViewComponent("cell");
-  DeriveSaturationFromPressure(pressure, ws);
+  DeriveSaturationFromPressure(pstate, ws);
  
   // re-initialize lambda (experimental)
-  if (ti_specs.pressure_lambda_constraints && experimental_solver_ == FLOW_SOLVER_NKA) {
-    double Tp = T0 + dT0;
-    EnforceConstraints_MFD(Tp, *solution);
-  } else if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    double Tp = T0 + dT0;
+  double Tp = T0 + dT0;
+  if (ti_specs.pressure_lambda_constraints) {
+    EnforceConstraints(Tp, *solution);
+  } else {
+    CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
     UpdateSourceBoundaryData(Tp, *solution);
-    rel_perm->Compute(p, bc_model, bc_values);
+    rel_perm->Compute(pressure, bc_model, bc_values);
   }
 
   // nonlinear solver control options
   ti_specs.num_itrs = 0;
   block_picard = 0;
 
-  Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-  Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux", passwd_)->ViewComponent("face", true);
+  CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+  matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
 
-  if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
-    matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
-    matrix_->DeriveDarcyMassFlux(*solution, bc_model, bc_values, flux);
-    AddGravityFluxes_DarcyFlux(flux, *rel_perm);
-  } else {
-    matrix_->DeriveDarcyMassFlux(*solution, bc_model, bc_values, flux);
-  }
-
+  Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
 }
 
@@ -602,16 +593,10 @@ void Richards_PK::CommitState(Teuchos::RCP<State> S)
   DeriveSaturationFromPressure(pressure, ws);
 
   // calculate Darcy flux as diffusive part + advective part.
-  Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux", passwd_)->ViewComponent("face", true);
+  CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+  matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
 
-  if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
-    matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
-    matrix_->DeriveDarcyMassFlux(*solution, bc_model, bc_values, flux);
-    AddGravityFluxes_DarcyFlux(flux, *rel_perm);
-  } else {
-    matrix_->DeriveDarcyMassFlux(*solution, bc_model, bc_values, flux);
-  }
-
+  Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
 
   // update time derivative
@@ -674,27 +659,18 @@ double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector&
 
 
 /* ******************************************************************
-* Adds time derivative to the cell-based part of MFD algebraic system.                                               
+* Identify type of the matrix.
 ****************************************************************** */
-void Richards_PK::AddTimeDerivative_MFD(
-    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix_operator)
+bool Richards_PK::SetSymmetryProperty()
 {
-  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell", false);
+  int method = rel_perm->method();
+  bool sym = false;
+  if ((method == FLOW_RELATIVE_PERM_CENTERED) ||
+      (method == FLOW_RELATIVE_PERM_AMANZI)) sym = true;
+  if (experimental_solver_ == FLOW_SOLVER_NEWTON || 
+      experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) sym = false;
 
-  std::vector<double>& Acc_cells = matrix_operator->Acc_cells();
-  std::vector<double>& Fc_cells = matrix_operator->Fc_cells();
-
-  Epetra_Vector dSdP(mesh_->cell_map(false));
-  rel_perm->DerivedSdP(pressure_cells, dSdP);
-
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  for (int c = 0; c < ncells; c++) {
-    double volume = mesh_->cell_volume(c);
-    double factor = rho_ * phi[0][c] * dSdP[c] * volume / dT_prec;
-    Acc_cells[c] += factor;
-    Fc_cells[c] += factor * pressure_cells[c];
-  }
+  return sym;
 }
 
 
@@ -733,22 +709,6 @@ double Richards_PK::AdaptiveTimeStepEstimate(double* dTfactor)
     solution->Comm().MaxAll(&error_tmp, &error_max, 1);  // find the global maximum
 #endif
   return error_max;
-}
-
-
-/* ******************************************************************
-* Identify type of the matrix.
-****************************************************************** */
-bool Richards_PK::SetSymmetryProperty()
-{
-  int method = rel_perm->method();
-  bool sym = false;
-  if ((method == FLOW_RELATIVE_PERM_CENTERED) ||
-      (method == FLOW_RELATIVE_PERM_AMANZI)) sym = true;
-  if (experimental_solver_ == FLOW_SOLVER_NEWTON || 
-      experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) sym = false;
-
-  return sym;
 }
 
 

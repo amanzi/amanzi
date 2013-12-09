@@ -27,8 +27,9 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Constructor                                      
 ****************************************************************** */
-Matrix_MFD::Matrix_MFD(Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : Matrix(mesh)
+Matrix_MFD::Matrix_MFD(Teuchos::RCP<State> S,
+                       Teuchos::RCP<RelativePermeability> rel_perm)
+    : Matrix(S, rel_perm)
 { 
   actions_ = 0;
 }
@@ -182,7 +183,7 @@ void Matrix_MFD::CreateMassMatrices_ScaledStability(
 /* ******************************************************************
 * Calculate elemental stiffness matrices (fully saturated flow)                                          
 ****************************************************************** */
-void Matrix_MFD::CreateStiffnessMatrices(
+void Matrix_MFD::CreateStiffnessMatricesDarcy(
     int mfd3d_method, std::vector<WhetStone::Tensor>& K)
 {
   int dim = mesh_->space_dimension();
@@ -229,7 +230,7 @@ void Matrix_MFD::CreateStiffnessMatrices(
 * Calculate stiffness matrices for partially saturated flow.
 * Permeability class carries information on nonlinear coefficient.
 ****************************************************************** */
-void Matrix_MFD::CreateStiffnessMatrices(RelativePermeability& rel_perm)
+void Matrix_MFD::CreateStiffnessMatricesRichards()
 {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -241,9 +242,9 @@ void Matrix_MFD::CreateStiffnessMatrices(RelativePermeability& rel_perm)
   Acf_cells_.clear();
   Acc_cells_.clear();
 
-  Epetra_Vector& Krel_cells = rel_perm.Krel_cells();
-  Epetra_Vector& Krel_faces = rel_perm.Krel_faces();
-  int method = rel_perm.method();
+  Epetra_MultiVector& Krel_cells = *rel_perm_->Krel().ViewComponent("cell");
+  Epetra_MultiVector& Krel_faces = *rel_perm_->Krel().ViewComponent("face", true);
+  int method = rel_perm_->method();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {
@@ -261,24 +262,24 @@ void Matrix_MFD::CreateStiffnessMatrices(RelativePermeability& rel_perm)
 
     } else if (method == FLOW_RELATIVE_PERM_CENTERED) {  // centered permeability for diffusion
       for (int n = 0; n < nfaces; n++)
-        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[c];
+        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[0][c];
 
     } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
-      std::vector<double>& krel = rel_perm.Krel_amanzi()[c];
+      std::vector<double>& krel = rel_perm_->Krel_amanzi()[c];
 
       for (int n = 0; n < nfaces; n++)
-        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[c];
+        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[0][c];
 
       // add upwind correction
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        // double t = std::max(0.0, Krel_faces[f] - Krel_cells[c]);
-        double t = fabs(Krel_faces[f] - Krel_cells[c]);
+        // double t = std::max(0.0, Krel_faces[0][f] - Krel_cells[0][c]);
+        double t = fabs(Krel_faces[0][f] - Krel_cells[0][c]);
         Bff(n, n) += Mff(n, n) * t; 
       }
     } else {
       for (int n = 0; n < nfaces; n++)
-        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_faces[faces[m]];
+        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_faces[0][faces[m]];
     }
 
     double matsum = 0.0;  // elimination of mass matrix
@@ -355,8 +356,8 @@ void Matrix_MFD::CreateRHSVectors()
 * called before applying boundary conditions and global assembling. 
 * simplified implementation for single phase flow.                                            
 ****************************************************************** */
-void Matrix_MFD::AddGravityFluxes(double rho, const AmanziGeometry::Point& gravity,
-                                  std::vector<WhetStone::Tensor>& K)
+void Matrix_MFD::AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& gravity,
+                                       std::vector<WhetStone::Tensor>& K)
 {
   AmanziGeometry::Point rho_gravity(gravity);
   rho_gravity *= rho;
@@ -388,9 +389,8 @@ void Matrix_MFD::AddGravityFluxes(double rho, const AmanziGeometry::Point& gravi
 * Routine updates elemental discretization matrices and must be 
 * called before applying boundary conditions and global assembling.                                             
 ****************************************************************** */
-void Matrix_MFD::AddGravityFluxes(double rho, const AmanziGeometry::Point& gravity,
-                                  std::vector<WhetStone::Tensor>& K,
-                                  RelativePermeability& rel_perm)
+void Matrix_MFD::AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity,
+                                          std::vector<WhetStone::Tensor>& K)
 {
   AmanziGeometry::Point rho_gravity(gravity);
   rho_gravity *= rho;
@@ -398,9 +398,9 @@ void Matrix_MFD::AddGravityFluxes(double rho, const AmanziGeometry::Point& gravi
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Epetra_Vector& Krel_cells = rel_perm.Krel_cells();
-  Epetra_Vector& Krel_faces = rel_perm.Krel_faces();
-  int method = rel_perm.method();
+  Epetra_MultiVector& Krel_cells = *rel_perm_->Krel().ViewComponent("cell");
+  Epetra_MultiVector& Krel_faces = *rel_perm_->Krel().ViewComponent("face", true);
+  int method = rel_perm_->method();
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
@@ -409,7 +409,7 @@ void Matrix_MFD::AddGravityFluxes(double rho, const AmanziGeometry::Point& gravi
 
     Epetra_SerialDenseVector& Ff = Ff_cells_[c];
     double& Fc = Fc_cells_[c];
-    std::vector<double>& krel = rel_perm.Krel_amanzi()[c];
+    std::vector<double>& krel = rel_perm_->Krel_amanzi()[c];
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
@@ -417,11 +417,11 @@ void Matrix_MFD::AddGravityFluxes(double rho, const AmanziGeometry::Point& gravi
 
       double outward_flux = ((K[c] * rho_gravity) * normal) * dirs[n]; 
       if (method == FLOW_RELATIVE_PERM_CENTERED) {
-        outward_flux *= Krel_cells[c];
+        outward_flux *= Krel_cells[0][c];
       } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
         outward_flux *= krel[n]; 
       } else {
-        outward_flux *= Krel_faces[f];
+        outward_flux *= Krel_faces[0][f];
       }
       Ff[n] += outward_flux;
       Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.
@@ -484,11 +484,31 @@ void Matrix_MFD::ApplyBoundaryConditions(
 
 
 /* ******************************************************************
+* Adds time derivative to the cell-based part of MFD algebraic system.
+****************************************************************** */
+void Matrix_MFD::AddTimeDerivative(
+    const Epetra_MultiVector& p, const Epetra_MultiVector& phi, double rho, double dT)
+{
+  Epetra_MultiVector dSdP(p);
+  rel_perm_->DerivedSdP(p, dSdP);
+
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  for (int c = 0; c < ncells; c++) {
+    double volume = mesh_->cell_volume(c);
+    double factor = rho * phi[0][c] * dSdP[0][c] * volume / dT;
+    Acc_cells_[c] += factor;
+    Fc_cells_[c] += factor * p[0][c];
+  }
+}
+
+
+/* ******************************************************************
 * Adds time derivative related to specific stroage to cell-based 
 * part of MFD algebraic system. 
 ****************************************************************** */
 void Matrix_MFD::AddTimeDerivativeSpecificStorage(
-    Epetra_MultiVector& p, const Epetra_MultiVector& ss, double g, double dT)
+    const Epetra_MultiVector& p, const Epetra_MultiVector& ss, double g, double dT)
 {
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
@@ -506,7 +526,7 @@ void Matrix_MFD::AddTimeDerivativeSpecificStorage(
 * of MFD algebraic system. Area factor is alreafy inside Sy. 
 ****************************************************************** */
 void Matrix_MFD::AddTimeDerivativeSpecificYield(
-    Epetra_MultiVector& p, const Epetra_MultiVector& sy, double g, double dT)
+    const Epetra_MultiVector& p, const Epetra_MultiVector& sy, double g, double dT)
 {
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells_owned; c++) {

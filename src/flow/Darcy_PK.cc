@@ -191,8 +191,8 @@ void Darcy_PK::InitPK()
   Teuchos::ParameterList mlist;
   mlist.set<std::string>("matrix", "mfd");
 
-  MatrixFactory factory(mesh_);
-  matrix_ = factory.Create(mlist);
+  MatrixFactory factory;
+  matrix_ = factory.Create(S_, Teuchos::null, mlist);
 
   matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
   matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
@@ -437,9 +437,9 @@ int Darcy_PK::Advance(double dT_MPC)
   const Epetra_MultiVector& ss = *S_->GetFieldData("specific_storage")->ViewComponent("cell");
   const Epetra_MultiVector& sy = *S_->GetFieldData("specific_yield")->ViewComponent("cell");
 
-  matrix_->CreateStiffnessMatrices(mfd3d_method_, K);
+  matrix_->CreateStiffnessMatricesDarcy(mfd3d_method_, K);
   matrix_->CreateRHSVectors();
-  matrix_->AddGravityFluxes(rho_, gravity_, K);
+  matrix_->AddGravityFluxesDarcy(rho_, gravity_, K);
   matrix_->AddTimeDerivativeSpecificStorage(p, ss, g_, dT);
   matrix_->AddTimeDerivativeSpecificYield(p, sy, g_, dT);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
@@ -512,7 +512,7 @@ void Darcy_PK::CommitState(Teuchos::RCP<State> S)
   CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
 
-  matrix_->CreateStiffnessMatrices(mfd3d_method_, K);
+  matrix_->CreateStiffnessMatricesDarcy(mfd3d_method_, K);
   matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
   AddGravityFluxes_DarcyFlux(flux);
 

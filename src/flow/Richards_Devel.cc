@@ -23,7 +23,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Calculates steady-state solution assuming that abosolute and relative
 * permeabilities do not depend explicitly on time.
-* WARNING: temporary replacement for missing BDF1 time integrator.                                                    
+* WARNING: temporary replacement for missing BDF1 time integrator.
 ****************************************************************** */
 int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
 {

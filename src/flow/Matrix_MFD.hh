@@ -45,30 +45,32 @@ namespace AmanziFlow {
 class Matrix_MFD : public Matrix<CompositeVector, CompositeVectorSpace> {
  public:
   Matrix_MFD() {};
-  Matrix_MFD(Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  Matrix_MFD(Teuchos::RCP<State> S, Teuchos::RCP<RelativePermeability> rel_perm);
   ~Matrix_MFD();
 
   // main methods (required methods)
+  void Init() {};
   void CreateMassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
   void CreateRHSVectors();
 
-  void CreateStiffnessMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
-  void CreateStiffnessMatrices(RelativePermeability& rel_perm);
+  void CreateStiffnessMatricesDarcy(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
+  void CreateStiffnessMatricesRichards();
 
   void SymbolicAssemble();
   void Assemble();
   void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
-  void AddGravityFluxes(double rho, const AmanziGeometry::Point& gravity,
-                        std::vector<WhetStone::Tensor>& K);
-  void AddGravityFluxes(double rho, const AmanziGeometry::Point& gravity,
-                        std::vector<WhetStone::Tensor>& K,
-                        RelativePermeability& rel_perm);
+  void AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& gravity,
+                             std::vector<WhetStone::Tensor>& K);
+  void AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity,
+                                std::vector<WhetStone::Tensor>& K);
 
+  void AddTimeDerivative(
+      const Epetra_MultiVector& p, const Epetra_MultiVector& phi, double rho, double dT);
   void AddTimeDerivativeSpecificStorage(
-    Epetra_MultiVector& p, const Epetra_MultiVector& ss, double g, double dT);
+      const Epetra_MultiVector& p, const Epetra_MultiVector& ss, double g, double dT);
   void AddTimeDerivativeSpecificYield(
-    Epetra_MultiVector& p, const Epetra_MultiVector& sy, double g, double dT);
+      const Epetra_MultiVector& p, const Epetra_MultiVector& sy, double g, double dT);
 
   void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
@@ -79,15 +81,6 @@ class Matrix_MFD : public Matrix<CompositeVector, CompositeVectorSpace> {
   void DeriveMassFlux(const CompositeVector& solution, CompositeVector& darcy_mass_flux,
                       std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
-  // other main methods
-  virtual void AnalyticJacobian(const Epetra_Vector& solution, 
-                                std::vector<int>& bc_markers, 
-                                std::vector<bc_tuple>& bc_values,
-                                RelativePermeability& rel_perm) {};
-
-  int ReduceGlobalSystem2LambdaSystem(CompositeVector& u);
-
-  // required methods
   virtual int Apply(const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
   const CompositeVectorSpace& DomainMap() const {
@@ -99,6 +92,9 @@ class Matrix_MFD : public Matrix<CompositeVector, CompositeVectorSpace> {
 
   // control methods
   bool CheckActionProperty(int action) { return actions_ & action; }
+
+  // other main methods
+  int ReduceGlobalSystem2LambdaSystem(CompositeVector& u);
 
   // development methods
   void CreateMassMatrices_ScaledStability(int method, double factor, std::vector<WhetStone::Tensor>& K);

@@ -6,7 +6,7 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Daniil Svyatskiy (dasvyat@lanl.gov)
 
   The class provides a different implementation of solvers than in 
@@ -14,69 +14,61 @@
   from the DAE system and short vectors are used in the nonlinear solver.
 */
 
-#ifndef AMANZI_MATRIX_TPFA_HH__
-#define AMANZI_MATRIX_TPFA_HH__
+#ifndef AMANZI_MATRIX_TPFA_HH_
+#define AMANZI_MATRIX_TPFA_HH_
 
 #include <strings.h>
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MultiVector.h"
-#include "Epetra_BlockMap.h"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Epetra_FECrsMatrix.h"
 #include "Ifpack.h" 
 
+#include "State.hh"
+#include "CompositeVector.hh"
 #include "Matrix.hh"
+#include "RelativePermeability.hh"
 
 
 namespace Amanzi {
 namespace AmanziFlow {
 
-class Matrix_TPFA : public Matrix<Epetra_MultiVector, Epetra_BlockMap> {
+class Matrix_TPFA : public Matrix<CompositeVector, CompositeVectorSpace> {
  public:
   Matrix_TPFA() {};
-  Matrix_TPFA(Teuchos::RCP<State>& S, Teuchos::RCP<const Epetra_Map> map);
-  Matrix_TPFA(Teuchos::RCP<State>& S,
-              Teuchos::RCP<Epetra_Vector> Krel_faces,
-              Teuchos::RCP<Epetra_Vector> Trans_faces,
-              Teuchos::RCP<Epetra_Vector> Grav_faces);
+  Matrix_TPFA(Teuchos::RCP<State> S, Teuchos::RCP<RelativePermeability> rel_perm);
   ~Matrix_TPFA() {};
 
   // main members (required members)
+  void Init();
+  void CreateStiffnessMatricesRichards();
 
+  void SymbolicAssemble();
+  void Assemble();
+
+  int Apply(const CompositeVector& X, CompositeVector& Y) const;
+  int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
+
+  void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values); 
+
+  void InitPreconditioner(const std::string& name, const Teuchos::ParameterList& plist);
   void UpdatePreconditioner() {};
 
-  // other main members
-  void Set_Krel_faces (Teuchos::RCP<Epetra_Vector> Krel_faces) { Krel_faces_ = Krel_faces;}
-  void Set_Trans_faces(Teuchos::RCP<Epetra_Vector> Trans_faces) { trans_on_faces_ = Trans_faces;}
-  void Set_Grav_faces (Teuchos::RCP<Epetra_Vector> Grav_faces) { grav_on_faces_ = Grav_faces;}
+  void DeriveMassFlux(const CompositeVector& solution, CompositeVector& darcy_mass_flux,
+                      std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
-  virtual void CreateMFDstiffnessMatrices(RelativePermeability& rel_perm);
-  virtual void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
-  virtual void AssembleGlobalMatrices();
-  virtual void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
-  
-  virtual double ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
-
-
-  virtual void AnalyticJacobian(const Epetra_Vector& solution, 
-                                std::vector<int>& bc_markers, 
-                                std::vector<bc_tuple>& bc_values,
-                                RelativePermeability& rel_perm); 
-
-  virtual void ApplyBoundaryConditions(std::vector<int>& bc_model,
-                                       std::vector<bc_tuple>& bc_values); 
-
-  virtual void DeriveDarcyMassFlux(const Epetra_Vector& solution,
-                                   std::vector<int>& bc_model, 
-                                   std::vector<bc_tuple>& bc_values,
-                                   Epetra_Vector& darcy_mass_flux);
-
-  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-
-  const Epetra_BlockMap& DomainMap() const;
-  const Epetra_BlockMap& RangeMap() const;
+  const CompositeVectorSpace& DomainMap() const {
+    return cvs_;
+  }
+  const CompositeVectorSpace& RangeMap() const {
+    return cvs_;
+  }
 
  private:
+  void AnalyticJacobian(const Epetra_Vector& solution, 
+                        std::vector<int>& bc_markers, 
+                        std::vector<bc_tuple>& bc_values);
+
   void ComputeJacobianLocal(int mcells,
                             int face_id,
                             int Krel_method,
@@ -85,13 +77,26 @@ class Matrix_TPFA : public Matrix<Epetra_MultiVector, Epetra_BlockMap> {
                             double *pres,
                             double *dk_dp_cell,
                             Teuchos::SerialDenseMatrix<int, double>& Jpp);
+
+  void ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_Vector& grav_faces);
          
+  void AddGravityFluxes(const Epetra_Vector& Krel_faces, const Epetra_Vector& Grav_term);
+
+ protected:
+  CompositeVectorSpace cvs_;
+
   Teuchos::RCP<Epetra_Vector> Dff_;
   Teuchos::RCP<Epetra_FECrsMatrix> Spp_;  // Explicit Schur complement
 
   Teuchos::RCP<Epetra_Vector> Krel_faces_;
   Teuchos::RCP<Epetra_Vector> trans_on_faces_;
   Teuchos::RCP<Epetra_Vector> grav_on_faces_;
+
+  std::vector<double> Acc_cells_;
+  std::vector<double> Fc_cells_;
+
+  Teuchos::RCP<Epetra_Vector> Transmis_faces;
+  Teuchos::RCP<Epetra_Vector> Grav_term_faces;
 
  private:
   void operator=(const Matrix_TPFA& matrix);

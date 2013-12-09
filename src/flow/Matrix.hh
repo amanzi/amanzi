@@ -34,28 +34,31 @@ template<class Vector, class VectorSpace>
 class Matrix {
  public:
   Matrix() {};
-  Matrix(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
+  Matrix(Teuchos::RCP<State> S, Teuchos::RCP<RelativePermeability> rel_perm)
+      : S_(S), rel_perm_(rel_perm) { mesh_ = S_->GetMesh(); }
   ~Matrix() {};
 
   // main methods
+  virtual void Init() {};
   virtual void CreateMassMatrices(int method, std::vector<WhetStone::Tensor>& K) {};
-  virtual void CreateStiffnessMatrices(int method, std::vector<WhetStone::Tensor>& K) {};
-  virtual void CreateStiffnessMatrices(RelativePermeability& rel_perm) {};
+  virtual void CreateStiffnessMatricesDarcy(int method, std::vector<WhetStone::Tensor>& K) {};
+  virtual void CreateStiffnessMatricesRichards() {};
 
   virtual void SymbolicAssemble() {};
   virtual void Assemble() {};
   virtual void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) {};
 
-  virtual void AddGravityFluxes(double rho, const AmanziGeometry::Point& gravity,
-                                std::vector<WhetStone::Tensor>& K) {};
-  virtual void AddGravityFluxes(double rho, const AmanziGeometry::Point& gravity,
-                                std::vector<WhetStone::Tensor>& K,
-                                RelativePermeability& rel_perm) {};
+  virtual void AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& gravity,
+                                     std::vector<WhetStone::Tensor>& K) {};
+  virtual void AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity,
+                                        std::vector<WhetStone::Tensor>& K) {};
 
+  virtual void AddTimeDerivative(
+      const Epetra_MultiVector& p, const Epetra_MultiVector& phi, double rho, double dT) {};
   virtual void AddTimeDerivativeSpecificStorage(
-      Epetra_MultiVector& p, const Epetra_MultiVector& ss, double g, double dT) {};
+      const Epetra_MultiVector& p, const Epetra_MultiVector& ss, double g, double dT) {};
   virtual void AddTimeDerivativeSpecificYield(
-      Epetra_MultiVector& p, const Epetra_MultiVector& sy, double g, double dT) {};
+      const Epetra_MultiVector& p, const Epetra_MultiVector& sy, double g, double dT) {};
 
   virtual void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) {};
 
@@ -88,7 +91,10 @@ class Matrix {
   int npassed() { return npassed_; }
 
  protected:
+  Teuchos::RCP<State> S_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<RelativePermeability> rel_perm_;
+
   Teuchos::RCP<Vector> rhs_;
 
   int actions_;  // aplly, apply inverse, or both

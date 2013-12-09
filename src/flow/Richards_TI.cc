@@ -91,9 +91,8 @@ void Richards_PK::fun(double Told, double Tnew,
 void Richards_PK::precon(Teuchos::RCP<const CompositeVector> X, 
                          Teuchos::RCP<CompositeVector> Y)
 {
- if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
-   preconditioner_->ApplyInverse(*X, *Y);
- } else {
+ preconditioner_->ApplyInverse(*X, *Y);
+ /*
    Teuchos::ParameterList plist;
    Teuchos::ParameterList& slist = plist.sublist("gmres");
    slist.set<string>("iterative method", "gmres");
@@ -102,14 +101,12 @@ void Richards_PK::precon(Teuchos::RCP<const CompositeVector> X,
    Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
    vlist.set("Verbosity Level", "low");
 
-   AmanziSolvers::LinearOperatorFactory<Matrix_TPFA, Epetra_MultiVector, Epetra_BlockMap> factory;
-   Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_TPFA, Epetra_MultiVector, Epetra_BlockMap> > 
-     solver = factory.Create("gmres", plist, preconditioner_, preconditioner_);
+   AmanziSolvers::LinearOperatorFactory<Matrix_TPFA, CompositeVector, CompositeVectorSpace> factory;
+   Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_TPFA, CompositeVector, CompositeVectorSpace> > 
+       solver = factory.Create("gmres", plist, preconditioner_, preconditioner_);
    
-   const Epetra_MultiVector& Xc = *X->ViewComponent("cell");
-   Epetra_MultiVector& Yc = *Y->ViewComponent("cell");
-   solver->ApplyInverse(Xc, Yc);
- }
+   solver->ApplyInverse(*X, *Y);
+ */
 }
 
 

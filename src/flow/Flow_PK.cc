@@ -399,8 +399,8 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux,
   std::vector<int> dirs;
   std::vector<int> flag(nfaces_wghost, 0);
 
-  Epetra_Vector& Krel_cells = rel_perm.Krel_cells();
-  Epetra_Vector& Krel_faces = rel_perm.Krel_faces();
+  Epetra_MultiVector& Krel_cells = *rel_perm.Krel().ViewComponent("cell");
+  Epetra_MultiVector& Krel_faces = *rel_perm.Krel().ViewComponent("face", true);
   int method = rel_perm.method();
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -417,11 +417,11 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux,
         if (method == FLOW_RELATIVE_PERM_NONE) {
           darcy_mass_flux[0][f] += rho * (Kg * normal);
         } else if (method == FLOW_RELATIVE_PERM_CENTERED) {
-          darcy_mass_flux[0][f] += rho * (Kg * normal) * Krel_cells[c];
+          darcy_mass_flux[0][f] += rho * (Kg * normal) * Krel_cells[0][c];
         } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
           darcy_mass_flux[0][f] += rho * (Kg * normal) * krel[n];
         } else {
-          darcy_mass_flux[0][f] += rho * (Kg * normal) * Krel_faces[f];
+          darcy_mass_flux[0][f] += rho * (Kg * normal) * Krel_faces[0][f];
         }
         flag[f] = 1;
       }

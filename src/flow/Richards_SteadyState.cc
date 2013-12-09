@@ -24,7 +24,7 @@ namespace AmanziFlow {
 int Richards_PK::AdvanceToSteadyState(double T0, double dT0)
 {
   // update the axiliary flow state
-  FS->CopyMasterFace2GhostFace(FS->ref_darcy_flux(), FS_aux->ref_darcy_flux());
+  S_->GetFieldData("darcy_flux", passwd_)->ScatterMasterToGhosted("face");
 
   // override internal parameters
   T_physics = ti_specs_sss_.T0 = T0;
@@ -38,13 +38,13 @@ int Richards_PK::AdvanceToSteadyState(double T0, double dT0)
     ierr = AdvanceToSteadyState_BackwardEuler(ti_specs_sss_);
   } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
     ierr = AdvanceToSteadyState_BDF1(ti_specs_sss_);
-  } else if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
-    ierr = AdvanceToSteadyState_BDF2(ti_specs_sss_);
   }
 
-  Epetra_Vector& ws = FS->ref_water_saturation();
-  Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
-  DeriveSaturationFromPressure(*solution_cells, ws);
+  Epetra_MultiVector& p = *solution->ViewComponent("cell");
+  Epetra_MultiVector& ws = *S_->GetFieldData("water_saturation", passwd_)->ViewComponent("cell");
+  Epetra_MultiVector& ws_prev = *S_->GetFieldData("prev_water_saturation", passwd_)->ViewComponent("cell");
+
+  DeriveSaturationFromPressure(p, ws);
   ws_prev = ws;
 
   return ierr;
@@ -66,77 +66,26 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
   int itrs = 0;
   while (itrs < max_itrs && T_physics < T1) {
     if (itrs == 0) {  // initialization of BDF1
-      Epetra_Vector udot(*super_map_);
+      Teuchos::RCP<CompositeVector> udot = Teuchos::rcp(new CompositeVector(*solution));
       // I do not know how to calculate du/dt in a robust way.
-      // ComputeUDot(T0, *solution, udot);
-      bdf1_dae->set_initial_state(T0, *solution, udot);
+      // ComputeUDot(T0, solution, udot);
+      udot->PutScalar(0.0);
+      bdf1_dae->set_initial_state(T0, solution, udot);
 
       int ierr;
-      update_precon(T0, *solution, dT0, ierr);
+      update_precon(T0, solution, dT0);
     }
 
     double dTnext;
     try { 
-      bdf1_dae->bdf1_step(dT, *solution, dTnext);
+      bdf1_dae->time_step(dT, dTnext, solution);
     } catch (int i) {
       dT /= 2;
       continue;
     }
-    bdf1_dae->commit_solution(dT, *solution);
-    bdf1_dae->write_bdf1_stepping_statistics();
+    bdf1_dae->commit_solution(dT, solution);
 
-    T_physics = bdf1_dae->most_recent_time();
-    dT = dTnext;
-    itrs++;
-
-    double Tdiff = T1 - T_physics;
-    if (dTnext > Tdiff) {
-      dT = Tdiff * 0.99999991;  // To avoid hitting the wrong BC
-      last_step = true;
-    }
-    if (last_step && dT < 1e-3) break;
-  }
-
-  ti_specs.num_itrs = itrs;
-  return 0;
-}
-
-
-/* ******************************************************************* 
-* Performs one time step of size dT using second-order time integrator.
-******************************************************************* */
-int Richards_PK::AdvanceToSteadyState_BDF2(TI_Specs& ti_specs)
-{
-  bool last_step = false;
-
-  int max_itrs_nonlinear = ti_specs.max_itrs;
-  double T0 = ti_specs.T0;
-  double T1 = ti_specs.T1;
-  double dT0 = ti_specs.dT0;
-
-  int itrs = 0;
-  while (itrs < max_itrs_nonlinear && T_physics < T1) {
-    if (itrs == 0) {  // initialization of BDF2
-      Epetra_Vector udot(*super_map_);
-      // I do not know how to calculate du/dt in a robust way.
-      // ComputeUDot(T0, *solution, udot);
-      bdf2_dae->set_initial_state(T0, *solution, udot);
-
-      int ierr;
-      update_precon(T0, *solution, dT0, ierr);
-    }
-
-    double dTnext;
-    try {
-      bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
-    } catch (int i) {
-      dT /= 2;
-      continue;
-    }
-    bdf2_dae->commit_solution(dT, *solution);
-    bdf2_dae->write_bdf2_stepping_statistics();
-
-    T_physics = bdf2_dae->most_recent_time();
+    T_physics = bdf1_dae->time();
     dT = dTnext;
     itrs++;
 
@@ -163,12 +112,12 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   // create verbosity object
   VerboseObject* vo = new VerboseObject("Amanzi::Picard", rp_list_); 
 
-  Epetra_Vector  solution_old(*solution);
-  Epetra_Vector& solution_new = *solution;
-  Epetra_Vector  residual(*solution);
+  CompositeVector  solution_old(*solution);
+  CompositeVector& solution_new = *solution;
+  CompositeVector  residual(*solution);
 
-  Epetra_Vector* solution_old_cells = FS->CreateCellView(solution_old);
-  Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
+  Epetra_MultiVector& pold_cells = *solution_old.ViewComponent("cell");
+  Epetra_MultiVector& pnew_cells = *solution_new.ViewComponent("cell");
 
   // update steady state boundary conditions
   double time = T_physics;
@@ -198,27 +147,24 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   while (L2error > residual_tol_nonlinear && itrs < max_itrs_nonlinear) {
     // update dynamic boundary conditions
     bc_seepage->Compute(time);
-    ProcessBoundaryConditions(
-        bc_pressure, bc_head, bc_flux, bc_seepage,
-        *solution_cells, *solution_faces, atm_pressure,
-        rainfall_factor, bc_submodel, bc_model, bc_values);
+    ProcessBCs();
 
     // update permeabilities
     rel_perm->Compute(*solution, bc_model, bc_values);
 
     // create algebraic problem
-    matrix_->CreateMFDstiffnessMatrices(*rel_perm);
-    matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, &*matrix_, *rel_perm);
+    matrix_->CreateStiffnessMatricesRichards();
+    matrix_->CreateRHSVectors();
+    matrix_->AddGravityFluxesRichards(rho_, gravity_, K);
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
-    matrix_->AssembleGlobalMatrices();
+    matrix_->Assemble();
 
-    Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();  // export RHS from the matrix class
-    if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
+    Teuchos::RCP<CompositeVector> rhs = matrix_->rhs();  // export RHS from the matrix class
+    if (src_sink != NULL) AddSourceTerms(*rhs);
 
     // create preconditioner
-    preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
-    preconditioner_->CreateMFDrhsVectors();
+    preconditioner_->CreateStiffnessMatricesRichards();
+    preconditioner_->CreateRHSVectors();
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
@@ -230,8 +176,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     L2error /= L2norm;
 
     // solve linear problem
-    AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
+    AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
        solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
     solver->ApplyInverse(*rhs, *solution);
@@ -241,7 +187,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
     // update relaxation
     double relaxation;
-    relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
+    relaxation = CalculateRelaxationFactor(pold_cells, pnew_cells);
 
     if (vo->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo->getOSTab();
@@ -249,14 +195,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
                   << " lin_solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
     }
 
-// Epetra_Vector& pressure = FS->ref_pressure();
-// for (int c = 0; c < ncells_owned; c++) pressure[c] = solution_old[c] - solution_new[c];
-// WriteGMVfile(FS); 
-    int ndof = ncells_owned + nfaces_owned;
-    for (int c = 0; c < ndof; c++) {
-      solution_new[c] = (1.0 - relaxation) * solution_old[c] + relaxation * solution_new[c];
-      solution_old[c] = solution_new[c];
-    }
+    solution_new.Update(1.0 - relaxation, solution_old, relaxation);
+    solution_old = solution_new;
 
     T_physics += dT;
     itrs++;
@@ -272,24 +212,25 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 /* ******************************************************************
 * Calculate relaxation factor.                                                       
 ****************************************************************** */
-double Richards_PK::CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew)
+double Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,
+                                              const Epetra_MultiVector& unew)
 { 
   double relaxation = 1.0;
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
-    Epetra_Vector dSdP(mesh_->cell_map(false));
+    Epetra_MultiVector dSdP(uold);
     rel_perm->DerivedSdP(uold, dSdP);
 
     for (int c = 0; c < ncells_owned; c++) {
-      double diff = dSdP[c] * fabs(unew[c] - uold[c]);
+      double diff = dSdP[0][c] * fabs(unew[0][c] - uold[0][c]);
       if (diff > 3e-2) relaxation = std::min(relaxation, 3e-2 / diff);
     }
   }
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_PRESSURE) {
     for (int c = 0; c < ncells_owned; c++) {
-      double diff = fabs(unew[c] - uold[c]);
-      double umax = std::max(fabs(unew[c]), fabs(uold[c]));
+      double diff = fabs(unew[0][c] - uold[0][c]);
+      double umax = std::max(fabs(unew[0][c]), fabs(uold[0][c]));
       if (diff > 1e-2 * umax) relaxation = std::min(relaxation, 1e-2 * umax / diff);
     }
   }

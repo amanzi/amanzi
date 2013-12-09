@@ -22,28 +22,25 @@ namespace AmanziFlow {
 * at time Tp.
 * WARNING: data in vectors Krel and rhs are destroyed.
 ****************************************************************** */
-void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u, LinearSolver_Specs& ls_specs)
+void Richards_PK::SolveFullySaturatedProblem(
+    double Tp, CompositeVector& u, LinearSolver_Specs& ls_specs)
 {
-  Epetra_Vector* u_cells = FS->CreateCellView(u);
-  Epetra_Vector* u_faces = FS->CreateFaceView(u);
-  UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
+  UpdateSourceBoundaryData(Tp, u);
 
   // set fully saturated media
   rel_perm->SetFullySaturated();
 
   // calculate and assemble elemental stiffness matrices
-  AssembleSteadyStateMatrix_MFD(&*matrix_);
-  const Epetra_Vector& rhs = *(matrix_->rhs());
-
-  AssembleSteadyStatePreconditioner_MFD(&*preconditioner_);
+  AssembleSteadyStateMatrix(&*matrix_);
+  AssembleSteadyStatePreconditioner(&*preconditioner_);
   preconditioner_->UpdatePreconditioner();
 
   // solve linear problem
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
-
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
+  AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
+  const CompositeVector& rhs = *matrix_->rhs();
   solver->ApplyInverse(rhs, u);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -61,35 +58,36 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u, Linear
 * Enforce constraints at time Tp by solving diagonalized MFD problem.
 * Algorithm is based on de-coupling pressure-lambda system.
 ****************************************************************** */
-void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
+void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
 {
-  Epetra_Vector utmp(u);
-  Epetra_Vector* u_cells = FS->CreateCellView(u);
-  Epetra_Vector* u_faces = FS->CreateFaceView(u);
-  Epetra_Vector* utmp_faces = FS->CreateFaceView(utmp);
+  UpdateSourceBoundaryData(Tp, u);
 
-  UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
+  CompositeVector utmp(u);
+  Epetra_MultiVector& utmp_faces = *utmp.ViewComponent("face");
+  Epetra_MultiVector& u_faces = *u.ViewComponent("face");
 
   // calculate and assemble elemental stiffness matrix
   rel_perm->Compute(u, bc_model, bc_values);
-  AssembleSteadyStateMatrix_MFD(&*matrix_);
-  matrix_->ReduceGlobalSystem2LambdaSystem(u);
+  AssembleSteadyStateMatrix(&*matrix_);
+  Matrix_MFD* matrix_tmp = dynamic_cast<Matrix_MFD*>(&*matrix_);
+  matrix_tmp->ReduceGlobalSystem2LambdaSystem(u);
 
   // copy stiffness matrix to preconditioner (raw-data)
-  preconditioner_->PopulatePreconditioner(*matrix_);
-  preconditioner_->UpdatePreconditioner();
+  Matrix_MFD* preconditioner_tmp = dynamic_cast<Matrix_MFD*>(&*preconditioner_);
+  preconditioner_tmp->PopulatePreconditioner(*matrix_tmp);
+  preconditioner_tmp->UpdatePreconditioner();
 
   // solve non-symmetric problem
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs_constraints;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
+  AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
-  Epetra_Vector& rhs = *(matrix_->rhs());
+  CompositeVector& rhs = *matrix_->rhs();
   solver->ApplyInverse(rhs, utmp);
 
-  *u_faces = *utmp_faces;
+  u_faces = utmp_faces;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->num_itrs();
