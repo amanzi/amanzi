@@ -34,8 +34,6 @@ int Richards_PK::AdvanceToSteadyState(double T0, double dT0)
   int ti_method = ti_specs_sss_.ti_method;
   if (ti_method == FLOW_TIME_INTEGRATION_PICARD) {
     ierr = AdvanceToSteadyState_Picard(ti_specs_sss_);
-  } else if (ti_method == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
-    ierr = AdvanceToSteadyState_BackwardEuler(ti_specs_sss_);
   } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
     ierr = AdvanceToSteadyState_BDF1(ti_specs_sss_);
   }

@@ -39,9 +39,9 @@ void RelativePermeability::Init(double p0, Teuchos::RCP<State> S)
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
-  const CompositeVector& flux = *S_->GetFieldData("darcy_flux");
-  Krel_ = Teuchos::rcp(new CompositeVector(flux));
-  dKdP_ = Teuchos::rcp(new CompositeVector(flux));
+  const CompositeVector& pressure = *S_->GetFieldData("pressure");
+  Krel_ = Teuchos::rcp(new CompositeVector(pressure));
+  dKdP_ = Teuchos::rcp(new CompositeVector(pressure));
 
   upwind_cell = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
   downwind_cell = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));

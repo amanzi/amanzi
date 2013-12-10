@@ -92,21 +92,6 @@ void Richards_PK::precon(Teuchos::RCP<const CompositeVector> X,
                          Teuchos::RCP<CompositeVector> Y)
 {
  preconditioner_->ApplyInverse(*X, *Y);
- /*
-   Teuchos::ParameterList plist;
-   Teuchos::ParameterList& slist = plist.sublist("gmres");
-   slist.set<string>("iterative method", "gmres");
-   slist.set<double>("error tolerance", 1e-8 );
-   slist.set<int>("maximum number of iterations", 100);
-   Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
-   vlist.set("Verbosity Level", "low");
-
-   AmanziSolvers::LinearOperatorFactory<Matrix_TPFA, CompositeVector, CompositeVectorSpace> factory;
-   Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_TPFA, CompositeVector, CompositeVectorSpace> > 
-       solver = factory.Create("gmres", plist, preconditioner_, preconditioner_);
-   
-   solver->ApplyInverse(*X, *Y);
- */
 }
 
 

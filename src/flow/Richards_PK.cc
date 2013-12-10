@@ -128,6 +128,10 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
     S_->RequireField("water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
+  if (!S_->HasField("prev_water_saturation")) {
+    S_->RequireField("prev_water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
 
   if (!S_->HasField("darcy_flux")) {
     S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -230,9 +234,6 @@ void Richards_PK::InitPK()
   K.resize(ncells_wghost);
   SetAbsolutePermeabilityTensor();
   rel_perm->CalculateKVectorUnit(K, gravity_);
-
-  // Initialize transmisibillity and gravity terms.
-  matrix_->Init();
 
   // Allocate memory for wells.
   if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {

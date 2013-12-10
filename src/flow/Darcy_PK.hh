@@ -42,7 +42,7 @@ class Darcy_PK : public Flow_PK {
   void InitPicard(double T0) {};  // not used yet.
   void InitNextTI(double T0, double dT0, TI_Specs ti_specs);
 
-  double CalculateDt() { return dT_desirable_; }
+  double CalculateFlowDt() { return dT_desirable_; }
   int Advance(double dT); 
   int AdvanceToSteadyState(double T0, double dT0);
   void InitializeAuxiliaryData();

@@ -41,8 +41,6 @@ class Matrix_TPFA : public Matrix<CompositeVector, CompositeVectorSpace> {
 
   // main members (required members)
   void Init();
-  void CreateStiffnessMatricesRichards();
-
   void SymbolicAssemble();
   void Assemble();
 
@@ -51,7 +49,7 @@ class Matrix_TPFA : public Matrix<CompositeVector, CompositeVectorSpace> {
 
   void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values); 
 
-  void InitPreconditioner(const std::string& name, const Teuchos::ParameterList& plist);
+  void InitPreconditioner(const std::string& name, const Teuchos::ParameterList& plist) {};
   void UpdatePreconditioner() {};
 
   void DeriveMassFlux(const CompositeVector& solution, CompositeVector& darcy_mass_flux,
@@ -63,6 +61,8 @@ class Matrix_TPFA : public Matrix<CompositeVector, CompositeVectorSpace> {
   const CompositeVectorSpace& RangeMap() const {
     return cvs_;
   }
+
+  double ComputeNegativeResidual(const CompositeVector& v, CompositeVector& r);
 
  private:
   void AnalyticJacobian(const Epetra_Vector& solution, 
@@ -97,6 +97,9 @@ class Matrix_TPFA : public Matrix<CompositeVector, CompositeVectorSpace> {
 
   Teuchos::RCP<Epetra_Vector> Transmis_faces;
   Teuchos::RCP<Epetra_Vector> Grav_term_faces;
+
+  std::vector<WhetStone::Tensor> K;  // TODO
+  Teuchos::RCP<FlowMatrix> preconditioner_;
 
  private:
   void operator=(const Matrix_TPFA& matrix);

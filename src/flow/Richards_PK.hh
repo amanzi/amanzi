@@ -78,6 +78,7 @@ class Richards_PK : public Flow_PK {
   }
   bool modify_correction(double h, Teuchos::RCP<const CompositeVector> res,
                          Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du);
+  void changed_solution() {};
 
   // other main methods
   void AddTimeDerivative_MFD(Epetra_Vector& p, double dTp, Matrix_MFD* matrix_operator);

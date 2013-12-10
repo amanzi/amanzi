@@ -48,7 +48,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   virtual void InitSteadyState(double T0, double dT0) = 0;
   virtual void InitTransient(double T0, double dT0) = 0;
 
-  virtual double CalculateDt() = 0;
+  virtual double CalculateFlowDt() = 0;
   virtual int Advance(double dT) = 0; 
   virtual int AdvanceToSteadyState(double T0, double dT0) = 0;
   virtual void InitializeAuxiliaryData() = 0;

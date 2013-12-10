@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
@@ -26,9 +26,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "GMVMesh.hh"
 
 #include "State.hh"
-#include "Flow_State.hh"
 #include "Richards_PK.hh"
-
 
 /* **************************************************************** */
 TEST(FLOW_2D_RICHARDS) {
@@ -44,15 +42,12 @@ TEST(FLOW_2D_RICHARDS) {
   if (MyPID == 0) cout << "Test: 2D Richards, 2-layer model" << endl;
 
   /* read parameter list */
-  ParameterList parameter_list;
   string xmlFileName = "test/flow_richards_2D.xml";
-  // DEPRECATED  updateParametersFromXmlFile(xmlFileName, &parameter_list);
-
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
   // create an MSTK mesh framework
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -63,45 +58,68 @@ TEST(FLOW_2D_RICHARDS) {
   meshfactory.preference(pref);
   RCP<Mesh> mesh = meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
 
-  // create and populate flow state
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
-  FS->Initialize();
-  FS->set_permeability_2D(0.1, 2.0, "Material 1");
-  FS->set_permeability_2D(0.5, 0.5, "Material 2");
-  FS->set_porosity(0.2);
-  FS->set_fluid_viscosity(1.0);
-  FS->set_fluid_density(1.0);
-  FS->set_gravity(-1.0);
+  /* create a simple state and populate it */
+  Amanzi::VerboseObject::hide_line_prefix = true;
 
-  Epetra_Vector& p = FS->ref_pressure();
-  for (int c = 0; c < p.MyLength(); c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    p[c] = xc[1] * (xc[1] + 2.0);
+  RCP<State> S = rcp(new State());
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+  Richards_PK* RPK = new Richards_PK(plist, S);
+  S->Setup();
+  S->InitializeFields();
+
+  /* modify the default state for the problem at hand */
+  std::string passwd("state"); 
+  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
+  
+  AmanziMesh::Entity_ID_List block;
+  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  for (int i = 0; i != block.size(); ++i) {
+    int c = block[i];
+    K[0][c] = 0.1;
+    K[1][c] = 2.0;
   }
 
-  // create Richards process kernel
-  Richards_PK* RPK = new Richards_PK(parameter_list, FS);
+  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  for (int i = 0; i != block.size(); ++i) {
+    int c = block[i];
+    K[0][c] = 0.5;
+    K[1][c] = 0.5;
+  }
+
+  *S->GetScalarData("fluid_density", passwd) = 1.0;
+  *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  gravity[1] = -1.0;
+
+  /* create the initial pressure function */
+  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
+
+  for (int c = 0; c < p.MyLength(); c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    p[0][c] = xc[1] * (xc[1] + 2.0);
+  }
+
+  /* initialize the Richards process kernel */
   RPK->InitPK();
   RPK->InitializeAuxiliaryData();
   RPK->InitSteadyState(0.0, 1e-8);
   RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);
 
-  // solve the problem
+  /* solve the problem */
   RPK->AdvanceToSteadyState(0.0, 0.1);
-  RPK->CommitState(FS);
+  RPK->CommitState(S);
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();
-    GMV::write_cell_data(FS->ref_pressure(), 0, "pressure");
+    GMV::write_cell_data(p, 0, "pressure");
     GMV::close_data_file();
   }
 
-
-  // check the pressure 
+  /* check the pressure */
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c = 0; c < ncells; c++) CHECK(p[c] > 0.0 && p[c] < 2.0);
-
+  for (int c = 0; c < ncells; c++) CHECK(p[0][c] > 0.0 && p[0][c] < 2.0);
 
   delete RPK;
 }
