@@ -590,7 +590,7 @@ void Richards_PK::CommitState(Teuchos::RCP<State> S)
   ws_prev = ws;
 
   // calculate new water saturation
-  const Epetra_MultiVector& pressure = *S_->GetFieldData("presure")->ViewComponent("cell", false);
+  const Epetra_MultiVector& pressure = *S_->GetFieldData("pressure")->ViewComponent("cell", false);
   DeriveSaturationFromPressure(pressure, ws);
 
   // calculate Darcy flux as diffusive part + advective part.

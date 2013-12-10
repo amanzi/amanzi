@@ -66,27 +66,42 @@
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
-        <Parameter name="time integration method" type="string" value="BDF2"/>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
         <Parameter name="initialize with darcy" type="bool" value="true"/>
         <Parameter name="clipping saturation value" type="double" value="0.6"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 
-        <ParameterList name="BDF2">
+        <ParameterList name="BDF1">
+          <Parameter name="error abs tol" type="double" value="1"/>
+          <Parameter name="error rel tol" type="double" value="0"/>
+          <Parameter name="nonlinear tolerance" type="double" value="0.1"/>
+          <Parameter name="max preconditioner lag iterations" type="int" value="1"/>
           <Parameter name="time step increase factor" type="double" value="1.2"/>
-          <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
-          <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
-          <Parameter name="NKA max vectors" type="int" value="5"/>
-          <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
-          <Parameter name="Nonlinear solver tolerance" type="double" value="1e-4"/>
 
-          <Parameter name="error abs tol" type="double" value="0.1"/>
-          <Parameter name="error rel tol" type="double" value="1e-5"/>
-          <Parameter name="time step increase factor" type="double" value="1.2"/>
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="min iterations" type="int" value="2"/>
+            <Parameter name="max iterations" type="int" value="5"/>
+            <Parameter name="time step increase factor" type="double" value="1.2"/>
+            <Parameter name="time step reduction factor" type="double" value="0.5"/>
+            <Parameter name="max time step" type="double" value="1.0"/>
+            <Parameter name="min time step" type="double" value="0.0"/>
+          </ParameterList>
+
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="1e-1"/>
+            <Parameter name="diverged tolerance" type="double" value="1+10"/>
+            <Parameter name="limit iterations" type="int" value="12"/>
+            <Parameter name="max du growth factor" type="double" value="1e+5"/>
+            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max nka vectors" type="int" value="10"/>
+          </ParameterList>
 
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="100.0"/>
-          <Parameter name="initial time step" type="double" value="0.1"/>
+          <Parameter name="initial time step" type="double" value="0.01"/>
           <Parameter name="maximum time step" type="double" value="1.0"/>
         </ParameterList>
       </ParameterList>
@@ -157,6 +172,9 @@
       <Parameter name="maximum number of iterations" type="int" value="400"/>
       <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
     </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Nonlinear solvers">
   </ParameterList>
 
   <!-- PRECONDITIONERS -->

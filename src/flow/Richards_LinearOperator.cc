@@ -38,7 +38,7 @@ void Richards_PK::SolveFullySaturatedProblem(
   // solve linear problem
   AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
+     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_, preconditioner_);
 
   const CompositeVector& rhs = *matrix_->rhs();
   solver->ApplyInverse(rhs, u);
@@ -82,7 +82,7 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
 
   AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
+     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_, preconditioner_);
 
   CompositeVector& rhs = *matrix_->rhs();
   solver->ApplyInverse(rhs, utmp);

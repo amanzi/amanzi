@@ -212,7 +212,6 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
 
     wp->Update(-1.0, *ff, 1.0);
 
-    wp->Print(std::cout);
     wp->Dot(*wp, &s);
     s = sqrt(s);
 

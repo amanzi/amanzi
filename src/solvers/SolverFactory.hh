@@ -31,9 +31,10 @@ struct SolverFactory {
   Create(Teuchos::ParameterList& solver_list);
 };
 
+
 /* ******************************************************************
- * Initialization of the preconditioner
- ****************************************************************** */
+* Initialization of the preconditioner
+****************************************************************** */
 template<class Vector,class VectorSpace>
 Teuchos::RCP<Solver<Vector, VectorSpace> >
 SolverFactory<Vector,VectorSpace>::Create(
@@ -50,9 +51,10 @@ SolverFactory<Vector,VectorSpace>::Create(
   }
 }
 
+
 /* ******************************************************************
- * Initialization of the solveronditioner
- ****************************************************************** */
+* Initialization of the solver
+****************************************************************** */
 template<class Vector,class VectorSpace>
 Teuchos::RCP<Solver<Vector, VectorSpace> >
 SolverFactory<Vector,VectorSpace>::Create(Teuchos::ParameterList& slist)
@@ -70,7 +72,7 @@ SolverFactory<Vector,VectorSpace>::Create(Teuchos::ParameterList& slist)
           Teuchos::rcp(new SolverNKA<Vector,VectorSpace>(nka_list));
       return solver;
     } else if (type == "Newton") {
-      if (!slist.isSublist("nka parameters")) {
+      if (!slist.isSublist("Newton parameters")) {
         Errors::Message msg("SolverFactory: missing sublist \"Newton parameters\"");
         Exceptions::amanzi_throw(msg);
       }
@@ -99,7 +101,6 @@ SolverFactory<Vector,VectorSpace>::Create(Teuchos::ParameterList& slist)
   }
   return Teuchos::null;
 }
-
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi
