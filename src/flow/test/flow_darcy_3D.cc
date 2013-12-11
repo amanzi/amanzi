@@ -61,7 +61,8 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   /* create and populate flow state */
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  RCP<State> S = rcp(new State());
+  ParameterList state_list;
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Darcy_PK* DPK = new Darcy_PK(plist, S);

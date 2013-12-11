@@ -34,7 +34,6 @@ void Richards_PK::fun(double Told, double Tnew,
 
   const Epetra_MultiVector& u_cells = *u->ViewComponent("cell");
   const Epetra_MultiVector& udot_cells = *udot->ViewComponent("cell");
-  const Epetra_MultiVector& f_cells = *f->ViewComponent("cell");
 
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
     /*
@@ -54,6 +53,7 @@ void Richards_PK::fun(double Told, double Tnew,
   }
 
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
+  const Epetra_MultiVector& f_cells = *f->ViewComponent("cell");
 
   functional_max_norm = 0.0;
   functional_max_cell = 0;

@@ -127,6 +127,7 @@ class Matrix_MFD : public Matrix<CompositeVector, CompositeVectorSpace> {
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
 
  private:
+  using FlowMatrix::nokay_;
   void operator=(const Matrix_MFD& matrix);
 };
 

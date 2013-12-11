@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
@@ -26,7 +26,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "GMVMesh.hh"
 
 #include "State.hh"
-#include "Flow_State.hh"
 #include "Richards_PK.hh"
 
 
@@ -43,14 +42,12 @@ TEST(FLOW_3D_RICHARDS) {
   if (MyPID == 0) cout << "Test: 3D Richards, crib model" << endl;
 
   /* read parameter list */
-  ParameterList parameter_list;
   string xmlFileName = "test/flow_richards_bc_cribs.xml";
-  
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
-  // create a mesh framework
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  /* create a mesh framework */
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
   FrameworkPreference pref;
@@ -59,47 +56,49 @@ TEST(FLOW_3D_RICHARDS) {
 
   MeshFactory factory(&comm);
   factory.preference(pref);  
-  ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
+  ParameterList mesh_list = plist.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
   ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
   Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
 
-  // create flow state
-  ParameterList state_list = parameter_list.get<ParameterList>("State");
-  State S(state_list);
-  S.RegisterDomainMesh(mesh);
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
-  S.Setup();
-  S.InitializeFields();
-  FS->Initialize();
+  /* create a simple state and populate it */
+  Amanzi::VerboseObject::hide_line_prefix = true;
 
-  // create Richards process kernel
-  Richards_PK* RPK = new Richards_PK(parameter_list, FS);
+  ParameterList state_list = plist.get<ParameterList>("State");
+  RCP<State> S = rcp(new State(state_list));
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+  Richards_PK* RPK = new Richards_PK(plist, S);
+  S->Setup();
+  S->InitializeFields();
+
+  /* initialize the Richards process kernel */
   RPK->InitPK();
-  RPK->InitSteadyState(0.0, 1e-7);  // dT0 is not used
+  RPK->InitializeAuxiliaryData();
+  RPK->InitSteadyState(0.0, 1e-7);
+  RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);
 
-  // solve the problem
-  S.set_time(0.0);
+  /* solve the problem */
   RPK->AdvanceToSteadyState(0.0, 1e-7);
-  RPK->CommitState(FS);
+  RPK->CommitState(S);
 
-  // derive dependent variable
-  Epetra_Vector& pressure = FS->ref_pressure();
-  Epetra_Vector  saturation(pressure);
-  RPK->DeriveSaturationFromPressure(pressure, saturation);
+  /* derive dependent variable */
+  const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
+  const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell");
+  const Epetra_MultiVector& K = *S->GetFieldData("permeability")->ViewComponent("cell");
 
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");
   GMV::start_data();
-  GMV::write_cell_data(pressure, 0, "pressure");
-  GMV::write_cell_data(saturation, 0, "saturation");
-  GMV::write_cell_data(*(*FS->permeability())(0), 0, "permeability_x");
-  GMV::write_cell_data(*(*FS->permeability())(1), 0, "permeability_y");
-  GMV::write_cell_data(*(*FS->permeability())(2), 0, "permeability_z");
+  GMV::write_cell_data(p, 0, "pressure");
+  GMV::write_cell_data(ws, 0, "saturation");
+  GMV::write_cell_data(*K(0), 0, "permeability_x");
+  GMV::write_cell_data(*K(1), 0, "permeability_y");
+  GMV::write_cell_data(*K(2), 0, "permeability_z");
   GMV::close_data_file();
 
-  // check the pressure profile
+  /* check the pressure profile */
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   //for (int c = 0; c < ncells; c++) cout << (mesh->cell_centroid(c))[2] << " " << pressure[c] << endl;
-  for (int c = 0; c < ncells; c++) CHECK(pressure[c] > 4500.0 && pressure[c] < 101325.0);
+  for (int c = 0; c < ncells; c++) CHECK(p[0][c] > 4500.0 && p[0][c] < 101325.0);
 
   delete RPK;
 }

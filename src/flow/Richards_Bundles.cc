@@ -47,7 +47,7 @@ void Richards_PK::UpdateSourceBoundaryData(double Tp, const CompositeVector& pre
   else
     bc_head->ComputeShift(Tp, shift_water_table_->Values());
 
-  ProcessBCs();
+  ComputeBCs(pressure);
 }
 
 

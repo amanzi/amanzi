@@ -61,7 +61,8 @@ TEST(FLOW_2D_RICHARDS) {
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  RCP<State> S = rcp(new State());
+  ParameterList state_list;
+  RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Richards_PK* RPK = new Richards_PK(plist, S);

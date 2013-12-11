@@ -636,7 +636,7 @@ void Matrix_MFD::Assemble()
 
   // We repeat some of the loops for code clarity.
   rhs_->PutScalar(0.0);
-  Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell", true);
+  Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell");
   Epetra_MultiVector& rhs_faces = *rhs_->ViewComponent("face", true);
 
   for (int c = 0; c < ncells; c++) {
@@ -649,7 +649,7 @@ void Matrix_MFD::Assemble()
       rhs_faces[0][f] += Ff_cells_[c][n];
     }
   }
-  rhs_->GatherGhostedToMaster("cell");
+  rhs_->GatherGhostedToMaster("face");
 }
 
 
