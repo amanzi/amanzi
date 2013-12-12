@@ -48,7 +48,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
   FrameworkPreference pref;
@@ -57,32 +57,34 @@ cout << "Test: Tensor Richards, a cube model" << endl;
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  RCP<AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, gm);
+  RCP<const AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, gm);
 
-  // create the state
-  ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-  State* S = new State(state_list);
-  S->RegisterDomainMesh(mesh);
-  RCP<Flow_State> FS = Teuchos::rcp(new AmanziFlow::Flow_State(*S));
+  /* create a simple state and populate it */
+  Amanzi::VerboseObject::hide_line_prefix = true;
+
+  ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
+  RCP<State> S = rcp(new State(state_list));
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+  Richards_PK* RPK = new Richards_PK(plist, S);
   S->Setup();
   S->InitializeFields();
-  FS->Initialize();
+  RPK->InitializeFields();
+  S->CheckAllFieldsInitialized();
 
-  // create Richards problem
-  Richards_PK* RPK = new Richards_PK(parameter_list, FS);
+  /* create Richards problem */
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 1.0);
 
-  // calculate the constant Darcy mass velocity
-  double rho = FS->ref_fluid_density();
-  double mu = FS->ref_fluid_viscosity();
-  AmanziGeometry::Point& g = RPK->gravity();
+  /* calculate the constant Darcy mass velocity */
+  double rho = *S->GetScalarData("fluid_density");
+  double mu = *S->GetScalarData("fluid_viscosity");
+  const AmanziGeometry::Point& g = RPK->gravity();
 
-  const Epetra_Vector& kx = *(*FS->permeability())(0);
-  const Epetra_Vector& ky = *(*FS->permeability())(1);
-  const Epetra_Vector& kz = *(*FS->permeability())(2);
+  std::string passwd("state");
+  Epetra_MultiVector& perm = *S->GetFieldData("fluid_viscosity", passwd)->ViewComponent("cell");
 
-  Point K(kx[0], ky[0], kz[0]);  // model the permeability tensor
+  Point K(perm[0][0], perm[1][0], perm[2][0]);  // model the permeability tensor
   Point u0(1.0, 1.0, 1.0);
   Point v0(3);
 
@@ -94,19 +96,19 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   cout << "grad(p)=" << v0 << endl;
 
   RPK->AdvanceToSteadyState(0.0, 1.0);
-  RPK->CommitState(FS);
+  RPK->CommitState(S);
 
-  // check accuracy
-  Epetra_Vector& pressure = FS->ref_pressure();
-  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
+  /* check accuracy */
+  const Epetra_MultiVector& pressure = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
+  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux", passwd)->ViewComponent("face");
 
   double err_p = 0.0, err_u = 0.0;
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     double p_exact = v0 * xc;
-    // cout << c << " p_num=" << pressure[c] << " p_ex=" << p_exact << endl;
-    err_p += pow(pressure[c] - p_exact, 2.0);
+    // cout << c << " p_num=" << pressure[0][c] << " p_ex=" << p_exact << endl;
+    err_p += pow(pressure[0][c] - p_exact, 2.0);
   }
   err_p = sqrt(err_p);
 
@@ -117,8 +119,8 @@ cout << "Test: Tensor Richards, a cube model" << endl;
 
     double p_exact = v0 * xf;
     double f_exact = u0 * normal / rho;
-    err_u += pow(darcy_flux[f] - f_exact, 2.0);
-    // cout << f << " " << xf << "  flux_num=" << darcy_flux[f] << " f_ex=" << f_exact << endl;
+    err_u += pow(flux[0][f] - f_exact, 2.0);
+    // cout << f << " " << xf << "  flux_num=" << flux[0][f] << " f_ex=" << f_exact << endl;
   }
   err_u = sqrt(err_u);
 
@@ -128,5 +130,4 @@ cout << "Test: Tensor Richards, a cube model" << endl;
 
   delete comm;
   delete RPK;
-  delete S;
 }

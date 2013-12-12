@@ -475,7 +475,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
  
   // re-initialize lambda (experimental)
   double Tp = T0 + dT0;
-  if (ti_specs.pressure_lambda_constraints) {
+ if (ti_specs.pressure_lambda_constraints) {
     EnforceConstraints(Tp, *solution);
   } else {
     CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
@@ -488,9 +488,12 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   block_picard = 0;
 
   CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+  matrix_->CreateStiffnessMatricesRichards();
   matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
+  AddGravityFluxes_DarcyFlux(flux, *rel_perm);
+
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
 }
 

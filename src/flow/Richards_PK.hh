@@ -64,8 +64,8 @@ class Richards_PK : public Flow_PK {
  
   // methods required for time integration
   void fun(const double Told, double Tnew, 
-           Teuchos::RCP<CompositeVector> u, Teuchos::RCP<CompositeVector> udot, 
-           Teuchos::RCP<CompositeVector> rhs);
+           Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
+           Teuchos::RCP<CompositeVector> f);
   void precon(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu);
   void update_precon(double T, Teuchos::RCP<const CompositeVector> u, double dT);
   double enorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du);
@@ -115,6 +115,7 @@ class Richards_PK : public Flow_PK {
   // access methods
   Teuchos::RCP<FlowMatrix> matrix() { return matrix_; }
   Teuchos::RCP<FlowMatrix> preconditioner() { return preconditioner_; }
+  const Teuchos::RCP<CompositeVector> get_solution() { return solution; }
 
   // developement members
   bool SetSymmetryProperty();

@@ -158,12 +158,12 @@ void Flow_PK::ProcessSublistTimeIntegration(
     Teuchos::ParameterList& tmp_list = list.sublist(name);
     ti_specs.atol = tmp_list.get<double>("error abs tol");  // standard parameters of BDFx
     ti_specs.rtol = tmp_list.get<double>("error rel tol");
-    ti_specs.dTfactor = tmp_list.get<double>("time step increase factor");
+    ti_specs.dTfactor = tmp_list.get<double>("time step increase factor", 1.0);
 
     ti_specs.T0 = tmp_list.get<double>("start time", 0.0);  // transition parameters
     ti_specs.T1 = tmp_list.get<double>("end time", 100 * AmanziFlow::FLOW_YEAR);
     ti_specs.dT0 = tmp_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
-    ti_specs.dTmax = tmp_list.get<double>("maximum time step", AmanziFlow::FLOW_MAXIMUM_DT);
+    ti_specs.dTmax = tmp_list.get<double>("max time step", AmanziFlow::FLOW_MAXIMUM_DT);
 
     ti_specs.residual_tol = tmp_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
     ti_specs.max_itrs = tmp_list.get<int>("maximum number of iterations", FLOW_TI_MAX_ITERATIONS);

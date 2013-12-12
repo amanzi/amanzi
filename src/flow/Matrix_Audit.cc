@@ -41,6 +41,7 @@ void Matrix_Audit::InitAudit()
 {
   MyPID = mesh_->cell_map(false).Comm().MyPID();
 
+  /*
   if (matrix_type == MATRIX_AUDIT_MFD) {
     A = &(matrix_->Aff_cells());
   }
@@ -61,6 +62,7 @@ void Matrix_Audit::InitAudit()
     printf("Matrix_Audit: initializing for matrix id =%2d\n", matrix_type);
     printf("Matrix_Audit: maximum matrix size =%3d\n", lda); 
   }
+  */
 }
 
 
@@ -142,6 +144,7 @@ int Matrix_Audit::CheckSpectralBoundsExtended()
   double emin = 1e+99, emax = -1e+99;
   double cndmin = 1e+99, cndmax = 1.0, cndavg = 0.0;
 
+  /*
   for (int c = 0; c < A->size(); c++) {
     Teuchos::SerialDenseMatrix<int, double>& Aff = matrix_->Aff_cells()[c];
     Epetra_SerialDenseVector& Acf = matrix_->Acf_cells()[c];
@@ -186,6 +189,7 @@ int Matrix_Audit::CheckSpectralBoundsExtended()
     cndavg += cnd;
   }
   cndavg /= A->size();
+  */
 
   if (MyPID == 0) {
     printf("Matrix_Audit: p-lambda matrices\n");
@@ -208,6 +212,7 @@ int Matrix_Audit::CheckSpectralBoundsSchurComplement()
   double emin = 1e+99, emax = -1e+99;
   double cndmin = 1e+99, cndmax = 1.0, cndavg = 0.0;
 
+  /*
   for (int c = 0; c < A->size(); c++) {
     Teuchos::SerialDenseMatrix<int, double> Acell((*A)[c]);
     Epetra_SerialDenseVector& Acf = matrix_->Acf_cells()[c];
@@ -243,6 +248,7 @@ int Matrix_Audit::CheckSpectralBoundsSchurComplement()
     cndavg += cnd;
   }
   cndavg /= A->size();
+  */
 
   if (MyPID == 0) {
     printf("Matrix_Audit: Schur complement matrices\n");

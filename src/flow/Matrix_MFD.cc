@@ -796,8 +796,8 @@ int Matrix_MFD::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 ****************************************************************** */
 int Matrix_MFD::ReduceGlobalSystem2LambdaSystem(CompositeVector& u)
 {
-  Epetra_MultiVector uc = *u.ViewComponent("cell", false);
-  Epetra_MultiVector gf = *rhs_->ViewComponent("face", false);
+  Epetra_MultiVector& uc = *u.ViewComponent("cell");
+  Epetra_MultiVector& gf = *rhs_->ViewComponent("face");
 
   // Update RHS: rhs = rhs - Afc * uc
   Epetra_MultiVector tf(gf.Map(), 1);

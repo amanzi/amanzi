@@ -1,15 +1,15 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Neil Carlson (nnc@lanl.gov), 
-         Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Neil Carlson (nnc@lanl.gov), 
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 
-The routine implements interface to BDFx time integrators.  
+  The routine implements interface to the BDF1 time integrator.  
 */
 
 #include <algorithm>
@@ -27,13 +27,13 @@ namespace AmanziFlow {
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
 void Richards_PK::fun(double Told, double Tnew, 
-                      Teuchos::RCP<CompositeVector> u, Teuchos::RCP<CompositeVector> udot, 
+                      Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
                       Teuchos::RCP<CompositeVector> f)
 { 
   double Tp(Told), dTp(Tnew - Told);
 
-  const Epetra_MultiVector& u_cells = *u->ViewComponent("cell");
-  const Epetra_MultiVector& udot_cells = *udot->ViewComponent("cell");
+  const Epetra_MultiVector& uold_cells = *u_old->ViewComponent("cell");
+  const Epetra_MultiVector& unew_cells = *u_new->ViewComponent("cell");
 
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
     /*
@@ -48,8 +48,8 @@ void Richards_PK::fun(double Told, double Tnew,
     matrix_->ComputeNegativeResidual(u_cells, f);  
     */
   } else {
-    AssembleMatrixMFD(*u, Tp);
-    matrix_->ComputeNegativeResidual(*u, *f);
+    AssembleMatrixMFD(*u_new, Tp);
+    matrix_->ComputeNegativeResidual(*u_new, *f);
   }
 
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
@@ -64,13 +64,11 @@ void Richards_PK::fun(double Told, double Tnew,
     AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
-    double v1, v2, s1, s2, volume;
+    double s1, s2, volume;
     for (int i = 0; i < block.size(); i++) {
       int c = block[i];
-      v1 = u_cells[0][c];
-      v2 = v1 - udot_cells[0][c] * dTp;
-      s1 = WRM[mb]->saturation(atm_pressure_ - v1);
-      s2 = WRM[mb]->saturation(atm_pressure_ - v2);
+      s1 = WRM[mb]->saturation(atm_pressure_ - unew_cells[0][c]);
+      s2 = WRM[mb]->saturation(atm_pressure_ - uold_cells[0][c]);
 
       double factor = rho_ * phi[0][c] * mesh_->cell_volume(c) / dTp;
       f_cells[0][c] += (s1 - s2) * factor;

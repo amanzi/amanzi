@@ -122,11 +122,11 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   // access
   double rho() { return rho_; }
   double mu() { return mu_; }
-  AmanziGeometry::Point gravity() { return gravity_; }
+  const AmanziGeometry::Point& gravity() { return gravity_; }
   std::vector<WhetStone::Tensor>& get_K() { return K; }
   std::vector<bc_tuple>& get_bc_values() { return bc_values; }
 
-public:
+ public:
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
 
@@ -136,7 +136,7 @@ public:
   int missed_bc_faces_;
   int ti_phase_counter;
 
- protected:
+ public:
   Teuchos::ParameterList linear_operator_list_;
   Teuchos::ParameterList preconditioner_list_;
   Teuchos::ParameterList solver_list_;

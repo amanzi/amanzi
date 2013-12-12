@@ -66,14 +66,18 @@ void Flow_PK::InitializeFields()
     }
   }
 
-  if (!S_->GetField("specific_storage", passwd_)->initialized()) {
-    S_->GetFieldData("specific_storage", passwd_)->PutScalar(0.0);
-    S_->GetField("specific_storage", passwd_)->set_initialized();
+  if (S_->HasField("specific_storage")) {
+    if (!S_->GetField("specific_storage", passwd_)->initialized()) {
+      S_->GetFieldData("specific_storage", passwd_)->PutScalar(0.0);
+      S_->GetField("specific_storage", passwd_)->set_initialized();
+    }
   }
 
-  if (!S_->GetField("specific_yield", passwd_)->initialized()) {
-    S_->GetFieldData("specific_yield", passwd_)->PutScalar(0.0);
-    S_->GetField("specific_yield", passwd_)->set_initialized();
+  if (S_->HasField("specific_yield")) {
+    if (!S_->GetField("specific_yield", passwd_)->initialized()) {
+      S_->GetFieldData("specific_yield", passwd_)->PutScalar(0.0);
+      S_->GetField("specific_yield", passwd_)->set_initialized();
+    }
   }
 
   if (!S_->GetField("pressure", passwd_)->initialized()) {

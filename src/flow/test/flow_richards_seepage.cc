@@ -25,7 +25,6 @@
 #include "GMVMesh.hh"
 
 #include "State.hh"
-#include "Flow_State.hh"
 #include "Richards_PK.hh"
 
 
@@ -43,13 +42,12 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   if (MyPID == 0) cout << "Test: 2D Richards, seepage boundary condition" << endl;
 
   /* read parameter list */
-  ParameterList parameter_list;
   string xmlFileName = "test/flow_richards_seepage.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -58,33 +56,60 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 100.0, 50.0, 100, 50, gm); 
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 100.0, 50.0, 100, 50, gm); 
 
-  // create and populate flow state
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
-  FS->Initialize();
-  FS->set_permeability_2D(5.0e-13, 5.0e-14, "Material 1");
-  FS->set_porosity(0.2);
-  FS->set_fluid_viscosity(0.00089);
-  FS->set_fluid_density(998);
-  FS->set_gravity(-9.81);
-  FS->set_pressure_hydrostatic(30.0, 101325.0);
+  /* create a simple state and populate it */
+  Amanzi::VerboseObject::hide_line_prefix = true;
 
-  // create Richards process kernel
-  Richards_PK* RPK = new Richards_PK(parameter_list, FS);
-  RPK->DeriveFaceValuesFromCellValues(FS->ref_pressure(), FS->ref_lambda()); 
+  ParameterList state_list;
+  RCP<State> S = rcp(new State(state_list));
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+  Richards_PK* RPK = new Richards_PK(plist, S);
+  S->Setup();
+  S->InitializeFields();
+  RPK->InitializeFields();
+  S->CheckAllFieldsInitialized();
+
+  /* modify the default state for the problem at hand */
+  std::string passwd("state"); 
+  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
+  
+  for (int c = 0; c != K.MyLength(); ++c) {
+    K[0][c] = 5.0e-13;
+    K[1][c] = 5.0e-14;
+  }
+
+  double rho = *S->GetScalarData("fluid_density", passwd) = 998.0;
+  *S->GetScalarData("fluid_viscosity", passwd) = 0.00089;
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  double g = gravity[1] = -9.81;
+
+  /* create the initial pressure function */
+  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
+  Epetra_MultiVector& lambda = *S->GetFieldData("pressure", passwd)->ViewComponent("face");
+
+  double p0(101325.0), z0(30.0);
+  for (int c = 0; c < p.MyLength(); c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    p[0][c] = p0 + rho * g * (xc[1] - z0);
+  }
+  RPK->DeriveFaceValuesFromCellValues(p, lambda); 
+
+  /* create Richards process kernel */
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 0.01);
 
-  // solve the steady-state problem
+  /* solve the steady-state problem */
   RPK->AdvanceToSteadyState(0.0, 0.01);
-  RPK->CommitState(FS);
+  RPK->CommitState(S);
 
+  const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell");
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();
-    GMV::write_cell_data(FS->ref_pressure(), 0, "pressure");
-    GMV::write_cell_data(FS->ref_water_saturation(), 0, "saturation");
+    GMV::write_cell_data(p, 0, "pressure");
+    GMV::write_cell_data(ws, 0, "saturation");
     GMV::close_data_file();
   }
 

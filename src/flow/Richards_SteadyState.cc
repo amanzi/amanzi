@@ -145,7 +145,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   while (L2error > residual_tol_nonlinear && itrs < max_itrs_nonlinear) {
     // update dynamic boundary conditions
     bc_seepage->Compute(time);
-    ProcessBCs();
+    ComputeBCs(*solution);
 
     // update permeabilities
     rel_perm->Compute(*solution, bc_model, bc_values);
@@ -176,7 +176,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     // solve linear problem
     AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
+       solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_, preconditioner_);
 
     solver->ApplyInverse(*rhs, *solution);
 

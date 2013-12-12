@@ -46,7 +46,7 @@ TEST(FLOW_2D_RICHARDS) {
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  // create an MSTK mesh framework
+  /* create an MSTK mesh framework */
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
@@ -56,7 +56,7 @@ TEST(FLOW_2D_RICHARDS) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
+  RCP<const Mesh> mesh = meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = true;
@@ -68,6 +68,8 @@ TEST(FLOW_2D_RICHARDS) {
   Richards_PK* RPK = new Richards_PK(plist, S);
   S->Setup();
   S->InitializeFields();
+  RPK->InitializeFields();
+  S->CheckAllFieldsInitialized();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
@@ -94,7 +96,7 @@ TEST(FLOW_2D_RICHARDS) {
   gravity[1] = -1.0;
 
   /* create the initial pressure function */
-  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
+  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -120,7 +122,7 @@ TEST(FLOW_2D_RICHARDS) {
 
   /* check the pressure */
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c = 0; c < ncells; c++) CHECK(p[0][c] > 0.0 && p[0][c] < 2.0);
+  for (int c = 0; c < ncells; c++) CHECK(p[0][c] > 0.0 && p[0][c] < 2.1);
 
   delete RPK;
 }
