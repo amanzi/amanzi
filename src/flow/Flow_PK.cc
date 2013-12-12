@@ -441,8 +441,9 @@ void Flow_PK::DeriveFaceValuesFromCellValues(
     const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces)
 {
   AmanziMesh::Entity_ID_List cells;
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
-  for (int f = 0; f < nfaces_owned; f++) {
+  for (int f = 0; f < nfaces; f++) {
     cells.clear();
     mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
     int ncells = cells.size();
