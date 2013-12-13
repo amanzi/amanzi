@@ -12,7 +12,6 @@
 #endif
 #include "MPC.hh"
 #include "State.hh"
-#include "Flow_State.hh"
 #include "Darcy_PK.hh"
 #include "Richards_PK.hh"
 #include "Transport_PK.hh"
@@ -112,12 +111,36 @@ void MPC::mpc_init() {
   }
 
   // flow...
-  if (flow_enabled) {
-    FS = Teuchos::rcp(new AmanziFlow::Flow_State(S));
+  if (flow_enabled) { 
+    flow_model = mpc_parameter_list.get<string>("Flow model", "Darcy");
+    if (flow_model == "Darcy") {
+      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, S));
+    } else if (flow_model == "Steady State Saturated") {
+      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, S));
+    } else if (flow_model == "Richards") {
+      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, S));
+    } else if (flow_model == "Steady State Richards") {
+      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, S));
+    } else {
+      cout << "MPC: unknown flow model: " << flow_model << endl;
+      throw std::exception();
+    }   
   }
 
   if (flow_model == "Steady State Richards") {
     *out << "Flow will be off during the transient phase" << std::endl;
+  }
+
+  if (transport_enabled) {
+    Teuchos::Array<std::string> comp_names;
+    if (mpc_parameter_list.isParameter("component names")) {
+      comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
+    }
+    std::vector<std::string> names;
+    for (int i = 0; i < comp_names.length(); i++) {
+      names.push_back(comp_names[i]);
+    }
+    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, names));
   }
 
   S->Setup();
@@ -128,45 +151,21 @@ void MPC::mpc_init() {
     CS->Initialize();
   }
   if (flow_enabled) {
-    FS->Initialize();
+    FPK->InitializeFields();
   }
 
   S->CheckAllFieldsInitialized();
 
-  if (transport_enabled) {
-    bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
-    transport_subcycling = (subcycling) ? 1 : 0;
-
-    Teuchos::Array<std::string> comp_names;
-    if (mpc_parameter_list.isParameter("component names")) {
-      comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
-    }
-    std::vector<std::string> names;
-    for (int i = 0; i < comp_names.length(); i++) {
-      names.push_back(comp_names[i]);
-    }
-    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, names));
-    TPK->InitPK();
-  }
-    
   if (flow_enabled) { 
-    flow_model = mpc_parameter_list.get<string>("Flow model", "Darcy");
-    if (flow_model == "Darcy") {
-      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
-    } else if (flow_model == "Steady State Saturated") {
-      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
-    } else if (flow_model == "Richards") {
-      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
-    } else if (flow_model == "Steady State Richards") {
-      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, FS));
-    } else {
-      cout << "MPC: unknown flow model: " << flow_model << endl;
-      throw std::exception();
-    }   
-
     FPK->InitPK();
   }
 
+  if (transport_enabled) {
+    bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
+    transport_subcycling = (subcycling) ? 1 : 0;
+    TPK->InitPK();
+  }
+    
   if (chemistry_enabled) {
     try {
       if (chemistry_model == "Alquimia") {
@@ -404,7 +403,7 @@ void MPC::cycle_driver() {
     if (flow_enabled) FPK->InitializeAuxiliaryData();
     if (do_picard_) {
       FPK->InitPicard(S->time());
-      FPK->CommitState(FS);
+      FPK->CommitState(S);
     }
     Amanzi::timer_manager.stop("Flow PK");
   }
@@ -428,7 +427,7 @@ void MPC::cycle_driver() {
       if (!restart_requested) {
         FPK->InitSteadyState(S->time(), dTsteady);
         FPK->InitializeSteadySaturated();
-        FPK->CommitState(FS);
+        FPK->CommitState(S);
 	if (ti_mode == INIT_TO_STEADY) S->advance_time(Tswitch-T0);
 	if (ti_mode == STEADY)         S->advance_time(T1-T0);
       } else {
@@ -521,9 +520,9 @@ void MPC::cycle_driver() {
 
       // log that we are starting a time step
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-        *out << setprecision(5) << std::endl;
+        *out << std::setprecision(5) << std::endl;
         *out << "Cycle " << iter;
-        *out << ": starting time step at time(y) = "<< scientific << S->time() / (365.25*60*60*24);
+        *out << ": starting time step at time(y) = "<< std::scientific << S->time() / (365.25*60*60*24);
         *out << std::endl;
       }
 
@@ -618,7 +617,7 @@ void MPC::cycle_driver() {
         if (!reset_times_.empty()) {
           // this is probably iffy...
           if (S->time() == reset_times_.front()) {
-            *out << setprecision(5) << "Resetting the time integrator at time(y) = "
+            *out << std::setprecision(5) << "Resetting the time integrator at time(y) = "
                  << std::fixed << S->time()/(365.25*24*60*60) << std::endl;
             mpc_dT = reset_times_dt_.front();
             mpc_dT = TSM->TimeStep(S->time(), mpc_dT);
@@ -637,9 +636,9 @@ void MPC::cycle_driver() {
       } 	
       
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-        *out << setprecision(5);
+        *out << std::setprecision(5);
         *out << "Cycle " << iter;
-        *out << ": proposed time step before flow step dT(y) = " << scientific << mpc_dT / (365.25*60*60*24);
+        *out << ": proposed time step before flow step dT(y) = " << std::scientific << mpc_dT / (365.25*60*60*24);
         *out << std::endl;
       }
 
@@ -668,7 +667,7 @@ void MPC::cycle_driver() {
               *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
             }
           } while (redo);
-          FPK->CommitState(FS);
+          FPK->CommitState(S);
         }
         S->set_final_time(S->initial_time() + mpc_dT);
       }
@@ -691,9 +690,9 @@ void MPC::cycle_driver() {
       }
 
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-        *out << setprecision(5);
+        *out << std::setprecision(5);
         *out << "Cycle " << iter;
-        *out << ": time step after flow step dT(y) = " << scientific << mpc_dT / (365.25*60*60*24);
+        *out << ": time step after flow step dT(y) = " << std::scientific << mpc_dT / (365.25*60*60*24);
         *out << " " << limitstring;
         *out << std::endl;
       }
@@ -886,7 +885,7 @@ void MPC::cycle_driver() {
       }
 
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-        *out << setprecision(5);
+        *out << std::setprecision(5);
         *out << "Cycle " << iter;
         *out << ": complete, new time = " << S->time() / (365.25*60*60*24);
         *out << std::endl;

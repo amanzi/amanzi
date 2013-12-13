@@ -10,7 +10,6 @@
 #include "Chemistry_State.hh"
 #include "chemistry_pk_base.hh"
 #include "Transport_PK.hh"
-#include "Flow_State.hh"
 #include "Flow_PK.hh"
 #include "ObservationData.hh"
 #include "Unstructured_observations.hh"
@@ -43,7 +42,6 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   // states
   Teuchos::RCP<State> S;
   Teuchos::RCP<AmanziChemistry::Chemistry_State> CS;
-  Teuchos::RCP<AmanziFlow::Flow_State> FS;
     
   // misc setup information
   Teuchos::ParameterList parameter_list;

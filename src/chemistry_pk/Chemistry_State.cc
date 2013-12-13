@@ -18,7 +18,9 @@ namespace AmanziChemistry {
 
 Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
         const Teuchos::RCP<State>& S) :
-    PK_State(std::string("state"), S),
+    S_(S),
+    ghosted_(true),
+    name_("state"),
     plist_(plist),
     number_of_aqueous_components_(0),
     number_of_minerals_(0),
@@ -27,6 +29,7 @@ Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
     using_sorption_(false),
     using_sorption_isotherms_(false) {
 
+  mesh_ = S_->GetMesh();
   SetupSoluteNames_();
   SetupMineralNames_();
   SetupSorptionSiteNames_();
@@ -49,13 +52,16 @@ Chemistry_State::Chemistry_State(const Teuchos::RCP<State>& S,
         int number_of_sorption_sites,
         bool using_sorption,
         bool using_sorption_isotherms) :
-    PK_State(std::string("state"), S),
+    S_(S),
+    ghosted_(true),
+    name_("state"),
     number_of_aqueous_components_(number_of_aqueous_components),
     number_of_minerals_(number_of_minerals),
     number_of_ion_exchange_sites_(number_of_ion_exchange_sites),
     number_of_sorption_sites_(number_of_sorption_sites),
     using_sorption_(using_sorption),
     using_sorption_isotherms_(using_sorption_isotherms) {
+  mesh_ = S_->GetMesh();
   RequireData_();
 }
 

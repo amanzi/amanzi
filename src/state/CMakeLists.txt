@@ -61,7 +61,6 @@ set(state_inc_files cell_volume_evaluator.hh
   Field_Scalar.hh
   io_event.hh
   Observable.hh
-  PK_State.hh
   rank_evaluator.hh
   rank_evaluator_reg.hh
   state_defs.hh
@@ -72,7 +71,6 @@ set(state_inc_files cell_volume_evaluator.hh
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(state 
                    SOURCE State.cc
-                          PK_State.cc
                           checkpoint.cc
                           visualization.cc
                           Observable.cc
