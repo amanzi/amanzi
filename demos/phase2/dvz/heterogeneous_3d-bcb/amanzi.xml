@@ -92,6 +92,9 @@
             <Parameter name="transient time step increase factor" type="double" value="1.25"/>
             <Parameter name="transient preconditioner" type="string" value="Hypre AMG"/>
           </ParameterList>
+          <ParameterList name="Nonlinear Solver">
+	    <Parameter name="Nonlinear Solver Type" type="string" value="NKA"/>
+	  </ParameterList>
           <ParameterList name="Preconditioners">
             <ParameterList name="Trilinos ML">
               <Parameter name="ML cycle applications" type="int" value="3"/>
@@ -261,8 +264,9 @@
           <Parameter name="Value" type="double" value="0.4082"/>
         </ParameterList>
         <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-          <Parameter name="Horizontal" type="double" value="1.9976E-12"/>
-          <Parameter name="Vertical" type="double" value="1.9976E-13"/>
+          <Parameter name="x" type="double" value="1.9976E-12"/>
+          <Parameter name="y" type="double" value="1.9976E-12"/>
+          <Parameter name="z" type="double" value="1.9976E-13"/>
         </ParameterList>
         <ParameterList name="Capillary Pressure: Brooks Corey">
           <Parameter name="lambda" type="double" value="0.2832"/>
@@ -279,8 +283,9 @@
           <Parameter name="Value" type="double" value="0.2206"/>
         </ParameterList>
         <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-          <Parameter name="Horizontal" type="double" value="6.9365E-11"/>
-          <Parameter name="Vertical" type="double" value="6.9365E-12"/>
+          <Parameter name="x" type="double" value="6.9365E-11"/>
+          <Parameter name="y" type="double" value="6.9365E-11"/>
+          <Parameter name="z" type="double" value="6.9365E-12"/>
         </ParameterList>
         <ParameterList name="Capillary Pressure: Brooks Corey">
           <Parameter name="lambda" type="double" value="0.261"/>
@@ -297,8 +302,9 @@
           <Parameter name="Value" type="double" value="0.234"/>
         </ParameterList>
         <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-          <Parameter name="Horizontal" type="double" value="2.0706E-9"/>
-          <Parameter name="Vertical" type="double" value="2.0706E-10"/>
+          <Parameter name="x" type="double" value="2.0706E-9"/>
+          <Parameter name="y" type="double" value="2.0706E-9"/>
+          <Parameter name="z" type="double" value="2.0706E-10"/>
         </ParameterList>
         <ParameterList name="Capillary Pressure: Brooks Corey">
           <Parameter name="lambda" type="double" value="0.387"/>
