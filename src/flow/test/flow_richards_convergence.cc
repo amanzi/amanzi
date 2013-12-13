@@ -123,7 +123,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
   // convergence estimate
   std::vector<double> h, p_error, v_error;
 
-  for (int n = 40; n < 321; n*=2) {
+  for (int n = 40; n < 161; n*=2) {
     Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
     
@@ -150,8 +150,9 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
     /* create Richards process kernel */
     RPK->InitPK();
-    RPK->InitSteadyState(0.0, 0.01);
-    RPK->AdvanceToSteadyState(0.0, 0.01);
+    RPK->InitSteadyState(0.0, 0.001);
+    RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);
+    RPK->AdvanceToSteadyState(0.0, 0.001);
     RPK->CommitState(S);
 
     double pressure_err, flux_err, div_err;  // error checks

@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cmath>
@@ -155,13 +155,14 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
     /* create Richards process kernel */
     RPK->InitPK();
-    RPK->InitSteadyState(0.0, 0.2);
-    RPK->AdvanceToSteadyState(0.0, 0.2);
+    RPK->InitializeAuxiliaryData();
+    RPK->InitSteadyState(0.0, 0.1);
+    RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);
+    RPK->AdvanceToSteadyState(0.0, 0.1);
     RPK->CommitState(S);
 
+    S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
     const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
-    const CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux");
-    darcy_flux.ScatterMasterToGhosted("face");
     const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
 
     double pressure_err, flux_err, div_err;  // error checks

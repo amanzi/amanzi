@@ -82,8 +82,8 @@ void Flow_PK::ProcessBCs()
 ****************************************************************** */
 void Flow_PK::ComputeBCs(const CompositeVector& pressure)
 {
-  const Epetra_MultiVector& pressure_cells = *(pressure.ViewComponent("cell"));
-  const Epetra_MultiVector& pressure_faces = *(pressure.ViewComponent("face"));
+  const Epetra_MultiVector& pressure_cells = *pressure.ViewComponent("cell");
+  const Epetra_MultiVector& pressure_faces = *pressure.ViewComponent("face");
   
   int flag_essential_bc = 0;
   bc_tuple zero = {0.0, 0.0};

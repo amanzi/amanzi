@@ -82,7 +82,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   const AmanziGeometry::Point& g = RPK->gravity();
 
   std::string passwd("state");
-  Epetra_MultiVector& perm = *S->GetFieldData("fluid_viscosity", passwd)->ViewComponent("cell");
+  Epetra_MultiVector& perm = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
 
   Point K(perm[0][0], perm[1][0], perm[2][0]);  // model the permeability tensor
   Point u0(1.0, 1.0, 1.0);

@@ -190,7 +190,7 @@ void Richards_PK::InitPK()
   bc_model.resize(nfaces_wghost, 0);
   bc_submodel.resize(nfaces_wghost, 0);
 
-  rainfall_factor.resize(nfaces_owned, 1.0);
+  rainfall_factor.resize(nfaces_wghost, 1.0);
 
   // Process Native XML.
   ProcessParameterList(rp_list_);
@@ -349,7 +349,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
   // DEBUG
   // AdvanceToSteadyState();
-  // CommitState(FS); WriteGMVfile(FS); exit(0);
+  // CommitState(S); WriteGMVfile(S); exit(0);
 }
 
 
@@ -598,6 +598,7 @@ void Richards_PK::CommitState(Teuchos::RCP<State> S)
 
   // calculate Darcy flux as diffusive part + advective part.
   CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+  matrix_->CreateStiffnessMatricesRichards();
   matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);

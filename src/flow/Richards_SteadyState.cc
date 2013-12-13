@@ -75,12 +75,11 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
     }
 
     double dTnext;
-    try { 
-      bdf1_dae->time_step(dT, dTnext, solution);
-    } catch (int i) {
-      dT /= 2;
-      continue;
+    Teuchos::RCP<CompositeVector> solution_tmp = Teuchos::rcp(new CompositeVector(*solution));
+    while (bdf1_dae->time_step(dT, dTnext, solution_tmp)) {
+      dT = dTnext;
     }
+    *solution = *solution_tmp;
     bdf1_dae->commit_solution(dT, solution);
 
     T_physics = bdf1_dae->time();
@@ -96,6 +95,7 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
   }
 
   ti_specs.num_itrs = itrs;
+  // cout << *solution->ViewComponent("cell") << endl; exit(0);
   return 0;
 }
 

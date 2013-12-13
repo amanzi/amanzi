@@ -597,7 +597,7 @@ void Matrix_MFD::SymbolicAssemble()
     Afc_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
   }
 
-  rhs_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, false));
+  rhs_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
 }
 
 
@@ -635,9 +635,10 @@ void Matrix_MFD::Assemble()
   Aff_->GlobalAssemble();
 
   // We repeat some of the loops for code clarity.
-  rhs_->PutScalar(0.0);
   Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell");
   Epetra_MultiVector& rhs_faces = *rhs_->ViewComponent("face", true);
+
+  rhs_faces.PutScalar(0.0);
 
   for (int c = 0; c < ncells; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -649,7 +650,7 @@ void Matrix_MFD::Assemble()
       rhs_faces[0][f] += Ff_cells_[c][n];
     }
   }
-  rhs_->GatherGhostedToMaster("face");
+  rhs_->GatherGhostedToMaster("face", Add);
 }
 
 

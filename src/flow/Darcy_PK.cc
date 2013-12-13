@@ -182,7 +182,7 @@ void Darcy_PK::InitPK()
   bc_model.resize(nfaces_wghost, 0);
   bc_submodel.resize(nfaces_wghost, 0);
 
-  rainfall_factor.resize(nfaces_owned, 1.0);
+  rainfall_factor.resize(nfaces_wghost, 1.0);
 
   // Process Native XML.
   ProcessParameterList(dp_list_);

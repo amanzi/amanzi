@@ -68,10 +68,11 @@
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
       <Parameter name="relative permeability" type="string" value="cell centered"/>
-      <Parameter name="atmospheric pressure" type="double" value="1e-20"/>
+      <!--Parameter name="relative permeability" type="string" value="upwind with gravity"/-->
+      <Parameter name="atmospheric pressure" type="double" value="1e-10"/>
 
       <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="none"/>
+        <Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
@@ -84,7 +85,6 @@
         <ParameterList name="BDF1">
           <Parameter name="error abs tol" type="double" value="1"/>
           <Parameter name="error rel tol" type="double" value="0"/>
-          <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
 
           <Parameter name="timestep controller type" type="string" value="standard"/>
           <ParameterList name="timestep controller standard parameters">
@@ -177,9 +177,19 @@
 
   <!-- PRECONDITIONERS -->
   <ParameterList name="Preconditioners">
+    <ParameterList name="Hypre AMG">
+      <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="strong threshold" type="double" value="0.5"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
+      </ParameterList>
+    </ParameterList>
+
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
-
       <ParameterList name="ml parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
