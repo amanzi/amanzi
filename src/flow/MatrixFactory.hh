@@ -35,17 +35,18 @@ class MatrixFactory {
   ~MatrixFactory() {};
 
   Teuchos::RCP<FlowMatrix> Create(Teuchos::RCP<State> S,
+                                  std::vector<WhetStone::Tensor>* K,
                                   Teuchos::RCP<RelativePermeability> rel_perm, 
                                   Teuchos::ParameterList& plist)
   {
     std::string name = plist.get<std::string>("matrix", "mfd");
     if (name == "mfd") {
-      Teuchos::RCP<Matrix_MFD> matrix = Teuchos::rcp(new Matrix_MFD(S, rel_perm));
+      Teuchos::RCP<Matrix_MFD> matrix = Teuchos::rcp(new Matrix_MFD(S, K, rel_perm));
       matrix->Init();
 
       return matrix;
     } else if (name == "tpfa") {
-      Teuchos::RCP<Matrix_TPFA> matrix = Teuchos::rcp(new Matrix_TPFA(S, rel_perm));
+      Teuchos::RCP<Matrix_TPFA> matrix = Teuchos::rcp(new Matrix_TPFA(S, K, rel_perm));
       matrix->Init();
 
       return matrix;

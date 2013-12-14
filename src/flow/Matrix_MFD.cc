@@ -6,7 +6,7 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <vector>
@@ -28,9 +28,16 @@ namespace AmanziFlow {
 * Constructor                                      
 ****************************************************************** */
 Matrix_MFD::Matrix_MFD(Teuchos::RCP<State> S,
+                       std::vector<WhetStone::Tensor>* K, 
                        Teuchos::RCP<RelativePermeability> rel_perm)
-    : Matrix(S, rel_perm)
+    : Matrix(S, K, rel_perm)
 { 
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+
   actions_ = 0;
 }
 
@@ -51,7 +58,7 @@ Matrix_MFD::~Matrix_MFD()
 * Calculate elemental inverse mass matrices. 
 * WARNING: The original Aff matrices are destroyed.                                            
 ****************************************************************** */
-void Matrix_MFD::CreateMassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K)
+void Matrix_MFD::CreateMassMatrices(int mfd3d_method)
 {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -69,31 +76,32 @@ void Matrix_MFD::CreateMassMatrices(int mfd3d_method, std::vector<WhetStone::Ten
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix Mff(nfaces, nfaces);
+    WhetStone::Tensor& Kc = (*K_)[c];
 
     if (mfd3d_method == FLOW_MFD3D_POLYHEDRA_SCALED) {
-      ok = mfd.MassMatrixInverseScaled(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseScaled(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_POLYHEDRA_MONOTONE) {
-      ok = mfd.MassMatrixInverseMMatrix(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseMMatrix(c, Kc, Mff);
       if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_WRONG) {
-        ok = mfd.MassMatrixInverseTPFA(c, K[c], Mff);
+        ok = mfd.MassMatrixInverseTPFA(c, Kc, Mff);
       }
     } else if (mfd3d_method == FLOW_MFD3D_POLYHEDRA) {
-      ok = mfd.MassMatrixInverse(c, K[c], Mff);
+      ok = mfd.MassMatrixInverse(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_OPTIMIZED_SCALED) {
-      ok = mfd.MassMatrixInverseOptimizedScaled(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseOptimizedScaled(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_OPTIMIZED) {
-      ok = mfd.MassMatrixInverseOptimized(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseOptimized(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        ok = mfd.MassMatrixInverseMMatrixHex(c, K[c], Mff);
+        ok = mfd.MassMatrixInverseMMatrixHex(c, Kc, Mff);
       else
-        ok = mfd.MassMatrixInverse(c, K[c], Mff);
+        ok = mfd.MassMatrixInverse(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_DEVELOPER_TESTING) {
-      ok = mfd.MassMatrixInverseDiagonal(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseDiagonal(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_TWO_POINT_FLUX) {
-      ok = mfd.MassMatrixInverseTPFA(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseTPFA(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_SUPPORT_OPERATOR) {
-      ok = mfd.MassMatrixInverseSO(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseSO(c, Kc, Mff);
     } else {
       Errors::Message msg("Flow PK: unexpected discretization methods (contact lipnikov@lanl.gov).");
       Exceptions::amanzi_throw(msg);
@@ -119,8 +127,7 @@ void Matrix_MFD::CreateMassMatrices(int mfd3d_method, std::vector<WhetStone::Ten
 /* ******************************************************************
 * Calculate elemental inverse mass matrices.                                           
 ****************************************************************** */
-void Matrix_MFD::CreateMassMatrices_ScaledStability(
-    int mfd3d_method, double factor, std::vector<WhetStone::Tensor>& K)
+void Matrix_MFD::CreateMassMatrices_ScaledStability(int mfd3d_method, double factor)
 {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -140,27 +147,28 @@ void Matrix_MFD::CreateMassMatrices_ScaledStability(
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix Mff(nfaces, nfaces);
+    WhetStone::Tensor& Kc = (*K_)[c];
 
     if (mfd3d_method == FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        ok = mfd.MassMatrixInverseMMatrixHex(c, K[c], Mff);
+        ok = mfd.MassMatrixInverseMMatrixHex(c, Kc, Mff);
       else
-        ok = mfd.MassMatrixInverse(c, K[c], Mff);
+        ok = mfd.MassMatrixInverse(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_POLYHEDRA_MONOTONE) {
-      ok = mfd.MassMatrixInverseMMatrix(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseMMatrix(c, Kc, Mff);
       if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_WRONG) {
-        ok = mfd.MassMatrixInverseTPFA(c, K[c], Mff);
+        ok = mfd.MassMatrixInverseTPFA(c, Kc, Mff);
       }
     } else if (mfd3d_method == FLOW_MFD3D_DEVELOPER_TESTING) {
-      ok = mfd.MassMatrixInverseDiagonal(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseDiagonal(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_TWO_POINT_FLUX) {
-      ok = mfd.MassMatrixInverseTPFA(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseTPFA(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_SUPPORT_OPERATOR) {
-      ok = mfd.MassMatrixInverseSO(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseSO(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_OPTIMIZED) {
-      ok = mfd.MassMatrixInverseOptimized(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseOptimized(c, Kc, Mff);
     } else {
-      ok = mfd.MassMatrixInverse(c, K[c], Mff);
+      ok = mfd.MassMatrixInverse(c, Kc, Mff);
     }
 
     Mff_cells_.push_back(Mff);
@@ -183,8 +191,7 @@ void Matrix_MFD::CreateMassMatrices_ScaledStability(
 /* ******************************************************************
 * Calculate elemental stiffness matrices (fully saturated flow)                                          
 ****************************************************************** */
-void Matrix_MFD::CreateStiffnessMatricesDarcy(
-    int mfd3d_method, std::vector<WhetStone::Tensor>& K)
+void Matrix_MFD::CreateStiffnessMatricesDarcy(int mfd3d_method)
 {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -356,8 +363,7 @@ void Matrix_MFD::CreateRHSVectors()
 * called before applying boundary conditions and global assembling. 
 * simplified implementation for single phase flow.                                            
 ****************************************************************** */
-void Matrix_MFD::AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& gravity,
-                                       std::vector<WhetStone::Tensor>& K)
+void Matrix_MFD::AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& gravity)
 {
   AmanziGeometry::Point rho_gravity(gravity);
   rho_gravity *= rho;
@@ -365,7 +371,6 @@ void Matrix_MFD::AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -377,7 +382,7 @@ void Matrix_MFD::AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& 
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-      double outward_flux = ((K[c] * rho_gravity) * normal) * dirs[n]; 
+      double outward_flux = (((*K_)[c] * rho_gravity) * normal) * dirs[n]; 
       Ff[n] += outward_flux;
       Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.
     }
@@ -390,7 +395,7 @@ void Matrix_MFD::AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& 
 * called before applying boundary conditions and global assembling.                                             
 ****************************************************************** */
 void Matrix_MFD::AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity,
-                                          std::vector<WhetStone::Tensor>& K)
+                                          std::vector<int>& bc_model) 
 {
   AmanziGeometry::Point rho_gravity(gravity);
   rho_gravity *= rho;
@@ -402,7 +407,6 @@ void Matrix_MFD::AddGravityFluxesRichards(double rho, const AmanziGeometry::Poin
   Epetra_MultiVector& Krel_faces = *rel_perm_->Krel().ViewComponent("face", true);
   int method = rel_perm_->method();
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -415,7 +419,7 @@ void Matrix_MFD::AddGravityFluxesRichards(double rho, const AmanziGeometry::Poin
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-      double outward_flux = ((K[c] * rho_gravity) * normal) * dirs[n]; 
+      double outward_flux = (((*K_)[c] * rho_gravity) * normal) * dirs[n]; 
       if (method == FLOW_RELATIVE_PERM_CENTERED) {
         outward_flux *= Krel_cells[0][c];
       } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
@@ -510,7 +514,6 @@ void Matrix_MFD::AddTimeDerivative(
 void Matrix_MFD::AddTimeDerivativeSpecificStorage(
     const Epetra_MultiVector& p, const Epetra_MultiVector& ss, double g, double dT)
 {
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
     double factor = volume * ss[0][c] / (g * dT);
@@ -528,7 +531,6 @@ void Matrix_MFD::AddTimeDerivativeSpecificStorage(
 void Matrix_MFD::AddTimeDerivativeSpecificYield(
     const Epetra_MultiVector& p, const Epetra_MultiVector& sy, double g, double dT)
 {
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
     double factor = sy[0][c] / (g * dT);
     Acc_cells_[c] += factor;
@@ -765,8 +767,8 @@ int Matrix_MFD::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
   Epetra_MultiVector& Yf = *Y.ViewComponent("face");
 
   // Temporary cell and face vectors.
-  Epetra_MultiVector Tc(Xc.Map(), 1);
-  Epetra_MultiVector Tf(Xf.Map(), 1);
+  Epetra_MultiVector Tc(Xc);
+  Epetra_MultiVector Tf(Xf);
 
   // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
   int ierr;
@@ -852,10 +854,6 @@ void Matrix_MFD::DeriveMassFlux(
   AmanziMesh::Entity_ID_List faces;
   std::vector<double> dp;
   std::vector<int> dirs;
-
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   std::vector<int> flag(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {

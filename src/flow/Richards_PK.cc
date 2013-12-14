@@ -249,8 +249,8 @@ void Richards_PK::InitPK()
   }
 
   MatrixFactory factory;
-  matrix_ = factory.Create(S_, rel_perm, mlist);
-  preconditioner_ = factory.Create(S_, rel_perm, mlist);
+  matrix_ = factory.Create(S_, &K, rel_perm, mlist);
+  preconditioner_ = factory.Create(S_, &K, rel_perm, mlist);
 
   matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
   preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
@@ -426,8 +426,8 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   SetAbsolutePermeabilityTensor();
   for (int c = 0; c < ncells_wghost; c++) K[c] *= rho_ / mu_;
 
-  matrix_->CreateMassMatrices(mfd3d_method_, K);
-  preconditioner_->CreateMassMatrices(mfd3d_method_preconditioner_, K);
+  matrix_->CreateMassMatrices(mfd3d_method_);
+  preconditioner_->CreateMassMatrices(mfd3d_method_preconditioner_);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     int missed_tmp = missed_bc_faces_;

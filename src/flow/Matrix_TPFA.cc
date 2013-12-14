@@ -36,12 +36,18 @@ int FindPosition(const std::vector<T>& v, const T& value) {
 * Constructor.                                           
 ****************************************************************** */
 Matrix_TPFA::Matrix_TPFA(Teuchos::RCP<State> S,
+                         std::vector<WhetStone::Tensor>* K, 
                          Teuchos::RCP<RelativePermeability> rel_perm)
-    : Matrix(S, rel_perm)
+    : Matrix(S, K, rel_perm)
 {
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED); 
-  Acc_cells_.resize(ncells);
-  Fc_cells_.resize(ncells);
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+
+  Acc_cells_.resize(ncells_owned);
+  Fc_cells_.resize(ncells_owned);
 }
 
 
@@ -51,9 +57,10 @@ Matrix_TPFA::Matrix_TPFA(Teuchos::RCP<State> S,
 void Matrix_TPFA::Init() 
 {
   const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
-  Transmis_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
-  Grav_term_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
-  ComputeTransmissibilities(*Transmis_faces, *Grav_term_faces);
+  transmissibility_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
+  gravity_term_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
+
+  ComputeTransmissibilities_();
 }
 
 
@@ -96,27 +103,28 @@ void Matrix_TPFA::SymbolicAssemble()
 /* ******************************************************************
 * Add gravity fluxes to RHS of TPFA approximation                                            
 ****************************************************************** */
-void Matrix_TPFA::AddGravityFluxes(const Epetra_Vector& Krel_faces, 
-                                   const Epetra_Vector& Grav_term)
+void Matrix_TPFA::AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity, 
+                                           std::vector<int>& bc_model)
 {
-  /* TODO
+  Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell");
+  Epetra_MultiVector& Krel_faces = *rel_perm_->Krel().ViewComponent("face", true);
+
   AmanziMesh::Entity_ID_List cells;
   std::vector<int> dirs;
-  Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell");
-
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   for (int f = 0; f < nfaces_wghost; f++) {
     if (bc_model[f] == FLOW_BC_FACE_FLUX) continue;
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
-    for (int i = 0; i < ncells; i++){
+
+    int sign(1);
+    for (int i = 0; i < ncells; i++) {
       int c = cells[i];
       if (c >= ncells_owned) continue;
-      rhs_cells[0][c] -= pow(-1.0, i)*Grav_term[f]*Krel_faces[f];  
+      rhs_cells[0][c] -= sign * (*gravity_term_)[f] * Krel_faces[0][f];  
+      sign = -sign;
     }
   }
-  */
 }
 
 
@@ -125,18 +133,18 @@ void Matrix_TPFA::AddGravityFluxes(const Epetra_Vector& Krel_faces,
 ****************************************************************** */
 void Matrix_TPFA::Assemble()
 {
+  Epetra_MultiVector& Krel_faces = *rel_perm_->Krel().ViewComponent("face", true);
+
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   AmanziMesh::Entity_ID_List cells;
 
-  Spp_->PutScalar(0.0);
-
   int cells_LID[2], cells_GID[2];
   Teuchos::SerialDenseMatrix<int, double> Spp_local(2, 2);
+
+  Spp_->PutScalar(0.0);
 
   for (int f = 0; f < nfaces_owned; f++){
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -149,7 +157,7 @@ void Matrix_TPFA::Assemble()
     double tij;
     for (int i=0; i < mcells; i++){
       for (int j=0; j < mcells; j++){
-	tij = (*trans_on_faces_)[f] * (*Krel_faces_)[f];
+	tij = (*transmissibility_)[f] * Krel_faces[0][f];
 	if (i==j) Spp_local(i,j) = tij;
 	else Spp_local(i,j) = -tij;
       }
@@ -181,8 +189,6 @@ void Matrix_TPFA::AnalyticJacobian(
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   AmanziMesh::Entity_ID_List cells;
@@ -257,7 +263,7 @@ void Matrix_TPFA::ComputeJacobianLocal(int mcells,
   if (mcells == 2) {
     dpres = pres[0] - pres[1];  // + grn;
     if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
-      double cos_angle = (*grav_on_faces_)[face_id]/(rho_w*mesh_->face_area(face_id));
+      double cos_angle = (*gravity_term_)[face_id] / (rho_w * mesh_->face_area(face_id));
       if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dk_dp_cell[0];
         dKrel_dp[1] = 0.0;
@@ -269,23 +275,23 @@ void Matrix_TPFA::ComputeJacobianLocal(int mcells,
         dKrel_dp[1] = 0.5*dk_dp_cell[1];
       }
     } else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-      if ((*trans_on_faces_)[face_id]*dpres + (*grav_on_faces_)[face_id] > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+      if ((*transmissibility_)[face_id] * dpres + (*gravity_term_)[face_id] > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dk_dp_cell[0];
         dKrel_dp[1] = 0.0;
-    } else if ((*trans_on_faces_)[face_id]*dpres + (*grav_on_faces_)[face_id] < -FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+      } else if ((*transmissibility_)[face_id] * dpres + (*gravity_term_)[face_id] < -FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = 0.0;
         dKrel_dp[1] = dk_dp_cell[1];
-    } else if (fabs((*trans_on_faces_)[face_id]*dpres + (*grav_on_faces_)[face_id]) < FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+      } else if (fabs((*transmissibility_)[face_id] * dpres + (*gravity_term_)[face_id]) < FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = 0.5*dk_dp_cell[0];
         dKrel_dp[1] = 0.5*dk_dp_cell[1];
+      }
+    } else if (Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
+      dKrel_dp[0] = 0.5*dk_dp_cell[0];
+      dKrel_dp[1] = 0.5*dk_dp_cell[1];
     }
-  } else if (Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
-    dKrel_dp[0] = 0.5*dk_dp_cell[0];
-    dKrel_dp[1] = 0.5*dk_dp_cell[1];
-  }
 
-    Jpp(0, 0) = ((*trans_on_faces_)[face_id]*dpres + (*grav_on_faces_)[face_id])*dKrel_dp[0];
-    Jpp(0, 1) = ((*trans_on_faces_)[face_id]*dpres + (*grav_on_faces_)[face_id])*dKrel_dp[1];
+    Jpp(0, 0) = ((*transmissibility_)[face_id] * dpres + (*gravity_term_)[face_id]) * dKrel_dp[0];
+    Jpp(0, 1) = ((*transmissibility_)[face_id] * dpres + (*gravity_term_)[face_id]) * dKrel_dp[1];
     Jpp(1, 0) = -Jpp(0, 0);
     Jpp(1, 1) = -Jpp(0, 1);
 
@@ -294,7 +300,7 @@ void Matrix_TPFA::ComputeJacobianLocal(int mcells,
       pres[1] = bc_values[face_id][0];
 
       dpres = pres[0] - pres[1];  // + grn;
-      Jpp(0,0) = ((*trans_on_faces_)[face_id]*dpres + (*grav_on_faces_)[face_id]) * dk_dp_cell[0];
+      Jpp(0,0) = ((*transmissibility_)[face_id] * dpres + (*gravity_term_)[face_id]) * dk_dp_cell[0];
     } else {
       Jpp(0,0) = 0.0;
     }
@@ -305,9 +311,9 @@ void Matrix_TPFA::ComputeJacobianLocal(int mcells,
 /* ******************************************************************
 * Compute transmissibilities on faces 
 ****************************************************************** */
-void Matrix_TPFA::ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_Vector& grav_faces)
+void Matrix_TPFA::ComputeTransmissibilities_()
 {
-  Trans_faces.PutScalar(0.0);
+  transmissibility_->PutScalar(0.0);
 
   double rho_ = *S_->GetScalarData("fluid_density");
   double mu_ = *S_->GetScalarData("fluid_viscosity");
@@ -324,7 +330,6 @@ void Matrix_TPFA::ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_V
   double trans_f;
 
   std::vector<int> dirs;
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -343,9 +348,9 @@ void Matrix_TPFA::ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_V
 
     for (int i=0; i<ncells; i++) {
       h[i] = norm(face_centr - mesh_->cell_centroid(cells[i]));
-      perm[i] = (rho_/mu_) * ((K[cells[i]] * normal) * normal) / area;
+      perm[i] = (rho_/mu_) * (((*K_)[cells[i]] * normal) * normal) / area;
 
-      perm_test[i] = (rho_/mu_) * ((K[cells[i]] * normal) * a_dist);
+      perm_test[i] = (rho_/mu_) * (((*K_)[cells[i]] * normal) * a_dist);
       h_test[i] = pow(-1.0, i)*((face_centr - mesh_->cell_centroid(cells[i]))*normal) / area;
     }
 
@@ -367,8 +372,8 @@ void Matrix_TPFA::ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_V
 
     trans_f = 1.0 / trans_f;
 
-    Trans_faces[f] = trans_f;
-    grav_faces[f] = Trans_faces[f] * grav;
+    (*transmissibility_)[f] = trans_f;
+    (*gravity_term_)[f] = (*transmissibility_)[f] * grav;
   }
 
   /* TODO 
@@ -428,7 +433,9 @@ int Matrix_TPFA::ApplyInverse(const CompositeVector& X, CompositeVector& Y) cons
 * 
 ****************************************************************** */
 void Matrix_TPFA::ApplyBoundaryConditions(std::vector<int>& bc_model, 
-                                          std::vector<bc_tuple>& bc_values){
+                                          std::vector<bc_tuple>& bc_values)
+{
+  Epetra_MultiVector& Krel_faces = *rel_perm_->Krel().ViewComponent("face", true);
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   AmanziMesh::Entity_ID_List faces;
@@ -446,11 +453,11 @@ void Matrix_TPFA::ApplyBoundaryConditions(std::vector<int>& bc_model,
       double value = bc_values[f][0];
 
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
-	rhs_cells[0][c] += value * (*trans_on_faces_)[f] * (*Krel_faces_)[f];
+	rhs_cells[0][c] += value * (*transmissibility_)[f] * Krel_faces[0][f];
       } else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
         rhs_cells[0][c] -= value * mesh_->face_area(f);
-	(*trans_on_faces_)[f] = 0.0;
-	(*grav_on_faces_)[f] = 0.0;
+	(*transmissibility_)[f] = 0.0;
+	(*gravity_term_)[f] = 0.0;
       } else if (bc_model[f] == FLOW_BC_FACE_MIXED) {
 	Errors::Message msg;
 	msg << "Mixed boundary conditions are not supported in TPFA mode\n";
@@ -466,8 +473,7 @@ void Matrix_TPFA::ApplyBoundaryConditions(std::vector<int>& bc_model,
 ****************************************************************** */
 double Matrix_TPFA::ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r)
 {
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  Epetra_MultiVector& Krel_faces = *rel_perm_->Krel().ViewComponent("face", true);
 
   AmanziMesh::Entity_ID_List faces;
   AmanziMesh::Entity_ID_List cells;
@@ -487,12 +493,12 @@ double Matrix_TPFA::ComputeNegativeResidual(const CompositeVector& u, CompositeV
       for (int i = 0; i < ncells; i++) {
 	int c = cells[i];
 	if (c >= ncells_owned) continue;
-	rc[0][c] += sign*(*Krel_faces_)[f]*(*trans_on_faces_)[f]*(uc[0][cells[0]] - uc[0][cells[1]]);  
+	rc[0][c] += sign * Krel_faces[0][f] * (*transmissibility_)[f] * (uc[0][cells[0]] - uc[0][cells[1]]);  
         sign = -sign;
       }
     } else if (ncells == 1) {
       int c = cells[0];
-      rc[0][c] += (*Krel_faces_)[f] * (*trans_on_faces_)[f] * uc[0][c];
+      rc[0][c] += Krel_faces[0][f] * (*transmissibility_)[f] * uc[0][c];
     }							
   } 
   
@@ -514,6 +520,8 @@ void Matrix_TPFA::DeriveMassFlux(
     const CompositeVector& solution, CompositeVector& darcy_mass_flux,
     std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
 {
+  Epetra_MultiVector& Krel_faces = *rel_perm_->Krel().ViewComponent("face", true);
+
   solution.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& p = *solution.ViewComponent("cell", true);
   Epetra_MultiVector& flux = *darcy_mass_flux.ViewComponent("face");
@@ -521,10 +529,6 @@ void Matrix_TPFA::DeriveMassFlux(
   AmanziMesh::Entity_ID_List faces;
   std::vector<double> dp;
   std::vector<int> dirs;
-
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   AmanziMesh::Entity_ID_List cells;
   std::vector<int> flag(nfaces_wghost, 0);
@@ -538,7 +542,7 @@ void Matrix_TPFA::DeriveMassFlux(
 
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
 	double value = bc_values[f][0];
-	flux[0][f] = dirs[n]*(*Krel_faces_)[f]*((*trans_on_faces_)[f]*(p[0][c] - value) + (*grav_on_faces_)[f]);
+	flux[0][f] = dirs[n] * Krel_faces[0][f] * ((*transmissibility_)[f] * (p[0][c] - value) + (*gravity_term_)[f]);
       } else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
 	double value = bc_values[f][0];
 	double area = mesh_->face_area(f);
@@ -554,11 +558,11 @@ void Matrix_TPFA::DeriveMassFlux(
 	  }
 
           if (c == cells[0]){
-            flux[0][f] = dirs[n]*(*trans_on_faces_)[f]*(p[0][cells[0]] - p[0][cells[1]]) + (*grav_on_faces_)[f];
+            flux[0][f] = dirs[n] * (*transmissibility_)[f] * (p[0][cells[0]] - p[0][cells[1]]) + (*gravity_term_)[f];
           } else {
-            flux[0][f] = dirs[n]*(*trans_on_faces_)[f]*(p[0][cells[1]] - p[0][cells[0]]) + (*grav_on_faces_)[f];
+            flux[0][f] = dirs[n] * (*transmissibility_)[f] * (p[0][cells[1]] - p[0][cells[0]]) + (*gravity_term_)[f];
           }	    
-          flux[0][f] *= (*Krel_faces_)[f];
+          flux[0][f] *= Krel_faces[0][f];
           flag[f] = 1;
 	}
       }

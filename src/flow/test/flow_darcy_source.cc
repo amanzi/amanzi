@@ -229,7 +229,7 @@ TEST(FLOW_DARCY_SOURCE) {
     // recalculate mass matrices
     double factor = pow(10.0, (double)(n - 50) / 100.0);
     Matrix_MFD* matrix = dynamic_cast<Matrix_MFD*>(&*DPK->matrix());
-    matrix->CreateMassMatrices_ScaledStability(AmanziFlow::FLOW_MFD3D_POLYHEDRA, factor, K);
+    matrix->CreateMassMatrices_ScaledStability(AmanziFlow::FLOW_MFD3D_POLYHEDRA, factor);
 
     // create a problem
     DPK->AssembleMatrixMFD();

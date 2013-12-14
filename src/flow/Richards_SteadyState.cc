@@ -153,7 +153,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     // create algebraic problem
     matrix_->CreateStiffnessMatricesRichards();
     matrix_->CreateRHSVectors();
-    matrix_->AddGravityFluxesRichards(rho_, gravity_, K);
+    matrix_->AddGravityFluxesRichards(rho_, gravity_, bc_model);
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->Assemble();
 

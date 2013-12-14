@@ -36,7 +36,9 @@ namespace AmanziFlow {
 class Matrix_TPFA : public Matrix<CompositeVector, CompositeVectorSpace> {
  public:
   Matrix_TPFA() {};
-  Matrix_TPFA(Teuchos::RCP<State> S, Teuchos::RCP<RelativePermeability> rel_perm);
+  Matrix_TPFA(Teuchos::RCP<State> S, 
+              std::vector<WhetStone::Tensor>* K, 
+              Teuchos::RCP<RelativePermeability> rel_perm);
   ~Matrix_TPFA() {};
 
   // main members (required members)
@@ -78,9 +80,10 @@ class Matrix_TPFA : public Matrix<CompositeVector, CompositeVectorSpace> {
                             double *dk_dp_cell,
                             Teuchos::SerialDenseMatrix<int, double>& Jpp);
 
-  void ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_Vector& grav_faces);
+  void ComputeTransmissibilities_();
          
-  void AddGravityFluxes(const Epetra_Vector& Krel_faces, const Epetra_Vector& Grav_term);
+  void AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity, 
+                                std::vector<int>& bc_model);
 
  protected:
   CompositeVectorSpace cvs_;
@@ -88,20 +91,18 @@ class Matrix_TPFA : public Matrix<CompositeVector, CompositeVectorSpace> {
   Teuchos::RCP<Epetra_Vector> Dff_;
   Teuchos::RCP<Epetra_FECrsMatrix> Spp_;  // Explicit Schur complement
 
-  Teuchos::RCP<Epetra_Vector> Krel_faces_;
-  Teuchos::RCP<Epetra_Vector> trans_on_faces_;
-  Teuchos::RCP<Epetra_Vector> grav_on_faces_;
-
   std::vector<double> Acc_cells_;
   std::vector<double> Fc_cells_;
 
-  Teuchos::RCP<Epetra_Vector> Transmis_faces;
-  Teuchos::RCP<Epetra_Vector> Grav_term_faces;
-
-  std::vector<WhetStone::Tensor> K;  // TODO
   Teuchos::RCP<FlowMatrix> preconditioner_;
 
  private:
+  int ncells_owned, ncells_wghost;
+  int nfaces_owned, nfaces_wghost;
+
+  Teuchos::RCP<Epetra_Vector> transmissibility_;
+  Teuchos::RCP<Epetra_Vector> gravity_term_;
+
   void operator=(const Matrix_TPFA& matrix);
 };
 

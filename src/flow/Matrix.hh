@@ -34,24 +34,25 @@ template<class Vector, class VectorSpace>
 class Matrix {
  public:
   Matrix() {};
-  Matrix(Teuchos::RCP<State> S, Teuchos::RCP<RelativePermeability> rel_perm)
-      : S_(S), rel_perm_(rel_perm) { mesh_ = S_->GetMesh(); }
+  Matrix(Teuchos::RCP<State> S, 
+         std::vector<WhetStone::Tensor>* K, 
+         Teuchos::RCP<RelativePermeability> rel_perm)
+      : S_(S), K_(K), rel_perm_(rel_perm) { mesh_ = S_->GetMesh(); }
   ~Matrix() {};
 
   // main methods
   virtual void Init() {};
-  virtual void CreateMassMatrices(int method, std::vector<WhetStone::Tensor>& K) {};
-  virtual void CreateStiffnessMatricesDarcy(int method, std::vector<WhetStone::Tensor>& K) {};
+  virtual void CreateMassMatrices(int method) {};
+  virtual void CreateStiffnessMatricesDarcy(int method) {};
   virtual void CreateStiffnessMatricesRichards() {};
 
   virtual void SymbolicAssemble() {};
   virtual void Assemble() {};
   virtual void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) {};
 
-  virtual void AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& gravity,
-                                     std::vector<WhetStone::Tensor>& K) {};
+  virtual void AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& gravity) {};
   virtual void AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity,
-                                        std::vector<WhetStone::Tensor>& K) {};
+                                        std::vector<int>& bc_model) {};
 
   virtual void AddTimeDerivative(
       const Epetra_MultiVector& p, const Epetra_MultiVector& phi, double rho, double dT) {};
@@ -93,6 +94,8 @@ class Matrix {
  protected:
   Teuchos::RCP<State> S_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+
+  std::vector<WhetStone::Tensor>* K_;
   Teuchos::RCP<RelativePermeability> rel_perm_;
 
   Teuchos::RCP<Vector> rhs_;

@@ -59,7 +59,7 @@ void Richards_PK::AssembleSteadyStateMatrix(FlowMatrix* matrix)
 { 
   matrix->CreateStiffnessMatricesRichards();
   matrix->CreateRHSVectors();
-  matrix->AddGravityFluxesRichards(rho_, gravity_, K);
+  matrix->AddGravityFluxesRichards(rho_, gravity_, bc_model);
   matrix->ApplyBoundaryConditions(bc_model, bc_values);
   matrix->Assemble();
   /*
@@ -119,7 +119,7 @@ void Richards_PK::AssembleMatrixMFD(const CompositeVector& u, double Tp)
   */
   matrix_->CreateStiffnessMatricesRichards();
   matrix_->CreateRHSVectors();
-  matrix_->AddGravityFluxesRichards(rho_, gravity_, K);
+  matrix_->AddGravityFluxesRichards(rho_, gravity_, bc_model);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->Assemble();
 

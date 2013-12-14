@@ -6,7 +6,7 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_MATRIX_MFD_HH_
@@ -45,25 +45,26 @@ namespace AmanziFlow {
 class Matrix_MFD : public Matrix<CompositeVector, CompositeVectorSpace> {
  public:
   Matrix_MFD() {};
-  Matrix_MFD(Teuchos::RCP<State> S, Teuchos::RCP<RelativePermeability> rel_perm);
+  Matrix_MFD(Teuchos::RCP<State> S, 
+             std::vector<WhetStone::Tensor>* K, 
+             Teuchos::RCP<RelativePermeability> rel_perm);
   ~Matrix_MFD();
 
   // main methods (required methods)
   void Init() {};
-  void CreateMassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
+  void CreateMassMatrices(int mfd3d_method);
   void CreateRHSVectors();
 
-  void CreateStiffnessMatricesDarcy(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
+  void CreateStiffnessMatricesDarcy(int mfd3d_method);
   void CreateStiffnessMatricesRichards();
 
   void SymbolicAssemble();
   void Assemble();
   void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
-  void AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& gravity,
-                             std::vector<WhetStone::Tensor>& K);
+  void AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& gravity);
   void AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity,
-                                std::vector<WhetStone::Tensor>& K);
+                                std::vector<int>& bc_model);
 
   void AddTimeDerivative(
       const Epetra_MultiVector& p, const Epetra_MultiVector& phi, double rho, double dT);
@@ -97,7 +98,7 @@ class Matrix_MFD : public Matrix<CompositeVector, CompositeVectorSpace> {
   int ReduceGlobalSystem2LambdaSystem(CompositeVector& u);
 
   // development methods
-  void CreateMassMatrices_ScaledStability(int method, double factor, std::vector<WhetStone::Tensor>& K);
+  void CreateMassMatrices_ScaledStability(int method, double factor);
   int PopulatePreconditioner(Matrix_MFD& matrix);
   void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
 
@@ -127,6 +128,9 @@ class Matrix_MFD : public Matrix<CompositeVector, CompositeVectorSpace> {
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
 
  private:
+  int ncells_owned, ncells_wghost;
+  int nfaces_owned, nfaces_wghost;
+
   using FlowMatrix::nokay_;
   void operator=(const Matrix_MFD& matrix);
 };
