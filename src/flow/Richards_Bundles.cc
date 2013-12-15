@@ -26,11 +26,8 @@ namespace AmanziFlow {
 /* ******************************************************************
 * A wrapper for updating boundary conditions.
 ****************************************************************** */
-void Richards_PK::UpdateSourceBoundaryData(double Tp, const CompositeVector& pressure)
+void Richards_PK::UpdateSourceBoundaryData(double Tp, const CompositeVector& u)
 {
-  const Epetra_MultiVector& p_cells = *pressure.ViewComponent("cell");
-  const Epetra_MultiVector& p_faces = *pressure.ViewComponent("face"); 
-
   if (src_sink != NULL) {
     if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       src_sink->ComputeDistribute(Tp, Kxy->Values()); 
@@ -47,7 +44,7 @@ void Richards_PK::UpdateSourceBoundaryData(double Tp, const CompositeVector& pre
   else
     bc_head->ComputeShift(Tp, shift_water_table_->Values());
 
-  ComputeBCs(pressure);
+  ComputeBCs(u);
 }
 
 
@@ -78,18 +75,12 @@ void Richards_PK::AssembleSteadyStateMatrix(FlowMatrix* matrix)
 ****************************************************************** */
 void Richards_PK::AssembleSteadyStatePreconditioner(FlowMatrix* preconditioner)
 { 
+  CompositeVector& u = *preconditioner->rhs();  // TODO u is dummy
+
   preconditioner->CreateStiffnessMatricesRichards();
   preconditioner->CreateRHSVectors();
   preconditioner->ApplyBoundaryConditions(bc_model, bc_values);
-  preconditioner->AssembleSchurComplement(bc_model, bc_values);
-
-  /*
-    Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-
-    preconditioner -> ApplyBoundaryConditions(bc_model, bc_values);
-    AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, preconditioner);
-    preconditioner -> AssembleGlobalMatrices();  
-  */ 
+  preconditioner->AssembleDerivatives(u, bc_model, bc_values);
 }
 
 
@@ -105,18 +96,6 @@ void Richards_PK::AssembleMatrixMFD(const CompositeVector& u, double Tp)
   rel_perm->Compute(u, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, u);
   
-  /* TODO
-  if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    Teuchos::RCP<Epetra_Vector> rhs_cells_ = matrix_->rhs_cells();
-    rhs_cells_->PutScalar(0.0);
-
-    Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-
-    matrix_->ApplyBoundaryConditions(bc_model, bc_values);
-    AddGravityFluxes_TPFA(Krel_faces, *Grav_term_faces, bc_model, &*matrix_);
-    matrix_->AssembleGlobalMatrices();
-  } else{
-  */
   matrix_->CreateStiffnessMatricesRichards();
   matrix_->CreateRHSVectors();
   matrix_->AddGravityFluxesRichards(rho_, gravity_, bc_model);
@@ -135,13 +114,6 @@ void Richards_PK::AssembleMatrixMFD(const CompositeVector& u, double Tp)
 void Richards_PK::AssemblePreconditionerMFD(const CompositeVector& u, double Tp, double dTp)
 {
   // update all coefficients, boundary data, and source/sink terms
-  /* TODO
-  if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    matrix_->DeriveMassFlux(*u_cells, flux, bc_model, bc_values);
-    for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;    
-  }
-  */
-
   const Epetra_MultiVector& u_cells = *u.ViewComponent("cell");
 
   rel_perm->Compute(u, bc_model, bc_values);
@@ -149,13 +121,6 @@ void Richards_PK::AssemblePreconditionerMFD(const CompositeVector& u, double Tp,
 
   preconditioner_->CreateStiffnessMatricesRichards();
   preconditioner_->CreateRHSVectors();
-  /* TODO
-    std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
-
-    double* Ac = Acc_cells.data();
-    int nsize = Acc_cells.size();
-    memset(Ac, 0.0, nsize*sizeof(double));
-  */
 
   if (dTp > 0.0) {
     const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
@@ -163,14 +128,7 @@ void Richards_PK::AssemblePreconditionerMFD(const CompositeVector& u, double Tp,
   }
   
   preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
-  preconditioner_->AssembleSchurComplement(bc_model, bc_values);
-  /* TODO
-    preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
-    preconditioner_->AssembleSchurComplement(bc_model, bc_values);
-
-    preconditioner_->AnalyticJacobian(*u_cells, bc_model, bc_values, *rel_perm);
-  */
-
+  preconditioner_->AssembleDerivatives(u, bc_model, bc_values);
   preconditioner_->UpdatePreconditioner();
 }
 

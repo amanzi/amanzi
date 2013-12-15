@@ -48,7 +48,9 @@ class Matrix {
 
   virtual void SymbolicAssemble() {};
   virtual void Assemble() {};
-  virtual void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) {};
+  virtual void AssembleDerivatives(const CompositeVector& u, 
+                                   std::vector<int>& bc_model,
+                                   std::vector<bc_tuple>& bc_values) {};
 
   virtual void AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& gravity) {};
   virtual void AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity,
@@ -65,6 +67,7 @@ class Matrix {
 
   virtual int Apply(const Vector& v, Vector& av) const = 0;
   virtual int ApplyInverse(const Vector& v, Vector& hv) const = 0;
+  virtual int ApplyPreconditioner(const Vector& v, Vector& hv) const {};
 
   virtual const VectorSpace& DomainMap() const = 0;
   virtual const VectorSpace& RangeMap() const = 0;
@@ -82,8 +85,8 @@ class Matrix {
   void AddActionProperty(int action) { actions_ |= action; }
   void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
 
-  double ComputeResidual(const Vector& v, Vector& r);
-  double ComputeNegativeResidual(const Vector& v, Vector& r);
+  virtual double ComputeResidual(const Vector& v, Vector& r);
+  virtual double ComputeNegativeResidual(const Vector& v, Vector& r);
 
   Teuchos::RCP<Vector> rhs() { return rhs_; }
 

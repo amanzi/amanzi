@@ -60,7 +60,10 @@ class Matrix_MFD : public Matrix<CompositeVector, CompositeVectorSpace> {
 
   void SymbolicAssemble();
   void Assemble();
-  void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
+  void AssembleDerivatives(const CompositeVector& u,
+                           std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) {
+    AssembleSchurComplement_(bc_model, bc_values);
+  }
 
   void AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& gravity);
   void AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity,
@@ -76,14 +79,16 @@ class Matrix_MFD : public Matrix<CompositeVector, CompositeVectorSpace> {
   void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
   void InitPreconditioner(const std::string& name, const Teuchos::ParameterList& plist);
-  virtual void UpdatePreconditioner() { preconditioner_->Update(Sff_); } 
+  void UpdatePreconditioner() { preconditioner_->Update(Sff_); } 
   void DestroyPreconditioner() { preconditioner_->Destroy(); }
 
   void DeriveMassFlux(const CompositeVector& solution, CompositeVector& darcy_mass_flux,
                       std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
   virtual int Apply(const CompositeVector& X, CompositeVector& Y) const;
-  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const { ApplyPreconditioner(X, Y); }
+  int ApplyPreconditioner(const CompositeVector& X, CompositeVector& Y) const;
+
   const CompositeVectorSpace& DomainMap() const {
     return cvs_;
   }
@@ -130,6 +135,8 @@ class Matrix_MFD : public Matrix<CompositeVector, CompositeVectorSpace> {
  private:
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
+
+  void AssembleSchurComplement_(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
   using FlowMatrix::nokay_;
   void operator=(const Matrix_MFD& matrix);

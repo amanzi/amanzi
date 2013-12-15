@@ -80,10 +80,9 @@ void Flow_PK::ProcessBCs()
 * WARNING: we can skip update of ghost boundary faces, b/c they 
 * should be always owned. 
 ****************************************************************** */
-void Flow_PK::ComputeBCs(const CompositeVector& pressure)
+void Flow_PK::ComputeBCs(const CompositeVector& u)
 {
-  const Epetra_MultiVector& pressure_cells = *pressure.ViewComponent("cell");
-  const Epetra_MultiVector& pressure_faces = *pressure.ViewComponent("face");
+  const Epetra_MultiVector& u_cells = *u.ViewComponent("cell");
   
   int flag_essential_bc = 0;
   bc_tuple zero = {0.0, 0.0};
@@ -113,79 +112,85 @@ void Flow_PK::ComputeBCs(const CompositeVector& pressure)
     bc_values[f][0] = bc->second * rainfall_factor[f];
   }
 
+  // Seepage face BC is implemented for p-lambda discretization only.
   int nseepage = 0;
   double area_seepage = 0.0;
-  for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
-    int f = bc->first;
 
-    if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {  // Model I.
-      if (pressure_faces[0][f] < atm_pressure_) {
-        bc_model[f] = FLOW_BC_FACE_FLUX;
-        bc_values[f][0] = bc->second * rainfall_factor[f];
-      } else {
-        int c = BoundaryFaceGetCell(f);
-        if (pressure_cells[0][c] < pressure_faces[0][f]) {
+  if (u.HasComponent("face")) {
+    const Epetra_MultiVector& u_faces = *u.ViewComponent("face");
+
+    for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
+      int f = bc->first;
+
+      if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {  // Model I.
+        if (u_faces[0][f] < atm_pressure_) {
           bc_model[f] = FLOW_BC_FACE_FLUX;
           bc_values[f][0] = bc->second * rainfall_factor[f];
         } else {
-          bc_model[f] = FLOW_BC_FACE_PRESSURE;
-          bc_values[f][0] = atm_pressure_;
-          flag_essential_bc = 1;
-          nseepage++;
-          area_seepage += mesh_->face_area(f);
+          int c = BoundaryFaceGetCell(f);
+          if (u_cells[0][c] < u_faces[0][f]) {
+            bc_model[f] = FLOW_BC_FACE_FLUX;
+            bc_values[f][0] = bc->second * rainfall_factor[f];
+          } else {
+            bc_model[f] = FLOW_BC_FACE_PRESSURE;
+            bc_values[f][0] = atm_pressure_;
+            flag_essential_bc = 1;
+            nseepage++;
+            area_seepage += mesh_->face_area(f);
+          }
         }
-      }
 
-    } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_FACT) {  // Model II.
-      double I = FLOW_BC_SEEPAGE_FACE_IMPEDANCE;
-      double influx = bc->second * rainfall_factor[f];
-      double pcreg = influx / I;
-      double pcmin = 3 * pcreg / 2;
-      double pcmax = pcreg / 2;
+      } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_FACT) {  // Model II.
+        double I = FLOW_BC_SEEPAGE_FACE_IMPEDANCE;
+        double influx = bc->second * rainfall_factor[f];
+        double pcreg = influx / I;
+        double pcmin = 3 * pcreg / 2;
+        double pcmax = pcreg / 2;
 
-      double pc = pressure_faces[0][f] - atm_pressure_;
-      if (pc < pcmin) {
-        bc_model[f] = FLOW_BC_FACE_FLUX;
-        bc_values[f][0] = influx;
-      } else if (pc >= pcmax) {
-        bc_model[f] = FLOW_BC_FACE_MIXED;
-        bc_values[f][0] = I * atm_pressure_;
-        bc_values[f][1] = -I;  // Impedance I should be positive.
-        flag_essential_bc = 1;
-        nseepage++;
-        area_seepage += mesh_->face_area(f);
-      } else {
-        bc_model[f] = FLOW_BC_FACE_FLUX;
-        double f = 2 * (pcreg - pc) / pcreg;
-        double q = (7 - 2 * f - f * f) / 8;
-        bc_values[f][0] = q * influx; 
-      }
-
-    } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_AMANZI) {  // Model III.
-      double influx = bc->second * rainfall_factor[f];
-      double pcreg = -FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
-
-      double pc = pressure_faces[0][f] - atm_pressure_;
-      if (pc < pcreg) {
-        bc_model[f] = FLOW_BC_FACE_FLUX;
-        bc_values[f][0] = influx;
-      } else if (pc >= 0.0) {
-        int c = BoundaryFaceGetCell(f);
-        if (pressure_cells[c] < pressure_faces[f]) {
+        double pc = u_faces[0][f] - atm_pressure_;
+        if (pc < pcmin) {
           bc_model[f] = FLOW_BC_FACE_FLUX;
           bc_values[f][0] = influx;
-        } else {
-          bc_model[f] = FLOW_BC_FACE_PRESSURE;
-          bc_values[f][0] = atm_pressure_;
+        } else if (pc >= pcmax) {
+          bc_model[f] = FLOW_BC_FACE_MIXED;
+          bc_values[f][0] = I * atm_pressure_;
+          bc_values[f][1] = -I;  // Impedance I should be positive.
           flag_essential_bc = 1;
           nseepage++;
           area_seepage += mesh_->face_area(f);
+        } else {
+          bc_model[f] = FLOW_BC_FACE_FLUX;
+          double f = 2 * (pcreg - pc) / pcreg;
+          double q = (7 - 2 * f - f * f) / 8;
+          bc_values[f][0] = q * influx; 
         }
-      } else {
-        bc_model[f] = FLOW_BC_FACE_FLUX;
-        double f = pc / pcreg;
-        double q = f * f * (3 - 2 * f);
-        bc_values[f][0] = q * influx;
+
+      } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_AMANZI) {  // Model III.
+        double influx = bc->second * rainfall_factor[f];
+        double pcreg = -FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
+
+        double pc = u_faces[0][f] - atm_pressure_;
+        if (pc < pcreg) {
+          bc_model[f] = FLOW_BC_FACE_FLUX;
+          bc_values[f][0] = influx;
+        } else if (pc >= 0.0) {
+          int c = BoundaryFaceGetCell(f);
+          if (u_cells[c] < u_faces[f]) {
+            bc_model[f] = FLOW_BC_FACE_FLUX;
+            bc_values[f][0] = influx;
+          } else {
+            bc_model[f] = FLOW_BC_FACE_PRESSURE;
+            bc_values[f][0] = atm_pressure_;
+            flag_essential_bc = 1;
+            nseepage++;
+            area_seepage += mesh_->face_area(f);
+          }
+        } else {
+          bc_model[f] = FLOW_BC_FACE_FLUX;
+          double f = pc / pcreg;
+          double q = f * f * (3 - 2 * f);
+          bc_values[f][0] = q * influx;
+        }
       }
     }
   }

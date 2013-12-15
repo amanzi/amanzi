@@ -206,14 +206,6 @@ void Richards_PK::InitPK()
   std::string krel_method_name = rp_list_.get<string>("relative permeability");
   rel_perm->ProcessStringRelativePermeability(krel_method_name);
 
-  // Create the solution (pressure) vector and auxiliary vector for time history.
-  solution = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("pressure"))));
-  solution->PutScalar(0.0);
-  
-  const Epetra_BlockMap& cmap_owned = mesh_->cell_map(false);
-  pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap_owned));
-  pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap_owned));
-
   // Initialize times.
   double time = S_->time();
   if (time >= 0.0) T_physics = time;
@@ -236,6 +228,7 @@ void Richards_PK::InitPK()
   rel_perm->CalculateKVectorUnit(K, gravity_);
 
   // Allocate memory for wells.
+  const Epetra_BlockMap& cmap_owned = mesh_->cell_map(false);
   if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   }
@@ -258,6 +251,13 @@ void Richards_PK::InitPK()
   is_matrix_symmetric = SetSymmetryProperty();
   matrix_->SetSymmetryProperty(is_matrix_symmetric);
   matrix_->SymbolicAssemble();
+
+  // Create the solution (pressure) vector and auxiliary vector for time history.
+  solution = Teuchos::rcp(new CompositeVector(matrix_->DomainMap()));
+  solution->PutScalar(0.0);
+  
+  pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap_owned));
+  pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
   // Initialize boundary and source data. 
   CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
@@ -418,8 +418,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     if (! bdf1_list.isSublist("VerboseObject"))
         bdf1_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
-    Teuchos::RCP<CompositeVector> cv = S_->GetFieldData("pressure", passwd_);
-    if (bdf1_dae == NULL) bdf1_dae = new BDF1_TI<CompositeVector, CompositeVectorSpace>(*this, bdf1_list, cv);
+    if (bdf1_dae == NULL) bdf1_dae = new BDF1_TI<CompositeVector, CompositeVectorSpace>(*this, bdf1_list, solution);
   }
 
   // initialize mass matrices
@@ -452,7 +451,8 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   // Initialize pressure (p and lambda components of solution and State).
   Epetra_MultiVector& pstate = *S_->GetFieldData("pressure", passwd_)->ViewComponent("cell");
   Epetra_MultiVector& p = *solution->ViewComponent("cell");
-  Epetra_MultiVector& lambda = *solution->ViewComponent("face", true);
+
+  p = pstate;
 
   if (ti_specs.initialize_with_darcy) {
     // Get a hydrostatic solution consistent with b.c.
@@ -461,12 +461,15 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     if (ti_specs.clip_saturation > 0.0) {
       double pmin = FLOW_PRESSURE_ATMOSPHERIC;
       ClipHydrostaticPressure(pmin, ti_specs.clip_saturation, p);
-      DeriveFaceValuesFromCellValues(p, lambda);
     } else if (ti_specs.clip_pressure > -5 * FLOW_PRESSURE_ATMOSPHERIC) {
       ClipHydrostaticPressure(ti_specs.clip_pressure, p);
-      DeriveFaceValuesFromCellValues(p, lambda);
     }
     pstate = p;
+  }
+
+  if (solution->HasComponent("face")) {
+    Epetra_MultiVector& lambda = *solution->ViewComponent("face", true);
+    DeriveFaceValuesFromCellValues(p, lambda);
   }
 
   // initialize saturation
@@ -585,19 +588,24 @@ int Richards_PK::Advance(double dT_MPC)
 void Richards_PK::CommitState(Teuchos::RCP<State> S)
 {
   // copy solution to State
-  *S_->GetFieldData("pressure", passwd_) = *solution;
+  CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
+  *pressure.ViewComponent("cell") = *solution->ViewComponent("cell");
+
+  if (solution->HasComponent("face")) {
+    *pressure.ViewComponent("face") = *solution->ViewComponent("face");
+  }
 
   // ws -> ws_prev
-  Epetra_MultiVector& ws = *S_->GetFieldData("water_saturation", passwd_)->ViewComponent("cell", false);
-  Epetra_MultiVector& ws_prev = *S_->GetFieldData("prev_water_saturation", passwd_)->ViewComponent("cell", false);
+  Epetra_MultiVector& ws = *S->GetFieldData("water_saturation", passwd_)->ViewComponent("cell", false);
+  Epetra_MultiVector& ws_prev = *S->GetFieldData("prev_water_saturation", passwd_)->ViewComponent("cell", false);
   ws_prev = ws;
 
   // calculate new water saturation
-  const Epetra_MultiVector& pressure = *S_->GetFieldData("pressure")->ViewComponent("cell", false);
-  DeriveSaturationFromPressure(pressure, ws);
+  const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell", false);
+  DeriveSaturationFromPressure(p, ws);
 
   // calculate Darcy flux as diffusive part + advective part.
-  CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+  CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux", passwd_);
   matrix_->CreateStiffnessMatricesRichards();
   matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
 

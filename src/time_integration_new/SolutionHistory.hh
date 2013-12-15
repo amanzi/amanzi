@@ -116,14 +116,14 @@ void SolutionHistory<Vec>::Initialize_(int mvec, const Vec& initvec) {
 template<class Vec>
 void SolutionHistory<Vec>::flush_history(double t, const Vec& x) {
   nvec_ = 0;
-  record_solution(t,x);
+  record_solution(t, x);
 }
 
 
 template<class Vec>
 void SolutionHistory<Vec>::flush_history(double t, const Vec& x, const Vec& xdot) {
   nvec_ = 0;
-  record_solution(t,x,xdot);
+  record_solution(t, x, xdot);
 }
 
 
@@ -161,10 +161,6 @@ void SolutionHistory<Vec>::record_solution(double t, const Vec& x) {
 template<class Vec>
 void SolutionHistory<Vec>::record_solution(double t, const Vec& x, const Vec& xdot)
 {
-  //ASSERT(x.Map().SameAs( xdot.Map() ) );
-  //ASSERT(x.Map().SameAs( (*d_[0]).Map() ) );
-  //ASSERT(xdot.Map().SameAs( (*d_[0]).Map() ) );
-
   record_solution(t,x);
 
   // update the number of vectors

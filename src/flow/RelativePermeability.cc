@@ -547,21 +547,26 @@ void RelativePermeability::FaceUpwindGravityInit_(const AmanziGeometry::Point& g
 void RelativePermeability::CalculateKVectorUnit(const std::vector<WhetStone::Tensor>& K,
                                                  const AmanziGeometry::Point& g)
 {
-  const Epetra_Map& cmap = mesh_->cell_map(true);
   int dim = g.dim();
-  Epetra_MultiVector Kg_copy(cmap, dim);  // temporary vector
+  CompositeVectorSpace cvs;
+
+  cvs.SetMesh(mesh_);
+  cvs.SetGhosted(true);
+  cvs.SetComponent("cell", AmanziMesh::CELL, dim);
+
+  CompositeVector Kg_cv(cvs);  // temporary vector
+  Epetra_MultiVector& Kg_data = *Kg_cv.ViewComponent("cell");
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
     AmanziGeometry::Point Kg = K[c] * g;
     double Kg_norm = norm(Kg);
  
-    for (int i = 0; i < dim; i++) Kg_copy[i][c] = Kg[i] / Kg_norm;
+    for (int i = 0; i < dim; i++) Kg_data[i][c] = Kg[i] / Kg_norm;
   }
 
 #ifdef HAVE_MPI
-  // TODO
-  // FS_->CopyMasterMultiCell2GhostMultiCell(Kg_copy);
+  Kg_cv.ScatterMasterToGhosted("cell");
 #endif
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -569,7 +574,7 @@ void RelativePermeability::CalculateKVectorUnit(const std::vector<WhetStone::Ten
 
   for (int c = 0; c < ncells_wghost; c++) {
     AmanziGeometry::Point Kg(dim); 
-    for (int i = 0; i < dim; i++) Kg[i] = Kg_copy[i][c];
+    for (int i = 0; i < dim; i++) Kg[i] = Kg_data[i][c];
     Kgravity_unit_.push_back(Kg);
   }
 

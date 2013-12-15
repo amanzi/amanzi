@@ -26,6 +26,7 @@
 
 #include "State.hh"
 #include "CompositeVector.hh"
+#include "Preconditioner.hh"
 #include "Matrix.hh"
 #include "RelativePermeability.hh"
 
@@ -45,17 +46,32 @@ class Matrix_TPFA : public Matrix<CompositeVector, CompositeVectorSpace> {
   void Init();
   void SymbolicAssemble();
   void Assemble();
+  void AssembleDerivatives(const CompositeVector& p, 
+                           std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) {
+    Assemble();
+    AnalyticJacobian_(p, bc_model, bc_values);
+  }
 
   int Apply(const CompositeVector& X, CompositeVector& Y) const;
   int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
+  int ApplyPreconditioner(const CompositeVector& X, CompositeVector& Y) const;
 
   void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values); 
 
-  void InitPreconditioner(const std::string& name, const Teuchos::ParameterList& plist) {};
-  void UpdatePreconditioner() {};
+  void AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity, 
+                                std::vector<int>& bc_model);
+
+  void AddTimeDerivative(
+      const Epetra_MultiVector& p, const Epetra_MultiVector& phi, double rho, double dT);
+
+  void InitPreconditioner(const std::string& name, const Teuchos::ParameterList& plist);
+  void UpdatePreconditioner() { preconditioner_->Update(Spp_); } 
 
   void DeriveMassFlux(const CompositeVector& solution, CompositeVector& darcy_mass_flux,
                       std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
+
+  void CreateStiffnessMatricesRichards() { Acc_cells_.assign(ncells_owned, 0.0); }
+  void CreateRHSVectors() { rhs_->PutScalar(0.0); }
 
   const CompositeVectorSpace& DomainMap() const {
     return cvs_;
@@ -67,34 +83,25 @@ class Matrix_TPFA : public Matrix<CompositeVector, CompositeVectorSpace> {
   double ComputeNegativeResidual(const CompositeVector& v, CompositeVector& r);
 
  private:
-  void AnalyticJacobian(const Epetra_Vector& solution, 
-                        std::vector<int>& bc_markers, 
-                        std::vector<bc_tuple>& bc_values);
+  void AnalyticJacobian_(const CompositeVector& solution, 
+                         std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values);
 
-  void ComputeJacobianLocal(int mcells,
-                            int face_id,
-                            int Krel_method,
-                            std::vector<int>& bc_markers,
-                            std::vector<bc_tuple>& bc_values,
-                            double *pres,
-                            double *dk_dp_cell,
-                            Teuchos::SerialDenseMatrix<int, double>& Jpp);
+  void ComputeJacobianLocal_(
+      int mcells, int face_id, int Krel_method,
+      std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values,
+      double *pres, double *dk_dp_cell,
+      Teuchos::SerialDenseMatrix<int, double>& Jpp);
 
   void ComputeTransmissibilities_();
          
-  void AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity, 
-                                std::vector<int>& bc_model);
-
  protected:
   CompositeVectorSpace cvs_;
-
-  Teuchos::RCP<Epetra_Vector> Dff_;
-  Teuchos::RCP<Epetra_FECrsMatrix> Spp_;  // Explicit Schur complement
 
   std::vector<double> Acc_cells_;
   std::vector<double> Fc_cells_;
 
-  Teuchos::RCP<FlowMatrix> preconditioner_;
+  Teuchos::RCP<Epetra_FECrsMatrix> Spp_;
+  Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
 
  private:
   int ncells_owned, ncells_wghost;

@@ -95,7 +95,6 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
   }
 
   ti_specs.num_itrs = itrs;
-  // cout << *solution->ViewComponent("cell") << endl; exit(0);
   return 0;
 }
 
@@ -164,7 +163,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     preconditioner_->CreateStiffnessMatricesRichards();
     preconditioner_->CreateRHSVectors();
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
-    preconditioner_->AssembleSchurComplement(bc_model, bc_values);
+    preconditioner_->AssembleDerivatives(*solution, bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
 
     // check convergence of non-linear residual

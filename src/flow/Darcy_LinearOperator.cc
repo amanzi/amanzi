@@ -22,12 +22,14 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Darcy_PK::AssembleMatrixMFD()
 {
+  CompositeVector& u = *matrix_->rhs();  // TODO (u is dummy)
+
   matrix_->CreateStiffnessMatricesDarcy(mfd3d_method_);
   matrix_->CreateRHSVectors();
   matrix_->AddGravityFluxesDarcy(rho_, gravity_);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->Assemble();
-  matrix_->AssembleSchurComplement(bc_model, bc_values);
+  matrix_->AssembleDerivatives(u, bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 }
 
@@ -45,7 +47,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
   matrix_->AddGravityFluxesDarcy(rho_, gravity_);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->Assemble();
-  matrix_->AssembleSchurComplement(bc_model, bc_values);
+  matrix_->AssembleDerivatives(u, bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 
   // create linear solver

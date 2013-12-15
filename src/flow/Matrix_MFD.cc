@@ -39,6 +39,9 @@ Matrix_MFD::Matrix_MFD(Teuchos::RCP<State> S,
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   actions_ = 0;
+
+  npassed_ = 0;
+  nokay_ = 0;
 }
 
 
@@ -660,7 +663,7 @@ void Matrix_MFD::Assemble()
 * Assembles four matrices: diagonal Acc_, two off-diagonal blocks
 * Acf_ and Afc_, and the Schur complement Sff_.
 ****************************************************************** */
-void Matrix_MFD::AssembleSchurComplement(
+void Matrix_MFD::AssembleSchurComplement_(
     std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
 {
   Sff_->PutScalar(0.0);
@@ -758,7 +761,7 @@ int Matrix_MFD::Apply(const CompositeVector& X, CompositeVector& Y) const
 * The OWNED cell-based and face-based d.o.f. are packed together into 
 * the X and Y Epetra vectors, with the cell-based in the first part.
 ****************************************************************** */
-int Matrix_MFD::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
+int Matrix_MFD::ApplyPreconditioner(const CompositeVector& X, CompositeVector& Y) const
 {
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
   const Epetra_MultiVector& Xf = *X.ViewComponent("face");

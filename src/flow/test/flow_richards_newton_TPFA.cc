@@ -77,7 +77,7 @@ TEST(NEWTON_RICHARD_STEADY) {
 
   /* create Richards process kernel */
   RPK->InitPK();
-  RPK->InitSteadyState(0.0, 1e+4);
+  RPK->InitSteadyState(0.0, 1.0);
 
   /* solve the problem */
   RPK->AdvanceToSteadyState(0.0, 1000.0);
@@ -95,7 +95,7 @@ TEST(NEWTON_RICHARD_STEADY) {
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {
-    // cout << (mesh->cell_centroid(c))[2] << " " << pressure[c] << endl;
+    // cout << (mesh->cell_centroid(c))[2] << " " << p[0][c] << endl;
     CHECK(p[0][c] > 4500.0 && p[0][c] < 101325.0);
   }
   

@@ -35,18 +35,6 @@ void Richards_PK::fun(double Told, double Tnew,
   const Epetra_MultiVector& uold_cells = *u_old->ViewComponent("cell");
   const Epetra_MultiVector& unew_cells = *u_new->ViewComponent("cell");
 
-  /*
-  if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-
-    matrix_->ApplyBoundaryConditions(bc_model, bc_values);
-    AddGravityFluxes_TPFA(Krel_faces, *Grav_term_faces, &*matrix_);
-    
-    Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();
-    if (src_sink != NULL) AddSourceTerms(*rhs);
-
-    matrix_->ComputeNegativeResidual(u_cells, f);  
-  */
   AssembleMatrixMFD(*u_new, Tp);
   matrix_->ComputeNegativeResidual(*u_new, *f);
 
@@ -87,7 +75,7 @@ void Richards_PK::fun(double Told, double Tnew,
 void Richards_PK::precon(Teuchos::RCP<const CompositeVector> X, 
                          Teuchos::RCP<CompositeVector> Y)
 {
-  preconditioner_->ApplyInverse(*X, *Y);
+  preconditioner_->ApplyPreconditioner(*X, *Y);
 }
 
 

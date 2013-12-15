@@ -54,10 +54,11 @@ double calculatePressureCellError(Teuchos::RCP<const Mesh> mesh,
       pexact = f1 * tan(cr * (z + 2*a) * f1 / k1);
     } else {
       pexact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
-      // cout << z << " " << pressure[c] << " exact=" <<  pressure_exact << endl;
     }
     error_L2 += std::pow(p[0][c] - pexact, 2.0) * volume;
+    cout << z << " " << p[0][c] << " exact=" <<  pexact << endl;
   }
+  exit(0);
   return sqrt(error_L2);
 }
 
