@@ -18,11 +18,9 @@ namespace Amanzi {
 
 template<class Vector,class VectorSpace>
 class BDF1_TI {
-
  public:
-  // Create the BDF Dae solver object, the nonlinear problem must
-  // be defined in a class that derives from the virtual base class
-  // FnBase.
+  // Create the BDF Dae solver object, the nonlinear problem must be
+  // defined in a class that derives from the virtual base class FnBase.
   BDF1_TI(BDFFnBase<Vector>& fn, Teuchos::ParameterList& plist,
           const Teuchos::RCP<const Vector>& initvector);
 
@@ -31,15 +29,14 @@ class BDF1_TI {
                          const Teuchos::RCP<Vector>& x,
                          const Teuchos::RCP<Vector>& xdot);
 
-  // after a successful step, this method is used to commit
-  // the new solution to the solution history
+  // After a successful step, this method commits the new
+  // solution to the solution history
   void commit_solution(const double h, const Teuchos::RCP<Vector>& u);
 
   // computes a step
   bool time_step(double dt, double& dt_next, const Teuchos::RCP<Vector>& x);
 
-  // this method will reset the memory of the time
-  // time integrator
+  // Reset the memory of the time integrator
   void reset();
 
   // returns the most recent time
@@ -49,11 +46,9 @@ class BDF1_TI {
   void Report(std::ostream&);
 
  protected:
-  // write statistics about the time step
   void WriteSteppingStatistics_();
 
  protected:
-
   int mtries_;
   Teuchos::RCP<AmanziSolvers::Solver<Vector,VectorSpace> > solver_;
   Teuchos::RCP<BDF1_State<Vector> > state_;
@@ -64,15 +59,19 @@ class BDF1_TI {
   Teuchos::RCP<VerboseObject> vo_;
 };
 
+
+/* ******************************************************************
+* Constructor
+****************************************************************** */
 template<class Vector,class VectorSpace>
-BDF1_TI<Vector,VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
-                      Teuchos::ParameterList& plist,
-                      const Teuchos::RCP<const Vector>& initvector) :
+BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
+                     Teuchos::ParameterList& plist,
+                     const Teuchos::RCP<const Vector>& initvector) :
     plist_(plist), initvector_(initvector) {
   fn_ = Teuchos::rcpFromRef(fn);
 
   // update the verbose options
-  vo_ = Teuchos::rcp(new VerboseObject("NKA", plist_));
+  vo_ = Teuchos::rcp(new VerboseObject("TI::BDF1", plist_));
 
   // Create the state.
   state_ = Teuchos::rcp(new BDF1_State<Vector>());
@@ -87,6 +86,9 @@ BDF1_TI<Vector,VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
 }
 
 
+/* ******************************************************************
+* Initialize miscaleneous parameters.
+****************************************************************** */
 template<class Vector,class VectorSpace>
 void BDF1_TI<Vector,VectorSpace>::set_initial_state(const double t,
         const Teuchos::RCP<Vector>& x,
@@ -98,6 +100,9 @@ void BDF1_TI<Vector,VectorSpace>::set_initial_state(const double t,
 }
 
 
+/* ******************************************************************
+* Record solution to the history.
+****************************************************************** */
 template<class Vector,class VectorSpace>
 void BDF1_TI<Vector,VectorSpace>::commit_solution(const double h, const Teuchos::RCP<Vector>& u) {
   double t = h + state_->uhist->most_recent_time();
@@ -115,12 +120,18 @@ void BDF1_TI<Vector,VectorSpace>::commit_solution(const double h, const Teuchos:
 }
 
 
+/* ******************************************************************
+* Returns most recent time.
+****************************************************************** */
 template<class Vector,class VectorSpace>
 double BDF1_TI<Vector,VectorSpace>::time() {
   return state_->uhist->most_recent_time();
 }
 
 
+/* ******************************************************************
+* Implementation of implicit Euler time step.
+****************************************************************** */
 template<class Vector,class VectorSpace>
 bool BDF1_TI<Vector,VectorSpace>::time_step(double dt, double& dt_next, const Teuchos::RCP<Vector>& u) {
   // initialize the output stream
@@ -131,8 +142,8 @@ bool BDF1_TI<Vector,VectorSpace>::time_step(double dt, double& dt_next, const Te
   double tnew = tlast + dt;
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    *vo_->os() << "BDF1 step " << state_->seq+1 << " T = "<< tlast
-               << " H = " << dt << std::endl;
+    *vo_->os() << "step " << state_->seq + 1 << " T = " << tlast
+               << " [sec]  dT = " << dt << std::endl;
   }
 
   // u at the start of the time step
@@ -160,7 +171,6 @@ bool BDF1_TI<Vector,VectorSpace>::time_step(double dt, double& dt_next, const Te
     }
   }
 
-
   // Set up the solver fn
   solver_fn_->SetTimes(tlast, tnew);
   solver_fn_->SetPreviousTimeSolution(u0);
@@ -171,6 +181,15 @@ bool BDF1_TI<Vector,VectorSpace>::time_step(double dt, double& dt_next, const Te
     itr = solver_->Solve(u);
   } catch (const Errors::CutTimeStep& e) {
     itr = -1;
+  }
+
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    if (itr == 0) {
+      *vo_->os() << "success: " << solver_->num_itrs() << " nonlinear itrs" 
+                 << " error=" << solver_->residual() << std::endl;
+    } else {
+      *vo_->os() << "failed with error message: " << itr << std::endl;
+    }
   }
 
   // update the next timestep size
@@ -197,7 +216,10 @@ bool BDF1_TI<Vector,VectorSpace>::time_step(double dt, double& dt_next, const Te
   return (itr < 0);
 }
 
-// write statistics about the time step
+
+/* ******************************************************************
+* Write statistics about the time step
+****************************************************************** */
 template<class Vector,class VectorSpace>
 void BDF1_TI<Vector,VectorSpace>::WriteSteppingStatistics_() {
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -226,7 +248,9 @@ void BDF1_TI<Vector,VectorSpace>::WriteSteppingStatistics_() {
 }
 
 
-// report total statistics
+/* ******************************************************************
+* Report statistics.
+****************************************************************** */
 template<class Vector,class VectorSpace>
 void BDF1_TI<Vector,VectorSpace>::Report(std::ostream& oss) {
   oss << "Report from BDF1 Time Integrator:" << std::endl;
@@ -238,6 +262,6 @@ void BDF1_TI<Vector,VectorSpace>::Report(std::ostream& oss) {
   //  solver_->Report(oss);
 }
 
-} // namespace
+}  // namespace Amanzi
 
 #endif

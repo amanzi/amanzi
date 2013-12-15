@@ -27,6 +27,8 @@ class Solver {
 
   virtual int Solve(const Teuchos::RCP<Vector>& u) = 0;
 
+  virtual double residual() = 0;
+  virtual int num_itrs() = 0;
 };
 
 }  // namespace AmanziSolvers

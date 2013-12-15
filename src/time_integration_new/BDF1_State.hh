@@ -23,7 +23,6 @@ namespace Amanzi {
 
 template<class Vec>
 struct BDF1_State {
-
   BDF1_State() {
     maxpclag = 0;
     extrapolate_guess = true;
@@ -40,9 +39,9 @@ struct BDF1_State {
   }
 
   // Parameters and control
-  int maxpclag;         // maximum iterations that the preconditioner can be lagged
-  bool extrapolate_guess;       // extrapolate forward in time or use previous
-                                // step as initial guess for nonlinear solver
+  int maxpclag;  // maximum iterations that the preconditioner can be lagged
+  bool extrapolate_guess;  // extrapolate forward in time or use previous
+                           // step as initial guess for nonlinear solver
 
   // Solution history
   Teuchos::RCP<SolutionHistory<Vec> > uhist;
@@ -65,10 +64,12 @@ struct BDF1_State {
   double hmin;          // maximum step size used on a successful step
 
   virtual void InitializeFromPlist(Teuchos::ParameterList&, const Teuchos::RCP<const Vec>&);
-
 };
 
 
+/* ******************************************************************
+* Initiazition of fundamental parameters
+****************************************************************** */
 template<class Vec>
 void BDF1_State<Vec>::InitializeFromPlist(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const Vec>& initvec) {
@@ -79,16 +80,15 @@ void BDF1_State<Vec>::InitializeFromPlist(Teuchos::ParameterList& plist,
   extrapolate_guess = plist.get<bool>("extrapolate initial guess", true);
 
   // solution history object
-  double t0 = plist.get<double>("initial time", 0.);
+  double t0 = plist.get<double>("initial time", 0.0);
   uhist = Teuchos::rcp(new SolutionHistory<Vec>(uhist_size, t0, *initvec));
 
   // timestep controller
   TimestepControllerFactory fac;
   ts_control = fac.Create(plist);
-
 }
 
+}  // namespace Amanzi
 
-}
+#endif
 
-#endif // AMANZI_BDF1STATE_HH_

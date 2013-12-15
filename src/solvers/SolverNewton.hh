@@ -39,6 +39,7 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
   virtual int Solve(const Teuchos::RCP<Vector>& u);
 
   // access
+  double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
   int pc_calls() { return pc_calls_; }
 
@@ -59,6 +60,7 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
   int fun_calls_, pc_calls_;
   int max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_, stagnation_itr_check_;
+  double residual_;
   ConvergenceMonitor monitor_;
 };
 
@@ -100,8 +102,10 @@ void SolverNewton<Vector, VectorSpace>::Init_()
   fun_calls_ = 0;
   pc_calls_ = 0;
 
+  residual_ = -1.0;
+
   // update the verbose options
-  vo_ = Teuchos::rcp(new VerboseObject("AmanziSolver::Newton", plist_));
+  vo_ = Teuchos::rcp(new VerboseObject("Solver::Newton", plist_));
 }
 
 
@@ -149,6 +153,7 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     if (monitor_ == SOLVER_MONITOR_RESIDUAL) {
       previous_error = error;
       error = fn_->ErrorNorm(u, r);
+      residual_ = error;
       r->Norm2(&l2_error);
 
       // attempt to catch non-convergence early
@@ -214,6 +219,7 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     if (monitor_ == SOLVER_MONITOR_UPDATE) {
       previous_error = error;
       error = fn_->ErrorNorm(u, du);
+      residual_ = error;
       du->Norm2(&l2_error);
 
       int ierr = Newton_ErrorControl_(error, previous_error, l2_error);

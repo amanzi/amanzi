@@ -41,6 +41,7 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   int Solve(const Teuchos::RCP<Vector>& u);
 
   // access
+  double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
   int pc_calls() { return pc_calls_; }
 
@@ -67,6 +68,7 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   int nka_lag_space_, nka_lag_iterations_;
   int max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_;
+  double residual_;  // defined by convergence criterion
   ConvergenceMonitor monitor_;
 };
 
@@ -122,8 +124,10 @@ void SolverNKA<Vector, VectorSpace>::Init_()
   pc_lag_ = 0;
   nka_lag_space_ = 0;
 
+  residual_ = -1.0;
+
   // update the verbose options
-  vo_ = Teuchos::rcp(new VerboseObject("AmanziSolver::NKA", plist_));
+  vo_ = Teuchos::rcp(new VerboseObject("Solver::NKA", plist_));
 }
 
 
@@ -153,10 +157,10 @@ int SolverNKA<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
 
   do {
     // Check for too many nonlinear iterations.
-    if (num_itrs_ > max_itrs_) {
+    if (num_itrs_ >= max_itrs_) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-        *vo_->os() << "Solve reached maximum of iteration " << num_itrs_ 
-                   << "  error=" << error << std::endl;
+        *vo_->os() << "Solve reached maximum of iterations (" << num_itrs_ 
+                   << ")  error=" << error << " terminating..." << std::endl;
       return SOLVER_MAX_ITERATIONS;
     }
 
@@ -177,6 +181,7 @@ int SolverNKA<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     if (monitor_ == SOLVER_MONITOR_RESIDUAL) {
       previous_error = error;
       error = fn_->ErrorNorm(u, r);
+      residual_ = error;
       r->Norm2(&l2_error);
 
       // We attempt to catch non-convergence early.
@@ -272,6 +277,7 @@ int SolverNKA<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     if (monitor_ == SOLVER_MONITOR_PCED_RESIDUAL) {
       previous_error = error;
       error = fn_->ErrorNorm(u, du_tmp);
+      residual_ = error;
       du_tmp->Norm2(&l2_error);
 
       int ierr = NKA_ErrorControl_(error, previous_error, l2_error);
@@ -282,6 +288,7 @@ int SolverNKA<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     if (monitor_ == SOLVER_MONITOR_UPDATE) {
       previous_error = error;
       error = fn_->ErrorNorm(u, du);
+      residual_ = error;
       du->Norm2(&l2_error);
 
       int ierr = NKA_ErrorControl_(error, previous_error, l2_error);

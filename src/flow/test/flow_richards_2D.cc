@@ -59,7 +59,7 @@ TEST(FLOW_2D_RICHARDS) {
   RCP<const Mesh> mesh = meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::hide_line_prefix = false;
 
   ParameterList state_list;
   RCP<State> S = rcp(new State(state_list));

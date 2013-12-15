@@ -1,13 +1,13 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Neil Carlson (version 1) 
-         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Authors: Neil Carlson (version 1) 
+           Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
 #include <string>
@@ -29,7 +29,7 @@ void Darcy_PK::ProcessParameterList()
   Errors::Message msg;
 
   // create verbosity object
-  vo_ = new VerboseObject("Amanzi::Darcy", dp_list_); 
+  vo_ = new VerboseObject("FlowPK::Darcy", dp_list_); 
 
   atm_pressure = dp_list_.get<double>("atmospheric pressure", 101325.0);
 

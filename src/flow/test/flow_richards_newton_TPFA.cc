@@ -63,7 +63,7 @@ TEST(NEWTON_RICHARD_STEADY) {
   Teuchos::RCP<const Mesh> mesh(factory(factory_list, gm));
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::hide_line_prefix = false;
 
   Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
   RCP<State> S = rcp(new State(state_list));
