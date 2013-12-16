@@ -56,7 +56,7 @@ DOE waste sites, universities and industry.
 Release Schedule
 ================
 
-The current version of Amanzi is 0.80.0 
+The current version of Amanzi is |version|
 
 Older Versions
 ~~~~~~~~~~~~~~
