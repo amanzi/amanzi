@@ -60,7 +60,7 @@ double WRM_fake::saturation(double pc)
 double WRM_fake::dSdPc(double pc)
 {
   if (pc < 0.0)
-    return pc;
+    return pc / (1.0 + pc * pc);
   else
     return 0.0;
 }

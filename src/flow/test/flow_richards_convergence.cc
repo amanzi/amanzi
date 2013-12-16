@@ -56,9 +56,8 @@ double calculatePressureCellError(Teuchos::RCP<const Mesh> mesh,
       pexact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
     }
     error_L2 += std::pow(p[0][c] - pexact, 2.0) * volume;
-    cout << z << " " << p[0][c] << " exact=" <<  pexact << endl;
+    // cout << z << " " << p[0][c] << " exact=" <<  pexact << endl;
   }
-  exit(0);
   return sqrt(error_L2);
 }
 
@@ -137,7 +136,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, -10.0, 1.0, 1.0, 0.0, 1, 1, n, gm);
 
     /* create and populate flow state */
-    Amanzi::VerboseObject::hide_line_prefix = true;
+    Amanzi::VerboseObject::hide_line_prefix = false;
 
     Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));

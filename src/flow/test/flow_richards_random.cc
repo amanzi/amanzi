@@ -141,7 +141,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     }
 
     /* create a simple state and populate it */
-    Amanzi::VerboseObject::hide_line_prefix = true;
+    Amanzi::VerboseObject::hide_line_prefix = false;
 
     Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
@@ -170,11 +170,11 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     flux_err = calculateDarcyFluxError(mesh, flux);
     div_err = calculateDarcyDivergenceError(mesh, flux);
 
-    int num_nonlinear_steps = -1;
-    printf("mesh=%d itrs=%d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n",
-        n, num_nonlinear_steps, pressure_err, flux_err, div_err);
+    int num_bdf1_steps = RPK->ti_specs_sss().num_itrs;
+    printf("mesh=%d bdf1_steps=%d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n",
+        n, num_bdf1_steps, pressure_err, flux_err, div_err);
 
-    CHECK(pressure_err < 1e-1 && flux_err < 2e-1 && div_err < 1e-9);
+    CHECK(pressure_err < 1e-1 && flux_err < 2e-1 && div_err < 1e-7);
 
     delete RPK;
   }

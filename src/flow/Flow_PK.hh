@@ -125,6 +125,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   const AmanziGeometry::Point& gravity() { return gravity_; }
   std::vector<WhetStone::Tensor>& get_K() { return K; }
   std::vector<bc_tuple>& get_bc_values() { return bc_values; }
+  const TI_Specs& ti_specs_sss() { return ti_specs_sss_; }
 
  public:
   int ncells_owned, ncells_wghost;

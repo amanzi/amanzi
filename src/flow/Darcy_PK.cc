@@ -522,7 +522,7 @@ void Darcy_PK::CommitState(Teuchos::RCP<State> S)
   *pdot_cells_prev = *pdot_cells;
 
   // DEBUG
-  // WriteGMVfile(FS_MPC);
+  // WriteGMVfile(S);
 }
 
 
