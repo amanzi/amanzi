@@ -668,12 +668,13 @@ Steady State Time Integrator
 ----------------------------
 
 The sublist `"steady state time integrator`" defines parameters controlling linear and 
-nonlinear solvers during steady state time integration. Here is an example:
+nonlinear solvers during steady state time integration. 
+We break this long sublist into smaller parts. 
+The first part controls preliminary steps in the time integrator.
 
 .. code-block:: xml
 
    <ParameterList name="steady state time integrator">
-     <Parameter name="time integration method" type="string" value="BDF1"/>
      <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
      <Parameter name="linear solver" type="string" value="GMRES with HypreAMG"/>
 
@@ -687,40 +688,9 @@ nonlinear solvers during steady state time integration. Here is an example:
        <Parameter name="method" type="string" value="projection"/>
        <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
      </ParameterList>
-
-     <ParameterList name="BDF1">
-       <Parameter name="max iterations" type="int" value="15"/>
-       <Parameter name="min iterations" type="int" value="10"/>
-       <Parameter name="limit iterations" type="int" value="20"/>
-       <Parameter name="nonlinear tolerance" type="double" value="1e-05"/>
-       <Parameter name="time step reduction factor" type="double" value="0.8"/>
-       <Parameter name="time step increase factor" type="double" value="1.25"/>
-       <Parameter name="max time step" type="double" value="6e+10"/>
-       <Parameter name="max preconditioner lag iterations" type="int" value="20"/>
-       <Parameter name="error abs tol" type="double" value="1.0"/>
-       <Parameter name="error rel tol" type="double" value="0.0"/>
-       <Parameter name="time step increase factor" type="double" value="1.2"/>
-       <Parameter name="max divergent iterations" type="int" value="3"/>
-       <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
-       <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-       <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
-       <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-       <Parameter name="nonlinear iteration divergence factor" type="double" value="1e+03"/>
-
-       <Parameter name="initial time step" type="double" value="1e-07"/>
-       <Parameter name="maximum time step" type="double" value="1e+10"/>
-       <Parameter name="maximum number of iterations" type="int" value="400"/>
-       <Parameter name="convergence tolerance" type="double" value="1e-12"/>
-       <Parameter name="maximal number of iterations" type="int" value="200"/>
-       <Parameter name="start time" type="double" value="0.0"/>
-       <Parameter name="end time" type="double" value="100.0"/>
-     </ParameterList>
    </ParameterList>
 
 The parameters used here are
-
-* `"time integration method`" [string] defines a time integration method.
-  The available options are `"BDF1`", `"BDF2`", `"Picard`", and `"backward Euler`".
 
 * `"error control options`" [Array(string)] lists various error control options. 
   A nonlinear solver is terminated when all listed options are passed. 
@@ -730,22 +700,6 @@ The parameters used here are
   The other two error are compared with 1. 
   The option `"pressure`" is always active during steady-state time integration.
   The option  `"saturation`" is always active during transient time integration.
-
-* `"time stepping strategy`" [string] allows one to define an adaptive time step increment 
-  through an error estimator. The only available option is `"adaptive`". It is supported
-  for the Darcy flow only. 
-  The error estimator can be controlled via two parameters in the list `"time integration method`" 
-  called `"absolute error tolerance`" and `"relative error tolerance`". The default values
-  for these parameters are 0.001. 
-
-* `"BDF1`" [list] list specified in `"time integration method`".
-  It includes the following parameters.
-
-  * `"time step increase factor`" [double] defines geometric grow rate for the
-    initial time step. If adaptive time stepping strategy is specified, this
-    parameter is ignored. Default is 1.0.
-
-  * Other parameters will be described later.
 
 * `"initialization`" [list] defines parameters for calculating initial pressure guess.
   It can be used to obtain pressure field which is consistent with the boundary conditions.
@@ -774,7 +728,107 @@ The parameters used here are
 
   * `"linear solver`" [string] refers to a solver sublist of the list `"Solvers`".
 
-* `"BFD1`" [list] the named list used to control the nonlinear solver.
+
+A specific time intergation method is invoked by parameter `"time integration method`".
+The available options are `"BDF1`" and `"Picard`".
+The time step change is controlled by parameter `"time integration method`".
+Available options are `"fixed`", `"standard`", `"smarter`", and `"adaptive`".
+The later is uder development and is based on error estimates.
+
+.. code-block:: xml
+
+   <ParameterList name="steady state time integrator">
+     <Parameter name="time integration method" type="string" value="BDF1"/>
+     <ParameterList name="BDF1">
+       <Parameter name="timestep controller type" type="string" value="standard"/>
+       <ParameterList name="timestep controller standard parameters">
+         <Parameter name="min iterations" type="int" value="5"/>
+         <Parameter name="max iterations" type="int" value="7"/>
+         <Parameter name="time step increase factor" type="double" value="1.2"/>
+         <Parameter name="time step reduction factor" type="double" value="0.5"/>
+         <Parameter name="max time step" type="double" value="1e+9"/>
+         <Parameter name="min time step" type="double" value="0.0"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+The parameters used here are
+
+* `"time step increase factor`" [double] defines geometric grow rate for the
+  initial time step. This factor is applied when nonlinear solver converged
+  in less than `"min iterations`" iterations. Default is 1.0.
+
+* `"time step reduction factor`" [double] defines abrupt time step reduction
+  when nonlinear solver failed or did not converge in  `"max iterations`" iterations.
+
+* `"max time step`" [double] is the maximum allowed time step.
+
+* `"min time step`" [double] is the minimum allowed time step.
+
+.. code-block:: xml
+
+     <ParameterList name="BDF1">
+       <Parameter name="solver type" type="string" value="nka"/>
+       <ParameterList name="nka parameters">
+         <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
+         <Parameter name="diverged tolerance" type="double" value="1+10"/>
+         <Parameter name="max du growth factor" type="double" value="1e+5"/>
+         <Parameter name="max divergent iterations" type="int" value="3"/>
+         <Parameter name="max preconditioner lag iterations" type="int" value="1"/>
+         <Parameter name="max nka vectors" type="int" value="10"/>
+         <ParameterList name="VerboseObject">
+         <Parameter name="Verbosity Level" type="string" value="high"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+
+The parameters used here are
+
+* `"solver type`" [string] defines nonlinear solver used on each time step for
+  a nonlinear algebraic system :math:`F(x) = 0`. 
+  The available options `"nka`" and `"Newton`".
+
+* `"diverged tolerance`" [double] is the maximum allowed error norm.
+
+* `"max du growth factor`" [double] limits the maximum change of the norm of
+  the increment `du` during one nonlinear iteration step. 
+
+* `"max divergent iterations`" [int] limits the number of times the error
+  can jump up during sequence of nonlinear iterations.
+
+* `"max preconditioner lag iterations`" [int] specifies frequency of 
+  preconditioner recalculation.
+
+* `"max nka vectors`" [int] is the size of the Krylov space.
+
+The remaining parameters in the time integrator sublist include 
+those needed for unit tests, and future code development:
+
+.. code-block:: xml
+
+     <ParameterList name="BDF1">
+       <Parameter name="start time" type="double" value="0.0"/>
+       <Parameter name="end time" type="double" value="100.0"/>
+
+       <Parameter name="maximum number of iterations" type="int" value="400"/>
+       <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
+       <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+       <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+       <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
+
+       <Parameter name="time stepping strategy" type="string" value='standard"/>
+       <Parameter name="error abs tol" type="double" value="1"/>
+       <Parameter name="error rel tol" type="double" value="0"/>
+     </ParameterList>
+
+The parameters used here are
+
+* `"time stepping strategy`" [string] allows one to define an adaptive time step increment 
+  through an error estimator. The only available option is `"adaptive`". It is supported
+  for the Darcy flow only. 
+  The error estimator can be controlled via two parameters in the list `"time integration method`" 
+  called `"absolute error tolerance`" and `"relative error tolerance`". The default values
+  for these parameters are 0.001. 
 
 
 Transient Time Integrator
@@ -782,8 +836,11 @@ Transient Time Integrator
 
 The sublist `"transient time integrator`" defines parameters controlling linear and 
 nonlinear solvers during transient time integration. Its parameters are similar to 
-that in the sublist `"steady state time integrator`" except for parameters controlling
-pressure re-initialization. Here is an example:
+that in the sublist `"steady state time integrator`".
+Here is a short example:
+Note that the transient time integrator can be restarted multiple times, 
+prefereably every time a simulation goes through a stress test (e.g. cribs are turning
+on and off abruptly).
 
 .. code-block:: xml
 
@@ -792,11 +849,6 @@ pressure re-initialization. Here is an example:
      <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
      <Parameter name="linear solver" type="string" value="GMRES with HypreAMG"/>
      <Parameter name="time stepping strategy" type="string" value="adaptive"/>
-
-     <ParameterList name="initialization">
-       <Parameter name="method" type="string" value="projection"/>
-       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
-     </ParameterList>
 
      <ParameterList name="pressure-lambda constraints">
        <Parameter name="method" type="string" value="projection"/>
@@ -1207,8 +1259,8 @@ The verbose object is discussed below.
 * `"size of Krylov space`" [int] is used in GMRES iterative method. The default value is 10.
 
 
-Nonlinear Solvers
-=================
+Nonlinear Solvers (obsolete)
+============================
 This list contains the name of a nonlinear solver. Curently, there are
 two available options: nka and newton. Using of the Newton method
 assumes that two-point flux discretization will be implemented.
@@ -1218,6 +1270,7 @@ assumes that two-point flux discretization will be implemented.
   <ParameterList name="Nonlinear solvers">
     <Parameter name="solver" type="string" value="newton"/>
   </ParameterList>
+
 
 Preconditioners
 ===============
