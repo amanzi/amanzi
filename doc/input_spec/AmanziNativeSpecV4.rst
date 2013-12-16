@@ -419,7 +419,7 @@ Flow
 ====
 
 Flow sublist includes exactly one sublist, either `"Darcy Problem`" or `"Richards Problem`".
-Structure of both sublists is quite similar. We make necessary comments on differences.
+Structure of both sublists is quite similar. We make necessary comments on their differences.
 
 Water retention models
 -----------------------
@@ -427,15 +427,18 @@ Water retention models
 User defines water retention models in sublist `"Water retention models`". 
 It contains as many sublists, 
 e.g. `"Soil 1`", `"Soil 2`", etc, as there are different soils. 
-These models are associated with non-overlapping regions. Each of the sublists `"Model N`" 
-includes a few mandatory parameters: a region name, model name, and parameters for the selected model.
+This list is required for `"Richards Problem`" sublist only.
+ 
+The water retention models are associated with non-overlapping regions. Each of the sublists (e.g. `"Soil 1`") 
+includes a few mandatory parameters: region name, model name, and parameters for the selected model.
 The available models are `"van Genuchten`", `"Brooks Corey`", and `"fake`". 
-The later is used to set up an analytic solution for convergence study. 
+The later is used only to set up a simple analytic solution for convergence study. 
 The available models for the relative permeability are `"Mualem`" (default) and `"Burdine`".
-An example of the van Genuchten model specification is:
+An example with two soils having different water retention models is:
 
 .. code-block:: xml
 
+  <ParameterList name="Water retention models">
     <ParameterList name="Soil 1">
        <Parameter name="region" type="string" value="Top Half"/>
        <Parameter name="water retention model" type="string" value="van Genuchten"/>
@@ -456,16 +459,20 @@ An example of the van Genuchten model specification is:
        <Parameter name="regularization interval" type="double" value="0.0"/>
        <Parameter name="relative permeability model" type="string" value="Burdine"/>
     </ParameterList>
+  </ParameterList>
 
 
 Amanzi performs rudimentary checks of validity of the provided parameters. 
 The relative permeability curves can be calculated and saved in the file krel_pc.txt
-and krel_sat.txt using the following optional commands (that go to `"Water Retention Models`" list):
+and krel_sat.txt using the following optional commands (that go to `"Water retention models`" list):
 
 .. code-block:: xml
 
+  <ParameterList name="Water retention models">
+    ...
     <Parameter name="plot krel-pc curves" type="Array(double)" value="{0.0, 0.1, 3000.0}"/>
     <Parameter name="plot krel-sat curves" type="Array(double)" value="{0.0001, 0.01, 1.0}"/>
+  </ParameterList>
 
 The triple of doubles means the starting capillary pressure (resp., saturation), the period, and 
 the final capillary pressure (resp., saturation).
@@ -1006,6 +1013,155 @@ The `"Transport`" parameters useful for developers are:
    
 * `"internal tests tolerance`" [double] tolerance for internal tests such as the 
   divergence-free condition. The default value is 1e-6.
+
+
+Functions
+=========
+
+To set up non-trivial boundary conditions and/or initial fields, `Amanzi`
+supports a few mathematical functions. 
+New function types can added easily.
+Each function is defined a list:
+
+.. code-block:: xml
+
+  <ParameterList name="NAME">
+    function-specification
+  </ParameterList>
+
+The parameter list name string `"NAME`" is arbitrary and meaningful only to the
+parent parameter list.
+This list is given as input to the Amanzi::FunctionFactory::Create
+method which instantiates a new Amanzi::Function object.
+The function-specification is one of the following parameter lists.
+
+
+Constant function
+-----------------
+Constant function is defined as `f(x) = a`, for all `x`. 
+The specification of this function needs only one parameter.
+For example, when `a = 1`, we have:
+
+.. code-block:: xml
+
+  <ParameterList name="function-constant">
+    <Parameter name="value" type="double" value="1.0"/>
+  </ParameterList>
+  
+
+Tabular function
+----------------
+Given values :math:`x_i, y_i, i=0, ... n-1`, a tabular function :math:`f(x)` is 
+defined piecewise: 
+
+.. math::
+  \begin{array}{rcl}
+  f(x) &=& x_0, \quad x \le x_0,\\
+  f(x) &=& f(x_{i-1}) + (x - x_{i-1}) \frac{f(x_i) - f(x_{i-1})}{x_i - x_{i-1}},
+  \quad x \in (x_{i-1}, x_i],\\
+  f(x) &=& x_{n-1}, \quad x > x_{n-1}.
+  \end{array}
+
+This function is continuous and linear between two consecutive points.
+This behavior can be changed using parameter `"forms`".
+This parameter is optional.
+If specified it must be an array of length equal to one less than the length 
+of `x values`.  
+Each value is either `"linear`" to indicate linear interpolation on that 
+interval, or `"constant`" to use the left endpoint value for that interval.
+The example defines function that is zero on interval :math:`(-\infty,\,0]`,
+linear on interval :math:`(0,\,1]`, constant (`f(x)=1`) on interval :math:`(1,\,2]`,
+and constant (`f(x)=2`) on interval :math:`(2,\,\infty]`.
+
+.. code-block:: xml
+
+  <ParameterList name="function-tabular">
+    <Parameter name="x values" type="Array(double)" value="{0.0, 1.0, 2.0}"/>
+    <Parameter name="y values" type="Array(double)" value="{0.0, 1.0, 2.0}"/>
+    <Parameter name="forms" type="Array(string)" value="{linear, constant}"/>
+  </ParameterList>
+  
+
+Smooth step function
+--------------------
+A smooth :math:`C^2` function `f(x)` on interval :math:`[x_0,\,x_1]` is 
+defined such that `f(x) = y_0` for `x < x0`, `f(x) = y_1` for `x > x_1`, 
+and monotonically increasing for :math:`x \in [x_0, x_1]`.
+Here is an example:
+
+.. code-block:: xml
+
+  <ParameterList name="function-smooth-step">
+    <Parameter name="x0" type="double" value="0.0"/>
+    <Parameter name="y0" type="double" value="0.0"/>
+    <Parameter name="x1" type="double" value="1.0"/>
+    <Parameter name="y1" type="double" value="2.0"/>
+  </ParameterList>
+
+
+Polynomial function
+-------------------
+A generic polynomial function is given by the following expression:
+
+.. math::
+  f(x) = \sum_{j=0}^n c_j (x - x_0)^{p_j}
+
+where :math:`c_j` are coefficients of monomials,
+:math:`p_j` are integer exponents, and :math:`x_0` is the reference point.
+Here i san example of a quartic polynomial:
+
+.. code-block:: xml
+
+  <ParameterList name="function-polynomial">
+    <Parameter name="coefficients" type="Array(double)" value="{1.0, 1.0}"/>
+    <Parameter name="exponents" type="Array(int)" value="{2, 4}"/>
+    <Parameter name="reference point" type="double" value="0.0"/>
+  </ParameterList>
+  
+
+Multi-variable linear function
+------------------------------
+A multi-variable linear function is formally defined by
+ 
+.. math::
+  f(x) = y_0 + \sum_{j=0}^{n-1} g_j (x_j - x_{0,j}) 
+
+with the constant term "math:`y_0` and gradient :math:`g_0,\, g_1\,\dots, g_{n-1}`.
+If the reference point :math:`x_0` is specified, it must have the same
+number of values as the gradient.  Otherwise, it defaults to zero.
+Note that one of the parameters in a multi-valued linear function can be time.
+Here is an example:
+
+.. code-block:: xml
+
+  <ParameterList name="function-linear">
+    <Parameter name="y0" type="double" value="1.0"/>
+    <Parameter name="gradient" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
+    <Parameter name="x0" type="Array(double)" value="{2.0, 3.0, 1.0}"/>
+  </ParameterList>
+  
+
+Separable function
+------------------
+A separable function is defined as the product of other functions such as
+
+.. math::
+  f(x_0, x_1,\dots,x_{n-1}) = f_1(x_0)\, f_2(x_1,\dots,x_{n-1})
+
+where :math:`f_1` is defined by the `"function1`" sublist, and 
+:math:`f_2` by the `"function2`" sublist:
+
+.. code-block:: xml
+
+  <ParameterList name="function-separable">
+    <ParameterList name="function1">
+      function-specification
+    </ParameterList>
+    <ParameterList name="function2">
+      function-specification
+    </ParameterList>
+  </ParameterList>
+
 
 
 Linear Solvers
