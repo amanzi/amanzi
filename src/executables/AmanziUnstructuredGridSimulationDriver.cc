@@ -80,7 +80,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   
   if (! native && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) { 
     std::string xmlFileName = new_list.get<std::string>("input file name");
-    std::string new_extension("_native_v3.xml");
+    std::string new_extension("_native_v4.xml");
     size_t pos = xmlFileName.find(".xml");
     xmlFileName.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
     if (comm->MyPID() == 0) {
