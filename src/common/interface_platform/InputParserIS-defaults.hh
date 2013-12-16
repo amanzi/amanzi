@@ -28,6 +28,7 @@
 #define ST_TS_RED_FACTOR                0.8
 #define ST_TS_INC_FACTOR                1.2
 #define ST_MAX_TS                       1.0e+10
+#define ST_MIN_TS                       1.0e-20
 #define ST_MAX_PREC_LAG                 5
 #define ST_ERROR_REL_TOL                0.0
 #define ST_ERROR_ABS_TOL                1.0
@@ -37,10 +38,17 @@
 #define ST_NONLIN_INIT_TS_FACTOR_DAMP   1.0
 #define ST_PRECOND                      "Hypre AMG"
 #define ST_SOLVER                       "AztecOO"
+#define ST_INIT_SOLVER                  "AztecOO"
+#define ST_PLAMB_SOLVER                 "AztecOO"
 #define ST_INIT_DARCY_BOOL              true
 #define ST_DIVERG_FACT                  1000.0
 #define ST_SP_DT_INCR_FACTOR            1.0    // this is the dt increase factor for single phase
- 
+#define ST_CLIP_SAT                     0.6
+#define ST_NKA_DIVGD_TOL                1.0e10
+#define ST_NKA_NUMVEC                   3
+#define ST_TS_STRATEGY                  "standard"
+#define ST_TS_CONTROLLER                "standard"
+
 
 #define TR_MAX_ITER                     15
 #define TR_MIN_ITER                     10
@@ -50,6 +58,7 @@
 #define TR_TS_RED_FACTOR                0.8
 #define TR_TS_INC_FACTOR                1.2
 #define TR_MAX_TS                       1.0e+8
+#define TR_MIN_TS                       1.0e-20
 #define TR_MAX_PREC_LAG                 5
 #define TR_ERROR_REL_TOL                0.0
 #define TR_ERROR_ABS_TOL                1.0
@@ -59,8 +68,17 @@
 #define TR_NONLIN_INIT_TS_FACTOR_DAMP   1.0
 #define TR_PRECOND                      "Hypre AMG" 
 #define TR_SOLVER                       "AztecOO"
+#define TR_INIT_SOLVER                  "AztecOO"
+#define TR_PLAMB_SOLVER                 "AztecOO"
 #define TR_DIVERG_FACT                  1000.0
 #define TR_SP_DT_INCR_FACTOR            1.0    // this is the dt increase factor for single phase
+#define TR_CLIP_SAT                     0.6
+#define TR_NKA_DIVGD_TOL                1.0e10
+#define TR_NKA_NUMVEC                   3
+#define TR_TS_STRATEGY                  "standard"
+#define TR_TS_CONTROLLER                "standard"
+
+
  
 #define PIC_INIT_DARCY                  true
 #define PIC_CLIP_SAT                    0.9

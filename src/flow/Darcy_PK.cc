@@ -126,7 +126,14 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
     S_->RequireField("specific_yield", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
-
+  if (!S_->HasField("water_saturation")) {
+    S_->RequireField("water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("prev_water_saturation")) {
+    S_->RequireField("prev_water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
   if (!S_->HasField("darcy_flux")) {
     S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
