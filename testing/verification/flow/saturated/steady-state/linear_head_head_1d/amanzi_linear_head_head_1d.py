@@ -95,6 +95,8 @@ def MakeTable(Obs_data,Obs_xml,filename):
     x = prettytable.PrettyTable(["x [m]", "z [m]", "Analytic [Pa]","Amanzi [Pa]"])
     x.padding_width = 2
     x.hrules = 1
+    x.horizontal_header_char="="
+
     for coords, p_analytic, p_amanzi in zip(coordinates,pressure_analytic,pressure_amanzi):
         x.add_row([coords[0],coords[1],"%.4f" % float(p_analytic),"%.4f" % float(p_amanzi)])
         

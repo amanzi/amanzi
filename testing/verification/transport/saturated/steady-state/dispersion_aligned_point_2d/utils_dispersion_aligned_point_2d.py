@@ -271,7 +271,7 @@ def PlotAnalyticSoln(solution, analytic, slice, axes1):
 
 def AmanziResults(input_filename,subtests,obs_slices,overwrite=False):
     
-    import run_amanzi
+    import run_amanzi_dispersion
 
     #
     # Create emtpy dictionaries
@@ -284,7 +284,7 @@ def AmanziResults(input_filename,subtests,obs_slices,overwrite=False):
 
         for st in subtests:
 
-            run_amanzi.run_amanzi(input_filename, subtests[st]['directory'], subtests[st]['parameters'], subtests[st]['mesh_file'],overwrite)
+            run_amanzi_dispersion.run_amanzi(input_filename, subtests[st]['directory'], subtests[st]['parameters'], subtests[st]['mesh_file'],overwrite)
             obs_xml[st]=loadInputXML(input_filename)
             obs_data[st]=loadDataFile(obs_xml[st],subtests[st]['directory'])
 

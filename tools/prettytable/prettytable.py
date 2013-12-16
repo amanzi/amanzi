@@ -164,7 +164,7 @@ class PrettyTable(object):
 
         self._vertical_char = kwargs["vertical_char"] or self._unicode("|")
         self._horizontal_char = kwargs["horizontal_char"] or self._unicode("-")
-        self._horizontal_header_char = ["horizontal_header_char"] or self._horizontal_char
+        self._horizontal_header_char = kwargs["horizontal_header_char"] or self._horizontal_char
         self._junction_char = kwargs["junction_char"] or self._unicode("+")
         
         if kwargs["print_empty"] in (True, False):

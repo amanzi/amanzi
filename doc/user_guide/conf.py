@@ -23,8 +23,15 @@ import sys, os, subprocess
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
 
-# Add any Sphinx extension module names here, as strings. They can be extensions
-# coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
+
+#
+#  Add path for custom extensions
+#
+sys.path.append(os.path.abspath('.'))
+
+# 
+#  Extensions 
+#
 extensions = ['sphinx.ext.todo', 
               'sphinx.ext.mathjax', 
               'sphinx.ext.ifconfig',
@@ -35,6 +42,8 @@ extensions = ['sphinx.ext.todo',
               'matplotlib.sphinxext.ipython_directive',
               'matplotlib.sphinxext.ipython_console_highlighting',
               'sphinxcontrib.tikz',
+              'extensions.hello',
+              'extensions.amanzi_xml',
               ]
 
 
