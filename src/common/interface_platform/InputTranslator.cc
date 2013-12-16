@@ -66,12 +66,9 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
 
   bool errorsOccured = false;
 
-      parser->parse(xmlfilename.c_str());
-  std::cout << "  EIB>> first errors = " << parser->getErrorCount() << " and occurred = " << errorsOccured<< std::endl;
-  std::cout << "EIB>> outside try" << std::endl;
+      //parser->parse(xmlfilename.c_str());
   try{
       parser->parse(xmlfilename.c_str());
-      std::cout << "  EIB>> found " << parser->getErrorCount() << " errors " << std::endl;
   }
   catch (const xercesc::OutOfMemoryException&)
   {
@@ -90,8 +87,6 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
       std::cerr << "                          " << e.code << std::endl;
       errorsOccured = true;
   }
-  std::cout << "  EIB>> rechecking errors = " << parser->getErrorCount() << " and occurred = " << errorsOccured<< std::endl;
-  std::cout << "EIB>> done try" << std::endl;
 
   // check that it's validating here
 
@@ -670,8 +665,8 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
   //ecsPL.sublist("simulation") = simPL;
   def_list->sublist("simulation") = simPL;
 
-  // If > 1 EC, then include default mode
-  if (numControlPeriods > 1) {
+  // If > 1 EC, then include default mode || mode wasn't set in any execution control statement
+  if (numControlPeriods > 1 || (!hasTrans && !hasSteady)) {
     if (defPL.isParameter("mode")) {
 	if (defPL.get<std::string>("mode") == "steady") hasSteady = true;
 	if (defPL.get<std::string>("mode") == "transient") hasTrans = true;
@@ -1067,6 +1062,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
       }
     }
   }
+
   /*
     for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
       if (ecsPL.sublist(it->first).isParameter("mode")) {
@@ -2398,7 +2394,6 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
       }
       if(cappressON) matlist.sublist(capname) = caplist;
       list.sublist(textContent) = matlist;
-      list.print(std::cout,true,false);
     }
 
   }
