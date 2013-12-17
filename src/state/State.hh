@@ -244,7 +244,7 @@ class State {
   // Time accessor and mutators.
   double time() const { return time_; }
   void set_time(double new_time);  // note this also evaluates state-owned functions
-  void advance_time(double dT) { set_time(time() + dT); }
+  void advance_time(double dT) { set_last_time(time()); set_time(time() + dT); }
 
   double final_time() const { return final_time_; }
   void set_final_time(double new_time) { final_time_ = new_time; }
