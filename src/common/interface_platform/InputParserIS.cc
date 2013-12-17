@@ -1468,6 +1468,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           sti_bdf1_nka.set<int>("max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS);
           sti_bdf1_nka.set<int>("max preconditioner lag iterations", ST_MAX_PREC_LAG);
           sti_bdf1_nka.set<int>("max nka vectors", ST_NKA_NUMVEC);
+	  sti_bdf1_nka.set<int>("limit iterations", ST_LIMIT_ITER);
 
           // remaining BDF1 parameters
           // sti_bdf1.set<int>("maximum number of iterations", ST_LIMIT_ITER); // this is NOT limit iters
@@ -1487,7 +1488,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
                 Teuchos::ParameterList& num_list = ncpu_list.sublist("Steady-State Implicit Time Integration");
                 sti_bdf1_std.set<int>("max iterations", num_list.get<int>("steady max iterations", ST_MAX_ITER));
                 sti_bdf1_std.set<int>("min iterations", num_list.get<int>("steady min iterations", ST_MIN_ITER));
-                // sti_bdf1.set<int>("maximum number of iterations", num_list.get<int>("steady limit iterations", ST_LIMIT_ITER));
+                sti_bdf1_nka.set<int>("limit iterations", num_list.get<int>("steady limit iterations", ST_LIMIT_ITER));
                 sti_bdf1_nka.set<double>("nonlinear tolerance",
                                      num_list.get<double>("steady nonlinear tolerance", STEADY_NONLINEAR_TOLERANCE));
                 sti_bdf1_std.set<double>("time step reduction factor",
@@ -1582,6 +1583,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           tti_bdf1_nka.set<int>("max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS);
           tti_bdf1_nka.set<int>("max preconditioner lag iterations", TR_MAX_PREC_LAG);
           tti_bdf1_nka.set<int>("max nka vectors", TR_NKA_NUMVEC);
+	  tti_bdf1_nka.set<int>("limit iterations", TR_LIMIT_ITER);
 
           // remaining parameters
           // tti_bdf1.set<int>("maximum number of iterations", TR_LIMIT_ITER); // this is not limit iters
@@ -1603,7 +1605,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 
                 tti_bdf1_std.set<int>("max iterations", num_list.get<int>("transient max iterations", TR_MAX_ITER));
                 tti_bdf1_std.set<int>("min iterations", num_list.get<int>("transient min iterations", TR_MIN_ITER));
-                // tti_bdf1.set<int>("maximum number of iterations", num_list.get<int>("transient limit iterations", TR_LIMIT_ITER));
+                tti_bdf1_nka.set<int>("limit iterations", num_list.get<int>("transient limit iterations", TR_LIMIT_ITER));
                 tti_bdf1_nka.set<double>("nonlinear tolerance",
                                      num_list.get<double>("transient nonlinear tolerance", TRANSIENT_NONLINEAR_TOLERANCE));
                 tti_bdf1_std.set<double>("time step reduction factor",
