@@ -184,7 +184,7 @@ bool BDF1_TI<Vector,VectorSpace>::time_step(double dt, double& dt_next, const Te
   }
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    if (itr == 0) {
+    if (itr >= 0) {
       *vo_->os() << "success: " << solver_->num_itrs() << " nonlinear itrs" 
                  << " error=" << solver_->residual() << std::endl;
     } else {
@@ -200,9 +200,9 @@ bool BDF1_TI<Vector,VectorSpace>::time_step(double dt, double& dt_next, const Te
     state_->pc_lag = 0;
   } else {
     if (dt_next > dt) {
-      state_->pc_lag = std::min(state_->pc_lag+1, state_->maxpclag);
+      state_->pc_lag = std::min(state_->pc_lag + 1, state_->maxpclag);
     } else if (dt_next < dt) {
-      state_->pc_lag = std::max(state_->pc_lag-1, 0);
+      state_->pc_lag = std::max(state_->pc_lag - 1, 0);
     }
   }
 
