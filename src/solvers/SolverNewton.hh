@@ -169,7 +169,8 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
       }
 
       int ierr = Newton_ErrorControl_(error, previous_error, l2_error);
-      if (ierr != SOLVER_CONTINUE) return num_itrs_;
+      if (ierr == SOLVER_CONVERGED) return num_itrs_;
+      if (ierr != SOLVER_CONTINUE) return ierr;
     }
 
     // Apply the preconditioner to the nonlinear residual.
@@ -223,7 +224,8 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
       du->Norm2(&l2_error);
 
       int ierr = Newton_ErrorControl_(error, previous_error, l2_error);
-      if (ierr != SOLVER_CONTINUE) return num_itrs_;
+      if (ierr == SOLVER_CONVERGED) return num_itrs_;
+      if (ierr != SOLVER_CONTINUE) return ierr;
     }
   } while (true);
 }

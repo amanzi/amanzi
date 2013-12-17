@@ -188,7 +188,7 @@ bool BDF1_TI<Vector,VectorSpace>::time_step(double dt, double& dt_next, const Te
       *vo_->os() << "success: " << solver_->num_itrs() << " nonlinear itrs" 
                  << " error=" << solver_->residual() << std::endl;
     } else {
-      *vo_->os() << "failed with error message: " << itr << std::endl;
+      *vo_->os() << "failed with error code: " << itr << std::endl;
     }
   }
 

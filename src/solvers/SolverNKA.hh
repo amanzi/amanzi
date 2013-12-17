@@ -197,7 +197,8 @@ int SolverNKA<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
       }
 
       int ierr = NKA_ErrorControl_(error, previous_error, l2_error);
-      if (ierr != SOLVER_CONTINUE) return num_itrs_;
+      if (ierr == SOLVER_CONVERGED) return num_itrs_;
+      if (ierr != SOLVER_CONTINUE) return ierr;
     }
 
     // Apply the preconditioner to the nonlinear residual.
@@ -281,7 +282,8 @@ int SolverNKA<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
       du_tmp->Norm2(&l2_error);
 
       int ierr = NKA_ErrorControl_(error, previous_error, l2_error);
-      if (ierr != SOLVER_CONTINUE) return num_itrs_;
+      if (ierr == SOLVER_CONVERGED) return num_itrs_;
+      if (ierr != SOLVER_CONTINUE) return ierr;
     }
 
     // Monitor the NKA'd PC'd residual.
@@ -292,7 +294,8 @@ int SolverNKA<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
       du->Norm2(&l2_error);
 
       int ierr = NKA_ErrorControl_(error, previous_error, l2_error);
-      if (ierr != SOLVER_CONTINUE) return num_itrs_;
+      if (ierr == SOLVER_CONVERGED) return num_itrs_;
+      if (ierr != SOLVER_CONTINUE) return ierr;
     }
   } while (true);
 }
