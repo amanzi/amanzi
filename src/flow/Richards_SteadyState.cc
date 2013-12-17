@@ -69,6 +69,7 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
       Epetra_Vector udot(*super_map_);
       // I do not know how to calculate du/dt in a robust way.
       // ComputeUDot(T0, *solution, udot);
+      udot.PutScalar(0.0);
       bdf1_dae->set_initial_state(T0, *solution, udot);
 
       int ierr;

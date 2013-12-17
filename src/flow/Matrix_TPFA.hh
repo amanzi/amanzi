@@ -77,8 +77,6 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
   virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-
-
  private:
   void ComputeJacobianLocal(int mcells,
                             int face_id,

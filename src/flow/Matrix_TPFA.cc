@@ -129,20 +129,18 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
       cells_LID[n] = cells[n];
       cells_GID[n] = cmap_wghost.GID(cells_LID[n]);     
     }
-    double tij;
+    double tij = (*trans_on_faces_)[f] * (*Krel_faces_)[f];
     for (int i=0; i < mcells; i++){
       for (int j=0; j < mcells; j++){
-	tij = (*trans_on_faces_)[f] * (*Krel_faces_)[f];
 	if (i==j) Spp_local(i,j) = tij;
 	else Spp_local(i,j) = -tij;
       }
     }
     //cout<<"face "<<f<<": "<<tij<<" ukvr "<<Krel_faces[f]<<endl;
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Spp_local.values());
-
   }
 
-  for (int c = 0; c <= ncells_owned; c++){
+  for (int c = 0; c < ncells_owned; c++){
     cells_GID[0] = cmap_wghost.GID(c);
     int mcells = 1;
     Spp_local(0,0) = Acc_cells_[c];
@@ -151,8 +149,6 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
   }
 
   Spp_->GlobalAssemble();
-
-    
 }
 
 
@@ -222,13 +218,10 @@ void Matrix_MFD_TPFA::AnalyticJacobian(
 
 
     ComputeJacobianLocal(mcells, f, method, bc_models, bc_values, pres, dk_dp, Jpp);
-
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp.values());
   }
 
   Spp_->GlobalAssemble();
-
-  //cout<<(*Spp_)<<endl;
 }
 
 
@@ -256,7 +249,6 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
   double dpres;
   if (mcells == 2) {
     dpres = pres[0] - pres[1];// + grn;
-		// cout<<"pres[0] "<<pres[0]<<" pres[1] "<<pres[1]<<" grv "<<grn<<endl;
     if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
       double cos_angle = (*grav_on_faces_)[face_id]/(rho_w*mesh_->face_area(face_id));
       if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
@@ -365,9 +357,6 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
   int nvectors = X.NumVectors();
 
   // Y = X;
- 
-  // cout<<"Matrix_MFD_TPFA::ApplyInverse\n";
-
   // return 0;
 
   const Epetra_Map& cmap = mesh_->cell_map(false);
@@ -486,9 +475,6 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
 
   FS_->CopyMasterCell2GhostCell(solution, sol_gh);
 
-
-  //cout<<(*rhs_cells_)<<endl;
-
   for (int f = 0; f < nfaces_wghost; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
@@ -585,12 +571,8 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
       }
     }
   }
-
   //cout<<"Darcy\n"<<darcy_mass_flux<<endl;
-
-
 }
-
 
 
 }  // namespace AmanziFlow

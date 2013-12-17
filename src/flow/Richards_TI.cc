@@ -89,7 +89,7 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
    Teuchos::ParameterList plist;
    Teuchos::ParameterList& slist = plist.sublist("gmres");
    slist.set<string>("iterative method", "gmres");
-   slist.set<double>("error tolerance", 1e-8 );
+   slist.set<double>("error tolerance", 1e-8);
    slist.set<int>("maximum number of iterations", 100);
    Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
    vlist.set("Verbosity Level", "low");

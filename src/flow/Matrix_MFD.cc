@@ -215,7 +215,6 @@ void Matrix_MFD::CreateMFDstiffnessMatrices()
 
       Bcf(n) = -rowsum;
       matsum += rowsum;
-
     }
 
     Aff_cells_.push_back(Bff);  // This the only place where memory can be allocated.

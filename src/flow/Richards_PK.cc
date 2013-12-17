@@ -133,7 +133,7 @@ void Richards_PK::InitPK()
   bc_model.resize(nfaces_wghost, 0);
   bc_submodel.resize(nfaces_wghost, 0);
 
-  rainfall_factor.resize(nfaces_owned, 1.0);
+  rainfall_factor.resize(nfaces_wghost, 1.0);
 
   // Read flow list and populate various structures. 
   ProcessParameterList();
@@ -469,8 +469,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
-
-  // rel_perm->Compute(*solution, bc_model, bc_values);
 }
 
 
