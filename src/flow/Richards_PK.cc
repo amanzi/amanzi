@@ -175,8 +175,6 @@ void Richards_PK::InitPK()
   src_sink_distribution = 0;
   experimental_solver_ = FLOW_SOLVER_NKA;
 
-  bdf1_dae = NULL;
-
   // Initilize various common data depending on mesh and state.
   Flow_PK::Init();
 
@@ -418,7 +416,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     if (! bdf1_list.isSublist("VerboseObject"))
         bdf1_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
-    if (bdf1_dae == NULL) bdf1_dae = new BDF1_TI<CompositeVector, CompositeVectorSpace>(*this, bdf1_list, solution);
+    bdf1_dae = Teuchos::rcp(new BDF1_TI<CompositeVector, CompositeVectorSpace>(*this, bdf1_list, solution));
   }
 
   // initialize mass matrices
@@ -542,13 +540,19 @@ int Richards_PK::Advance(double dT_MPC)
       block_picard = 1;  // We will wait for transient initialization.
     }
 
-    int ierr;
     update_precon(time, solution, dT);
     ti_specs->num_itrs++;
   }
 
   if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
-    bdf1_dae->time_step(dT, dTnext, solution);
+    Teuchos::RCP<CompositeVector> solution_tmp = Teuchos::rcp(new CompositeVector(*solution));
+
+    while (bdf1_dae->time_step(dT, dTnext, solution_tmp)) {
+      dT = dTnext;
+      *solution_tmp = *solution;
+    }
+
+    *solution = *solution_tmp;
     bdf1_dae->commit_solution(dT, solution);
     T_physics = bdf1_dae->time();
   }

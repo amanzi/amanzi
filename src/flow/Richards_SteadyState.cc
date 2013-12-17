@@ -70,14 +70,13 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
       udot->PutScalar(0.0);
       bdf1_dae->set_initial_state(T0, solution, udot);
 
-      int ierr;
       update_precon(T0, solution, dT0);
     }
 
-    double dTnext;
     Teuchos::RCP<CompositeVector> solution_tmp = Teuchos::rcp(new CompositeVector(*solution));
     while (bdf1_dae->time_step(dT, dTnext, solution_tmp)) {
       dT = dTnext;
+      *solution_tmp = *solution;
     }
     *solution = *solution_tmp;
     bdf1_dae->commit_solution(dT, solution);

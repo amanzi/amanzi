@@ -41,15 +41,19 @@ void Transport_PK::CreateDefaultState(
   S_->RequireField("prev_water_saturation", name)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-  S_->RequireField("darcy_flux", name)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
-  
-  std::vector<std::vector<std::string> > subfield_names(1);
-  for (int i = 0; i != ncomponents; ++i) {
-    subfield_names[0].push_back(component_names_[i]);
+  if (!S_->HasField("darcy_flux")) {
+    S_->RequireField("darcy_flux", name)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("face", AmanziMesh::FACE, 1);
   }
-  S_->RequireField("total_component_concentration", name, subfield_names)->SetMesh(mesh_)
-      ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+  
+  if (!S_->HasField("total_component_concentration")) {
+    std::vector<std::vector<std::string> > subfield_names(1);
+    for (int i = 0; i != ncomponents; ++i) {
+      subfield_names[0].push_back(component_names_[i]);
+    }
+    S_->RequireField("total_component_concentration", name, subfield_names)->SetMesh(mesh_)
+        ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+  }
 
   // initialize fields
   S_->Setup();

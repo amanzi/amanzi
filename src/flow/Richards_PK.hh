@@ -131,7 +131,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<FlowMatrix> matrix_;
   Teuchos::RCP<FlowMatrix> preconditioner_;
 
-  BDF1_TI<CompositeVector, CompositeVectorSpace>* bdf1_dae;  // Time integrators
+  Teuchos::RCP<BDF1_TI<CompositeVector, CompositeVectorSpace> > bdf1_dae;  // Time integrators
   int block_picard;
 
   int error_control_;
