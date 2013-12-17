@@ -771,6 +771,7 @@ The parameters used here are
        <Parameter name="solver type" type="string" value="nka"/>
        <ParameterList name="nka parameters">
          <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
+         <Parameter name="limit iterations" type="int" value="30"/>
          <Parameter name="diverged tolerance" type="double" value="1+10"/>
          <Parameter name="max du growth factor" type="double" value="1e+5"/>
          <Parameter name="max divergent iterations" type="int" value="3"/>
@@ -783,6 +784,10 @@ The parameters used here are
      </ParameterList>
 
 The parameters used here are
+
+* `"nonlinear tolerance`" [double] is the convergence tolerance.
+
+* `"limit iterations`" [int] is the maximum allowed number of iterations.
 
 * `"solver type`" [string] defines nonlinear solver used on each time step for
   a nonlinear algebraic system :math:`F(x) = 0`. 
