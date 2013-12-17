@@ -66,6 +66,22 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
   mass_tracer_exact = 0.0;  // Tracer is defined as species #0.
 
   name_ = "state";  //  state password
+
+  // require state variables
+  if (!S_->HasField("darcy_flux")) {
+    S_->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+  if (!S_->HasField("total_component_concentration")) {
+    std::vector<std::vector<std::string> > subfield_names(1);
+    int ncomponents = component_names_.size();
+    for (int i = 0; i != ncomponents; ++i) {
+      subfield_names[0].push_back(component_names_[i]);
+    }
+
+    S_->RequireField("total_component_concentration", name_, subfield_names)->SetMesh(mesh_)
+      ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+  }
 }
 
 
@@ -98,27 +114,6 @@ int Transport_PK::InitPK()
 
   // extract control parameters
   ProcessParameterList();
-
-  // complete state initialization (it should not be here! lipnikov@lanl.gov)
-  /*
-  if (!S_->HasField("darcy_flux")) {
-    S_->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("face", AmanziMesh::FACE, 1);
-  }
-  if (!S_->HasField("total_component_concentration")) {
-    std::vector<std::vector<std::string> > subfield_names(1);
-    int ncomponents = component_names_.size();
-    for (int i = 0; i != ncomponents; ++i) {
-      subfield_names[0].push_back(component_names_[i]);
-    }
-
-    S_->RequireField("total_component_concentration", name_, subfield_names)->SetMesh(mesh_)
-      ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
-  }
-
-  S_->Setup();
-  S_->Initialize();
-  */
 
   // state pre-prosessing
   Teuchos::RCP<CompositeVector> cv1;
