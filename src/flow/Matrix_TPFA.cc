@@ -142,7 +142,7 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
 
   }
 
-  for (int c = 0; c <= ncells_owned; c++){
+  for (int c = 0; c < ncells_owned; c++){
     cells_GID[0] = cmap_wghost.GID(c);
     int mcells = 1;
     Spp_local(0,0) = Acc_cells_[c];
