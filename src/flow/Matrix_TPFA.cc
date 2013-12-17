@@ -75,9 +75,11 @@ void Matrix_TPFA::Init()
 ****************************************************************** */
 void Matrix_TPFA::SymbolicAssemble()
 {
-  cvs_.SetMesh(mesh_);
-  cvs_.SetGhosted(false);
-  cvs_.SetComponent("cell", AmanziMesh::CELL, 1);
+  if (cvs_.size() == 0) {  // ugly solution (lipnikov@lanl.gov) 
+    cvs_.SetMesh(mesh_);
+    cvs_.SetGhosted(false);
+    cvs_.SetComponent("cell", AmanziMesh::CELL, 1);
+  }
 
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);

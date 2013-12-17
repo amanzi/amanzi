@@ -550,11 +550,13 @@ void Matrix_MFD::AddTimeDerivativeSpecificYield(
 void Matrix_MFD::SymbolicAssemble()
 {
   // create the p-lambda map associated with the matrix
-  cvs_.SetMesh(mesh_);
-  cvs_.SetGhosted(false);
-  cvs_.SetComponent("cell", AmanziMesh::CELL, 1);
-  cvs_.SetOwned(false);
-  cvs_.AddComponent("face", AmanziMesh::FACE, 1);
+  if (cvs_.size() == 0) {  // ugly solution (lipnikov@lanl.gov) 
+    cvs_.SetMesh(mesh_);
+    cvs_.SetGhosted(false);
+    cvs_.SetComponent("cell", AmanziMesh::CELL, 1);
+    cvs_.SetOwned(false);
+    cvs_.AddComponent("face", AmanziMesh::FACE, 1);
+  }
 
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
