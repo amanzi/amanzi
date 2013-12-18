@@ -121,9 +121,6 @@ int Transport_PK::InitPK()
   cv1 = S_->GetFieldData("darcy_flux", name_);
   darcy_flux = cv1->ViewComponent("face", true);
 
-  cv1 = S_->GetFieldData("total_component_concentration", name_);
-  tcc = cv1->ViewComponent("cell", false);
-
   Teuchos::RCP<const CompositeVector> cv2;
   cv2 = S_->GetFieldData("water_saturation");
   ws = cv2->ViewComponent("cell", false);
@@ -133,6 +130,8 @@ int Transport_PK::InitPK()
 
   cv2 = S_->GetFieldData("porosity");
   phi = cv2->ViewComponent("cell", false);
+
+  tcc = S_->GetFieldData("total_component_concentration", name_);
 
   // memory for new components
   tcc_tmp = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("total_component_concentration"))));
@@ -189,6 +188,8 @@ int Transport_PK::InitPK()
 * ***************************************************************** */
 double Transport_PK::CalculateTransportDt()
 {
+  IdentifyUpwindCells();
+
   // loop over faces and accumulate upwinding fluxes
   std::vector<double> total_outflux(ncells_wghost, 0.0);
 
@@ -260,11 +261,13 @@ double Transport_PK::EstimateTransportDt()
 * MPC will call this function to advance the transport state.
 * Efficient subcycling requires to calculate an intermediate state of
 * saturation only once, which leads to a leap-frog-type algorithm.
-* 
-* WARNIN: We cannot assume that dT_MPC equals to the global time step.
 ******************************************************************* */
 void Transport_PK::Advance(double dT_MPC)
-{
+{ 
+  // We use original tcc and make a copy of it later if needed.
+  tcc = S_->GetFieldData("total_component_concentration", name_);
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
+
   // calculate stable time step dT
   double dT_shift = 0.0, dT_global = dT_MPC;
   double time = S_->intermediate_time();
@@ -336,9 +339,8 @@ void Transport_PK::Advance(double dT_MPC)
       // AdvanceSecondOrderUpwindGeneric(dT_cycle);
     }
 
-    if (! final_cycle) {  // rotate concentrations
-      Teuchos::RCP<Epetra_MultiVector> tcc_next = tcc_tmp->ViewComponent("cell", false);
-      *tcc = *tcc_next;
+    if (! final_cycle) {  // rotate concentrations (we need new memory for tcc)
+      tcc = Teuchos::RCP<CompositeVector>(new CompositeVector(*tcc_tmp));
     }
 
     ncycles++;
@@ -347,8 +349,8 @@ void Transport_PK::Advance(double dT_MPC)
   dT = dT_original;  // restore the original dT (just in case)
 
   // We define tracer as the species #0 as calculate some statistics.
-  int number_components = tcc->NumVectors();
-  Teuchos::RCP<Epetra_MultiVector> tcc_next = tcc_tmp->ViewComponent("cell", false);
+  int number_components = tcc_prev.NumVectors();
+  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", false);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -358,18 +360,18 @@ void Transport_PK::Advance(double dT_MPC)
     double tccmin_vec[number_components];
     double tccmax_vec[number_components];
 
-    tcc_next->MinValue(tccmin_vec);
-    tcc_next->MaxValue(tccmax_vec);
+    tcc_next.MinValue(tccmin_vec);
+    tcc_next.MaxValue(tccmax_vec);
 
     double tccmin, tccmax;
-    tcc_next->Comm().MinAll(tccmin_vec, &tccmin, 1);  // find the global extrema
-    tcc_next->Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
+    tcc_next.Comm().MinAll(tccmin_vec, &tccmin, 1);  // find the global extrema
+    tcc_next.Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
 
     mass_tracer_exact += TracerVolumeChangePerSecond(0) * dT_MPC;
     double mass_tracer = 0.0;
     for (int c = 0; c < ncells_owned; c++) {
       double vol = mesh_->cell_volume(c);
-      mass_tracer += (*ws)[0][c] * (*phi)[0][c] * (*tcc_next)[0][c] * vol;
+      mass_tracer += (*ws)[0][c] * (*phi)[0][c] * tcc_next[0][c] * vol;
     }
 
     double mass_tracer_tmp = mass_tracer, mass_exact_tmp = mass_tracer_exact, mass_exact;
@@ -412,8 +414,8 @@ void Transport_PK::Advance(double dT_MPC)
     for (int i = 0; i < number_components; i++) {
       for (int c = 0; c < ncells_owned; c++) {
         double factor = mesh_->cell_volume(c) * (*ws)[0][c] * (*phi)[0][c] / dT_MPC;
-        rhs[c] = (*tcc_next)[i][c] * factor;
-        sol[c] = (*tcc_next)[i][c];
+        rhs[c] = tcc_next[i][c] * factor;
+        sol[c] = tcc_next[i][c];
       }
 
       solver->ApplyInverse(rhs, sol);
@@ -422,7 +424,7 @@ void Transport_PK::Advance(double dT_MPC)
       num_itrs += solver->num_itrs();
 
       for (int c = 0; c < ncells_owned; c++) {
-        (*tcc_next)[i][c] = sol[c];
+        tcc_next[i][c] = sol[c];
       }
     }
 
@@ -459,18 +461,19 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   mass_tracer_source = 0.0;
 
   // populating next state of concentrations
-  tcc_tmp->ScatterMasterToGhosted("cell");
-  Teuchos::RCP<Epetra_MultiVector> tcc_next = tcc_tmp->ViewComponent("cell", true);
+  tcc->ScatterMasterToGhosted("cell");
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
+  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
   // prepare conservative state in master and slave cells
   double vol_phi_ws, tcc_flux;
-  int ncomponents = tcc->NumVectors();
+  int ncomponents = tcc_next.NumVectors();
 
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c];
 
     for (int i = 0; i < ncomponents; i++)
-      (*tcc_next)[i][c] = (*tcc)[i][c] * vol_phi_ws;
+      tcc_next[i][c] = tcc_prev[i][c] * vol_phi_ws;
   }
 
   // advance all components at once
@@ -482,21 +485,21 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
 
     if (c1 >=0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       for (int i = 0; i < ncomponents; i++) {
-        tcc_flux = dT * u * (*tcc)[i][c1];
-        (*tcc_next)[i][c1] -= tcc_flux;
-        (*tcc_next)[i][c2] += tcc_flux;
+        tcc_flux = dT * u * tcc_prev[i][c1];
+        tcc_next[i][c1] -= tcc_flux;
+        tcc_next[i][c2] += tcc_flux;
       }
 
     } else if (c1 >=0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
       for (int i = 0; i < ncomponents; i++) {
-        tcc_flux = dT * u * (*tcc)[i][c1];
-        (*tcc_next)[i][c1] -= tcc_flux;
+        tcc_flux = dT * u * tcc_prev[i][c1];
+        tcc_next[i][c1] -= tcc_flux;
       }
 
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       for (int i = 0; i < ncomponents; i++) {
-        tcc_flux = dT * u * (*tcc_next)[i][c1];
-        (*tcc_next)[i][c2] += tcc_flux;
+        tcc_flux = dT * u * tcc_prev[i][c1];
+        tcc_next[i][c2] += tcc_flux;
       }
     }
   }
@@ -512,7 +515,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
       if (c2 >= 0) {
         double u = fabs((*darcy_flux)[0][f]);
         tcc_flux = dT * u * bc->second;
-        (*tcc_next)[i][c2] += tcc_flux;
+        tcc_next[i][c2] += tcc_flux;
       }
     }
   }
@@ -520,20 +523,20 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   // process external sources
   if (src_sink != NULL) {
     double time = T_physics;
-    ComputeAddSourceTerms(time, dT, src_sink, *tcc_next);
+    ComputeAddSourceTerms(time, dT, src_sink, tcc_next);
   }
 
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_end)[0][c];
-    for (int i = 0; i < ncomponents; i++) (*tcc_next)[i][c] /= vol_phi_ws;
+    for (int i = 0; i < ncomponents; i++) tcc_next[i][c] /= vol_phi_ws;
   }
 
   // update mass balance
   mass_tracer_exact += mass_tracer_source * dT;
 
   if (internal_tests) {
-    CheckGEDproperty(*tcc_next);
+    CheckGEDproperty(tcc_next);
   }
 }
 
@@ -555,20 +558,21 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
 
   // distribute vector of concentrations
   S_->GetFieldData("total_component_concentration")->ScatterMasterToGhosted("cell");
-  Teuchos::RCP<Epetra_MultiVector> tcc_next = tcc_tmp->ViewComponent("cell", true);
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
+  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
-  int ncomponents = tcc->NumVectors();
+  int ncomponents = tcc_next.NumVectors();
   for (int i = 0; i < ncomponents; i++) {
     current_component_ = i;  // needed by BJ 
 
     double T = T_physics;
-    Epetra_Vector*& component = (*tcc)(i);
+    Epetra_Vector*& component = tcc_prev(i);
     fun(T, *component, f_component);
 
     double ws_ratio;
     for (int c = 0; c < ncells_owned; c++) {
       ws_ratio = (*ws_start)[0][c] / (*ws_end)[0][c];
-      (*tcc_next)[i][c] = ((*tcc)[i][c] + dT * f_component[c]) * ws_ratio;
+      tcc_next[i][c] = (tcc_prev[i][c] + dT * f_component[c]) * ws_ratio;
     }
   }
 
@@ -576,7 +580,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
   mass_tracer_exact += mass_tracer_source * dT;
 
   if (internal_tests) {
-    CheckGEDproperty(*tcc_next);
+    CheckGEDproperty(tcc_next);
   }
 }
 
@@ -597,37 +601,38 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
 
   // distribute old vector of concentrations
   S_->GetFieldData("total_component_concentration")->ScatterMasterToGhosted("cell");
-  Teuchos::RCP<Epetra_MultiVector> tcc_next = tcc_tmp->ViewComponent("cell", true);
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
+  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
   Epetra_Vector ws_ratio(Copy, *ws_start, 0);
   for (int c = 0; c < ncells_owned; c++) ws_ratio[c] /= (*ws_end)[0][c];
 
   // predictor step
-  for (int i = 0; i < tcc->NumVectors(); i++) {
+  for (int i = 0; i < tcc_next.NumVectors(); i++) {
     current_component_ = i;  // needed by BJ 
 
     double T = T_physics;
-    Epetra_Vector*& component = (*tcc)(i);
+    Epetra_Vector*& component = tcc_prev(i);
     fun(T, *component, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
-      (*tcc_next)[i][c] = ((*tcc)[i][c] + dT * f_component[c]) * ws_ratio[c];
+      tcc_next[i][c] = (tcc_prev[i][c] + dT * f_component[c]) * ws_ratio[c];
     }
   }
 
   tcc_tmp->ScatterMasterToGhosted("cell");
 
   // corrector step
-  for (int i = 0; i < tcc->NumVectors(); i++) {
+  for (int i = 0; i < tcc_next.NumVectors(); i++) {
     current_component_ = i;  // needed by BJ 
 
     double T = T_physics;
-    Epetra_Vector*& component = (*tcc_next)(i);
+    Epetra_Vector*& component = tcc_next(i);
     fun(T, *component, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
-      double value = ((*tcc)[i][c] + dT * f_component[c]) * ws_ratio[c];
-      (*tcc_next)[i][c] = ((*tcc_next)[i][c] + value) / 2;
+      double value = (tcc_prev[i][c] + dT * f_component[c]) * ws_ratio[c];
+      tcc_next[i][c] = (tcc_next[i][c] + value) / 2;
     }
   }
 
@@ -635,7 +640,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
   mass_tracer_exact += mass_tracer_source * dT / 2;
 
   if (internal_tests) {
-    CheckGEDproperty(*tcc_next);
+    CheckGEDproperty(tcc_next);
   }
 }
 

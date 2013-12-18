@@ -207,9 +207,11 @@ void Transport_PK::ProcessStringAdvectionLimiter(const std::string name, int* me
 /* ************************************************************* */
 void Transport_PK::PrintStatistics() const
 {
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
+
   if (vo_->getVerbLevel() > Teuchos::VERB_NONE) {
     cout << "Transport PK: CFL = " << cfl_ << endl;
-    cout << "    Total number of components = " << tcc->NumVectors() << endl;
+    cout << "    Total number of components = " << tcc_prev.NumVectors() << endl;
     cout << "    Verbosity level = " << vo_->getVerbLevel() << endl;
     cout << "    Spatial/temporal discretication orders = " << spatial_disc_order
          << " " << temporal_disc_order << endl;
@@ -224,9 +226,11 @@ void Transport_PK::PrintStatistics() const
 **************************************************************** */
 void Transport_PK::WriteGMVfile(Teuchos::RCP<State> S) const
 {
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
+
   GMV::open_data_file(*mesh_, (std::string)"transport.gmv");
   GMV::start_data();
-  GMV::write_cell_data(*tcc, 0, "component0");
+  GMV::write_cell_data(tcc_prev, 0, "component0");
   GMV::write_cell_data(*ws, 0, "saturation");
   GMV::close_data_file();
 }

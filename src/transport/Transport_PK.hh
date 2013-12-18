@@ -176,8 +176,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<State> S_;  // state info
   std::string name_;
 
-  Teuchos::RCP<CompositeVector> tcc_tmp;  // updated tcc
-  Teuchos::RCP<Epetra_MultiVector> tcc;  // static variables
+  Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
+  Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
   Teuchos::RCP<Epetra_MultiVector> darcy_flux;
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
   

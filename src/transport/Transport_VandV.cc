@@ -159,7 +159,7 @@ void Transport_PK::CheckDivergenceProperty()
  ****************************************************************** */
 void Transport_PK::CheckInfluxBC() const
 {
-  int number_components = tcc->NumVectors();
+  int number_components = tcc->ViewComponent("cell")->NumVectors();
   std::vector<int> influx_face(nfaces_wghost);
 
   for (int i = 0; i < number_components; i++) {
@@ -167,7 +167,7 @@ void Transport_PK::CheckInfluxBC() const
 
     for (int n = 0; n < bcs.size(); n++) {
       if (i == bcs_tcc_index[n]) {
-        for (Amanzi::Functions::TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        for (Functions::TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
           int f = bc->first;
           influx_face[f] = 1;
         }
@@ -233,6 +233,8 @@ void Transport_PK::CheckTracerBounds(Epetra_MultiVector& tracer,
                                      double upper_bound,
                                      double tol) const
 {
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
+
   for (int c = 0; c < ncells_owned; c++) {
     double value = tracer[component][c];
     if (value < lower_bound - tol || value > upper_bound + tol) {
@@ -244,7 +246,7 @@ void Transport_PK::CheckTracerBounds(Epetra_MultiVector& tracer,
       cout << "      cell = " << c << endl;
       cout << "      center = " << mesh_->cell_centroid(c) << endl;
       cout << "      limiter = " << (*limiter_)[c] << endl;
-      cout << "      value (old) = " << (*tcc)[component][c] << endl;
+      cout << "      value (old) = " << tcc_prev[component][c] << endl;
       cout << "      value (new) = " << value << endl;
 
       Errors::Message msg;
