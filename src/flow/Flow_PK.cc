@@ -243,7 +243,10 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
 ****************************************************************** */
 void Flow_PK::SetAbsolutePermeabilityTensor()
 {
-  const Epetra_MultiVector& perm = *(S_->GetFieldData("permeability")->ViewComponent("cell"));
+  const CompositeVector& cv = *S_->GetFieldData("permeability");
+  cv.ScatterMasterToGhosted("cell");
+  const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
+
   if (dim == 2) {
     for (int c = 0; c < K.size(); c++) {
       if (perm[0][c] == perm[1][c]) {
