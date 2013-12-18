@@ -74,6 +74,7 @@ SurfaceBalanceSEB::SurfaceBalanceSEB(const Teuchos::RCP<Teuchos::ParameterList>&
 
   // transition snow depth
   snow_ground_trans_ = plist_->get<double>("minimum snow depth", 0.02);
+  no_snow_trans_ = plist_->get<double>("zero snow depth", 1.e-5);
 
   // albedo transition depth
   albedo_trans_ = plist_->get<double>("albedo transition depth", 0.02);
@@ -313,6 +314,10 @@ bool SurfaceBalanceSEB::advance(double dt) {
     data.st_energy.age_snow = days_of_nosnow[0][c];
 
     // Snow-ground Smoothing
+    // -- zero out if just small
+    if (data.st_energy.ht_snow < no_snow_trans_)
+      data.st_energy.ht_snow = 0.;
+
     if ((data.st_energy.ht_snow > snow_ground_trans_) ||
         (data.st_energy.ht_snow <= 0)) {
       SurfaceEnergyBalance::SnowEnergyBalance(data);
