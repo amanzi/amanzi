@@ -1004,6 +1004,10 @@ if [ -z "${tpl_config_file}" ]; then
   # Configure the TPL build
   cd ${tpl_build_dir}
   ${cmake_binary} \
+                -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
+                -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
+                -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
+                -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
                 -DCMAKE_BUILD_TYPE:STRING=${build_type} \
                 -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
                 -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
@@ -1082,10 +1086,10 @@ cd ${amanzi_build_dir}
 
 ${cmake_binary} \
               -C${tpl_config_file} \
-	      -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
-	      -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
-	      -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
-	      -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
+              -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
+              -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
+              -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
+              -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
               -DCMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
               -DENABLE_Structured:BOOL=${structured} \
               -DENABLE_Unstructured:BOOL=${unstructured} \
