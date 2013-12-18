@@ -81,7 +81,12 @@ AdvectedEnergySourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void
 AdvectedEnergySourceEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  result->PutScalar(0.);
+  if (include_conduction_ && wrt_key == conducted_source_key_) {
+    *result->ViewComponent("cell",false) = *S->GetFieldData(cell_vol_key_)
+        ->ViewComponent("cell",false);
+  } else {
+    result->PutScalar(0.);
+  }
 }
 
 void
