@@ -16,7 +16,7 @@
 
 namespace Amanzi {
 
-template<class Vector,class VectorSpace>
+template<class Vector, class VectorSpace>
 class BDF1_TI {
  public:
   // Create the BDF Dae solver object, the nonlinear problem must be
@@ -80,8 +80,10 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
   // Set up the nonlinear solver
   // -- initialized the SolverFnBase interface
   solver_fn_ = Teuchos::rcp(new BDF1_SolverFnBase<Vector>(plist_, fn_));
-  AmanziSolvers::SolverFactory<Vector,VectorSpace> fac;
-  solver_ = fac.Create(plist_);
+
+  AmanziSolvers::SolverFactory<Vector,VectorSpace> factory;
+  solver_ = factory.Create(plist_);
+
   solver_->Init(solver_fn_, initvector->Map());
 }
 
@@ -144,6 +146,8 @@ bool BDF1_TI<Vector,VectorSpace>::time_step(double dt, double& dt_next, const Te
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "step " << state_->seq + 1 << " T = " << tlast
                << " [sec]  dT = " << dt << std::endl;
+    *vo_->os() << "preconditioner lag is " << state_->pc_lag
+               << " out of " << state_->maxpclag << std::endl;
   }
 
   // u at the start of the time step
@@ -205,6 +209,7 @@ bool BDF1_TI<Vector,VectorSpace>::time_step(double dt, double& dt_next, const Te
       state_->pc_lag = std::max(state_->pc_lag - 1, 0);
     }
   }
+  solver_->set_pc_lag(state_->pc_lag);
 
   // update performance monitors
   if (itr < 0) {

@@ -677,6 +677,8 @@ The first part controls preliminary steps in the time integrator.
    <ParameterList name="steady state time integrator">
      <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
      <Parameter name="linear solver" type="string" value="GMRES with HypreAMG"/>
+     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+     <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
 
      <ParameterList name="initialization">
        <Parameter name="method" type="string" value="saturated solver"/>
@@ -701,12 +703,17 @@ The parameters used here are
   The option `"pressure`" is always active during steady-state time integration.
   The option  `"saturation`" is always active during transient time integration.
 
+* `"preconditioner`" [string] specifies preconditioner for nonlinear solvers.
+
+* `"max preconditioner lag iterations`" [int] specifies frequency of 
+  preconditioner recalculation.
+
 * `"initialization`" [list] defines parameters for calculating initial pressure guess.
   It can be used to obtain pressure field which is consistent with the boundary conditions.
   Default is empty list.
 
-  * `"method`" [string] refers to a constraint enforcement method. The only 
-    available option is `"projection`" which is default.
+  * `"method`" [string] refers to a constraint enforcement method. The only
+    available option is `"saturated solver`" which lead to solving a Darcy problem.
 
   * `"linear solver`" [string] refers to a solver sublist of the list `"Solvers`".
 
@@ -775,7 +782,6 @@ The parameters used here are
          <Parameter name="diverged tolerance" type="double" value="1+10"/>
          <Parameter name="max du growth factor" type="double" value="1e+5"/>
          <Parameter name="max divergent iterations" type="int" value="3"/>
-         <Parameter name="max preconditioner lag iterations" type="int" value="1"/>
          <Parameter name="max nka vectors" type="int" value="10"/>
          <ParameterList name="VerboseObject">
          <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -800,9 +806,6 @@ The parameters used here are
 
 * `"max divergent iterations`" [int] limits the number of times the error
   can jump up during sequence of nonlinear iterations.
-
-* `"max preconditioner lag iterations`" [int] specifies frequency of 
-  preconditioner recalculation.
 
 * `"max nka vectors`" [int] is the size of the Krylov space.
 

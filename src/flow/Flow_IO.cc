@@ -171,7 +171,8 @@ void Flow_PK::ProcessSublistTimeIntegration(
     // new way to define parameters ovverrides the above values.
     if (list.isSublist("initialization")) {
       Teuchos::ParameterList& ini_list = list.sublist("initialization");
-      ti_specs.initialize_with_darcy = ini_list.get<bool>("initialize with darcy", false);
+      std::string name = ini_list.get<string>("method", "none");
+      ti_specs.initialize_with_darcy = (name == "saturated solver");
       ti_specs.clip_saturation = ini_list.get<double>("clipping saturation value", -1.0);
       ti_specs.clip_pressure = ini_list.get<double>("clipping pressure value", -1e+10);
 

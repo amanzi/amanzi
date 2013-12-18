@@ -1436,9 +1436,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 
           // initialization
           Teuchos::ParameterList &sti_init = steady_time_integrator.sublist("initialization");
-          sti_init.set<std::string>("method","projection");
+          sti_init.set<std::string>("method", "saturated solver");
           sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
-          sti_init.set<double>("clipping saturation value", ST_CLIP_SAT);
 
           // pressure-lambda constraints
           Teuchos::ParameterList &sti_plamb = steady_time_integrator.sublist("pressure-lambda constraints");
@@ -1466,11 +1465,11 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           sti_bdf1_nka.set<double>("diverged tolerance", ST_NKA_DIVGD_TOL);
           sti_bdf1_nka.set<double>("max du growth factor", ST_DIVERG_FACT);
           sti_bdf1_nka.set<int>("max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS);
-          sti_bdf1_nka.set<int>("max preconditioner lag iterations", ST_MAX_PREC_LAG);
           sti_bdf1_nka.set<int>("max nka vectors", ST_NKA_NUMVEC);
 	  sti_bdf1_nka.set<int>("limit iterations", ST_LIMIT_ITER);
 
           // remaining BDF1 parameters
+          sti_bdf1.set<int>("max preconditioner lag iterations", ST_MAX_PREC_LAG);
           // sti_bdf1.set<int>("maximum number of iterations", ST_LIMIT_ITER); // this is NOT limit iters
           // sti_bdf1.set<double>("nonlinear iteration damping factor", ST_NONLIN_DAMP);
           // sti_bdf1.set<int>("nonlinear iteration initial guess extrapolation order",ST_NONLIN_INIT_GUESS_EXTR_ORD);
@@ -1496,7 +1495,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
                 sti_bdf1_std.set<double>("time step increase factor",
                                      num_list.get<double>("steady time step increase factor", ST_TS_INC_FACTOR));
                 sti_bdf1_std.set<double>("max time step", num_list.get<double>("steady max time step", ST_MAX_TS));
-                sti_bdf1_nka.set<int>("max preconditioner lag iterations",
+                sti_bdf1.set<int>("max preconditioner lag iterations",
                                   num_list.get<int>("steady max preconditioner lag iterations", ST_MAX_PREC_LAG));
                 sti_bdf1.set<double>("error abs tol", num_list.get<double>("steady error abs tol", ST_ERROR_ABS_TOL));
                 sti_bdf1.set<double>("error rel tol", num_list.get<double>("steady error rel tol", ST_ERROR_REL_TOL));
@@ -1553,7 +1552,6 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           Teuchos::ParameterList &tti_init = transient_time_integrator.sublist("initialization");
           tti_init.set<std::string>("method","projection");
           tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
-          tti_init.set<double>("clipping saturation value", TR_CLIP_SAT);
 
           // pressure-lambda constraints
           Teuchos::ParameterList &tti_plamb = transient_time_integrator.sublist("pressure-lambda constraints");

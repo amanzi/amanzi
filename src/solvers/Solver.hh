@@ -29,6 +29,7 @@ class Solver {
 
   virtual double residual() = 0;
   virtual int num_itrs() = 0;
+  virtual void set_pc_lag(double pc_lag) = 0;
 };
 
 }  // namespace AmanziSolvers

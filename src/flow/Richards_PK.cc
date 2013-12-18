@@ -447,28 +447,32 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   }
 
   // Initialize pressure (p and lambda components of solution and State).
+  *solution = *S_->GetFieldData("pressure");
+
   Epetra_MultiVector& pstate = *S_->GetFieldData("pressure", passwd_)->ViewComponent("cell");
   Epetra_MultiVector& p = *solution->ViewComponent("cell");
-
-  p = pstate;
 
   if (ti_specs.initialize_with_darcy) {
     // Get a hydrostatic solution consistent with b.c.
     SolveFullySaturatedProblem(T0, *solution, ti_specs.ls_specs_ini);
 
+    bool clip(false);
     if (ti_specs.clip_saturation > 0.0) {
       double pmin = FLOW_PRESSURE_ATMOSPHERIC;
       ClipHydrostaticPressure(pmin, ti_specs.clip_saturation, p);
+      clip = true;
     } else if (ti_specs.clip_pressure > -5 * FLOW_PRESSURE_ATMOSPHERIC) {
       ClipHydrostaticPressure(ti_specs.clip_pressure, p);
+      clip = true;
     }
     pstate = p;
+
+    if (solution->HasComponent("face") && clip) {
+      Epetra_MultiVector& lambda = *solution->ViewComponent("face", true);
+      DeriveFaceValuesFromCellValues(p, lambda);
+    }
   }
 
-  if (solution->HasComponent("face")) {
-    Epetra_MultiVector& lambda = *solution->ViewComponent("face", true);
-    DeriveFaceValuesFromCellValues(p, lambda);
-  }
 
   // initialize saturation
   Epetra_MultiVector& ws = *S_->GetFieldData("water_saturation", passwd_)->ViewComponent("cell");

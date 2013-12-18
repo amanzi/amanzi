@@ -38,6 +38,9 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
 
   virtual int Solve(const Teuchos::RCP<Vector>& u);
 
+  // control
+  void set_pc_lag(double pc_lag) {};  // Newton does not need it
+
   // access
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }

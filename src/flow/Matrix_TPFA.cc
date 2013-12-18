@@ -370,7 +370,7 @@ void Matrix_TPFA::DeriveMassFlux(
 
   solution.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& p = *solution.ViewComponent("cell", true);
-  Epetra_MultiVector& flux = *darcy_mass_flux.ViewComponent("face");
+  Epetra_MultiVector& flux = *darcy_mass_flux.ViewComponent("face", true);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<double> dp;
@@ -395,7 +395,7 @@ void Matrix_TPFA::DeriveMassFlux(
 	flux[0][f] = value*area;
       } else {
 	if (f < nfaces_owned && !flag[f]) {
-	  mesh_->face_get_cells(f,  AmanziMesh::USED, &cells);
+	  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
 	  if (cells.size() <= 1) {
 	    Errors::Message msg("Flow PK: These boundary conditions are not supported by TPFA.");
 	    Exceptions::amanzi_throw(msg);

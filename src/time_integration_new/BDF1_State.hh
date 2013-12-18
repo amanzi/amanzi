@@ -51,17 +51,16 @@ struct BDF1_State {
 
   // internal counters and state
   int freeze_count;
-  int uhist_size;       // extrapolation order for initial guess
-  double hlast;         // last step size
-  double hpc;           // step size built into the current preconditioner
-  int pc_lag;            // counter for how many iterations the preconditioner
-                        // has been lagged
+  int uhist_size;  // extrapolation order for initial guess
+  double hlast;  // last step size
+  double hpc;  // step size built into the current preconditioner
+  int pc_lag;  // counter for how many iterations the preconditioner has been lagged
 
   // performance counters
-  int seq;              // number of steps taken
-  int failed_bce;       // number of completely failed BCE steps
-  double hmax;          // maximum step size used on a successful step
-  double hmin;          // maximum step size used on a successful step
+  int seq;  // number of steps taken
+  int failed_bce;  // number of completely failed BCE steps
+  double hmax;  // maximum step size used on a successful step
+  double hmin;  // minimum step size used on a successful step
 
   virtual void InitializeFromPlist(Teuchos::ParameterList&, const Teuchos::RCP<const Vec>&);
 };
@@ -74,7 +73,7 @@ template<class Vec>
 void BDF1_State<Vec>::InitializeFromPlist(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const Vec>& initvec) {
   // preconditioner lag control
-  maxpclag = plist.get<int>("preconditioner lag iterations", 0);
+  maxpclag = plist.get<int>("max preconditioner lag iterations", 0);
 
   // forward time extrapolation
   extrapolate_guess = plist.get<bool>("extrapolate initial guess", true);

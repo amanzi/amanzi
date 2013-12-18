@@ -36,9 +36,12 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   }
 
   void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-       const VectorSpace& map);
+            const VectorSpace& map);
 
   int Solve(const Teuchos::RCP<Vector>& u);
+
+  // control
+  void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
 
   // access
   double residual() { return residual_; }
