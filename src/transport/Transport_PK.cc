@@ -505,7 +505,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   for (int n = 0; n < bcs.size(); n++) {
     int i = bcs_tcc_index[n];
 
-    for (Amanzi::Functions::TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+    for (Functions::TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
       int f = bc->first;
       int c2 = (*downwind_cell_)[f];
 

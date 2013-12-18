@@ -72,7 +72,7 @@ class RelativePermeability {
   std::vector<AmanziGeometry::Point >& Kgravity_unit() {return Kgravity_unit_;}
 
   int method() { return method_; }
-  Epetra_Vector& map_c2mb() { return *map_c2mb_; }
+  const CompositeVector& map_c2mb() { return *map_c2mb_; }
   void set_experimental_solver(int solver) { experimental_solver_ = solver; }
 
  private:
@@ -121,7 +121,7 @@ class RelativePermeability {
   std::vector<AmanziGeometry::Point> Kgravity_unit_;  // normalized vector Kg
 
   // Miscallenous maps
-  Teuchos::RCP<Epetra_Vector> map_c2mb_;
+  Teuchos::RCP<CompositeVector> map_c2mb_;
 
   // obsolete, must go away (lipnikov@lanl.gov)
   int experimental_solver_; 
