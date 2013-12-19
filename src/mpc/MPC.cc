@@ -773,10 +773,14 @@ void MPC::cycle_driver() {
               // total_component_concentration_star for the chemistry step
               if (transport_enabled) {
                 Amanzi::timer_manager.start("Transport PK");
-                TPK->Advance(tc_dT);
-                TPK->CommitState(S);
-                Amanzi::timer_manager.stop("Transport PK");
-              } else if (chemistry_enabled ) { // if we're not advancing transport we still need to prepare for chemistry
+                int ok = TPK->Advance(tc_dT);
+                if (ok == 0) {
+                  *total_component_concentration_star = *TPK->total_component_concentration()->ViewComponent("cell");
+                } else {
+                  Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
+                  Exceptions::amanzi_throw(message);
+                }
+              } else if (chemistry_enabled) { // if we're not advancing transport we still need to prepare for chemistry
 		*total_component_concentration_star = *S->GetFieldData("total_component_concentration")->ViewComponent("cell", true);
 	      }
 
@@ -863,11 +867,7 @@ void MPC::cycle_driver() {
 	    
             success = false;
           }
-	  
-	  
-	  
         } while (!success);
-	
       }
       
       // update the times in the state object
@@ -879,6 +879,10 @@ void MPC::cycle_driver() {
       // in the process kernels
 
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ) {
+        Amanzi::timer_manager.start("Transport PK");
+        if (transport_enabled) TPK->CommitState(S);
+        Amanzi::timer_manager.stop("Transport PK");
+
         Amanzi::timer_manager.start("Chemistry PK");
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
         Amanzi::timer_manager.stop("Chemistry PK");
@@ -894,7 +898,6 @@ void MPC::cycle_driver() {
       // advance the iteration count
       iter++;
       S->set_cycle(iter);
-
 
 
       // make observations

@@ -66,12 +66,13 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   double EstimateTransportDt();
   double CalculateTransportDt();
-  void Advance(double dT);
+  int Advance(double dT);
   void CommitState(Teuchos::RCP<State> S);
 
   // access members  
   Teuchos::RCP<const State> state() { return S_; }
   Teuchos::RCP<Dispersion> dispersion_matrix() { return dispersion_matrix_; }
+  Teuchos::RCP<CompositeVector> total_component_concentration() { return tcc_tmp; }
 
   double TimeStep() { return dT; }
   void TimeStep(double dT_) { dT = dT_; }

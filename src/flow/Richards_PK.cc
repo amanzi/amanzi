@@ -500,6 +500,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   AddGravityFluxes_DarcyFlux(flux, *rel_perm);
 
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
+// {double aaa; solution->Norm2(&aaa); cout << aaa << endl;} exit(0);
 }
 
 

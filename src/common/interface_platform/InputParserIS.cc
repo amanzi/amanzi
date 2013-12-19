@@ -1579,11 +1579,11 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           tti_bdf1_nka.set<double>("diverged tolerance", TR_NKA_DIVGD_TOL);
           tti_bdf1_nka.set<double>("max du growth factor", TR_DIVERG_FACT);
           tti_bdf1_nka.set<int>("max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS);
-          tti_bdf1_nka.set<int>("max preconditioner lag iterations", TR_MAX_PREC_LAG);
           tti_bdf1_nka.set<int>("max nka vectors", TR_NKA_NUMVEC);
 	  tti_bdf1_nka.set<int>("limit iterations", TR_LIMIT_ITER);
 
           // remaining parameters
+          tti_bdf1.set<int>("max preconditioner lag iterations", TR_MAX_PREC_LAG);
           // tti_bdf1.set<int>("maximum number of iterations", TR_LIMIT_ITER); // this is not limit iters
           // tti_bdf1.set<double>("nonlinear iteration damping factor", TR_NONLIN_DAMP);
           // tti_bdf1.set<int>("nonlinear iteration initial guess extrapolation order", TR_NONLIN_INIT_GUESS_EXTR_ORD);
@@ -1611,7 +1611,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
                 tti_bdf1_std.set<double>("time step increase factor",
                                      num_list.get<double>("transient time step increase factor", TR_TS_INC_FACTOR));
                 tti_bdf1_std.set<double>("max time step", num_list.get<double>("transient max time step", TR_MAX_TS));
-                tti_bdf1_nka.set<int>("max preconditioner lag iterations",
+                tti_bdf1.set<int>("max preconditioner lag iterations",
                                   num_list.get<int>("transient max preconditioner lag iterations", TR_MAX_PREC_LAG));
                 tti_bdf1.set<double>("error abs tol", num_list.get<double>("transient error abs tol", TR_ERROR_ABS_TOL));
                 tti_bdf1.set<double>("error rel tol", num_list.get<double>("transient error rel tol", TR_ERROR_REL_TOL));

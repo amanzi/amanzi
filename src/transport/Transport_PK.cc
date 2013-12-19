@@ -262,7 +262,7 @@ double Transport_PK::EstimateTransportDt()
 * Efficient subcycling requires to calculate an intermediate state of
 * saturation only once, which leads to a leap-frog-type algorithm.
 ******************************************************************* */
-void Transport_PK::Advance(double dT_MPC)
+int Transport_PK::Advance(double dT_MPC)
 { 
   // We use original tcc and make a copy of it later if needed.
   tcc = S_->GetFieldData("total_component_concentration", name_);
@@ -435,9 +435,7 @@ void Transport_PK::Advance(double dT_MPC)
                    << " itrs=" << num_itrs / number_components << endl;
     }
   }
-
-  // DEBUG
-  // WriteGMVfile(TS_nextMPC); 
+  return 0;
 }
 
 
