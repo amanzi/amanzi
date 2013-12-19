@@ -852,8 +852,8 @@ void Matrix_MFD::DeriveMassFlux(
 {
   solution.ScatterMasterToGhosted("face");
 
-  const Epetra_MultiVector& solution_cells = *solution.ViewComponent("cell", false);
-  const Epetra_MultiVector& solution_faces = *solution.ViewComponent("face", false);
+  const Epetra_MultiVector& solution_cells = *solution.ViewComponent("cell");
+  const Epetra_MultiVector& solution_faces = *solution.ViewComponent("face", true);
   Epetra_MultiVector& flux = *darcy_mass_flux.ViewComponent("face", true);
 
   AmanziMesh::Entity_ID_List faces;

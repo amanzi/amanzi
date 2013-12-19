@@ -344,10 +344,6 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   error_control_ |= ti_specs->error_control_options;
 
   InitNextTI(T0, dT0, ti_specs_sss_);
-
-  // DEBUG
-  // AdvanceToSteadyState();
-  // CommitState(S); WriteGMVfile(S); exit(0);
 }
 
 
@@ -532,10 +528,9 @@ int Richards_PK::Advance(double dT_MPC)
   // predict water mass change during time step
   time = T_physics;
   if (ti_specs->num_itrs == 0) {  // initialization
+    // I do not know how to estimate du/dt, so it is set to zero.
     Teuchos::RCP<CompositeVector> udot = Teuchos::rcp(new CompositeVector(*solution));
     udot->PutScalar(0.0);
-    // I do not know how to estimate du/dt in a robust manner.
-    // ComputeUDot(time, *solution, udot);  
 
     if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
       bdf1_dae->SetInitialState(time, solution, udot);
@@ -550,14 +545,9 @@ int Richards_PK::Advance(double dT_MPC)
   }
 
   if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
-    Teuchos::RCP<CompositeVector> solution_tmp = Teuchos::rcp(new CompositeVector(*solution));
-
-    while (bdf1_dae->TimeStep(dT, dTnext, solution_tmp)) {
+    while (bdf1_dae->TimeStep(dT, dTnext, solution)) {
       dT = dTnext;
-      *solution_tmp = *solution;
     }
-
-    *solution = *solution_tmp;
     bdf1_dae->CommitSolution(dT, solution);
     T_physics = bdf1_dae->time();
   }

@@ -237,24 +237,24 @@ int SolverNKA<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     du->NormInf(&du_norm);
 
     if ((num_itrs_ > 1) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
-      // try to recover by restarting NKA
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
+        *vo_->os() << "overflow: ||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << endl
+                   << "trying to restart NKA..." << endl;
+
+      // Try to recover by restarting NKA.
       nka_->Restart();
 
-      // ... this is the first invocation of nka_correction with an empty
+      // This is the first invocation of nka_correction with an empty
       // nka space, so we call it withoug du_last, since there isn't one
       nka_->Correction(*du_tmp, *du);
 
-      // re-check du
+      // Re-check du. If it fails again, give up.
       du->NormInf(&du_norm);
-      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
-        *vo_->os() << "Solver threatens to overflow, trying to restart NKA." << endl
-                   << "  ||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << endl;
 
-      // If it fails again, give up.
-      if ((num_itrs_ > 1) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
+      if (du_norm > max_du_growth_factor_ * previous_du_norm) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
-           *vo_->os() << "Solver threatens to overflow: FAIL." << endl
-                      << "  ||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << endl;
+           *vo_->os() << "terminating due to overflow ||du||=" << du_norm 
+                      << ", ||du_prev||=" << previous_du_norm << endl;
         return SOLVER_OVERFLOW;
       }
     }
@@ -266,7 +266,7 @@ int SolverNKA<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
       // If it does not recover quickly, abort.
       if (divergence_count == max_divergence_count_) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_LOW)
-          *vo_->os() << "Solver is diverging repeatedly, FAIL." << endl;
+          *vo_->os() << "Solver is diverging repeatedly, terminating..." << endl;
         return SOLVER_DIVERGING;
       }
     } else {

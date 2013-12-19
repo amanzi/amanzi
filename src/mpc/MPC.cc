@@ -775,7 +775,7 @@ void MPC::cycle_driver() {
                 Amanzi::timer_manager.start("Transport PK");
                 int ok = TPK->Advance(tc_dT);
                 if (ok == 0) {
-                  *total_component_concentration_star = *TPK->total_component_concentration()->ViewComponent("cell");
+                  *total_component_concentration_star = *TPK->total_component_concentration()->ViewComponent("cell", true);
                 } else {
                   Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
                   Exceptions::amanzi_throw(message);

@@ -182,7 +182,7 @@ bool Richards_PK::modify_correction(
   const Epetra_MultiVector& duc = *du->ViewComponent("cell");
 
   double max_sat_pert = 0.25;
-  bool ret_val = false;
+  int ret_val = 0;
   double dumping_factor = 0.6;
   double reference_pressure = 101325.0;
 
@@ -214,7 +214,7 @@ bool Richards_PK::modify_correction(
       else duc[0][c] = -fabs(du_pert_max);
       
       ncells_clipped++;
-      ret_val = true;
+      ret_val = 1;
     }    
   }
 
@@ -247,7 +247,12 @@ bool Richards_PK::modify_correction(
     }
   }
 
-  return ret_val;
+#ifdef HAVE_MPI
+  int ret_val_tmp = ret_val;
+  du->Comm().MaxAll(&ret_val_tmp, &ret_val, 1);  // find the global maximum
+#endif
+
+  return (ret_val == 1);
 }
 
 }  // namespace AmanziFlow

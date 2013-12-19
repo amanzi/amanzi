@@ -73,12 +73,9 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
       update_precon(T0, solution, dT0);
     }
 
-    Teuchos::RCP<CompositeVector> solution_tmp = Teuchos::rcp(new CompositeVector(*solution));
-    while (bdf1_dae->TimeStep(dT, dTnext, solution_tmp)) {
+    while (bdf1_dae->TimeStep(dT, dTnext, solution)) {
       dT = dTnext;
-      *solution_tmp = *solution;
     }
-    *solution = *solution_tmp;
     bdf1_dae->CommitSolution(dT, solution);
 
     T_physics = bdf1_dae->time();

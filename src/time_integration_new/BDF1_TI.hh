@@ -116,7 +116,7 @@ void BDF1_TI<Vector,VectorSpace>::CommitSolution(const double h, const Teuchos::
   // record some information about this time step
   state_->hlast = h;
   state_->seq++;
-  state_->freeze_count = std::max<int>(0, state_->freeze_count-1);
+  state_->freeze_count = std::max(0, state_->freeze_count-1);
   state_->hmin = std::min<double>(h, state_->hmin);
   state_->hmax = std::max<double>(h, state_->hmax);
 }
@@ -152,13 +152,13 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
 
   // u at the start of the time step
   Teuchos::RCP<Vector> u0 = Teuchos::rcp(new Vector(*u));
-  *u0 = *u;
 
   // Predicted solution (initial value for the nonlinear solver)
   if (state_->extrapolate_guess) {
-    if ( state_->uhist->history_size() > 1) {
-      state_->uhist->interpolate_solution(tnew,  *u);
+    if (state_->uhist->history_size() > 1) {
+      state_->uhist->interpolate_solution(tnew, *u);
       fn_->changed_solution();
+
       if (fn_->is_admissible(u)) {
 	if (vo_->os_OK(Teuchos::VERB_HIGH))
 	  *vo_->os() << "is admissible!" << std::endl;
@@ -192,14 +192,15 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
       *vo_->os() << "success: " << solver_->num_itrs() << " nonlinear itrs" 
                  << " error=" << solver_->residual() << std::endl;
     } else {
-      *vo_->os() << "failed with error code: " << itr << std::endl;
+      *vo_->os() << "step failed with error code " << itr << std::endl;
+      *u = *u0;
     }
   }
 
   // update the next timestep size
   dt_next = state_->ts_control->get_timestep(dt, itr);
 
-  // update the pc lag
+  // update the preconditioner lag
   if (itr < 0) {
     state_->pc_lag = 0;
   } else {
@@ -211,7 +212,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   }
   solver_->set_pc_lag(state_->pc_lag);
 
-  // update performance monitors
+  // update performance statistics
   if (itr < 0) {
     state_->failed_bce++;
   } else {

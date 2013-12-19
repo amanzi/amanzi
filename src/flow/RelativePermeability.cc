@@ -123,7 +123,8 @@ void RelativePermeability::ComputeOnFaces(
     FaceUpwindGravity_(pressure, bc_model, bc_values);
 
   } else if (method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-    const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face");
+    S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
+    const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
     
     FaceUpwindFlux_(pressure, flux, bc_model, bc_values);
 
@@ -146,7 +147,7 @@ void RelativePermeability::FaceUpwindGravity_(
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Epetra_MultiVector& Krel_cells = *Krel_->ViewComponent("cell");
+  Epetra_MultiVector& Krel_cells = *Krel_->ViewComponent("cell", true);
   Epetra_MultiVector& Krel_faces = *Krel_->ViewComponent("face", true);
   Krel_faces.PutScalar(2.0);
 
@@ -195,7 +196,7 @@ void RelativePermeability::FaceUpwindGravityInSoil_(
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Epetra_MultiVector& Krel_cells = *Krel_->ViewComponent("cell");
+  Epetra_MultiVector& Krel_cells = *Krel_->ViewComponent("cell", true);
   Epetra_MultiVector& Krel_faces = *Krel_->ViewComponent("face", true);
   Krel_amanzi_.clear();
 
@@ -247,7 +248,7 @@ void RelativePermeability::FaceUpwindFlux_(
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Epetra_MultiVector& Krel_cells = *Krel_->ViewComponent("cell");
+  Epetra_MultiVector& Krel_cells = *Krel_->ViewComponent("cell", true);
   Epetra_MultiVector& Krel_faces = *Krel_->ViewComponent("face", true);
   Krel_faces.PutScalar(0.0);
 
@@ -292,7 +293,7 @@ void RelativePermeability::FaceArithmeticMean_(const CompositeVector& pressure)
 {
   AmanziMesh::Entity_ID_List cells;
 
-  Epetra_MultiVector& Krel_cells = *Krel_->ViewComponent("cell");
+  Epetra_MultiVector& Krel_cells = *Krel_->ViewComponent("cell", true);
   Epetra_MultiVector& Krel_faces = *Krel_->ViewComponent("face", true);
   Krel_faces.PutScalar(0.0);
 
@@ -339,7 +340,7 @@ void RelativePermeability::DerivativeFaceUpwindGravity_(
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Epetra_MultiVector& dKdP_cells = *dKdP_->ViewComponent("cell");
+  Epetra_MultiVector& dKdP_cells = *dKdP_->ViewComponent("cell", true);
   Epetra_MultiVector& dKdP_faces = *dKdP_->ViewComponent("face", true);
   dKdP_faces.PutScalar(0.0);
 
@@ -385,7 +386,7 @@ void RelativePermeability::DerivativeFaceUpwindFlux_(
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Epetra_MultiVector& dKdP_cells = *dKdP_->ViewComponent("cell");
+  Epetra_MultiVector& dKdP_cells = *dKdP_->ViewComponent("cell", true);
   Epetra_MultiVector& dKdP_faces = *dKdP_->ViewComponent("face", true);
   dKdP_faces.PutScalar(0.0);
 
@@ -581,9 +582,7 @@ void RelativePermeability::CalculateKVectorUnit(const std::vector<WhetStone::Ten
     for (int i = 0; i < dim; i++) Kg_data[i][c] = Kg[i] / Kg_norm;
   }
 
-#ifdef HAVE_MPI
   Kg_cv.ScatterMasterToGhosted("cell");
-#endif
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   Kgravity_unit_.clear();

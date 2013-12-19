@@ -32,8 +32,6 @@ Authors: Neil Carlson (version 1)
 namespace Amanzi {
 namespace AmanziFlow {
 
-class Flow_State;  // forward declarations
-
 class Richards_PK : public Flow_PK {
  public:
   Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<State> S);

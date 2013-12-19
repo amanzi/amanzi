@@ -55,6 +55,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "VerboseObject.hh"
+#include "dbc.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -282,7 +283,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
         hk[j] = hkj;
         hkk -= hkj * hkj;
       }
-      if (hkk > vtol_*vtol_) {
+      if (hkk > vtol_ * vtol_) {
         hk[k] = sqrt(hkk);
       } else {
         if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
@@ -292,7 +293,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
 
         // The current w nearly lies in the span of the previous vectors:
         // Drop this vector,
-        assert(prev_v_[k] != NKA_EOL);
+        ASSERT(prev_v_[k] != NKA_EOL);
         next_v_[prev_v_[k]] = next_v_[k];
         if (next_v_[k] == NKA_EOL) {
           last_v_ = prev_v_[k];
