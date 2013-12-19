@@ -538,7 +538,7 @@ int Richards_PK::Advance(double dT_MPC)
     // ComputeUDot(time, *solution, udot);  
 
     if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
-      bdf1_dae->set_initial_state(time, solution, udot);
+      bdf1_dae->SetInitialState(time, solution, udot);
 
     } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_PICARD) {
       AdvanceToSteadyState(time, dT_MPC);
@@ -552,13 +552,13 @@ int Richards_PK::Advance(double dT_MPC)
   if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
     Teuchos::RCP<CompositeVector> solution_tmp = Teuchos::rcp(new CompositeVector(*solution));
 
-    while (bdf1_dae->time_step(dT, dTnext, solution_tmp)) {
+    while (bdf1_dae->TimeStep(dT, dTnext, solution_tmp)) {
       dT = dTnext;
       *solution_tmp = *solution;
     }
 
     *solution = *solution_tmp;
-    bdf1_dae->commit_solution(dT, solution);
+    bdf1_dae->CommitSolution(dT, solution);
     T_physics = bdf1_dae->time();
   }
 

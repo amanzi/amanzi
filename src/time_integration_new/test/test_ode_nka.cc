@@ -92,7 +92,7 @@ SUITE(ODEIntegrationTests) {
     double h = 1.0e-5;
     double hnext;
     // initialize the state of the time stepper
-    TS->set_initial_state(t, u, u_dot);
+    TS->SetInitialState(t, u, u_dot);
 
     // iterate until the final time
     int i=0;
@@ -107,12 +107,12 @@ SUITE(ODEIntegrationTests) {
 
       bool redo(false);
       do {
-        redo = TS->time_step(h, hnext, u);
+        redo = TS->TimeStep(h, hnext, u);
       } while (redo);
 
       u->Print(std::cout);
 
-      TS->commit_solution(h, u);
+      TS->CommitSolution(h, u);
 
       h = hnext;
       i++;
@@ -127,7 +127,7 @@ SUITE(ODEIntegrationTests) {
     double norm;
     u->NormInf(&norm);
 
-    TS->Report(std::cout);
+    TS->ReportStatistics(std::cout);
     CHECK_CLOSE(0.0,norm,1e-3);
   }
 
@@ -173,7 +173,7 @@ SUITE(ODEIntegrationTests) {
     double h = 1.0e-5;
     double hnext;
     // initialize the state of the time stepper
-    TS->set_initial_state(t, u, u_dot);
+    TS->SetInitialState(t, u, u_dot);
 
     // iterate until the final time
     int i=0;
@@ -188,12 +188,12 @@ SUITE(ODEIntegrationTests) {
 
       bool redo(false);
       do {
-        redo = TS->time_step(h, hnext, u);
+        redo = TS->TimeStep(h, hnext, u);
       } while (redo);
 
       u->Print(std::cout);
 
-      TS->commit_solution(h, u);
+      TS->CommitSolution(h, u);
 
       h = hnext;
       i++;
@@ -208,7 +208,7 @@ SUITE(ODEIntegrationTests) {
     double norm;
     u->NormInf(&norm);
 
-    TS->Report(std::cout);
+    TS->ReportStatistics(std::cout);
     CHECK_CLOSE(0.0,norm,1e-3);
   }
 

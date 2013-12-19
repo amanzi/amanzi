@@ -25,25 +25,25 @@ class BDF1_TI {
           const Teuchos::RCP<const Vector>& initvector);
 
   // initializes the state
-  void set_initial_state(const double h,
-                         const Teuchos::RCP<Vector>& x,
-                         const Teuchos::RCP<Vector>& xdot);
+  void SetInitialState(const double h,
+                       const Teuchos::RCP<Vector>& x,
+                       const Teuchos::RCP<Vector>& xdot);
 
   // After a successful step, this method commits the new
   // solution to the solution history
-  void commit_solution(const double h, const Teuchos::RCP<Vector>& u);
+  void CommitSolution(const double h, const Teuchos::RCP<Vector>& u);
 
   // computes a step
-  bool time_step(double dt, double& dt_next, const Teuchos::RCP<Vector>& x);
+  bool TimeStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& x);
 
   // Reset the memory of the time integrator
-  void reset();
+  void Reset();
 
   // returns the most recent time
   double time();
 
   // Report statistics
-  void Report(std::ostream&);
+  void ReportStatistics(std::ostream&);
 
  protected:
   void WriteSteppingStatistics_();
@@ -92,7 +92,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
 * Initialize miscaleneous parameters.
 ****************************************************************** */
 template<class Vector,class VectorSpace>
-void BDF1_TI<Vector,VectorSpace>::set_initial_state(const double t,
+void BDF1_TI<Vector,VectorSpace>::SetInitialState(const double t,
         const Teuchos::RCP<Vector>& x,
         const Teuchos::RCP<Vector>& xdot) {
   // set a clean initial state for when the time integrator is reinitialized
@@ -106,7 +106,7 @@ void BDF1_TI<Vector,VectorSpace>::set_initial_state(const double t,
 * Record solution to the history.
 ****************************************************************** */
 template<class Vector,class VectorSpace>
-void BDF1_TI<Vector,VectorSpace>::commit_solution(const double h, const Teuchos::RCP<Vector>& u) {
+void BDF1_TI<Vector,VectorSpace>::CommitSolution(const double h, const Teuchos::RCP<Vector>& u) {
   double t = h + state_->uhist->most_recent_time();
 
   // record the solution for later use when computing an initial guess
@@ -135,7 +135,7 @@ double BDF1_TI<Vector,VectorSpace>::time() {
 * Implementation of implicit Euler time step.
 ****************************************************************** */
 template<class Vector,class VectorSpace>
-bool BDF1_TI<Vector,VectorSpace>::time_step(double dt, double& dt_next, const Teuchos::RCP<Vector>& u) {
+bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& u) {
   // initialize the output stream
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -257,14 +257,13 @@ void BDF1_TI<Vector,VectorSpace>::WriteSteppingStatistics_() {
 * Report statistics.
 ****************************************************************** */
 template<class Vector,class VectorSpace>
-void BDF1_TI<Vector,VectorSpace>::Report(std::ostream& oss) {
+void BDF1_TI<Vector,VectorSpace>::ReportStatistics(std::ostream& oss) {
   oss << "Report from BDF1 Time Integrator:" << std::endl;
   oss << "  total timesteps = " << state_->seq << std::endl;
   oss << "  total failed steps = " << state_->failed_bce << std::endl;
   oss << "  overall min dt = " << state_->hmin << std::endl;
   oss << "  overall max dt = " << state_->hmax << std::endl;
   oss << "--------------------------------------" << std::endl;
-  //  solver_->Report(oss);
 }
 
 }  // namespace Amanzi

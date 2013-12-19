@@ -68,18 +68,18 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
       // I do not know how to calculate du/dt in a robust way.
       // ComputeUDot(T0, solution, udot);
       udot->PutScalar(0.0);
-      bdf1_dae->set_initial_state(T0, solution, udot);
+      bdf1_dae->SetInitialState(T0, solution, udot);
 
       update_precon(T0, solution, dT0);
     }
 
     Teuchos::RCP<CompositeVector> solution_tmp = Teuchos::rcp(new CompositeVector(*solution));
-    while (bdf1_dae->time_step(dT, dTnext, solution_tmp)) {
+    while (bdf1_dae->TimeStep(dT, dTnext, solution_tmp)) {
       dT = dTnext;
       *solution_tmp = *solution;
     }
     *solution = *solution_tmp;
-    bdf1_dae->commit_solution(dT, solution);
+    bdf1_dae->CommitSolution(dT, solution);
 
     T_physics = bdf1_dae->time();
     dT = dTnext;
