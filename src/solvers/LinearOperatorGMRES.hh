@@ -53,6 +53,12 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
 
   void Init(Teuchos::ParameterList& plist);
 
+  int ApplyInverse(const Vector& v, Vector& hv) const {
+    int ierr = GMRESRestart_(v, hv, tol_, max_itrs_, criteria_);
+    return ierr;
+    // return (ierr > 0) ? 0 : 1;
+  }
+
   // access members
   void set_tolerance(double tol) { tol_ = tol; }
   void set_max_itrs(int max_itrs) { max_itrs_ = max_itrs; }
@@ -72,12 +78,6 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   Teuchos::RCP<VerboseObject> vo_;
 
  private:
-  int ApplyInverse_(const Vector& v, Vector& hv) const {
-    int i = GMRESRestart_(v, hv, tol_, max_itrs_, criteria_);
-    return i;
-  }
-
-
   int GMRESRestart_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
   int GMRES_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
   void ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix& T, double* s,

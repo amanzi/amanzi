@@ -51,6 +51,8 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
 
   void Init(Teuchos::ParameterList& plist);
 
+  int ApplyInverse(const Vector& v, Vector& hv) const;
+
   virtual Teuchos::RCP<Matrix> Clone() const {
     return Teuchos::rcp(new LinearOperatorNKA(*this)); }
 
@@ -66,9 +68,6 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
 
  public:
   Teuchos::RCP<VerboseObject> vo_;
-
- private:
-  int ApplyInverse_(const Vector& v, Vector& hv) const;
 
  private:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
@@ -88,7 +87,7 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
 
 // Apply the inverse, x <-- A^-1 b
 template<class Matrix, class Vector, class VectorSpace>
-int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse_(const Vector& f, Vector& x) const 
+int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& f, Vector& x) const 
 {
   ASSERT(f.Map().SameAs(m_->RangeMap()));
   ASSERT(x.Map().SameAs(m_->DomainMap()));

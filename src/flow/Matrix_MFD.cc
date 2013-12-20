@@ -676,9 +676,7 @@ void Matrix_MFD::AssembleSchurComplement_(
   int faces_LID[FLOW_MAX_FACES];
   int faces_GID[FLOW_MAX_FACES];
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  for (int c = 0; c < ncells; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
     Teuchos::SerialDenseMatrix<int, double> Schur(nfaces, nfaces);

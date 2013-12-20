@@ -41,7 +41,7 @@ void Richards_PK::SolveFullySaturatedProblem(
      solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_, preconditioner_);
 
   const CompositeVector& rhs = *matrix_->rhs();
-  solver->ApplyInverse(rhs, u);
+  int ierr = solver->ApplyInverse(rhs, u);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->num_itrs();
@@ -49,7 +49,8 @@ void Richards_PK::SolveFullySaturatedProblem(
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *(vo_->os()) << "saturated solver (" << solver->name() 
-                 << "): ||r||=" << residual << " itr=" << num_itrs << endl;
+                 << "): ||r||=" << residual << " itr=" << num_itrs 
+                 << " code=" << ierr << endl;
   }
 }
 
@@ -85,7 +86,7 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
      solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_, preconditioner_);
 
   CompositeVector& rhs = *matrix_->rhs();
-  solver->ApplyInverse(rhs, utmp);
+  int ierr = solver->ApplyInverse(rhs, utmp);
 
   u_faces = utmp_faces;
 
@@ -95,7 +96,8 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *(vo_->os()) << "constraints solver (" << solver->name() 
-                 << "): ||r||=" << residual << " itr=" << num_itrs << endl;
+                 << "): ||r||=" << residual << " itr=" << num_itrs
+                 << " code=" << ierr << endl;
   }
 }
 

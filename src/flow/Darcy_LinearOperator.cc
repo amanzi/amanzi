@@ -58,7 +58,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
      solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
 
   CompositeVector& rhs = *matrix_->rhs();
-  solver->ApplyInverse(rhs, *solution);
+  int ierr = solver->ApplyInverse(rhs, *solution);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->num_itrs();
@@ -66,7 +66,8 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *(vo_->os()) << "pressure solver (" << solver->name() 
-                 << "): ||r||=" << residual << " itr=" << num_itrs << endl;
+                 << "): ||r||=" << residual << " itr=" << num_itrs
+                 << " code=" << ierr << endl;
   }
 }
 
@@ -83,14 +84,15 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, const CompositeVector& rhs,
   Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
 
-  solver->ApplyInverse(rhs, u);
+  int ierr = solver->ApplyInverse(rhs, u);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->num_itrs();
     double residual = solver->residual();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "pressure solver: ||r||=" << residual << " itr=" << num_itrs << endl;
+    *(vo_->os()) << "pressure solver: ||r||=" << residual << " itr=" << num_itrs 
+                 << " code=" << ierr << endl;
   }
 }
 

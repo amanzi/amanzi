@@ -49,6 +49,12 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
 
   void Init(Teuchos::ParameterList& plist);
 
+  int ApplyInverse(const Vector& v, Vector& hv) const {
+    int ierr = PCG_(v, hv, tol_, max_itrs_, criteria_);
+    return ierr;
+    // return (ierr > 0) ? 0 : 1;
+  }
+
   // access members
   void set_tolerance(double tol) { tol_ = tol; }
   void set_max_itrs(int max_itrs) { max_itrs_ = max_itrs; }
@@ -63,11 +69,6 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
   Teuchos::RCP<VerboseObject> vo_;
 
  private:
-  int ApplyInverse_(const Vector& v, Vector& hv) const {
-    int ierr = PCG_(v, hv, tol_, max_itrs_, criteria_);
-    return ierr;
-  }
-
   int PCG_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
 
  private:

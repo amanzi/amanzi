@@ -443,10 +443,13 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   }
 
   // Initialize pressure (p and lambda components of solution and State).
-  *solution = *S_->GetFieldData("pressure");
-
   Epetra_MultiVector& pstate = *S_->GetFieldData("pressure", passwd_)->ViewComponent("cell");
   Epetra_MultiVector& p = *solution->ViewComponent("cell");
+  p = pstate;
+
+  if (solution->HasComponent("face")) {
+    *solution->ViewComponent("face") = *S_->GetFieldData("pressure")->ViewComponent("face");
+  }
 
   if (ti_specs.initialize_with_darcy) {
     // Get a hydrostatic solution consistent with b.c.

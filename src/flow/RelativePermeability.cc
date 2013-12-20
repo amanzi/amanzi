@@ -633,7 +633,8 @@ void RelativePermeability::PopulateMapC2MB()
 ****************************************************************** */
 void RelativePermeability::SetFullySaturated()
 {
-  Krel_->PutScalar(1.0);
+  Krel_->ViewComponent("cell", true)->PutScalar(1.0);
+  Krel_->ViewComponent("face", true)->PutScalar(1.0);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
