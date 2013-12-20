@@ -55,6 +55,7 @@ Flow_State::Flow_State(const Flow_State& other,
 
     CompositeVectorSpace fac;
     fac.SetMesh(mesh_);
+    fac.SetGhosted();
     fac.SetComponent("face", AmanziMesh::FACE, 1);
     Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(fac));
     //flux->CreateData();
