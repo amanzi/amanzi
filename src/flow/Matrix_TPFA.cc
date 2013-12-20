@@ -43,7 +43,7 @@ Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const
   Fc_cells_.resize(ncells);
 }
 
-  Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map,
+Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map,
 				   Teuchos::RCP<Epetra_Vector> Krel_faces,
 				   Teuchos::RCP<Epetra_Vector> Trans_faces,
 				   Teuchos::RCP<Epetra_Vector> Grav_faces) 
@@ -492,7 +492,7 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
   for (int f = 0; f < nfaces_wghost; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
-    if (ncells > 1){
+    if (ncells == 2){
       for (int i = 0; i < ncells; i++){
 	int c = cells[i];
 	if (c >= ncells_owned) continue;
@@ -501,8 +501,13 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
     }
     else if (ncells == 1){
       int c = cells[0];
+      if (c >= ncells_owned){
+	//cout << "Point reached\n";
+	//exit(0);
+	continue;
+      }
       residual[c] += (*Krel_faces_)[f] * (*trans_on_faces_)[f] * sol_gh[c];
-    }							
+    }		
   } 
   
 
