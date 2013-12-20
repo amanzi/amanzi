@@ -3,7 +3,7 @@
 #
 # Amanzi SuperBuild
 #       Amanzi TPL Build Targets
-cmake_minimum_required(VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.8)
 
 if ("${CMAKE_PATCH_VERSION}" GREATER 3)
   set(ADJUST_POLICY "True")
@@ -70,7 +70,8 @@ include(CheckMPISourceCompiles)
 check_mpi_source_compiles(MPI_WRAPPERS_IN_USE)
 if (NOT MPI_WRAPPERS_IN_USE)
   # MPI_WRAPPERS_IN_USE is FALSE if any of the compilers fail to compile an MPI app
-  message(FATAL_ERROR "Missing a compiler type for MPI applications -- exiting.
+  #message(FATAL_ERROR "Missing a compiler type for MPI applications -- exiting.
+  message(WARING "Missing a compiler type for MPI applications.
   See previous error messages to determine missing compiler.")
 endif()
 

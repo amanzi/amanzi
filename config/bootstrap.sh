@@ -878,7 +878,30 @@ function check_compilers
 
 }
 
-    
+version_compare_element()
+{
+  (( $1 == $2 )) && return 0 #equal
+  (( $1 > $2 )) && return 1  #greater than
+  (( $1 < $2 )) && return 2  #less than
+  exit 1
+}
+
+version_compare()
+{
+  A=(${1//./ })
+  B=(${2//./ })
+  i=0
+  while (( i < ${#A[@]} )) && (( i < ${#B[@]})); 
+  do
+    version_compare_element "${A[i]}" "${B[i]}"
+    result=$?
+    [[ $result =~ [12] ]] && return $result
+    let i++
+  done
+  version_compare_element "${#A[i]}" "${#B[i]}"
+  return $?
+}
+
 # Tool Checks
 function check_tools
 {
@@ -905,6 +928,16 @@ function check_tools
   if [ ! -e "${cmake_binary}" ]; then
     error_message "CMake binary does not exist. Will build."
     build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
+  else
+    # CMake binary does exist, not check the version number
+    ver_string=`${cmake_binary} --version | sed 's/cmake version[ ]*//'`
+    status_message "Found CMake version:  ${ver_string}"
+    ( version_compare "$ver_string" "$cmake_version" )
+    result=$?
+    if [ ${result} -eq 2 ]; then
+      status_message "CMake version is less than required version. Will build CMake version 2.8.8"
+      build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
+    fi
   fi
   if [ ! -e "${ctest_binary}" ]; then
     error_message "CTest binary does not exist. Will deactivate the test suite."
@@ -1004,10 +1037,6 @@ if [ -z "${tpl_config_file}" ]; then
   # Configure the TPL build
   cd ${tpl_build_dir}
   ${cmake_binary} \
-                -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
-                -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
-                -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
-                -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
                 -DCMAKE_BUILD_TYPE:STRING=${build_type} \
                 -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
                 -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
@@ -1086,10 +1115,10 @@ cd ${amanzi_build_dir}
 
 ${cmake_binary} \
               -C${tpl_config_file} \
-              -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
-              -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
-              -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
-              -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
+	      -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
+	      -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
+	      -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
+	      -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
               -DCMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
               -DENABLE_Structured:BOOL=${structured} \
               -DENABLE_Unstructured:BOOL=${unstructured} \
