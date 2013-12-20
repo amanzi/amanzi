@@ -81,20 +81,20 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
 template<class Vector>
 void BDF1_SolverFnBase<Vector>::Residual(const Teuchos::RCP<Vector>& u,
                                          const Teuchos::RCP<Vector>& r) {
-  bdf_fn_->fun(t_old_, t_new_, u_old_, u, r);
+  bdf_fn_->Functional(t_old_, t_new_, u_old_, u, r);
 }
 
 // preconditioner application
 template<class Vector>
 void BDF1_SolverFnBase<Vector>::ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
                                                     const Teuchos::RCP<Vector>& Pr) {
-  bdf_fn_->precon(r, Pr);
+  bdf_fn_->ApplyPreconditioner(r, Pr);
 }
 
 // preconditioner update
 template<class Vector>
 void BDF1_SolverFnBase<Vector>::UpdatePreconditioner(const Teuchos::RCP<const Vector>& u) {
-  bdf_fn_->update_precon(t_new_, u, h_);
+  bdf_fn_->UpdatePreconditioner(t_new_, u, h_);
 }
 
 // error norm
@@ -117,7 +117,7 @@ template<class Vector>
 bool BDF1_SolverFnBase<Vector>::ModifyCorrection(const Teuchos::RCP<const Vector>& res,
                                                  const Teuchos::RCP<const Vector>& u,
                                                  const Teuchos::RCP<Vector>& du) {
-  return bdf_fn_->modify_correction(h_, res, u, du);
+  return bdf_fn_->ModifyCorrection(h_, res, u, du);
 }
 
 // bookkeeping for state

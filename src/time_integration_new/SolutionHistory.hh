@@ -29,8 +29,8 @@ class SolutionHistory {
   // the initial solution vector of a new history.  If XDOT is specified
   // it is also recorded as the solution vector time derivative at time
   // index T.
-  void flush_history(double t, const Vector& x);
-  void flush_history(double t, const Vector& x, const Vector& xdot);
+  void FlushHistory(double t, const Vector& x);
+  void FlushHistory(double t, const Vector& x, const Vector& xdot);
 
   // Records the vector X with time index T as the most recent solution
   // vector in the history structure.  If the vector XDOT is present,
@@ -39,8 +39,8 @@ class SolutionHistory {
   // is present) is discarded once the history is fully populated with MVEC
   // vectors.  Note that when only one of a X/XDOT pair of vectors is
   // discarded, it is the derivative vector that gets discarded.
-  void record_solution(double t, const Vector& x);
-  void record_solution(double t, const Vector& x, const Vector& xdot);
+  void RecordSolution(double t, const Vector& x);
+  void RecordSolution(double t, const Vector& x, const Vector& xdot);
 
   // Computes the interpolated (or extrapolated) vector X at time T using
   // polynomial interpolation from the set of solution vectors maintained
@@ -50,16 +50,16 @@ class SolutionHistory {
   // order for which there is insufficient data.  If not specified, the
   // maximal interpolation order is used given the available data; once
   // the history is fully populated, the order of interpolation is MVEC-1.
-  void interpolate_solution(double t, Vector& x);
-  void interpolate_solution(double t, Vector& x, unsigned int order);
+  void InterpolateSolution(double t, Vector& x);
+  void InterpolateSolution(double t, Vector& x, unsigned int order);
 
   // Function returns the most recent solution vector
   // maintained by the history.
-  void most_recent_solution(Vector& x);
+  void MostRecentSolution(Vector& x);
 
   // Function returns the the time index T associated with the most
   // recent solution vector maintained by the history THIS.
-  double most_recent_time();
+  double MostRecentTime();
 
   // Function returns an array H of time index differences.  The first
   // element of H is the difference between the most recent time and the
@@ -67,7 +67,7 @@ class SolutionHistory {
   // most recent time and the antepenultimate time, and so forth.  The
   // length of the result equals one less than the number of solution
   // vectors being maintained by the history.
-  void time_deltas(std::vector<double>& h);
+  void TimeDeltas(std::vector<double>& h);
 
   // Returns the number of solution vectors currently
   // maintained in the history structure THIS.  The number will be
@@ -91,7 +91,7 @@ template<class Vector>
 SolutionHistory<Vector>::SolutionHistory(int mvec, double t, const Vector& x) {
   ASSERT(mvec>0);
   Initialize_(mvec, x);
-  record_solution(t, x);
+  RecordSolution(t, x);
 }
 
 
@@ -99,7 +99,7 @@ template<class Vector>
 SolutionHistory<Vector>::SolutionHistory(int mvec, double t, const Vector& x, const Vector& xdot) {
   ASSERT(mvec>0);
   Initialize_(mvec, x);
-  record_solution(t, x, xdot);
+  RecordSolution(t, x, xdot);
 }
 
 
@@ -123,16 +123,16 @@ void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
 * Modify history
 ****************************************************************** */
 template<class Vector>
-void SolutionHistory<Vector>::flush_history(double t, const Vector& x) {
+void SolutionHistory<Vector>::FlushHistory(double t, const Vector& x) {
   nvec_ = 0;
-  record_solution(t, x);
+  RecordSolution(t, x);
 }
 
 
 template<class Vector>
-void SolutionHistory<Vector>::flush_history(double t, const Vector& x, const Vector& xdot) {
+void SolutionHistory<Vector>::FlushHistory(double t, const Vector& x, const Vector& xdot) {
   nvec_ = 0;
-  record_solution(t, x, xdot);
+  RecordSolution(t, x, xdot);
 }
 
 
@@ -140,7 +140,7 @@ void SolutionHistory<Vector>::flush_history(double t, const Vector& x, const Vec
 * Update history.
 ****************************************************************** */
 template<class Vector>
-void SolutionHistory<Vector>::record_solution(double t, const Vector& x) {
+void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x) {
   // update the number of vectors
   nvec_++;
   if (nvec_ > d_.size()) nvec_ = d_.size();
@@ -174,9 +174,9 @@ void SolutionHistory<Vector>::record_solution(double t, const Vector& x) {
 * Update history, including differences.
 ****************************************************************** */
 template<class Vector>
-void SolutionHistory<Vector>::record_solution(double t, const Vector& x, const Vector& xdot)
+void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, const Vector& xdot)
 {
-  record_solution(t, x);
+  RecordSolution(t, x);
 
   // update the number of vectors
   nvec_++;
@@ -209,15 +209,15 @@ void SolutionHistory<Vector>::record_solution(double t, const Vector& x, const V
 * Interpolation routines.
 ****************************************************************** */
 template<class Vector>
-void SolutionHistory<Vector>::interpolate_solution(double t, Vector& x)
+void SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x)
 {
   unsigned int order = nvec_ - 1;
-  interpolate_solution(t, x, order);
+  InterpolateSolution(t, x, order);
 }
 
 
 template<class Vector>
-void SolutionHistory<Vector>::interpolate_solution(double t, Vector& x, unsigned int order)
+void SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x, unsigned int order)
 {
   ASSERT(order < nvec_);
   ASSERT(order >= 0);
@@ -233,21 +233,21 @@ void SolutionHistory<Vector>::interpolate_solution(double t, Vector& x, unsigned
 * Access members.
 ****************************************************************** */
 template<class Vector>
-void SolutionHistory<Vector>::most_recent_solution(Vector& x)
+void SolutionHistory<Vector>::MostRecentSolution(Vector& x)
 {
   x = *d_[0];
 }
 
 
 template<class Vector>
-double SolutionHistory<Vector>::most_recent_time()
+double SolutionHistory<Vector>::MostRecentTime()
 {
   return times_[0];
 }
 
 
 template<class Vector>
-void SolutionHistory<Vector>::time_deltas(std::vector<double>& h)
+void SolutionHistory<Vector>::TimeDeltas(std::vector<double>& h)
 {
   h.resize(nvec_ - 1);
 

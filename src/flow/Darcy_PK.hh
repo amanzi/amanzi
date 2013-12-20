@@ -51,22 +51,22 @@ class Darcy_PK : public Flow_PK {
   void CommitState(Teuchos::RCP<State> S);
 
   // methods required for time integration
-  void fun(const double Told, double Tnew, 
-           Teuchos::RCP<CompositeVector> u, Teuchos::RCP<CompositeVector> udot, 
-           Teuchos::RCP<CompositeVector> rhs) {};
-  void precon(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu) {};
+  void Functional(const double Told, double Tnew, 
+                  Teuchos::RCP<CompositeVector> u, Teuchos::RCP<CompositeVector> udot, 
+                  Teuchos::RCP<CompositeVector> rhs) {};
+  void ApplyPreconditioner(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu) {};
   double enorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du) { 
     return 0.0; 
   }
-  void update_precon(double T, Teuchos::RCP<const CompositeVector> up, double h) {};
+  void UpdatePreconditioner(double T, Teuchos::RCP<const CompositeVector> up, double h) {};
   void update_norm(double rtol, double atol) {};
   bool is_admissible(Teuchos::RCP<const CompositeVector> up) { 
    return false; 
   }
-  bool modify_predictor(double h, Teuchos::RCP<CompositeVector> up) {
+  bool ModifyPredictor(double h, Teuchos::RCP<CompositeVector> up) {
     return false;
   }
-  bool modify_correction(double h, Teuchos::RCP<const CompositeVector> res,
+  bool ModifyCorrection(double h, Teuchos::RCP<const CompositeVector> res,
                          Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du) {
     return false;
   }

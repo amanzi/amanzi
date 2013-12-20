@@ -211,7 +211,6 @@ SUITE(ODEIntegrationTests) {
     TS->ReportStatistics(std::cout);
     CHECK_CLOSE(0.0,norm,1e-3);
   }
-
 }
 
 

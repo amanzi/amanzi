@@ -10,30 +10,29 @@ public:
       rtol_(rtol), atol_(atol), exact_jacobian_(exact_jacobian) {
   }
 
-  void fun(double told, double tnew, Teuchos::RCP<Epetra_Vector> uold,
-           Teuchos::RCP<Epetra_Vector> unew,
-           Teuchos::RCP<Epetra_Vector> f) {
+  void Functional(double told, double tnew, Teuchos::RCP<Epetra_Vector> uold,
+                  Teuchos::RCP<Epetra_Vector> unew,
+                  Teuchos::RCP<Epetra_Vector> f) {
     // f = udot - u^2
     // note that the exact solution is
     // uex = u0/(1-u0(t-t0))
 
     // compute udot... f <-- (unew-uold)/(tnew-told)
     *f = *unew;
-    double hinv(1.0/(tnew-told));
-    f->Update(-hinv,*uold,hinv);
+    double hinv(1.0 / (tnew - told));
+    f->Update(-hinv, *uold, hinv);
 
     // f <-- f - unew^2
     f->Multiply(-1.0, *unew, *unew, 1.0);
 
-	std::cout.precision(10);
-	for (int c=0; c!=unew->MyLength(); ++c) {
-	  std::cout << "Res: u_old = " << (*uold)[c] << ", u_new = " << (*unew)[c] << ", f = " << (*f)[c] << std::endl;
-	}
+    std::cout.precision(10);
+    for (int c = 0; c != unew->MyLength(); ++c) {
+      std::cout << "Res: u_old = " << (*uold)[c] << ", u_new = " << (*unew)[c] << ", f = " << (*f)[c] << std::endl;
+    }
   }
 
-  void precon(Teuchos::RCP<const Epetra_Vector> u, Teuchos::RCP<Epetra_Vector> Pu) {
-	Pu->ReciprocalMultiply(1., *Pu_, *u, 0.);
-	//    *Pu = *u;
+  void ApplyPreconditioner(Teuchos::RCP<const Epetra_Vector> u, Teuchos::RCP<Epetra_Vector> Pu) {
+    Pu->ReciprocalMultiply(1., *Pu_, *u, 0.);
   }
 
   double enorm(Teuchos::RCP<const Epetra_Vector> u, Teuchos::RCP<const Epetra_Vector> du) {
@@ -43,32 +42,31 @@ public:
     return  norm_du/(atol_+rtol_*norm_u);
   }
 
-  void update_precon(double t, Teuchos::RCP<const Epetra_Vector> up, double h) {
+  void UpdatePreconditioner(double t, Teuchos::RCP<const Epetra_Vector> up, double h) {
     // do nothing since the preconditioner is the identity
-	if (Pu_ == Teuchos::null) {
-	  Pu_ = Teuchos::rcp(new Epetra_Vector(*up));
-	}
+    if (Pu_ == Teuchos::null) {
+      Pu_ = Teuchos::rcp(new Epetra_Vector(*up));
+    }
 
     if (exact_jacobian_) {
       *Pu_ = *up;
       Teuchos::RCP<Epetra_MultiVector> ones = Teuchos::rcp(new Epetra_Vector(*Pu_));
       ones->PutScalar(1.0);
-      Pu_->Update(1./h, *ones, -2.);
+      Pu_->Update(1.0/h, *ones, -2.0);
     } else {
-      Pu_->PutScalar(1./h);
+      Pu_->PutScalar(1.0/h);
     }
-
   }
 
-  void compute_udot(double t,  Teuchos::RCP<const Epetra_Vector> u,  Teuchos::RCP<const Epetra_Vector> udot) {
-  }
+
+  void compute_udot(double t, Teuchos::RCP<const Epetra_Vector> u, Teuchos::RCP<const Epetra_Vector> udot) {};
 
 
   bool is_admissible(Teuchos::RCP<const Epetra_Vector> up) { return true; }
-  bool modify_predictor(double h, Teuchos::RCP<Epetra_Vector> up) { return false; }
-  bool modify_correction(double h, Teuchos::RCP<const Epetra_Vector> res,
-                         Teuchos::RCP<const Epetra_Vector> u,
-                         Teuchos::RCP<Epetra_Vector> du) { return false; }
+  bool ModifyPredictor(double h, Teuchos::RCP<Epetra_Vector> up) { return false; }
+  bool ModifyCorrection(double h, Teuchos::RCP<const Epetra_Vector> res,
+                        Teuchos::RCP<const Epetra_Vector> u,
+                        Teuchos::RCP<Epetra_Vector> du) { return false; }
   void changed_solution() {}
 
 

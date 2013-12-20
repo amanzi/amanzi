@@ -26,9 +26,9 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
-void Richards_PK::fun(double Told, double Tnew, 
-                      Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
-                      Teuchos::RCP<CompositeVector> f)
+void Richards_PK::Functional(double Told, double Tnew, 
+                             Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
+                             Teuchos::RCP<CompositeVector> f)
 { 
   double Tp(Told), dTp(Tnew - Told);
 
@@ -72,8 +72,8 @@ void Richards_PK::fun(double Told, double Tnew,
 /* ******************************************************************
 * Apply preconditioner inv(B) * X.                                                 
 ****************************************************************** */
-void Richards_PK::precon(Teuchos::RCP<const CompositeVector> X, 
-                         Teuchos::RCP<CompositeVector> Y)
+void Richards_PK::ApplyPreconditioner(Teuchos::RCP<const CompositeVector> X, 
+                                      Teuchos::RCP<CompositeVector> Y)
 {
   preconditioner_->ApplyPreconditioner(*X, *Y);
 }
@@ -82,7 +82,7 @@ void Richards_PK::precon(Teuchos::RCP<const CompositeVector> X,
 /* ******************************************************************
 * Update new preconditioner B(p, dT_prec).                                   
 ****************************************************************** */
-void Richards_PK::update_precon(double Tp, Teuchos::RCP<const CompositeVector> u, double dTp)
+void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVector> u, double dTp)
 {
   AssemblePreconditionerMFD(*u, Tp, dTp);
 }
@@ -174,7 +174,7 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
 * Modifies nonlinear update du based on the maximum allowed change
 * of saturation.
 ****************************************************************** */
-bool Richards_PK::modify_correction(
+bool Richards_PK::ModifyCorrection(
     double dT, Teuchos::RCP<const CompositeVector> f,
     Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du)
 {

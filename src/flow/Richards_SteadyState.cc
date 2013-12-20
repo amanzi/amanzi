@@ -70,7 +70,7 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
       udot->PutScalar(0.0);
       bdf1_dae->SetInitialState(T0, solution, udot);
 
-      update_precon(T0, solution, dT0);
+      UpdatePreconditioner(T0, solution, dT0);
     }
 
     while (bdf1_dae->TimeStep(dT, dTnext, solution)) {

@@ -543,7 +543,7 @@ int Richards_PK::Advance(double dT_MPC)
       block_picard = 1;  // We will wait for transient initialization.
     }
 
-    update_precon(time, solution, dT);
+    UpdatePreconditioner(time, solution, dT);
     ti_specs->num_itrs++;
   }
 

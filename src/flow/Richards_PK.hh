@@ -61,20 +61,20 @@ class Richards_PK : public Flow_PK {
   double ErrorNormPicardExperimental(const CompositeVector& uold, const CompositeVector& unew);
  
   // methods required for time integration
-  void fun(const double Told, double Tnew, 
-           Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
-           Teuchos::RCP<CompositeVector> f);
-  void precon(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu);
-  void update_precon(double T, Teuchos::RCP<const CompositeVector> u, double dT);
+  void Functional(const double Told, double Tnew, 
+                  Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
+                  Teuchos::RCP<CompositeVector> f);
+  void ApplyPreconditioner(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu);
+  void UpdatePreconditioner(double T, Teuchos::RCP<const CompositeVector> u, double dT);
   double enorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du);
   void update_norm(double rtol, double atol) {};
   bool is_admissible(Teuchos::RCP<const CompositeVector> up) { 
    return false; 
   }
-  bool modify_predictor(double h, Teuchos::RCP<CompositeVector> up) {
+  bool ModifyPredictor(double h, Teuchos::RCP<CompositeVector> up) {
     return false;
   }
-  bool modify_correction(double h, Teuchos::RCP<const CompositeVector> res,
+  bool ModifyCorrection(double h, Teuchos::RCP<const CompositeVector> res,
                          Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du);
   void changed_solution() {};
 

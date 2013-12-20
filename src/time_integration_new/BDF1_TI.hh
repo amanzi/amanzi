@@ -96,7 +96,7 @@ void BDF1_TI<Vector,VectorSpace>::SetInitialState(const double t,
         const Teuchos::RCP<Vector>& x,
         const Teuchos::RCP<Vector>& xdot) {
   // set a clean initial state for when the time integrator is reinitialized
-  state_->uhist->flush_history(t, *x, *xdot);
+  state_->uhist->FlushHistory(t, *x, *xdot);
   state_->seq = 0;
   state_->pc_lag = 0;
 }
@@ -107,11 +107,11 @@ void BDF1_TI<Vector,VectorSpace>::SetInitialState(const double t,
 ****************************************************************** */
 template<class Vector,class VectorSpace>
 void BDF1_TI<Vector,VectorSpace>::CommitSolution(const double h, const Teuchos::RCP<Vector>& u) {
-  double t = h + state_->uhist->most_recent_time();
+  double t = h + state_->uhist->MostRecentTime();
 
   // record the solution for later use when computing an initial guess
   // for the nonlinear solver
-  state_->uhist->record_solution(t, *u);
+  state_->uhist->RecordSolution(t, *u);
 
   // record some information about this time step
   state_->hlast = h;
@@ -127,7 +127,7 @@ void BDF1_TI<Vector,VectorSpace>::CommitSolution(const double h, const Teuchos::
 ****************************************************************** */
 template<class Vector,class VectorSpace>
 double BDF1_TI<Vector,VectorSpace>::time() {
-  return state_->uhist->most_recent_time();
+  return state_->uhist->MostRecentTime();
 }
 
 
@@ -140,7 +140,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // print some info about the time step
-  double tlast = state_->uhist->most_recent_time();
+  double tlast = state_->uhist->MostRecentTime();
   double tnew = tlast + dt;
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -156,13 +156,13 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   // Predicted solution (initial value for the nonlinear solver)
   if (state_->extrapolate_guess) {
     if (state_->uhist->history_size() > 1) {
-      state_->uhist->interpolate_solution(tnew, *u);
+      state_->uhist->InterpolateSolution(tnew, *u);
       fn_->changed_solution();
 
       if (fn_->is_admissible(u)) {
 	if (vo_->os_OK(Teuchos::VERB_HIGH))
 	  *vo_->os() << "is admissible!" << std::endl;
-	bool changed = fn_->modify_predictor(dt,u);
+	bool changed = fn_->ModifyPredictor(dt, u);
 	if (changed) fn_->changed_solution();
       } else {
 	*u = *u0;
@@ -170,7 +170,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
       }
     } else {
       fn_->changed_solution();
-      bool changed = fn_->modify_predictor(dt,u);
+      bool changed = fn_->ModifyPredictor(dt, u);
       if (changed) fn_->changed_solution();
     }
   }
@@ -243,7 +243,7 @@ void BDF1_TI<Vector,VectorSpace>::WriteSteppingStatistics_() {
     oss << " T=";
     oss.precision(5);
     oss.width(11);
-    oss << std::left << state_.uhist->most_recent_time();
+    oss << std::left << state_.uhist->MostRecentTime();
     oss << " H=";
     oss.precision(5);
     oss.width(11);
