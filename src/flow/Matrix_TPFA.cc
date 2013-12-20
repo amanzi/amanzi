@@ -487,6 +487,7 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
     }
     else if (ncells == 1){
       int c = cells[0];
+      if (c >= ncells_owned) continue;
       residual[c] += (*Krel_faces_)[f] * (*trans_on_faces_)[f] * sol_gh[c];
     }							
   } 
