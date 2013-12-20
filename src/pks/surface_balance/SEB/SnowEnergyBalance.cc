@@ -31,9 +31,10 @@ void SurfaceEnergyBalance::UpdateIncomingRadiation(LocalData& seb) {
   seb.st_energy.fQswIn = (1 - seb.st_energy.albedo_value) * seb.st_energy.QswIn;
 
   // Calculate incoming long-wave radiation
-  seb.st_energy.fQlwIn = 1.08 * (1 - std::exp(-0.01 * std::pow(std::pow(10, 11.4 - (2353/seb.vp_air.dewpoint_temp)),
-          (seb.st_energy.temp_air/2016))))
-      * seb.st_energy.stephB * std::pow(seb.st_energy.temp_air,4);
+    double EmissivityAir = std::pow((0.01*seb.vp_air.actual_vaporpressure),(seb.st_energy.temp_air/2016));
+    EmissivityAir = (1 - std::exp(-EmissivityAir));
+    EmissivityAir = 1.08 * EmissivityAir;
+  seb.st_energy.fQlwIn = EmissivityAir * seb.st_energy.stephB * std::pow(seb.st_energy.temp_air,4);
 
   // Calculate D_h, D_e
   seb.st_energy.Dhe = (std::pow(seb.st_energy.VKc,2) * seb.st_energy.Us
@@ -194,6 +195,7 @@ void SurfaceEnergyBalance::UpdateVaporPressure(VaporPressure& vp) {
   //Convert from Kelvin to Celsius
   temp = vp.temp-273.15;
   // Sat vap. press o/water Dingman D-7 (Bolton, 1980)
+// *** (Bolton, 1980) Calculates vapor pressure in millibars or hPa  ****
   vp.saturated_vaporpressure = 0.611*std::exp(17.67*temp / (temp+243.5));
   // (Bolton, 1980)
   vp.actual_vaporpressure = vp.saturated_vaporpressure * vp.relative_humidity;
@@ -201,6 +203,9 @@ void SurfaceEnergyBalance::UpdateVaporPressure(VaporPressure& vp) {
   vp.dewpoint_temp = (std::log(vp.actual_vaporpressure) + 0.4926) / (0.0708-0.00421*std::log(vp.actual_vaporpressure));
   // Convert Tdp from Celsius to Kelvin
   vp.dewpoint_temp = vp.dewpoint_temp + 273.15;
+  // Convert all vapor pressures from hPa to KPa  10 hPa = 1 kPa
+    vp.saturated_vaporpressure = vp.saturated_vaporpressure/10;
+    vp.actual_vaporpressure = vp.actual_vaporpressure/10;
 }
 
 
