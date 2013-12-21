@@ -19,7 +19,7 @@ class BDFFnBase {
   virtual void ApplyPreconditioner(Teuchos::RCP<const Vector> u, Teuchos::RCP<Vector> Pu) = 0;
 
   // computes a norm on u-du and returns the result
-  virtual double enorm(Teuchos::RCP<const Vector> u, Teuchos::RCP<const Vector> du) = 0;
+  virtual double ErrorNorm(Teuchos::RCP<const Vector> u, Teuchos::RCP<const Vector> du) = 0;
 
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const Vector> up, double h) = 0;

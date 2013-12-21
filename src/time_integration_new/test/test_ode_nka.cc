@@ -15,7 +15,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 
-#include "ode_test_fnbase.hh"
+#include "ode_fnbase.hh"
 
 using namespace Amanzi;
 

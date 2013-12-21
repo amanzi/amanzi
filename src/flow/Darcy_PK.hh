@@ -55,7 +55,7 @@ class Darcy_PK : public Flow_PK {
                   Teuchos::RCP<CompositeVector> u, Teuchos::RCP<CompositeVector> udot, 
                   Teuchos::RCP<CompositeVector> rhs) {};
   void ApplyPreconditioner(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu) {};
-  double enorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du) { 
+  double ErrorNorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du) { 
     return 0.0; 
   }
   void UpdatePreconditioner(double T, Teuchos::RCP<const CompositeVector> up, double h) {};

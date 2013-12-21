@@ -344,7 +344,9 @@ double Matrix_TPFA::ComputeNegativeResidual(const CompositeVector& u, CompositeV
       }
     } else if (ncells == 1) {
       int c = cells[0];
-      rc[0][c] += Krel_faces[0][f] * (*transmissibility_)[f] * uc[0][c];
+      if (c < ncells_owned) { 
+        rc[0][c] += Krel_faces[0][f] * (*transmissibility_)[f] * uc[0][c];
+      }
     }							
   } 
   

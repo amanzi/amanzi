@@ -35,7 +35,7 @@ public:
     Pu->ReciprocalMultiply(1., *Pu_, *u, 0.);
   }
 
-  double enorm(Teuchos::RCP<const Epetra_Vector> u, Teuchos::RCP<const Epetra_Vector> du) {
+  double ErrorNorm(Teuchos::RCP<const Epetra_Vector> u, Teuchos::RCP<const Epetra_Vector> du) {
     double norm_du, norm_u;
     du->NormInf(&norm_du);
     u->NormInf(&norm_u);

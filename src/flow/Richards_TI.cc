@@ -92,8 +92,8 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
 * Check difference du between the predicted and converged solutions.
 * This is a wrapper for various error control methods. 
 ****************************************************************** */
-double Richards_PK::enorm(Teuchos::RCP<const CompositeVector> u, 
-                          Teuchos::RCP<const CompositeVector> du)
+double Richards_PK::ErrorNorm(Teuchos::RCP<const CompositeVector> u, 
+                              Teuchos::RCP<const CompositeVector> du)
 {
   double error;
   error = ErrorNormSTOMP(*u, *du);
@@ -236,8 +236,7 @@ bool Richards_PK::ModifyCorrection(
     }
   }
 
-  //  if (verbosity >= FLOW_VERBOSITY_HIGH) {
-  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int ncells_tmp = ncells_clipped;
     mesh_->get_comm()->SumAll(&ncells_tmp, &ncells_clipped, 1);
 

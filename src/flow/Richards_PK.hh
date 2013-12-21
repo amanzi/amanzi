@@ -66,7 +66,7 @@ class Richards_PK : public Flow_PK {
                   Teuchos::RCP<CompositeVector> f);
   void ApplyPreconditioner(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu);
   void UpdatePreconditioner(double T, Teuchos::RCP<const CompositeVector> u, double dT);
-  double enorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du);
+  double ErrorNorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du);
   void update_norm(double rtol, double atol) {};
   bool is_admissible(Teuchos::RCP<const CompositeVector> up) { 
    return false; 

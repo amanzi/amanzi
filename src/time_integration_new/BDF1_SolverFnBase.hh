@@ -101,7 +101,7 @@ void BDF1_SolverFnBase<Vector>::UpdatePreconditioner(const Teuchos::RCP<const Ve
 template<class Vector>
 double BDF1_SolverFnBase<Vector>::ErrorNorm(const Teuchos::RCP<const Vector>& u,
                                             const Teuchos::RCP<const Vector>& du) {
-  return bdf_fn_->enorm(u, du);
+  return bdf_fn_->ErrorNorm(u, du);
 }
 
 
