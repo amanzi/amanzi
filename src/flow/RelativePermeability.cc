@@ -73,10 +73,8 @@ void RelativePermeability::Compute(const CompositeVector& pressure,
       method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
     ComputeOnFaces(pressure, bc_model, bc_values);
     Krel_cells.PutScalar(1.0);
-    if (experimental_solver_ == FLOW_SOLVER_NEWTON || 
-        experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-      ComputeDerivativeOnFaces(pressure, bc_model, bc_values);
-    }
+
+    ComputeDerivativeOnFaces(pressure, bc_model, bc_values);
   } else if (method_ == FLOW_RELATIVE_PERM_AMANZI) {
     ComputeOnFaces(pressure, bc_model, bc_values);
   } else {
@@ -239,7 +237,6 @@ void RelativePermeability::FaceUpwindGravityInSoil_(
 
 /* ******************************************************************
 * Defines upwinded relative permeabilities for faces using a given flux.
-* WARNING: This is the experimental code. 
 ****************************************************************** */
 void RelativePermeability::FaceUpwindFlux_(
     const CompositeVector& pressure, const Epetra_MultiVector& flux,
@@ -377,7 +374,6 @@ void RelativePermeability::DerivativeFaceUpwindGravity_(
 /* ******************************************************************
 * Defines upwind derivative of relative permeability on mesh faces 
 * using a given flux.
-* WARNING: This is a part of the experimental solver. 
 ****************************************************************** */
 void RelativePermeability::DerivativeFaceUpwindFlux_(
     const CompositeVector& pressure, const Epetra_MultiVector& flux,

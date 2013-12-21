@@ -99,9 +99,7 @@ void Matrix_MFD::CreateMassMatrices(int mfd3d_method)
         ok = mfd.MassMatrixInverseMMatrixHex(c, Kc, Mff);
       else
         ok = mfd.MassMatrixInverse(c, Kc, Mff);
-    } else if (mfd3d_method == FLOW_MFD3D_DEVELOPER_TESTING) {
-      ok = mfd.MassMatrixInverseDiagonal(c, Kc, Mff);
-    } else if (mfd3d_method == FLOW_MFD3D_TWO_POINT_FLUX) {
+    } else if (mfd3d_method == FLOW_MFD3D_TPFA) {
       ok = mfd.MassMatrixInverseTPFA(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_SUPPORT_OPERATOR) {
       ok = mfd.MassMatrixInverseSO(c, Kc, Mff);
@@ -162,9 +160,7 @@ void Matrix_MFD::CreateMassMatrices_ScaledStability(int mfd3d_method, double fac
       if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_WRONG) {
         ok = mfd.MassMatrixInverseTPFA(c, Kc, Mff);
       }
-    } else if (mfd3d_method == FLOW_MFD3D_DEVELOPER_TESTING) {
-      ok = mfd.MassMatrixInverseDiagonal(c, Kc, Mff);
-    } else if (mfd3d_method == FLOW_MFD3D_TWO_POINT_FLUX) {
+    } else if (mfd3d_method == FLOW_MFD3D_TPFA) {
       ok = mfd.MassMatrixInverseTPFA(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_SUPPORT_OPERATOR) {
       ok = mfd.MassMatrixInverseSO(c, Kc, Mff);

@@ -37,6 +37,7 @@ void Richards_PK::Functional(double Told, double Tnew,
 
   AssembleMatrixMFD(*u_new, Tp);
   matrix_->ComputeNegativeResidual(*u_new, *f);
+{ double aaa; f->Norm2(&aaa); cout << aaa << endl; }
 
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
   const Epetra_MultiVector& f_cells = *f->ViewComponent("cell");

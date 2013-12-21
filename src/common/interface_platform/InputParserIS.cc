@@ -81,7 +81,6 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   new_list.sublist("Flow") = create_Flow_List(plist);
   new_list.sublist("Preconditioners") = create_Preconditioners_List(plist);
   new_list.sublist("Solvers") = create_Solvers_List(plist);
-  new_list.sublist("Nonlinear solvers") = create_Nonlinear_Solvers_List(plist);
 
   if (new_list.sublist("MPC").get<std::string>("Chemistry Model") != "Off") {
     new_list.sublist("Chemistry") = CreateChemistryList(plist);
@@ -1248,39 +1247,6 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
   pcg_list.set<std::string>("preconditioner", prec);
 
   return solver_list;
-}
-
-
-/* ******************************************************************
- * Collects nonlinear solvers
- ****************************************************************** */
-Teuchos::ParameterList create_Nonlinear_Solvers_List(Teuchos::ParameterList* plist) {
-  Teuchos::ParameterList nls_list;
-
-  std::string nonlinear_solver("");
-  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").isSublist("Nonlinear Solver")) {
-    Teuchos::ParameterList fl_exp_params = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").sublist("Nonlinear Solver");
-    if (fl_exp_params.isParameter("Nonlinear Solver Type")) {
-      nonlinear_solver = fl_exp_params.get<std::string>("Nonlinear Solver Type");
-    }
-  }
-
-  if (nonlinear_solver.size() > 0) {
-    if (nonlinear_solver == std::string("Newton")) {
-      nls_list.set("solver", "newton");
-    } else if (nonlinear_solver == std::string("inexact Newton")) {
-      nls_list.set("solver", "newton");
-    } else if (nonlinear_solver == "NKA") {
-      nls_list.set("solver", "nka");
-    } else {
-      Exceptions::amanzi_throw(Errors::Message("Select exaclty one of the nonlinear solver types 'Newton', 'inexact Newton', or 'NKA', "+ nonlinear_solver + " is not supported."));
-    }
-  } else { // default is nka
-    nls_list.set("solver", "nka");
-  }
-
-  return nls_list;
-
 }
 
 

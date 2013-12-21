@@ -73,7 +73,6 @@ class RelativePermeability {
 
   int method() { return method_; }
   const CompositeVector& map_c2mb() { return *map_c2mb_; }
-  void set_experimental_solver(int solver) { experimental_solver_ = solver; }
 
  private:
   void FaceArithmeticMean_(const CompositeVector& pressure);
@@ -124,7 +123,6 @@ class RelativePermeability {
   Teuchos::RCP<CompositeVector> map_c2mb_;
 
   // obsolete, must go away (lipnikov@lanl.gov)
-  int experimental_solver_; 
   Teuchos::RCP<State> S_;
 };
 

@@ -73,10 +73,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
     Exceptions::amanzi_throw(msg);
   }
 
-  if (glist.isSublist("Nonlinear solvers")) {
-    solver_list_ = glist.sublist("Nonlinear solvers");
-  }
-
   // for creating fields
   std::vector<std::string> names(2);
   names[0] = "cell"; 

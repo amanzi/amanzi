@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <vector>
@@ -63,11 +63,6 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
     src_sink = src_factory.createSource();
     src_sink_distribution = src_sink->CollectActionsList();
   }
-
-  // experimental solver (NKA is default)
-  // string experimental_solver_name = plist.get<string>("experimental solver", "nka");
-  string solver_name = solver_list_.get<string>("solver", "nka");
-  ProcessStringExperimentalSolver(solver_name, &experimental_solver_);
 
   // Time integrator for period I, temporary called initial guess initialization
   if (plist.isSublist("initial guess pseudo time integrator")) {
@@ -241,17 +236,17 @@ void Flow_PK::ProcessStringMFD3D(const std::string name, int* method)
     *method = FLOW_MFD3D_POLYHEDRA_MONOTONE;
   } else if (name == "support operator") {
     *method = FLOW_MFD3D_SUPPORT_OPERATOR;
-  } else if (name == "developer testing") {
-    *method = FLOW_MFD3D_DEVELOPER_TESTING;
   } else if (name == "two point flux approximation") {
-    *method = FLOW_MFD3D_TWO_POINT_FLUX;
-  } else if (name == "optimized mfd") {  // two optimization methods
+    *method = FLOW_MFD3D_TPFA;
+  } else if (name == "finite volume") {
+    *method = FLOW_FV_TPFA;
+  } else if (name == "optimized mfd") {
     *method = FLOW_MFD3D_OPTIMIZED;
   } else if (name == "optimized mfd scaled") {
     *method = FLOW_MFD3D_OPTIMIZED_SCALED;
-  } else if (name == "mfd") {  // two basic methods
+  } else if (name == "mfd") {  // first basic mfd
     *method = FLOW_MFD3D_POLYHEDRA;
-  } else if (name == "mfd scaled") {
+  } else if (name == "mfd scaled") {  // second basic mfd
     *method = FLOW_MFD3D_POLYHEDRA_SCALED;
   } else {
     *method = FLOW_MFD3D_POLYHEDRA;
@@ -343,21 +338,6 @@ std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list)
     Exceptions::amanzi_throw(msg);
   }
   return name;
-}
-
-
-/* ****************************************************************
-* Process string for the relative permeability
-**************************************************************** */
-void Flow_PK::ProcessStringExperimentalSolver(const std::string name, int* method)
-{
-  if (name == "newton") {
-    *method = AmanziFlow::FLOW_SOLVER_NEWTON;
-  } else if (name == "picard-newton") {
-    *method = AmanziFlow::FLOW_SOLVER_PICARD_NEWTON;
-  } else {
-    *method = AmanziFlow::FLOW_SOLVER_NKA;
-  }
 }
 
 

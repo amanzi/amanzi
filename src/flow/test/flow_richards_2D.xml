@@ -174,9 +174,6 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Nonlinear solvers">
-  </ParameterList>
-
   <!-- PRECONDITIONERS -->
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">

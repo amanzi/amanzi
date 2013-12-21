@@ -55,6 +55,7 @@
     <ParameterList name="Richards Problem">
       <Parameter name="atmospheric pressure" type="double" value="1.01325000e+05"/>
       <Parameter name="relative permeability" type="string" value="upwind with gravity"/> 
+      <Parameter name="discretization method" type="string" value="finite volume"/>
 
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -406,10 +407,8 @@
       </ParameterList>      
     </ParameterList>
   </ParameterList>
+
   <Parameter name="grid_option" type="string" value="Unstructured"/>
   <Parameter isUsed="true" name="input file name" type="string" value="test_anjac.xml"/>
-  <ParameterList name="Nonlinear solvers">
-    <Parameter name="solver" type="string" value="newton"/>
-  </ParameterList>
 </ParameterList>
 

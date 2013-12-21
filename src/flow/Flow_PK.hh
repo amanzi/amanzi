@@ -94,7 +94,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   void ProcessStringTimeIntegration(const std::string name, int* method);
   void ProcessStringLinearSolver(const std::string& name, LinearSolver_Specs* ls_specs);
   void ProcessStringPreconditioner(const std::string& name, int* preconditioner);
-  void ProcessStringExperimentalSolver(const std::string name, int* method);
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
 
   std::string FindStringLinearSolver(const Teuchos::ParameterList& plist);
@@ -140,7 +139,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
  public:
   Teuchos::ParameterList linear_operator_list_;
   Teuchos::ParameterList preconditioner_list_;
-  Teuchos::ParameterList solver_list_;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -175,7 +173,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
 
   // discretization and solvers
   int mfd3d_method_, mfd3d_method_preconditioner_;
-  int experimental_solver_; 
 
   // time integration phases
   TI_Specs ti_specs_igs_;

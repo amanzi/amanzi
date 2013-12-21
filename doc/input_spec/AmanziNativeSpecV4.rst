@@ -886,11 +886,11 @@ The remaining `"Flow`" parameters are
 
 * `"discretization method`" [string] helps to test new discretization methods. 
   The available options are `"mfd scaled`", `"optimized mfd scaled`",
-  `"two-point flux approximation`", `"two point flux approximation`" and
-  `"support operator`". The last option reproduces discretization method implemented in RC1. 
-  The third option is recommended for orthogonal meshes and diagonal absolute permeability.
-  The second option is still experimental (no papers were published) and produces 
-  an optimal discretization.
+  `"finite volume`" and `"support operator`". 
+  The last option reproduces discretization method implemented in RC1. 
+  The second option is recommended for general meshes.
+  The third option is recommended for orthogonal meshes and diagonal absolute 
+  permeability tensor.
 
 * `"plot time history`" [bool] produces an ASCII file with time history when exists.
 
@@ -1265,19 +1265,6 @@ The verbose object is discussed below.
   preconditioner will be employed. Support of the identity preconditioner is the work in progress.
 
 * `"size of Krylov space`" [int] is used in GMRES iterative method. The default value is 10.
-
-
-Nonlinear Solvers (obsolete)
-============================
-This list contains the name of a nonlinear solver. Curently, there are
-two available options: nka and newton. Using of the Newton method
-assumes that two-point flux discretization will be implemented.
-
-.. code-block:: xml
-
-  <ParameterList name="Nonlinear solvers">
-    <Parameter name="solver" type="string" value="newton"/>
-  </ParameterList>
 
 
 Preconditioners

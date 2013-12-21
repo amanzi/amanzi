@@ -79,10 +79,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
     Exceptions::amanzi_throw(msg);
   }
 
-  if (glist.isSublist("Nonlinear solvers")) {
-    solver_list_ = glist.sublist("Nonlinear solvers");
-  }
-
   // for creating fields
   std::vector<std::string> names(2);
   names[0] = "cell"; 
@@ -173,7 +169,6 @@ void Richards_PK::InitPK()
 
   src_sink = NULL;
   src_sink_distribution = 0;
-  experimental_solver_ = FLOW_SOLVER_NKA;
 
   // Initilize various common data depending on mesh and state.
   Flow_PK::Init();
@@ -199,7 +194,6 @@ void Richards_PK::InitPK()
   rel_perm->Init(atm_pressure_, S_);
   rel_perm->ProcessParameterList();
   rel_perm->PopulateMapC2MB();
-  rel_perm->set_experimental_solver(experimental_solver_);
 
   std::string krel_method_name = rp_list_.get<string>("relative permeability");
   rel_perm->ProcessStringRelativePermeability(krel_method_name);
@@ -233,7 +227,7 @@ void Richards_PK::InitPK()
 
   // Select a proper matrix class. 
   Teuchos::ParameterList mlist;
-  if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
+  if (mfd3d_method_ == FLOW_FV_TPFA) {
     mlist.set<std::string>("matrix", "tpfa");
   } else {
     mlist.set<std::string>("matrix", "mfd");
@@ -447,7 +441,9 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   Epetra_MultiVector& p = *solution->ViewComponent("cell");
   p = pstate;
 
+  bool flag_face(false);
   if (solution->HasComponent("face")) {
+    flag_face = true;
     *solution->ViewComponent("face") = *S_->GetFieldData("pressure")->ViewComponent("face");
   }
 
@@ -466,7 +462,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     }
     pstate = p;
 
-    if (solution->HasComponent("face") && clip) {
+    if (flag_face && clip) {
       Epetra_MultiVector& lambda = *solution->ViewComponent("face", true);
       DeriveFaceValuesFromCellValues(p, lambda);
     }
@@ -479,7 +475,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
  
   // re-initialize lambda (experimental)
   double Tp = T0 + dT0;
- if (ti_specs.pressure_lambda_constraints) {
+ if (flag_face && ti_specs.pressure_lambda_constraints) {
     EnforceConstraints(Tp, *solution);
   } else {
     CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
@@ -684,9 +680,6 @@ bool Richards_PK::SetSymmetryProperty()
   bool sym = false;
   if ((method == FLOW_RELATIVE_PERM_CENTERED) ||
       (method == FLOW_RELATIVE_PERM_AMANZI)) sym = true;
-  if (experimental_solver_ == FLOW_SOLVER_NEWTON || 
-      experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) sym = false;
-
   return sym;
 }
 
