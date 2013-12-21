@@ -1,7 +1,7 @@
 /*
   This is the Nonlinear Solver component of the Amanzi code.
 
-  Interface for using NKA as a solver.
+  Interface for Newton solver.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
@@ -80,6 +80,7 @@ SolverNewton<Vector, VectorSpace>::Init(
   Init_();
 }
 
+
 /* ******************************************************************
 * Initialization of the Newton solver
 ****************************************************************** */
@@ -94,7 +95,7 @@ void SolverNewton<Vector, VectorSpace>::Init_()
   max_divergence_count_ = plist_.get<int>("max divergent iterations", 3);
   stagnation_itr_check_ = plist_.get<int>("stagnation iteration check", 8);
 
-  std::string monitor_name = plist_.get<std::string>("monitor", "monitor residual");
+  std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
 
   if (monitor_name == "monitor update") {
     monitor_ = SOLVER_MONITOR_UPDATE;

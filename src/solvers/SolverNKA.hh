@@ -71,6 +71,8 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   int nka_lag_space_, nka_lag_iterations_;
   int max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_;
+
+  bool modify_correction_;
   double residual_;  // defined by convergence criterion
   ConvergenceMonitor monitor_;
 };
@@ -102,11 +104,12 @@ void SolverNKA<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
-  max_itrs_ = plist_.get<int>("limit iterations", 100);
+  max_itrs_ = plist_.get<int>("limit iterations", 20);
   max_du_growth_factor_ = plist_.get<double>("max du growth factor", 1.0e5);
   max_error_growth_factor_ = plist_.get<double>("max error growth factor", 1.0e5);
   max_divergence_count_ = plist_.get<int>("max divergent iterations", 3);
   nka_lag_iterations_ = plist_.get<int>("lag iterations", 0);
+  modify_correction_ = plist_.get<bool>("modify correction", false);
 
   std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
   if (monitor_name == "monitor residual") {
@@ -127,6 +130,7 @@ void SolverNKA<Vector, VectorSpace>::Init_()
   pc_lag_ = 0;
   nka_lag_space_ = 0;
 
+  modify_correction_ = false;
   residual_ = -1.0;
 
   // update the verbose options
@@ -224,12 +228,14 @@ int SolverNKA<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     }
 
     // Hack the correction
-    bool hacked = fn_->ModifyCorrection(r, u, du);
-    if (hacked) {
-      // If we had to hack things, it't not unlikely that the Jacobian
-      // information is crap. Take the hacked correction, and restart
-      // NKA to start building a new Jacobian space.
-      nka_->Restart();
+    if (modify_correction_) {
+      bool hacked = fn_->ModifyCorrection(r, u, du);
+      if (hacked) {
+        // If we had to hack things, it't not unlikely that the Jacobian
+        // information is crap. Take the hacked correction, and restart
+        // NKA to start building a new Jacobian space.
+        nka_->Restart();
+      }
     }
 
     // Make sure that we do not diverge and cause numerical overflow.

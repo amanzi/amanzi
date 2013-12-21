@@ -783,6 +783,7 @@ The parameters used here are
          <Parameter name="max du growth factor" type="double" value="1e+5"/>
          <Parameter name="max divergent iterations" type="int" value="3"/>
          <Parameter name="max nka vectors" type="int" value="10"/>
+         <Parameter name="modify correction" type="bool" value="false"/>
          <ParameterList name="VerboseObject">
          <Parameter name="Verbosity Level" type="string" value="high"/>
          </ParameterList>
@@ -808,6 +809,9 @@ The parameters used here are
   can jump up during sequence of nonlinear iterations.
 
 * `"max nka vectors`" [int] is the size of the Krylov space.
+
+* `"modify correction`" [bool] allows to change (e.g. clip and damp) 
+  the NKA correction. This is the experimental option with dafualt `"false`".
 
 The remaining parameters in the time integrator sublist include 
 those needed for unit tests, and future code development:

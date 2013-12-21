@@ -190,7 +190,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
 template<class Matrix, class Vector, class VectorSpace>
 void LinearOperatorPCG<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::PCG_Solver", plist));
+  vo_ = Teuchos::rcp(new VerboseObject("Solvers::PCG", plist));
 
   tol_ = plist.get<double>("error tolerance", 1e-6);
   max_itrs_ = plist.get<int>("maximum number of iterations", 100);

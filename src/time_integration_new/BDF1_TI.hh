@@ -144,7 +144,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   double tnew = tlast + dt;
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    *vo_->os() << "step " << state_->seq + 1 << " T = " << tlast
+    *vo_->os() << "step " << state_->seq << " T = " << tlast
                << " [sec]  dT = " << dt << std::endl;
     *vo_->os() << "preconditioner lag is " << state_->pc_lag
                << " out of " << state_->maxpclag << std::endl;
@@ -160,8 +160,6 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
       fn_->changed_solution();
 
       if (fn_->is_admissible(u)) {
-	if (vo_->os_OK(Teuchos::VERB_HIGH))
-	  *vo_->os() << "is admissible!" << std::endl;
 	bool changed = fn_->ModifyPredictor(dt, u);
 	if (changed) fn_->changed_solution();
       } else {

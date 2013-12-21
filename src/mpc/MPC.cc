@@ -689,15 +689,6 @@ void MPC::cycle_driver() {
           break;
       }
 
-      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-        *out << std::setprecision(5);
-        *out << "Cycle " << iter;
-        *out << ": time step after flow step dT(y) = " << std::scientific << mpc_dT / (365.25*60*60*24);
-        *out << " " << limitstring;
-        *out << std::endl;
-      }
-      // ==============================================================
-
       // then advance transport and chemistry
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ) {
         double tc_dT(mpc_dT);

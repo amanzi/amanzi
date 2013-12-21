@@ -69,7 +69,7 @@ class Richards_PK : public Flow_PK {
   double ErrorNorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du);
   void update_norm(double rtol, double atol) {};
   bool is_admissible(Teuchos::RCP<const CompositeVector> up) { 
-   return false; 
+   return true; 
   }
   bool ModifyPredictor(double h, Teuchos::RCP<CompositeVector> up) {
     return false;

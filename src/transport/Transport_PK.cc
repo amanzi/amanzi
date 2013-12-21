@@ -238,7 +238,7 @@ double Transport_PK::CalculateTransportDt()
       const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dT);
 
       Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "cell id=" << cmin_dT << " has smallest dT, (" << p[0] << ", " << p[1];
+      *(vo_->os()) << "cell " << cmin_dT << " has smallest dT, (" << p[0] << ", " << p[1];
       if (p.dim() == 3) *(vo_->os()) << ", ", p[2];
       *(vo_->os()) << ")" << endl;
     }

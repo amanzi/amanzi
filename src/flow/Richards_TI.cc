@@ -37,7 +37,6 @@ void Richards_PK::Functional(double Told, double Tnew,
 
   AssembleMatrixMFD(*u_new, Tp);
   matrix_->ComputeNegativeResidual(*u_new, *f);
-{ double aaa; f->Norm2(&aaa); cout << aaa << endl; }
 
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
   const Epetra_MultiVector& f_cells = *f->ViewComponent("cell");
@@ -183,11 +182,11 @@ bool Richards_PK::ModifyCorrection(
   const Epetra_MultiVector& duc = *du->ViewComponent("cell");
 
   double max_sat_pert = 0.25;
-  int ret_val = 0;
-  double dumping_factor = 0.6;
+  double damping_factor = 0.6;
   double reference_pressure = 101325.0;
 
   int ncells_clipped(0);
+
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM(); 
   const Epetra_MultiVector& map_c2mb = *rel_perm->map_c2mb().ViewComponent("cell");
  
@@ -205,17 +204,15 @@ bool Richards_PK::ModifyCorrection(
     if ((fabs(duc[0][c]) > du_pert_max) && (1 - sat > 1e-5)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << "saturation clipping in cell " << c 
-                     << " pressure change: " << duc[0][c] << " -> " << du_pert_max << endl;
+        *(vo_->os()) << "clip saturation: c=" << c 
+                     << " p=" << uc[0][c]
+                     << " dp: " << duc[0][c] << " -> " << du_pert_max << endl;
       }
 
-      double tmp = duc[0][c];
-
-      if (duc[0][c] >= 0.0) duc[0][c] = fabs(du_pert_max);
-      else duc[0][c] = -fabs(du_pert_max);
+      if (duc[0][c] >= 0.0) duc[0][c] = du_pert_max;
+      else duc[0][c] = -du_pert_max;
       
       ncells_clipped++;
-      ret_val = 1;
     }    
   }
 
@@ -223,20 +220,16 @@ bool Richards_PK::ModifyCorrection(
     double unew = uc[0][c] - duc[0][c];
     double tmp = duc[0][c];
 
-    if ((unew < atm_pressure_) && (uc[0][c] > atm_pressure_)) {
-       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-	 *(vo_->os()) << "S -> U: " << uc[0][c] << " -> " << unew << endl;
-       }
-    }
-    else if ((unew > atm_pressure_) && (uc[0][c] < atm_pressure_)) {
+    if ((unew > atm_pressure_) && (uc[0][c] < atm_pressure_)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-	 *(vo_->os()) << "U -> S: " << uc[0][c] << " -> " << unew << endl;
+	 *(vo_->os()) << "pressure change: " << uc[0][c] << " -> " << unew << endl;
       }
-      duc[0][c] = tmp*dumping_factor;
+      duc[0][c] = tmp * damping_factor;
       ncells_clipped++;
     }
   }
 
+  // output statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int ncells_tmp = ncells_clipped;
     mesh_->get_comm()->SumAll(&ncells_tmp, &ncells_clipped, 1);
@@ -247,12 +240,7 @@ bool Richards_PK::ModifyCorrection(
     }
   }
 
-#ifdef HAVE_MPI
-  int ret_val_tmp = ret_val;
-  du->Comm().MaxAll(&ret_val_tmp, &ret_val, 1);  // find the global maximum
-#endif
-
-  return (ret_val == 1);
+  return (ncells_clipped > 0);
 }
 
 }  // namespace AmanziFlow
