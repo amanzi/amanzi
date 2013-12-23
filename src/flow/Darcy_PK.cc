@@ -275,7 +275,7 @@ void Darcy_PK::InitializeSteadySaturated()
 { 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "initializing with a saturated steady state..." << endl;
+    *vo_->os() << "initializing with a saturated steady state..." << endl;
   }
   double T = S_->time();
   SolveFullySaturatedProblem(T, *solution);
@@ -324,16 +324,16 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     LinearSolver_Specs& ls_specs = ti_specs.ls_specs;
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "****************************************" << endl
-                 << "TI phase: " << ti_specs.ti_method_name.c_str() << endl
-                 << "****************************************" << endl
-                 << "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << endl
-                 << "  time stepping id=" << ti_specs.dT_method << endl
-                 << "  sources distribution id=" << src_sink_distribution << endl
-                 << "  linear solver: ||r||<" << ls_specs.convergence_tol << " #itr<" << ls_specs.max_itrs << endl
-                 << "  preconditioner: " << ti_specs.preconditioner_name.c_str() << endl;
+    *vo_->os() << "****************************************" << endl
+               << "TI phase: " << ti_specs.ti_method_name.c_str() << endl
+               << "****************************************" << endl
+               << "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << endl
+               << "  time stepping id=" << ti_specs.dT_method << endl
+               << "  sources distribution id=" << src_sink_distribution << endl
+               << "  linear solver: ||r||<" << ls_specs.convergence_tol << " #itr<" << ls_specs.max_itrs << endl
+               << "  preconditioner: " << ti_specs.preconditioner_name.c_str() << endl;
     if (ti_specs.initialize_with_darcy) {
-      *(vo_->os()) << "  initial pressure guess: \"saturated solution\"" << endl;
+      *vo_->os() << "  initial pressure guess: \"saturated solution\"" << endl;
     }
   }
 
@@ -365,7 +365,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     int npassed = matrix_->npassed();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "  good and repaired matrices: " << nokay << " " << npassed << endl;
+    *vo_->os() << "  good and repaired matrices: " << nokay << " " << npassed << endl;
   }
 
   // Well modeling (one-time call)
@@ -470,8 +470,8 @@ int Darcy_PK::Advance(double dT_MPC)
     double residual = solver->residual();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "pressure solver (" << solver->name()
-                 << "): ||r||=" << residual << " itr=" << num_itrs << endl;
+    *vo_->os() << "pressure solver (" << solver->name()
+               << "): ||r||=" << residual << " itr=" << num_itrs << endl;
   }
 
   // calculate time derivative and 2nd-order solution approximation

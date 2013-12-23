@@ -110,7 +110,6 @@ TEST(FLOW_3D_RICHARDS) {
   RPK->InitPK();
   RPK->InitializeAuxiliaryData();
   RPK->InitSteadyState(0.0, 0.01);  // dT0 is not used
-  RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);
 
   /* solve the problem */
   RPK->AdvanceToSteadyState(0.0, 0.01);

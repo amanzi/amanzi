@@ -103,7 +103,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
 
   } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "mandatory sublist for steady-state calculations is missing." << endl;
+    *vo_->os() << "mandatory sublist for steady-state calculations is missing." << endl;
   }
 
   // Time integrator for period III, called transient time integrator
@@ -126,7 +126,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
 
   } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "missing sublist '\"transient time integrator'\"" << endl;
+    *vo_->os() << "missing sublist '\"transient time integrator'\"" << endl;
   }
 }
 
@@ -377,7 +377,7 @@ void Flow_PK::OutputTimeHistory(
   if (plist.isParameter("plot time history") && 
       vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "saving time history in file flow_dt_history.txt..." << endl;
+    *vo_->os() << "saving time history in file flow_dt_history.txt..." << endl;
 
     char file_name[30];
     sprintf(file_name, "flow_dt_history_%d.txt", ti_phase_counter++);

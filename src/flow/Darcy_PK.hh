@@ -63,11 +63,11 @@ class Darcy_PK : public Flow_PK {
   bool is_admissible(Teuchos::RCP<const CompositeVector> up) { 
    return false; 
   }
-  bool ModifyPredictor(double h, Teuchos::RCP<CompositeVector> up) {
+  bool ModifyPredictor(double dT, Teuchos::RCP<CompositeVector> u0, Teuchos::RCP<CompositeVector> u) {
     return false;
   }
-  bool ModifyCorrection(double h, Teuchos::RCP<const CompositeVector> res,
-                         Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du) {
+  bool ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
+                        Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du) {
     return false;
   }
   void changed_solution() {};

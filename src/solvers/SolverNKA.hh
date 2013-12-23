@@ -130,7 +130,6 @@ void SolverNKA<Vector, VectorSpace>::Init_()
   pc_lag_ = 0;
   nka_lag_space_ = 0;
 
-  modify_correction_ = false;
   residual_ = -1.0;
 
   // update the verbose options

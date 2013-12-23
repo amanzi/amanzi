@@ -151,7 +151,6 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     /* create Richards process kernel */
     RPK->InitPK();
     RPK->InitSteadyState(0.0, 0.001);
-    RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);
     RPK->AdvanceToSteadyState(0.0, 0.001);
     RPK->CommitState(S);
 

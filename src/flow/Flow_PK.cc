@@ -219,7 +219,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
 #endif
   if (! flag_essential_bc && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "WARNING: no essential boundary conditions, solver may fail" << endl;
+    *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << endl;
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -231,7 +231,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
 #endif
     if (MyPID == 0 && nseepage > 0 && nseepage != nseepage_prev) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "seepage face has changed: " << area_seepage << " [m^2]" << endl;
+      *vo_->os() << "seepage face has changed: " << area_seepage << " [m^2]" << endl;
     }
   }
   nseepage_prev = nseepage;

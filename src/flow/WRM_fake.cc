@@ -48,7 +48,7 @@ double WRM_fake::k_relative(double pc)
 double WRM_fake::saturation(double pc)
 {
   if (pc < 0.0)
-    return 0.0;
+    return 1.0; // 1.0 / (1.0 + pc * pc);
   else
     return 1.0;
 }
@@ -60,7 +60,7 @@ double WRM_fake::saturation(double pc)
 double WRM_fake::dSdPc(double pc)
 {
   if (pc < 0.0)
-    return pc / (1.0 + pc * pc);
+    return 0.0;  // pc / (1.0 + pc * pc);
   else
     return 0.0;
 }

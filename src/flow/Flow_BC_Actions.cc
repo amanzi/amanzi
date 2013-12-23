@@ -217,7 +217,7 @@ void Flow_PK::CalculateShiftWaterTable(const std::string region)
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "found " << nedges/2 << " boundary edges for side set " << region.c_str() << endl;
+    *vo_->os() << "found " << nedges/2 << " boundary edges for side set " << region.c_str() << endl;
   }
 }
 

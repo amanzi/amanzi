@@ -48,4 +48,28 @@ VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist)
   out_->setShowLinePrefix(!no_pre);
 }
 
+
+std::string VerboseObject::color(std::string name) 
+{ 
+  std::string output("");
+#ifdef __linux
+  if (name == "red") {
+    output = std::string("\033[1;31m");
+  } else if (name == "green") {
+    output = std::string("\033[1;32m");
+  }
+#endif
+  return output;
+}
+
+
+std::string VerboseObject::reset() 
+{ 
+  std::string output("");
+#ifdef __linux
+  output = std::string("\033[0m");
+#endif
+  return output;
+}
+
 } // namespace Amanzi

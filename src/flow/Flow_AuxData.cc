@@ -29,7 +29,7 @@ void aux_compute_hydraulic_head(
 void Flow_PK::UpdateAuxilliaryData() 
 {
   Teuchos::OSTab tab = vo_->getOSTab();
-  *(vo_->os()) << "Secondary fields: hydraulic head, etc..." << endl;  
+  *vo_->os() << "Secondary fields: hydraulic head, etc..." << endl;  
 
   Epetra_MultiVector& hydraulic_head = *(S_->GetFieldData("hydraulic_head", passwd_)->ViewComponent("cell"));
   const Epetra_MultiVector& pressure = *(S_->GetFieldData("pressure")->ViewComponent("cell"));

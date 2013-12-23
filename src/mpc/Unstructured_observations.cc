@@ -155,7 +155,7 @@ void Unstructured_observations::make_observations(State& state)
       if (global_mesh_block_size == 0) {
 	// warn that this region is empty and bail
 	Teuchos::OSTab tab = vo_->getOSTab();
-	*(vo_->os()) << "Cannot make an observation on an empty region: " << (i->second).region << ", skipping" << endl;
+	*vo_->os() << "Cannot make an observation on an empty region: " << (i->second).region << ", skipping" << endl;
 	continue;
       }
 

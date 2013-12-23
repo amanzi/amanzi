@@ -60,6 +60,7 @@
       <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="10.0"/>
       <Parameter name="discretization method" type="string" value="two point flux approximation"/>
+      <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="high"/>

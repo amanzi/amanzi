@@ -111,11 +111,10 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
   const Epetra_MultiVector& duc = *du.ViewComponent("cell");
 
   double error, error_p, error_r;
-  int cell_p, cell_r;
+  int cell_p(0), cell_r(0);
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_PRESSURE) {
     error_p = 0.0;
-    cell_p = 0;
     for (int c = 0; c < ncells_owned; c++) {
       double tmp = fabs(duc[0][c]) / (fabs(uc[0][c] - atm_pressure_) + atm_pressure_);
       if (tmp > error_p) {
@@ -149,20 +148,20 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
       const AmanziGeometry::Point& xp = mesh_->cell_centroid(c);
 
       Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "residual=" << functional_max_norm << " at point";
-      for (int i = 0; i < dim; i++) *(vo_->os()) << " " << xp[i];
-      *(vo_->os()) << endl;
+      *vo_->os() << "residual=" << functional_max_norm << " at point";
+      for (int i = 0; i < dim; i++) *vo_->os() << " " << xp[i];
+      *vo_->os() << endl;
  
       c = cell_p;
       const AmanziGeometry::Point& yp = mesh_->cell_centroid(c);
 
-      *(vo_->os()) << "pressure err=" << error_p << " at point";
-      for (int i = 0; i < dim; i++) *(vo_->os()) << " " << yp[i];
-      *(vo_->os()) << endl;
+      *vo_->os() << "pressure err=" << error_p << " at point";
+      for (int i = 0; i < dim; i++) *vo_->os() << " " << yp[i];
+      *vo_->os() << endl;
 
       int mb = map_c2mb[0][c];
       double s = (rel_perm->WRM())[mb]->saturation(atm_pressure_ - uc[0][c]);
-      *(vo_->os()) << "saturation=" << s << " pressure=" << uc[0][c] << endl;
+      *vo_->os() << "saturation=" << s << " pressure=" << uc[0][c] << endl;
     }
   }
 
@@ -204,9 +203,9 @@ bool Richards_PK::ModifyCorrection(
     if ((fabs(duc[0][c]) > du_pert_max) && (1 - sat > 1e-5)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << "clip saturation: c=" << c 
-                     << " p=" << uc[0][c]
-                     << " dp: " << duc[0][c] << " -> " << du_pert_max << endl;
+        *vo_->os() << "clip saturation: c=" << c 
+                   << " p=" << uc[0][c]
+                   << " dp: " << duc[0][c] << " -> " << du_pert_max << endl;
       }
 
       if (duc[0][c] >= 0.0) duc[0][c] = du_pert_max;
@@ -222,7 +221,7 @@ bool Richards_PK::ModifyCorrection(
 
     if ((unew > atm_pressure_) && (uc[0][c] < atm_pressure_)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-	 *(vo_->os()) << "pressure change: " << uc[0][c] << " -> " << unew << endl;
+	 *vo_->os() << "pressure change: " << uc[0][c] << " -> " << unew << endl;
       }
       duc[0][c] = tmp * damping_factor;
       ncells_clipped++;
@@ -236,7 +235,8 @@ bool Richards_PK::ModifyCorrection(
 
     if (MyPID == 0 && ncells_clipped > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "saturation was clipped in " << ncells_clipped << " cells" << endl;
+      *vo_->os() << vo_->color("red") << "saturation was clipped in " 
+                 << ncells_clipped << " cells" << vo_->reset() << endl;
     }
   }
 

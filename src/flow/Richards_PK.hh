@@ -71,11 +71,21 @@ class Richards_PK : public Flow_PK {
   bool is_admissible(Teuchos::RCP<const CompositeVector> up) { 
    return true; 
   }
-  bool ModifyPredictor(double h, Teuchos::RCP<CompositeVector> up) {
+  bool ModifyPredictor(double dT, Teuchos::RCP<CompositeVector> u0,
+                       Teuchos::RCP<CompositeVector> u) {
+    /*
+    Teuchos::RCP<CompositeVector> du = Teuchos::rcp(new CompositeVector(*u));
+    du->Update(-1.0, *u0, 1.0);
+
+    ModifyCorrection(dT, Teuchos::null, u0, du);
+
+    *u = *u0;
+    u->Update(1.0, *du, 1.0);
+    */
     return false;
   }
-  bool ModifyCorrection(double h, Teuchos::RCP<const CompositeVector> res,
-                         Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du);
+  bool ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
+                        Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du);
   void changed_solution() {};
 
   // other main methods
@@ -107,7 +117,6 @@ class Richards_PK : public Flow_PK {
                                    const Epetra_MultiVector& unew);
 
   // control method
-  void ResetErrorControl(int error) { error_control_ = error; }
   void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
   
   // access methods

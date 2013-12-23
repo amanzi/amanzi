@@ -34,7 +34,7 @@ class BDFFnBase {
   // using extrapolation and the time step that is used to compute
   // this predictor this function returns true if the predictor was
   // modified, false if not
-  virtual bool ModifyPredictor(double h, Teuchos::RCP<Vector> up) = 0;
+  virtual bool ModifyPredictor(double h, Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> u) = 0;
 
   // possibly modifies the correction, after the nonlinear solver (NKA)
   // has computed it, will return true if it did change the correction,

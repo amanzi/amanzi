@@ -156,7 +156,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     if (initialized_) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << i << " ||r||=" << residual_ << endl;
+        *vo_->os() << i << " ||r||=" << residual_ << endl;
       }
     }
     if (rnorm > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;

@@ -160,16 +160,12 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
       fn_->changed_solution();
 
       if (fn_->is_admissible(u)) {
-	bool changed = fn_->ModifyPredictor(dt, u);
+	bool changed = fn_->ModifyPredictor(dt, u0, u);
 	if (changed) fn_->changed_solution();
       } else {
 	*u = *u0;
 	fn_->changed_solution();
       }
-    } else {
-      fn_->changed_solution();
-      bool changed = fn_->ModifyPredictor(dt, u);
-      if (changed) fn_->changed_solution();
     }
   }
 
@@ -190,7 +186,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
       *vo_->os() << "success: " << solver_->num_itrs() << " nonlinear itrs" 
                  << " error=" << solver_->residual() << std::endl;
     } else {
-      *vo_->os() << "step failed with error code " << itr << std::endl;
+      *vo_->os() << vo_->color("red") << "step failed with error code " << itr << vo_->reset() << std::endl;
       *u = *u0;
     }
   }

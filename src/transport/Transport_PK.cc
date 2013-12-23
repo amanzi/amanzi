@@ -238,9 +238,9 @@ double Transport_PK::CalculateTransportDt()
       const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dT);
 
       Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "cell " << cmin_dT << " has smallest dT, (" << p[0] << ", " << p[1];
-      if (p.dim() == 3) *(vo_->os()) << ", ", p[2];
-      *(vo_->os()) << ")" << endl;
+      *vo_->os() << "cell " << cmin_dT << " has smallest dT, (" << p[0] << ", " << p[1];
+      if (p.dim() == 3) *vo_->os() << ", ", p[2];
+      *vo_->os() << ")" << endl;
     }
   }
   return dT;
@@ -354,8 +354,8 @@ int Transport_PK::Advance(double dT_MPC)
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << ncycles << " sub-cycles, dT_stable=" << dT_original 
-                 << " [sec]  dT_MPC=" << dT_MPC << " [sec]" << endl;
+    *vo_->os() << ncycles << " sub-cycles, dT_stable=" << dT_original 
+               << " [sec]  dT_MPC=" << dT_MPC << " [sec]" << endl;
 
     double tccmin_vec[number_components];
     double tccmax_vec[number_components];
@@ -379,8 +379,8 @@ int Transport_PK::Advance(double dT_MPC)
     mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_exact, 1);
 
     double mass_loss = mass_exact - mass_tracer;
-    *(vo_->os()) << "species #0: " << tccmin << " <= concentration <= " << tccmax << endl;
-    *(vo_->os()) << "species #0: mass=" << mass_tracer << " [kg], mass left domain=" << mass_loss << " [kg]" << endl;
+    *vo_->os() << "species #0: " << tccmin << " <= concentration <= " << tccmax << endl;
+    *vo_->os() << "species #0: mass=" << mass_tracer << " [kg], mass left domain=" << mass_loss << " [kg]" << endl;
   }
 
   if (dispersion_models_.size() != 0) {
@@ -430,9 +430,9 @@ int Transport_PK::Advance(double dT_MPC)
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "dispersion solver (" << solver->name() 
-                   << ") ||r||=" << residual / number_components
-                   << " itrs=" << num_itrs / number_components << endl;
+      *vo_->os() << "dispersion solver (" << solver->name() 
+                 << ") ||r||=" << residual / number_components
+                 << " itrs=" << num_itrs / number_components << endl;
     }
   }
   return 0;

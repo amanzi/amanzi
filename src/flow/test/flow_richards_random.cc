@@ -156,9 +156,8 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     /* create Richards process kernel */
     RPK->InitPK();
     RPK->InitializeAuxiliaryData();
-    RPK->InitSteadyState(0.0, 0.1);
-    RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);
-    RPK->AdvanceToSteadyState(0.0, 0.1);
+    RPK->InitSteadyState(0.0, 1.0);
+    RPK->AdvanceToSteadyState(0.0, 1.0);
     RPK->CommitState(S);
 
     S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
