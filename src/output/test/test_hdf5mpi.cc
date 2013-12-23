@@ -58,7 +58,7 @@ TEST(HDF5_MPI) {
   viz_output->setTrackXdmf(true);
   viz_output->createMeshFile(Mesh, hdf5_meshfile);
   viz_output->createDataFile(hdf5_datafile1);
-  
+
   Amanzi::HDF5_MPI *restart_output = new Amanzi::HDF5_MPI(*comm);
   restart_output->setTrackXdmf(false);
   restart_output->createDataFile(hdf5_datafile2);
@@ -67,13 +67,17 @@ TEST(HDF5_MPI) {
 
   double time = 0.0;
   int cycle = 0;
+
   for (int i = 0; i < 15; i++) {
-    
+
+    cout << "iteration... " << i << endl;
+
     cell_quantity->ReplaceGlobalValues(8, cell_values, cell_index_list);
     fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list);
     node_quantity->ReplaceGlobalValues(12, node_values, node_index_list);
     
     // write time step data
+    viz_output->open_h5file();
     viz_output->createTimestep(time, i);
     viz_output->writeCellDataReal(*cell_quantity, "cell_quantity");
     viz_output->writeCellDataReal(*fake_pressure, "pressure");
@@ -94,16 +98,21 @@ TEST(HDF5_MPI) {
 
     // close file
     viz_output->endTimestep();
+    viz_output->close_h5file();
   }
-   
+
+
   // write out restart
+
+  restart_output->open_h5file();
   restart_output->writeAttrReal(time, "time");
   restart_output->writeAttrInt(cycle, "cycle");
   restart_output->writeAttrString("string value", "attr name");
   restart_output->writeCellDataReal(*cell_quantity, "cell_quantity");
   restart_output->writeCellDataReal(*fake_pressure, "pressure");
   restart_output->writeNodeDataReal(*node_quantity, "node_quantity");
-  
+  restart_output->close_h5file();
+
   // write out string dataset
   /*
   int num_wstrs = 5;
@@ -121,12 +130,18 @@ TEST(HDF5_MPI) {
   restart_output->writeDataString(strArray,num_wstrs,"string_dataset");
   */
   
+  cout << "O.K." << endl;
+
   delete viz_output;
   delete restart_output;
   
   // test reading data back
   cout << "E>> create restart_input with file " << hdf5_datafile2 << ".h5" << endl;
   Amanzi::HDF5_MPI *restart_input = new Amanzi::HDF5_MPI(*comm,hdf5_datafile2+".h5");
+  cout << hdf5_datafile2+".h5" << endl;
+  
+  restart_input->open_h5file();
+
   double newtime;
   int newcycle;
   std::string newstring;
@@ -135,7 +150,7 @@ TEST(HDF5_MPI) {
   restart_input->readAttrInt(newcycle,"cycle");
   cout << "E>> read back attribute cycle = " << newcycle << endl;
   restart_input->readAttrString(newstring,"attr name");
-  cout << "E>> read back attribute string = " << newstring.c_str() << endl;
+  cout << "E>> read back attribute string = " << newstring << endl;
   cout << "E>> compare results" << endl;
   cout << "E>> original:" << endl << *cell_quantity;
   Teuchos::RCP<Epetra_Vector> read_quantity;
@@ -156,8 +171,11 @@ TEST(HDF5_MPI) {
     cout << "    " << strBack[i] << endl;
   }
   */
-  
+
+  restart_input->close_h5file();
+
   delete restart_input;
+
 
 #endif
 }
