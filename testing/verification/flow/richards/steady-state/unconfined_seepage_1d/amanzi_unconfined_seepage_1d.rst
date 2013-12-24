@@ -138,10 +138,6 @@ Results and Comparison
      :width: 5in
      :align: left
 
-.... image:: figures/hydraulic_head.png
-..   :width: 5in
-..   :align: center
-
 
 References
 ----------
