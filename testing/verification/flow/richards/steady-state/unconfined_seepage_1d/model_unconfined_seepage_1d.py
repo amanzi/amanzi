@@ -3,6 +3,11 @@ import matplotlib.pylab as plt
 
 class UnconfinedSeepageHead(object):
 
+    ft2m = 0.3048        # feet to meters 
+    m2ft = 3.28084       # meters to feet
+    d2s  = 86400         # days to seconds
+    y2s  = 31536000      # years to seconds
+
     """
     Solves the system:  MUST HAVE RICHARDS EQUATION HERE?
 
@@ -26,18 +31,20 @@ class UnconfinedSeepageHead(object):
         if params is None:
             params = dict()
 
-        params.setdefault("x_0",0)
-        params.setdefault("x_1",1000)
-        params.setdefault("z_0",100)
-        params.setdefault("z_1",50)
+        """ all numbers in metric system """
 
-        params.setdefault("k",1.0)
-        params.setdefault("rho",998.2)
+        params.setdefault("x_0",0)
+        params.setdefault("x_1",self.ft2m*1000)  
+        params.setdefault("z_0",self.ft2m*100)  
+        params.setdefault("z_1",self.ft2m*50)  
+
+        params.setdefault("k",self.ft2m*self.ft2m*1)   
+        params.setdefault("rho",998.2)  
         params.setdefault("mu",1.002e-3)
 
-        params.setdefault("h_0",80.0)
-        params.setdefault("h_1",50.0)
-        params.setdefault("Q_src",1.0)
+        params.setdefault("h_0",self.ft2m*80)   
+        params.setdefault("h_1",self.ft2m*50)    
+        params.setdefault("Q_src",self.ft2m*1/self.y2s)  # 1 ft/year to m/s
 
         params.setdefault("g",9.80665)
         params.setdefault("p_atm",101325.0)
@@ -50,8 +57,9 @@ class UnconfinedSeepageHead(object):
         We should really write the expression for this 
         """
 
-        self.L_s = 829.0
-        self.h_s = 50.0*(2-self.L_s/self.x_1)
+        self.L_s = self.ft2m*829.0
+        self.h_s = (self.ft2m*50.0)*(2-self.L_s/self.x_1)
+        print "self.h_s = ",self.h_s
 
     def head(self, coords):
 
@@ -66,7 +74,11 @@ class UnconfinedSeepageHead(object):
         """
 
         head = numpy.zeros(len(coords))
-        head[:] = self.h_0*self.h_0 + (self.h_s*self.h_s - self.h_0*self.h_0)*(coords[:,0]/self.L_s) + (self.Q_src*self.L_s*self.L_s/self.K)*(coords[:,0]/self.L_s)*(1.0-coords[:,0]/self.L_s)
+        head[:] = numpy.sqrt(self.h_0*self.h_0 + (self.h_s*self.h_s - self.h_0*self.h_0)*(coords[:,0]/self.L_s) + (self.Q_src*self.L_s*self.L_s/self.K)*(coords[:,0]/self.L_s)*(1.0-coords[:,0]/self.L_s))
+
+        print "term 1 ",self.h_0*self.h_0
+        print "term 2 ",(self.h_s*self.h_s - self.h_0*self.h_0)*(coords[:,0]/self.L_s)
+        print "term 3 ",(self.Q_src*self.L_s*self.L_s/self.K)*(coords[:,0]/self.L_s)*(1.0-coords[:,0]/self.L_s)
 
         return head
 
@@ -93,14 +105,6 @@ def createFromXML(filename):
     xml = amanzi_xml.utils.io.fromFile(filename)
     import amanzi_xml.utils.search as search
    
-    #
-    #  Domain Size (from Exodus file)
-    #
-    params["x_0"] = 0.0
-    params["z_0"] = 0.0
-    params["x_1"] = 304.8
-    params["z_1"] = 30.48
-
     #
     #  Material Properties
     #
@@ -137,15 +141,15 @@ if __name__ == "__main__":
     # set z
     coords[:,1]=0.524
     
-    # compute heads and pressures 
+    # compute heads (converted to feet) and pressures 
     h1 = ush.head(coords)
     p1 = ush.pressure(coords)
-
+    
     # plot 
-    plt.plot(x,p1)
-    plt.plot(x,p2)
+    plt.plot(x,h1)
+
     plt.xlabel('x-coordinate [m]')
-    plt.ylabel('Pressure [Pa]')
+    plt.ylabel('Hydraulic head [m]')
 
     # show the plot
     plt.show()
