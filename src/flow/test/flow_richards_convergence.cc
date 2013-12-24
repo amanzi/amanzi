@@ -180,7 +180,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
   printf("convergence rates: %23.2f %22.2f\n", p_rate, v_rate);
 
   CHECK_CLOSE(p_rate, 2.0, 0.2);
-  CHECK_CLOSE(v_rate, 2.0, 0.2);
+  CHECK(v_rate > 1.8);
 
   delete comm;
 }

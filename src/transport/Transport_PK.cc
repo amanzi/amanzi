@@ -62,6 +62,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
   mesh_ = S->GetMesh();
   dim = mesh_->space_dimension();
 
+  dT = 0.0;
   bc_scaling = 0.0;
   mass_tracer_exact = 0.0;  // Tracer is defined as species #0.
 
@@ -188,6 +189,8 @@ int Transport_PK::InitPK()
 * ***************************************************************** */
 double Transport_PK::CalculateTransportDt()
 {
+  S_->GetFieldData("darcy_flux", name_)->ScatterMasterToGhosted("face");
+
   IdentifyUpwindCells();
 
   // loop over faces and accumulate upwinding fluxes

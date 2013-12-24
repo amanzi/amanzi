@@ -77,7 +77,7 @@ void Matrix_TPFA::SymbolicAssemble()
 {
   if (cvs_.size() == 0) {  // ugly solution (lipnikov@lanl.gov) 
     cvs_.SetMesh(mesh_);
-    cvs_.SetGhosted(false);
+    cvs_.SetGhosted(true);
     cvs_.SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
