@@ -1,4 +1,4 @@
-<ParameterList>
+<ParameterList name="Main">
   <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
 
   <ParameterList name="Execution Control">
@@ -10,7 +10,7 @@
         <ParameterList name="Steady">
           <Parameter name="Start" type="double" value="0.0"/>
           <Parameter name="End" type="double" value="9.46728e+10"/>
-          <Parameter name="Initial Time Step" type="double" value="100.0"/>
+          <Parameter name="Initial Time Step" type="double" value="1.0"/>
         </ParameterList>
     </ParameterList>
 
@@ -18,10 +18,9 @@
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
-        <ParameterList name="Linear Solver">
-          <Parameter name="linear solver tolerance" type="double" value="1e-18"/>
-          <Parameter name="linear solver maximum iterations" type="int" value="100"/>
-        </ParameterList>
+        <Parameter name="linear solver tolerance" type="double" value="1e-18"/>
+        <Parameter name="linear solver maximum iterations" type="int" value="100"/>
+
         <ParameterList name="Steady-State Implicit Time Integration">
           <Parameter name="steady initialize with darcy" type="bool" value="true"/>
         </ParameterList>
@@ -161,6 +160,7 @@
         <Parameter name="Sr" type="double" value="0.25"/>
         <Parameter name="m" type="double" value="0.09090"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+        <Parameter name="krel smoothing interval" type="double" value="100"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
