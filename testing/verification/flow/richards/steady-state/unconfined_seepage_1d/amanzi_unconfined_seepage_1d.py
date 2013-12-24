@@ -45,21 +45,21 @@ def plotTestObservations(Obs_xml, Obs_data, axes1):
     for key in cmap.keys():
         scatter_data[key]={}
         scatter_data[key]['x']=[]
-        scatter_data[key]['pressure']=[]
+        scatter_data[key]['head']=[]
 
     # Collect observations in scatter_data
     for obs in Obs_data.observations.itervalues(): 
         scatter_data[obs.coordinate[1]]['x'].append(obs.coordinate[0])
-        scatter_data[obs.coordinate[1]]['pressure'].append(obs.data)
+        scatter_data[obs.coordinate[1]]['head'].append(obs.data)
 
     # Plot the observations
     for key in cmap.keys():
-        axes1.scatter(scatter_data[key]['x'],scatter_data[key]['pressure'],c=cmap[key],marker='s',s=25,label='Amanzi')
+        axes1.scatter(scatter_data[key]['x'],scatter_data[key]['head'],c=cmap[key],marker='s',s=25,label='Amanzi')
 
     # Set labels and title
     axes1.set_xlabel('x-coordinate [m]')
-    axes1.set_ylabel('Pressure [Pa]')
-    axes1.set_title('Aqueous Pressure vs Distance')
+    axes1.set_ylabel('Hydraulic Head [m]')
+    axes1.set_title('Hydraulic Head vs Distance')
     
     return cmap
 
@@ -77,29 +77,29 @@ def plotTestModel(filename, cmap, axes1, Obs_xml, Obs_data):
     # Plot a line for each z-coordinate in the observations
     for (z_val, color) in cmap.iteritems():
         coords[:,1] = z_val
-        pressure = mymodel.pressure(coords)
-        axes1.plot(x,pressure,color,label='$z = %0.2f $'%z_val)
+        head = mymodel.head(coords)
+        axes1.plot(x,head,color,label='$z = %0.2f $'%z_val)
         axes1.legend(loc="upper right" , fancybox = True , shadow = True)
           
 def MakeTable(Obs_data,Obs_xml,filename):
 
-    pressure_amanzi = []
+    head_amanzi = []
     coordinates = []
     mymodel = model_unconfined_seepage_1d.createFromXML(filename)
 
     for obs in Obs_data.observations.itervalues():
         coordinates.append([obs.coordinate[0], obs.coordinate[1]])
-        pressure_amanzi.append(str(obs.data).rstrip(']').lstrip('['))
+        head_amanzi.append(str(obs.data).rstrip(']').lstrip('['))
 
-    pressure_analytic = list(mymodel.pressure(numpy.array(coordinates)))
+    head_analytic = list(mymodel.head(numpy.array(coordinates)))
 
-    x = prettytable.PrettyTable(["x [m]", "z [m]", "Analytic [Pa]","Amanzi [Pa]"])
+    x = prettytable.PrettyTable(["x [m]", "z [m]", "Analytic [m]","Amanzi [m]"])
     x.padding_width = 2
     x.hrules = 1
     x.horizontal_header_char="="
 
-    for coords, p_analytic, p_amanzi in zip(coordinates,pressure_analytic,pressure_amanzi):
-        x.add_row([coords[0],coords[1],"%.4f" % float(p_analytic),"%.4f" % float(p_amanzi)])
+    for coords, h_analytic, h_amanzi in zip(coordinates,head_analytic,head_amanzi):
+        x.add_row([coords[0],coords[1],"%.4f" % float(h_analytic),"%.4f" % float(h_amanzi)])
         
     if os.path.exists("table_values.txt"):
         os.remove("table_values.txt")
