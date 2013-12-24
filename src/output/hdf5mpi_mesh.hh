@@ -87,6 +87,12 @@ class HDF5_MPI {
   // TODO(barker): Consolidate into a singel Xdmf file, after VisIt updates.
   void createTimestep(const double time, const int iteration);
   void endTimestep();
+  
+  // before writing data to the h5 file, the user must open the
+  // file, and after writing is done, he must close it
+  void open_h5file();
+  void close_h5file();
+
 
   // Write attribute to HDF5 data file.
   void writeAttrReal(double value, const std::string attrname);
@@ -188,6 +194,8 @@ class HDF5_MPI {
   static std::string xdmfHeader_;
 
   hid_t mesh_file_;
+  hid_t data_file_;
+  std::ofstream of_timestep_;
 
   bool dynamic_mesh_, mesh_written_;
   int static_mesh_cycle_;

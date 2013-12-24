@@ -776,6 +776,8 @@ void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
     }
 
     chk->WriteAttributes(S->time(), dt, S->cycle());
+    
+    chk->Finalize();
   }
 };
 
@@ -784,6 +786,7 @@ double ReadCheckpoint(Epetra_MpiComm* comm,
                       const Teuchos::Ptr<State>& S,
                       std::string filename) {
   Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(*comm, filename));
+  checkpoint->open_h5file();
 
   // load the attributes
   double time(0.);
@@ -818,7 +821,8 @@ double ReadCheckpoint(Epetra_MpiComm* comm,
       field->second->set_initialized();
     }
   }
-
+  
+  checkpoint->close_h5file();
   return dt;
 };
 
@@ -829,7 +833,9 @@ double ReadCheckpointInitialTime(Epetra_MpiComm* comm,
 
   // load the attributes
   double time(0.);
+  checkpoint->open_h5file();
   checkpoint->readAttrReal(time, "time");
+  checkpoint->close_h5file();
   return time;
 };
 

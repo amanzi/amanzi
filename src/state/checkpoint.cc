@@ -57,7 +57,13 @@ void Checkpoint::CreateFile(const int cycle) {
   oss.width(filenamedigits_);
   oss << std::right << cycle;
   checkpoint_output_->createDataFile(oss.str());
+  checkpoint_output_->open_h5file();
 };
+
+void Checkpoint::Finalize() {
+  checkpoint_output_->close_h5file();
+}
+
 
 
 void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
