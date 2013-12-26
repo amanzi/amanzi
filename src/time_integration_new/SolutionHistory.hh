@@ -72,7 +72,7 @@ class SolutionHistory {
   // Returns the number of solution vectors currently
   // maintained in the history structure THIS.  The number will be
   // between 0 and the value of MVEC used to create the structure.
-  int history_size();
+  int history_size() { return nvec_; }
 
  protected:
   void Initialize_(int mvec, const Vector& initvec);
@@ -254,13 +254,6 @@ void SolutionHistory<Vector>::TimeDeltas(std::vector<double>& h)
   for (unsigned int j = 0; j <= nvec_ - 2; j++) {
     h[j] = times_[0] - times_[j + 1];
   }
-}
-
-
-template<class Vector>
-int SolutionHistory<Vector>::history_size()
-{
-  return nvec_;
 }
 
 

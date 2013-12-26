@@ -97,7 +97,6 @@ class Richards_PK : public Flow_PK {
   void AssemblePreconditionerMFD(const CompositeVector &u, double Tp, double dTp);
 
   void UpdateSourceBoundaryData(double Tp, const CompositeVector& pressure);
-  double AdaptiveTimeStepEstimate(double* dTfactor);
 
   // linear problems and solvers
   void AssembleSteadyStateMatrix(FlowMatrix* matrix);

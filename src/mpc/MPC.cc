@@ -393,11 +393,12 @@ void MPC::cycle_driver() {
     restart_dT = ReadCheckpoint(comm, Teuchos::ptr(&*S), restart_from_filename);
     iter = S->cycle();
     if (!reset_times_.empty()) {
-      while (reset_times_.front()<S->time()) {
+      while (reset_times_.front() < S->time()) {
         reset_times_.erase(reset_times_.begin());
         reset_times_dt_.erase(reset_times_dt_.begin());
       }
     }
+    S->set_initial_time(S->time());
   } else { // no restart, we will call the PKs to allow them to init their auxilary data and massage initial conditions
     Amanzi::timer_manager.start("Flow PK");
     if (flow_enabled) FPK->InitializeAuxiliaryData();

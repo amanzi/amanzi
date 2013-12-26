@@ -45,7 +45,7 @@
 #define ST_SP_DT_INCR_FACTOR            1.0    // this is the dt increase factor for single phase
 #define ST_CLIP_SAT                     0.6
 #define ST_NKA_DIVGD_TOL                1.0e10
-#define ST_NKA_NUMVEC                   3
+#define ST_NKA_NUMVEC                   10
 #define ST_TS_STRATEGY                  "standard"
 #define ST_TS_CONTROLLER                "standard"
 
@@ -74,7 +74,7 @@
 #define TR_SP_DT_INCR_FACTOR            1.0    // this is the dt increase factor for single phase
 #define TR_CLIP_SAT                     0.6
 #define TR_NKA_DIVGD_TOL                1.0e10
-#define TR_NKA_NUMVEC                   3
+#define TR_NKA_NUMVEC                   10
 #define TR_TS_STRATEGY                  "standard"
 #define TR_TS_CONTROLLER                "standard"
 

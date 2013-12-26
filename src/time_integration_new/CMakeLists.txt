@@ -72,6 +72,9 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
     include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 
+    # Hacking the templated vector machinery
+    add_definitions("-D VECTORisEPETRA_VECTOR")
+
     add_amanzi_test(time_integration test_time_integration
                     KIND unit
 		    SOURCE
@@ -89,9 +92,9 @@ if (BUILD_TESTS)
 		          test/Main.cc
 			  test/test_ode_nka.cc
 		    LINK_LIBS
-              time_integration
-			  error_handling
-              atk
+			time_integration
+			error_handling
+        		atk
 			  ${UnitTest_LIBRARIES}
 			  ${time_int_new_tpl_libs})
 

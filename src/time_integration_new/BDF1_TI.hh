@@ -49,14 +49,17 @@ class BDF1_TI {
   void WriteSteppingStatistics_();
 
  protected:
-  int mtries_;
-  Teuchos::RCP<AmanziSolvers::Solver<Vector,VectorSpace> > solver_;
+  Teuchos::RCP<TimestepController> ts_control;  // timestep controller
   Teuchos::RCP<BDF1_State<Vector> > state_;
+
+  Teuchos::RCP<AmanziSolvers::Solver<Vector,VectorSpace> > solver_;
   Teuchos::RCP<BDF1_SolverFnBase<Vector> > solver_fn_;
   Teuchos::RCP<BDFFnBase<Vector> > fn_;
-  Teuchos::RCP<const Vector> initvector_;
+
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
+
+  Teuchos::RCP<Vector> udot_prev_, udot_;  // for error estimate 
 };
 
 
@@ -67,7 +70,7 @@ template<class Vector,class VectorSpace>
 BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
                      Teuchos::ParameterList& plist,
                      const Teuchos::RCP<const Vector>& initvector) :
-    plist_(plist), initvector_(initvector) {
+    plist_(plist) {
   fn_ = Teuchos::rcpFromRef(fn);
 
   // update the verbose options
@@ -85,6 +88,14 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
   solver_ = factory.Create(plist_);
 
   solver_->Init(solver_fn_, initvector->Map());
+
+  // Allocate memory for adaptive timestep controll
+  udot_ = Teuchos::rcp(new Vector(*initvector));
+  udot_prev_ = Teuchos::rcp(new Vector(*initvector));
+
+  // timestep controller
+  TimestepControllerFactory<Vector> fac;
+  ts_control = fac.Create(plist, udot_, udot_prev_);
 }
 
 
@@ -192,7 +203,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   }
 
   // update the next timestep size
-  dt_next = state_->ts_control->get_timestep(dt, itr);
+  dt_next = ts_control->get_timestep(dt, itr);
 
   // update the preconditioner lag
   if (itr < 0) {
@@ -212,6 +223,13 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   } else {
     state_->hmax = std::max(state_->hmax, dt);
     state_->hmin = std::min(state_->hmin, dt);
+
+    if (state_->uhist->history_size() > 1) {
+      *udot_prev_ = *udot_;
+      double tmp = 1.0 / dt;
+      *udot_ = *u;
+      udot_->Update(-tmp, *u0, tmp);
+    }
   }
   return (itr < 0);
 }

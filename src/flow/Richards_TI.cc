@@ -30,7 +30,7 @@ void Richards_PK::Functional(double Told, double Tnew,
                              Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
                              Teuchos::RCP<CompositeVector> f)
 { 
-  double Tp(Told), dTp(Tnew - Told);
+  double Tp(Tnew), dTp(Tnew - Told);
 
   const Epetra_MultiVector& uold_cells = *u_old->ViewComponent("cell");
   const Epetra_MultiVector& unew_cells = *u_new->ViewComponent("cell");

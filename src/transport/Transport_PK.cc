@@ -299,7 +299,7 @@ int Transport_PK::Advance(double dT_MPC)
   int ncycles = 0, swap = 1;
   while (dT_sum < dT_MPC) {
     // update boundary conditions
-    time = T_physics;
+    time = T_physics + dT_cycle / 2;
     for (int i = 0; i < bcs.size(); i++) bcs[i]->Compute(time);
     
     double dT_try = dT_MPC - dT_sum;
@@ -383,7 +383,8 @@ int Transport_PK::Advance(double dT_MPC)
 
     double mass_loss = mass_exact - mass_tracer;
     *vo_->os() << "species #0: " << tccmin << " <= concentration <= " << tccmax << endl;
-    *vo_->os() << "species #0: mass=" << mass_tracer << " [kg], mass left domain=" << mass_loss << " [kg]" << endl;
+    *vo_->os() << "species #0: reservoir mass=" << mass_tracer 
+               << " [kg], mass left=" << mass_loss << " [kg]" << endl;
   }
 
   if (dispersion_models_.size() != 0) {

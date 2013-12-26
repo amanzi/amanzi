@@ -363,6 +363,9 @@ void Richards_PK::InitTransient(double T0, double dT0)
   }
 
   InitNextTI(T0, dT0, ti_specs_trs_);
+
+  // reset some quantities
+  mass_bc = 0.0;
 }
 
 
@@ -558,23 +561,6 @@ int Richards_PK::Advance(double dT_MPC)
     T_physics = bdf1_dae->time();
   }
 
-  // Calculate time derivative and 2nd-order solution approximation.
-  // Estimate of a time step multiplier overrides the above estimate.
-  if (ti_specs->dT_method == FLOW_DT_ADAPTIVE) {
-    const Epetra_MultiVector& pressure = *S_->GetFieldData("pressure")->ViewComponent("face", false);
-    Epetra_MultiVector& p = *solution->ViewComponent("face", false);
-
-    for (int c = 0; c < ncells_owned; c++) {
-      (*pdot_cells)[c] = (p[0][c] - pressure[0][c]) / dT; 
-      p[0][c] = pressure[0][c] + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
-    }
-
-    double err, dTfactor;
-    err = AdaptiveTimeStepEstimate(&dTfactor);
-    if (err > 0.0) throw 1000;  // fix (lipnikov@lan.gov)
-    dTnext = std::min(dT_MPC * dTfactor, ti_specs->dTmax);
-  }
-
   dt_tuple times(time, dT_MPC);
   ti_specs->dT_history.push_back(times);
 
@@ -641,41 +627,12 @@ void Richards_PK::CommitState(Teuchos::RCP<State> S)
     mass_bc += mass_bc_dT;
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "water mass=" << mass_amanzi 
-                 << " [kg], total boundary flux=" << mass_bc << " [kg]" << endl;
+    *vo_->os() << "reservoir water mass=" << mass_amanzi 
+                 << " [kg], total influx=" << mass_bc << " [kg]" << endl;
   }
 
   dT = dTnext;
 }
-
-
-/* ******************************************************************
-* Estimate du/dt from the pressure equation, a du/dt = g - A*u.
-* There is no meaniful way to estimate du/dt due to the abrupt change 
-* of function a. The routine is not used.
-****************************************************************** */
-/*
-double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot)
-{
-  AssembleMatrixMFD(u, T);
-  double norm_udot = matrix_->ComputeNegativeResidual(u, udot);
-
-  Epetra_Vector* udot_cells = FS->CreateCellView(udot);
-  const Epetra_Vector& phi = FS->ref_porosity();
-  Epetra_Vector dSdP(mesh_->cell_map(false));
-  rel_perm->DerivedSdP(u, dSdP);
- 
-  for (int c = 0; c < ncells_owned; c++) {
-    double volume = mesh_->cell_volume(c);
-    if (dSdP[c] > 0.0) (*udot_cells)[c] /= volume * dSdP[c] * phi[c] * rho_;
-  }
-
-  Epetra_Vector* udot_faces = FS->CreateFaceView(udot);
-  DeriveFaceValuesFromCellValues(*udot_cells, *udot_faces);
-
-  return norm_udot;
-}
-*/
 
 
 /* ******************************************************************
@@ -688,44 +645,6 @@ bool Richards_PK::SetSymmetryProperty()
   if ((method == FLOW_RELATIVE_PERM_CENTERED) ||
       (method == FLOW_RELATIVE_PERM_AMANZI)) sym = true;
   return sym;
-}
-
-
-/* ******************************************************************
-* Estimate dT increase factor by comparing the 1st and 2nd order
-* time approximations. 
-* WARNING: it is implmented for transient phase only.
-****************************************************************** */
-double Richards_PK::AdaptiveTimeStepEstimate(double* dTfactor)
-{
-  Epetra_MultiVector& p = *solution->ViewComponent("cell");
-
-  double tol, error, error_max = 0.0;
-  double dTfactor_cell;
-
-  *dTfactor = 100.0;
-  for (int c = 0; c < ncells_owned; c++) {
-    error = fabs((*pdot_cells)[c] - (*pdot_cells_prev)[c]) * dT / 2;
-    tol = ti_specs_trs_.rtol * fabs(p[0][c]) + ti_specs_trs_.atol;
-
-    dTfactor_cell = sqrt(tol / std::max(error, FLOW_DT_ADAPTIVE_ERROR_TOLERANCE));
-    *dTfactor = std::min(*dTfactor, dTfactor_cell);
-
-    error_max = std::max(error_max, error - tol);
-  }
-
-  *dTfactor *= FLOW_DT_ADAPTIVE_SAFETY_FACTOR;
-  *dTfactor = std::min(*dTfactor, FLOW_DT_ADAPTIVE_INCREASE);
-  *dTfactor = std::max(*dTfactor, FLOW_DT_ADAPTIVE_REDUCTION);
-
-#ifdef HAVE_MPI
-    double dT_tmp = *dTfactor;
-    solution->Comm().MinAll(&dT_tmp, dTfactor, 1);  // find the global minimum
- 
-    double error_tmp = error_max;
-    solution->Comm().MaxAll(&error_tmp, &error_max, 1);  // find the global maximum
-#endif
-  return error_max;
 }
 
 
