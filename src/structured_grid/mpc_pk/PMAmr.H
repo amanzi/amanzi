@@ -22,8 +22,19 @@ public:
     virtual void init (Real strt_time,
                        Real stop_time);
 
-    virtual void initialInit (Real strt_time,
-                              Real stop_time);
+    void initialInit (Real              strt_time,
+		      Real              stop_time,
+		      const BoxArray*   lev0_grids = 0,
+		      const Array<int>* pmap = 0);
+    //
+    // First part of initialInit
+    //
+    void InitializeInit (Real strt_time, Real stop_time, 
+                         const BoxArray* lev0_grids = 0, const Array<int>* pmap = 0);
+    //
+    // Second part of initialInit
+    //
+    void FinalizeInit (Real strt_time, Real stop_time); 
 
     virtual void writePlotFile ();
     virtual void checkPoint ();
@@ -102,6 +113,7 @@ private:
     Real dt0_before_event_cut;
     Real dt0_from_previous_advance;
     static bool do_output_time_in_years;
+    static bool attempt_to_recover_failed_step;
 };
 
 #endif /*_PMAmr_H_*/

@@ -276,7 +276,10 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
 #endif  
 
   BuildOpSkel(Jac);
-  BuildMLPropEval();
+
+  if (!params.upwind_krel  &&  params.subgrid_krel) {
+    BuildMLPropEval();
+  }
   
   matfdcoloring = 0;
   ierr = SNESCreate(comm,&snes); CHKPETSC(ierr);
@@ -334,91 +337,90 @@ Join(const BoxArray& ba1, const BoxArray& ba2, bool do_simplify = false)
 void
 RichardSolver::BuildMLPropEval()
 {
-  if (!params.upwind_krel  &&  params.subgrid_krel) {
-    MatFiller* matFiller = pm_amr.GetMatFiller();
-    bool ret = matFiller != 0 && matFiller->Initialized();
-    if (!ret) {
-      BoxLib::Abort("RichardSolver::BuildMLPropEval: matFiller not ready");
-    }
+  BL_ASSERT(!params.upwind_krel  &&  params.subgrid_krel);
 
-    const Array<BoxArray>& gridArray = layout.GridArray();
-    int num_levs_mixed = matFiller->NumLevels();
+  MatFiller* matFiller = pm_amr.GetMatFiller();
+  bool ret = matFiller != 0 && matFiller->Initialized();
+  if (!ret) {
+    BoxLib::Abort("RichardSolver::BuildMLPropEval: matFiller not ready");
+  }
 
-    state_to_fill.resize(num_levs_mixed);
-    derive_to_fill.resize(num_levs_mixed);
+  const Array<BoxArray>& gridArray = layout.GridArray();
+  int num_levs_mixed = matFiller->NumLevels();
 
-    for (int lev=0; lev<num_levs_mixed; ++lev) {
-      const BoxArray& stf = (lev==0 ? gridArray[0] : state_to_fill[lev]);
-      BoxArray mixed = BoxLib::intersect(matFiller->Mixed(lev),stf);
-      if (mixed.size()>0) {
-        if (lev<num_levs_mixed-1) {
-          state_to_fill[lev+1] = BoxArray(mixed).refine(matFiller->RefRatio(lev));          
-          BoxList bl(state_to_fill[lev+1]); bl.simplify(); state_to_fill[lev+1] = BoxArray(bl);
-        }
-        state_to_fill[lev] = ComplementIn(mixed,state_to_fill[lev],true);
-      }
-    }
+  state_to_fill.resize(num_levs_mixed);
+  derive_to_fill.resize(num_levs_mixed);
 
-    for (int lev=0; lev<num_levs_mixed; ++lev) {
-      if (lev==0) {
-        derive_to_fill[lev] = matFiller->Mixed(lev);
-      }
+  for (int lev=0; lev<num_levs_mixed; ++lev) {
+    const BoxArray& stf = (lev==0 ? gridArray[0] : state_to_fill[lev]);
+    BoxArray mixed = BoxLib::intersect(matFiller->Mixed(lev),stf);
+    if (mixed.size()>0) {
       if (lev<num_levs_mixed-1) {
-        derive_to_fill[lev] = Join(derive_to_fill[lev],matFiller->Mixed(lev),true);
+	state_to_fill[lev+1] = BoxArray(mixed).refine(matFiller->RefRatio(lev));          
+	BoxList bl(state_to_fill[lev+1]); bl.simplify(); state_to_fill[lev+1] = BoxArray(bl);
       }
-      if (lev>0) {
-        derive_to_fill[lev] = Join(derive_to_fill[lev],
-                                   BoxArray(matFiller->Mixed(lev-1)).refine(matFiller->RefRatio(lev-1)),true);
-      }
-      derive_to_fill[lev].removeOverlap();
+      state_to_fill[lev] = ComplementIn(mixed,state_to_fill[lev],true);
     }
+  }
 
-    for (int lev=0; lev<num_levs_mixed; ++lev) {
-      int mg = pm_amr.maxGridSize(lev);
-      if (state_to_fill[lev].size()>0) {
-        state_to_fill[lev].maxSize(mg);
-      }
-      if (derive_to_fill[lev].size()>0) {
-        derive_to_fill[lev].maxSize(mg);
-      }
+  for (int lev=0; lev<num_levs_mixed; ++lev) {
+    if (lev==0) {
+      derive_to_fill[lev] = matFiller->Mixed(lev);
     }
-
-    int num_fill = state_to_fill.size();
-    phif.resize(num_fill,PArrayManage);
-    pcPf.resize(num_fill,PArrayManage);
-    kf.resize(num_fill,PArrayManage);
-    krf.resize(num_fill,PArrayManage);
-    pf.resize(num_fill,PArrayManage);
-    lf.resize(num_fill,PArrayManage);
-
-    for (int lev=1; lev<num_fill; ++lev) {
-      const BoxArray& stff = state_to_fill[lev];
-      if (stff.size()>0) {	
-	int ncPhi = matFiller->nComp("porosity");
-	phif.set(lev, new MultiFab(stff,ncPhi,0));
-
-	int ncPcP = matFiller->nComp("capillary_pressure");
-	pcPf.set(lev, new MultiFab(stff,ncPcP,0));
-
-	int ncK = matFiller->nComp("permeability");
-	kf.set(lev, new MultiFab(stff,ncK,0));
-
-	int ncKr = matFiller->nComp("relative_permeability");
-	krf.set(lev, new MultiFab(stff,ncKr,0));
-
-	pf.set(lev, new MultiFab(stff,1,0));
-	lf.set(lev, new MultiFab(stff,1,0));
-      }
+    if (lev<num_levs_mixed-1) {
+      derive_to_fill[lev] = Join(derive_to_fill[lev],matFiller->Mixed(lev),true);
     }
-
-    int num_derive = derive_to_fill.size();
-    lc.resize(num_derive,PArrayManage);
-    for (int lev=0; lev<num_derive; ++lev) {
-      if (derive_to_fill[lev].size()>0) {
-	lc.set(lev,new MultiFab(derive_to_fill[lev],BL_SPACEDIM,0));
-      }
+    if (lev>0) {
+      derive_to_fill[lev] = Join(derive_to_fill[lev],
+				 BoxArray(matFiller->Mixed(lev-1)).refine(matFiller->RefRatio(lev-1)),true);
     }
+    derive_to_fill[lev].removeOverlap();
+  }
 
+  for (int lev=0; lev<num_levs_mixed; ++lev) {
+    int mg = pm_amr.maxGridSize(lev);
+    if (state_to_fill[lev].size()>0) {
+      state_to_fill[lev].maxSize(mg);
+    }
+    if (derive_to_fill[lev].size()>0) {
+      derive_to_fill[lev].maxSize(mg);
+    }
+  }
+
+  int num_fill = state_to_fill.size();
+  phif.resize(num_fill,PArrayManage);
+  pcPf.resize(num_fill,PArrayManage);
+  kf.resize(num_fill,PArrayManage);
+  krf.resize(num_fill,PArrayManage);
+  pf.resize(num_fill,PArrayManage);
+  lf.resize(num_fill,PArrayManage);
+
+  for (int lev=1; lev<num_fill; ++lev) {
+    const BoxArray& stff = state_to_fill[lev];
+    if (stff.size()>0) {	
+      int ncPhi = matFiller->nComp("porosity");
+      phif.set(lev, new MultiFab(stff,ncPhi,0));
+
+      int ncPcP = matFiller->nComp("capillary_pressure");
+      pcPf.set(lev, new MultiFab(stff,ncPcP,0));
+
+      int ncK = matFiller->nComp("permeability");
+      kf.set(lev, new MultiFab(stff,ncK,0));
+
+      int ncKr = matFiller->nComp("relative_permeability");
+      krf.set(lev, new MultiFab(stff,ncKr,0));
+
+      pf.set(lev, new MultiFab(stff,1,0));
+      lf.set(lev, new MultiFab(stff,1,0));
+    }
+  }
+
+  int num_derive = derive_to_fill.size();
+  lc.resize(num_derive,PArrayManage);
+  for (int lev=0; lev<num_derive; ++lev) {
+    if (derive_to_fill[lev].size()>0) {
+      lc.set(lev,new MultiFab(derive_to_fill[lev],BL_SPACEDIM,0));
+    }
   }
 }
 

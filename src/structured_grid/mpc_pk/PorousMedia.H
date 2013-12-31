@@ -401,7 +401,8 @@ public:
 		      int   amr_ncycle,
                       Real  dt_try,
                       Real& dt_taken,
-                      Real& dt_suggest);
+                      Real& dt_suggest,
+		      bool  attempt_to_recover_failed_step);
 
   void advance_richards_transport_dt(Real t);
 

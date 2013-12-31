@@ -2482,7 +2482,8 @@ PorousMedia::ml_step_driver(Real  time,
 			    int   amr_ncycle,
                             Real  dt_try,
                             Real& dt_taken,
-                            Real& dt_suggest)
+                            Real& dt_suggest,
+			    bool  attempt_to_recover_failed_step)
 {
     Real dt_min = 1.e-20 * dt_try;
     int max_dt_iters = 1; // By default, do not subcycle this process
@@ -2534,6 +2535,10 @@ PorousMedia::ml_step_driver(Real  time,
       dt_iter++;
 
       continue_dt_iteration = !step_ok  &&  (dt_this_attempt >= dt_min) && (dt_iter < max_dt_iters);
+
+      if (!step_ok && !attempt_to_recover_failed_step) {
+	continue_dt_iteration = false;
+      }
     }
     return step_ok && dt_taken >= dt_min &&  dt_iter <= max_dt_iters;
 }
@@ -3679,11 +3684,7 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
 
   int num_active_levels = finest_level + 1;
   Layout layout_sub(parent,num_active_levels);
-  RichardSolver* rs = 0;
   if (steady_use_PETSc_snes) {
-    RSParams rsparams;
-    SetRichardSolverParameters(rsparams,"FlowAdvance");
-    rs = new RichardSolver(*(PMParent()),rsparams,layout_sub);
 
     // Prepare the state data structures
     for (int lev=0; lev<=finest_level; ++lev) {
@@ -3743,15 +3744,15 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     
   if (steady_use_PETSc_snes) 
   {
-    rs->ResetRhoSat();
-    rs->SetCurrentTimestep(parent->levelSteps(0));
+    richard_solver->ResetRhoSat();
+    richard_solver->SetCurrentTimestep(parent->levelSteps(0));
     if (!steady_record_file.empty()) {
-      rs->SetRecordFile(steady_record_file);
+      richard_solver->SetRecordFile(steady_record_file);
     }
-    int retCode = rs->Solve(t_flow+dt_flow, dt_flow, 1, nld);
+    int retCode = richard_solver->Solve(t_flow+dt_flow, dt_flow, 1, nld);
     if (retCode > 0) {
       ret = RichardNLSdata::RICHARD_SUCCESS;
-      rs->UpdateDarcyVelocity(rs->GetPressureNp1(),t_flow+dt_flow);
+      richard_solver->UpdateDarcyVelocity(richard_solver->GetPressureNp1(),t_flow+dt_flow);
     } 
     else {
       if (ret == -3 || ret == 0) {
@@ -3771,8 +3772,6 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
 
   bool cont = nld.AdjustDt(dt_flow,ret,dt_flow_new); 
 
-  delete rs;
-    
   step_ok = (ret == RichardNLSdata::RICHARD_SUCCESS);
 
 
@@ -8750,15 +8749,10 @@ PorousMedia::post_regrid (int lbase,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::post_regrid()");
 
-#if 1
-  if (level == lbase) {
-    PMParent()->GetLayout().Rebuild();
-  }
-#else
   if (level == lbase  && steady_use_PETSc_snes) {
 
     // NOTE: If grids change at any level, the layout (and RS) is no longer valid
-    Layout& layout = PMAmr::GetLayout();
+    Layout& layout = PMParent()->GetLayout();
     PMAmr* pm_parent = PMParent();
     int new_nLevs = new_finest - lbase + 1;
 
@@ -8774,7 +8768,6 @@ PorousMedia::post_regrid (int lbase,
       richard_solver = new RichardSolver(*pm_parent,rsparams,layout);
     }
   }
-#endif
 }
 
 void 
@@ -8868,7 +8861,8 @@ PorousMedia::post_init (Real stop_time)
 
   post_init_estDT(dt_init_local, nc_save, dt_save, stop_time);
 
-  const Real strt_time       = state[State_Type].curTime();
+  const Real strt_time = parent->startTime();
+
   for (int k = 0; k <= finest_level; k++)
     getLevel(k).setTimeLevel(strt_time,dt_save[k],dt_save[k]);
 

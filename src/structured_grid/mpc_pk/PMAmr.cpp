@@ -23,6 +23,7 @@ namespace
 EventCoord PMAmr::event_coord;
 std::map<std::string,EventCoord::Event*> PMAmr::defined_events;
 bool PMAmr::do_output_time_in_years;
+bool PMAmr::attempt_to_recover_failed_step;
 
 void
 PMAmr::CleanupStatics ()
@@ -43,6 +44,7 @@ PMAmr::PMAmr()
         plot_file_digits         = file_name_digits;
         chk_file_digits          = file_name_digits;
         do_output_time_in_years  = true;
+        attempt_to_recover_failed_step = true;
 
         BoxLib::ExecOnFinalize(PMAmr::CleanupStatics);
         pmamr_initialized = true;
@@ -56,6 +58,7 @@ PMAmr::PMAmr()
     ppa.query("plotfile_on_restart",plotfile_on_restart);
     ppa.query("compute_new_dt_on_regrid",compute_new_dt_on_regrid);
     ppa.query("do_output_time_in_years",do_output_time_in_years);
+    ppa.query("attempt_to_recover_failed_step",attempt_to_recover_failed_step);
 
     ParmParse pp;
     pp.query("max_step",max_step);
@@ -227,37 +230,38 @@ void
 PMAmr::init (Real t_start,
              Real t_stop)
 {
-    SetUpMaterialServer();
-    InitializeControlEvents();
+  SetUpMaterialServer();
+  InitializeControlEvents();
+  
+  if (!restart_chkfile.empty() && restart_chkfile != "init") {
+    
+    restart(restart_chkfile);
+    setStartTime(0); // FIXME: This needs to be written to the checkpoint
 
-    Amr::init(t_start, t_stop);
+  } else {
 
-    if (!restart_chkfile.empty() && restart_chkfile != "init")
-    {
-        setStartTime(0); // FIXME: This needs to be written to the checkpoint
+    initialInit(t_start, t_stop);
+
+    bool write_plot, write_check, begin_tpc;
+    Array<int> initial_observations;
+
+    initial_events(write_plot,write_check,initial_observations,begin_tpc,event_coord,
+		   cumtime, level_steps[0]);
+    
+    if (write_plot) {
+      int file_name_digits_tmp = file_name_digits;
+      file_name_digits = plot_file_digits;
+      writePlotFile();
+      file_name_digits = file_name_digits_tmp;
     }
-    else
-    {
-        bool write_plot, write_check, begin_tpc;
-        Array<int> initial_observations;
-
-        initial_events(write_plot,write_check,initial_observations,begin_tpc,event_coord,
-                       cumtime, level_steps[0]);
-
-        if (write_plot) {
-            int file_name_digits_tmp = file_name_digits;
-            file_name_digits = plot_file_digits;
-            writePlotFile();
-            file_name_digits = file_name_digits_tmp;
-        }
-
-        if (write_check) {
-            int file_name_digits_tmp = file_name_digits;
-            file_name_digits = chk_file_digits;
-            checkPoint();
-            file_name_digits = file_name_digits_tmp;
-        }
+    
+    if (write_check) {
+      int file_name_digits_tmp = file_name_digits;
+      file_name_digits = chk_file_digits;
+      checkPoint();
+      file_name_digits = file_name_digits_tmp;
     }
+  }
 }
 
 void
@@ -426,7 +430,7 @@ PMAmr::pm_timeStep (int  level,
     //
     Real dt_taken, dt_suggest;
     PorousMedia& pm = dynamic_cast<PorousMedia&>(amr_level[level]);
-    bool step_ok = pm.ml_step_driver(time,iteration,niter,dt_level[level],dt_taken,dt_suggest);
+    bool step_ok = pm.ml_step_driver(time,iteration,niter,dt_level[level],dt_taken,dt_suggest,attempt_to_recover_failed_step);
 
     if (step_ok) {
       if (level==0) {
@@ -438,7 +442,7 @@ PMAmr::pm_timeStep (int  level,
       }
     }
     else {
-        BoxLib::Abort("Step failed");
+      BoxLib::Abort("Step failed, and \"attempt_to_recover_failed_step\" is false");
     }
 
     dt_min[level] = iteration == 1 ? dt_suggest : std::min(dt_min[level],dt_suggest);
@@ -507,8 +511,6 @@ PMAmr::coarseTimeStep (Real _stop_time)
                               dt_level,
                               stop_time,
                               post_regrid_flag);
-
-    Real strt_time = startTime();
 
     bool write_plot, write_check, begin_tpc;
     Array<int> observations_to_process;
@@ -692,48 +694,36 @@ PMAmr::SetUpMaterialServer()
 }
 
 void
-PMAmr::initialInit (Real t_start,
-                    Real t_stop)
+PMAmr::initialInit (Real              strt_time,
+		    Real              stop_time,
+		    const BoxArray*   lev0_grids,
+		    const Array<int>* pmap)
 {
-    checkInput();
+  setStartTime(strt_time);
+  Amr::InitializeInit(strt_time, stop_time, lev0_grids, pmap);
 
-    finest_level = 0;
+  // This is a subtlety, but in the case where we are initializing the data
+  //   from a plotfile, we want to use the time read in from the plotfile as 
+  //   the start time instead of using "strt_time".
+  // The Amr data "cumtime" has been set in InitializeInit; if we are restarting 
+  //   from a plotfile, then cumtime must be re-defined in that initialization routine. 
+  //   Thus here we pass "cumtime" rather than "strt_time" to FinalizeInit.
+  FinalizeInit  (cumtime, stop_time);
+}
 
-    int init = true;
+void
+PMAmr::InitializeInit(Real              strt_time,
+		      Real              stop_time,
+		      const BoxArray*   lev0_grids,
+		      const Array<int>* pmap)
+{
+  Amr::InitializeInit(strt_time,stop_time,lev0_grids,pmap);
+}
 
-#ifdef BL_SYNC_RANTABLES
-    int iGet(0), iSet(1);
-    const int iTableSize(64);
-    Real *RanAmpl = new Real[iTableSize];
-    Real *RanPhase = new Real[iTableSize];
-    FORT_SYNC_RANTABLES(RanPhase, RanAmpl, &iGet);
-    ParallelDescriptor::Bcast(RanPhase, iTableSize);
-    ParallelDescriptor::Bcast(RanAmpl, iTableSize);
-    FORT_SYNC_RANTABLES(RanPhase, RanAmpl, &iSet);
-    delete [] RanAmpl;
-    delete [] RanPhase;
-#endif
-    setStartTime(t_start);
-    setCumTime(startTime());
-    //
-    // Define base level grids.
-    //
-    defBaseLevel(startTime());
-
-    if (max_level > 0)
-        bldFineLevels(startTime());
-
-    for (int lev = 0; lev <= finest_level; lev++)
-        amr_level[lev].setTimeLevel(startTime(),dt_level[lev],dt_level[lev]);
-
-    for (int lev = 0; lev <= finest_level; lev++)
-        amr_level[lev].post_regrid(0,finest_level);
-    //
-    // Perform any special post_initialization operations.
-    //
-    for (int lev = 0; lev <= finest_level; lev++) {
-        amr_level[lev].post_init(t_stop);
-    }
+void
+PMAmr::FinalizeInit (Real              strt_time,
+		     Real              stop_time)
+{
     //
     // Compute dt and set time levels of all grid data.
     //
@@ -742,14 +732,13 @@ PMAmr::initialInit (Real t_start,
                                   n_cycle,
                                   ref_ratio,
                                   dt_level,
-                                  t_stop);
+                                  stop_time);
     //
     // The following was added for multifluid.
     //
     Real dt0   = dt_level[0];
     dt_min[0]  = dt_level[0];
     n_cycle[0] = 1;
-
 
     //
     // The following was added to avoid stepping over registered events
@@ -765,20 +754,33 @@ PMAmr::initialInit (Real t_start,
 
     for (int lev = 1; lev <= max_level; lev++)
     {
-      // FIXME: Takes only ref[0] here, AND enforces ref-based sub-dt
-        const int fact = sub_cycle ? ref_ratio[lev-1][0] : 1;
-
-        dt0           /= Real(fact);
+        dt0           /= n_cycle[lev];
         dt_level[lev]  = dt0;
         dt_min[lev]    = dt_level[lev];
-        n_cycle[lev]   = fact;
     }
+
+    if (max_level > 0)
+        bldFineLevels(strt_time);
+
+    for (int lev = 0; lev <= finest_level; lev++)
+        amr_level[lev].setTimeLevel(strt_time,dt_level[lev],dt_level[lev]);
+
+    for (int lev = 0; lev <= finest_level; lev++)
+        amr_level[lev].post_regrid(0,finest_level);
 
     for (int lev = 0; lev <= finest_level; lev++)
     {
-        level_count[lev] = 0;
         level_steps[lev] = 0;
+        level_count[lev] = 0;
     }
+
+    //
+    // Perform any special post_initialization operations.
+    //
+    for (int lev = 0; lev <= finest_level; lev++)
+        amr_level[lev].post_init(stop_time);
+
+    for (int lev = 0; lev <= finest_level; lev++)
 
     if (ParallelDescriptor::IOProcessor())
     {
@@ -800,7 +802,7 @@ PMAmr::initialInit (Real t_start,
         printGridInfo(gridlog,0,finest_level);
     }
 
-#ifdef USE_STATIONDATA
+#ifdef USE_STATIONDATA 
     station.init(amr_level, finestLevel());
     station.findGrid(amr_level,geom);
 #endif
