@@ -127,7 +127,7 @@ SUITE(ODEIntegrationTests) {
     double norm;
     u->NormInf(&norm);
 
-    TS->ReportStatistics(std::cout);
+    TS->ReportStatistics_();
     CHECK_CLOSE(0.0,norm,1e-3);
   }
 
@@ -208,7 +208,7 @@ SUITE(ODEIntegrationTests) {
     double norm;
     u->NormInf(&norm);
 
-    TS->ReportStatistics(std::cout);
+    TS->ReportStatistics_();
     CHECK_CLOSE(0.0,norm,1e-3);
   }
 }
