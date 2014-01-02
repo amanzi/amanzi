@@ -203,8 +203,8 @@ MPCPermafrost3::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   domain_flow_pk_->fun(t_old, t_new, u_old->SubVector(0),
                        u_new->SubVector(0), g->SubVector(0));
 
-  // All fluxes have been taken by the subsurface.
-  g->SubVector(2)->PutScalar(0.);
+  // All surface to subsurface fluxes have been taken by the subsurface.
+  g->SubVector(2)->Data()->ViewComponent("cell",false)->PutScalar(0.);
 
   // Now that mass fluxes are done, do energy.
   // Evaluate the surface energy residual
@@ -223,7 +223,7 @@ MPCPermafrost3::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                      u_new->SubVector(1), g->SubVector(1));
 
   // All energy fluxes have been taken by the subsurface.
-  g->SubVector(3)->PutScalar(0.);
+  g->SubVector(3)->Data()->ViewComponent("cell",false)->PutScalar(0.);
 }
 
 // -- Apply preconditioner to u and returns the result in Pu.
@@ -485,12 +485,16 @@ MPCPermafrost3::UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const Tr
         const Teuchos::RCP<TreeVector>& Pu) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(2)->Data();
-  Epetra_MultiVector& surf_Pu_c = *surf_Pu->ViewComponent("cell",false);
-  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(2)->Data();
+  Teuchos::RCP<CompositeVector> surf_Pp = Pu->SubVector(2)->Data();
+  Epetra_MultiVector& surf_Pp_c = *surf_Pp->ViewComponent("cell",false);
+
+  Teuchos::RCP<CompositeVector> surf_PT = Pu->SubVector(3)->Data();
+  Epetra_MultiVector& surf_PT_c = *surf_PT->ViewComponent("cell",false);
+
+  Teuchos::RCP<const CompositeVector> surf_p = u->SubVector(2)->Data();
 
   // Calculate delta h on the surface
-  Teuchos::RCP<CompositeVector> surf_Ph = Teuchos::rcp(new CompositeVector(*surf_Pu));
+  Teuchos::RCP<CompositeVector> surf_Ph = Teuchos::rcp(new CompositeVector(*surf_Pp));
   surf_Ph->PutScalar(0.);
 
   // old ponded depth
@@ -498,23 +502,39 @@ MPCPermafrost3::UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const Tr
   *surf_Ph->ViewComponent("cell",false) = *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell",false);
 
   // new ponded depth
-  S_next_->GetFieldData("surface_pressure", sub_pks_[2]->name())
-      ->ViewComponent("cell",false)->Update(-1., surf_Pu_c, 1.);
+  Teuchos::RCP<TreeVector> tv_p = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<CompositeVector> cv_p = S_next_->GetFieldData("surface_pressure", sub_pks_[2]->name());
+  cv_p->ViewComponent("cell",false)->Update(-1., surf_Pp_c, 1.);
+  tv_p->SetData(cv_p);
+
+  Teuchos::RCP<TreeVector> tv_T = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<CompositeVector> cv_T = S_next_->GetFieldData("surface_temperature", sub_pks_[3]->name());
+  cv_T->ViewComponent("cell",false)->Update(-1., surf_PT_c, 1.);
+  tv_T->SetData(cv_T);
+
   sub_pks_[2]->changed_solution();
-  S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
+  sub_pks_[3]->changed_solution();
 
-  // put delta ponded depth into surf_Ph_cell
-  surf_Ph->ViewComponent("cell",false)
-      ->Update(-1., *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell",false), 1.);
+  if (sub_pks_[2]->is_admissible(tv_p) &&
+      sub_pks_[3]->is_admissible(tv_T)) {
+    S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
 
-  // update delta faces
-  pc_surf_flow_->UpdateConsistentFaceCorrection(*surf_u, surf_Ph.ptr());
-  *surf_Pu->ViewComponent("face",false) = *surf_Ph->ViewComponent("face",false);
+    // put delta ponded depth into surf_Ph_cell
+    surf_Ph->ViewComponent("cell",false)
+        ->Update(-1., *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell",false), 1.);
+
+    // update delta faces
+    pc_surf_flow_->UpdateConsistentFaceCorrection(*surf_p, surf_Ph.ptr());
+    *surf_Pp->ViewComponent("face",false) = *surf_Ph->ViewComponent("face",false);
+  }
 
   // revert solution so we don't break things
   S_next_->GetFieldData("surface_pressure",sub_pks_[2]->name())
-      ->ViewComponent("cell",false)->Update(1., surf_Pu_c, 1.);
+      ->ViewComponent("cell",false)->Update(1., surf_Pp_c, 1.);
   sub_pks_[2]->changed_solution();
+  S_next_->GetFieldData("surface_temperature",sub_pks_[3]->name())
+      ->ViewComponent("cell",false)->Update(1., surf_PT_c, 1.);
+  sub_pks_[3]->changed_solution();
 }
 
 

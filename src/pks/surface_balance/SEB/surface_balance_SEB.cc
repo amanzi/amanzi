@@ -74,6 +74,7 @@ SurfaceBalanceSEB::SurfaceBalanceSEB(const Teuchos::RCP<Teuchos::ParameterList>&
 
   // transition snow depth
   snow_ground_trans_ = plist_->get<double>("minimum snow depth", 0.02);
+  no_snow_trans_ = plist_->get<double>("zero snow depth", 1.e-5);
 
   // albedo transition depth
   albedo_trans_ = plist_->get<double>("albedo transition depth", 0.02);
@@ -210,52 +211,48 @@ bool SurfaceBalanceSEB::advance(double dt) {
                << "----------------------------------------------------------------" << std::endl;
   // Get all data
   // ATS CALCULATED
-  S_inter_->GetFieldEvaluator("surface_temperature")->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator("surface_temperature")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& surf_temp =
-      *S_inter_->GetFieldData("surface_temperature")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("surface_temperature")->ViewComponent("cell", false);
 
-  S_inter_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& ponded_depth =
-      *S_inter_->GetFieldData("ponded_depth")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell", false);
 
-  S_inter_->GetFieldEvaluator("surface_porosity")->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator("surface_porosity")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& surf_porosity =
-      *S_inter_->GetFieldData("surface_porosity")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("surface_porosity")->ViewComponent("cell", false);
 
-  S_inter_->GetFieldEvaluator("surface_vapor_pressure")->HasFieldChanged(S_inter_.ptr(), name_); // Actually mole_fraction not pressure ~AA
-  const Epetra_MultiVector& soil_vapor_mole_fraction =      //  THIS IS MOLE FRACTION OF GAS NEEDS TO BE CONVERTEDT TO VAPOR PRESSURE!
-      *S_inter_->GetFieldData("surface_vapor_pressure")->ViewComponent("cell", false);
+  S_next_->GetFieldEvaluator("surface_vapor_pressure")->HasFieldChanged(S_next_.ptr(), name_);
+  //  THIS IS MOLE FRACTION OF GAS NEEDS TO BE CONVERTEDT TO VAPOR PRESSURE!
+  // Actually mole_fraction not pressure ~AA
+  const Epetra_MultiVector& soil_vapor_mol_fraction =
+      *S_next_->GetFieldData("surface_vapor_pressure")->ViewComponent("cell", false);
 
   // MET DATA
-  S_inter_->GetFieldEvaluator("air_temperature")->HasFieldChanged(S_inter_.ptr(), name_);
-  S_next_->GetFieldEvaluator("air_temperature")->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator("air_temperature")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& air_temp =
-      *S_inter_->GetFieldData("air_temperature")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("air_temperature")->ViewComponent("cell", false);
 
-  S_inter_->GetFieldEvaluator("incoming_shortwave_radiation")->HasFieldChanged(S_inter_.ptr(), name_);
   S_next_->GetFieldEvaluator("incoming_shortwave_radiation")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& incoming_shortwave =
-      *S_inter_->GetFieldData("incoming_shortwave_radiation")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("incoming_shortwave_radiation")->ViewComponent("cell", false);
 
-  S_inter_->GetFieldEvaluator("relative_humidity")->HasFieldChanged(S_inter_.ptr(), name_);
   S_next_->GetFieldEvaluator("relative_humidity")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& relative_humidity =
-      *S_inter_->GetFieldData("relative_humidity")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("relative_humidity")->ViewComponent("cell", false);
 
-  S_inter_->GetFieldEvaluator("wind_speed")->HasFieldChanged(S_inter_.ptr(), name_);
   S_next_->GetFieldEvaluator("wind_speed")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& wind_speed =
-      *S_inter_->GetFieldData("wind_speed")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("wind_speed")->ViewComponent("cell", false);
 
-  S_inter_->GetFieldEvaluator("precipitation_rain")->HasFieldChanged(S_inter_.ptr(), name_);
   S_next_->GetFieldEvaluator("precipitation_rain")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& precip_rain =
-      *S_inter_->GetFieldData("precipitation_rain")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("precipitation_rain")->ViewComponent("cell", false);
 
-  S_inter_->GetFieldEvaluator("precipitation_snow")->HasFieldChanged(S_inter_.ptr(), name_);
   S_next_->GetFieldEvaluator("precipitation_snow")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& precip_snow =
-      *S_inter_->GetFieldData("precipitation_snow")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("precipitation_snow")->ViewComponent("cell", false);
 
 
   // Get output data
@@ -279,7 +276,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
 
   Epetra_MultiVector& snow_temp =
       *S_next_->GetFieldData("snow_temperature", name_)->ViewComponent("cell", false);
-  
+
   // Create the SEB data structure
   SurfaceEnergyBalance::LocalData data;
   data.st_energy.dt = dt;
@@ -300,7 +297,8 @@ bool SurfaceBalanceSEB::advance(double dt) {
     data.st_energy.water_depth = ponded_depth[0][c];
     data.st_energy.temp_ground = surf_temp[0][c];
     data.vp_ground.temp = surf_temp[0][c];
-    data.vp_ground.actual_vaporpressure = soil_vapor_mole_fraction[0][c] * data.st_energy.Apa; // Converts Mole fraction to vapor pressure [moleFraction/atmosphericPressure]
+    // Convert mol fraction to vapor pressure [moleFraction/atmosphericPressure]
+    data.vp_ground.actual_vaporpressure = soil_vapor_mol_fraction[0][c] * data.st_energy.Apa;
     data.st_energy.porrowaLe = surf_porosity[0][c] * density_air * data.st_energy.Le;
     // MET station data
     data.st_energy.temp_air = air_temp[0][c];
@@ -316,6 +314,10 @@ bool SurfaceBalanceSEB::advance(double dt) {
     data.st_energy.age_snow = days_of_nosnow[0][c];
 
     // Snow-ground Smoothing
+    // -- zero out if just small
+    if (data.st_energy.ht_snow < no_snow_trans_)
+      data.st_energy.ht_snow = 0.;
+
     if ((data.st_energy.ht_snow > snow_ground_trans_) ||
         (data.st_energy.ht_snow <= 0)) {
       SurfaceEnergyBalance::SnowEnergyBalance(data);
@@ -335,7 +337,9 @@ bool SurfaceBalanceSEB::advance(double dt) {
       data_bare.st_energy.water_depth = ponded_depth[0][c];
       data_bare.st_energy.temp_ground = surf_temp[0][c];
       data_bare.vp_ground.temp = surf_temp[0][c];
-      data_bare.vp_ground.actual_vaporpressure = soil_vapor_mole_fraction[0][c] * data_bare.st_energy.Apa; //Converts Mole fraction to vapor pressure [moleFraction/atmosphericPressure] 
+      //Convert Mol fraction to vapor pressure [molFraction/atmosphericPressure]
+      data_bare.vp_ground.actual_vaporpressure = soil_vapor_mol_fraction[0][c] * data_bare.st_energy.Apa; 
+
       data_bare.st_energy.porrowaLe = surf_porosity[0][c] * density_air * data_bare.st_energy.Le;
       // MET station data
       data_bare.st_energy.temp_air = air_temp[0][c];
@@ -415,13 +419,12 @@ bool SurfaceBalanceSEB::advance(double dt) {
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     std::vector<std::string> vnames;
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    vnames.push_back("air_temp"); vecs.push_back(S_inter_->GetFieldData("air_temperature").ptr());
-    vnames.push_back("air_temp2"); vecs.push_back(S_next_->GetFieldData("air_temperature").ptr());
-    vnames.push_back("Qsw_in"); vecs.push_back(S_inter_->GetFieldData("incoming_shortwave_radiation").ptr());
-    vnames.push_back("precip_rain"); vecs.push_back(S_inter_->GetFieldData("precipitation_rain").ptr());
-    vnames.push_back("precip_snow"); vecs.push_back(S_inter_->GetFieldData("precipitation_snow").ptr());
-    vnames.push_back("soil vapor mole fraction"); vecs.push_back(S_inter_->GetFieldData("surface_vapor_pressure").ptr()); // Actually mole fracton not pressure ~AA
-    vnames.push_back("T_ground"); vecs.push_back(S_inter_->GetFieldData("surface_temperature").ptr());
+    vnames.push_back("air_temp"); vecs.push_back(S_next_->GetFieldData("air_temperature").ptr());
+    vnames.push_back("Qsw_in"); vecs.push_back(S_next_->GetFieldData("incoming_shortwave_radiation").ptr());
+    vnames.push_back("precip_rain"); vecs.push_back(S_next_->GetFieldData("precipitation_rain").ptr());
+    vnames.push_back("precip_snow"); vecs.push_back(S_next_->GetFieldData("precipitation_snow").ptr());
+    vnames.push_back("soil vapor mol fraction"); vecs.push_back(S_next_->GetFieldData("surface_vapor_pressure").ptr());
+    vnames.push_back("T_ground"); vecs.push_back(S_next_->GetFieldData("surface_temperature").ptr());
     vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source").ptr());
     //    vnames.push_back("e_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
     db_->WriteVectors(vnames, vecs, true);

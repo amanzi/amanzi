@@ -102,8 +102,8 @@ struct LocalData {
     st_energy.Zr = 2.0;                 // Referance ht of wind speed ------- [m]
     st_energy.Zo = 0.005;               // Roughness length  ---------------- [m]
     st_energy.VKc = 0.41;               // Von Karman Constant -------------- [-]
-    double Cp = 1004.0;               // Specific heat of air ------------- [J/K kg]
-    st_energy.Apa = 100;                // Atmospheric Pressure ------------- [KPa]
+    double Cp = 1004.0;                 // Specific heat of air ------------- [J/K kg]
+    st_energy.Apa = 101.325;            // Atmospheric Pressure ------------- [KPa]
 
     st_energy.density_w = 1000;         // Density of Water ----------------- [kg/m^3]
     double density_air = 1.275;       // Density of Air ------------------- [kg/m^3]
@@ -129,9 +129,11 @@ struct LocalData {
 
 
 void UpdateIncomingRadiation(LocalData& seb);
+void UpdateIncomingRadiationDerivatives(LocalData& seb);
 void UpdateEFluxesSnow(LocalData& seb, double T);
 double CalcMeltEnergy(LocalData& seb);
 void UpdateGroundEnergy(LocalData& seb);
+void UpdateGroundEnergyDerivatives(LocalData& seb);
 
 void UpdateVaporPressure(VaporPressure& vp);
 double CalcAlbedo(EnergyBalance& eb);
@@ -147,6 +149,7 @@ void UpdateSnow(EnergyBalance& eb);
 // Main "public" methods.
 void SnowEnergyBalance(LocalData& seb);
 void UpdateEnergyBalance(LocalData& seb);
+void UpdateEnergyBalanceDerivative(LocalData& seb);
 
 }// Namespace
 

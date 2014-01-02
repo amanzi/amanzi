@@ -31,9 +31,22 @@ void SurfaceEnergyBalance::UpdateIncomingRadiation(LocalData& seb) {
   seb.st_energy.fQswIn = (1 - seb.st_energy.albedo_value) * seb.st_energy.QswIn;
 
   // Calculate incoming long-wave radiation
-  seb.st_energy.fQlwIn = 1.08 * (1 - std::exp(-0.01 * std::pow(std::pow(10, 11.4 - (2353/seb.vp_air.dewpoint_temp)),
-          (seb.st_energy.temp_air/2016))))
-      * seb.st_energy.stephB * std::pow(seb.st_energy.temp_air,4);
+    double EmissivityAir = std::pow((0.01*seb.vp_air.actual_vaporpressure),(seb.st_energy.temp_air/2016));
+    EmissivityAir = (1 - std::exp(-EmissivityAir));
+    EmissivityAir = 1.08 * EmissivityAir;
+  seb.st_energy.fQlwIn = EmissivityAir * seb.st_energy.stephB * std::pow(seb.st_energy.temp_air,4);
+
+  // Calculate D_h, D_e
+  seb.st_energy.Dhe = (std::pow(seb.st_energy.VKc,2) * seb.st_energy.Us
+                       / std::pow(std::log(seb.st_energy.Zr / seb.st_energy.Zo), 2));
+}
+
+void SurfaceEnergyBalance::UpdateIncomingRadiationDerivatives(LocalData& seb) {
+  // Calculate incoming short-wave radiation
+  seb.st_energy.fQswIn = 0.;
+
+  // Calculate incoming long-wave radiation
+  seb.st_energy.fQlwIn = 0.;
 
   // Calculate D_h, D_e
   seb.st_energy.Dhe = (std::pow(seb.st_energy.VKc,2) * seb.st_energy.Us
@@ -98,6 +111,7 @@ void SurfaceEnergyBalance::UpdateGroundEnergy(LocalData& seb) {
 
   seb.st_energy.fQh = seb.st_energy.rowaCp * seb.st_energy.Dhe * Sqig * (seb.st_energy.temp_air - seb.st_energy.temp_ground);
   //  seb.st_energy.fQh = 0.;
+  std::cout << "fQh: Dhe = " << seb.st_energy.Dhe << ", zeta = " << Sqig << ", Ta = " << seb.st_energy.temp_air << ", Tg = " << seb.st_energy.temp_ground << std::endl;
 
   if (seb.st_energy.water_depth > 0.0) {
     // Checking for standing water
@@ -116,6 +130,62 @@ void SurfaceEnergyBalance::UpdateGroundEnergy(LocalData& seb) {
   // Heat flux to ground surface is the balance.
   seb.st_energy.fQc = seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut
       + seb.st_energy.fQh + seb.st_energy.fQe;
+
+  std::cout << "Energy summary:" << std::endl
+            << "  fQswIn  = " << seb.st_energy.fQswIn << std::endl
+            << "  fQlwIn  = " << seb.st_energy.fQlwIn << std::endl
+            << "  fQlwOut = " << seb.st_energy.fQlwOut << std::endl
+            << "  fQh (s) = " << seb.st_energy.fQh << std::endl
+            << "  fQe (l) = " << seb.st_energy.fQe << std::endl
+            << "  fQc (c) = " << seb.st_energy.fQc << std::endl;
+}
+
+
+// Energy balance for no-snow case.
+void SurfaceEnergyBalance::UpdateGroundEnergyDerivatives(LocalData& seb) {
+  seb.st_energy.fQlwOut = -4 * seb.st_energy.SEtun * seb.st_energy.stephB * std::pow(seb.st_energy.temp_ground,3);
+
+  double Sqig, dSqig;
+  if (seb.st_energy.Us == 0.) {
+    Sqig = 0.;
+    dSqig = 0.;
+  } else {
+    double Ri = seb.st_energy.gZr * (seb.st_energy.temp_air-seb.st_energy.temp_ground)
+        / (seb.st_energy.temp_air*std::pow(seb.st_energy.Us,2));
+    double dRi = -seb.st_energy.gZr / (seb.st_energy.temp_air*std::pow(seb.st_energy.Us,2));
+    if (Ri < 0) { // Unstable condition
+      Sqig = (1-10*Ri);
+      dSqig = -10*dRi;
+    } else { // Stable Condition
+      Sqig = (1/(1+10*Ri));
+      dSqig = -std::pow(1+10*Ri,-2) * 10 * dRi;
+    }
+  }
+
+  seb.st_energy.fQh = - seb.st_energy.rowaCp * seb.st_energy.Dhe * Sqig
+      + seb.st_energy.rowaCp * seb.st_energy.Dhe * dSqig * (seb.st_energy.temp_air - seb.st_energy.temp_ground);
+
+  // -- SKIPPING THIS TERM!
+  if (seb.st_energy.water_depth > 0.0) {
+    // Checking for standing water
+    UpdateVaporPressure(seb.vp_ground);
+    seb.st_energy.fQe = 0.;
+  } else {
+    // no standing water
+    seb.st_energy.fQe = 0.;
+  }
+
+  // Heat flux to ground surface is the balance.
+  seb.st_energy.fQc = seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut
+      + seb.st_energy.fQh + seb.st_energy.fQe;
+
+  std::cout << "Energy summary:" << std::endl
+            << "  dfQswIn  = " << seb.st_energy.fQswIn << std::endl
+            << "  dfQlwIn  = " << seb.st_energy.fQlwIn << std::endl
+            << "  dfQlwOut = " << seb.st_energy.fQlwOut << std::endl
+            << "  dfQh (s) = " << seb.st_energy.fQh << std::endl
+            << "  dfQe (l) = " << seb.st_energy.fQe << std::endl
+            << "  dfQc (c) = " << seb.st_energy.fQc << std::endl;
 }
 
 
@@ -125,6 +195,7 @@ void SurfaceEnergyBalance::UpdateVaporPressure(VaporPressure& vp) {
   //Convert from Kelvin to Celsius
   temp = vp.temp-273.15;
   // Sat vap. press o/water Dingman D-7 (Bolton, 1980)
+// *** (Bolton, 1980) Calculates vapor pressure in millibars or hPa  ****
   vp.saturated_vaporpressure = 0.611*std::exp(17.67*temp / (temp+243.5));
   // (Bolton, 1980)
   vp.actual_vaporpressure = vp.saturated_vaporpressure * vp.relative_humidity;
@@ -132,6 +203,9 @@ void SurfaceEnergyBalance::UpdateVaporPressure(VaporPressure& vp) {
   vp.dewpoint_temp = (std::log(vp.actual_vaporpressure) + 0.4926) / (0.0708-0.00421*std::log(vp.actual_vaporpressure));
   // Convert Tdp from Celsius to Kelvin
   vp.dewpoint_temp = vp.dewpoint_temp + 273.15;
+  // Convert all vapor pressures from hPa to KPa  10 hPa = 1 kPa
+    vp.saturated_vaporpressure = vp.saturated_vaporpressure/10;
+    vp.actual_vaporpressure = vp.actual_vaporpressure/10;
 }
 
 
@@ -404,27 +478,27 @@ void SurfaceEnergyBalance::SnowEnergyBalance(LocalData& seb) {
 // Main energy-only function.
 void SurfaceEnergyBalance::UpdateEnergyBalance(LocalData& seb) {
   if (seb.st_energy.ht_snow > 0.) {
-    // Caculate Vapor pressure and dewpoint temperature from Air
-    UpdateVaporPressure(seb.vp_air);
+    // // Caculate Vapor pressure and dewpoint temperature from Air
+    // UpdateVaporPressure(seb.vp_air);
 
-    // Find effective Albedo
-    seb.st_energy.albedo_value = CalcAlbedo(seb.st_energy);
+    // // Find effective Albedo
+    // seb.st_energy.albedo_value = CalcAlbedo(seb.st_energy);
 
-    // Update temperature-independent fluxes, the short- and long-wave incoming
-    // radiation.
-    UpdateIncomingRadiation(seb);
+    // // Update temperature-independent fluxes, the short- and long-wave incoming
+    // // radiation.
+    // UpdateIncomingRadiation(seb);
 
-    seb.st_energy.temp_snow = CalcSnowTemperature(seb);
+    // seb.st_energy.temp_snow = CalcSnowTemperature(seb);
 
-    if (seb.st_energy.temp_snow <= 273.15) { // Snow is not melting
-      seb.st_energy.Qm = 0; //  no water leaving snowpack as melt water
-    } else {
-      seb.st_energy.temp_snow = 273.15; // Set snow temperature to zero
-      UpdateEFluxesSnow(seb, seb.st_energy.temp_snow);
-    }
+    // if (seb.st_energy.temp_snow <= 273.15) { // Snow is not melting
+    //   seb.st_energy.Qm = 0; //  no water leaving snowpack as melt water
+    // } else {
+    //   seb.st_energy.temp_snow = 273.15; // Set snow temperature to zero
+    //   UpdateEFluxesSnow(seb, seb.st_energy.temp_snow);
+    // }
 
-    //    double Ks = 2.9e-6 * std::pow(seb.st_energy.density_snow,2);
-    //    seb.st_energy.fQc = Ks * (seb.st_energy.temp_snow - seb.st_energy.temp_ground) / seb.st_energy.ht_snow;
+    double Ks = 2.9e-6 * std::pow(seb.st_energy.density_snow,2);
+    seb.st_energy.fQc = Ks * (seb.st_energy.temp_snow - seb.st_energy.temp_ground) / seb.st_energy.ht_snow;
   } else {
     // Caculate Vapor pressure and dewpoint temperature from Air
     UpdateVaporPressure(seb.vp_air);
@@ -440,3 +514,26 @@ void SurfaceEnergyBalance::UpdateEnergyBalance(LocalData& seb) {
     UpdateGroundEnergy(seb);
   }
 }
+
+
+// Main energy-only function.
+void SurfaceEnergyBalance::UpdateEnergyBalanceDerivative(LocalData& seb) {
+  if (seb.st_energy.ht_snow > 0.) {
+    double Ks = 2.9e-6 * std::pow(seb.st_energy.density_snow,2);
+    seb.st_energy.fQc = -Ks / seb.st_energy.ht_snow;
+  } else {
+    // Caculate Vapor pressure and dewpoint temperature from Air
+    UpdateVaporPressure(seb.vp_air);
+
+    // Find effective Albedo
+    seb.st_energy.albedo_value = CalcAlbedo(seb.st_energy);
+
+    // Update temperature-independent fluxes, the short- and long-wave incoming
+    // radiation.
+    UpdateIncomingRadiationDerivatives(seb);
+
+    // Energy balance
+    UpdateGroundEnergyDerivatives(seb);
+  }
+}
+

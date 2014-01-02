@@ -127,31 +127,20 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
   Teuchos::OSTab tab = vo_->getOSTab();
+
   // external sources of energy
   if (is_source_term_) {
     Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 
-    // Add in external source term.
-    S_next_->GetFieldEvaluator(source_key_)
-        ->HasFieldChanged(S_next_.ptr(), name_);
-    S_inter_->GetFieldEvaluator(source_key_)
-        ->HasFieldChanged(S_inter_.ptr(), name_);
-
-    const Epetra_MultiVector& source0 =
-        *S_inter_->GetFieldData(source_key_)->ViewComponent("cell",false);
+    // Update the source term
+    S_next_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_next_.ptr(), name_);
     const Epetra_MultiVector& source1 =
         *S_next_->GetFieldData(source_key_)->ViewComponent("cell",false);
 
-    if (S_inter_->cycle() == 0) {
-      unsigned int ncells = g_c.MyLength();
-      for (unsigned int c=0; c!=ncells; ++c) {
-        g_c[0][c] -= source1[0][c];
-      }
-    } else {
-      unsigned int ncells = g_c.MyLength();
-      for (unsigned int c=0; c!=ncells; ++c) {
-        g_c[0][c] -= 0.5* (source0[0][c] + source1[0][c]);
-      }
+    // Add into residual
+    unsigned int ncells = g_c.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
+      g_c[0][c] -= source1[0][c];
     }
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
@@ -159,12 +148,12 @@ void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
       db_->WriteVector("  Q_ext", S_next_->GetFieldData(source_key_).ptr(), false);
       db_->WriteVector("res (src)", g, false);
     }
-
   }
 }
 
 
 void EnergyBase::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
+  // external sources of energy (temperature dependent source)
   if (is_source_term_ && S->GetFieldEvaluator(source_key_)->IsDependency(S, key_)) {
     std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
 
@@ -173,7 +162,7 @@ void EnergyBase::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
         *S->GetFieldData(dsource_dT_key_)->ViewComponent("cell",false);
     unsigned int ncells = dsource_dT.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
-      Acc_cells[c] -= 0.5 * dsource_dT[0][c];
+      Acc_cells[c] -= dsource_dT[0][c];
     }
   }
 }
