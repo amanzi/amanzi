@@ -43,10 +43,7 @@ class BDF1_TI {
   double time();
 
   // Report statistics
-  void ReportStatistics(std::ostream&);
-
- protected:
-  void WriteSteppingStatistics_();
+  void ReportStatistics_();
 
  protected:
   Teuchos::RCP<TimestepController> ts_control;  // timestep controller
@@ -127,7 +124,6 @@ void BDF1_TI<Vector,VectorSpace>::CommitSolution(const double h, const Teuchos::
   // record some information about this time step
   state_->hlast = h;
   state_->seq++;
-  state_->freeze_count = std::max(0, state_->freeze_count-1);
   state_->hmin = std::min<double>(h, state_->hmin);
   state_->hmax = std::max<double>(h, state_->hmax);
 }
@@ -218,8 +214,10 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   solver_->set_pc_lag(state_->pc_lag);
 
   // update performance statistics
+  state_->solve_itrs += solver_->num_itrs();
+
   if (itr < 0) {
-    state_->failed_bce++;
+    state_->failed_solve++;
   } else {
     state_->hmax = std::max(state_->hmax, dt);
     state_->hmin = std::min(state_->hmin, dt);
@@ -230,39 +228,10 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
       *udot_ = *u;
       udot_->Update(-tmp, *u0, tmp);
     }
+
+    ReportStatistics_();
   }
   return (itr < 0);
-}
-
-
-/* ******************************************************************
-* Write statistics about the time step
-****************************************************************** */
-template<class Vector,class VectorSpace>
-void BDF1_TI<Vector,VectorSpace>::WriteSteppingStatistics_() {
-  Teuchos::OSTab tab = vo_->getOSTab();
-
-  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-    std::ostringstream oss;
-
-    oss.flush();
-    oss.setf(std::ios::scientific, std::ios::floatfield);
-
-    oss << "STEP=";
-    oss.fill('0');
-    oss.width(5);
-    oss << std::right << state_.seq;
-    oss << " T=";
-    oss.precision(5);
-    oss.width(11);
-    oss << std::left << state_.uhist->MostRecentTime();
-    oss << " H=";
-    oss.precision(5);
-    oss.width(11);
-    oss << std::left << state_.hlast;
-
-    *vo_->os() << oss.str() << std::endl;
-  }
 }
 
 
@@ -270,13 +239,24 @@ void BDF1_TI<Vector,VectorSpace>::WriteSteppingStatistics_() {
 * Report statistics.
 ****************************************************************** */
 template<class Vector,class VectorSpace>
-void BDF1_TI<Vector,VectorSpace>::ReportStatistics(std::ostream& oss) {
-  oss << "Report from BDF1 Time Integrator:" << std::endl;
-  oss << "  total timesteps = " << state_->seq << std::endl;
-  oss << "  total failed steps = " << state_->failed_bce << std::endl;
-  oss << "  overall min dt = " << state_->hmin << std::endl;
-  oss << "  overall max dt = " << state_->hmax << std::endl;
-  oss << "--------------------------------------" << std::endl;
+void BDF1_TI<Vector,VectorSpace>::ReportStatistics_()
+{
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    std::ostringstream oss;
+    oss.flush();
+    oss.setf(std::ios::scientific, std::ios::floatfield);
+
+    oss << "TS:" << std::right << state_->seq;
+    oss << " FS:" << state_->failed_solve;
+    oss << " NS:" << state_->solve_itrs;
+
+    oss << " dt:";
+    oss.precision(4);
+    oss.width(10);
+    oss << state_->hmin << " " << state_->hmax;
+
+    *vo_->os() << oss.str() << std::endl;
+  }  
 }
 
 }  // namespace Amanzi

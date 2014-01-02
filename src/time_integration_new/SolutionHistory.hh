@@ -89,7 +89,6 @@ class SolutionHistory {
 ****************************************************************** */
 template<class Vector>
 SolutionHistory<Vector>::SolutionHistory(int mvec, double t, const Vector& x) {
-  ASSERT(mvec>0);
   Initialize_(mvec, x);
   RecordSolution(t, x);
 }
@@ -97,7 +96,6 @@ SolutionHistory<Vector>::SolutionHistory(int mvec, double t, const Vector& x) {
 
 template<class Vector>
 SolutionHistory<Vector>::SolutionHistory(int mvec, double t, const Vector& x, const Vector& xdot) {
-  ASSERT(mvec>0);
   Initialize_(mvec, x);
   RecordSolution(t, x, xdot);
 }
@@ -108,8 +106,6 @@ SolutionHistory<Vector>::SolutionHistory(int mvec, double t, const Vector& x, co
 ****************************************************************** */
 template<class Vector>
 void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
-  ASSERT(mvec>0);
-
   nvec_ = 0;
   d_.resize(mvec);
   times_.resize(mvec);
