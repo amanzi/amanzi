@@ -17,7 +17,8 @@ include_directories(${ATS_SOURCE_DIR}/src/coordinator)
 # ATS F90 includes.
 #------------------------------------------------------------------------------#
 
-include_directories(${ATS_SOURCE_DIR}/src/xlib)
+include_directories(${ATS_SOURCE_DIR}/src/xlib/c)
+include_directories(${ATS_BINARY_DIR}/src/xlib/fc)
 include_directories(${ATS_BINARY_DIR}/src/xlib)
 
 
@@ -140,5 +141,30 @@ if (Amanzi_DISABLE_MPI_CXX_BINDINGS)
    #---------------------------------------------------------------------------#
 
    install(TARGETS ats_f90 DESTINATION bin)
+
+
+
+   add_executable(ats_test_clm_driver test_clm_driver.cc)
+
+   target_link_libraries(
+        # Target
+	ats_test_clm_driver
+
+        # ATS cross lib
+	atsx
+
+    ${ATS_LIBS}
+	${AMANZI_LIBS}
+	${Amanzi_TPL_Trilinos_LIBRARIES}
+
+        # MPI
+	${Amanzi_MPI_C_LIBRARIES}
+   )
+
+   #---------------------------------------------------------------------------#
+   # Install rule
+   #---------------------------------------------------------------------------#
+
+   install(TARGETS ats_test_clm_driver DESTINATION bin)
 
 endif()

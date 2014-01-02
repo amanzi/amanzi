@@ -360,7 +360,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
   // ASSERT(nindices == num_types);
 
   ncells_surf_ = surface_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  //  ASSERT(ncells_surf_ == num_cols); // THIS CURRENTLY FAILS!
+  ASSERT(ncells_surf_ == num_cols); // THIS CURRENTLY FAILS!
   surf_clm_map_ = Teuchos::rcp(new Epetra_Map(-1, ncells_surf_, 0, *comm));
 
   ncells_sub_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -445,11 +445,11 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
   const Epetra_Map& ats_col_map = surface_mesh->cell_map(false);
   //  Epetra_Map ats_imp_col_map(-1, ncells_surf_, &gids_surf[0], 0, *comm);
   //  Epetra_Map ats_imp_cell_map(-1, ncells_surf_, &gids_sub[0], 0, *comm);
-  Epetra_Map ats_imp_col_map(ats_col_map);
-  Epetra_Map ats_imp_cell_map(ats_cell_map);
 
-  sub_importer_ = Teuchos::rcp(new Epetra_Import(ats_cell_map, ats_imp_cell_map));
-  surf_importer_ = Teuchos::rcp(new Epetra_Import(ats_col_map, ats_imp_col_map));
+  //  sub_importer_ = Teuchos::rcp(new Epetra_Import(ats_cell_map, ats_imp_cell_map));
+  //  surf_importer_ = Teuchos::rcp(new Epetra_Import(ats_col_map, ats_imp_col_map));
+  sub_importer_ = Teuchos::rcp(new Epetra_Import(ats_cell_map, *sub_clm_map_));
+  surf_importer_ = Teuchos::rcp(new Epetra_Import(ats_col_map, *surf_clm_map_));
 
   // set up the coordinator, allocating space
   coordinator_->setup();
@@ -499,6 +499,10 @@ int32_t ATSCLMDriver::GetData_(std::string key, double* data, int length) {
 
 int32_t ATSCLMDriver::SetSurfaceData_(std::string key, double* data, int length) {
   Teuchos::RCP<State> S = S_next_ == Teuchos::null ? S_ : S_next_;
+  if (S_next_ == Teuchos::null)
+    std::cout << "writing to S_old" << std::endl;
+  else
+    std::cout << "writing to S_next" << std::endl;
 
   // from the name, grab data from state and determine the type of the data
   Teuchos::RCP<CompositeVector> dat =
@@ -511,8 +515,15 @@ int32_t ATSCLMDriver::SetSurfaceData_(std::string key, double* data, int length)
   Epetra_MultiVector& dat_v = *dat->ViewComponent("cell",false);
   int ierr = dat_v.Import(dat_clm, *surf_importer_, Insert);
   ASSERT(!ierr);
-  return ierr;
 
+  std::cout << "Surf data in = " << std::endl;
+  dat_clm.Print(std::cout);
+  std::cout << "Surf data out = " << std::endl;
+  dat_v.Print(std::cout);
+
+  //  std::cout << "Surf Data In (" << key << ")[0] = " << data[0] << std::endl;
+  //  std::cout << "Surf Data Out (" << key << ")[0] = " << dat_v[0][0] << std::endl;
+  return ierr;
 }
 
 int32_t ATSCLMDriver::GetSurfaceData_(std::string key, double* data, int length) {
@@ -557,14 +568,14 @@ int32_t ATSCLMDriver::SetInitCLMData(double* T, double* sl, double* si) {
 int32_t ATSCLMDriver::SetCLMData(double* e_flux, double* w_flux) {
   int ierr(0);
 
-  std::cout << "SetCLMData (ATS):" << std::endl;
+  std::cout << "SetCLMData (ATS) (on " << ncells_surf_ << " cells):" << std::endl;
   std::cout << "Qe_ats[0] = " << e_flux[0] << std::endl;
-  std::cout << "Qe_ats[25] = " << e_flux[25] << std::endl;
+  std::cout << "Qe_ats[24] = " << e_flux[24] << std::endl;
   std::cout << "Qw_ats[0] = " << w_flux[0] << std::endl;
-  std::cout << "Qw_ats[25] = " << w_flux[25] << std::endl;
+  std::cout << "Qw_ats[24] = " << w_flux[24] << std::endl;
 
-  ierr |= SetSurfaceData_("surface_total_energy_source", e_flux, ncells_surf_);
-  ierr |= SetSurfaceData_("surface_mass_source", w_flux, ncells_surf_);
+  // ierr |= SetSurfaceData_("surface_total_energy_source", e_flux, ncells_surf_);
+  // ierr |= SetSurfaceData_("surface_mass_source", w_flux, ncells_surf_);
   return ierr;
 }
 
