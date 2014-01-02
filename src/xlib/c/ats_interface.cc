@@ -26,17 +26,17 @@ int32_t ats_finalize() {
 } // ats_finalize
 
 int32_t ats_set_init_clm_data(double * T, double * Sl, double * Si) {
-	_state.clm_driver().SetInitCLMData(T, Sl, Si);
+	return _state.clm_driver().SetInitCLMData(T, Sl, Si);
 } // ats_set_init_clm_data
 
 int32_t ats_set_clm_data(double * e_flux, double * w_flux) {
-	_state.clm_driver().SetCLMData(e_flux, w_flux);
+	return _state.clm_driver().SetCLMData(e_flux, w_flux);
 } // ats_set_clm_data
 
 int32_t ats_get_clm_data(double * T, double * Sl, double * Si) {
-	_state.clm_driver().GetCLMData(T, Sl, Si);
+	return _state.clm_driver().GetCLMData(T, Sl, Si);
 } // ats_get_clm_data
 
 int32_t ats_advance(double dt, int32_t force_viz) {
-	_state.clm_driver().Advance(dt, force_viz == 1 ? true : false);
+	return _state.clm_driver().Advance(dt, force_viz == 1 ? true : false);
 } // ats_advance

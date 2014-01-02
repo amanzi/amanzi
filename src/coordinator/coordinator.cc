@@ -94,13 +94,14 @@ void Coordinator::coordinator_init() {
   tsm_ = Teuchos::rcp(new TimeStepManager());
 }
 
-
-void Coordinator::initialize() {
+void Coordinator::setup() {
   // Set up the states, creating all data structures.
   S_->set_time(t0_);
   S_->set_cycle(cycle0_);
   S_->Setup();
+}
 
+void Coordinator::initialize() {
   // Restart from checkpoint, part 1.
 
   // This is crufty -- blame the BDF1 time integrator, whose solution history
@@ -351,6 +352,7 @@ void Coordinator::checkpoint(double dt, bool force) {
 // -----------------------------------------------------------------------------
 void Coordinator::cycle_driver() {
   // start at time t = t0 and initialize the state.
+  setup();
   initialize();
 
   // get the intial timestep -- note, this would have to be fixed for a true restart
