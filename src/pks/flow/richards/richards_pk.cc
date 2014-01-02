@@ -311,7 +311,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // Initialize PK
 // -------------------------------------------------------------
 void Richards::initialize(const Teuchos::Ptr<State>& S) {
-  //  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
+  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
 
   // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);

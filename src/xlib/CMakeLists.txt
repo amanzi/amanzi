@@ -98,3 +98,4 @@ add_custom_command(
 set_property(TARGET atsx PROPERTY
 	COMPILE_DEFINITIONS OMPI_SKIP_MPICXX MPICH_SKIP_MPICXX
 )
+
