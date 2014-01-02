@@ -47,9 +47,9 @@ interface
       use, intrinsic :: ISO_C_BINDING
       use :: ats_data
       implicit none
-      type(c_ptr) :: T
-      type(c_ptr) :: Sl
-      type(c_ptr) :: Si
+      type(c_ptr), value :: T
+      type(c_ptr), value :: Sl
+      type(c_ptr), value :: Si
       integer(int32_t) :: ierr
    end function ats_set_init_clm_data_f90
 
@@ -62,8 +62,8 @@ interface
       use, intrinsic :: ISO_C_BINDING
       use :: ats_data
       implicit none
-      type(c_ptr) :: e_flux
-      type(c_ptr) :: w_flux
+      type(c_ptr), value :: e_flux
+      type(c_ptr), value :: w_flux
       integer(int32_t) :: ierr
    end function ats_set_clm_data_f90
 
@@ -76,9 +76,9 @@ interface
       use, intrinsic :: ISO_C_BINDING
       use :: ats_data
       implicit none
-      type(c_ptr) :: T
-      type(c_ptr) :: Sl
-      type(c_ptr) :: Si
+      type(c_ptr), value :: T
+      type(c_ptr), value :: Sl
+      type(c_ptr), value :: Si
       integer(int32_t) :: ierr
    end function ats_get_clm_data_f90
 

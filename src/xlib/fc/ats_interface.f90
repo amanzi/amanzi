@@ -48,9 +48,9 @@ module ats_interface
    subroutine ats_set_init_clm_data(T, Sl, Si, ierr)
       use :: ats_data
       implicit none
-      type(c_ptr) :: T
-      type(c_ptr) :: Sl
-      type(c_ptr) :: Si
+      type(c_ptr), value :: T
+      type(c_ptr), value :: Sl
+      type(c_ptr), value :: Si
       integer(int32_t) :: ierr
 
       ierr = ats_set_init_clm_data_f90(T, Sl, Si)
@@ -63,8 +63,8 @@ module ats_interface
    subroutine ats_set_clm_data(e_flux, w_flux, ierr)
       use :: ats_data
       implicit none
-      type(c_ptr) :: e_flux
-      type(c_ptr) :: w_flux
+      type(c_ptr), value :: e_flux
+      type(c_ptr), value :: w_flux
       integer(int32_t) :: ierr
 
       ierr = ats_set_clm_data_f90(e_flux, w_flux)
@@ -77,9 +77,9 @@ module ats_interface
    subroutine ats_get_clm_data(T, Sl, Si, ierr)
       use :: ats_data
       implicit none
-      type(c_ptr) :: T
-      type(c_ptr) :: Sl
-      type(c_ptr) :: Si
+      type(c_ptr), value :: T
+      type(c_ptr), value :: Sl
+      type(c_ptr), value :: Si
       integer(int32_t) :: ierr
 
       ierr = ats_get_clm_data_f90(T, Sl, Si)

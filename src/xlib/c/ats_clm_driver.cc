@@ -347,7 +347,6 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
 
   // create the top level Coordinator
   coordinator_ = Teuchos::rcp(new Coordinator(params_copy, S_, comm));
-  coordinator_->initialize();
 
   // ======= SET UP THE CLM TO ATS MAPPINGS =========
 
@@ -451,6 +450,9 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
 
   sub_importer_ = Teuchos::rcp(new Epetra_Import(ats_cell_map, ats_imp_cell_map));
   surf_importer_ = Teuchos::rcp(new Epetra_Import(ats_col_map, ats_imp_col_map));
+
+  // set up the coordinator, allocating space
+  coordinator_->setup();
 }
 
 int32_t ATSCLMDriver::Finalize() {
@@ -532,17 +534,35 @@ int32_t ATSCLMDriver::GetSurfaceData_(std::string key, double* data, int length)
 
 int32_t ATSCLMDriver::SetInitCLMData(double* T, double* sl, double* si) {
   int ierr(0);
+  std::cout << "SetInitCLMData (ATS):" << std::endl;
+  std::cout << "T_ats[0] = " << T[0] << std::endl;
+  std::cout << "T_ats[374] = " << T[374] << std::endl;
+  std::cout << "sl_ats[0] = " << sl[0] << std::endl;
+  std::cout << "sl_ats[374] = " << sl[374] << std::endl;
+  std::cout << "si_ats[0] = " << si[0] << std::endl;
+  std::cout << "si_ats[374] = " << si[374] << std::endl;
+
   // ierr |= SetData_("temperature", T, ncells_sub_);
   // S_->GetField("temperature", S_->GetField("temperature")->owner())->set_initialized();
   // ierr |= SetData_("saturation_liquid", sl, ncells_sub_);
   // S_->GetField("saturation_liquid", S_->GetField("saturation_liquid")->owner())->set_initialized();
   // ierr |= SetData_("saturation_ice", si, ncells_sub_);
   // S_->GetField("saturation_ice", S_->GetField("saturation_ice")->owner())->set_initialized();
+
+  coordinator_->initialize();
+
   return ierr;
 }
 
 int32_t ATSCLMDriver::SetCLMData(double* e_flux, double* w_flux) {
   int ierr(0);
+
+  std::cout << "SetCLMData (ATS):" << std::endl;
+  std::cout << "Qe_ats[0] = " << e_flux[0] << std::endl;
+  std::cout << "Qe_ats[25] = " << e_flux[25] << std::endl;
+  std::cout << "Qw_ats[0] = " << w_flux[0] << std::endl;
+  std::cout << "Qw_ats[25] = " << w_flux[25] << std::endl;
+
   ierr |= SetSurfaceData_("surface_total_energy_source", e_flux, ncells_surf_);
   ierr |= SetSurfaceData_("surface_mass_source", w_flux, ncells_surf_);
   return ierr;
@@ -551,9 +571,19 @@ int32_t ATSCLMDriver::SetCLMData(double* e_flux, double* w_flux) {
 
 int32_t ATSCLMDriver::GetCLMData(double* T, double* sl, double* si) {
   int ierr(0);
+
   ierr |= GetData_("temperature", T, ncells_sub_);
   ierr |= GetData_("saturation_liquid", sl, ncells_sub_);
   ierr |= GetData_("saturation_ice", si, ncells_sub_);
+
+  std::cout << "GetCLMData (ATS):" << std::endl;
+  std::cout << "T_ats[0] = " << T[0] << std::endl;
+  std::cout << "T_ats[374] = " << T[374] << std::endl;
+  std::cout << "sl_ats[0] = " << sl[0] << std::endl;
+  std::cout << "sl_ats[374] = " << sl[374] << std::endl;
+  std::cout << "si_ats[0] = " << si[0] << std::endl;
+  std::cout << "si_ats[374] = " << si[374] << std::endl;
+
   return ierr;
 }
 
