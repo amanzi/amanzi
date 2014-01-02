@@ -39,6 +39,7 @@ public:
               //              Amanzi::ObservationData& output_observations);
 
   // PK methods
+  void setup();
   void initialize();
   void finalize();
   bool advance(double dt);
