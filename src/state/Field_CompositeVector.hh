@@ -56,6 +56,7 @@ public:
 
   // initialization
   virtual void Initialize(Teuchos::ParameterList& plist);
+  void ReadFromExodusII_(Teuchos::ParameterList& plist); 
 
   // visualization and checkpoint i/o
   void WriteVis(const Teuchos::Ptr<Visualization>& vis);
