@@ -1013,6 +1013,7 @@ double MPC::time_step_limiter (double T, double dT, double T_end) {
 }
 
 
+/* *******************************************************************/
 /*
 void MPC::populate_walkabout_data() {
   // update centroid and velocity in state

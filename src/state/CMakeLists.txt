@@ -63,7 +63,7 @@ set(state_inc_files cell_volume_evaluator.hh
   Observable.hh
   rank_evaluator.hh
   rank_evaluator_reg.hh
-  state_defs.hh
+  StateDefs.hh
   State.hh
   UnstructuredObservations.hh
   visualization.hh)
