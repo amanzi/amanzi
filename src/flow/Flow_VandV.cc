@@ -104,7 +104,7 @@ void Flow_PK::InitializeFields()
 
 /* ******************************************************************
 * TODO: Verify that a BC has been applied to every boundary face.
-* Right now faces without BC are considered no-mass-flux.                                         
+* Right now faces without BC are considered no-mass-flux.
 ****************************************************************** */
 void Flow_PK::ValidateBCs() const
 {

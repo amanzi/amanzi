@@ -63,6 +63,7 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   // primary members
   int InitPK();
+  void InitializeFields();
 
   double EstimateTransportDt();
   double CalculateTransportDt();

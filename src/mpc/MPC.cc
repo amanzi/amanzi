@@ -153,6 +153,9 @@ void MPC::mpc_init() {
   if (flow_enabled) {
     FPK->InitializeFields();
   }
+  if (transport_enabled) {
+    TPK->InitializeFields();
+  }
 
   S->CheckAllFieldsInitialized();
 
@@ -670,8 +673,8 @@ void MPC::cycle_driver() {
           } while (redo);
           FPK->CommitState(S);
         }
-        S->set_final_time(S->initial_time() + mpc_dT);
       }
+      S->set_final_time(S->initial_time() + mpc_dT);
       Amanzi::timer_manager.stop("Flow PK");
       // write some info about the time step we are about to take
       // first determine what we will write about the time step limiter

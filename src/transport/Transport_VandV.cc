@@ -24,6 +24,28 @@ namespace Amanzi {
 namespace AmanziTransport {
 
 /* ****************************************************************
+* Routine completes initialization of objects in the state.
+**************************************************************** */
+void Transport_PK::InitializeFields()
+{
+  // set popular default values whne Flow is off
+  if (S_->HasField("water_saturation")) {
+    if (!S_->GetField("water_saturation", name_)->initialized()) {
+      S_->GetFieldData("water_saturation", name_)->PutScalar(1.0);
+      S_->GetField("water_saturation", name_)->set_initialized();
+    }
+  }
+
+  if (S_->HasField("prev_water_saturation")) {
+    if (!S_->GetField("prev_water_saturation", name_)->initialized()) {
+      S_->GetFieldData("prev_water_saturation", name_)->PutScalar(1.0);
+      S_->GetField("prev_water_saturation", name_)->set_initialized();
+    }
+  }
+}
+
+
+/* ****************************************************************
 * Construct default state for unit tests.
 **************************************************************** */
 void Transport_PK::CreateDefaultState(
@@ -32,14 +54,20 @@ void Transport_PK::CreateDefaultState(
   std::string name("state"); 
   S_->RequireScalar("fluid_density", name);
 
-  S_->RequireField("porosity", name)->SetMesh(mesh)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasField("porosity")) {
+    S_->RequireField("porosity", name)->SetMesh(mesh)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
  
-  S_->RequireField("water_saturation", name)->SetMesh(mesh)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasField("water_saturation")) {
+    S_->RequireField("water_saturation", name)->SetMesh(mesh)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
   
-  S_->RequireField("prev_water_saturation", name)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasField("prev_water_saturation")) {
+    S_->RequireField("prev_water_saturation", name)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
 
   if (!S_->HasField("darcy_flux")) {
     S_->RequireField("darcy_flux", name)->SetMesh(mesh_)->SetGhosted(true)

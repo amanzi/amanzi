@@ -12,6 +12,7 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 #include <string>
 
+#include "dbc.hh"
 #include "errors.hh"
 #include "CompositeVector.hh"
 #include "composite_vector_function.hh"
@@ -115,11 +116,59 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   // ------ Set values using a function -----
   if (plist.isSublist("function")) {
     Teuchos::ParameterList func_plist = plist.sublist("function");
-    Teuchos::RCP<Functions::CompositeVectorFunction> func =
-        Functions::CreateCompositeVectorFunction(func_plist, data_->Map());
-    func->Compute(0.0, data_.ptr());
-    set_initialized();
-    return;
+ 
+    // -- potential use of a mapping operator first -- 
+    bool map_normal = plist.get<bool>("dot with normal", false); 
+    if (map_normal) { 
+      // map_normal take a vector and dots it with face normals 
+      ASSERT(data_->NumComponents() == 1); // one comp 
+      ASSERT(data_->HasComponent("face")); // is named face 
+      ASSERT(data_->Location("face") == AmanziMesh::FACE); // is on face 
+      ASSERT(data_->NumVectors("face") == 1);  // and is scalar 
+ 
+      // create a vector on faces of the appropriate dimension 
+      int dim = data_->Mesh()->space_dimension(); 
+
+      CompositeVectorSpace cvs;
+      cvs.SetMesh(data_->Mesh());
+      cvs.SetComponent("face", AmanziMesh::FACE, dim);
+      Teuchos::RCP<CompositeVector> vel_vec = Teuchos::rcp(new CompositeVector(cvs));
+
+      // Evaluate the velocity function 
+      Teuchos::RCP<Functions::CompositeVectorFunction> func = 
+          Functions::CreateCompositeVectorFunction(func_plist, vel_vec->Map()); 
+      func->Compute(0.0, vel_vec.ptr()); 
+ 
+      // Dot the velocity with the normal 
+      unsigned int nfaces_owned = data_->Mesh() 
+          ->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED); 
+ 
+      Epetra_MultiVector& dat_f = *data_->ViewComponent("face",false); 
+      const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face",false); 
+ 
+      AmanziGeometry::Point vel(dim); 
+      for (unsigned int f=0; f!=nfaces_owned; ++f) { 
+        AmanziGeometry::Point normal = data_->Mesh()->face_normal(f); 
+        if (dim == 2) { 
+          vel.set(vel_f[0][f], vel_f[1][f]); 
+        } else if (dim == 3) { 
+          vel.set(vel_f[0][f], vel_f[1][f], vel_f[2][f]); 
+        } else { 
+          ASSERT(0); 
+        } 
+        dat_f[0][f] = vel * normal; 
+      } 
+      set_initialized(); 
+      return; 
+ 
+    } else { 
+      // no map, just evaluate the function 
+      Teuchos::RCP<Functions::CompositeVectorFunction> func = 
+          Functions::CreateCompositeVectorFunction(func_plist, data_->Map()); 
+      func->Compute(0.0, data_.ptr()); 
+      set_initialized(); 
+      return; 
+    } 
   }
 };
 
