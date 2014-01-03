@@ -1,12 +1,12 @@
 /*
-This is the transport component of the Amanzi code. 
+  This is the transport component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include "Teuchos_RCP.hpp"
@@ -35,7 +35,6 @@ void Dispersion_TPFA::SymbolicAssembleMatrix()
 {
   const Epetra_Map& cmap_owned = mesh_->cell_map(false);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
   int avg_entries_row = (dim == 2) ? TRANSPORT_QUAD_FACES : TRANSPORT_HEX_FACES;
   Epetra_FECrsGraph pp_graph(Copy, cmap_owned, avg_entries_row + 1);
@@ -78,8 +77,9 @@ void Dispersion_TPFA::AssembleMatrix(const Epetra_MultiVector& p)
   cv_space.SetComponent("face", AmanziMesh::FACE, 1);
 
   Teuchos::RCP<CompositeVector> T = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
-  Teuchos::RCP<Epetra_MultiVector> Ttmp = T->ViewComponent("face", true);
+  Epetra_MultiVector& Ttmp = *T->ViewComponent("face", true);
 
+  Ttmp.PutScalar(0.0);
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -89,7 +89,7 @@ void Dispersion_TPFA::AssembleMatrix(const Epetra_MultiVector& p)
    
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      (*Ttmp)[0][f] += 1.0 / Mff(n, n);
+      Ttmp[0][f] += 1.0 / Mff(n, n);
     }
   }
   T->GatherGhostedToMaster();
@@ -108,13 +108,13 @@ void Dispersion_TPFA::AssembleMatrix(const Epetra_MultiVector& p)
 
     for (int n = 0; n < ncells; n++) {
       cells_GID[n] = cmap_wghost.GID(cells[n]);
-
-      double coef = 1.0 / (*Ttmp)[0][f];
-      Bpp(0, 0) =  coef;
-      Bpp(1, 1) =  coef;
-      Bpp(0, 1) = -coef;
-      Bpp(1, 0) = -coef;
     }
+
+    double coef = 1.0 / Ttmp[0][f];
+    Bpp(0, 0) =  coef;
+    Bpp(1, 1) =  coef;
+    Bpp(0, 1) = -coef;
+    Bpp(1, 0) = -coef;
 
     App_->SumIntoGlobalValues(ncells, cells_GID, Bpp.Values());
   }
