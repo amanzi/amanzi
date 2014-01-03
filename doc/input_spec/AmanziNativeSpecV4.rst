@@ -409,9 +409,11 @@ Here is an example:
 
 .. code-block:: xml
 
-  <ParameterList name="exodus file initialization">
-    <Parameter name="file" type="string" value="mesh_with_data.exo"/>
-    <Parameter name="attribute" type="string" value="perm"/>
+  <ParameterList name="permeability">
+    <ParameterList name="exodus file initialization">
+      <Parameter name="file" type="string" value="mesh_with_data.exo"/>
+      <Parameter name="attribute" type="string" value="perm"/>
+    </ParameterList>
   </ParameterList>
 
 
