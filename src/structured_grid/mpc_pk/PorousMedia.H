@@ -27,7 +27,9 @@
 
 #include <PMAmr.H>
 class RichardSolver;
-class RSParams;
+class NLScontrol;
+class NLSreason;
+class RSdata;
 #include <RichardSolver.H>
 
 // Amanzi chemistry
@@ -121,92 +123,6 @@ protected:
     PArray<Region> regions;
 };
 
-struct RichardNLSdata {
-  enum Reason
-  {
-      RICHARD_SUCCESS, 
-      RICHARD_NONLINEAR_FAIL,
-      RICHARD_LINEAR_FAIL,
-      RICHARD_NONLINEAR_CATASTROPHIC_FAIL
-  };
-
-  RichardNLSdata(int slev, int nlevs, PMAmr* amrp);
-  void SetMaxNewtonIterations(int max_iter);
-  void SetMaxJacobianReuse(int max_num_reuse);
-  void SetMaxConsecutiveFails(int max_num);
-  void SetDtRetryFactor(Real factor);
-  void SetMaxConsecutiveFails2(int max_num);
-  void SetDtRetryFactor2(Real factor);
-  void SetDtRetryFactorF(Real factor);
-  void SetMaxConsecutiveErrIncrease(int max_num);
-  void SetConsecutiveErrIncreaseDtReduction(Real factor);
-
-  void SetMaxNewtonIterationsForDt(int max_iter);
-  void SetMaxConsecutiveSuccess(int max_num);
-  void SetDtIncreaseFactor(Real factor);
-  void SetMinNewtonIterationsForDt(int max_iter);
-  void SetDtIncreaseFactor2(Real factor);
-  void SetMinNewtonIterationsForDt2(int max_iter);
-  void SetDtReductionFactor(Real factor);
-  void SetMaxDt(Real dt_max);
-
-  bool UpdateJacobian(int lev);
-  void ResetJacobianCounter(int lev);
-  void ResetJacobianCounter();
-  int NLIterationsTaken() {return nl_iterations_taken;}
-  int MaxNLIterations() {return max_nl_iterations;}
-  void operator++() {nl_iterations_taken++;}
-  void operator++(int) {nl_iterations_taken++;}
-  void SetNLIterationsTaken(int iters);
-  void ResetCounters();
-
-  bool AdjustDt(Real                dt, 
-		Reason              nl_solver_status, 
-		Real&               new_dt); // Note: return bool for whether run should stop
-
-  Array < PArray <MultiFab> > Hcoeffs;
-  Array < PArray <MultiFab> > Jacobian;
-  PArray <MultiFab>  DAlpha;
-  Array <MultiFab*> velPhase;
-  PArray <MultiFab>  initialState;
-
-private:
-  void Build();
-  int start_level, end_level;
-  int max_num_Jacobian_reuse;
-  Array<int> num_Jacobian_reuses_remaining;
-  int max_nl_iterations, nl_iterations_taken;
-  Real max_nl_residual_norm, nl_residual_norm; 
-
-  int max_num_consecutive_success, num_consecutive_success;
-  int max_num_consecutive_failures_1, num_consecutive_failures_1;
-  int max_num_consecutive_failures_2, num_consecutive_failures_2;
-  int max_num_consecutive_increases, num_consecutive_increases;
-  Real consecutive_increase_reduction_factor;
-  int min_nl_iterations_for_dt, min_nl_iterations_for_dt_2, max_nl_iterations_for_dt;
-  Real time_step_increase_factor, time_step_increase_factor_2, time_step_reduction_factor;
-  Real time_step_retry_factor, time_step_retry_factor_2, time_step_retry_factor_f;
-  bool last_chance;
-  Real prev_abs_err;
-  bool first;
-  Real max_time_step_size;
-
-  Array<PArray<MultiFab> > ktmp; // Currently maintains its own copy of this, should be fixed
-  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew;
-  PArray<MFTower> Kappa, DarcyVelocity;
-  Vec RhsV, SolnV;
-  PMAmr* pm_amr;
-
-  SNES           snes;
-  ISColoring     iscoloring;
-  MatFDColoring  matfdcoloring;
-
-  Array<Real> gravity;
-  Array<Real> density;
-  MFTFillPatch* mftfp;
-
-};
-
 class PorousMedia
   :
   public AmrLevel 
@@ -217,8 +133,6 @@ public:
   friend class Observation;
 
   enum ExecutionMode {INIT_TO_STEADY, STEADY, TRANSIENT, INVALID};
-
-  RichardNLSdata* BuildInitNLS();
 
   PorousMedia ();
 
@@ -479,7 +393,7 @@ public:
 
   static int echo_inputs;
 
-  void BuildRichardNLSdata(RichardNLSdata& nld, int slev, int nlevs);
+  void BuildNLScontrol(NLScontrol& nlsc, int slev, int nlevs);
 
   DistributionMapping getFuncCountDM (const BoxArray& bxba, int ngrow = 0);
 
@@ -637,12 +551,12 @@ public:
 #ifdef MG_USE_FBOXLIB
   void richard_eqb_update (MultiFab* u_mac = 0);
 
-  RichardNLSdata::Reason richard_scalar_update (Real dt, 
-						int& total_nwt_iter,
-						MultiFab* u_mac = 0);
+  NLSreason richard_scalar_update (Real      dt, 
+				   int&      total_nwt_iter,
+				   MultiFab* u_mac = 0);
 
-  RichardNLSdata::Reason richard_composite_update (Real dt, 
-						   RichardNLSdata& nl_data);
+  NLSreason richard_composite_update (Real        dt, 
+				      NLScontrol& nlsc);
 #endif
 
   void scalar_adjust_constraint (int  first_scalar,
@@ -1154,8 +1068,9 @@ public:
                            int       dcomp,
                            int       dir);
 
-  static void SetRichardSolverParameters(RSParams&          rsparams,
-                                         const std::string& IDstring);
+
+  void BuildNLScontrol(NLScontrol&        nlsc,
+		       const std::string& IDstring);
 
 protected:
 
@@ -1164,6 +1079,8 @@ protected:
   void setup_bound_desc();
 
   static RichardSolver* richard_solver;
+  static NLScontrol* richard_solver_control;
+  static RSdata* richard_solver_data;
 
   // Deals with the ghost cells 
   AuxBoundaryData aux_boundary_data_old;
@@ -1254,7 +1171,7 @@ protected:
   static Array<int>  rinflow_bc_lo;
   static Array<int>  rinflow_bc_hi;
 
-  static RichardNLSdata* nld_flow;
+  static NLScontrol* nlsc_flow;
 
   typedef std::pair<Box,Array<int> > BCDesc;
   std::map<Orientation,BCDesc> bc_descriptor_map;
