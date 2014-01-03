@@ -510,6 +510,7 @@ void MPC::cycle_driver() {
   if (flow_enabled || transport_enabled || chemistry_enabled) {
     if (observations) {
       if (observations->DumpRequested(S->cycle(), S->time())) {
+	if (flow_enabled) FPK->UpdateAuxilliaryData();
 	observations->make_observations(*S);
       }
     }
@@ -887,6 +888,7 @@ void MPC::cycle_driver() {
         *out << std::setprecision(5);
         *out << "Cycle " << iter;
         *out << ": complete, new time = " << S->time() / (365.25*60*60*24);
+        *out << " " << limitstring;
         *out << std::endl;
       }
 
@@ -898,6 +900,7 @@ void MPC::cycle_driver() {
       // make observations
       if (observations) {
 	if (observations->DumpRequested(S->cycle(), S->time())) {
+	  if (flow_enabled) FPK->UpdateAuxilliaryData();
 	  observations->make_observations(*S);
 	}
       } 

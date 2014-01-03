@@ -151,11 +151,11 @@ void Flow_PK::ProcessSublistTimeIntegration(
     if (dT_name == "adaptive") ti_specs.dT_method = FLOW_DT_ADAPTIVE;
 
     Teuchos::ParameterList& tmp_list = list.sublist(name);
-    ti_specs.atol = tmp_list.get<double>("error abs tol");  // standard parameters of BDFx
+    ti_specs.atol = tmp_list.get<double>("error abs tol"); 
     ti_specs.rtol = tmp_list.get<double>("error rel tol");
     ti_specs.dTfactor = tmp_list.get<double>("time step increase factor", 1.0);
 
-    ti_specs.T0 = tmp_list.get<double>("start time", 0.0);  // transition parameters
+    ti_specs.T0 = tmp_list.get<double>("start time", 0.0);
     ti_specs.T1 = tmp_list.get<double>("end time", 100 * AmanziFlow::FLOW_YEAR);
     ti_specs.dT0 = tmp_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
     ti_specs.dTmax = tmp_list.get<double>("max time step", AmanziFlow::FLOW_MAXIMUM_DT);
@@ -163,7 +163,24 @@ void Flow_PK::ProcessSublistTimeIntegration(
     ti_specs.residual_tol = tmp_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
     ti_specs.max_itrs = tmp_list.get<int>("maximum number of iterations", FLOW_TI_MAX_ITERATIONS);
 
-    // new way to define parameters ovverrides the above values.
+    // new way to define parameters overrides the above values.
+    Teuchos::ParameterList bdf1_list = list.sublist("BDF1");
+
+    if (list.isParameter("timestep controller type")) {
+      std::string dT_method_name = bdf1_list.get<string>("timestep controller type");
+
+      ti_specs.dT_method = 0;
+      if (dT_method_name == "standard") {
+        Teuchos::ParameterList dtlist = bdf1_list.sublist("timestep controller standard parameters");
+        ti_specs.dTfactor = dtlist.get<double>("time step increase factor");
+      } else if (dT_method_name == "fixed") {
+        Teuchos::ParameterList dtlist = bdf1_list.sublist("timestep controller fixed parameters");
+        ti_specs.dTfactor = dtlist.get<double>("time step increase factor");
+      } else if (dT_method_name == "adaptive") {
+        ti_specs.dT_method = FLOW_DT_ADAPTIVE;
+      }
+    }
+
     if (list.isSublist("initialization")) {
       Teuchos::ParameterList& ini_list = list.sublist("initialization");
       std::string name = ini_list.get<string>("method", "none");
