@@ -81,6 +81,11 @@
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
 
+        <ParameterList name="initialization">
+          <Parameter name="method" type="string" value="saturated solver"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+        </ParameterList>
+
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
           <Parameter name="timestep controller type" type="string" value="standard"/>
@@ -110,11 +115,6 @@
         </ParameterList>
 
         <ParameterList name="obsolete parameters">
-          <Parameter name="initialize with darcy" type="bool" value="true"/>
-          <Parameter name="error abs tol" type="double" value="1"/>
-          <Parameter name="error rel tol" type="double" value="0"/>
-
-          <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="1.0e+4"/>
         </ParameterList>
       </ParameterList>

@@ -98,10 +98,6 @@
         </ParameterList>
 
         <ParameterList name="obsolete parameters">
-          <Parameter name="error abs tol" type="double" value="1"/>
-          <Parameter name="error rel tol" type="double" value="0"/>
-
-          <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="100.0"/>
         </ParameterList>
       </ParameterList>

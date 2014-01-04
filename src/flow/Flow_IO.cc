@@ -148,11 +148,9 @@ void Flow_PK::ProcessSublistTimeIntegration(
       ti_specs.pressure_lambda_constraints = olist.get<bool>("enforce pressure-lambda constraints", true);
 
       ti_specs.dT_method = 0;
-      std::string dT_name = olist.get<string>("time stepping strategy", "simple");
+      std::string dT_name = olist.get<string>("time stepping strategy", "standard");
       if (dT_name == "adaptive") ti_specs.dT_method = FLOW_DT_ADAPTIVE;
 
-      ti_specs.atol = olist.get<double>("error abs tol", 1.0); 
-      ti_specs.rtol = olist.get<double>("error rel tol", 0.0);
       ti_specs.dTfactor = olist.get<double>("time step increase factor", 1.0);
 
       ti_specs.T0 = olist.get<double>("start time", 0.0);

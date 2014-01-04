@@ -30,25 +30,20 @@
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 
+        <ParameterList name="initialization">
+          <Parameter name="method" type="string" value="saturated solver"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+          <Parameter name="clipping saturation value" type="double" value="0.6"/>
+        </ParameterList>
+
         <Parameter name="time integration method" type="string" value="Picard"/>
         <ParameterList name="Picard">
         </ParameterList>
 
         <ParameterList name="obsolete parameters">
-          <Parameter name="initialize with darcy" type="bool" value="true"/>
-          <Parameter name="clipping saturation value" type="double" value="0.6"/>
-
-          <Parameter name="error abs tol" type="double" value="1"/>
-          <Parameter name="error rel tol" type="double" value="0"/>
-          <Parameter name="time step increase factor" type="double" value="1.2"/>
-
           <Parameter name="convergence tolerance" type="double" value="1e-12"/>
           <Parameter name="maximum number of iterations" type="int" value="600"/>
-          <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="1e+10"/>
-
-          <Parameter name="initial time step" type="double" value="1e-7"/>
-          <Parameter name="maximum time step" type="double" value="1e+7"/>
         </ParameterList>
       </ParameterList>
 
@@ -125,15 +120,10 @@
         <ParameterList name="pressure">
           <ParameterList name="BC 1">
             <ParameterList name="boundary pressure">
-              <!--
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="101325"/>
-              </ParameterList>
-              -->
               <ParameterList name="function-tabular">
                 <Parameter name="forms" type="Array(string)" value="{linear}"/>
-                <Parameter name="x values" type="Array(double)" value="{0, 1e+9}"/>
-                <Parameter name="y values" type="Array(double)" value="{101325, 101325}"/>
+                <Parameter name="x values" type="Array(double)" value="{0.0, 1e+9}"/>
+                <Parameter name="y values" type="Array(double)" value="{101325.0, 101325.0}"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="regions" type="Array(string)" value="{Bottom Surface Region}"/>
@@ -279,7 +269,7 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
     </ParameterList>
     <ParameterList name="AztecOO">
-      <Parameter name="error tolerance" type="double" value="1e-14"/>
+      <Parameter name="error tolerance" type="double" value="1e-15"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <Parameter name="maximum number of iterations" type="int" value="400"/>
       <Parameter name="preconditioner" type="string" value="Trilinos ML"/>

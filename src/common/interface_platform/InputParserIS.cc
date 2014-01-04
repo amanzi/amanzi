@@ -1463,8 +1463,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
                 sti_bdf1_std.set<double>("max time step", num_list.get<double>("steady max time step", ST_MAX_TS));
                 sti_bdf1.set<int>("max preconditioner lag iterations",
                                   num_list.get<int>("steady max preconditioner lag iterations", ST_MAX_PREC_LAG));
-                sti_bdf1.set<double>("error abs tol", num_list.get<double>("steady error abs tol", ST_ERROR_ABS_TOL));
-                sti_bdf1.set<double>("error rel tol", num_list.get<double>("steady error rel tol", ST_ERROR_REL_TOL));
+                // sti_bdf1.set<double>("error abs tol", num_list.get<double>("steady error abs tol", ST_ERROR_ABS_TOL));
+                // sti_bdf1.set<double>("error rel tol", num_list.get<double>("steady error rel tol", ST_ERROR_REL_TOL));
                 sti_bdf1_nka.set<int>("max divergent iterations",
                                   num_list.get<int>("steady max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS));
                 sti_bdf1.set<double>("nonlinear iteration damping factor",
@@ -1580,8 +1580,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
                 tti_bdf1_std.set<double>("max time step", num_list.get<double>("transient max time step", TR_MAX_TS));
                 tti_bdf1.set<int>("max preconditioner lag iterations",
                                   num_list.get<int>("transient max preconditioner lag iterations", TR_MAX_PREC_LAG));
-                tti_bdf1.set<double>("error abs tol", num_list.get<double>("transient error abs tol", TR_ERROR_ABS_TOL));
-                tti_bdf1.set<double>("error rel tol", num_list.get<double>("transient error rel tol", TR_ERROR_REL_TOL));
+                // tti_bdf1.set<double>("error abs tol", num_list.get<double>("transient error abs tol", TR_ERROR_ABS_TOL));
+                // tti_bdf1.set<double>("error rel tol", num_list.get<double>("transient error rel tol", TR_ERROR_REL_TOL));
                 tti_bdf1_nka.set<int>("max divergent iterations",
                                   num_list.get<int>("transient max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS));
                 tti_bdf1.set<double>("nonlinear iteration damping factor",

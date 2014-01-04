@@ -4,12 +4,6 @@
 
   <!--  REGIONS  -->
   <ParameterList name="Regions">
-    <ParameterList name="Computational domain">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,-2.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="Material 1">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,-2.0}"/>
@@ -70,8 +64,16 @@
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 
+        <ParameterList name="initialization">
+          <Parameter name="method" type="string" value="saturated solver"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+          <Parameter name="clipping saturation value" type="double" value="0.6"/>
+        </ParameterList>
+
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
+          <Parameter name="max preconditioner lag iterations" type="int" value="1"/>
+
           <Parameter name="timestep controller type" type="string" value="standard"/>
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="min iterations" type="int" value="5"/>
@@ -97,15 +99,6 @@
         </ParameterList>
 
         <ParameterList name="obsolete parameters">
-          <Parameter name="initialize with darcy" type="bool" value="true"/>
-          <Parameter name="clipping saturation value" type="double" value="0.6"/>
-
-          <Parameter name="error abs tol" type="double" value="1"/>
-          <Parameter name="error rel tol" type="double" value="0"/>
-          <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
-          <Parameter name="max preconditioner lag iterations" type="int" value="1"/>
-
-          <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="100.0"/>
         </ParameterList>
       </ParameterList>

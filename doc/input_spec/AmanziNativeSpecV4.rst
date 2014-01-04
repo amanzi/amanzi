@@ -680,7 +680,6 @@ The first part controls preliminary steps in the time integrator.
      <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
      <Parameter name="linear solver" type="string" value="GMRES with HypreAMG"/>
      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-     <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
 
      <ParameterList name="initialization">
        <Parameter name="method" type="string" value="saturated solver"/>
@@ -706,9 +705,6 @@ The parameters used here are
   The option  `"saturation`" is always active during transient time integration.
 
 * `"preconditioner`" [string] specifies preconditioner for nonlinear solvers.
-
-* `"max preconditioner lag iterations`" [int] specifies frequency of 
-  preconditioner recalculation.
 
 * `"initialization`" [list] defines parameters for calculating initial pressure guess.
   It can be used to obtain pressure field which is consistent with the boundary conditions.
@@ -747,6 +743,9 @@ The later is uder development and is based on error estimates.
 .. code-block:: xml
 
    <ParameterList name="steady state time integrator">
+     <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+     <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+
      <Parameter name="time integration method" type="string" value="BDF1"/>
      <ParameterList name="BDF1">
        <Parameter name="timestep controller type" type="string" value="standard"/>
@@ -762,6 +761,12 @@ The later is uder development and is based on error estimates.
    </ParameterList>
 
 The parameters used here are
+
+* `"max preconditioner lag iterations`" [int] specifies frequency of 
+  preconditioner recalculation.
+
+* `"extrapolate initial guess`" [bool] identifies forward time extrapolation
+  of the initial guess. Default is `"true`".
 
 * `"time step increase factor`" [double] defines geometric grow rate for the
   initial time step. This factor is applied when nonlinear solver converged
@@ -812,7 +817,7 @@ The parameters used here are
 
 * `"max nka vectors`" [int] is the size of the Krylov space.
 
-* `"modify correction`" [bool] allows to change (e.g. clip and damp) 
+* `"modify correction`" [bool] allows to change (e.g. clip or damp) 
   the NKA correction. This is the experimental option with dafualt `"false`".
 
 The remaining parameters in the time integrator sublist include 

@@ -4,13 +4,6 @@
 
   <!--  REGIONS  -->
   <ParameterList name="Regions">
-    <ParameterList name="Material 1">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0}"/>
-      </ParameterList>
-    </ParameterList>
-
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
         <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
@@ -66,15 +59,8 @@
         </ParameterList>
 
         <ParameterList name="obsolete parameters">
-          <Parameter name="error abs tol" type="double" value="1.0"/>
-          <Parameter name="error rel tol" type="double" value="1e-5"/>
           <Parameter name="time step increase factor" type="double" value="1.0"/>
-
-          <Parameter name="convergence tolerance" type="double" value="1e-14"/>
           <Parameter name="maximal number of iterations" type="int" value="2"/>
-          <Parameter name="start time" type="double" value="0.0"/>
-          <Parameter name="end time" type="double" value="0.0"/>
-          <Parameter name="initial time step" type="double" value="0.1"/>
           <Parameter name="maximum time step" type="double" value="1.0"/>
         </ParameterList>
       </ParameterList>
