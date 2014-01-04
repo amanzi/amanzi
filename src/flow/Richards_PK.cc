@@ -185,6 +185,9 @@ void Richards_PK::InitPK()
 
   rainfall_factor.resize(nfaces_wghost, 1.0);
 
+  // create verbosity object
+  vo_ = new VerboseObject("FlowPK::Richards", rp_list_); 
+
   // Process Native XML.
   ProcessParameterList(rp_list_);
 

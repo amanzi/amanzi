@@ -187,6 +187,9 @@ void Darcy_PK::InitPK()
 
   rainfall_factor.resize(nfaces_wghost, 1.0);
 
+  // create verbosity object
+  vo_ = new VerboseObject("FlowPK::Darcy", dp_list_); 
+
   // Process Native XML.
   ProcessParameterList(dp_list_);
 

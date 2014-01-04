@@ -31,9 +31,6 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
 {
   double rho = *(S_->GetScalarData("fluid_density"));
 
-  // create verbosity object
-  vo_ = new VerboseObject("FlowPK::Richards", plist); 
-
   // Process main one-line options (not sublists)
   atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
  
