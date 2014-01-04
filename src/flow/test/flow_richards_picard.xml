@@ -26,13 +26,17 @@
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
-        <Parameter name="time integration method" type="string" value="Picard"/>
-        <Parameter name="initialize with darcy" type="bool" value="true"/>
-        <Parameter name="clipping saturation value" type="double" value="0.6"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 
+        <Parameter name="time integration method" type="string" value="Picard"/>
         <ParameterList name="Picard">
+        </ParameterList>
+
+        <ParameterList name="obsolete parameters">
+          <Parameter name="initialize with darcy" type="bool" value="true"/>
+          <Parameter name="clipping saturation value" type="double" value="0.6"/>
+
           <Parameter name="error abs tol" type="double" value="1"/>
           <Parameter name="error rel tol" type="double" value="0"/>
           <Parameter name="time step increase factor" type="double" value="1.2"/>

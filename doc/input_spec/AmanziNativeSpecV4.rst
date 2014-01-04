@@ -820,7 +820,8 @@ those needed for unit tests, and future code development:
 
 .. code-block:: xml
 
-     <ParameterList name="BDF1">
+   <ParameterList name="steady state time integrator">
+     <ParameterList name="obsolete parameters">
        <Parameter name="start time" type="double" value="0.0"/>
        <Parameter name="end time" type="double" value="100.0"/>
 
@@ -834,6 +835,7 @@ those needed for unit tests, and future code development:
        <Parameter name="error abs tol" type="double" value="1"/>
        <Parameter name="error rel tol" type="double" value="0"/>
      </ParameterList>
+   </ParameterList>
 
 The parameters used here are
 

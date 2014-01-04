@@ -100,7 +100,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
 
   } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "mandatory sublist for steady-state calculations is missing." << endl;
+    *vo_->os() << "steady-state calculation was not requested." << endl;
   }
 
   // Time integrator for period III, called transient time integrator
@@ -137,33 +137,35 @@ void Flow_PK::ProcessSublistTimeIntegration(
   Errors::Message msg;
 
   if (list.isSublist(name)) {
+    Teuchos::ParameterList bdf1_list = list.sublist(name);
     // obsolete way to define parameters
-    ti_specs.initialize_with_darcy = list.get<bool>("initialize with darcy", false);
-    ti_specs.clip_saturation = list.get<double>("clipping saturation value", -1.0);
-    ti_specs.clip_pressure = list.get<double>("clipping pressure value", -1e+10);
-    ti_specs.pressure_lambda_constraints = list.get<bool>("enforce pressure-lambda constraints", true);
+    if (list.isSublist("obsolete parameters")) {
+      Teuchos::ParameterList olist = list.sublist("obsolete parameters");
+      ti_specs.initialize_with_darcy = olist.get<bool>("initialize with darcy", false);
+      ti_specs.clip_saturation = olist.get<double>("clipping saturation value", -1.0);
+      ti_specs.clip_pressure = olist.get<double>("clipping pressure value", -1e+10);
 
-    ti_specs.dT_method = 0;
-    std::string dT_name = list.get<string>("time stepping strategy", "simple");
-    if (dT_name == "adaptive") ti_specs.dT_method = FLOW_DT_ADAPTIVE;
+      ti_specs.pressure_lambda_constraints = olist.get<bool>("enforce pressure-lambda constraints", true);
 
-    Teuchos::ParameterList& tmp_list = list.sublist(name);
-    ti_specs.atol = tmp_list.get<double>("error abs tol"); 
-    ti_specs.rtol = tmp_list.get<double>("error rel tol");
-    ti_specs.dTfactor = tmp_list.get<double>("time step increase factor", 1.0);
+      ti_specs.dT_method = 0;
+      std::string dT_name = olist.get<string>("time stepping strategy", "simple");
+      if (dT_name == "adaptive") ti_specs.dT_method = FLOW_DT_ADAPTIVE;
 
-    ti_specs.T0 = tmp_list.get<double>("start time", 0.0);
-    ti_specs.T1 = tmp_list.get<double>("end time", 100 * AmanziFlow::FLOW_YEAR);
-    ti_specs.dT0 = tmp_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
-    ti_specs.dTmax = tmp_list.get<double>("max time step", AmanziFlow::FLOW_MAXIMUM_DT);
+      ti_specs.atol = olist.get<double>("error abs tol", 1.0); 
+      ti_specs.rtol = olist.get<double>("error rel tol", 0.0);
+      ti_specs.dTfactor = olist.get<double>("time step increase factor", 1.0);
 
-    ti_specs.residual_tol = tmp_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
-    ti_specs.max_itrs = tmp_list.get<int>("maximum number of iterations", FLOW_TI_MAX_ITERATIONS);
+      ti_specs.T0 = olist.get<double>("start time", 0.0);
+      ti_specs.T1 = olist.get<double>("end time", 100 * AmanziFlow::FLOW_YEAR);
+      ti_specs.dT0 = olist.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
+      ti_specs.dTmax = olist.get<double>("max time step", AmanziFlow::FLOW_MAXIMUM_DT);
+
+      ti_specs.residual_tol = olist.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
+      ti_specs.max_itrs = olist.get<int>("maximum number of iterations", FLOW_TI_MAX_ITERATIONS);
+    }
 
     // new way to define parameters overrides the above values.
-    Teuchos::ParameterList bdf1_list = list.sublist("BDF1");
-
-    if (list.isParameter("timestep controller type")) {
+    if (bdf1_list.isParameter("timestep controller type")) {
       std::string dT_method_name = bdf1_list.get<string>("timestep controller type");
 
       ti_specs.dT_method = 0;

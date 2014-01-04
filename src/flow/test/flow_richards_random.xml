@@ -77,16 +77,12 @@
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
-        <Parameter name="initialize with darcy" type="bool" value="true"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <Parameter name="error control options" type="Array(string)" value="{residual}"/>
 
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
-          <Parameter name="error abs tol" type="double" value="1"/>
-          <Parameter name="error rel tol" type="double" value="0"/>
-
           <Parameter name="timestep controller type" type="string" value="standard"/>
           <ParameterList name="timestep controller standard parameters">
             <Parameter name="min iterations" type="int" value="8"/>
@@ -111,6 +107,12 @@
               <Parameter name="Verbosity Level" type="string" value="none"/>
             </ParameterList>
           </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="obsolete parameters">
+          <Parameter name="initialize with darcy" type="bool" value="true"/>
+          <Parameter name="error abs tol" type="double" value="1"/>
+          <Parameter name="error rel tol" type="double" value="0"/>
 
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="1.0e+4"/>
