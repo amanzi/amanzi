@@ -10,7 +10,6 @@ Authors: Neil Carlson (version 1)
 #include "boost/math/special_functions/fpclassify.hpp"
 
 #include "Epetra_Import.h"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "flow_bc_factory.hh"
 
@@ -68,13 +67,14 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 // Setup data
 // -------------------------------------------------------------
 void Richards::setup(const Teuchos::Ptr<State>& S) {
-  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
+  plist_->print(std::cout);
 
   PKPhysicalBDFBase::setup(S);
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
 
   flux_tol_ = plist_->get<double>("flux tolerance", 1.e-4);
+  plist_->print(std::cout);
 };
 
 
@@ -311,7 +311,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // Initialize PK
 // -------------------------------------------------------------
 void Richards::initialize(const Teuchos::Ptr<State>& S) {
-  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
+  plist_->print(std::cout);
 
   // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);

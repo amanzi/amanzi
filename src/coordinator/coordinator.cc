@@ -37,7 +37,7 @@ namespace Amanzi {
 Coordinator::Coordinator(Teuchos::ParameterList& parameter_list,
                          Teuchos::RCP<State>& S,
                          Epetra_MpiComm* comm ) :
-    parameter_list_(Teuchos::rcpFromRef(parameter_list)),
+    parameter_list_(Teuchos::rcp(new Teuchos::ParameterList(parameter_list))),
     S_(S),
     comm_(comm),
     restart_(false) {
