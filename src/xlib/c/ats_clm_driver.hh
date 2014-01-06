@@ -69,6 +69,9 @@ struct ATSCLMDriver
   int ncells_surf_;
   int ncells_sub_;
 
+  // debug
+  bool coord_setup_, coord_init_;
+
   // ATS internals
   Teuchos::RCP<AmanziGeometry::Domain> simdomain_;
   Teuchos::RCP<AmanziGeometry::GeometricModel> geom_model_;

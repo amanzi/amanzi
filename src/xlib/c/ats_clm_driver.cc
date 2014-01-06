@@ -159,13 +159,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
   try {
     std::string framework = mesh_plist.get<string>("Framework");
     AmanziMesh::FrameworkPreference prefs(factory.preference());
-    if (framework == AmanziMesh::framework_name(AmanziMesh::Simple)) {
-      prefs.clear(); prefs.push_back(AmanziMesh::Simple);
-    } else if (framework == AmanziMesh::framework_name(AmanziMesh::MOAB)) {
-      prefs.clear(); prefs.push_back(AmanziMesh::MOAB);
-    } else if (framework == AmanziMesh::framework_name(AmanziMesh::STKMESH)) {
-      prefs.clear(); prefs.push_back(AmanziMesh::STKMESH);
-    } else if (framework == AmanziMesh::framework_name(AmanziMesh::MSTK)) {
+    if (framework == AmanziMesh::framework_name(AmanziMesh::MSTK)) {
       prefs.clear(); prefs.push_back(AmanziMesh::MSTK);
     } else if (framework == "") {
       // do nothing
@@ -327,132 +321,91 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
   // Create the state.
   Teuchos::ParameterList state_plist = params_copy.sublist("state");
   S_ = Teuchos::rcp(new State(state_plist));
+  state_plist.print(std::cout);
   S_->RegisterDomainMesh(mesh_);
   if (surface3D_mesh != Teuchos::null) S_->RegisterMesh("surface_3d", surface3D_mesh);
   if (surface_mesh != Teuchos::null) S_->RegisterMesh("surface", surface_mesh);
 
+  // set up primary vars
+  ASSERT(!S_->FEList().isSublist("surface_total_energy_source"));
+  ASSERT(!S_->FEList().isSublist("surface_mass_source"));
+  S_->FEList().sublist("surface_total_energy_source").set("field evaluator type", "primary variable");
+  S_->FEList().sublist("surface_mass_source").set("field evaluator type", "primary variable");
+
+  coordinator_ = Teuchos::rcp(new Coordinator(params_copy, S_, comm));
+  coord_setup_ = false;
+  coord_init_ = false;
+
   // slaved fluxes from CLM
+  S_->RequireFieldEvaluator("surface_total_energy_source");
+  S_->RequireFieldEvaluator("surface_mass_source");
+
   S_->RequireField("surface_total_energy_source","clm")->SetMesh(surface_mesh)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   S_->RequireField("surface_mass_source","clm")->SetMesh(surface_mesh)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireField("surface_mass_source_temperature","clm")->SetMesh(surface_mesh)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S_->FEList().sublist("surface_total_energy_source").set("field evaluator type", "primary variable");
-  S_->FEList().sublist("surface_mass_source").set("field evaluator type", "primary variable");
-  S_->FEList().sublist("surface_mass_source_temperature").set("field evaluator type", "primary variable");
-  S_->RequireFieldEvaluator("surface_total_energy_source");
-  S_->RequireFieldEvaluator("surface_mass_source");
-  S_->RequireFieldEvaluator("surface_mass_source_temperature");
-
-  // create the top level Coordinator
-  coordinator_ = Teuchos::rcp(new Coordinator(params_copy, S_, comm));
 
   // ======= SET UP THE CLM TO ATS MAPPINGS =========
+  // Currently assumes the identity map on the surface.
+  // Currently assumes this can be done locally.
 
-  // ASSUMES IDENTITY MAP!
-
-  // Create maps for CLM and ATS
-  // CURRENTLY ASSUMES that this can be done locally!
-  // clm_type_region_names = mesh_plist.get<Teuchos::Array<std::string> >("clm region list").toVector();
-
-  // int nindices = clm_type_region_names.size();
-  // ASSERT(nindices == num_types);
-
+  // -- identity map for surface
   ncells_surf_ = surface_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ASSERT(ncells_surf_ == num_cols); // THIS CURRENTLY FAILS!
+  ASSERT(ncells_surf_ == num_cols);
   surf_clm_map_ = Teuchos::rcp(new Epetra_Map(-1, ncells_surf_, 0, *comm));
 
+  const Epetra_Map& ats_col_map = surface_mesh->cell_map(false);
+  surf_importer_ = Teuchos::rcp(new Epetra_Import(ats_col_map, *surf_clm_map_));
+
+  // -- subsurface map -- top down
   ncells_sub_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ASSERT(ncells_sub_ == ncells_surf_ * 15); // MAGIC NUMBER OF CELLS PER COL IN CLM
   sub_clm_map_ = Teuchos::rcp(new Epetra_Map(-1, ncells_sub_, 0, *comm));
 
-  // // create list of region each cell is in
-  // std::vector<int> region_ats(ncells_surf_,-1);
-  // int counter = 1;
-  // for (std::vector<std::string>::const_iterator region=clm_type_region_names.begin();
-  //      region!=clm_type_region_names.end(); ++region) {
-  //   AmanziMesh::Entity_ID_List surf_cells;
-  //   surface_mesh->get_set_entities(*region, AmanziMesh::CELL,
-  //           AmanziMesh::OWNED, &surf_cells);
-  //   for (AmanziMesh::Entity_ID_List::const_iterator c=surf_cells.begin();
-  //        c!=surf_cells.end(); ++c) {
-  //     ASSERT(region_ats[*c] < 0);
-  //     region_ats[*c] = counter;
-  //   }
-  //   counter++;
-  // }
+  // Set up the subsurface gids -- GIDs in sub_clm_map
+  const Epetra_Map& ats_cell_map = mesh_->cell_map(false);
+  std::vector<int> gids_sub(ncells_sub_, -1);
 
-  // // loop over each index in the clm list, finding a cell of the same type in
-  // // the ATS list
-  // // -- create a col map for CLM
-  // std::vector< std::vector<int>::const_iterator > iters(nindices, region_ats.begin());
+  // -- loop over surface cells
+  for (int icol=0; icol!=ncells_surf_; ++icol) {
+    // get the GID of ATS's icol
+    int ats_col_gid = ats_col_map.GID(icol);
 
-  // std::vector<int> lids_surf(ncells_surf_,-1);
-  // for (int lcv=0; lcv!=ncells_surf_; ++lcv) {
-  //   int my_type = col_types[lcv];
+    // get the LID of the corresponding GID on CLM (assumes map is local permutation, but does not assume identity map)
+    int clm_col_lid = surf_clm_map_->LID(ats_col_gid);
+    ASSERT(clm_col_lid >= 0);
 
-  //   // get the iterator pointing to where we are on this type
-  //   std::vector<int>::const_iterator my_iter = iters[my_type-1];
+    // get the face on the subsurf mesh
+    AmanziMesh::Entity_ID f =
+        surface_mesh->entity_get_parent(AmanziMesh::CELL, icol);
 
-  //   // find the next instance of this type
-  //   std::vector<int>::const_iterator my_loc = std::find<std::vector<int>::const_iterator, int>(my_iter, region_ats.end(), my_type);
-  //   ASSERT(my_loc != region_ats.end());
+    // get the cell within the face
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    ASSERT(cells.size() == 1);
+    AmanziMesh::Entity_ID c = cells[0];
 
-  //   // grab the clm col gid at this location
-  //   lids_surf[my_loc - region_ats.begin()] = lcv;
-
-  //   // put this pointer back into the array
-  //   my_iter++; // increment to point to the NEXT spot
-  //   iters[my_type-1] = my_iter;
-  // }
-
-  // // Set up the subsurface gids from there
-  // std::vector<int> gids_sub(ncells_sub_, -1);
-
-  // // -- loop over surface cells
-  // for (int lcv=0; lcv!=ncells_surf_; ++lcv) {
-  //   // get the corresponding clm lid
-  //   int ind = lids_surf[lcv];
-
-  //   // get the face on the subsurf mesh
-  //   AmanziMesh::Entity_ID f =
-  //       surface_mesh->entity_get_parent(AmanziMesh::CELL, lcv);
-
-  //   // get the cell within the face
-  //   AmanziMesh::Entity_ID_List cells;
-  //   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-  //   ASSERT(cells.size() == 1);
-  //   AmanziMesh::Entity_ID c = cells[0];
-
-  //   // loop over cells_below() to find the column
-  //   int cell_ind = ind * 15;
-  //   while (c >= 0) {
-  //     gids_sub[c] = sub_clm_map_->GID(cell_ind);
-  //     cell_ind++;
-  //     c = mesh_->cell_get_cell_below(c);
-  //   }
-  //   ASSERT(cell_ind == (ind+1)*15); // checks to make sure we got the right number of cells below
-  // }
-
-  // // lids --> gids
-  // std::vector<int> gids_surf(ncells_surf_,-1);
-  // for (int lcv=0; lcv!=ncells_surf_; ++lcv)
-  //   gids_surf[lcv] = surf_clm_map_->GID(lids_surf[lcv]);
+    // loop over cells_below() to find the column.  NOTE: CLM uses horizontal
+    // cells as fastest varying, NOT vertical columns.
+    int clm_cell_lid = clm_col_lid;
+    int ncells_in_col = 0;
+    while (c >= 0) {
+      gids_sub[c] = sub_clm_map_->GID(clm_cell_lid);
+      clm_cell_lid += num_cols;
+      c = mesh_->cell_get_cell_below(c);
+      ncells_in_col++;
+    }
+    ASSERT(ncells_in_col == 15);
+  }
 
   // Create the imports
-  const Epetra_Map& ats_cell_map = mesh_->cell_map(false);
-  const Epetra_Map& ats_col_map = surface_mesh->cell_map(false);
-  //  Epetra_Map ats_imp_col_map(-1, ncells_surf_, &gids_surf[0], 0, *comm);
-  //  Epetra_Map ats_imp_cell_map(-1, ncells_surf_, &gids_sub[0], 0, *comm);
-
-  //  sub_importer_ = Teuchos::rcp(new Epetra_Import(ats_cell_map, ats_imp_cell_map));
-  //  surf_importer_ = Teuchos::rcp(new Epetra_Import(ats_col_map, ats_imp_col_map));
-  sub_importer_ = Teuchos::rcp(new Epetra_Import(ats_cell_map, *sub_clm_map_));
-  surf_importer_ = Teuchos::rcp(new Epetra_Import(ats_col_map, *surf_clm_map_));
+  ASSERT(*std::min_element(gids_sub.begin(), gids_sub.end()) >= 0);
+  Epetra_Map ats_cell_gids(-1, ncells_sub_, &gids_sub[0], 0, *comm);
+  sub_importer_ = Teuchos::rcp(new Epetra_Import(ats_cell_gids, *sub_clm_map_));
 
   // set up the coordinator, allocating space
   coordinator_->setup();
+  coord_setup_ = true;
 }
 
 int32_t ATSCLMDriver::Finalize() {
@@ -475,8 +428,12 @@ int32_t ATSCLMDriver::SetData_(std::string key, double* data, int length) {
   Epetra_MultiVector& dat_v = *dat->ViewComponent("cell",false);
   int ierr = dat_v.Import(dat_clm, *sub_importer_, Insert);
   ASSERT(!ierr);
-  return ierr;
 
+  std::cout << "SetData (ATS):" << std::endl;
+  std::cout << "data[0] = " << dat_v[0][0] << std::endl;
+  std::cout << "data[1] = " << dat_v[0][1] << std::endl;
+
+  return ierr;
 }
 
 
@@ -553,14 +510,16 @@ int32_t ATSCLMDriver::SetInitCLMData(double* T, double* sl, double* si) {
   std::cout << "si_ats[0] = " << si[0] << std::endl;
   std::cout << "si_ats[374] = " << si[374] << std::endl;
 
-  // ierr |= SetData_("temperature", T, ncells_sub_);
-  // S_->GetField("temperature", S_->GetField("temperature")->owner())->set_initialized();
+  ierr |= SetData_("temperature", T, ncells_sub_);
+
   // ierr |= SetData_("saturation_liquid", sl, ncells_sub_);
   // S_->GetField("saturation_liquid", S_->GetField("saturation_liquid")->owner())->set_initialized();
   // ierr |= SetData_("saturation_ice", si, ncells_sub_);
   // S_->GetField("saturation_ice", S_->GetField("saturation_ice")->owner())->set_initialized();
 
   coordinator_->initialize();
+  coord_init_ = true;
+  S_next_ = coordinator_->get_next_state();
 
   return ierr;
 }
@@ -574,8 +533,8 @@ int32_t ATSCLMDriver::SetCLMData(double* e_flux, double* w_flux) {
   std::cout << "Qw_ats[0] = " << w_flux[0] << std::endl;
   std::cout << "Qw_ats[24] = " << w_flux[24] << std::endl;
 
-  // ierr |= SetSurfaceData_("surface_total_energy_source", e_flux, ncells_surf_);
-  // ierr |= SetSurfaceData_("surface_mass_source", w_flux, ncells_surf_);
+  ierr |= SetSurfaceData_("surface_total_energy_source", e_flux, ncells_surf_);
+  ierr |= SetSurfaceData_("surface_mass_source", w_flux, ncells_surf_);
   return ierr;
 }
 
@@ -600,6 +559,9 @@ int32_t ATSCLMDriver::GetCLMData(double* T, double* sl, double* si) {
 
 
 int32_t ATSCLMDriver::Advance(double dt, bool force_vis) {
+  ASSERT(coord_setup_);
+  ASSERT(coord_init_);
+
   int ierr(0);
 
   int nsteps_max = 100;
