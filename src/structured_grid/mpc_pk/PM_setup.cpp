@@ -305,7 +305,6 @@ bool PorousMedia::do_output_chemistry_time_in_years;
 bool PorousMedia::do_output_transport_time_in_years;
 
 int  PorousMedia::richard_solver_verbose;
-RichardNLSdata* PorousMedia::nld_flow;
 
 //
 // Init to steady
@@ -362,6 +361,8 @@ Real PorousMedia::richard_variable_switch_saturation_threshold;
 Real PorousMedia::richard_dt_thresh_pure_steady;
 
 RichardSolver* PorousMedia::richard_solver;
+NLScontrol* PorousMedia::richard_solver_control;
+RSdata* PorousMedia::richard_solver_data;
 
 PorousMedia::ExecutionMode PorousMedia::execution_mode;
 Real PorousMedia::switch_time;
@@ -706,6 +707,8 @@ PorousMedia::InitializeStaticVariables ()
 
   PorousMedia::echo_inputs    = 0;
   PorousMedia::richard_solver = 0;
+  PorousMedia::richard_solver_control = 0;
+  PorousMedia::richard_solver_data = 0;
 }
 
 std::pair<std::string,std::string>
