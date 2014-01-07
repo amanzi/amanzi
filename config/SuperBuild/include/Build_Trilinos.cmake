@@ -45,6 +45,10 @@ foreach(package ${Trilinos_PACKAGE_LIST})
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_${package}:STRING=ON")
 endforeach()
 
+# Trilinos 11.0.3 has some C++ compile errors in it that we can sidestep by 
+# defining HAVE_TEUCHOS_ARRAY_BOUNDSCHECK.
+list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTeuchos_ENABLE_ABC:BOOL=ON")
+
 # Remove SEACAS from the build and force STK to use external Exodus
 if ( ENABLE_STK_Mesh )
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_SEACAS:STRING=OFF")
