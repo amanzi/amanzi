@@ -22,7 +22,7 @@ UnfrozenFractionModel::UnfrozenFractionModel(Teuchos::ParameterList& plist) :
   T0_ = plist_.get<double>("freezing point", 273.15);
 }
 
-double UnfrozenFractionModel::UnfrozenFraction(double temp) {
+double UnfrozenFractionModel::UnfrozenFraction(double temp) const {
   double adj_temp = temp - T0_;
   double uf;
   if (adj_temp > 0.) {
@@ -35,7 +35,7 @@ double UnfrozenFractionModel::UnfrozenFraction(double temp) {
   return uf;
 }
 
-double UnfrozenFractionModel::DUnfrozenFractionDT(double temp) {
+double UnfrozenFractionModel::DUnfrozenFractionDT(double temp) const {
   double adj_temp = temp - T0_;
   double duf;
   if (adj_temp > 0.) {

@@ -31,6 +31,7 @@ class UnfrozenFractionEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
+  Teuchos::RCP<const UnfrozenFractionModel> get_Model() const { return model_; }
   Teuchos::RCP<UnfrozenFractionModel> get_Model() { return model_; }
 
 protected:

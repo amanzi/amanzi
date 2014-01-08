@@ -128,14 +128,11 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- unfrozen fraction
   S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList uf_plist = plist_->sublist("unfrozen fraction evaluator");
-  Teuchos::RCP<FlowRelations::UnfrozenFractionEvaluator> uf_eval =
-      Teuchos::rcp(new FlowRelations::UnfrozenFractionEvaluator(uf_plist));
+  S->RequireFieldEvaluator("unfrozen_fraction");
+  Teuchos::RCP<const FieldEvaluator> uf_eval_fe = S->GetFieldEvaluator("unfrozen_fraction");
+  Teuchos::RCP<const FlowRelations::UnfrozenFractionEvaluator> uf_eval =
+      Teuchos::rcp_dynamic_cast<const FlowRelations::UnfrozenFractionEvaluator>(uf_eval_fe);
   uf_model_ = uf_eval->get_Model();
-  S->SetFieldEvaluator("unfrozen_fraction", uf_eval);
-
-  S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // -- unfrozen fraction Krel -- allows some water to be held in ice
   S->RequireField("unfrozen_fraction_relperm")->SetMesh(mesh_)
