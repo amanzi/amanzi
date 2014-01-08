@@ -19,8 +19,8 @@ class UnfrozenFractionModel {
  public:
   UnfrozenFractionModel(Teuchos::ParameterList& list);
 
-  double UnfrozenFraction(double temp);
-  double DUnfrozenFractionDT(double temp);
+  double UnfrozenFraction(double temp) const;
+  double DUnfrozenFractionDT(double temp) const;
 
  protected:
   double halfwidth_;

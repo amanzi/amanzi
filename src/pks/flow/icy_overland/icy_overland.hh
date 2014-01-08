@@ -44,7 +44,7 @@ class IcyOverlandFlow : public OverlandHeadFlow {
 
  protected:
   Teuchos::RCP<FlowRelations::IcyHeightModel> icy_height_model_;
-  Teuchos::RCP<FlowRelations::UnfrozenFractionModel> uf_model_;
+  Teuchos::RCP<const FlowRelations::UnfrozenFractionModel> uf_model_;
 
  private:
   // factory registration
