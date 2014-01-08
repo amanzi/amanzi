@@ -165,6 +165,10 @@ void SurfaceBalanceSEB::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("ponded_depth")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
+  S->RequireFieldEvaluator("unfrozen_fraction");
+  S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   S->RequireFieldEvaluator("surface_porosity");
   S->RequireField("surface_porosity")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -218,6 +222,11 @@ bool SurfaceBalanceSEB::advance(double dt) {
   S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& ponded_depth =
       *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell", false);
+
+  S_next_->GetFieldEvaluator("unfrozen_fraction")->HasFieldChanged(S_next_.ptr(), name_);
+  const Epetra_MultiVector& unfrozen_fraction =
+      *S_next_->GetFieldData("unfrozen_fraction")->ViewComponent("cell", false);
+
 
   S_next_->GetFieldEvaluator("surface_porosity")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& surf_porosity =
@@ -295,6 +304,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
     // ATS Calcualted Data
     double density_air = 1.275;       // Density of Air ------------------- [kg/m^3]
     data.st_energy.water_depth = ponded_depth[0][c];
+    data.st_energy.water_fraction = unfrozen_fraction[0][c];
     data.st_energy.temp_ground = surf_temp[0][c];
     data.vp_ground.temp = surf_temp[0][c];
     // Convert mol fraction to vapor pressure [moleFraction/atmosphericPressure]
@@ -335,6 +345,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
       // Calculate as if bare ground
       // ATS Calcualted Data
       data_bare.st_energy.water_depth = ponded_depth[0][c];
+      data_bare.st_energy.water_fraction = unfrozen_fraction[0][c];
       data_bare.st_energy.temp_ground = surf_temp[0][c];
       data_bare.vp_ground.temp = surf_temp[0][c];
       //Convert Mol fraction to vapor pressure [molFraction/atmosphericPressure]
