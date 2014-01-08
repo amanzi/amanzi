@@ -67,9 +67,8 @@ void PreconditionerHypre::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   Teuchos::ParameterList hypre_list("Preconditioner List");
   hypre_list.set("Preconditioner", BoomerAMG);
   hypre_list.set("SolveOrPrecondition", (Hypre_Chooser)1);
-  //hypre_list.set("SolveOrPrecondition", Solver);
+  // hypre_list.set("SolveOrPrecondition", Solver);
   hypre_list.set("SetPreconditioner", true);
-  //hypre_list.set("SetPreconditioner", false);
 
   hypre_list.set("NumFunctions", 9);
   hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
@@ -77,7 +76,6 @@ void PreconditionerHypre::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   IfpHypre_->SetParameters(hypre_list);
   IfpHypre_->Initialize();
   IfpHypre_->Compute();
-  //  exit(0);
 #endif
 }
 

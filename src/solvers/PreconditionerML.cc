@@ -43,7 +43,7 @@ void PreconditionerML::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   if (initialized_) ML_->DestroyPreconditioner();
   ML_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*A, list_, false));
   ML_->ComputePreconditioner();
-  initialized_ = true;
+  initialized_ = true; 
 }
 
 

@@ -29,7 +29,7 @@
 #include "CompositeVector.hh"
 #include "CompositeVectorSpace.hh"
 
-#include "state_defs.hh"
+#include "StateDefs.hh"
 
 #include "visualization.hh"
 #include "checkpoint.hh"

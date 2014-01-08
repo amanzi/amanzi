@@ -32,12 +32,7 @@ class LinearOperator : public Matrix {
   virtual void Init(Teuchos::ParameterList& plist) = 0;  
 
   virtual int Apply(const Vector& v, Vector& mv) const { return m_->Apply(v, mv); }
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const {
-    int ierr = ApplyInverse_(v,hv);
-    if (ierr > 0) return 0;
-    else if (ierr < 0) return 1;
-    else ASSERT(1);
-  }
+  virtual int ApplyInverse(const Vector& v, Vector& hv) const = 0;
 
   virtual const VectorSpace& DomainMap() const { return m_->DomainMap(); }
   virtual const VectorSpace& RangeMap() const { return m_->RangeMap(); }
@@ -57,9 +52,6 @@ class LinearOperator : public Matrix {
   virtual void add_criteria(int criteria) = 0;
   std::string name() { return name_; }
   void set_name(std::string name) { name_ = name; }
-
- protected:
-  virtual int ApplyInverse_(const Vector& v, Vector& hv) const = 0;
 
  protected:
   Teuchos::RCP<const Matrix> m_;

@@ -37,25 +37,25 @@ double f_cubic(const Amanzi::AmanziGeometry::Point& x, double t) {
 /* **************************************************************** */
 TEST(DISPERSION) {
   using namespace Teuchos;
+  using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "Test: dispersion" << endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
 
-  // read parameter list
-  ParameterList parameter_list;
+  /* read parameter list */
   string xmlFileName = "test/transport_dispersion.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
-  // create an MSTK mesh framework
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  /* create an MSTK mesh framework */
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
 
   FrameworkPreference pref;
@@ -65,50 +65,67 @@ TEST(DISPERSION) {
   MeshFactory factory(comm);
   factory.preference(pref);
   int nx = 20;
-  RCP<Mesh> mesh = factory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 10, 1, gm); 
+  RCP<const Mesh> mesh = factory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 10, 1, gm); 
 
-
-  RCP<Transport_State> TS = rcp(new Transport_State(mesh,1));
-
-  Point u(1.0, 0.0, 0.0);
-  TS->Initialize();
-  TS->set_darcy_flux(u);
-  TS->set_total_component_concentration(f_step, 0.0);
-  TS->set_porosity(1.0);
-  TS->set_water_saturation(1.0);
-  TS->set_prev_water_saturation(1.0);
-  TS->set_water_density(1.0);
-
-  // create transport PK  
+  /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  Transport_PK TPK(parameter_list, TS);
+  std::vector<std::string> component_names;
+  component_names.push_back("Component 0");
+
+  RCP<State> S = rcp(new State());
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+  Transport_PK TPK(plist, S, component_names);
+  TPK.CreateDefaultState(mesh, 1);
+
+  /* modify the default state for the problem at hand */
+  std::string passwd("state"); 
+  Teuchos::RCP<Epetra_MultiVector> 
+      flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+
+  AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces_owned; f++) {
+    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    (*flux)[0][f] = velocity * normal;
+  }
+
+  Teuchos::RCP<Epetra_MultiVector> 
+      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells_owned; c++) {
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    (*tcc)[0][c] = f_step(xc, 0.0);
+  }
+
+  S->GetFieldData("porosity", passwd)->PutScalar(1.0);
+  *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+
+  /* initialize a transport process kernel */
+  Amanzi::VerboseObject::hide_line_prefix = true;
   TPK.InitPK();
   TPK.PrintStatistics();
 
-  // advance the state
-  int i, k, iter = 0;
-  double T = 0.0, T1 = 1.0;
-
-  RCP<Transport_State> TS_next = TPK.transport_state_next();
-  RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
-
+  /* advance the state */
   double dT, dT0;
   dT0 = TPK.CalculateTransportDt();
 
+  int i, k, iter = 0;
+  double T = 0.0, T1 = 1.0;
   while (T < T1) {
     dT = std::min(TPK.CalculateTransportDt(), T1 - T);
     dT = std::min(dT, dT0);
-    // for (int k=0; k<nx; k++) printf("%10.8f\n", (*tcc_next)[0][k]); 
+    // for (int k = 0; k < nx; k++) printf("%10.8f\n", (*tcc)[0][k]); 
     // printf("\n");
 
     TPK.Advance(dT);
+    TPK.CommitState(S);
     T += dT;
-    TPK.CheckTracerBounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
-
-    *tcc = *tcc_next;
     iter++;
+
+    TPK.CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
   }
  
   delete comm;

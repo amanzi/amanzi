@@ -49,6 +49,12 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
 
   void Init(Teuchos::ParameterList& plist);
 
+  int ApplyInverse(const Vector& v, Vector& hv) const {
+    int ierr = PCG_(v, hv, tol_, max_itrs_, criteria_);
+    return ierr;
+    // return (ierr > 0) ? 0 : 1;
+  }
+
   // access members
   void set_tolerance(double tol) { tol_ = tol; }
   void set_max_itrs(int max_itrs) { max_itrs_ = max_itrs; }
@@ -63,11 +69,6 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
   Teuchos::RCP<VerboseObject> vo_;
 
  private:
-  int ApplyInverse_(const Vector& v, Vector& hv) const {
-    int ierr = PCG_(v, hv, tol_, max_itrs_, criteria_);
-    return ierr;
-  }
-
   int PCG_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
 
  private:
@@ -155,7 +156,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     if (initialized_) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << i << " ||r||=" << residual_ << endl;
+        *vo_->os() << i << " ||r||=" << residual_ << endl;
       }
     }
     if (rnorm > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;
@@ -189,7 +190,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
 template<class Matrix, class Vector, class VectorSpace>
 void LinearOperatorPCG<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::PCG_Solver", plist));
+  vo_ = Teuchos::rcp(new VerboseObject("Solvers::PCG", plist));
 
   tol_ = plist.get<double>("error tolerance", 1e-6);
   max_itrs_ = plist.get<int>("maximum number of iterations", 100);

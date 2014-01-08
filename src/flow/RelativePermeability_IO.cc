@@ -158,7 +158,7 @@ void RelativePermeability::PlotWRMcurves()
   if (MyPID == 0) {
     if (list_.isParameter("plot krel-pc curves")) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "saving krel-pc curves in file flow_krel_pc.txt..." << endl;
+      *vo_->os() << "saving krel-pc curves in file flow_krel_pc.txt..." << endl;
       std::ofstream ofile;
       ofile.open("flow_krel_pc.txt");
 
@@ -177,7 +177,7 @@ void RelativePermeability::PlotWRMcurves()
     }
 
     if (list_.isParameter("plot krel-sat curves")) {
-      *(vo_->os()) << "saving krel-sat curves in file flow_krel_sat.txt..." << endl;
+      *vo_->os() << "saving krel-sat curves in file flow_krel_sat.txt..." << endl;
       std::ofstream ofile;
       ofile.open("flow_krel_sat.txt");
 
@@ -198,7 +198,7 @@ void RelativePermeability::PlotWRMcurves()
     }
 
     if (list_.isParameter("plot sat-pc curves")) {
-      *(vo_->os()) << "saving sat-pc curves in file flow_sat_pc.txt..." << endl;
+      *vo_->os() << "saving sat-pc curves in file flow_sat_pc.txt..." << endl;
       std::ofstream ofile;
       ofile.open("flow_sat_pc.txt");
 

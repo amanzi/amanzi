@@ -44,19 +44,17 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: flow
 #
-set(flow_src_files Flow_PK.cc Flow_State.cc Flow_IO.cc
+set(flow_src_files Flow_PK.cc Flow_IO.cc
                    Flow_BC_Factory.cc Flow_BC_Actions.cc Flow_SourceFactory.cc Flow_VandV.cc 
-                   Darcy_PK.cc Darcy_TI.cc Darcy_IO.cc Darcy_LinearOperator.cc
-                   Richards_PK.cc Richards_IO.cc Richards_TI.cc Richards_WRM.cc
-                   Richards_SteadyState.cc Richards_LinearOperator.cc
-                   Richards_Bundles.cc Richards_Devel.cc 
-                   Matrix_MFD.cc Matrix_TPFA.cc 
-                   Stiffness_MFD.cc 
-                   WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
-                   RelativePermeability.cc RelativePermeability_IO.cc
-                   Flow_Utilities.cc
+                   Flow_Utilities.cc Flow_AuxData.cc
                    flow_domain_function.cc flow_boundary_function.cc
-		   Flow_AuxData.cc
+                   Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
+                   Richards_PK.cc Richards_TI.cc Richards_WRM.cc
+                   Richards_SteadyState.cc Richards_LinearOperator.cc
+                   Richards_Bundles.cc
+                   Matrix_MFD.cc Stiffness_MFD.cc Matrix_TPFA.cc 
+                   RelativePermeability.cc RelativePermeability_IO.cc
+                   WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
 		   )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
@@ -85,7 +83,6 @@ set(flow_inc_files
   flow_domain_function.hh
   Flow_PK.hh
   Flow_SourceFactory.hh
-  Flow_State.hh
   Flow_typedefs.hh
   Matrix_Audit.hh
   Matrix_MFD.hh

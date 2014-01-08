@@ -19,7 +19,6 @@
 #include "Epetra_Vector.h"
 
 #include "Preconditioner.hh"
-#include "Transport_State.hh"
 #include "Dispersion.hh"
 
 namespace Amanzi {
@@ -29,8 +28,8 @@ class Dispersion_TPFA : public Dispersion {
  public:
   Dispersion_TPFA() {};
   Dispersion_TPFA(std::vector<Teuchos::RCP<DispersionModel> >* specs,
-                  Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<Transport_State> TS)
-      : Dispersion(specs, mesh, TS) {};
+                  Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State> S)
+      : Dispersion(specs, mesh, S) {};
   ~Dispersion_TPFA() {};
 
   // primary members
@@ -38,7 +37,7 @@ class Dispersion_TPFA : public Dispersion {
   int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
 
   void SymbolicAssembleMatrix();
-  void AssembleMatrix(const Epetra_Vector& p);
+  void AssembleMatrix(const Epetra_MultiVector& p);
 };
 
 }  // namespace AmanziTransport

@@ -26,7 +26,7 @@ initialization, etc.
 #include "checkpoint.hh"
 #include "CompositeVector.hh"
 
-#include "state_defs.hh"
+#include "StateDefs.hh"
 
 namespace Amanzi {
 

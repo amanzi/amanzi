@@ -53,6 +53,12 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
 
   void Init(Teuchos::ParameterList& plist);
 
+  int ApplyInverse(const Vector& v, Vector& hv) const {
+    int ierr = GMRESRestart_(v, hv, tol_, max_itrs_, criteria_);
+    return ierr;
+    // return (ierr > 0) ? 0 : 1;
+  }
+
   // access members
   void set_tolerance(double tol) { tol_ = tol; }
   void set_max_itrs(int max_itrs) { max_itrs_ = max_itrs; }
@@ -72,12 +78,6 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   Teuchos::RCP<VerboseObject> vo_;
 
  private:
-  int ApplyInverse_(const Vector& v, Vector& hv) const {
-    int i = GMRESRestart_(v, hv, tol_, max_itrs_, criteria_);
-    return i;
-  }
-
-
   int GMRESRestart_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
   int GMRES_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
   void ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix& T, double* s,
@@ -212,7 +212,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     if (initialized_) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << i << " ||r||=" << residual_ << endl;
+        *vo_->os() << i << " ||r||=" << residual_ << endl;
       }
     }
     // Check all criteria one-by-one.
@@ -256,7 +256,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
 template<class Matrix, class Vector, class VectorSpace>
 void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::GMRES_Solver", plist));
+  vo_ = Teuchos::rcp(new VerboseObject("Solvers::GMRES", plist));
 
   tol_ = plist.get<double>("error tolerance", 1e-6);
   max_itrs_ = plist.get<int>("maximum number of iterations", 100);

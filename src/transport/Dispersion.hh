@@ -19,8 +19,8 @@
 #include "Epetra_Vector.h"
 
 #include "tensor.hh"
+#include "State.hh"
 #include "Preconditioner.hh"
-#include "Transport_State.hh"
 #include "TransportDefs.hh"
 
 namespace Amanzi {
@@ -48,14 +48,14 @@ class Dispersion {
  public:
   Dispersion() {};
   Dispersion(std::vector<Teuchos::RCP<DispersionModel> >* specs,
-             Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<Transport_State> TS) 
-      : specs_(specs), mesh_(mesh), TS_(TS) {};
+             Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State> S) 
+      : specs_(specs), mesh_(mesh), S_(S) {};
   ~Dispersion() {};
 
   // required members
   virtual void SymbolicAssembleMatrix() {};  // It fixes a large stencil S.
   virtual void ModifySymbolicAssemble() {};  // It allows to tweak the stencil a little.
-  virtual void AssembleMatrix(const Epetra_Vector& p) {};
+  virtual void AssembleMatrix(const Epetra_MultiVector& p) {};
 
   virtual int Apply(const Epetra_Vector& v,  Epetra_Vector& av) const { return 0; };
   virtual int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const { return 0; }
@@ -63,11 +63,11 @@ class Dispersion {
   // generic members
   void Init();
   void CalculateDispersionTensor(
-      const Epetra_Vector& darcy_flux,
-      const Epetra_Vector& porosity, const Epetra_Vector& saturation);
+      const Epetra_MultiVector& darcy_flux,
+      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
   void AddTimeDerivative(
-      double dT, const Epetra_Vector& porosity, const Epetra_Vector& saturation);
+      double dT, const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
   const Epetra_Map& RangeMap() const { return App_->RangeMap(); }
   const Epetra_Map& DomainMap() const { return App_->DomainMap(); }
@@ -78,7 +78,7 @@ class Dispersion {
  protected:
   std::vector<Teuchos::RCP<DispersionModel> >* specs_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<Transport_State> TS_;
+  Teuchos::RCP<State> S_;
 
   int dim;
   int ncells_owned, ncells_wghost;

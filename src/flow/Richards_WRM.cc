@@ -22,7 +22,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Convertion p -> s.                                               
 ****************************************************************** */
-void Richards_PK::DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s)
+void Richards_PK::DeriveSaturationFromPressure(const Epetra_MultiVector& p, Epetra_MultiVector& s)
 {
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
 
@@ -33,8 +33,8 @@ void Richards_PK::DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Ve
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
-      double pc = atm_pressure - p[*i];
-      s[*i] = WRM[mb]->saturation(pc);
+      double pc = atm_pressure_ - p[0][*i];
+      s[0][*i] = WRM[mb]->saturation(pc);
     }
   }
 }
@@ -43,7 +43,7 @@ void Richards_PK::DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Ve
 /* ******************************************************************
 * Convertion s -> p.                                               
 ****************************************************************** */
-void Richards_PK::DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p)
+void Richards_PK::DerivePressureFromSaturation(const Epetra_MultiVector& s, Epetra_MultiVector& p)
 {
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
 
@@ -54,8 +54,8 @@ void Richards_PK::DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Ve
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
-      double pc = WRM[mb]->capillaryPressure(s[*i]);
-      p[*i] = atm_pressure - pc;
+      double pc = WRM[mb]->capillaryPressure(s[0][*i]);
+      p[0][*i] = atm_pressure_ - pc;
     }
   }
 }
@@ -64,16 +64,16 @@ void Richards_PK::DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Ve
 /* ******************************************************************
 * Clip pressure using pressure threshold.
 ****************************************************************** */
-void Richards_PK::ClipHydrostaticPressure(const double pmin, Epetra_Vector& p)
+void Richards_PK::ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p)
 {
-  for (int c = 0; c < ncells_owned; c++) p[c] = std::max(p[c], pmin);
+  for (int c = 0; c < ncells_owned; c++) p[0][c] = std::max(p[0][c], pmin);
 }
 
 
 /* ******************************************************************
 * Clip pressure using constant saturation.
 ****************************************************************** */
-void Richards_PK::ClipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& p)
+void Richards_PK::ClipHydrostaticPressure(double pmin, double s0, Epetra_MultiVector& p)
 {
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
 
@@ -84,9 +84,9 @@ void Richards_PK::ClipHydrostaticPressure(const double pmin, const double s0, Ep
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
-      if (p[*i] < pmin) {
+      if (p[0][*i] < pmin) {
         double pc = WRM[mb]->capillaryPressure(s0);
-        p[*i] = atm_pressure - pc;
+        p[0][*i] = atm_pressure_ - pc;
       }
     }
   }

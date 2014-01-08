@@ -51,6 +51,8 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
 
   void Init(Teuchos::ParameterList& plist);
 
+  int ApplyInverse(const Vector& v, Vector& hv) const;
+
   virtual Teuchos::RCP<Matrix> Clone() const {
     return Teuchos::rcp(new LinearOperatorNKA(*this)); }
 
@@ -66,9 +68,6 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
 
  public:
   Teuchos::RCP<VerboseObject> vo_;
-
- private:
-  int ApplyInverse_(const Vector& v, Vector& hv) const;
 
  private:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
@@ -88,7 +87,7 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
 
 // Apply the inverse, x <-- A^-1 b
 template<class Matrix, class Vector, class VectorSpace>
-int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse_(const Vector& f, Vector& x) const 
+int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& f, Vector& x) const 
 {
   ASSERT(f.Map().SameAs(m_->RangeMap()));
   ASSERT(x.Map().SameAs(m_->DomainMap()));
@@ -120,7 +119,7 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse_(const Vector& 
   if (initialized_) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << num_itrs_ << " ||r||=" << residual_ << endl;
+      *vo_->os() << num_itrs_ << " ||r||=" << residual_ << endl;
     }
   }
   if (criteria_ == LIN_SOLVER_RELATIVE_RHS) {
@@ -152,7 +151,7 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse_(const Vector& 
     if (initialized_) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << num_itrs_ << " ||r||=" << residual_ << endl;
+        *vo_->os() << num_itrs_ << " ||r||=" << residual_ << endl;
       }
     }
     if (rnorm > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;
@@ -188,7 +187,7 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse_(const Vector& 
 template<class Matrix, class Vector, class VectorSpace>
 void LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::NKA_Solver", plist));
+  vo_ = Teuchos::rcp(new VerboseObject("Solvers::NKA", plist));
 
   tol_ = plist.get<double>("error tolerance", 1e-6);
   max_itrs_ = plist.get<int>("maximum number of iterations", 100);

@@ -1,3 +1,9 @@
+/*
+  The transport component of the Amanzi code, serial unit tests.
+  License: BSD
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
@@ -14,14 +20,13 @@
 #include "Transport_PK.hh"
 
 
-double f_step(const Amanzi::AmanziGeometry::Point& x, double t ) { 
-  if ( x[0] <= t ) return 1;
+double f_step(const Amanzi::AmanziGeometry::Point& x, double t) { 
+  if (x[0] <= t) return 1;
   return 0;
 }
 
 
 TEST(ADVANCE_WITH_MSTK_PARALLEL) {
-  using namespace std;
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -30,20 +35,18 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   cout << "Test: advance with MSTK in parallel" << endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
 
-  // read parameter list
-  ParameterList parameter_list;
+  /* read parameter list */
   string xmlFileName = "test/transport_parallel_mstk.xml";
-
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
-  // create an MSTK mesh framework 
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  /* create an MSTK mesh framework */
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
   FrameworkPreference pref;
@@ -52,48 +55,62 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory("test/hex_3x3x3_ss.exo", gm);
+  RCP<const Mesh> mesh = meshfactory("test/hex_3x3x3_ss.exo", gm);
   
-  RCP<Transport_State> TS = rcp(new Transport_State(mesh, 2));
+  /* create a simple state and populate it */
+  std::vector<std::string> component_names;
+  component_names.push_back("Component 0");
+  component_names.push_back("Component 1");
 
-  Point u(1.0, 0.0, 0.0);
-  TS->Initialize();
-  TS->set_darcy_flux(u);
-  TS->set_porosity(0.2);
-  TS->set_water_saturation(1.0);
-  TS->set_prev_water_saturation(1.0);
-  TS->set_water_density(1000.0);
-  TS->set_total_component_concentration(f_step,0.0,0);
-  TS->set_total_component_concentration(f_step,0.0,1);
+  RCP<State> S = rcp(new State());
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Transport_PK TPK(parameter_list, TS);
+  Transport_PK TPK(plist, S, component_names);
+  TPK.CreateDefaultState(mesh, 2);
+
+  /* modify the default state for the problem at hand */
+  std::string passwd("state"); 
+  Teuchos::RCP<Epetra_MultiVector> 
+      flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+
+  AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces_owned; f++) {
+    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    (*flux)[0][f] = velocity * normal;
+  }
+
+  Teuchos::RCP<Epetra_MultiVector>
+      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells_owned; c++) {
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    (*tcc)[0][c] = f_step(xc, 0.0);
+  }
+
+  /* initialize a transport process kernel */
   TPK.InitPK();
   TPK.PrintStatistics();
 
-  // advance the state
+  /* advance the state */
   double dT = TPK.CalculateTransportDt();
   TPK.Advance(dT);
 
-  // printing cell concentration
-  int  iter, k;
-  double  T = 0.0;
-  RCP<Transport_State> TS_next = TPK.transport_state_next();
-  RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
-
-  iter = 0;
+  /* print cell concentrations */
+  double T = 0.0;
+  int iter = 0;
   while(T < 1.0) {
     dT = TPK.CalculateTransportDt();
     TPK.Advance(dT);
+    TPK.CommitState(S);
     T += dT;
     iter++;
 
     if (iter < 10 && TPK.MyPID == 3) {
       printf("T=%7.2f  C_0(x):", T);
-      for (int k = 0; k < 2; k++) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
+      for (int k = 0; k < 2; k++) printf("%7.4f", (*tcc)[0][k]); cout << endl;
     }
-
-    *tcc = *tcc_next;
   }
 
   //for (int k=0; k<12; k++) 

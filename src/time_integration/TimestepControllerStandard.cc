@@ -50,7 +50,7 @@ TimestepControllerStandard::get_timestep(double dt, int iterations) {
   // check min step size
   if (dt_next < min_dt_) {
     if (iterations < 0) {
-      std::string msg = "Timestep failed: Time step crash";
+      std::string msg = "dT is too small, terminating...";
       Errors::Message m(msg);
       Exceptions::amanzi_throw(m);
     } else {
@@ -60,8 +60,8 @@ TimestepControllerStandard::get_timestep(double dt, int iterations) {
 
   // check that if we have failed, our step size has decreased.
   if (iterations < 0) {
-    if (dt - dt_next < 1.e-10) {
-      std::string msg = "Timestep failed: Time step crash";
+    if (dt - dt_next < 1.0e-10) {
+      std::string msg = "dT change is too small, terminating...";
       Errors::Message m(msg);
       Exceptions::amanzi_throw(m);
     }

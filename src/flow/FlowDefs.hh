@@ -38,10 +38,6 @@ const int FLOW_BC_SUBMODEL_HEAD_RELATIVE = 16;
 const double FLOW_BC_SEEPAGE_FACE_IMPEDANCE = 1e-10;  // [sec / m]
 const double FLOW_BC_SEEPAGE_FACE_REGULARIZATION = 1000.0;  // [Pa] 
 
-const int FLOW_SOLVER_NKA = 1;
-const int FLOW_SOLVER_NEWTON = 2;
-const int FLOW_SOLVER_PICARD_NEWTON = 3;
-
 const int FLOW_TIME_INTEGRATION_PICARD = 1;
 const int FLOW_TIME_INTEGRATION_BACKWARD_EULER = 2;  // Only for testing.
 const int FLOW_TIME_INTEGRATION_BDF1 = 3;
@@ -73,13 +69,13 @@ const int FLOW_PERMFLAG_BOUNDARY = 4;
 
 const int FLOW_MFD3D_POLYHEDRA = 1;  // default
 const int FLOW_MFD3D_POLYHEDRA_SCALED = 2;
-const int FLOW_MFD3D_POLYHEDRA_MONOTONE = 3;  // brand-new method
-const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 4;  // for developers
-const int FLOW_MFD3D_TWO_POINT_FLUX = 5;  // lacks consistency in some cases
-const int FLOW_MFD3D_SUPPORT_OPERATOR = 6;
-const int FLOW_MFD3D_OPTIMIZED = 7;
-const int FLOW_MFD3D_OPTIMIZED_SCALED = 8;  // better version of 6
-const int FLOW_MFD3D_DEVELOPER_TESTING = 9;  // for developers only
+const int FLOW_MFD3D_POLYHEDRA_MONOTONE = 3;
+const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 4;  // for developers only
+const int FLOW_MFD3D_TPFA = 5;  // TPFA via MFD framework
+const int FLOW_FV_TPFA = 6;
+const int FLOW_MFD3D_SUPPORT_OPERATOR = 7;
+const int FLOW_MFD3D_OPTIMIZED = 8;
+const int FLOW_MFD3D_OPTIMIZED_SCALED = 9;
 
 const int FLOW_PRECONDITIONER_TRILINOS_ML = 1;  // preconditioners
 const int FLOW_PRECONDITIONER_HYPRE_AMG = 2;
@@ -93,9 +89,6 @@ const double FLOW_TI_ABSOLUTE_TOLERANCE = 1.0;  // defaults for time integration
 const double FLOW_TI_RELATIVE_TOLERANCE = 0.0;
 const double FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE = 1e-6;
 const int FLOW_TI_MAX_ITERATIONS = 400;
-
-const int FLOW_MATRIX_MFD = 1;  // matrix to use in linear and nonlinear solvers 
-const int FLOW_MATRIX_MFD_TPFA = 2;
 
 const int FLOW_MATRIX_ACTION_MATRIX = 1;
 const int FLOW_MATRIX_ACTION_PRECONDITIONER = 2;

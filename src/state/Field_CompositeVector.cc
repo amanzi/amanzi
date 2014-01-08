@@ -12,6 +12,9 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 #include <string>
 
+#include "exodusII.h" 
+
+#include "dbc.hh"
 #include "errors.hh"
 #include "CompositeVector.hh"
 #include "composite_vector_function.hh"
@@ -104,6 +107,18 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
     return;
   }
 
+  // ------ Try to set values from an file -----
+  if (plist.isSublist("exodus file initialization")) {
+    // data must be pre-initialized to zero in case Exodus file does not
+    // provide all values.
+    data_->PutScalar(0.0);
+
+    Teuchos::ParameterList file_list = plist.sublist("exodus file initialization");
+    ReadFromExodusII_(file_list);
+    set_initialized();
+    return;
+  }
+
   // ------ Set values using a constant -----
   if (plist.isParameter("constant")) {
     double value = plist.get<double>("constant");
@@ -115,11 +130,59 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   // ------ Set values using a function -----
   if (plist.isSublist("function")) {
     Teuchos::ParameterList func_plist = plist.sublist("function");
-    Teuchos::RCP<Functions::CompositeVectorFunction> func =
-        Functions::CreateCompositeVectorFunction(func_plist, data_->Map());
-    func->Compute(0.0, data_.ptr());
-    set_initialized();
-    return;
+ 
+    // -- potential use of a mapping operator first -- 
+    bool map_normal = plist.get<bool>("dot with normal", false); 
+    if (map_normal) { 
+      // map_normal take a vector and dots it with face normals 
+      ASSERT(data_->NumComponents() == 1); // one comp 
+      ASSERT(data_->HasComponent("face")); // is named face 
+      ASSERT(data_->Location("face") == AmanziMesh::FACE); // is on face 
+      ASSERT(data_->NumVectors("face") == 1);  // and is scalar 
+ 
+      // create a vector on faces of the appropriate dimension 
+      int dim = data_->Mesh()->space_dimension(); 
+
+      CompositeVectorSpace cvs;
+      cvs.SetMesh(data_->Mesh());
+      cvs.SetComponent("face", AmanziMesh::FACE, dim);
+      Teuchos::RCP<CompositeVector> vel_vec = Teuchos::rcp(new CompositeVector(cvs));
+
+      // Evaluate the velocity function 
+      Teuchos::RCP<Functions::CompositeVectorFunction> func = 
+          Functions::CreateCompositeVectorFunction(func_plist, vel_vec->Map()); 
+      func->Compute(0.0, vel_vec.ptr()); 
+ 
+      // Dot the velocity with the normal 
+      unsigned int nfaces_owned = data_->Mesh() 
+          ->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED); 
+ 
+      Epetra_MultiVector& dat_f = *data_->ViewComponent("face",false); 
+      const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face",false); 
+ 
+      AmanziGeometry::Point vel(dim); 
+      for (unsigned int f=0; f!=nfaces_owned; ++f) { 
+        AmanziGeometry::Point normal = data_->Mesh()->face_normal(f); 
+        if (dim == 2) { 
+          vel.set(vel_f[0][f], vel_f[1][f]); 
+        } else if (dim == 3) { 
+          vel.set(vel_f[0][f], vel_f[1][f], vel_f[2][f]); 
+        } else { 
+          ASSERT(0); 
+        } 
+        dat_f[0][f] = vel * normal; 
+      } 
+      set_initialized(); 
+      return; 
+ 
+    } else { 
+      // no map, just evaluate the function 
+      Teuchos::RCP<Functions::CompositeVectorFunction> func = 
+          Functions::CreateCompositeVectorFunction(func_plist, data_->Map()); 
+      func->Compute(0.0, data_.ptr()); 
+      set_initialized(); 
+      return; 
+    } 
   }
 };
 
@@ -263,4 +326,61 @@ void Field_CompositeVector::EnsureSubfieldNames_() {
   }
 };
 
-} // namespace
+
+void Field_CompositeVector::ReadFromExodusII_(Teuchos::ParameterList& file_list) 
+{ 
+  Epetra_MultiVector& dat_f = *data_->ViewComponent("cell", false); 
+  int nvectors = dat_f.NumVectors(); 
+ 
+  std::string file_name = file_list.get<std::string>("file"); 
+  std::string attribute_name = file_list.get<std::string>("attribute"); 
+ 
+  // open ExodusII file 
+  const Epetra_Comm& comm = data_->Comm(); 
+ 
+  if (comm.NumProc() > 1) { 
+    std::stringstream add_extension; 
+    add_extension << "." << comm.NumProc() << "." << comm.MyPID(); 
+    file_name.append(add_extension.str()); 
+  } 
+ 
+  int CPU_word_size(8), IO_word_size(0), ierr; 
+  float version; 
+  int exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version); 
+  printf("Opening file: %s ws=%d %d\n", file_name.c_str(), CPU_word_size, IO_word_size); 
+ 
+  // read database parameters 
+  int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets; 
+  char title[MAX_LINE_LENGTH + 1]; 
+  ierr = ex_get_init(exoid, title, &dim, &num_nodes, &num_elem, 
+                     &num_elem_blk, &num_node_sets, &num_side_sets); 
+ 
+  int* ids = (int*) calloc(num_elem_blk, sizeof(int)); 
+  ierr = ex_get_elem_blk_ids(exoid, ids); 
+ 
+  // read attributes block-by-block 
+  int offset = 0; 
+  char elem_type[MAX_LINE_LENGTH + 1]; 
+  for (int i = 0; i < num_elem_blk; i++) { 
+    int num_elem_this_blk, num_attr, num_nodes_elem; 
+    ierr = ex_get_elem_block(exoid, ids[i], elem_type, &num_elem_this_blk, 
+                             &num_nodes_elem, &num_attr); 
+ 
+    double* attrib = (double*) calloc(num_elem_this_blk * num_attr, sizeof(double)); 
+    ierr = ex_get_elem_attr(exoid, ids[i], attrib); 
+ 
+    for (int n = 0; n < num_elem_this_blk; n++) { 
+      int c = n + offset; 
+      for (int k = 0; k < nvectors; k++) dat_f[k][c] = attrib[n]; 
+    } 
+    free(attrib); 
+    printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk); 
+ 
+    offset += num_elem_this_blk; 
+  } 
+ 
+  ierr = ex_close(exoid); 
+  printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), offset, ierr); 
+} 
+
+} // namespace Amanzi

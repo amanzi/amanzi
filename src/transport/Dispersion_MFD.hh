@@ -20,7 +20,6 @@
 #include "Epetra_Map.h"
 
 #include "Preconditioner.hh"
-#include "Transport_State.hh"
 #include "Dispersion.hh"
 
 namespace Amanzi {
@@ -30,8 +29,8 @@ class Dispersion_MFD : public Dispersion {
  public:
   Dispersion_MFD() {};
   Dispersion_MFD(std::vector<Teuchos::RCP<DispersionModel> >* specs,
-                Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<Transport_State> TS)
-      : Dispersion(specs, mesh, TS) {};
+                Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State> S)
+      : Dispersion(specs, mesh, S) {};
   ~Dispersion_MFD() {};
 
   // primary members
@@ -39,7 +38,7 @@ class Dispersion_MFD : public Dispersion {
   int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
 
   void SymbolicAssembleMatrix();
-  void AssembleMatrix(const Epetra_Vector& p);
+  void AssembleMatrix(const Epetra_MultiVector& p);
 
   // access (now only for unit tests)
   const Epetra_Map& super_map() { return *super_map_; }

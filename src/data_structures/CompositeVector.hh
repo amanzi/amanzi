@@ -120,8 +120,8 @@ integrators/nonlinear solvers.
 DOCUMENT VANDELAY HERE! FIX ME --etc
 ------------------------------------------------------------------------- */
 
-#ifndef COMPOSITEVECTOR_HH_
-#define COMPOSITEVECTOR_HH_
+#ifndef AMANZI_COMPOSITEVECTOR_HH_
+#define AMANZI_COMPOSITEVECTOR_HH_
 
 #define CV_ENABLE_SET_FROM_OPERATOR 0
 
@@ -185,6 +185,7 @@ public:
           bool ghosted=false) const {
     return ghosted ? ghostvec_->ComponentMap(name) : mastervec_->ComponentMap(name);
   }
+  CompositeVector(const Epetra_BlockMap& map) {};
 
   // -- View data. --
 

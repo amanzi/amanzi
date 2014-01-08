@@ -1,3 +1,9 @@
+/*
+  The transport component of the Amanzi code, serial unit tests.
+  License: BSD
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
@@ -17,93 +23,102 @@
 #include "State.hh"
 #include "Transport_PK.hh"
 
-
-double f_step(const Amanzi::AmanziGeometry::Point& x, double t) { 
-  if (x[0] <= 1 + t) return 1;
-  return 0;
-}
-
-double f_smooth(const Amanzi::AmanziGeometry::Point& x, double t) { 
-  return 0.5 - atan(50*(x[0]-5-t)) / M_PI;
-}
-
 double f_cubic(const Amanzi::AmanziGeometry::Point& x, double t) {
-  if( x[0] < 1 + t ) return 1;
-  if( x[0] > 3 + t ) return 0;
-  double z = (x[0]-1-t) / 2;
-  return 2*z*z*z - 3*z*z + 1;
+  if (x[0] < 1 + t) return 1.0;
+  if (x[0] > 3 + t) return 0.0;
+  double z = (x[0] - 1 - t) / 2;
+  return 2 * z * z * z - 3 * z * z + 1;
 }
 
 
-/* **************************************************************** */
 TEST(CONVERGENCE_ANALYSIS_DONOR) {
   using namespace Teuchos;
+  using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "TEST: convergence analysis of the donor scheme" << endl;
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  Epetra_SerialComm* comm = new Epetra_SerialComm();
 
-  // read parameter list
-  ParameterList parameter_list;
+  /* read parameter list */
   string xmlFileName = "test/transport_convergence.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
-  // convergence estimate
+  /* convergence estimate */
   std::vector<double> h;
   std::vector<double> L1error, L2error;
 
-  for (int nx=20; nx<321; nx*=2 ) {
-    // create an MSTK mesh framework 
-    ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  for (int nx = 20; nx < 321; nx *= 2) {
+    /* create an MSTK mesh framework */
+    ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
+
     FrameworkPreference pref;
     pref.clear();
     pref.push_back(Simple);
     
     MeshFactory meshfactory((Epetra_MpiComm *)comm);
     meshfactory.preference(pref);
-    RCP<Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 2, gm);
+    RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx,2,2, gm);
 
-    RCP<Transport_State> TS = rcp(new Transport_State(mesh, 1));
- 
-    Point u(1.0, 0.0, 0.0);
-    TS->Initialize();
-    TS->set_darcy_flux(u);
-    TS->set_total_component_concentration(f_cubic, 0.0);
-    TS->set_porosity(1.0);
-    TS->set_water_saturation(1.0);
-    TS->set_prev_water_saturation(1.0);
-    TS->set_water_density(1.0);
+    /* create a simple state and populate it */
+    Amanzi::VerboseObject::hide_line_prefix = false;
+    Amanzi::VerboseObject::global_default_level = Teuchos::VERB_NONE;
 
-    Transport_PK TPK(parameter_list, TS);
+    std::vector<std::string> component_names;
+    component_names.push_back("Component 0");
+
+    RCP<State> S = rcp(new State());
+    S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+    Transport_PK TPK(plist, S, component_names);
+    TPK.CreateDefaultState(mesh, 1);
+
+    /* modify the default state for the problem at hand */
+    std::string passwd("state"); 
+    Teuchos::RCP<Epetra_MultiVector> 
+        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+
+    AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
+    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+    for (int f = 0; f < nfaces_owned; f++) {
+      const AmanziGeometry::Point& normal = mesh->face_normal(f);
+      (*flux)[0][f] = velocity * normal;
+    }
+
+    Teuchos::RCP<Epetra_MultiVector> 
+        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+
+    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    for (int c = 0; c < ncells_owned; c++) {
+      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+      (*tcc)[0][c] = f_cubic(xc, 0.0);
+    }
+
+    S->GetFieldData("porosity", passwd)->PutScalar(1.0);
+    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+
+    /* initialize a transport process kernel */
     TPK.InitPK();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
     if (nx == 20) TPK.PrintStatistics();
-    Amanzi::VerboseObject::global_default_level = Teuchos::VERB_NONE;
  
-    // advance the state
-    int i, k, iter = 0;
+    /* advance the state */
+    int iter = 0;
     double T = 0.0, T1 = 1.0;
-
-    RCP<Transport_State> TS_next = TPK.transport_state_next();
-    RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
-    RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
-
     while (T < T1) {
       double dT = std::min(TPK.CalculateTransportDt(), T1 - T);
       TPK.Advance(dT);
+      TPK.CommitState(S);
       T += dT;
-
-      *tcc = *tcc_next;
       iter++;
     }
 
-    // calculate L1 and L2 errors
+    /* calculate L1 and L2 errors */
     double L1, L2;
-    TS->error_total_component_concentration(f_cubic, T, &L1, &L2);
+    TPK.CalculateLpErrors(f_cubic, T, (*tcc)(0), &L1, &L2);
     printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
 
     h.push_back(5.0 / nx);
@@ -127,6 +142,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
 /* **************************************************************** */
 TEST(CONVERGENCE_ANALYSIS_2ND) {
   using namespace Teuchos;
+  using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
@@ -135,75 +151,92 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 
   /* read parameter list */
-  ParameterList parameter_list;
   string xmlFileName = "test/transport_convergence.xml";
-  
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
   /* create an MSTK mesh framework */
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
  
-  // convergence estimate
+  /* convergence estimate */
   std::vector<double> h;
   std::vector<double> L1error, L2error;
 
-  for (int nx=20; nx<161; nx*=2 ) {
+  for (int nx = 20; nx < 161; nx *= 2) {
     FrameworkPreference pref;
     pref.clear();
     pref.push_back(Simple);
     
     MeshFactory meshfactory((Epetra_MpiComm *)comm);
     meshfactory.preference(pref);
-    RCP<Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1, gm); 
+    RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1, gm); 
 
-    RCP<Transport_State> TS = rcp(new Transport_State(mesh, 1));
+    /* create a simple state and populate it */
+    Amanzi::VerboseObject::hide_line_prefix = false;
+    Amanzi::VerboseObject::global_default_level = Teuchos::VERB_NONE;
 
-    Point u(1.0, 0.0, 0.0);
-    TS->Initialize();
-    TS->set_darcy_flux(u);
-    TS->set_total_component_concentration(f_cubic, 0.0);
-    TS->set_porosity(1.0);
-    TS->set_water_saturation(1.0);
-    TS->set_prev_water_saturation(1.0);
-    TS->set_water_density(1.0);    
+    std::vector<std::string> component_names;
+    component_names.push_back("Component 0");
 
-    Transport_PK TPK(parameter_list, TS);
+    RCP<State> S = rcp(new State());
+    S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+    Transport_PK TPK(plist, S, component_names);
+    TPK.CreateDefaultState(mesh, 1);
+
+    /* modify the default state for the problem at hand */
+    std::string passwd("state"); 
+    Teuchos::RCP<Epetra_MultiVector> 
+        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+
+    AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
+    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+    for (int f = 0; f < nfaces_owned; f++) {
+      const AmanziGeometry::Point& normal = mesh->face_normal(f);
+      (*flux)[0][f] = velocity * normal;
+    }
+
+    Teuchos::RCP<Epetra_MultiVector> 
+        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+
+    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    for (int c = 0; c < ncells_owned; c++) {
+      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+      (*tcc)[0][c] = f_cubic(xc, 0.0);
+    }
+
+    S->GetFieldData("porosity", passwd)->PutScalar(1.0);
+    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+
+    /* initialize a transport process kernel */
     TPK.InitPK();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
     if (nx == 20) TPK.PrintStatistics();
-    Amanzi::VerboseObject::global_default_level = Teuchos::VERB_NONE;
-
-    // advance the state
-    int i, k, iter = 0;
-    double T = 0.0, T1 = 2.0;
-
-    RCP<Transport_State> TS_next = TPK.transport_state_next();
-    RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
-    RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
-
+ 
+    /* advance the state */
     double dT, dT0;
     if (nx == 20) dT0 = TPK.CalculateTransportDt();
     else dT0 /= 2;
 
+    int iter = 0;
+    double T = 0.0, T1 = 2.0;
     while (T < T1) {
       dT = std::min(TPK.CalculateTransportDt(), T1 - T);
       dT = std::min(dT, dT0);
 
       TPK.Advance(dT);
+      TPK.CommitState(S);
       T += dT;
       if (TPK.internal_tests) {
-        TPK.CheckTracerBounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
+        TPK.CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
       }
-
-      *tcc = *tcc_next;
       iter++;
     }
-    //for (int k=0; k<nx; k++) cout << (*tcc_next)[0][k] << endl;
+    //for (int k=0; k<nx; k++) cout << (*tcc)[0][k] << endl;
 
     double L1, L2;  // L1 and L2 errors
-    TS->error_total_component_concentration(f_cubic, T, &L1, &L2);
+    TPK.CalculateLpErrors(f_cubic, T, (*tcc)(0), &L1, &L2);
     printf("nx=%3d  L1 error=%10.8f  L2 error=%10.8f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
 
     h.push_back(5.0 / nx);
@@ -221,6 +254,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   delete gm;
   delete comm;
 }
+
 
 
 

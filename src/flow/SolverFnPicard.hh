@@ -1,7 +1,7 @@
 /*
   This is the flow component of the Amanzi code.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -74,9 +74,9 @@ template<class Vector>
 void SolverFnPicard<Vector>::ApplyPreconditioner(
     const Teuchos::RCP<const Vector>& v, const Teuchos::RCP<Vector>& hv)
 {
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
-      solver = factory.Create("AztecOO", RPK_->solver_list_, RPK_->matrix(), RPK_->preconditioner());
+  AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
+      solver = factory.Create("AztecOO", RPK_->linear_operator_list_, RPK_->matrix(), RPK_->preconditioner());
 
   solver->ApplyInverse(*v, *hv);
 }
@@ -104,24 +104,10 @@ bool SolverFnPicard<Vector>::ModifyCorrection(
     const Teuchos::RCP<const Vector>& u, 
     const Teuchos::RCP<Vector>& du)
 { 
-  double relaxation = 1.0;
+  // double relaxation = CalculateRelaxationFactor(u, du);
+  double relaxation = 0.01;
 
-  for (int c = 0; c < u->MyLength(); c++) {
-    double diff = fabs((*du)[c]);
-    double uold = (*u)[c];
-    double unew = uold + (*du)[c];
-    double umax = std::max(fabs(unew), fabs(uold));
-    if (diff > 1e-2 * umax) relaxation = std::min(relaxation, 1e-2 * umax / diff);
-  }
-
-#ifdef HAVE_MPI
-  double relaxation_tmp = relaxation;
-  mesh_->get_comm()->MinAll(&relaxation_tmp, &relaxation, 1);  // find the global minimum
-#endif
-
-  for (int c = 0; c < u->MyLength(); c++) {
-    (*du)[c] *= relaxation;
-  }
+  du->Scale(relaxation);
 
   return relaxation;
 }

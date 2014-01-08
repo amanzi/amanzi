@@ -24,9 +24,8 @@ public:
 
   // single method for timestep control
   virtual double get_timestep(double dt, int iterations) = 0;
-
 };
 
-} // namespace
+}  // namespace Amanzi
 
 #endif

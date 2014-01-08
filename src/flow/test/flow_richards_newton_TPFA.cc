@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Daniil Svyatskiy (dasvyat@lanl.gov)
+  Author: Daniil Svyatskiy (dasvyat@lanl.gov)
 */
 
 #include <cstdlib>
@@ -26,10 +26,10 @@ Author: Daniil Svyatskiy (dasvyat@lanl.gov)
 #include "GMVMesh.hh"
 
 #include "State.hh"
-#include "Flow_State.hh"
 #include "Richards_PK.hh"
 
 #include "BDF1_TI.hh"
+
 
 /* ******************************** */
 TEST(NEWTON_RICHARD_STEADY) {
@@ -43,15 +43,13 @@ TEST(NEWTON_RICHARD_STEADY) {
   int MyPID = comm.MyPID();
 
   if (MyPID == 0) cout << "Test: orthogonal newton solver, 2-layer model" << endl;
-   /* read parameter list */
-  ParameterList parameter_list;
+  /* read parameter list */
   string xmlFileName = "test/flow_richards_newton_TPFA.xml";
-
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
-  // create a mesh framework
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  /* create a mesh framework */
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
   FrameworkPreference pref;
@@ -60,51 +58,45 @@ TEST(NEWTON_RICHARD_STEADY) {
 
   MeshFactory factory(&comm);
   factory.preference(pref);
-  ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
+  ParameterList mesh_list = plist.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
   ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
-  Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
+  Teuchos::RCP<const Mesh> mesh(factory(factory_list, gm));
 
-  Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-  State S(state_list);
-  S.RegisterDomainMesh(mesh);
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
-  S.Setup();
-  S.InitializeFields();
-  FS->Initialize();
+  /* create a simple state and populate it */
+  Amanzi::VerboseObject::hide_line_prefix = false;
 
-  // create Richards process kernel
-  Richards_PK* RPK = new Richards_PK(parameter_list, FS);
+  Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
+  RCP<State> S = rcp(new State(state_list));
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+  Richards_PK* RPK = new Richards_PK(plist, S);
+  S->Setup();
+  S->InitializeFields();
+  RPK->InitializeFields();
+  S->CheckAllFieldsInitialized();
+
+  /* create Richards process kernel */
   RPK->InitPK();
+  RPK->InitSteadyState(0.0, 1.0);
 
-
-  
-  RPK->InitSteadyState(0.0, 1e+4);
-
-  // solve the problem
-  // S.set_time(0.0);
+  /* solve the problem */
   RPK->AdvanceToSteadyState(0.0, 1000.0);
-  RPK->CommitState(FS);
+  RPK->CommitState(S);
 
-  // derive dependent variable
-  Epetra_Vector& pressure = FS->ref_pressure();
-  Epetra_Vector  saturation(pressure);
-  RPK->DeriveSaturationFromPressure(pressure, saturation);
+  /* derive dependent variable */
+  const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
+  const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell");
 
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");
   GMV::start_data();
-  GMV::write_cell_data(pressure, 0, "pressure");
-  GMV::write_cell_data(saturation, 0, "saturation");
+  GMV::write_cell_data(p, 0, "pressure");
+  GMV::write_cell_data(ws, 0, "saturation");
   GMV::close_data_file();
 
-  // check the number of iteration
-  // int numiter = RPK->bdf1_dae->total_non_iter;
-
-  // BDF1Dae* bdf1 = RPK->time_intergrator();
-  // cout << "nonlinear numiter " << bdf1->total_nonlinear_iter() << endl;
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {
-    // cout << (mesh->cell_centroid(c))[2] << " " << pressure[c] << endl;
-    CHECK(pressure[c] > 4500.0 && pressure[c] < 101325.0);
+    // cout << (mesh->cell_centroid(c))[2] << " " << p[0][c] << endl;
+    CHECK(p[0][c] > 4500.0 && p[0][c] < 101325.0);
   }
   
   delete RPK;

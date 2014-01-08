@@ -2,7 +2,7 @@
 
 #
 #  Amanzi
-#   Flow process kernel
+#    Time Integration class
 #
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
@@ -24,7 +24,7 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
-include_directories(${MESH_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
@@ -43,17 +43,19 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: time_integration
 #
-file(GLOB time_integration_source_files "*.cc")
-file(GLOB time_int_inc_files "*.hh")
-set(time_integration_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
-list(REVERSE time_integration_tpl_libs)
-list(REMOVE_DUPLICATES time_integration_tpl_libs)
-list(REVERSE time_integration_tpl_libs)
+file(GLOB time_int_new_source_files "*.cc")
+file(GLOB time_int_new_inc_files "*.hh")
+set(time_int_new_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} )
+list(REVERSE time_int_new_tpl_libs)
+list(REMOVE_DUPLICATES time_int_new_tpl_libs)
+list(REVERSE time_int_new_tpl_libs)
 add_amanzi_library(time_integration
-                   SOURCE ${time_integration_source_files} HEADERS ${time_int_inc_files}
-                   LINK_LIBS error_handling solvers ${time_integration_tpl_libs} atk)
+                   SOURCE ${time_int_new_source_files}
+		           HEADERS ${time_int_new_inc_files}
+		           LINK_LIBS error_handling solvers atk ${time_int_new_tpl_libs})
+
+
 if (BUILD_TESTS)
-#if (0)
 
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -66,19 +68,34 @@ if (BUILD_TESTS)
 
     # Add the time_integration directory to the include paths
     include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+    include_directories(${TIME_INTEGRATION_SOURCE_DIR}/test)
     include_directories(${SOLVERS_SOURCE_DIR})
+    include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+
+    # Hacking the templated vector machinery
+    add_definitions("-D VECTORisEPETRA_VECTOR")
 
     add_amanzi_test(time_integration test_time_integration
                     KIND unit
-                    SOURCE 
-   		          test/Main.cc
-   			  test/test_solhist.cc
-   			  test/test_Explicit_RK.cc 
-                    LINK_LIBS
-   		          time_integration
-   			  solvers
-   			  error_handling
-   			  ${UnitTest_LIBRARIES}
-   			  ${time_integration_tpl_libs})
+		    SOURCE
+		          test/Main.cc
+			  test/test_solhist.cc
+		    LINK_LIBS
+		      time_integration
+			  error_handling
+			  ${UnitTest_LIBRARIES}
+			  ${time_integration_tpl_libs})
+
+    add_amanzi_test(time_integration_nka test_nka_time_integration
+                    KIND unit
+		    SOURCE
+		          test/Main.cc
+			  test/test_ode_nka.cc
+		    LINK_LIBS
+			time_integration
+			error_handling
+        		atk
+			  ${UnitTest_LIBRARIES}
+			  ${time_int_new_tpl_libs})
 
 endif()

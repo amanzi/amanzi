@@ -23,18 +23,18 @@ namespace AmanziTransport {
  ****************************************************************** */
 Teuchos::RCP<Dispersion> DispersionMatrixFactory::Create(
     const string& matrix_name, std::vector<Teuchos::RCP<DispersionModel> >* specs,
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<Transport_State> TS)
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State> S)
 {
   if (matrix_name == "tpfa") {
-    Teuchos::RCP<Dispersion_TPFA> matrix = Teuchos::rcp(new Dispersion_TPFA(specs, mesh, TS));
+    Teuchos::RCP<Dispersion_TPFA> matrix = Teuchos::rcp(new Dispersion_TPFA(specs, mesh, S));
     matrix->Init();
     return matrix;
   } else if (matrix_name == "mfd") {
-    Teuchos::RCP<Dispersion_MFD> matrix = Teuchos::rcp(new Dispersion_MFD(specs, mesh, TS));
+    Teuchos::RCP<Dispersion_MFD> matrix = Teuchos::rcp(new Dispersion_MFD(specs, mesh, S));
     matrix->Init();
     return matrix;
   } else if (matrix_name == "nlfv") {
-    Teuchos::RCP<Dispersion_NLFV> matrix = Teuchos::rcp(new Dispersion_NLFV(specs, mesh, TS));
+    Teuchos::RCP<Dispersion_NLFV> matrix = Teuchos::rcp(new Dispersion_NLFV(specs, mesh, S));
     matrix->Init();
     matrix->InitNLFV();  // additional initialization
     return matrix;

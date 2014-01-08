@@ -4,8 +4,8 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_TRANSPORT_SOLVER_FN_NLFV_
-#define AMANZI_TRANSPORT_SOLVER_FN_NLFV_
+#ifndef AMANZI_TRANSPORT_SOLVER_FN_NLFV_HH_
+#define AMANZI_TRANSPORT_SOLVER_FN_NLFV_HH_
 
 #include <vector>
 
@@ -17,7 +17,6 @@
 #include "LinearOperatorFactory.hh"
 #include "SolverFnBase.hh"
 #include "Transport_PK.hh"
-#include "Transport_State.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -27,7 +26,12 @@ class SolverFnNLFV : public AmanziSolvers::SolverFnBase<Vector> {
  public:
   SolverFnNLFV(Teuchos::RCP<const AmanziMesh::Mesh> mesh, 
                Teuchos::RCP<Transport_PK> TPK, Teuchos::RCP<Vector> b) :
-      mesh_(mesh), TPK_(TPK), b_(b) {}
+      mesh_(mesh), TPK_(TPK), b_(b) 
+  {
+    Teuchos::RCP<const State> S = TPK_->state();
+    ws = S->GetFieldData("water_saturation")->ViewComponent("cell", false);
+    phi = S->GetFieldData("porosity")->ViewComponent("cell", false);
+  }
 
   ~SolverFnNLFV() {};
 
@@ -52,6 +56,7 @@ class SolverFnNLFV : public AmanziSolvers::SolverFnBase<Vector> {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<Transport_PK> TPK_; 
   Teuchos::RCP<Vector> b_; 
+  Teuchos::RCP<const Epetra_MultiVector> ws, phi;
 };
 
 
@@ -61,13 +66,9 @@ class SolverFnNLFV : public AmanziSolvers::SolverFnBase<Vector> {
 template<class Vector>
 void SolverFnNLFV<Vector>::Residual(const Teuchos::RCP<Vector>& u, const Teuchos::RCP<Vector>& r)
 {
-  Teuchos::RCP<Transport_State> TS = TPK_->transport_state();
-  const Epetra_Vector& phi = TS->ref_porosity();
-  const Epetra_Vector& ws = TS->ref_water_saturation();
- 
   Teuchos::RCP<Dispersion> matrix = TPK_->dispersion_matrix();
   matrix->AssembleMatrix(*u);
-  matrix->AddTimeDerivative(TPK_->TimeStep(), phi, ws);
+  matrix->AddTimeDerivative(TPK_->TimeStep(), *phi, *ws);
 
   matrix->Apply(*u, *r);
   r->Update(-1.0, *b_, 1.0);
@@ -95,13 +96,9 @@ void SolverFnNLFV<Vector>::ApplyPreconditioner(
 template<class Vector>
 void SolverFnNLFV<Vector>::UpdatePreconditioner(const Teuchos::RCP<const Vector>& u)
 {
-  Teuchos::RCP<Transport_State> TS = TPK_->transport_state();
-  const Epetra_Vector& phi = TS->ref_porosity();
-  const Epetra_Vector& ws = TS->ref_water_saturation();
- 
   Teuchos::RCP<Dispersion> matrix = TPK_->dispersion_matrix();
   matrix->AssembleMatrix(*u);
-  matrix->AddTimeDerivative(TPK_->TimeStep(), phi, ws);
+  matrix->AddTimeDerivative(TPK_->TimeStep(), *phi, *ws);
   matrix->UpdatePreconditioner();
 }
 
