@@ -212,9 +212,17 @@ void SurfaceEnergyBalance::UpdateVaporPressure(VaporPressure& vp) {
 // Take a weighted average to get the albedo.
 double SurfaceEnergyBalance::CalcAlbedo(EnergyBalance& eb) {
   double perSnow = 0.0, perTundra=0.0, perWater=0.0;
-  double AlTundra=0.15, AlWater=0.6;
+  // Tundra albedo comes from Grenfell and Perovich, (2004)
+  // Water albedo from Cogley J.G. (1979)
+  // Albedo for deteriorated ice from Grenfell and Perovich, (2004)
+  double AlTundra=0.15, AlWater=0.141, Alice=0.44;
   double AlSnow = 0.0;
   double TransitionVal = eb.AlbedoTrans;  // Set to 2 cm
+    double TransionPercent=0.0;
+//Shortwave Pentration Depth varries greatly depending on water clarity. 
+    double QswPenitrationDepth = 0.1;// This number could easily change
+
+    AlWater=(AlWater*eb.water_fraction) + (Alice*(1-eb.water_fraction));
 
   if (eb.density_snow <= 432.238) {
     AlSnow = 1.0 - 0.247 * std::pow(0.16 + 110*std::pow(eb.density_snow/1000, 4), 0.5);
@@ -233,6 +241,11 @@ double SurfaceEnergyBalance::CalcAlbedo(EnergyBalance& eb) {
     // Transitions to surface water
     perSnow = eb.ht_snow / TransitionVal;
     perWater = 1 - perSnow;
+      //Transition from Ponded water to Bare Ground
+      if (eb.water_depth < QswPenitrationDepth) {
+          TransionPercent=eb.water_depth/QswPenitrationDepth;
+          AlWater=AlWater*TransionPercent + AlTundra*(1-TransionPercent);
+      }
   }
 
 #ifdef ENABLE_DBC
