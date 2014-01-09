@@ -453,7 +453,7 @@ void MPC::cycle_driver() {
 	  if (flow_model != std::string("Steady State Richards")) {
 	    // only initialize here if we're not on a time integrator restart time
 	    // in that case we initialize later
-	    std::vector<double>::const_iterator it;
+	    Teuchos::Array<double>::const_iterator it;
 	    for (it = reset_times_.begin(); it != reset_times_.end(); ++it) {
 	      if (*it == S->time()) break;
 	    }
