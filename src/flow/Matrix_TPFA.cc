@@ -602,10 +602,28 @@ void Matrix_TPFA::ComputeTransmissibilities_()
     (*gravity_term_)[f] = (*transmissibility_)[f] * grav;
   }
 
-  /* TODO 
-  FS->CopyMasterFace2GhostFace(Trans_faces);
-  FS->CopyMasterFace2GhostFace(grav_faces);
-  */
+  // parallelization using CV capability
+#ifdef HAVE_MPI
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh_);
+  cvs.SetGhosted(true);
+  cvs.SetComponent("face", AmanziMesh::FACE, 1);
+
+  CompositeVector tmp(cvs, true);
+  Epetra_MultiVector& data = *tmp.ViewComponent("face", true);
+
+  data = *transmissibility_;
+  tmp.ScatterMasterToGhosted("face", true);
+  for (int f = nfaces_owned; f < nfaces_wghost; f++) {
+    (*transmissibility_)[f] = data[0][f];
+  }
+
+  data = *gravity_term_;
+  tmp.ScatterMasterToGhosted("face", true);
+  for (int f = nfaces_owned; f < nfaces_wghost; f++) {
+    (*gravity_term_)[f] = data[0][f];
+  }
+#endif
 }
 
 }  // namespace AmanziFlow
