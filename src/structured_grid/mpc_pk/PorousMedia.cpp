@@ -6,25 +6,20 @@
 #include <ios>
 #include <iomanip>
 
-#include <ErrorList.H>
-#include <Interpolater.H>
 #include <MultiGrid.H>
-#include <ArrayLim.H>
-#include <Profiler.H>
 #include <TagBox.H>
-#include <AmrData.H>
 #include <time.h> 
-#include <PMAmr.H>
 #include "PMAMR_Labels.H"
 
-std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::AmanziInput::AMRToAmanziLabelMap();
+static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::AmanziInput::AMRToAmanziLabelMap();
 
-#include <Godunov.H>
 #include <PorousMedia.H>
 #include <PROB_PM_F.H>
 #include <POROUS_F.H>
 #include <POROUSMEDIA_F.H>
 #include <VISCOPERATOR_F.H>
+
+#include <RSAMRdata.H>
 
 #ifdef _OPENMP
 #include "omp.h"

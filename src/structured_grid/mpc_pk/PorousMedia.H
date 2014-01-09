@@ -26,10 +26,6 @@
 #include <DataServices.H>
 
 #include <PMAmr.H>
-class RichardSolver;
-class NLScontrol;
-class NLSstatus;
-class RSdata;
 #include <RichardSolver.H>
 
 // Amanzi chemistry

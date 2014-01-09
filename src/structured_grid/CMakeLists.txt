@@ -22,11 +22,11 @@ foreach(d ${PMAMR_REL_INCLUDE_DIRS})
   add_subdirectory(${d})
 endforeach(d)
 
-add_library(structured_amanzi $<TARGET_OBJECTS:structdriv>
+add_library(structured_amanzi $<TARGET_OBJECTS:pmamr>
+                              $<TARGET_OBJECTS:boxprob>
+                              $<TARGET_OBJECTS:structdriv>
                               $<TARGET_OBJECTS:structutils>
                               $<TARGET_OBJECTS:structmat>
-                              $<TARGET_OBJECTS:pmamr>
-                              $<TARGET_OBJECTS:boxprob>
                               $<TARGET_OBJECTS:strans>
                               $<TARGET_OBJECTS:sflow>
                               $<TARGET_OBJECTS:schem>)

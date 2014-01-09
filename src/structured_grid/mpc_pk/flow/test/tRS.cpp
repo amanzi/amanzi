@@ -1,6 +1,7 @@
 #include <RichardSolver.H>
 #include <ParmParse.H>
 #include <VisMF.H>
+#include <Utility.H>
 
 static Real inflow_velocity = -1.1091e-10;
 static Real Pwt = 0;
@@ -433,7 +434,7 @@ RStdata::GetSource(Real t)
 {
   for (int lev=0; lev<nLevs; ++lev) {
     int nGrow = (*Source)[lev].nGrow();
-    (*Source)[lev].setVal(kappa,0,1,nGrow);
+    (*Source)[lev].setVal(0,0,1,nGrow);
   }
   return Source;
 }
