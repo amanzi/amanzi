@@ -90,9 +90,8 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   Teuchos::Ptr<Amanzi::Checkpoint> restart;
  
   // time period control
-  Teuchos::Array<double> reset_times_;
-  Teuchos::Array<double> reset_times_dt_;
-  
+  std::vector<std::pair<double,double> > reset_info_;
+
   // picard flag
   bool do_picard_;
 
