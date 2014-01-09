@@ -648,7 +648,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::abort_on_chem_fail = true;
   PorousMedia::show_selected_runtimes = 0;
   PorousMedia::be_cn_theta_trac = 0.5;
-  PorousMedia::do_output_flow_time_in_years = true;
+  //PorousMedia::do_output_flow_time_in_years = true;
+  PorousMedia::do_output_flow_time_in_years = false;
   PorousMedia::do_output_chemistry_time_in_years = true;
   PorousMedia::do_output_transport_time_in_years = false;
 

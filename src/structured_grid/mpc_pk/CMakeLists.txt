@@ -34,8 +34,7 @@ set(CXX_source_files Diffusion.cpp
                      RegionData.cpp
                      PMAmr.cpp
                      Layout.cpp
-                     MFTower.cpp
-                     RichardSolver.cpp)
+                     MFTower.cpp)
 
 set(CXX_header_files BC_TYPES_PM.H
                      DIFFUSION_F.H
@@ -62,8 +61,6 @@ set(CXX_header_files BC_TYPES_PM.H
                      RegionData.H
                      Region.H
                      RegType.H
-                     RICHARDSOLVER_F.H
-                     RichardSolver.H
                      Source.H
                      ViscBndry.H
                      VISCOPERATOR_F.H)
@@ -79,8 +76,7 @@ set(FPP_source_files  EOS_F.F
                       POROUS_${AMANZI_SPACEDIM}D.F
                       POROUSMEDIA_${AMANZI_SPACEDIM}D.F
                       VISCOPERATOR_${AMANZI_SPACEDIM}D.F
-                      MFTOWER_${AMANZI_SPACEDIM}D.F
-                      RICHARDSOLVER_${AMANZI_SPACEDIM}D.F)
+                      MFTOWER_${AMANZI_SPACEDIM}D.F)
 
 preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 

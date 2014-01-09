@@ -167,23 +167,50 @@ Layout::Layout(Amr* _parent,
 	       int  _nLevs)
     : initialized(false),
       nGrow(1),
-      parent(_parent),
-      nLevs(_nLevs)
+      parent(_parent)
 {
   if (parent != 0) {
-    Rebuild(nLevs);
+    SetGridsFromParent(_nLevs);
+    Build(_nLevs);
   }
+}
+
+Layout::Layout(const Array<IntVect>&  refRatio_array,
+               const Array<BoxArray>& grid_array,
+               const Array<Geometry>& geom_array,
+               int                    n_levs)
+    : initialized(false),
+      nGrow(1),
+      parent(0),
+      nLevs(n_levs)
+{
+  BL_ASSERT(refRatio_array.size() >= nLevs-1);
+  BL_ASSERT(grid_array.size() >= nLevs);
+  BL_ASSERT(geom_array.size() >= nLevs);
+
+  gridArray.resize(nLevs);
+  geomArray.resize(nLevs);
+  refRatio.resize(nLevs-1);
+  for (int i=0; i<nLevs; ++i) {
+    gridArray[i] = grid_array[i];
+    geomArray[i] = geom_array[i];
+    if (i<nLevs-1) {
+      refRatio[i] = refRatio_array[i];
+    }
+  }
+  Build(nLevs);
 }
 
 Layout::~Layout()
 {
+  if (initialized)
     Clear();
 }
 
 void
 Layout::SetParent(Amr* new_parent)
 {
-    if (parent) {
+    if (parent && initialized) {
         Clear();
     }
     parent = new_parent;
@@ -279,29 +306,47 @@ Layout::Area(int lev, int dir) const
     return area[dir][lev];
 }
 
+void
+Layout::SetGridsFromParent(int _nLevs)
+{
+  BL_ASSERT(parent!=0);
+  nLevs = (_nLevs > 0 ? _nLevs : parent->finestLevel()+1);
+  BL_ASSERT(nLevs <= parent->finestLevel()+1);
+  gridArray.resize(nLevs);
+  geomArray.resize(nLevs);
+  refRatio.resize(nLevs-1);
+  for (int i=0; i<nLevs; ++i) {
+    gridArray[i] = parent->boxArray(i);
+    geomArray[i] = parent->Geom(i);
+    if (i<nLevs-1) {
+      refRatio[i] = parent->refRatio(i);
+    }
+  }
+}
+
 void 
-Layout::Rebuild(int _nLevs)
+Layout::Build(int _nLevs)
 {
     nGrow = 1;
-    BL_ASSERT(parent);
 
-    nLevs = (_nLevs < 0 ? parent->finestLevel() + 1 : nLevs);
-    gridArray.resize(nLevs);
-    geomArray.resize(nLevs);
-    refRatio.resize(nLevs-1);
-    for (int i=0; i<nLevs; ++i) {
-        gridArray[i] = parent->boxArray(i);
-        geomArray[i] = parent->Geom(i);
-        if (i<nLevs-1) {
-            refRatio[i] = parent->refRatio(i);
-        }
+    if (parent!=0) {
+      SetGridsFromParent(_nLevs);
+    }
+    else {
+      if (_nLevs > 0) {
+        BL_ASSERT(_nLevs <= nLevs); // Otherwise, will not have enough data to do this
+        nLevs = _nLevs;
+      }
     }
 
     BuildMetrics();
 
     NodeFab fnodeFab;
 
-    Clear();
+    if (initialized) {
+      Clear();
+    }
+
     nodes.resize(nLevs,PArrayManage);
     nodeIds.resize(nLevs,PArrayManage);
     bndryCells.resize(nLevs);
@@ -323,7 +368,7 @@ Layout::Rebuild(int _nLevs)
             for (IntVect iv=box.smallEnd(); iv<=box.bigEnd(); box.next(iv))
                 ifab(iv,0) = Node(iv,lev,Node::VALID);
         }
-            
+
         if (lev > 0)
         {
             BoxArray cba = BoxArray(gridArray[lev]).coarsen(refRatio[lev-1]);

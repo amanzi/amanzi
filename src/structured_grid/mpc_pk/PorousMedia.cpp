@@ -616,9 +616,8 @@ PorousMedia::PorousMedia (Amr&            papa,
     specific_storage = new MultiFab(grids,1,0);
   }
 
-  if (do_source_term) {
-    source = new MultiFab(grids,ncomps,0);
-  }
+  source = new MultiFab(grids,ncomps,0);
+  source->setVal(0);
 
   BL_ASSERT(lambda == 0);
   lambda = new MultiFab[BL_SPACEDIM];
@@ -857,9 +856,8 @@ PorousMedia::restart (Amr&          papa,
     specific_storage = new MultiFab(grids,1,0);
   }
 
-  if (do_source_term) {
-    source = new MultiFab(grids,ncomps,0);
-  }
+  source = new MultiFab(grids,ncomps,0);
+  source->setVal(0);
 
   BL_ASSERT(lambda == 0);
   lambda = new MultiFab[BL_SPACEDIM];
@@ -1724,14 +1722,14 @@ PorousMedia::richard_init_to_steady()
               Real dt_solve = attempting_pure_steady ? -1 : dt;
               if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
                 std::cout << "     **************** Attempting pure steady solve" << '\n';
-              int retCode = rs->Solve(t+dt, dt_solve, k, nlsc);
+              int retCode = rs->Solve(t, t+dt_solve, k, nlsc);
 
               if (retCode < 0 && attempting_pure_steady) {
                 dt_thresh_pure_steady *= 10;
                 if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
                   std::cout << "     **************** Steady solve failed, resuming transient..." << '\n';
                 attempting_pure_steady = false;
-                retCode = rs->Solve(t+dt, dt, k, nlsc);
+                retCode = rs->Solve(t, t+dt, k, nlsc);
               }
 
               if (retCode >= 0) {
@@ -3544,7 +3542,7 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     }
 
     // Solve for the update using PETSc
-    int retCode = richard_solver->Solve(t_flow+dt_flow, dt_flow, 1, *richard_solver_control);
+    int retCode = richard_solver->Solve(t_flow, t_flow+dt_flow, 1, *richard_solver_control);
     if (retCode > 0) {
       ret = NLSstatus::NLS_SUCCESS;
       richard_solver->ComputeDarcyVelocity(richard_solver->GetPressureNp1(),t_flow+dt_flow);
@@ -3773,7 +3771,6 @@ PorousMedia::mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time)
   //
   // get source term
   //
-  MultiFab* forces = 0;
   if (do_source_term) {
     int do_rho_scale = 1;
     int nGrow = 0;
@@ -4442,8 +4439,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
     }
 
   int nGrowF = 1;
-  MultiFab tforces(grids,nscal,nGrowF);
-  getForce(tforces,nGrowF,0,nscal,prev_time);
+  getForce(*source,nGrowF,0,nscal,prev_time);
 
   for (FillPatchIterator S_fpi(*this,get_old_data(State_Type),nGrowHYP,
 			       prev_time,State_Type,fscalar,nscal);
@@ -4462,7 +4458,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
       int state_ind = 0;
       int use_conserv_diff = (advectionType[state_ind] == Conservative);
       
-      godunov->Sum_tf_divu_visc(S_fpi(),state_ind,tforces[S_fpi],state_ind,nscal,
+      godunov->Sum_tf_divu_visc(S_fpi(),state_ind,(*source)[S_fpi],state_ind,nscal,
 				visc_terms[i],state_ind,
 				(*divu_fp)[i],use_conserv_diff);
       
@@ -4479,7 +4475,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
 #if (BL_SPACEDIM == 3)                        
 				  area[2][i], u_macG[2][i], flux[2], kpedge[2][i],
 #endif
-				  S_fpi(),S_new[i],tforces[S_fpi],
+				  S_fpi(),S_new[i],(*source)[S_fpi],
 				  (*divu_fp)[i] , state_ind,
 				  (*aofs)[i]    , state_ind,
 				  (*rock_phi)[i], (*kappa)[i],
@@ -4500,7 +4496,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
 #if (BL_SPACEDIM == 3)                        
 				  area[2][i], u_macG[2][i], flux[2],
 #endif
-				  S_fpi(),S_new[i],tforces[S_fpi], state_ind,
+				  S_fpi(),S_new[i],(*source)[S_fpi], state_ind,
 				  (*aofs)[i]    , state_ind,
 				  (*rock_phi)[i], state_ind,
 				  state_bc.dataPtr(),volume[i],nscal);	
@@ -4524,7 +4520,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
 #if (BL_SPACEDIM == 3)                        
 				      area[2][i], u_macG[2][i], flux[2], kpedge[2][i], lambda[2][i],
 #endif
-				      S_fpi(), S_new[i], tforces[S_fpi],
+				      S_fpi(), S_new[i], (*source)[S_fpi],
 				      (*divu_fp)[i] , state_ind,
 				      (*aofs)[i]    , state_ind,
 				      (*rock_phi)[i], (*kappa)[i],  pctmp,
@@ -4540,7 +4536,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
 #if (BL_SPACEDIM == 3)                        
 				    area[2][i], u_macG[2][i], flux[2], kpedge[2][i],
 #endif
-				    S_fpi(),S_new[i],tforces[S_fpi],
+				    S_fpi(),S_new[i],(*source)[S_fpi],
 				    (*divu_fp)[i] , state_ind,
 				    (*aofs)[i]    , state_ind,
 				    (*rock_phi)[i], (*kappa)[i], 
@@ -4665,12 +4661,11 @@ PorousMedia::scalar_advection_update (Real dt,
   int nscal = last_scalar - first_scalar + 1;
 
   int nGrowF = 0;
-  MultiFab tforces(grids,nscal,nGrowF);
-  getForce(tforces,nGrowF,0,nscal,pcTime);
+  getForce(*source,nGrowF,0,nscal,pcTime);
   for (MFIter mfi(S_new); mfi.isValid(); ++mfi) {
     const int i = mfi.index();
     godunov->Add_aofs_tf(S_old[i],S_new[i],first_scalar,nscal,
-			 Aofs[i],first_scalar,tforces[mfi],0,Rockphi[i],grids[i],dt);
+			 Aofs[i],first_scalar,(*source)[mfi],0,Rockphi[i],grids[i],dt);
   }
 
   FillStateBndry(pcTime,State_Type,first_scalar,nscal);
@@ -8562,7 +8557,7 @@ void PorousMedia::post_restart()
 {
   if (level==0)
   {
-      PMParent()->GetLayout().Rebuild();
+      PMParent()->GetLayout().Build();
   }
 
   if (level == 0)
@@ -8605,7 +8600,7 @@ PorousMedia::post_regrid (int lbase,
         delete richard_solver_data;
       }
 
-      layout.Rebuild();
+      layout.Build();
       richard_solver_control = new NLScontrol();
       richard_solver_data = new RSAMRdata(0,new_nLevs,layout,pm_parent,*richard_solver_control);
       BuildNLScontrolData(*richard_solver_control,*richard_solver_data,"Flow_PK");

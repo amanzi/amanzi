@@ -191,18 +191,24 @@ struct RSdata
   virtual void SetPressureBC(const BCRec& pbc) {pressure_bc = pbc;}
   virtual void SetInflowVelocity(PArray<MFTower>& velocity,
 				 Real             time) = 0;
-  virtual void FillStateBndry (Real time,
-			       int  state_indx,
-			       int  src_comp,
-			       int  num_comp) = 0;
+  virtual void FillStateBndry (MFTower& press,
+                               Real time) = 0;
   virtual void calcInvPressure (MFTower&       N,
 				const MFTower& P) const = 0;
   virtual void calcLambda (MFTower&       lbd,
 			   const MFTower& N) = 0;
+  virtual void calcRichardAlpha(MFTower&       alpha,
+                                const MFTower& rhoSat,
+                                Real           time) = 0;
   virtual Array<int>& rinflowBCLo() = 0;
   virtual Array<int>& rinflowBCHi() = 0;
 
+  virtual void SetDensity() = 0;
+  virtual void SetGravity() = 0;
+  virtual void SetViscosity() = 0;
+  virtual void SetIsSaturated() = 0;
 
+  virtual const PArray<MFTower>& GetKappaEC(Real t) {return KappaEC;}
   virtual const MFTower* GetKappaCCdir(Real t) {return KappaCCdir;}
   virtual const MFTower* GetSource(Real time) {return Source;}
 
@@ -242,12 +248,12 @@ struct RSdata
   MFTower *CoeffCC;
 
   // Edge-centered data
-  Array<PArray<MultiFab> > kappaEC;
   PArray<MFTower> KappaEC, DarcyVelocity, RichardCoefs;
 
-  // Scalars
-  Array<Real> gravity;
-  Array<Real> density;
+  const Array<Real>& GetDensity() const {return density;}
+  const Array<Real>& GetGravity() const {return gravity;}
+  const Array<Real>& GetViscosity() const {return viscosity;}
+  bool IsSaturated() const {return is_saturated;}
   Real time, dt;
   int time_step;
   int start_level, end_level;
@@ -264,8 +270,13 @@ protected:
   // These are "managed", access only via functions above
   MFTower *KappaCCdir;
   MFTower *Source;
-
+  Array<PArray<MultiFab> > kappaEC;
   bool memory_is_set_up;
+
+  Array<Real> gravity;
+  Array<Real> density;
+  Array<Real> viscosity;
+  bool is_saturated;
 };
 
 struct RSAMRdata
@@ -280,16 +291,21 @@ struct RSAMRdata
   virtual void ResetRhoSat();
   virtual void SetInflowVelocity(PArray<MFTower>& velocity,
 				 Real             time);
-  virtual void FillStateBndry (Real time,
-			       int  state_indx,
-			       int  src_comp,
-			       int  num_comp);
+  virtual void FillStateBndry (MFTower& press,
+                               Real time);
   virtual void calcInvPressure (MFTower&       N,
 				const MFTower& P) const;
   virtual void calcLambda (MFTower&       lbd,
 			   const MFTower& N);
+  virtual void calcRichardAlpha(MFTower&       alpha,
+                                const MFTower& rhoSat,
+                                Real           time);
   virtual Array<int>& rinflowBCLo();
   virtual Array<int>& rinflowBCHi();
+  virtual void SetDensity();
+  virtual void SetGravity();
+  virtual void SetViscosity();
+  virtual void SetIsSaturated();
 
   enum RSdata_Property {
     RSdata_KappaCCdir = 0,
@@ -325,6 +341,7 @@ struct RSAMRdata
   };
 
   virtual const MFTower* GetKappaCCdir(Real t);
+  virtual const PArray<MFTower>& GetKappaEC(Real t);
   virtual const MFTower* GetSource(Real t);
 
   PorousMedia& GetPMlevel(int level) {return pm[level];}
@@ -346,8 +363,8 @@ public:
 
   const std::string& GetRecordFile() const {return record_file;}
 
-  int Solve(Real        time,
-            Real        dt,
+  int Solve(Real        old_time,
+            Real        new_time,
 	    int         timestep,
             NLScontrol& nlsc);
 
@@ -371,7 +388,6 @@ public:
   MFTower& GetAlpha() {return *rs_data.Alpha;}
   MFTower& GetLambda() {return *rs_data.Lambda;}
   MFTower& GetKappaCCavg() {return *rs_data.KappaCCavg;}
-  PArray<MFTower>& GetKappaEC() {return rs_data.KappaEC;}
   MFTower& GetPorosity() {return *rs_data.Porosity;}
   MFTower& GetSpecificStorage() {return *rs_data.SpecificStorage;}
   MFTower& GetPressureNp1() {return *rs_data.Pnew;}
@@ -383,11 +399,13 @@ public:
 
   // Time-dependent properties
   const MFTower* GetKappaCCdir(Real t) {return rs_data.GetKappaCCdir(t);}
+  const PArray<MFTower>& GetKappaEC(Real t) {return rs_data.GetKappaEC(t);}
 
   PArray<MFTower>& GetDarcyVelocity() {return rs_data.DarcyVelocity;}
   PArray<MFTower>& GetRichardCoefs() {return rs_data.RichardCoefs;}
-  const Array<Real>& GetDensity() {return rs_data.density;}
-  const Array<Real>& GetGravity() {return rs_data.gravity;}
+  const Array<Real>& GetDensity() {return rs_data.GetDensity();}
+  const Array<Real>& GetGravity() {return rs_data.GetGravity();}
+  const Array<Real>& GetViscosity() {return rs_data.GetViscosity();}
   const Array<BoxArray>& GridArray() const {return rs_data.layout.GridArray();}
   const Array<Geometry>& GeomArray() const {return rs_data.layout.GeomArray();}
   const Array<IntVect>& RefRatio() const {return rs_data.layout.RefRatio();}
@@ -416,9 +434,12 @@ public:
 
   void CreateJac(Mat& J, 
 		 MFTower& pressure,
+                 Real t,
 		 Real dt);
 
-  void ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure);
+  void ComputeRichardAlpha(Vec&       Alpha,
+                           const Vec& Pressure,
+                           Real       t);
 
   static void SetTheRichardSolver(RichardSolver* ptr);
 
