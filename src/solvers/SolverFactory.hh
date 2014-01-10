@@ -15,6 +15,7 @@
 #include "errors.hh"
 #include "Solver.hh"
 #include "SolverNKA.hh"
+#include "SolverNKA_BT.hh"
 #include "SolverNewton.hh"
 
 namespace Amanzi {
@@ -80,16 +81,15 @@ SolverFactory<Vector,VectorSpace>::Create(Teuchos::ParameterList& slist)
       Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
           Teuchos::rcp(new SolverNewton<Vector,VectorSpace>(newton_list));
       return solver;
-    } else if (type == "nka with backtracking") {
-      if (!slist.isSublist("nka with backtracking parameters")) {
-        Errors::Message msg("SolverFactory: missing sublist \"Newton parameters\"");
+    } else if (type == "nka_bt") {
+      if (!slist.isSublist("nka_bt parameters")) {
+        Errors::Message msg("SolverFactory: missing sublist \"nka_bt parameters\"");
         Exceptions::amanzi_throw(msg);
       }
       // placeholder for NKA_BT
-      Teuchos::ParameterList nka_list =
-          slist.sublist("nka with backtracking parameters");
+      Teuchos::ParameterList nka_list = slist.sublist("nka_bt parameters");
       Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
-          Teuchos::rcp(new SolverNKA<Vector,VectorSpace>(nka_list));
+          Teuchos::rcp(new SolverNKA_BT<Vector,VectorSpace>(nka_list));
       return solver;
     } else {
       Errors::Message msg("SolverFactory: wrong value of parameter `\"solver type`\"");
