@@ -30,7 +30,7 @@ namespace AmanziFlow {
 Matrix_MFD::Matrix_MFD(Teuchos::RCP<State> S,
                        std::vector<WhetStone::Tensor>* K, 
                        Teuchos::RCP<RelativePermeability> rel_perm)
-    : Matrix(S, K, rel_perm)
+    : Matrix<CompositeVector, CompositeVectorSpace>(S, K, rel_perm)
 { 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);

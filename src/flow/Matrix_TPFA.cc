@@ -39,7 +39,7 @@ int FindPosition(const std::vector<T>& v, const T& value) {
 Matrix_TPFA::Matrix_TPFA(Teuchos::RCP<State> S,
                          std::vector<WhetStone::Tensor>* K, 
                          Teuchos::RCP<RelativePermeability> rel_perm)
-    : Matrix(S, K, rel_perm)
+    : Matrix<CompositeVector, CompositeVectorSpace>(S, K, rel_perm)
 {
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -241,7 +241,7 @@ int Matrix_TPFA::ApplyPreconditioner(const CompositeVector& X, CompositeVector& 
   Teuchos::ParameterList& slist = plist.sublist("gmres");
   slist.set<string>("iterative method", "gmres");
   slist.set<double>("error tolerance", 1e-18);
-  slist.set<int>("maximum number of iterations", 10000);
+  slist.set<int>("maximum number of iterations", 200);
   Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
   vlist.set("Verbosity Level", "low");
 
@@ -251,7 +251,14 @@ int Matrix_TPFA::ApplyPreconditioner(const CompositeVector& X, CompositeVector& 
   Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> > 
       solver = factory.Create("gmres", plist, matrix_tmp, matrix_tmp);
    
-  solver->ApplyInverse(X, Y);
+  int ok = solver->ApplyInverse(X, Y);
+
+  if (ok != 1) {
+    cout << "Newton solver (" << solver->name() 
+         << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+         << " code=" << ok << endl;
+    exit(0);
+  }
 
   return 0;
 }

@@ -818,7 +818,7 @@ The parameters used here are
 * `"max nka vectors`" [int] is the size of the Krylov space.
 
 * `"modify correction`" [bool] allows to change (e.g. clip or damp) 
-  the NKA correction. This is the experimental option with dafualt `"false`".
+  the NKA or Newton correction. This is the experimental option with dafualt `"false`".
 
 The remaining parameters in the time integrator sublist include 
 those needed for unit tests, and future code development:

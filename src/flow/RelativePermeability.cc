@@ -632,6 +632,9 @@ void RelativePermeability::SetFullySaturated()
   Krel_->ViewComponent("cell", true)->PutScalar(1.0);
   Krel_->ViewComponent("face", true)->PutScalar(1.0);
 
+  dKdP_->ViewComponent("cell", true)->PutScalar(0.0);
+  dKdP_->ViewComponent("face", true)->PutScalar(0.0);
+
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
