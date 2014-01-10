@@ -356,8 +356,9 @@ double Matrix_TPFA::ComputeNegativeResidual(const CompositeVector& u, CompositeV
       int sign(1);
       for (int i = 0; i < ncells; i++) {
 	int c = cells[i];
-	if (c >= ncells_owned) continue;
-	rc[0][c] += sign * Krel_faces[0][f] * (*transmissibility_)[f] * (uc[0][cells[0]] - uc[0][cells[1]]);  
+	if (c < ncells_owned){ 
+	  rc[0][c] += sign * Krel_faces[0][f] * (*transmissibility_)[f] * (uc[0][cells[0]] - uc[0][cells[1]]);  
+	}
         sign = -sign;
       }
     } else if (ncells == 1) {
@@ -451,8 +452,8 @@ void Matrix_TPFA::AnalyticJacobian_(const CompositeVector& u,
   u.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
 
-  //cout.precision(10);
-  //cout<<uc<<endl;
+  // cout.precision(10);
+  // cout<<uc<<endl;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;

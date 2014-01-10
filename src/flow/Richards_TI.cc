@@ -70,7 +70,7 @@ void Richards_PK::Functional(double Told, double Tnew,
       }
     }
   }
-
+  
 
 }
 
