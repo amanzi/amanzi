@@ -18,6 +18,7 @@
 #include "SolverFnBase.hh"
 #include "SolverDefs.hh"
 #include "NKA_Base.hh"
+#include "BackTracking.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -131,9 +132,7 @@ void SolverNKA_BT<Vector, VectorSpace>::Init_()
   update_pc_calls_ = 0;
   pc_lag_ = 0;
   nka_lag_space_ = 0;
-
   backtrack_lag_ = 2;
-  max_bt_ = 4;
 
   residual_ = -1.0;
 
@@ -166,10 +165,6 @@ int SolverNKA_BT<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
   double l2_error_initial(0.0);
   double du_norm(0.0), previous_du_norm(0.0);
   int divergence_count(0);
-
-  int n_bt(0);
-  double bt_factor(0.9);
-  bool nka_applied;
 
   do {
     // Check for too many nonlinear iterations.
@@ -290,78 +285,18 @@ int SolverNKA_BT<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
 
     // evaluate new step, backtrack if necessary
     if (num_itrs_ > backtrack_lag_) {
-      bool good_step = false;
-      *u_bt = *u;
       previous_error = error;
       previous_l2_error = l2_error;
 
-      if (nka_applied) {
-        // check the NKA updated norm
-        u->Update(-1.0, *du, 1.0);
-        fn_->ChangedSolution();
+      BackTracking<Vector> bt(fn_);
+      int ok = bt.Bisection(u, du);
 
-        // Evaluate the nonlinear function.
-        fun_calls_++;
-        fn_->Residual(u, r);
-
-        // Evalute error
-        error = fn_->ErrorNorm(u, r);
-        r->Norm2(&l2_error);
-        if (vo_->os_OK(Teuchos::VERB_LOW)) {
-          *vo_->os() << "backtracking: " << n_bt 
-                     << " ||r||=" << error << " " << l2_error << std::endl;
+      if (ok != 0) {
+        if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+          *vo_->os() << bt.num_steps() << " backtracking steps,  ||r||: " 
+                     << bt.initial_residual() << " -> " << bt.final_residual() << endl;
         }
-
-        // Check if we have improved
-        good_step = (error < previous_error) || (l2_error < previous_l2_error);
-
-        // if NKA did not improve the error, toss Jacobian info
-        if (!good_step) {
-          if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-            *vo_->os() << "Restarting NKA, NKA step does not improve error."
-                       << std::endl;
-          }
-          nka_->Restart();
-        }
-      }
-
-      if (!good_step) {
-        // still not good.  replace with picard iterate, backtrack
-        bool done_backtracking = false;
-        int n_backtrack = 0;
-        double backtrack_alpha = 1.;
-
-        while (!done_backtracking) {
-          // apply the correction
-          if (n_backtrack > 0) *u = *u_bt;
-          u->Update(-backtrack_alpha, *du_tmp, 1.);
-          fn_->ChangedSolution();
-
-          // Evaluate the nonlinear function.
-          fun_calls_++;
-          fn_->Residual(u, r);
-
-          // Evalute error
-          error = fn_->ErrorNorm(u, r);
-          r->Norm2(&l2_error);
-          if (vo_->os_OK(Teuchos::VERB_LOW)) {
-            *vo_->os() << num_itrs_ << ": backtrack " << n_backtrack
-                       << ": error(res) = " << error << std::endl
-                       << ": L2 error(res) = " << l2_error << std::endl;
-          }
-
-          // Check if we have improved
-          good_step = (error < previous_error) || (l2_error < previous_l2_error);
-
-          if (!good_step) {
-            // Not good, either because not admissible or not error-decreasing.
-            n_backtrack++;
-            backtrack_alpha *= bt_factor;
-          }
-
-          // Check for done
-          done_backtracking = good_step || n_backtrack > max_bt_;
-        }
+        nka_->Restart();
       }
     }
 
@@ -372,7 +307,7 @@ int SolverNKA_BT<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     // Monitor the PC'd residual.
     if (monitor_ == SOLVER_MONITOR_PCED_RESIDUAL) {
       previous_error = error;
-      error = fn_->ErrorNorm(u, du_tmp);
+      error = fn_->ErrorNorm(u, du);
       residual_ = error;
       du_tmp->Norm2(&l2_error);
 

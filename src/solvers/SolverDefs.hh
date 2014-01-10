@@ -25,6 +25,10 @@ const int SOLVER_OVERFLOW = -2;
 const int SOLVER_STAGNATING = -3;
 const int SOLVER_DIVERGING = -4;
 
+const double BACKTRACKING_GOOD_REDUCTION = 0.5;
+const int BACKTRACKING_USED = 1;
+const int BACKTRACKING_MAX_ITERATIONS = 4;
+
 }  // namespace AmanziSolvers
 }  // namespace Amanzi
  
