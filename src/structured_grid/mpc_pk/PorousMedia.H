@@ -407,10 +407,6 @@ public:
   static void read_source (); 
   static void read_observation (); 
   static void read_chem (); 
-  static void assign_bc_coef(int type_id, 
-			     ParmParse& ppr,
-			     Array<std::string>& names, 
-			     Array<Real>& coef);
 
   static PArray<Region> build_region_PArray(const Array<std::string>& region_names);
   static const Material& find_material(const std::string& name);

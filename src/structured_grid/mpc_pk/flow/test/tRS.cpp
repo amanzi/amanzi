@@ -74,7 +74,7 @@ struct RStdata
 
   bool IsNewTime(Real time) const;
   Real old_time, new_time;
-  Real eval_time_for_KappaCCdir, eval_time_for_KappaEC;
+  Real eval_time_for_KappaCCdir, eval_time_for_KappaEC, eval_time_for_source;
 };
 
 void
@@ -119,6 +119,7 @@ RStdata::RStdata(int slev, int nlevs, Layout& layout, NLScontrol& nlsc)
 
   eval_time_for_KappaCCdir = -1;
   eval_time_for_KappaEC = -1;
+  eval_time_for_source = -1;
 }
 
 RStdata::~RStdata()
@@ -432,9 +433,12 @@ RStdata::GetKappaCCdir(Real t)
 const MFTower*
 RStdata::GetSource(Real t)
 {
-  for (int lev=0; lev<nLevs; ++lev) {
-    int nGrow = (*Source)[lev].nGrow();
-    (*Source)[lev].setVal(0,0,1,nGrow);
+  if (t!=eval_time_for_source) {
+    for (int lev=0; lev<nLevs; ++lev) {
+      int nGrow = (*Source)[lev].nGrow();
+      (*Source)[lev].setVal(0,0,1,nGrow);
+    }
+    eval_time_for_source = t;
   }
   return Source;
 }
@@ -442,23 +446,10 @@ RStdata::GetSource(Real t)
 const PArray<MFTower>&
 RStdata::GetKappaEC(Real t)
 {
+  static bool do_harm = true;
   if (t!=eval_time_for_KappaEC) {
     GetKappaCCdir(t);
-
-    for (int lev=0; lev<nLevs; ++lev) {
-      for (MFIter mfi((*KappaCCdir)[lev]); mfi.isValid(); ++mfi) {
-        const FArrayBox& cc = (*KappaCCdir)[lev][mfi];
-        int nGrow = 1;  BL_ASSERT(KappaCCdir->NGrow()>=1);
-        const Box& ccbox = Box(mfi.validbox()).grow(nGrow);
-        for (int d=0; d<BL_SPACEDIM; ++d) {
-          FArrayBox& ec = KappaEC[d][lev][mfi];
-          const Box glbox = Box(mfi.validbox()).growHi(d,1);
-          for (IntVect iv=glbox.smallEnd(), End=glbox.bigEnd(); iv<=End; glbox.next(iv)) {
-            ec(iv,0) = 2/(1/cc(iv,d) + 1/cc(iv-BoxLib::BASISV(d),d));
-          }
-        }
-      }
-    }
+    MFTower::CCtoECavg(KappaEC,*KappaCCdir,1.0,0,0,-1,do_harm,nLevs);
     eval_time_for_KappaEC = t;
   }
   return KappaEC;

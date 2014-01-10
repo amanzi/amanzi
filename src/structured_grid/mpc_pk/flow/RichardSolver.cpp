@@ -892,7 +892,7 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
     const PArray<MFTower>& kappaEC = GetKappaEC(t);
     for (int d=0; d<BL_SPACEDIM; ++d) {
       XmultYZ(darcy_vel[d],GetRichardCoefs()[d],kappaEC[d]);
-    }    
+    }
   }
   else {
 

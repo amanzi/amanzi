@@ -73,7 +73,7 @@ struct RSAMRdata
   PMAmr* pm_amr;
   PArray<PorousMedia> pm;
   std::map<RSdata_Property,PropertyManager*> managed_properties;
-  Real source_eval_time;
+  Real eval_time_for_source;
 };
 
 #endif

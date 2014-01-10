@@ -2,7 +2,7 @@
 #include <POROUSMEDIA_F.H> // For FORT_RICHARD_ALPHA
 
 RSAMRdata::RSAMRdata(int slev, int nlevs, Layout& _layout, PMAmr* amrp, NLScontrol& nlsc)
-  : RSdata(slev,nlevs,_layout,nlsc), pm_amr(amrp), source_eval_time(-1)
+  : RSdata(slev,nlevs,_layout,nlsc), pm_amr(amrp), eval_time_for_source(-1)
 {
   nLevs = layout.NumLevels();
   pm.resize(pm_amr->finestLevel()+1,PArrayNoManage);
@@ -388,8 +388,7 @@ RSAMRdata::GetKappaEC(Real t)
 const MFTower*
 RSAMRdata::GetSource(Real t)
 {
-  if (t != source_eval_time) {
-    source_eval_time = t;
+  if (t != eval_time_for_source) {
     int nGrow = 0;
     int strt_comp = 0;
     int num_comp = 1;
@@ -397,6 +396,7 @@ RSAMRdata::GetSource(Real t)
     for (int lev=0; lev<nLevs; ++lev) {
       pm[lev].getForce((*Source)[lev],nGrow,strt_comp,num_comp,time,do_rho_scale);
     }
+    eval_time_for_source = t;
   }
   return Source;
 }
