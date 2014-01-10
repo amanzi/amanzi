@@ -124,8 +124,6 @@ void Matrix_TPFA::AddGravityFluxesRichards(double rho, const AmanziGeometry::Poi
   AmanziMesh::Entity_ID_List cells;
   std::vector<int> dirs;
 
-  //cout<<"AddGravityFluxesRichards\n";
-  //  cout<<rhs_cells<<endl;
 
   for (int f = 0; f < nfaces_wghost; f++) {
     if (bc_model[f] == FLOW_BC_FACE_FLUX) continue;
@@ -135,18 +133,14 @@ void Matrix_TPFA::AddGravityFluxesRichards(double rho, const AmanziGeometry::Poi
     int sign(1);
     for (int i = 0; i < ncells; i++) {
       int c = cells[i];
-      //if (c >= ncells_owned) continue;
+
       if (c < ncells_owned){
 	rhs_cells[0][c] -= sign * (*gravity_term_)[f] * Krel_faces[0][f];  
-      //cout<<"cell "<<c<<" -- "<< sign * (*gravity_term_)[f] * Krel_faces[0][f]<<" "<<sign<<" "<<(*gravity_term_)[f]<<endl;
       }
       sign = -sign;
     }
   }
 
-
-  //cout<<rhs_cells<<endl;
-  //exit(0);
 
 }
 
@@ -451,9 +445,6 @@ void Matrix_TPFA::AnalyticJacobian_(const CompositeVector& u,
 {
   u.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
-
-  // cout.precision(10);
-  // cout<<uc<<endl;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;

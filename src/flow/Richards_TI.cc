@@ -35,14 +35,13 @@ void Richards_PK::Functional(double Told, double Tnew,
   const Epetra_MultiVector& uold_cells = *u_old->ViewComponent("cell");
   const Epetra_MultiVector& unew_cells = *u_new->ViewComponent("cell");
 
-  //cout<<"Functional1\n";
   AssembleMatrixMFD(*u_new, Tp);
   matrix_->ComputeNegativeResidual(*u_new, *f);
 
 
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
   Epetra_MultiVector& f_cells = *f->ViewComponent("cell");
-  //  cout<<f_cells<<endl;
+
 
 
   functional_max_norm = 0.0;
