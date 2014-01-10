@@ -80,7 +80,7 @@ TEST(NEWTON_RICHARD_STEADY) {
   RPK->InitSteadyState(0.0, 1.0);
 
   /* solve the problem */
-  RPK->AdvanceToSteadyState(0.0, 1000.0);
+  RPK->AdvanceToSteadyState(0.0, 1e+3);
   RPK->CommitState(S);
 
   /* derive dependent variable */

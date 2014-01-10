@@ -124,6 +124,9 @@ void Matrix_TPFA::AddGravityFluxesRichards(double rho, const AmanziGeometry::Poi
   AmanziMesh::Entity_ID_List cells;
   std::vector<int> dirs;
 
+  //cout<<"AddGravityFluxesRichards\n";
+  //  cout<<rhs_cells<<endl;
+
   for (int f = 0; f < nfaces_wghost; f++) {
     if (bc_model[f] == FLOW_BC_FACE_FLUX) continue;
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -132,11 +135,19 @@ void Matrix_TPFA::AddGravityFluxesRichards(double rho, const AmanziGeometry::Poi
     int sign(1);
     for (int i = 0; i < ncells; i++) {
       int c = cells[i];
-      if (c >= ncells_owned) continue;
-      rhs_cells[0][c] -= sign * (*gravity_term_)[f] * Krel_faces[0][f];  
+      //if (c >= ncells_owned) continue;
+      if (c < ncells_owned){
+	rhs_cells[0][c] -= sign * (*gravity_term_)[f] * Krel_faces[0][f];  
+      //cout<<"cell "<<c<<" -- "<< sign * (*gravity_term_)[f] * Krel_faces[0][f]<<" "<<sign<<" "<<(*gravity_term_)[f]<<endl;
+      }
       sign = -sign;
     }
   }
+
+
+  //cout<<rhs_cells<<endl;
+  //exit(0);
+
 }
 
 
@@ -229,8 +240,8 @@ int Matrix_TPFA::ApplyPreconditioner(const CompositeVector& X, CompositeVector& 
   Teuchos::ParameterList plist;
   Teuchos::ParameterList& slist = plist.sublist("gmres");
   slist.set<string>("iterative method", "gmres");
-  slist.set<double>("error tolerance", 1e-10);
-  slist.set<int>("maximum number of iterations", 100);
+  slist.set<double>("error tolerance", 1e-18);
+  slist.set<int>("maximum number of iterations", 10000);
   Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
   vlist.set("Verbosity Level", "low");
 
@@ -349,8 +360,13 @@ double Matrix_TPFA::ComputeNegativeResidual(const CompositeVector& u, CompositeV
       }
     }							
   } 
+
+  
   
   Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell");
+
+  
+
   for (int c = 0; c < ncells_owned; c++) {    
     rc[0][c] -= rhs_cells[0][c];
   }
@@ -427,6 +443,9 @@ void Matrix_TPFA::AnalyticJacobian_(const CompositeVector& u,
 {
   u.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
+
+  //cout.precision(10);
+  //cout<<uc<<endl;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -600,6 +619,7 @@ void Matrix_TPFA::ComputeTransmissibilities_()
 
     (*transmissibility_)[f] = trans_f;
     (*gravity_term_)[f] = (*transmissibility_)[f] * grav;
+
   }
 
   // parallelization using CV capability
