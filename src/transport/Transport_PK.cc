@@ -49,7 +49,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
   nonlin_solvers_list = glist.sublist("Nonlinear solvers");
 
   dT = dT_debug = T_physics = 0.0;
-  double time = S->initial_time();
+  double time = S->time();
   if (time >= 0.0) T_physics = time;
 
   dispersion_method = TRANSPORT_DISPERSION_METHOD_TPFA; 
