@@ -63,6 +63,8 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
   int fun_calls_, pc_calls_;
   int max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_, stagnation_itr_check_;
+
+  int modify_correction_;
   double residual_;
   ConvergenceMonitor monitor_;
 };
@@ -94,6 +96,7 @@ void SolverNewton<Vector, VectorSpace>::Init_()
   max_error_growth_factor_ = plist_.get<double>("max error growth factor", 1.0e5);
   max_divergence_count_ = plist_.get<int>("max divergent iterations", 3);
   stagnation_itr_check_ = plist_.get<int>("stagnation iteration check", 8);
+  modify_correction_ = plist_.get<bool>("modify correction", true);
 
   std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
 
@@ -182,7 +185,9 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     fn_->ApplyPreconditioner(r, du);
 
     // Hack the correction
-    bool hacked = fn_->ModifyCorrection(r, u, du);
+    if (modify_correction_) {
+      bool hacked = fn_->ModifyCorrection(r, u, du);
+    }
 
     // Make sure that we do not diverge and cause numerical overflow.
     previous_du_norm = du_norm;
