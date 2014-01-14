@@ -104,11 +104,13 @@
       <Parameter name="error tolerance" type="double" value="1e-12"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <Parameter name="maximal number of iterations" type="int" value="400"/>
+      <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
     </ParameterList>
   </ParameterList>  <!-- End Solvers -->
 
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">
+      <Parameter name="preconditioner type" type="string" value="ml"/>
       <ParameterList name="ML Parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
@@ -130,16 +132,7 @@
     </ParameterList>
   </ParameterList> <!-- End Preconditioners -->
   
-
-
-
-
-
-
-
   <ParameterList name="State">
-
-    
     <ParameterList name="initial conditions">
 
       <ParameterList name="fluid_density">

@@ -109,9 +109,11 @@ void Visualization::CreateFiles() {
 
 void Visualization::CreateTimestep(const double& time, const int& cycle) {
   visualization_output_->createTimestep(time,cycle);
+  visualization_output_->open_h5file();
 }
 
 void Visualization::FinalizeTimestep() const {
+  visualization_output_->close_h5file();
   visualization_output_->endTimestep();
 }
 

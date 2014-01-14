@@ -13,16 +13,10 @@
 
 namespace Amanzi {
 
-  // ConstructMode
-  // Indicates how copy constructors work.
-  //  CONSTRUCT_WITH_NEW_DATA : creates the vector with new uninitialized data
-  //  CONSTRUCT_WITH_OLD_DATA : creates a new vector shell with pointers to
-  //                            the same old data
-  //  CONSTRUCT_WITHOUT_DATA : creates a vector whose CreateData() method has
-  //                           not been called
-  typedef enum { CONSTRUCT_WITH_NEW_DATA,
-                 CONSTRUCT_WITH_OLD_DATA,
-                 CONSTRUCT_WITHOUT_DATA } ConstructMode;
+// Controls initialization in copy constructor.
+typedef enum { INIT_MODE_NONE,
+               INIT_MODE_ZERO,
+               INIT_MODE_COPY } InitMode;
 
 } // namespace
 

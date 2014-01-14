@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
@@ -25,7 +25,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "GMVMesh.hh"
 
 #include "State.hh"
-#include "Flow_State.hh"
 #include "Darcy_PK.hh"
 
 
@@ -43,55 +42,67 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   if (MyPID == 0) cout << "Test: 2D transient Darcy, polygonal mesh" << endl;
 
   /* read parameter list */
-  ParameterList parameter_list;
   string xmlFileName = "test/flow_darcy_dual2D.xml";
-
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
-  // create a MSTK mesh framework
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  /* create a MSTK mesh framework */
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory("test/dual2D.exo", gm);
+  RCP<const Mesh> mesh = meshfactory("test/dual2D.exo", gm);
 
-  // create and populate flow state
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
-  FS->Initialize();
-  FS->set_permeability_2D(0.1, 2.0, "Computational domain");
-  FS->set_porosity(0.2);
-  FS->set_fluid_viscosity(1.0);
-  FS->set_fluid_density(1.0);
-  FS->set_gravity(-1.0);
+  /* create a simple state populate it */
+  Amanzi::VerboseObject::hide_line_prefix = true;
 
-  // create Richards process kernel
-  Darcy_PK* DPK = new Darcy_PK(parameter_list, FS);
-  DPK->InitPK();
-  DPK->InitSteadyState(0.0, 1e-8);
+  RCP<State> S = rcp(new State());
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  // create the initial pressure function
-  Epetra_Vector& p = FS->ref_pressure();
+  Darcy_PK* DPK = new Darcy_PK(plist, S);
+  S->Setup();
+  S->InitializeFields();
+
+  /* modify the default state for the problem at hand */
+  std::string passwd("state"); 
+  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
+  for (int c = 0; c < K.MyLength(); c++) {
+    K[0][c] = 0.1;
+    K[1][c] = 2.0;
+  }
+
+  *S->GetScalarData("fluid_density", passwd) = 1.0;
+  *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  gravity[1] = -1.0;
+
+  /* create the initial pressure function */
+  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
-    p[c] = xc[1] * (xc[1] + 2.0);
+    p[0][c] = xc[1] * (xc[1] + 2.0);
   }
 
-  // transient solution
+  /* initialize Darcy process kernel */
+  DPK->InitPK();
+  DPK->InitSteadyState(0.0, 1e-8);
+
+  /* transient solution */
   double dT = 0.1;
   for (int n = 0; n < 2; n++) {
     DPK->Advance(dT);
-    DPK->CommitState(FS);
+    DPK->CommitState(S);
 
     if (MyPID == 0) {
       GMV::open_data_file(*mesh, (std::string)"flow.gmv");
       GMV::start_data();
-      GMV::write_cell_data(FS->ref_pressure(), 0, "pressure");
+      GMV::write_cell_data(p, 0, "pressure");
       GMV::close_data_file();
     }
   }

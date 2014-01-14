@@ -28,7 +28,6 @@
 #include "State.hh"
 #include "SolverFnPicard.hh"
 #include "SolverNewton.hh"
-#include "Flow_State.hh"
 #include "Richards_PK.hh"
 
 
@@ -49,7 +48,7 @@ TEST(FLOW_RICHARDS_PICARD) {
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  // create a mesh framework
+  /* create a mesh framework */
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
@@ -61,52 +60,55 @@ TEST(FLOW_RICHARDS_PICARD) {
   factory.preference(pref);  
   ParameterList mesh_list = plist.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
   ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
-  Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
+  Teuchos::RCP<const Mesh> mesh(factory(factory_list, gm));
 
-  // create flow state
+  /* create a simple state and populate it */
+  Amanzi::VerboseObject::hide_line_prefix = true;
+
   ParameterList state_list = plist.get<ParameterList>("State");
-  State S(state_list);
-  S.RegisterDomainMesh(mesh);
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
-  S.Setup();
-  S.Initialize();
-  FS->Initialize();
+  Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  // create Richards process kernel
-  Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, FS));
+  Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, S));
+  S->Setup();
+  S->InitializeFields();
+  RPK->InitializeFields();
+  S->CheckAllFieldsInitialized();
+
+  /* create Richards process kernel */
   RPK->InitPK();
-  RPK->InitSteadyState(0.0, 1e-7);  // dT0 is not used
+  RPK->InitSteadyState(0.0, 1e-7);
 
-  // create the function class
-  Teuchos::RCP<SolverFnPicard<Epetra_Vector> > fn = 
-      Teuchos::rcp(new SolverFnPicard<Epetra_Vector>(mesh, RPK));
+  /* create the function class */
+  Teuchos::RCP<SolverFnPicard<CompositeVector> > fn = 
+      Teuchos::rcp(new SolverFnPicard<CompositeVector>(mesh, RPK));
 
-  // create the Solver
-  const Teuchos::RCP<Epetra_Vector> u = RPK->get_solution();
-  const Epetra_BlockMap& map = u->Map();
-  Teuchos::ParameterList nlist = RPK->nonlin_solver_list_;
+  /* create a solver */
+  const Teuchos::RCP<CompositeVector> u = RPK->get_solution();
+  const CompositeVectorSpace& map = u->Map();
 
-  Teuchos::RCP<AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap> > picard =
-      Teuchos::rcp(new AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>(nlist, fn, map));
+  ParameterList nlist = plist.get<ParameterList>("Nonlinear solvers");
+  Teuchos::RCP<AmanziSolvers::SolverNewton<CompositeVector, CompositeVectorSpace> > picard =
+      Teuchos::rcp(new AmanziSolvers::SolverNewton<CompositeVector, CompositeVectorSpace>(nlist, fn, map));
 
   picard->Solve(u);
 
-  RPK->CommitState(FS);
+  RPK->CommitState(S);
 
-  // derive dependent variable
-  Epetra_Vector& pressure = FS->ref_pressure();
-  Epetra_Vector saturation(pressure);
-  RPK->DeriveSaturationFromPressure(pressure, saturation);
+  /* derive dependent variable */
+  const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
+  const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell");
+  const Epetra_MultiVector& K = *S->GetFieldData("permeability")->ViewComponent("cell");
 
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");
   GMV::start_data();
-  GMV::write_cell_data(pressure, 0, "pressure");
-  GMV::write_cell_data(saturation, 0, "saturation");
-  GMV::write_cell_data(*(*FS->permeability())(0), 0, "permeability_x");
-  GMV::write_cell_data(*(*FS->permeability())(1), 0, "permeability_y");
+  GMV::write_cell_data(p, 0, "pressure");
+  GMV::write_cell_data(ws, 0, "saturation");
+  GMV::write_cell_data(*K(0), 0, "permeability_x");
+  GMV::write_cell_data(*K(1), 0, "permeability_y");
   GMV::close_data_file();
 
-  // check the pressure profile
+  /* check the pressure profile */
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c = 0; c < ncells; c++) CHECK(pressure[c] > 4500.0 && pressure[c] < 101325.0);
+  for (int c = 0; c < ncells; c++) CHECK(p[0][c] > 4500.0 && p[0][c] < 101325.0);
 }

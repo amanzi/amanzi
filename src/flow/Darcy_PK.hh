@@ -1,13 +1,13 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Neil Carlson (version 1) 
-         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Authors: Neil Carlson (version 1) 
+           Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_DARCY_PK_HH_
@@ -20,12 +20,9 @@ Authors: Neil Carlson (version 1)
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "flow_boundary_function.hh"
-#include "flow_domain_function.hh"
 #include "tensor.hh"
 
 #include "Flow_PK.hh"
-#include "Flow_State.hh"
 #include "Matrix_MFD.hh"
 #include "TI_Specs.hh"
 
@@ -35,7 +32,7 @@ namespace AmanziFlow {
 
 class Darcy_PK : public Flow_PK {
  public:
-  Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC);
+  Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S);
   ~Darcy_PK();
 
   // main methods
@@ -51,97 +48,62 @@ class Darcy_PK : public Flow_PK {
   void InitializeAuxiliaryData();
   void InitializeSteadySaturated();
 
-  void CommitState(Teuchos::RCP<Flow_State> FS);
+  void CommitState(Teuchos::RCP<State> S);
 
   // methods required for time integration
-  void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0) {};
-  void precon(const Epetra_Vector& u, Epetra_Vector& Hu) {};
-  double enorm(const Epetra_Vector& u, const Epetra_Vector& du) { return 0.0; }
-  void update_precon(const double T, const Epetra_Vector& up, const double h, int& errc) {};
+  void Functional(const double Told, double Tnew, 
+                  Teuchos::RCP<CompositeVector> u, Teuchos::RCP<CompositeVector> udot, 
+                  Teuchos::RCP<CompositeVector> rhs) {};
+  void ApplyPreconditioner(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu) {};
+  double ErrorNorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du) { 
+    return 0.0; 
+  }
+  void UpdatePreconditioner(double T, Teuchos::RCP<const CompositeVector> up, double h) {};
   void update_norm(double rtol, double atol) {};
+  bool is_admissible(Teuchos::RCP<const CompositeVector> up) { 
+   return false; 
+  }
+  bool ModifyPredictor(double dT, Teuchos::RCP<CompositeVector> u0, Teuchos::RCP<CompositeVector> u) {
+    return false;
+  }
+  bool ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
+                        Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du) {
+    return false;
+  }
+  void changed_solution() {};
 
   // other main methods
-  void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
-  void AddTimeDerivativeSpecificStorage(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
-  void AddTimeDerivativeSpecificYield(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
+  void AddTimeDerivativeSpecificStorage(Epetra_MultiVector& p, double dTp, Matrix_MFD* matrix_operator);
+  void AddTimeDerivativeSpecificYield(Epetra_MultiVector& p, double dTp, Matrix_MFD* matrix_operator);
   void UpdateSpecificYield();
 
   double ErrorEstimate(double* dTfactor);
 
   // linear solvers
-  void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
-  void SolveFullySaturatedProblem(double T, const Epetra_Vector& rhs, Epetra_Vector& u);
+  void SolveFullySaturatedProblem(double T, CompositeVector& u);
+  void SolveFullySaturatedProblem(double T, const CompositeVector& rhs, CompositeVector& u);
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; return 1; }
   void AssembleMatrixMFD();
 
-  // io members
-  void ProcessParameterList();
-  void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
-
-  // control methods
+  // control methods (for unit tests)
   void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list_ = dp_list_new; }
 
-  // access methods
-  Epetra_Vector& ref_solution() { return *solution; }
-  Epetra_Vector& ref_solution_faces() { return *solution_faces; }
-  Epetra_Import& face_importer() { return *face_importer_; }
-  const Epetra_Map& super_map() { return *super_map_; }
-
-  double rho() { return rho_; }
-  double mu() { return mu_; }
-  AmanziGeometry::Point& gravity() { return gravity_; }
-
-  // access methods only for unit tests (prefix get_ indicates that)
-  std::vector<WhetStone::Tensor>& get_K() { return K; }
-  Teuchos::RCP<Matrix_MFD> matrix() { return matrix_; }
-  std::vector<bc_tuple>& get_bc_values() { return bc_values; }
-
-  // auxilliary data management
-  void UpdateAuxilliaryData();
+  // access
+  Teuchos::RCP<FlowMatrix> matrix() { return matrix_; }
+  Teuchos::RCP<CompositeVector> get_solution() { return solution; }
 
  private:
   Teuchos::ParameterList dp_list_;
 
-  double atm_pressure;
-  Teuchos::RCP<Epetra_Map> super_map_;
-  int dim;
-
-  Teuchos::RCP<Epetra_Import> face_importer_;   // parallel communicators
-
-  Teuchos::RCP<Matrix_MFD> matrix_;
+  Teuchos::RCP<FlowMatrix> matrix_;
 
   int error_control_;
+  double dT_desirable_;
 
-  TI_Specs ti_specs_sss_;  // Two time integration phases
-  TI_Specs ti_specs_trs_;
-  TI_Specs* ti_specs;
-
-  double dT_desirable_; // Parameters for transient solver
-
-  Teuchos::RCP<Epetra_Vector> solution;  // global solution
-  Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
-  Teuchos::RCP<Epetra_Vector> solution_faces;  // face-base pressures
-
+  Teuchos::RCP<CompositeVector> solution;  // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
  
-  Functions::FlowBoundaryFunction* bc_pressure;  // Boundary conditions. 
-  Functions::FlowBoundaryFunction* bc_head;
-  Functions::FlowBoundaryFunction* bc_flux;
-  Functions::FlowBoundaryFunction* bc_seepage;
-
-  std::vector<int> bc_model, bc_submodel;  // Support of boundary conditions.
-  std::vector<bc_tuple> bc_values;
-  Teuchos::RCP<Epetra_Vector> shift_water_table_;
-  std::vector<double> rainfall_factor;
-
-  Functions::FlowDomainFunction* src_sink;  // Source and sink terms
-  int src_sink_distribution; 
-
-  std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
-  Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
-
-  int mfd3d_method_;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 };
 

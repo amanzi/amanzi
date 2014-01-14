@@ -262,7 +262,7 @@ MFTower::CCtoECavg(PArray<MFTower>& mfte,
             
             for (int d=0; d<BL_SPACEDIM; ++d) {            
                 FArrayBox& efab = mfte[d][lev][mfi];
-                BL_ASSERT(dComp+nComp<=efab.nComp());
+                BL_ASSERT(dComp<efab.nComp());
                 efab.setVal(0);
                 BL_ASSERT(Box(vcbox).surroundingNodes(d).contains(efab.box()));
 

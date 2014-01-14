@@ -39,8 +39,8 @@ class Preconditioner {
   virtual void Destroy() = 0;
 
   // Apply the preconditioner.
-  virtual void ApplyInverse(const Epetra_MultiVector& v,
-                            Epetra_MultiVector& hv) = 0;
+  virtual int ApplyInverse(const Epetra_MultiVector& v,
+			   Epetra_MultiVector& hv) = 0;
 };
 
 }  // namespace AmanziPreconditioners

@@ -35,8 +35,6 @@ void Transport_PK::ProcessParameterList()
   Teuchos::ParameterList transport_list;
   transport_list = parameter_list;
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = TS->mesh();
-
   // create verbosity object
   vo_ = new VerboseObject("Amanzi::Transport", transport_list); 
 
@@ -50,9 +48,6 @@ void Transport_PK::ProcessParameterList()
 
   string advection_limiter_name = transport_list.get<string>("advection limiter");
   ProcessStringAdvectionLimiter(advection_limiter_name, &advection_limiter);
-
-  std::string flow_mode_name = transport_list.get<string>("flow mode", "transient");
-  ProcessStringFlowMode(flow_mode_name, &flow_mode);
 
   // transport dispersion (default is none)
   if (transport_list.isSublist("Dispersivity")) {
@@ -119,7 +114,7 @@ void Transport_PK::ProcessParameterList()
 #endif
     bc_factory.CreateConcentration(bcs, bcs_tcc_name);
     for (int i = 0; i < bcs_tcc_name.size(); i++) {
-      bcs_tcc_index.push_back(TS->get_component_number(bcs_tcc_name[i]));
+      bcs_tcc_index.push_back(FindComponentNumber(bcs_tcc_name[i]));
     }
   } else {
     printf("Transport PK: does not have boundary conditions.\n");
@@ -146,20 +141,15 @@ void Transport_PK::ProcessParameterList()
 
 
 /* ****************************************************************
-* Process string for the discretization method.
+* Find place of the given component in a multivector.
 **************************************************************** */
-void Transport_PK::ProcessStringFlowMode(const std::string name, int* method)
+int Transport_PK::FindComponentNumber(const std::string component_name)
 {
-  Errors::Message msg;
-  *method = TRANSPORT_FLOW_TRANSIENT;
-  if (name == "steady-state") {
-    *method = TRANSPORT_FLOW_STEADYSTATE;
-  } else if (name == "transient") {
-    *method = TRANSPORT_FLOW_TRANSIENT;
-  } else {
-    msg << "Trasnport PK: flow mode is wrong (steady-state, transient)." << "\n";
-    Exceptions::amanzi_throw(msg);
-  }
+  int ncomponents = component_names_.size();
+  for (int i = 0; i < ncomponents; i++) {
+    if (component_names_[i] == component_name) return i;
+  } 
+  return -1;
 }
 
 
@@ -221,9 +211,11 @@ void Transport_PK::ProcessStringAdvectionLimiter(const std::string name, int* me
 /* ************************************************************* */
 void Transport_PK::PrintStatistics() const
 {
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
+
   if (vo_->getVerbLevel() > Teuchos::VERB_NONE) {
     cout << "Transport PK: CFL = " << cfl_ << endl;
-    cout << "    Total number of components = " << number_components << endl;
+    cout << "    Total number of components = " << tcc_prev.NumVectors() << endl;
     cout << "    Verbosity level = " << vo_->getVerbLevel() << endl;
     cout << "    Spatial/temporal discretication orders = " << spatial_disc_order
          << " " << temporal_disc_order << endl;
@@ -236,15 +228,14 @@ void Transport_PK::PrintStatistics() const
 /* ****************************************************************
 * DEBUG: creating GMV file 
 **************************************************************** */
-void Transport_PK::WriteGMVfile(Teuchos::RCP<Transport_State> TS) const
+void Transport_PK::WriteGMVfile(Teuchos::RCP<State> S) const
 {
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = TS->mesh();
-  Epetra_MultiVector& tcc = TS->ref_total_component_concentration();
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
-  GMV::open_data_file(*mesh, (std::string)"transport.gmv");
+  GMV::open_data_file(*mesh_, (std::string)"transport.gmv");
   GMV::start_data();
-  GMV::write_cell_data(tcc, 0, "component0");
-  GMV::write_cell_data(TS->ref_water_saturation(), "saturation");
+  GMV::write_cell_data(tcc_prev, 0, "component0");
+  GMV::write_cell_data(*ws, 0, "saturation");
   GMV::close_data_file();
 }
 

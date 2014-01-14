@@ -1,108 +1,86 @@
-#ifndef _BDF1STATE_HH_
-#define _BDF1STATE_HH_
+/*
+  Authors: Marcus Berndt
+           Ethan Coon (ecoon@lanl.gov)
 
-// This class is based on Neil Carlson's BDF2_DAE module
-// that is part of LANL's Truchas code.
+  This class is based on Neil Carlson's BDF2_DAE module
+  that is part of LANL's Truchas code.
+*/
 
-#include "dbc.hh"
-#include "SolutionHistory.hh"
+#ifndef AMANZI_BDF1STATE_HH_
+#define AMANZI_BDF1STATE_HH_
+
 #include <limits>
+
+#include "errors.hh"
+#include "dbc.hh"
+
+#include "SolutionHistory.hh"
+
+#include "TimestepController.hh"
+#include "TimestepControllerFactory.hh"
 
 namespace Amanzi {
 
-enum bdf_nonlinear_solver_t { BDFNKA, BDFJFNK };
+template<class Vector>
+struct BDF1_State {
+  BDF1_State() {
+    maxpclag = 0;
+    extrapolate_guess = true;
 
-struct BDF1State {
-
- public:
-
-  BDF1State() {
     seq = -1;
-    usable_pc = false;
-    mitr = 20;
-    ntol = 0.1;
+    failed_solve = 0;
+    solve_itrs = 0;
 
-    pcfun_calls = 0;
-    updpc_calls = 0;
-    updpc_failed = 0;
-    retried_bce = 0;
-    failed_bce = 0;
-    rejected_steps = 0;
-    eps = std::numeric_limits<double>::epsilon();
-    hmax = std::numeric_limits<double>::max();
-
-    damp = 1.0;
     uhist_size = 2;
 
-    hlimit = 1e10;
-    elimit = 1e15;
-    maxpclag = 0;
-    currentpclag = 0;
-
-    nonlinear_solver = BDFNKA;
-
-    verbose = false;
-    ntol_multiplier = 1.0;
-    ntol_multiplier_damp = 1.0;
-    ntol_multiplier_current = 1.0;
-    
-    divergence_factor = 1000.0;
-
-    clip_NKA = false;
+    hmax = std::numeric_limits<double>::min();
+    hmin = std::numeric_limits<double>::max();
   }
 
-  ~BDF1State() {
-    if (! uhist) delete uhist;
-  }
+  // Parameters and control
+  int maxpclag;  // maximum iterations that the preconditioner can be lagged
+  bool extrapolate_guess;  // extrapolate forward in time or use previous
+                           // step as initial guess for nonlinear solver
 
-  void init_solution_history(BDF2::SolutionHistory* sh) {
-    ASSERT(sh);
-    uhist = sh;
-  }
+  // Solution history
+  Teuchos::RCP<SolutionHistory<Vector> > uhist;
 
-
-  int       seq;          // number of steps taken
-  double    hlast;        // last step size
-  double    hpc;          // step size built into the current preconditioner
-  bool      usable_pc;    // whether the current preconditioner is usable
-  int       mitr;         // maximum number of nonlinear iterations, more and we fail
-  int       minitr;       // minimum number of nonlinear iterations (we will increase time step here)
-  int       maxitr;       // maximum number of nonlinear iterations (we cut time step here)
-  int       maxpclag;     // maximum iterations that the preconditioner can be lagged
-  int       currentpclag;
-  int       pclagcount;   // counter for how many iterations the preconditioner has been lagged
-  double    hlimit;       // maximum allowed time step
-  double    elimit;
-  double    ntol;         // nonlinear solver error tolerance (relative to 1)
-  double    atol, rtol;   // parameters that define the norm to be used in the model evaluator
-  BDF2::SolutionHistory* uhist; // solution history structure
+  // internal counters and state
+  int uhist_size;  // extrapolation order for initial guess
+  double hlast;  // last step size
+  double hpc;  // step size built into the current preconditioner
+  int pc_lag;  // counter for how many iterations the preconditioner has been lagged
 
   // performance counters
-  int    pcfun_calls;    // number of calls to PCFUN
-  int    updpc_calls;    // number of calls to UPDPC
-  int    updpc_failed;   // number of UPDPC calls returning an error
-  int    retried_bce;    // number of retried BCE steps
-  int    failed_bce;     // number of completely failed BCE steps
-  int    rejected_steps; // number of steps rejected on error tolerance
-  double eps;            // machine epsilon used in deciding when time step is too small
-  double hmax;           // maximum step size used on a successful step
-  double hinc;           // stepsize increase factor
-  double hred;           // stepsize reduction factor
-  double damp;           // nka damping factor
-  int uhist_size;        // extrapolation order for initial guess
-  double ntol_multiplier, ntol_multiplier_damp, ntol_multiplier_current;
-  double divergence_factor; // if the nonlinear update grows by more than this in one iteration, abort
+  int seq;  // number of steps taken
+  int failed_solve;  // number of completely failed BCE steps
+  double hmin, hmax;  // minimum and maximum dt used on a successful step
 
-  bool clip_NKA; 
+  // performane of nonlinear solver
+  int solve_itrs;
 
-
-  bdf_nonlinear_solver_t nonlinear_solver;
-
-  // Diagnostics
-  bool   verbose;
-
+  void InitializeFromPlist(Teuchos::ParameterList&, const Teuchos::RCP<const Vector>&);
 };
 
+
+/* ******************************************************************
+* Initiazition of fundamental parameters
+****************************************************************** */
+template<class Vector>
+void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
+        const Teuchos::RCP<const Vector>& initvec) {
+  // preconditioner lag control
+  maxpclag = plist.get<int>("max preconditioner lag iterations", 0);
+
+  // forward time extrapolation
+  extrapolate_guess = plist.get<bool>("extrapolate initial guess", true);
+
+  // solution history object
+  double t0 = plist.get<double>("initial time", 0.0);
+  uhist = Teuchos::rcp(new SolutionHistory<Vector>(uhist_size, t0, *initvec));
 }
 
-#endif // _BDF1STATE_HH_
+}  // namespace Amanzi
+
+#endif
+

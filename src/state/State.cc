@@ -19,9 +19,7 @@ initialized (as independent variables are owned by state, not by any PK).
 #include "Epetra_Vector.h"
 
 #include "errors.hh"
-#include "composite_vector.hh"
-#include "function-factory.hh"
-#include "function.hh"
+#include "CompositeVector.hh"
 #include "FieldEvaluator_Factory.hh"
 #include "cell_volume_evaluator.hh"
 #include "rank_evaluator.hh"
@@ -30,17 +28,11 @@ initialized (as independent variables are owned by state, not by any PK).
 
 namespace Amanzi {
 
-State::State() :
-    time_(0.0),
-    final_time_(0.0),
-    intermediate_time_(0.0),
-    cycle_(0) {};
+State::State() {};
 
 State::State(Teuchos::ParameterList& state_plist) :
     state_plist_(state_plist),
     time_(0.0),
-    final_time_(0.0),
-    intermediate_time_(0.0),
     cycle_(0) {};
 
 // copy constructor:
@@ -53,8 +45,6 @@ State::State(const State& other, StateConstructMode mode) :
     meshes_(other.meshes_),
     field_factories_(other.field_factories_),
     time_(other.time_),
-    final_time_(other.final_time_),
-    intermediate_time_(other.intermediate_time_),
     cycle_(other.cycle_) {
 
   if (mode == STATE_CONSTRUCT_MODE_COPY_DATA) {
@@ -133,14 +123,23 @@ State& State::operator=(const State& other) {
 // -----------------------------------------------------------------------------
 // State handles mesh management.
 // -----------------------------------------------------------------------------
-void State::RegisterDomainMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
-  RegisterMesh("domain", mesh);
+void State::RegisterDomainMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+                               bool deformable) {
+  RegisterMesh("domain", mesh, deformable);
 }
 
 
 void State::RegisterMesh(Key key,
-                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
-  meshes_.insert(std::make_pair(key, mesh));
+                         const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+                         bool deformable) {
+  meshes_.insert(std::make_pair(key, std::make_pair(mesh,deformable)));
+};
+
+
+void State::AliasMesh(Key target, Key alias) {
+  bool deformable = IsDeformableMesh(target);
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = GetMesh_(target);
+  RegisterMesh(alias, mesh, deformable);
 };
 
 
@@ -161,10 +160,43 @@ Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(Key key) const {
 };
 
 
-Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh_(Key key) const {
+Teuchos::RCP<AmanziMesh::Mesh> State::GetDeformableMesh(Key key) {
   mesh_iterator lb = meshes_.lower_bound(key);
   if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
-    return lb->second;
+    if (lb->second.second) {
+      return lb->second.first;
+    } else {
+      std::stringstream messagestream;
+      messagestream << "Mesh " << key << " is not deformable.";
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+    }
+  } else {
+    std::stringstream messagestream;
+    messagestream << "Mesh " << key << " does not exist in the state.";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+};
+
+
+bool State::IsDeformableMesh(Key key) const {
+  mesh_iterator lb = meshes_.lower_bound(key);
+  if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
+    return lb->second.second;
+  } else {
+    std::stringstream messagestream;
+    messagestream << "Mesh " << key << " does not exist in the state.";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+};
+
+
+Teuchos::RCP<AmanziMesh::Mesh> State::GetMesh_(Key key) const {
+  mesh_iterator lb = meshes_.lower_bound(key);
+  if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
+    return lb->second.first;
   } else {
     return Teuchos::null;
   }
@@ -245,6 +277,7 @@ State::RequireFieldEvaluator(Key key) {
       SetFieldEvaluator(key, evaluator);
     }
   }
+
 
   if (evaluator == Teuchos::null) {
     std::stringstream messagestream;
@@ -370,7 +403,7 @@ void State::RequireConstantVector(Key fieldname, int dimension) {
 };
 
 // Vector Field requires
-Teuchos::RCP<CompositeVectorFactory>
+Teuchos::RCP<CompositeVectorSpace>
 State::RequireField(Key fieldname, Key owner) {
   Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname,
           COMPOSITE_VECTOR_FIELD, owner);
@@ -380,7 +413,7 @@ State::RequireField(Key fieldname, Key owner) {
     Teuchos::RCP<Field_CompositeVector> field =
         Teuchos::rcp(new Field_CompositeVector(fieldname, owner));
     fields_[fieldname] = field;
-    field_factories_[fieldname] = Teuchos::rcp(new CompositeVectorFactory());
+    field_factories_[fieldname] = Teuchos::rcp(new CompositeVectorSpace());
   } else if (owner != Key("state")) {
     field->set_owner(owner);
   }
@@ -388,9 +421,8 @@ State::RequireField(Key fieldname, Key owner) {
   return field_factories_[fieldname];
 };
 
-
 // Vector Field requires
-Teuchos::RCP<CompositeVectorFactory>
+Teuchos::RCP<CompositeVectorSpace>
 State::RequireField(Key fieldname, Key owner,
                     const std::vector<std::vector<std::string> >& subfield_names) {
   Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname,
@@ -401,14 +433,13 @@ State::RequireField(Key fieldname, Key owner,
     Teuchos::RCP<Field_CompositeVector> field =
         Teuchos::rcp(new Field_CompositeVector(fieldname, owner, subfield_names));
     fields_[fieldname] = field;
-    field_factories_[fieldname] = Teuchos::rcp(new CompositeVectorFactory());
+    field_factories_[fieldname] = Teuchos::rcp(new CompositeVectorSpace());
   } else if (owner != Key("state")) {
     field->set_owner(owner);
   }
 
   return field_factories_[fieldname];
 };
-
 
 void State::RequireGravity() {
   int dim = 3;
@@ -579,7 +610,7 @@ void State::Setup() {
   // -- First use factories to instantiate composite vectors.
   for (FieldFactoryMap::iterator fac_it=field_factories_.begin();
        fac_it!=field_factories_.end(); ++fac_it) {
-    GetField_(fac_it->first)->SetData(fac_it->second->CreateVector());
+    GetField_(fac_it->first)->SetData(Teuchos::rcp(new CompositeVector(*fac_it->second)));
   }
 
   // -- Now create the data for all fields.
@@ -590,26 +621,22 @@ void State::Setup() {
 };
 
 
-void State::Initialize() {
-  // Initialize any other fields from state plist.
-  InitializeFields_();
+// void State::Initialize() {
+//   // Initialize any other fields from state plist.
+//   InitializeFields();
 
-  // Initialize other field evaluators.
-  InitializeEvaluators_();
-};
+//   // Ensure that non-evaluator-based fields are initialized.
+//   CheckNotEvaluatedFieldsInitialized();
 
+//   // Initialize other field evaluators.
+//   InitializeEvaluators();
 
-void State::CheckInitialized() {
-  // Ensure that non-evaluator-based fields are initialized.
-  CheckNotEvaluatedFieldsInitialized_();
-
-  // Ensure everything is owned and initialized.
-  CheckAllFieldsInitialized_();
-}
+//   // Ensure everything is owned and initialized.
+//   CheckAllFieldsInitialized();
+// };
 
 
-
-void State::InitializeEvaluators_() {
+void State::InitializeEvaluators() {
   for (evaluator_iterator f_it = field_evaluator_begin();
        f_it != field_evaluator_end(); ++f_it) {
     f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
@@ -618,7 +645,7 @@ void State::InitializeEvaluators_() {
 };
 
 
-void State::InitializeFields_() {
+void State::InitializeFields() {
   for (FieldMap::iterator f_it = fields_.begin();
        f_it != fields_.end(); ++f_it) {
     if (!f_it->second->initialized()) {
@@ -636,7 +663,7 @@ void State::InitializeFields_() {
 // Make sure all fields that are not evaluated by a FieldEvaluator are
 // initialized.  Such fields may be used by an evaluator field but are not in
 // the dependency tree due to poor design.
-bool State::CheckNotEvaluatedFieldsInitialized_() {
+bool State::CheckNotEvaluatedFieldsInitialized() {
   for (FieldMap::iterator f_it = fields_.begin();
        f_it != fields_.end(); ++f_it) {
     Teuchos::RCP<Field> field = f_it->second;
@@ -653,7 +680,7 @@ bool State::CheckNotEvaluatedFieldsInitialized_() {
 
 
 // Make sure all fields have gotten their IC, either from State or the owning PK.
-bool State::CheckAllFieldsInitialized_() {
+bool State::CheckAllFieldsInitialized() {
   for (FieldMap::iterator f_it = fields_.begin();
        f_it != fields_.end(); ++f_it) {
     Teuchos::RCP<Field> field = f_it->second;
@@ -749,6 +776,8 @@ void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
     }
 
     chk->WriteAttributes(S->time(), dt, S->cycle());
+    
+    chk->Finalize();
   }
 };
 
@@ -757,6 +786,7 @@ double ReadCheckpoint(Epetra_MpiComm* comm,
                       const Teuchos::Ptr<State>& S,
                       std::string filename) {
   Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(*comm, filename));
+  checkpoint->open_h5file();
 
   // load the attributes
   double time(0.);
@@ -785,11 +815,14 @@ double ReadCheckpoint(Epetra_MpiComm* comm,
 
   // load the data
   for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
-    if (field->second->io_checkpoint()) {
+    if (field->second->type() == COMPOSITE_VECTOR_FIELD &&
+        field->second->io_checkpoint()) {
       field->second->ReadCheckpoint(checkpoint);
+      field->second->set_initialized();
     }
   }
-
+  
+  checkpoint->close_h5file();
   return dt;
 };
 
@@ -800,7 +833,9 @@ double ReadCheckpointInitialTime(Epetra_MpiComm* comm,
 
   // load the attributes
   double time(0.);
+  checkpoint->open_h5file();
   checkpoint->readAttrReal(time, "time");
+  checkpoint->close_h5file();
   return time;
 };
 
@@ -810,27 +845,28 @@ void DeformCheckpointMesh(const Teuchos::Ptr<State>& S) {
   if (S->HasField("vertex coordinate")) { // only deform mesh if vertex coordinate field exists
     AmanziMesh::Mesh * write_access_mesh_ =  const_cast<AmanziMesh::Mesh*>(&*S->GetMesh());
     // get vertex coordinates state
-    const Epetra_MultiVector& vc = *S->GetFieldData("vertex coordinate")
-        ->ViewComponent("node",false);
+    Teuchos::RCP<const CompositeVector> vc = S->GetFieldData("vertex coordinate");
+    vc->ScatterMasterToGhosted("node");
+    const Epetra_MultiVector& vc_n = *vc->ViewComponent("node",true);
+
     int dim = write_access_mesh_->space_dimension();
-    int nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE, 
-                                              Amanzi::AmanziMesh::OWNED);  
-    Amanzi::AmanziMesh::Entity_ID_List nodeids;  
-    Amanzi::AmanziGeometry::Point new_coords(3);
-    AmanziGeometry::Point_List new_pos, final_pos;  
+    Amanzi::AmanziMesh::Entity_ID_List nodeids;
+    Amanzi::AmanziGeometry::Point new_coords(dim);
+    AmanziGeometry::Point_List new_pos, final_pos;
     // loop over vertices and update vc
-    for (int iV=0; iV<nV; iV++) {
+    unsigned int nV = vc_n.MyLength();
+    for (unsigned int iV=0; iV!=nV; ++iV) {
       // set the coords of the node
-      for ( int s=0; s<dim; ++s ) {
-        new_coords[s] = vc[s][iV];
-      }
+      for (unsigned int s=0; s!=dim; ++s) new_coords[s] = vc_n[s][iV];
+
       // push back for deform method
       nodeids.push_back(iV);
-      new_pos.push_back(new_coords);    
-    } 
+      new_pos.push_back(new_coords);
+    }
+
+    // deform
     write_access_mesh_->deform( nodeids, new_pos, true, &final_pos); // deforms the mesh
   }
-  
 }
 
 } // namespace amanzi

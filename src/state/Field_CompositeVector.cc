@@ -1,22 +1,22 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-   ATS
+ATS
 
-   License: see $ATS_DIR/COPYRIGHT
-   Author: Ethan Coon
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
 
-   Implementation for a Field.
+Implementation for a Field.
 
-   Field also stores some basic metadata for Vis, checkpointing, etc.
-   ------------------------------------------------------------------------- */
+Field also stores some basic metadata for Vis, checkpointing, etc.
+------------------------------------------------------------------------- */
 
 #include <string>
 
-#include "exodusII.h"
+#include "exodusII.h" 
 
+#include "dbc.hh"
 #include "errors.hh"
-#include "composite_vector.hh"
-#include "composite_vector_factory.hh"
+#include "CompositeVector.hh"
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
 
@@ -39,7 +39,7 @@ Field_CompositeVector::Field_CompositeVector(std::string fieldname, std::string 
 };
 
 Field_CompositeVector::Field_CompositeVector(std::string fieldname, std::string owner,
-        Teuchos::RCP<CompositeVector>& data) :
+                                           Teuchos::RCP<CompositeVector>& data) :
     Field::Field(fieldname, owner), data_(data) {
   type_ = COMPOSITE_VECTOR_FIELD;
 };
@@ -72,9 +72,7 @@ Teuchos::RCP<Field> Field_CompositeVector::Clone(std::string fieldname, std::str
 };
 
 // Create the data
-void Field_CompositeVector::CreateData() {
-  data_->CreateData();
-}
+void Field_CompositeVector::CreateData() {}
 
 // write-access to the data
 Teuchos::RCP<CompositeVector> Field_CompositeVector::GetFieldData() {
@@ -86,12 +84,10 @@ void Field_CompositeVector::SetData(const Teuchos::RCP<CompositeVector>& data) {
   data_ = data;
 };
 
-// Set data by copy.
 void Field_CompositeVector::SetData(const CompositeVector& data) {
   *data_ = data;
 };
 
-// Initialize the data using a series of possible options from the input file.
 void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   // ------ protect against unset names -----
   EnsureSubfieldNames_();
@@ -115,9 +111,9 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   if (plist.isSublist("exodus file initialization")) {
     // data must be pre-initialized to zero in case Exodus file does not
     // provide all values.
-    data_->PutScalar(0.);
+    data_->PutScalar(0.0);
 
-    const Teuchos::ParameterList& file_list = plist.sublist("exodus file initialization");
+    Teuchos::ParameterList file_list = plist.sublist("exodus file initialization");
     ReadFromExodusII_(file_list);
     set_initialized();
     return;
@@ -134,66 +130,65 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   // ------ Set values using a function -----
   if (plist.isSublist("function")) {
     Teuchos::ParameterList func_plist = plist.sublist("function");
+ 
+    // -- potential use of a mapping operator first -- 
+    bool map_normal = plist.get<bool>("dot with normal", false); 
+    if (map_normal) { 
+      // map_normal take a vector and dots it with face normals 
+      ASSERT(data_->NumComponents() == 1); // one comp 
+      ASSERT(data_->HasComponent("face")); // is named face 
+      ASSERT(data_->Location("face") == AmanziMesh::FACE); // is on face 
+      ASSERT(data_->NumVectors("face") == 1);  // and is scalar 
+ 
+      // create a vector on faces of the appropriate dimension 
+      int dim = data_->Mesh()->space_dimension(); 
 
-    // -- potential use of a mapping operator first --
-    bool map_normal = plist.get<bool>("dot with normal", false);
-    if (map_normal) {
-      // map_normal take a vector and dots it with face normals
-      ASSERT(data_->num_components() == 1); // one comp
-      ASSERT(data_->has_component("face")); // is named face
-      ASSERT(data_->location("face") == AmanziMesh::FACE); // is on face
-      ASSERT(data_->num_dofs("face") == 1);  // and is scalar
+      CompositeVectorSpace cvs;
+      cvs.SetMesh(data_->Mesh());
+      cvs.SetComponent("face", AmanziMesh::FACE, dim);
+      Teuchos::RCP<CompositeVector> vel_vec = Teuchos::rcp(new CompositeVector(cvs));
 
-      // create a vector on faces of the appropriate dimension
-      CompositeVectorFactory fac;
-      fac.SetMesh(data_->mesh())
-          ->SetComponent("face",AmanziMesh::FACE,data_->mesh()->space_dimension());
-      Teuchos::RCP<CompositeVector> vel_vec = fac.CreateVector(false);
-      vel_vec->CreateData();
-
-      // Evaluate the velocity function
-      Teuchos::RCP<Functions::CompositeVectorFunction> func =
-          Functions::CreateCompositeVectorFunction(func_plist, *vel_vec);
-      func->Compute(0., vel_vec.ptr());
-
-      // Dot the velocity with the normal
-      unsigned int nfaces_owned = data_->mesh()
-          ->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-
-      Epetra_MultiVector& dat_f = *data_->ViewComponent("face",false);
-      const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face",false);
-      int dim = data_->mesh()->space_dimension();
-
-
-      AmanziGeometry::Point vel(dim);
-      for (unsigned int f=0; f!=nfaces_owned; ++f) {
-        AmanziGeometry::Point normal = data_->mesh()->face_normal(f);
-        if (dim == 2) {
-          vel.set(vel_f[0][f], vel_f[1][f]);
-        } else if (dim == 3) {
-          vel.set(vel_f[0][f], vel_f[1][f], vel_f[2][f]);
-        } else {
-          ASSERT(0);
-        }
-        dat_f[0][f] = vel * normal;
-      }
-      set_initialized();
-      return;
-
-    } else {
-      // no map, just evaluate the function
-      Teuchos::RCP<Functions::CompositeVectorFunction> func =
-          Functions::CreateCompositeVectorFunction(func_plist, *data_);
-      func->Compute(0.0, data_.ptr());
-      set_initialized();
-      return;
-    }
+      // Evaluate the velocity function 
+      Teuchos::RCP<Functions::CompositeVectorFunction> func = 
+          Functions::CreateCompositeVectorFunction(func_plist, vel_vec->Map()); 
+      func->Compute(0.0, vel_vec.ptr()); 
+ 
+      // Dot the velocity with the normal 
+      unsigned int nfaces_owned = data_->Mesh() 
+          ->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED); 
+ 
+      Epetra_MultiVector& dat_f = *data_->ViewComponent("face",false); 
+      const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face",false); 
+ 
+      AmanziGeometry::Point vel(dim); 
+      for (unsigned int f=0; f!=nfaces_owned; ++f) { 
+        AmanziGeometry::Point normal = data_->Mesh()->face_normal(f); 
+        if (dim == 2) { 
+          vel.set(vel_f[0][f], vel_f[1][f]); 
+        } else if (dim == 3) { 
+          vel.set(vel_f[0][f], vel_f[1][f], vel_f[2][f]); 
+        } else { 
+          ASSERT(0); 
+        } 
+        dat_f[0][f] = vel * normal; 
+      } 
+      set_initialized(); 
+      return; 
+ 
+    } else { 
+      // no map, just evaluate the function 
+      Teuchos::RCP<Functions::CompositeVectorFunction> func = 
+          Functions::CreateCompositeVectorFunction(func_plist, data_->Map()); 
+      func->Compute(0.0, data_.ptr()); 
+      set_initialized(); 
+      return; 
+    } 
   }
 };
 
 
 void Field_CompositeVector::WriteVis(const Teuchos::Ptr<Visualization>& vis) {
-  if (io_vis_ && (vis->mesh() == data_->mesh())) {
+  if (io_vis_ && (vis->mesh() == data_->Mesh())) {
     EnsureSubfieldNames_();
 
     // loop over the components and dump them to the vis file if possible
@@ -202,7 +197,7 @@ void Field_CompositeVector::WriteVis(const Teuchos::Ptr<Visualization>& vis) {
          compname!=data_->end(); ++compname) {
       // check that this vector is a cell vector (currently this is the only
       // type of vector we can visualize
-      if (data_->location(*compname) == AmanziMesh::CELL) {
+      if (data_->Location(*compname) == AmanziMesh::CELL) {
         // get the MultiVector that should be dumped
         Teuchos::RCP<Epetra_MultiVector> v = data_->ViewComponent(*compname, false);
 
@@ -210,7 +205,7 @@ void Field_CompositeVector::WriteVis(const Teuchos::Ptr<Visualization>& vis) {
         std::vector< std::string > vis_names(subfield_names_[i]);
         for (unsigned int j = 0; j!=subfield_names_[i].size(); ++j) {
           vis_names[j] = fieldname_ + std::string(".") + *compname
-              + std::string(".") + subfield_names_[i][j];
+            + std::string(".") + subfield_names_[i][j];
         }
         vis->WriteVector(*v, vis_names);
       }
@@ -301,72 +296,15 @@ void Field_CompositeVector::ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file_in
 }
 
 
-void Field_CompositeVector::ReadFromExodusII_(const Teuchos::ParameterList& file_list)
-{
-  Epetra_MultiVector& dat_f = *data_->ViewComponent("cell", false);
-  int nvectors = dat_f.NumVectors();
-
-  std::string file_name = file_list.get<std::string>("file");
-  std::string attribute_name = file_list.get<std::string>("attribute");
-
-  // open ExodusII file
-  const Epetra_Comm& comm = data_->Comm();
-
-  if (comm.NumProc() > 1) {
-    std::stringstream add_extension;
-    add_extension << "." << comm.NumProc() << "." << comm.MyPID();
-    file_name.append(add_extension.str());
-  }
-
-  int CPU_word_size(8), IO_word_size(0), ierr;
-  float version;
-  int exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version);
-  printf("Opening file: %s ws=%d %d\n", file_name.c_str(), CPU_word_size, IO_word_size);
-
-  // read database parameters
-  int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
-  char title[MAX_LINE_LENGTH + 1];
-  ierr = ex_get_init(exoid, title, &dim, &num_nodes, &num_elem,
-                     &num_elem_blk, &num_node_sets, &num_side_sets);
-
-  int* ids = (int*) calloc(num_elem_blk, sizeof(int));
-  ierr = ex_get_elem_blk_ids(exoid, ids);
-
-  // read attributes block-by-block
-  int offset = 0;
-  char elem_type[MAX_LINE_LENGTH + 1];
-  for (int i = 0; i < num_elem_blk; i++) {
-    int num_elem_this_blk, num_attr, num_nodes_elem;
-    ierr = ex_get_elem_block(exoid, ids[i], elem_type, &num_elem_this_blk,
-                             &num_nodes_elem, &num_attr);
-
-    double* attrib = (double*) calloc(num_elem_this_blk * num_attr, sizeof(double));
-    ierr = ex_get_elem_attr(exoid, ids[i], attrib);
-
-    for (int n = 0; n < num_elem_this_blk; n++) {
-      int c = n + offset;
-      for (int k = 0; k < nvectors; k++) dat_f[k][c] = attrib[n];
-    }
-    free(attrib);
-    printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk);
-
-    offset += num_elem_this_blk;
-  }
-
-  ierr = ex_close(exoid);
-  printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), offset, ierr);
-}
-
-
 void Field_CompositeVector::EnsureSubfieldNames_() {
   // set default values for subfield names, ensuring they are unique
   if (subfield_names_.size() == 0) {
-    subfield_names_.resize(data_->num_components());
+    subfield_names_.resize(data_->NumComponents());
 
     unsigned int i = 0;
     for (CompositeVector::name_iterator compname=data_->begin();
          compname!=data_->end(); ++compname) {
-      subfield_names_[i].resize(data_->num_dofs(*compname));
+      subfield_names_[i].resize(data_->NumVectors(*compname));
 
       for (unsigned int j=0; j!=subfield_names_[i].size(); ++j) {
         std::stringstream s;
@@ -388,4 +326,61 @@ void Field_CompositeVector::EnsureSubfieldNames_() {
   }
 };
 
-} // namespace
+
+void Field_CompositeVector::ReadFromExodusII_(Teuchos::ParameterList& file_list) 
+{ 
+  Epetra_MultiVector& dat_f = *data_->ViewComponent("cell", false); 
+  int nvectors = dat_f.NumVectors(); 
+ 
+  std::string file_name = file_list.get<std::string>("file"); 
+  std::string attribute_name = file_list.get<std::string>("attribute"); 
+ 
+  // open ExodusII file 
+  const Epetra_Comm& comm = data_->Comm(); 
+ 
+  if (comm.NumProc() > 1) { 
+    std::stringstream add_extension; 
+    add_extension << "." << comm.NumProc() << "." << comm.MyPID(); 
+    file_name.append(add_extension.str()); 
+  } 
+ 
+  int CPU_word_size(8), IO_word_size(0), ierr; 
+  float version; 
+  int exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version); 
+  printf("Opening file: %s ws=%d %d\n", file_name.c_str(), CPU_word_size, IO_word_size); 
+ 
+  // read database parameters 
+  int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets; 
+  char title[MAX_LINE_LENGTH + 1]; 
+  ierr = ex_get_init(exoid, title, &dim, &num_nodes, &num_elem, 
+                     &num_elem_blk, &num_node_sets, &num_side_sets); 
+ 
+  int* ids = (int*) calloc(num_elem_blk, sizeof(int)); 
+  ierr = ex_get_elem_blk_ids(exoid, ids); 
+ 
+  // read attributes block-by-block 
+  int offset = 0; 
+  char elem_type[MAX_LINE_LENGTH + 1]; 
+  for (int i = 0; i < num_elem_blk; i++) { 
+    int num_elem_this_blk, num_attr, num_nodes_elem; 
+    ierr = ex_get_elem_block(exoid, ids[i], elem_type, &num_elem_this_blk, 
+                             &num_nodes_elem, &num_attr); 
+ 
+    double* attrib = (double*) calloc(num_elem_this_blk * num_attr, sizeof(double)); 
+    ierr = ex_get_elem_attr(exoid, ids[i], attrib); 
+ 
+    for (int n = 0; n < num_elem_this_blk; n++) { 
+      int c = n + offset; 
+      for (int k = 0; k < nvectors; k++) dat_f[k][c] = attrib[n]; 
+    } 
+    free(attrib); 
+    printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk); 
+ 
+    offset += num_elem_this_blk; 
+  } 
+ 
+  ierr = ex_close(exoid); 
+  printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), offset, ierr); 
+} 
+
+} // namespace Amanzi

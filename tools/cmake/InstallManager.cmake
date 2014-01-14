@@ -372,5 +372,11 @@ install(EXPORT AmanziTargets
 
 install(FILES ${AMANZI_SOURCE_DIR}/doc/input_spec/schema/amanzi.xsd DESTINATION bin)
 
+# Write the evaluator registration macro file
+message(STATUS "Writing evaluator registration macro file")
+install(FILES tools/cmake/RegisterEvaluators.cmake
+        DESTINATION lib)
+
+
 endfunction()
 

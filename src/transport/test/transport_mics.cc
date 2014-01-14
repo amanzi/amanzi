@@ -34,21 +34,18 @@ TEST(CONSTRUCTOR) {
 
   std::cout << "Test: read transport XML file" << endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
 
   /* read parameter list */
-  ParameterList parameter_list;
   string xmlFileName = "test/transport_mics.xml";
-  // DEPRECATED  updateParametersFromXmlFile(xmlFileName, &parameter_list);
-
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();  
+  ParameterList plist = xmlreader.getParameters();  
  
   /* create an MSTK mesh framework */
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
 
   FrameworkPreference pref;
@@ -57,16 +54,23 @@ TEST(CONSTRUCTOR) {
 
   MeshFactory factory(comm);
   factory.preference(pref);
-  RCP<Mesh> mesh = factory(0.0,0.0,0.0, 1.0,1.0,1.0, 1, 2, 1, gm); 
+  RCP<const Mesh> mesh = factory(0.0,0.0,0.0, 1.0,1.0,1.0, 1, 2, 1, gm); 
  
   //MeshAudit audit(mesh);
   //audit.Verify();
 
+  /* create a simple state and populate it */
+  std::vector<std::string> component_names;
+  component_names.push_back("Component 0");
+  component_names.push_back("Component 1");
 
-  RCP<Transport_State> TS = rcp(new Transport_State(mesh,2));
-  TS->Initialize();
+  RCP<State> S = rcp(new State());
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Transport_PK TPK(parameter_list, TS);
+  Transport_PK TPK(plist, S, component_names);
+  TPK.CreateDefaultState(mesh, 2);
+
+  /* initialize a transport process kernel from a transport state */
   TPK.InitPK();
   TPK.PrintStatistics();
 

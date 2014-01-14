@@ -30,5 +30,7 @@ public:
 Message& operator<<(Message &message, const char* data);
 Message& operator<<(Message &message, const std::string& data);
 
+class CutTimeStep : public Exceptions::Amanzi_exception {};
+
 }
 #endif /* _ERRORS_H_ */

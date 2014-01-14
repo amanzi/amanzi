@@ -25,24 +25,35 @@ namespace AmanziSolvers {
 template<class Matrix, class Vector, class VectorSpace>
 class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
  public:
-  LinearOperatorPCG(const Teuchos::RCP<const Matrix>& m, const Teuchos::RCP<const Matrix>& h) :
-      LinearOperator<Matrix, Vector, VectorSpace>(m, h) {
-    tol_ = 1e-6;
-    overflow_tol_ = 3.0e+50;  // mass of the Universe (J.Hopkins)
-    max_itrs_ = 100;
-    criteria_ = LIN_SOLVER_RELATIVE_RHS;
-    initialized_ = false;
-  }
-  ~LinearOperatorPCG() {};
+  LinearOperatorPCG(const Teuchos::RCP<const Matrix>& m,
+                    const Teuchos::RCP<const Matrix>& h) :
+      LinearOperator<Matrix, Vector, VectorSpace>(m, h),
+      tol_(1e-6),
+      overflow_tol_(3.0e+50),  // mass of the Universe (J.Hopkins)
+      max_itrs_(100),
+      criteria_(LIN_SOLVER_RELATIVE_RHS),
+      initialized_(false) {}
+
+  LinearOperatorPCG(const LinearOperatorPCG& other) :
+      LinearOperator<Matrix,Vector,VectorSpace>(other),
+      tol_(other.tol_),
+      overflow_tol_(other.overflow_tol_),
+      max_itrs_(other.max_itrs_),
+      num_itrs_(other.num_itrs_),
+      residual_(other.residual_),
+      criteria_(other.criteria_),
+      initialized_(other.initialized_) {}
+
+  virtual Teuchos::RCP<Matrix> Clone() const {
+    return Teuchos::rcp(new LinearOperatorPCG(*this)); }
 
   void Init(Teuchos::ParameterList& plist);
 
   int ApplyInverse(const Vector& v, Vector& hv) const {
     int ierr = PCG_(v, hv, tol_, max_itrs_, criteria_);
     return ierr;
+    // return (ierr > 0) ? 0 : 1;
   }
-
-  Teuchos::RCP<LinearOperatorPCG> Clone() const {};
 
   // access members
   void set_tolerance(double tol) { tol_ = tol; }
@@ -145,7 +156,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     if (initialized_) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << i << " ||r||=" << residual_ << endl;
+        *vo_->os() << i << " ||r||=" << residual_ << endl;
       }
     }
     if (rnorm > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;
@@ -179,7 +190,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
 template<class Matrix, class Vector, class VectorSpace>
 void LinearOperatorPCG<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::PCG_Solver", plist));
+  vo_ = Teuchos::rcp(new VerboseObject("Solvers::PCG", plist));
 
   tol_ = plist.get<double>("error tolerance", 1e-6);
   max_itrs_ = plist.get<int>("maximum number of iterations", 100);

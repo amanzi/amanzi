@@ -5,9 +5,11 @@
 include(CMakeParseArguments)
 include(PrintVariable)
 
+#
+# Mercurial id
+#
 function(hg_id_command action repo output)
 
-  find_package(Mercurial)
   if ( MERCURIAL_FOUND )
     set(cmd ${MERCURIAL_EXECUTABLE} id --${action} ${repo})
     execute_process(COMMAND ${cmd}
@@ -17,7 +19,7 @@ function(hg_id_command action repo output)
                     OUTPUT_STRIP_TRAILING_WHITESPACE
                     ERROR_STRIP_TRAILING_WHITESPACE)
     if(err_occurred)
-      message(WARNING "Could not determine mercurial ${action} in ${repo}:\n${err}")
+      message(WARNING "Error executing mercurial:\n ${cmd}\n${err}")
       set(cmd_output cmd_output-NOTFOUND)
     endif()
   else()
@@ -33,7 +35,6 @@ endfunction(hg_id_command)
 # Return branch
 macro(MERCURIAL_BRANCH branch)
 
-
   set(oneValueArgs REPOSITORY)
   cmake_parse_arguments(ARGS "" "${oneValueArgs}" "" ${ARGN})
 
@@ -46,7 +47,7 @@ macro(MERCURIAL_BRANCH branch)
 endmacro(MERCURIAL_BRANCH)
 
 macro(MERCURIAL_GLOBAL_ID global_id)
- 
+
   set(oneValueArgs REPOSITORY)
   cmake_parse_arguments(ARGS "" "${oneValueArgs}" "" ${ARGN})
 
@@ -70,4 +71,3 @@ macro(MERCURIAL_LOCAL_ID local_id)
   hg_id_command(num ${ARGS_REPOSITORY} ${local_id})
 
 endmacro(MERCURIAL_LOCAL_ID)
-

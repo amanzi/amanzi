@@ -401,6 +401,7 @@ int MFD3D::SimplexFindFeasibleSolution_(
   }
 
   // work memory
+  double tol = WHETSTONE_SIMPLEX_TOLERANCE * n;
   int ip, kp, itr_max = WHETSTONE_SIMPLEX_MAX_ITERATIONS * n;
   int itr1(0), itr2(0), nl1(n), l1[n + 1];
 
@@ -418,19 +419,17 @@ int MFD3D::SimplexFindFeasibleSolution_(
       T.MaxRowValue(m + 1, 1, n, &kp, &vmax); 
 
       // feasible solution does not exist 
-      if (vmax < WHETSTONE_SIMPLEX_TOLERANCE && 
-          T(m + 1, 0) < -WHETSTONE_SIMPLEX_TOLERANCE) 
+      if (vmax < tol && T(m + 1, 0) < -tol) 
           return WHETSTONE_SIMPLEX_NO_FEASIBLE_SET;
 
       // feasible solution has been found
-      if (vmax < WHETSTONE_SIMPLEX_TOLERANCE && 
-          fabs(T(m + 1, 0)) < WHETSTONE_SIMPLEX_TOLERANCE) {
+      if (vmax < tol && fabs(T(m + 1, 0)) < tol) {
         /*
         for (int ip = m1 + m2 + 1; ip < m + 1; ip++) {
           if (iypos[ip] == ip + n) {
             // Found an artificial variable for an equality constraint.
             T.MaxRowMagnitude(ip, 1, n, &kp, &vmax);
-            if (vmax > WHETSTONE_SIMPLEX_TOLERANCE) goto one;
+            if (vmax > tol) goto one;
           }
         }
         */
@@ -481,13 +480,15 @@ int MFD3D::SimplexFindFeasibleSolution_(
   }
 
   // Start of phase II.
+  int flag(0);
   for (int itr = 0; itr < itr_max; itr++) {
     double vmax;
     T.MaxRowValue(0, 1, n, &kp, &vmax);
 
     // solution has been found
-    if (vmax < WHETSTONE_SIMPLEX_TOLERANCE) {
+    if (vmax < tol) {
       itr2 = itr;
+      flag = 1;
       break;
     }
 
@@ -502,6 +503,7 @@ int MFD3D::SimplexFindFeasibleSolution_(
     izrow[kp] = iypos[ip];
     iypos[ip] = is;
   }
+  if (flag == 0) return WHETSTONE_SIMPLEX_NO_CONVERGENCE;
 
   return itr1 + itr2;
 }
@@ -515,11 +517,12 @@ void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
   int m = T.NumRows() - 2;
   int n = T.NumCols() - 1;
   double qmin, q, qp, q0, tmp;
+  double tol = WHETSTONE_SIMPLEX_TOLERANCE * n;
 
   *ip = 0;
   for (int i = 1; i < m + 1; i++) {
     tmp = T(i, kp);
-    if (tmp < -WHETSTONE_SIMPLEX_TOLERANCE) {
+    if (tmp < -tol) {
       q = -T(i, 0) / tmp;
 
       if (*ip == 0) {

@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cmath>
@@ -48,7 +48,7 @@ double WRM_fake::k_relative(double pc)
 double WRM_fake::saturation(double pc)
 {
   if (pc < 0.0)
-    return pc;
+    return 1.0; // 1.0 / (1.0 + pc * pc);
   else
     return 1.0;
 }
@@ -60,14 +60,14 @@ double WRM_fake::saturation(double pc)
 double WRM_fake::dSdPc(double pc)
 {
   if (pc < 0.0)
-    return 1.0;
+    return 0.0;  // pc / (1.0 + pc * pc);
   else
     return 0.0;
 }
 
 
 /* ******************************************************************
-* erify (lipnikov@lanl.gov).                                       
+* Verify (lipnikov@lanl.gov).                                       
 ****************************************************************** */
 double WRM_fake::capillaryPressure(double sl)
 {

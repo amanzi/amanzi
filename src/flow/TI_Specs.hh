@@ -50,7 +50,8 @@ class TI_Specs {
     dT_method = 0;
     T0 = T1 = dT0 = dTmax = 0.0;
     dTfactor = 1.0;
-    atol = rtol = 1e-3;
+    atol = 1.0; 
+    rtol = 1e-5;
     residual_tol = 0.0;
     initialize_with_darcy = false;
     clip_saturation = -1.0;

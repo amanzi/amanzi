@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cmath>
@@ -37,24 +37,25 @@ using namespace Amanzi::AmanziFlow;
 /* ******************************************************************
 * Calculate L2 error in pressure.                                                    
 ****************************************************************** */
-double calculatePressureCellError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& pressure)
+double calculatePressureCellError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector& p)
 {
   double k1 = 0.5, k2 = 2.0, g = 2.0, a = 5.0, cr = 1.02160895462971866;  // analytical data
   double f1 = sqrt(1.0 - g * k1 / cr);
   double f2 = sqrt(g * k2 / cr - 1.0);
 
-  double pressure_exact, error_L2 = 0.0;
-  for (int c = 0; c < pressure.MyLength(); c++) {
+  double pexact, error_L2 = 0.0;
+  for (int c = 0; c < p.MyLength(); c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double volume = mesh->cell_volume(c);
 
     double z = xc[1];
-    if (z < -a)
-      pressure_exact = f1 * tan(cr * (z + 2*a) * f1 / k1);
-    else
-      pressure_exact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
-      // cout << z << " " << pressure[c] << " exact=" <<  pressure_exact << endl;
-    error_L2 += std::pow(pressure[c] - pressure_exact, 2.0) * volume;
+    if (z < -a) {
+      pexact = f1 * tan(cr * (z + 2*a) * f1 / k1);
+    } else {
+      pexact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
+      // cout << z << " " << p[0][c] << " exact=" <<  pexact << endl;
+    }
+    error_L2 += std::pow(p[0][c] - pexact, 2.0) * volume;
   }
   return sqrt(error_L2);
 }
@@ -63,17 +64,17 @@ double calculatePressureCellError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& pressu
 /* ******************************************************************
 * Calculate l2 error (small l) in darcy flux.                                                    
 ****************************************************************** */
-double calculateDarcyFluxError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& darcy_flux)
+double calculateDarcyFluxError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector& flux)
 {
   double cr = 1.02160895462971866;  // analytical data
   AmanziGeometry::Point velocity_exact(0.0, -cr);
 
-  int nfaces = darcy_flux.MyLength();
+  int nfaces = flux.MyLength();
   double error_l2 = 0.0;
   for (int f = 0; f < nfaces; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    // cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
-    error_l2 += std::pow(darcy_flux[f] - velocity_exact * normal, 2.0);
+    // cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << endl;
+    error_l2 += std::pow(flux[0][f] - velocity_exact * normal, 2.0);
   }
   return sqrt(error_l2 / nfaces);
 }
@@ -82,22 +83,11 @@ double calculateDarcyFluxError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& darcy_flu
 /* ******************************************************************
 * Calculate L2 divergence error in darcy flux.                                                    
 ****************************************************************** */
-double calculateDarcyDivergenceError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& darcy_flux)
+double calculateDarcyDivergenceError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector& flux)
 {
   double error_L2 = 0.0;
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_map = mesh->face_map(false);
-  const Epetra_BlockMap& target_map = mesh->face_map(true);
-  Epetra_Import importer(target_map, source_map);
-
-  Epetra_Vector darcy_flux_wghost(target_map);
-  darcy_flux_wghost.Import(darcy_flux, importer, Insert);
-#else
-  Epetra_Vector& darcy_flux_wghost = darcy_flux;
-#endif
 
   for (int c = 0; c < ncells_owned; c++) {
     AmanziMesh::Entity_ID_List faces;
@@ -109,7 +99,7 @@ double calculateDarcyDivergenceError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& dar
     double div = 0.0;
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      div += darcy_flux_wghost[f] * dirs[i];
+      div += flux[0][f] * dirs[i];
     }
     error_L2 += div*div / mesh->cell_volume(c);
   }
@@ -122,18 +112,16 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
   int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout <<"Convergence analysis on three random meshes" << std::endl;
 
-  Teuchos::ParameterList parameter_list;
   string xmlFileName = "test/flow_richards_random.xml";
-  
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  Teuchos::ParameterList plist = xmlreader.getParameters();
 
   // convergence estimate
-  int nmeshes = parameter_list.get<int>("number of meshes", 1);
+  int nmeshes = plist.get<int>("number of meshes", 1);
   std::vector<double> h, p_error, v_error;
 
   for (int n = 0; n < nmeshes; n++) {  // Use "n < 3" for the full test
-    Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+    Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
     
     FrameworkPreference pref;
@@ -142,8 +130,8 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
     MeshFactory meshfactory(comm);
     meshfactory.preference(pref);
-    // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, -10.0, 1.0, 0.0, 5, 50, gm);
-    Teuchos::RCP<Mesh> mesh;
+    // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, -10.0, 1.0, 0.0, 5, 50, gm);
+    Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
       mesh = meshfactory("test/random_mesh1.exo", gm);
     } else if (n == 1) {
@@ -152,33 +140,40 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
       mesh = meshfactory("test/random_mesh3.exo", gm);
     }
 
-    // create flow state
-    Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-    State S(state_list);
-    S.RegisterDomainMesh(mesh);
-    Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
-    S.Setup();
-    S.Initialize();
-    FS->Initialize();
+    /* create a simple state and populate it */
+    Amanzi::VerboseObject::hide_line_prefix = false;
 
-    // create Richards process kernel
-    Richards_PK* RPK = new Richards_PK(parameter_list, FS);
-    RPK->InitPK();  // setup the problem
-    RPK->InitSteadyState(0.0, 0.2);
+    Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
+    Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
+    S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
-    RPK->AdvanceToSteadyState(0.0, 0.2);
-    RPK->CommitState(FS);
+    Richards_PK* RPK = new Richards_PK(plist, S);
+    S->Setup();
+    S->InitializeFields();
+    RPK->InitializeFields();
+    S->CheckAllFieldsInitialized();
+
+    /* create Richards process kernel */
+    RPK->InitPK();
+    RPK->InitializeAuxiliaryData();
+    RPK->InitSteadyState(0.0, 1.0);
+    RPK->AdvanceToSteadyState(0.0, 1.0);
+    RPK->CommitState(S);
+
+    S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
+    const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
+    const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
 
     double pressure_err, flux_err, div_err;  // error checks
-    pressure_err = calculatePressureCellError(mesh, FS->ref_pressure());
-    flux_err = calculateDarcyFluxError(mesh, FS->ref_darcy_flux());
-    div_err = calculateDarcyDivergenceError(mesh, FS->ref_darcy_flux());
+    pressure_err = calculatePressureCellError(mesh, p);
+    flux_err = calculateDarcyFluxError(mesh, flux);
+    div_err = calculateDarcyDivergenceError(mesh, flux);
 
-    int num_nonlinear_steps = -1;
-    printf("mesh=%d itrs=%d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n",
-        n, num_nonlinear_steps, pressure_err, flux_err, div_err);
+    int num_bdf1_steps = RPK->ti_specs_sss().num_itrs;
+    printf("mesh=%d bdf1_steps=%d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n",
+        n, num_bdf1_steps, pressure_err, flux_err, div_err);
 
-    CHECK(pressure_err < 1e-1 && flux_err < 2e-1 && div_err < 1e-9);
+    CHECK(pressure_err < 1e-1 && flux_err < 2e-1 && div_err < 1e-7);
 
     delete RPK;
   }

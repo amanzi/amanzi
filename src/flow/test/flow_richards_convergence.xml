@@ -68,31 +68,52 @@
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
       <Parameter name="relative permeability" type="string" value="cell centered"/>
-      <Parameter name="atmospheric pressure" type="double" value="1e-20"/>
+      <Parameter name="atmospheric pressure" type="double" value="1e-10"/>
 
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="none"/>
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
-        <Parameter name="time integration method" type="string" value="backward Euler"/>
-        <Parameter name="initialize with darcy" type="bool" value="true"/>
-        <Parameter name="clipping saturation value" type="double" value="0.6"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
-        <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
-        <ParameterList name="backward Euler">
-          <Parameter name="error abs tol" type="double" value="1"/>
-          <Parameter name="error rel tol" type="double" value="0"/>
-          <Parameter name="time step increase factor" type="double" value="1.2"/>
+        <ParameterList name="initialization">
+          <Parameter name="method" type="string" value="saturated solver"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+        </ParameterList>
 
-          <Parameter name="convergence tolerance" type="double" value="1e-9"/>
-          <Parameter name="maximum number of iterations" type="int" value="3000"/>
-          <Parameter name="start time" type="double" value="0.0"/>
-          <Parameter name="end time" type="double" value="1e+4"/>
-          <Parameter name="initial time step" type="double" value="0.01"/>
-          <Parameter name="maximum time step" type="double" value="1.0"/>
-          <Parameter name="time step increase factor" type="double" value="1.2"/>
+        <Parameter name="time integration method" type="string" value="BDF1"/>
+        <ParameterList name="BDF1">
+          <Parameter name="timestep controller type" type="string" value="standard"/>
+          <ParameterList name="timestep controller standard parameters">
+            <Parameter name="min iterations" type="int" value="8"/>
+            <Parameter name="max iterations" type="int" value="15"/>
+            <Parameter name="time step increase factor" type="double" value="1.25"/>
+            <Parameter name="time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="max time step" type="double" value="1.0e+5"/>
+            <Parameter name="min time step" type="double" value="0.0"/>
+          </ParameterList>
+
+          <Parameter name="solver type" type="string" value="nka"/>
+          <ParameterList name="nka parameters">
+            <Parameter name="nonlinear tolerance" type="double" value="1e-3"/>
+            <Parameter name="diverged tolerance" type="double" value="10000.0"/>
+            <Parameter name="max du growth factor" type="double" value="100.0"/>
+            <Parameter name="max divergent iterations" type="int" value="3"/>
+            <Parameter name="max nka vectors" type="int" value="7"/>
+            <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
+            <Parameter name="limit iterations" type="int" value="20"/>
+            <Parameter name="modify correction" type="bool" value="false"/>
+            <ParameterList name="VerboseObject">
+              <Parameter name="Verbosity Level" type="string" value="none"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="obsolete parameters">
+          <Parameter name="maximum number of iterations" type="int" value="1000"/>
+          <Parameter name="end time" type="double" value="1.0e+4"/>
         </ParameterList>
       </ParameterList>
 
@@ -158,9 +179,19 @@
 
   <!-- PRECONDITIONERS -->
   <ParameterList name="Preconditioners">
+    <ParameterList name="Hypre AMG">
+      <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="strong threshold" type="double" value="0.5"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
+      </ParameterList>
+    </ParameterList>
+
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
-
       <ParameterList name="ml parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="aggregation: damping factor" type="double" value="1.33"/>

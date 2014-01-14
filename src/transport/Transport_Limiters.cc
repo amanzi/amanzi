@@ -22,14 +22,14 @@ namespace AmanziTransport {
  * calculation of a 3x3 matrix.
  ****************************************************************** */
 void Transport_PK::LimiterTensorial(const int component,
-                                    Teuchos::RCP<Epetra_Vector> scalar_field,
-                                    Teuchos::RCP<Epetra_MultiVector> gradient)
+                                    Teuchos::RCP<const Epetra_Vector> scalar_field,
+                                    Teuchos::RCP<CompositeVector> gradient)
 {
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-
   double u1, u2, u1f, u2f, umin, umax, L22normal_new;
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
   AmanziGeometry::Point normal_new(dim), direction(dim), p(dim);
+
+  Teuchos::RCP<Epetra_MultiVector> grad = gradient->ViewComponent("cell", false);
 
   std::vector<AmanziGeometry::Point> normals;
   AmanziMesh::Entity_ID_List faces;
@@ -41,7 +41,7 @@ void Transport_PK::LimiterTensorial(const int component,
     int nfaces = faces.size();
 
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    for (int i = 0; i < dim; i++) gradient_c1[i] = (*gradient)[i][c];
+    for (int i = 0; i < dim; i++) gradient_c1[i] = (*grad)[i][c];
 
     normals.clear();  // normals to planes the define the feasiable set
     for (int loop = 0; loop < 2; loop++) {
@@ -85,7 +85,7 @@ void Transport_PK::LimiterTensorial(const int component,
     double grad_norm = norm(gradient_c1);
     if (grad_norm < TRANSPORT_LIMITER_TOLERANCE * bc_scaling) gradient_c1.set(0.0);
 
-    for (int i = 0; i < dim; i++) (*gradient)[i][c] = gradient_c1[i];
+    for (int i = 0; i < dim; i++) (*grad)[i][c] = gradient_c1[i];
   }
 
   // Local extrema are calculated here and updated in Step 2.
@@ -123,7 +123,7 @@ void Transport_PK::LimiterTensorial(const int component,
           const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
           const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
           u2f = lifting.getValue(c2, xcf);
-          for (int i = 0; i < dim; i++) gradient_c2[i] = (*gradient)[i][c2];
+          for (int i = 0; i < dim; i++) gradient_c2[i] = (*grad)[i][c2];
           direction = xcf - xc2;
 
           if (u2f < umin) {
@@ -135,7 +135,7 @@ void Transport_PK::LimiterTensorial(const int component,
             ApplyDirectionalLimiter(direction, p, direction, gradient_c2);
           }
 
-          for (int i = 0; i < dim; i++) (*gradient)[i][c2] = gradient_c2[i];
+          for (int i = 0; i < dim; i++) (*grad)[i][c2] = gradient_c2[i];
         }
       }
     }
@@ -162,12 +162,12 @@ void Transport_PK::LimiterTensorial(const int component,
           if (a > 0) b = u1 - component_local_min_[c];
           else       b = u1 - component_local_max_[c];
 
-          flux = fabs(darcy_flux[f]);
+          flux = fabs((*darcy_flux)[0][f]);
           outflux += flux;
           if (b) {
             outflux_weigted += flux * a / b;
           } else {
-            for (int k = 0; k < dim; k++) (*gradient)[k][c] = 0.0;
+            for (int k = 0; k < dim; k++) (*grad)[k][c] = 0.0;
             break;
           }
         }
@@ -176,11 +176,11 @@ void Transport_PK::LimiterTensorial(const int component,
 
     if (outflux_weigted > outflux) {
       double psi = outflux / outflux_weigted;
-      for (int i = 0; i < dim; i++) (*gradient)[i][c] *= psi;
+      for (int i = 0; i < dim; i++) (*grad)[i][c] *= psi;
     }
   }
 
-  TS_nextBIG->CopyMasterMultiCell2GhostMultiCell(*gradient);
+  gradient->ScatterMasterToGhosted("cell");
 }
 
 
@@ -191,14 +191,13 @@ void Transport_PK::LimiterTensorial(const int component,
  * Second, it limits outflux values which gives factor 0.5 in the
  * time step estimate.
  ****************************************************************** */
-void Transport_PK::LimiterBarthJespersen(const int component,
-                                         Teuchos::RCP<Epetra_Vector> scalar_field,
-                                         Teuchos::RCP<Epetra_MultiVector> gradient,
+void Transport_PK::LimiterBarthJespersen(const int component, 
+                                         Teuchos::RCP<const Epetra_Vector> scalar_field,
+                                         Teuchos::RCP<CompositeVector> gradient,
                                          Teuchos::RCP<Epetra_Vector> limiter)
 {
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-
   limiter->PutScalar(1.0);
+  Teuchos::RCP<Epetra_MultiVector> grad = gradient->ViewComponent("cell", false);
 
   double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
@@ -220,7 +219,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
     const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
     const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
 
-    for (int i = 0; i < dim; i++) gradient_c1[i] = (*gradient)[i][c1];
+    for (int i = 0; i < dim; i++) gradient_c1[i] = (*grad)[i][c1];
     double u1_add = gradient_c1 * (xcf - xc1);
     u1f = u1 + u1_add;
 
@@ -230,7 +229,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
       (*limiter)[c1] = std::min((*limiter)[c1], (umax - u1) / u1_add);
     }
 
-    for (int i = 0; i < dim; i++) gradient_c2[i] = (*gradient)[i][c2];
+    for (int i = 0; i < dim; i++) gradient_c2[i] = (*grad)[i][c2];
     double u2_add = gradient_c2 * (xcf - xc2);
     u2f = u2 + u2_add;
 
@@ -275,7 +274,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
           const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
           const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
 
-          for (int i = 0; i < dim; i++) gradient_c2[i] = (*gradient)[i][c2];
+          for (int i = 0; i < dim; i++) gradient_c2[i] = (*grad)[i][c2];
           double u_add = gradient_c2 * (xcf - xc2);
           u2f = u2 + u_add;
 
@@ -307,7 +306,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
       if (c == c1) {
         const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
         u1 = (*scalar_field)[c];
-        for (int i = 0; i < dim; i++) gradient_c1[i] = (*gradient)[i][c1];
+        for (int i = 0; i < dim; i++) gradient_c1[i] = (*grad)[i][c1];
         u1f = u1 + gradient_c1 * (xcf - xc);
 
         a = u1f - u1;
@@ -315,7 +314,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
           if (a > 0) b = u1 - component_local_min_[c];
           else       b = u1 - component_local_max_[c];
 
-          flux = fabs(darcy_flux[f]);
+          flux = fabs((*darcy_flux)[0][f]);
           outflux += flux;
           if (b) {
             outflux_weigted += flux * a / b;
@@ -333,7 +332,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
     }
   }
 
-  TS_nextBIG->CopyMasterCell2GhostCell(*limiter);
+  gradient->ScatterMasterToGhosted("cell");
 }
 
 
@@ -341,9 +340,11 @@ void Transport_PK::LimiterBarthJespersen(const int component,
  * Kuzmin's limiter use all neighbors of a computational cell.  
  ****************************************************************** */
 void Transport_PK::LimiterKuzmin(const int component,
-                                 Teuchos::RCP<Epetra_Vector> scalar_field,
-                                 Teuchos::RCP<Epetra_MultiVector> gradient)
+                                 Teuchos::RCP<const Epetra_Vector> scalar_field,
+                                 Teuchos::RCP<CompositeVector> gradient)
 {
+  Teuchos::RCP<Epetra_MultiVector> grad = gradient->ViewComponent("cell", false);
+
   // Step 1: local extrema are calculated here at nodes and updated later
   std::vector<double> component_node_min(nnodes_wghost);
   std::vector<double> component_node_max(nnodes_wghost);
@@ -399,7 +400,7 @@ void Transport_PK::LimiterKuzmin(const int component,
     int nnodes = nodes.size();
 
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    for (int i = 0; i < dim; i++) gradient_c[i] = (*gradient)[i][c];
+    for (int i = 0; i < dim; i++) gradient_c[i] = (*grad)[i][c];
 
     double umin = component_node_min[c];
     double umax = component_node_max[c];
@@ -433,7 +434,7 @@ void Transport_PK::LimiterKuzmin(const int component,
     double grad_norm = norm(gradient_c);
     if (grad_norm < TRANSPORT_LIMITER_TOLERANCE * bc_scaling) gradient_c.set(0.0);
 
-    for (int i = 0; i < dim; i++) (*gradient)[i][c] = gradient_c[i];
+    for (int i = 0; i < dim; i++) (*grad)[i][c] = gradient_c[i];
   }
 
   // Step 3: extrema are calculated for cells.
@@ -452,7 +453,6 @@ void Transport_PK::LimiterKuzmin(const int component,
 
   // Step 4: enforcing a priori time step estimate (division of dT by 2).
   // Experimental version is limited to 2D (lipnikov@lanl.gov).
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
 
@@ -482,12 +482,12 @@ void Transport_PK::LimiterKuzmin(const int component,
             else
               b = u1 - component_local_max_[c];
 
-            flux = fabs(darcy_flux[f]);
+            flux = fabs((*darcy_flux)[0][f]);
             outflux += flux;
             if (b) {
               outflux_weigted += flux * a / b;
             } else {
-              for (int k = 0; k < dim; k++) (*gradient)[k][c] = 0.0;
+              for (int k = 0; k < dim; k++) (*grad)[k][c] = 0.0;
               break;
             }
           }
@@ -497,11 +497,11 @@ void Transport_PK::LimiterKuzmin(const int component,
 
     if (outflux_weigted > outflux) {
       double psi = outflux / outflux_weigted;
-      for (int i = 0; i < dim; i++) (*gradient)[i][c] *= psi;
+      for (int i = 0; i < dim; i++) (*grad)[i][c] *= psi;
     }
   }
 
-  TS_nextBIG->CopyMasterMultiCell2GhostMultiCell(*gradient);
+  gradient->ScatterMasterToGhosted("cell");
 }
 
 

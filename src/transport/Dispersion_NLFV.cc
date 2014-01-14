@@ -1,12 +1,12 @@
 /*
-This is the transport component of the Amanzi code. 
+  This is the transport component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include "Teuchos_RCP.hpp"
@@ -136,7 +136,7 @@ void Dispersion_NLFV::ModifySymbolicAssemble()
 * Calculate and assemble fluxes using the NLFV scheme. We avoid 
 * round-off operations since the stencils already incorporate them.
 ****************************************************************** */
-void Dispersion_NLFV::AssembleMatrix(const Epetra_Vector& p)
+void Dispersion_NLFV::AssembleMatrix(const Epetra_MultiVector& p)
 {
   AmanziMesh::Entity_ID_List cells;
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
@@ -175,7 +175,7 @@ void Dispersion_NLFV::AssembleMatrix(const Epetra_Vector& p)
         if (c3 < c1) gamma = 1.0 - gamma;
 
         double tmp = stencil_[f].weights[i] *gamma;
-        g1 += tmp * (p[c1] - p[c3]);
+        g1 += tmp * (p[0][c1] - p[0][c3]);
       }
     }
 
@@ -188,7 +188,7 @@ void Dispersion_NLFV::AssembleMatrix(const Epetra_Vector& p)
         if (c3 < c2) gamma = 1.0 - gamma;
 
         double tmp = stencil_[f].weights[i + d] * gamma;
-        g2 += tmp * (p[c2] - p[c3]);
+        g2 += tmp * (p[0][c2] - p[0][c3]);
       }
     }
 
@@ -266,9 +266,9 @@ void Dispersion_NLFV::AssembleMatrix(const Epetra_Vector& p)
 /* *******************************************************************
 * Collect time-dependent boundary data in face-based arrays.                               
 ******************************************************************* */
-void Dispersion_NLFV::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
+int Dispersion_NLFV::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
 {
-  App_->Apply(v, av);
+  return App_->Apply(v, av);
 }
 
 

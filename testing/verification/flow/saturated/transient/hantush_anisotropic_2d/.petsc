@@ -36,10 +36,10 @@
 # none jacobi pbjacobi bjacobi sor lu shell mg eisenstat ilu icc cholesky asm gasm ksp 
 # composite redundant nn mat fieldsplit galerkin exotic hmpi asa cp lsc redistribute svd tfs
 #
--pc_type lu
+#-pc_type lu
 #-pc_type ilu
 #-sub_pc_type ilu
-#-pc_type pbjacobi
+-pc_type pbjacobi
 #-sub_pc_type lu
 -pc_view
 #-pc_factor_mat_ordering_type qmd

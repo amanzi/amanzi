@@ -1,12 +1,12 @@
 /*
-This is the transport component of the Amanzi code. 
+  This is the transport component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include "Teuchos_RCP.hpp"
@@ -86,7 +86,7 @@ void Dispersion_MFD::SymbolicAssembleMatrix()
 /* ******************************************************************
 * Calculate and assemble fluxes using the MFD method.
 ****************************************************************** */
-void Dispersion_MFD::AssembleMatrix(const Epetra_Vector& p)
+void Dispersion_MFD::AssembleMatrix(const Epetra_MultiVector& p)
 {
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
@@ -142,9 +142,9 @@ void Dispersion_MFD::AssembleMatrix(const Epetra_Vector& p)
 /* *******************************************************************
 * Collect time-dependent boundary data in face-based arrays.                               
 ******************************************************************* */
-void Dispersion_MFD::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
+int Dispersion_MFD::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
 {
-  App_->Apply(v, av);
+  return App_->Apply(v, av);
 }
 
 

@@ -16,18 +16,14 @@ Factory for a CV function on a mesh.
 #include "Mesh.hh"
 
 #include "composite_vector_function.hh"
-#include "composite_vector_factory.hh"
+#include "CompositeVectorSpace.hh"
 
 namespace Amanzi {
 namespace Functions {
 
 Teuchos::RCP<CompositeVectorFunction>
 CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
-        const CompositeVector& sample);
-
-Teuchos::RCP<CompositeVectorFunction>
-CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
-        const CompositeVectorFactory& factory);
+        const CompositeVectorSpace& factory);
 
 } // namespace
 } // namespace

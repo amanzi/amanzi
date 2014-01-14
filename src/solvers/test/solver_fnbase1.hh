@@ -12,7 +12,8 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
   NonlinearProblem(double atol, double rtol, bool exact_jacobian) :
     rtol_(rtol), atol_(atol), exact_jacobian_(exact_jacobian) {}
 
-  void Residual(const Teuchos::RCP<Epetra_Vector>& u, Teuchos::RCP<Epetra_Vector>& f) {
+  void Residual(const Teuchos::RCP<Epetra_Vector>& u,
+                const Teuchos::RCP<Epetra_Vector>& f) {
     for (int c = 0; c != u->MyLength(); ++c) {
       double x = (*u)[c];
       (*f)[c] = x * (x * x + 1.0);

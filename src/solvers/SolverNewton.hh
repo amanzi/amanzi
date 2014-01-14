@@ -1,7 +1,7 @@
 /*
   This is the Nonlinear Solver component of the Amanzi code.
 
-  Interface for using NKA as a solver.
+  Interface for Newton solver.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
@@ -21,16 +21,28 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Vector, class VectorSpace>
-class SolverNewton : public Solver<Vector> {
+class SolverNewton : public Solver<Vector,VectorSpace> {
  public:
+  SolverNewton(Teuchos::ParameterList& plist) :
+      plist_(plist) {}
+
   SolverNewton(Teuchos::ParameterList& plist,
-               const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-               const VectorSpace& map) : 
-      plist_(plist), fn_(fn) { Init_(); }
+            const Teuchos::RCP<SolverFnBase<Vector> >& fn,
+            const VectorSpace& map) :
+      plist_(plist) {
+    Init(fn,map);
+  }
+
+  void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
+       const VectorSpace& map);
 
   virtual int Solve(const Teuchos::RCP<Vector>& u);
 
+  // control
+  void set_pc_lag(double pc_lag) {};  // Newton does not need it
+
   // access
+  double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
   int pc_calls() { return pc_calls_; }
 
@@ -51,8 +63,24 @@ class SolverNewton : public Solver<Vector> {
   int fun_calls_, pc_calls_;
   int max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_, stagnation_itr_check_;
+
+  int modify_correction_;
+  double residual_;
   ConvergenceMonitor monitor_;
 };
+
+
+/* ******************************************************************
+* Public Init method.
+****************************************************************** */
+template<class Vector, class VectorSpace>
+void
+SolverNewton<Vector, VectorSpace>::Init(
+    const Teuchos::RCP<SolverFnBase<Vector> >& fn,
+    const VectorSpace& map) {
+  fn_ = fn;
+  Init_();
+}
 
 
 /* ******************************************************************
@@ -68,8 +96,9 @@ void SolverNewton<Vector, VectorSpace>::Init_()
   max_error_growth_factor_ = plist_.get<double>("max error growth factor", 1.0e5);
   max_divergence_count_ = plist_.get<int>("max divergent iterations", 3);
   stagnation_itr_check_ = plist_.get<int>("stagnation iteration check", 8);
+  modify_correction_ = plist_.get<bool>("modify correction", true);
 
-  std::string monitor_name = plist_.get<std::string>("monitor", "monitor residual");
+  std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
 
   if (monitor_name == "monitor update") {
     monitor_ = SOLVER_MONITOR_UPDATE;
@@ -80,8 +109,10 @@ void SolverNewton<Vector, VectorSpace>::Init_()
   fun_calls_ = 0;
   pc_calls_ = 0;
 
+  residual_ = -1.0;
+
   // update the verbose options
-  vo_ = Teuchos::rcp(new VerboseObject("AmanziSolver::Newton", plist_));
+  vo_ = Teuchos::rcp(new VerboseObject("Solver::Newton", plist_));
 }
 
 
@@ -129,6 +160,7 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     if (monitor_ == SOLVER_MONITOR_RESIDUAL) {
       previous_error = error;
       error = fn_->ErrorNorm(u, r);
+      residual_ = error;
       r->Norm2(&l2_error);
 
       // attempt to catch non-convergence early
@@ -144,6 +176,7 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
       }
 
       int ierr = Newton_ErrorControl_(error, previous_error, l2_error);
+      if (ierr == SOLVER_CONVERGED) return num_itrs_;
       if (ierr != SOLVER_CONTINUE) return ierr;
     }
 
@@ -152,7 +185,9 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     fn_->ApplyPreconditioner(r, du);
 
     // Hack the correction
-    bool hacked = fn_->ModifyCorrection(r, u, du);
+    if (modify_correction_) {
+      bool hacked = fn_->ModifyCorrection(r, u, du);
+    }
 
     // Make sure that we do not diverge and cause numerical overflow.
     previous_du_norm = du_norm;
@@ -194,9 +229,11 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     if (monitor_ == SOLVER_MONITOR_UPDATE) {
       previous_error = error;
       error = fn_->ErrorNorm(u, du);
+      residual_ = error;
       du->Norm2(&l2_error);
 
       int ierr = Newton_ErrorControl_(error, previous_error, l2_error);
+      if (ierr == SOLVER_CONVERGED) return num_itrs_;
       if (ierr != SOLVER_CONTINUE) return ierr;
     }
   } while (true);

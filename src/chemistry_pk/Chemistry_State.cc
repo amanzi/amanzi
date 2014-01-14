@@ -18,7 +18,9 @@ namespace AmanziChemistry {
 
 Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
         const Teuchos::RCP<State>& S) :
-    PK_State(std::string("state"), S),
+    S_(S),
+    ghosted_(true),
+    name_("state"),
     plist_(plist),
     number_of_aqueous_components_(0),
     number_of_minerals_(0),
@@ -27,6 +29,7 @@ Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
     using_sorption_(false),
     using_sorption_isotherms_(false) {
 
+  mesh_ = S_->GetMesh();
   SetupSoluteNames_();
   SetupMineralNames_();
   SetupSorptionSiteNames_();
@@ -49,13 +52,16 @@ Chemistry_State::Chemistry_State(const Teuchos::RCP<State>& S,
         int number_of_sorption_sites,
         bool using_sorption,
         bool using_sorption_isotherms) :
-    PK_State(std::string("state"), S),
+    S_(S),
+    ghosted_(true),
+    name_("state"),
     number_of_aqueous_components_(number_of_aqueous_components),
     number_of_minerals_(number_of_minerals),
     number_of_ion_exchange_sites_(number_of_ion_exchange_sites),
     number_of_sorption_sites_(number_of_sorption_sites),
     using_sorption_(using_sorption),
     using_sorption_isotherms_(using_sorption_isotherms) {
+  mesh_ = S_->GetMesh();
   RequireData_();
 }
 
@@ -509,11 +515,12 @@ void Chemistry_State::AllocateAdditionalChemistryStorage(
   int n_secondary_comps = components.secondary_activity_coeff.size();
   if (n_secondary_comps > 0) {
     // CreateStorageSecondaryActivityCoeff()
-    Teuchos::RCP<CompositeVectorFactory> fac =
+    Teuchos::RCP<CompositeVectorSpace> fac =
         S_->RequireField("secondary_activity_coeff", name_);
     fac->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, n_secondary_comps);
-    S_->GetField("secondary_activity_coeff",name_)->SetData(fac->CreateVector());
+    Teuchos::RCP<CompositeVector> sac = Teuchos::rcp(new CompositeVector(*fac));
+    S_->GetField("secondary_activity_coeff",name_)->SetData(sac);
     S_->GetField("secondary_activity_coeff",name_)->CreateData();
     S_->GetFieldData("secondary_activity_coeff",name_)->PutScalar(1.0);
   }
@@ -524,11 +531,12 @@ void Chemistry_State::AllocateAdditionalChemistryStorage(
 void Chemistry_State::AllocateAdditionalChemistryStorage(int num_aqueous_components) {
   if (num_aqueous_components > 0) {
     // CreateStorageSecondaryActivityCoeff()
-    Teuchos::RCP<CompositeVectorFactory> fac =
+    Teuchos::RCP<CompositeVectorSpace> fac =
         S_->RequireField("secondary_activity_coeff", name_);
     fac->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, num_aqueous_components);
-    S_->GetField("secondary_activity_coeff",name_)->SetData(fac->CreateVector());
+    Teuchos::RCP<CompositeVector> sac = Teuchos::rcp(new CompositeVector(*fac));    
+    S_->GetField("secondary_activity_coeff",name_)->SetData(*fac);
     S_->GetField("secondary_activity_coeff",name_)->CreateData();
     S_->GetFieldData("secondary_activity_coeff",name_)->PutScalar(1.0);
   }

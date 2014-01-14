@@ -19,7 +19,6 @@
 #include "Epetra_Vector.h"
 
 #include "Preconditioner.hh"
-#include "Transport_State.hh"
 #include "Dispersion.hh"
 
 namespace Amanzi {
@@ -50,17 +49,17 @@ class Dispersion_NLFV : public Dispersion {
  public:
   Dispersion_NLFV() {};
   Dispersion_NLFV(std::vector<Teuchos::RCP<DispersionModel> >* specs,
-                  Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<Transport_State> TS)
-      : Dispersion(specs, mesh, TS) {};
+                  Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State> S)
+      : Dispersion(specs, mesh, S) {};
   ~Dispersion_NLFV() {};
 
   // primary members
-  void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const;
+  int Apply(const Epetra_Vector& v,  Epetra_Vector& av) const;
   int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
 
   void SymbolicAssembleMatrix();
   void ModifySymbolicAssemble();
-  void AssembleMatrix(const Epetra_Vector& p);
+  void AssembleMatrix(const Epetra_MultiVector& p);
 
   // additional members
   void InitNLFV();  // additional initialization of nonlinear scheme

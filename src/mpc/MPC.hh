@@ -9,9 +9,7 @@
 #include "State.hh"
 #include "Chemistry_State.hh"
 #include "chemistry_pk_base.hh"
-#include "Transport_State.hh"
 #include "Transport_PK.hh"
-#include "Flow_State.hh"
 #include "Flow_PK.hh"
 #include "ObservationData.hh"
 #include "Unstructured_observations.hh"
@@ -103,9 +101,8 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   Teuchos::Ptr<Amanzi::Checkpoint> restart;
  
   // time period control
-  Teuchos::Array<double> reset_times_;
-  Teuchos::Array<double> reset_times_dt_;
-  
+  std::vector<std::pair<double,double> > reset_info_;
+
   // picard flag
   bool do_picard_;
 

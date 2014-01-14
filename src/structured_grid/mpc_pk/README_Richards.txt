@@ -1,5 +1,5 @@
 
-How Amanzi-S works!
+How the Richards Solver in Amanzi-S works
 
 This file will be considered somewhat of a living document, serving as
 a location where some of the more esoteric aspects of the structured
@@ -28,11 +28,21 @@ permeabilty, mu is the viscosity and g is the gravity vector.  For
 unsaturated conditions, p = -pcap, where pcap=pcap(s) is the capiilary
 pressure.
 
+Equation (1) takes on various similar forms under other restricted
+scenarios...For example, if s=1 (saturated flow), the time derivative
+as written would vanish.  However, for the saturated case, the
+time term is modified to include a change in the storativity of the
+medium:
 
-We solve (1) in finite-volume form.  Integrating over each discrete cell
-(using the divergence theorem, taking the state at the center of
-each cell to represent the cell-average value), and using a backward-
-Euler (in time) discretization over time interval, dt:
+      S . dp/dt + Div(q) = 0                             (2)
+
+S (specific storage) accounts for the compressibility of the matrix.
+
+We solve (1) (or (2)) in finite-volume form.  Integrating over each
+discrete cell (using the divergence theorem, taking the state at the
+center of each cell to represent the cell-average value), and using a
+backward-Euler (in time) discretization over time interval, dt.  
+Writing this out for (1):
 
 (rho.phi.s)^{new}-(rho.phi.s)^{old} + (dt/vol).Sum(q^{new}.Area) = Res
 
@@ -45,10 +55,11 @@ The big picture:
 
 In Amanzi-speak, the "MPC" (multi-process coordinator) and flow PK
 (process kernal) work together to drive the solution of this system,
-the sense that they provide the initial data (p^{old}) and the time
-interval, dt.  The solver attempts to solve (1) for dt, and reports
-back on its success (or failure) to do so.  The time-step is adjusted,
-and the solver is called to integrate the next time interval (or retry
+in the sense that they provide the initial data (p^{old}) the time
+interval, dt, and all the material properties.  The solver attempts to
+integrate the PDE over the interval and reports back on its success
+(or failure) to do so.  The time-step is adjusted, and the solver is
+called to integrate the next time interval (or retry the integration
 over a shorter interval, as needed).
 
 The solution process itself is managed in the RichardSolver class.
@@ -60,7 +71,7 @@ Calling the solver
 There are a number of options for the solver piece of this task,
 including the ability to select different solver approaches.  By far,
 the most developed approach is to let PETSc's SNES nonlinear solver
-software drive.  In this case, the code in RichardSolver.cpp provides
+software drive this part.  Here, the code in RichardSolver.cpp provides
 all the functions that are expected by SNES to do its work.  Well, 
 actually, that is where the code exists to manage this construction.
 The gory details of evaluating material properties, computing 
@@ -68,15 +79,14 @@ saturations from pressures, and that sort of thing, are done by the
 original worker functions buried in the PorousMedia class.  That
 being said, RichardSolver is really devoted as an interface between
 PorousMedia and PETSc.  As such, it does need quite a few support
-class and routines.  We'll mention a few as we go, but this is not
+class and routines.  We'll mention a few as we go; this is not
 an exaustive manual by any stretch.  Here's a brief rundown of what
 the RichardSolver does when asked to solve Richards equation:
 
 1. Copy the initial state from the data structures native to Amanzi-S
 into those expected by vanilla PETSc (note that we might have chosen
 to extend PETSc's structures to BoxLib data directly, but that would
-have been a larger effort not yet warranted....ie, premature
-optimization!).
+have been a larger effort not yet warranted).
 
 2. Driving PETSc:
 - Set a pointer identifying the residual function
@@ -89,27 +99,31 @@ optimization!).
 
 Building the residual:
 
-There is one residual function, RichardRes_DtDt, called by SNES.  It
+The residual function, RichardRes_DtDt, is called by SNES, and the
+timestep is "solved" when the residual is sufficiently small.  It
 takes x, the pressure and returns f, the residual.  The pressure
-enters as a PETSc "Vec", it is optionally scaled,and then converted to
-a BoxLib MFTower (more on those later).  DpDtResidual then does the
-work on BoxLib structures, passing the the hardest part to the routine
-DivRhoU.  Once DivRhoU is computed, the final residual is assembled in
-a very simple fortran routine cleverly named, FORT_RS_PDOTRES.
+enters as a PETSc "Vec", it is optionally scaled.  When we need to
+work with it, data in the Vec is converted into data in a BoxLib-based
+MFTower (more on those later).  The meat of the residual is tied 
+up in computing DivRhoU.  Once DivRhoU is computed, the final residual
+is assembled in a very simple fortran routine cleverly named, FORT_RS_PDOTRES.
+(Note that all over, I used RS for RichardSolver).
 
 Unless told otherwise, PETSc will use RichardRes_DtDt also to
 construct a Jacobian matrix, using finite differences, ie:
 J_ij=dR_i/dp_j.  It does so by twiddling each cell's pressure
-indepenently and recomputing R+ = R(p + p_eps).  Then J_ij=(R+ -
-R)/p_eps.  Well, it's a little smarter, in that we've set it up to
-divide the complete set of unknowns into independent sets (colors) so
-that the number of actual calls to the residual function for this
-purpose is optimally minimal.  As a variation on this strategy, if
-semi_analytic_J is true, the J is computed using the routine
-"RichardR2" instead.  RichardR2 only computes the DivRhoU piece of R.
-The time derivative part is computed analytically, and added to the
-matrix elements inside the FD driver, paradoxically (but maybe less so
-now?) named SemiAnalyticMatFDColoringApply.
+indepenently and recomputing R+ = R(p + p_eps) [or, optionally doing
+a centered version of the same].  Then J_ij=(R+ - R)/p_eps.  Well, it's
+a little smarter, in that we've set it up to divide the complete set
+of unknowns into independent sets (colors) so that the number of actual
+calls to the residual function for this purpose is optimally minimal.
+As a variation on this strategy, if semi_analytic_J is true, the J is
+computed using the routine "RichardR2" instead.  RichardR2 only computes
+the DivRhoU piece of R.  The time derivative part is computed analytically,
+(this involves the routine mysteriously named ComputeRichardAlpha, for
+historical reasons...) and added to the matrix elements inside the FD
+driver.  The construction of J is done in routines XXXFDColoringApply, 
+such as SemiAnalyticMatFDColoringApply.
 
 
 Options, options, options....
@@ -160,8 +174,8 @@ PETSc options file by setting "-pc_type lu",
 
 It should be said that at this time, there's no clear winner for all
 this stuff.  The set of problems I've been looking at are difficult
-enough that getting a solution requires horsing with all of these
-until one works.
+enough that simply getting a solution often requires horsing with
+all of these until one works.
 
 
 More grungy detail:
@@ -222,3 +236,36 @@ data copying, and how much memory is available with smarter
 organization of the work.  This means there's probably lots of
 opportunity for the bright young mind to improve all this!
 
+-Marc Day
+
+
+Additional comments added in early 2014
+
+I have found that the RS structure here was so closely tied to the
+PorousMedia class that it was tough to debug and test very thoroughly.
+To "fix" this, I've rearranged the code in a way that might seem
+to be agressively complicating something that was already complicated.
+Basically, I created a container class, RSdata, to be the keeper
+of much of the data needed for the RichardSover operations, including
+the state, much of the temporaries and the material properties.
+
+As before, the actual data is managed by PorousMedia and RSdata 
+contains mostly pointers into those places, but by splitting this
+out, I can now choose to have someone else manage that information.
+In particular, this allows me to create a testing framework where
+I can make simplified versions of all the input data I need, and
+have the test really just focus on the solver interfaces.
+
+In doing this, I moved the RS stuff down into a "flow" folder.  I
+also put a "simple" test setup that I based on a 1D-ish version of
+one of the dvz demo setups.  While this test code is approaching
+1K lines, it does seem to isolate things as I had hoped.
+
+In the longer term, it is likely that I'll completely separate the
+container holding material properties from the PorousMedia class
+since that will enable independent testing of optimized EOS-type
+things (table lookups, splines, etc).  My bet is that this new
+class will be born from the RSdata class I've made here.
+
+
+-M, 1/9/14

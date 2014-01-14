@@ -22,7 +22,7 @@
 #include "SolverFnNLFV.hh"
 #include "LinearOperatorFactory.hh"
 
-#include "Transport_State.hh"
+#include "State.hh"
 #include "Transport_PK.hh"
 #include "DispersionMatrixFactory.hh"
 #include "Dispersion.hh"
@@ -63,23 +63,38 @@ SUITE(DISPERSION_MATRIX) {
       meshfactory.preference(pref);
       mesh = meshfactory(0.0,0.0, 1.0,1.0, 10,10, gm);
 
-      /* update vebose object */
+      /* create a simple state and populate it */
       Amanzi::VerboseObject::hide_line_prefix = true;
 
-      /* create a transport state from the MPC state and populate it */
-      TS = rcp(new Transport_State(mesh, 1));
-      TS->Initialize();
+      std::vector<std::string> component_names;
+      component_names.push_back("Component 0");
+
+      S = rcp(new State());
+      S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+      TPK = rcp(new Transport_PK(plist, S, component_names));
+      TPK->CreateDefaultState(mesh, 1);
+
+      /* create RCP pointers */
+      ws = S->GetFieldData("water_saturation")->ViewComponent("cell", false);
+      phi = S->GetFieldData("porosity")->ViewComponent("cell", false);
+      flux = S->GetFieldData("darcy_flux")->ViewComponent("face", true);
+
+      /* modify the default state for the problem at hand */
+      std::string passwd("state"); 
+      Teuchos::RCP<Epetra_MultiVector> 
+          darcy_flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
       AmanziGeometry::Point velocity(3.0, 4.0);
-      TS->set_darcy_flux(velocity);
-      TS->set_porosity(0.5);
-      TS->set_water_saturation(1.0);
-      TS->set_prev_water_saturation(1.0);
-      TS->set_water_density(1000.0);
-      TS->set_total_component_concentration(0.0, 0);
+      int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+      for (int f = 0; f < nfaces_owned; f++) {
+        const AmanziGeometry::Point& normal = mesh->face_normal(f);
+        (*darcy_flux)[0][f] = velocity * normal;
+      }
 
-      /* initialize a transport process kernel from a transport state */
-      TPK = rcp(new Transport_PK(plist, TS));
+      S->GetFieldData("porosity", passwd)->PutScalar(0.5);
+
+      /* initialize a transport process kernel */
       TPK->InitPK();
       TPK->TimeStep(1.0);
     }
@@ -116,11 +131,12 @@ SUITE(DISPERSION_MATRIX) {
 
    public:
     Epetra_MpiComm* comm;
-    RCP<Mesh> mesh;
+    RCP<const Mesh> mesh;
     ParameterList plist;
 
-    RCP<Transport_State> TS;
+    RCP<State> S;
     RCP<Transport_PK> TPK;
+    Teuchos::RCP<const Epetra_MultiVector> ws, phi, flux;
   };
 
   /* **************************************************************** */
@@ -129,19 +145,17 @@ SUITE(DISPERSION_MATRIX) {
     Init();
 
     /* generate a dispersion matrix */
-    const Epetra_Vector& phi = TS->ref_porosity();
-    const Epetra_Vector& flux = TS->ref_darcy_flux();
-    const Epetra_Vector& ws = TS->ref_water_saturation();
-
-    Teuchos::RCP<Dispersion_TPFA> matrix = Teuchos::rcp(new Dispersion_TPFA(&(TPK->dispersion_models()), mesh, TS));
+    Teuchos::RCP<Dispersion_TPFA> 
+        matrix = Teuchos::rcp(new Dispersion_TPFA(&(TPK->dispersion_models()), mesh, S));
     matrix->Init();
     matrix->InitPreconditioner("Hypre AMG", plist.sublist("Preconditioners"));
     matrix->SymbolicAssembleMatrix();
-    matrix->CalculateDispersionTensor(flux, phi, ws);
-    matrix->AssembleMatrix(phi);
+    matrix->CalculateDispersionTensor(*flux, *phi, *ws);
+    matrix->AssembleMatrix(*phi);
 
     /* populate right-hand side and solution */
-    Epetra_Vector u(phi), r(phi), b(phi);
+    const Epetra_BlockMap map = phi->Map();
+    Epetra_Vector u(map), r(map), b(map);
     InitSOL(u);
     InitRHS(b, 0.0);
 
@@ -162,16 +176,13 @@ SUITE(DISPERSION_MATRIX) {
     Init();
 
     /* generate a dispersion matrix */
-    const Epetra_Vector& phi = TS->ref_porosity();
-    const Epetra_Vector& flux = TS->ref_darcy_flux();
-    const Epetra_Vector& ws = TS->ref_water_saturation();
-
-    Teuchos::RCP<Dispersion_MFD> matrix = Teuchos::rcp(new Dispersion_MFD(&(TPK->dispersion_models()), mesh, TS));
+    Teuchos::RCP<Dispersion_MFD>
+        matrix = Teuchos::rcp(new Dispersion_MFD(&(TPK->dispersion_models()), mesh, S));
     matrix->Init();
     matrix->InitPreconditioner("Hypre AMG", plist.sublist("Preconditioners"));
     matrix->SymbolicAssembleMatrix();
-    matrix->CalculateDispersionTensor(flux, phi, ws);
-    matrix->AssembleMatrix(phi);
+    matrix->CalculateDispersionTensor(*flux, *phi, *ws);
+    matrix->AssembleMatrix(*phi);
 
     /* populate right-hand side and solution */
     const Epetra_Map& map = matrix->super_map();
@@ -195,30 +206,27 @@ SUITE(DISPERSION_MATRIX) {
     Init();
 
     /* generate a dispersion matrix */
-    const Epetra_Vector& phi = TS->ref_porosity();
-    const Epetra_Vector& flux = TS->ref_darcy_flux();
-    const Epetra_Vector& ws = TS->ref_water_saturation();
-
-    /* create matrix */
-    Teuchos::RCP<Dispersion_NLFV> matrix = Teuchos::rcp(new Dispersion_NLFV(&(TPK->dispersion_models()), mesh, TS));
+    Teuchos::RCP<Dispersion_NLFV>
+        matrix = Teuchos::rcp(new Dispersion_NLFV(&(TPK->dispersion_models()), mesh, S));
     matrix->Init();
     matrix->InitNLFV();
-    matrix->CalculateDispersionTensor(flux, phi, ws);
+    matrix->CalculateDispersionTensor(*flux, *phi, *ws);
 
     matrix->SymbolicAssembleMatrix();
     matrix->ModifySymbolicAssemble();
 
     /* populate solution and right-hand side */
-    Epetra_Vector u(phi), b(phi);
+    const Epetra_BlockMap map = phi->Map();
+    Epetra_Vector u(map), b(map);
     InitSOL(u);
     InitRHS(b, 1.0);
 
     /* update matrix */
     matrix->AssembleMatrix(u);
-    matrix->AddTimeDerivative(1.0, phi, ws);
+    matrix->AddTimeDerivative(1.0, *phi, *ws);
 
     /* Compute residual */
-    Epetra_Vector r(phi);
+    Epetra_Vector r(map);
     matrix->Apply(u, r);
     r.Update(-1.0, b, 1.0);
 
@@ -236,20 +244,17 @@ SUITE(DISPERSION_MATRIX) {
     Init();
 
     /* generate a dispersion matrix */
-    const Epetra_Vector& phi = TS->ref_porosity();
-    const Epetra_Vector& flux = TS->ref_darcy_flux();
-    const Epetra_Vector& ws = TS->ref_water_saturation();
-
     DispersionMatrixFactory factory;
-    Teuchos::RCP<Dispersion> matrix = factory.Create("tpfa", &(TPK->dispersion_models()), mesh, TS);
+    Teuchos::RCP<Dispersion> matrix = factory.Create("tpfa", &(TPK->dispersion_models()), mesh, S);
     matrix->InitPreconditioner("Hypre AMG", plist.sublist("Preconditioners"));
 
-    matrix->CalculateDispersionTensor(flux, phi, ws);
+    matrix->CalculateDispersionTensor(*flux, *phi, *ws);
     matrix->SymbolicAssembleMatrix();
     matrix->ModifySymbolicAssemble();
 
     /* populate right-hand side and solution */
-    Epetra_Vector u(phi), r(phi), b(phi);
+    const Epetra_BlockMap& map = phi->Map();
+    Epetra_Vector u(map), r(map), b(map);
     InitSOL(u);
     InitRHS(b, 0.0);
 
@@ -273,27 +278,25 @@ SUITE(DISPERSION_MATRIX) {
     Init();
 
     /* generate a dispersion matrix */
-    const Epetra_Vector& phi = TS->ref_porosity();
-    const Epetra_Vector& flux = TS->ref_darcy_flux();
-    const Epetra_Vector& ws = TS->ref_water_saturation();
-
-    Teuchos::RCP<Dispersion_NLFV> matrix = Teuchos::rcp(new Dispersion_NLFV(&(TPK->dispersion_models()), mesh, TS));
+    Teuchos::RCP<Dispersion_NLFV>
+        matrix = Teuchos::rcp(new Dispersion_NLFV(&(TPK->dispersion_models()), mesh, S));
     matrix->Init();
     matrix->InitNLFV();
 
-    matrix->CalculateDispersionTensor(flux, phi, ws);
+    matrix->CalculateDispersionTensor(*flux, *phi, *ws);
     matrix->SymbolicAssembleMatrix();
     matrix->ModifySymbolicAssemble();
 
     /* create matrix */
-    Epetra_Vector u(phi);
+    const Epetra_BlockMap& map = phi->Map();
+    Epetra_Vector u(map);
     u.PutScalar(1.0);
 
     matrix->AssembleMatrix(u);
-    matrix->AddTimeDerivative(1.0, phi, ws);
+    matrix->AddTimeDerivative(1.0, *phi, *ws);
 
     /* populate right-hand side */
-    Epetra_Vector r(phi), b(phi);
+    Epetra_Vector r(map), b(map);
     InitRHS(b, 1.0);
 
     double bnorm; 
@@ -309,7 +312,7 @@ SUITE(DISPERSION_MATRIX) {
     double snorm, residual; 
     for (int n = 0; n < 10; n++) {
       matrix->AssembleMatrix(u);
-      matrix->AddTimeDerivative(1.0, phi, ws);
+      matrix->AddTimeDerivative(1.0, *phi, *ws);
 
       u.Norm2(&snorm);
       residual = solver->TrueResidual(b, u);
@@ -341,23 +344,20 @@ SUITE(DISPERSION_MATRIX) {
     Init();
 
     /* populate the solution guess and right-hand side */
-    const Epetra_Vector& phi = TS->ref_porosity();
-    const Teuchos::RCP<Epetra_Vector> b = Teuchos::rcp(new Epetra_Vector(phi));
-    const Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(phi));
+    const Epetra_BlockMap& map = phi->Map();
+    const Teuchos::RCP<Epetra_Vector> b = Teuchos::rcp(new Epetra_Vector(map));
+    const Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(map));
 
     u->PutScalar(1.0);
     InitRHS(*b, 1.0);
 
     /* create matrix sparcity structure */
-    const Epetra_Vector& flux = TS->ref_darcy_flux();
-    const Epetra_Vector& ws = TS->ref_water_saturation();
-
     DispersionMatrixFactory factory;
-    Teuchos::RCP<Dispersion> matrix = factory.Create("nlfv", &(TPK->dispersion_models()), mesh, TS);
+    Teuchos::RCP<Dispersion> matrix = factory.Create("nlfv", &(TPK->dispersion_models()), mesh, S);
     TPK->init_dispersion_matrix(matrix);
     matrix->InitPreconditioner("Hypre AMG", plist.sublist("Preconditioners"));
 
-    matrix->CalculateDispersionTensor(flux, phi, ws);
+    matrix->CalculateDispersionTensor(*flux, *phi, *ws);
     matrix->SymbolicAssembleMatrix();
     matrix->ModifySymbolicAssemble();
 
@@ -366,13 +366,13 @@ SUITE(DISPERSION_MATRIX) {
         Teuchos::rcp(new SolverFnNLFV<Epetra_Vector>(mesh, TPK, b));
 
     /* create nonlinear solver */
-    const Epetra_BlockMap& map = b->Map();
     Teuchos::ParameterList& nlist = TPK->nonlin_solvers_list;
 
     Teuchos::RCP<AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap> > picard =
         Teuchos::rcp(new AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>(nlist, fn, map));
 
     picard->Solve(u);
+
   }
 }
 

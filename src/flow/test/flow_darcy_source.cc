@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
@@ -23,12 +23,12 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
+#include "LinearOperatorFactory.hh"
 
 #include "tensor.hh"
 #include "mfd3d_diffusion.hh"
 
 #include "State.hh"
-#include "Flow_State.hh"
 #include "Darcy_PK.hh"
 #include "Stiffness_MFD.hh"
 
@@ -156,15 +156,12 @@ TEST(FLOW_DARCY_SOURCE) {
   if (MyPID == 0) cout << "Test: 2D steady-state elliptic solver, mixed discretization" << endl;
 
   /* read parameter list */
-  ParameterList parameter_list;
   string xmlFileName = "test/flow_darcy_source.xml";
-  
-  // DEPRECATED  updateParametersFromXmlFile(xmlFileName, &parameter_list);
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
-  // create an SIMPLE mesh framework
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  /* create an SIMPLE mesh framework */
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -174,23 +171,38 @@ TEST(FLOW_DARCY_SOURCE) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 200, 200, gm);
-  RCP<Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
-  // create and populate fake flow state
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
-  FS->Initialize();
-  FS->set_permeability_2D(2.0, 1.0, "Material 1");
-  FS->set_porosity(1.0);
-  FS->set_fluid_viscosity(1.0);
-  FS->set_fluid_density(1.0);
-  FS->set_gravity(0.0);
+  /* create a simple state and populate it */
+  Amanzi::VerboseObject::hide_line_prefix = true;
 
-  // create Darcy process kernel
-  Darcy_PK* DPK = new Darcy_PK(parameter_list, FS);
+  RCP<State> S = rcp(new State());
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+  Darcy_PK* DPK = new Darcy_PK(plist, S);
+  S->Setup();
+  S->InitializeFields();
+
+  /* modify the default state for the problem at hand */
+  std::string passwd("state"); 
+  Epetra_MultiVector& perm = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
+  
+  for (int c = 0; c < perm.MyLength(); c++) {
+    perm[0][c] = 2.0;
+    perm[1][c] = 1.0;
+  }
+
+  *S->GetScalarData("fluid_density", passwd) = 1.0;
+  *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  gravity[1] = 0.0;
+  S->GetFieldData("porosity", passwd)->PutScalar(1.0);
+ 
+  /* initialize the Darcy process kernel */
   DPK->InitPK();
   DPK->InitSteadyState(0.0, 1e-8);
 
-  // reset problem coefficients
+  /* reset problem coefficients */
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   std::vector<WhetStone::Tensor>& K = DPK->get_K();
 
@@ -202,7 +214,7 @@ TEST(FLOW_DARCY_SOURCE) {
     K[c](1, 0) = Kxy(xc, 0.0);
   }
 
-  // update Dirichlet boundary data 
+  /* update Dirichlet boundary data */
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   std::vector<bc_tuple>& bc_values = DPK->get_bc_values();
 
@@ -216,28 +228,29 @@ TEST(FLOW_DARCY_SOURCE) {
   for (int n = 0; n < 240; n+=50) {
     // recalculate mass matrices
     double factor = pow(10.0, (double)(n - 50) / 100.0);
-    DPK->matrix()->CreateMFDmassMatrices_ScaledStability(
-        AmanziFlow::FLOW_MFD3D_POLYHEDRA, factor, K);
+    Matrix_MFD* matrix = dynamic_cast<Matrix_MFD*>(&*DPK->matrix());
+    matrix->CreateMassMatrices_ScaledStability(AmanziFlow::FLOW_MFD3D_POLYHEDRA, factor);
 
     // create a problem
     DPK->AssembleMatrixMFD();
 
     // update right-hand side
-    Teuchos::RCP<Epetra_Vector> rhs = DPK->matrix()->rhs();
+    Epetra_MultiVector& b = *DPK->matrix()->rhs()->ViewComponent("cell");
     for (int c = 0; c < ncells; c++) {
       const Point& xc = mesh->cell_centroid(c);
       double volume = mesh->cell_volume(c);
-      (*rhs)[c] += source_exact(xc, 0.0) * volume;
+      b[0][c] += source_exact(xc, 0.0) * volume;
     }
 
     // steady-state solution
-    Epetra_Vector& solution = DPK->ref_solution();
-    DPK->SolveFullySaturatedProblem(0.0, *rhs, solution);
-    DPK->CommitState(FS);
+    CompositeVector& rhs = *DPK->matrix()->rhs();
+    CompositeVector& solution = *DPK->get_solution();
+    DPK->SolveFullySaturatedProblem(0.0, rhs, solution);
+    DPK->CommitState(S);
 
     // calculate errors
-    Epetra_Vector& p = FS->ref_pressure();
-    Epetra_Vector& flux = FS->ref_darcy_flux();
+    Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
+    Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", true);
 
     double p_norm(0.0), p_error(0.0);
     for (int c = 0; c < ncells; c++) {
@@ -245,7 +258,7 @@ TEST(FLOW_DARCY_SOURCE) {
       double tmp = pressure_exact(xc, 0.0);
       double volume = mesh->cell_volume(c);
 
-      p_error += std::pow(tmp - p[c], 2.0) * volume;
+      p_error += std::pow(tmp - p[0][c], 2.0) * volume;
       p_norm += std::pow(tmp, 2.0) * volume;
     }
 
@@ -256,7 +269,7 @@ TEST(FLOW_DARCY_SOURCE) {
       const AmanziGeometry::Point& velocity = velocity_exact(xf, 0.0);
       double tmp = velocity * normal;
  
-      flux_error += std::pow(tmp - flux[f], 2.0);
+      flux_error += std::pow(tmp - flux[0][f], 2.0);
       flux_norm += std::pow(tmp, 2.0);
     }  
 
@@ -267,7 +280,7 @@ TEST(FLOW_DARCY_SOURCE) {
     CHECK(p_error< 0.15 && flux_error < 0.15);
   }
 
-  Epetra_Vector& p = FS->ref_pressure();
+  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");
   GMV::start_data();
   GMV::write_cell_data(p, 0, "pressure");
@@ -294,14 +307,12 @@ TEST(FLOW_DARCY_NODAL) {
   if (MyPID == 0) cout << "\nTest: 2D steady-state elliptic solver, nodal discretization" << endl;
 
   // read parameter list
-  ParameterList parameter_list;
   string xmlFileName = "test/flow_darcy_source.xml";
-  
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -311,18 +322,9 @@ TEST(FLOW_DARCY_NODAL) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 80, 80, gm);
-  RCP<Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
-  // create and populate fake flow state
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
-  FS->Initialize();
-  FS->set_permeability_2D(2.0, 1.0, "Material 1");
-  FS->set_porosity(1.0);
-  FS->set_fluid_viscosity(1.0);
-  FS->set_fluid_density(1.0);
-  FS->set_gravity(0.0);
-
-  // create diffusion coefficient
+  /* modify diffusion coefficient */
   std::vector<WhetStone::Tensor> K;
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
@@ -354,33 +356,37 @@ TEST(FLOW_DARCY_NODAL) {
   }
 
   // create matrix and preconditioner
-  const Epetra_Map& map = mesh->node_map(false);
-  Stiffness_MFD matrix(FS, map);
-  Stiffness_MFD preconditioner(FS, map);
+  Teuchos::RCP<Stiffness_MFD> matrix = Teuchos::rcp(new Stiffness_MFD(mesh));
+  Teuchos::RCP<Stiffness_MFD> preconditioner = Teuchos::rcp(new Stiffness_MFD(mesh));
 
-  matrix.SymbolicAssembleGlobalMatrices();
-  preconditioner.SymbolicAssembleGlobalMatrices();
+  matrix->SymbolicAssembleGlobalMatrices();
+  preconditioner->SymbolicAssembleGlobalMatrices();
 
-  for (int n = 0; n < 400; n+=100) {
+  ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners")
+                             .get<Teuchos::ParameterList>("Hypre AMG")
+                             .get<Teuchos::ParameterList>("boomer amg parameters");
+  preconditioner->InitPreconditioner(FLOW_PRECONDITIONER_HYPRE_AMG, slist);
+
+  for (int n = 0; n < 400; n+=110) {
     // double factor = pow(10.0, (double)(n - 50) / 100.0);
     double factor = pow(10.0, (double)(n - 150) / 100.0);
 
     // populate matrix
-    matrix.CreateMFDstiffnessMatrices(K, factor);
-    matrix.CreateMFDrhsVectors();
-    matrix.ApplyBoundaryConditions(bc_model, bc_values);
-    matrix.AssembleGlobalMatrices();
+    matrix->CreateMFDstiffnessMatrices(K, factor);
+    matrix->CreateMFDrhsVectors();
+    matrix->ApplyBoundaryConditions(bc_model, bc_values);
+    matrix->AssembleGlobalMatrices();
 
     // populate preconditioner
-    preconditioner.CreateMFDstiffnessMatrices(K, factor);
-    preconditioner.CreateMFDrhsVectors();
-    preconditioner.ApplyBoundaryConditions(bc_model, bc_values);
-    preconditioner.AssembleGlobalMatrices();
-    preconditioner.UpdatePreconditioner();
+    preconditioner->CreateMFDstiffnessMatrices(K, factor);
+    preconditioner->CreateMFDrhsVectors();
+    preconditioner->ApplyBoundaryConditions(bc_model, bc_values);
+    preconditioner->AssembleGlobalMatrices();
+    preconditioner->UpdatePreconditioner();
   
     // update right-hand side
     AmanziMesh::Entity_ID_List nodes;
-    Teuchos::RCP<Epetra_Vector> rhs = matrix.rhs();
+    Teuchos::RCP<Epetra_Vector> rhs = matrix->rhs();
 
     for (int c = 0; c < ncells; c++) {
       const Point& xc = mesh->cell_centroid(c);
@@ -396,20 +402,13 @@ TEST(FLOW_DARCY_NODAL) {
     }
 
     // solve the problem
-    AztecOO* solver = new AztecOO;
-    solver->SetUserOperator(&matrix);
-    solver->SetPrecOperator(&preconditioner);
+    ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+    AmanziSolvers::LinearOperatorFactory<Stiffness_MFD, Epetra_Vector, Epetra_BlockMap> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Stiffness_MFD, Epetra_Vector, Epetra_BlockMap> >
+       solver = factory.Create("AztecOO CG", lop_list, matrix, preconditioner);
 
-    solver->SetAztecOption(AZ_solver, AZ_cg);
-    solver->SetAztecOption(AZ_output, 0);
-    solver->SetAztecOption(AZ_conv, AZ_rhs);
-
-    Epetra_Vector solution(map);
-    solver->SetRHS(&*rhs);
-    solver->SetLHS(&solution); 
-
-    solver->Iterate(100, 1e-16);
-    delete solver;
+    Epetra_Vector solution(*rhs);
+    solver->ApplyInverse(*rhs, solution);
 
     // calculate errors
     WhetStone::MFD3D_Diffusion mfd(mesh);

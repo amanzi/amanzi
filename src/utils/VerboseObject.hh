@@ -77,6 +77,10 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   // Size of the left column of names.
   static unsigned int line_prefix_size;
 
+  // Color output for developers
+  std::string color(std::string name);
+  std::string reset();
+
  protected:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 };

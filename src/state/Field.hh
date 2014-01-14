@@ -24,9 +24,9 @@ initialization, etc.
 
 #include "visualization.hh"
 #include "checkpoint.hh"
-#include "composite_vector.hh"
+#include "CompositeVector.hh"
 
-#include "state_defs.hh"
+#include "StateDefs.hh"
 
 namespace Amanzi {
 

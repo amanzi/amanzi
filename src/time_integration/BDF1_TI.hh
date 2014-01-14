@@ -1,96 +1,264 @@
-#ifndef _BDF1_DAE_HH_
-#define _BDF1_DAE_HH_
-
-// This class is based on Neil Carlson's BDF2_DAE module
-// that is part of LANL's Truchas code.
+#ifndef AMANZI_BDF1_TIME_INTEGRATOR_HH_
+#define AMANZI_BDF1_TIME_INTEGRATOR_HH_
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_ParameterListAcceptor.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
-#include "Epetra_Vector.h"
-#include "Epetra_BlockMap.h"
+#include "errors.hh"
+#include "VerboseObject.hh"
+#include "Solver.hh"
+#include "SolverFactory.hh"
 
-#include "NKA.hh"
 #include "BDF1_State.hh"
-#include "BDF_FnBase.hh"
-
+#include "SolutionHistory.hh"
+#include "BDF1_SolverFnBase.hh"
 
 namespace Amanzi {
 
-class BDF1Dae : public Teuchos::VerboseObject<BDF1Dae>,
-                public Teuchos::ParameterListAcceptor {
+template<class Vector, class VectorSpace>
+class BDF1_TI {
  public:
-  // Create the BDF1Dae solver object, the nonlinear problem must
-  // be defined in a class that derives from the virtual base class
-  // fnBase.
-  // The map is passed in, so that the BDF2 Dae stepper knows what
-  // kind of Epetra_Vector is needs to work with.
-  // The parameter list plist is checked for validity in the constructor.
-  BDF1Dae(BDF2::fnBase& fn_, const Epetra_BlockMap& map_);
-  ~BDF1Dae();
+  // Create the BDF Dae solver object, the nonlinear problem must be
+  // defined in a class that derives from the virtual base class FnBase.
+  BDF1_TI(BDFFnBase<Vector>& fn, Teuchos::ParameterList& plist,
+          const Teuchos::RCP<const Vector>& initvector);
 
-  // initializes the state of the BDF2 stepper
-  void set_initial_state(const double t, const Epetra_Vector& x, const Epetra_Vector& xdot);
+  // initializes the state
+  void SetInitialState(const double h,
+                       const Teuchos::RCP<Vector>& x,
+                       const Teuchos::RCP<Vector>& xdot);
 
-  // after a successful BDF2 step, this method is used to commit
-  // the new solution to the solution history
-  void commit_solution(const double h, const Epetra_Vector& u);
+  // After a successful step, this method commits the new
+  // solution to the solution history
+  void CommitSolution(const double h, const Teuchos::RCP<Vector>& u);
 
-  // based on the past time step sizes and the current error, this
-  // method computes a new time step length
-  void select_step_size(const std::vector<double>& dt, const double perr, double& h);
+  // computes a step
+  bool TimeStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& x);
 
-  // computes a BDF1 step
-  void bdf1_step(double h, Epetra_Vector& u, double& hnext);
-
-  // the nonlinear solver (uses NKA)
-  void solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u);
-
-//   the nonlinear solver (uses JFNK)
-  void solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vector& u);
+  // Reset the memory of the time integrator
+  void Reset();
 
   // returns the most recent time
-  double most_recent_time() { return state.uhist->most_recent_time(); }
+  double time();
 
-  // write statistics about the time step
-  void write_bdf1_stepping_statistics();
+  // Report statistics
+  void ReportStatistics_();
 
-  // Overridden from ParameterListAccpetor
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const&);
-  Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+ protected:
+  Teuchos::RCP<TimestepController> ts_control;  // timestep controller
+  Teuchos::RCP<BDF1_State<Vector> > state_;
 
+  Teuchos::RCP<AmanziSolvers::Solver<Vector,VectorSpace> > solver_;
+  Teuchos::RCP<BDF1_SolverFnBase<Vector> > solver_fn_;
+  Teuchos::RCP<BDFFnBase<Vector> > fn_;
 
- private:
-  double rmin;
-  double rmax;
-  double margin;
+  Teuchos::ParameterList plist_;
+  Teuchos::RCP<VerboseObject> vo_;
 
-  int mtries;
-  int total_non_iter;
-
-  int max_divergence_count_;
-  int current_prec_lag_;
-
-  BDF1State state;
-  nka* fpa;
-  BDF2::SolutionHistory* sh_;
-  BDF2::fnBase& fn;
-
-
-  const Epetra_BlockMap& map;
-
-  Teuchos::RCP<Teuchos::ParameterList> paramList_;
-
-  // constants
-  const static double RMIN;
-  const static double RMAX;
-  const static double MARGIN;
+  Teuchos::RCP<Vector> udot_prev_, udot_;  // for error estimate 
 };
 
+
+/* ******************************************************************
+* Constructor
+****************************************************************** */
+template<class Vector,class VectorSpace>
+BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
+                     Teuchos::ParameterList& plist,
+                     const Teuchos::RCP<const Vector>& initvector) :
+    plist_(plist) {
+  fn_ = Teuchos::rcpFromRef(fn);
+
+  // update the verbose options
+  vo_ = Teuchos::rcp(new VerboseObject("TI::BDF1", plist_));
+
+  // Create the state.
+  state_ = Teuchos::rcp(new BDF1_State<Vector>());
+  state_->InitializeFromPlist(plist_, initvector);
+
+  // Set up the nonlinear solver
+  // -- initialized the SolverFnBase interface
+  solver_fn_ = Teuchos::rcp(new BDF1_SolverFnBase<Vector>(plist_, fn_));
+
+  AmanziSolvers::SolverFactory<Vector,VectorSpace> factory;
+  solver_ = factory.Create(plist_);
+
+  solver_->Init(solver_fn_, initvector->Map());
+
+  // Allocate memory for adaptive timestep controll
+  udot_ = Teuchos::rcp(new Vector(*initvector));
+  udot_prev_ = Teuchos::rcp(new Vector(*initvector));
+
+  // timestep controller
+  TimestepControllerFactory<Vector> fac;
+  ts_control = fac.Create(plist, udot_, udot_prev_);
 }
 
-#endif // _BDF2_DAE_HPP_
+
+/* ******************************************************************
+* Initialize miscaleneous parameters.
+****************************************************************** */
+template<class Vector,class VectorSpace>
+void BDF1_TI<Vector,VectorSpace>::SetInitialState(const double t,
+        const Teuchos::RCP<Vector>& x,
+        const Teuchos::RCP<Vector>& xdot) {
+  // set a clean initial state for when the time integrator is reinitialized
+  state_->uhist->FlushHistory(t, *x, *xdot);
+  state_->seq = 0;
+  state_->pc_lag = 0;
+}
+
+
+/* ******************************************************************
+* Record solution to the history.
+****************************************************************** */
+template<class Vector,class VectorSpace>
+void BDF1_TI<Vector,VectorSpace>::CommitSolution(const double h, const Teuchos::RCP<Vector>& u) {
+  double t = h + state_->uhist->MostRecentTime();
+
+  // record the solution for later use when computing an initial guess
+  // for the nonlinear solver
+  state_->uhist->RecordSolution(t, *u);
+
+  // record some information about this time step
+  state_->hlast = h;
+  state_->seq++;
+  state_->hmin = std::min<double>(h, state_->hmin);
+  state_->hmax = std::max<double>(h, state_->hmax);
+}
+
+
+/* ******************************************************************
+* Returns most recent time.
+****************************************************************** */
+template<class Vector,class VectorSpace>
+double BDF1_TI<Vector,VectorSpace>::time() {
+  return state_->uhist->MostRecentTime();
+}
+
+
+/* ******************************************************************
+* Implementation of implicit Euler time step.
+****************************************************************** */
+template<class Vector,class VectorSpace>
+bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& u) {
+  // initialize the output stream
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  // print some info about the time step
+  double tlast = state_->uhist->MostRecentTime();
+  double tnew = tlast + dt;
+
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "step " << state_->seq << " T = " << tlast
+               << " [sec]  dT = " << dt << std::endl;
+    *vo_->os() << "preconditioner lag is " << state_->pc_lag
+               << " out of " << state_->maxpclag << std::endl;
+  }
+
+  // u at the start of the time step
+  Teuchos::RCP<Vector> u0 = Teuchos::rcp(new Vector(*u));
+
+  // Predicted solution (initial value for the nonlinear solver)
+  if (state_->extrapolate_guess) {
+    if (state_->uhist->history_size() > 1) {
+      state_->uhist->InterpolateSolution(tnew, *u);
+      fn_->changed_solution();
+
+      if (fn_->is_admissible(u)) {
+	bool changed = fn_->ModifyPredictor(dt, u0, u);
+	if (changed) fn_->changed_solution();
+      } else {
+	*u = *u0;
+	fn_->changed_solution();
+      }
+    }
+  }
+
+  // Set up the solver fn
+  solver_fn_->SetTimes(tlast, tnew);
+  solver_fn_->SetPreviousTimeSolution(u0);
+
+  // Solve the nonlinear BCE system.
+  int itr;
+  try {
+    itr = solver_->Solve(u);
+  } catch (const Errors::CutTimeStep& e) {
+    itr = -1;
+  }
+
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    if (itr >= 0) {
+      *vo_->os() << "success: " << solver_->num_itrs() << " nonlinear itrs" 
+                 << " error=" << solver_->residual() << std::endl;
+    } else {
+      *vo_->os() << vo_->color("red") << "step failed with error code " << itr << vo_->reset() << std::endl;
+      *u = *u0;
+    }
+  }
+
+  // update the next timestep size
+  dt_next = ts_control->get_timestep(dt, itr);
+
+  // update the preconditioner lag
+  if (itr < 0) {
+    state_->pc_lag = 0;
+  } else {
+    if (dt_next > dt) {
+      state_->pc_lag = std::min(state_->pc_lag + 1, state_->maxpclag);
+    } else if (dt_next < dt) {
+      state_->pc_lag = std::max(state_->pc_lag - 1, 0);
+    }
+  }
+  solver_->set_pc_lag(state_->pc_lag);
+
+  // update performance statistics
+  state_->solve_itrs += solver_->num_itrs();
+
+  if (itr < 0) {
+    state_->failed_solve++;
+  } else {
+    state_->hmax = std::max(state_->hmax, dt);
+    state_->hmin = std::min(state_->hmin, dt);
+
+    if (state_->uhist->history_size() > 1) {
+      *udot_prev_ = *udot_;
+      double tmp = 1.0 / dt;
+      *udot_ = *u;
+      udot_->Update(-tmp, *u0, tmp);
+    }
+
+    ReportStatistics_();
+  }
+  return (itr < 0);
+}
+
+
+/* ******************************************************************
+* Report statistics.
+****************************************************************** */
+template<class Vector,class VectorSpace>
+void BDF1_TI<Vector,VectorSpace>::ReportStatistics_()
+{
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    std::ostringstream oss;
+    oss.flush();
+    oss.setf(std::ios::scientific, std::ios::floatfield);
+
+    oss << "TS:" << std::right << state_->seq;
+    oss << " FS:" << state_->failed_solve;
+    oss << " NS:" << state_->solve_itrs;
+
+    oss << " dt:";
+    oss.precision(4);
+    oss.width(10);
+    oss << state_->hmin << " " << state_->hmax;
+
+    *vo_->os() << oss.str() << std::endl;
+  }  
+}
+
+}  // namespace Amanzi
+
+#endif

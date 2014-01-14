@@ -209,9 +209,12 @@ Amanzi verification test results
 
 (TBD) somehow insert table comparing analytic and Amanzi hydraulic head
 
-.... include:: table_values.txt
-
 (TBD) somehow insert plot comparing analytic and Amanzi hydraulic head
 
-.... plot:: prototype/steady-linear/amanzi_steady_linear.py
+.. image:: figures/hydraulic_head.png
+   :width: 4in
+   :align: center
+
+
+
 

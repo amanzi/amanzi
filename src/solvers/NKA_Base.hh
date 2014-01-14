@@ -51,13 +51,14 @@
 #ifndef AMANZI_NKA_BASE_HH_
 #define AMANZI_NKA_BASE_HH_
 
-namespace Amanzi {
-namespace AmanziSolvers {
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 #include "VerboseObject.hh"
+#include "dbc.hh"
+
+namespace Amanzi {
+namespace AmanziSolvers {
 
 #define NKA_TRUE 1
 #define NKA_FALSE 0
@@ -75,7 +76,8 @@ class NKA_Base {
 
   void Relax();
   void Restart();
-  void Correction(const Vector&, Vector&, Teuchos::RCP<Vector> oldv = Teuchos::null);
+  void Correction(const Vector&, Vector&,
+                  const Teuchos::Ptr<const Vector>& oldv=Teuchos::null);
 
  private:
   int subspace_;  // boolean: a nonempty subspace
@@ -194,7 +196,8 @@ void NKA_Base<Vector, VectorSpace>::Restart()
  * TBW
  ***************************************************************** */
 template<class Vector, class VectorSpace>
-void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir, Teuchos::RCP<Vector> old_dir)
+void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
+        const Teuchos::Ptr<const Vector>& old_dir)
 {
   int i, j, k, nvec, new_v;
   double s, hkk, hkj, cj;
@@ -209,6 +212,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir, Teu
     wp = w_[first_v_];
 
     wp->Update(-1.0, *ff, 1.0);
+
     wp->Dot(*wp, &s);
     s = sqrt(s);
 
@@ -279,7 +283,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir, Teu
         hk[j] = hkj;
         hkk -= hkj * hkj;
       }
-      if (hkk > vtol_*vtol_) {
+      if (hkk > vtol_ * vtol_) {
         hk[k] = sqrt(hkk);
       } else {
         if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
@@ -289,7 +293,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir, Teu
 
         // The current w nearly lies in the span of the previous vectors:
         // Drop this vector,
-        assert(prev_v_[k] != NKA_EOL);
+        ASSERT(prev_v_[k] != NKA_EOL);
         next_v_[prev_v_[k]] = next_v_[k];
         if (next_v_[k] == NKA_EOL) {
           last_v_ = prev_v_[k];

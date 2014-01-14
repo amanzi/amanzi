@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <vector>
@@ -22,15 +22,6 @@ Author: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 namespace Amanzi {
 namespace AmanziFlow {
-
-/* ******************************************************************
-* Constructor                                      
-****************************************************************** */
-Stiffness_MFD::Stiffness_MFD(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map)
-    : FS_(FS), map_(map)
-{ 
-  mesh_ = FS_->mesh();
-}
 
 
 /* ******************************************************************
@@ -125,10 +116,12 @@ void Stiffness_MFD::ApplyBoundaryConditions(
 ****************************************************************** */
 void Stiffness_MFD::SymbolicAssembleGlobalMatrices()
 {
-  const Epetra_Map& vmap_wghost = mesh_->node_map(true);
+  // map used with matrix
+  map_ = Teuchos::rcp(new Epetra_Map(mesh_->node_map(false)));
 
+  const Epetra_Map& vmap_wghost = mesh_->node_map(true);
   int avg_entries_row = (mesh_->space_dimension() == 2) ? FLOW_QUAD_NODES : FLOW_HEX_NODES;
-  Epetra_FECrsGraph vv_graph(Copy, map_, 8*avg_entries_row);
+  Epetra_FECrsGraph vv_graph(Copy, *map_, 8*avg_entries_row);
 
   AmanziMesh::Entity_ID_List nodes;
   int nodes_LID[FLOW_MAX_NODES];  // Contigious memory is required.
@@ -151,7 +144,7 @@ void Stiffness_MFD::SymbolicAssembleGlobalMatrices()
   Avv_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, vv_graph));
   Avv_->GlobalAssemble();
 
-  rhs_ = Teuchos::rcp(new Epetra_Vector(map_));
+  rhs_ = Teuchos::rcp(new Epetra_Vector(*map_));
 }
 
 
@@ -194,7 +187,7 @@ void Stiffness_MFD::AssembleGlobalMatrices()
       rhs_wghost[v] += Fv_cells_[c][n];
     }
   }
-  FS_->CombineGhostNode2MasterNode(rhs_wghost, Add);
+  CombineGhostNode2MasterNode_(rhs_wghost, Add);
 
   int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
   for (int v = 0; v < nnodes; v++) (*rhs_)[v] = rhs_wghost[v];
@@ -299,6 +292,27 @@ int Stiffness_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector&
     ifp_prec_->ApplyInverse(X, Y);
   }
   return 0;
+}
+
+
+/* *******************************************************************
+ * * Transfers node-based data from ghost to master positions and 
+ * * performs the operation 'mode' there. 
+ * * WARNING: Vector v must contain ghost nodes.              
+ * ******************************************************************* */
+void Stiffness_MFD::CombineGhostNode2MasterNode_(Epetra_Vector& v, Epetra_CombineMode mode)
+{
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& source_vmap = mesh_->node_map(false);
+  const Epetra_BlockMap& target_vmap = mesh_->node_map(true);
+  Epetra_Import importer(target_vmap, source_vmap);
+
+  double* vdata;
+  v.ExtractView(&vdata);
+  Epetra_Vector vv(View, source_vmap, vdata);
+
+  vv.Export(v, importer, mode);
+#endif
 }
 
 }  // namespace AmanziFlow

@@ -1,15 +1,15 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Neil Carlson (nnc@lanl.gov), 
-         Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Neil Carlson (nnc@lanl.gov), 
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 
-The routine implements interface to BDFx time integrators.  
+  The routine implements interface to the BDF1 time integrator.  
 */
 
 #include <algorithm>
@@ -26,28 +26,22 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
-void Richards_PK::fun(
-    double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
+void Richards_PK::Functional(double Told, double Tnew, 
+                             Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
+                             Teuchos::RCP<CompositeVector> f)
 { 
-  if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    Epetra_Vector* u_cells = FS->CreateCellView(u);
-    Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
+  double Tp(Tnew), dTp(Tnew - Told);
 
-    matrix_ -> ApplyBoundaryConditions(bc_model, bc_values);
-    AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, &*matrix_);
-    
-    Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();
-    if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
+  const Epetra_MultiVector& uold_cells = *u_old->ViewComponent("cell");
+  const Epetra_MultiVector& unew_cells = *u_new->ViewComponent("cell");
 
-    matrix_->ComputeNegativeResidual(*u_cells,  f);  
-  }
-  else {
-    // compute inegative residual f = A*u - rhs
-    AssembleMatrixMFD(u, Tp);
-    matrix_->ComputeNegativeResidual(u, f);     
-  }
+  AssembleMatrixMFD(*u_new, Tp);
+  matrix_->ComputeNegativeResidual(*u_new, *f);
 
-  const Epetra_Vector& phi = FS->ref_porosity();
+  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
+  Epetra_MultiVector& f_cells = *f->ViewComponent("cell");
+
+
 
   functional_max_norm = 0.0;
   functional_max_cell = 0;
@@ -58,66 +52,43 @@ void Richards_PK::fun(
     AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
-    double v, s1, s2, volume;
+    double s1, s2, volume;
     for (int i = 0; i < block.size(); i++) {
       int c = block[i];
-      v = u[c] - udot[c] * dTp;
-      s1 = WRM[mb]->saturation(atm_pressure - u[c]);
-      s2 = WRM[mb]->saturation(atm_pressure - v);
+      s1 = WRM[mb]->saturation(atm_pressure_ - unew_cells[0][c]);
+      s2 = WRM[mb]->saturation(atm_pressure_ - uold_cells[0][c]);
 
-      double factor = rho_ * phi[c] * mesh_->cell_volume(c) / dTp;
-      f[c] += (s1 - s2) * factor;
+      double factor = rho_ * phi[0][c] * mesh_->cell_volume(c) / dTp;
+      f_cells[0][c] += (s1 - s2) * factor;
 
-      double tmp = fabs(f[c]) / factor;  // calculate errors
+      double tmp = fabs(f_cells[0][c]) / factor;  // calculate errors
       if (tmp > functional_max_norm) {
         functional_max_norm = tmp;
         functional_max_cell = c;        
       }
     }
   }
+  
+
 }
 
 
 /* ******************************************************************
 * Apply preconditioner inv(B) * X.                                                 
 ****************************************************************** */
-void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
+void Richards_PK::ApplyPreconditioner(Teuchos::RCP<const CompositeVector> X, 
+                                      Teuchos::RCP<CompositeVector> Y)
 {
- if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
-   preconditioner_->ApplyInverse(X, Y);
- } else {
-   Teuchos::ParameterList plist;
-   Teuchos::ParameterList& slist = plist.sublist("gmres");
-   slist.set<string>("iterative method", "gmres");
-   slist.set<double>("error tolerance", 1e-8 );
-   slist.set<int>("maximum number of iterations", 100);
-   Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
-   vlist.set("Verbosity Level", "low");
-
-   AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
-   Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> > 
-     solver = factory.Create("gmres", plist, preconditioner_, preconditioner_);
-   
-   solver->ApplyInverse(X, Y);
- }
+  preconditioner_->ApplyPreconditioner(*X, *Y);
 }
 
 
 /* ******************************************************************
 * Update new preconditioner B(p, dT_prec).                                   
 ****************************************************************** */
-void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)
+void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVector> u, double dTp)
 {
-  AssemblePreconditionerMFD(u, Tp, dTp);
-}
-
-
-/* ******************************************************************
-* .                                   
-****************************************************************** */
-int Richards_PK::ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
-{
-  return preconditioner_->ApplyInverse(X, Y);
+  AssemblePreconditionerMFD(*u, Tp, dTp);
 }
 
 
@@ -125,11 +96,11 @@ int Richards_PK::ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
 * Check difference du between the predicted and converged solutions.
 * This is a wrapper for various error control methods. 
 ****************************************************************** */
-double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
+double Richards_PK::ErrorNorm(Teuchos::RCP<const CompositeVector> u, 
+                              Teuchos::RCP<const CompositeVector> du)
 {
   double error;
-  error = ErrorNormSTOMP(u, du);
-  //error = ErrorNormRC1(u, du);
+  error = ErrorNormSTOMP(*u, *du);
 
   return error;
 }
@@ -138,16 +109,18 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 /* ******************************************************************
 * Error control a-la STOMP.
 ****************************************************************** */
-double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du)
+double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du)
 {
+  const Epetra_MultiVector& uc = *u.ViewComponent("cell");
+  const Epetra_MultiVector& duc = *du.ViewComponent("cell");
+
   double error, error_p, error_r;
-  int cell_p, cell_r;
+  int cell_p(0), cell_r(0);
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_PRESSURE) {
     error_p = 0.0;
-    cell_p = 0;
     for (int c = 0; c < ncells_owned; c++) {
-      double tmp = fabs(du[c]) / (fabs(u[c] - atm_pressure) + atm_pressure);
+      double tmp = fabs(duc[0][c]) / (fabs(uc[0][c] - atm_pressure_) + atm_pressure_);
       if (tmp > error_p) {
         error_p = tmp;
         cell_p = c;
@@ -172,52 +145,31 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
 
   // maximum error is printed out only on one processor
   if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    const Epetra_MultiVector& map_c2mb = *rel_perm->map_c2mb().ViewComponent("cell");
+
     if (error == buf) {
       int c = functional_max_cell;
       const AmanziGeometry::Point& xp = mesh_->cell_centroid(c);
 
       Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "residual=" << functional_max_norm << " at point";
-      for (int i = 0; i < dim; i++) *(vo_->os()) << " " << xp[i];
-      *(vo_->os()) << endl;
+      *vo_->os() << "residual=" << functional_max_norm << " at point";
+      for (int i = 0; i < dim; i++) *vo_->os() << " " << xp[i];
+      *vo_->os() << endl;
  
       c = cell_p;
       const AmanziGeometry::Point& yp = mesh_->cell_centroid(c);
 
-      *(vo_->os()) << "pressure err=" << error_p << " at point";
-      for (int i = 0; i < dim; i++) *(vo_->os()) << " " << yp[i];
-      *(vo_->os()) << endl;
+      *vo_->os() << "pressure err=" << error_p << " at point";
+      for (int i = 0; i < dim; i++) *vo_->os() << " " << yp[i];
+      *vo_->os() << endl;
 
-      int mb = (rel_perm->map_c2mb())[c];
-      double s = (rel_perm->WRM())[mb]->saturation(atm_pressure - u[c]);
-      *(vo_->os()) << "saturation=" << s << " pressure=" << u[c] << endl;
+      int mb = map_c2mb[0][c];
+      double s = (rel_perm->WRM())[mb]->saturation(atm_pressure_ - uc[0][c]);
+      *vo_->os() << "saturation=" << s << " pressure=" << uc[0][c] << endl;
     }
   }
 
-  // if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
-  // }
-  
   return error;
-}
-
-
-/* ******************************************************************
-* Error control from RC1 (OBSOLETE)
-****************************************************************** */
-double Richards_PK::ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du)
-{
-  double error_norm = 0.0;
-  double absolute_tol = 1.0, relative_tol = 1e-6;
-  for (int n = 0; n < u.MyLength(); n++) {
-    double tmp = fabs(du[n]) / (absolute_tol + relative_tol * fabs(u[n]));
-    error_norm = std::max(error_norm, tmp);
-  }
- 
-#ifdef HAVE_MPI
-  double buf = error_norm;
-  du.Comm().MaxAll(&buf, &error_norm, 1);  // find the global maximum
-#endif
-  return  error_norm;
 }
 
 
@@ -225,91 +177,74 @@ double Richards_PK::ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du
 * Modifies nonlinear update du based on the maximum allowed change
 * of saturation.
 ****************************************************************** */
-bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& du)
+bool Richards_PK::ModifyCorrection(
+    double dT, Teuchos::RCP<const CompositeVector> f,
+    Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du)
 {
+  const Epetra_MultiVector& uc = *u->ViewComponent("cell");
+  const Epetra_MultiVector& duc = *du->ViewComponent("cell");
+
   double max_sat_pert = 0.25;
-  bool ret_val = false;
-  double dumping_factor = 0.6;
+  double damping_factor = 0.6;
   double reference_pressure = 101325.0;
 
   int ncells_clipped(0);
+
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM(); 
+  const Epetra_MultiVector& map_c2mb = *rel_perm->map_c2mb().ViewComponent("cell");
  
   for (int c = 0; c < ncells_owned; c++) {
-    int mb = (rel_perm->map_c2mb())[c];
-    double pc = atm_pressure - u[c];
+    int mb = map_c2mb[0][c];
+    double pc = atm_pressure_ - uc[0][c];
     double sat = WRM[mb]->saturation(pc);
     double sat_pert;
     if (sat >= 0.5) sat_pert = sat - max_sat_pert;
     else sat_pert = sat + max_sat_pert;
     
-    double press_pert = atm_pressure - WRM[mb]->capillaryPressure(sat_pert);
-    double du_pert_max = fabs(u[c] - press_pert); 
+    double press_pert = atm_pressure_ - WRM[mb]->capillaryPressure(sat_pert);
+    double du_pert_max = fabs(uc[0][c] - press_pert); 
 
-    if ((fabs(du[c]) > du_pert_max)&&(1 - sat > 1e-5)) {
+    if ((fabs(duc[0][c]) > du_pert_max) && (1 - sat > 1e-5)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << "saturation clipping in cell " << c 
-                     << " pressure change: " << du[c] << " -> " << du_pert_max << endl;
+        *vo_->os() << "clip saturation: c=" << c 
+                   << " p=" << uc[0][c]
+                   << " dp: " << duc[0][c] << " -> " << du_pert_max << endl;
       }
 
-      double tmp = du[c];
-
-      if (du[c] >= 0.0) du[c] = fabs(du_pert_max);
-      else du[c] = -fabs(du_pert_max);
+      if (duc[0][c] >= 0.0) duc[0][c] = du_pert_max;
+      else duc[0][c] = -du_pert_max;
       
       ncells_clipped++;
-      ret_val = true;
-      // cout<< "saturation clipping in cell " << c <<" is "<< sat 
-      //              << " pressure change: " << du[c] << " -> " << du_pert_max << endl;
-
     }    
   }
 
   for (int c = 0; c < ncells_owned; c++) {
+    double unew = uc[0][c] - duc[0][c];
+    double tmp = duc[0][c];
 
-    double unew = u[c] - du[c];
-    double tmp = du[c];
-
-    if ((unew < atm_pressure) && ( u[c] > atm_pressure)){
-       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-	 *(vo_->os()) << "S -> U: "<<u[c]<<" -> "<<unew<<endl;
-       }
-    }
-    else if ((unew > atm_pressure) && ( u[c] < atm_pressure)){
+    if ((unew > atm_pressure_) && (uc[0][c] < atm_pressure_)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-	 *(vo_->os()) << "U -> S: "<<u[c]<<" -> "<<unew<<endl;
+	 *vo_->os() << "pressure change: " << uc[0][c] << " -> " << unew << endl;
       }
-      // cout << "U -> S: "<<u[c]<<" -> before "<<unew<<" "<<du[c]<<endl;
-      du[c] = tmp*dumping_factor;
-      // cout << "U -> S: "<<u[c]<<" -> after "<<u[c] - du[c]<<" "<<du[c]<<endl;
+      duc[0][c] = tmp * damping_factor;
       ncells_clipped++;
     }
-
   }
 
-  //  if (verbosity >= FLOW_VERBOSITY_HIGH) {
-  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+  // output statistics
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int ncells_tmp = ncells_clipped;
-    du.Comm().SumAll(&ncells_tmp, &ncells_clipped, 1);
+    mesh_->get_comm()->SumAll(&ncells_tmp, &ncells_clipped, 1);
+
     if (MyPID == 0 && ncells_clipped > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "saturation was clipped in " << ncells_clipped << " cells" << endl;
+      *vo_->os() << vo_->color("red") << "saturation was clipped in " 
+                 << ncells_clipped << " cells" << vo_->reset() << endl;
     }
   }
 
-  return ret_val;
-}
-
-
-/********************************************************************
-* Converts the BDF1 time intgerator to the Newton solver
-****************************************************************** */
-bool Richards_PK::IsPureNewton() const
-{
-  if (experimental_solver_ == FLOW_SOLVER_NKA) return false;
-  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) return false;
-  return true; 
+  return (ncells_clipped > 0);
 }
 
 }  // namespace AmanziFlow

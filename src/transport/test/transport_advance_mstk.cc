@@ -1,7 +1,7 @@
 /*
-The transport component of the Amanzi code, serial unit tests.
-License: BSD
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  The transport component of the Amanzi code, serial unit tests.
+  License: BSD
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <iostream>
@@ -28,75 +28,84 @@ TEST(ADVANCE_WITH_MSTK) {
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "Test: advance with MSTK" << endl;
-
 #ifdef HAVE_MPI
-  Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm  *comm = new Epetra_SerialComm();
+  Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
 
-  // read parameter list
-  ParameterList parameter_list;
+  /* read parameter list */
   string xmlFileName = "test/transport_advance_mstk.xml";
-  // DEPRECATED updateParametersFromXmlFile(xmlFileName, &parameter_list);
-
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
-   // create an MSTK mesh framework 
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-
+   /* create an MSTK mesh framework */
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
+
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory("test/hex_3x3x3_ss.exo", gm);
+  RCP<const Mesh> mesh = meshfactory("test/hex_3x3x3_ss.exo", gm);
   
-  RCP<Transport_State> TS = rcp(new Transport_State(mesh, 2));
+  /* create a simple state and populate it */
+  Amanzi::VerboseObject::hide_line_prefix = false;
 
-  Point u(1.0, 0.0, 0.0);
-  TS->Initialize();
-  TS->set_darcy_flux(u);
-  TS->set_porosity(0.2);
-  TS->set_water_saturation(1.0);
-  TS->set_prev_water_saturation(1.0);
-  TS->set_water_density(1000.0);
-  TS->set_total_component_concentration(0.0,0);
-  TS->set_total_component_concentration(0.0,1);
+  std::vector<std::string> component_names;
+  component_names.push_back("Component 0");
+  component_names.push_back("Component 1");
 
-  Transport_PK TPK(parameter_list, TS);
+  RCP<State> S = rcp(new State());
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+
+  Transport_PK TPK(plist, S, component_names);
+  TPK.CreateDefaultState(mesh, 2);
+
+  /* modify the default state for the problem at hand */
+  std::string passwd("state"); 
+  Teuchos::RCP<Epetra_MultiVector> 
+      flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+
+  AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces_owned; f++) {
+    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    (*flux)[0][f] = velocity * normal;
+  }
+
+  /* initialize a transport process kernel */
   TPK.InitPK();
+  TPK.PrintStatistics();
 
-  // advance the state
+  /* advance the state */
   double dT = TPK.CalculateTransportDt();
   TPK.Advance(dT);
 
-  // printing cell concentration 
-  int i, k;
+  /* printing cell concentration */
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.transport_state_next();
-  RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
+  Teuchos::RCP<Epetra_MultiVector> 
+      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
-  int iter = 0;
   while(T < 1.2) {
     dT = TPK.CalculateTransportDt();
     TPK.Advance(dT);
+    TPK.CommitState(S);
     T += dT;
  
     if (T < 0.4) {
       printf("T=%6.2f  C_0(x):", T);
-      for (int k=0; k<9; k++) printf("%7.4f", (*tcc_next)[0][k]); std::cout << endl;
+      for (int k = 0; k < 9; k++) printf("%7.4f", (*tcc)[0][k]); std::cout << endl;
     }
-    *tcc = *tcc_next;
   }
 
-  // check that the final state is constant
-  for (int k=0; k<4; k++) 
-    CHECK_CLOSE((*tcc_next)[0][k], 1.0, 1e-6);
+  /* check that the final state is constant */
+  for (int k = 0; k < 4; k++) 
+    CHECK_CLOSE((*tcc)[0][k], 1.0, 1e-6);
+
+  delete comm;
 }
  
 

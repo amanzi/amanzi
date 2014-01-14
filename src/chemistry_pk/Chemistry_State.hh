@@ -13,14 +13,14 @@ accessing the new state-dev from the old Flow PK.
 #ifndef AMANZI_CHEMISTRY_STATE_NEW_HH_
 #define AMANZI_CHEMISTRY_STATE_NEW_HH_
 
-#include "PK_State.hh"
+#include "State.hh"
 #include "beaker.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
 
-class Chemistry_State : public PK_State {
+class Chemistry_State {
 
  public:
 
@@ -226,7 +226,6 @@ class Chemistry_State : public PK_State {
   }
 
  protected:
-
   void InitializeField_(Teuchos::ParameterList& ic_plist, std::string fieldname,
                         bool sane_default, double default_val);
 
@@ -247,6 +246,11 @@ class Chemistry_State : public PK_State {
   Chemistry_State(const Chemistry_State& other);
 
  protected:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<State> S_;
+  bool ghosted_;
+  std::string name_;
+
   Teuchos::ParameterList plist_;
 
   int number_of_aqueous_components_;
