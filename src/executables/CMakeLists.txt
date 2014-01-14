@@ -44,7 +44,7 @@ include_evaluators_directories(LISTNAME ENERGY_SURFACE_ICE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_TWO_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_THREE_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME SURFACE_BALANCE_SEB_REG_INCLUDES)
-include_evaluators_directories(LISTNAME TEST_PKS_DIVGRAD_TEST_REG_INCLUDES)
+include_evaluators_directories(LISTNAME TEST_PKS_REG_INCLUDES)
 include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 #include_evaluators_directories(LISTNAME TRANSPORT_PASSIVE_TRACER_REG_INCLUDES)
 
@@ -53,7 +53,7 @@ add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
 set(ATS_LIBS
 		     coordinator
                      mpc
-                      pk_test_divgrad
+                      pk_test_pks
                       pk_energy_constant_temperature
                       pk_energy_advection_diffusion
 		              pk_energy_two_phase

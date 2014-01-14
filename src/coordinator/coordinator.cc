@@ -98,6 +98,7 @@ void Coordinator::setup() {
   // Set up the states, creating all data structures.
   S_->set_time(t0_);
   S_->set_cycle(cycle0_);
+  S_->RequireScalar("dt", "coordinator");
   S_->Setup();
 }
 
@@ -379,8 +380,10 @@ void Coordinator::cycle_driver() {
                   << std::endl;
       }
 
+      *S_next_->GetScalarData("dt", "coordinator") = dt;
       fail = advance(dt);
       dt = get_dt();
+
     } // while not finished
 
 

@@ -24,6 +24,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/elevation/snow_distribution_evaluator_reg.hh
+  LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
+  )
+
+register_evaluator_with_factory(
   HEADERFILE constitutive_relations/overland_conductivity/unfrozen_fraction_evaluator_reg.hh
   LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
   )
@@ -147,7 +152,6 @@ generate_evaluators_registration_header(
   )
 
 # overland/
-
 register_evaluator_with_factory(
   HEADERFILE overland/overland_pk_reg.hh
   LISTNAME   FLOW_OVERLAND_EVAL_FAC
