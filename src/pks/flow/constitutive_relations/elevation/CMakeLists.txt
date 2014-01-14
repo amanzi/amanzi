@@ -14,6 +14,7 @@ add_library(flow_relations_elevation
   elevation_evaluator.cc
   meshed_elevation_evaluator.cc
   standalone_elevation_evaluator.cc
+  snow_distribution_evaluator.cc
   )
 
 install(TARGETS flow_relations_elevation DESTINATION lib)
