@@ -46,7 +46,7 @@
 
 #include "surface_balance_SEB_registration.hh"
 
-#include "test_pks_divgrad_test_registration.hh"
+#include "test_pks_registration.hh"
 
 // #include "transport_passive_tracer_registration.hh"
 

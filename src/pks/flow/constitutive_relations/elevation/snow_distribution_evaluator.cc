@@ -22,13 +22,23 @@ SnowDistributionEvaluator::SnowDistributionEvaluator(Teuchos::ParameterList& pli
 
   elev_key_ = plist_.get<std::string>("elevation key", "elevation");
   dependencies_.insert(elev_key_);
+  slope_key_ = plist_.get<std::string>("slope key", "slope_magnitude");
+  dependencies_.insert(slope_key_);
   pd_key_ = plist_.get<std::string>("ponded depth key", "ponded_depth");
   dependencies_.insert(pd_key_);
   snow_height_key_ = plist_.get<std::string>("snow height key", "snow_depth");
   dependencies_.insert(snow_height_key_);
 
   mesh_name_ = plist_.get<std::string>("mesh name", "surface");
-
+  manning_ = plist_.get<double>("manning coefficient", 1.);
+  
+  if (mesh_name_ == "domain") {
+    cell_vol_key_ = "cell_volume";
+  } else {
+    cell_vol_key_ = mesh_name_+std::string("_cell_volume");
+  }    
+  dependencies_.insert(cell_vol_key_);
+  
   FunctionFactory fac;
   precip_func_ = Teuchos::rcp(fac.Create(plist_.sublist("precipitation function")));
 }
@@ -36,9 +46,12 @@ SnowDistributionEvaluator::SnowDistributionEvaluator(Teuchos::ParameterList& pli
 SnowDistributionEvaluator::SnowDistributionEvaluator(const SnowDistributionEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     elev_key_(other.elev_key_),
+    slope_key_(other.slope_key_),
     pd_key_(other.pd_key_),
     snow_height_key_(other.snow_height_key_),
+    cell_vol_key_(other.cell_vol_key_),
     precip_func_(other.precip_func_),
+    manning_(other.manning_),
     assembled_(other.assembled_),
     mesh_name_(other.mesh_name_),
     matrix_(other.matrix_) {}
@@ -48,59 +61,124 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
   if (!assembled_) AssembleOperator_(S);
 
-  // result <-- Q_snow * dt
+  result->PutScalar(0.);
+
   double dt = *S->GetScalarData("dt");
   double time = S->time();
   double Qe = (*precip_func_)(&time);
   if (Qe * dt > 0.) {
-    result->PutScalar(Qe * dt);
-    CompositeVector res(*result);
-    res = *result;
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_name_);
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    std::vector<Operators::MatrixBC> bc_markers(nfaces, Operators::MATRIX_BC_NULL);
+    std::vector<double> bc_values(nfaces, 0.0);
+    
+    Teuchos::RCP<CompositeVector> hz = Teuchos::rcp(new CompositeVector(*result));
+    Teuchos::RCP<CompositeVector> residual = Teuchos::rcp(new CompositeVector(*result));
+    Teuchos::RCP<CompositeVector> du = Teuchos::rcp(new CompositeVector(*result));
 
-    // result += z + h_pd + h_snow
-    std::cout << "elev = " << std::endl;
-    S->GetFieldData(elev_key_)->Print(std::cout);
-    res.Update(1., *S->GetFieldData(elev_key_),
-               1., *S->GetFieldData(pd_key_), 1.);
-    res.Update(1., *S->GetFieldData(snow_height_key_), 1.);
+    Teuchos::RCP<CompositeVector> Krel_c = Teuchos::rcp(new CompositeVector(*result));
+    CompositeVectorSpace Krel_f_space;
+    Krel_f_space.SetMesh(mesh)->SetComponent("face",AmanziMesh::FACE,1);
+    Teuchos::RCP<CompositeVector> Krel_uw = Teuchos::rcp(new CompositeVector(Krel_f_space));
 
-    // Apply the operator to get a residual
-    CompositeVector du(*result);
-    du.PutScalar(0.);
-    matrix_->Apply(res, du);
-    du.Print(std::cout);
+    const Epetra_MultiVector& slope = *S->GetFieldData(slope_key_)->ViewComponent("cell",false);
+    const Epetra_MultiVector& cv = *S->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
+            
+    int n_cycles = 10;
+    result->PutScalar(Qe*dt);
+    for (int n=0; n!=n_cycles; ++n) {
+      std::cout << "SNOW INNER ITERATE " << n << std::endl;
 
-    // smooth to find a correction
-    res.PutScalar(0.);
-    matrix_->ApplyInverse(du, res);
-    res.Print(std::cout);
+      // update snow potential, z + h_pd + h_s + Qe*dt
+      *hz = *result;
+      hz->Update(1., *S->GetFieldData(elev_key_),
+                 1., *S->GetFieldData(pd_key_), 1.);
+      hz->Update(1., *S->GetFieldData(snow_height_key_), 1.);
 
-    // scale to ensure no negative precip
-    double scaling = 0;
-    const Epetra_MultiVector& du_c = *res.ViewComponent("cell",false);
-    const Epetra_MultiVector& result_c = *result->ViewComponent("cell",false);
-    for (int c=0; c!=du_c.MyLength(); ++c) {
-      scaling = std::max(scaling, du_c[0][c]/result_c[0][c]);
+      // update Krel
+      {
+        Epetra_MultiVector& Krel_c_vec = *Krel_c->ViewComponent("cell",false);
+        const Epetra_MultiVector& result_c = *result->ViewComponent("cell",false);
+        for (int c=0; c!=ncells; ++c) {
+          Krel_c_vec[0][c] = std::pow(std::max(result_c[0][c],0.), 4./3)
+              / (std::sqrt(std::max(slope[0][c], 1.e-4)) * manning_);
+        }
+      }
+
+      // communicate and upwind
+      Krel_c->ScatterMasterToGhosted();
+      hz->ScatterMasterToGhosted();
+      {
+        Epetra_MultiVector& Krel_uw_vec = *Krel_uw->ViewComponent("face",false);
+        const Epetra_MultiVector& Krel_c_vec = *Krel_c->ViewComponent("cell",true);
+        const Epetra_MultiVector& hz_c = *hz->ViewComponent("cell",true);
+        for (int f=0; f!=nfaces; ++f) {
+          AmanziMesh::Entity_ID_List cells;
+          mesh->face_get_cells(f,AmanziMesh::USED,&cells);
+          if (cells.size() == 1) {
+            Krel_uw_vec[0][f] = Krel_c_vec[0][cells[0]];
+          } else {
+            if (hz_c[0][cells[0]] > hz_c[0][cells[1]]) {
+              Krel_uw_vec[0][f] = Krel_c_vec[0][cells[0]];
+            } else {
+              Krel_uw_vec[0][f] = Krel_c_vec[0][cells[1]];
+            }
+          }
+        }
+      }
+
+      // Re-assemble
+      matrix_->CreateMFDstiffnessMatrices(Krel_uw.ptr());
+      matrix_->CreateMFDrhsVectors();
+      matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+      matrix_->AssembleGlobalMatrices();
+
+      // Apply the operator to get a residual
+      matrix_->ComputeNegativeResidual(*hz, residual.ptr());
+
+      // Apply the accumulation term
+      // Apply the source term
+      Epetra_MultiVector& residual_c = *residual->ViewComponent("cell",false);
+      const Epetra_MultiVector& result_c = *result->ViewComponent("cell",false);
+      for (int c=0; c!=ncells; ++c) {
+        residual_c[0][c] += cv[0][c] * result_c[0][c];
+        residual_c[0][c] -= cv[0][c] * dt * Qe;
+      }
+
+      // smooth to find a correction
+      double norm(0.);
+      residual->NormInf(&norm);
+      if (norm < 1.e-4) {
+        break;
+      }
+
+      du->PutScalar(0.);
+      // PC
+      std::vector<double>& Acc_cells = matrix_->Acc_cells();
+      for (int c=0; c!=ncells; ++c) {
+        Acc_cells[c] += cv[0][c];
+      }
+      matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+      matrix_->AssembleGlobalMatrices();
+      matrix_->ComputeSchurComplement(bc_markers, bc_values);
+      matrix_->UpdatePreconditioner();
+      matrix_->ApplyInverse(*residual, *du);
+
+      // apply correction
+      std::cout << "correction = " << std::endl;
+      du->Print(std::cout);
+
+      result->Update(-1., *du, 1.);
+
+      // apply correction
+      std::cout << "new iterate = " << std::endl;
+      result->Print(std::cout);
+
     }
 
-    double my_scaling(scaling);
-    S->GetMesh(mesh_name_)->get_comm()->MaxAll(&my_scaling, &scaling, 1);
-    if (scaling > 1) {
-      du.Scale(1./scaling);
-    }
-
-    // apply correction
-    std::cout << "result, pre-correction = " << std::endl;
-    result->Print(std::cout);
-    result->Update(-1., du, 1.);
-    std::cout << "result, post-correction = " << std::endl;
-    result->Print(std::cout);
-
-
-    // get Q
+    // get Q back
     result->Scale(1./dt);
-  } else {
-    result->PutScalar(0.);
   }
 }
 
@@ -113,28 +191,12 @@ void SnowDistributionEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
 void
 SnowDistributionEvaluator::AssembleOperator_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_name_);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  std::vector<Operators::MatrixBC> bc_markers(nfaces, Operators::MATRIX_BC_NULL);
-  std::vector<double> bc_values(nfaces, 0.0);
-
   matrix_ = Operators::CreateMatrixMFD(plist_.sublist("smoothing operator"), mesh);
 
   matrix_->set_symmetric(true);
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->CreateMFDmassMatrices(Teuchos::null);
   matrix_->InitPreconditioner();
-  matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
-  matrix_->CreateMFDrhsVectors();
-  std::vector<double>& Acc_cells = matrix_->Acc_cells();
-  for (int c=0; c!=ncells; ++c) {
-    Acc_cells[c] += 1.e-8;
-  }
-
-  matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
-  matrix_->AssembleGlobalMatrices();
-  matrix_->ComputeSchurComplement(bc_markers, bc_values);
-  matrix_->UpdatePreconditioner();
 }
 
 

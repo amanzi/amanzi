@@ -33,7 +33,6 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
   Teuchos::Ptr<CompositeVector> slope = results[1];
 
   Epetra_MultiVector& elev_c = *elev->ViewComponent("cell", false);
-  Epetra_MultiVector& elev_f = *elev->ViewComponent("face", false);
   Epetra_MultiVector& slope_c = *slope->ViewComponent("cell", false);
 
   // Get the elevation and slope values from the domain mesh.
@@ -69,20 +68,23 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
 
     // Set the elevation on faces by getting the corresponding nodes and
     // averaging.
-    AmanziMesh::Entity_ID_List surface_nodes(2);
-    AmanziMesh::Entity_ID node0, node1;
-    AmanziGeometry::Point coord0(3);
-    AmanziGeometry::Point coord1(3);
+    if (elev->HasComponent("face")) {
+      Epetra_MultiVector& elev_f = *elev->ViewComponent("face", false);
+      AmanziMesh::Entity_ID_List surface_nodes(2);
+      AmanziMesh::Entity_ID node0, node1;
+      AmanziGeometry::Point coord0(3);
+      AmanziGeometry::Point coord1(3);
 
-    int nfaces = elev_f.MyLength();
-    for (int f=0; f!=nfaces; ++f) {
-      surface_mesh->face_get_nodes(f, &surface_nodes);
-      node0 = surface_mesh->entity_get_parent(AmanziMesh::NODE, surface_nodes[0]);
-      node1 = surface_mesh->entity_get_parent(AmanziMesh::NODE, surface_nodes[1]);
+      int nfaces = elev_f.MyLength();
+      for (int f=0; f!=nfaces; ++f) {
+        surface_mesh->face_get_nodes(f, &surface_nodes);
+        node0 = surface_mesh->entity_get_parent(AmanziMesh::NODE, surface_nodes[0]);
+        node1 = surface_mesh->entity_get_parent(AmanziMesh::NODE, surface_nodes[1]);
 
-      domain_mesh->node_get_coordinates(node0, &coord0);
-      domain_mesh->node_get_coordinates(node1, &coord1);
-      elev_f[0][f] = (coord0[2] + coord1[2])/2.0;
+        domain_mesh->node_get_coordinates(node0, &coord0);
+        domain_mesh->node_get_coordinates(node1, &coord1);
+        elev_f[0][f] = (coord0[2] + coord1[2])/2.0;
+      }
     }
   } else if (domain_mesh->cell_dimension() == 2) {
     // Set the elevation on cells by getting the corresponding cell and its
@@ -128,14 +130,17 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
 
     // Set the elevation on faces by getting the corresponding face and its
     // centroid.
-    int nfaces = elev_f.MyLength();
-    for (int f=0; f!=nfaces; ++f) {
-      // Note that a surface face is a surface mesh's face.
-      AmanziMesh::Entity_ID domain_face =
-          surface_mesh->entity_get_parent(AmanziMesh::FACE, f);
-      AmanziGeometry::Point x = domain_mesh->face_centroid(domain_face);
+    if (elev->HasComponent("face")) {
+      Epetra_MultiVector& elev_f = *elev->ViewComponent("face", false);
+      int nfaces = elev_f.MyLength();
+      for (int f=0; f!=nfaces; ++f) {
+        // Note that a surface face is a surface mesh's face.
+        AmanziMesh::Entity_ID domain_face =
+            surface_mesh->entity_get_parent(AmanziMesh::FACE, f);
+        AmanziGeometry::Point x = domain_mesh->face_centroid(domain_face);
 
-      elev_f[0][f] = x[2];
+        elev_f[0][f] = x[2];
+      }
     }
   }
 }
