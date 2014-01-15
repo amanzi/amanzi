@@ -9,6 +9,7 @@
 #ifndef AMANZI_FLOWRELATIONS_MESHED_ELEVATION_EVALUATOR_
 #define AMANZI_FLOWRELATIONS_MESHED_ELEVATION_EVALUATOR_
 
+#include "factory.hh"
 #include "elevation_evaluator.hh"
 
 namespace Amanzi {
@@ -27,6 +28,9 @@ class MeshedElevationEvaluator : public ElevationEvaluator {
 
   virtual void EvaluateElevationAndSlope_(const Teuchos::Ptr<State>& S,
           const std::vector<Teuchos::Ptr<CompositeVector> >& results);
+
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,MeshedElevationEvaluator> reg_;
 
 };
 

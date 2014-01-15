@@ -326,16 +326,18 @@ int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
   }
 
   // Update the faces
-  Epetra_MultiVector& Yf = *Y.ViewComponent("face", false);
-  const Epetra_MultiVector& Xf = *X.ViewComponent("face", false);
-  const Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",false);
+  if (Y.HasComponent("face")) {
+    Epetra_MultiVector& Yf = *Y.ViewComponent("face", false);
+    const Epetra_MultiVector& Xf = *X.ViewComponent("face", false);
+    const Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",false);
 
-  Afc_->Multiply(true, Tc, Yf);  // Afc is kept in the transpose form.
-  Yf.Update(1., Xf, -1.);
+    Afc_->Multiply(true, Tc, Yf);  // Afc is kept in the transpose form.
+    Yf.Update(1., Xf, -1.);
 
-  int nfaces = Yf.MyLength();
-  for (int f=0; f!=nfaces; ++f) {
-    Yf[0][f] /= Dff_f[0][f];
+    int nfaces = Yf.MyLength();
+    for (int f=0; f!=nfaces; ++f) {
+      Yf[0][f] /= Dff_f[0][f];
+    }
   }
   return ierr;
 }
