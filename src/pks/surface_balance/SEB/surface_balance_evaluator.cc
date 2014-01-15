@@ -257,6 +257,17 @@ void SurfaceBalanceEvaluator::EvaluateFieldPartialDerivative_(
   data_bare.st_energy.dt = 0.;
   data_bare.st_energy.AlbedoTrans = albedo_trans_;
 
+   data.st_energy.Zo=0.005;
+   if (air_temp[0][0] > 270){// Little ditty I wrote for the roughness lenght ~ AA 1/10/14
+      double Zsmooth = 0.005;
+      double Zrough = 0.04;
+      double Zfraction = -0.1*air_temp[0][0] + 28;
+      if (air_temp[0][0]>=280){
+       Zfraction = 0;
+       }
+     data.st_energy.Zo=(Zsmooth*Zfraction) + (Zrough*(1-Zfraction));
+    }
+
   int count = dQe.MyLength();
   for (unsigned int c=0; c!=count; ++c) {
     // ATS Calcualted Data

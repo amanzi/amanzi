@@ -101,7 +101,7 @@ struct LocalData {
     st_energy.SEs = 0.98;               // Surface Emissivity for snow  ----- [-] ** From P. ReVelle (Thesis)
     st_energy.SEtun = 0.92;             // Surface Emissivity for tundray --- [-] ** From P. ReVelle (Thesis)
     st_energy.Zr = 2.0;                 // Referance ht of wind speed ------- [m]
-    st_energy.Zo = 0.005;               // Roughness length  ---------------- [m] Mud flats, snow; no vegetation, no obstacles 
+ //   st_energy.Zo = 0.005;               // Roughness length  ---------------- [m] Mud flats, snow; no vegetation, no obstacles 
   //*Note on Roughness lenght* Should add Change from Snow 0.005 to bare ground 0.03 --> Open flat terrain; grass, few isolated obstacles.   
     st_energy.VKc = 0.41;               // Von Karman Constant -------------- [-]
     double Cp = 1004.0;                 // Specific heat of air ------------- [J/K kg]
