@@ -47,8 +47,11 @@ protected:
 
  protected:
   Key elev_key_;
+  Key slope_key_;
   Key pd_key_;
   Key snow_height_key_;
+  Key cell_vol_key_;
+  double manning_;
 
   Teuchos::RCP<Function> precip_func_;
 
