@@ -70,7 +70,7 @@ Effectively stolen from Amanzi, with few modifications.
 #include "energy_two_phase_registration.hh"
 #include "energy_three_phase_registration.hh"
 #include "surface_balance_SEB_registration.hh"
-#include "test_pks_divgrad_test_registration.hh"
+#include "test_pks_registration.hh"
 // #include "transport_passive_tracer_registration.hh"
 #include "mpc_registration.hh"
 
