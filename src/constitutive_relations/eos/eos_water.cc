@@ -22,7 +22,7 @@ EOSWater::EOSWater(Teuchos::ParameterList& eos_plist) :
 
     ka_(999.915),
     kb_(0.0416516),
-    kc_(0.0100836),
+    kc_(-0.0100836),
     kd_(0.000206355),
     kT0_(273.15),
 
