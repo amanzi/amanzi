@@ -99,7 +99,7 @@ struct LocalData {
     st_energy.Ls = 2834000.0;           // Latent heat of sublimation ------- [J/kg]
     st_energy.Le = 2497848.;            // Latent heat of vaporization ------ [J/kg]
     st_energy.SEs = 0.98;               // Surface Emissivity for snow  ----- [-] ** From P. ReVelle (Thesis)
-    st_energy.SEtun = 0.92;             // Surface Emissivity for tundray --- [-] ** From P. ReVelle (Thesis)
+    st_energy.SEtun = 0.92;             // Surface Emissivity for tundra --- [-] ** From P. ReVelle (Thesis); Ling & Zhang, 2004
     st_energy.Zr = 2.0;                 // Referance ht of wind speed ------- [m]
  //   st_energy.Zo = 0.005;               // Roughness length  ---------------- [m] Mud flats, snow; no vegetation, no obstacles 
   //*Note on Roughness lenght* Should add Change from Snow 0.005 to bare ground 0.03 --> Open flat terrain; grass, few isolated obstacles.   
