@@ -298,6 +298,18 @@ bool SurfaceBalanceSEB::advance(double dt) {
    data.vp_ground.relative_humidity=1;
    data_bare.vp_ground.relative_humidity=1;
 
+
+   data.st_energy.Zo=0.005;
+   if (air_temp[0][0] > 270){// Little ditty I wrote for the roughness lenght ~ AA 1/10/14
+      double Zsmooth = 0.005;
+      double Zrough = 0.04;
+      double Zfraction = -0.1*air_temp[0][0] + 28;
+      if (air_temp[0][0]>=280){
+       Zfraction = 0;
+       }
+     data.st_energy.Zo=(Zsmooth*Zfraction) + (Zrough*(1-Zfraction));
+    }
+
   // loop over all cells and call CalculateSEB_
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
@@ -416,6 +428,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
       *vo_->os() << "Sensible heat = " << data.st_energy.fQh << std::endl;
       *vo_->os() << "GROUND HEAT Qex = " << data.st_energy.fQc << std::endl;
       *vo_->os() << "Ice condensation rate = " << data.st_energy.MIr << std::endl;
+      *vo_->os() << "ALBEDO = " << data.st_energy.albedo_value << std::endl;
     }
 
   }

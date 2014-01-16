@@ -37,8 +37,13 @@ void SurfaceEnergyBalance::UpdateIncomingRadiation(LocalData& seb) {
   seb.st_energy.fQlwIn = EmissivityAir * seb.st_energy.stephB * std::pow(seb.st_energy.temp_air,4);
 
   // Calculate D_h, D_e
+  if (seb.st_energy.ht_snow>0.02){// roughness length for wind swept snow = 0.005 m
   seb.st_energy.Dhe = (std::pow(seb.st_energy.VKc,2) * seb.st_energy.Us
                        / std::pow(std::log(seb.st_energy.Zr / seb.st_energy.Zo), 2));
+}else{// roughness lenght for open field = 0.03 m
+  seb.st_energy.Dhe = (std::pow(seb.st_energy.VKc,2) * seb.st_energy.Us
+                       / std::pow(std::log(seb.st_energy.Zr / 0.03), 2));
+}
 }
 
 void SurfaceEnergyBalance::UpdateIncomingRadiationDerivatives(LocalData& seb) {
@@ -49,8 +54,13 @@ void SurfaceEnergyBalance::UpdateIncomingRadiationDerivatives(LocalData& seb) {
   seb.st_energy.fQlwIn = 0.;
 
   // Calculate D_h, D_e
+  if (seb.st_energy.ht_snow>0.02){// roughness length for wind swept snow = 0.005 m
   seb.st_energy.Dhe = (std::pow(seb.st_energy.VKc,2) * seb.st_energy.Us
                        / std::pow(std::log(seb.st_energy.Zr / seb.st_energy.Zo), 2));
+}else{// roughness lenght for open field = 0.03 m
+  seb.st_energy.Dhe = (std::pow(seb.st_energy.VKc,2) * seb.st_energy.Us
+                       / std::pow(std::log(seb.st_energy.Zr / 0.03), 2));
+}
 }
 
 
@@ -111,7 +121,7 @@ void SurfaceEnergyBalance::UpdateGroundEnergy(LocalData& seb) {
 
   seb.st_energy.fQh = seb.st_energy.rowaCp * seb.st_energy.Dhe * Sqig * (seb.st_energy.temp_air - seb.st_energy.temp_ground);
   //  seb.st_energy.fQh = 0.;
-  std::cout << "fQh: Dhe = " << seb.st_energy.Dhe << ", zeta = " << Sqig << ", Ta = " << seb.st_energy.temp_air << ", Tg = " << seb.st_energy.temp_ground << std::endl;
+  std::cout << "fQh: Dhe = " << seb.st_energy.Dhe << ", zeta = " << Sqig << ", Ta = " << seb.st_energy.temp_air << ", Tg = " << seb.st_energy.temp_ground <<", ALBEDO = " << seb.st_energy.albedo_value << std::endl;
 
   if (seb.st_energy.water_depth > 0.0) {
     // Checking for standing water
