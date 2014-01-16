@@ -128,9 +128,9 @@ void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
     field->Initialize(ic_plist);
 
     // -- Update faces from cells if needed.
-    if (ic_plist.get<bool>("initialize faces from cells", false)) {
-      DeriveFaceValuesFromCellValues_(field->GetFieldData().ptr());
-    }
+    // if (ic_plist.get<bool>("initialize faces from cells", false)) {
+    //   DeriveFaceValuesFromCellValues_(field->GetFieldData().ptr());
+    // }
 
     // communicate just to make sure values are initialized for valgrind's sake
     field->GetFieldData()->ScatterMasterToGhosted();
