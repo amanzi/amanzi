@@ -130,6 +130,8 @@ void Coordinator::initialize() {
 
   // Initialize the process kernels (initializes all independent variables)
   pk_->initialize(S_.ptr());
+  *S_->GetScalarData("dt", "coordinator") = 0.;
+  S_->GetField("dt","coordinator")->set_initialized();
 
   // Initialize the state (initializes all dependent variables).
   S_->Initialize();
