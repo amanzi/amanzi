@@ -133,11 +133,10 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   }
 
   // Potentially do face values as well, though only for saturation_liquid?
-  if (results[1]->HasComponent("boundary_face")) {
-    ASSERT(!results[0]->HasComponent("boundary_face"));
-    ASSERT(!results[2]->HasComponent("boundary_face"));
-
-    Epetra_MultiVector& sat_bf = *results[1]->ViewComponent("boundary_face",false);
+  if (results[0]->HasComponent("boundary_face")) {
+    Epetra_MultiVector& satg_bf = *results[0]->ViewComponent("boundary_face",false);
+    Epetra_MultiVector& satl_bf = *results[1]->ViewComponent("boundary_face",false);
+    Epetra_MultiVector& sati_bf = *results[2]->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& pc_liq_bf = *S->GetFieldData(pc_liq_key_)
         ->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& pc_ice_bf = *S->GetFieldData(pc_ice_key_)
@@ -150,7 +149,7 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     AmanziMesh::Entity_ID_List cells;
 
     // calculate boundary face values
-    int nbfaces = sat_bf.MyLength();
+    int nbfaces = satg_bf.MyLength();
     for (int bf=0; bf!=nbfaces; ++bf) {
       // given a boundary face, we need the internal cell to choose the right WRM
       AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
@@ -160,7 +159,9 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       int i = (*permafrost_models_->first)[cells[0]];
       permafrost_models_->second[i]
           ->saturations(pc_liq_bf[0][bf], pc_ice_bf[0][bf], sats);
-      sat_bf[0][bf] = sats[1];
+      satg_bf[0][bf] = sats[0];
+      satl_bf[0][bf] = sats[1];
+      sati_bf[0][bf] = sats[2];
     }
   }
 }
