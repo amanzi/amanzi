@@ -18,6 +18,7 @@ and to integrate reactions given a chemical configuration.
 #include <vector>
 #include <map>
 
+#include "function.hh"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -123,7 +124,7 @@ class Chemistry_Engine {
   // the Amanzi-U transport process kernel. If such a context already exists, that context is returned.
   // Its lifetime is determined by the Chemistry_Engine: DO NOT manage this function with a 
   // reference-counted pointer!
-  GeochemicalConditionContext* ContextForCondition(const std::string& geochemical_condition_name);
+//  GeochemicalConditionContext* ContextForCondition(const std::string& geochemical_condition_name);
 
  private:
 
@@ -161,11 +162,6 @@ class Chemistry_Engine {
   // pointers to the objects.
   std::map<std::string, AlquimiaGeochemicalCondition*> chem_conditions_;
 
-  // Geochemical condition contexts with which to enforce chemical conditions by the unstructured 
-  // transport pk. This is a wart that accommodates the rigid way in which Amanzi-U's transport 
-  // package enforces boundary conditions on species concentrations (namely separately).
-  std::map<std::string, GeochemicalConditionContext*> chem_contexts_;
-  
   // Vector that takes responsibility for ownership of geochemical conditions.
   std::vector<AlquimiaGeochemicalCondition*> all_chem_conditions_;
 
@@ -183,6 +179,7 @@ class Chemistry_Engine {
 
 };
 
+#if 0
 // This object represents a single context in which geochemical conditions are enforced. We need 
 // this object to relate the separate functions that provide species concentrations using the same 
 // geochemical condition, since the transport package enforces boundary conditions on each species 
@@ -228,7 +225,8 @@ class GeochemicalConditionContext {
   GeochemicalConditionContext();
   GeochemicalConditionContext(const GeochemicalConditionContext&);
   GeochemicalConditionContext& operator=(const GeochemicalConditionContext&);
-}
+};
+#endif
 
 } // namespace
 } // namespace

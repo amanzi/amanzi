@@ -46,8 +46,6 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   // states
   Teuchos::RCP<State> S;
   Teuchos::RCP<AmanziChemistry::Chemistry_State> CS;
-  Teuchos::RCP<AmanziTransport::Transport_State> TS; 
-  Teuchos::RCP<AmanziFlow::Flow_State> FS;
 
 #ifdef ALQUIMIA_ENABLED
   // Chemistry engine -- used for transport boundary conditions and for the Alquimia chemistry PK.

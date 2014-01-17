@@ -53,7 +53,7 @@ include_directories(${HDF5_INCLUDE_DIRS})
 file(GLOB chem_inc_files "*hh")
 set(chem_src_files Chemistry_State.cc;chemistry_pk.cc)
 if (ENABLE_ALQUIMIA)
-  list(APPEND chem_src_files alquimia_chemistry_pk.cc;Chemistry_Engine.cc;GeochemicalConditionContext.cc)
+  list(APPEND chem_src_files alquimia_chemistry_pk.cc;Chemistry_Engine.cc)
 else()
 endif()
 add_amanzi_library(chemistry_pk

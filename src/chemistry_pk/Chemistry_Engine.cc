@@ -40,12 +40,14 @@ Chemistry_Engine::~Chemistry_Engine()
 {
   if (chem_initialized_)
   {
+#if 0
     // Delete the context objects for the geochemical conditions.
     for (std::map<std::string, GeochemicalConditionContext*>::iterator 
          iter = chem_contexts_.begin(); iter != chem_contexts_.end(); ++iter)
     {
       delete iter->second;
     }
+#endif
 
     chem_.Shutdown(&chem_data_.engine_state, &chem_status_);
     FreeAlquimiaData(&chem_data_);
@@ -320,6 +322,7 @@ void Chemistry_Engine::Advance(double delta_time,
   CopyOut(chem_state, mat_props, aux_data, aux_output);
 }
 
+#if 0
 GeochemicalConditionContext* Chemistry_Engine::ContextForCondition(const std::string& geochemical_condition_name)
 {
   GeochemicalConditionContext* context = NULL;
@@ -333,6 +336,7 @@ GeochemicalConditionContext* Chemistry_Engine::ContextForCondition(const std::st
     context = iter->second;
   return context;
 }
+#endif
 
 void Chemistry_Engine::ParseChemicalConditions(const Teuchos::ParameterList& param_list,
                                                std::map<std::string, AlquimiaGeochemicalCondition*>& conditions)
@@ -660,6 +664,7 @@ void Chemistry_Engine::CopyOut(AlquimiaState* chem_state, AlquimiaMaterialProper
   }
 }
 
+#if 0
 // This subclass of Amanzi::Function provides an interface by which a geochemical condition can be 
 // enforced on a given species.
 class GeochemicalConcentrationFunction: public Function {
@@ -727,8 +732,8 @@ Teuchos::RCP<Function> GeochemicalConditionContext::speciesFunction(const std::s
     Exceptions::amanzi_throw(msg); 
   }
 
-  GeochemicalConcentrationFunction* function = new GeochemicalConcentrationFunction(speciesIndex);
-  functions_[speciesIndex] = Teuchos::RCP<Function>(function);
+//  GeochemicalConcentrationFunction* function = new GeochemicalConcentrationFunction(speciesIndex);
+//  functions_[speciesIndex] = Teuchos::RCP<Function>(function);
   return functions_[speciesIndex];
 }
 
@@ -744,10 +749,11 @@ void GeochemicalConditionContext::EnforceCondition(double t,
   int N = chem_engine_->NumPrimarySpecies();
   for (int i = 0; i < N; ++i)
   {
-    Teuchos::RCP<GeochemicalConcentrationFunction> concFunc = functions_[i];
-    concFunc->value_ = chem_state->total_mobile.data[i];
+//    Teuchos::RCP<GeochemicalConcentrationFunction> concFunc = functions_[i];
+//    concFunc->value_ = chem_state->total_mobile.data[i];
   }
 }
+#endif
 
 } // namespace
 } // namespace

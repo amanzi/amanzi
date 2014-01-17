@@ -43,7 +43,7 @@ void TransportBCFactory::CreateConcentration(
           Functions::TransportBoundaryFunction* bc = new Functions::TransportBoundaryFunction(mesh_);
           ProcessGeochemicalCondition(cond_name, cond_list, bc);
           bcs.push_back(bc);
-          bcs_tcc_name.push_back(name);
+//          bcs_tcc_name.push_back(name); // FIXME: This is not correct!
         }
       }
     }
@@ -123,7 +123,7 @@ void TransportBCFactory::ProcessConcentrationSpec(
   Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
     f = Teuchos::rcp(new Amanzi::MultiFunction(*f_list));
-  } catch (Errors::Message& m) {\n"
+  } catch (Errors::Message& m) {
     msg << "error in sublist \"boundary concentration\": " << m.what();
     Exceptions::amanzi_throw(msg);
   }
@@ -142,9 +142,9 @@ void TransportBCFactory::ProcessGeochemicalCondition(const std::string& cond_nam
 
   // Figure out which regions this geochemical condition applies to.
   std::vector<std::string> regions;
-  if (spec.isParameter("regions")) {
-    if (spec.isType<Teuchos::Array<std::string> >("regions")) {
-      regions = spec.get<Teuchos::Array<std::string> >("regions").toVector();
+  if (cond_list.isParameter("regions")) {
+    if (cond_list.isType<Teuchos::Array<std::string> >("regions")) {
+      regions = cond_list.get<Teuchos::Array<std::string> >("regions").toVector();
     } else {
       msg << "parameter \"regions\" is not of type \"Array string\"";
       Exceptions::amanzi_throw(msg);
@@ -157,6 +157,8 @@ void TransportBCFactory::ProcessGeochemicalCondition(const std::string& cond_nam
   // Construct functions for each of the species and create multi-functions for each. Here, we use a 
   // Geochemical condition "context" that enforces a geochemical condition and broadcasts the resulting 
   // species concentrations to various GeochemicalConcentrationFunctions.
+  // FIXME: I don't think we need to do this anymore.
+#if 0
   Teuchos::RCP<AmanziChemistry::GeochemicalConditionContext> geochem_context = 
     Teuchos::rcp(new AmanziChemistry::GeochemicalConditionContext(chem_engine_, cond_name));
   std::vector<std::string> speciesNames;
@@ -170,6 +172,7 @@ void TransportBCFactory::ProcessGeochemicalCondition(const std::string& cond_nam
     // Add this BC specification to the boundary function.
     bc->Define(regions, f); // , Amanzi::BOUNDARY_FUNCTION_ACTION_NONE); // needs to be fixed
   }
+#endif
 }
 #endif
 
