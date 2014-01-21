@@ -237,6 +237,16 @@ void MPC::mpc_init() {
   // first assume we're not
   restart_requested = false;
 
+
+  if (flow_enabled) {
+    if (parameter_list.isSublist("Walkabout Data")) {
+      Teuchos::ParameterList walkabout_parameter_list = parameter_list.sublist("Walkabout Data");
+      walkabout = Teuchos::ptr(new Amanzi::Checkpoint(walkabout_parameter_list, comm));
+    } else {
+      walkabout = Teuchos::ptr(new Amanzi::Checkpoint());
+    }    
+  }
+  
   // then check if indeed we are
   if (mpc_parameter_list.isSublist("Restart from Checkpoint Data File")) {
 
@@ -513,7 +523,19 @@ void MPC::cycle_driver() {
         WriteCheckpoint(restart,S.ptr(),dTtransient);
       }
     }
+
+    // write walkabout data if requested
+    if (flow_enabled) {
+      if (walkabout->DumpRequested(S->cycle(), S->time())) {
+        if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+          *out << "Cycle " << S->cycle() << ": writing walkabout data" << std::endl;
+        }
+        FPK->WriteWalkabout(walkabout.ptr());
+      }
+    }
   }
+
+
   Amanzi::timer_manager.stop("I/O");
 
 
@@ -968,6 +990,17 @@ void MPC::cycle_driver() {
         }
         WriteCheckpoint(restart,S.ptr(),mpc_dT);
       }
+
+      // write walkabout data if requested
+      if (flow_enabled) {
+        if (force || force_checkpoint || walkabout->DumpRequested(S->cycle(), S->time())) {
+          if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+            *out << "Cycle " << S->cycle() << ": writing walkabout data" << std::endl;
+          }
+          FPK->WriteWalkabout(walkabout.ptr());
+        }
+      }
+      
       Amanzi::timer_manager.stop("I/O");
     }
   }
