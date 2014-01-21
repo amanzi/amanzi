@@ -1774,7 +1774,6 @@ by machine round errors and randomness due to execution in a parallel computing 
 
   * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
 
-  * `"walkabout`" [bool] (false) include postprocessed output for walkabout in the checkpoint files.
 
 Example:
 
@@ -1790,15 +1789,55 @@ Example:
     <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
     <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
     <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
-
-    <Parameter name="walkabout" type="bool" value="false"/>
   </ParameterList>
 
 In this example, Checkpoint Data files are written when the cycle number is 
 a multiple of 100.
 
-Additional data are written to this file when parameter `"walkabout`"
-is set to true.  
+
+Walkabout Data
+--------------
+
+A user may request periodic dumps of Walkabout Data. Output controls for Walkabout Data are limited to file name generation and writing frequency, by numerical cycle number or time.
+
+* `"Walkabout Data`" [list] can accept a file name base [string] and cycle data [list] 
+  used to generate the file base name or directory base name that is used in writing Checkpoint Data. 
+
+  * `"file name base`" [string] ("walkabout")
+  
+  * `"file name digits`" [int] (5)
+
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop parameters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
+
+  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
+
+  * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+
+  * `"times start period stop n`" [Array(double) if multiple start period stop parameters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" parameter.
+
+  * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Walkabout Data">
+    <Parameter name="file name base" type="string" value="walkabout"/>
+    <Parameter name="file name digits" type="int" value="5"/>
+
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+    <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+  </ParameterList>
+
+In this example, walkabout data files are written when the cycle number is 
+a multiple of 100.
+
 
 
 Visualization Data
