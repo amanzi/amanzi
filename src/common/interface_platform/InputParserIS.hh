@@ -18,6 +18,7 @@ Teuchos::Array<std::string> get_Variable_Macro ( const std::string& macro_name, 
 void init_global_info( Teuchos::ParameterList* plist );
 
 Teuchos::ParameterList create_Checkpoint_Data_List ( Teuchos::ParameterList* plist );
+Teuchos::ParameterList create_Walkabout_Data_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Visualization_Data_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList get_Regions_List ( Teuchos::ParameterList* plist );
