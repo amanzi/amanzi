@@ -11,10 +11,10 @@ Author (v1): Neil Carlson
 #include "errors.hh"
 
 #include "Domain.hh"
-#include "transport_domain_function.hh"
+#include "TransportDomainFunction.hh"
 
 namespace Amanzi {
-namespace Functions {
+namespace AmanziTransport {
 
 /* ******************************************************************
 * Calculate pairs <list of cells, function>

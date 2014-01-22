@@ -15,7 +15,9 @@
 #include <vector>
 
 #include "Mesh.hh"
-#include "transport_boundary_function.hh"
+#include "TransportBoundaryFunction.hh"
+#include "TransportBoundaryFunction_Tracer.hh"
+#include "TransportBoundaryFunction_Alquimia.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -27,9 +29,17 @@ class TransportBCFactory {
      : mesh_(mesh), list_(list) {};
   ~TransportBCFactory() {};
   
-  void CreateConcentration(std::vector<Functions::TransportBoundaryFunction*>& bcs, 
-                           std::vector<std::string>& bcs_tcc_name) const;
-  void ProcessConcentrationSpec(Teuchos::ParameterList& spec, Functions::TransportBoundaryFunction* bc) const;
+  void CreateConcentration(std::vector<TransportBoundaryFunction*>& bcs) const;
+
+  // non-reactive components
+  void ProcessTracerList(std::vector<TransportBoundaryFunction*>& bcs) const;
+  void ProcessTracerSpec(
+      Teuchos::ParameterList& spec, TransportBoundaryFunction_Tracer* bc) const;
+
+  // reactive components
+  void ProcessGeochemicalConditionList(std::vector<TransportBoundaryFunction*>& bcs) const {};
+  void ProcessGeochemicalConditionSpec(
+      Teuchos::ParameterList& spec, TransportBoundaryFunction_Alquimia* bc) const {};
 
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;

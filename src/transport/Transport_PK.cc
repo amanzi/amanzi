@@ -183,7 +183,7 @@ int Transport_PK::InitPK()
   CheckInfluxBC();
 
   // source term initialization
-  if (src_sink_distribution & Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  if (src_sink_distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
 
@@ -524,7 +524,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   for (int n = 0; n < bcs.size(); n++) {
     int i = bcs_tcc_index[n];
 
-    for (Functions::TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+    for (TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
       int f = bc->first;
       int c2 = (*downwind_cell_)[f];
 
@@ -709,7 +709,7 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
 * Return mass rate for the tracer.
 ****************************************************************** */
 void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp, 
-                                         Functions::TransportDomainFunction* src_sink, 
+                                         TransportDomainFunction* src_sink, 
                                          Epetra_MultiVector& tcc)
 {
   int ncomponents = tcc.NumVectors();
@@ -717,12 +717,13 @@ void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp,
     std::string name(component_names_[i]);
     
     if (src_sink_distribution & 
-        Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+        TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       src_sink->ComputeDistributeMultiValue(Tp, name, Kxy->Values()); 
-    else
+    } else {
       src_sink->ComputeDistributeMultiValue(Tp, name, NULL);
+    }
 
-    Functions::TransportDomainFunction::Iterator src;
+    TransportDomainFunction::Iterator src;
     for (src = src_sink->begin(); src != src_sink->end(); ++src) {
       int c = src->first;
       double value = mesh_->cell_volume(c) * src->second;

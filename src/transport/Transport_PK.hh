@@ -26,14 +26,14 @@
 #include "CompositeVector.hh"
 #include "tensor.hh"
 #include "Explicit_TI_FnBase.hh"
-#include "transport_boundary_function.hh"
-#include "transport_domain_function.hh"
+#include "TransportBoundaryFunction.hh"
+#include "TransportDomainFunction.hh"
 
 #include "State.hh"
 #include "Reconstruction.hh"
 
 #include "TransportDefs.hh"
-#include "Transport_SourceFactory.hh"
+#include "TransportSourceFactory.hh"
 #include "Dispersion.hh"
 
 
@@ -99,7 +99,7 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   // sources and sinks
   void ComputeAddSourceTerms(double Tp, double dTp, 
-                             Functions::TransportDomainFunction* src_sink, 
+                             TransportDomainFunction* src_sink, 
                              Epetra_MultiVector& tcc);
 
   // limiters 
@@ -196,7 +196,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<double> component_local_min_;
   std::vector<double> component_local_max_;
 
-  Functions::TransportDomainFunction* src_sink;  // Source and sink terms
+  TransportDomainFunction* src_sink;  // Source and sink terms
   int src_sink_distribution; 
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
@@ -211,7 +211,7 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   double cfl_, dT, dT_debug, T_physics;  
 
-  std::vector<Functions::TransportBoundaryFunction*> bcs;  // influx BCs for each components
+  std::vector<TransportBoundaryFunction*> bcs;  // influx BCs for each components
   std::vector<int> bcs_tcc_index; 
   double bc_scaling;
 

@@ -1,10 +1,10 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 This is the Transport component of Amanzi
 
 License: see $AMANZI_DIR/COPYRIGHT
 Author (v1): Neil Carlson
        (v2): Ethan Coon
+       (v3): Konstantin Lipnikov
 
 Function applied to a mesh component with at most one function 
 application per entity.
@@ -24,27 +24,17 @@ application per entity.
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {
-namespace Functions {
+namespace AmanziTransport {
 
 typedef std::pair<std::string, int> Action;
 
-class TransportBoundaryFunction : public UniqueMeshFunction {
+class TransportBoundaryFunction : public Functions::UniqueMeshFunction {
  public:
   TransportBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :
       UniqueMeshFunction(mesh),
-      finalized_(false) {}
+      finalized_(false) {};
   
-  void Define(const std::vector<std::string> &regions,
-              const Teuchos::RCP<const MultiFunction> &f);
-
-  void Define(std::string region,
-              const Teuchos::RCP<const MultiFunction> &f);
-
-  void Compute(double time);
-
-  void ComputeShift(double T, double* shift);
-
-  void Finalize();
+  virtual void Compute(double time) = 0;
 
   // iterator methods
   typedef std::map<int,double>::const_iterator Iterator;
@@ -53,13 +43,16 @@ class TransportBoundaryFunction : public UniqueMeshFunction {
   Iterator find(const int j) const { return value_.find(j); }
   std::map<int,double>::size_type size() { return value_.size(); }
 
+ public:
+  std::vector<std::string> tcc_name;
+
  protected:
   std::map<int,double> value_;
   bool finalized_;
 };
 
-} // namespace
-} // namespace
+}  // namespace AmanziTransport
+}  // namespace Amanzi
 
 
 #endif

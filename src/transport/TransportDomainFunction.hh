@@ -21,7 +21,7 @@
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {
-namespace Functions {
+namespace AmanziTransport {
 
 namespace TransportActions {
 const int DOMAIN_FUNCTION_ACTION_NONE = 0;
@@ -29,7 +29,7 @@ const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME = 1;
 const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY = 2;
 }
 
-class TransportDomainFunction : public UniqueMeshFunction {
+class TransportDomainFunction : public Functions::UniqueMeshFunction {
  public:
   explicit TransportDomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
       UniqueMeshFunction(mesh),
@@ -72,7 +72,7 @@ class TransportDomainFunction : public UniqueMeshFunction {
 };
 
 
-}  // namespace Functions
+}  // namespace AmanziTransport
 }  // namespace Amanzi
 
 #endif  // AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH_
