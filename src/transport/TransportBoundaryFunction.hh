@@ -40,8 +40,8 @@ class TransportBoundaryFunction : public Functions::UniqueMeshFunction {
   typedef std::map<int,double>::const_iterator Iterator;
   Iterator begin() const { return value_.begin(); }
   Iterator end() const  { return value_.end(); }
-  Iterator find(const int j) const { return value_.find(j); }
-  std::map<int,double>::size_type size() { return value_.size(); }
+  // Iterator find(const int j) const { return value_.find(j); }
+  // std::map<int,double>::size_type size() { return value_.size(); }
 
  public:
   std::vector<std::string> tcc_name;
