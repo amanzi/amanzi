@@ -86,8 +86,11 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& cv = *S->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
             
     int n_cycles = 10;
+    int i_cycle = 0;
+    double norm;
     result->PutScalar(Qe*dt);
     for (int n=0; n!=n_cycles; ++n) {
+      i_cycle = n;
       std::cout << "SNOW INNER ITERATE " << n << std::endl;
 
       // update snow potential, z + h_pd + h_s + Qe*dt
@@ -147,7 +150,6 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       }
 
       // smooth to find a correction
-      double norm(0.);
       residual->NormInf(&norm);
       if (norm < 1.e-4) {
         break;
@@ -166,17 +168,14 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       matrix_->ApplyInverse(*residual, *du);
 
       // apply correction
-      std::cout << "correction = " << std::endl;
-      du->Print(std::cout);
-
       result->Update(-1., *du, 1.);
 
-      // apply correction
-      std::cout << "new iterate = " << std::endl;
-      result->Print(std::cout);
+      // log
+      std::cout << "Snow Distribution: itr=" << i_cycle << ", norm=" << norm << std::endl;
 
     }
-
+    std::cout << "Snow Distribution finished: itr=" << i_cycle << ", norm=" << norm << std::endl;
+    
     // get Q back
     result->Scale(1./dt);
   }
