@@ -1005,7 +1005,7 @@ allows us to define spatially variable boundary conditions.
    <ParameterList name="boundary conditions">
      <ParameterList name="concentration">
        <ParameterList name="H+"> 
-         <ParameterList name="source for east well">   <!-- user defined name -->
+         <ParameterList name="east crib">   <!-- user defined name -->
            <Parameter name="regions" type="Array(string)" value="{Top, Bottom}"/>
              <ParameterList name="boundary concentration">
                <ParameterList name="function-constant">  <!-- any time function -->
@@ -1014,7 +1014,7 @@ allows us to define spatially variable boundary conditions.
              </ParameterList>
            </ParameterList>
          </ParameterList>
-         <ParameterList name="source for west well">   <!-- user defined name -->
+         <ParameterList name="west crib">   <!-- user defined name -->
            ...
          </ParameterList>
        </ParameterList>
@@ -1027,6 +1027,23 @@ allows us to define spatially variable boundary conditions.
      <ParameterList name="outward flux">  <!-- Future boundary conditions -->
      </ParameterList>
    </ParameterList>
+
+
+Geochemical boundary conditions are concentration-type boundary conditions
+but require special treatment. They are specified as follows:
+
+.. code-block:: xml
+
+   <ParameterList name="boundary conditions">
+     <ParameterList name="geochemical conditions">
+       <ParameterList name="east crib">   <!-- user defined name -->
+         <Parameter name="geochemical engine" type="string" value="pflotran"/>
+         <Parameter name="input file" type="string" value="tritium.bgd"/>
+         <Parameter name="regions" type="Array(string)" value="{Crib1}"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
 
 Sources and Sinks
 -----------------
