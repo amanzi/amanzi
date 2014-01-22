@@ -58,6 +58,9 @@ Output data from Amanzi is currently organized into four specific groups:
 
 * `"Checkpoint Data`": the complete set of information that is required to duplicate a given execution of Amanzi.  Typically `"Checkpoint Data`" is created at periodic intervals during a long run in order to facilitate a repeatable simulation restart capability and archiving procedures. Unlike the first two data groups, there are no user-settable parameters to control the contents of a `"Checkpoint Data`" file - the implementation will determine the quantity, format and precision of this data in order to guarantee reproducibility.
 
+
+* `"Walkabout Data`": post-processed field data specific to be used as input to the particle tracking software Walkabout.
+
 * `"Log Data`": running commentary on the performance and status of Amanzi's execution.  Typically such data is written to a C++ stream which may be directed to a pipe or file.  The amount and detail of log data is determined by a range of verbosity controls.
 
 Generally, `"Visualization Data`" and `"Checkpoint Data`" consists of high-dimensional field data representing snapshots of the evolving discrete variables.  These are large datasets, relative to the other types, and are most often written to disk in a file format that allows a direct repesentation of the underlying discrete mesh and parallel data distribution.
@@ -1425,7 +1428,7 @@ The chemistry list is needed if the Chemistry model is set to `"On`".
 Output
 ======
 
-Output data from Amanzi is currently organized into four specific groups: `"Observation Data`", `"Visualization Data`", `"Checkpoint Data`" `"Diagnostic Output`" and `"Log Data`".  
+Output data from Amanzi is currently organized into four specific groups: `"Observation Data`", `"Visualization Data`", `"Checkpoint Data`", `"Walkabout Data`", `"Diagnostic Output`" and `"Log Data`".  
 Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Checkpoint Data`" is intended to represent all that is necesary to repeat or continue an Amanzi run.  The specific data contained in a Checkpoint Data dump is specific to the algorithm optoins and mesh framework selected.  Checkpoint Data is special in that no interpolation is perfomed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write Checkpoint Data at the discrete intervals of the simulation.
@@ -1438,7 +1441,10 @@ Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Log Data`" is intended to represent runtime diagnostics to indicate the status of the simulation in progress.  This data is typically written by the simulation code to the screen or some other stream or file pipe.  The volume of `"Log Data`" generated is a function of the `"Verbosity`" setting under `"Execution Control`".
 
+* `"Walkabout Data`" is intended to be used as input to the particle tracking software Walkabout.
+
 "`Log Data`" is not explicitly controlled in this section, since it is easier to control in the context of specifying details of the algorithms.  The remaining data types are discussed in the section below.
+
 
 
 Time and Cycle specification
@@ -1689,6 +1695,49 @@ Example:
   </ParameterList>
 
 In this example, the liquid pressure and moisture content are written when the cycle number is evenly divisble by 5.
+
+
+
+
+Walkabout Data
+--------------
+
+A user may request periodic dumps of Walkabout Data.  Output controls for Walkabout Data are limited to file name generation and writing frequency, by numerical cycle number.
+
+* [U] `"Walkabout Data`" [list] can accept a file name base [string] and cycle data [list] used to generate the file base name or directory base name that is used in writing Walkabout Data. 
+
+  * [U] `"File Name Base`" [string]
+
+  * [U] `"File Name Digits`" [int] specify the number of digits that should be appended to the file name for the cycle number.
+
+  * [U] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
+
+Notes:
+
+[U] if only `"File Name Base`" and optionally `"File Name Digits`" are specified then only one walkabout dump is
+written at the end of the simulation.
+
+
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Cycle Macros">
+    <ParameterList name="Every-5">
+      <Parameter name="Start_Period_Stop" type="Array int" value="{0, 5, -1}"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Walkabout Data">
+    <Parameter name="File Name Base" type="string" value="walk"/>
+    <Parameter name="File Name Digits" type="int" value="5"/>
+    <Parameter name="Cycle Macro" type="string" value="Every-5"/>
+  </ParameterList>
+
+In this example, Checkpoint Data files are written when the cycle number is evenly divisible by 5.
+
+
 
 
 Restart from Checkpoint Data File

@@ -40,7 +40,7 @@ TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN) {
 
   // create the SolverState
   Teuchos::ParameterList plist;
-  plist.set("nonlinear tolerance", 1e-7);
+  plist.set("nonlinear tolerance", 1e-8);
   plist.set("diverged tolerance", 1e10);
   plist.set("limit iterations", 10);
   plist.set("max du growth factor", 1e5);

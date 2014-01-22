@@ -29,6 +29,8 @@
 #include "RelativePermeability.hh"
 #include "Matrix_MFD.hh"
 
+#include "checkpoint.hh"
+
 /* This is a base virtual class */
 
 namespace Amanzi {
@@ -110,7 +112,8 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   void CalculatePoreVelocity(std::vector<AmanziGeometry::Point>& xyz, 
                              std::vector<AmanziGeometry::Point>& velocity,
                              std::vector<double>& porosity, std::vector<double>& saturation);
-
+  void WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk);
+  
   // extensions 
   int BoundaryFaceGetCell(int f);  // of AmanziMesh
 
@@ -183,6 +186,9 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
  protected:
   VerboseObject* vo_;
 };
+
+
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

@@ -33,6 +33,7 @@ class Checkpoint : public IOEvent {
   void CreateFile(int cycle);
   void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const;
   void WriteAttributes(double time, double dt, int cycle) const;
+  void WriteAttributes(double time, int cycle) const;
   void Finalize();
 
   void set_filebasename(std::string base) { filebasename_ = base; }

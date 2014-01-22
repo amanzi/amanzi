@@ -42,7 +42,7 @@ namespace AmanziTransport {
 #ifdef ALQUIMIA_ENABLED
 Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
                            std::vector<std::string>& component_names,
-                           Teuchos::RCP<AmanziChemistry::Chemistry_Engine> chem_engine)
+                           Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
     : S_(S), component_names_(component_names), chem_engine_(chem_engine)
 #else
 Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
@@ -192,7 +192,7 @@ int Transport_PK::InitPK()
   CheckInfluxBC();
 
   // source term initialization
-  if (src_sink_distribution & Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  if (src_sink_distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
 
@@ -530,17 +530,23 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   }
 
   // loop over exterior boundary sets
-  for (int n = 0; n < bcs.size(); n++) {
-    int i = bcs_tcc_index[n];
+  for (int m = 0; m < bcs.size(); m++) {
+    std::vector<int>& tcc_index = bcs[m]->tcc_index();
+    std::vector<int>& faces = bcs[m]->faces();
+    std::vector<std::vector<double> >& values = bcs[m]->values();
 
-    for (Functions::TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
-      int f = bc->first;
+    int ncomp = tcc_index.size();
+    int nbfaces = faces.size();
+    for (int n = 0; n < nbfaces; n++) {
+      int f = faces[n];
       int c2 = (*downwind_cell_)[f];
 
       if (c2 >= 0) {
         double u = fabs((*darcy_flux)[0][f]);
-        tcc_flux = dT * u * bc->second;
-        tcc_next[i][c2] += tcc_flux;
+        for (int i = 0; i < ncomp; i++) {
+          tcc_flux = dT * u * values[n][i];
+          tcc_next[tcc_index[i]][c2] += tcc_flux;
+        }
       }
     }
   }
@@ -718,7 +724,7 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
 * Return mass rate for the tracer.
 ****************************************************************** */
 void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp, 
-                                         Functions::TransportDomainFunction* src_sink, 
+                                         TransportDomainFunction* src_sink, 
                                          Epetra_MultiVector& tcc)
 {
   int ncomponents = tcc.NumVectors();
@@ -726,12 +732,13 @@ void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp,
     std::string name(component_names_[i]);
     
     if (src_sink_distribution & 
-        Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+        TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       src_sink->ComputeDistributeMultiValue(Tp, name, Kxy->Values()); 
-    else
+    } else {
       src_sink->ComputeDistributeMultiValue(Tp, name, NULL);
+    }
 
-    Functions::TransportDomainFunction::Iterator src;
+    TransportDomainFunction::Iterator src;
     for (src = src_sink->begin(); src != src_sink->end(); ++src) {
       int c = src->first;
       double value = mesh_->cell_volume(c) * src->second;

@@ -14,7 +14,7 @@
 
 #include "errors.hh"
 
-#include "Transport_SourceFactory.hh"
+#include "TransportSourceFactory.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -22,10 +22,10 @@ namespace AmanziTransport {
 /* ******************************************************************
 * Process source, step 1.
 ****************************************************************** */
-Functions::TransportDomainFunction* TransportSourceFactory::CreateSource() 
+TransportDomainFunction* TransportSourceFactory::CreateSource() 
 {
   Errors::Message msg;
-  Functions::TransportDomainFunction* src = new Functions::TransportDomainFunction(mesh_);
+  TransportDomainFunction* src = new TransportDomainFunction(mesh_);
 
   if (plist_->isSublist("concentration")) {
     Teuchos::ParameterList& clist = plist_->get<Teuchos::ParameterList>("concentration");
@@ -70,7 +70,7 @@ Functions::TransportDomainFunction* TransportSourceFactory::CreateSource()
 * Process source, step 2.
 ****************************************************************** */
 void TransportSourceFactory::ProcessSourceSpec(
-  Teuchos::ParameterList& list, const std::string& name, Functions::TransportDomainFunction* src) const 
+  Teuchos::ParameterList& list, const std::string& name, TransportDomainFunction* src) const 
 {
   Errors::Message m;
   std::vector<std::string> regions;
@@ -120,11 +120,11 @@ void TransportSourceFactory::ProcessStringActions(const std::string& name, int* 
 {
   Errors::Message msg;
   if (name == "none") {
-    *method = Amanzi::Functions::TransportActions::DOMAIN_FUNCTION_ACTION_NONE;
+    *method = TransportActions::DOMAIN_FUNCTION_ACTION_NONE;
   } else if (name == "volume") {
-    *method = Amanzi::Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
+    *method = TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
   } else if (name == "permeability") {
-    *method = Amanzi::Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
+    *method = TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
   } else {
     msg << "Transport PK: unknown source distribution method has been specified.";
     Exceptions::amanzi_throw(msg);

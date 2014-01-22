@@ -21,7 +21,7 @@
 
 #include "Mesh.hh"
 #include "Transport_PK.hh"
-#include "Transport_BC_Factory.hh"
+#include "TransportBCFactory.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -101,7 +101,6 @@ void Transport_PK::ProcessParameterList()
 
   // populate the list of boundary influx functions
   bcs.clear();
-  bcs_tcc_index.clear();
 
   if (transport_list.isSublist("boundary conditions")) {  // New flexible format.
     std::vector<std::string> bcs_tcc_name;
@@ -112,10 +111,7 @@ void Transport_PK::ProcessParameterList()
 #else
     TransportBCFactory bc_factory(mesh_, bcs_list);
 #endif
-    bc_factory.CreateConcentration(bcs, bcs_tcc_name);
-    for (int i = 0; i < bcs_tcc_name.size(); i++) {
-      bcs_tcc_index.push_back(FindComponentNumber(bcs_tcc_name[i]));
-    }
+    bc_factory.CreateConcentration(bcs);
   } else {
     printf("Transport PK: does not have boundary conditions.\n");
   }
@@ -128,7 +124,7 @@ void Transport_PK::ProcessParameterList()
     
     // revisit the code below (lipnikov@lanl.gov)
     src_sink_distribution = src_sink->CollectActionsList();
-    if (src_sink_distribution & Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+    if (src_sink_distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       Errors::Message msg;
       msg << "Transport PK: support of permeability weighted source distribution is pending.\n";
       Exceptions::amanzi_throw(msg);  

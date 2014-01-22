@@ -26,18 +26,18 @@
 #include "CompositeVector.hh"
 #include "tensor.hh"
 #include "Explicit_TI_FnBase.hh"
-#include "transport_boundary_function.hh"
-#include "transport_domain_function.hh"
+#include "TransportBoundaryFunction.hh"
+#include "TransportDomainFunction.hh"
 
 #include "State.hh"
 #include "Reconstruction.hh"
 
 #include "TransportDefs.hh"
-#include "Transport_SourceFactory.hh"
+#include "TransportSourceFactory.hh"
 #include "Dispersion.hh"
 
 #ifdef ALQUIMIA_ENABLED
-#include "Chemistry_Engine.hh"
+#include "ChemistryEngine.hh"
 #endif
 
 /*
@@ -63,7 +63,7 @@ class Transport_PK : public Explicit_TI::fnBase {
 #ifdef ALQUIMIA_ENABLED
   Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
                std::vector<std::string>& component_names,
-               Teuchos::RCP<AmanziChemistry::Chemistry_Engine> chem_engine = Teuchos::null);
+               Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine = Teuchos::null);
 #else
   Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
                std::vector<std::string>& component_names);
@@ -108,7 +108,7 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   // sources and sinks
   void ComputeAddSourceTerms(double Tp, double dTp, 
-                             Functions::TransportDomainFunction* src_sink, 
+                             TransportDomainFunction* src_sink, 
                              Epetra_MultiVector& tcc);
 
   // limiters 
@@ -193,7 +193,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
   
 #ifdef ALQUIMIA_ENABLED
-  Teuchos::RCP<AmanziChemistry::Chemistry_Engine> chem_engine_;
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 #endif
 
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
@@ -209,7 +209,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<double> component_local_min_;
   std::vector<double> component_local_max_;
 
-  Functions::TransportDomainFunction* src_sink;  // Source and sink terms
+  TransportDomainFunction* src_sink;  // Source and sink terms
   int src_sink_distribution; 
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
@@ -224,8 +224,7 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   double cfl_, dT, dT_debug, T_physics;  
 
-  std::vector<Functions::TransportBoundaryFunction*> bcs;  // influx BCs for each components
-  std::vector<int> bcs_tcc_index; 
+  std::vector<TransportBoundaryFunction*> bcs;  // influx BCs for each components
   double bc_scaling;
 
   double mass_tracer_exact, mass_tracer_source;  // statistics for tracer

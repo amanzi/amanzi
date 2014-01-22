@@ -9,7 +9,7 @@ This implements the Alquimia chemistry engine.
 
  ------------------------------------------------------------------------- */
 
-#include "Chemistry_Engine.hh"
+#include "ChemistryEngine.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 
@@ -23,7 +23,7 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 
-Chemistry_Engine::Chemistry_Engine(const Teuchos::ParameterList& param_list):
+ChemistryEngine::ChemistryEngine(const Teuchos::ParameterList& param_list):
   main_param_list_(param_list), 
   chem_param_list_(),
   chem_initialized_(false),
@@ -36,7 +36,7 @@ Chemistry_Engine::Chemistry_Engine(const Teuchos::ParameterList& param_list):
   Initialize();
 }
 
-Chemistry_Engine::~Chemistry_Engine()
+ChemistryEngine::~ChemistryEngine()
 {
   if (chem_initialized_)
   {
@@ -60,12 +60,12 @@ Chemistry_Engine::~Chemistry_Engine()
   }
 }
 
-const std::string& Chemistry_Engine::Name() const
+const std::string& ChemistryEngine::Name() const
 {
   return chem_engine_name_;
 }
 
-void Chemistry_Engine::Initialize()
+void ChemistryEngine::Initialize()
 {
   Errors::Message msg;
 
@@ -124,22 +124,22 @@ void Chemistry_Engine::Initialize()
   chem_initialized_ = true;
 }
 
-int Chemistry_Engine::NumPrimarySpecies() const
+int ChemistryEngine::NumPrimarySpecies() const
 {
   return chem_data_.sizes.num_primary;
 }
 
-int Chemistry_Engine::NumAqueousComplexes() const
+int ChemistryEngine::NumAqueousComplexes() const
 {
   return chem_data_.sizes.num_aqueous_complexes;
 }
 
-int Chemistry_Engine::NumSorbedSpecies() const
+int ChemistryEngine::NumSorbedSpecies() const
 {
   return chem_data_.sizes.num_sorbed;
 }
 
-void Chemistry_Engine::GetPrimarySpeciesNames(std::vector<std::string>& speciesNames) const
+void ChemistryEngine::GetPrimarySpeciesNames(std::vector<std::string>& speciesNames) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_data_.meta_data;
   int N = metadata->primary_names.size;
@@ -148,12 +148,12 @@ void Chemistry_Engine::GetPrimarySpeciesNames(std::vector<std::string>& speciesN
     speciesNames[i] = std::string(metadata->primary_names.data[i]);
 }
 
-int Chemistry_Engine::NumMinerals() const
+int ChemistryEngine::NumMinerals() const
 {
   return chem_data_.sizes.num_kinetic_minerals;
 }
 
-void Chemistry_Engine::GetMineralNames(std::vector<std::string>& mineralNames) const
+void ChemistryEngine::GetMineralNames(std::vector<std::string>& mineralNames) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_data_.meta_data;
   int N = metadata->mineral_names.size;
@@ -162,12 +162,12 @@ void Chemistry_Engine::GetMineralNames(std::vector<std::string>& mineralNames) c
     mineralNames[i] = std::string(metadata->mineral_names.data[i]);
 }
 
-int Chemistry_Engine::NumSurfaceSites() const
+int ChemistryEngine::NumSurfaceSites() const
 {
   return chem_data_.sizes.num_surface_sites;
 }
 
-void Chemistry_Engine::GetSurfaceSiteNames(std::vector<std::string>& siteNames) const
+void ChemistryEngine::GetSurfaceSiteNames(std::vector<std::string>& siteNames) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_data_.meta_data;
   int N = metadata->surface_site_names.size;
@@ -176,12 +176,12 @@ void Chemistry_Engine::GetSurfaceSiteNames(std::vector<std::string>& siteNames) 
     siteNames[i] = std::string(metadata->surface_site_names.data[i]);
 }
 
-int Chemistry_Engine::NumIonExchangeSites() const
+int ChemistryEngine::NumIonExchangeSites() const
 {
   return chem_data_.sizes.num_ion_exchange_sites;
 }
 
-void Chemistry_Engine::GetIonExchangeNames(std::vector<std::string>& ionExchangeNames) const
+void ChemistryEngine::GetIonExchangeNames(std::vector<std::string>& ionExchangeNames) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_data_.meta_data;
   int N = metadata->ion_exchange_names.size;
@@ -190,12 +190,12 @@ void Chemistry_Engine::GetIonExchangeNames(std::vector<std::string>& ionExchange
     ionExchangeNames[i] = std::string(metadata->ion_exchange_names.data[i]);
 }
 
-int Chemistry_Engine::NumIsothermSpecies() const
+int ChemistryEngine::NumIsothermSpecies() const
 {
   return chem_data_.sizes.num_isotherm_species;
 }
 
-void Chemistry_Engine::GetIsothermSpeciesNames(std::vector<std::string>& speciesNames) const
+void ChemistryEngine::GetIsothermSpeciesNames(std::vector<std::string>& speciesNames) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_data_.meta_data;
   int N = metadata->isotherm_species_names.size;
@@ -204,12 +204,12 @@ void Chemistry_Engine::GetIsothermSpeciesNames(std::vector<std::string>& species
     speciesNames[i] = std::string(metadata->isotherm_species_names.data[i]);
 }
 
-int Chemistry_Engine::NumFreeIonSpecies() const
+int ChemistryEngine::NumFreeIonSpecies() const
 {
   return chem_data_.aux_output.primary_free_ion_concentration.size;
 }
 
-void Chemistry_Engine::EnforceCondition(const std::string& conditionName,
+void ChemistryEngine::EnforceCondition(const std::string& conditionName,
                                         double time,
                                         AlquimiaState* chem_state,
                                         AlquimiaMaterialProperties* mat_props,
@@ -222,7 +222,7 @@ void Chemistry_Engine::EnforceCondition(const std::string& conditionName,
   std::map<std::string, AlquimiaGeochemicalCondition*>::iterator iter = chem_conditions_.find(conditionName);
   if (iter == chem_conditions_.end())
   {
-    msg << "Chemistry_Engine::EnforceCondition: No condition '" << conditionName << "' was found!\n";
+    msg << "ChemistryEngine::EnforceCondition: No condition '" << conditionName << "' was found!\n";
     Exceptions::amanzi_throw(msg); 
   }
 
@@ -271,7 +271,7 @@ void Chemistry_Engine::EnforceCondition(const std::string& conditionName,
   CopyOut(chem_state, mat_props, aux_data, aux_output);
 }
 
-void Chemistry_Engine::Advance(double delta_time,
+void ChemistryEngine::Advance(double delta_time,
                                AlquimiaState* chem_state,
                                AlquimiaMaterialProperties* mat_props,
                                AlquimiaAuxiliaryData* aux_data,
@@ -322,24 +322,8 @@ void Chemistry_Engine::Advance(double delta_time,
   CopyOut(chem_state, mat_props, aux_data, aux_output);
 }
 
-#if 0
-GeochemicalConditionContext* Chemistry_Engine::ContextForCondition(const std::string& geochemical_condition_name)
-{
-  GeochemicalConditionContext* context = NULL;
-  std::map<std::string, GeochemicalConditionContext*>::iterator iter = chem_contexts_.find(geochemical_condition_name);
-  if (iter == chem_contexts_.end())
-  {
-    context = new GeochemicalConditionContext(this, geochemical_condition_name);
-    chem_contexts_[geochemical_condition_name] = context;
-  }
-  else
-    context = iter->second;
-  return context;
-}
-#endif
-
-void Chemistry_Engine::ParseChemicalConditions(const Teuchos::ParameterList& param_list,
-                                               std::map<std::string, AlquimiaGeochemicalCondition*>& conditions)
+void ChemistryEngine::ParseChemicalConditions(const Teuchos::ParameterList& param_list,
+                                              std::map<std::string, AlquimiaGeochemicalCondition*>& conditions)
 {
   Errors::Message msg;
 
@@ -357,7 +341,7 @@ void Chemistry_Engine::ParseChemicalConditions(const Teuchos::ParameterList& par
     std::string engine_constraint = chem_engine_name_ + std::string(" Constraint");
     if (!cond_sublist.isType<std::string>(engine_constraint))
     {
-      msg << "Chemistry_Engine::ParseChemicalConditions():\n";
+      msg << "ChemistryEngine::ParseChemicalConditions():\n";
       msg << "  Geochemical condition '" << cond_name << "' has no '" << engine_constraint << "' entry.\n";
       msg << "  (Must be of type Array(string).)\n";
       Exceptions::amanzi_throw(msg);
@@ -376,7 +360,7 @@ void Chemistry_Engine::ParseChemicalConditions(const Teuchos::ParameterList& par
   }
 }
 
-void Chemistry_Engine::ReadXMLParameters() 
+void ChemistryEngine::ReadXMLParameters() 
 {
   Errors::Message msg;
 
@@ -387,7 +371,7 @@ void Chemistry_Engine::ReadXMLParameters()
     chem_engine_name_ = chem_param_list_.get<std::string>("Engine");
     if (chem_engine_name_ != "PFloTran")
     {
-      msg << "Chemistry_Engine::ReadXMLParameters(): \n";
+      msg << "ChemistryEngine::ReadXMLParameters(): \n";
       msg << "  Unsupported chemistry engine: '" << chem_engine_name_ << "'\n";
       msg << "  Options are 'PFlotran'.\n";
       Exceptions::amanzi_throw(msg);
@@ -418,7 +402,7 @@ void Chemistry_Engine::ReadXMLParameters()
 //      else 
 //      {
 //        std::stringstream message;
-//        message << "Chemistry_Engine::ReadXMLParameters(): unknown value in 'Auxiliary Data' list: " 
+//        message << "ChemistryEngine::ReadXMLParameters(): unknown value in 'Auxiliary Data' list: " 
 //                << *name << std::endl;
 //        chem_out->Write(kWarning, message);
 //      }
@@ -491,64 +475,64 @@ void Chemistry_Engine::ReadXMLParameters()
        
 }  // end ReadXMLParameters()
 
-const AlquimiaSizes& Chemistry_Engine::Sizes() const
+const AlquimiaSizes& ChemistryEngine::Sizes() const
 {
   return chem_data_.sizes;
 }
 
-AlquimiaState* Chemistry_Engine::NewState() const
+AlquimiaState* ChemistryEngine::NewState() const
 {
   AlquimiaState* state = new AlquimiaState;
   AllocateAlquimiaState(&chem_data_.sizes, state);
   return state;
 }
 
-void Chemistry_Engine::DeleteState(AlquimiaState* state)
+void ChemistryEngine::DeleteState(AlquimiaState* state)
 {
   FreeAlquimiaState(state);
   delete state;
 }
 
-AlquimiaMaterialProperties* Chemistry_Engine::NewMaterialProperties() const
+AlquimiaMaterialProperties* ChemistryEngine::NewMaterialProperties() const
 {
   AlquimiaMaterialProperties* mat_props = new AlquimiaMaterialProperties;
   AllocateAlquimiaMaterialProperties(&chem_data_.sizes, mat_props);
   return mat_props;
 }
 
-void Chemistry_Engine::DeleteMaterialProperties(AlquimiaMaterialProperties* mat_props)
+void ChemistryEngine::DeleteMaterialProperties(AlquimiaMaterialProperties* mat_props)
 {
   FreeAlquimiaMaterialProperties(mat_props);
   delete mat_props;
 }
 
-AlquimiaAuxiliaryData* Chemistry_Engine::NewAuxiliaryData() const
+AlquimiaAuxiliaryData* ChemistryEngine::NewAuxiliaryData() const
 {
   AlquimiaAuxiliaryData* aux_data = new AlquimiaAuxiliaryData;
   AllocateAlquimiaAuxiliaryData(&chem_data_.sizes, aux_data);
   return aux_data;
 }
 
-void Chemistry_Engine::DeleteAuxiliaryData(AlquimiaAuxiliaryData* aux_data)
+void ChemistryEngine::DeleteAuxiliaryData(AlquimiaAuxiliaryData* aux_data)
 {
   FreeAlquimiaAuxiliaryData(aux_data);
   delete aux_data;
 }
 
-AlquimiaAuxiliaryOutputData* Chemistry_Engine::NewAuxiliaryOutputData() const
+AlquimiaAuxiliaryOutputData* ChemistryEngine::NewAuxiliaryOutputData() const
 {
   AlquimiaAuxiliaryOutputData* aux_output = new AlquimiaAuxiliaryOutputData;
   AllocateAlquimiaAuxiliaryOutputData(&chem_data_.sizes, aux_output);
   return aux_output;
 }
 
-void Chemistry_Engine::DeleteAuxiliaryOutputData(AlquimiaAuxiliaryOutputData* aux_output)
+void ChemistryEngine::DeleteAuxiliaryOutputData(AlquimiaAuxiliaryOutputData* aux_output)
 {
   FreeAlquimiaAuxiliaryOutputData(aux_output);
   delete aux_output;
 }
 
-void Chemistry_Engine::CopyIn(AlquimiaState* chem_state, AlquimiaMaterialProperties* mat_props, AlquimiaAuxiliaryData* aux_data)
+void ChemistryEngine::CopyIn(AlquimiaState* chem_state, AlquimiaMaterialProperties* mat_props, AlquimiaAuxiliaryData* aux_data)
 {
   AlquimiaState* alquimia_state = &chem_data_.state;
   AlquimiaMaterialProperties* alquimia_mat_props = &chem_data_.material_properties;
@@ -596,7 +580,7 @@ void Chemistry_Engine::CopyIn(AlquimiaState* chem_state, AlquimiaMaterialPropert
     alquimia_aux_data->aux_doubles.data[i] = aux_data->aux_doubles.data[i];
 }
 
-void Chemistry_Engine::CopyOut(AlquimiaState* chem_state, AlquimiaMaterialProperties* mat_props, 
+void ChemistryEngine::CopyOut(AlquimiaState* chem_state, AlquimiaMaterialProperties* mat_props, 
                                AlquimiaAuxiliaryData* aux_data, AlquimiaAuxiliaryOutputData* aux_output)
 {
   AlquimiaState* alquimia_state = &chem_data_.state;
@@ -663,97 +647,6 @@ void Chemistry_Engine::CopyOut(AlquimiaState* chem_state, AlquimiaMaterialProper
     aux_output->pH = alquimia_aux_output->pH;
   }
 }
-
-#if 0
-// This subclass of Amanzi::Function provides an interface by which a geochemical condition can be 
-// enforced on a given species.
-class GeochemicalConcentrationFunction: public Function {
-
- public:
-
-  // Constructs a GeochemicalConcentrationFunction that reports species concentrations 
-  // computed by a GeochemicalConditionContext.
-  explicit GeochemicalConcentrationFunction(int speciesIndex):
-    index_(speciesIndex)
-  {
-  }
-
-  // Destructor.
-  ~GeochemicalConcentrationFunction();
-
-  // Overridden methods.
-  Function* clone() const
-  {
-    return new GeochemicalConcentrationFunction(index_);
-  }
-
-  double operator() (const double* xt) const
-  {
-    // No space/time dependence -- we just reach into our context for the answer.
-    return value_;
-  }
-
-  double value_; // Updated by GeochemicalConditionContext.
-
- private:
-
-  int index_;
-};
-
-GeochemicalConditionContext::GeochemicalConditionContext(Chemistry_Engine* chem_engine, 
-                                                         const std::string& geochem_condition):
-  chem_engine_(chem_engine_), condition_(geochem_condition), functions_(chem_engine->NumPrimarySpecies())
-{
-}
-
-GeochemicalConditionContext::~GeochemicalConditionContext()
-{
-}
-
-Teuchos::RCP<Function> GeochemicalConditionContext::speciesFunction(const std::string& species)
-{
-  Errors::Message msg;
-
-  // Find the index of the given species within the list kept in the chemistry engine.
-  int speciesIndex = -1;
-  std::vector<std::string> speciesNames;
-  chem_engine_->GetPrimarySpeciesNames(speciesNames);
-  for (size_t i = 0; i < speciesNames.size(); ++i)
-  {
-    if (species == speciesNames[i])
-    {
-      speciesIndex = (int)i;
-      break;
-    }
-  }
-  if (speciesIndex == -1)
-  {
-    msg << "Invalid species: " << species;
-    Exceptions::amanzi_throw(msg); 
-  }
-
-//  GeochemicalConcentrationFunction* function = new GeochemicalConcentrationFunction(speciesIndex);
-//  functions_[speciesIndex] = Teuchos::RCP<Function>(function);
-  return functions_[speciesIndex];
-}
-
-void GeochemicalConditionContext::EnforceCondition(double t,
-                                                   AlquimiaState* chem_state,
-                                                   AlquimiaMaterialProperties* mat_props,
-                                                   AlquimiaAuxiliaryData* aux_data)
-{
-  // Enforce the condition.
-  chem_engine_->EnforceCondition(condition_, t, chem_state, mat_props, aux_data);
-
-  // Copy out the concentrations and broadcast them to our functions.
-  int N = chem_engine_->NumPrimarySpecies();
-  for (int i = 0; i < N; ++i)
-  {
-//    Teuchos::RCP<GeochemicalConcentrationFunction> concFunc = functions_[i];
-//    concFunc->value_ = chem_state->total_mobile.data[i];
-  }
-}
-#endif
 
 } // namespace
 } // namespace

@@ -18,7 +18,7 @@
 #include "chemistry_data.hh"
 
 #ifdef ALQUIMIA_ENABLED
-#include "Chemistry_Engine.hh"
+#include "ChemistryEngine.hh"
 #endif
 
 namespace Amanzi {
@@ -49,7 +49,7 @@ class MPC : public Teuchos::VerboseObject<MPC> {
 
 #ifdef ALQUIMIA_ENABLED
   // Chemistry engine -- used for transport boundary conditions and for the Alquimia chemistry PK.
-  Teuchos::RCP<AmanziChemistry::Chemistry_Engine> chem_engine;
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine;
 #endif
     
   // misc setup information
@@ -98,6 +98,9 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   // checkpoint/restart 
   Teuchos::Ptr<Amanzi::Checkpoint> restart;
  
+  // walkabout
+  Teuchos::Ptr<Amanzi::Checkpoint> walkabout;  
+
   // time period control
   std::vector<std::pair<double,double> > reset_info_;
 

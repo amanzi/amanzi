@@ -60,6 +60,13 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
     new_list.sublist("Checkpoint Data") = tmp_list;
   }
 
+  // walkabout list is optional
+  tmp_list = create_Walkabout_Data_List(plist);
+  if (tmp_list.begin() != tmp_list.end()) {
+    new_list.sublist("Walkabout Data") = tmp_list;
+  }
+
+  // visualization list is optional
   tmp_list = create_Visualization_Data_List(plist);
   if (tmp_list.begin() != tmp_list.end()) {
     new_list.sublist("Visualization Data") = tmp_list;
@@ -380,6 +387,35 @@ Teuchos::ParameterList create_Checkpoint_Data_List(Teuchos::ParameterList* plist
   }
 
   return restart_list;
+}
+
+/* ******************************************************************
+ * Empty
+ ****************************************************************** */
+Teuchos::ParameterList create_Walkabout_Data_List(Teuchos::ParameterList* plist) {
+
+  Teuchos::ParameterList walkabout_list;
+
+  if ( plist->isSublist("Output") ) {
+
+    if ( plist->sublist("Output").isSublist("Walkabout Data") ) {
+      Teuchos::ParameterList rlist = plist->sublist("Output").sublist("Walkabout Data");
+
+      walkabout_list.set<std::string>("file name base", rlist.get<std::string>("File Name Base",std::string("walkabout")));
+      walkabout_list.set<int>("file name digits", rlist.get<int>("File Name Digits",5));
+
+      // check if the cycle range is defined via a macro
+      if ( rlist.isParameter("Cycle Macro") ) {
+        std::string cycle_macro = rlist.get<std::string>("Cycle Macro");
+
+        Teuchos::Array<int> range = get_Cycle_Macro(cycle_macro, plist).get<Teuchos::Array<int> >("Start_Period_Stop");
+
+        walkabout_list.set<Teuchos::Array<int> >("cycles start period stop", range);
+      }
+    }
+  }
+
+  return walkabout_list;
 }
 
 

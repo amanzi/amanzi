@@ -11,8 +11,8 @@ and to integrate reactions given a chemical configuration.
 
  ------------------------------------------------------------------------- */
 
-#ifndef AMANZI_CHEMISTRY_ENGINE_HH_
-#define AMANZI_CHEMISTRY_ENGINE_HH_
+#ifndef AMANZI_ChemistryEngine_HH_
+#define AMANZI_ChemistryEngine_HH_
 
 #include <string>
 #include <vector>
@@ -35,16 +35,16 @@ namespace AmanziChemistry {
 // Forward declaration of GeochemicalConditionContext.
 class GeochemicalConditionContext;
 
-class Chemistry_Engine {
+class ChemistryEngine {
 
  public:
 
   // Constructs a chemistry engine using the Chemistry parameter list in the input file and 
   // Amanzi's chemistry state.
-  explicit Chemistry_Engine(const Teuchos::ParameterList& param_list);
+  explicit ChemistryEngine(const Teuchos::ParameterList& param_list);
 
   // Destructor.
-  ~Chemistry_Engine();
+  ~ChemistryEngine();
 
   // Returns the name of the backend that does the chemistry.
   const std::string& Name() const;
@@ -120,12 +120,6 @@ class Chemistry_Engine {
                AlquimiaAuxiliaryOutputData* aux_output,
                int& num_iterations);
 
-  // This creates a context for enforcing boundary condition data for species concentrations with 
-  // the Amanzi-U transport process kernel. If such a context already exists, that context is returned.
-  // Its lifetime is determined by the Chemistry_Engine: DO NOT manage this function with a 
-  // reference-counted pointer!
-//  GeochemicalConditionContext* ContextForCondition(const std::string& geochemical_condition_name);
-
  private:
 
   // Copy chemistry data into the engine.
@@ -173,60 +167,11 @@ class Chemistry_Engine {
   std::vector<std::string> aux_names_;
 
   // forbidden.
-  Chemistry_Engine();
-  Chemistry_Engine(const Chemistry_Engine&);
-  Chemistry_Engine& operator=(const Chemistry_Engine&);
+  ChemistryEngine();
+  ChemistryEngine(const ChemistryEngine&);
+  ChemistryEngine& operator=(const ChemistryEngine&);
 
 };
-
-#if 0
-// This object represents a single context in which geochemical conditions are enforced. We need 
-// this object to relate the separate functions that provide species concentrations using the same 
-// geochemical condition, since the transport package enforces boundary conditions on each species 
-// separately.
-class GeochemicalConditionContext {
-
- public:
-
-  // Emits a Function that can be used to recover the concentration for the given species 
-  // that has been computed in accordance with the associated geochemical condition.
-  Teuchos::RCP<Function> speciesFunction(const std::string& species);
-
-  // This gets called by the species function to retrieve the concentration of the species with the 
-  // given index. This assumes that EnforceCondition() has been called recently.
-  double GetConcentration(int index);
-
-  // This needs to get called by someone before concentration boundary conditions are requested 
-  // by the Transport PK.
-  void EnforceCondition(double t,
-                        AlquimiaState* chem_state,
-                        AlquimiaMaterialProperties* mat_props,
-                        AlquimiaAuxiliaryData* aux_data);
-
- private:
-
-  // The Chemistry_Engine class has special access to the constructor/destructor.
-  friend class Chemistry_Engine;
-
-  // Constructs a geochemical condition context associated with the given chemical engine and 
-  // geochemical condition. This serves as a factory for Function objects that enforce this 
-  // condition on species within the chemistry engine.
-  GeochemicalConditionContext(Teuchos::RCP<Chemistry_Engine> chem_engine, 
-                              const std::string& geochem_condition);
-
-  // Destructor.
-  ~GeochemicalConditionContext();
-
-  Teuchos::RCP<Chemistry_Engine> chem_engine_;
-  std::string condition_;
-  std::vector<Teuchos::RCP<Function> > functions_; // Concentration data.
-
-  // forbidden.
-  GeochemicalConditionContext();
-  GeochemicalConditionContext(const GeochemicalConditionContext&);
-  GeochemicalConditionContext& operator=(const GeochemicalConditionContext&);
-};
-#endif
 
 } // namespace
 } // namespace

@@ -10,7 +10,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "chemistry_pk_base.hh"
-#include "Chemistry_Engine.hh"
+#include "ChemistryEngine.hh"
 
 // forward declarations
 class Epetra_MultiVector;
@@ -29,7 +29,7 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   // problem.
   Alquimia_Chemistry_PK(const Teuchos::ParameterList& param_list,
                         Teuchos::RCP<Chemistry_State> chem_state,
-                        Teuchos::RCP<Chemistry_Engine> chemistry_engine);
+                        Teuchos::RCP<ChemistryEngine> chem_engine);
 
   ~Alquimia_Chemistry_PK();
 
@@ -106,7 +106,7 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   bool chem_initialized_;
 
   // Chemistry engine.
-  Teuchos::RCP<Chemistry_Engine> chem_engine_;
+  Teuchos::RCP<ChemistryEngine> chem_engine_;
 
   // Alquimia data structures.
   AlquimiaState* alq_state_;

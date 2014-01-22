@@ -83,7 +83,7 @@ set(flow_inc_files
   flow_domain_function.hh
   Flow_PK.hh
   Flow_SourceFactory.hh
-  Flow_typedefs.hh
+  FlowTypeDefs.hh
   Matrix_Audit.hh
   Matrix_MFD.hh
   Matrix_TPFA.hh

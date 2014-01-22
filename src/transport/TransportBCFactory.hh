@@ -15,10 +15,12 @@
 #include <vector>
 
 #include "Mesh.hh"
-#include "transport_boundary_function.hh"
+#include "TransportBoundaryFunction.hh"
+#include "TransportBoundaryFunction_Tracer.hh"
+#include "TransportBoundaryFunction_Alquimia.hh"
 
 #ifdef ALQUIMIA_ENABLED
-#include "Chemistry_Engine.hh"
+#include "ChemistryEngine.hh"
 #endif
 
 namespace Amanzi {
@@ -37,27 +39,29 @@ class TransportBCFactory {
 #ifdef ALQUIMIA_ENABLED
   TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                      const Teuchos::RCP<Teuchos::ParameterList>& list,
-                     const Teuchos::RCP<AmanziChemistry::Chemistry_Engine>& chem_engine)
+                     const Teuchos::RCP<AmanziChemistry::ChemistryEngine>& chem_engine)
      : mesh_(mesh), list_(list), chem_engine_(chem_engine) {};
 #endif
 
   ~TransportBCFactory() {};
   
-  void CreateConcentration(std::vector<Functions::TransportBoundaryFunction*>& bcs, 
-                           std::vector<std::string>& bcs_tcc_name) const;
-  void ProcessConcentrationSpec(Teuchos::ParameterList& spec, Functions::TransportBoundaryFunction* bc) const;
+  void CreateConcentration(std::vector<TransportBoundaryFunction*>& bcs) const;
 
-#ifdef ALQUIMIA_ENABLED
-  void ProcessGeochemicalCondition(const std::string& cond_name,
-                                   const Teuchos::ParameterList& cond_list, 
-                                   Functions::TransportBoundaryFunction* bc) const;
-#endif
+  // non-reactive components
+  void ProcessTracerList(std::vector<TransportBoundaryFunction*>& bcs) const;
+  void ProcessTracerSpec(
+      Teuchos::ParameterList& spec, TransportBoundaryFunction_Tracer* bc) const;
+
+  // reactive components
+  void ProcessGeochemicalConditionList(std::vector<TransportBoundaryFunction*>& bcs) const;
+  void ProcessGeochemicalConditionSpec(
+      Teuchos::ParameterList& spec, TransportBoundaryFunction_Alquimia* bc) const;
 
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
   const Teuchos::RCP<Teuchos::ParameterList>& list_;
 #ifdef ALQUIMIA_ENABLED
-  const Teuchos::RCP<AmanziChemistry::Chemistry_Engine>& chem_engine_;
+  const Teuchos::RCP<AmanziChemistry::ChemistryEngine>& chem_engine_;
 #endif
 };
 

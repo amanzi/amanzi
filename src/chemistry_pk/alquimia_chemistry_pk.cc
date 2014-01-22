@@ -66,7 +66,7 @@ namespace AmanziChemistry {
 
 Alquimia_Chemistry_PK::Alquimia_Chemistry_PK(const Teuchos::ParameterList& param_list,
                                              Teuchos::RCP<Chemistry_State> chem_state,
-                                             Teuchos::RCP<Chemistry_Engine> chemistry_engine)
+                                             Teuchos::RCP<ChemistryEngine> chem_engine)
     : debug_(false),
       display_free_columns_(false),
       max_time_step_(9.9e9),
@@ -74,7 +74,7 @@ Alquimia_Chemistry_PK::Alquimia_Chemistry_PK(const Teuchos::ParameterList& param
       main_param_list_(param_list),
       chem_param_list_(),
       chem_initialized_(false),
-      chem_engine_(chemistry_engine),
+      chem_engine_(chem_engine),
       current_time_(0.0),
       saved_time_(0.0) 
 {

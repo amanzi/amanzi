@@ -107,7 +107,7 @@ void MPC::mpc_init() {
     Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
     CS = Teuchos::rcp( new AmanziChemistry::Chemistry_State( chemistry_parameter_list, S ) );
 #ifdef ALQUIMIA_ENABLED
-    chem_engine = Teuchos::rcp( new AmanziChemistry::Chemistry_Engine(parameter_list) );
+    chem_engine = Teuchos::rcp( new AmanziChemistry::ChemistryEngine(parameter_list) );
 #endif
   }
 
@@ -246,6 +246,16 @@ void MPC::mpc_init() {
   // first assume we're not
   restart_requested = false;
 
+
+  if (flow_enabled) {
+    if (parameter_list.isSublist("Walkabout Data")) {
+      Teuchos::ParameterList walkabout_parameter_list = parameter_list.sublist("Walkabout Data");
+      walkabout = Teuchos::ptr(new Amanzi::Checkpoint(walkabout_parameter_list, comm));
+    } else {
+      walkabout = Teuchos::ptr(new Amanzi::Checkpoint());
+    }    
+  }
+  
   // then check if indeed we are
   if (mpc_parameter_list.isSublist("Restart from Checkpoint Data File")) {
 
@@ -522,7 +532,19 @@ void MPC::cycle_driver() {
         WriteCheckpoint(restart,S.ptr(),dTtransient);
       }
     }
+
+    // write walkabout data if requested
+    if (flow_enabled) {
+      if (walkabout->DumpRequested(S->cycle(), S->time())) {
+        if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+          *out << "Cycle " << S->cycle() << ": writing walkabout data" << std::endl;
+        }
+        FPK->WriteWalkabout(walkabout.ptr());
+      }
+    }
   }
+
+
   Amanzi::timer_manager.stop("I/O");
 
 
@@ -977,6 +999,17 @@ void MPC::cycle_driver() {
         }
         WriteCheckpoint(restart,S.ptr(),mpc_dT);
       }
+
+      // write walkabout data if requested
+      if (flow_enabled) {
+        if (force || force_checkpoint || walkabout->DumpRequested(S->cycle(), S->time())) {
+          if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+            *out << "Cycle " << S->cycle() << ": writing walkabout data" << std::endl;
+          }
+          FPK->WriteWalkabout(walkabout.ptr());
+        }
+      }
+      
       Amanzi::timer_manager.stop("I/O");
     }
   }
@@ -998,6 +1031,14 @@ void MPC::cycle_driver() {
       *out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
     }
     WriteCheckpoint(restart,S.ptr(),0.0);
+
+    if (flow_enabled) {
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	*out << "Cycle " << S->cycle() << ": writing walkabout file" << std::endl;
+      }
+      FPK->WriteWalkabout(walkabout.ptr());
+    }
+
     Amanzi::timer_manager.stop("I/O");
   }
 
@@ -1030,53 +1071,5 @@ double MPC::time_step_limiter (double T, double dT, double T_end) {
   }
 }
 
-
-/* *******************************************************************/
-/*
-  void MPC::populate_walkabout_data() {
-  // update centroid and velocity in state
-  std::vector<Amanzi::AmanziGeometry::Point> walkabout_xyz;
-  std::vector<Amanzi::AmanziGeometry::Point> walkabout_velocity;
-  std::vector<double> walkabout_phi;
-  std::vector<double> walkabout_ws;
-
-  // FPK->CalculateDarcyVelocity(xyz, velocity);
-  FPK->CalculatePoreVelocity(walkabout_xyz, walkabout_velocity, walkabout_phi, walkabout_ws);
-
-  int dim = walkabout_xyz[0].dim();
-
-  // if this is the first time we're updating state, create the epetra multivectors
-  // first, find the global number of elements
-  if (S->get_walkabout_velocity() == Teuchos::null) {
-  int numel = walkabout_xyz.size();
-  int gnumel;
-
-  comm->SumAll(&numel, &gnumel, 1);
-
-  Epetra_BlockMap map(gnumel, numel, 1, 0, *comm);
-
-  S->get_walkabout_xyz() = Teuchos::rcp(new Epetra_MultiVector(map, dim));
-  S->get_walkabout_velocity() = Teuchos::rcp(new Epetra_MultiVector(map, dim));
-
-  S->get_walkabout_porosity() = Teuchos::rcp(new Epetra_Vector(map));
-  S->get_walkabout_water_saturation() = Teuchos::rcp(new Epetra_Vector(map));
-  }
-
-  Teuchos::RCP<Epetra_MultiVector> wa_xyz = S->get_walkabout_xyz();
-  Teuchos::RCP<Epetra_MultiVector> wa_vel = S->get_walkabout_velocity();
-  Teuchos::RCP<Epetra_Vector> wa_phi = S->get_walkabout_porosity();
-  Teuchos::RCP<Epetra_Vector> wa_ws = S->get_walkabout_water_saturation();
-
-  // then populate the state vectors
-  for (int i = 0; i < walkabout_xyz.size(); ++i) {
-  for (int j = 0; j < dim; ++j) {
-  (*(*wa_xyz)(j))[i] = walkabout_xyz[i][j];
-  (*(*wa_vel)(j))[i] = walkabout_velocity[i][j];
-  }
-  (*wa_phi)[i] = walkabout_phi[i];
-  (*wa_ws)[i] = walkabout_ws[i];
-  }
-  }
-*/
 
 }  // namespace Amanzi

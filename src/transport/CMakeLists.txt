@@ -49,20 +49,24 @@ set(transport_inc_files
   Dispersion.hh
   Dispersion_TPFA.hh
   Reconstruction.hh
-  Transport_BC_Factory.hh
-  transport_boundary_function.hh
+  TransportBCFactory.hh
+  TransportBoundaryFunction.hh
+  TransportBoundaryFunction_Tracer.hh
+  TransportBoundaryFunction_Alquimia.hh
   TransportDefs.hh
-  transport_domain_function.hh
+  transportDomainFunction.hh
   Transport_PK.hh
-  Transport_SourceFactory.hh)
+  TransportSourceFactory.hh)
 
 set(transport_src_files Transport_PK.cc Transport_TI.cc 
                         Transport_Limiters.cc Transport_VandV.cc Transport_IO.cc 
-                        Transport_BC_Factory.cc Transport_SourceFactory.cc
                         Reconstruction.cc 
                         DispersionMatrixFactory.cc Dispersion.cc 
                         Dispersion_TPFA.cc Dispersion_MFD.cc Dispersion_NLFV.cc
-                        transport_boundary_function.cc transport_domain_function.cc)
+                        TransportBCFactory.cc TransportSourceFactory.cc
+                        TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
+                        TransportDomainFunction.cc)
+
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
                    LINK_LIBS geometry mesh error_handling state data_structures 
