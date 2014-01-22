@@ -107,7 +107,7 @@ cout << "Test: Advance on a 2D square mesh" << endl;
       printf("\n");
     }
 
-    if (iter == 15) {
+    if (T < 0.15) {
       GMV::open_data_file(*mesh, (std::string)"transport.gmv");
       GMV::start_data();
       GMV::write_cell_data(*tcc, 0, "Component_0");

@@ -103,39 +103,48 @@ void Transport_PK::LimiterTensorial(const int component,
   }
 
   // Step 2: limit gradient on the Dirichlet boundary
-  for (int n = 0; n < bcs.size(); n++) {
-    if (component == bcs_tcc_index[n]) {
-      for (TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
-        int f = bc->first;
-        int c1 = (*upwind_cell_)[f];
-        int c2 = (*downwind_cell_)[f];
+  for (int m = 0; m < bcs.size(); m++) {
+    std::vector<int>& tcc_index = bcs[m]->tcc_index();
+    int ncomp = tcc_index.size();
 
-        if (c2 >= 0 && c2 < ncells_owned) {
-          u2 = (*scalar_field)[c2];
-          u1 = bc->second;
-          umin = std::min(u1, u2);
-          umax = std::max(u1, u2);
+    for (int i = 0; i < ncomp; i++) {
+      if (component == tcc_index[i]) {
+        std::vector<int>& faces = bcs[m]->faces();
+        std::vector<std::vector<double> >& values = bcs[m]->values();
+        int nbfaces = faces.size();
 
-          bc_scaling = std::max(bc_scaling, u1);
-          component_local_max_[c2] = std::max(component_local_max_[c2], u1);
-          component_local_min_[c2] = std::min(component_local_min_[c2], u1);
+        for (int n = 0; n < nbfaces; ++n) {
+          int f = faces[n];
+          int c1 = (*upwind_cell_)[f];
+          int c2 = (*downwind_cell_)[f];
 
-          const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
-          const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-          u2f = lifting.getValue(c2, xcf);
-          for (int i = 0; i < dim; i++) gradient_c2[i] = (*grad)[i][c2];
-          direction = xcf - xc2;
+          if (c2 >= 0 && c2 < ncells_owned) {
+            u2 = (*scalar_field)[c2];
+            u1 = values[n][i];
+            umin = std::min(u1, u2);
+            umax = std::max(u1, u2);
 
-          if (u2f < umin) {
-            p = ((umin - u2) / L22(direction)) * direction;
-            ApplyDirectionalLimiter(direction, p, direction, gradient_c2);
+            bc_scaling = std::max(bc_scaling, u1);
+            component_local_max_[c2] = std::max(component_local_max_[c2], u1);
+            component_local_min_[c2] = std::min(component_local_min_[c2], u1);
 
-          } else if (u2f > umax) {
-            p = ((umax - u2) / L22(direction)) * direction;
-            ApplyDirectionalLimiter(direction, p, direction, gradient_c2);
+            const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
+            const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
+            u2f = lifting.getValue(c2, xcf);
+            for (int k = 0; k < dim; k++) gradient_c2[k] = (*grad)[k][c2];
+            direction = xcf - xc2;
+
+            if (u2f < umin) {
+              p = ((umin - u2) / L22(direction)) * direction;
+              ApplyDirectionalLimiter(direction, p, direction, gradient_c2);
+
+            } else if (u2f > umax) {
+              p = ((umax - u2) / L22(direction)) * direction;
+              ApplyDirectionalLimiter(direction, p, direction, gradient_c2);
+            }
+
+            for (int k = 0; k < dim; k++) (*grad)[k][c2] = gradient_c2[k];
           }
-
-          for (int i = 0; i < dim; i++) (*grad)[i][c2] = gradient_c2[i];
         }
       }
     }
@@ -255,33 +264,42 @@ void Transport_PK::LimiterBarthJespersen(const int component,
   }
 
   // Step 2: limiting gradient on the Dirichlet boundary
-  for (int n = 0; n < bcs.size(); n++) {
-    if (component == bcs_tcc_index[n]) {
-      for (TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
-        int f = bc->first;
-        int c2 = (*downwind_cell_)[f];
+  for (int m = 0; m < bcs.size(); m++) {
+    std::vector<int>& tcc_index = bcs[m]->tcc_index();
+    int ncomp = tcc_index.size();
 
-        if (c2 >= 0) {
-          u2 = (*scalar_field)[c2];
-          u1 = bc->second;
-          umin = std::min(u1, u2);
-          umax = std::max(u1, u2);
-          double tol = sqrt(TRANSPORT_LIMITER_TOLERANCE) * (fabs(u1) + fabs(u2));
+    for (int i = 0; i < ncomp; i++) {
+      if (component == tcc_index[i]) {
+        std::vector<int>& faces = bcs[m]->faces();
+        std::vector<std::vector<double> >& values = bcs[m]->values();
+        int nbfaces = faces.size();
 
-          component_local_max_[c2] = std::max(component_local_max_[c2], u1);
-          component_local_min_[c2] = std::min(component_local_min_[c2], u1);
+        for (int n = 0; n < nbfaces; ++n) {
+          int f = faces[n];
+          int c2 = (*downwind_cell_)[f];
 
-          const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
-          const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
+          if (c2 >= 0) {
+            u2 = (*scalar_field)[c2];
+            u1 = values[n][i];
+            umin = std::min(u1, u2);
+            umax = std::max(u1, u2);
+            double tol = sqrt(TRANSPORT_LIMITER_TOLERANCE) * (fabs(u1) + fabs(u2));
 
-          for (int i = 0; i < dim; i++) gradient_c2[i] = (*grad)[i][c2];
-          double u_add = gradient_c2 * (xcf - xc2);
-          u2f = u2 + u_add;
+            component_local_max_[c2] = std::max(component_local_max_[c2], u1);
+            component_local_min_[c2] = std::min(component_local_min_[c2], u1);
 
-          if (u2f < umin - tol) {
-            (*limiter)[c2] = std::min((*limiter)[c2], (umin - u2) / u_add);
-          } else if (u2f > umax + tol) {
-            (*limiter)[c2] = std::min((*limiter)[c2], (umax - u2) / u_add);
+            const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
+            const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
+
+            for (int k = 0; k < dim; k++) gradient_c2[k] = (*grad)[k][c2];
+            double u_add = gradient_c2 * (xcf - xc2);
+            u2f = u2 + u_add;
+
+            if (u2f < umin - tol) {
+              (*limiter)[c2] = std::min((*limiter)[c2], (umin - u2) / u_add);
+            } else if (u2f > umax + tol) {
+              (*limiter)[c2] = std::min((*limiter)[c2], (umax - u2) / u_add);
+            }
           }
         }
       }
@@ -366,20 +384,29 @@ void Transport_PK::LimiterKuzmin(const int component,
   }
 
   // Update min/max at nodes from influx boundary data
-  for (int n = 0; n < bcs.size(); n++) {
-    if (component == bcs_tcc_index[n]) {
-      for (TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
-        int f = bc->first;
-        int c2 = (*downwind_cell_)[f];
+  for (int m = 0; m < bcs.size(); m++) {
+    std::vector<int>& tcc_index = bcs[m]->tcc_index();
+    int ncomp = tcc_index.size();
 
-        if (c2 >= 0) {
-          mesh_->face_get_nodes(f, &nodes);
-          double value = (*scalar_field)[c2];
+    for (int i = 0; i < ncomp; i++) {
+      if (component == tcc_index[i]) {
+        std::vector<int>& faces = bcs[m]->faces();
+        std::vector<std::vector<double> >& values = bcs[m]->values();
+        int nbfaces = faces.size();
 
-          for (int i = 0; i < nodes.size(); i++) {
-            int v = nodes[i];
-            component_node_min[v] = std::min(component_node_min[v], value);
-            component_node_max[v] = std::max(component_node_max[v], value);
+        for (int n = 0; n < nbfaces; ++n) {
+          int f = faces[n];
+          int c2 = (*downwind_cell_)[f];
+
+          if (c2 >= 0) {
+            mesh_->face_get_nodes(f, &nodes);
+            double value = (*scalar_field)[c2];
+
+            for (int k = 0; k < nodes.size(); k++) {
+              int v = nodes[k];
+              component_node_min[v] = std::min(component_node_min[v], value);
+              component_node_max[v] = std::max(component_node_max[v], value);
+            }
           }
         }
       }

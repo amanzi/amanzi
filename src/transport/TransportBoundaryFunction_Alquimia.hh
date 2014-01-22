@@ -4,7 +4,6 @@ This is the Transport component of Amanzi
 License: see $AMANZI_DIR/COPYRIGHT
 Author (v1): Neil Carlson
        (v2): Ethan Coon
-       (v3): Jeff Jonsson
 
 Function applied to a mesh component with at most one function 
 application per entity.

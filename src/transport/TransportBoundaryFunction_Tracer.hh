@@ -40,7 +40,7 @@ class TransportBoundaryFunction_Tracer : public TransportBoundaryFunction {
               const Teuchos::RCP<const MultiFunction> &f);
 
  private:
-  void Finalize();
+  void Finalize_();
 };
 
 }  // namespace AmanziTransport

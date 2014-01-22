@@ -37,7 +37,7 @@ class TransportBCFactory {
       Teuchos::ParameterList& spec, TransportBoundaryFunction_Tracer* bc) const;
 
   // reactive components
-  void ProcessGeochemicalConditionList(std::vector<TransportBoundaryFunction*>& bcs) const {};
+  void ProcessGeochemicalConditionList(std::vector<TransportBoundaryFunction*>& bcs) const;
   void ProcessGeochemicalConditionSpec(
       Teuchos::ParameterList& spec, TransportBoundaryFunction_Alquimia* bc) const {};
 

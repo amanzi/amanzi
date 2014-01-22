@@ -212,7 +212,6 @@ class Transport_PK : public Explicit_TI::fnBase {
   double cfl_, dT, dT_debug, T_physics;  
 
   std::vector<TransportBoundaryFunction*> bcs;  // influx BCs for each components
-  std::vector<int> bcs_tcc_index; 
   double bc_scaling;
 
   double mass_tracer_exact, mass_tracer_source;  // statistics for tracer

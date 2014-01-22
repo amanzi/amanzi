@@ -521,17 +521,23 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   }
 
   // loop over exterior boundary sets
-  for (int n = 0; n < bcs.size(); n++) {
-    int i = bcs_tcc_index[n];
+  for (int m = 0; m < bcs.size(); m++) {
+    std::vector<int>& tcc_index = bcs[m]->tcc_index();
+    std::vector<int>& faces = bcs[m]->faces();
+    std::vector<std::vector<double> >& values = bcs[m]->values();
 
-    for (TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
-      int f = bc->first;
+    int ncomp = tcc_index.size();
+    int nbfaces = faces.size();
+    for (int n = 0; n < nbfaces; n++) {
+      int f = faces[n];
       int c2 = (*downwind_cell_)[f];
 
       if (c2 >= 0) {
         double u = fabs((*darcy_flux)[0][f]);
-        tcc_flux = dT * u * bc->second;
-        tcc_next[i][c2] += tcc_flux;
+        for (int i = 0; i < ncomp; i++) {
+          tcc_flux = dT * u * values[n][i];
+          tcc_next[tcc_index[i]][c2] += tcc_flux;
+        }
       }
     }
   }

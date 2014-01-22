@@ -31,24 +31,23 @@ typedef std::pair<std::string, int> Action;
 class TransportBoundaryFunction : public Functions::UniqueMeshFunction {
  public:
   TransportBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :
-      UniqueMeshFunction(mesh),
-      finalized_(false) {};
+      UniqueMeshFunction(mesh) {};
   
   virtual void Compute(double time) = 0;
 
-  // iterator methods
-  typedef std::map<int,double>::const_iterator Iterator;
-  Iterator begin() const { return value_.begin(); }
-  Iterator end() const  { return value_.end(); }
-  // Iterator find(const int j) const { return value_.find(j); }
-  // std::map<int,double>::size_type size() { return value_.size(); }
+  // access
+  std::vector<string>& tcc_names() { return tcc_names_; }
+  std::vector<int>& tcc_index() { return tcc_index_; }
 
- public:
-  std::vector<std::string> tcc_name;
+  std::vector<int>& faces() { return faces_; }
+  std::vector<std::vector<double> >& values() { return values_; }
 
  protected:
-  std::map<int,double> value_;
-  bool finalized_;
+  std::vector<std::string> tcc_names_;  // list of component names
+  std::vector<int> tcc_index_;  // index of component in the global list
+
+  std::vector<int> faces_;  // list of boundary faces 
+  std::vector<std::vector<double> > values_;  // component values on boundary faces
 };
 
 }  // namespace AmanziTransport

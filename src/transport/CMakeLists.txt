@@ -63,7 +63,8 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
                         DispersionMatrixFactory.cc Dispersion.cc 
                         Dispersion_TPFA.cc Dispersion_MFD.cc Dispersion_NLFV.cc
                         TransportBCFactory.cc TransportSourceFactory.cc
-                        TransportBoundaryFunction_Tracer.cc TransportDomainFunction.cc)
+                        TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
+                        TransportDomainFunction.cc)
 
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}

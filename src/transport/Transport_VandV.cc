@@ -182,9 +182,9 @@ void Transport_PK::CheckDivergenceProperty()
 }
 
 
-/* *******************************************************************
- * Check for completeness of influx boundary conditions.                        
- ****************************************************************** */
+/********************************************************************
+* Check for completeness of influx boundary conditions.                        
+****************************************************************** */
 void Transport_PK::CheckInfluxBC() const
 {
   int number_components = tcc->ViewComponent("cell")->NumVectors();
@@ -193,26 +193,42 @@ void Transport_PK::CheckInfluxBC() const
   for (int i = 0; i < number_components; i++) {
     influx_face.assign(nfaces_wghost, 0);
 
-    for (int n = 0; n < bcs.size(); n++) {
-      if (i == bcs_tcc_index[n]) {
-        for (TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
-          int f = bc->first;
-          influx_face[f] = 1;
+    for (int m = 0; m < bcs.size(); m++) {
+      std::vector<int>& tcc_index = bcs[m]->tcc_index();
+      int ncomp = tcc_index.size();
+
+      for (int k = 0; k < ncomp; k++) {
+        if (i == tcc_index[k]) {
+          std::vector<int>& faces = bcs[m]->faces();
+          int nbfaces = faces.size();
+
+          for (int n = 0; n < nbfaces; ++n) {
+            int f = faces[n];
+            influx_face[f] = 1;
+          }
         }
       }
     }
 
-    for (int n = 0; n < bcs.size(); n++) {
-      if (i == bcs_tcc_index[n]) {
-        for (TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
-          int f = bc->first;
-          if ((*darcy_flux)[f] < 0 && influx_face[f] == 0) {
-            char component[3];
-            std::sprintf(component, "%3d", i);
+    for (int m = 0; m < bcs.size(); m++) {
+      std::vector<int>& tcc_index = bcs[m]->tcc_index();
+      int ncomp = tcc_index.size();
 
-            Errors::Message msg;
-            msg << "No influx boundary condition has been found for component " << component << ".\n";
-            Exceptions::amanzi_throw(msg);
+      for (int k = 0; k < ncomp; k++) {
+        if (i == tcc_index[k]) {
+          std::vector<int>& faces = bcs[m]->faces();
+          int nbfaces = faces.size();
+
+          for (int n = 0; n < nbfaces; ++n) {
+            int f = faces[n];
+            if ((*darcy_flux)[f] < 0 && influx_face[f] == 0) {
+              char component[3];
+              std::sprintf(component, "%3d", i);
+
+              Errors::Message msg;
+              msg << "No influx boundary condition has been found for component " << component << ".\n";
+              Exceptions::amanzi_throw(msg);
+            }
           }
         }
       }
@@ -293,17 +309,24 @@ double Transport_PK::TracerVolumeChangePerSecond(int idx_tracer)
 {
   double volume = 0.0;
 
-  for (int n = 0; n < bcs.size(); n++) {
-    int i = bcs_tcc_index[n];
+  for (int m = 0; m < bcs.size(); m++) {
+    std::vector<int>& tcc_index = bcs[m]->tcc_index();
+    int ncomp = tcc_index.size();
 
-    if (i == idx_tracer) {
-      for (TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
-        int f = bc->first;
-        int c2 = (*downwind_cell_)[f];
+    for (int i = 0; i < ncomp; i++) {
+      if (tcc_index[i] == idx_tracer) {
+        std::vector<int>& faces = bcs[m]->faces();
+        std::vector<std::vector<double> >& values = bcs[m]->values();
+        int nbfaces = faces.size();
 
-        if (c2 >= 0) {
-          double u = fabs((*darcy_flux)[0][f]);
-          volume += u * bc->second;
+        for (int n = 0; n < nbfaces; ++n) {
+          int f = faces[n];
+          int c2 = (*downwind_cell_)[f];
+
+          if (c2 >= 0) {
+            double u = fabs((*darcy_flux)[0][f]);
+            volume += u * values[n][i];
+          }
         }
       }
     }

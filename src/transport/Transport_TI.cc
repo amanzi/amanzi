@@ -99,17 +99,26 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
   }
 
   // BOUNDARY CONDITIONS for ADVECTION
-  for (int n = 0; n < bcs.size(); n++) {
-    if (current_component_ == bcs_tcc_index[n]) {
-      for (TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
-        f = bc->first;
-        c2 = (*downwind_cell_)[f];
+  for (int m = 0; m < bcs.size(); m++) {
+    std::vector<int>& tcc_index = bcs[m]->tcc_index();
+    int ncomp = tcc_index.size();
 
-        if (c2 >= 0 && f < nfaces_owned) {
-          u = fabs((*darcy_flux)[0][f]);
-          double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
-          tcc_flux = u * bc->second;
-          f_component[c2] += tcc_flux / vol_phi_ws;
+    for (int i = 0; i < ncomp; i++) {
+      if (current_component_ == tcc_index[i]) {
+        std::vector<int>& faces = bcs[m]->faces();
+        std::vector<std::vector<double> >& values = bcs[m]->values();
+        int nbfaces = faces.size();
+
+        for (int n = 0; n < nbfaces; ++n) {
+          f = faces[n];
+          c2 = (*downwind_cell_)[f];
+
+          if (c2 >= 0 && f < nfaces_owned) {
+            u = fabs((*darcy_flux)[0][f]);
+            double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
+            tcc_flux = u * values[n][i];
+            f_component[c2] += tcc_flux / vol_phi_ws;
+          }
         }
       }
     }

@@ -101,15 +101,21 @@ void Transport_PK::ProcessParameterList()
 
   // populate the list of boundary influx functions
   bcs.clear();
-  bcs_tcc_index.clear();
 
   if (transport_list.isSublist("boundary conditions")) {  // New flexible format.
     Teuchos::RCP<Teuchos::ParameterList>
        bcs_list = Teuchos::rcp(new Teuchos::ParameterList(transport_list.get<Teuchos::ParameterList>("boundary conditions")));
     TransportBCFactory bc_factory(mesh_, bcs_list);
     bc_factory.CreateConcentration(bcs);
-    for (int i = 0; i < bcs.size(); i++) {
-      bcs_tcc_index.push_back(FindComponentNumber(bcs[i]->tcc_name[0]));
+
+    for (int m = 0; m < bcs.size(); m++) {
+      std::vector<int>& tcc_index = bcs[m]->tcc_index();
+      std::vector<string>& tcc_names = bcs[m]->tcc_names();
+      int ncomp = tcc_names.size();
+
+      for (int i = 0; i < ncomp; i++) {
+        tcc_index.push_back(FindComponentNumber(tcc_names[i]));
+      }
     }
   } else {
     printf("Transport PK: does not have boundary conditions.\n");

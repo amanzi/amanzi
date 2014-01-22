@@ -60,7 +60,7 @@ void TransportBCFactory::ProcessTracerList(std::vector<TransportBoundaryFunction
           try {
             TransportBoundaryFunction_Tracer* bc = new TransportBoundaryFunction_Tracer(mesh_);
             ProcessTracerSpec(spec, bc);
-            bc->tcc_name.push_back(name);
+            bc->tcc_names().push_back(name);
 
             TransportBoundaryFunction* bc_base = bc;
             bcs.push_back(bc_base);
@@ -121,6 +121,37 @@ void TransportBCFactory::ProcessTracerSpec(
   
   // Add this BC specification to the boundary function.
   bc->Define(regions, f); // , Amanzi::BOUNDARY_FUNCTION_ACTION_NONE); // needs to be fixed
+}
+
+
+/* ******************************************************************
+* Process Dirichet BC (concentration), step 1.
+* **************************************************************** */
+void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBoundaryFunction*>& bcs) const
+{
+  Errors::Message msg;
+  Teuchos::ParameterList& clist = list_->get<Teuchos::ParameterList>("geochemical condition");
+
+  for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
+    std::string name = it->first;
+    if (clist.isSublist(name)) {
+      Teuchos::ParameterList& spec = clist.sublist(name);
+      try {
+        TransportBoundaryFunction_Alquimia* bc = new TransportBoundaryFunction_Alquimia(mesh_);
+        ProcessGeochemicalConditionSpec(spec, bc);
+        // bc->tcc_names().push_back(name);
+
+        TransportBoundaryFunction* bc_base = bc;
+        bcs.push_back(bc_base);
+      } catch (Errors::Message& m) {
+        msg << "in sublist \"" << name.c_str() << "\": " << m.what();
+        Exceptions::amanzi_throw(msg);
+      }
+    } else {
+      msg << "parameter \"" << name.c_str() << "\" is not a sublist.\n";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
 }
 
 }  // namespace AmanziTransport
