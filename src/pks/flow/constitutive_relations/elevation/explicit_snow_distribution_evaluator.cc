@@ -9,16 +9,25 @@
 #include "Function.hh"
 #include "FunctionFactory.hh"
 
-#include "snow_distribution_evaluator.hh"
+#include "explicit_snow_distribution_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-SnowDistributionEvaluator::SnowDistributionEvaluator(Teuchos::ParameterList& plist) :
+ExplicitSnowDistributionEvaluator::ExplicitSnowDistributionEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist),
     assembled_(false) {
   my_key_ = plist_.get<std::string>("precipitation snow field", "precipitation_snow");
+
+  // depenedencies
+  mesh_name_ = plist_.get<std::string>("domain name", "surface");
+  if (mesh_name_ == "domain") {
+    cell_vol_key_ = "cell_volume";
+  } else {
+    cell_vol_key_ = mesh_name_+std::string("_cell_volume");
+  }    
+  dependencies_.insert(cell_vol_key_);
 
   elev_key_ = plist_.get<std::string>("elevation key", "elevation");
   dependencies_.insert(elev_key_);
@@ -29,21 +38,18 @@ SnowDistributionEvaluator::SnowDistributionEvaluator(Teuchos::ParameterList& pli
   snow_height_key_ = plist_.get<std::string>("snow height key", "snow_depth");
   dependencies_.insert(snow_height_key_);
 
-  mesh_name_ = plist_.get<std::string>("mesh name", "surface");
-  manning_ = plist_.get<double>("manning coefficient", 1.);
-  
-  if (mesh_name_ == "domain") {
-    cell_vol_key_ = "cell_volume";
-  } else {
-    cell_vol_key_ = mesh_name_+std::string("_cell_volume");
-  }    
-  dependencies_.insert(cell_vol_key_);
-  
+  // constant parameters
+  kL_ = plist_.get<double>("snow distribution length");
+  kdx_ = plist_.get<double>("characteristic horizontal grid size", 0.25);
+  ktmax_ = plist_.get<double>("faux integration time", 86400.);
+  kS_ = plist_.get<double>("characteristic slope", 1.);
+  kCFL_ = plist_.get<double>("Courant number", 0.5);
+
   FunctionFactory fac;
   precip_func_ = Teuchos::rcp(fac.Create(plist_.sublist("precipitation function")));
 }
 
-SnowDistributionEvaluator::SnowDistributionEvaluator(const SnowDistributionEvaluator& other) :
+ExplicitSnowDistributionEvaluator::ExplicitSnowDistributionEvaluator(const ExplicitSnowDistributionEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     elev_key_(other.elev_key_),
     slope_key_(other.slope_key_),
@@ -51,53 +57,68 @@ SnowDistributionEvaluator::SnowDistributionEvaluator(const SnowDistributionEvalu
     snow_height_key_(other.snow_height_key_),
     cell_vol_key_(other.cell_vol_key_),
     precip_func_(other.precip_func_),
-    manning_(other.manning_),
+    kL_(other.kL_),
+    kdx_(other.kdx_),
+    ktmax_(other.ktmax_),
+    kS_(other.kS_),
+    kCFL_(other.kCFL_),
     assembled_(other.assembled_),
     mesh_name_(other.mesh_name_),
     matrix_(other.matrix_) {}
 
 
-void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
   if (!assembled_) AssembleOperator_(S);
 
-  result->PutScalar(0.);
-
-  double dt = *S->GetScalarData("dt");
   double time = S->time();
   double Qe = (*precip_func_)(&time);
-  if (Qe * dt > 0.) {
+  double dt_sim = *S->GetScalarData("dt");
+
+  if (Qe * dt_sim > 0.) {
+    // determine scaling of flow
+    const double kq = kL_/ktmax_;
+    const nm = std::pow(Qe * ktmax_, 4./3) * std::sqrt(kS_) / kq;
+    double dt = kCFL_ * kdx_ / kq;
+    int nsteps = std::ceil(ktmax_ / dt);
+    dt = ktmax_ / nsteps;
+
+    // Gather mesh entities
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_name_);
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+    // Gather null boundary conditions (no flux of snow into or out of domain)
     std::vector<Operators::MatrixBC> bc_markers(nfaces, Operators::MATRIX_BC_NULL);
     std::vector<double> bc_values(nfaces, 0.0);
-    
-    Teuchos::RCP<CompositeVector> hz = Teuchos::rcp(new CompositeVector(*result));
-    Teuchos::RCP<CompositeVector> residual = Teuchos::rcp(new CompositeVector(*result));
-    Teuchos::RCP<CompositeVector> du = Teuchos::rcp(new CompositeVector(*result));
 
+    // Create temporary work space
+    Teuchos::RCP<CompositeVector> hz = Teuchos::rcp(new CompositeVector(*result));
+    Teuchos::RCP<CompositeVector> divq = Teuchos::rcp(new CompositeVector(*result));
     Teuchos::RCP<CompositeVector> Krel_c = Teuchos::rcp(new CompositeVector(*result));
     CompositeVectorSpace Krel_f_space;
     Krel_f_space.SetMesh(mesh)->SetComponent("face",AmanziMesh::FACE,1);
     Teuchos::RCP<CompositeVector> Krel_uw = Teuchos::rcp(new CompositeVector(Krel_f_space));
 
+    // Gather dependencies
+    // NOTE: this is incorrect approximation... should be | sqrt( grad( z+h_pd ) ) |
     const Epetra_MultiVector& slope = *S->GetFieldData(slope_key_)->ViewComponent("cell",false);
     const Epetra_MultiVector& cv = *S->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
-            
-    int n_cycles = 10;
-    int i_cycle = 0;
-    double norm;
-    result->PutScalar(Qe*dt);
-    for (int n=0; n!=n_cycles; ++n) {
-      i_cycle = n;
-      std::cout << "SNOW INNER ITERATE " << n << std::endl;
+    Teuchos::RCP<const CompositeVector> elev = S->GetFieldData(elev_key_);
+    Teuchos::RCP<const CompositeVector> pd = S->GetFieldData(pd_key_);
+    Teuchos::RCP<const CompositeVector> snow_height = S->GetFieldData(snow_height_key_);
+
+    // initialize and begin timestep loop
+    result->PutScalar(Qe*ktmax_);
+    for (int istep=0; istep!=nsteps; ++istep) {
+      std::cout << "SNOW INNER TIMESTEP " << istep << " with size " dt << std::endl;
+      std::cout << "   Qe*t_total =" << std::endl;
+      result->Print(std::cout);
 
       // update snow potential, z + h_pd + h_s + Qe*dt
       *hz = *result;
-      hz->Update(1., *S->GetFieldData(elev_key_),
-                 1., *S->GetFieldData(pd_key_), 1.);
-      hz->Update(1., *S->GetFieldData(snow_height_key_), 1.);
+      hz->Update(1., *elev, 1., *pd, 1.);
+      hz->Update(1., *snow_height, 1.);
 
       // update Krel
       {
@@ -105,7 +126,7 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Epetra_MultiVector& result_c = *result->ViewComponent("cell",false);
         for (int c=0; c!=ncells; ++c) {
           Krel_c_vec[0][c] = std::pow(std::max(result_c[0][c],0.), 4./3)
-              / (std::sqrt(std::max(slope[0][c], 1.e-4)) * manning_);
+              / (std::sqrt(std::max(slope[0][c], 1.e-6)) * nm);
         }
       }
 
@@ -137,78 +158,37 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
       matrix_->AssembleGlobalMatrices();
 
-      // Apply the operator to get a residual
-      matrix_->ComputeNegativeResidual(*hz, residual.ptr());
+      // Apply the operator to get div flux
+      matrix_->ComputeResidual(*hz, divq.ptr());
 
-      // Apply the accumulation term
-      // Apply the source term
-      Epetra_MultiVector& residual_c = *residual->ViewComponent("cell",false);
-      const Epetra_MultiVector& result_c = *result->ViewComponent("cell",false);
-      for (int c=0; c!=ncells; ++c) {
-        residual_c[0][c] += cv[0][c] * result_c[0][c] > 0 ? result_c[0][c] : 0.;
-        residual_c[0][c] -= cv[0][c] * dt * Qe;
+      // update the timestep
+      result->Update(dt, divq, 1.);
+
+      // Ensure non-negativity via clipping
+      {
+        Epetra_MultiVector& result_c = *result->ViewComponent("cell",false);
+        for (int c=0; c!=ncells; ++c) {
+          if (result_c[0][c] < 0.) {
+            std::cout << "  Lost snow mass cell " << c << ": h = " << result_c[0][c] << std::endl;
+          }
+          result_c[0][c] = std::max(0., result_c[0][c]);
+        }
       }
-
-      // smooth to find a correction
-      residual->Norm2(&norm);
-      std::cout << "Snow Distribution: itr=" << i_cycle << ", norm=" << norm << std::endl;
-      std::cout << "Qs:" << std::endl;
-      result->Print(std::cout);
-      std::cout << "Residual:" << std::endl;
-      residual->Print(std::cout);
-
-      if (norm < 1.e-4) {
-        break;
-      }
-
-      du->PutScalar(0.);
-      // PC
-      std::vector<double>& Acc_cells = matrix_->Acc_cells();
-      for (int c=0; c!=ncells; ++c) {
-        Acc_cells[c] += cv[0][c];
-      }
-      matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
-      matrix_->AssembleGlobalMatrices();
-      matrix_->ComputeSchurComplement(bc_markers, bc_values);
-      matrix_->UpdatePreconditioner();
-      matrix_->ApplyInverse(*residual, *du);
-
-      // apply correction
-      result->Update(-1., *du, 1.);
-
-      // // check for negative results and backtrack
-      // double factor = 1.;
-      // double total_scaling = 1.;
-      // double minval = 0;
-      // result->ViewComponent("cell",false)->MinValue(&minval);
-      // while (minval < 0.) {
-      //   factor *= 0.5;
-      //   result->Update(factor, *du, 1.);
-      //   total_scaling -= factor;
-      //   result->ViewComponent("cell",false)->MinValue(&minval);
-      // }
-      
-      // log
-      std::cout << "Correction:" << std::endl;
-      // du->Scale(total_scaling);
-      du->Print(std::cout);
-
     }
-    std::cout << "Snow Distribution finished: itr=" << i_cycle << ", norm=" << norm << std::endl;
-    
+
     // get Q back
-    result->Scale(1./dt);
+    result->Scale(1./ktmax_);
   }
 }
 
 // This is hopefully never called?
-void SnowDistributionEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+void ExplicitSnowDistributionEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& results) {
   ASSERT(0);
 }
 
 void
-SnowDistributionEvaluator::AssembleOperator_(const Teuchos::Ptr<State>& S) {
+ExplicitSnowDistributionEvaluator::AssembleOperator_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_name_);
   matrix_ = Operators::CreateMatrixMFD(plist_.sublist("smoothing operator"), mesh);
 
