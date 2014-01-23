@@ -109,10 +109,10 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   Teuchos::RCP<ChemistryEngine> chem_engine_;
 
   // Alquimia data structures.
-  AlquimiaState* alq_state_;
-  AlquimiaMaterialProperties* alq_mat_props_;
-  AlquimiaAuxiliaryData* alq_aux_data_;
-  AlquimiaAuxiliaryOutputData* alq_aux_output_;
+  AlquimiaState alq_state_;
+  AlquimiaMaterialProperties alq_mat_props_;
+  AlquimiaAuxiliaryData alq_aux_data_;
+  AlquimiaAuxiliaryOutputData alq_aux_output_;
 
   // Mapping of region names to geochemical condition names. A region is identified 
   // by a string, and all cells within a region will have all geochemical 
@@ -143,15 +143,15 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   // given cell.
   void CopyAmanziStateToAlquimia(const int cell_id,
                                  Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
-                                 AlquimiaState* state,
-                                 AlquimiaMaterialProperties* mat_props,
-                                 AlquimiaAuxiliaryData* aux_data);
+                                 AlquimiaState& state,
+                                 AlquimiaMaterialProperties& mat_props,
+                                 AlquimiaAuxiliaryData& aux_data);
 
   void CopyAlquimiaStateToAmanzi(const int cell_id,
-                                 const AlquimiaState* state,
-                                 const AlquimiaMaterialProperties* mat_props,
-                                 const AlquimiaAuxiliaryData* aux_data,
-                                 const AlquimiaAuxiliaryOutputData* aux_output);
+                                 const AlquimiaState& state,
+                                 const AlquimiaMaterialProperties& mat_props,
+                                 const AlquimiaAuxiliaryData& aux_data,
+                                 const AlquimiaAuxiliaryOutputData& aux_output);
 
 };
 

@@ -49,6 +49,9 @@ class ChemistryEngine {
   // Returns the name of the backend that does the chemistry.
   const std::string& Name() const;
 
+  // Returns true if the chemistry engine is thread-safe, false if not.
+  bool IsThreadSafe() const;
+
   // These query methods return metadata for the chemical configuration represented 
   // within the chemistry engine.
   int NumPrimarySpecies() const;
@@ -69,65 +72,39 @@ class ChemistryEngine {
   // arrays representing the geochemical state within the engine.
   const AlquimiaSizes& Sizes() const;
 
-  // Returns a freshly-allocated pointer to an "AlquimiaState" object that has been initialized so that 
-  // it can hold all of the data in a geochemical simulation. This must be freed with DeleteState().
-  AlquimiaState* NewState() const;
-
-  // Call this to delete a state returned by NewState().
-  void DeleteState(AlquimiaState* state);
-
-  // Returns a freshly-allocated pointer to an "AlquimiaMaterialProperties" object that has been initialized 
-  // so that it can hold all of the material property data in a geochemical simulation. This must be freed with 
-  // DeleteMaterialProperties().
-  AlquimiaMaterialProperties* NewMaterialProperties() const;
-
-  // Call this to delete a set of material properties returned by NewMaterialProperties().
-  void DeleteMaterialProperties(AlquimiaMaterialProperties* mat_props);
-
-  // Returns a freshly-allocated pointer to an "AlquimiaAuxiliaryData" object that has been initialized 
-  // so that it can hold all of the auxiliary data in a geochemical simulation. This must be freed with 
-  // DeleteAuxiliaryData().
-  AlquimiaAuxiliaryData* NewAuxiliaryData() const;
-
-  // Call this to delete a set of auxiliary data returned by NewAuxiliaryData().
-  void DeleteAuxiliaryData(AlquimiaAuxiliaryData* aux_data);
-
-  // Returns a freshly-allocated pointer to an "AlquimiaAuxiliaryOutputData" object that has been initialized 
-  // so that it can hold all of the auxiliary output data in a geochemical simulation. This must be freed with 
-  // DeleteAuxiliaryOutputData().
-  AlquimiaAuxiliaryOutputData* NewAuxiliaryOutputData() const;
-
-  // Call this to delete a set of auxiliary output data returned by NewAuxiliaryOutputData().
-  void DeleteAuxiliaryOutputData(AlquimiaAuxiliaryOutputData* aux_output);
+  // Initializes the data structures that hold the chemical state information.
+  void InitState(AlquimiaState& chem_state, 
+                 AlquimiaMaterialProperties& mat_props,
+                 AlquimiaAuxiliaryData& aux_data,
+                 AlquimiaAuxiliaryOutputData& aux_output);
+                 
+  // Frees the data structures that hold the chemical state information.
+  void FreeState(AlquimiaState& chem_state,
+                 AlquimiaMaterialProperties& mat_props,
+                 AlquimiaAuxiliaryData& aux_data,
+                 AlquimiaAuxiliaryOutputData& aux_output);
 
   // Enforces the geochemical condition with the given name on the chemical configuration 
   // represented by the given array of concentrations at the given time. The order of the 
   // concentrations in the array matches that of the species names returned by GetSpeciesNames.
   void EnforceCondition(const std::string& conditionName,
                         double time,
-                        AlquimiaState* chem_state,
-                        AlquimiaMaterialProperties* mat_props,
-                        AlquimiaAuxiliaryData* aux_data,
-                        AlquimiaAuxiliaryOutputData* aux_output);
+                        AlquimiaState& chem_state,
+                        AlquimiaMaterialProperties& mat_props,
+                        AlquimiaAuxiliaryData& aux_data,
+                        AlquimiaAuxiliaryOutputData& aux_output);
 
   // Advances the species represented by the given array of concentrations, replacing old values 
   // with new values. The order of the concentrations in the array matches that of the species names 
   // returned by GetSpeciesNames.
   void Advance(double delta_time,
-               AlquimiaState* chem_state,
-               AlquimiaMaterialProperties* mat_props,
-               AlquimiaAuxiliaryData* aux_data,
-               AlquimiaAuxiliaryOutputData* aux_output,
+               AlquimiaState& chem_state,
+               AlquimiaMaterialProperties& mat_props,
+               AlquimiaAuxiliaryData& aux_data,
+               AlquimiaAuxiliaryOutputData& aux_output,
                int& num_iterations);
 
  private:
-
-  // Copy chemistry data into the engine.
-  void CopyIn(AlquimiaState* chem_state, AlquimiaMaterialProperties* mat_props, AlquimiaAuxiliaryData* aux_data);
-
-  // Copy chemistry data out of the engine.
-  void CopyOut(AlquimiaState* chem_state, AlquimiaMaterialProperties* mat_props, 
-               AlquimiaAuxiliaryData* aux_data, AlquimiaAuxiliaryOutputData* aux_output);
 
   // Reads parameters from the XML input file to set up chemistry.
   void ReadXMLParameters();
@@ -145,9 +122,12 @@ class ChemistryEngine {
 
   // Alquimia data structures.
   bool chem_initialized_;
+  void* engine_state_;
+  AlquimiaEngineFunctionality functionality_;
+  AlquimiaSizes sizes_;
   AlquimiaInterface chem_;
   AlquimiaEngineStatus chem_status_;
-  AlquimiaData chem_data_;
+  AlquimiaProblemMetaData chem_metadata_;
 
   // Mapping of region names to geochemical conditions. A region is identified 
   // by a string, and all cells within a region will have all geochemical 
