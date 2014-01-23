@@ -77,7 +77,7 @@
 #define TR_NKA_NUMVEC                   10
 #define TR_TS_STRATEGY                  "standard"
 #define TR_TS_CONTROLLER                "standard"
-
+#define TR_INIT_DARCY_BOOL              false
 
  
 #define PIC_INIT_DARCY                  true

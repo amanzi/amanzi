@@ -1436,11 +1436,6 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           steady_time_integrator.set<std::string>("linear solver", ST_SOLVER);
           steady_time_integrator.set<std::string>("preconditioner", ST_PRECOND);
 
-          // initialization
-          Teuchos::ParameterList &sti_init = steady_time_integrator.sublist("initialization");
-          sti_init.set<std::string>("method", "saturated solver");
-          sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
-
           // pressure-lambda constraints
           Teuchos::ParameterList &sti_plamb = steady_time_integrator.sublist("pressure-lambda constraints");
           sti_plamb.set<std::string>("method","projection");
@@ -1516,18 +1511,16 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 
                 steady_time_integrator.set<std::string>("preconditioner",
                                                         num_list.get<std::string>("steady preconditioner", ST_PRECOND));
-#if 0
-                if (!use_picard) {
-                  steady_time_integrator.set<bool>("initialize with darcy",
-                                                   num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL));
-                } else {
-                  steady_time_integrator.set<bool>("initialize with darcy",false);
-                }
-#endif
+
                 if (flow_model == "Single Phase") {
                   sti_bdf1_std.set<double>("time step increase factor",num_list.get<double>("steady time step increase factor",ST_SP_DT_INCR_FACTOR));
                 }
-
+		// initialization
+		if (num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL)) {
+		  Teuchos::ParameterList &sti_init = steady_time_integrator.sublist("initialization");
+		  sti_init.set<std::string>("method", "saturated solver");
+		  sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
+		}
               }
             }
           }
@@ -1549,11 +1542,6 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           // linear solver
           transient_time_integrator.set<std::string>("linear solver", TR_SOLVER);
           transient_time_integrator.set<std::string>("preconditioner", TR_PRECOND);
-
-          // initialization
-          Teuchos::ParameterList &tti_init = transient_time_integrator.sublist("initialization");
-          tti_init.set<std::string>("method","projection");
-          tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
 
           // pressure-lambda constraints
           Teuchos::ParameterList &tti_plamb = transient_time_integrator.sublist("pressure-lambda constraints");
@@ -1638,7 +1626,17 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
                   tti_bdf1_std.set<double>("time step increase factor",
                                            num_list.get<double>("transient time step increase factor", TR_SP_DT_INCR_FACTOR));
                 }
-              }
+		// create an initialization sublist
+		if (num_list.get<bool>("transient initialize with darcy", TR_INIT_DARCY_BOOL)) {
+		  Teuchos::ParameterList &tti_init = transient_time_integrator.sublist("initialization");
+		  tti_init.set<std::string>("method","saturated");
+		  tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
+		} else {
+		  Teuchos::ParameterList &tti_init = transient_time_integrator.sublist("initialization");
+		  tti_init.set<std::string>("method","projection");
+		  tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
+		}
+	      }
             }
           }
 
