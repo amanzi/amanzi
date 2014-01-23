@@ -150,7 +150,7 @@ void MPC::mpc_init() {
 #ifdef ALQUIMIA_ENABLED
     // When Alquimia is used, the Transport PK must interact with the 
     // chemistry engine to obtain boundary values for the components.
-    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, names, chem_engine));
+    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, names, CS, chem_engine));
 #else
     TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, names));
 #endif

@@ -42,16 +42,15 @@ namespace AmanziTransport {
 #ifdef ALQUIMIA_ENABLED
 Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
                            std::vector<std::string>& component_names,
+                           Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
                            Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
-    : S_(S), component_names_(component_names), chem_engine_(chem_engine)
+    : S_(S), component_names_(component_names), chem_state_(chem_state), chem_engine_(chem_engine)
 #else
 Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
                            std::vector<std::string>& component_names)
     : S_(S), component_names_(component_names)
 #endif
 {
-  chem_engine_ = chem_engine;
-
   parameter_list = glist.sublist("Transport");
   preconditioners_list = glist.sublist("Preconditioners");
   solvers_list = glist.sublist("Solvers");

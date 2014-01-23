@@ -14,12 +14,15 @@
 
 #include <vector>
 
+#include "Teuchos_RCP.hpp"
+
 #include "Mesh.hh"
 #include "TransportBoundaryFunction.hh"
 #include "TransportBoundaryFunction_Tracer.hh"
 #include "TransportBoundaryFunction_Alquimia.hh"
 
 #ifdef ALQUIMIA_ENABLED
+#include "Chemistry_State.hh"
 #include "ChemistryEngine.hh"
 #endif
 
@@ -32,15 +35,16 @@ class TransportBCFactory {
                      const Teuchos::RCP<Teuchos::ParameterList>& list)
      : mesh_(mesh), list_(list),
 #ifdef ALQUIMIA_ENABLED
-       chem_engine_(Teuchos::null) {};
+       chem_state_(Teuchos::null), chem_engine_(Teuchos::null) {};
 #endif
 
   // Alquimia-enabled constructor.
 #ifdef ALQUIMIA_ENABLED
   TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                      const Teuchos::RCP<Teuchos::ParameterList>& list,
+                     const Teuchos::RCP<AmanziChemistry::Chemistry_State>& chem_state,
                      const Teuchos::RCP<AmanziChemistry::ChemistryEngine>& chem_engine)
-     : mesh_(mesh), list_(list), chem_engine_(chem_engine) {};
+     : mesh_(mesh), list_(list), chem_state_(chem_state), chem_engine_(chem_engine) {};
 #endif
 
   ~TransportBCFactory() {};
@@ -61,6 +65,7 @@ class TransportBCFactory {
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
   const Teuchos::RCP<Teuchos::ParameterList>& list_;
 #ifdef ALQUIMIA_ENABLED
+  const Teuchos::RCP<AmanziChemistry::Chemistry_State>& chem_state_;
   const Teuchos::RCP<AmanziChemistry::ChemistryEngine>& chem_engine_;
 #endif
 };

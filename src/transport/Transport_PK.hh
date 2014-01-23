@@ -37,6 +37,7 @@
 #include "Dispersion.hh"
 
 #ifdef ALQUIMIA_ENABLED
+#include "Chemistry_State.hh"
 #include "ChemistryEngine.hh"
 #endif
 
@@ -63,6 +64,7 @@ class Transport_PK : public Explicit_TI::fnBase {
 #ifdef ALQUIMIA_ENABLED
   Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
                std::vector<std::string>& component_names,
+               Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state = Teuchos::null,
                Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine = Teuchos::null);
 #else
   Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
@@ -193,6 +195,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
   
 #ifdef ALQUIMIA_ENABLED
+  Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state_;
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 #endif
 
