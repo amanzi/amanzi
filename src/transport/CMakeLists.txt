@@ -53,7 +53,7 @@ set(transport_inc_files
   TransportBoundaryFunction_Tracer.hh
   TransportBoundaryFunction_Alquimia.hh
   TransportDefs.hh
-  transportDomainFunction.hh
+  TransportDomainFunction.hh
   Transport_PK.hh
   TransportSourceFactory.hh)
 
