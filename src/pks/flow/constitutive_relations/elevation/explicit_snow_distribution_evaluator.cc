@@ -69,6 +69,8 @@ ExplicitSnowDistributionEvaluator::ExplicitSnowDistributionEvaluator(const Expli
 
 void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+
   if (!assembled_) AssembleOperator_(S);
 
   double time = S->time();
@@ -77,11 +79,30 @@ void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
 
   if (Qe * dt_sim > 0.) {
     // determine scaling of flow
-    const double kq = kL_/ktmax_;
-    const nm = std::pow(Qe * ktmax_, 4./3) * std::sqrt(kS_) / kq;
-    double dt = kCFL_ * kdx_ / kq;
+
+    const double kV = kL_/ktmax_;
+    double dt = kCFL_ * kdx_ / kV;
+
+    const double kh0 = Qe * ktmax_;
+    const double nm = std::pow(kh0, 1./3) * std::sqrt(kS_) / kV;
+
     int nsteps = std::ceil(ktmax_ / dt);
     dt = ktmax_ / nsteps;
+
+    // scale report
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Snow Distribution: taking " << nsteps << " steps of size " << dt
+                 << " s for travel length " << kL_ << " m." << std::endl
+                 << "  L     = " << kL_ << std::endl
+                 << "  t_max = " << ktmax_ << std::endl
+                 << "  V     = " << kV << std::endl
+                 << "  Q     = " << kV*kh0 << std::endl
+                 << "  -------" << std::endl
+                 << "  h0    = " << kh0 << std::endl
+                 << "  nm    = " << nm << std::endl
+                 << "  V(man)= " << std::pow(kh0,1./3) * std::sqrt(kS_) / nm << std::endl
+                 << "  -------" << std::endl;
+    }
 
     // Gather mesh entities
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_name_);
@@ -103,7 +124,7 @@ void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     // Gather dependencies
     // NOTE: this is incorrect approximation... should be | sqrt( grad( z+h_pd ) ) |
     const Epetra_MultiVector& slope = *S->GetFieldData(slope_key_)->ViewComponent("cell",false);
-    const Epetra_MultiVector& cv = *S->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
+    Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cell_vol_key_);
     Teuchos::RCP<const CompositeVector> elev = S->GetFieldData(elev_key_);
     Teuchos::RCP<const CompositeVector> pd = S->GetFieldData(pd_key_);
     Teuchos::RCP<const CompositeVector> snow_height = S->GetFieldData(snow_height_key_);
@@ -111,9 +132,9 @@ void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     // initialize and begin timestep loop
     result->PutScalar(Qe*ktmax_);
     for (int istep=0; istep!=nsteps; ++istep) {
-      std::cout << "SNOW INNER TIMESTEP " << istep << " with size " dt << std::endl;
-      std::cout << "   Qe*t_total =" << std::endl;
-      result->Print(std::cout);
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "Snow distribution inner timestep " << istep << " with size " << dt << std::endl
+                   << "   Qe*t_total =" << std::endl;
 
       // update snow potential, z + h_pd + h_s + Qe*dt
       *hz = *result;
@@ -161,16 +182,24 @@ void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
       // Apply the operator to get div flux
       matrix_->ComputeResidual(*hz, divq.ptr());
 
+      // scale by 1/cell volume
+      {
+        const Epetra_MultiVector& cv_c = *cv->ViewComponent("cell",false);
+        Epetra_MultiVector& divq_c = *divq->ViewComponent("cell",false);
+        for (unsigned int c=0; c!=ncells; ++c) {
+          divq_c[0][c] /= cv_c[0][c];
+        }
+      }
+
       // update the timestep
-      result->Update(dt, divq, 1.);
+      result->Update(dt, *divq, 1.);
 
       // Ensure non-negativity via clipping
       {
         Epetra_MultiVector& result_c = *result->ViewComponent("cell",false);
         for (int c=0; c!=ncells; ++c) {
-          if (result_c[0][c] < 0.) {
-            std::cout << "  Lost snow mass cell " << c << ": h = " << result_c[0][c] << std::endl;
-          }
+          if (result_c[0][c] < 0. && vo_->os_OK(Teuchos::VERB_HIGH))
+            *vo_->os() << "  Lost snow mass cell " << c << ": h = " << result_c[0][c] << std::endl;
           result_c[0][c] = std::max(0., result_c[0][c]);
         }
       }
@@ -190,7 +219,7 @@ void ExplicitSnowDistributionEvaluator::EvaluateFieldPartialDerivative_(const Te
 void
 ExplicitSnowDistributionEvaluator::AssembleOperator_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_name_);
-  matrix_ = Operators::CreateMatrixMFD(plist_.sublist("smoothing operator"), mesh);
+  matrix_ = Operators::CreateMatrixMFD(plist_.sublist("Diffusion"), mesh);
 
   matrix_->set_symmetric(true);
   matrix_->SymbolicAssembleGlobalMatrices();
