@@ -991,6 +991,14 @@ The following models can be specified for the intrinsic permeability of the mate
  
  * [SU] `"Value`" [double] to specify the constant value of the intrinsic permeability
 
+* [U] `"Intrinsic Permeability: File`" [list] requires 
+ 
+ * [U] `"File`" [string] provides the name of the file containing the permeability field
+
+ * [U] `"Format`" [string] specifies the format of the file (`"exodus`" is the only supported format at this time)
+
+ * [U] `"Attribute`" [string] to specify the attribute name used to identify the permeability values
+
 * [SU] `"Intrinsic Permeability: Anisotropic Uniform`" [list] requires
  
  * [SU] `"x`" [double] to specify the constant value of the intrinsic permeability in the x-direction; and
