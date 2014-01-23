@@ -1629,7 +1629,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 		// create an initialization sublist
 		if (num_list.get<bool>("transient initialize with darcy", TR_INIT_DARCY_BOOL)) {
 		  Teuchos::ParameterList &tti_init = transient_time_integrator.sublist("initialization");
-		  tti_init.set<std::string>("method","saturated");
+		  tti_init.set<std::string>("method","saturated solver");
 		  tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
 		} else {
 		  Teuchos::ParameterList &tti_init = transient_time_integrator.sublist("initialization");
