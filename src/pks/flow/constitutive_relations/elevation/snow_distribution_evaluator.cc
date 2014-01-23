@@ -210,7 +210,7 @@ void SnowDistributionEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
 void
 SnowDistributionEvaluator::AssembleOperator_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_name_);
-  matrix_ = Operators::CreateMatrixMFD(plist_.sublist("smoothing operator"), mesh);
+  matrix_ = Operators::CreateMatrixMFD(plist_.sublist("Diffusion"), mesh);
 
   matrix_->set_symmetric(true);
   matrix_->SymbolicAssembleGlobalMatrices();

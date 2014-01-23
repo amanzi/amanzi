@@ -29,6 +29,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/elevation/explicit_snow_distribution_evaluator_reg.hh
+  LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
+  )
+
+register_evaluator_with_factory(
   HEADERFILE constitutive_relations/elevation/meshed_elevation_evaluator_reg.hh
   LISTNAME   FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY
   )
