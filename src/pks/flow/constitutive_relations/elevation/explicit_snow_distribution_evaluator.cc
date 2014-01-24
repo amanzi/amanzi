@@ -207,6 +207,8 @@ void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
 
     // get Q back
     result->Scale(1./ktmax_);
+  } else {
+    result->PutScalar(0.);
   }
 }
 
