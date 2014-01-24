@@ -465,6 +465,10 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     // Get a hydrostatic solution consistent with b.c.
     SolveFullySaturatedProblem(T0, *solution, ti_specs.ls_specs_ini);
 
+    // Call this initialization procedure only once. Use case: multiple
+    // restart of a single phase transient time integrator.
+    ti_specs.initialize_with_darcy = false;
+
     bool clip(false);
     if (ti_specs.clip_saturation > 0.0) {
       double pmin = FLOW_PRESSURE_ATMOSPHERIC;
