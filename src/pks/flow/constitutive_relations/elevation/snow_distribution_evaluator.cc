@@ -29,7 +29,7 @@ SnowDistributionEvaluator::SnowDistributionEvaluator(Teuchos::ParameterList& pli
   snow_height_key_ = plist_.get<std::string>("snow height key", "snow_depth");
   dependencies_.insert(snow_height_key_);
 
-  mesh_name_ = plist_.get<std::string>("mesh name", "surface");
+  mesh_name_ = plist_.get<std::string>("domain name", "surface");
   manning_ = plist_.get<double>("manning coefficient", 1.);
   
   if (mesh_name_ == "domain") {
