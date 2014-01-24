@@ -13,9 +13,11 @@ add_subdirectory(geometry)
 # Grid-option agnostic chemistry and interfaces
 if (ENABLE_Physics)
   add_subdirectory(chemistry)
+
   if (ENABLE_ALQUIMIA)
     # Use Alquimia as a chemistry engine.
     add_definitions(-DALQUIMIA_ENABLED)
+    add_subdirectory(common/geochemistry)
   endif()
 endif()
 

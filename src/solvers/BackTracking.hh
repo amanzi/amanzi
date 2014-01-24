@@ -156,10 +156,10 @@ int BackTracking<Vector>::LineSearch(
     // Convergence on Delta x.
     if (alam < alamin) {
       x = xold;
-      return;
+      return 0;
     // Sufficient function decrease
     } else if (f <= fold + alpha * alam * slope) {
-      return;
+      return 0;
     // Backtracking
     } else {
       if (alam == 1.0) {

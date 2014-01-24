@@ -18,7 +18,6 @@ and to integrate reactions given a chemical configuration.
 #include <vector>
 #include <map>
 
-#include "function.hh"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
