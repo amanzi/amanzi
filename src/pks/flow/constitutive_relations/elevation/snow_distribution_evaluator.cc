@@ -31,6 +31,7 @@ SnowDistributionEvaluator::SnowDistributionEvaluator(Teuchos::ParameterList& pli
 
   mesh_name_ = plist_.get<std::string>("domain name", "surface");
   manning_ = plist_.get<double>("manning coefficient", 1.);
+  swe_conv_ = plist_.get<double>("SWE-to-snow conversion ratio", 10.);
   
   if (mesh_name_ == "domain") {
     cell_vol_key_ = "cell_volume";
@@ -52,6 +53,7 @@ SnowDistributionEvaluator::SnowDistributionEvaluator(const SnowDistributionEvalu
     cell_vol_key_(other.cell_vol_key_),
     precip_func_(other.precip_func_),
     manning_(other.manning_),
+    swe_conv_(other.swe_conv_),
     assembled_(other.assembled_),
     mesh_name_(other.mesh_name_),
     matrix_(other.matrix_) {}
@@ -66,7 +68,7 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   double dt = *S->GetScalarData("dt");
   double time = S->time();
   double Qe = (*precip_func_)(&time);
-  if (Qe * dt > 0.) {
+  if (Qe * dt * swe_conv_ > 0.) {
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_name_);
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -88,7 +90,7 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     int n_cycles = 10;
     int i_cycle = 0;
     double norm;
-    result->PutScalar(Qe*dt);
+    result->PutScalar(Qe*dt*swe_conv_);
     for (int n=0; n!=n_cycles; ++n) {
       i_cycle = n;
       std::cout << "SNOW INNER ITERATE " << n << std::endl;
@@ -146,7 +148,7 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       const Epetra_MultiVector& result_c = *result->ViewComponent("cell",false);
       for (int c=0; c!=ncells; ++c) {
         residual_c[0][c] += cv[0][c] * result_c[0][c] > 0 ? result_c[0][c] : 0.;
-        residual_c[0][c] -= cv[0][c] * dt * Qe;
+        residual_c[0][c] -= cv[0][c] * dt * Qe * swe_conv_;
       }
 
       // smooth to find a correction
@@ -197,7 +199,7 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     std::cout << "Snow Distribution finished: itr=" << i_cycle << ", norm=" << norm << std::endl;
     
     // get Q back
-    result->Scale(1./dt);
+    result->Scale(1./(dt * swe_conv_));
   }
 }
 

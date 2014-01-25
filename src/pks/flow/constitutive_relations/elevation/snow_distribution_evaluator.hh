@@ -52,7 +52,8 @@ protected:
   Key snow_height_key_;
   Key cell_vol_key_;
   double manning_;
-
+  double swe_conv_;
+  
   Teuchos::RCP<Function> precip_func_;
 
   bool assembled_;

@@ -44,6 +44,7 @@ ExplicitSnowDistributionEvaluator::ExplicitSnowDistributionEvaluator(Teuchos::Pa
   ktmax_ = plist_.get<double>("faux integration time", 86400.);
   kS_ = plist_.get<double>("characteristic slope", 1.);
   kCFL_ = plist_.get<double>("Courant number", 0.5);
+  kSWE_conv_ = plist_.get<double>("SWE-to-snow conversion ratio", 10.);
 
   FunctionFactory fac;
   precip_func_ = Teuchos::rcp(fac.Create(plist_.sublist("precipitation function")));
@@ -62,6 +63,7 @@ ExplicitSnowDistributionEvaluator::ExplicitSnowDistributionEvaluator(const Expli
     ktmax_(other.ktmax_),
     kS_(other.kS_),
     kCFL_(other.kCFL_),
+    kSWE_conv_(other.kSWE_conv_),
     assembled_(other.assembled_),
     mesh_name_(other.mesh_name_),
     matrix_(other.matrix_) {}
@@ -77,13 +79,14 @@ void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
   double Qe = (*precip_func_)(&time);
   double dt_sim = *S->GetScalarData("dt");
 
-  if (Qe * dt_sim > 0.) {
+  // NOTE: snow precip comes in SWE, must convert it to snow depth!
+  if (Qe * dt_sim * kSWE_conv_ > 0.) {
     // determine scaling of flow
 
     const double kV = kL_/ktmax_;
     double dt = kCFL_ * kdx_ / kV;
 
-    const double kh0 = Qe * ktmax_;
+    const double kh0 = Qe * ktmax_ * kSWE_conv_;
     const double nm = std::pow(kh0, 1./3) * std::sqrt(kS_) / kV;
 
     int nsteps = std::ceil(ktmax_ / dt);
@@ -130,7 +133,7 @@ void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     Teuchos::RCP<const CompositeVector> snow_height = S->GetFieldData(snow_height_key_);
 
     // initialize and begin timestep loop
-    result->PutScalar(Qe*ktmax_);
+    result->PutScalar(Qe * ktmax_ * kSWE_conv_);
     for (int istep=0; istep!=nsteps; ++istep) {
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
         *vo_->os() << "Snow distribution inner timestep " << istep << " with size " << dt << std::endl
@@ -206,7 +209,7 @@ void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     }
 
     // get Q back
-    result->Scale(1./ktmax_);
+    result->Scale(1./(ktmax_ * kSWE_conv_));
   } else {
     result->PutScalar(0.);
   }

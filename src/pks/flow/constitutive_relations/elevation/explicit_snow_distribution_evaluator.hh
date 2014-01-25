@@ -57,6 +57,7 @@ protected:
   double ktmax_;
   double kS_;
   double kCFL_;
+  double kSWE_conv_;
   
   Teuchos::RCP<Function> precip_func_;
 
