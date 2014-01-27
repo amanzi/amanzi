@@ -587,8 +587,8 @@ main (int   argc,
   }
   RealBox rb(problo.dataPtr(),probhi.dataPtr());
   int coord = 0; // Cartesian
-  int is_per = 0; // Not periodic
-  geom_array[0] = Geometry(domain,&rb,coord,&is_per);
+  Array<int> is_per(BL_SPACEDIM,0); // Not periodic
+  geom_array[0] = Geometry(domain,&rb,coord,is_per.dataPtr());
   
   Layout layout(refRatio_array,grid_array,geom_array,nLevs);
 
