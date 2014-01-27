@@ -2509,6 +2509,7 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
           if (!boost::filesystem::exists(p)) {
             Exceptions::amanzi_throw(Errors::Message("Permeability initialization from file: not all the partitioned files '" + perm_file_par + ".<numranks>.<rank>' exist, and possibly none of them exist."));
           }
+          perm_file = perm_file_par;
         } else { // numproc_ == 1
           std::string suffix = perm_file.substr(perm_file.size()-4);
           if (suffix != std::string(".exo")) {          
