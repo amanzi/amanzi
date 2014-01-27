@@ -35,6 +35,18 @@ bool compareEpsilon(T& first, T eps) {
 }
 
 
+template <typename T>
+T amanzi_get(Teuchos::ParameterList& plist, const std::string &name) {
+  if (plist.isParameter(name)) {
+    return plist.get<T>(name);
+  } else {
+    Exceptions::amanzi_throw(Errors::Message("Trying to read required parameter '" + name + "'  "));
+  }
+}
+
+
+
+
 /* ******************************************************************
  * Empty
  ****************************************************************** */
@@ -2456,22 +2468,22 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
       Teuchos::ParameterList &aux_list = mplist.sublist("Intrinsic Permeability: File");
       bool input_error = false;
       if (aux_list.isParameter("File")) {
-	perm_file = aux_list.get<std::string>("File");
+        perm_file = aux_list.get<std::string>("File");
       } else {
-	input_error = true;
+        input_error = true;
       }
       if (aux_list.isParameter("Attribute")) {
-	perm_attribute = aux_list.get<std::string>("Attribute");
+        perm_attribute = aux_list.get<std::string>("Attribute");
       } else {
-	input_error = true;
+        input_error = true;
       }
       if (aux_list.isParameter("Format")) {
-	perm_format = mplist.sublist("Intrinsic Permeability: File").get<std::string>("Format");
+        perm_format = mplist.sublist("Intrinsic Permeability: File").get<std::string>("Format");
       } else {
-	input_error = true;
+        input_error = true;
       }
       if (input_error) {
-	Exceptions::amanzi_throw(Errors::Message("The list 'Input Permeability: File' could not be parsed, a required parameter is missing. Check the input specification."));
+        Exceptions::amanzi_throw(Errors::Message("The list 'Input Permeability: File' could not be parsed, a required parameter is missing. Check the input specification."));
       }
       perm_init_from_file = true;
     } else {
@@ -2481,19 +2493,39 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
     Teuchos::ParameterList &permeability_ic = stt_ic.sublist("permeability");
     if (perm_init_from_file) {
       if (perm_format == std::string("exodus")) {
-	// first make sure the file actually exists
-	boost::filesystem::path perm_file_path(perm_file);
-	boost::filesystem::file_status stat = boost::filesystem::status(perm_file_path);
-	if (boost::filesystem::exists(stat)) {
-	  permeability_ic.sublist("exodus file initialization")
-	    .set<std::string>("file",perm_file)
-	    .set<std::string>("attribute",perm_attribute);
-	} else {
-	  Exceptions::amanzi_throw(Errors::Message("Permeability initialization from file: the file '" + perm_file + "' does not exist."));
-	}
+        // first make sure the file actually exists
+
+        boost::filesystem::path p;
+        if (numproc_>1) {
+          // attach the right extensions as required by Nemesis file naming conventions
+          // in which files are named as mymesh.par.N.r where N = numproc and r is rank
+          // and check if files exist
+          std::string perm_file_par = perm_file.substr(0,perm_file.size()-4) + std::string(".par");
+          int rank = numproc_-1;
+          int ndigits = static_cast<int>(floor(log10(numproc_))) + 1;
+          std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
+          std::string par_file_w_ext = boost::str(boost::format(fmt) % perm_file_par % numproc_ % rank);
+          p = par_file_w_ext;
+          if (!boost::filesystem::exists(p)) {
+            Exceptions::amanzi_throw(Errors::Message("Permeability initialization from file: not all the partitioned files '" + perm_file_par + ".<numranks>.<rank>' exist, and possibly none of them exist."));
+          }
+        } else { // numproc_ == 1
+          std::string suffix = perm_file.substr(perm_file.size()-4);
+          if (suffix != std::string(".exo")) {          
+            Exceptions::amanzi_throw(Errors::Message("Permeability initialization from file: in serial the exodus mesh file must have the suffix .exo"));
+          }
+          p = perm_file;
+          if (!boost::filesystem::exists(p)) {
+            Exceptions::amanzi_throw(Errors::Message("Permeability initialization from file: the file '" + perm_file + "' does not exist."));
+          }
+        }
+        permeability_ic.sublist("exodus file initialization")
+            .set<std::string>("file",perm_file)
+            .set<std::string>("attribute",perm_attribute);
       } else {
-	Exceptions::amanzi_throw(Errors::Message("Permeabily initialization from file, incompatible format specified: '" + perm_format + "', only 'exodus' is supported."));	
+        Exceptions::amanzi_throw(Errors::Message("Permeabily initialization from file, incompatible format specified: '" + perm_format + "', only 'exodus' is supported."));
       }
+     
     } else {
       Teuchos::ParameterList& aux_list =
         permeability_ic.sublist("function").sublist(reg_str)
@@ -2505,11 +2537,11 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
       aux_list.sublist("DoF 1 Function").sublist("function-constant")
         .set<double>("value", perm_x);
       if (spatial_dimension_ >= 2) {
-	aux_list.sublist("DoF 2 Function").sublist("function-constant")
+        aux_list.sublist("DoF 2 Function").sublist("function-constant")
           .set<double>("value", perm_y);
       }
       if (spatial_dimension_ == 3) {
-	aux_list.sublist("DoF 3 Function").sublist("function-constant")
+        aux_list.sublist("DoF 3 Function").sublist("function-constant")
           .set<double>("value", perm_z);
       }
     }
