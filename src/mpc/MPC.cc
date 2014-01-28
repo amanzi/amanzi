@@ -107,7 +107,23 @@ void MPC::mpc_init() {
     Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
     CS = Teuchos::rcp( new AmanziChemistry::Chemistry_State( chemistry_parameter_list, S ) );
 #ifdef ALQUIMIA_ENABLED
-    chem_engine = Teuchos::rcp( new AmanziChemistry::ChemistryEngine(parameter_list) );
+    if (!chemistry_parameter_list.isParameter("Engine")) 
+    {
+      Errors::Message msg;
+      msg << "MPC::mpc_init(): \n";
+      msg << "  No 'Engine' parameter found in parameter list for 'Chemistry'.\n";
+      Exceptions::amanzi_throw(msg);
+    }
+    if (!chemistry_parameter_list.isParameter("Engine Input File")) 
+    {
+      Errors::Message msg;
+      msg << "MPC::mpc_init(): \n";
+      msg << "  No 'Engine Input File' parameter found in parameter list for 'Chemistry'.\n";
+      Exceptions::amanzi_throw(msg);
+    }
+    std::string chemEngineName = chemistry_parameter_list.get<std::string>("Engine");
+    std::string chemEngineInputFile = chemistry_parameter_list.get<std::string>("Engine Input File");
+    chem_engine = Teuchos::rcp( new AmanziChemistry::ChemistryEngine(chemEngineName, chemEngineInputFile) );
 #endif
   }
 

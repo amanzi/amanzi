@@ -18,9 +18,6 @@ and to integrate reactions given a chemical configuration.
 #include <vector>
 #include <map>
 
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
-
 #include "alquimia_memory.h"
 #include "alquimia_util.h"
 #include "alquimia_constants.h"
@@ -38,9 +35,8 @@ class ChemistryEngine {
 
  public:
 
-  // Constructs a chemistry engine using the Chemistry parameter list in the input file and 
-  // Amanzi's chemistry state.
-  explicit ChemistryEngine(const Teuchos::ParameterList& param_list);
+  // Constructs a chemistry engine using the given engine (backend) name and input file.
+  ChemistryEngine(const std::string& engineName, const std::string& inputFile);
 
   // Destructor.
   ~ChemistryEngine();
@@ -72,14 +68,14 @@ class ChemistryEngine {
   const AlquimiaSizes& Sizes() const;
 
   // Initializes the data structures that hold the chemical state information.
-  void InitState(AlquimiaState& chem_state, 
-                 AlquimiaMaterialProperties& mat_props,
+  void InitState(AlquimiaMaterialProperties& mat_props,
+                 AlquimiaState& chem_state, 
                  AlquimiaAuxiliaryData& aux_data,
                  AlquimiaAuxiliaryOutputData& aux_output);
                  
   // Frees the data structures that hold the chemical state information.
-  void FreeState(AlquimiaState& chem_state,
-                 AlquimiaMaterialProperties& mat_props,
+  void FreeState(AlquimiaMaterialProperties& mat_props,
+                 AlquimiaState& chem_state,
                  AlquimiaAuxiliaryData& aux_data,
                  AlquimiaAuxiliaryOutputData& aux_output);
 
@@ -87,37 +83,23 @@ class ChemistryEngine {
   // represented by the given array of concentrations at the given time. The order of the 
   // concentrations in the array matches that of the species names returned by GetSpeciesNames.
   void EnforceCondition(const std::string& conditionName,
-                        double time,
+                        const double time,
+                        const AlquimiaMaterialProperties& mat_props,
                         AlquimiaState& chem_state,
-                        AlquimiaMaterialProperties& mat_props,
                         AlquimiaAuxiliaryData& aux_data,
                         AlquimiaAuxiliaryOutputData& aux_output);
 
   // Advances the species represented by the given array of concentrations, replacing old values 
   // with new values. The order of the concentrations in the array matches that of the species names 
   // returned by GetSpeciesNames.
-  void Advance(double delta_time,
+  void Advance(const double delta_time,
+               const AlquimiaMaterialProperties& mat_props,
                AlquimiaState& chem_state,
-               AlquimiaMaterialProperties& mat_props,
                AlquimiaAuxiliaryData& aux_data,
                AlquimiaAuxiliaryOutputData& aux_output,
                int& num_iterations);
 
  private:
-
-  // Reads parameters from the XML input file to set up chemistry.
-  void ReadXMLParameters();
-
-  // Initializes the chemistry engine, preparing it to answer queries from other entities.
-  void Initialize();
-
-  // This helper parses geochemical conditions from the given parameter list, placing them into a
-  // data structure that will be used to retrieve them by name.
-  void ParseChemicalConditions(const Teuchos::ParameterList& param_list,
-                               std::map<std::string, AlquimiaGeochemicalCondition*>& conditions);
-
-  // parameter lists
-  Teuchos::ParameterList main_param_list_, chem_param_list_;
 
   // Alquimia data structures.
   bool chem_initialized_;
@@ -128,19 +110,12 @@ class ChemistryEngine {
   AlquimiaEngineStatus chem_status_;
   AlquimiaProblemMetaData chem_metadata_;
 
-  // Mapping of region names to geochemical conditions. A region is identified 
-  // by a string, and all cells within a region will have all geochemical 
-  // conditions in the corresponding condition vector applied to them. NOTE
-  // that these maps do not own the geochemical conditions--they only hold 
-  // pointers to the objects.
+  // Mapping of geochemical condition names to geochemical conditions. 
   std::map<std::string, AlquimiaGeochemicalCondition*> chem_conditions_;
 
-  // Vector that takes responsibility for ownership of geochemical conditions.
-  std::vector<AlquimiaGeochemicalCondition*> all_chem_conditions_;
-
   // Back-end engine name and input file.
-  std::string chem_engine_inputfile_;
   std::string chem_engine_name_;
+  std::string chem_engine_inputfile_;
 
   // Names of auxiliary data.
   std::vector<std::string> aux_names_;
