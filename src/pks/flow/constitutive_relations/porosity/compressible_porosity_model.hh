@@ -56,6 +56,7 @@ class CompressiblePorosityModel {
  protected:
   void InitializeFromPlist_() {
     compressibility_ = plist_.get<double>("pore compressibility");
+    ASSERT(compressibility_ < 2.49e-7); // this can be removed once this insidious value in removed from all input specs!
     cutoff_ = plist_.get<double>("pore compressibility inflection point", 1000.);
   }
 
