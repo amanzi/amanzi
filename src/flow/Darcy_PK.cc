@@ -327,16 +327,19 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     LinearSolver_Specs& ls_specs = ti_specs.ls_specs;
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "****************************************" << endl
-               << "TI phase: " << ti_specs.ti_method_name.c_str() << endl
-               << "****************************************" << endl
-               << "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << endl
-               << "  time stepping id=" << ti_specs.dT_method << endl
-               << "  sources distribution id=" << src_sink_distribution << endl
-               << "  linear solver: ||r||<" << ls_specs.convergence_tol << " #itr<" << ls_specs.max_itrs << endl
-               << "  preconditioner: " << ti_specs.preconditioner_name.c_str() << endl;
+    *vo_->os() << endl
+        << "****************************************" << endl
+        << vo_->color("green") << "New TI phase: " << ti_specs.ti_method_name.c_str() << vo_->reset() << endl
+        << "****************************************" << endl
+        << "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << endl
+        << "  time stepping id=" << ti_specs.dT_method << endl
+        << "  sources distribution id=" << src_sink_distribution << endl
+        << "  linear solver: ||r||<" << ls_specs.convergence_tol << " #itr<" << ls_specs.max_itrs << endl
+        << "  preconditioner: " << ti_specs.preconditioner_name.c_str() << endl;
     if (ti_specs.initialize_with_darcy) {
       *vo_->os() << "  initial pressure guess: \"saturated solution\"" << endl;
+    } else {
+      *vo_->os() << "  initial pressure guess: \"from state\"" << endl;
     }
   }
 

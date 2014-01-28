@@ -403,8 +403,9 @@ Initialization from a file
 --------------------------
 
 Some data can be initialized from files. Additional sublist has to be added to
-named sublist of the `"state`" list with the file name and names of attributes. 
-The provided data will override results of other initialization tools. 
+named sublist of the `"state`" list with the file name and the name of attribute. 
+For a serial run, the file extension must be `".exo`". 
+For a parallel run, it must be `".par`".
 Here is an example:
 
 .. code-block:: xml
