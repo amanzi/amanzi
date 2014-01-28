@@ -63,7 +63,7 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
   db_ = Teuchos::rcp(new Debugger(mesh_, name_, *plist_));
 
   // Create the precon
-  Teuchos::ParameterList pc_sublist = plist_->sublist("Coupled PC");
+  Teuchos::ParameterList& pc_sublist = plist_->sublist("Coupled PC");
   mfd_preconditioner_ = Operators::CreateMatrixMFD_Coupled(pc_sublist, mesh_);
 
   // Set the sub-blocks from the sub-PK's preconditioners.

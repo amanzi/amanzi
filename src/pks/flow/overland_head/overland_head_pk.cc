@@ -955,10 +955,6 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
   u->ViewComponent("face",false)->Update(1., *pres_elev->ViewComponent("face",false),
           -1., elevation, 0.);
 
-  std::cout << std::setprecision(15) << "FUCK CONSIST FACE (237): h+z, h = " << (*pres_elev->ViewComponent("face",false))[0][237] << ", " 
-            << (*u->ViewComponent("face",false))[0][237] << std::endl;
-
-
 }
 
 } // namespace
