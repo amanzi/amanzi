@@ -52,7 +52,7 @@ ChemistryEngine::ChemistryEngine(const std::string& engineName,
 
   // Set up Alquimia, get sizes for data.
   chem_.Setup(chem_engine_inputfile_.c_str(),
-              engine_state_,
+              &engine_state_,
               &sizes_,
               &functionality_,
               &chem_status_);
@@ -82,7 +82,7 @@ ChemistryEngine::ChemistryEngine(const std::string& engineName,
 
 ChemistryEngine::~ChemistryEngine()
 {
-  chem_.Shutdown(engine_state_, &chem_status_);
+  chem_.Shutdown(&engine_state_, &chem_status_);
   FreeAlquimiaProblemMetaData(&chem_metadata_);
 
   // Delete the various geochemical conditions.
