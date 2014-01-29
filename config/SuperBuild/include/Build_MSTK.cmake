@@ -32,6 +32,7 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DENABLE_ExodusII:BOOL=TRUE
                     -DENABLE_ZOLTAN:BOOL=TRUE
                     -DENABLE_METIS:BOOL=TRUE
+                    -DMETIS_MAJOR_VER:STRING=4
                     -DHDF5_DIR:PATH=${TPL_INSTALL_PREFIX}
                     -DNetCDF_DIR:PATH=${TPL_INSTALL_PREFIX} 
                     -DExodusII_DIR:PATH=${TPL_INSTALL_PREFIX} 
