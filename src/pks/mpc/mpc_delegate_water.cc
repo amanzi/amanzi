@@ -129,7 +129,7 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtCap(double h, Teuchos::RCP<const Tr
         domain_Pu_f[0][f] = p_old - (patm + cap_size_);
         n_modified++;
         if (vo_->os_OK(Teuchos::VERB_HIGH))
-          *vo_->os() << "  CAPPING THE SPURT: p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << p_old - domain_Pu_f[0][f] << std::endl;
+          *vo_->os() << "  CAPPING THE SPURT (sc=" << cs << "): p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << p_old - domain_Pu_f[0][f] << std::endl;
       }
     }
   }

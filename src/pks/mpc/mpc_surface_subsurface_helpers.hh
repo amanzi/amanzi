@@ -13,6 +13,12 @@ void
 CopySubsurfaceToSurface(const CompositeVector& sub,
                         const Teuchos::Ptr<CompositeVector>& surf);
 
+void
+MergeSubsurfaceAndSurfacePressure(const Teuchos::Ptr<CompositeVector>& sub_p,
+				  const Teuchos::Ptr<CompositeVector>& sub_T,
+				  const Teuchos::Ptr<CompositeVector>& surf_p,
+				  const Teuchos::Ptr<CompositeVector>& surf_T);
+
 
 } // namespace
 

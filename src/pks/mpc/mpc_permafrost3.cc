@@ -258,9 +258,9 @@ MPCPermafrost3::precon(Teuchos::RCP<const TreeVector> u,
                           Pu->SubVector(3)->Data().ptr());
 
   // Derive surface face corrections.
-  UpdateConsistentFaceCorrectionWater_(u, Pu);
   pc_surf_energy_->UpdateConsistentFaceCorrection(*u->SubVector(3)->Data(),
           Pu->SubVector(3)->Data().ptr());
+  UpdateConsistentFaceCorrectionWater_(u, Pu);
 
   // dump to screen
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -345,30 +345,50 @@ bool
 MPCPermafrost3::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   bool modified = false;
 
-  // Surface EWC
-  // -- make a new TreeVector that is just the surface values (by pointer).
+  // Make a new TreeVector that is just the subsurface values (by pointer).
+  Teuchos::RCP<TreeVector> sub_u = Teuchos::rcp(new TreeVector());
+  sub_u->PushBack(u->SubVector(0));
+  sub_u->PushBack(u->SubVector(1));
+
+  // Subsurface EWC, modifies cells
+  modified |= sub_ewc_->modify_predictor(h,sub_u);
+
+  // Calculate consistent faces
+  modified |= domain_flow_pk_->modify_predictor(h, u->SubVector(0));
+  modified |= domain_energy_pk_->modify_predictor(h, u->SubVector(1));
+
+  // Make a new TreeVector that is just the surface values (by pointer).
   Teuchos::RCP<TreeVector> surf_u = Teuchos::rcp(new TreeVector());
   surf_u->PushBack(u->SubVector(2));
   surf_u->PushBack(u->SubVector(3));
+
+  // Surface EWC
   modified |= surf_ewc_->modify_predictor(h,surf_u);
+
+  // Merge surface cells with subsurface faces
+  if (modified)
+    MergeSubsurfaceAndSurfacePressure(u->SubVector(0)->Data().ptr(),
+				      u->SubVector(1)->Data().ptr(),
+				      u->SubVector(2)->Data().ptr(),
+				      u->SubVector(3)->Data().ptr());
+
+  // Hack surface faces
+  bool newly_modified = false;
+  newly_modified |= water_->ModifyPredictor_Heuristic(h, u);
+  newly_modified |= water_->ModifyPredictor_WaterSpurtDamp(h, u);
+  newly_modified |= water_->ModifyPredictor_TempFromSource(h, u);
+  modified |= newly_modified;
+
   // -- copy surf --> sub
-  if (modified) {
+  if (newly_modified) {
     CopySurfaceToSubsurface(*u->SubVector(2)->Data(), u->SubVector(0)->Data().ptr());
     CopySurfaceToSubsurface(*u->SubVector(3)->Data(), u->SubVector(1)->Data().ptr());
   }
 
-  // Subsurface EWC
-  // -- make a new TreeVector that is just the subsurface values (by pointer).
-  Teuchos::RCP<TreeVector> sub_u = Teuchos::rcp(new TreeVector());
-  sub_u->PushBack(u->SubVector(0));
-  sub_u->PushBack(u->SubVector(1));
-  modified |= sub_ewc_->modify_predictor(h,sub_u);
+  // Calculate consistent surface faces
+  modified |= surf_flow_pk_->modify_predictor(h, u->SubVector(2));
+  modified |= surf_energy_pk_->modify_predictor(h, u->SubVector(3));
 
-  modified |= water_->ModifyPredictor_Heuristic(h, u);
-  modified |= water_->ModifyPredictor_WaterSpurtDamp(h, u);
-  modified |= water_->ModifyPredictor_TempFromSource(h, u);
-
-  modified |= StrongMPC<PKPhysicalBDFBase>::modify_predictor(h, u);
   return modified;
 }
 
@@ -526,6 +546,20 @@ MPCPermafrost3::UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const Tr
     // update delta faces
     pc_surf_flow_->UpdateConsistentFaceCorrection(*surf_p, surf_Ph.ptr());
     *surf_Pp->ViewComponent("face",false) = *surf_Ph->ViewComponent("face",false);
+
+    // dump to screen
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Precon water correction." << std::endl;
+
+      std::vector<std::string> vnames;
+      vnames.push_back("pd_new");
+      vnames.push_back("delta_pd");
+
+      std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+      vecs.push_back(S_next_->GetFieldData("ponded_depth").ptr());
+      vecs.push_back(surf_Ph.ptr());
+      surf_db_->WriteVectors(vnames, vecs, true);    
+    }
   }
 
   // revert solution so we don't break things

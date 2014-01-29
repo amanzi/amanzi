@@ -92,7 +92,7 @@ void OverlandHeadFlow::fun( double t_old,
     vnames.resize(2);
     vecs.resize(2);
     vnames[0] = "uf_frac_old";
-    vnames[1] = "uf_frac_old";
+    vnames[1] = "uf_frac_new";
     vecs[0] = S_inter_->GetFieldData("unfrozen_fraction").ptr();
     vecs[1] = S_next_->GetFieldData("unfrozen_fraction").ptr();
     db_->WriteVectors(vnames, vecs, false);
@@ -322,10 +322,10 @@ double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
   const Epetra_MultiVector& wc = *S_next_->GetFieldData("surface_water_content")
       ->ViewComponent("cell",false);
 
-  const Epetra_MultiVector& flux = *S_next_->GetFieldData("surface_flux")
-      ->ViewComponent("face",false);
-  double flux_max(0.);
-  flux.NormInf(&flux_max);
+  // const Epetra_MultiVector& flux = *S_next_->GetFieldData("surface_flux")
+  //     ->ViewComponent("face",false);
+  // double flux_max(0.);
+  // flux.NormInf(&flux_max);
 
   Teuchos::RCP<const CompositeVector> res = du->Data();
   const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
@@ -338,19 +338,28 @@ double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
   // Cell error is based upon error in mass conservation relative to
   // the current water content
   double enorm_cell(0.);
+  int bad_cell = -1;
   unsigned int ncells = res_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
-    double tmp = std::abs(h*res_c[0][c])
-        / (atol_ * .1 * cv[0][c] + rtol_*std::abs(wc[0][c]));
-    enorm_cell = std::max<double>(enorm_cell, tmp);
+    double tmp = std::abs(h*res_c[0][c]) / (atol_ * .01 * cv[0][c] * 55000. + rtol_*std::abs(wc[0][c]));
+    if (tmp > enorm_cell) {
+      enorm_cell = tmp;
+      bad_cell = c;
+    }
   }
 
   // Face error given by mismatch of flux, so relative to flux.
   double enorm_face(0.);
+  int bad_face = -1;
   unsigned int nfaces = res_f.MyLength();
   for (unsigned int f=0; f!=nfaces; ++f) {
-    double tmp = 1.e-4 * std::abs(res_f[0][f]) / (atol_ + rtol_*flux_max);
-    enorm_face = std::max<double>(enorm_face, tmp);
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+    double tmp = std::abs(h*res_f[0][f])  / (atol_ * .01 * cv[0][cells[0]] * 55000. + rtol_*std::abs(wc[0][cells[0]]));
+    if (tmp > enorm_face) {
+      enorm_face = tmp;
+      bad_face = f;
+    }
   }
 
   // Write out Inf norms too.
@@ -365,8 +374,14 @@ double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
     MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
 
-    *vo_->os() << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")" << std::endl
-               << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")" << std::endl;
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(bad_face, AmanziMesh::USED, &cells);
+    *vo_->os() << "ENorm (cells) = " << enorm_cell << "[" << bad_cell << "] (" << infnorm_c << ")" << std::endl;
+    if (cells.size() == 1) {
+      *vo_->os() << "ENorm (faces) = " << enorm_face << "[" << cells[0] << "] (" << infnorm_f << ")" << std::endl;
+    } else {
+      *vo_->os() << "ENorm (faces) = " << enorm_face << "[" << cells[0] << "," << cells[1] << "] (" << infnorm_f << ")" << std::endl;
+    }
   }
 
   double enorm_val(std::max<double>(enorm_face, enorm_cell));

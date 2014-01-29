@@ -180,6 +180,10 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
 
   // Create the upwinding method
+  S->RequireField("sc_numerical_rel_perm", name_)->SetMesh(mesh_)->SetGhosted()
+                    ->SetComponents(names2, locations2, num_dofs2);
+  S->GetField("sc_numerical_rel_perm",name_)->set_io_vis(false);
+
   S->RequireField("numerical_rel_perm", name_)->SetMesh(mesh_)->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("numerical_rel_perm",name_)->set_io_vis(false);
@@ -343,6 +347,8 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   // and will be initialized in the call to commit_state()
   S->GetFieldData("numerical_rel_perm",name_)->PutScalar(1.0);
   S->GetField("numerical_rel_perm",name_)->set_initialized();
+  S->GetFieldData("sc_numerical_rel_perm",name_)->PutScalar(1.0);
+  S->GetField("sc_numerical_rel_perm",name_)->set_initialized();
 
   S->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
   S->GetField("darcy_flux", name_)->set_initialized();
@@ -480,6 +486,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Updating permeability?";
 
+  Teuchos::RCP<CompositeVector> sc_uw_rel_perm = S->GetFieldData("sc_numerical_rel_perm", name_);
   Teuchos::RCP<CompositeVector> uw_rel_perm = S->GetFieldData("numerical_rel_perm", name_);
   Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
   bool update_perm = S->GetFieldEvaluator("relative_permeability")
@@ -506,14 +513,14 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
       // Create the stiffness matrix without a rel perm (just n/mu)
       {
-        Epetra_MultiVector& uw_rel_perm_c = *uw_rel_perm->ViewComponent("cell",false);
+        Epetra_MultiVector& uw_rel_perm_c = *sc_uw_rel_perm->ViewComponent("cell",false);
         int ncells = uw_rel_perm_c.MyLength();
         for (unsigned int c=0; c!=ncells; ++c) {
           uw_rel_perm_c[0][c] = n_liq[0][c] / visc[0][c] / perm_scale_;
         }
       }
-      uw_rel_perm->ViewComponent("face",false)->PutScalar(1.);
-      matrix_->CreateMFDstiffnessMatrices(uw_rel_perm.ptr());
+      sc_uw_rel_perm->ViewComponent("face",false)->PutScalar(1.);
+      matrix_->CreateMFDstiffnessMatrices(sc_uw_rel_perm.ptr());
 
       // Derive the pressure fluxes
       Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
@@ -522,7 +529,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       // Add in the gravity fluxes
       Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
       Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
-      AddGravityFluxesToVector_(gvec.ptr(), uw_rel_perm.ptr(), rho.ptr(), flux_dir.ptr());
+      AddGravityFluxesToVector_(gvec.ptr(), sc_uw_rel_perm.ptr(), rho.ptr(), flux_dir.ptr());
     }
 
     update_perm |= update_dir;
@@ -538,15 +545,13 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
     }
 
-    // upwind
-    upwinding_->Update(S);
-
     // patch up the surface, use 1
     //    if (coupled_to_surface_via_head_ || coupled_to_surface_via_flux_) {
     if (S->HasMesh("surface")) {
       Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
       unsigned int ncells_surface = surface->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
+      const Epetra_MultiVector& pres_f = *S->GetFieldData(key_)->ViewComponent("face",false);
       if (S->HasFieldEvaluator("unfrozen_fraction")) {
         Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
         S->GetFieldEvaluator("unfrozen_fraction_relperm")->HasFieldChanged(S.ptr(), name_);
@@ -556,7 +561,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
           // -- get the surface cell's equivalent subsurface face
           AmanziMesh::Entity_ID f =
               surface->entity_get_parent(AmanziMesh::CELL, c);
-
+          
           // -- set that value to the unfrozen fraction to ensure we
           // -- don't advect ice
           uw_rel_perm_f[0][f] = uf_krel[0][c];
@@ -573,6 +578,9 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         }
       }
     }
+
+    // upwind DEBUG ME... shouldn't this be AFTER the below surface calls?
+    upwinding_->Update(S);
   }
 
   // Scale cells by n/mu
@@ -772,40 +780,6 @@ bool Richards::ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector
 bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
   ASSERT(0);
   return false;
-
-  // Teuchos::OSTab tab = vo_->getOSTab();
-  // if (vo_->os_OK(Teuchos::VERB_EXTREME))
-  //   *vo_->os() << "  modifications for consistent face pressures." << std::endl;
-
-  // // assumes mostly incompressible liquid, and uses just ds/dt
-  // Epetra_MultiVector& u_c = u->Data()->ViewComponent("cell",false);
-
-  // // pres at previous step
-  // const Epetra_MultiVector& p1 = *S_inter_->GetFieldData("saturation_liquid")
-  //   ->ViewComponent("cell",false);
-
-  // // project saturation
-  // double dt_next = S_next_->time() - S_inter_->time();
-  // double dt_prev = S_inter_->time() - time_prev2_;
-
-  // // -- get sat data
-  // const Epetra_MultiVector& sat0 = *sat_prev2_;
-  // const Epetra_MultiVector& sat1 = *S_inter_->GetFieldData("saturation_liquid")
-  //     ->ViewComponent("cell",false);
-  // Epetra_MultiVector& sat2 = *S_next_->GetFieldData("saturation_liquid",
-  //         "saturation_liquid")->ViewComponent("cell",false);
-
-  // // -- project
-  // sat2 = sat0;
-  // double dt_ratio = (dt_next + dt_prev) / dt_prev;
-  // sat2.Update(dt_ratio, sat1, 1. - dt_ratio);
-
-  // // determine pressure at new step
-  // Epetra_MultiVector pres_wc(u_c);
-  // unsigned int ncells = pres_wc.MyLength();
-  // for (unsigned int c=0; c!=ncells; ++c) {
-  //   // Query the WRM somehow?
-  // }
 }
 
 
@@ -851,7 +825,7 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   UpdateBoundaryConditions_();
 
   Teuchos::RCP<CompositeVector> rel_perm =
-      S_next_->GetFieldData("numerical_rel_perm", name_);
+      S_next_->GetFieldData("sc_numerical_rel_perm", name_);
 
   Teuchos::RCP<const CompositeVector> rho =
       S_next_->GetFieldData("mass_density_liquid");
