@@ -121,7 +121,7 @@ void SurfaceEnergyBalance::UpdateGroundEnergy(LocalData& seb) {
 
   seb.st_energy.fQh = seb.st_energy.rowaCp * seb.st_energy.Dhe * Sqig * (seb.st_energy.temp_air - seb.st_energy.temp_ground);
   //  seb.st_energy.fQh = 0.;
-  std::cout << "fQh: Dhe = " << seb.st_energy.Dhe << ", zeta = " << Sqig << ", Ta = " << seb.st_energy.temp_air << ", Tg = " << seb.st_energy.temp_ground <<", ALBEDO = " << seb.st_energy.albedo_value << std::endl;
+  //  std::cout << "fQh: Dhe = " << seb.st_energy.Dhe << ", zeta = " << Sqig << ", Ta = " << seb.st_energy.temp_air << ", Tg = " << seb.st_energy.temp_ground <<", ALBEDO = " << seb.st_energy.albedo_value << std::endl;
 
   if (seb.st_energy.water_depth > 0.0) {
     // Checking for standing water
@@ -141,13 +141,13 @@ void SurfaceEnergyBalance::UpdateGroundEnergy(LocalData& seb) {
   seb.st_energy.fQc = seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut
       + seb.st_energy.fQh + seb.st_energy.fQe;
 
-  std::cout << "Energy summary:" << std::endl
-            << "  fQswIn  = " << seb.st_energy.fQswIn << std::endl
-            << "  fQlwIn  = " << seb.st_energy.fQlwIn << std::endl
-            << "  fQlwOut = " << seb.st_energy.fQlwOut << std::endl
-            << "  fQh (s) = " << seb.st_energy.fQh << std::endl
-            << "  fQe (l) = " << seb.st_energy.fQe << std::endl
-            << "  fQc (c) = " << seb.st_energy.fQc << std::endl;
+    // std::cout << "Energy summary:" << std::endl
+    //         << "  fQswIn  = " << seb.st_energy.fQswIn << std::endl
+    //         << "  fQlwIn  = " << seb.st_energy.fQlwIn << std::endl
+    //         << "  fQlwOut = " << seb.st_energy.fQlwOut << std::endl
+    //         << "  fQh (s) = " << seb.st_energy.fQh << std::endl
+    //         << "  fQe (l) = " << seb.st_energy.fQe << std::endl
+    //         << "  fQc (c) = " << seb.st_energy.fQc << std::endl;
 }
 
 
@@ -189,13 +189,13 @@ void SurfaceEnergyBalance::UpdateGroundEnergyDerivatives(LocalData& seb) {
   seb.st_energy.fQc = seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut
       + seb.st_energy.fQh + seb.st_energy.fQe;
 
-  std::cout << "Energy summary:" << std::endl
-            << "  dfQswIn  = " << seb.st_energy.fQswIn << std::endl
-            << "  dfQlwIn  = " << seb.st_energy.fQlwIn << std::endl
-            << "  dfQlwOut = " << seb.st_energy.fQlwOut << std::endl
-            << "  dfQh (s) = " << seb.st_energy.fQh << std::endl
-            << "  dfQe (l) = " << seb.st_energy.fQe << std::endl
-            << "  dfQc (c) = " << seb.st_energy.fQc << std::endl;
+  // std::cout << "Energy summary:" << std::endl
+  //           << "  dfQswIn  = " << seb.st_energy.fQswIn << std::endl
+  //           << "  dfQlwIn  = " << seb.st_energy.fQlwIn << std::endl
+  //           << "  dfQlwOut = " << seb.st_energy.fQlwOut << std::endl
+  //           << "  dfQh (s) = " << seb.st_energy.fQh << std::endl
+  //           << "  dfQe (l) = " << seb.st_energy.fQe << std::endl
+  //           << "  dfQc (c) = " << seb.st_energy.fQc << std::endl;
 }
 
 

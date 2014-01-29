@@ -26,6 +26,7 @@ UnfrozenFractionRelPermModel::UnfrozenFractionRelPermModel(Teuchos::ParameterLis
     Exceptions::amanzi_throw(message);
   }
 
+  min_val_ = plist_.get<double>("minimum rel perm cutoff", 1.e-30);
   h_cutoff_ = plist_.get<double>("unfrozen rel perm cutoff height", 0.01);
 }
 
@@ -33,10 +34,14 @@ double
 UnfrozenFractionRelPermModel::UnfrozenFractionRelPerm(double uf, double h) {
   double kr = std::pow(std::sin(pi_ * uf / 2.), alpha_);
   if (h < h_cutoff_) {
-    double fac = h / h_cutoff_;
-    kr = kr * fac + (1-fac); // kr --> 1  as h --> 0
+    // double fac = h / h_cutoff_;
+    // kr = kr * fac + (1-fac); // kr --> 1  as h --> 0
+
+    double fac = std::pow(std::sin(pi_ * (h/h_cutoff_) / 2.), 2);
+    kr *= fac; // kr --> 0 as h --> 0
+
   }
-  return kr;
+  return std::max(kr, min_val_);
 }
 
 double

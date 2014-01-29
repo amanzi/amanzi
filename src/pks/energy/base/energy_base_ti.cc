@@ -241,10 +241,17 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
 
   // Face error is mismatch in flux??
   double enorm_face(0.);
+  int bad_face = -1;
   unsigned int nfaces = res_f.MyLength();
   for (unsigned int f=0; f!=nfaces; ++f) {
-    double tmp = flux_tol_ * std::abs(res_f[0][f]) / (atol_+rtol_*273.15);
-    enorm_face = std::max<double>(enorm_face, tmp);
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+    //    double tmp = flux_tol_ * std::abs(res_f[0][f]) / (atol_+rtol_*273.15);
+    double tmp = std::abs(h*res_f[0][f])  / (atol_ * cv[0][cells[0]]*2.e6 + rtol_* std::abs(energy[0][cells[0]]));
+    if (tmp > enorm_face) {
+      enorm_face = tmp;
+      bad_face = f;
+    }
   }
 
   // Write out Inf norms too.
@@ -259,8 +266,14 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
     MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
 
-    *vo_->os() << "ENorm (cells) = " << enorm_cell << "[" << bad_cell << "] (" << infnorm_c << ")" << std::endl
-               << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")" << std::endl;
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(bad_face, AmanziMesh::USED, &cells);
+    *vo_->os() << "ENorm (cells) = " << enorm_cell << "[" << bad_cell << "] (" << infnorm_c << ")" << std::endl;
+    if (cells.size() == 1) {
+      *vo_->os() << "ENorm (faces) = " << enorm_face << "[" << cells[0] << "] (" << infnorm_f << ")" << std::endl;
+    } else {
+      *vo_->os() << "ENorm (faces) = " << enorm_face << "[" << cells[0] << "," << cells[1] << "] (" << infnorm_f << ")" << std::endl;
+    }
   }
 
   // Communicate and take the max.

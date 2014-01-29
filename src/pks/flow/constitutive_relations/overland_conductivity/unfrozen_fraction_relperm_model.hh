@@ -29,6 +29,7 @@ class UnfrozenFractionRelPermModel {
 
   int alpha_; // must be an even integer
   double h_cutoff_;
+  double min_val_;
 
   const double pi_;
 

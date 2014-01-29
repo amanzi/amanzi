@@ -419,18 +419,22 @@ bool SurfaceBalanceSEB::advance(double dt) {
     snow_temp[0][c] = data.st_energy.temp_snow;
     
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "Snow depth, snowtemp = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;
-      *vo_->os() << "Melt heat = " << data.st_energy.Qm << std::endl;
-      *vo_->os() << "ShortWave = " << data.st_energy.fQswIn << std::endl;
-      *vo_->os() << "LongWave IN = " << data.st_energy.fQlwIn << std::endl;
-      *vo_->os() << "LongWave OUT = " << data.st_energy.fQlwOut << std::endl;
-      *vo_->os() << "Latent heat = " << data.st_energy.fQe << std::endl;
-      *vo_->os() << "Sensible heat = " << data.st_energy.fQh << std::endl;
-      *vo_->os() << "GROUND HEAT Qex = " << data.st_energy.fQc << std::endl;
-      *vo_->os() << "Ice condensation rate = " << data.st_energy.MIr << std::endl;
-      *vo_->os() << "ALBEDO = " << data.st_energy.albedo_value << std::endl;
+      int rank = mesh_->get_comm()->MyPID();
+      Teuchos::RCP<VerboseObject> dcvo = db_->GetVerboseObject(c, rank);
+      if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_HIGH)) {
+        *dcvo->os() << "Surface Cell " << c << " SEB:" << std::endl
+                    << "  Snow depth, snowtemp = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl
+                    << "  Melt heat = " << data.st_energy.Qm << std::endl
+                    << "  ShortWave = " << data.st_energy.fQswIn << std::endl
+                    << "  LongWave IN = " << data.st_energy.fQlwIn << std::endl
+                    << "  LongWave OUT = " << data.st_energy.fQlwOut << std::endl
+                    << "  Latent heat = " << data.st_energy.fQe << std::endl
+                    << "  Sensible heat = " << data.st_energy.fQh << std::endl
+                    << "GROUND HEAT Qex = " << data.st_energy.fQc << std::endl
+                    << "  Ice condensation rate = " << data.st_energy.MIr << std::endl
+                    << "WATER SOURCE Mr = " << data.st_energy.Mr << std::endl;
+      }
     }
-
   }
 
   // Mark primary variables as changed.
@@ -439,20 +443,20 @@ bool SurfaceBalanceSEB::advance(double dt) {
   pvfe_wsource_->SetFieldAsChanged(S_next_.ptr());
   pvfe_wtemp_->SetFieldAsChanged(S_next_.ptr());
 
-  // debug
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    std::vector<std::string> vnames;
-    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    vnames.push_back("air_temp"); vecs.push_back(S_next_->GetFieldData("air_temperature").ptr());
-    vnames.push_back("Qsw_in"); vecs.push_back(S_next_->GetFieldData("incoming_shortwave_radiation").ptr());
-    vnames.push_back("precip_rain"); vecs.push_back(S_next_->GetFieldData("precipitation_rain").ptr());
-    vnames.push_back("precip_snow"); vecs.push_back(S_next_->GetFieldData("precipitation_snow").ptr());
-    vnames.push_back("soil vapor mol fraction"); vecs.push_back(S_next_->GetFieldData("surface_vapor_pressure").ptr());
-    vnames.push_back("T_ground"); vecs.push_back(S_next_->GetFieldData("surface_temperature").ptr());
-    vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source").ptr());
-    //    vnames.push_back("e_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
-    db_->WriteVectors(vnames, vecs, true);
-  }
+  // // debug
+  // if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+  //   std::vector<std::string> vnames;
+  //   std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+  //   vnames.push_back("air_temp"); vecs.push_back(S_next_->GetFieldData("air_temperature").ptr());
+  //   vnames.push_back("Qsw_in"); vecs.push_back(S_next_->GetFieldData("incoming_shortwave_radiation").ptr());
+  //   vnames.push_back("precip_rain"); vecs.push_back(S_next_->GetFieldData("precipitation_rain").ptr());
+  //   vnames.push_back("precip_snow"); vecs.push_back(S_next_->GetFieldData("precipitation_snow").ptr());
+  //   vnames.push_back("soil vapor mol fraction"); vecs.push_back(S_next_->GetFieldData("surface_vapor_pressure").ptr());
+  //   vnames.push_back("T_ground"); vecs.push_back(S_next_->GetFieldData("surface_temperature").ptr());
+  //   vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source").ptr());
+  //   //    vnames.push_back("e_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
+  //   db_->WriteVectors(vnames, vecs, true);
+  // }
 
   return false;
 };

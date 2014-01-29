@@ -232,11 +232,11 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
   const Epetra_MultiVector& wc = *S_next_->GetFieldData("water_content")
       ->ViewComponent("cell",false);
 
-  // Collect a typical flux value.
-  const Epetra_MultiVector& flux = *S_next_->GetFieldData("darcy_flux")
-      ->ViewComponent("face",false);
-  double flux_max(0.);
-  flux.NormInf(&flux_max);
+  // // Collect a typical flux value.
+  // const Epetra_MultiVector& flux = *S_next_->GetFieldData("darcy_flux")
+  //     ->ViewComponent("face",false);
+  // double flux_max(0.);
+  // flux.NormInf(&flux_max);
 
   // Collect additional data.
   Teuchos::RCP<const CompositeVector> res = du->Data();
@@ -260,12 +260,15 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
     }
   }
 
-  // Face error is mismatch in flux, so relative to flux.
+  // Face error is mismatch in flux, so relative to water in neighboring cells
   double enorm_face(0.);
   int bad_face = -1;
   unsigned int nfaces = res_f.MyLength();
   for (unsigned int f=0; f!=nfaces; ++f) {
-    double tmp = flux_tol_ * std::abs(res_f[0][f]) / (atol_ + rtol_*flux_max);
+    //    double tmp = flux_tol_ * std::abs(res_f[0][f]) / (atol_ + rtol_*flux_max);
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+    double tmp = std::abs(h*res_f[0][f])  / (atol_ * .25*.1*55000.*cv[0][cells[0]] + rtol_*std::abs(wc[0][cells[0]]));
     if (tmp > enorm_face) {
       enorm_face = tmp;
       bad_face = f;
@@ -287,7 +290,6 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(bad_face, AmanziMesh::USED, &cells);
     *vo_->os() << "ENorm (cells) = " << enorm_cell << "[" << bad_cell << "] (" << infnorm_c << ")" << std::endl;
-
     if (cells.size() == 1) {
       *vo_->os() << "ENorm (faces) = " << enorm_face << "[" << cells[0] << "] (" << infnorm_f << ")" << std::endl;
     } else {
