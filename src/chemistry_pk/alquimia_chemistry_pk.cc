@@ -426,7 +426,7 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
                                                       const AlquimiaAuxiliaryData& aux_data,
                                                       const AlquimiaAuxiliaryOutputData& aux_output)
 {
-    // If the chemistry has modified the porosity and/or density, it needs to 
+  // If the chemistry has modified the porosity and/or density, it needs to 
   // be updated here.
   // NOTE: At the moment, these accessors are const-only in Chemistry_State.
   //(*chemistry_state_->water_density())[cell_id] = state.water_density;

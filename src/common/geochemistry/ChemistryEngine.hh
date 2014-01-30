@@ -82,7 +82,7 @@ class ChemistryEngine {
   // Enforces the geochemical condition with the given name on the chemical configuration 
   // represented by the given array of concentrations at the given time. The order of the 
   // concentrations in the array matches that of the species names returned by GetSpeciesNames.
-  void EnforceCondition(const std::string& conditionName,
+  void EnforceCondition(const std::string& condition_name,
                         const double time,
                         const AlquimiaMaterialProperties& mat_props,
                         AlquimiaState& chem_state,

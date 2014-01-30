@@ -74,7 +74,7 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
                    LINK_LIBS geometry mesh error_handling state data_structures 
-                             time_integration ${Epetra_LIBRARIES})
+                             geochemistry chemistry_pk time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
 

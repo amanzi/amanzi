@@ -199,7 +199,7 @@ int ChemistryEngine::NumFreeIonSpecies() const
   return sizes_.num_primary;
 }
 
-void ChemistryEngine::EnforceCondition(const std::string& conditionName,
+void ChemistryEngine::EnforceCondition(const std::string& condition_name,
                                        const double time,
                                        const AlquimiaMaterialProperties& mat_props,
                                        AlquimiaState& chem_state,
@@ -209,7 +209,7 @@ void ChemistryEngine::EnforceCondition(const std::string& conditionName,
   Errors::Message msg;
 
   // Retrieve the chemical condition for the given name.
-  std::map<std::string, AlquimiaGeochemicalCondition*>::iterator iter = chem_conditions_.find(conditionName);
+  std::map<std::string, AlquimiaGeochemicalCondition*>::iterator iter = chem_conditions_.find(condition_name);
   if (iter == chem_conditions_.end())
   {
     // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 
@@ -217,11 +217,11 @@ void ChemistryEngine::EnforceCondition(const std::string& conditionName,
     AlquimiaGeochemicalCondition* condition = new AlquimiaGeochemicalCondition();
     int num_aq = 0, num_min = 0;
     AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, num_aq, num_min, condition);
-    std::strcpy(condition->name, conditionName.c_str());
+    std::strcpy(condition->name, condition_name.c_str());
 
     // Add this to the conditions map.
-    chem_conditions_[conditionName] = condition;
-    iter = chem_conditions_.find(conditionName);
+    chem_conditions_[condition_name] = condition;
+    iter = chem_conditions_.find(condition_name);
   }
 
 #ifdef AMANZI_USE_FENV
@@ -257,7 +257,7 @@ void ChemistryEngine::EnforceCondition(const std::string& conditionName,
   mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) 
   {
-    msg << "Error in enforcement of chemical condition '" << conditionName << "'";
+    msg << "Error in enforcement of chemical condition '" << condition_name << "'";
     Exceptions::amanzi_throw(msg); 
   }  
 #endif

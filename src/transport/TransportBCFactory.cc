@@ -128,24 +128,30 @@ void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBo
 {
 #ifdef ALQUIMIA_ENABLED
   Errors::Message msg;
-  Teuchos::ParameterList& clist = list_->get<Teuchos::ParameterList>("geochemical condition");
+  if (!list_->isSublist("geochemical conditions"))
+  {
+    msg << "  No 'geochemical conditions' list was found in 'Transport->boundary conditions'!\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  Teuchos::ParameterList& clist = list_->get<Teuchos::ParameterList>("geochemical conditions");
 
   for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
-    std::string name = it->first;
-    if (clist.isSublist(name)) {
-      Teuchos::ParameterList& spec = clist.sublist(name);
+    std::string cond_name = it->first;
+    if (clist.isSublist(cond_name)) {
+      Teuchos::ParameterList& spec = clist.sublist(cond_name);
       try {
-        TransportBoundaryFunction_Alquimia* bc = new TransportBoundaryFunction_Alquimia(mesh_);
+        TransportBoundaryFunction_Alquimia* bc = 
+          new TransportBoundaryFunction_Alquimia(cond_name, mesh_, chem_state_, chem_engine_);
         ProcessGeochemicalConditionSpec(spec, bc);
 
         TransportBoundaryFunction* bc_base = bc;
         bcs.push_back(bc_base);
       } catch (Errors::Message& m) {
-        msg << "in sublist \"" << name.c_str() << "\": " << m.what();
+        msg << "in sublist \"" << cond_name << "\": " << m.what();
         Exceptions::amanzi_throw(msg);
       }
     } else {
-      msg << "parameter \"" << name.c_str() << "\" is not a sublist.\n";
+      msg << "parameter \"" << cond_name << "\" is not a sublist.\n";
       Exceptions::amanzi_throw(msg);
     }
   }
