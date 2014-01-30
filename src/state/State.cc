@@ -757,6 +757,9 @@ void WriteVis(const Teuchos::Ptr<Visualization>& vis,
     for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
       field->second->WriteVis(vis);
     }
+    
+    vis->WriteRegions();
+    vis->WritePartition();
 
     // Finalize i/o.
     vis->FinalizeTimestep();

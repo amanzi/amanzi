@@ -219,6 +219,7 @@ void MPC::mpc_init() {
   if (parameter_list.isSublist("Visualization Data"))  {
     Teuchos::ParameterList vis_parameter_list = parameter_list.sublist("Visualization Data");
     visualization = Teuchos::ptr(new Amanzi::Visualization(vis_parameter_list, comm));
+    visualization->set_mesh(mesh_maps);
     visualization->CreateFiles();
   } else {  // create a dummy vis object
     visualization = Teuchos::ptr(new Amanzi::Visualization());
@@ -490,7 +491,7 @@ void MPC::cycle_driver() {
 
   // write visualization output as requested
   Amanzi::timer_manager.start("I/O");
-  visualization->set_mesh(mesh_maps);
+  //visualization->set_mesh(mesh_maps);
   visualization->CreateFiles();
 
 
