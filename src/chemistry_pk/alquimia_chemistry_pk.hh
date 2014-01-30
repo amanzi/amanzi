@@ -126,9 +126,6 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   std::vector<std::string> aux_names_;
   Teuchos::RCP<Epetra_MultiVector> aux_output_;
 
-  // Auxiliary data, maintained by Amanzi and updated
-  Teuchos::RCP<Epetra_MultiVector> aux_data_;
-
   void UpdateChemistryStateStorage(void);
   int InitializeSingleCell(int cellIndex, const std::string& condition);
   int AdvanceSingleCell(double delta_time, 
@@ -143,15 +140,16 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   // given cell.
   void CopyAmanziStateToAlquimia(const int cell_id,
                                  Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
-                                 AlquimiaState& state,
                                  AlquimiaMaterialProperties& mat_props,
+                                 AlquimiaState& state,
                                  AlquimiaAuxiliaryData& aux_data);
 
   void CopyAlquimiaStateToAmanzi(const int cell_id,
-                                 const AlquimiaState& state,
                                  const AlquimiaMaterialProperties& mat_props,
+                                 const AlquimiaState& state,
                                  const AlquimiaAuxiliaryData& aux_data,
-                                 const AlquimiaAuxiliaryOutputData& aux_output);
+                                 const AlquimiaAuxiliaryOutputData& aux_output,
+                                 Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
 
 };
 
