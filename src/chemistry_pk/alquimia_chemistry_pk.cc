@@ -18,11 +18,6 @@
 
 #include "boost/mpi.hpp"
 
-// For now, we use the "interim" chemistry input spec, in which the 
-// initial and boundary conditions are specified within the Chemistry
-// parameter list.
-#define USE_INTERIM_INPUT_SPEC 1
-
 namespace Amanzi {
 namespace AmanziChemistry {
 
@@ -119,8 +114,6 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
   // Read XML parameters from our input file.
   XMLParameters();
 
-  chemistry_state_->AllocateAdditionalChemistryStorage(number_aqueous_components());
-
   // Initialize the data structures that we will use to traffic data between 
   // Amanzi and Alquimia.
   chem_engine_->InitState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
@@ -162,9 +155,7 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
   {
     msg << "Error in Alquimia_Chemistry_PK::InitializeChemistry 1";
     Exceptions::amanzi_throw(msg); 
-  }  
-
-//  chem_out->Write(kVerbose, "ChemistryPK::InitializeChemistry(): initialization was successful.\n");
+  }
 
   chem_initialized_ = true;
 }  // end InitializeChemistry()
@@ -192,7 +183,7 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const Teuchos::ParameterList
     // Apply this condition to all desired regions.
     if (!cond_sublist.isType<Teuchos::Array<std::string> >("regions"))
     {
-      msg << "Chemistry_PK::XMLParameters(): \n";
+      msg << "Alquimia_Chemistry_PK::ParseChemicalConditions(): \n";
       msg << "  Geochemical condition '" << cond_name << "' has no valid 'regions' entry.\n";
       Exceptions::amanzi_throw(msg);
     }
@@ -205,7 +196,7 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const Teuchos::ParameterList
       if (!mesh->valid_set_name(regions[r], AmanziMesh::CELL) &&
           !mesh->valid_set_name(regions[r], AmanziMesh::FACE))
       {
-        msg << "Chemistry_PK::XMLParameters(): \n";
+        msg << "Alquimia_Chemistry_PK::ParseChemicalConditions(): \n";
         msg << "  Invalid region '" << regions[r] << "' given for geochemical condition '" << cond_name << "'.\n";
         Exceptions::amanzi_throw(msg);
       }
@@ -276,7 +267,7 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
       else 
       {
         std::stringstream message;
-        message << "ChemistryPK::XMLParameters(): unknown value in 'Auxiliary Data' list: " 
+        message << "Alquimia_ChemistryPK::XMLParameters(): unknown value in 'Auxiliary Data' list: " 
                 << *name << std::endl;
         chem_out->Write(kWarning, message);
       }
@@ -298,21 +289,24 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
   // Initial conditions.
   if (!main_param_list_.isSublist("State"))
   {
-    msg << "Chemistry_PK::XMLParameters(): \n";
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
     msg << "  No 'State' sublist was found!\n";
     Exceptions::amanzi_throw(msg);
   }
-#if USE_INTERIM_INPUT_SPEC
-  Teuchos::ParameterList initial_conditions = chem_param_list_.sublist("Initial Conditions");
-#else
-  Teuchos::ParameterList state_list = main_param_list_.sublist("state");
+  Teuchos::ParameterList state_list = main_param_list_.sublist("State");
   Teuchos::ParameterList initial_conditions = state_list.sublist("initial conditions");
-#endif
-  ParseChemicalConditions(initial_conditions, chem_initial_conditions_);
+  if (!initial_conditions.isSublist("geochemical conditions"))
+  {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  No 'geochemical conditions' list was found in 'State->initial conditions'!\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  Teuchos::ParameterList geochem_conditions = initial_conditions.sublist("geochemical conditions");
+  ParseChemicalConditions(geochem_conditions, chem_initial_conditions_);
   if (chem_initial_conditions_.empty())
   {
-    msg << "Chemistry_PK::XMLParameters(): \n";
-    msg << "  No geochemical conditions were found in 'initial conditions'!\n";
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  No geochemical conditions were found in 'State->initial conditions->geochemical conditions'!\n";
     Exceptions::amanzi_throw(msg);
   }
 
