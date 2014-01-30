@@ -44,6 +44,12 @@ class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
 
   void Define(std::string region);
 
+  // The computational mesh.
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+
+  // The geochemical condition we are enforcing.
+  std::string cond_name_;
+
   // Chemistry state and engine.
   Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state_;
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
@@ -54,9 +60,9 @@ class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
   AlquimiaAuxiliaryData alq_aux_data_;
   AlquimiaAuxiliaryOutputData alq_aux_output_;
 
-  // The geochemical condition we are enforcing.
-  std::string cond_name_;
-  
+  // A mapping of boundary face indices to interior cells.
+  std::map<int, int> cell_for_face_;
+
 };
 
 }  // namespace AmanziTransport
