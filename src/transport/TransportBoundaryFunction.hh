@@ -20,7 +20,6 @@ application per entity.
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "MultiFunction.hh"
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {

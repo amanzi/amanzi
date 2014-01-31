@@ -356,6 +356,9 @@ Usage:
 
      * [U] `"transient preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
+     * [U] `"transient initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"false`") 
+
+
    * [U] `"Steady-State Psuedo-Time Implicit Solver`" [list] Parameters for Damped Picard iteration to reach steady-state
 
      * [U] `"pseudo time integrator initialize with darcy`" [bool] Initialize the pseudo time integrator (Picard) with a Darcy solution. (default: `"true`")
@@ -990,6 +993,14 @@ The following models can be specified for the intrinsic permeability of the mate
 * [SU] `"Intrinsic Permeability: Uniform`" [list] requires 
  
  * [SU] `"Value`" [double] to specify the constant value of the intrinsic permeability
+
+* [U] `"Intrinsic Permeability: File`" [list] requires 
+ 
+ * [U] `"File`" [string] provides the name of the file containing the permeability field
+
+ * [U] `"Format`" [string] specifies the format of the file (`"exodus`" is the only supported format at this time)
+
+ * [U] `"Attribute`" [string] to specify the attribute name used to identify the permeability values
 
 * [SU] `"Intrinsic Permeability: Anisotropic Uniform`" [list] requires
  

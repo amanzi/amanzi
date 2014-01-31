@@ -321,7 +321,7 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 /* ******************************************************************
 * Generic initialization of a next time integration phase.
 ****************************************************************** */
-void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
+void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     LinearSolver_Specs& ls_specs = ti_specs.ls_specs;
@@ -387,12 +387,14 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   
   // make initial guess consistent with boundary conditions
   if (ti_specs.initialize_with_darcy) {
-    ti_specs.initialize_with_darcy = false;
-
     DeriveFaceValuesFromCellValues(p, lambda);
 
     SolveFullySaturatedProblem(T0, *solution);
     pressure = p;
+
+    // Call this initialization procedure only once. Use case: multiple
+    // restart of a single phase transient time integrator.
+    ti_specs.initialize_with_darcy = false;
   }
 }
 

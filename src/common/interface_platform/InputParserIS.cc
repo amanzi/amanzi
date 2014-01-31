@@ -1436,11 +1436,6 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           steady_time_integrator.set<std::string>("linear solver", ST_SOLVER);
           steady_time_integrator.set<std::string>("preconditioner", ST_PRECOND);
 
-          // initialization
-          Teuchos::ParameterList &sti_init = steady_time_integrator.sublist("initialization");
-          sti_init.set<std::string>("method", "saturated solver");
-          sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
-
           // pressure-lambda constraints
           Teuchos::ParameterList &sti_plamb = steady_time_integrator.sublist("pressure-lambda constraints");
           sti_plamb.set<std::string>("method","projection");
@@ -1516,18 +1511,16 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 
                 steady_time_integrator.set<std::string>("preconditioner",
                                                         num_list.get<std::string>("steady preconditioner", ST_PRECOND));
-#if 0
-                if (!use_picard) {
-                  steady_time_integrator.set<bool>("initialize with darcy",
-                                                   num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL));
-                } else {
-                  steady_time_integrator.set<bool>("initialize with darcy",false);
-                }
-#endif
+
                 if (flow_model == "Single Phase") {
                   sti_bdf1_std.set<double>("time step increase factor",num_list.get<double>("steady time step increase factor",ST_SP_DT_INCR_FACTOR));
                 }
-
+		// initialization
+		if (num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL)) {
+		  Teuchos::ParameterList &sti_init = steady_time_integrator.sublist("initialization");
+		  sti_init.set<std::string>("method", "saturated solver");
+		  sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
+		}
               }
             }
           }
@@ -1549,11 +1542,6 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           // linear solver
           transient_time_integrator.set<std::string>("linear solver", TR_SOLVER);
           transient_time_integrator.set<std::string>("preconditioner", TR_PRECOND);
-
-          // initialization
-          Teuchos::ParameterList &tti_init = transient_time_integrator.sublist("initialization");
-          tti_init.set<std::string>("method","projection");
-          tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
 
           // pressure-lambda constraints
           Teuchos::ParameterList &tti_plamb = transient_time_integrator.sublist("pressure-lambda constraints");
@@ -1638,7 +1626,17 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
                   tti_bdf1_std.set<double>("time step increase factor",
                                            num_list.get<double>("transient time step increase factor", TR_SP_DT_INCR_FACTOR));
                 }
-              }
+		// create an initialization sublist
+		if (num_list.get<bool>("transient initialize with darcy", TR_INIT_DARCY_BOOL)) {
+		  Teuchos::ParameterList &tti_init = transient_time_integrator.sublist("initialization");
+		  tti_init.set<std::string>("method","saturated solver");
+		  tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
+		} else {
+		  Teuchos::ParameterList &tti_init = transient_time_integrator.sublist("initialization");
+		  tti_init.set<std::string>("method","projection");
+		  tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
+		}
+	      }
             }
           }
 
@@ -2412,9 +2410,13 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 
     // permeability...
     double perm_x, perm_y, perm_z;
+    std::string perm_file, perm_attribute, perm_format;
+    bool perm_init_from_file = false;
     Teuchos::ParameterList& mplist = matprop_list.sublist(matprop_list.name(i));
-    if ((mplist.isSublist("Intrinsic Permeability: Uniform") || mplist.isSublist("Intrinsic Permeability: Anisotropic Uniform"))
-        && (mplist.isSublist("Hydraulic Conductivity: Uniform") || mplist.isSublist("Hydraulic Conductivity: Anisotropic Uniform"))) {
+    if ((mplist.isSublist("Intrinsic Permeability: Uniform") || 
+	 mplist.isSublist("Intrinsic Permeability: Anisotropic Uniform")) && 
+	(mplist.isSublist("Hydraulic Conductivity: Uniform") || 
+	 mplist.isSublist("Hydraulic Conductivity: Anisotropic Uniform"))) {
       Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified either Intrinsic Permeability or Hydraulic Conductivity, but not both."));
     }
 
@@ -2450,27 +2452,66 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
       perm_x *= viscosity/(density*GRAVITY_MAGNITUDE);
       perm_y *= viscosity/(density*GRAVITY_MAGNITUDE);
       perm_z *= viscosity/(density*GRAVITY_MAGNITUDE);
+    } else if (mplist.isSublist("Intrinsic Permeability: File")) {
+      Teuchos::ParameterList &aux_list = mplist.sublist("Intrinsic Permeability: File");
+      bool input_error = false;
+      if (aux_list.isParameter("File")) {
+	perm_file = aux_list.get<std::string>("File");
+      } else {
+	input_error = true;
+      }
+      if (aux_list.isParameter("Attribute")) {
+	perm_attribute = aux_list.get<std::string>("Attribute");
+      } else {
+	input_error = true;
+      }
+      if (aux_list.isParameter("Format")) {
+	perm_format = mplist.sublist("Intrinsic Permeability: File").get<std::string>("Format");
+      } else {
+	input_error = true;
+      }
+      if (input_error) {
+	Exceptions::amanzi_throw(Errors::Message("The list 'Input Permeability: File' could not be parsed, a required parameter is missing. Check the input specification."));
+      }
+      perm_init_from_file = true;
     } else {
-      Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as 'Intrinsic Permeability: Uniform', 'Intrinsic Permeability: Anisotropic Uniform', 'Hydraulic Conductivity: Uniform', or 'Hydraulic Conductivity: Anisotropic Uniform'"));
+      Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as 'Intrinsic Permeability: Uniform', 'Intrinsic Permeability: Anisotropic Uniform', 'Hydraulic Conductivity: Uniform', 'Hydraulic Conductivity: Anisotropic Uniform', or 'Intrinsic Permeability: File'"));
     }
 
     Teuchos::ParameterList &permeability_ic = stt_ic.sublist("permeability");
-    Teuchos::ParameterList& aux_list =
+    if (perm_init_from_file) {
+      if (perm_format == std::string("exodus")) {
+	// first make sure the file actually exists
+	boost::filesystem::path perm_file_path(perm_file);
+	boost::filesystem::file_status stat = boost::filesystem::status(perm_file_path);
+	if (boost::filesystem::exists(stat)) {
+	  permeability_ic.sublist("exodus file initialization")
+	    .set<std::string>("file",perm_file)
+	    .set<std::string>("attribute",perm_attribute);
+	} else {
+	  Exceptions::amanzi_throw(Errors::Message("Permeability initialization from file: the file '" + perm_file + "' does not exist."));
+	}
+      } else {
+	Exceptions::amanzi_throw(Errors::Message("Permeabily initialization from file, incompatible format specified: '" + perm_format + "', only 'exodus' is supported."));	
+      }
+    } else {
+      Teuchos::ParameterList& aux_list =
         permeability_ic.sublist("function").sublist(reg_str)
         .set<Teuchos::Array<std::string> >("regions",regions)
         .set<std::string>("component","cell")
         .sublist("function");
-    aux_list.set<int>("Number of DoFs",spatial_dimension_)
+      aux_list.set<int>("Number of DoFs",spatial_dimension_)
         .set<std::string>("Function type","composite function");
-    aux_list.sublist("DoF 1 Function").sublist("function-constant")
+      aux_list.sublist("DoF 1 Function").sublist("function-constant")
         .set<double>("value", perm_x);
-    if (spatial_dimension_ >= 2) {
-      aux_list.sublist("DoF 2 Function").sublist("function-constant")
+      if (spatial_dimension_ >= 2) {
+	aux_list.sublist("DoF 2 Function").sublist("function-constant")
           .set<double>("value", perm_y);
-    }
-    if (spatial_dimension_ == 3) {
-      aux_list.sublist("DoF 3 Function").sublist("function-constant")
+      }
+      if (spatial_dimension_ == 3) {
+	aux_list.sublist("DoF 3 Function").sublist("function-constant")
           .set<double>("value", perm_z);
+      }
     }
 
     // specific_yield...
