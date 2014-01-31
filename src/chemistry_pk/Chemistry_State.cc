@@ -615,7 +615,7 @@ void Chemistry_State::CopyToAlquimia(const int cell_id,
   }
 
   // Auxiliary data -- block copy.
-  if (num_aux_data_ == -1) 
+  if (num_aux_data_ != -1) 
   {
     int num_aux_ints = aux_data.aux_ints.size;
     int num_aux_doubles = aux_data.aux_doubles.size;
