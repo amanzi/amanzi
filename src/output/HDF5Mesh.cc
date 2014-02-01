@@ -439,10 +439,10 @@ void HDF5::writeFieldData_(const Epetra_Vector &x, std::string varname,
     // Check if varname group exists; if not, create it
     htri_t exists = H5Lexists(file, h5path.str().c_str(), H5P_DEFAULT);
     if (exists) {
-      cout << "  WRITE>> opening group:"<<h5path.str()<<std::endl;
+      std::cout << "  WRITE>> opening group:"<<h5path.str()<<std::endl;
       group = H5Gopen(file, h5path.str().c_str(), H5P_DEFAULT);
     } else {
-      cout << "  WRITE>> creating group:"<<h5path.str()<<std::endl;
+      std::cout << "  WRITE>> creating group:"<<h5path.str()<<std::endl;
       group = H5Gcreate(file, h5path.str().c_str(),
                         H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     }
