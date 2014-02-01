@@ -464,7 +464,7 @@ CompositeVector::Norm2(double* norm) const {
 }
 
 inline void
-CompositeVector::Print(ostream &os) const {
+CompositeVector::Print(std::ostream &os) const {
   return mastervec_->Print(os);
 }
 
