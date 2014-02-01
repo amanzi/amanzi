@@ -25,7 +25,7 @@ template<class Vector,class VectorSpace>
 struct SolverFactory {
  public:
   Teuchos::RCP<Solver<Vector,VectorSpace> >
-  Create(const string& name,
+  Create(const std::string& name,
          const Teuchos::ParameterList& prec_list);
 
   Teuchos::RCP<Solver<Vector,VectorSpace> >
