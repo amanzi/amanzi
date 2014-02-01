@@ -140,7 +140,7 @@ void HDF5::createTimestep(const double time, const int iteration) {
     std::stringstream filename;
     filename << H5DataFilename() << "." << iteration << ".xmf";
     of.open(filename.str().c_str());
-    of << tmp << endl;
+    of << tmp << std::endl;
     of.close();
     setxdmfStepFilename(filename.str());
 
@@ -200,7 +200,7 @@ void HDF5::createXdmfMesh_(const std::string xmfFilename) {
 
   // write xmf
   std::ofstream of(xmfFilename.c_str());
-  of << HDF5::xdmfHeader_ << mesh << endl;
+  of << HDF5::xdmfHeader_ << mesh << std::endl;
   of.close();
 }
 
@@ -221,7 +221,7 @@ void HDF5::createXdmfParaview_() {
 
   // write xmf
   std::ofstream of(xdmfParaviewFilename().c_str());
-  of << HDF5::xdmfHeader_ << xmf << endl;
+  of << HDF5::xdmfHeader_ << xmf << std::endl;
   of.close();
 
   // Store ParaView XMLObject
@@ -239,7 +239,7 @@ void HDF5::createXdmfVisit_() {
 
   // write xmf
   std::ofstream of(xdmfVisitFilename().c_str());
-  of << HDF5::xdmfHeader_ << xmf << endl;
+  of << HDF5::xdmfHeader_ << xmf << std::endl;
   of.close();
 
   // Store VisIt XMLObject
@@ -439,10 +439,10 @@ void HDF5::writeFieldData_(const Epetra_Vector &x, std::string varname,
     // Check if varname group exists; if not, create it
     htri_t exists = H5Lexists(file, h5path.str().c_str(), H5P_DEFAULT);
     if (exists) {
-      cout << "  WRITE>> opening group:"<<h5path.str()<<endl;
+      cout << "  WRITE>> opening group:"<<h5path.str()<<std::endl;
       group = H5Gopen(file, h5path.str().c_str(), H5P_DEFAULT);
     } else {
-      cout << "  WRITE>> creating group:"<<h5path.str()<<endl;
+      cout << "  WRITE>> creating group:"<<h5path.str()<<std::endl;
       group = H5Gcreate(file, h5path.str().c_str(),
                         H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     }
