@@ -833,9 +833,9 @@ Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_extra_chemistry_output_data()
 }
 
 
-void Chemistry_PK::set_chemistry_output_names(std::vector<string>* names) {
+void Chemistry_PK::set_chemistry_output_names(std::vector<std::string>* names) {
   names->clear();
-  for (std::vector<string>::const_iterator name = aux_names_.begin();
+  for (std::vector<std::string>::const_iterator name = aux_names_.begin();
        name != aux_names_.end(); name++) {
     names->push_back(*name);
   }
