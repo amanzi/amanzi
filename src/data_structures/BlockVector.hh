@@ -136,7 +136,7 @@ public:
   int Norm2(double* norm) const;
 
   // Extras
-  void Print(ostream &os) const;
+  void Print(std::ostream &os) const;
 
   const Epetra_MpiComm& Comm() const { return comm_; }
 
