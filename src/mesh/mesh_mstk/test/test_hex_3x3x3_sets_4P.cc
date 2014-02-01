@@ -44,7 +44,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
   MPI_Comm_size(MPI_COMM_WORLD,&size);
 
   if (size != 4) {
-    cerr << "Test must be run with 4 processors" << std::endl;
+    std::cerr << "Test must be run with 4 processors" << std::endl;
   }
   CHECK_EQUAL(4,size);
 
