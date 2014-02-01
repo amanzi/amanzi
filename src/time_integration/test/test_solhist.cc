@@ -30,7 +30,7 @@ SUITE(SolutionHistoryTests) {
   };
 
   TEST_FIXTURE(test_data, SolutionHistory_1) {
-    cout << "Test: SolutionHistory_1" << endl;
+    std::cout << "Test: SolutionHistory_1" << std::endl;
 
     // create a solution history of size three
     Teuchos::RCP<Amanzi::SolutionHistory<Epetra_Vector> > SH =
