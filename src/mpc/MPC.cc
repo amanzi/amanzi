@@ -74,15 +74,15 @@ void MPC::mpc_init() {
   // let users selectively disable individual process kernels
   // to allow for testing of the process kernels separately
   transport_enabled =
-      (mpc_parameter_list.get<string>("disable Transport_PK","no") == "no");
+      (mpc_parameter_list.get<std::string>("disable Transport_PK","no") == "no");
 
-  std::string chemistry_model = mpc_parameter_list.get<string>("Chemistry Model","Off");
+  std::string chemistry_model = mpc_parameter_list.get<std::string>("Chemistry Model","Off");
   if (chemistry_model != "Off") {
     chemistry_enabled = true;
   }
 
   flow_enabled =
-      (mpc_parameter_list.get<string>("disable Flow_PK","no") == "no");
+      (mpc_parameter_list.get<std::string>("disable Flow_PK","no") == "no");
 
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
     *out << "The following process kernels are enabled: ";
@@ -116,7 +116,7 @@ void MPC::mpc_init() {
 
   // flow...
   if (flow_enabled) {
-    flow_model = mpc_parameter_list.get<string>("Flow model", "Darcy");
+    flow_model = mpc_parameter_list.get<std::string>("Flow model", "Darcy");
     if (flow_model == "Darcy") {
       FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, S));
     } else if (flow_model == "Steady State Saturated") {
@@ -126,7 +126,7 @@ void MPC::mpc_init() {
     } else if (flow_model == "Steady State Richards") {
       FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, S));
     } else {
-      cout << "MPC: unknown flow model: " << flow_model << endl;
+      std::cout << "MPC: unknown flow model: " << flow_model << std::endl;
       throw std::exception();
     }
   }
@@ -179,14 +179,14 @@ void MPC::mpc_init() {
 #ifdef ALQUIMIA_ENABLED
         CPK = Teuchos::rcp( new AmanziChemistry::Alquimia_Chemistry_PK(parameter_list, CS) );
 #else
-        cout << "MPC: Alquimia chemistry model is not enabled for this build.\n";
+        std::cout << "MPC: Alquimia chemistry model is not enabled for this build.\n";
         throw std::exception();
 #endif
       } else if (chemistry_model == "Amanzi") {
         Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
         CPK = Teuchos::rcp( new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS) );
       } else {
-        cout << "MPC: unknown chemistry model: " << chemistry_model << endl;
+        std::cout << "MPC: unknown chemistry model: " << chemistry_model << std::endl;
         throw std::exception();
       }
       CPK->InitializeChemistry();
@@ -256,7 +256,7 @@ void MPC::mpc_init() {
     Teuchos::ParameterList& restart_parameter_list =
         mpc_parameter_list.sublist("Restart from Checkpoint Data File");
 
-    restart_from_filename = restart_parameter_list.get<string>("Checkpoint Data File Name");
+    restart_from_filename = restart_parameter_list.get<std::string>("Checkpoint Data File Name");
 
     if (restart_requested) {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {

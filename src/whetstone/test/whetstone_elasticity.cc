@@ -34,7 +34,7 @@ TEST(ELASTICITY_STIFFNESS_2D) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Stiffness matrix for elasticity in 2D" << endl;
+  std::cout << "\nTest: Stiffness matrix for elasticity in 2D" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -73,8 +73,8 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     // mfd.StiffnessMatrix(cell, T, A);
     mfd.StiffnessMatrixOptimized(cell, T, A);
     // mfd.StiffnessMatrixMMatrix(cell, T, A);
-    // cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << endl;
-    // cout << "Functional value=" << mfd.simplex_functional() << endl;
+    // std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
+    // std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
 
     printf("Stiffness matrix for cell %3d\n", cell);
     for (int i = 0; i < nrows; i++) {
@@ -128,7 +128,7 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Stiffness matrix for Elasticity in 3D" << endl;
+  std::cout << "\nTest: Stiffness matrix for Elasticity in 3D" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else

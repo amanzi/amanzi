@@ -44,7 +44,7 @@ Checkpoint::Checkpoint(): IOEvent() {}
 // Set up control from parameter list.
 // -----------------------------------------------------------------------------
 void Checkpoint::ReadParameters_() {
-  filebasename_ = plist_.get<string>("file name base","checkpoint");
+  filebasename_ = plist_.get<std::string>("file name base","checkpoint");
   filenamedigits_ = plist_.get<int>("file name digits", 5);
 };
 

@@ -248,9 +248,9 @@ int Matrix_TPFA::ApplyPreconditioner(const CompositeVector& X, CompositeVector& 
   int ok = solver->ApplyInverse(X, Y);
 
   // if (ok != 1) {
-  //   cout << "Newton solver (" << solver->name() 
+  //   std::cout << "Newton solver (" << solver->name() 
   //        << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-  //        << " code=" << ok << endl;
+  //        << " code=" << ok << std::endl;
   //   exit(0);
   // }
 

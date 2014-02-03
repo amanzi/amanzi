@@ -41,10 +41,10 @@ TEST(FLOW_RICHARDS_PICARD) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) cout << "Test: 2D crib model with Picard solver" << endl;
+  if (MyPID == 0) std::cout << "Test: 2D crib model with Picard solver" << std::endl;
 
   /* read parameter list */
-  string xmlFileName = "test/flow_richards_picard.xml";
+  std::string xmlFileName = "test/flow_richards_picard.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 

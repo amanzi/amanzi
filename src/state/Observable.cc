@@ -30,12 +30,12 @@ Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
     count_(0) {
   // process the spec
   name_ = plist.name();
-  variable_ = plist.get<string>("Variable");
-  region_ = plist.get<string>("Region");
-  functional_ = plist.get<string>("Functional");
+  variable_ = plist.get<std::string>("Variable");
+  region_ = plist.get<std::string>("Region");
+  functional_ = plist.get<std::string>("Functional");
 
   // entity of region
-  location_ = plist.get<string>("Location Name", "cell");
+  location_ = plist.get<std::string>("Location Name", "cell");
 
   // write mode
   interval_ = plist.get<int>("Write Interval", 0);

@@ -30,7 +30,7 @@ TEST(ADVANCE_WITH_SUBCYCLING) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-cout << "Test: Subcycling on a 2D square mesh" << endl;
+std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -38,7 +38,7 @@ cout << "Test: Subcycling on a 2D square mesh" << endl;
 #endif
 
   /* read parameter list */
-  string xmlFileName = "test/transport_subcycling.xml";
+  std::string xmlFileName = "test/transport_subcycling.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 

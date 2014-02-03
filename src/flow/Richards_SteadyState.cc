@@ -185,7 +185,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     if (vo->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo->getOSTab();
       *(vo->os()) << itrs << ": ||r||=" << L2error << " relax=" << relaxation 
-                  << " lin_solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
+                  << " lin_solver(" << linear_residual << ", " << num_itrs_linear << ")" << std::endl;
     }
 
     solution_new.Update(1.0 - relaxation, solution_old, relaxation);
