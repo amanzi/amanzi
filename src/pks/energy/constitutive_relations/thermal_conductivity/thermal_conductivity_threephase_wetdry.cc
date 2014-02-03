@@ -23,14 +23,13 @@ ThermalConductivityThreePhaseWetDry::ThermalConductivityThreePhaseWetDry(
 
 double ThermalConductivityThreePhaseWetDry::ThermalConductivity(double poro,
         double sat_liq, double sat_ice, double temp) {
-  double Ki = 831.51/(pow(temp, 1.0552));
+  double Ki = 831.51/(std::pow(temp, 1.0552));
   double Kl = 0.5611;
-  double k_sat_f = k_sat_u_ * pow(Ki/Kl, poro);
+  double k_sat_f = k_sat_u_ * std::pow(Ki/Kl, poro);
 
-  double kersten_u = pow(sat_liq + eps_, alpha_u_);
-  double kersten_f = pow(sat_ice + eps_, alpha_f_);
-  return kersten_f * k_sat_f + kersten_u * k_sat_u_
-    + (1.0 - kersten_f - kersten_u) * k_dry_;
+  double kersten_u = std::pow(sat_liq + eps_, alpha_u_);
+  double kersten_f = std::pow(sat_ice + eps_, alpha_f_);
+  return kersten_f * k_sat_f + kersten_u * k_sat_u_ + (1.0 - kersten_f - kersten_u) * k_dry_;
 };
 
 void ThermalConductivityThreePhaseWetDry::InitializeFromPlist_() {
