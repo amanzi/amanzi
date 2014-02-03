@@ -18,6 +18,7 @@ This provides the base of an advection-diffusion equation for energy.
 #include "pk_factory.hh"
 #include "MatrixMFD.hh"
 #include "pk_physical_bdf_base.hh"
+#include "upwinding.hh"
 
 namespace Amanzi {
 
@@ -102,6 +103,10 @@ protected:
   // Standard methods
   virtual void SetupEnergy_(const Teuchos::Ptr<State>& S);
 
+  // Upwinding conductivities
+  virtual bool UpdateConductivityData_(const Teuchos::Ptr<State>& S);
+
+
   // boundary condition members
   virtual void UpdateBoundaryConditions_();
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature);
@@ -133,6 +138,9 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
 
   // operators
+  Operators::UpwindMethod Krel_method_;
+  Teuchos::RCP<Operators::Upwinding> upwinding_;
+
   Teuchos::RCP<Operators::Advection> advection_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   // note PC is in PKPhysicalBDFBase
@@ -159,6 +167,7 @@ protected:
   Key flux_key_;
   Key energy_flux_key_;
   Key conductivity_key_;
+  Key uw_conductivity_key_;
   Key de_dT_key_;
   Key source_key_;
   Key dsource_dT_key_;

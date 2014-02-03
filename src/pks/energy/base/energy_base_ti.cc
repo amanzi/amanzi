@@ -65,6 +65,12 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   // diffusion term, implicit
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
+  vnames[0] = "K";
+  vecs[0] = S_next_->GetFieldData(conductivity_key_).ptr();
+  vnames[1] = "uw_K";
+  vecs[1] = S_next_->GetFieldData(uw_conductivity_key_).ptr();
+  db_->WriteVectors(vnames,vecs,true);
+
   db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
 
@@ -146,10 +152,9 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
   UpdateBoundaryConditions_();
 
   // div K_e grad u
-  S_next_->GetFieldEvaluator(conductivity_key_)
-    ->HasFieldChanged(S_next_.ptr(), name_);
+  UpdateConductivityData_(S_next_.ptr());
   Teuchos::RCP<const CompositeVector> conductivity =
-    S_next_->GetFieldData(conductivity_key_);
+      S_next_->GetFieldData(uw_conductivity_key_);
 
   mfd_preconditioner_->CreateMFDstiffnessMatrices(conductivity.ptr());
   mfd_preconditioner_->CreateMFDrhsVectors();
@@ -228,7 +233,7 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
 
   // Cell error is based upon error in energy conservation relative to
   // a characteristic energy
-  double enorm_cell(0.);
+  double enorm_cell(-1.);
   int bad_cell = -1;
   unsigned int ncells = res_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
@@ -240,14 +245,14 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
   }
 
   // Face error is mismatch in flux??
-  double enorm_face(0.);
+  double enorm_face(-1.);
   int bad_face = -1;
   unsigned int nfaces = res_f.MyLength();
   for (unsigned int f=0; f!=nfaces; ++f) {
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
     //    double tmp = flux_tol_ * std::abs(res_f[0][f]) / (atol_+rtol_*273.15);
-    double tmp = std::abs(h*res_f[0][f])  / (atol_ * cv[0][cells[0]]*2.e6 + rtol_* std::abs(energy[0][cells[0]]));
+    double tmp = flux_tol_ * std::abs(h*res_f[0][f])  / (atol_ * cv[0][cells[0]]*2.e6 + rtol_* std::abs(energy[0][cells[0]]));
     if (tmp > enorm_face) {
       enorm_face = tmp;
       bad_face = f;
