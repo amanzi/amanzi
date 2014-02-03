@@ -43,7 +43,10 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
 
   Teuchos::RCP<WRMPartition> wrms_;
   Key sat_key_;
+  Key dens_key_;
+  Key visc_key_;
 
+  double perm_scale_;
   double min_val_;
 };
 

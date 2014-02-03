@@ -300,9 +300,9 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("molar_density_liquid");
 
-  S->RequireField("viscosity_liquid")->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("viscosity_liquid");
+  // S->RequireField("viscosity_liquid")->SetMesh(mesh_)->SetGhosted()
+  //     ->AddComponent("cell", AmanziMesh::CELL, 1);
+  // S->RequireFieldEvaluator("viscosity_liquid");
 
   // -- liquid mass density for the gravity fluxes
   S->RequireField("mass_density_liquid")->SetMesh(mesh_)->SetGhosted()
@@ -492,13 +492,13 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   bool update_perm = S->GetFieldEvaluator("relative_permeability")
       ->HasFieldChanged(S, name_);
 
-  // n/mu on cells
-  update_perm |= S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S, name_);
-  update_perm |= S->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S, name_);
-  const Epetra_MultiVector& n_liq = *S->GetFieldData("molar_density_liquid")
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& visc = *S->GetFieldData("viscosity_liquid")
-      ->ViewComponent("cell",false);
+  // // n/mu on cells
+  // update_perm |= S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S, name_);
+  // update_perm |= S->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S, name_);
+  // const Epetra_MultiVector& n_liq = *S->GetFieldData("molar_density_liquid")
+  //     ->ViewComponent("cell",false);
+  // const Epetra_MultiVector& visc = *S->GetFieldData("viscosity_liquid")
+  //     ->ViewComponent("cell",false);
 
   // requirements due to the upwinding method
   if (Krel_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
@@ -511,16 +511,17 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       Teuchos::RCP<CompositeVector> flux_dir =
           S->GetFieldData("darcy_flux_direction", name_);
 
-      // Create the stiffness matrix without a rel perm (just n/mu)
-      {
-        Epetra_MultiVector& uw_rel_perm_c = *sc_uw_rel_perm->ViewComponent("cell",false);
-        int ncells = uw_rel_perm_c.MyLength();
-        for (unsigned int c=0; c!=ncells; ++c) {
-          uw_rel_perm_c[0][c] = n_liq[0][c] / visc[0][c] / perm_scale_;
-        }
-      }
-      sc_uw_rel_perm->ViewComponent("face",false)->PutScalar(1.);
-      matrix_->CreateMFDstiffnessMatrices(sc_uw_rel_perm.ptr());
+      // // Create the stiffness matrix without a rel perm (just n/mu)
+      // {
+      //   Epetra_MultiVector& uw_rel_perm_c = *sc_uw_rel_perm->ViewComponent("cell",false);
+      //   int ncells = uw_rel_perm_c.MyLength();
+      //   for (unsigned int c=0; c!=ncells; ++c) {
+      //     uw_rel_perm_c[0][c] = n_liq[0][c] / visc[0][c] / perm_scale_;
+      //   }
+      // }
+      // sc_uw_rel_perm->ViewComponent("face",false)->PutScalar(1.);
+      // matrix_->CreateMFDstiffnessMatrices(sc_uw_rel_perm.ptr());
+      matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
 
       // Derive the pressure fluxes
       Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
@@ -529,7 +530,8 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       // Add in the gravity fluxes
       Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
       Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
-      AddGravityFluxesToVector_(gvec.ptr(), sc_uw_rel_perm.ptr(), rho.ptr(), flux_dir.ptr());
+      // AddGravityFluxesToVector_(gvec.ptr(), sc_uw_rel_perm.ptr(), rho.ptr(), flux_dir.ptr());
+      AddGravityFluxesToVector_(gvec.ptr(), Teuchos::null, rho.ptr(), flux_dir.ptr());
     }
 
     update_perm |= update_dir;
@@ -583,14 +585,14 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     upwinding_->Update(S);
   }
 
-  // Scale cells by n/mu
-  if (update_perm) {
-    Epetra_MultiVector& uw_rel_perm_c = *uw_rel_perm->ViewComponent("cell",false);
-    int ncells = uw_rel_perm_c.MyLength();
-    for (unsigned int c=0; c!=ncells; ++c) {
-      uw_rel_perm_c[0][c] *= n_liq[0][c] / visc[0][c] / perm_scale_;
-    }
-  }
+  // // Scale cells by n/mu
+  // if (update_perm) {
+  //   Epetra_MultiVector& uw_rel_perm_c = *uw_rel_perm->ViewComponent("cell",false);
+  //   int ncells = uw_rel_perm_c.MyLength();
+  //   for (unsigned int c=0; c!=ncells; ++c) {
+  //     uw_rel_perm_c[0][c] *= n_liq[0][c] / visc[0][c] / perm_scale_;
+  //   }
+  // }
 
   // debugging
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
