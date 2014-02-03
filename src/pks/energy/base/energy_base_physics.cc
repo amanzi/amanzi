@@ -97,9 +97,9 @@ void EnergyBase::AddAdvection_(const Teuchos::Ptr<State>& S,
 void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& g) {
   // update the thermal conductivity
-  S->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S.ptr(), name_);
+  UpdateConductivityData_(S_next_.ptr());
   Teuchos::RCP<const CompositeVector> conductivity =
-    S->GetFieldData(conductivity_key_);
+      S_next_->GetFieldData(uw_conductivity_key_);
 
   // update the stiffness matrix
   matrix_->CreateMFDstiffnessMatrices(conductivity.ptr());

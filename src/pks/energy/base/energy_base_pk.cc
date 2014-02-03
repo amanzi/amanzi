@@ -10,6 +10,11 @@ Author: Ethan Coon
 #include "energy_bc_factory.hh"
 #include "advection_factory.hh"
 
+#include "upwind_cell_centered.hh"
+#include "upwind_arithmetic_mean.hh"
+#include "upwind_total_flux.hh"
+#include "upwind_gravity_flux.hh"
+
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
 #include "MatrixMFD_Factory.hh"
@@ -60,6 +65,10 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   if (conductivity_key_ == std::string()) {
     conductivity_key_ = plist_->get<std::string>("conductivity key",
             domain_prefix_+std::string("thermal_conductivity"));
+  }
+  if (uw_conductivity_key_ == std::string()) {
+    uw_conductivity_key_ = plist_->get<std::string>("upwind conductivity key",
+            domain_prefix_+std::string("numerical_thermal_conductivity"));
   }
   if (de_dT_key_ == std::string()) {
     de_dT_key_ = plist_->get<std::string>("de/dT key",
@@ -124,6 +133,27 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   }
   S->RequireField(energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
+
+  // Require an upwinding strategy
+  S->RequireField(uw_conductivity_key_, name_)->SetMesh(mesh_)->SetGhosted()
+                    ->SetComponents(names2, locations2, num_dofs2);
+  S->GetField(uw_conductivity_key_,name_)->set_io_vis(false);
+  string method_name = plist_->get<string>("upwind conductivity method", "arithmetic mean");
+  if (method_name == "cell centered") {
+    upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
+            conductivity_key_, uw_conductivity_key_));
+    Krel_method_ = Operators::UPWIND_METHOD_CENTERED;
+  } else if (method_name == "arithmetic mean") {
+    upwinding_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
+            conductivity_key_, uw_conductivity_key_));
+    Krel_method_ = Operators::UPWIND_METHOD_ARITHMETIC_MEAN;
+  } else {
+    std::stringstream messagestream;
+    messagestream << "Energy PK has no upwinding method named: " << method_name;
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
 
   // coupling terms
   // -- subsurface PK, coupled to the surface
@@ -209,6 +239,11 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
 
 #endif
 
+  // Set extra fields as initialized -- these don't currently have evaluators,
+  // and will be initialized in the call to commit_state()
+  S->GetFieldData(uw_conductivity_key_,name_)->PutScalar(1.0);
+  S->GetField(uw_conductivity_key_,name_)->set_initialized();
+
   // initialize boundary conditions
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
@@ -233,13 +268,12 @@ void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
     *vo_->os() << "Commiting state." << std::endl;
 
   niter_ = 0;
-  bool update = S->GetFieldEvaluator(conductivity_key_)
-      ->HasFieldChanged(S.ptr(), name_);
+  bool update = UpdateConductivityData_(S.ptr());
 
   if (update_flux_ == UPDATE_FLUX_TIMESTEP ||
       (update_flux_ == UPDATE_FLUX_ITERATION && update)) {
     Teuchos::RCP<const CompositeVector> conductivity =
-        S->GetFieldData(conductivity_key_);
+        S->GetFieldData(uw_conductivity_key_);
     matrix_->CreateMFDstiffnessMatrices(conductivity.ptr());
 
     Teuchos::RCP<CompositeVector> temp = S->GetFieldData(key_, name_);
@@ -248,6 +282,14 @@ void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
   }
 };
 
+
+bool EnergyBase::UpdateConductivityData_(const Teuchos::Ptr<State>& S) {
+  bool update = S->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S, name_);
+  if (update) {
+    upwinding_->Update(S);
+  }
+  return update;
+}
 
 // -----------------------------------------------------------------------------
 // Evaluate boundary conditions at the current time.
@@ -397,10 +439,9 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
 
   // div K_e grad u
   changed_solution();
-  S_next_->GetFieldEvaluator(conductivity_key_)
-      ->HasFieldChanged(S_next_.ptr(), name_);
+  bool update = UpdateConductivityData_(S_next_.ptr());
   Teuchos::RCP<const CompositeVector> conductivity =
-      S_next_->GetFieldData(conductivity_key_);
+      S_next_->GetFieldData(uw_conductivity_key_);
 
   matrix_->CreateMFDstiffnessMatrices(conductivity.ptr());
   matrix_->CreateMFDrhsVectors();

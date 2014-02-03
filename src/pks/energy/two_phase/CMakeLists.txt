@@ -10,6 +10,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/enth
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
+include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
 add_library(pk_energy_two_phase
   two_phase_energy_evaluator.cc
