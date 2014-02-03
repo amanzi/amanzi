@@ -337,7 +337,7 @@ double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
 
   // Cell error is based upon error in mass conservation relative to
   // the current water content
-  double enorm_cell(0.);
+  double enorm_cell(-1.);
   int bad_cell = -1;
   unsigned int ncells = res_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
@@ -349,7 +349,7 @@ double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
   }
 
   // Face error given by mismatch of flux, so relative to flux.
-  double enorm_face(0.);
+  double enorm_face(-1.);
   int bad_face = -1;
   unsigned int nfaces = res_f.MyLength();
   for (unsigned int f=0; f!=nfaces; ++f) {

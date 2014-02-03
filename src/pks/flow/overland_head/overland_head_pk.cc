@@ -570,7 +570,7 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         Epetra_MultiVector& uw_cond_c = *uw_cond->ViewComponent("cell",false);
         int ncells = uw_cond_c.MyLength();
         for (unsigned int c=0; c!=ncells; ++c) {
-          uw_cond_c[0][c] = n_liq[0][c];
+          uw_cond_c[0][c] = 1.; //n_liq[0][c];
         }
       }
       uw_cond->ViewComponent("face",false)->PutScalar(1.);
@@ -608,18 +608,18 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // Then upwind.  This overwrites the boundary if upwinding says so.
     upwinding_->Update(S);
 
-    { // Scale cells by n_liq
-      const Epetra_MultiVector& n_liq =
-          *S->GetFieldData("surface_molar_density_liquid")
-              ->ViewComponent("cell",false);
+    // { // Scale cells by n_liq
+    //   const Epetra_MultiVector& n_liq =
+    //       *S->GetFieldData("surface_molar_density_liquid")
+    //           ->ViewComponent("cell",false);
 
-      Epetra_MultiVector& uw_cond_c = *uw_cond->ViewComponent("cell",false);
-      int ncells = uw_cond_c.MyLength();
-      for (unsigned int c=0; c!=ncells; ++c) {
-        ASSERT(uw_cond_c[0][c] == 1.); // REMOVE ME!
-        uw_cond_c[0][c] *= n_liq[0][c];
-      }
-    }
+    //   Epetra_MultiVector& uw_cond_c = *uw_cond->ViewComponent("cell",false);
+    //   int ncells = uw_cond_c.MyLength();
+    //   for (unsigned int c=0; c!=ncells; ++c) {
+    //     ASSERT(uw_cond_c[0][c] == 1.); // REMOVE ME!
+    //     uw_cond_c[0][c] *= n_liq[0][c];
+    //   }
+    // }
   }
 
   if (update_perm && vo_->os_OK(Teuchos::VERB_EXTREME))
