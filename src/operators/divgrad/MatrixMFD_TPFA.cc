@@ -295,15 +295,8 @@ int MatrixMFD_TPFA::Apply(const CompositeVector& X,
   if (Y.HasComponent("face")) {
     Epetra_MultiVector& Yf = *Y.ViewComponent("face",false);
     ierr |= Afc_->Multiply(true, *X.ViewComponent("cell",false), Yf);
-    std::cout << std::setprecision(15) << "FUCK RESIDUAL LHS Afc*Xc(237): LHS = " << Yf[0][237] << std::endl;
     ierr |= Yf.Multiply(1., *Dff_->ViewComponent("face",false), *X.ViewComponent("face",false), 1.);
-    std::cout << std::setprecision(15) << "FUCK RESIDUAL LHS Dff*Xf(237): LHS = " << (*Dff_->ViewComponent("face",false))[0][237]*(*X.ViewComponent("face",false))[0][237] << std::endl;
   }
-
-
-  std::cout << std::setprecision(15) << "FUCK RESIDUAL LHS F(237): LHS = " << (*Y.ViewComponent("face",false))[0][237] << std::endl;
-  std::cout << std::setprecision(15) << "FUCK RESIDUAL RHS F(237): RHS = " << (*rhs_->ViewComponent("face",false))[0][237] << std::endl;
-  
 
   if (ierr) {
     Errors::Message msg("MatrixMFD_TPFA::Apply has failed to calculate y = A*x.");
