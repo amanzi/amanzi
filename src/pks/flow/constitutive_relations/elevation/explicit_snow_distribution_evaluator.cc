@@ -127,7 +127,7 @@ void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     // Gather dependencies
     // NOTE: this is incorrect approximation... should be | sqrt( grad( z+h_pd ) ) |
     const Epetra_MultiVector& slope = *S->GetFieldData(slope_key_)->ViewComponent("cell",false);
-    Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cell_vol_key_);
+    const Epetra_MultiVector& cv = *S->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
     Teuchos::RCP<const CompositeVector> elev = S->GetFieldData(elev_key_);
     Teuchos::RCP<const CompositeVector> pd = S->GetFieldData(pd_key_);
     Teuchos::RCP<const CompositeVector> snow_height = S->GetFieldData(snow_height_key_);
@@ -187,22 +187,26 @@ void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
 
       // scale by 1/cell volume
       {
-        const Epetra_MultiVector& cv_c = *cv->ViewComponent("cell",false);
         Epetra_MultiVector& divq_c = *divq->ViewComponent("cell",false);
         for (unsigned int c=0; c!=ncells; ++c) {
-          divq_c[0][c] /= cv_c[0][c];
+          divq_c[0][c] /= cv[0][c];
         }
       }
 
       // update the timestep
       result->Update(dt, *divq, 1.);
 
+      result->Print(std::cout);
+
       // Ensure non-negativity via clipping
       {
         Epetra_MultiVector& result_c = *result->ViewComponent("cell",false);
         for (int c=0; c!=ncells; ++c) {
-          if (result_c[0][c] < 0. && vo_->os_OK(Teuchos::VERB_HIGH))
-            *vo_->os() << "  Lost snow mass cell " << c << ": h = " << result_c[0][c] << std::endl;
+          if (result_c[0][c] < 0. && vo_->os_OK(Teuchos::VERB_HIGH)) {
+            *vo_->os() << "  Lost snow mass cell " << c << ": h = " << result_c[0][c] << std::endl
+                       << "      slope = " << slope[0][c] << std::endl
+                       << "      cellv = " << cv[0][c] << std::endl;
+          }
           result_c[0][c] = std::max(0., result_c[0][c]);
         }
       }
