@@ -38,6 +38,7 @@ private:
   Key depth_key_;
   Key slope_key_;
   Key coef_key_;
+  Key dens_key_;
 
 };
 
