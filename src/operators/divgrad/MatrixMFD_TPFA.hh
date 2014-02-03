@@ -30,7 +30,13 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
  public:
   MatrixMFD_TPFA(Teuchos::ParameterList& plist,
                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      MatrixMFD(plist,mesh) {}
+      MatrixMFD(plist,mesh) {
+    cells_only_ = plist.get<bool>("TPFA use cells only", false);
+    if (cells_only_) {
+      space_ = Teuchos::rcp(new CompositeVectorSpace());
+      space_->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+  }
 
   // override main methods of the base class
   virtual void CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVector>& Krel);
@@ -75,6 +81,7 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
  protected:
   Teuchos::RCP<CompositeVector> Dff_;
   Teuchos::RCP<Epetra_FECrsMatrix> Spp_;  // Explicit Schur complement
+  bool cells_only_;
 
  private:
   MatrixMFD_TPFA(const MatrixMFD& other);
