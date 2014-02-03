@@ -587,7 +587,7 @@ void HDF5_MPI::writeDataString(char **x, int num_entries, const std::string varn
     strData[i] = (char *)malloc(MAX_STRING_LENGTH*sizeof(char));
     }
     for (int i=0; i<num_entries; i++) {
-    cout << "E>> WRITE>> recieved x["<<i<<"] = " << x[i] <<std::endl;
+    std::cout << "E>> WRITE>> recieved x["<<i<<"] = " << x[i] <<std::endl;
     strcpy(strData[i], x[i].c_str());
     //strData[i] = (char*)x[i].c_str();
     }

@@ -233,7 +233,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
       }
       iter++;
     }
-    //for (int k=0; k<nx; k++) cout << (*tcc)[0][k] << endl;
+    //for (int k=0; k<nx; k++) std::cout << (*tcc)[0][k] << std::endl;
 
     double L1, L2;  // L1 and L2 errors
     TPK.CalculateLpErrors(f_cubic, T, (*tcc)(0), &L1, &L2);
