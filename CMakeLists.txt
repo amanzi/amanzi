@@ -55,7 +55,8 @@ include(AmanziTPL)
 link_directories(${CMAKE_INSTALL_PREFIX}/tpls/lib)
 
 # Check the mesh framework choice
-if ( (NOT ENABLE_STK_Mesh)  AND 
+if ( (ENABLE_Unstructured)  AND
+     (NOT ENABLE_STK_Mesh)  AND
      (NOT ENABLE_MOAB_Mesh) AND
      (NOT ENABLE_MSTK_Mesh)
    )

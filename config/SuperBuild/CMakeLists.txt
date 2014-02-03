@@ -153,6 +153,13 @@ if ( ENABLE_OpenMP )
 endif()
 endif()
 
+# If unstructured is not enabled, there is no reason to have these mesh frameworks
+if ( NOT ENABLE_Unstructured )
+  set (ENABLE_STK_Mesh FALSE)
+  set (ENABLE_MSTK_Mesh FALSE)
+  set (ENABLE_MOAB_Mesh FALSE)
+endif()
+
 # Amanzi Test Suite
 option(ENABLE_TESTS "Build the Amanzi Test Suite" TRUE)
 
@@ -407,9 +414,10 @@ set(Amanzi_CMAKE_LINKER_ARGS
      -DCMAKE_SHARED_LINKER_FLAGS:STRING=${CMAKE_SHARED_LINKER_FLAGS})
 
 # GNU configure static/shared
-set(Amanzi_SHARED_SWITCH "--disable-shared")
 if(BUILD_SHARED_LIBS)
   set(Amanzi_SHARED_SWITCH "--enable-shared")
+else()
+  set(Amanzi_SHARED_SWITCH "--disable-shared")
 endif()
 
 
@@ -551,6 +559,13 @@ endif()
 include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS 
            -DMETIS_DIR:FILEPATH=${METIS_DIR})
+
+# ParMetis -- needs to go before PETSc because PETSc needs it.
+include(${SuperBuild_BUILD_FILES_DIR}/Build_ParMetis.cmake)
+if (ENABLE_PETSC OR ENABLE_Structured)
+  append_set(Amanzi_TPL_CMAKE_ARGS
+             -DParMetis_DIR:FILEPATH=${ParMetis_DIR})
+endif ()
 
 # PETSc
 option(ENABLE_PETSC "Build the PETSc package" FALSE)

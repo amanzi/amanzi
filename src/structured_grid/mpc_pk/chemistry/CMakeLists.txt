@@ -39,7 +39,7 @@ if (BUILD_TESTS)
   link_directories(${CCSE_LIBRARY_DIR})
   add_definitions("-DENABLE_Structured")
 
-  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES})
+  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
@@ -47,17 +47,34 @@ if (BUILD_TESTS)
   endif()
   set(tpl_libs)
 
+  get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
+  set(common_libs error_handling ${GEOCHEM_LIBS} interface atk)
+
+  set(ssc_libs ${ssc_structured_grid_libs}
+               ${ssc_unstructured_grid_libs}
+               ${ssc_common_libs})
+  set(tpl_libs ${amanzi_mesh_libs}
+               ${Teuchos_LIBRARIES}
+               ${Epetra_LIBRARIES}
+               ${Boost_LIBRARIES}
+               ${XERCES_LIBRARIES}
+               ${XERCES_ICU_LIBRARIES})
+
+#if (ENABLE_Structured)
+#  list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})
+#endif()
+
   set(SCHEMTEST "${SCHEM_SOURCE_DIR}/test")
   add_amanzi_test(tMultiFabCellVector tMultiFabCellVector
                   KIND unit
                   SOURCE ${SCHEMTEST}/tMultiFabCellVector.cpp
-                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+                  LINK_LIBS ${structured_grid_libs} ${common_libs} ${tpl_libs})
 
   add_amanzi_test(tMultiFabCellVector4 tMultiFabCellVector4
                   KIND unit
 	          NPROCS 4
                   SOURCE ${SCHEMTEST}/tMultiFabCellVector.cpp
-                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+                  LINK_LIBS ${structured_grid_libs} ${common_libs} ${tpl_libs})
 
 
 endif()

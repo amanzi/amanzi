@@ -620,11 +620,20 @@ Layout::Build(int _nLevs)
     int d_nz = 1 + 2*BL_SPACEDIM; // Number of nonzero local columns of J
     int o_nz = 0; // Number of nonzero nonlocal (off-diagonal) columns of J
 
-    PetscErrorCode ierr = 
-        MatCreateMPIAIJ(ParallelDescriptor::Communicator(), m, n, M, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, &J_mat);
-    CHKPETSC(ierr);
+    PetscErrorCode ierr;
+    MPI_Comm comm = ParallelDescriptor::Communicator();
+
+#if PETSC_VERSION_LT(3,4,3)
+    ierr = MatCreateMPIAIJ(comm, n, n, N, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, &J_mat); CHKPETSC(ierr);
+#else
+    ierr = MatCreate(comm, &J_mat); CHKPETSC(ierr);
+    ierr = MatSetSizes(J_mat,n,n,N,N);  CHKPETSC(ierr);
+    ierr = MatSetFromOptions(J_mat); CHKPETSC(ierr);
+    ierr = MatSeqAIJSetPreallocation(J_mat, d_nz*d_nz, PETSC_NULL); CHKPETSC(ierr);
+    ierr = MatMPIAIJSetPreallocation(J_mat, d_nz, PETSC_NULL, o_nz, PETSC_NULL); CHKPETSC(ierr);
+#endif
     mats_I_created.push_back(&J_mat);
-    ierr = VecCreateMPI(ParallelDescriptor::Communicator(),nNodes_local,nNodes_global,&JRowScale_vec); CHKPETSC(ierr);        
+    ierr = VecCreateMPI(comm,nNodes_local,nNodes_global,&JRowScale_vec); CHKPETSC(ierr);        
     vecs_I_created.push_back(&JRowScale_vec);
 #endif
     initialized = true;

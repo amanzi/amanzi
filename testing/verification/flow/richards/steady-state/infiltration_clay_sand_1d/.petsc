@@ -6,7 +6,10 @@
 -mat_superlu_dist_equil true
 -mat_superlu_equil true
 -snes_monitor
--snes_ls basic
+
+#  LS type: basic, bt, l2, cp, shell
+-snes_linesearch_type l2
+
 -snes_atol 1.e-10
 -snes_rtol 1.e-10
 -snes_stol 1.e-20

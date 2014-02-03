@@ -51,7 +51,7 @@ if (BUILD_TESTS)
   link_directories(${CCSE_LIBRARY_DIR})
   add_definitions("-DENABLE_Structured")
 
-  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES})
+  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)

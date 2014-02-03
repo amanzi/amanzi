@@ -92,19 +92,22 @@ if (BUILD_TESTS)
   link_directories(${CCSE_LIBRARY_DIR})
   add_definitions("-DENABLE_Structured")
 
-  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES})
+  set(structured_grid_libs structured_amanzi ${PETSC_LIBRARIES} ${CCSE_LIBRARIES})
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU)
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
     endif()
   endif()
 
+  get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
+  set(common_libs error_handling ${GEOCHEM_LIBS} interface atk)
+
   set(tpl_libs ${Teuchos_LIBRARIES})
 
   add_amanzi_test(tRegion tRegion
                   KIND unit
                   SOURCE tRegion.cpp
-                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+                  LINK_LIBS ${structured_grid_libs} ${common_libs} ${tpl_libs})
 
 endif()
 

@@ -102,7 +102,7 @@ petsc=${TRUE}
 hypre=${TRUE}
 alquimia=${FALSE}
 pflotran=${FALSE}
-
+shared=${FALSE}
 
 
 
@@ -208,7 +208,6 @@ function set_feature()
 
   if echo $action | grep "disable" > /dev/null 2>/dev/null; then
     eval "${feature}=$FALSE"
-    
   fi
   if echo $action | grep "enable" > /dev/null 2>/dev/null; then
     eval "${feature}=$TRUE"
@@ -278,6 +277,7 @@ Value in brackets indicates default setting.
   pflotran                build the PFlotran geochemistry backend ['"${pflotran}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
+  shared                  build Amanzi and tpls using shared libraries ['"${test_suite}"']
 
 Tool definitions:
 
@@ -351,6 +351,7 @@ Build configuration:
     build_type          ='"${build_type}"'
     tpl_config_file     ='"${tpl_config_file}"'
     parallel            ='"${parallel_jobs}"'
+    shared              ='"${shared}"'
 
 Build Features:   
     structured          ='"${structured}"'
@@ -985,6 +986,23 @@ function define_install_directories
   status_message "TPL installation: ${tpl_install_prefix}"
 
 }    
+
+function define_unstructured_dependencies
+{
+  if [ "${unstructured}" -eq "${FALSE}" ]; then
+    eval "stk_mesh=$FALSE"
+    eval "mstk_mesh=$FALSE"
+    eval "moab_mesh=$FALSE"
+  fi
+}
+
+function define_structured_dependencies
+{
+  if [ "${structured}" -eq "${TRUE}" ]; then
+    eval "petsc=$TRUE"
+  fi
+}
+
 #
 # End functions
 # ---------------------------------------------------------------------------- #
@@ -997,6 +1015,12 @@ function define_install_directories
 # Parse the command line arguments
 array=( "$@" )
 parse_argv "${array[@]}"
+
+# Set packages that depend on unstructured
+define_unstructured_dependencies
+
+# Set packages that depend on structured
+define_structured_dependencies
 
 # Define the install directories 
 define_install_directories
@@ -1039,7 +1063,7 @@ if [ -z "${tpl_config_file}" ]; then
   ${cmake_binary} \
       	        -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
                 -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
-        	      -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
+                -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
                 -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
                 -DCMAKE_BUILD_TYPE:STRING=${build_type} \
                 -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
@@ -1056,6 +1080,7 @@ if [ -z "${tpl_config_file}" ]; then
                 -DENABLE_PETSC:BOOL=${petsc} \
                 -DENABLE_ALQUIMIA:BOOL=${alquimia} \
                 -DENABLE_PFLOTRAN:BOOL=${plotran} \
+                -DBUILD_SHARED_LIBS:BOOL=${shared} \
                 ${tpl_build_src_dir}
 
   if [ $? -ne 0 ]; then
@@ -1124,6 +1149,10 @@ ${cmake_binary} \
       	      -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
       	      -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
               -DCMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
+              -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+              -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
+              -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
+              -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
               -DENABLE_Structured:BOOL=${structured} \
               -DENABLE_Unstructured:BOOL=${unstructured} \
               -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
@@ -1133,6 +1162,7 @@ ${cmake_binary} \
               -DENABLE_PETSC:BOOL=${petsc} \
               -DENABLE_ALQUIMIA:BOOL=${alquimia} \
               -DENABLE_PFLOTRAN:BOOL=${plotran} \
+              -DBUILD_SHARED_LIBS:BOOL=${shared} \
               ${amanzi_source_dir}
 
 if [ $? -ne 0 ]; then

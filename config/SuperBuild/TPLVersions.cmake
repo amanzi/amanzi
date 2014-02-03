@@ -34,6 +34,7 @@
 #   0.91.10      - updated MSTK to version 2.10rc5
 #   0.91.11      - updated PFlotran to commit 1afe88d.
 #   0.91.12      - updated MSTK to version 2.10
+#   0.91.13      - updated METIS to 5.1.0, ParMetis to 4.0.3a, SuperLU to 4.3, SuperLUDist to 3.3 and PETSc to 3.4.3
 #
 
 include(CMakeParseArguments)
@@ -84,7 +85,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 91)
-set (AMANZI_TPLS_VERSION_PATCH 12)
+set (AMANZI_TPLS_VERSION_PATCH 13)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -135,13 +136,13 @@ set(ZLIB_MD5_SUM        618e944d7c7cd6521551e30b32322f4a)
 #
 # TPL: METIS
 #
-set(METIS_VERSION_MAJOR 4)
-set(METIS_VERSION_MINOR 0)
-set(METIS_VERSION_PATCH 3)
+set(METIS_VERSION_MAJOR 5)
+set(METIS_VERSION_MINOR 1)
+set(METIS_VERSION_PATCH 0)
 set(METIS_VERSION ${METIS_VERSION_MAJOR}.${METIS_VERSION_MINOR}.${METIS_VERSION_PATCH})
 set(METIS_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(METIS_ARCHIVE_FILE   metis-${METIS_VERSION}.tar.gz)
-set(METIS_MD5_SUM        d3848b454532ef18dc83e4fb160d1e10) 
+set(METIS_MD5_SUM        5465e67079419a69e0116de24fce58fe)
 
 #
 # TPL: CCSE
@@ -280,47 +281,47 @@ set(HYPRE_ARCHIVE_FILE   hypre-${HYPRE_VERSION}.tar.gz)
 set(HYPRE_MD5_SUM        6b4db576c68d2072e48efbc00ea58489) 
 
 #
-# TPL: ParMetis (Built by PETSc!)
+# TPL: ParMetis
 #
-set(ParMetis_VERSION_MAJOR  3)
-set(ParMetis_VERSION_MINOR  2)
-set(ParMetis_VERSION_PATCH  0-p1)
+set(ParMetis_VERSION_MAJOR  4)
+set(ParMetis_VERSION_MINOR  0)
+set(ParMetis_VERSION_PATCH  3a)
 set(ParMetis_VERSION  ${ParMetis_VERSION_MAJOR}.${ParMetis_VERSION_MINOR}.${ParMetis_VERSION_PATCH})
 set(ParMetis_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(ParMetis_ARCHIVE_FILE   ParMetis-${ParMetis_VERSION}.tar.gz)
-set(ParMetis_MD5_SUM        f17ec2aeacc04f67f8b69f28cae4079f) 
+set(ParMetis_ARCHIVE_FILE   parmetis-${ParMetis_VERSION}.tar.gz)
+set(ParMetis_MD5_SUM        56ac6ebf6e7e8a522fa053c799dc7a92)
 
 #
 # TPL: SuperLU (Built by PETSc!)
 #
 set(SuperLU_VERSION_MAJOR  4)
-set(SuperLU_VERSION_MINOR  2)
+set(SuperLU_VERSION_MINOR  3)
 set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR})
 set(SuperLU_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(SuperLU_ARCHIVE_FILE   superlu_${SuperLU_VERSION}.tar.gz)
-set(SuperLU_MD5_SUM        565602cf69e425874c2525f8b96e9bb1)
+set(SuperLU_MD5_SUM        b72c6309f25e9660133007b82621ba7c)
 
 #
 # TPL: SuperLU Distrib (Built by PETSc!)
 #
-set(SuperLUDist_VERSION_MAJOR  2)
-set(SuperLUDist_VERSION_MINOR  5)
+set(SuperLUDist_VERSION_MAJOR  3)
+set(SuperLUDist_VERSION_MINOR  3)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR})
 set(SuperLUDist_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(SuperLUDist_ARCHIVE_FILE   superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        2194ae8f9786e396a721cf4d41045566)
- 
+set(SuperLUDist_MD5_SUM        b72c6309f25e9660133007b82621ba7c)
+
 #
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  2)
-set(PETSc_VERSION_PATCH  7)
+set(PETSc_VERSION_MINOR  4)
+set(PETSc_VERSION_PATCH  3)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
-set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}-p${PETSc_VERSION_PATCH})
+set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(PETSc_ARCHIVE_FILE   petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        b9b5b42ffb6c619e4f7ee6b29134dc5f)
+set(PETSc_MD5_SUM        db40d8f811f5445ac510dc85ae738573)
 
 #
 # TPL: Trilinos

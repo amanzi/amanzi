@@ -80,7 +80,6 @@ if (BUILD_TESTS)
                   ${XERCES_LIBRARIES}
                   ${XERCES_ICU_LIBRARIES})
 
-
   if (ENABLE_Structured)
     list(APPEND my_tpl_libs ${CCSE_EXT_LIBRARIES})
   endif()
@@ -88,8 +87,8 @@ if (BUILD_TESTS)
 
   set(FLOWTEST "${STRUCTUREDFLOW_SOURCE_DIR}/test")
   include_directories(${FLOWTEST})
-  set(CXX_header_files_1 ${FLOWTEST}/tRS.H)
-  set(CXX_source_files_1 ${FLOWTEST}/tRS.cpp)
+  set(CXX_header_files_1 ${FLOWTEST}/RStdata.H)
+  set(CXX_source_files_1 ${FLOWTEST}/tRS.cpp ${FLOWTEST}/RStdata.cpp)
   set(F90_source_files_1 )
   set(F77_source_files_1 )
   set(FPP_source_files_1 )
