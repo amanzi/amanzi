@@ -67,6 +67,16 @@ void UpwindArithmeticMean::CalculateCoefficientsOnFaces(
       face_coef_f[0][f] += cell_coef_c[0][c] / 2.0;
     }
   }
+
+  // rescale boundary faces, as these had only one cell neighbor
+  unsigned int f_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (unsigned int f=0; f!=f_owned; ++f) {
+    AmanziMesh::Entity_ID_List cells;
+    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    if (cells.size() == 1) {
+      face_coef_f[0][f] *= 2.;
+    }
+  }
 };
 
 
