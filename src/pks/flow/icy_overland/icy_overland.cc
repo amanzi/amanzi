@@ -20,8 +20,6 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "unfrozen_fraction_evaluator.hh"
 #include "icy_height_model.hh"
 #include "icy_height_evaluator.hh"
-#include "unfrozen_fraction_relperm_evaluator.hh"
-
 
 #include "overland_head_water_content_evaluator.hh"
 #include "icy_overland.hh"
@@ -133,14 +131,6 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<const FlowRelations::UnfrozenFractionEvaluator> uf_eval =
       Teuchos::rcp_dynamic_cast<const FlowRelations::UnfrozenFractionEvaluator>(uf_eval_fe);
   uf_model_ = uf_eval->get_Model();
-
-  // -- unfrozen fraction Krel -- allows some water to be held in ice
-  S->RequireField("unfrozen_fraction_relperm")->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList uf_kr_plist = plist_->sublist("unfrozen fraction rel perm evaluator");
-  Teuchos::RCP<FlowRelations::UnfrozenFractionRelPermEvaluator> uf_kr_eval =
-      Teuchos::rcp(new FlowRelations::UnfrozenFractionRelPermEvaluator(uf_kr_plist));
-  S->SetFieldEvaluator("unfrozen_fraction_relperm", uf_kr_eval);
 
   // -- temperature -- fix me!
   S->RequireField("surface_temperature")->SetMesh(mesh_)

@@ -30,13 +30,17 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
   RelPermEvaluator(const RelPermEvaluator& other);
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
+  
+  Teuchos::RCP<WRMPartition> get_WRMs() { return wrms_; }
+
+ protected:
+  
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
-
-  Teuchos::RCP<WRMPartition> get_WRMs() { return wrms_; }
 
  protected:
   void InitializeFromPlist_();
@@ -45,7 +49,12 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
   Key sat_key_;
   Key dens_key_;
   Key visc_key_;
+  Key surf_rel_perm_key_;
 
+  bool is_dens_visc_;
+  bool is_surf_;
+  Key surf_mesh_key_;
+  
   double perm_scale_;
   double min_val_;
 };
