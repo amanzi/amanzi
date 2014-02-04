@@ -50,7 +50,7 @@ struct RSAMRdata
       : property_dataPtr(pdat_ptr),
         property_dependents(dependents),
         property_ctx(ctx),
-        eval_time(-1) {}
+        eval_time(-666) {}
     virtual const MFTower* UpdateProperty(Real t);
     virtual void UpdateDependents(Real t)
       {
