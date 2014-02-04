@@ -6,40 +6,43 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_UNFROZEN_FRACTION_KR_EVALUATOR_
-#define AMANZI_FLOWRELATIONS_UNFROZEN_FRACTION_KR_EVALUATOR_
+#ifndef AMANZI_FLOWRELATIONS_SURFACE_KR_EVALUATOR_
+#define AMANZI_FLOWRELATIONS_SURFACE_KR_EVALUATOR_
 
 #include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
+#include "surface_relperm_model.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class UnfrozenFractionRelPermModel;
+class SurfaceRelPermModel;
 
-class UnfrozenFractionRelPermEvaluator : public SecondaryVariableFieldEvaluator {
+class SurfaceRelPermEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
-  UnfrozenFractionRelPermEvaluator(Teuchos::ParameterList& plist);
-  UnfrozenFractionRelPermEvaluator(const UnfrozenFractionRelPermEvaluator& other);
+  SurfaceRelPermEvaluator(Teuchos::ParameterList& plist);
+  SurfaceRelPermEvaluator(const SurfaceRelPermEvaluator& other);
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
+  Teuchos::RCP<SurfaceRelPermModel> get_Model() { return model_; }
+
+ protected:
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
-  Teuchos::RCP<UnfrozenFractionRelPermModel> get_Model() { return model_; }
-
-protected:
-  Teuchos::RCP<UnfrozenFractionRelPermModel> model_;
+ protected:
+  Teuchos::RCP<SurfaceRelPermModel> model_;
+  bool is_temp_;
   Key uf_key_;
   Key h_key_;
 
 private:
-  static Utils::RegisteredFactory<FieldEvaluator,UnfrozenFractionRelPermEvaluator> fac_;
+  static Utils::RegisteredFactory<FieldEvaluator,SurfaceRelPermEvaluator> fac_;
 
 
 };

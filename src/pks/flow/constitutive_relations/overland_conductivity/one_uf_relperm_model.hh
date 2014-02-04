@@ -7,8 +7,8 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_UNFROZEN_FRACTION_KR_MODEL_
-#define AMANZI_FLOWRELATIONS_UNFROZEN_FRACTION_KR_MODEL_
+#ifndef AMANZI_FLOWRELATIONS_ONE_UNFROZEN_FRACTION_KR_MODEL_
+#define AMANZI_FLOWRELATIONS_ONE_UNFROZEN_FRACTION_KR_MODEL_
 
 #include "Teuchos_ParameterList.hpp"
 #include "dbc.hh"
@@ -19,9 +19,9 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class UnfrozenFractionRelPermModel : public SurfaceRelPermModel {
+class OneUFRelPermModel : public SurfaceRelPermModel {
  public:
-  UnfrozenFractionRelPermModel(Teuchos::ParameterList& list);
+  OneUFRelPermModel(Teuchos::ParameterList& list);
 
   virtual bool TemperatureDependent() { return true; }
 
@@ -42,9 +42,10 @@ class UnfrozenFractionRelPermModel : public SurfaceRelPermModel {
 
   int alpha_; // must be an even integer
   const double pi_;
+  double h_cutoff_;
 
  private:
-  static Utils::RegisteredFactory<SurfaceRelPermModel,UnfrozenFractionRelPermModel> reg_;
+  static Utils::RegisteredFactory<SurfaceRelPermModel,OneUFRelPermModel> reg_;
   
 };
 
@@ -53,3 +54,4 @@ class UnfrozenFractionRelPermModel : public SurfaceRelPermModel {
 } // namespace
 
 #endif
+

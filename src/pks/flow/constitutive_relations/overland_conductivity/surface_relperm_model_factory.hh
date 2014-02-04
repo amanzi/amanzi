@@ -7,24 +7,26 @@
    Self-registering factory for EOS implementations.
    ------------------------------------------------------------------------- */
 
-#ifndef PK_FLOW_EOS_FACTORY_HH_
-#define PK_FLOW_EOS_FACTORY_HH_
+#ifndef PK_FLOW_SURFACE_RELPERM_FACTORY_HH_
+#define PK_FLOW_SURFACE_RELPERM_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "eos.hh"
+#include "surface_relperm_model.hh"
 #include "factory.hh"
 
 namespace Amanzi {
-namespace Relations {
+namespace Flow {
+namespace FlowRelations {
 
-class EOSFactory : public Utils::Factory<EOS> {
+class SurfaceRelPermModelFactory : public Utils::Factory<SurfaceRelPermModel> {
 
 public:
-  Teuchos::RCP<EOS> createEOS(Teuchos::ParameterList& plist);
+  Teuchos::RCP<SurfaceRelPermModel> createModel(Teuchos::ParameterList& plist);
 };
 
+} // namespace
 } // namespace
 } // namespace
 

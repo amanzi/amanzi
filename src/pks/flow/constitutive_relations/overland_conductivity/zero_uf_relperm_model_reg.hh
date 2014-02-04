@@ -6,15 +6,15 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "unfrozen_fraction_evaluator.hh"
+#include "zero_uf_relperm_model.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
 // registry of method
-Utils::RegisteredFactory<FieldEvaluator,UnfrozenFractionEvaluator>
-UnfrozenFractionEvaluator::fac_("unfrozen fraction");
+Utils::RegisteredFactory<SurfaceRelPermModel,ZeroUFRelPermModel>
+ZeroUFRelPermModel::reg_("unfrozen fraction rel perm, limit zero");
 
 } //namespace
 } //namespace

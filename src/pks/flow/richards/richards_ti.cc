@@ -173,8 +173,21 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   Teuchos::RCP<const Epetra_Vector> gvec =
       S_next_->GetConstantVectorData("gravity");
 
+  Teuchos::RCP<CompositeVector> rel_perm_modified =
+      Teuchos::rcp(new CompositeVector(*rel_perm));
+  *rel_perm_modified = *rel_perm;
+
+  {
+    Epetra_MultiVector& rel_perm_mod_f = *rel_perm_modified->ViewComponent("face",false);
+    unsigned int nfaces = rel_perm_mod_f.MyLength();
+    for (unsigned int f=0; f!=nfaces; ++f) {
+      rel_perm_mod_f[0][f] = std::max(rel_perm_mod_f[0][f], 1.e-18);
+    }
+  }      
+  
   // Update the preconditioner with darcy and gravity fluxes
-  mfd_preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+  //  mfd_preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+  mfd_preconditioner_->CreateMFDstiffnessMatrices(rel_perm_modified.ptr());
   mfd_preconditioner_->CreateMFDrhsVectors();
   AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), mfd_preconditioner_.ptr());
 

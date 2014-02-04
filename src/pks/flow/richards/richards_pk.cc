@@ -538,7 +538,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   }
 
   if (update_perm) {
-    // patch up the BCs -- move rel perm on boundary_faces into uw_rel_perm on faces
+    // Move rel perm on boundary_faces into uw_rel_perm on faces
     const Epetra_Import& vandelay = mesh_->exterior_face_importer();
     const Epetra_MultiVector& rel_perm_bf =
         *rel_perm->ViewComponent("boundary_face",false);
@@ -547,41 +547,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
     }
 
-    // patch up the surface, use 1
-    //    if (coupled_to_surface_via_head_ || coupled_to_surface_via_flux_) {
-    if (S->HasMesh("surface")) {
-      Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
-      unsigned int ncells_surface = surface->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-      const Epetra_MultiVector& pres_f = *S->GetFieldData(key_)->ViewComponent("face",false);
-      if (S->HasFieldEvaluator("unfrozen_fraction")) {
-        Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
-        S->GetFieldEvaluator("unfrozen_fraction_relperm")->HasFieldChanged(S.ptr(), name_);
-        const Epetra_MultiVector& uf_krel = *S->GetFieldData("unfrozen_fraction_relperm")
-            ->ViewComponent("cell",false);
-        for (unsigned int c=0; c!=ncells_surface; ++c) {
-          // -- get the surface cell's equivalent subsurface face
-          AmanziMesh::Entity_ID f =
-              surface->entity_get_parent(AmanziMesh::CELL, c);
-          
-          // -- set that value to the unfrozen fraction to ensure we
-          // -- don't advect ice
-          uw_rel_perm_f[0][f] = uf_krel[0][c];
-        }
-      } else {
-        Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
-        for (unsigned int c=0; c!=ncells_surface; ++c) {
-          // -- get the surface cell's equivalent subsurface face
-          AmanziMesh::Entity_ID f =
-              surface->entity_get_parent(AmanziMesh::CELL, c);
-
-          // -- set that value to 1
-          uw_rel_perm_f[0][f] = 1.0;
-        }
-      }
-    }
-
-    // upwind DEBUG ME... shouldn't this be AFTER the below surface calls?
+    // Upwind, only overwriting boundary faces if the wind says to do so.
     upwinding_->Update(S);
   }
 
