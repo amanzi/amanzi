@@ -94,7 +94,8 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
 
   // Determine the face coefficient of local faces.
   // These parameters may be key to a smooth convergence rate near zero flux.
-  double flow_eps_factor = 1.e-6;
+  double flow_eps_factor = 1.;
+  double min_flow_eps = 1.e-8;
   double coefs[2];
 
   int nfaces = face_coef->size("face",false);
@@ -121,7 +122,7 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
     // near zero flux
     double flow_eps = std::max(( 1.0 - std::abs(coefs[0] - coefs[1]) )
             * std::sqrt(coefs[0] * coefs[1]) * flow_eps_factor,
-            1.e-8);
+            min_flow_eps);
 
     // Determine the coefficient
     if (abs(flux_v[0][f]) >= flow_eps) {
