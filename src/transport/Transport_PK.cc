@@ -452,6 +452,10 @@ int Transport_PK::Advance(double dT_MPC)
                  << ") ||r||=" << residual / number_components
                  << " itrs=" << num_itrs / number_components << std::endl;
     }
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      int i =dispersion_matrix_->nfailed;
+      if (i > 0) *vo_->os() << "failed matrices: " << (100 * i) / ncells_owned << "%" << endl;
+    }
   }
   return 0;
 }
