@@ -1365,9 +1365,13 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
   }
 
   int nLevs = rs_data.nLevs;
-
   rs_data.FillStateBndry(pressure,t); // Set new boundary data
-  if (!rs_data.IsSaturated()) {
+
+  if (rs_data.IsSaturated()) {
+    for (int n=0; n<nComp; ++n) {
+      rhoSat.SetVal(rho[n],n,1,1);
+    }
+  } else {
     rs_data.calcInvPressure(rhoSat,pressure);
   }
 
