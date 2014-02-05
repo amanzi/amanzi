@@ -13,6 +13,8 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 ------------------------------------------------------------------------- */
 
 #include <iostream>
+#include <unistd.h>
+#include <sys/resource.h>
 #include "errors.hh"
 
 #include "global_verbosity.hh"
@@ -222,6 +224,74 @@ void Coordinator::finalize() {
 
   // flush observations to make sure they are saved
   observations_->Flush();
+}
+
+
+double rss_usage() { // return ru_maxrss in MBytes
+#if (defined(__unix__) || defined(__unix) || defined(unix) || defined(__APPLE__) || defined(__MACH__))
+  struct rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+#if (defined(__APPLE__) || defined(__MACH__))
+  return static_cast<double>(usage.ru_maxrss)/1024.0/1024.0;
+#else
+  return static_cast<double>(usage.ru_maxrss)/1024.0;
+#endif
+#else
+  return 0.0;
+#endif
+}
+
+
+void Coordinator::report_memory() {
+  // report the memory high water mark (using ru_maxrss)
+  // this should be called at the very end of a simulation
+  if (out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_MEDIUM,true)) {
+    double global_ncells(0.0);
+    double local_ncells(0.0);
+    for (State::mesh_iterator mesh = S_->mesh_begin(); mesh != S_->mesh_end(); ++mesh) {
+      Epetra_Map cell_map = (mesh->second.first)->cell_epetra_map(false);
+      global_ncells += cell_map.NumGlobalElements();
+      local_ncells += cell_map.NumMyElements();
+    }    
+
+    double mem = rss_usage();
+    
+    double percell(mem);
+    if (local_ncells > 0) {
+      percell = mem/local_ncells;
+    }
+
+    double max_percell(0.0);
+    double min_percell(0.0);
+    comm_->MinAll(&percell,&min_percell,1);
+    comm_->MaxAll(&percell,&max_percell,1);
+
+    double total_mem(0.0);
+    double max_mem(0.0);
+    double min_mem(0.0);
+    comm_->SumAll(&mem,&total_mem,1);
+    comm_->MinAll(&mem,&min_mem,1);
+    comm_->MaxAll(&mem,&max_mem,1);
+    
+    *out_ << endl;
+    *out_ << "Memory usage (high water mark):" << endl;
+    *out_ << std::fixed << std::setprecision(1);
+    *out_ << "  Maximum per core:   " << std::setw(7) << max_mem 
+          << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
+          << " Bytes" << endl;
+    *out_ << "  Minumum per core:   " << std::setw(7) << min_mem 
+          << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
+         << " Bytes" << endl;
+    *out_ << "  Total:              " << std::setw(7) << total_mem 
+          << " MBytes,  total per cell:   " << std::setw(7) << total_mem/global_ncells*1024*1024 
+          << " Bytes" << endl;
+  }   
+  
+  
+
+
+
+  
 }
 
 
