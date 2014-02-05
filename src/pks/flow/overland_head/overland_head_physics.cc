@@ -47,12 +47,6 @@ void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres_elev, g.ptr());
-
-
-  std::cout << std::setprecision(15) << "FUCK RESIDUAL F(237): h+z, r = " << (*pres_elev->ViewComponent("face",false))[0][237] << ", " 
-            << (*g->ViewComponent("face",false))[0][237] << std::endl;
-  std::cout << std::setprecision(15) << "            C(78,79): h+z = " << (*pres_elev->ViewComponent("cell",false))[0][78] << ", "
-            << (*pres_elev->ViewComponent("cell",false))[0][79] << std::endl;
 };
 
 

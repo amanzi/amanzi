@@ -40,7 +40,6 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   plist_->sublist("PKs").sublist(names[1]).sublist("Diffusion PC").set("coupled to surface", true);
   plist_->sublist("PKs").sublist(names[2]).sublist("Diffusion PC").set("TPFA", true);
   plist_->sublist("PKs").sublist(names[3]).sublist("Diffusion PC").set("TPFA", true);
-  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
 
   // grab the meshes
   surf_mesh_ = S->GetMesh("surface");
