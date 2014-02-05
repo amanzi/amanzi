@@ -38,12 +38,21 @@ void MatrixMFD_TPFA_ScaledConstraint::CreateMFDstiffnessMatrices(
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
 
-    Aff_cells_.clear();
-    Afc_cells_.clear();
-    Acf_cells_.clear();
-    Acc_cells_.clear();
-
     int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+    if (Aff_cells_.size() != ncells) {
+      Aff_cells_.resize(static_cast<size_t>(ncells));
+    }
+    if (Afc_cells_.size() != ncells) {
+      Afc_cells_.resize(static_cast<size_t>(ncells));
+    }
+    if (Acf_cells_.size() != ncells) {
+      Acf_cells_.resize(static_cast<size_t>(ncells));
+    }
+    if (Acc_cells_.size() != ncells) {
+      Acc_cells_.resize(static_cast<size_t>(ncells));
+    }     
+
     for (int c=0; c!=ncells; ++c) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
@@ -73,10 +82,10 @@ void MatrixMFD_TPFA_ScaledConstraint::CreateMFDstiffnessMatrices(
         matsum += colsum;
       }
 
-      Aff_cells_.push_back(Bff);
-      Afc_cells_.push_back(Bfc);
-      Acf_cells_.push_back(Bcf);
-      Acc_cells_.push_back(matsum);
+      Aff_cells_[c] = Bff;
+      Afc_cells_[c] = Bfc;
+      Acf_cells_[c] = Bcf;
+      Acc_cells_[c] = matsum;
     }
   }
 }

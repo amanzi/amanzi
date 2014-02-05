@@ -272,8 +272,11 @@ void Coordinator::report_memory() {
     comm_->SumAll(&mem,&total_mem,1);
     comm_->MinAll(&mem,&min_mem,1);
     comm_->MaxAll(&mem,&max_mem,1);
-    
-    *out_ << endl;
+
+    Teuchos::OSTab tab = getOSTab();
+
+    *out_ << "======================================================================" << endl;
+    *out_ << "All meshes combined have " << global_ncells << " cells." << endl;
     *out_ << "Memory usage (high water mark):" << endl;
     *out_ << std::fixed << std::setprecision(1);
     *out_ << "  Maximum per core:   " << std::setw(7) << max_mem 
@@ -285,14 +288,27 @@ void Coordinator::report_memory() {
     *out_ << "  Total:              " << std::setw(7) << total_mem 
           << " MBytes,  total per cell:   " << std::setw(7) << total_mem/global_ncells*1024*1024 
           << " Bytes" << endl;
-  }   
-  
-  
-
-
+  }
 
   
+  double doubles_count(0.0);
+  for (State::field_iterator field=S_->field_begin(); field!=S_->field_end(); ++field) {
+    doubles_count += static_cast<double>(field->second->GetLocalElementCount());
+  }
+  double global_doubles_count(0.0);
+  double min_doubles_count(0.0);
+  double max_doubles_count(0.0);
+  comm_->SumAll(&doubles_count,&global_doubles_count,1);
+  comm_->MinAll(&doubles_count,&min_doubles_count,1);
+  comm_->MaxAll(&doubles_count,&max_doubles_count,1);
+
+  Teuchos::OSTab tab = getOSTab();
+  *out_ << "Doubles allocated in state fields " << endl;
+  *out_ << "  Maximum per core:   " << std::setw(7) << max_doubles_count*8/1024/1024 << " MBytes" << endl;
+  *out_ << "  Minimum per core:   " << std::setw(7) << min_doubles_count*8/1024/1024 << " MBytes" << endl; 
+  *out_ << "  Total:              " << std::setw(7) << global_doubles_count*8/1024/1024 << " MBytes" <<endl;
 }
+
 
 
 void Coordinator::read_parameter_list() {
@@ -479,6 +495,8 @@ void Coordinator::cycle_driver() {
     throw e;
   }
 #endif
+
+  report_memory();
 
   finalize();
 
