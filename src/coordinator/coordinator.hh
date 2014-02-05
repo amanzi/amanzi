@@ -42,6 +42,7 @@ public:
   void setup();
   void initialize();
   void finalize();
+  void report_memory();
   bool advance(double dt);
   void visualize(bool force=false);
   void checkpoint(double dt, bool force=false);
