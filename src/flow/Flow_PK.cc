@@ -27,6 +27,21 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
+* default constructor that initializes all pointers to NULL
+****************************************************************** */
+Flow_PK::Flow_PK() :
+    bc_pressure(NULL),
+    bc_flux(NULL),
+    bc_head(NULL),
+    bc_seepage(NULL),
+    src_sink(NULL),
+    ti_specs(NULL),
+    vo_(NULL),
+    passwd_("state")
+{
+}
+
+/* ******************************************************************
 * Initiazition of fundamental flow sturctures.                                              
 ****************************************************************** */
 void Flow_PK::Init()
