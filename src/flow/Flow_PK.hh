@@ -40,7 +40,7 @@ double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
 
 class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
  public:
-  Flow_PK() { passwd_ = "state"; }
+  Flow_PK();
   virtual ~Flow_PK() {};
 
   // main methods
