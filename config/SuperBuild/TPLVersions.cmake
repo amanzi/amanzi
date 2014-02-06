@@ -35,6 +35,7 @@
 #   0.91.11      - updated PFlotran to commit 1afe88d.
 #   0.91.12      - updated MSTK to version 2.10
 #   0.91.13      - updated METIS to 5.1.0, ParMetis to 4.0.3a, SuperLU to 4.3, SuperLUDist to 3.3 and PETSc to 3.4.3
+#   0.91.14      - updated Trilinos to 10.6.1 and MSTK to 2.11rc2
 #
 
 include(CMakeParseArguments)
@@ -253,11 +254,11 @@ set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
 #
 set(MSTK_VERSION_MAJOR 2)
 set(MSTK_VERSION_MINOR 11)
-set(MSTK_VERSION_PATCH rc1)
+set(MSTK_VERSION_PATCH rc2)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        dfef459e08ff4ddf6c6a1b409bdff65a)
+set(MSTK_MD5_SUM        8b7fd0a181ebe8732e8e8d718eec69d0)
 
 #
 # TPL: MOAB
