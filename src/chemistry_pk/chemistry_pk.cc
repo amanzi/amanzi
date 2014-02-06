@@ -133,7 +133,7 @@ void Chemistry_PK::InitializeChemistry(void) {
   // std::cout << "number_total_sorbed              = " << number_total_sorbed() << std::endl;
   // std::cout << "number_minerals                  = " << number_minerals() << std::endl;
   // std::cout << "number_ion_exchange_sites        = " << number_ion_exchange_sites() << std::endl;
-  // std::cout << "number_sorption_sites            = " << number_sorption_sites() << std:: endl;
+  // std::cout << "number_sorption_sites            = " << number_sorption_sites() << std:: std::endl;
   // std::cout << "using_sorption                   = " << using_sorption() << std::endl;
   // std::cout << "using_sorption_isotherms         = " << using_sorption_isotherms() << std::endl;
 
@@ -833,9 +833,9 @@ Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_extra_chemistry_output_data()
 }
 
 
-void Chemistry_PK::set_chemistry_output_names(std::vector<string>* names) {
+void Chemistry_PK::set_chemistry_output_names(std::vector<std::string>* names) {
   names->clear();
-  for (std::vector<string>::const_iterator name = aux_names_.begin();
+  for (std::vector<std::string>::const_iterator name = aux_names_.begin();
        name != aux_names_.end(); name++) {
     names->push_back(*name);
   }

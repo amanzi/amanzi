@@ -56,7 +56,7 @@ TEST(DRIVER) {
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   
-  cout << "Using mesh framework " << mesh_class << endl;
+  std::cout << "Using mesh framework " << mesh_class << std::endl;
 
   if (mesh_class == "MSTK")  
     {      

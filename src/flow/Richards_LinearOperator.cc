@@ -50,7 +50,7 @@ void Richards_PK::SolveFullySaturatedProblem(
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "saturated solver (" << solver->name() 
                << "): ||r||=" << residual << " itr=" << num_itrs 
-               << " code=" << ierr << endl;
+               << " code=" << ierr << std::endl;
   }
 }
 
@@ -97,7 +97,7 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "constraints solver (" << solver->name() 
                << "): ||r||=" << residual << " itr=" << num_itrs
-               << " code=" << ierr << endl;
+               << " code=" << ierr << std::endl;
   }
 }
 

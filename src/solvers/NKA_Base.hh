@@ -225,7 +225,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     if (s < 1.0e-8) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Dot product = " << s << ", tossing iterate" << endl;
+        *vo_->os() << "Dot product = " << s << ", tossing iterate" << std::endl;
       }
 
       // nka_relax sets pending_ to NKA_FALSE
@@ -288,7 +288,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
       } else {
         if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
           Teuchos::OSTab tab = vo_->getOSTab();
-          *vo_->os() << "Vectors are linearly dependent, hkk=" << hkk << ", tossing iterate" << endl;
+          *vo_->os() << "Vectors are linearly dependent, hkk=" << hkk << ", tossing iterate" << std::endl;
         }
 
         // The current w nearly lies in the span of the previous vectors:

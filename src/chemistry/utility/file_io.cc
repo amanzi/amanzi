@@ -18,19 +18,19 @@ using std::ios;
 using std::noskipws;
 
 FileIO::FileIO(string filename) {
-  cout << filename << endl;
+  std::cout << filename << std::endl;
   file.open(filename.c_str(), fstream::in);
   if (!file.is_open()) {
-    cout << "ERROR opening file " << filename << ".\n";
+    std::cout << "ERROR opening file " << filename << ".\n";
   }
   buffer = NULL;
 }  // end FileIO constructor
 
 FileIO::FileIO(char* filename) {
-  cout << filename << endl;
+  std::cout << filename << std::endl;
   file.open(filename, fstream::in);
   if (!file.is_open()) {
-    cout << "ERROR opening file " << filename << ".\n";
+    std::cout << "ERROR opening file " << filename << ".\n";
   }
   buffer = NULL;
 }  // end FileIO constructor
@@ -178,22 +178,22 @@ int FileIO::startsWith(char* str) {
 
 void FileIO::checkDefaultMessage(char* word, int* ierr) {
   if (ierr) {
-    cout << "\"" << word << "\" set to default value" << endl;
+    std::cout << "\"" << word << "\" set to default value" << std::endl;
   }
   *ierr = 0;
 }  // end checkDefaultMessage()
 
 void FileIO::checkErrorMessage(char* word1, char* word2, int ierr) {
   if (ierr) {
-    cout << "Error reading \"" << word1 << "\" under keyword \"" << word2 <<
-        "\"." << endl;
+    std::cout << "Error reading \"" << word1 << "\" under keyword \"" << word2 <<
+        "\"." << std::endl;
     exit(1);
   }
 }  // end checkErrorMessage()
 
 void FileIO::checkLineErrorMessage(char* word, int ierr) {
   if (ierr) {
-    cout << "Error reading in string in \"" << word << "\"." << endl;
+    std::cout << "Error reading in string in \"" << word << "\"." << std::endl;
     std::exit(1);
   }
 }  // end checkLineErrorMessage()

@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
     // *************************************//
 
     const Teuchos::ParameterList& mesh_parameter_list = driver_parameter_list.sublist("Mesh");
-    driver_parameter_list.set<string>("input file name", xmlInFileName);
+    driver_parameter_list.set<std::string>("input file name", xmlInFileName);
 
     // The Mesh list contains a "Structured" sublist or a "Unstructured" sublist, and will
     // determine which simulation driver to call
@@ -390,7 +390,7 @@ int main(int argc, char *argv[]) {
         std::ofstream out;
         out.open(obs_file.c_str(),std::ios::out);
         if (!out.good()) {
-          std::cout << "OPEN PROBLEM" << endl;
+          std::cout << "OPEN PROBLEM" << std::endl;
         }
 
         out.precision(16);
@@ -408,7 +408,7 @@ int main(int argc, char *argv[]) {
 
               if (output_observations[label][j].is_valid) {
                 if (!out.good()) {
-                  std::cout << "PROBLEM BEFORE" << endl;
+                  std::cout << "PROBLEM BEFORE" << std::endl;
                 }
                 out << label << ", "
                     << ind_obs_list.get<std::string>("Region") << ", "
@@ -417,7 +417,7 @@ int main(int argc, char *argv[]) {
                     << output_observations[label][j].time << ", "
                     << output_observations[label][j].value << '\n';
                 if (!out.good()) {
-                  std::cout << "PROBLEM AFTER" << endl;
+                  std::cout << "PROBLEM AFTER" << std::endl;
                 }
               }
             }

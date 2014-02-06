@@ -120,7 +120,7 @@ class TreeVector {
                double scalarThis);
 
   // non-inherited extras
-  void Print(ostream &os) const;
+  void Print(std::ostream &os) const;
 
  private:
   // Init's version of PushBack, which does not add to the space.

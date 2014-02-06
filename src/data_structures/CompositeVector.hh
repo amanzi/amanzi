@@ -352,7 +352,7 @@ public:
   // -- Utilities --
 
   // Write components to outstream.
-  void Print(ostream &os) const;
+  void Print(std::ostream &os) const;
 
  private:
   void InitMap_(const CompositeVectorSpace& space);
@@ -464,7 +464,7 @@ CompositeVector::Norm2(double* norm) const {
 }
 
 inline void
-CompositeVector::Print(ostream &os) const {
+CompositeVector::Print(std::ostream &os) const {
   return mastervec_->Print(os);
 }
 

@@ -143,21 +143,21 @@ void Transport_PK::CheckDivergenceProperty()
     /* verify that divergence complies with the flow model  */
     int flag = 0;
     if (TRANSPORT_AMANZI_VERSION == 1 && fabs(div) > tests_tolerance * umax) {
-      cout << "TRANSPORT: The flow violates conservation property." << endl;
-      cout << "    Modify either flow convergence criteria or transport tolerance." << endl;
+      std::cout << "TRANSPORT: The flow violates conservation property." << std::endl;
+      std::cout << "    Modify either flow convergence criteria or transport tolerance." << std::endl;
       flag = 1;
     }
     if (TRANSPORT_AMANZI_VERSION == 2 && div < -tests_tolerance * umax) {
-      cout << "TRANSPORT: The flow has large artificial sinks."<< endl;
-      cout << "cell = " << c << " div = " << div << " umax = " << umax << endl;
+      std::cout << "TRANSPORT: The flow has large artificial sinks."<< std::endl;
+      std::cout << "cell = " << c << " div = " << div << " umax = " << umax << std::endl;
       flag = 1;
     }
 
     if (flag && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
-      cout << "    MyPID = " << MyPID << endl;
-      cout << "    cell  = " << c << endl;
-      cout << "    divergence = " << div << endl;
-      cout << "    maximum velocity = " << umax << endl;
+      std::cout << "    MyPID = " << MyPID << std::endl;
+      std::cout << "    cell  = " << c << std::endl;
+      std::cout << "    divergence = " << div << std::endl;
+      std::cout << "    maximum velocity = " << umax << std::endl;
       Errors::Message msg;
       msg << "Velocity field is not divergence free " << "\n";
       Exceptions::amanzi_throw(msg);
@@ -174,9 +174,9 @@ void Transport_PK::CheckDivergenceProperty()
     error_max = global_max;
 #endif
     if (!MyPID) {
-      cout << "Transport_PK: " << endl;
-      cout << "    maximum (divergence / flux) = " << error_max << endl;
-      cout << "    average (divergence / flux) = " << error_avg << endl;
+      std::cout << "Transport_PK: " << std::endl;
+      std::cout << "    maximum (divergence / flux) = " << error_max << std::endl;
+      std::cout << "    average (divergence / flux) = " << error_avg << std::endl;
     }
   }
 }
@@ -252,12 +252,12 @@ void Transport_PK::CheckGEDproperty(Epetra_MultiVector& tracer) const
   if (TRANSPORT_AMANZI_VERSION == 1) {
     for (i = 0; i < num_components; i++) {
       if (tr_min[i] < 0) {
-        cout << "Transport_PK: concentration violates GED property" << endl;
-        cout << "    Make an Amanzi ticket or turn off internal transport tests" << endl;
-        cout << "    MyPID = " << MyPID << endl;
-        cout << "    component = " << i << endl;
-        cout << "    time = " << T_physics << endl;
-        cout << "    min/max values = " << tr_min[i] << " " << tr_max[i] << endl;
+        std::cout << "Transport_PK: concentration violates GED property" << std::endl;
+        std::cout << "    Make an Amanzi ticket or turn off internal transport tests" << std::endl;
+        std::cout << "    MyPID = " << MyPID << std::endl;
+        std::cout << "    component = " << i << std::endl;
+        std::cout << "    time = " << T_physics << std::endl;
+        std::cout << "    min/max values = " << tr_min[i] << " " << tr_max[i] << std::endl;
 
         Errors::Message msg;
         msg << "Concentration violates GED property." << "\n";
@@ -282,16 +282,16 @@ void Transport_PK::CheckTracerBounds(Epetra_MultiVector& tracer,
   for (int c = 0; c < ncells_owned; c++) {
     double value = tracer[component][c];
     if (value < lower_bound - tol || value > upper_bound + tol) {
-      cout << "Transport_PK: tracer violates bounds" << endl;
-      cout << "    Make an Amanzi ticket or turn off internal transport tests" << endl;
-      cout << "    MyPID = " << MyPID << endl;
-      cout << "    component = " << component << endl;
-      cout << "    simulation time = " << T_physics << endl;
-      cout << "      cell = " << c << endl;
-      cout << "      center = " << mesh_->cell_centroid(c) << endl;
-      cout << "      limiter = " << (*limiter_)[c] << endl;
-      cout << "      value (old) = " << tcc_prev[component][c] << endl;
-      cout << "      value (new) = " << value << endl;
+      std::cout << "Transport_PK: tracer violates bounds" << std::endl;
+      std::cout << "    Make an Amanzi ticket or turn off internal transport tests" << std::endl;
+      std::cout << "    MyPID = " << MyPID << std::endl;
+      std::cout << "    component = " << component << std::endl;
+      std::cout << "    simulation time = " << T_physics << std::endl;
+      std::cout << "      cell = " << c << std::endl;
+      std::cout << "      center = " << mesh_->cell_centroid(c) << std::endl;
+      std::cout << "      limiter = " << (*limiter_)[c] << std::endl;
+      std::cout << "      value (old) = " << tcc_prev[component][c] << std::endl;
+      std::cout << "      value (new) = " << value << std::endl;
 
       Errors::Message msg;
       msg << "Tracer violates bounds." << "\n";

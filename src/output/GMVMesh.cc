@@ -101,7 +101,7 @@ void open_data_file(std::string meshfile,
                     unsigned int cycleno, 
                     unsigned int digits) 
 {
-  string suffixstr(digits+1,'.');
+  std::string suffixstr(digits+1,'.');
   suffix_no(suffixstr, cycleno);
   filename.append(suffixstr);
     
@@ -125,7 +125,7 @@ void open_data_file(const AmanziMesh::Mesh &mesh_map, std::string filename, unsi
   unsigned int num_nodes = mesh_map.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
   unsigned int num_cells = mesh_map.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
-  string suffixstr(digits+1,'.');
+  std::string suffixstr(digits+1,'.');
   suffix_no(suffixstr, cycleno);
   filename.append(suffixstr); 
   write_mesh_to_file_(mesh_map, filename);

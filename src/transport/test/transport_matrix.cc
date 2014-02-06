@@ -46,7 +46,7 @@ SUITE(DISPERSION_MATRIX) {
       comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
       /* read parameter list */
-      string xmlFileName = "test/transport_matrix.xml";
+      std::string xmlFileName = "test/transport_matrix.xml";
 
       ParameterXMLFileReader xmlreader(xmlFileName);
       plist = xmlreader.getParameters();
@@ -141,7 +141,7 @@ SUITE(DISPERSION_MATRIX) {
 
   /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_TPFA) {
-    cout << endl << "Test: TPFA matrix (no spatial convergence)" << endl;
+    std::cout << std::endl << "Test: TPFA matrix (no spatial convergence)" << std::endl;
     Init();
 
     /* generate a dispersion matrix */
@@ -166,13 +166,13 @@ SUITE(DISPERSION_MATRIX) {
     b.Norm2(&bnorm);
     r.Norm2(&residual);
     residual /= bnorm;
-    cout << "Relative residual: " << residual << endl;
+    std::cout << "Relative residual: " << residual << std::endl;
     CHECK(residual < 0.5);
   }
 
   /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_MFD) {
-    cout << endl << "Test: MFD matrix" << endl;
+    std::cout << std::endl << "Test: MFD matrix" << std::endl;
     Init();
 
     /* generate a dispersion matrix */
@@ -196,13 +196,13 @@ SUITE(DISPERSION_MATRIX) {
     double bnorm, residual; 
     b.Norm2(&bnorm);
     r.Norm2(&residual);
-    cout << "Relative residual: " << residual << endl;
+    std::cout << "Relative residual: " << residual << std::endl;
     CHECK(residual < 0.5);
   }
 
   /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_NLFV) {
-    cout << endl << "Test: NLFV matrix (spartial convergence)" << endl;
+    std::cout << std::endl << "Test: NLFV matrix (spartial convergence)" << std::endl;
     Init();
 
     /* generate a dispersion matrix */
@@ -234,13 +234,13 @@ SUITE(DISPERSION_MATRIX) {
     b.Norm2(&bnorm);
     r.Norm2(&residual);
     residual /= bnorm;
-    cout << "Relative residual: " << residual << endl;
+    std::cout << "Relative residual: " << residual << std::endl;
     CHECK(residual < 0.2);
   }
 
   /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_FACTORY) {
-    cout << endl << "Test: Factory of matrices" << endl;
+    std::cout << std::endl << "Test: Factory of matrices" << std::endl;
     Init();
 
     /* generate a dispersion matrix */
@@ -268,13 +268,13 @@ SUITE(DISPERSION_MATRIX) {
     b.Norm2(&bnorm);
     r.Norm2(&residual);
     residual /= bnorm;
-    cout << "Relative residual: " << residual << endl;
+    std::cout << "Relative residual: " << residual << std::endl;
     CHECK(residual < 0.5);
   }
 
   /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_PICARD) {
-    cout << endl << "Test: Nonlinear convergence" << endl;
+    std::cout << std::endl << "Test: Nonlinear convergence" << std::endl;
     Init();
 
     /* generate a dispersion matrix */
@@ -316,7 +316,7 @@ SUITE(DISPERSION_MATRIX) {
 
       u.Norm2(&snorm);
       residual = solver->TrueResidual(b, u);
-      cout << "||r||=" << residual << "  ||u||=" << snorm << endl;
+      std::cout << "||r||=" << residual << "  ||u||=" << snorm << std::endl;
       CHECK(residual < 0.12 / pow(1.7, double(n)));
 
       solver->ApplyInverse(b, u);
@@ -340,7 +340,7 @@ SUITE(DISPERSION_MATRIX) {
 
   /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_SOLVER) {
-    cout << endl << "Test: NLFV coupled with Newton" << endl;
+    std::cout << std::endl << "Test: NLFV coupled with Newton" << std::endl;
     Init();
 
     /* populate the solution guess and right-hand side */

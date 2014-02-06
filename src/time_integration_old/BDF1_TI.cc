@@ -382,10 +382,10 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   Epetra_Vector du(map);
   Epetra_Vector u_tmp(map);
 
-  // cout<<"Check initial guess\n";
-  // cout.precision(16);
-  // for (int i=0; i<12; i++) cout<<u[i]<<"\n";
-  // cout<<endl;
+  // std::cout<<"Check initial guess\n";
+  // std::cout.precision(16);
+  // for (int i=0; i<12; i++) std::cout<<u[i]<<"\n";
+  // std::cout<<std::endl;
 
 
   Teuchos::RCP<NOX::Epetra::Vector> preconditioned_f =
@@ -748,7 +748,7 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
 
   if (status == NOX::StatusTest::Converged) {
     // if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) 
-    utils.out() << "Test Passed!" << endl;
+    utils.out() << "Test Passed!" << std::endl;
     
      // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
@@ -761,7 +761,7 @@ void BDF1Dae::solve_bce_jfnk(double t, double h, Epetra_Vector& u0, Epetra_Vecto
   }
   else 
   {
-    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) utils.out() << "Nonlinear solver failed to converge!" << endl;
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) utils.out() << "Nonlinear solver failed to converge!" << std::endl;
     throw state.mitr+1;
    }
 

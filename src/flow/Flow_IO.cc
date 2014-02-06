@@ -34,7 +34,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
   // Process main one-line options (not sublists)
   atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
  
-  string mfd3d_method_name = plist.get<string>("discretization method", "optimized mfd");
+  std::string mfd3d_method_name = plist.get<std::string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_); 
 
   // Create the BC objects.
@@ -52,7 +52,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
 
   // Create the source object if any
   if (plist.isSublist("source terms")) {
-    string distribution_method_name = plist.get<string>("source and sink distribution method", "none");
+    std::string distribution_method_name = plist.get<std::string>("source and sink distribution method", "none");
     ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution); 
 
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(plist.sublist("source terms", true));
@@ -65,7 +65,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
   if (plist.isSublist("initial guess pseudo time integrator")) {
     Teuchos::ParameterList& igs_list = plist.sublist("initial guess pseudo time integrator");
 
-    std::string ti_method_name = igs_list.get<string>("time integration method", "none");
+    std::string ti_method_name = igs_list.get<std::string>("time integration method", "none");
     ProcessStringTimeIntegration(ti_method_name, &ti_specs_igs_.ti_method);
     ProcessSublistTimeIntegration(igs_list, ti_method_name, ti_specs_igs_);
     ti_specs_igs_.ti_method_name = "initial guess pseudo time integrator";
@@ -84,7 +84,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
   if (plist.isSublist("steady state time integrator")) {
     Teuchos::ParameterList& sss_list = plist.sublist("steady state time integrator");
 
-    std::string ti_method_name = sss_list.get<string>("time integration method", "none");
+    std::string ti_method_name = sss_list.get<std::string>("time integration method", "none");
     ProcessStringTimeIntegration(ti_method_name, &ti_specs_sss_.ti_method);
     ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss_);
     ti_specs_sss_.ti_method_name = "steady state time integrator";
@@ -100,14 +100,14 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
 
   } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "steady-state calculation was not requested." << endl;
+    *vo_->os() << "steady-state calculation was not requested." << std::endl;
   }
 
   // Time integrator for period III, called transient time integrator
   if (plist.isSublist("transient time integrator")) {
     Teuchos::ParameterList& trs_list = plist.sublist("transient time integrator");
 
-    string ti_method_name = trs_list.get<string>("time integration method", "none");
+    std::string ti_method_name = trs_list.get<std::string>("time integration method", "none");
     ProcessStringTimeIntegration(ti_method_name, &ti_specs_trs_.ti_method);
     ProcessSublistTimeIntegration(trs_list, ti_method_name, ti_specs_trs_);
     ti_specs_trs_.ti_method_name = "transient time integrator";
@@ -123,7 +123,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
 
   } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "missing sublist '\"transient time integrator'\"" << endl;
+    *vo_->os() << "missing sublist '\"transient time integrator'\"" << std::endl;
   }
 }
 
@@ -148,7 +148,7 @@ void Flow_PK::ProcessSublistTimeIntegration(
       ti_specs.pressure_lambda_constraints = olist.get<bool>("enforce pressure-lambda constraints", true);
 
       ti_specs.dT_method = 0;
-      std::string dT_name = olist.get<string>("time stepping strategy", "standard");
+      std::string dT_name = olist.get<std::string>("time stepping strategy", "standard");
       if (dT_name == "adaptive") ti_specs.dT_method = FLOW_DT_ADAPTIVE;
 
       ti_specs.dTfactor = olist.get<double>("time step increase factor", 1.0);
@@ -164,7 +164,7 @@ void Flow_PK::ProcessSublistTimeIntegration(
 
     // new way to define parameters overrides the above values.
     if (bdf1_list.isParameter("timestep controller type")) {
-      std::string dT_method_name = bdf1_list.get<string>("timestep controller type");
+      std::string dT_method_name = bdf1_list.get<std::string>("timestep controller type");
 
       ti_specs.dT_method = 0;
       if (dT_method_name == "standard") {
@@ -180,7 +180,7 @@ void Flow_PK::ProcessSublistTimeIntegration(
 
     if (list.isSublist("initialization")) {
       Teuchos::ParameterList& ini_list = list.sublist("initialization");
-      std::string name = ini_list.get<string>("method", "none");
+      std::string name = ini_list.get<std::string>("method", "none");
       ti_specs.initialize_with_darcy = (name == "saturated solver");
       ti_specs.clip_saturation = ini_list.get<double>("clipping saturation value", -1.0);
       ti_specs.clip_pressure = ini_list.get<double>("clipping pressure value", -1e+10);
@@ -298,7 +298,7 @@ std::string Flow_PK::FindStringPreconditioner(const Teuchos::ParameterList& list
   std::string name; 
 
   if (list.isParameter("preconditioner")) {
-    name = list.get<string>("preconditioner");
+    name = list.get<std::string>("preconditioner");
   } else {
     msg << "Flow PK: parameter <preconditioner> is missing either in TI or LS list.";
     Exceptions::amanzi_throw(msg);
@@ -341,7 +341,7 @@ std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list)
   std::string name; 
 
   if (list.isParameter("linear solver")) {
-    name = list.get<string>("linear solver");
+    name = list.get<std::string>("linear solver");
   } else {
     msg << "Flow PK: time integrator does not define <linear solver>.";
     Exceptions::amanzi_throw(msg);
@@ -391,7 +391,7 @@ void Flow_PK::OutputTimeHistory(
   if (plist.isParameter("plot time history") && 
       vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "saving time history in file flow_dt_history.txt..." << endl;
+    *vo_->os() << "saving time history in file flow_dt_history.txt..." << std::endl;
 
     char file_name[30];
     sprintf(file_name, "flow_dt_history_%d.txt", ti_phase_counter++);

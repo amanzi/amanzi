@@ -212,7 +212,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     if (initialized_) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << i << " ||r||=" << residual_ << endl;
+        *vo_->os() << i << " ||r||=" << residual_ << std::endl;
       }
     }
     // Check all criteria one-by-one.

@@ -41,6 +41,8 @@ void Dispersion::Init()
 
   D.resize(ncells_owned);
   for (int c = 0; c < ncells_owned; c++) D[c].init(dim, 2);
+
+  nfailed = 0;
 }
 
 

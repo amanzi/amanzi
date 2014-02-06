@@ -167,7 +167,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     file->readDouble(&size);
 #define DEBUG
 #ifdef DEBUG
-    std::cout << name << " " << charge << " " << size << endl;
+    std::cout << name << " " << charge << " " << size << std::endl;
 #endif
     g->AddPrimarySpecies(Species(id, name, charge, mol_wt, size));
   }
@@ -196,7 +196,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     file->readDouble(&charge);
     file->readDouble(&size);
 #ifdef DEBUG
-    std::cout << name << " " << charge << " " << size << endl;
+    std::cout << name << " " << charge << " " << size << std::endl;
 #endif
     // species ids
     file->getLine();
@@ -214,7 +214,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     for (unsigned int j = 0; j < species_ids.size(); j++) {
       std::cout << species_ids[j] << " ";
     }
-    std::cout << endl;
+    std::cout << std::endl;
 #endif
     // species stoichiometries
     double tempd;
@@ -229,26 +229,26 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     for (int j = 0; j < ncomp_in_rxn; j++) {
       std::cout << stoichiometries[j] << " ";
     }
-    std::cout << endl;
+    std::cout << std::endl;
 #endif
     // h2o id <- skip this
     int tempi;
     file->getLine();
     file->readInt(&tempi);
 #ifdef DEBUG
-    //    std::cout << eqcplxh2oid[i] << endl;
+    //    std::cout << eqcplxh2oid[i] << std::endl;
 #endif
     // h2o stoichiometry
     file->getLine();
     file->readDouble(&h2o_stoich);
 #ifdef DEBUG
-    std::cout << h2o_stoich << endl;
+    std::cout << h2o_stoich << std::endl;
 #endif
     // logK
     file->getLine();
     file->readDouble(&logK);
 #ifdef DEBUG
-    std::cout << logK << endl;
+    std::cout << logK << std::endl;
     std::cout << "-------------------------\n";
 #endif
     g->AddAqueousEquilibriumComplex(AqueousEquilibriumComplex(
@@ -298,7 +298,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     backward_species_ids.clear();
 
 #ifdef DEBUG
-    std::cout << "Species IDs" << endl;
+    std::cout << "Species IDs" << std::endl;
 #endif
     // species ids
     file->getLine();
@@ -316,7 +316,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     for (unsigned int j = 0; j < species_ids.size(); j++) {
       std::cout << species_ids[j] << " ";
     }
-    std::cout << endl;
+    std::cout << std::endl;
 #endif
     // species stoichiometries
     double tempd;
@@ -329,12 +329,12 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     for (int j = 0; j < ncomp_in_rxn; j++) {
       std::cout << stoichiometries[j] << " ";
     }
-    std::cout << endl;
+    std::cout << std::endl;
 #endif
 
 
 #ifdef DEBUG
-    std::cout << "Forward Reaction" << endl;
+    std::cout << "Forward Reaction" << std::endl;
 #endif
     // species ids
     file->getLine();
@@ -351,7 +351,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     for (int j = 0; j < ncomp_in_rxn; j++) {
       std::cout << forward_species_ids[j] << " ";
     }
-    std::cout << endl;
+    std::cout << std::endl;
 #endif
     // species stoichiometries
     file->getLine();
@@ -364,12 +364,12 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     for (int j = 0; j < ncomp_in_rxn; j++) {
       std::cout << forward_stoichiometries[j] << " ";
     }
-    std::cout << endl;
+    std::cout << std::endl;
 #endif
 
 
 #ifdef DEBUG
-    std::cout << "Backward Reaction" << endl;
+    std::cout << "Backward Reaction" << std::endl;
 #endif
     // species ids
     file->getLine();
@@ -386,7 +386,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     for (int j = 0; j < ncomp_in_rxn; j++) {
       std::cout << backward_species_ids[j] << " ";
     }
-    std::cout << endl;
+    std::cout << std::endl;
 #endif
     // species stoichiometries
     file->getLine();
@@ -399,15 +399,15 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     for (int j = 0; j < ncomp_in_rxn; j++) {
       std::cout << backward_stoichiometries[j] << " ";
     }
-    std::cout << endl;
+    std::cout << std::endl;
 #endif
 
     // h2o stoichiometry
     file->getLine();
     file->readDouble(&h2o_stoich);
 #ifdef DEBUG
-    std::cout << "H2O ID" << endl;
-    std::cout << h2o_stoich << endl;
+    std::cout << "H2O ID" << std::endl;
+    std::cout << h2o_stoich << std::endl;
 #endif
 
     // kf
@@ -417,8 +417,8 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     file->getLine();
     file->readDouble(&kb);
 #ifdef DEBUG
-    std::cout << "kf: " << kf << endl;
-    std::cout << "kb: " << kb << endl;
+    std::cout << "kf: " << kf << std::endl;
+    std::cout << "kb: " << kb << std::endl;
     std::cout << "-------------------------\n";
 #endif
 
@@ -463,14 +463,14 @@ static void readChemistryFromFile(string filename, Beaker* g) {
       name = word;
 
 #ifdef DEBUG
-      std::cout << "Surface Complex: " << name << endl;
+      std::cout << "Surface Complex: " << name << std::endl;
 #endif
 
       // charge
       file->readDouble(&charge);
 
 #ifdef DEBUG
-      std::cout << "Surface Complex Species IDs" << endl;
+      std::cout << "Surface Complex Species IDs" << std::endl;
 #endif
 
       // species ids
@@ -489,7 +489,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
       for (unsigned int j = 0; j < species_ids.size(); j++) {
         std::cout << species_ids[j] << " ";
       }
-      std::cout << endl;
+      std::cout << std::endl;
 #endif
       // species stoichiometries
       double tempd;
@@ -502,7 +502,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
       for (int j = 0; j < ncomp_in_rxn; j++) {
         std::cout << stoichiometries[j] << " ";
       }
-      std::cout << endl;
+      std::cout << std::endl;
 #endif
 
       // skip h2o id
@@ -512,8 +512,8 @@ static void readChemistryFromFile(string filename, Beaker* g) {
       file->getLine();
       file->readDouble(&h2o_stoich);
 #ifdef DEBUG
-      std::cout << "H2O ID" << endl;
-      std::cout << h2o_stoich << endl;
+      std::cout << "H2O ID" << std::endl;
+      std::cout << h2o_stoich << std::endl;
 #endif
 
       // skip free site id
@@ -524,15 +524,15 @@ static void readChemistryFromFile(string filename, Beaker* g) {
       file->getLine();
       file->readDouble(&free_site_stoich);
 #ifdef DEBUG
-      std::cout << "Free Site Stoichiometry" << endl;
-      std::cout << free_site_stoich << endl;
+      std::cout << "Free Site Stoichiometry" << std::endl;
+      std::cout << free_site_stoich << std::endl;
 #endif
 
       // logK
       file->getLine();
       file->readDouble(&logK);
 #ifdef DEBUG
-      std::cout << logK << endl;
+      std::cout << logK << std::endl;
       std::cout << "-------------------------\n";
 #endif
 
@@ -560,7 +560,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     file->readWord(word);
     name = word;
 #ifdef DEBUG
-    std::cout << name << endl;
+    std::cout << name << std::endl;
 #endif
     // species ids
     file->getLine();
@@ -578,7 +578,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     for (unsigned int j = 0; j < species_ids.size(); j++) {
       std::cout << species_ids[j] << " ";
     }
-    std::cout << endl;
+    std::cout << std::endl;
 #endif
     // species stoichiometries
     double tempd;
@@ -593,47 +593,47 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     for (int j = 0; j < ncomp_in_rxn; j++) {
       std::cout << stoichiometries[j] << " ";
     }
-    std::cout << endl;
+    std::cout << std::endl;
 #endif
     // h2o id <- skip this
     int tempi;
     file->getLine();
     file->readInt(&tempi);
 #ifdef DEBUG
-    //    std::cout << kinmnrlh2oid[i] << endl;
+    //    std::cout << kinmnrlh2oid[i] << std::endl;
 #endif
     // h2o stoichiometry
     file->getLine();
     file->readDouble(&h2o_stoich);
 #ifdef DEBUG
-    std::cout << h2o_stoich << endl;
+    std::cout << h2o_stoich << std::endl;
 #endif
     // logK
     file->getLine();
     file->readDouble(&logK);
 #ifdef DEBUG
-    std::cout << logK << endl;
+    std::cout << logK << std::endl;
 #endif
     // molar vol
     double molar_vol;
     file->getLine();
     file->readDouble(&molar_vol);
 #ifdef DEBUG
-    std::cout << molar_vol << endl;
+    std::cout << molar_vol << std::endl;
 #endif
     // molar wt
     double molar_wt;
     file->getLine();
     file->readDouble(&molar_wt);
 #ifdef DEBUG
-    std::cout << molar_wt << endl;
+    std::cout << molar_wt << std::endl;
 #endif
     // rate
     double rate;
     file->getLine();
     file->readDouble(&rate);
 #ifdef DEBUG
-    std::cout << rate << endl;
+    std::cout << rate << std::endl;
 #endif
     // specific surface area
     double specific_surface_area;
@@ -642,7 +642,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     // convert from cm^2/cm^3 to m^2/m^3
     specific_surface_area *= 100.;
 #ifdef DEBUG
-    std::cout << specific_surface_area << endl;
+    std::cout << specific_surface_area << std::endl;
 #endif
 
 

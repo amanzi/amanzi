@@ -446,6 +446,11 @@ endif()
 # Begin TPL builds 
 # ############################################################################ #
 
+# --- Add .NOTPARALLEL target in order to force the top level make to 
+#     execute serially
+
+add_custom_target(.NOTPARALLEL)
+
 # --- Initalize and set the TPL build files
 
 # Create configure, build, install and test targets for each TPL

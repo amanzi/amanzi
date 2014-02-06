@@ -154,18 +154,18 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "residual=" << functional_max_norm << " at point";
       for (int i = 0; i < dim; i++) *vo_->os() << " " << xp[i];
-      *vo_->os() << endl;
+      *vo_->os() << std::endl;
  
       c = cell_p;
       const AmanziGeometry::Point& yp = mesh_->cell_centroid(c);
 
       *vo_->os() << "pressure err=" << error_p << " at point";
       for (int i = 0; i < dim; i++) *vo_->os() << " " << yp[i];
-      *vo_->os() << endl;
+      *vo_->os() << std::endl;
 
       int mb = map_c2mb[0][c];
       double s = (rel_perm->WRM())[mb]->saturation(atm_pressure_ - uc[0][c]);
-      *vo_->os() << "saturation=" << s << " pressure=" << uc[0][c] << endl;
+      *vo_->os() << "saturation=" << s << " pressure=" << uc[0][c] << std::endl;
     }
   }
 
@@ -209,7 +209,7 @@ bool Richards_PK::ModifyCorrection(
         Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "clip saturation: c=" << c 
                    << " p=" << uc[0][c]
-                   << " dp: " << duc[0][c] << " -> " << du_pert_max << endl;
+                   << " dp: " << duc[0][c] << " -> " << du_pert_max << std::endl;
       }
 
       if (duc[0][c] >= 0.0) duc[0][c] = du_pert_max;
@@ -225,7 +225,7 @@ bool Richards_PK::ModifyCorrection(
 
     if ((unew > atm_pressure_) && (uc[0][c] < atm_pressure_)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-	 *vo_->os() << "pressure change: " << uc[0][c] << " -> " << unew << endl;
+	 *vo_->os() << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
       }
       duc[0][c] = tmp * damping_factor;
       ncells_clipped++;
@@ -240,7 +240,7 @@ bool Richards_PK::ModifyCorrection(
     if (MyPID == 0 && ncells_clipped > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << vo_->color("red") << "saturation was clipped in " 
-                 << ncells_clipped << " cells" << vo_->reset() << endl;
+                 << ncells_clipped << " cells" << vo_->reset() << std::endl;
     }
   }
 

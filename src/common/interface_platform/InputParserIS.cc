@@ -1788,7 +1788,7 @@ Teuchos::ParameterList create_TransportSrc_List(Teuchos::ParameterList* plist)
                 src_sub_out.set<std::string>("spatial distribution method",dist_method);
                 src_fn = solute_src.sublist("Source: Flow Weighted Concentration");
               } else {
-                Exceptions::amanzi_throw(Errors::Message("In the definition of Sources: you must either specify 'Source: Volume Weighted' or 'Source: Permeability Weighted'."));
+                Exceptions::amanzi_throw(Errors::Message("In the definition of Sources: you must either specify 'Source: Uniform Concentration' or 'Source: Flow Weighted Concentration'."));
               }
               // create time function
               Teuchos::ParameterList& src_sub_out_fn = src_sub_out.sublist("sink");

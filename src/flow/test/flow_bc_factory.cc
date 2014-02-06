@@ -156,7 +156,7 @@ SUITE(pressure_bad_param) {
     std::vector<int> submodel(ncells);
     CHECK_THROW(Functions::FlowBoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
 
-    foo.set("regions", 0.0);  // wrong -- type should be Array<string>
+    foo.set("regions", 0.0);  // wrong -- type should be Array<std::string>
     CHECK_THROW(Functions::FlowBoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
   }
 

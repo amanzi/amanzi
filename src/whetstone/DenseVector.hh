@@ -25,6 +25,11 @@ namespace WhetStone {
 
 class DenseVector {
  public:
+  DenseVector() {
+    m_ = 0;
+    data_ = NULL;
+  }
+
   DenseVector(int mrow) {
     m_ = mrow;
     data_ = new double[m_];
@@ -43,7 +48,7 @@ class DenseVector {
     for (int i = 0; i < m_; i++) data_[i] = dataB[i];
   }
 
-  ~DenseVector() { delete[] data_; }
+  ~DenseVector() { if (data_ != NULL) { delete[] data_; } }
 
   // primary members 
   void clear() { for (int i = 0; i < m_; i++) data_[i] = 0.0; } 
@@ -51,11 +56,18 @@ class DenseVector {
   double& operator()(int i) { return data_[i]; }
   const double& operator()(int i) const { return data_[i]; }
 
-  DenseVector& operator=(const DenseVector& B) {        
-    double *a = (*this).Values();
-    const double *b = B.Values();
-
-    for (int i = 0; i < m_; i++) a[i] = b[i];
+  DenseVector& operator=(const DenseVector& B) {
+    if (this != &B) {
+      if (m_ != B.m_ && B.m_ != 0) {
+	if (data_ != NULL) {
+	  delete [] data_;
+	}
+	data_ = new double[B.m_];
+      }
+      m_ = B.m_;
+      const double *b = B.Values();
+      for (int i = 0; i < m_; ++i) data_[i] = b[i];
+    }
     return (*this);
   }
 

@@ -296,7 +296,7 @@ void Richards_PK::InitializeSteadySaturated()
 { 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "initializing with a saturated steady state..." << endl;
+    *vo_->os() << "initializing with a saturated steady state..." << std::endl;
   }
   double T = S_->time();
   SolveFullySaturatedProblem(T, *solution, ti_specs->ls_specs_ini);
@@ -382,22 +382,22 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     LinearSolver_Specs& ls = ti_specs.ls_specs;
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << endl 
-        << "****************************************" << endl
-        << vo_->color("green") << "New TI phase: " << ti_specs.ti_method_name.c_str() << vo_->reset() << endl
-        << "****************************************" << endl
-        << " start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << endl
-        << " error control id=" << error_control_ << endl
-        << " preconditioner for nonlinear solver: " << ti_specs.preconditioner_name.c_str() << endl
-        << " sources distribution id=" << src_sink_distribution << endl;
+    *vo_->os() << std::endl 
+        << "****************************************" << std::endl
+        << vo_->color("green") << "New TI phase: " << ti_specs.ti_method_name.c_str() << vo_->reset() << std::endl
+        << "****************************************" << std::endl
+        << " start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << std::endl
+        << " error control id=" << error_control_ << std::endl
+        << " preconditioner for nonlinear solver: " << ti_specs.preconditioner_name.c_str() << std::endl
+        << " sources distribution id=" << src_sink_distribution << std::endl;
 
     if (ti_specs.initialize_with_darcy) {
       LinearSolver_Specs& ls_ini = ti_specs.ls_specs_ini;
-      *vo_->os() << " initial pressure solver: " << ls_ini.solver_name << endl;
+      *vo_->os() << " initial pressure solver: " << ls_ini.solver_name << std::endl;
       if (ti_specs.clip_saturation > 0.0) {
-        *vo_->os() << "  clipping saturation at " << ti_specs.clip_saturation << " [-]" << endl;
+        *vo_->os() << "  clipping saturation at " << ti_specs.clip_saturation << " [-]" << std::endl;
       } else if (ti_specs.clip_pressure > -5 * FLOW_PRESSURE_ATMOSPHERIC) {
-        *vo_->os() << "  clipping pressure at " << ti_specs.clip_pressure << " [Pa]" << endl;
+        *vo_->os() << "  clipping pressure at " << ti_specs.clip_pressure << " [Pa]" << std::endl;
       }
     }
   }
@@ -440,9 +440,9 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     int npassed = matrix_->npassed();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << " discretization method (prec): " << mfd3d_method_name.c_str() << endl
-               << "  good and repaired matrices: " << nokay << " " << npassed << endl
-               << " assigned default (no-flow) BC to " << missed_bc_faces_ << " faces" << endl << endl;
+    *vo_->os() << " discretization method (prec): " << mfd3d_method_name.c_str() << std::endl
+               << "  good and repaired matrices: " << nokay << " " << npassed << std::endl
+               << " assigned default (no-flow) BC to " << missed_bc_faces_ << " faces" << std::endl << std::endl;
   }
 
   // Well modeling
@@ -635,7 +635,7 @@ void Richards_PK::CommitState(Teuchos::RCP<State> S)
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "reservoir water mass=" << mass_amanzi 
-                 << " [kg], total influx=" << mass_bc << " [kg]" << endl;
+                 << " [kg], total influx=" << mass_bc << " [kg]" << std::endl;
   }
 
   dT = dTnext;

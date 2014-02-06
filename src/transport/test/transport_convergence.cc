@@ -38,11 +38,11 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "TEST: convergence analysis of the donor scheme" << endl;
+  std::cout << "TEST: convergence analysis of the donor scheme" << std::endl;
   Epetra_SerialComm* comm = new Epetra_SerialComm();
 
   /* read parameter list */
-  string xmlFileName = "test/transport_convergence.xml";
+  std::string xmlFileName = "test/transport_convergence.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
@@ -147,11 +147,11 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  cout << "Test: Convergence analysis, 2nd order scheme" << endl;
+  std::cout << "Test: Convergence analysis, 2nd order scheme" << std::endl;
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 
   /* read parameter list */
-  string xmlFileName = "test/transport_convergence.xml";
+  std::string xmlFileName = "test/transport_convergence.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
@@ -233,7 +233,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
       }
       iter++;
     }
-    //for (int k=0; k<nx; k++) cout << (*tcc)[0][k] << endl;
+    //for (int k=0; k<nx; k++) std::cout << (*tcc)[0][k] << std::endl;
 
     double L1, L2;  // L1 and L2 errors
     TPK.CalculateLpErrors(f_cubic, T, (*tcc)(0), &L1, &L2);

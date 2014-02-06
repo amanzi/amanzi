@@ -37,7 +37,7 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
       this_spec_ids->insert(id_list.begin(), id_list.end());
     } else {
       std::stringstream m;
-      m << "unknown region: \"" << *region << "\"";
+      m << "Unknown region in processing mesh function spec: \"" << *region << "\"";
       Errors::Message message(m.str());
       Exceptions::amanzi_throw(message);
     }

@@ -50,13 +50,13 @@ TEST(HDF5) {
   // Write a file which contains both mesh and data.
   Amanzi::HDF5 viz_output;
   viz_output.setTrackXdmf(true);
-  cout << "E>> creat viz mesh file" << endl;
+  std::cout << "E>> creat viz mesh file" << std::endl;
   viz_output.createMeshFile(*(Mesh.get()), hdf5_meshfile);
-  cout << "E>> creat viz data file" << endl;
+  std::cout << "E>> creat viz data file" << std::endl;
   viz_output.createDataFile(hdf5_datafile1);
   Amanzi::HDF5 restart_output;
   restart_output.setTrackXdmf(false);
-  cout << "E>> creat restart data file" << endl;
+  std::cout << "E>> creat restart data file" << std::endl;
   restart_output.createDataFile(hdf5_datafile2);
 
   double time = 0.0;
@@ -67,7 +67,7 @@ TEST(HDF5) {
     node_quantity->ReplaceGlobalValues(12, node_values, node_index_list);
     
     // write time step data
-    cout << "E>> writing to viz:" << i << endl;
+    std::cout << "E>> writing to viz:" << i << std::endl;
     viz_output.createTimestep(time, i);
     viz_output.writeCellData(*cell_quantity, "cell_quantity");
     viz_output.writeCellData(*fake_pressure, "pressure");
@@ -87,18 +87,18 @@ TEST(HDF5) {
     viz_output.endTimestep();
   }
   
-  cout << "E>> writing to restart" << endl;
+  std::cout << "E>> writing to restart" << std::endl;
   restart_output.writeCellData(*cell_quantity, "cell_quantity");
   restart_output.writeCellData(*fake_pressure, "pressure");
   restart_output.writeNodeData(*node_quantity, "node_quantity");
   
-  cout << "E>> started with" << endl;
-  cout << *cell_quantity;
-  cout << "E>> read back restart" << endl;
+  std::cout << "E>> started with" << std::endl;
+  std::cout << *cell_quantity;
+  std::cout << "E>> read back restart" << std::endl;
   Teuchos::RCP<Epetra_Vector> read_quantity;
   read_quantity = Teuchos::rcp(new Epetra_Vector(Mesh->cell_map(false)));
   restart_output.readData(*read_quantity, "cell_quantity");
-  cout << *read_quantity;
+  std::cout << *read_quantity;
 
 }
 

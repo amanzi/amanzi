@@ -42,7 +42,7 @@ TEST(DISPERSION) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "Test: dispersion" << endl;
+  std::cout << "Test: dispersion" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -50,7 +50,7 @@ TEST(DISPERSION) {
 #endif
 
   /* read parameter list */
-  string xmlFileName = "test/transport_dispersion.xml";
+  std::string xmlFileName = "test/transport_dispersion.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 

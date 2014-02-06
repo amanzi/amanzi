@@ -75,6 +75,9 @@ class Dispersion {
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& prec_list);
   void UpdatePreconditioner() { preconditioner_->Update(App_); }
 
+ public:
+  int nfailed;  // number of failed matrices
+
  protected:
   std::vector<Teuchos::RCP<DispersionModel> >* specs_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

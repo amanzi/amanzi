@@ -137,7 +137,7 @@ void CompositeVectorFunction::Compute(double time,
             }
           } else {
             std::stringstream m;
-            m << "unknown region: \"" << *region << "\"";
+            m << "CV: unknown boundary region: \"" << *region << "\"";
             Errors::Message message(m.str());
             Exceptions::amanzi_throw(message);
           }
@@ -172,7 +172,7 @@ void CompositeVectorFunction::Compute(double time,
             }
           } else {
             std::stringstream m;
-            m << "unknown region: \"" << *region << "\"";
+            m << "CV: unknown region \"" << *region << "\"";
             Errors::Message message(m.str());
             Exceptions::amanzi_throw(message);
           }

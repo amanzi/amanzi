@@ -676,7 +676,7 @@ TEST(MESH_GEOMETRY_SOLID)
 
     for (int i = 0; i < ncells; i++) {
 
-      //      cout << "CELL " << i << ":" << std::endl;
+      //      std::cout << "CELL " << i << ":" << std::endl;
 
       Amanzi::AmanziMesh::Entity_ID_List cfaces;
       std::vector<int> cfdirs;
@@ -688,13 +688,13 @@ TEST(MESH_GEOMETRY_SOLID)
       for (int j = 0; j < cfaces.size(); j++) {
         normal = mesh->face_normal(cfaces[j],true,i);
         normal_sum += normal;
-        //        cout << "      face " << j << " normal : " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
+        //        std::cout << "      face " << j << " normal : " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
       }
 
       double val = L22(normal_sum);
       CHECK_CLOSE(val,0.0,1.0e-20);                
 
-      //      cout << "Sum of normals: " << val << std::endl << std::endl;
+      //      std::cout << "Sum of normals: " << val << std::endl << std::endl;
     }    
 
   } // for each framework i

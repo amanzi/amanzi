@@ -587,7 +587,7 @@ void HDF5_MPI::writeDataString(char **x, int num_entries, const std::string varn
     strData[i] = (char *)malloc(MAX_STRING_LENGTH*sizeof(char));
     }
     for (int i=0; i<num_entries; i++) {
-    cout << "E>> WRITE>> recieved x["<<i<<"] = " << x[i] <<endl;
+    std::cout << "E>> WRITE>> recieved x["<<i<<"] = " << x[i] <<std::endl;
     strcpy(strData[i], x[i].c_str());
     //strData[i] = (char*)x[i].c_str();
     }
@@ -797,7 +797,7 @@ void HDF5_MPI::createXdmfMesh_(const std::string filename, const double time, co
 
   // write xmf
   std::ofstream of(fname.str().c_str());
-  of << HDF5_MPI::xdmfHeader_ << mesh << endl;
+  of << HDF5_MPI::xdmfHeader_ << mesh << std::endl;
   of.close();
 }
 
@@ -813,7 +813,7 @@ void HDF5_MPI::createXdmfMeshVisit_() {
 
   // write xmf
   std::ofstream of(xdmfMeshVisitFilename().c_str());
-  of << HDF5_MPI::xdmfHeader_ << xmf << endl;
+  of << HDF5_MPI::xdmfHeader_ << xmf << std::endl;
   of.close();
 
   // Store VisIt XMLObject
@@ -833,7 +833,7 @@ void HDF5_MPI::createXdmfVisit_() {
 
   // write xmf
   std::ofstream of(xdmfVisitFilename().c_str());
-  of << HDF5_MPI::xdmfHeader_ << xmf << endl;
+  of << HDF5_MPI::xdmfHeader_ << xmf << std::endl;
   of.close();
 
   // Store VisIt XMLObject

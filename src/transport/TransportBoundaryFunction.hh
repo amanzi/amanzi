@@ -35,7 +35,7 @@ class TransportBoundaryFunction : public Functions::UniqueMeshFunction {
   virtual void Compute(double time) = 0;
 
   // access
-  std::vector<string>& tcc_names() { return tcc_names_; }
+  std::vector<std::string>& tcc_names() { return tcc_names_; }
   std::vector<int>& tcc_index() { return tcc_index_; }
 
   std::vector<int>& faces() { return faces_; }
