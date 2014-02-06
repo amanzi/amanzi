@@ -1081,18 +1081,18 @@ void MPC::cycle_driver() {
     comm->MinAll(&mem,&min_mem,1);
     comm->MaxAll(&mem,&max_mem,1);
     
-    *out << endl;
-    *out << "Memory usage (high water mark):" << endl;
+    *out << std::endl;
+    *out << "Memory usage (high water mark):" << std::endl;
     *out << std::fixed << std::setprecision(1);
     *out << "  Maximum per core:   " << std::setw(7) << max_mem 
          << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
-         << " Bytes" << endl;
+         << " Bytes" << std::endl;
     *out << "  Minumum per core:   " << std::setw(7) << min_mem 
          << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
-         << " Bytes" << endl;
+         << " Bytes" << std::endl;
     *out << "  Total:              " << std::setw(7) << total_mem 
          << " MBytes,  total per cell:   " << std::setw(7) << total_mem/cell_map.NumGlobalElements()*1024*1024 
-         << " Bytes" << endl;
+         << " Bytes" << std::endl;
   }   
 }
 

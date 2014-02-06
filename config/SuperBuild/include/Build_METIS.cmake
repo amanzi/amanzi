@@ -1,6 +1,5 @@
 #  -*- mode: cmake -*-
 
-message(STATUS "-------------- IN Build_METIS.cmake ------------------")
 #
 # Build TPL:  METIS
 #
@@ -55,6 +54,4 @@ ExternalProject_Add(${METIS_BUILD_TARGET}
 include(BuildLibraryName)
 build_library_name(metis METIS_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 set(METIS_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
-#message(STATUS "METIS_LIBRARIES from Build_METIS.cmake: ${METIS_LIBRARIES}")
-#message(STATUS "METIS_INCLUDE_DIRS from Build_METIS.cmake: ${METIS_INCLUDE_DIRS}")
 
