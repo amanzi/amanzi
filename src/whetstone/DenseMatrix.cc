@@ -32,6 +32,16 @@ DenseMatrix::DenseMatrix(int mrow, int ncol)
   access_ = WHETSTONE_DATA_ACCESS_COPY;
 }
 
+/* ******************************************************************
+* Constructor.
+****************************************************************** */
+DenseMatrix::DenseMatrix() 
+{ 
+  m_ = 0;
+  n_ = 0;
+  data_ = NULL; 
+  access_ = WHETSTONE_DATA_ACCESS_COPY;
+}
 
 /* ******************************************************************
 * No memory check is performed: invalid read is possible.
