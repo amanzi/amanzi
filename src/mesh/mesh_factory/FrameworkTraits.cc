@@ -206,16 +206,16 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
                             const Amanzi::AmanziGeometry::Point coords)
   {}
 
-  const Epetra_Map& cell_epetra_map (const bool include_ghost) const
+  const Epetra_Map& cell_map (const bool include_ghost) const
   { return *bogus_map_; }
     
-  const Epetra_Map& face_epetra_map (const bool include_ghost) const
+  const Epetra_Map& face_map (const bool include_ghost) const
   { return *bogus_map_; }
     
-  const Epetra_Map& node_epetra_map (const bool include_ghost) const
+  const Epetra_Map& node_map (const bool include_ghost) const
   { return *bogus_map_; }
 
-  const Epetra_Map& exterior_face_epetra_map (void) const
+  const Epetra_Map& exterior_face_map (void) const
   { return *bogus_map_; }
 
   const Epetra_Import& exterior_face_importer (void) const

@@ -26,9 +26,9 @@ namespace Amanzi
   MeshAudit:: MeshAudit(Teuchos::RCP<AmanziMesh::Mesh> &mesh_, std::ostream& os_) :
       mesh(mesh_), comm(*(mesh_->get_comm())), MyPID(mesh_->get_comm()->MyPID()),
       os(os_),
-      nnode(mesh_->node_epetra_map(true).NumMyElements()),
-      nface(mesh_->face_epetra_map(true).NumMyElements()),
-      ncell(mesh_->cell_epetra_map(true).NumMyElements()),
+      nnode(mesh_->node_map(true).NumMyElements()),
+      nface(mesh_->face_map(true).NumMyElements()),
+      ncell(mesh_->cell_map(true).NumMyElements()),
       MAX_OUT(5)
     { create_test_dependencies(); }
 
@@ -289,7 +289,7 @@ bool MeshAudit::check_entity_counts() const
 
   // Check the number of owned nodes.
   n = mesh->num_entities(AmanziMesh::NODE,AmanziMesh::OWNED);
-  nref = mesh->node_epetra_map(false).NumMyElements();
+  nref = mesh->node_map(false).NumMyElements();
   if (n != nref) {
     os << ": ERROR: num_entities(NODE,OWNED)=" << n << "; should be " << nref << std::endl;
     error = true;
@@ -297,7 +297,7 @@ bool MeshAudit::check_entity_counts() const
 
   // Check the number of used nodes.
   n = mesh->num_entities(AmanziMesh::NODE,AmanziMesh::USED);
-  nref = mesh->node_epetra_map(true).NumMyElements();
+  nref = mesh->node_map(true).NumMyElements();
   if (n != nref) {
     os << "ERROR: num_entities(NODE,USED)=" << n << "; should be " << nref << std::endl;
     error = true;
@@ -305,7 +305,7 @@ bool MeshAudit::check_entity_counts() const
 
   // Check the number of owned faces.
   n = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
-  nref = mesh->face_epetra_map(false).NumMyElements();
+  nref = mesh->face_map(false).NumMyElements();
   if (n != nref) {
     os << "ERROR: num_entities(FACE,OWNED)=" << n << "; should be " << nref << std::endl;
     error = true;
@@ -313,7 +313,7 @@ bool MeshAudit::check_entity_counts() const
 
   // Check the number of used faces.
   n = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::USED);
-  nref = mesh->face_epetra_map(true).NumMyElements();
+  nref = mesh->face_map(true).NumMyElements();
   if (n != nref) {
     os << "ERROR: num_entities(FACE,USED)=" << n << "; should be " << nref << std::endl;
     error = true;
@@ -321,7 +321,7 @@ bool MeshAudit::check_entity_counts() const
 
   // Check the number of owned cells.
   n = mesh->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
-  nref = mesh->cell_epetra_map(false).NumMyElements();
+  nref = mesh->cell_map(false).NumMyElements();
   if (n != nref) {
     os << "ERROR: num_entities(CELL,OWNED)=" << n << "; should be " << nref << std::endl;
     error = true;
@@ -329,7 +329,7 @@ bool MeshAudit::check_entity_counts() const
 
   // Check the number of used cells.
   n = mesh->num_entities(AmanziMesh::CELL,AmanziMesh::USED);
-  nref = mesh->cell_epetra_map(true).NumMyElements();
+  nref = mesh->cell_map(true).NumMyElements();
   if (n != nref) {
     os << "ERROR: num_entities(CELL,USED)=" << n << "; should be " << nref << std::endl;
     error = true;
@@ -917,17 +917,17 @@ bool MeshAudit::check_cell_geometry() const
 
 bool MeshAudit::check_node_maps() const
 {
-  return check_maps(mesh->node_epetra_map(false), mesh->node_epetra_map(true));
+  return check_maps(mesh->node_map(false), mesh->node_map(true));
 }
 
 bool MeshAudit::check_face_maps() const
 {
-  return check_maps(mesh->face_epetra_map(false), mesh->face_epetra_map(true));
+  return check_maps(mesh->face_map(false), mesh->face_map(true));
 }
 
 bool MeshAudit::check_cell_maps() const
 {
-  return check_maps(mesh->cell_epetra_map(false), mesh->cell_epetra_map(true));
+  return check_maps(mesh->cell_map(false), mesh->cell_map(true));
 }
 
 bool MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) const
@@ -1040,8 +1040,8 @@ bool MeshAudit::check_node_to_coordinates_ghost_data() const
 {
   int spdim = mesh->space_dimension();
 
-  const Epetra_Map &node_map_own = mesh->node_epetra_map(false);
-  const Epetra_Map &node_map_use = mesh->node_epetra_map(true);
+  const Epetra_Map &node_map_own = mesh->node_map(false);
+  const Epetra_Map &node_map_use = mesh->node_map(true);
 
   int nnode_own = node_map_own.NumMyElements();
   int nnode_use = node_map_use.NumMyElements();
@@ -1087,9 +1087,9 @@ bool MeshAudit::check_node_to_coordinates_ghost_data() const
 
 bool MeshAudit::check_face_to_nodes_ghost_data() const
 {
-  const Epetra_Map &node_map = mesh->node_epetra_map(true);
-  const Epetra_Map &face_map_own = mesh->face_epetra_map(false);
-  const Epetra_Map &face_map_use = mesh->face_epetra_map(true);
+  const Epetra_Map &node_map = mesh->node_map(true);
+  const Epetra_Map &face_map_own = mesh->face_map(false);
+  const Epetra_Map &face_map_use = mesh->face_map(true);
 
   int nface_own = face_map_own.NumMyElements();
   int nface_use = face_map_use.NumMyElements();
@@ -1201,9 +1201,9 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
 
 bool MeshAudit::check_cell_to_nodes_ghost_data() const
 {
-  const Epetra_Map &node_map = mesh->node_epetra_map(true);
-  const Epetra_Map &cell_map_own = mesh->cell_epetra_map(false);
-  const Epetra_Map &cell_map_use = mesh->cell_epetra_map(true);
+  const Epetra_Map &node_map = mesh->node_map(true);
+  const Epetra_Map &cell_map_own = mesh->cell_map(false);
+  const Epetra_Map &cell_map_use = mesh->cell_map(true);
 
   int ncell_own = cell_map_own.NumMyElements();
   int ncell_use = cell_map_use.NumMyElements();
@@ -1280,9 +1280,9 @@ bool MeshAudit::check_cell_to_nodes_ghost_data() const
 
 bool MeshAudit::check_cell_to_faces_ghost_data() const
 {
-  const Epetra_Map &face_map = mesh->face_epetra_map(true);
-  const Epetra_Map &cell_map_own = mesh->cell_epetra_map(false);
-  const Epetra_Map &cell_map_use = mesh->cell_epetra_map(true);
+  const Epetra_Map &face_map = mesh->face_map(true);
+  const Epetra_Map &cell_map_own = mesh->cell_map(false);
+  const Epetra_Map &cell_map_use = mesh->cell_map(true);
 
   int ncell_own = cell_map_own.NumMyElements();
   int ncell_use = cell_map_use.NumMyElements();
@@ -1731,14 +1731,14 @@ bool MeshAudit::check_face_partition() const
   for (int j = 0; j < nface; ++j) owned[j] = false;
   AmanziMesh::Entity_ID_List cface;
   std::vector<int> cfdirs;
-  for (AmanziMesh::Entity_ID j = 0; j < mesh->cell_epetra_map(false).NumMyElements(); ++j) {
+  for (AmanziMesh::Entity_ID j = 0; j < mesh->cell_map(false).NumMyElements(); ++j) {
     mesh->cell_get_faces_and_dirs(j, &cface, &cfdirs);
     for (int k = 0; k < cface.size(); ++k) owned[cface[k]] = true;
   }
 
   // Verify that every owned face has been marked as belonging to an owned cell.
   AmanziMesh::Entity_ID_List bad_faces;
-  for (AmanziMesh::Entity_ID j = 0; j < mesh->face_epetra_map(false).NumMyElements(); ++j)
+  for (AmanziMesh::Entity_ID j = 0; j < mesh->face_map(false).NumMyElements(); ++j)
     if (!owned[j]) bad_faces.push_back(j);
 
   if (!bad_faces.empty()) {
@@ -1758,14 +1758,14 @@ bool MeshAudit::check_node_partition() const
   bool owned[nnode];
   for (int j = 0; j < nnode; ++j) owned[j] = false;
   AmanziMesh::Entity_ID_List cnode;
-  for (AmanziMesh::Entity_ID j = 0; j < mesh->cell_epetra_map(false).NumMyElements(); ++j) {
+  for (AmanziMesh::Entity_ID j = 0; j < mesh->cell_map(false).NumMyElements(); ++j) {
     mesh->cell_get_nodes(j, &cnode);
     for (int k = 0; k < cnode.size(); ++k) owned[cnode[k]] = true;
   }
 
   // Verify that every owned node has been marked as belonging to an owned cell.
   AmanziMesh::Entity_ID_List bad_nodes;
-  for (AmanziMesh::Entity_ID j = 0; j < mesh->node_epetra_map(false).NumMyElements(); ++j)
+  for (AmanziMesh::Entity_ID j = 0; j < mesh->node_map(false).NumMyElements(); ++j)
     if (!owned[j]) bad_nodes.push_back(j);
 
   if (!bad_nodes.empty()) {

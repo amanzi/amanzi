@@ -281,10 +281,10 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   //
   // Epetra maps
   //------------
-  const Epetra_Map& cell_epetra_map (const bool include_ghost) const;
-  const Epetra_Map& face_epetra_map (const bool include_ghost) const; 
-  const Epetra_Map& node_epetra_map (const bool include_ghost) const;
-  const Epetra_Map& exterior_face_epetra_map (void) const; 
+  const Epetra_Map& cell_map (const bool include_ghost) const;
+  const Epetra_Map& face_map (const bool include_ghost) const; 
+  const Epetra_Map& node_map (const bool include_ghost) const;
+  const Epetra_Map& exterior_face_map (void) const; 
 
   // Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector

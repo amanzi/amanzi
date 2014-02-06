@@ -649,12 +649,12 @@ void Mesh::update_ghost_node_coordinates () {
 
   int ndim = space_dimension();
 
-  Epetra_Map owned_node_map = node_epetra_map(false);
-  Epetra_Map used_node_map = node_epetra_map(true);
+  Epetra_Map owned_node_map = node_map(false);
+  Epetra_Map used_node_map = node_map(true);
   Epetra_Import importer(used_node_map, owned_node_map);
 
   // change last arg to false after debugging
-  Epetra_MultiVector owned_node_coords(node_epetra_map(true),ndim,true);
+  Epetra_MultiVector owned_node_coords(node_map(true),ndim,true);
 
   AmanziGeometry::Point pnt(ndim);
 

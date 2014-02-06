@@ -80,7 +80,7 @@ dump_output(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& fi
   viz_output->createMeshFile(Teuchos::rcp(&mesh), filenameout);
   viz_output->createDataFile(filenameout);
 
-  const Epetra_Map& cmap(mesh.cell_epetra_map(false));
+  const Epetra_Map& cmap(mesh.cell_map(false));
   Epetra_Vector part(cmap);
   int nmycell(cmap.NumMyElements());
   std::vector<int> myidx(nmycell, 0);

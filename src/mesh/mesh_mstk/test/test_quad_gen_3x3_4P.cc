@@ -45,8 +45,8 @@ TEST(MSTK_QUAD_GEN_3x3_4P)
 
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(4);
   std::vector<int> c2fdirs(4);
-  Epetra_Map cell_map(mesh->cell_epetra_map(false));
-  Epetra_Map face_map(mesh->face_epetra_map(true));
+  Epetra_Map cell_map(mesh->cell_map(false));
+  Epetra_Map face_map(mesh->face_map(true));
 
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {

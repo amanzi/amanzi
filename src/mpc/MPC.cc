@@ -1061,7 +1061,7 @@ void MPC::cycle_driver() {
   }
   
   if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-    Epetra_Map cell_map = mesh_maps->cell_epetra_map(false);
+    Epetra_Map cell_map = mesh_maps->cell_map(false);
     double mem = rss_usage();
     
     double percell(mem);

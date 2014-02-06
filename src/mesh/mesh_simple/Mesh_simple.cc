@@ -758,22 +758,22 @@ void Mesh_simple::cell_get_node_adj_cells(const AmanziMesh::Entity_ID cellid,
 
     
     
-const Epetra_Map& Mesh_simple::cell_epetra_map (bool include_ghost) const
+const Epetra_Map& Mesh_simple::cell_map (bool include_ghost) const
 {
   return *cell_map_;
 }
 
-const Epetra_Map& Mesh_simple::face_epetra_map (bool include_ghost) const
+const Epetra_Map& Mesh_simple::face_map (bool include_ghost) const
 {
   return *face_map_;
 }
 
-const Epetra_Map& Mesh_simple::node_epetra_map (bool include_ghost) const
+const Epetra_Map& Mesh_simple::node_map (bool include_ghost) const
 {
   return *node_map_;
 }
 
-const Epetra_Map& Mesh_simple::exterior_face_epetra_map (void) const
+const Epetra_Map& Mesh_simple::exterior_face_map (void) const
 {
   Errors::Message mesg("not implemented");
   amanzi_throw(mesg);
