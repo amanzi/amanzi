@@ -76,5 +76,4 @@ ExternalProject_Add(${MSTK_BUILD_TARGET}
 
 # MSTK include and library install path
 global_set(MSTK_INCLUDE_DIR "${TPL_INSTALL_PREFIX}/include")
-global_set(MSTK_ARCHOS "${CMAKE_SYSTEM_PROCESSOR}_${CMAKE_SYSTEM_NAME}")
-global_set(MSTK_LIBRARY_DIR "${TPL_INSTALL_PREFIX}/lib/${MSTK_ARCHOS}")
+global_set(MSTK_LIBRARY_DIR "${TPL_INSTALL_PREFIX}/lib")
