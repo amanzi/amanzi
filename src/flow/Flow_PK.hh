@@ -13,9 +13,8 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Teuchos_RCP.hpp"
 
-#include "flow_boundary_function.hh"
-#include "flow_domain_function.hh"
-#include "unique_mesh_function.hh"
+#include "FlowBoundaryFunction.hh"
+#include "FlowDomainFunction.hh"
 #include "BDFFnBase.hh"
 #include "CompositeVectorSpace.hh"
 #include "VerboseObject.hh"

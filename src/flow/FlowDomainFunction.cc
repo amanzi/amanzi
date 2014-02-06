@@ -2,7 +2,7 @@
 #include "errors.hh"
 
 #include "Domain.hh"
-#include "flow_domain_function.hh"
+#include "FlowDomainFunction.hh"
 
 namespace Amanzi {
 namespace Functions {

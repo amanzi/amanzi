@@ -544,6 +544,7 @@ of the other available functions:
        </ParameterList>
 
        <ParameterList name="seepage face">
+         <Parameter name="reference pressure" type="double" value="101325.0"/>
          <ParameterList name="BC 3">
            <Parameter name="regions" type="Array(string)" value="{East side Bottom}"/>
            <ParameterList name="outward mass flux">
@@ -565,6 +566,8 @@ parameters described below. Mix and match of parameters is allowed.
 * `"relative to top`" [bool] indicates that the static head is defined with respect
   to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
   Default value is `"false`". 
+
+* `"reference pressure`" [double] defaults to the atmospheric pressure. 
 
 * `"submodel`" [string] indicates different models for the seepage face boundary condition.
   It can take values `"PFloTran`", `"FACT`", and `"Amanzi`". The first option leads to a 
@@ -1146,12 +1149,12 @@ Given values :math:`x_i, y_i, i=0, ... n-1`, a tabular function :math:`f(x)` is
 defined piecewise: 
 
 .. math::
-  \begin{array}{rcl}
-  f(x) &=& x_0, \quad x \le x_0,\\
+  \begin{matrix}
+  f(x) &=& x_0, & x \le x_0,\\
   f(x) &=& f(x_{i-1}) + (x - x_{i-1}) \frac{f(x_i) - f(x_{i-1})}{x_i - x_{i-1}},
-  \quad x \in (x_{i-1}, x_i],\\
-  f(x) &=& x_{n-1}, \quad x > x_{n-1}.
-  \end{array}
+  & x \in (x_{i-1}, x_i],\\
+  f(x) &=& x_{n-1}, & x > x_{n-1}.
+  \end{matrix}
 
 This function is continuous and linear between two consecutive points.
 This behavior can be changed using parameter `"forms`".
@@ -1217,7 +1220,7 @@ A multi-variable linear function is formally defined by
 .. math::
   f(x) = y_0 + \sum_{j=0}^{n-1} g_j (x_j - x_{0,j}) 
 
-with the constant term "math:`y_0` and gradient :math:`g_0,\, g_1\,\dots, g_{n-1}`.
+with the constant term "math:`y_0` and gradient :math:`g_0,\, g_1\,..., g_{n-1}`.
 If the reference point :math:`x_0` is specified, it must have the same
 number of values as the gradient.  Otherwise, it defaults to zero.
 Note that one of the parameters in a multi-valued linear function can be time.
@@ -1237,7 +1240,7 @@ Separable function
 A separable function is defined as the product of other functions such as
 
 .. math::
-  f(x_0, x_1,\dots,x_{n-1}) = f_1(x_0)\, f_2(x_1,\dots,x_{n-1})
+  f(x_0, x_1,...,x_{n-1}) = f_1(x_0)\, f_2(x_1,...,x_{n-1})
 
 where :math:`f_1` is defined by the `"function1`" sublist, and 
 :math:`f_2` by the `"function2`" sublist:

@@ -47,7 +47,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 set(flow_src_files Flow_PK.cc Flow_IO.cc
                    Flow_BC_Factory.cc Flow_BC_Actions.cc Flow_SourceFactory.cc Flow_VandV.cc 
                    Flow_Utilities.cc Flow_AuxData.cc
-                   flow_domain_function.cc flow_boundary_function.cc
+                   FlowDomainFunction.cc FlowBoundaryFunction.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_SteadyState.cc Richards_LinearOperator.cc
@@ -79,8 +79,8 @@ set(flow_inc_files
   Darcy_PK.hh
   Flow_BC_Factory.hh
   FlowDefs.hh
-  flow_boundary_function.hh
-  flow_domain_function.hh
+  FlowBoundaryFunction.hh
+  FlowDomainFunction.hh
   Flow_PK.hh
   Flow_SourceFactory.hh
   FlowTypeDefs.hh
