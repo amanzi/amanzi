@@ -32,7 +32,7 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DENABLE_ExodusII:BOOL=TRUE
                     -DENABLE_ZOLTAN:BOOL=TRUE
                     -DENABLE_METIS:BOOL=TRUE
-                    -DMETIS_MAJOR_VER:STRING=4
+                    -DMETIS_MAJOR_VER:STRING=5
                     -DHDF5_DIR:PATH=${TPL_INSTALL_PREFIX}
                     -DNetCDF_DIR:PATH=${TPL_INSTALL_PREFIX} 
                     -DExodusII_DIR:PATH=${TPL_INSTALL_PREFIX} 
@@ -41,8 +41,8 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DMETIS_DIR:PATH=${METIS_DIR} 
                     -DMetis_LIB_DIR:PATH=${METIS_DIR}/lib 
                     -DMETIS_LIB_DIR:PATH=${METIS_DIR}/lib 
-                    -DMetis_LIBRARY:PATH=${METIS_LIBRARY}
-                    -DMETIS_LIBRARY:PATH=${METIS_LIBRARY}
+                    -DMetis_LIBRARY:PATH=${METIS_LIBRARIES}
+                    -DMETIS_LIBRARY:PATH=${METIS_LIBRARIES}
                     -DMetis_INCLUDE_DIR:PATH=${METIS_DIR}/include 
                     -DMETIS_INCLUDE_DIR:PATH=${METIS_DIR}/include 
                     -DMetis_INCLUDE_DIRS:PATH=${METIS_DIR}/include

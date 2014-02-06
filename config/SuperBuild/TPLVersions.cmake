@@ -252,12 +252,12 @@ set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 2)
-set(MSTK_VERSION_MINOR 10)
-set(MSTK_VERSION_PATCH )
+set(MSTK_VERSION_MINOR 11)
+set(MSTK_VERSION_PATCH rc1)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        6e284d8d7e93f5c45f6230ada0a5eb7a)
+set(MSTK_MD5_SUM        dfef459e08ff4ddf6c6a1b409bdff65a)
 
 #
 # TPL: MOAB
