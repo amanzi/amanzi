@@ -404,6 +404,7 @@ int Transport_PK::Advance(double dT_MPC)
   if (dispersion_models_.size() != 0) {
     std::string scheme("tpfa");
     if (mesh_->mesh_type() == AmanziMesh::RECTANGULAR) scheme = "mfd";
+    // scheme = "mfd";
 
     DispersionMatrixFactory mfactory;
     dispersion_matrix_ = mfactory.Create(scheme, &dispersion_models_, mesh_, S_);
@@ -453,8 +454,12 @@ int Transport_PK::Advance(double dT_MPC)
                  << " itrs=" << num_itrs / number_components << std::endl;
     }
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-      int i =dispersion_matrix_->nfailed;
-      if (i > 0) *vo_->os() << "failed matrices: " << (100 * i) / ncells_owned << "%" << std::endl;
+      Teuchos::OSTab tab = vo_->getOSTab();
+      int i = dispersion_matrix_->nprimary;
+      int j = dispersion_matrix_->nsecondary;
+      int k = dispersion_matrix_->num_simplex_itrs;
+      if (i > 0) *vo_->os() << "secondary matrices: " << double(100 * j) / ncells_owned << "%" 
+          << ",  average itrs: " << k / (i + 1) << std::endl;
     }
   }
   return 0;

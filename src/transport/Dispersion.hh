@@ -76,7 +76,8 @@ class Dispersion {
   void UpdatePreconditioner() { preconditioner_->Update(App_); }
 
  public:
-  int nfailed;  // number of failed matrices
+  int nprimary, nsecondary;  // number of matrices
+  int num_simplex_itrs;
 
  protected:
   std::vector<Teuchos::RCP<DispersionModel> >* specs_;

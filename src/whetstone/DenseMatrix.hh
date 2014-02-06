@@ -43,7 +43,7 @@ class DenseMatrix {
 
   DenseMatrix& operator=(const DenseMatrix& B) {
     if (this != &B) {
-      if (m_*n_ != B.m_*B.n_ && B.m_*B.n_ != 0) {
+      if (m_ * n_ != B.m_ * B.n_ && B.m_ * B.n_ != 0) {
         if (data_ != NULL) {
           delete [] data_;
         }
@@ -62,6 +62,11 @@ class DenseMatrix {
     return *this;
   }
 
+  DenseMatrix& operator/=(double val) {
+    for (int i = 0; i < m_ * n_; i++) data_[i] /= val;
+    return *this;
+  }
+
   int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);
   int Multiply(const DenseVector& A, DenseVector& B, bool transpose);
 
@@ -69,7 +74,7 @@ class DenseMatrix {
     for (int i = 0; i < m_ * n_; i++) data_[i] = val;
   }
 
-  // access
+  // access: the data are ordered by columns
   int NumRows() const { return m_; }
   int NumCols() const { return n_; }
 
@@ -89,6 +94,8 @@ class DenseMatrix {
   }
 
   // first level routines
+  double Trace();
+
   void MaxRowValue(int irow, int* j, double* value) { 
     MaxRowValue(irow, 0, n_, j, value); 
   } 
@@ -111,13 +118,13 @@ class DenseMatrix {
 inline bool operator==(const DenseMatrix& A, const DenseMatrix& B) {
   if (A.NumRows() != B.NumRows()) return false;
   if (A.NumCols() != B.NumCols()) return false;
-  for (int i=0; i!=A.NumRows()*A.NumCols(); ++i) 
+  for (int i = 0; i != A.NumRows() * A.NumCols(); ++i) 
     if (A.Values()[i] != B.Values()[i]) return false;
   return true;
 }
 
 inline bool operator!=(const DenseMatrix& A, const DenseMatrix& B) {
-  return !(A==B);
+  return !(A == B);
 }
 
 }  // namespace WhetStone
