@@ -227,10 +227,11 @@ void Darcy_PK::InitPK()
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
-  if (shift_water_table_.getRawPtr() == NULL)
+  if (shift_water_table_.getRawPtr() == NULL) {
     bc_head->Compute(time);
-  else
+  } else {
     bc_head->ComputeShift(time, shift_water_table_->Values());
+  }
 
   const CompositeVector& pressure = *S_->GetFieldData("pressure");
   ComputeBCs(pressure);

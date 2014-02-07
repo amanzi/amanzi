@@ -133,7 +133,7 @@ void FlowBoundaryFunction::ComputeShift(double time, double* shift)
       for (int i = 0; i != dim; ++i) xargs[i] = xc[i];
       // Careful tracing of the typedefs is required here: spec_and_ids->first
       //  is a RCP<Spec>, and the Spec's second is an RCP to the function.
-      value_[*id] = (*(*spec_and_ids)->first->second)(args)[0]  + shift[*id];
+      value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] + shift[*id];
     }
   }
 

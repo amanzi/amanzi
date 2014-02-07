@@ -100,7 +100,8 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
 
   } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "steady-state calculation was not requested." << std::endl;
+    *vo_->os() << vo_->color("yellow") << "steady-state calculation was not requested." 
+               << vo_->reset() << std::endl;
   }
 
   // Time integrator for period III, called transient time integrator
