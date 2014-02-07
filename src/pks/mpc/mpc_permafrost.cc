@@ -25,7 +25,7 @@ subtree:
 #include "permafrost_model.hh"
 #include "MatrixMFD_Coupled_Surf.hh"
 #include "MatrixMFD_Surf.hh"
-#include "mpc_delegate_ewc.hh"
+#include "mpc_delegate_ewc_subsurface.hh"
 #include "mpc_surface_subsurface_flux_coupler.hh"
 #include "mpc_permafrost.hh"
 
@@ -95,7 +95,7 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
 
   // create the EWC delegate if requested.
   if (predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC) {
-    ewc_ = Teuchos::rcp(new MPCDelegateEWC(*plist_));
+    ewc_ = Teuchos::rcp(new MPCDelegateEWCSubsurface(*plist_));
 
     Teuchos::RCP<PermafrostModel> model = Teuchos::rcp(new PermafrostModel());
     ewc_->set_model(model);

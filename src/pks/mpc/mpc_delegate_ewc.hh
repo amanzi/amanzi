@@ -42,13 +42,10 @@ class MPCDelegateEWC {
   void set_model(const Teuchos::RCP<EWCModel>& model) { model_ = model; }
 
  protected:
-  virtual bool modify_predictor_ewc_(double h, Teuchos::RCP<TreeVector> up);
-  virtual bool modify_predictor_energy_(double h, Teuchos::RCP<TreeVector> up);
-  virtual bool modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVector> up);
-  virtual bool modify_predictor_smart_energy_(double h, Teuchos::RCP<TreeVector> up);
-
+  virtual bool modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVector> up) = 0;
   virtual void precon_ewc_(Teuchos::RCP<const TreeVector> u,
-          Teuchos::RCP<TreeVector> Pu);
+                           Teuchos::RCP<TreeVector> Pu) = 0;
+
   virtual void update_precon_ewc_(double t, Teuchos::RCP<const TreeVector> up, double h);
 
 

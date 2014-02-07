@@ -13,7 +13,7 @@ with freezing.
 #include "EpetraExt_RowMatrixOut.h"
 
 #include "permafrost_model.hh"
-#include "mpc_delegate_ewc.hh"
+#include "mpc_delegate_ewc_subsurface.hh"
 #include "mpc_subsurface.hh"
 
 #define DEBUG_FLAG 1
@@ -69,7 +69,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   // create the EWC delegate if requested.
   if (precon_type_ == PRECON_EWC || precon_type_ == PRECON_SMART_EWC ||
       predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC) {
-    ewc_ = Teuchos::rcp(new MPCDelegateEWC(*plist_));
+    ewc_ = Teuchos::rcp(new MPCDelegateEWCSubsurface(*plist_));
     Teuchos::RCP<PermafrostModel> model = Teuchos::rcp(new PermafrostModel());
     ewc_->set_model(model);
     ewc_->setup(S);
@@ -97,13 +97,8 @@ void MPCSubsurface::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // update the predictor to be physically consistent
 bool MPCSubsurface::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   bool modified(false);
-  if (predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC) {
-    modified = ewc_->modify_predictor(h, up);
-    if (modified) changed_solution();
-  } else if (predictor_type_ == PREDICTOR_HEURISTIC) {
-    modified = modify_predictor_heuristic_(h, up);
-    if (modified) changed_solution();
-  }
+  modified = ewc_->modify_predictor(h, up);
+  if (modified) changed_solution();
 
   // potentially update faces
   modified |= MPCCoupledCells::modify_predictor(h, up);
@@ -185,12 +180,6 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
   }
 }
 
-
-bool MPCSubsurface::modify_predictor_heuristic_(double h, Teuchos::RCP<TreeVector> up) {
-  Errors::Message message("MPCSubsurface: heuristic no longer implemented");
-  Exceptions::amanzi_throw(message);
-  return false;
-}
 
 bool MPCSubsurface::modify_correction(double h,
         Teuchos::RCP<const TreeVector> res,
