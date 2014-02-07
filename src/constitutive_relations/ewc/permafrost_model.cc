@@ -139,7 +139,6 @@ void PermafrostModel::UpdateModel(const Teuchos::Ptr<State>& S, int c) {
   ASSERT(IsSetUp_());
 }
 
-
 bool PermafrostModel::IsSetUp_() {
   if (wrm_ == Teuchos::null) return false;
   if (liquid_eos_ == Teuchos::null) return false;
@@ -155,6 +154,25 @@ bool PermafrostModel::IsSetUp_() {
   if (rho_rock_ < 0.) return false;
   if (p_atm_ < -1.e10) return false;
   return true;
+}
+
+
+bool 
+PermafrostModel::Freezing(double T, double p) {
+  double eff_p = std::max(p_atm_, p);
+  double rho_l = liquid_eos_->MolarDensity(T,eff_p);
+  double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
+
+  double pc_l = pc_l_->CapillaryPressure(p,p_atm_);
+  double pc_i;
+  if (pc_i_->IsMolarBasis()) {
+    pc_i = pc_i_->CapillaryPressure(T, rho_l);
+  } else {
+    double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
+    pc_i = pc_i_->CapillaryPressure(T, mass_rho_l);
+  }
+
+  return wrm_->freezing(T,pc_l,pc_i);
 }
 
 

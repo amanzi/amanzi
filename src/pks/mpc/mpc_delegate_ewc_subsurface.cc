@@ -11,7 +11,9 @@ energy/water-content space instead of temperature/pressure space.
 #define DEBUG_FLAG 1
 
 #include "ewc_model.hh"
+#include "FieldEvaluator.hh"
 #include "mpc_delegate_ewc_subsurface.hh"
+
 
 namespace Amanzi {
 
@@ -82,6 +84,10 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
     double T_prev = T1[0][c];
     double T_prev2 = (T_guess - dt_ratio*T_prev) / (1. - dt_ratio);
 
+    double p_guess = pres_guess_c[0][c];
+    double p_prev = p1[0][c];
+    double p_prev2 = (p_guess - dt_ratio*p_prev) / (1. - dt_ratio);
+
     double p = p1[0][c];
     double T = T1[0][c];
 
@@ -109,42 +115,33 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
       if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   decreasing temps..." << std::endl;
 
-      if (T_guess >= 273.149) {
+      if (!model_->Freezing(T_guess + .001, p_guess)) {
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   above freezing, keep T,p projections" << std::endl;
+        // pass, guesses are good
+      } else if (model_->Freezing(T_prev, p_prev)) {
+        if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+          *dcvo->os() << "   second point past the freezing point, keep T,p projections" << std::endl;
         // pass, guesses are good
       } else {
         // -- invert for T,p at the projected ewc
         ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], T, p);
-        double s_g, s_l, s_i;
-        ierr |= model_->EvaluateSaturations(T,p,s_g,s_l,s_i);
         if (ierr) {
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
               *dcvo->os() << "FAILED EWC PREDICTOR" << std::endl;
-
+          // pass, keep the T,p projections
         } else {
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
-            *dcvo->os() << "   saturations new ewc values (g,l,i): " << s_g << ", " << s_l << ", " << s_i << std::endl
-                        << "   frozen_fraction at the new ewc values: " << (s_i/(s_l + s_i)) << std::endl;
+            *dcvo->os() << "     kept within the transition zone." << std::endl
+                        << "   p,T = " << p << ", " << T << std::endl;
 
-          // Check if our energy projection is before the 2nd inflection point
-          if ( s_i / (s_l + s_i) < 0.99) {
-            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
-              *dcvo->os() << "     kept within the transition zone." << std::endl
-                          << "   p,T = " << p << ", " << T << std::endl;
-
-            // in the transition zone of latent heat exchange
-            if (T > 200.) {
-              temp_guess_c[0][c] = T;
-              pres_guess_c[0][c] = p;
-            } else {
-              if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
-                *dcvo->os() << "       not admissible!" << std::endl;
-            }
+          // in the transition zone of latent heat exchange
+          if (T > 200.) {
+            temp_guess_c[0][c] = T;
+            pres_guess_c[0][c] = p;
           } else {
-            // pass, past the transition and we are just chilling ice
             if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
-              *dcvo->os() << "     outside the transition zone." << std::endl;
+              *dcvo->os() << "       not admissible!" << std::endl;
           }
         }
       }
@@ -153,37 +150,29 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
       if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
         *dcvo->os() << "   increasing temps..." << std::endl;
 
-      if (T >= 273.149) {
+      if (!model_->Freezing(T_prev + .001, p_prev)) {
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   above freezing, keep T,p projections" << std::endl;
-
         // pass, guesses are good
-      } else {
-        double s_g, s_l, s_i;
-        ierr = model_->EvaluateSaturations(temp_guess_c[0][c],pres_guess_c[0][c],
-                s_g,s_l,s_i);
-        ASSERT(!ierr);
+      } else if (model_->Freezing(T_guess, p_guess)) {
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
-            *dcvo->os() << "   saturations extrap pT values (g,l,i): " << s_g << ", " << s_l << ", " << s_i << std::endl
-                        << "   frozen_fraction at the new pT values: " << (s_i/(s_l + s_i)) << std::endl;
+          *dcvo->os() << "   projection below freezing, keep T,p projections" << std::endl;
+        // pass, guesses are good
 
-        if (( s_i / (s_l + s_i) > 0.99)) {
-          // pass, warming ice but still outside of the transition region
+      } else {
+        std::cout << "Yes, we did call ewc" << std::endl;
+        // in the transition zone of latent heat exchange
+        ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], T, p);
+        if (ierr) {
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
-              *dcvo->os() << "     outside the transition zone." << std::endl;
+              *dcvo->os() << "FAILED EWC PREDICTOR" << std::endl;
+          // pass, keep the T,p projections
         } else {
-          // in the transition zone of latent heat exchange
-          ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], T, p);
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
-              *dcvo->os() << "     kept within the transition zone." << std::endl
-                          << "   p,T = " << p << ", " << T << std::endl;
-
-          if (!ierr && T < 273.149) {
-            temp_guess_c[0][c] = T;
-            pres_guess_c[0][c] = p;
-          } else {
-            // pass, past the transition zone and onto the upper branch
-          }
+            *dcvo->os() << "     kept within the transition zone." << std::endl
+                        << "   p,T = " << p << ", " << T << std::endl;
+          temp_guess_c[0][c] = T;
+          pres_guess_c[0][c] = p;
         }
       }
     }

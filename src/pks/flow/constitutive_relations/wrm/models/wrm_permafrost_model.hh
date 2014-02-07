@@ -23,7 +23,7 @@ public:
 
   void set_WRM(const Teuchos::RCP<WRM>& wrm) { wrm_ = wrm; }
 
-  // required methods from the base class
+  virtual bool freezing(double T, double pc_liq, double pc_ice) = 0;
   virtual void saturations(double pc_liq, double pc_ice, double (&sats)[3]) = 0;
   virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice,
           double (&dsats)[3]) = 0;
