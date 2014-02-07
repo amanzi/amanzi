@@ -248,8 +248,11 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
   int faces_LID[MFD_MAX_FACES];  // Contigious memory is required.
   int faces_GID[MFD_MAX_FACES];
 
-  // clear global space
-  A2c2c_cells_Inv_.clear();
+  // allocate global space, if necessary
+  if (A2c2c_cells_Inv_.size() != ncells) {
+    A2c2c_cells_Inv_.resize(static_cast<size_t>(ncells));
+  }
+
   if (is_matrix_constructed_) P2f2f_->PutScalar(0.0);
 
   // Assemble
@@ -282,7 +285,7 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
       //      ASSERT(0);
       Exceptions::amanzi_throw(Errors::CutTimeStep());
     }
-    A2c2c_cells_Inv_.push_back(cell_inv);
+    A2c2c_cells_Inv_[c] = cell_inv;
 
     // Make the cell-local Schur complement
     for (int i=0; i!=nfaces; ++i) {

@@ -109,7 +109,11 @@ void MatrixMFD::CreateMFDmassMatrices(
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Mff_cells_.clear();
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  if (Mff_cells_.size() != ncells) {
+   Mff_cells_.resize(static_cast<size_t>(ncells));
+  }
 
   int ok;
   nokay_ = npassed_ = 0;
@@ -120,7 +124,7 @@ void MatrixMFD::CreateMFDmassMatrices(
     Kc(0,0) = 1.0;
   }
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  //int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -152,9 +156,9 @@ void MatrixMFD::CreateMFDmassMatrices(
       Errors::Message msg("Flow PK: unexpected discretization methods (contact lipnikov@lanl.gov).");
       Exceptions::amanzi_throw(msg);
     }
-
-    Mff_cells_.push_back(Mff);
-
+    
+    Mff_cells_[c] = Mff;
+    
     if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
       Errors::Message msg("Matrix_MFD: unexpected failure of LAPACK in WhetStone.");
       Exceptions::amanzi_throw(msg);
@@ -185,12 +189,21 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Aff_cells_.clear();
-  Afc_cells_.clear();
-  Acf_cells_.clear();
-  Acc_cells_.clear();
-
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  
+  if (Aff_cells_.size() != ncells) {
+    Aff_cells_.resize(static_cast<size_t>(ncells));
+  }
+  if (Afc_cells_.size() != ncells) {
+    Afc_cells_.resize(static_cast<size_t>(ncells));
+  }
+  if (Acf_cells_.size() != ncells) {
+    Acf_cells_.resize(static_cast<size_t>(ncells));
+  }
+  if (Acc_cells_.size() != ncells) {
+    Acc_cells_.resize(static_cast<size_t>(ncells));
+  }
+
   for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -235,25 +248,25 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
       }
     }
 
-	double matsum = 0.0;
-	for (int n=0; n!=nfaces; ++n) {
-	  double rowsum = 0.0;
+    double matsum = 0.0;
+    for (int n=0; n!=nfaces; ++n) {
+      double rowsum = 0.0;
       double colsum = 0.0;
-
-	  for (int m=0; m!=nfaces; ++m) {
+      
+      for (int m=0; m!=nfaces; ++m) {
         colsum += Bff(m, n);
-		rowsum += Bff(n, m);
-	  }
-
-	  Bcf(n) = -colsum;
-	  Bfc(n) = -rowsum;
-	  matsum += colsum;
-	}
-
-    Aff_cells_.push_back(Bff);
-    Afc_cells_.push_back(Bfc);
-    Acf_cells_.push_back(Bcf);
-    Acc_cells_.push_back(matsum);
+	rowsum += Bff(n, m);
+      }
+      
+      Bcf(n) = -colsum;
+      Bfc(n) = -rowsum;
+      matsum += colsum;
+    }
+    
+    Aff_cells_[c] = Bff;
+    Afc_cells_[c] = Bfc;
+    Acf_cells_[c] = Bcf;
+    Acc_cells_[c] = matsum;
   }
 }
 
@@ -262,10 +275,16 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
  * Create elemental rhs vectors.
  ****************************************************************** */
 void MatrixMFD::CreateMFDrhsVectors() {
-  Ff_cells_.clear();
-  Fc_cells_.clear();
-
+  
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  
+  if (Ff_cells_.size() != ncells) {
+    Ff_cells_.resize(static_cast<size_t>(ncells));
+  }
+  if (Fc_cells_.size() != ncells) {
+    Fc_cells_.resize(static_cast<size_t>(ncells));
+  }
+
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -276,8 +295,8 @@ void MatrixMFD::CreateMFDrhsVectors() {
     Epetra_SerialDenseVector Ff(nfaces);  // Entries are initilaized to 0.0.
     double Fc = 0.0;
 
-    Ff_cells_.push_back(Ff);
-    Fc_cells_.push_back(Fc);
+    Ff_cells_[c] = Ff;
+    Fc_cells_[c] = Fc;
   }
 }
 
