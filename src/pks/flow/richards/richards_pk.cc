@@ -229,6 +229,12 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->InitPreconditioner();
 
+  // operator with no krel for flux direction, consistent faces
+  face_matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
+  face_matrix_->set_symmetric(symmetric_);
+  face_matrix_->SymbolicAssembleGlobalMatrices();
+  face_matrix_->InitPreconditioner();
+
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
   if (scaled_constraint_ && !mfd_pc_plist.isParameter("scaled constraint equation"))
@@ -363,6 +369,11 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   // operators
   matrix_->CreateMFDmassMatrices(K_.ptr());
   mfd_preconditioner_->CreateMFDmassMatrices(K_.ptr());
+
+  face_matrix_->CreateMFDmassMatrices(K_.ptr());
+  face_matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
+
+
 };
 
 
@@ -492,14 +503,6 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   bool update_perm = S->GetFieldEvaluator("relative_permeability")
       ->HasFieldChanged(S, name_);
 
-  // // n/mu on cells
-  // update_perm |= S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S, name_);
-  // update_perm |= S->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S, name_);
-  // const Epetra_MultiVector& n_liq = *S->GetFieldData("molar_density_liquid")
-  //     ->ViewComponent("cell",false);
-  // const Epetra_MultiVector& visc = *S->GetFieldData("viscosity_liquid")
-  //     ->ViewComponent("cell",false);
-
   // requirements due to the upwinding method
   if (Krel_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
     bool update_dir = S->GetFieldEvaluator("mass_density_liquid")
@@ -511,21 +514,9 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       Teuchos::RCP<CompositeVector> flux_dir =
           S->GetFieldData("darcy_flux_direction", name_);
 
-      // // Create the stiffness matrix without a rel perm (just n/mu)
-      // {
-      //   Epetra_MultiVector& uw_rel_perm_c = *sc_uw_rel_perm->ViewComponent("cell",false);
-      //   int ncells = uw_rel_perm_c.MyLength();
-      //   for (unsigned int c=0; c!=ncells; ++c) {
-      //     uw_rel_perm_c[0][c] = n_liq[0][c] / visc[0][c] / perm_scale_;
-      //   }
-      // }
-      // sc_uw_rel_perm->ViewComponent("face",false)->PutScalar(1.);
-      // matrix_->CreateMFDstiffnessMatrices(sc_uw_rel_perm.ptr());
-      matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
-
       // Derive the pressure fluxes
       Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
-      matrix_->DeriveFlux(*pres, flux_dir.ptr());
+      face_matrix_->DeriveFlux(*pres, flux_dir.ptr());
 
       // Add in the gravity fluxes
       Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
