@@ -17,7 +17,7 @@ with freezing.
 
 namespace Amanzi {
 
-class MPCDelegateEWC;
+class MPCDelegateEWCSubsurface;
 
 class MPCSubsurface : public MPCCoupledCells {
 
@@ -51,9 +51,6 @@ class MPCSubsurface : public MPCCoupledCells {
           Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
  protected:
-  bool modify_predictor_heuristic_(double h, Teuchos::RCP<TreeVector> up);
-
- protected:
 
   enum PredictorType {
     PREDICTOR_NONE = 0,
@@ -77,7 +74,7 @@ class MPCSubsurface : public MPCCoupledCells {
   PredictorType predictor_type_;
 
   // EWC delegate
-  Teuchos::RCP<MPCDelegateEWC> ewc_;
+  Teuchos::RCP<MPCDelegateEWCSubsurface> ewc_;
 
   bool dumped_;
 
