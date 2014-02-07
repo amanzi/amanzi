@@ -97,8 +97,10 @@ The gravitational acceleration is assumed to be directed in the negative z-direc
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "VerboseObject.hh"
 #include "Point.hh"
 #include "Mesh.hh"
+
 #include "FlowBoundaryFunction.hh"
 
 
@@ -108,15 +110,15 @@ namespace AmanziFlow {
 class FlowBCFactory {
  public:
   FlowBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                const Teuchos::RCP<Teuchos::ParameterList>& params)
-     : mesh_(mesh), params_(params) {}
+                const Teuchos::RCP<Teuchos::ParameterList>& plist);
   ~FlowBCFactory() {};
   
   Functions::FlowBoundaryFunction* CreatePressure(std::vector<int>& submodel) const;
   Functions::FlowBoundaryFunction* CreateMassFlux(std::vector<int>& submodel) const;
   Functions::FlowBoundaryFunction* CreateStaticHead(
       double p0, double rho, const AmanziGeometry::Point& gravity, std::vector<int>& submodel) const;
-  Functions::FlowBoundaryFunction* CreateSeepageFace(std::vector<int>& submodel) const;
+  Functions::FlowBoundaryFunction* CreateSeepageFace(
+      double p0, std::vector<int>& submodel) const;
 
  private:
   void ProcessPressureList(
@@ -146,7 +148,9 @@ class FlowBCFactory {
 
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
-  const Teuchos::RCP<Teuchos::ParameterList>& params_;
+  const Teuchos::RCP<Teuchos::ParameterList>& plist_;
+
+  VerboseObject* vo_;
 };
 
 }  // namespace AmanziFlow

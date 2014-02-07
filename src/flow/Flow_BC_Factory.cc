@@ -23,13 +23,27 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
+* Constructor
+****************************************************************** */
+FlowBCFactory::FlowBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
+   : mesh_(mesh), plist_(plist)
+{
+  // create verbosity object
+  Teuchos::ParameterList vlist;
+  // vlist.set("Verbosity Level", "medium");
+  vo_ = new VerboseObject("FlowPK::Richards", vlist); 
+}
+
+
+/* ******************************************************************
 * Process Dirichet BC (pressure), step 1.
 ****************************************************************** */
 Functions::FlowBoundaryFunction* FlowBCFactory::CreatePressure(std::vector<int>& submodel) const
 {
   Functions::FlowBoundaryFunction* bc = new Functions::FlowBoundaryFunction(mesh_);
   try {
-    ProcessPressureList(params_->sublist("pressure"), submodel, bc);
+    ProcessPressureList(plist_->sublist("pressure"), submodel, bc);
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FlowBCFactory: \"pressure\" sublist error: " << msg.what();
@@ -52,7 +66,7 @@ Functions::FlowBoundaryFunction* FlowBCFactory::CreateMassFlux(std::vector<int>&
 
   Functions::FlowBoundaryFunction* bc = new Functions::FlowBoundaryFunction(mesh_);
   try {
-    ProcessMassFluxList(params_->sublist("mass flux"), submodel, bc);
+    ProcessMassFluxList(plist_->sublist("mass flux"), submodel, bc);
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FlowBCFactory: \"mass flux\" sublist error: " << msg.what();
@@ -74,8 +88,10 @@ Functions::FlowBoundaryFunction* FlowBCFactory::CreateStaticHead(
     std::vector<int>& submodel) const
 {
   Functions::FlowBoundaryFunction* bc = new Functions::FlowBoundaryFunction(mesh_);
+  bc->set_reference_pressure(p0);  // Set default reference pressure
+
   try {
-    ProcessStaticHeadList(p0, density, gravity, params_->sublist("static head"), submodel, bc);
+    ProcessStaticHeadList(p0, density, gravity, plist_->sublist("static head"), submodel, bc);
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FlowBCFactory: \"static head\" sublist error: " << msg.what();
@@ -92,11 +108,14 @@ Functions::FlowBoundaryFunction* FlowBCFactory::CreateStaticHead(
 /* ******************************************************************
 * Seepage Face BC, step 1.
 ****************************************************************** */
-Functions::FlowBoundaryFunction* FlowBCFactory::CreateSeepageFace(std::vector<int>& submodel) const
+Functions::FlowBoundaryFunction* FlowBCFactory::CreateSeepageFace(
+    double p0, std::vector<int>& submodel) const
 {
   Functions::FlowBoundaryFunction* bc = new Functions::FlowBoundaryFunction(mesh_);
+  bc->set_reference_pressure(p0);  // Set default reference pressure
+
   try {
-    ProcessSeepageFaceList(params_->sublist("seepage face"), submodel, bc);
+    ProcessSeepageFaceList(plist_->sublist("seepage face"), submodel, bc);
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FlowBCFactory: \"seepage face\" sublist error: " << msg.what();
@@ -369,10 +388,10 @@ void FlowBCFactory::ProcessSeepageFaceList(
         m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
         Exceptions::amanzi_throw(m);
       }
-    } else {  // ERROR -- parameter is not a sublist
-      Errors::Message m;
-      m << "parameter \"" << name.c_str() << "\" is not a sublist";
-      Exceptions::amanzi_throw(m);
+    } else {  // WARNING -- parameter is not a sublist
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << vo_->color("yellow") << "ignoring Flow BC parameter \"" 
+                 << name.c_str() << "\"" << vo_->reset() << std::endl;
     }
   }
 }

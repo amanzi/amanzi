@@ -57,6 +57,8 @@ std::string VerboseObject::color(std::string name)
     output = std::string("\033[1;31m");
   } else if (name == "green") {
     output = std::string("\033[1;32m");
+  } else if (name == "yellow") {
+    output = std::string("\033[1;33m");
   }
 #endif
   return output;

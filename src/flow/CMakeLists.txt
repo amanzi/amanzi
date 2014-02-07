@@ -218,7 +218,7 @@ if (BUILD_TESTS)
     # Test: flow-bc-factory
     add_amanzi_test(flow_bc_factory flow_bc_factory
                     KIND unit
-                    SOURCE test/flow_bc_factory.cc
+                    SOURCE test/Main.cc test/flow_bc_factory.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
     # Test: 3D Richards

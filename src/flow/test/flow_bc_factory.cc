@@ -29,13 +29,6 @@ using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::AmanziFlow;
 
-int main(int argc, char *argv[])
-{
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  return UnitTest::RunAllTests ();
-}
-
-
 struct bits_and_pieces
 {
   Epetra_MpiComm *comm;
