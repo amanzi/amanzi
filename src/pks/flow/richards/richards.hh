@@ -151,6 +151,7 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
+  Teuchos::RCP<Operators::MatrixMFD> face_matrix_;
   // note PC is in PKPhysicalBDFBase
 
   // custom enorm tolerances
