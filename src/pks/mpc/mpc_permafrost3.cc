@@ -356,6 +356,14 @@ MPCPermafrost3::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   modified |= domain_flow_pk_->modify_predictor(h, u->SubVector(0));
   modified |= domain_energy_pk_->modify_predictor(h, u->SubVector(1));
 
+  // Copy consistent faces to surface
+  if (modified) {
+    MergeSubsurfaceAndSurfacePressure(u->SubVector(0)->Data().ptr(),
+  				      u->SubVector(1)->Data().ptr(),
+  				      u->SubVector(2)->Data().ptr(),
+  				      u->SubVector(3)->Data().ptr());
+  }
+
   // Make a new TreeVector that is just the surface values (by pointer).
   Teuchos::RCP<TreeVector> surf_u = Teuchos::rcp(new TreeVector());
   surf_u->PushBack(u->SubVector(2));
@@ -364,12 +372,12 @@ MPCPermafrost3::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   // Surface EWC
   modified |= surf_ewc_->modify_predictor(h,surf_u);
 
-  // Merge surface cells with subsurface faces
-  if (modified)
-    MergeSubsurfaceAndSurfacePressure(u->SubVector(0)->Data().ptr(),
-				      u->SubVector(1)->Data().ptr(),
-				      u->SubVector(2)->Data().ptr(),
-				      u->SubVector(3)->Data().ptr());
+  // // Merge surface cells with subsurface faces
+  // if (modified)
+  //   MergeSubsurfaceAndSurfacePressure(u->SubVector(0)->Data().ptr(),
+  // 				      u->SubVector(1)->Data().ptr(),
+  // 				      u->SubVector(2)->Data().ptr(),
+  // 				      u->SubVector(3)->Data().ptr());
 
   // Hack surface faces
   bool newly_modified = false;
