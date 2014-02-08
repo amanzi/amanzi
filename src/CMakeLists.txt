@@ -56,18 +56,14 @@ if (ENABLE_Unstructured)
 
 endif()
 
-if (ENABLE_Unstructured AND ENABLE_Physics)
-
-  add_subdirectory(chemistry_pk)
-
+if (ENABLE_Unstructured AND ENABLE_Physics)  
+  add_subdirectory(chemistry_pk)	    
   add_subdirectory(flow)
   add_subdirectory(transport)
 
   # Multiprocess coordinator
   add_subdirectory(mpc)
-endif()
 
-if (ENABLE_Unstructured AND ENABLE_Physics)
   # unstructured grid simualtion driver, and Amanzi binaries
   add_subdirectory(executables)
 endif()

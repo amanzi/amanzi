@@ -97,8 +97,7 @@ int PorousMedia::num_state_type;
 //
 // Region.
 //
-std::string    PorousMedia::surf_file;
-PArray<Region> PorousMedia::regions;
+std::string      PorousMedia::surf_file;
 PArray<Material> PorousMedia::materials;
 //
 // Rock
@@ -991,8 +990,7 @@ PorousMedia::variableSetUp ()
   //
   // **************  DEFINE ERROR ESTIMATION QUANTITIES  *************
   //
-  //err_list.add("gradn",1,ErrorRec::Special,ErrorFunc(FORT_ADVERROR));
-
+  const RegionManager* region_manager = PMAmr::RegionManagerPtr();
   Array<std::string> refinement_indicators;
   pp.queryarr("refinement_indicators",refinement_indicators,0,pp.countval("refinement_indicators"));
   for (int i=0; i<refinement_indicators.size(); ++i)
@@ -1007,7 +1005,7 @@ PorousMedia::variableSetUp ()
       if (nreg) {
           ppr.getarr("regions",region_names,0,nreg);
       }
-      PArray<Region> regions = build_region_PArray(region_names);
+      Array<const Region*> regions = region_manager->RegionPtrArray(region_names);
       if (ppr.countval("val_greater_than")) {
           Real value; ppr.get("val_greater_than",value);
           std::string field; ppr.get("field",field);
@@ -1045,6 +1043,7 @@ PorousMedia::variableSetUp ()
 //
 //  Read input file
 //
+#if 0
 void PorousMedia::read_geometry()
 {
   //
@@ -1134,6 +1133,7 @@ void PorousMedia::read_geometry()
       pp.query("surf_file",surf_file);
     }
 }
+#endif
 
 void
 PorousMedia::read_rock()
@@ -1348,7 +1348,9 @@ PorousMedia::read_rock()
 
         Array<std::string> region_names;
         ppr.getarr("regions",region_names,0,ppr.countval("regions"));
-        PArray<Region> rregions = build_region_PArray(region_names);
+
+	const RegionManager* region_manager = PMAmr::RegionManagerPtr();
+	Array<const Region*> rregions = region_manager->RegionPtrArray(region_names);
         for (int j=0; j<region_names.size(); ++j) {
             material_regions.push_back(region_names[j]);
         }
@@ -1800,30 +1802,6 @@ void PorousMedia::read_prob()
 // Construct bc functions
 //
 
-PArray<Region>
-PorousMedia::build_region_PArray(const Array<std::string>& region_names)
-{
-    PArray<Region> ret(region_names.size(), PArrayNoManage);
-    for (int i=0; i<region_names.size(); ++i)
-    {
-        const std::string& name = region_names[i];
-        bool found = false;
-        for (int j=0; j<regions.size() && !found; ++j)
-        {
-            Region& r = regions[j];
-            if (regions[j].name == name) {
-                found = true;
-                ret.set(i,&r);
-            }
-        }
-        if (!found) {
-            std::string m = "Named region not found: \"" + name + "\"";
-            BoxLib::Error(m.c_str());
-        }
-    }
-    return ret;
-}
-
 const Material&
 PorousMedia::find_material(const std::string& name)
 {
@@ -2002,6 +1980,7 @@ void  PorousMedia::read_comp()
       cp.getarr("ic_labels",ic_names,0,n_ics);
       ic_array.resize(n_ics,PArrayManage);
       do_constant_vel = false;
+      const RegionManager* region_manager = PMAmr::RegionManagerPtr();
       for (int i = 0; i<n_ics; i++)
       {
           const std::string& icname = ic_names[i];
@@ -2011,7 +1990,7 @@ void  PorousMedia::read_comp()
 	  int n_ic_regions = ppr.countval("regions");
           Array<std::string> region_names;
 	  ppr.getarr("regions",region_names,0,n_ic_regions);
-          PArray<Region> ic_regions = build_region_PArray(region_names);
+	  Array<const Region*> ic_regions = region_manager->RegionPtrArray(region_names);
 
           std::string ic_type; ppr.get("type",ic_type);
 	  BL_ASSERT(!do_constant_vel); // If this is ever set, it must be the only IC so we should never see this true here
@@ -2158,6 +2137,7 @@ void  PorousMedia::read_comp()
 	pres_bc.setHi(j,1);
       }
 
+      const RegionManager* region_manager = PMAmr::RegionManagerPtr();
       for (int i = 0; i<n_bcs; i++)
       {
           int ibc = i;
@@ -2168,7 +2148,7 @@ void  PorousMedia::read_comp()
 	  int n_bc_regions = ppr.countval("regions");
           Array<std::string> region_names;
 	  ppr.getarr("regions",region_names,0,n_bc_regions);
-          const PArray<Region> bc_regions = build_region_PArray(region_names);
+	  Array<const Region*> bc_regions = region_manager->RegionPtrArray(region_names);
           std::string bc_type; ppr.get("type",bc_type);
 
           bool is_inflow = false;
@@ -2309,7 +2289,7 @@ void  PorousMedia::read_comp()
               int is_hi = -1;
               for (int j=0; j<bc_regions.size(); ++j)
               {
-                  const std::string purpose = bc_regions[j].purpose;
+                  const std::string purpose = bc_regions[j]->purpose;
                   for (int k=0; k<7; ++k) {
                       if (purpose == PMAMR::RpurposeDEF[k]) {
 			  if (k == 6) {
@@ -2358,7 +2338,7 @@ void  PorousMedia::read_comp()
 
           for (int j=0; j<bc_regions.size(); ++j)
           {
-              const std::string purpose = bc_regions[j].purpose;
+              const std::string purpose = bc_regions[j]->purpose;
               int dir = -1, is_hi;
               for (int k=0; k<7; ++k) {
                   if (purpose == PMAMR::RpurposeDEF[k]) {
@@ -2449,6 +2429,7 @@ void  PorousMedia::read_tracer()
           ppr.getarr("tinits",tic_names,0,n_ic);
           tic_array[i].resize(n_ic,PArrayManage);
           
+	  const RegionManager* region_manager = PMAmr::RegionManagerPtr();
           for (int n = 0; n<n_ic; n++)
           {
               const std::string prefixIC(prefix + "." + tic_names[n]);
@@ -2456,7 +2437,7 @@ void  PorousMedia::read_tracer()
               int n_ic_region = ppri.countval("regions");
               Array<std::string> region_names;
               ppri.getarr("regions",region_names,0,n_ic_region);
-              const PArray<Region> tic_regions = build_region_PArray(region_names);
+	      Array<const Region*> tic_regions = region_manager->RegionPtrArray(region_names);
               std::string tic_type; ppri.get("type",tic_type);
               
               if (tic_type == "concentration")
@@ -2479,16 +2460,15 @@ void  PorousMedia::read_tracer()
               tbc_array[i].resize(n_tbc+2*BL_SPACEDIM,PArrayManage);
 
               // Explicitly build default BCs
+	      const RegionManager* region_manager = PMAmr::RegionManagerPtr();
               int tbc_cnt = 0;
               for (int n=0; n<BL_SPACEDIM; ++n) {
                 tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n] + "_DEFAULT",
-                                                           build_region_PArray(Array<std::string>(1,RlabelDEF[n])),
+                                                           region_manager->RegionPtrArray(Array<std::string>(1,RlabelDEF[n])),
                                                            std::string("noflow"),0));
-		//std::string("concentration"),0));
                 tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n+3] + "_DEFAULT",
-                                                           build_region_PArray(Array<std::string>(1,RlabelDEF[n+3])),
+                                                           region_manager->RegionPtrArray(Array<std::string>(1,RlabelDEF[n+3])),
                                                            std::string("noflow"),0));
-		//std::string("concentration"),0));
               }
 
               Array<int> orient_types(6,-1);
@@ -2501,7 +2481,7 @@ void  PorousMedia::read_tracer()
                   Array<std::string> tbc_region_names;
                   ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
 
-                  const PArray<Region> tbc_regions = build_region_PArray(tbc_region_names);
+                  Array<const Region*> tbc_regions = region_manager->RegionPtrArray(tbc_region_names);
                   std::string tbc_type; ppri.get("type",tbc_type);
 
                   // When we get the BCs, we need to translate to AMR-standardized type id.  By
@@ -2552,7 +2532,7 @@ void  PorousMedia::read_tracer()
 
                   for (int j=0; j<tbc_regions.size(); ++j)
                   {
-                    const std::string purpose = tbc_regions[j].purpose;
+                    const std::string purpose = tbc_regions[j]->purpose;
                     int dir = -1, is_hi, k;
                     for (int kt=0; kt<7 && dir<0; ++kt) {
                       if (purpose == PMAMR::RpurposeDEF[kt]) {
@@ -2627,7 +2607,8 @@ void  PorousMedia::read_source()
       int n_src_regions = pps.countval("regions");
       Array<std::string> src_region_names; 
       pps.getarr("regions",src_region_names,0,n_src_regions);
-      const PArray<Region> source_regions = build_region_PArray(src_region_names);
+      const RegionManager* region_manager = PMAmr::RegionManagerPtr();
+      const Array<const Region*> source_regions = region_manager->RegionPtrArray(src_region_names);
 
       if (pps.countval("type")) {
 	std::string source_type; pps.get("type",source_type);
@@ -2642,7 +2623,7 @@ void  PorousMedia::read_source()
 
             if (source_type == "point") {
               BL_ASSERT(source_regions.size() == 1);
-              BL_ASSERT(source_regions[0].type=="point");
+              BL_ASSERT(source_regions[0]->type=="point");
             }
 
 	    source_array.set(i, new RegionData(source_name,source_regions,source_type,vals));
@@ -2727,6 +2708,15 @@ void  PorousMedia::read_source()
   }
 }
 
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Epetra_Comm.h"
+#include "Epetra_MpiComm.h"
+#ifdef ALQUIMIA_ENABLED
+#include "Chemistry_Engine.hh"
+#endif
+
 void  PorousMedia::read_chem()
 {
 
@@ -2742,6 +2732,16 @@ void  PorousMedia::read_chem()
       do_full_strang = 0;
     }
       
+  std::string chemistry_model = "Amanzi"; pp.query("chemistry_model",chemistry_model);
+
+  const Teuchos::ParameterList& chemistry_parameter_list = PorousMedia::InputParameterList().sublist("Chemistry");
+
+  // chemistry...
+  //Amanzi::AmanziChemistry::Chemistry_Engine* chemistry_engine;
+  if (do_tracer_chemistry) {
+    //chemistry_engine = new Amanzi::AmanziChemistry::Chemistry_Engine(chemistry_parameter_list);
+  }
+
 #ifdef AMANZI
 
   // get input file name, create SimpleThermoDatabase, process
@@ -2902,15 +2902,22 @@ void PorousMedia::read_params()
   // problem-specific
   read_prob();
 
+  RegionManager* region_manager = PMAmr::RegionManagerPtr();
+  region_manager = new RegionManager();
+
+#if 0
   // geometry
   read_geometry();
+#endif
+
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read geometry." << std::endl;
 
-  if (echo_inputs && ParallelDescriptor::IOProcessor()) {
+  if (1 || (echo_inputs && ParallelDescriptor::IOProcessor())) {
       std::cout << "The Regions: " << std::endl;
+      const Array<const Region*> regions = region_manager->RegionPtrArray();
       for (int i=0; i<regions.size(); ++i) {
-          std::cout << regions[i] << std::endl;
+	std::cout << *(regions[i]) << std::endl;
       }
   }
 

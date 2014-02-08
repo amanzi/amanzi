@@ -37,6 +37,8 @@ static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::Aman
 extern Amanzi::AmanziChemistry::ChemistryOutput* Amanzi::AmanziChemistry::chem_out;
 #endif
 
+Teuchos::ParameterList PorousMedia::input_parameter_list;
+
 #define SHOWVALARR(val)                        \
 {                                              \
     std::cout << #val << " = ";                \
@@ -120,34 +122,31 @@ static double richard_time;
 static double richard_time_min = 1.e6;
 
 PM_Error_Value::PM_Error_Value (Real min_time, Real max_time, int max_level, 
-                                const PArray<Region>& regions)
+                                const Array<const Region*>& regions_)
     : pmef(0), value(0), min_time(min_time), max_time(max_time), max_level(max_level)
 {
-    set_regions(regions);
+    set_regions(regions_);
 }
 
 PM_Error_Value::PM_Error_Value (PMEF pmef,
                                 Real value, Real min_time,
                                 Real max_time, int max_level, 
-                                const PArray<Region>& regions)
+                                const Array<const Region*>& regions_)
     : pmef(pmef), value(value), min_time(min_time), max_time(max_time), max_level(max_level)
 {
-    set_regions(regions);
+    set_regions(regions_);
 }
 
 void
-PM_Error_Value::set_regions(const PArray<Region>& regions_)
+PM_Error_Value::set_regions(const Array<const Region*>& regions_)
 {
-    regions.clear();
     int nregions=regions_.size();
 
     // Get a copy of the pointers to regions in a structure that wont 
     //   remove them when it leaves scope
-    regions.resize(nregions,PArrayNoManage);
-    for (int i=0; i<nregions; ++i)
-    {
-        Region& r = const_cast<Region&>(regions_[i]);
-        regions.set(i,&(r));
+    regions.resize(nregions);
+    for (int i=0; i<nregions; ++i) {
+      regions[i] = regions_[i];
     }
 }
 
@@ -189,7 +188,6 @@ static bool physics_events_registered = false;
 void
 PorousMedia::CleanupStatics ()
 {
-    regions.clear();
     ic_array.clear();
     bc_array.clear();
     tic_array.clear();
@@ -345,10 +343,10 @@ PorousMedia::setup_bound_desc()
       const PArray<RegionData>& bcs = PorousMedia::BCs();
       Array<int> myBCs;
       for (int i=0; i<bcs.size(); ++i) {
-        const PArray<Region>& regions = bcs[i].Regions();
+        const Array<const Region*>& regions = bcs[i].Regions();
         int found = 0;
         for (int j=0; j<regions.size(); ++j) {
-          if (regions[j].purpose == purpose) {
+          if (regions[j]->purpose == purpose) {
             found++;
           }
         }
@@ -389,10 +387,10 @@ PorousMedia::setup_bound_desc()
           const PArray<RegionData>& tbcs = PorousMedia::TBCs(n);
           Array<int> myTBCs;
           for (int i=0; i<tbcs.size(); ++i) {
-            const PArray<Region>& tregions = tbcs[i].Regions();
+            const Array<const Region*>& tregions = tbcs[i].Regions();
             int tfound = 0;
             for (int j=0; j<tregions.size(); ++j) {
-              if (tregions[j].purpose == purpose) {
+              if (tregions[j]->purpose == purpose) {
                 tfound++;
               }
             }
@@ -430,10 +428,10 @@ PorousMedia::setup_bound_desc()
         const PArray<RegionData>& bcs = PorousMedia::BCs();
         Array<int> myBCs;
         for (int i=0; i<bcs.size(); ++i) {
-          const PArray<Region>& regions = bcs[i].Regions();
+          const Array<const Region*>& regions = bcs[i].Regions();
           int found = 0;
           for (int j=0; j<regions.size(); ++j) {
-            if (regions[j].purpose == purpose) {
+            if (regions[j]->purpose == purpose) {
               found++;
             }
           }
@@ -1064,7 +1062,7 @@ PorousMedia::initData ()
         for (int i=0; i<ic_array.size(); ++i)
         {
             const RegionData& ic = ic_array[i];
-            const PArray<Region>& ic_regions = ic.Regions();
+            const Array<const Region*>& ic_regions = ic.Regions();
             const std::string& type = ic.Type();
             
             if (type == "file") 
@@ -1082,8 +1080,8 @@ PorousMedia::initData ()
 	    {
 	      Array<Real> vals = ic();
 	      for (int jt=0; jt<ic_regions.size(); ++jt) {
-		regions[jt].setVal(P_new[mfi],vals,
-				   dx,0,0,ncomps);
+		const RegionManager* region_manager = PMAmr::RegionManagerPtr();
+		region_manager->RegionPtrArray()[jt]->setVal(P_new[mfi],vals,dx,0,0,ncomps);
 	      }
 	    }
             else if (type == "linear_pressure")
@@ -1154,7 +1152,7 @@ PorousMedia::initData ()
                 for (int i=0; i<rds.size(); ++i)
                 {
                     const RegionData& tic = rds[i];
-                    const PArray<Region>& tic_regions = tic.Regions();
+                    const Array<const Region*>& tic_regions = tic.Regions();
                     const std::string& tic_type = tic.Type();
                     
                     if (tic_type == "file") 
@@ -1171,7 +1169,7 @@ PorousMedia::initData ()
                             BL_ASSERT(sdat.nComp()>ncomps+iTracer);
                             BL_ASSERT(tic_regions.size()>jt);
 
-                            tic_regions[jt].setVal(sdat,val[0],ncomps+iTracer,dx,0);
+                            tic_regions[jt]->setVal(sdat,val[0],ncomps+iTracer,dx,0);
                         }
                     }
                     else {
@@ -1197,7 +1195,7 @@ PorousMedia::initData ()
                 for (ChemICMap::iterator it=sorption_isotherm_ics.begin(); it!=sorption_isotherm_ics.end(); ++it)
                 {
                     const std::string& material_name = it->first;
-                    const PArray<Region>& rock_regions = find_material(material_name).Regions();
+                    const Array<const Region*>& rock_regions = find_material(material_name).Regions();
 
                     ICLabelParmPair& solute_to_pp = it->second; 
                     for (ICLabelParmPair::iterator it1=solute_to_pp.begin(); it1!=solute_to_pp.end(); ++it1) 
@@ -1216,7 +1214,7 @@ PorousMedia::initData ()
                                           << value << std::endl;
                             }
                             for (int j=0; j<rock_regions.size(); ++j) {
-                                rock_regions[j].setVal(fab,value,comp,dx,0);
+                                rock_regions[j]->setVal(fab,value,comp,dx,0);
                             }
                         }
                     }
@@ -1234,7 +1232,7 @@ PorousMedia::initData ()
                 for (ChemICMap::iterator it=mineralogy_ics.begin(); it!=mineralogy_ics.end(); ++it)
                 {
                     const std::string& material_name = it->first;
-                    const PArray<Region>& rock_regions = find_material(material_name).Regions();
+                    const Array<const Region*>& rock_regions = find_material(material_name).Regions();
                     
                     ICLabelParmPair& mineral_to_pp = it->second; 
                     for (ICLabelParmPair::iterator it1=mineral_to_pp.begin(); it1!=mineral_to_pp.end(); ++it1) 
@@ -1247,7 +1245,7 @@ PorousMedia::initData ()
                             int comp = mineralogy_label_map[mineral_name][parameter];
                             Real value = it2->second;
                             for (int j=0; j<rock_regions.size(); ++j) {
-                                rock_regions[j].setVal(fab,value,comp,dx,0);
+                                rock_regions[j]->setVal(fab,value,comp,dx,0);
                             }
                         }
                     }
@@ -1276,9 +1274,9 @@ PorousMedia::initData ()
                             int comp = surface_complexation_label_map[sorption_site_name][parameter];
                             Real value = it2->second;
                             
-                            const PArray<Region>& rock_regions = find_material(material_name).Regions();
+                            const Array<const Region*>& rock_regions = find_material(material_name).Regions();
                             for (int j=0; j<rock_regions.size(); ++j) {
-                                rock_regions[j].setVal(fab,value,comp,dx,0);
+                                rock_regions[j]->setVal(fab,value,comp,dx,0);
                             }
                         }
                     }
@@ -1299,9 +1297,9 @@ PorousMedia::initData ()
                     Real value = it->second;
                     int comp = cation_exchange_label_map.begin()->second;
                     
-                    const PArray<Region>& rock_regions = find_material(material_name).Regions();
+                    const Array<const Region*>& rock_regions = find_material(material_name).Regions();
                     for (int j=0; j<rock_regions.size(); ++j) {
-                        rock_regions[j].setVal(fab,value,comp,dx,0);
+                        rock_regions[j]->setVal(fab,value,comp,dx,0);
                     }
                 }
             }
@@ -1329,9 +1327,9 @@ PorousMedia::initData ()
                             int comp = solute_chem_label_map[tracer_name][parameter];
                             Real value = it2->second;
                             
-                            const PArray<Region>& rock_regions = find_material(material_name).Regions();
+                            const Array<const Region*>& rock_regions = find_material(material_name).Regions();
                             for (int j=0; j<rock_regions.size(); ++j) {
-                                rock_regions[j].setVal(fab,value,comp,dx,0);
+                                rock_regions[j]->setVal(fab,value,comp,dx,0);
                             }
                         }
                     }
@@ -1358,9 +1356,9 @@ PorousMedia::initData ()
                         Real value = it1->second;
                         for (int i=0; i<materials.size(); ++i)
                         {	  
-                          const PArray<Region>& mat_regions = materials[i].Regions();
+                          const Array<const Region*>& mat_regions = materials[i].Regions();
                             for (int j=0; j<mat_regions.size(); ++j) {
-                                mat_regions[j].setVal(fab,value,comp,dx,0);
+                                mat_regions[j]->setVal(fab,value,comp,dx,0);
                             }
                         }
                     }
@@ -2798,7 +2796,7 @@ PorousMedia::set_saturated_velocity()
 
   for (int i=0; i<ic_array.size(); ++i) {
     const RegionData& ic = ic_array[i];
-    const PArray<Region>& ic_regions = ic.Regions();
+    const Array<const Region*>& ic_regions = ic.Regions();
     const std::string& type = ic.Type();
     if (type == "constant_velocity") {
       Array<Real> vals = ic();
@@ -4030,11 +4028,11 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
             ret = true;
             Array<Real> inflow_tmp = face_bc(t_eval);
             Real inflow_vel = inflow_tmp[0];
-            const PArray<Region>& regions = face_bc.Regions();
+            const Array<const Region*>& regions = face_bc.Regions();
             for (int j=0; j<regions.size(); ++j)
             {
-              regions[j].setVal(ccBndFab,inflow_vel,0,dx,0);
-              regions[j].setVal(mask,1,0,dx,0);
+              regions[j]->setVal(ccBndFab,inflow_vel,0,dx,0);
+              regions[j]->setVal(mask,1,0,dx,0);
             }
           }
 	}
@@ -4082,12 +4080,12 @@ PorousMedia::get_inflow_density(const Orientation& face,
 	kdat.resize(ccBndBox,1);
 	kdat.copy(ktdat,ccBndBox,face.coordDir(),ccBndBox,0,1);
 
-	const PArray<Region>& regions = face_bc.Regions();
+	const Array<const Region*>& regions = face_bc.Regions();
         
         mask.resize(ccBndBox,1); mask.setVal(-1);
 	for (int j=0; j<regions.size(); ++j) {
-	  regions[j].setVal(vdat,inflow_vel[0],0,dx,0);
-	  regions[j].setVal(mask,1,0,dx,0);
+	  regions[j]->setVal(vdat,inflow_vel[0],0,dx,0);
+	  regions[j]->setVal(mask,1,0,dx,0);
         }
 
 	DEF_LIMITS(fab,s_ptr,s_lo,s_hi);
@@ -7375,7 +7373,7 @@ PorousMedia::errorEst (TagBoxArray& tags,
               const Real* dx_fine = fgeom.CellSize();
               const Real* plo = fgeom.ProbLo();
 
-              const PArray<Region>& my_regions = pmfunc->Regions();
+              const Array<const Region*>& my_regions = pmfunc->Regions();
 
               MultiFab* mf = 0;
               const std::string& name = err_list[j].name();
@@ -7391,7 +7389,7 @@ PorousMedia::errorEst (TagBoxArray& tags,
                   
                   mask.resize(fine_box,1); mask.setVal(0);                  
                   for (int j=0; j<my_regions.size(); ++j) {
-                      my_regions[j].setVal(mask,1,0,dx_fine,0);
+                      my_regions[j]->setVal(mask,1,0,dx_fine,0);
                   }                  
                   coarsenMask(cmask,mask,cumRatio);
 
@@ -10546,12 +10544,12 @@ PorousMedia::getForce (MultiFab& force,
       int snum_comp = std::min(num_comp-strt_comp,ncomps);
       for (MFIter mfi(force); mfi.isValid(); ++mfi) {
 	source_array[i].apply(tmp[mfi],dx,0,snum_comp,time);	
-	const PArray<Region>& regions = source_array[i].Regions();
+	const Array<const Region*>& regions = source_array[i].Regions();
 	for (int j=0; j<regions.size(); ++j) {
 	  if (snum_comp > 0) {
 	    source_array[i].apply(tmp[mfi],dx,0,snum_comp,time);
 	  }
-	  regions[j].setVal(mask[mfi],1,0,dx,0);
+	  regions[j]->setVal(mask[mfi],1,0,dx,0);
 	}
       }
 
@@ -12194,7 +12192,7 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
           const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
 
           mask.setVal(0);
-          const PArray<Region>& regions = face_bc.Regions();
+          const Array<const Region*>& regions = face_bc.Regions();
                     
           if (face_bc.Type() == "zero_total_velocity"  || face_bc.Type() == "noflow") {
             get_inflow_density(it->first,face_bc,bndFab,bndBox,t_eval);
@@ -12279,10 +12277,10 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
             sdat.setVal(0);
             face_bc.apply(sdat,dx,0,ncomps,t_eval);
             mask.resize(subbox,1); mask.setVal(-1);
-            const PArray<Region>& regions = face_bc.Regions();
+            const Array<const Region*>& regions = face_bc.Regions();
             for (int j=0; j<regions.size(); ++j)
             { 
-              regions[j].setVal(mask,1,0,dx,0);
+              regions[j]->setVal(mask,1,0,dx,0);
             }
             
             FArrayBox cpldat, phidat, kpdat, ktdat;
@@ -12317,17 +12315,17 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
           for (int i=0; i<face_bc_idxs.size(); ++i) {
             const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
             mask.setVal(0);
-            const PArray<Region>& regions = face_bc.Regions();
+            const Array<const Region*>& regions = face_bc.Regions();
 
             if (face_bc.Type() == "pressure") {
               for (int j=0; j<regions.size(); ++j) {
-                regions[j].setVal(mask,1,0,dx,0);
+                regions[j]->setVal(mask,1,0,dx,0);
               }
               face_bc.apply(prdat,dx,0,ncomps,t_eval);
             }
             else if (face_bc.Type() == "pressure_head") {
               for (int j=0; j<regions.size(); ++j) {
-                regions[j].setVal(mask,1,0,dx,0);
+                regions[j]->setVal(mask,1,0,dx,0);
               }
               Real head_val = face_bc(t_eval)[0];
 	      if (BL_SPACEDIM<3 && gravity_dir>BL_SPACEDIM-1) {
@@ -12365,7 +12363,7 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
             }
             else if (face_bc.Type() == "linear_pressure") {
               for (int j=0; j<regions.size(); ++j) {
-                regions[j].setVal(mask,1,0,dx,0);
+                regions[j]->setVal(mask,1,0,dx,0);
               }
 	      Array<Real> vals = face_bc(t_eval);
 	      BL_ASSERT(vals.size()>=2*BL_SPACEDIM+1);
@@ -12433,9 +12431,9 @@ PorousMedia::derive_Material_ID(Real      time,
     FArrayBox& fab = mf[mfi];
     for (int i=0; i<materials.size(); ++i) {
       Real val = (Real)i;
-      const PArray<Region>& mat_regions = materials[i].Regions();
+      const Array<const Region*>& mat_regions = materials[i].Regions();
       for (int j=0; j<mat_regions.size(); ++j) {
-        mat_regions[j].setVal(fab,val,dcomp,dx,0);
+        mat_regions[j]->setVal(fab,val,dcomp,dx,0);
       }
     }
   }

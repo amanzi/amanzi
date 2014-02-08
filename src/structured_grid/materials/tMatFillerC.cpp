@@ -14,25 +14,25 @@ static PArray<Material> materials;
 std::ostream& operator<<(std::ostream& os, const Material& mat) {
   std::cout << "Material: " << mat.Name() << std::endl;
   std::cout << "  Regions: ";
-  const PArray<Region>& regions = mat.Regions();
+  const Array<const Region*>& regions = mat.Regions();
   for (int i=0; i<regions.size(); ++i) {
-    std::cout << regions[i].name << " ";
+    std::cout << regions[i]->name << " ";
   }
   std::cout << std::endl;
   return os;
 }
 
-PArray<Region>
-build_region_PArray(const Array<std::string>& region_names)
+Array<const Region*>
+RegionPtrArray(const Array<std::string>& region_names)
 {
-  PArray<Region> ret(region_names.size(), PArrayNoManage);
+  Array<const Region*> ret(region_names.size());
 
   for (int i=0; i<region_names.size(); ++i)
   {
     const std::string& name = region_names[i];
     std::map<std::string, Region*>::const_iterator it = regions.find(name);
     if (it != regions.end()) {
-      ret.set(i,it->second);
+      ret[i] = it->second;
     }
     else {
       std::string m = "Named region not found: " + name;
@@ -157,34 +157,34 @@ SetMaterialsTANK()
   std::vector<Property*> properties(1,(Property*)0);
   materials.resize(5, PArrayManage);
   Array<std::string> region_names;
-  PArray<Region> regionset;
+  Array<const Region*> regionset;
 
   region_names.push_back("Soil");
-  regionset = build_region_PArray(region_names);
+  regionset = RegionPtrArray(region_names);
   delete properties[0]; properties[0] = new ConstantProperty(phi_str,1);
   materials.set(0,new Material("Soil",regionset,properties));
 
   region_names.clear();
   region_names.push_back("Concrete");
-  regionset = build_region_PArray(region_names);
+  regionset = RegionPtrArray(region_names);
   delete properties[0]; properties[0] = new ConstantProperty(phi_str,2);
   materials.set(1,new Material("TankConc",regionset,properties));
 
   region_names.clear();
   region_names.push_back("FastFlow");
-  regionset = build_region_PArray(region_names);
+  regionset = RegionPtrArray(region_names);
   delete properties[0]; properties[0] = new ConstantProperty(phi_str,3);
   materials.set(2,new Material("TankFF",regionset,properties));
 
   region_names.clear();
   region_names.push_back("TankGrout");
-  regionset = build_region_PArray(region_names);
+  regionset = RegionPtrArray(region_names);
   delete properties[0]; properties[0] = new ConstantProperty(phi_str,4);
   materials.set(3,new Material("TankGrout",regionset,properties));
 
   region_names.clear();
   region_names.push_back("Liner");
-  regionset = build_region_PArray(region_names);
+  regionset = RegionPtrArray(region_names);
   //delete properties[0]; properties[0] = new ConstantProperty(phi_str,5);
   int nvals = 2;
   Array<double> p_values(nvals); p_values[0] = 5; p_values[1] = 6;

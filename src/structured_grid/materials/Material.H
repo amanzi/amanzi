@@ -91,7 +91,7 @@ class Material
 {
 public:
   Material(const std::string&    name, 
-	   const PArray<Region>& regions,
+	   const Array<const Region*>& regions,
 	   const std::vector<Property*>& properties = std::vector<Property*>());
   
   Material(const Material& rhs);
@@ -99,7 +99,7 @@ public:
   
   void setVal(FArrayBox& fab,Real val,int comp, const Real* dx) const;
   
-  const PArray<Region>& Regions() const {return regions;}
+  const Array<const Region*>& Regions() const {return regions;}
   const std::string& Name() const {return name;}
   const Property* Prop(const std::string& pname) const;
   Array<std::string> PropertyNames() const;
@@ -108,7 +108,7 @@ protected:
   void ClearProperties();
 
   std::string name;
-  PArray<Region> regions;
+  Array<const Region*> regions;
   std::vector<Property*> properties;
 };
 #endif

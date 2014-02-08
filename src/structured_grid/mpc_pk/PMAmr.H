@@ -12,6 +12,22 @@ class MFTGrowFill;
 #include <Observation.H>
 #include <EventCoord.H>
 
+class RegionManager
+{
+public:
+  RegionManager();
+  ~RegionManager();
+
+  Array<const Region*> RegionPtrArray() const;
+  Array<const Region*> RegionPtrArray(const Array<std::string>& region_names) const;
+
+protected:
+  void Clear();
+  Array<Region*> regions;
+  std::map<std::string,int> name_to_region_idx;
+};
+
+
 class PMAmr
     : public Amr
 {
@@ -58,6 +74,8 @@ public:
                         bool& begin_tpc_now,
                         EventCoord& event_coord,
                         Real time, int iter);
+
+    static RegionManager* RegionManagerPtr() {return region_manager;}
 
     Layout& GetLayout() {return layout;}
     MatFiller* GetMatFiller() {return materialFiller;}
@@ -110,6 +128,7 @@ private:
 
     // Private data
     MatFiller* materialFiller;
+    static RegionManager* region_manager;
     Real dt0_before_event_cut;
     Real dt0_from_previous_advance;
     static bool do_output_time_in_years;

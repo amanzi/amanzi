@@ -37,13 +37,13 @@ TabularInTimeProperty::eval (Real t, int level, const Box& box, FArrayBox& fab, 
 }
 
 Material::Material(const std::string&    _name, 
-		   const PArray<Region>& _regions,
+		   const Array<const Region*>& _regions,
 		   const std::vector<Property*>& _properties)
   : name(_name)
 {
-  regions.resize(_regions.size(),PArrayNoManage);
+  regions.resize(_regions.size());
   for (int i=0; i<regions.size(); ++i) {
-    regions.set(i,(Region*)&(_regions[i]));
+    regions[i] = _regions[i];
   }
   ClearProperties();
   int nprop = _properties.size();
@@ -91,9 +91,9 @@ Material::Material(const Material& rhs)
 {
   name = rhs.name;
   if (rhs.regions.size()>0) {
-    regions.resize(rhs.regions.size(),PArrayNoManage);
+    regions.resize(rhs.regions.size());
     for (int i=0; i<regions.size(); ++i) {
-      regions.set(i,(Region*)&(rhs.regions[i]));
+      regions[i] = rhs.regions[i];
     }
   }
   ClearProperties();
@@ -115,7 +115,7 @@ Material::setVal(FArrayBox& fab,Real val,int comp, const Real* dx) const
 
   int ng = 0;
   for (int k=0; k<regions.size(); ++k) {
-    regions[k].setVal(fab,val,comp,dx,ng);
+    regions[k]->setVal(fab,val,comp,dx,ng);
   }
 }
 

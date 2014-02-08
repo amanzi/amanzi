@@ -9,17 +9,17 @@ class RegionData
 {
 public:
     RegionData(const std::string&    label,
-               const PArray<Region>& regions,
+               const Array<const Region*>& regions,
                const std::string&    typeStr,
                const Array<Real>&    vals);
 
     RegionData(const std::string&    label,
-               const PArray<Region>& regions,
+               const Array<const Region*>& regions,
                const std::string&    typeStr,
                Real                  val);
     virtual ~RegionData() {}
 
-    const PArray<Region>& Regions() const {return regions;}
+    const Array<const Region*>& Regions() const {return regions;}
     std::string Type() const {return type;}
     std::string Label() const {return label;}
     virtual Array<Real> operator() (Real time=0) const {return vals;}
@@ -33,11 +33,11 @@ public:
     
 
 protected:
-    void setRegions(const PArray<Region>& regions_);
+    void setRegions(const Array<const Region*>& regions_);
 
     int nComp;
     std::string type, label;
-    PArray<Region> regions;
+    Array<const Region*> regions;
     Array<Real> vals;
 };
 
@@ -49,14 +49,14 @@ public:
                     const Array<Array<Real> >&        x,
                     const Array<Array<Real> >&        y,
                     const Array<Array<std::string> >& form,
-                    const PArray<Region>&             regions,
+                    const Array<const Region*>&             regions,
                     const std::string&                typeStr);
 
     ArrayRegionData(const std::string&       label,
                     const Array<Real>&       x,
                     const Array<Real>&       y,
                     const Array<std::string> form,
-                    const PArray<Region>&    regions,
+                    const Array<const Region*>&    regions,
                     const std::string&       typeStr,
                     int                      nComp);
     virtual ~ArrayRegionData() {}
@@ -85,7 +85,7 @@ public:
                           const Array<Real>&        x,
                           const Array<Real>&        y,
                           const Array<std::string>& form,
-                          const PArray<Region>&     regions,
+                          const Array<const Region*>&     regions,
                           const std::string&        typeStr,
                           int                       nComp,
                           ArrayTransform&           tfunc)

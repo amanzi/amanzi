@@ -35,6 +35,8 @@
 #include "beaker.hh"
 #endif
 
+#include "Teuchos_ParameterList.hpp"
+
 static Real BL_ONEATM = 101325.0;
 
 enum StateType {State_Type=0, Press_Type, Vcr_Type, FuncCount_Type, Aux_Chem_Type, Num_State_Type};
@@ -83,16 +85,15 @@ public:
         pmef(0), value(), min_time(), max_time(), max_level() {}
     
     PM_Error_Value (Real min_time, Real max_time, int max_level, 
-                    const PArray<Region>& regions);
+                    const Array<const Region*>& regions);
 
     PM_Error_Value (PMEF pmef, Real value, Real min_time,
-                    Real max_time, int max_level, const PArray<Region>& regions);
+                    Real max_time, int max_level, const Array<const Region*>& regions);
 
     virtual ~PM_Error_Value () {}
     
-    virtual ErrorRec::ErrorFunc* clone () const
-    {
-        return new PM_Error_Value(pmef,value,min_time,max_time,max_level,regions);
+    virtual ErrorRec::ErrorFunc* clone () const {
+      return new PM_Error_Value(pmef,value,min_time,max_time,max_level,regions);
     }
 
     bool regionOnly() const {return pmef==0;}
@@ -109,14 +110,14 @@ public:
     Real MinTime() const {return min_time;}
     Real MaxTime() const {return max_time;}
     Real Value() const {return value;}
-    const PArray<Region>& Regions () const {return regions;}
+    const Array<const Region*>& Regions () const {return regions;}
 
 protected:
-    void set_regions(const PArray<Region>& regions);
+    void set_regions(const Array<const Region*>& regions);
     PMEF pmef;
     Real value, min_time, max_time;
     int max_level;
-    PArray<Region> regions;
+    Array<const Region*> regions;
 };
 
 class PorousMedia
@@ -139,6 +140,9 @@ public:
 	       Real            time);
 
   virtual ~PorousMedia ();
+
+  static const Teuchos::ParameterList&InputParameterList() {return input_parameter_list;}
+  static void SetInputParameterList(const Teuchos::ParameterList& pl) {input_parameter_list=pl;}
 
   virtual void restart (Amr&          papa,
 			std::istream& is,
@@ -375,7 +379,7 @@ public:
 				       const Orientation& _Face); 
 
   static const Array<std::string>& UserDerives() {return user_derive_list;}
-  static PArray<Region>& Regions() {return regions;}
+
   static PArray<Material>& Materials() {return materials;}
   static const Array<Real>& Density() {return density;}
   static const Array<Real>& Viscosity() {return muval;}
@@ -408,7 +412,6 @@ public:
   static void read_observation (); 
   static void read_chem (); 
 
-  static PArray<Region> build_region_PArray(const Array<std::string>& region_names);
   static const Material& find_material(const std::string& name);
 
   virtual void sum_integrated_quantities ();
@@ -1082,7 +1085,7 @@ protected:
   bool            FillPatchedOldState_ok;
 
   static Real geometry_eps;
-  static PArray<Region> regions;
+  //static PArray<Region> regions;
   static std::string surf_file;
 
   static PArray<Material> materials;
@@ -1445,6 +1448,7 @@ protected:
   MultiFab *sat_old_cached, *sat_new_cached;
   Real t_sat_old_cached, t_sat_new_cached;
 
+  static Teuchos::ParameterList input_parameter_list;
 };
 
 #endif /*_PorousMedia_H_*/
