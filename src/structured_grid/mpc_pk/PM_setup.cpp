@@ -2734,11 +2734,10 @@ void  PorousMedia::read_chem()
       
   std::string chemistry_model = "Amanzi"; pp.query("chemistry_model",chemistry_model);
 
-  const Teuchos::ParameterList& chemistry_parameter_list = PorousMedia::InputParameterList().sublist("Chemistry");
-
   // chemistry...
   //Amanzi::AmanziChemistry::Chemistry_Engine* chemistry_engine;
   if (do_tracer_chemistry) {
+    //const Teuchos::ParameterList& chemistry_parameter_list = PorousMedia::InputParameterList().sublist("Chemistry");
     //chemistry_engine = new Amanzi::AmanziChemistry::Chemistry_Engine(chemistry_parameter_list);
   }
 
@@ -2902,8 +2901,8 @@ void PorousMedia::read_params()
   // problem-specific
   read_prob();
 
+  PMAmr::SetRegionManagerPtr(new RegionManager());
   RegionManager* region_manager = PMAmr::RegionManagerPtr();
-  region_manager = new RegionManager();
 
 #if 0
   // geometry

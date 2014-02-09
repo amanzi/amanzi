@@ -341,7 +341,7 @@ RegionManager::RegionPtrArray(const Array<std::string>& region_names) const
   }
 
   Array<const Region*> ret(region_names.size());
-  for (int i=0; i<regions.size(); ++i) {
+  for (int i=0; i<region_names.size(); ++i) {
     const std::string& name = region_names[i];
     std::map<std::string,int>::const_iterator it = name_to_region_idx.find(name);
     if (it != name_to_region_idx.end()) {

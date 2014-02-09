@@ -75,6 +75,7 @@ public:
                         EventCoord& event_coord,
                         Real time, int iter);
 
+    static void SetRegionManagerPtr(RegionManager* rmp) {region_manager = rmp;}
     static RegionManager* RegionManagerPtr() {return region_manager;}
 
     Layout& GetLayout() {return layout;}
