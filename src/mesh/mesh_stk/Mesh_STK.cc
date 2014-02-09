@@ -109,16 +109,16 @@ Mesh_STK::entity_get_ptype(const Entity_kind kind,
   bool owned, used;
   switch (kind) {
     case CELL:
-      owned = this->cell_epetra_map(false).MyLID(entid);
-      used = this->cell_epetra_map(true).MyLID(entid);
+      owned = this->cell_map(false).MyLID(entid);
+      used = this->cell_map(true).MyLID(entid);
       break;
     case FACE:
-      owned = this->face_epetra_map(false).MyLID(entid);
-      used = this->face_epetra_map(true).MyLID(entid);
+      owned = this->face_map(false).MyLID(entid);
+      used = this->face_map(true).MyLID(entid);
       break;
     case NODE:
-      owned = this->node_epetra_map(false).MyLID(entid);
-      used = this->node_epetra_map(true).MyLID(entid);
+      owned = this->node_map(false).MyLID(entid);
+      used = this->node_map(true).MyLID(entid);
       break;
     default:
       Exceptions::amanzi_throw( STK::Error ("Unknown Entity Kind") );
@@ -196,16 +196,16 @@ Mesh_STK::GID(const Entity_ID lid, const Entity_kind kind) const
 
   switch (kind) {
     case CELL:
-      ASSERT(this->cell_epetra_map(true).MyLID(lid));
-      result = this->cell_epetra_map(true).GID(lid);
+      ASSERT(this->cell_map(true).MyLID(lid));
+      result = this->cell_map(true).GID(lid);
       break;
     case FACE:
-      ASSERT(this->face_epetra_map(true).MyLID(lid));
-      result = this->face_epetra_map(true).GID(lid);
+      ASSERT(this->face_map(true).MyLID(lid));
+      result = this->face_map(true).GID(lid);
       break;
     case NODE:
-      ASSERT(this->node_epetra_map(true).MyLID(lid));
-      result = this->node_epetra_map(true).GID(lid);
+      ASSERT(this->node_map(true).MyLID(lid));
+      result = this->node_map(true).GID(lid);
       break;
     default:
       Exceptions::amanzi_throw( STK::Error ("Unknown Entity Kind") );
@@ -225,16 +225,16 @@ Mesh_STK::LID(const Entity_ID& gid, const Entity_kind& kind) const
 
   switch (kind) {
     case CELL:
-      ASSERT(this->cell_epetra_map(true).MyGID(gid));
-      result = this->cell_epetra_map(true).LID(gid);
+      ASSERT(this->cell_map(true).MyGID(gid));
+      result = this->cell_map(true).LID(gid);
       break;
     case FACE:
-      ASSERT(this->face_epetra_map(true).MyGID(gid));
-      result = this->face_epetra_map(true).LID(gid);
+      ASSERT(this->face_map(true).MyGID(gid));
+      result = this->face_map(true).LID(gid);
       break;
     case NODE:
-      ASSERT(this->node_epetra_map(true).MyGID(gid));
-      result = this->node_epetra_map(true).LID(gid);
+      ASSERT(this->node_map(true).MyGID(gid));
+      result = this->node_map(true).LID(gid);
       break;
     default:
       Exceptions::amanzi_throw( STK::Error ("Unknown Entity Kind") );
@@ -277,9 +277,9 @@ Mesh_STK::cell_get_faces_and_dirs (const Entity_ID cellid,
   for (STK::Entity_Ids::iterator f = stk_face_ids.begin(); 
        f != stk_face_ids.end(); f++) {
     stk::mesh::EntityId global_face_id(*f);
-    ASSERT(this->face_epetra_map(true).MyGID((long long int) global_face_id));
+    ASSERT(this->face_map(true).MyGID((long long int) global_face_id));
     stk::mesh::EntityId local_face_id = 
-      this->face_epetra_map(true).LID((long long int) global_face_id);
+      this->face_map(true).LID((long long int) global_face_id);
     outfaceids->push_back(local_face_id);
   }
 }
@@ -302,9 +302,9 @@ Mesh_STK::cell_get_nodes (const Entity_ID cellid,
   outnodeids->clear();
   for (STK::Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
     stk::mesh::EntityId global_node_id(*n);
-    ASSERT(this->node_epetra_map(true).MyGID((long long int) global_node_id));
+    ASSERT(this->node_map(true).MyGID((long long int) global_node_id));
     stk::mesh::EntityId local_node_id = 
-      this->node_epetra_map(true).LID((long long int) global_node_id);
+      this->node_map(true).LID((long long int) global_node_id);
     outnodeids->push_back(local_node_id);
   }
 }
@@ -326,9 +326,9 @@ Mesh_STK::face_get_nodes (const Entity_ID faceid,
   outnodeids->clear();
   for (STK::Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
     stk::mesh::EntityId global_node_id(*n);
-    ASSERT(this->node_epetra_map(true).MyGID((long long int) global_node_id));
+    ASSERT(this->node_map(true).MyGID((long long int) global_node_id));
     stk::mesh::EntityId local_node_id = 
-      this->node_epetra_map(true).LID((long long int) global_node_id);
+      this->node_map(true).LID((long long int) global_node_id);
     outnodeids->push_back(local_node_id);
   }
   ASSERT(!outnodeids->empty());
@@ -350,7 +350,7 @@ Mesh_STK::node_get_cells(const Entity_ID nodeid,
 
   outcellids->clear();
   for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
-    Entity_ID local_cell_id(this->cell_epetra_map(true).LID((long long int)*i));
+    Entity_ID local_cell_id(this->cell_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(CELL, local_cell_id));
     if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
       outcellids->push_back(local_cell_id);
@@ -375,7 +375,7 @@ Mesh_STK::node_get_faces(const Entity_ID nodeid,
   std::for_each(face_ids.begin(), face_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
   outfaceids->clear();
   for (STK::Entity_Ids::iterator i = face_ids.begin(); i != face_ids.end(); i++) {
-    Entity_ID local_face_id(this->face_epetra_map(true).LID((long long int)*i));
+    Entity_ID local_face_id(this->face_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_face_id));
     if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
       outfaceids->push_back(local_face_id);
@@ -422,7 +422,7 @@ Mesh_STK::face_get_cells(const Entity_ID faceid,
                          Entity_ID_List *outcellids) const
 {
   stk::mesh::EntityId global_face_id = 
-      this->face_epetra_map(true).GID(faceid);
+      this->face_map(true).GID(faceid);
   global_face_id += 1;
   
   STK::Entity_Ids cell_ids;
@@ -431,7 +431,7 @@ Mesh_STK::face_get_cells(const Entity_ID faceid,
 
   outcellids->clear();
   for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
-    Entity_ID local_cell_id(this->cell_epetra_map(true).LID((long long int)*i));
+    Entity_ID local_cell_id(this->cell_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_cell_id));
     if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
       outcellids->push_back(local_cell_id);
@@ -614,37 +614,37 @@ Mesh_STK::node_set_coordinates(const Entity_ID nodeid,
 
 
 // -------------------------------------------------------------
-// Mesh_STK::cell_epetra_map
+// Mesh_STK::cell_map
 // -------------------------------------------------------------
 const Epetra_Map& 
-Mesh_STK::cell_epetra_map(bool include_ghost) const
+Mesh_STK::cell_map(bool include_ghost) const
 {
   return get_map_(CELL, include_ghost);
 }
 
 // -------------------------------------------------------------
-// Mesh_STK::cell_epetra_map
+// Mesh_STK::face_map
 // -------------------------------------------------------------
 const Epetra_Map& 
-Mesh_STK::face_epetra_map(bool include_ghost) const
+Mesh_STK::face_map(bool include_ghost) const
 {
   return get_map_(FACE, include_ghost);
 }
 
 // -------------------------------------------------------------
-// Mesh_STK::cell_epetra_map
+// Mesh_STK::node_map
 // -------------------------------------------------------------
 const Epetra_Map& 
-Mesh_STK::node_epetra_map (bool include_ghost) const
+Mesh_STK::node_map (bool include_ghost) const
 {
   return get_map_(NODE, include_ghost);
 }
 
 // -------------------------------------------------------------
-// Mesh_STK::exterior_face_epetra_map
+// Mesh_STK::exterior_face_map
 // -------------------------------------------------------------
 const Epetra_Map& 
-Mesh_STK::exterior_face_epetra_map(void) const
+Mesh_STK::exterior_face_map(void) const
 {
   Errors::Message mesg("not implemented");
   amanzi_throw(mesg);

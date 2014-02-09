@@ -31,7 +31,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-cout << "Test: Advance on a 2D square mesh" << endl;
+std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -39,7 +39,7 @@ cout << "Test: Advance on a 2D square mesh" << endl;
 #endif
 
   /* read parameter list */
-  string xmlFileName = "test/transport_2D.xml";
+  std::string xmlFileName = "test/transport_2D.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 

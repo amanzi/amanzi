@@ -557,7 +557,7 @@ void Mesh_MOAB::init_pface_dirs() {
 
     result = mbcore->get_adjacencies(&face,1,celldim,false,fcells,MBCore::UNION);
     if (result != MB_SUCCESS) {
-      cout << "Could not get cells of face" << std::endl;
+      std::cout << "Could not get cells of face" << std::endl;
       assert(result == MB_SUCCESS);
     }
 
@@ -611,13 +611,13 @@ void Mesh_MOAB::init_pface_dirs() {
 
   result = mbcomm->exchange_tags(tmp_fc0_tag,AllFaces);
   if (result != MB_SUCCESS) {
-    cout << "Could not get exchange tag data successfully" << std::endl;
+    std::cout << "Could not get exchange tag data successfully" << std::endl;
     assert(result == MB_SUCCESS);
   }
 
   result = mbcomm->exchange_tags(tmp_fc1_tag,AllFaces);
   if (result != MB_SUCCESS) {
-    cout << "Could not get exchange tag data successfully" << std::endl;
+    std::cout << "Could not get exchange tag data successfully" << std::endl;
     assert(result == MB_SUCCESS);
   }
 
@@ -636,19 +636,19 @@ void Mesh_MOAB::init_pface_dirs() {
 
     result = mbcore->tag_get_data(tmp_fc0_tag,&face,1,&master_cell0_gid);
     if (result != MB_SUCCESS) {
-      cout << "Could not get face tag data" << std::endl;
+      std::cout << "Could not get face tag data" << std::endl;
       assert(result == MB_SUCCESS);
     }
     result = mbcore->tag_get_data(tmp_fc1_tag,&face,1,&master_cell1_gid);
     if (result != MB_SUCCESS) {
-      cout << "Could not get face tag data" << std::endl;
+      std::cout << "Could not get face tag data" << std::endl;
       assert(result == MB_SUCCESS);
     }
 
 
     result = mbcore->get_adjacencies(&face,1,celldim,false,fcells,MBCore::UNION);
     if (result != MB_SUCCESS) {
-      cout << "Could not get cells of face" << std::endl;
+      std::cout << "Could not get cells of face" << std::endl;
       assert(result == MB_SUCCESS);
     }
 
@@ -1990,7 +1990,7 @@ Entity_ID Mesh_MOAB::GID(Entity_ID lid, Entity_kind kind) const {
 
 
 
-inline const Epetra_Map& Mesh_MOAB::cell_epetra_map (bool include_ghost) const {
+inline const Epetra_Map& Mesh_MOAB::cell_map (bool include_ghost) const {
   if (serial_run)
     return *cell_map_wo_ghosts_;
   else
@@ -1998,21 +1998,21 @@ inline const Epetra_Map& Mesh_MOAB::cell_epetra_map (bool include_ghost) const {
 }
 
 
-inline const Epetra_Map& Mesh_MOAB::face_epetra_map (bool include_ghost) const {
+inline const Epetra_Map& Mesh_MOAB::face_map (bool include_ghost) const {
   if (serial_run)
     return *face_map_wo_ghosts_;
   else
     return (include_ghost ? *face_map_w_ghosts_ : *face_map_wo_ghosts_);
 }
 
-inline const Epetra_Map& Mesh_MOAB::node_epetra_map (bool include_ghost) const {
+inline const Epetra_Map& Mesh_MOAB::node_map (bool include_ghost) const {
   if (serial_run)
     return *node_map_wo_ghosts_;
   else
     return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
 }
 
-inline const Epetra_Map& Mesh_MOAB::exterior_face_epetra_map (void) const {
+inline const Epetra_Map& Mesh_MOAB::exterior_face_map (void) const {
   throw std::exception(); // Not implemented
 }
 

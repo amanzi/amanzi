@@ -94,7 +94,7 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
 
   // ------ Try to set values from a restart file -----
   if (plist.isParameter("restart file")) {
-    std::string filename = plist.get<string>("restart file");
+    std::string filename = plist.get<std::string>("restart file");
     ReadCheckpoint_(filename);
     set_initialized();
     return;
@@ -102,7 +102,7 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
 
   // ------ Try to set cell values from a restart file -----
   if (plist.isParameter("cells from file")) {
-    std::string filename = plist.get<string>("cells from file");
+    std::string filename = plist.get<std::string>("cells from file");
     ReadCellsFromCheckpoint_(filename);
     return;
   }

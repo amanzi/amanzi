@@ -206,16 +206,16 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
                             const Amanzi::AmanziGeometry::Point coords)
   {}
 
-  const Epetra_Map& cell_epetra_map (const bool include_ghost) const
+  const Epetra_Map& cell_map (const bool include_ghost) const
   { return *bogus_map_; }
     
-  const Epetra_Map& face_epetra_map (const bool include_ghost) const
+  const Epetra_Map& face_map (const bool include_ghost) const
   { return *bogus_map_; }
     
-  const Epetra_Map& node_epetra_map (const bool include_ghost) const
+  const Epetra_Map& node_map (const bool include_ghost) const
   { return *bogus_map_; }
 
-  const Epetra_Map& exterior_face_epetra_map (void) const
+  const Epetra_Map& exterior_face_map (void) const
   { return *bogus_map_; }
 
   const Epetra_Import& exterior_face_importer (void) const
@@ -667,15 +667,23 @@ framework_read(const Epetra_MpiComm *comm, const Framework& f, const std::string
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
+    if (comm->MyPID() == 0)
+      std::cout << "Using SimpleMesh framework to read mesh" << std::endl;
     result = FrameworkTraits<Simple>::read(comm, fname, gm);
     break;
   case STKMESH:
+    if (comm->MyPID() == 0)
+      std::cout << "Using STKmesh framework to read mesh" << std::endl;
     result = FrameworkTraits<STKMESH>::read(comm, fname, gm);
     break;
   case MOAB:
+    if (comm->MyPID() == 0)
+      std::cout << "Using MOAB framework to read mesh" << std::endl;
     result = FrameworkTraits<MOAB>::read(comm, fname, gm);
     break;
   case MSTK:
+    if (comm->MyPID() == 0)
+      std::cout << "Using MSTK framework to read mesh" << std::endl;
     result = FrameworkTraits<MSTK>::read(comm, fname, gm);
     break;
   default:
@@ -753,15 +761,23 @@ framework_generate(const Epetra_MpiComm *comm, const Framework& f,
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
+    if (comm->MyPID() == 0)
+      std::cout << "Using SimpleMesh framework to generate mesh" << std::endl;
     result = FrameworkTraits<Simple>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm, gm);
     break;
   case STKMESH:
+    if (comm->MyPID() == 0)
+      std::cout << "Using STKmesh framework to generate mesh" << std::endl;
     result = FrameworkTraits<STKMESH>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm, gm);
     break;
   case MOAB:
+    if (comm->MyPID() == 0)
+      std::cout << "Using MOAB framework to generate mesh" << std::endl;
     result = FrameworkTraits<MOAB>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm, gm);
     break;
   case MSTK:
+    if (comm->MyPID() == 0)
+      std::cout << "Using MSTK framework to generate mesh" << std::endl;
     result = FrameworkTraits<MSTK>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm, gm);
     break;
   default:
@@ -787,15 +803,23 @@ framework_generate(const Epetra_MpiComm *comm, const Framework& f,
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
+    if (comm->MyPID() == 0)
+      std::cout << "Using SimpleMesh framework to generate mesh" << std::endl;
     result = FrameworkTraits<Simple>::generate(x0, y0, x1, y1, nx, ny, comm, gm);
     break;
   case STKMESH:
+    if (comm->MyPID() == 0)
+      std::cout << "Using STKmesh framework to generate mesh" << std::endl;
     result = FrameworkTraits<STKMESH>::generate(x0, y0, x1, y1, nx, ny, comm, gm);
     break;
   case MOAB:
+    if (comm->MyPID() == 0)
+      std::cout << "Using MOAB framework to generate mesh" << std::endl;
     result = FrameworkTraits<MOAB>::generate(x0, y0, x1, y1, nx, ny, comm, gm);
     break;
   case MSTK:
+    if (comm->MyPID() == 0)
+      std::cout << "Using MSTK framework to generate mesh" << std::endl;
     result = FrameworkTraits<MSTK>::generate(x0, y0, x1, y1, nx, ny, comm, gm);
     break;
   default:
@@ -816,15 +840,23 @@ framework_generate(const Epetra_MpiComm *comm, const Framework& f,
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
+    if (comm->MyPID() == 0)
+      std::cout << "Using SimpleMesh framework to generate mesh" << std::endl;
     result = FrameworkTraits<Simple>::generate(parameter_list, comm, gm);
     break;
   case STKMESH:
+    if (comm->MyPID() == 0)
+      std::cout << "Using STKmesh framework to generate mesh" << std::endl;
     result = FrameworkTraits<STKMESH>::generate(parameter_list, comm, gm);
     break;
   case MOAB:
+    if (comm->MyPID() == 0)
+      std::cout << "Using MOAB framework to generate mesh" << std::endl;
     result = FrameworkTraits<MOAB>::generate(parameter_list, comm, gm);
     break;
   case MSTK:
+    if (comm->MyPID() == 0)
+      std::cout << "Using MSTK framework to generate mesh" << std::endl;
     result = FrameworkTraits<MSTK>::generate(parameter_list, comm, gm);
     break;
   default:

@@ -90,6 +90,8 @@ void FlowDomainFunction::ComputeDistribute(double time)
   double *xargs = args+1;
   args[0] = time;
 
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
   for (SpecAndIDsList::const_iterator
            spec_and_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
            spec_and_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
@@ -97,8 +99,9 @@ void FlowDomainFunction::ComputeDistribute(double time)
     double domain_volume = 0.0;
     Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
 
+    // calculate physical volume of region.
     for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
-      domain_volume += mesh_->cell_volume(*id);
+      if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
     }
     double volume_tmp = domain_volume;
     mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
@@ -132,6 +135,8 @@ void FlowDomainFunction::ComputeDistribute(double t, double* weight)
   double *xargs = args+1;
   args[0] = t;
 
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
   int i_action(0);
   for (SpecAndIDsList::const_iterator
            spec_and_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
@@ -145,8 +150,9 @@ void FlowDomainFunction::ComputeDistribute(double t, double* weight)
 
     if (action == DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
 
+      // calculate physical volume of region.
       for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
-	domain_volume += mesh_->cell_volume(*id);
+	if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
       }
       double volume_tmp = domain_volume;
       mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
@@ -161,7 +167,7 @@ void FlowDomainFunction::ComputeDistribute(double t, double* weight)
     } else if (action == DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
 
       for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-	domain_volume += mesh_->cell_volume(*id);
+	if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
       }
       double volume_tmp = domain_volume;
       mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);

@@ -162,7 +162,7 @@ int Matrix_Audit::CheckSpectralBoundsExtended()
     Teuchos::SerialDenseMatrix<int, double> Acopy(Acell);
 
     if (Acc <= 0.0) {
-      cout << Acell << endl;
+      std::cout << Acell << std::endl;
       msg << "Matrix Audit: Acc is not positive.";
       Exceptions::amanzi_throw(msg);
     }

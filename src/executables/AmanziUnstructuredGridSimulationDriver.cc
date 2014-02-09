@@ -179,7 +179,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       // preferences
 
       if (framework_specified) {
-	std::string framework = expert_mesh_params.get<string>("Framework");
+	std::string framework = expert_mesh_params.get<std::string>("Framework");
 
 	if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::Simple)) {
 	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Simple);
@@ -222,7 +222,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     Teuchos::ParameterList read_params = unstr_mesh_params.sublist("Read Mesh File");
     
     if (read_params.isParameter("File")) {
-      file = read_params.get<string>("File");
+      file = read_params.get<std::string>("File");
     } else {
       std::cerr << "Must specify File parameter for Read option under Mesh" << std::endl;
       throw std::exception();
@@ -230,7 +230,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
     if (read_params.isParameter("Format")) {
       // Is the format one that we can read?
-      format = read_params.get<string>("Format");
+      format = read_params.get<std::string>("Format");
 
       if (format != "Exodus II") {	    
 	std::cerr << "Can only read files in Exodus II format" << std::endl;

@@ -1,7 +1,7 @@
-diff -rupN trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.cpp trilinos-11.0.3-source-patch/packages/ifpack/src/Ifpack_Hypre.cpp
---- trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.cpp	2013-09-03 11:45:03.357326012 -0600
-+++ trilinos-11.0.3-source-patch/packages/ifpack/src/Ifpack_Hypre.cpp	2013-09-03 11:45:16.140831464 -0600
-@@ -68,23 +68,46 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMat
+diff -rupN trilinos-11.6.1-source/packages/ifpack/src/Ifpack_Hypre.cpp trilinos-11.6.1-source-patch/packages/ifpack/src/Ifpack_Hypre.cpp
+--- trilinos-11.6.1-source/packages/ifpack/src/Ifpack_Hypre.cpp	2014-01-29 16:05:21.000000000 -0700
++++ trilinos-11.6.1-source-patch/packages/ifpack/src/Ifpack_Hypre.cpp	2014-02-06 11:08:43.727635000 -0700
+@@ -81,7 +81,7 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMat
    MPI_Comm comm = GetMpiComm();
    int ilower = A_->RowMatrixRowMap().MinMyGID();
    int iupper = A_->RowMatrixRowMap().MaxMyGID();
@@ -10,10 +10,7 @@ diff -rupN trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.cpp trilinos-
    std::vector<int> ilowers; ilowers.resize(Comm().NumProc());
    std::vector<int> iuppers; iuppers.resize(Comm().NumProc());
    int myLower[1]; myLower[0] = ilower;
-   int myUpper[1]; myUpper[0] = iupper;
-   Comm().GatherAll(myLower, &ilowers[0], 1);
-   Comm().GatherAll(myUpper, &iuppers[0], 1);
-+
+@@ -91,13 +91,35 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMat
    for(int i = 0; i < Comm().NumProc()-1; i++){
      NiceRowMap_ = (NiceRowMap_ && iuppers[i]+1 == ilowers[i+1]);
    }
@@ -56,7 +53,7 @@ diff -rupN trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.cpp trilinos-
  
    // Next create vectors that will be used when ApplyInverse() is called
    IFPACK_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_));
-@@ -104,11 +127,6 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMat
+@@ -117,11 +139,6 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMat
  
    YVec_ = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_));
    YLocal_ = hypre_ParVectorLocalVector(YVec_);
@@ -68,7 +65,7 @@ diff -rupN trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.cpp trilinos-
  } //Constructor
  
  //==============================================================================
-@@ -145,10 +163,10 @@ int Ifpack_Hypre::Initialize(){
+@@ -158,10 +175,10 @@ int Ifpack_Hypre::Initialize(){
      int numEntries;
      IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, numElements, numEntries, &values[0], &indices[0]));
      for(int j = 0; j < numEntries; j++){
@@ -81,10 +78,10 @@ diff -rupN trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.cpp trilinos-
      IFPACK_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]));
    }
    IFPACK_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
-diff -rupN trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.h trilinos-11.0.3-source-patch/packages/ifpack/src/Ifpack_Hypre.h
---- trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.h	2013-09-03 11:45:03.753310696 -0600
-+++ trilinos-11.0.3-source-patch/packages/ifpack/src/Ifpack_Hypre.h	2013-09-03 11:45:16.508817230 -0600
-@@ -648,6 +648,8 @@ private:
+diff -rupN trilinos-11.6.1-source/packages/ifpack/src/Ifpack_Hypre.h trilinos-11.6.1-source-patch/packages/ifpack/src/Ifpack_Hypre.h
+--- trilinos-11.6.1-source/packages/ifpack/src/Ifpack_Hypre.h	2014-01-29 16:05:21.000000000 -0700
++++ trilinos-11.6.1-source-patch/packages/ifpack/src/Ifpack_Hypre.h	2014-02-06 11:08:47.392424000 -0700
+@@ -661,6 +661,8 @@ private:
    Hypre_Chooser SolveOrPrec_;
    //! This is a linear map used the way it is in Hypre
    Teuchos::RefCountPtr<Epetra_Map> MySimpleMap_;

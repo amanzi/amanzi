@@ -34,7 +34,7 @@ TEST(MSTK_HEX_3x3x3_PAR_READ_4P)
   CHECK_EQUAL(4,size);
 
   if (size != 4) {
-    cerr << "Test must be run with 4 processors" << std::endl;
+    std::cerr << "Test must be run with 4 processors" << std::endl;
     //    return;
   }
 
@@ -50,8 +50,8 @@ TEST(MSTK_HEX_3x3x3_PAR_READ_4P)
 
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
   std::vector<int> c2fdirs(6);
-  Epetra_Map cell_map(mesh->cell_epetra_map(false));
-  Epetra_Map face_map(mesh->face_epetra_map(true));
+  Epetra_Map cell_map(mesh->cell_map(false));
+  Epetra_Map face_map(mesh->face_map(true));
 
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
@@ -63,11 +63,11 @@ TEST(MSTK_HEX_3x3x3_PAR_READ_4P)
 	  int f = face_map.LID(mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE));
 	  CHECK_EQUAL( f,c2f[j] );
 	  if (f != c2f[j]) {
-	    cout << std::endl;
-	    cout << "Processor ID " << rank << std::endl;
-	    cout << "Cell ID " << cell_map.GID(c) << std::endl;
-	    cout << "Problem face c2f[j] = " << c2f[j] << " GID = " << mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE) << " f = " << f << std::endl;
-	    cout << std::endl;
+	    std::cout << std::endl;
+	    std::cout << "Processor ID " << rank << std::endl;
+	    std::cout << "Cell ID " << cell_map.GID(c) << std::endl;
+	    std::cout << "Problem face c2f[j] = " << c2f[j] << " GID = " << mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE) << " f = " << f << std::endl;
+	    std::cout << std::endl;
 	  }
 	}
 

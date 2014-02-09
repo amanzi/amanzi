@@ -129,14 +129,14 @@ NOX::StatusTest::StatusType PK_enorm::getStatus() const {
   return status;
 }
 
-ostream& PK_enorm::print(ostream& stream, int indent) const {
+  ostream& PK_enorm::print(std::ostream& stream, int indent) const {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
   stream << "PK_enorm = " << NOX::Utils::sciformat(normF,3);
   stream << " < " << NOX::Utils::sciformat(specifiedTolerance, 3);
   stream << "\n";
-  stream << endl;
+  stream << std::endl;
 
   return stream;
 }

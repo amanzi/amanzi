@@ -41,8 +41,8 @@ TEST(MSTK_HEX_GEN_3x3x3)
 
   Amanzi::AmanziMesh::Entity_ID_List  c2f(6);
   std::vector<int> c2fdirs(6);
-  Epetra_Map cell_map(mesh->cell_epetra_map(false));
-  Epetra_Map face_map(mesh->face_epetra_map(false));
+  Epetra_Map cell_map(mesh->cell_map(false));
+  Epetra_Map face_map(mesh->face_map(false));
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
       CHECK_EQUAL(cell_map.GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));

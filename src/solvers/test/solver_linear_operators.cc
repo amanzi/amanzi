@@ -135,7 +135,7 @@ SUITE(SOLVERS) {
 
     Teuchos::ParameterList plist;
     Teuchos::ParameterList& slist = plist.sublist("pcg");
-    slist.set<string>("iterative method", "pcg");
+    slist.set<std::string>("iterative method", "pcg");
 
     // create the pcg operator
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
@@ -167,7 +167,7 @@ SUITE(SOLVERS) {
 
     Teuchos::ParameterList plist;
     Teuchos::ParameterList& slist = plist.sublist("gmres");
-    slist.set<string>("iterative method", "gmres");
+    slist.set<std::string>("iterative method", "gmres");
     Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
     vlist.set("Verbosity Level", "extreme");
 

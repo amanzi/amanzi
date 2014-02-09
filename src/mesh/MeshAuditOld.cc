@@ -50,14 +50,14 @@ int MeshAuditOld::Verify() const
 
   for (std::list<Vertex>::iterator itr = run_order.begin(); itr != run_order.end(); ++itr) {
     if (g[*itr].run){
-      os << "Checking " << g[*itr].name << " ..." << endl;
+      os << "Checking " << g[*itr].name << " ..." << std::endl;
       if (((*this).*(g[*itr].test))()) {
         status = 1;
-        os << "  Test failed!" << endl;
+        os << "  Test failed!" << std::endl;
         breadth_first_search(g, *itr, visitor(vis));
       }
     } else {
-      os << "Skipping " << g[*itr].name << " check because of previous failures." << endl;
+      os << "Skipping " << g[*itr].name << " check because of previous failures." << std::endl;
     }
   }
 
@@ -342,7 +342,7 @@ bool MeshAuditOld::check_entity_counts() const
   n = mesh->count_entities(AmanziMesh::NODE,AmanziMesh::OWNED);
   nref = mesh->node_map(false).NumMyElements();
   if (n != nref) {
-    os << ": ERROR: count_entities(NODE,OWNED)=" << n << "; should be " << nref << endl;
+    os << ": ERROR: count_entities(NODE,OWNED)=" << n << "; should be " << nref << std::endl;
     error = true;
   }
 
@@ -350,7 +350,7 @@ bool MeshAuditOld::check_entity_counts() const
   n = mesh->count_entities(AmanziMesh::NODE,AmanziMesh::USED);
   nref = mesh->node_map(true).NumMyElements();
   if (n != nref) {
-    os << "ERROR: count_entities(NODE,USED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: count_entities(NODE,USED)=" << n << "; should be " << nref << std::endl;
     error = true;
   }
 
@@ -358,7 +358,7 @@ bool MeshAuditOld::check_entity_counts() const
   n = mesh->count_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
   nref = mesh->face_map(false).NumMyElements();
   if (n != nref) {
-    os << "ERROR: count_entities(FACE,OWNED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: count_entities(FACE,OWNED)=" << n << "; should be " << nref << std::endl;
     error = true;
   }
 
@@ -366,7 +366,7 @@ bool MeshAuditOld::check_entity_counts() const
   n = mesh->count_entities(AmanziMesh::FACE,AmanziMesh::USED);
   nref = mesh->face_map(true).NumMyElements();
   if (n != nref) {
-    os << "ERROR: count_entities(FACE,USED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: count_entities(FACE,USED)=" << n << "; should be " << nref << std::endl;
     error = true;
   }
 
@@ -374,7 +374,7 @@ bool MeshAuditOld::check_entity_counts() const
   n = mesh->count_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
   nref = mesh->cell_map(false).NumMyElements();
   if (n != nref) {
-    os << "ERROR: count_entities(CELL,OWNED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: count_entities(CELL,OWNED)=" << n << "; should be " << nref << std::endl;
     error = true;
   }
 
@@ -382,7 +382,7 @@ bool MeshAuditOld::check_entity_counts() const
   n = mesh->count_entities(AmanziMesh::CELL,AmanziMesh::USED);
   nref = mesh->cell_map(true).NumMyElements();
   if (n != nref) {
-    os << "ERROR: count_entities(CELL,USED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: count_entities(CELL,USED)=" << n << "; should be " << nref << std::endl;
     error = true;
   }
 
@@ -815,7 +815,7 @@ bool MeshAuditOld::check_cell_to_face_dirs_consistency() const
 
 bool MeshAuditOld::check_cell_degeneracy() const
 {
-  os << "Checking cells for topological degeneracy ..." << endl;
+  os << "Checking cells for topological degeneracy ..." << std::endl;
 
   vector<unsigned int> cnode(8);
   vector<unsigned int> bad_cells;
@@ -1220,17 +1220,17 @@ bool MeshAuditOld::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_u
 
   // Local index should start at 0.
   if (map_own.IndexBase() != 0) {
-    os << "ERROR: the owned map's index base is not 0." << endl;
+    os << "ERROR: the owned map's index base is not 0." << std::endl;
     error = true;
   }
   if (map_use.IndexBase() != 0) {
-    os << "ERROR: the overlap map's index base is not 0." << endl;
+    os << "ERROR: the overlap map's index base is not 0." << std::endl;
     error = true;
   }
 
   // Check that the owned map is 1-1.
   if (!map_own.UniqueGIDs()) {
-    os << "ERROR: owned map is not 1-to-1" << endl;
+    os << "ERROR: owned map is not 1-to-1" << std::endl;
     error = true;
   }
 
@@ -1243,7 +1243,7 @@ bool MeshAuditOld::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_u
     // Serial or 1-process MPI
 
     if (!map_use.SameAs(map_own)) {
-      os << "ERROR: the overlap map differs from the owned map (single process)." << endl;
+      os << "ERROR: the overlap map differs from the owned map (single process)." << std::endl;
       error = true;
     }
 
@@ -1268,7 +1268,7 @@ bool MeshAuditOld::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_u
         if (map_use.GID(j) != map_own.GID(j)) bad_map = true;
     }
     if (bad_map) {
-      os << "ERROR: overlap map does not extend the owned map." << endl;
+      os << "ERROR: overlap map does not extend the owned map." << std::endl;
       error = true;
     }
 
@@ -1285,7 +1285,7 @@ bool MeshAuditOld::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_u
     for (int j = 0; j < num_ovl; ++j)
       if (pids[j] < 0 || pids[j] == comm.MyPID()) bad_map = true;
     if (bad_map) {
-      os << "ERROR: invalid ghosts in overlap map." << endl;
+      os << "ERROR: invalid ghosts in overlap map." << std::endl;
       error = true;
     }
 
@@ -1293,7 +1293,7 @@ bool MeshAuditOld::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_u
     vector<int> ovl_gids(gids, gids+num_ovl);
     sort(ovl_gids.begin(), ovl_gids.end());
     if (adjacent_find(ovl_gids.begin(),ovl_gids.end()) != ovl_gids.end()) {
-      os << "ERROR: duplicate ghosts in overlap map." << endl;
+      os << "ERROR: duplicate ghosts in overlap map." << std::endl;
       error = true;
     }
 
@@ -1483,7 +1483,7 @@ bool MeshAuditOld::check_cell_to_nodes_ghost_data() const
   if (!bad_cells.empty()) {
     os << "ERROR: found bad data for ghost cells:";
     write_list(bad_cells, MAX_OUT);
-    os << "       The ghost cells are not exact copies of their master." << endl;
+    os << "       The ghost cells are not exact copies of their master." << std::endl;
     error = true;
   }
 
@@ -1539,7 +1539,7 @@ bool MeshAuditOld::check_cell_to_faces_ghost_data() const
   if (!bad_cells.empty()) {
     os << "ERROR: found bad data for ghost cells:";
     write_list(bad_cells, MAX_OUT);
-    os << "       The ghost cells are not exact copies of their master." << endl;
+    os << "       The ghost cells are not exact copies of their master." << std::endl;
     error = true;
   }
 
@@ -1581,7 +1581,7 @@ bool MeshAuditOld::check_get_set_ids(AmanziMesh::Entity_kind kind) const
   try {
     nset = mesh->num_sets(kind); // this may fail
   } catch (...) {
-    os << "ERROR: caught exception from num_sets()" << endl;
+    os << "ERROR: caught exception from num_sets()" << std::endl;
     error = true;
   }
   error = global_any(error);
@@ -1592,7 +1592,7 @@ bool MeshAuditOld::check_get_set_ids(AmanziMesh::Entity_kind kind) const
   try {
     mesh->get_set_ids(kind, sids.begin(), sids.end()); // this may fail
   } catch (...) {
-    os << "ERROR: caught exception from get_set_ids()" << endl;
+    os << "ERROR: caught exception from get_set_ids()" << std::endl;
     error = true;
   }
   error = global_any(error);
@@ -1606,7 +1606,7 @@ bool MeshAuditOld::check_get_set_ids(AmanziMesh::Entity_kind kind) const
   for (int j = 0; j < nset; ++j)
     if (sids[j] == UINT_MAX) bad_data = true;
   if (bad_data) {
-    os << "ERROR: get_set_ids() failed to set all values" << endl;
+    os << "ERROR: get_set_ids() failed to set all values" << std::endl;
     error = true;
   }
   error = global_any(error);
@@ -1614,7 +1614,7 @@ bool MeshAuditOld::check_get_set_ids(AmanziMesh::Entity_kind kind) const
 
   // Verify that the vector of set IDs contains no duplicates.
   if (!distinct_values(sids)) {
-    os << "ERROR: get_set_ids() returned duplicate IDs" << endl;
+    os << "ERROR: get_set_ids() returned duplicate IDs" << std::endl;
     // it would be nice to output the duplicates
     error = true;
   }
@@ -1626,7 +1626,7 @@ bool MeshAuditOld::check_get_set_ids(AmanziMesh::Entity_kind kind) const
     // Check the number of sets are the same.
     comm.Broadcast(&nset, 1, 0);
     if (nset != mesh->num_sets(kind)) {
-      os << "ERROR: inconsistent num_sets() value" << endl;
+      os << "ERROR: inconsistent num_sets() value" << std::endl;
       error = true;
     }
     error = global_any(error);
@@ -1644,7 +1644,7 @@ bool MeshAuditOld::check_get_set_ids(AmanziMesh::Entity_kind kind) const
       for (int j = 0; j < nset; ++j)
         if (sids[j] != sids0[j]) bad_data = true;
       if (bad_data) {
-        os << "ERROR: get_set_ids() returned inconsistent values" << endl;
+        os << "ERROR: get_set_ids() returned inconsistent values" << std::endl;
         error = true;
       }
       delete [] sids0;
@@ -1740,7 +1740,7 @@ bool MeshAuditOld::check_sets(AmanziMesh::Entity_kind kind,
   mesh->get_set_ids(kind, sids.begin(), sids.end());
 
   for (int n = 0; n < sids.size(); ++n) {
-    os << "  Checking set ID=" << sids[n] << " ..." << endl;
+    os << "  Checking set ID=" << sids[n] << " ..." << std::endl;
 
     // Basic sanity checks of the owned and used sets.
     bool bad_set = check_get_set(sids[n], kind, AmanziMesh::OWNED, 
@@ -1774,7 +1774,7 @@ bool MeshAuditOld::check_get_set(unsigned int sid,
   try {
     n = mesh->get_set_size(sid, kind, ptype); // this may fail
   } catch (...) {
-    os << "  ERROR: caught exception from get_set_size()" << endl;
+    os << "  ERROR: caught exception from get_set_size()" << std::endl;
     return true;
   }
 
@@ -1783,7 +1783,7 @@ bool MeshAuditOld::check_get_set(unsigned int sid,
   try {
     mesh->get_set(sid, kind, ptype, set.begin(), set.end());  // this may fail
   } catch (...) {
-    os << "  ERROR: caught exception from get_set()" << endl;
+    os << "  ERROR: caught exception from get_set()" << std::endl;
     return true;
   }
 
@@ -1792,7 +1792,7 @@ bool MeshAuditOld::check_get_set(unsigned int sid,
   for (int j = 0; j < set.size(); ++j)
     if (set[j] == UINT_MAX) bad_data = true;
   if (bad_data) {
-    os << "  ERROR: not all values assigned by get_set()" << endl;
+    os << "  ERROR: not all values assigned by get_set()" << std::endl;
     return true;
   }
 
@@ -1808,7 +1808,7 @@ bool MeshAuditOld::check_get_set(unsigned int sid,
 
   // Check that there are no duplicates in the set.
   if (!distinct_values(set)) {
-    os << "  ERROR: set contains duplicate LIDs." << endl;
+    os << "  ERROR: set contains duplicate LIDs." << std::endl;
     // it would be nice to output the duplicates
     return true;
   }
@@ -1840,7 +1840,7 @@ bool MeshAuditOld::check_used_set(unsigned int sid,
     // Set sizes had better be the same.
     if (mesh->get_set_size(sid, kind, AmanziMesh::USED) != 
 	set_own.size()) {
-      os << "  ERROR: owned and used set sizes differ" << endl;
+      os << "  ERROR: owned and used set sizes differ" << std::endl;
       return true;
     }
 
@@ -1852,7 +1852,7 @@ bool MeshAuditOld::check_used_set(unsigned int sid,
     for (int j = 0; j < n; ++j)
       if (set_use[j] != set_own[j]) bad_data = true;
     if (bad_data) {
-      os << "  ERROR: owned and used sets differ" << endl;
+      os << "  ERROR: owned and used sets differ" << std::endl;
       return true;
     }
 
@@ -1945,18 +1945,18 @@ bool MeshAuditOld::check_sets_alt(AmanziMesh::Entity_kind kind) const
     for (int j = 0; j < nset; ++j)
       if (sids1[j] != sids[j]) bad_data = true;
     if (bad_data) {
-      os << "ERROR: pointer-based get_set_ids() returned inconsistent values." << endl;
+      os << "ERROR: pointer-based get_set_ids() returned inconsistent values." << std::endl;
       error = true;
     }
   } catch (...) {
-    os << "ERROR: caught exception from pointer-based get_set_ids()." << endl;
+    os << "ERROR: caught exception from pointer-based get_set_ids()." << std::endl;
     error = true;
   }
   error = global_any(error);
   if (error) return error;
 
   for (int n = 0; n < sids.size(); ++n) {
-    os << "  Checking set ID=" << sids[n] << " ..." << endl;
+    os << "  Checking set ID=" << sids[n] << " ..." << std::endl;
 
     bool bad_set = check_get_set_alt(sids[n], kind, 
 				     AmanziMesh::OWNED) ||
@@ -1989,11 +1989,11 @@ bool MeshAuditOld::check_get_set_alt(unsigned int sid,
     for (int j = 0; j < n; ++j)
       if (set1[j] != set0[j]) bad_data = true;
     if (bad_data) {
-      os << "  ERROR: pointer-based get_set() returned inconsistent values." << endl;
+      os << "  ERROR: pointer-based get_set() returned inconsistent values." << std::endl;
       return true;
     }
   } catch (...) {
-    os << "  ERROR: caught exception from pointer-based get_set()" << endl;
+    os << "  ERROR: caught exception from pointer-based get_set()" << std::endl;
     return true;
   }
   return false;
@@ -2027,7 +2027,7 @@ bool MeshAuditOld::check_face_partition() const
   if (!bad_faces.empty()) {
     os << "ERROR: found orphaned owned faces:";
     write_list(bad_faces, MAX_OUT);
-    os << "       Process doesn't own either of the cells sharing the face." << endl;
+    os << "       Process doesn't own either of the cells sharing the face." << std::endl;
     return true;
   }
 
@@ -2054,7 +2054,7 @@ bool MeshAuditOld::check_node_partition() const
   if (!bad_nodes.empty()) {
     os << "ERROR: found orphaned owned nodes:";
     write_list(bad_nodes, MAX_OUT);
-    os << "       Process doesn't own any of the cells containing the node." << endl;
+    os << "       Process doesn't own any of the cells containing the node." << std::endl;
     return true;
   }
 
@@ -2120,7 +2120,7 @@ void MeshAuditOld::write_list(const vector<unsigned int> &list, unsigned int max
   int num_out = min((unsigned int) list.size(), max_out);
   for (int i = 0; i < num_out; ++i) os << " " << list[i];
   if (num_out < list.size()) os << " [" << list.size()-num_out << " items omitted]";
-  os << endl;
+  os << std::endl;
 }
 
 bool MeshAuditOld::global_any(bool value) const

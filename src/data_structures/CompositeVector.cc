@@ -162,7 +162,7 @@ void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
     } else if (space.Location(*name) == AmanziMesh::NODE) {
       mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->node_map(false)));
     } else if (space.Location(*name) == AmanziMesh::BOUNDARY_FACE) {
-      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->exterior_face_epetra_map()));
+      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->exterior_face_map()));
     }
    }
 
@@ -465,7 +465,7 @@ void CompositeVector::GatherGhostedToMaster(std::string name,
 // Vandelay operations
 void CompositeVector::CreateVandelay_() const {
   vandelay_importer_ = Teuchos::rcp(new Epetra_Import(Mesh()->exterior_face_importer()));
-  vandelay_vector_ = Teuchos::rcp(new Epetra_MultiVector(Mesh()->exterior_face_epetra_map(),
+  vandelay_vector_ = Teuchos::rcp(new Epetra_MultiVector(Mesh()->exterior_face_map(),
           mastervec_->NumVectors("face"), false));
 }
 

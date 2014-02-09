@@ -166,12 +166,14 @@ Stencil::operator*=(Real val)
 Layout::Layout(Amr* _parent,
 	       int  _nLevs)
     : initialized(false),
+      nLevs(_nLevs),
       nGrow(1),
       parent(_parent)
 {
   if (parent != 0) {
-    SetGridsFromParent(_nLevs);
-    Build(_nLevs);
+    if (nLevs<0) nLevs = parent->finestLevel() + 1;
+    SetGridsFromParent();
+    Build();
   }
 }
 
@@ -184,6 +186,7 @@ Layout::Layout(const Array<IntVect>&  refRatio_array,
       parent(0),
       nLevs(n_levs)
 {
+  BL_ASSERT(nLevs>0);
   BL_ASSERT(refRatio_array.size() >= nLevs-1);
   BL_ASSERT(grid_array.size() >= nLevs);
   BL_ASSERT(geom_array.size() >= nLevs);
@@ -198,7 +201,7 @@ Layout::Layout(const Array<IntVect>&  refRatio_array,
       refRatio[i] = refRatio_array[i];
     }
   }
-  Build(nLevs);
+  Build();
 }
 
 Layout::~Layout()
@@ -307,10 +310,9 @@ Layout::Area(int lev, int dir) const
 }
 
 void
-Layout::SetGridsFromParent(int _nLevs)
+Layout::SetGridsFromParent()
 {
   BL_ASSERT(parent!=0);
-  nLevs = (_nLevs > 0 ? _nLevs : parent->finestLevel()+1);
   BL_ASSERT(nLevs <= parent->finestLevel()+1);
   gridArray.resize(nLevs);
   geomArray.resize(nLevs);
@@ -325,18 +327,13 @@ Layout::SetGridsFromParent(int _nLevs)
 }
 
 void 
-Layout::Build(int _nLevs)
+Layout::Build()
 {
     nGrow = 1;
 
     if (parent!=0) {
-      SetGridsFromParent(_nLevs);
-    }
-    else {
-      if (_nLevs > 0) {
-        BL_ASSERT(_nLevs <= nLevs); // Otherwise, will not have enough data to do this
-        nLevs = _nLevs;
-      }
+      if (nLevs <= 0) nLevs = parent->finestLevel()+1;
+      SetGridsFromParent();
     }
 
     BuildMetrics();

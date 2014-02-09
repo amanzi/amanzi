@@ -39,10 +39,10 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) cout << "Test: 3D transient Darcy, 3-layer model" << endl;
+  if (MyPID == 0) std::cout << "Test: 3D transient Darcy, 3-layer model" << std::endl;
 
   /* read parameter list */
-  string xmlFileName = "test/flow_darcy_3D.xml";
+  std::string xmlFileName = "test/flow_darcy_3D.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
@@ -130,7 +130,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
 
   int nvel = velocity.size();
   for (int n = 0; n < nvel; n++) { 
-    // cout << xyz[n] << " " << velocity[n] << endl;
+    // std::cout << xyz[n] << " " << velocity[n] << std::endl;
   } 
 
   delete DPK;

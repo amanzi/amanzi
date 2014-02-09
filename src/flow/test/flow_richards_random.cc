@@ -53,7 +53,7 @@ double calculatePressureCellError(Teuchos::RCP<const Mesh> mesh, const Epetra_Mu
       pexact = f1 * tan(cr * (z + 2*a) * f1 / k1);
     } else {
       pexact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
-      // cout << z << " " << p[0][c] << " exact=" <<  pexact << endl;
+      // std::cout << z << " " << p[0][c] << " exact=" <<  pexact << std::endl;
     }
     error_L2 += std::pow(p[0][c] - pexact, 2.0) * volume;
   }
@@ -73,7 +73,7 @@ double calculateDarcyFluxError(Teuchos::RCP<const Mesh> mesh, const Epetra_Multi
   double error_l2 = 0.0;
   for (int f = 0; f < nfaces; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    // cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << endl;
+    // std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << std::endl;
     error_l2 += std::pow(flux[0][f] - velocity_exact * normal, 2.0);
   }
   return sqrt(error_l2 / nfaces);
@@ -112,7 +112,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
   int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout <<"Convergence analysis on three random meshes" << std::endl;
 
-  string xmlFileName = "test/flow_richards_random.xml";
+  std::string xmlFileName = "test/flow_richards_random.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
 

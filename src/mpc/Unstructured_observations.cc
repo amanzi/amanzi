@@ -75,12 +75,12 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
       }
 
       // loop over all variables listed and create an observable for each
-      std::string var = observable_plist.get<string>("Variable");
+      std::string var = observable_plist.get<std::string>("Variable");
       observations.insert(std::pair
                           <std::string, Observable>(observations_plist_.name(i),
                                                     Observable(var,
-                                                               observable_plist.get<string>("Region"),
-                                                               observable_plist.get<string>("Functional"),
+                                                               observable_plist.get<std::string>("Region"),
+                                                               observable_plist.get<std::string>("Functional"),
 							       observable_plist,
 							       comm)));
     }
@@ -123,7 +123,7 @@ void Unstructured_observations::make_observations(State& state)
       std::string name = var;
       
       int pos = name.find("Aqueous concentration");
-      if (pos != string::npos) {
+      if (pos != std::string::npos) {
 	var = name.substr(0, pos-1);
       } else {
 	var = name;
@@ -155,7 +155,7 @@ void Unstructured_observations::make_observations(State& state)
       if (global_mesh_block_size == 0) {
 	// warn that this region is empty and bail
 	Teuchos::OSTab tab = vo_->getOSTab();
-	*vo_->os() << "Cannot make an observation on an empty region: " << (i->second).region << ", skipping" << endl;
+	*vo_->os() << "Cannot make an observation on an empty region: " << (i->second).region << ", skipping" << std::endl;
 	continue;
       }
 

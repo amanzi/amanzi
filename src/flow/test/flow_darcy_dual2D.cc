@@ -39,10 +39,10 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) cout << "Test: 2D transient Darcy, polygonal mesh" << endl;
+  if (MyPID == 0) std::cout << "Test: 2D transient Darcy, polygonal mesh" << std::endl;
 
   /* read parameter list */
-  string xmlFileName = "test/flow_darcy_dual2D.xml";
+  std::string xmlFileName = "test/flow_darcy_dual2D.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 

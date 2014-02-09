@@ -83,7 +83,7 @@ struct Layout
   ~Layout();
   void Clear();
   void SetParent(Amr* new_parent);
-  void Build(int nLevs = -1);
+  void Build();
   void SetNodeIds(BaseFab<int>& idFab, int lev, int grid) const;
   int NumberOfGlobalNodeIds() const {return nNodes_global;}
   int NumberOfLocalNodeIds() const {return nNodes_local;}
@@ -125,7 +125,7 @@ struct Layout
 protected:
   void DestroyPetscStructures();
   void BuildMetrics();
-  void SetGridsFromParent(int _nLevs = -1);
+  void SetGridsFromParent();
 
 #ifdef BL_USE_PETSC
     Mat J_mat;

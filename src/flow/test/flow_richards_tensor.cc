@@ -36,7 +36,7 @@ TEST(FLOW_RICHARDS_ACCURACY) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziFlow;
 
-cout << "Test: Tensor Richards, a cube model" << endl;
+std::cout << "Test: Tensor Richards, a cube model" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -44,7 +44,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
 #endif
 
   /* read parameter list */
-  string xmlFileName = "test/flow_richards_tensor.xml";
+  std::string xmlFileName = "test/flow_richards_tensor.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
@@ -91,9 +91,9 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   for (int i = 0; i < 3; i++) v0[i] = -u0[i] / K[i];
   v0 *= mu / rho;
   v0 += g * rho;
-  cout << "rho=" << rho << "  mu=" << mu << endl;
-  cout << "K=" << K << "  gravity=" << g << endl;
-  cout << "grad(p)=" << v0 << endl;
+  std::cout << "rho=" << rho << "  mu=" << mu << std::endl;
+  std::cout << "K=" << K << "  gravity=" << g << std::endl;
+  std::cout << "grad(p)=" << v0 << std::endl;
 
   RPK->AdvanceToSteadyState(0.0, 1.0);
   RPK->CommitState(S);
@@ -107,7 +107,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     double p_exact = v0 * xc;
-    // cout << c << " p_num=" << pressure[0][c] << " p_ex=" << p_exact << endl;
+    // std::cout << c << " p_num=" << pressure[0][c] << " p_ex=" << p_exact << std::endl;
     err_p += pow(pressure[0][c] - p_exact, 2.0);
   }
   err_p = sqrt(err_p);
@@ -120,7 +120,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
     double p_exact = v0 * xf;
     double f_exact = u0 * normal / rho;
     err_u += pow(flux[0][f] - f_exact, 2.0);
-    // cout << f << " " << xf << "  flux_num=" << flux[0][f] << " f_ex=" << f_exact << endl;
+    // std::cout << f << " " << xf << "  flux_num=" << flux[0][f] << " f_ex=" << f_exact << std::endl;
   }
   err_u = sqrt(err_u);
 

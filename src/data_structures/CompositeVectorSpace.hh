@@ -10,7 +10,7 @@ Factory for a CompositeVector on an Amanzi mesh.
 
 This should be thought of as a vector-space: it lays out data components as a
 mesh along with entities on the mesh.  This meta-data can be used with the
-mesh's *_epetra_map() methods to create the data.
+mesh's *_map() methods to create the data.
 
 This class is very light weight as it maintains only meta-data.
 

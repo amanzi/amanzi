@@ -25,7 +25,7 @@ class PreconditionerFactory {
   PreconditionerFactory() {};
   ~PreconditionerFactory() {};
 
-  Teuchos::RCP<Preconditioner> Create(const string& name,
+  Teuchos::RCP<Preconditioner> Create(const std::string& name,
           const Teuchos::ParameterList& prec_list);
   Teuchos::RCP<Preconditioner> Create(Teuchos::ParameterList& prec_list);
 };

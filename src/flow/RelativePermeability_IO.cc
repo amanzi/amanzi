@@ -53,7 +53,7 @@ void RelativePermeability::ProcessParameterList()
         Exceptions::amanzi_throw(msg);
       }
 
-      if (wrm_list.get<string>("water retention model") == "van Genuchten") {
+      if (wrm_list.get<std::string>("water retention model") == "van Genuchten") {
         double m = wrm_list.get<double>("van Genuchten m", FLOW_WRM_EXCEPTION);
         double alpha = wrm_list.get<double>("van Genuchten alpha", FLOW_WRM_EXCEPTION);
         double l = wrm_list.get<double>("van Genuchten l", FLOW_WRM_VANGENUCHTEN_L);
@@ -66,7 +66,7 @@ void RelativePermeability::ProcessParameterList()
 
         WRM_[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, m, l, alpha, sr, krel_function, pc0));
 
-      } else if (wrm_list.get<string>("water retention model") == "Brooks Corey") {
+      } else if (wrm_list.get<std::string>("water retention model") == "Brooks Corey") {
         double lambda = wrm_list.get<double>("Brooks Corey lambda", FLOW_WRM_EXCEPTION);
         double alpha = wrm_list.get<double>("Brooks Corey alpha", FLOW_WRM_EXCEPTION);
         double l = wrm_list.get<double>("Brooks Corey l", FLOW_WRM_BROOKS_COREY_L);
@@ -79,7 +79,7 @@ void RelativePermeability::ProcessParameterList()
 
         WRM_[iblock] = Teuchos::rcp(new WRM_BrooksCorey(region, lambda, l, alpha, sr, krel_function, pc0));
 
-      } else if (wrm_list.get<string>("water retention model") == "fake") {
+      } else if (wrm_list.get<std::string>("water retention model") == "fake") {
         WRM_[iblock] = Teuchos::rcp(new WRM_fake(region));
 
       } else {
@@ -158,7 +158,7 @@ void RelativePermeability::PlotWRMcurves()
   if (MyPID == 0) {
     if (list_.isParameter("plot krel-pc curves")) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "saving krel-pc curves in file flow_krel_pc.txt..." << endl;
+      *vo_->os() << "saving krel-pc curves in file flow_krel_pc.txt..." << std::endl;
       std::ofstream ofile;
       ofile.open("flow_krel_pc.txt");
 
@@ -171,13 +171,13 @@ void RelativePermeability::PlotWRMcurves()
           double krel = WRM_[mb]->k_relative(pc);
           ofile << krel << " ";
         }
-        ofile << endl;
+        ofile << std::endl;
       }
       ofile.close();
     }
 
     if (list_.isParameter("plot krel-sat curves")) {
-      *vo_->os() << "saving krel-sat curves in file flow_krel_sat.txt..." << endl;
+      *vo_->os() << "saving krel-sat curves in file flow_krel_sat.txt..." << std::endl;
       std::ofstream ofile;
       ofile.open("flow_krel_sat.txt");
 
@@ -192,13 +192,13 @@ void RelativePermeability::PlotWRMcurves()
           double krel = WRM_[mb]->k_relative(pc);
           ofile << krel << " ";
         }
-        ofile << endl;
+        ofile << std::endl;
       }
       ofile.close();
     }
 
     if (list_.isParameter("plot sat-pc curves")) {
-      *vo_->os() << "saving sat-pc curves in file flow_sat_pc.txt..." << endl;
+      *vo_->os() << "saving sat-pc curves in file flow_sat_pc.txt..." << std::endl;
       std::ofstream ofile;
       ofile.open("flow_sat_pc.txt");
 
@@ -211,7 +211,7 @@ void RelativePermeability::PlotWRMcurves()
           double sat = WRM_[mb]->saturation(pc);
           ofile << sat << " ";
         }
-        ofile << endl;
+        ofile << std::endl;
       }
       ofile.close();
     }
