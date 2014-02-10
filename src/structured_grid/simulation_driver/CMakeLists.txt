@@ -2,11 +2,11 @@
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   BOXDRIV_SOURCE_DIR
-#   BOXDRIV_BINARY_DIR
+#   SDRIVER_SOURCE_DIR
+#   SDRIVER_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
-project(BOXDRIV)
+project(SDRIVER)
 
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
 include_directories(${CHEM_INCLUDES_DIR})
@@ -25,8 +25,8 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 set(CXX_header_files amanzi_structured_grid_simulation_driver.H)
 set(CXX_source_files amanzi_structured_grid_simulation_driver.cpp)
 
-add_library(structdriv OBJECT ${CXX_source_files}
-                              ${CXX_headers_files})
+add_library(sdriver OBJECT ${CXX_source_files}
+                           ${CXX_headers_files})
 
 if (BUILD_TESTS)
 

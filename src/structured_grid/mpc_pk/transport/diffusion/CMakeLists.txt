@@ -2,13 +2,13 @@
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   STRUCTUREDTRANS_SOURCE_DIR
-#   STRUCTUREDTRANS_BINARY_DIR
+#   STRANS_SOURCE_DIR
+#   STRANS_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
-project(STRUCTUREDTRANS)
+project(STRANS)
 
-include_directories(${STRUCTUREDTRANS_SOURCE_DIR})
+include_directories(${STRANS_SOURCE_DIR})
 
 if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
   include_directories(${CHEM_SOURCE_DIR}/includes)
@@ -16,7 +16,9 @@ if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
 endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
-include_directories(${PMAMR_INCLUDE_DIRS})
+include_directories(${SAMR_SOURCE_DIR}) 
+include_directories(${SFLOW_SOURCE_DIR}) 
+include_directories(${STRANS_SOURCE_DIR}) 
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -59,7 +61,7 @@ if (BUILD_TESTS)
   endif()
   set(tpl_libs)
 
-  set(TRANSTEST "${STRUCTUREDTRANS_SOURCE_DIR}/test")
+  set(TRANSTEST "${STRANS_SOURCE_DIR}/test")
   include_directories(${TRANSTEST})
   set(CXX_header_files_1 ${TRANSTEST}/tTensorDiffusion_PK_F.H)
   set(CXX_source_files_1 ${TRANSTEST}/tTensorDiffusion_PK.cpp)

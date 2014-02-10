@@ -2,11 +2,11 @@
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   STRUCTMAT_SOURCE_DIR
-#   STRUCTMAT_BINARY_DIR
+#   SMATERIALS_SOURCE_DIR
+#   SMATERIALS_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
-project(STRUCTMAT)
+project(SMATERIALS)
 
 set(CXX_header_files Material.H
                      MatFiller.H
@@ -18,7 +18,8 @@ set(CXX_source_files Material.cpp
 set(FPP_source_files MatFiller_${AMANZI_SPACEDIM}D.F)
 
 
-include_directories(${STRUCTMAT_SOURCE_DIR})
+include_directories(${SREGION_SOURCE_DIR})  
+include_directories(${SMATERIALS_SOURCE_DIR})  
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 
@@ -30,12 +31,12 @@ include_directories(${AMANZI_BINARY_DIR}) # required to pick up amanzi_version.h
 # The structured grid pieces
 #
 include_directories(${CCSE_INCLUDE_DIRS})
-include_directories(${PMAMR_INCLUDE_DIRS})
+include_directories(${SAMR_INCLUDE_DIRS})
 link_directories(${CCSE_LIBRARY_DIR})
-include_directories(${BOXDRIV_SOURCE_DIR})
-link_directories(${BOXDRIV_SOURCE_DIR})
-include_directories(${STRUCTUREDUTILS_SOURCE_DIR})
-link_directories(${STRUCTUREDUTILS_SOURCE_DIR})
+include_directories(${SDRIVER_SOURCE_DIR})
+link_directories(${SDRIVER_SOURCE_DIR})
+include_directories(${SUTILS_SOURCE_DIR})
+link_directories(${SUTILS_SOURCE_DIR})
 add_definitions("-DENABLE_Structured")
 
 #
@@ -52,11 +53,11 @@ include_directories(${Epetra_INCLUDE_DIRS})
 
 preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 
-add_library(structmat OBJECT ${FPP_out_files}
-                             ${CXX_source_files}
-                             ${F90_source_files}
-                             ${F77_source_files}
-                             ${CXX_headers_files})
+add_library(smaterials OBJECT ${FPP_out_files}
+                              ${CXX_source_files}
+                              ${F90_source_files}
+                              ${F77_source_files}
+                              ${CXX_headers_files})
 
 if (BUILD_TESTS) 
 

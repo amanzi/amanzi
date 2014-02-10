@@ -1040,101 +1040,6 @@ PorousMedia::variableSetUp ()
 
 }
 
-//
-//  Read input file
-//
-#if 0
-void PorousMedia::read_geometry()
-{
-  //
-  // Get geometry-related parameters.  
-  // Note: 1. The domain size and periodity information are read in 
-  //          automatically.  This function deals primarily with region
-  //          definition.
-  //       2. regions defined in PorousMedia.H as PArray<Region>
-  //
-  ParmParse pp("geometry");
-
-  Array<Real> problo, probhi;
-  pp.getarr("prob_lo",problo,0,BL_SPACEDIM);
-  pp.getarr("prob_hi",probhi,0,BL_SPACEDIM);
-  Region::domlo = problo;
-  Region::domhi = probhi;
-  
-  Real geometry_eps = -1; pp.get("geometry_eps",geometry_eps);
-  Region::geometry_eps = geometry_eps;
-
-  // set up  1+2*BL_SPACEDIM default regions
-  bool generate_default_regions = true; pp.query("generate_default_regions",generate_default_regions);
-  int nregion_DEF = 0;
-  regions.clear();
-  if (generate_default_regions) {
-      nregion_DEF = 1 + 2*BL_SPACEDIM;
-      regions.resize(nregion_DEF,PArrayManage);
-      regions.set(0, new   AllRegion());
-      regions.set(1, new AllBCRegion(0,0));
-      regions.set(2, new AllBCRegion(0,1));
-      regions.set(3, new AllBCRegion(1,0));
-      regions.set(4, new AllBCRegion(1,1));
-#if BL_SPACEDIM == 3
-      regions.set(5, new AllBCRegion(2,0));
-      regions.set(6, new AllBCRegion(2,1));
-#endif
-  }
-
-  // Get parameters for each user defined region 
-  int nregion = nregion_DEF;
-
-  int nregion_user = pp.countval("regions");
-
-  if (!generate_default_regions  && nregion_user==0) {
-      BoxLib::Abort("Default regions not generated and none provided.  Perhaps omitted regions list?");
-  }
-  if (nregion_user)
-    {
-      std::string r_purpose, r_type;
-      Array<std::string> r_name;
-      pp.getarr("regions",r_name,0,nregion_user);
-      nregion += nregion_user;
-      regions.resize(nregion,PArrayManage);
-
-      for (int j=0; j<nregion_user; ++j)
-      {
-          const std::string prefix("geometry." + r_name[j]);
-          ParmParse ppr(prefix.c_str());
-	  ppr.get("purpose",r_purpose);
-	  ppr.get("type",r_type);      
-
-	  if (r_type == "point")
-          {
-	      Array<Real> coor;
-	      ppr.getarr("coordinate",coor,0,BL_SPACEDIM);
-              regions.set(nregion_DEF+j, new PointRegion(r_name[j],r_purpose,coor));
-	    }
-	  else if (r_type == "box" || r_type == "surface")
-	    {
-	      Array<Real> lo_coor,hi_coor;
-	      ppr.getarr("lo_coordinate",lo_coor,0,BL_SPACEDIM);
-	      ppr.getarr("hi_coordinate",hi_coor,0,BL_SPACEDIM);
-              regions.set(nregion_DEF+j, new BoxRegion(r_name[j],r_purpose,lo_coor,hi_coor));
-	    }
-	  else if (r_type == "color_function")
-          {
-              int color_value; ppr.get("color_value",color_value);
-              std::string color_file; ppr.get("color_file",color_file);
-              ColorFunctionRegion* cfr = new ColorFunctionRegion(r_name[j],r_purpose,color_file,color_value);
-	      regions.set(nregion_DEF+j, cfr);
-          }
-          else {
-              std::string m = "region type not supported \"" + r_type + "\"";
-              BoxLib::Abort(m.c_str());
-          }
-	}
-      pp.query("surf_file",surf_file);
-    }
-}
-#endif
-
 void
 PorousMedia::read_rock()
 {
@@ -2904,15 +2809,10 @@ void PorousMedia::read_params()
   PMAmr::SetRegionManagerPtr(new RegionManager());
   RegionManager* region_manager = PMAmr::RegionManagerPtr();
 
-#if 0
-  // geometry
-  read_geometry();
-#endif
-
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read geometry." << std::endl;
 
-  if (1 || (echo_inputs && ParallelDescriptor::IOProcessor())) {
+  if (echo_inputs && ParallelDescriptor::IOProcessor()) {
       std::cout << "The Regions: " << std::endl;
       const Array<const Region*> regions = region_manager->RegionPtrArray();
       for (int i=0; i<regions.size(); ++i) {

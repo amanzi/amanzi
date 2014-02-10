@@ -11,22 +11,7 @@ class MFTGrowFill;
 #include <MatFiller.H>
 #include <Observation.H>
 #include <EventCoord.H>
-
-class RegionManager
-{
-public:
-  RegionManager();
-  ~RegionManager();
-
-  Array<const Region*> RegionPtrArray() const;
-  Array<const Region*> RegionPtrArray(const Array<std::string>& region_names) const;
-
-protected:
-  void Clear();
-  Array<Region*> regions;
-  std::map<std::string,int> name_to_region_idx;
-};
-
+#include <RegionManager.H>
 
 class PMAmr
     : public Amr

@@ -1,7 +1,4 @@
 #include <RegionData.H>
-#include <PorousMedia.H>
-#include <POROUSMEDIA_F.H>
-
 
 RegionData::RegionData(const std::string&    label,
                        const Array<const Region*>& regions,
