@@ -2,13 +2,13 @@
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   STRUCTUREDFLOW_SOURCE_DIR
-#   STRUCTUREDFLOW_BINARY_DIR
+#   SFLOW_SOURCE_DIR
+#   SFLOW_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
-project(STRUCTUREDFLOW)
+project(SFLOW)
 
-include_directories(${STRUCTUREDFLOW_SOURCE_DIR})
+include_directories(${SFLOW_SOURCE_DIR})
 
 if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
   include_directories(${CHEM_SOURCE_DIR}/includes)
@@ -20,9 +20,14 @@ include_directories(${CHEM_SOURCE_DIR}/includes)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
-include_directories(${STRUCTUREDFLOW_SOURCE_DIR})
-include_directories(${STRUCTUREDUTILS_SOURCE_DIR})
-include_directories(${PMAMR_INCLUDE_DIRS})
+include_directories(${SFLOW_SOURCE_DIR})
+include_directories(${SUTILS_SOURCE_DIR})  
+include_directories(${SFLOW_SOURCE_DIR})  
+include_directories(${STRANS_SOURCE_DIR})  
+include_directories(${SPROB_SOURCE_DIR})  
+include_directories(${SAMR_SOURCE_DIR})  
+include_directories(${SREGION_SOURCE_DIR})   
+include_directories(${SMATERIALS_SOURCE_DIR})   
 include_directories(${PETSC_INCLUDE_DIRS})
 
 # External (TPL) include directories

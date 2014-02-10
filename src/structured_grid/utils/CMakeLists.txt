@@ -2,13 +2,13 @@
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   STRUCTUREDUTILS_SOURCE_DIR
-#   STRUCTUREDUTILS_BINARY_DIR
+#   SUTILS_SOURCE_DIR
+#   SUTILS_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
-project(STRUCTUREDUTILS)
+project(SUTILS)
 
-include_directories(${STRUCTUREDUTILS_SOURCE_DIR})
+include_directories(${SUTILS_SOURCE_DIR})
 
 
 if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
@@ -17,7 +17,7 @@ if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
 endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
-include_directories(${PMAMR_INCLUDE_DIRS})
+include_directories(${SAMR_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -33,8 +33,8 @@ set(CXX_source_files ParmParseHelpers.cpp
                      EventCoord.cpp
                      WritePlotfile.cpp)
 
-add_library(structutils OBJECT ${CXX_source_files}
-                               ${CXX_headers_files})
+add_library(sutils OBJECT ${CXX_source_files}
+                          ${CXX_headers_files})
 
 if (BUILD_TESTS)
 
