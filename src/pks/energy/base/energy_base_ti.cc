@@ -86,7 +86,11 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 #endif
 
   // advection term, implicit
-  AddAdvection_(S_next_.ptr(), res.ptr(), true);
+  if (implicit_advection_) {
+    AddAdvection_(S_next_.ptr(), res.ptr(), true);
+  } else {
+    AddAdvection_(S_inter_.ptr(), res.ptr(), true);
+  }
 #if DEBUG_FLAG
   db_->WriteVector("res (adv)", res.ptr());
 #endif
