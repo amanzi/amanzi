@@ -187,6 +187,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   bc_flux_ = bc_factory.CreateEnthalpyFlux();
 
   // operator for advection terms
+  implicit_advection_ = plist_->get<bool>("implicit advection", true);
   Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
   advection_ = advection_factory.create(advect_plist, mesh_);
