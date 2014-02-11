@@ -13,6 +13,8 @@
 #include "Mesh.hh"
 #include "CompositeVector.hh"
 #include "State.hh"
+#include "Debugger.hh"
+#include "VerboseObject.hh"
 #include "upwind_total_flux.hh"
 #include "Epetra_IntVector.h"
 
@@ -29,18 +31,21 @@ UpwindTotalFlux::UpwindTotalFlux(std::string pkname,
     flux_(flux) {};
 
 
-void UpwindTotalFlux::Update(const Teuchos::Ptr<State>& S) {
+void UpwindTotalFlux::Update(const Teuchos::Ptr<State>& S,
+                             const Teuchos::Ptr<Debugger>& db) {
+
   Teuchos::RCP<const CompositeVector> cell = S->GetFieldData(cell_coef_);
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(flux_);
   Teuchos::RCP<CompositeVector> face = S->GetFieldData(face_coef_, pkname_);
-  CalculateCoefficientsOnFaces(*cell, *flux, face.ptr());
+  CalculateCoefficientsOnFaces(*cell, *flux, face.ptr(), db);
 };
 
 
 void UpwindTotalFlux::CalculateCoefficientsOnFaces(
         const CompositeVector& cell_coef,
         const CompositeVector& flux,
-        const Teuchos::Ptr<CompositeVector>& face_coef) {
+        const Teuchos::Ptr<CompositeVector>& face_coef,
+        const Teuchos::Ptr<Debugger>& db) {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->Mesh();
 
   // initialize the face coefficients
@@ -104,6 +109,14 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
     int dw = downwind_cell[f];
     ASSERT(!((uw == -1) && (dw == -1)));
 
+    // Teuchos::RCP<VerboseObject> dcvo_dw = Teuchos::null;
+    // Teuchos::RCP<VerboseObject> dcvo_uw = Teuchos::null;
+
+    // if (uw >= 0)
+    //   dcvo_uw = db->GetVerboseObject(uw, face_coef->Mesh()->get_comm()->MyPID());
+    // if (dw >= 0)
+    //   dcvo_dw = db->GetVerboseObject(dw, face_coef->Mesh()->get_comm()->MyPID());
+
     // uw coef
     if (uw == -1) {
       coefs[0] = coef_faces[0][f];
@@ -124,6 +137,20 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
             * std::sqrt(coefs[0] * coefs[1]) * flow_eps_factor,
             min_flow_eps);
 
+    // if (dcvo_uw != Teuchos::null)
+    //   *dcvo_uw->os() << "UW Cell " << uw << " of face " << f << ":" << std::endl
+    //                  << "  flux_dir = " << flux_v[0][f] << std::endl
+    //                  << "  flux_eps = " << flow_eps << std::endl
+    //                  << "     coef[uw] = " << coefs[0] << std::endl
+    //                  << "     coef[dw] = " << coefs[1] << std::endl;
+    // if (dcvo_dw != Teuchos::null)
+    //   *dcvo_dw->os() << "DW Cell " << dw << " of face " << f << ":" << std::endl
+    //                  << "  flux_dir = " << flux_v[0][f] << std::endl
+    //                  << "  flux_eps = " << flow_eps << std::endl
+    //                  << "     coef[uw] = " << coefs[0] << std::endl
+    //                  << "     coef[dw] = " << coefs[1] << std::endl;
+        
+
     // Determine the coefficient
     if (abs(flux_v[0][f]) >= flow_eps) {
       coef_faces[0][f] = coefs[0];
@@ -136,6 +163,11 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
         std::cout << "  param = " << param << std::endl;
         std::cout << "  flow_eps = " << flow_eps << std::endl;
       }
+
+      // if (dcvo_uw != Teuchos::null)
+      //   *dcvo_uw->os() << "  AVG param = " << param << std::endl;
+      // if (dcvo_dw != Teuchos::null)
+      //   *dcvo_dw->os() << "  AVG param = " << param << std::endl;
 
       ASSERT(param >= 0.5);
       ASSERT(param <= 1.0);

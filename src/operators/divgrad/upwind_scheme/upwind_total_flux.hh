@@ -31,12 +31,16 @@ public:
                   std::string face_coef,
                   std::string flux);
 
-  void Update(const Teuchos::Ptr<State>& S);
+  void Update(const Teuchos::Ptr<State>& S,
+              const Teuchos::Ptr<Debugger>& db=Teuchos::null);
+
 
   void CalculateCoefficientsOnFaces(
         const CompositeVector& cell_coef,
         const CompositeVector& flux,
-        const Teuchos::Ptr<CompositeVector>& face_coef);
+        const Teuchos::Ptr<CompositeVector>& face_coef,
+        const Teuchos::Ptr<Debugger>& db);
+
 
 private:
 

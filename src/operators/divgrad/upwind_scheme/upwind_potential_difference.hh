@@ -32,7 +32,9 @@ public:
                             std::string potential,
                             std::string overlap=std::string(""));
 
-  void Update(const Teuchos::Ptr<State>& S);
+  void Update(const Teuchos::Ptr<State>& S,
+              const Teuchos::Ptr<Debugger>& db=Teuchos::null);
+
 
   void CalculateCoefficientsOnFaces(
         const CompositeVector& cell_coef,

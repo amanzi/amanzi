@@ -28,7 +28,9 @@ UpwindGravityFlux::UpwindGravityFlux(std::string pkname,
     K_(K) {};
 
 
-void UpwindGravityFlux::Update(const Teuchos::Ptr<State>& S) {
+void UpwindGravityFlux::Update(const Teuchos::Ptr<State>& S,
+                               const Teuchos::Ptr<Debugger>& db) {
+
   Teuchos::RCP<const CompositeVector> cell = S->GetFieldData(cell_coef_);
   Teuchos::RCP<const Epetra_Vector> g_vec = S->GetConstantVectorData("gravity");
   Teuchos::RCP<CompositeVector> face = S->GetFieldData(face_coef_, pkname_);
