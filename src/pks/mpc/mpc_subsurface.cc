@@ -44,36 +44,25 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   } else if (precon_string == "ewc") {
     precon_type_ = PRECON_EWC;
   } else if (precon_string == "smart ewc") {
-    precon_type_ = PRECON_SMART_EWC;
+    precon_type_ = PRECON_EWC;
   } else {
     Errors::Message message(std::string("Invalid preconditioner type ")+precon_string);
     Exceptions::amanzi_throw(message);
   }
 
-  // select the method used for nonlinear prediction
-  std::string predictor_string = plist_->get<std::string>("predictor type", "none");
-  if (predictor_string == "none") {
-    predictor_type_ = PREDICTOR_NONE;
-  } else if (predictor_string == "heuristic") {
-    //    predictor_type_ = PREDICTOR_HEURISTIC;
-    //    modify_thaw_to_prev_ = plist_->get<bool>("modify thawing cells to previous temp",true);
-  } else if (predictor_string == "ewc") {
-    predictor_type_ = PREDICTOR_EWC;
-  } else if (predictor_string == "smart ewc") {
-    predictor_type_ = PREDICTOR_SMART_EWC;
-  } else {
-    Errors::Message message(std::string("Invalid predictor type ")+predictor_string);
-    Exceptions::amanzi_throw(message);
-  }
-
-  // create the EWC delegate if requested.
-  if (precon_type_ == PRECON_EWC || precon_type_ == PRECON_SMART_EWC ||
-      predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC) {
-    ewc_ = Teuchos::rcp(new MPCDelegateEWCSubsurface(*plist_));
+  // create the EWC delegate
+  if (plist_->isSublist("ewc delegate")) {
+    Teuchos::RCP<Teuchos::ParameterList> sub_ewc_list = Teuchos::sublist(plist_, "ewc delegate");
+    sub_ewc_list->set("PK name", name_);
+    sub_ewc_list->set("domain key", "");
+    ewc_ = Teuchos::rcp(new MPCDelegateEWCSubsurface(*sub_ewc_list));
     Teuchos::RCP<PermafrostModel> model = Teuchos::rcp(new PermafrostModel());
     ewc_->set_model(model);
     ewc_->setup(S);
-  }
+  } else if (plist_->isParameter("predictor type")) {
+    Errors::Message message("Old-style subsurface ParameterList, please use sublist for EWC delegate.");
+    Exceptions::amanzi_throw(message);
+  }    
 }
 
 void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
@@ -97,8 +86,10 @@ void MPCSubsurface::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // update the predictor to be physically consistent
 bool MPCSubsurface::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   bool modified(false);
-  modified = ewc_->modify_predictor(h, up);
-  if (modified) changed_solution();
+  if (ewc_ != Teuchos::null) {
+    modified = ewc_->modify_predictor(h, up);
+    if (modified) changed_solution();
+  }
 
   // potentially update faces
   modified |= MPCCoupledCells::modify_predictor(h, up);
@@ -117,17 +108,6 @@ void MPCSubsurface::update_precon(double t, Teuchos::RCP<const TreeVector> up, d
   } else if (precon_type_ == PRECON_EWC) {
     MPCCoupledCells::update_precon(t,up,h);
     ewc_->update_precon(t,up,h);
-  } else if (precon_type_ == PRECON_SMART_EWC) {
-    MPCCoupledCells::update_precon(t,up,h);
-    ewc_->update_precon(t,up,h);
-  }
-
-  if (S_next_->cycle() == 437 && !dumped_) {
-    Teuchos::RCP<const Epetra_FEVbrMatrix> sc = mfd_preconditioner_->Schur();
-    std::stringstream filename_s;
-    filename_s << "schur_" << S_next_->cycle() << ".txt";
-    EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-    dumped_ = true;
   }
 }
 
@@ -144,10 +124,6 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
   } else if (precon_type_ == PRECON_PICARD) {
     MPCCoupledCells::precon(u,Pu);
   } else if (precon_type_ == PRECON_EWC) {
-    MPCCoupledCells::precon(u,Pu);
-    ewc_->precon(u, Pu);
-    mfd_preconditioner_->UpdateConsistentFaceCorrection(*u, Pu.ptr());
-  } else if (precon_type_ == PRECON_SMART_EWC) {
     MPCCoupledCells::precon(u,Pu);
 
     // make sure we can back-calc face corrections that preserve residuals on faces

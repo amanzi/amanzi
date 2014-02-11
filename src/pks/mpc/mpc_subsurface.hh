@@ -52,26 +52,15 @@ class MPCSubsurface : public MPCCoupledCells {
 
  protected:
 
-  enum PredictorType {
-    PREDICTOR_NONE = 0,
-    PREDICTOR_HEURISTIC = 1,
-    PREDICTOR_EWC = 2,
-    PREDICTOR_SMART_EWC = 3,
-  };
-
   enum PreconditionerType {
     PRECON_NONE = 0,
     PRECON_BLOCK_DIAGONAL = 1,
     PRECON_PICARD = 2,
-    PRECON_EWC = 3,
-    PRECON_SMART_EWC = 4,
+    PRECON_EWC = 3
   };
 
   // preconditioner methods
   PreconditionerType precon_type_;
-
-  // prediction methods
-  PredictorType predictor_type_;
 
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWCSubsurface> ewc_;
