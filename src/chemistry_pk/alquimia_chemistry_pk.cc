@@ -75,6 +75,12 @@ Alquimia_Chemistry_PK::Alquimia_Chemistry_PK(const Teuchos::ParameterList& param
 {
   // We need the top-level parameter list.
   chem_param_list_ = main_param_list_.sublist("Chemistry");
+
+  // Set the component names within the Chemistry_State using the 
+  // Chemistry Engine.
+  std::vector<std::string> componentNames;
+  chem_engine_->GetPrimarySpeciesNames(componentNames);
+  chemistry_state_->SetComponentNames(componentNames);
 }  // end Alquimia_Chemistry_PK()
 
 Alquimia_Chemistry_PK::~Alquimia_Chemistry_PK() 

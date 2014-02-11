@@ -230,6 +230,9 @@ class Chemistry_State {
     return using_sorption_isotherms_;
   }
 
+  // Set the solution component names.
+  void SetComponentNames(const std::vector<std::string>& comp_names);
+
 #ifdef ALQUIMIA_ENABLED
   // The following methods are designed to help the Chemistry State interact with 
   // Alquimia via the ChemistryEngine.
@@ -263,7 +266,6 @@ class Chemistry_State {
   void InitializeField_(Teuchos::ParameterList& ic_plist, std::string fieldname,
                         bool sane_default, double default_val);
 
-  void SetupSoluteNames_();
   void SetupMineralNames_();
   void SetupSorptionSiteNames_();
   void ParseMeshBlocks_();

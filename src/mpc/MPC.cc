@@ -155,20 +155,28 @@ void MPC::mpc_init() {
   }
 
   if (transport_enabled) {
-    Teuchos::Array<std::string> comp_names;
-    if (mpc_parameter_list.isParameter("component names")) {
-      comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
-    }
-    std::vector<std::string> names;
-    for (int i = 0; i < comp_names.length(); i++) {
-      names.push_back(comp_names[i]);
-    }
 #ifdef ALQUIMIA_ENABLED
-    // When Alquimia is used, the Transport PK must interact with the 
-    // chemistry engine to obtain boundary values for the components.
-    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, names, CS, chem_engine));
-#else
-    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, names));
+    if (chemistry_model == "Alquimia") {
+      // When Alquimia is used, the Transport PK must interact with the 
+      // chemistry engine to obtain boundary values for the components.
+      // The component names are fetched from the chemistry engine.
+      TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, CS, chem_engine));
+    }
+    else {
+#endif
+      // We use the native Amanzi chemistry package.
+      Teuchos::Array<std::string> comp_names;
+      if (mpc_parameter_list.isParameter("component names")) {
+        comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
+      }
+      std::vector<std::string> names;
+      for (int i = 0; i < comp_names.length(); i++) {
+        names.push_back(comp_names[i]);
+      }
+      CS->SetComponentNames(names);
+      TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, names));
+#ifdef ALQUIMIA_ENABLED
+    }
 #endif
   }
 

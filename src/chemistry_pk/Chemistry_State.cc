@@ -31,7 +31,7 @@ Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
     num_aux_data_(-1) {
 
   mesh_ = S_->GetMesh();
-  SetupSoluteNames_();
+//  SetupSoluteNames_();
   SetupMineralNames_();
   SetupSorptionSiteNames_();
 
@@ -66,29 +66,6 @@ Chemistry_State::Chemistry_State(const Teuchos::RCP<State>& S,
   mesh_ = S_->GetMesh();
   RequireData_();
 }
-
-
-void Chemistry_State::SetupSoluteNames_() {
-  // get the number of component concentrations from the
-  // parameter list
-  if (plist_.isParameter("Number of component concentrations")) {
-    number_of_aqueous_components_ =
-        plist_.get<int>("Number of component concentrations");
-  } else {
-    // if the parameter list does not contain this key, then assume we
-    // are being called from a state constructor w/o a valid parameter
-    // list (vis/restart) and the number_of_components variable was
-    // already set to a valid (non-zero?) value....
-  }
-
-  if (number_of_aqueous_components_ > 0) {
-    // read the component names if they are spelled out
-    Teuchos::Array<std::string> comp_names;
-    if (plist_.isParameter("Component Solutes")) {
-      comp_names = plist_.get<Teuchos::Array<std::string> >("Component Solutes");
-    }
-  }
-}  // end SetupSoluteNames()
 
 void Chemistry_State::SetupMineralNames_() {
   // do we need to worry about minerals?
@@ -318,16 +295,19 @@ void Chemistry_State::RequireData_() {
 
   // Require my data
   if (number_of_aqueous_components_ > 0) {
-    // TCC
-    if (compnames_.size() != number_of_aqueous_components_) {
-      compnames_.clear();
-      for (int i=0; i!=number_of_aqueous_components_; ++i) {
+
+    // Make dummy names if our component names haven't already been set.
+    if (compnames_.empty())
+    {
+      for (int i = 0; i < number_of_aqueous_components_; ++i)
+      {
         std::stringstream ss;
-        ss << "Component " << i;
+        ss << "Component " << i << std::ends;
         compnames_.push_back(ss.str());
       }
     }
 
+    // TCC
     if (!S_->HasField("total_component_concentration")) {    
       // set the names for vis
       std::vector<std::vector<std::string> > conc_names_cv(1);
@@ -753,6 +733,12 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
     }
   }
 }
+
+void Chemistry_State::SetComponentNames(const std::vector<std::string>& comp_names)
+{
+  compnames_ = comp_names;
+}
+
 
 #endif
 
