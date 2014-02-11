@@ -266,7 +266,7 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
   int bad_cell = -1;
   unsigned int ncells = res_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
-    double tmp = std::abs(h*res_c[0][c]) / (atol_ * .25*.1*55000.*cv[0][c] + rtol_*std::abs(wc[0][c]));
+    double tmp = std::abs(h*res_c[0][c]) / (atol_ * .5*.5*55000.*cv[0][c] + rtol_*std::abs(wc[0][c]));
     if (tmp > enorm_cell) {
       enorm_cell = tmp;
       bad_cell = c;
