@@ -38,11 +38,11 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                        -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
                        -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
-                       -DCMAKE_C_FLAGS_DEBUG:STRING=${Amanzi_COMMON_CFLAGS}
+                       -DCMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}:STRING=${Amanzi_COMMON_CFLAGS}
                        -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
-                       -DCMAKE_CXX_FLAGS_DEBUG:STRING=${Amanzi_COMMON_CXXFLAGS}
+                       -DCMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}:STRING=${Amanzi_COMMON_CXXFLAGS}
                        -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
-                       -DCMAKE_Fortran_FLAGS_DEBUG:STRING=${Amanzi_COMMON_FCFLAGS}
+                       -DCMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}:STRING=${Amanzi_COMMON_FCFLAGS}
                        -DVERBOSE:BOOL=ON)
 
 
@@ -73,8 +73,8 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     # -- Patch 
                     #PATCH_COMMAND ${CCSE_PATCH_COMMAND}
                     # -- Configure
-                    SOURCE_DIR       ${CCSE_source_dir}               # Source directory
-                    CMAKE_CACHE_ARGS ${CCSE_CMAKE_CACHE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                    SOURCE_DIR       ${CCSE_source_dir}           # Source directory
+                    CMAKE_CACHE_ARGS ${CCSE_CMAKE_CACHE_ARGS}     # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
                     # -- Build
                     BINARY_DIR        ${CCSE_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
