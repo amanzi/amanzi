@@ -41,11 +41,13 @@ TEST(DARCY_SURFACE) {
 
   FrameworkPreference pref;
   pref.clear();
-  pref.push_back(Simple);
+  pref.push_back(MSTK);
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
   RCP<Mesh> mesh = meshfactory("test/surface.exo"); 
+ 
+  MFD3D_Diffusion mfd(mesh);
  
   /*
   MFD3D_Diffusion mfd(mesh);
