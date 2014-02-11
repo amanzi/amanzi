@@ -36,7 +36,14 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DBL_USE_PARTICLES:INT=0
                        -DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>
                        -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                       -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS})
+                       -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
+                       -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
+                       -DCMAKE_C_FLAGS_DEBUG:STRING=${Amanzi_COMMON_CFLAGS}
+                       -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
+                       -DCMAKE_CXX_FLAGS_DEBUG:STRING=${Amanzi_COMMON_CXXFLAGS}
+                       -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
+                       -DCMAKE_Fortran_FLAGS_DEBUG:STRING=${Amanzi_COMMON_FCFLAGS}
+                       -DVERBOSE:BOOL=ON)
 
 
 # --- Set the name of the patch
@@ -68,12 +75,6 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR       ${CCSE_source_dir}               # Source directory
                     CMAKE_CACHE_ARGS ${CCSE_CMAKE_CACHE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
-                                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
-                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}    # Ensure uniform build
-                                     -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
-                                     ${Amanzi_CMAKE_CXX_COMPILER_ARGS}  # Ensure uniform build
-                                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
-                                     ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}  # Ensure uniform build
                     # -- Build
                     BINARY_DIR        ${CCSE_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
