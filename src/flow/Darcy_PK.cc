@@ -35,7 +35,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Simplest possible constructor: extracts lists and requires fields.
 ****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
+Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_PK()
 {
   S_ = S;
 
@@ -146,12 +146,17 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
 ****************************************************************** */
 Darcy_PK::~Darcy_PK()
 {
-  delete bc_pressure;
-  delete bc_head;
-  delete bc_flux;
-  delete bc_seepage;
+  if (bc_pressure != NULL) delete bc_pressure;
+  if (bc_head != NULL) delete bc_head;
+  if (bc_flux != NULL) delete bc_flux;
+  if (bc_seepage != NULL) delete bc_seepage;
 
-  if (ti_specs != NULL) OutputTimeHistory(dp_list_, ti_specs->dT_history);
+  if (ti_specs != NULL) {
+    OutputTimeHistory(dp_list_, ti_specs->dT_history);
+  }
+
+  if (src_sink != NULL) delete src_sink;
+  if (vo_ != NULL) delete vo_;
 }
 
 
@@ -222,10 +227,11 @@ void Darcy_PK::InitPK()
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
-  if (shift_water_table_.getRawPtr() == NULL)
+  if (shift_water_table_.getRawPtr() == NULL) {
     bc_head->Compute(time);
-  else
+  } else {
     bc_head->ComputeShift(time, shift_water_table_->Values());
+  }
 
   const CompositeVector& pressure = *S_->GetFieldData("pressure");
   ComputeBCs(pressure);
@@ -278,7 +284,7 @@ void Darcy_PK::InitializeSteadySaturated()
 { 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "initializing with a saturated steady state..." << endl;
+    *vo_->os() << "initializing with a saturated steady state..." << std::endl;
   }
   double T = S_->time();
   SolveFullySaturatedProblem(T, *solution);
@@ -327,16 +333,19 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     LinearSolver_Specs& ls_specs = ti_specs.ls_specs;
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "****************************************" << endl
-               << "TI phase: " << ti_specs.ti_method_name.c_str() << endl
-               << "****************************************" << endl
-               << "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << endl
-               << "  time stepping id=" << ti_specs.dT_method << endl
-               << "  sources distribution id=" << src_sink_distribution << endl
-               << "  linear solver: ||r||<" << ls_specs.convergence_tol << " #itr<" << ls_specs.max_itrs << endl
-               << "  preconditioner: " << ti_specs.preconditioner_name.c_str() << endl;
+    *vo_->os() << std::endl
+        << "****************************************" << std::endl
+        << vo_->color("green") << "New TI phase: " << ti_specs.ti_method_name.c_str() << vo_->reset() << std::endl
+        << "****************************************" << std::endl
+        << "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << std::endl
+        << "  time stepping id=" << ti_specs.dT_method << std::endl
+        << "  sources distribution id=" << src_sink_distribution << std::endl
+        << "  linear solver: ||r||<" << ls_specs.convergence_tol << " #itr<" << ls_specs.max_itrs << std::endl
+        << "  preconditioner: " << ti_specs.preconditioner_name.c_str() << std::endl;
     if (ti_specs.initialize_with_darcy) {
-      *vo_->os() << "  initial pressure guess: \"saturated solution\"" << endl;
+      *vo_->os() << "  initial pressure guess: \"saturated solution\"" << std::endl;
+    } else {
+      *vo_->os() << "  initial pressure guess: \"from state\"" << std::endl;
     }
   }
 
@@ -368,7 +377,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     int npassed = matrix_->npassed();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "  good and repaired matrices: " << nokay << " " << npassed << endl;
+    *vo_->os() << "  good and repaired matrices: " << nokay << " " << npassed << std::endl;
   }
 
   // Well modeling (one-time call)
@@ -476,7 +485,7 @@ int Darcy_PK::Advance(double dT_MPC)
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "pressure solver (" << solver->name()
-               << "): ||r||=" << residual << " itr=" << num_itrs << endl;
+               << "): ||r||=" << residual << " itr=" << num_itrs << std::endl;
   }
 
   // calculate time derivative and 2nd-order solution approximation

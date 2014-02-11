@@ -275,10 +275,16 @@ int MFD3D_Diffusion::StiffnessMatrixMMatrix(int cell, const Tensor& permeability
   int ok = H1consistency(cell, permeability, N, Ac);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
+  // scaling of matrix Wc
+  double s = Ac.Trace() / nnodes;
+  Ac /= s;
+
   int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE;
   StabilityMMatrix_(cell, N, Ac, A, objective);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
+  A *= s;
+  simplex_functional_ *= s;
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -513,13 +519,20 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrix(
 
   DenseMatrix R(nfaces, d);
   DenseMatrix Wc(nfaces, nfaces);
+  Wc.PutScalar(0.0);
 
   int ok = L2consistencyInverse(cell, permeability, R, Wc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
+  // scaling of matrix Wc
+  double s = Wc.Trace() / nfaces;
+  Wc /= s;
+
   ok = StabilityMMatrix_(cell, R, Wc, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
+  W *= s;
+  simplex_functional_ *= s;
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

@@ -160,7 +160,7 @@ int TreeVector::Norm2(double* n2) const {
   return ierr;
 };
 
-void TreeVector::Print(ostream &os) const {
+void TreeVector::Print(std::ostream &os) const {
   // Print data to ostream for this node and all children.
   if (data_ != Teuchos::null) data_->Print(os);
 

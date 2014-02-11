@@ -75,6 +75,12 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_tensors.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: vsurface matrices for diffusion
+    add_amanzi_test(whetstone_surface whetstone_surface
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_surface.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
 

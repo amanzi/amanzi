@@ -17,7 +17,6 @@ Authors: Neil Carlson, version 1 (nnc@lanl.gov),
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "flow_boundary_function.hh"
 #include "errors.hh"
 
 #include "MeshFactory.hh"
@@ -29,13 +28,6 @@ using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::AmanziFlow;
-
-int main(int argc, char *argv[])
-{
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  return UnitTest::RunAllTests ();
-}
-
 
 struct bits_and_pieces
 {
@@ -156,7 +148,7 @@ SUITE(pressure_bad_param) {
     std::vector<int> submodel(ncells);
     CHECK_THROW(Functions::FlowBoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
 
-    foo.set("regions", 0.0);  // wrong -- type should be Array<string>
+    foo.set("regions", 0.0);  // wrong -- type should be Array<std::string>
     CHECK_THROW(Functions::FlowBoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
   }
 

@@ -42,9 +42,9 @@ TEST(NEWTON_RICHARD_STEADY) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) cout << "Test: orthogonal newton solver, 2-layer model" << endl;
+  if (MyPID == 0) std::cout << "Test: orthogonal newton solver, 2-layer model" << std::endl;
   /* read parameter list */
-  string xmlFileName = "test/flow_richards_newton_TPFA.xml";
+  std::string xmlFileName = "test/flow_richards_newton_TPFA.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
@@ -95,7 +95,7 @@ TEST(NEWTON_RICHARD_STEADY) {
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {
-    // cout << (mesh->cell_centroid(c))[2] << " " << p[0][c] << endl;
+    // std::cout << (mesh->cell_centroid(c))[2] << " " << p[0][c] << std::endl;
     CHECK(p[0][c] > 4500.0 && p[0][c] < 101325.0);
   }
   

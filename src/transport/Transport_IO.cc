@@ -46,24 +46,24 @@ void Transport_PK::ProcessParameterList()
   temporal_disc_order = transport_list.get<int>("temporal discretization order", 1);
   if (temporal_disc_order < 1 || temporal_disc_order > 2) temporal_disc_order = 1;
 
-  string advection_limiter_name = transport_list.get<string>("advection limiter");
+  std::string advection_limiter_name = transport_list.get<std::string>("advection limiter");
   ProcessStringAdvectionLimiter(advection_limiter_name, &advection_limiter);
 
   // transport dispersion (default is none)
   if (transport_list.isSublist("Dispersivity")) {
     Teuchos::ParameterList& dlist = transport_list.sublist("Dispersivity");
 
-    dispersion_solver = dlist.get<string>("solver", "missing");
+    dispersion_solver = dlist.get<std::string>("solver", "missing");
     if (solvers_list.isSublist(dispersion_solver)) {
       Teuchos::ParameterList& slist = solvers_list.sublist(dispersion_solver);
-      dispersion_preconditioner = slist.get<string>("preconditioner", "identity");
+      dispersion_preconditioner = slist.get<std::string>("preconditioner", "identity");
     } else {
       Errors::Message msg;
       msg << "Transport PK: dispersivity solver does not exist.\n";
       Exceptions::amanzi_throw(msg);  
     }
 
-    string method_name = dlist.get<string>("numerical method", "none");
+    std::string method_name = dlist.get<std::string>("numerical method", "none");
     ProcessStringDispersionMethod(method_name, &dispersion_method);
 
     int nblocks = 0; 
@@ -80,7 +80,7 @@ void Transport_PK::ProcessParameterList()
 
         Teuchos::ParameterList& model_list = dlist.sublist(dlist.name(i));
 
-        string model_name = model_list.get<string>("model", "none");
+        std::string model_name = model_list.get<std::string>("model", "none");
         ProcessStringDispersionModel(model_name, &(dispersion_models_[iblock]->model));
 
         dispersion_models_[iblock]->alphaL = model_list.get<double>("alphaL", 0.0);
@@ -95,7 +95,7 @@ void Transport_PK::ProcessParameterList()
   }
 
   // control parameter
-  internal_tests = transport_list.get<string>("enable internal tests", "no") == "yes";
+  internal_tests = transport_list.get<std::string>("enable internal tests", "no") == "yes";
   tests_tolerance = transport_list.get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
   dT_debug = transport_list.get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
 
@@ -112,6 +112,16 @@ void Transport_PK::ProcessParameterList()
     TransportBCFactory bc_factory(mesh_, bcs_list);
 #endif
     bc_factory.CreateConcentration(bcs);
+
+    for (int m = 0; m < bcs.size(); m++) {
+      std::vector<int>& tcc_index = bcs[m]->tcc_index();
+      std::vector<std::string>& tcc_names = bcs[m]->tcc_names();
+      int ncomp = tcc_names.size();
+
+      for (int i = 0; i < ncomp; i++) {
+        tcc_index.push_back(FindComponentNumber(tcc_names[i]));
+      }
+    }
   } else {
     printf("Transport PK: does not have boundary conditions.\n");
   }
@@ -210,13 +220,13 @@ void Transport_PK::PrintStatistics() const
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
   if (vo_->getVerbLevel() > Teuchos::VERB_NONE) {
-    cout << "Transport PK: CFL = " << cfl_ << endl;
-    cout << "    Total number of components = " << tcc_prev.NumVectors() << endl;
-    cout << "    Verbosity level = " << vo_->getVerbLevel() << endl;
-    cout << "    Spatial/temporal discretication orders = " << spatial_disc_order
-         << " " << temporal_disc_order << endl;
-    cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
-    cout << "    Advection limiter = " << (advection_limiter == TRANSPORT_LIMITER_TENSORIAL ? "Tensorial" : "BarthJespersen or Kuzmin(experimental)") << endl;
+    std::cout << "Transport PK: CFL = " << cfl_ << std::endl;
+    std::cout << "    Total number of components = " << tcc_prev.NumVectors() << std::endl;
+    std::cout << "    Verbosity level = " << vo_->getVerbLevel() << std::endl;
+    std::cout << "    Spatial/temporal discretication orders = " << spatial_disc_order
+         << " " << temporal_disc_order << std::endl;
+    std::cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << std::endl;
+    std::cout << "    Advection limiter = " << (advection_limiter == TRANSPORT_LIMITER_TENSORIAL ? "Tensorial" : "BarthJespersen or Kuzmin(experimental)") << std::endl;
   }
 }
 

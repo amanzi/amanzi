@@ -54,6 +54,10 @@ Visualization::Visualization () : IOEvent() {}
 void Visualization::ReadParameters_() {
   filebasename_ = plist_.get<std::string>("file name base","amanzi_vis");
   dynamic_mesh_ = plist_.get<bool>("dynamic mesh",false);
+
+  Teuchos::Array<std::string>  default_no_regions(0);
+  regions_ = plist_.get<Teuchos::Array<std::string> >("regions", default_no_regions);
+  write_partition_ = plist_.get<bool>("write partition",false);
 }
 
 
@@ -86,6 +90,54 @@ void Visualization::WriteVector(const Epetra_Vector& vec, const std::string name
 void Visualization::WriteMesh(const double time, const int iteration) const {
   visualization_output_->writeMesh(time, iteration);
 }
+
+
+// -----------------------------------------------------------------------------
+// Write a field with region information
+// -----------------------------------------------------------------------------
+void Visualization::WriteRegions() {
+  if (regions_.size() > 0) {
+    // first make an Epetra_Vector to hold the region information
+    Epetra_MultiVector reg(mesh_->cell_map(false),1,true);
+    // loop over the regions and initialize the reg array
+    double reg_index = 1.0;
+    for (Teuchos::Array<std::string>::const_iterator reg_it = regions_.begin();
+         reg_it != regions_.end(); ++reg_it, reg_index += 1.0) {
+      // only do something if the user provided a valid region name
+      // for a region that consists of cells
+      if (mesh_->valid_set_name(*reg_it, AmanziMesh::CELL)) {
+        AmanziMesh::Entity_ID_List ids;
+        mesh_->get_set_entities(*reg_it, AmanziMesh::CELL, AmanziMesh::OWNED, &ids);
+        for (AmanziMesh::Entity_ID_List::const_iterator it = ids.begin(); it != ids.end(); ++it) {
+        reg[0][*it] = reg_index;
+        }
+      }
+    }
+    std::vector<std::string> name; 
+    name.push_back("regions");
+    WriteVector(reg,name);
+  }
+}
+
+
+
+// -----------------------------------------------------------------------------
+// Write a field with region information
+// -----------------------------------------------------------------------------
+void Visualization::WritePartition() {
+  if (write_partition_) {
+    // first make an Epetra_Vector to hold the partitions information
+    Epetra_MultiVector reg(mesh_->cell_map(false),1,false);
+    // loop over the regions and initialize the reg array
+    double part_index = static_cast<double>(mesh_->get_comm()->MyPID());
+    reg.PutScalar(part_index);
+  
+    std::vector<std::string> name; 
+    name.push_back("partition");
+    WriteVector(reg,name);
+  }
+}
+
 
 
 void Visualization::CreateFiles() {

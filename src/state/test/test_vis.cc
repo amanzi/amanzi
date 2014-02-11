@@ -15,7 +15,7 @@ SUITE(VISUALIZATION) {
     
     Teuchos::ParameterList plist;
 
-    plist.set<string>("file name base","visdump");
+    plist.set<std::string>("file name base","visdump");
     plist.set<int>("file name digits",5);
 
     Teuchos::Array<int> csps(3);

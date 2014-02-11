@@ -99,6 +99,8 @@ void Dispersion_MFD::AssembleMatrix(const Epetra_MultiVector& p)
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
+  nprimary = nsecondary = 0;
+  num_simplex_itrs = 0;
   App_->PutScalar(0.0);
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -116,8 +118,14 @@ void Dispersion_MFD::AssembleMatrix(const Epetra_MultiVector& p)
 
     // build inverse of the mass matrix
     int i = mfd3d.MassMatrixInverseMMatrixHex(c, D[c], Wff);
+    // int i = mfd3d.MassMatrixInverseMMatrix(c, D[c], Wff);
+    // int i = mfd3d.MassMatrixInverseOptimizedScaled(c, D[c], Wff);
     if (i == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_WRONG) {
-      mfd3d.MassMatrixInverseOptimizedScaled(c, D[c], Wff);
+      mfd3d.MassMatrixInverseTPFA(c, D[c], Wff);
+      nsecondary++;
+    } else {
+      nprimary++;
+      num_simplex_itrs += mfd3d.simplex_num_itrs();
     }
     for (int n = 0; n < nfaces; n++)
       for (int m = 0; m < nfaces; m++) Bpp(m + 1, n + 1) = Wff(m, n);
@@ -136,6 +144,14 @@ void Dispersion_MFD::AssembleMatrix(const Epetra_MultiVector& p)
   }
 
   App_->GlobalAssemble();
+
+  // collecting statistics
+  int i = nprimary;
+  mesh_->get_comm()->SumAll(&i, &nprimary, 1);
+  i = nsecondary;
+  mesh_->get_comm()->SumAll(&i, &nsecondary, 1);
+  i = num_simplex_itrs;
+  mesh_->get_comm()->SumAll(&i, &num_simplex_itrs, 1);
 }
 
 

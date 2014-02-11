@@ -55,7 +55,7 @@ class DarcyProblem {
     delete comm;
   }
 
-  void Init(const string xmlFileName, const char* meshExodus) {
+  void Init(const std::string xmlFileName, const char* meshExodus) {
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
     Teuchos::ParameterList plist = xmlreader.getParameters();
 
@@ -116,7 +116,7 @@ class DarcyProblem {
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       double pressure_exact = p0 + pressure_gradient * xc;
-      // if (MyPID==0) cout << c << " " << pressure[0][c] << " exact=" <<  pressure_exact << endl;
+      // if (MyPID==0) std::cout << c << " " << pressure[0][c] << " exact=" <<  pressure_exact << std::endl;
       error_L2 += std::pow(pressure[0][c] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
@@ -130,7 +130,7 @@ class DarcyProblem {
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       double pressure_exact = p0 + pressure_gradient * xf;
-      // cout << f << " " << lambda[0][f] << " exact=" << pressure_exact << endl;
+      // std::cout << f << " " << lambda[0][f] << " exact=" << pressure_exact << std::endl;
       error_L2 += std::pow(lambda[0][f] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
@@ -143,7 +143,7 @@ class DarcyProblem {
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      // cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << endl;
+      // std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << std::endl;
       error_L2 += std::pow(flux[0][f] - velocity_exact * normal, 2.0);
     }
     return sqrt(error_L2);
@@ -187,10 +187,10 @@ SUITE(Darcy_PK) {
     if (MyPID == 0) std::cout <<"Darcy PK on hexes: Dirichlet-Dirichlet" << std::endl;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = string("Top side");
+    regions[0] = std::string("Top side");
     createBClist("pressure", "BC 1", regions, 0.0);
 
-    regions[0] = string("Bottom side");
+    regions[0] = std::string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
 
     DPK->ResetParameterList(dp_list);
@@ -222,10 +222,10 @@ SUITE(Darcy_PK) {
     if (MyPID == 0) std::cout <<"Darcy PK on hexes: Dirichlet-Neumann" << std::endl;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = string("Top side");
+    regions[0] = std::string("Top side");
     createBClist("mass flux", "BC 1", regions, -20.0);
 
-    regions[0] = string("Bottom side");
+    regions[0] = std::string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
     DPK->ResetParameterList(dp_list);
 
@@ -257,10 +257,10 @@ SUITE(Darcy_PK) {
     if (MyPID == 0) std::cout <<"Darcy PK on hexes: StaticHead-Dirichlet" << std::endl;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = string("Top side");
+    regions[0] = std::string("Top side");
     createBClist("pressure", "BC 1", regions, 1.0);
 
-    regions[0] = string("Bottom side");
+    regions[0] = std::string("Bottom side");
     createBClist("static head", "BC 2", regions, 0.25);
 
     DPK->ResetParameterList(dp_list);
@@ -294,10 +294,10 @@ SUITE(Darcy_PK) {
     if (MyPID == 0) std::cout << "\nDarcy PK on prisms: Dirichlet-Dirichlet" << std::endl;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = string("Top side");
+    regions[0] = std::string("Top side");
     createBClist("pressure", "BC 1", regions, 0.0);
 
-    regions[0] = string("Bottom side");
+    regions[0] = std::string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
     DPK->ResetParameterList(dp_list);
 
@@ -331,10 +331,10 @@ SUITE(Darcy_PK) {
     if (MyPID == 0) std::cout << "\nDarcy PK on tets: Dirichlet-Neumann" << std::endl;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = string("Top side");
+    regions[0] = std::string("Top side");
     createBClist("mass flux", "BC 1", regions, -20.0);
 
-    regions[0] = string("Bottom side");
+    regions[0] = std::string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
     DPK->ResetParameterList(dp_list);
 
@@ -368,10 +368,10 @@ SUITE(Darcy_PK) {
     if (MyPID == 0) std::cout << "\nDarcy PK on mixed mesh: Dirichlet-Dirichlet" << std::endl;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = string("Top side");
+    regions[0] = std::string("Top side");
     createBClist("pressure", "BC 1", regions, 0.0);
 
-    regions[0] = string("Bottom side");
+    regions[0] = std::string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
     DPK->ResetParameterList(dp_list);
 

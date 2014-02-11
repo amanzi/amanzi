@@ -70,7 +70,7 @@ TEST(HDF5_MPI) {
 
   for (int i = 0; i < 15; i++) {
 
-    cout << "iteration... " << i << endl;
+    std::cout << "iteration... " << i << std::endl;
 
     cell_quantity->ReplaceGlobalValues(8, cell_values, cell_index_list);
     fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list);
@@ -130,15 +130,15 @@ TEST(HDF5_MPI) {
   restart_output->writeDataString(strArray,num_wstrs,"string_dataset");
   */
   
-  cout << "O.K." << endl;
+  std::cout << "O.K." << std::endl;
 
   delete viz_output;
   delete restart_output;
   
   // test reading data back
-  cout << "E>> create restart_input with file " << hdf5_datafile2 << ".h5" << endl;
+  std::cout << "E>> create restart_input with file " << hdf5_datafile2 << ".h5" << std::endl;
   Amanzi::HDF5_MPI *restart_input = new Amanzi::HDF5_MPI(*comm,hdf5_datafile2+".h5");
-  cout << hdf5_datafile2+".h5" << endl;
+  std::cout << hdf5_datafile2+".h5" << std::endl;
   
   restart_input->open_h5file();
 
@@ -146,29 +146,29 @@ TEST(HDF5_MPI) {
   int newcycle;
   std::string newstring;
   restart_input->readAttrReal(newtime,"time");
-  cout << "E>> read back attribute time = " << newtime << endl;
+  std::cout << "E>> read back attribute time = " << newtime << std::endl;
   restart_input->readAttrInt(newcycle,"cycle");
-  cout << "E>> read back attribute cycle = " << newcycle << endl;
+  std::cout << "E>> read back attribute cycle = " << newcycle << std::endl;
   restart_input->readAttrString(newstring,"attr name");
-  cout << "E>> read back attribute string = " << newstring << endl;
-  cout << "E>> compare results" << endl;
-  cout << "E>> original:" << endl << *cell_quantity;
+  std::cout << "E>> read back attribute string = " << newstring << std::endl;
+  std::cout << "E>> compare results" << std::endl;
+  std::cout << "E>> original:" << std::endl << *cell_quantity;
   Teuchos::RCP<Epetra_Vector> read_quantity;
   read_quantity = Teuchos::rcp(new Epetra_Vector(Mesh->cell_map(false)));
-  cout << endl;
+  std::cout << std::endl;
   restart_input->readData(*read_quantity, "cell_quantity");
   
-  cout << "E>> read back:" << endl << *read_quantity;
-  cout << "E>> cell map:" << endl << Mesh->cell_map(false);
+  std::cout << "E>> read back:" << std::endl << *read_quantity;
+  std::cout << "E>> cell map:" << std::endl << Mesh->cell_map(false);
 
   // reading back string dataset
   /*
   char **strBack;
   int num_rstrs = 0;
   restart_input->readDataString(&strBack, &num_rstrs, "string_dataset");
-  cout << "E>> reading back string dataset["<<num_rstrs<<"]: " << endl;
+  std::cout << "E>> reading back string dataset["<<num_rstrs<<"]: " << std::endl;
   for (int i=0 ; i<num_rstrs; i++) {
-    cout << "    " << strBack[i] << endl;
+    std::cout << "    " << strBack[i] << std::endl;
   }
   */
 

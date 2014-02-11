@@ -29,27 +29,41 @@ const int WHETSTONE_DATA_ACCESS_VIEW = 2;
 
 class DenseMatrix {
  public:
+  DenseMatrix();
   DenseMatrix(int mrow, int ncol);
   DenseMatrix(int mrow, int ncol, double* data, int data_access = WHETSTONE_DATA_ACCESS_COPY);
   DenseMatrix(const DenseMatrix& B);
-  ~DenseMatrix() { delete[] data_; }
-
+  ~DenseMatrix() { if (data_ != NULL) { delete[] data_; } }
+  
   // primary members 
   void clear() { for (int i = 0; i < m_ * n_; i++) data_[i] = 0.0; } 
 
   double& operator()(int i, int j) { return data_[j * m_ + i]; }
   const double& operator()(int i, int j) const { return data_[j * m_ + i]; }
 
-  DenseMatrix& operator=(const DenseMatrix& B) {        
-    double *a = (*this).Values();
-    const double *b = B.Values();
-
-    for (int i = 0; i < m_ * n_; i++) a[i] = b[i];
+  DenseMatrix& operator=(const DenseMatrix& B) {
+    if (this != &B) {
+      if (m_ * n_ != B.m_ * B.n_ && B.m_ * B.n_ != 0) {
+        if (data_ != NULL) {
+          delete [] data_;
+        }
+        data_ = new double[B.m_ * B.n_];
+      }
+      n_ = B.n_;
+      m_ = B.m_;
+      const double *b = B.Values();
+      for (int i = 0; i < m_ * n_; i++) data_[i] = b[i];
+    }
     return (*this);
   }
 
   DenseMatrix& operator*=(double val) {
     for (int i = 0; i < m_ * n_; i++) data_[i] *= val;
+    return *this;
+  }
+
+  DenseMatrix& operator/=(double val) {
+    for (int i = 0; i < m_ * n_; i++) data_[i] /= val;
     return *this;
   }
 
@@ -60,7 +74,7 @@ class DenseMatrix {
     for (int i = 0; i < m_ * n_; i++) data_[i] = val;
   }
 
-  // access
+  // access: the data are ordered by columns
   int NumRows() const { return m_; }
   int NumCols() const { return n_; }
 
@@ -80,6 +94,8 @@ class DenseMatrix {
   }
 
   // first level routines
+  double Trace();
+
   void MaxRowValue(int irow, int* j, double* value) { 
     MaxRowValue(irow, 0, n_, j, value); 
   } 
@@ -98,6 +114,18 @@ class DenseMatrix {
   int m_, n_, access_;
   double* data_;                       
 };
+
+inline bool operator==(const DenseMatrix& A, const DenseMatrix& B) {
+  if (A.NumRows() != B.NumRows()) return false;
+  if (A.NumCols() != B.NumCols()) return false;
+  for (int i = 0; i != A.NumRows() * A.NumCols(); ++i) 
+    if (A.Values()[i] != B.Values()[i]) return false;
+  return true;
+}
+
+inline bool operator!=(const DenseMatrix& A, const DenseMatrix& B) {
+  return !(A == B);
+}
 
 }  // namespace WhetStone
 }  // namespace Amanzi

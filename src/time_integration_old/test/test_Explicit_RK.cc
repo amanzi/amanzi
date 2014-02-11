@@ -21,7 +21,7 @@ using namespace Amanzi;
 
 
   TEST(Explicit_RK_Euler) {
-    cout << "Test: Explicit_RK_Euler" << endl;    
+    std::cout << "Test: Explicit_RK_Euler" << std::endl;    
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);
     Epetra_Vector y(map);
@@ -52,7 +52,7 @@ using namespace Amanzi;
        
 
   TEST(Explicit_RK_Heun) {
-    cout << "Test: Explicit_RK_Heun" << endl;    
+    std::cout << "Test: Explicit_RK_Heun" << std::endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);
@@ -84,7 +84,7 @@ using namespace Amanzi;
        
 
   TEST(Explicit_RK_Midpoint) {
-    cout << "Test: Explicit_RK_Midpoint" << endl;    
+    std::cout << "Test: Explicit_RK_Midpoint" << std::endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);
@@ -115,7 +115,7 @@ using namespace Amanzi;
   }
 
   TEST(Explicit_RK_Ralston) {
-    cout << "Test: Explicit_RK_Rapson" << endl;    
+    std::cout << "Test: Explicit_RK_Rapson" << std::endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);
@@ -147,7 +147,7 @@ using namespace Amanzi;
 
 
   TEST(Explicit_RK_Kutta3D) {
-    cout << "Test: Explicit_RK_Kutta3D" << endl;    
+    std::cout << "Test: Explicit_RK_Kutta3D" << std::endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);
@@ -178,7 +178,7 @@ using namespace Amanzi;
   }
 
   TEST(Explicit_RK_UserDefined) {
-    cout << "Test: Explicit_RK_UserDefined" << endl;    
+    std::cout << "Test: Explicit_RK_UserDefined" << std::endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);
@@ -223,7 +223,7 @@ using namespace Amanzi;
   }
 
   TEST(Explicit_RK_RK4) {
-    cout << "Test: Explicit_RK_RK4" << endl;    
+    std::cout << "Test: Explicit_RK_RK4" << std::endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);

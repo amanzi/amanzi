@@ -39,10 +39,10 @@ TEST(FLOW_3D_RICHARDS) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) cout << "Test: 3D Richards, crib model" << endl;
+  if (MyPID == 0) std::cout << "Test: 3D Richards, crib model" << std::endl;
 
   /* read parameter list */
-  string xmlFileName = "test/flow_richards_bc_cribs.xml";
+  std::string xmlFileName = "test/flow_richards_bc_cribs.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
@@ -98,7 +98,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   /* check the pressure profile */
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  //for (int c = 0; c < ncells; c++) cout << (mesh->cell_centroid(c))[2] << " " << pressure[c] << endl;
+  //for (int c = 0; c < ncells; c++) std::cout << (mesh->cell_centroid(c))[2] << " " << pressure[c] << std::endl;
   for (int c = 0; c < ncells; c++) CHECK(p[0][c] > 4500.0 && p[0][c] < 101325.0);
 
   delete RPK;

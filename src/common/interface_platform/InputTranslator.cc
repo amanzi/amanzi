@@ -112,7 +112,7 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
   //std::cout << "EIB>> getting Execution Control" << std::endl;
   new_list.sublist("Execution Control") = get_execution_controls(doc, &def_list);
   new_list.sublist("Phase Definitions") = get_phases(doc, def_list);
-  new_list.sublist("Regions") = get_regions(doc, def_list);
+  new_list.sublist("Regions") = get_regions(doc, &def_list);
   new_list.sublist("Material Properties") = get_materials(doc, def_list);
   new_list.sublist("Initial Conditions") = get_initial_conditions(doc, def_list);
   new_list.sublist("Boundary Conditions") = get_boundary_conditions(doc, def_list);
@@ -1965,7 +1965,7 @@ Teuchos::ParameterList get_phases(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
  * Empty
  ******************************************************************
  */
-Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list) {
+Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList* def_list) {
 
   Teuchos::ParameterList list;
 
@@ -1979,12 +1979,13 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
   char* textContent2;
   char* char_array;
 
-  if (def_list.sublist("simulation").isParameter("verbosity")) {
-    std::string verbosity = def_list.sublist("simulation").get<std::string>("verbosity") ;
+  if (def_list->sublist("simulation").isParameter("verbosity")) {
+    std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
     if (verbosity == "extreme") {
 	    std::cout << "Amanzi::InputTranslator: Getting Regions."<< std::endl;
     }
   }
+  Teuchos::ParameterList reg_names;
 
   // get regions node
   nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("regions"));
@@ -2008,6 +2009,12 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 	attrMap = cur->getAttributes();
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
         textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	// add region name to array of region names
+	if (reg_names.isParameter(textContent)) {
+		// warn, region of this name already exists, overwriting
+	} else {
+	  reg_names.set<std::string>(textContent,"region");
+	}
 	// deal with children: comments, box/file
         xercesc::DOMNodeList* kids = cur->getChildNodes();
         for (int j=0; j<kids->getLength(); j++) {
@@ -2025,12 +2032,12 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 	      attrMap = curKid->getAttributes();
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("low_coordinates"));
               textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	      Teuchos::Array<double> low = make_coordinates(textContent2, def_list);
+	      Teuchos::Array<double> low = make_coordinates(textContent2, *def_list);
               list.sublist(textContent).sublist("Region: Box").set<Teuchos::Array<double> >("Low Coordinate",low);
 	      XMLString::release(&textContent2);
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("high_coordinates"));
               textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	      Teuchos::Array<double> high = make_coordinates(textContent2, def_list);
+	      Teuchos::Array<double> high = make_coordinates(textContent2,* def_list);
               list.sublist(textContent).sublist("Region: Box").set<Teuchos::Array<double> >("High Coordinate",high);
 	      XMLString::release(&textContent2);
 	    }
@@ -2038,11 +2045,11 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 	      attrMap = curKid->getAttributes();
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("location"));
               textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	      Teuchos::Array<double> loc = make_coordinates(textContent2, def_list);
+	      Teuchos::Array<double> loc = make_coordinates(textContent2, *def_list);
               list.sublist(textContent).sublist("Region: Plane").set<Teuchos::Array<double> >("Location",loc);
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("normal"));
               textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	      Teuchos::Array<double> dir = make_coordinates(textContent2, def_list);
+	      Teuchos::Array<double> dir = make_coordinates(textContent2, *def_list);
               list.sublist(textContent).sublist("Region: Plane").set<Teuchos::Array<double> >("Direction",dir);
 	      XMLString::release(&textContent2);
 	    } else if  (strcmp(nodeName,"region_file") == 0){
@@ -2088,16 +2095,22 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 	attrMap = cur->getAttributes();
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
         textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	// add region name to array of region names
+	if (reg_names.isParameter(textContent)) {
+		// warn, region of this name already exists, overwriting
+	} else {
+	  reg_names.set<std::string>(textContent,"box");
+	}
 	// get low coord
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("low_coordinates"));
         textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	Teuchos::Array<double> low = make_coordinates(textContent2, def_list);
+	Teuchos::Array<double> low = make_coordinates(textContent2, *def_list);
         list.sublist(textContent).sublist("Region: Box").set<Teuchos::Array<double> >("Low Coordinate",low);
 	XMLString::release(&textContent2);
 	// get high coord
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("high_coordinates"));
         textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	Teuchos::Array<double> high = make_coordinates(textContent2, def_list);
+	Teuchos::Array<double> high = make_coordinates(textContent2, *def_list);
         list.sublist(textContent).sublist("Region: Box").set<Teuchos::Array<double> >("High Coordinate",high);
 	XMLString::release(&textContent2);
 	XMLString::release(&textContent);
@@ -2106,9 +2119,15 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 	attrMap = cur->getAttributes();
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
         textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	// add region name to array of region names
+	if (reg_names.isParameter(textContent)) {
+		// warn, region of this name already exists, overwriting
+	} else {
+	  reg_names.set<std::string>(textContent,"point");
+	}
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("coordinate"));
         textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	Teuchos::Array<double> coord = make_coordinates(textContent2, def_list);
+	Teuchos::Array<double> coord = make_coordinates(textContent2, *def_list);
         list.sublist(textContent).sublist("Region: Point").set<Teuchos::Array<double> >("Coordinate",coord);
 	XMLString::release(&textContent);
 	XMLString::release(&textContent2);
@@ -2116,13 +2135,19 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 	attrMap = cur->getAttributes();
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
         textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	// add region name to array of region names
+	if (reg_names.isParameter(textContent)) {
+		// warn, region of this name already exists, overwriting
+	} else {
+	  reg_names.set<std::string>(textContent,"plane");
+	}
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("location"));
         textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	Teuchos::Array<double> loc = make_coordinates(textContent2, def_list);
+	Teuchos::Array<double> loc = make_coordinates(textContent2, *def_list);
         list.sublist(textContent).sublist("Region: Plane").set<Teuchos::Array<double> >("Location",loc);
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("normal"));
         textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	Teuchos::Array<double> dir = make_coordinates(textContent2, def_list);
+	Teuchos::Array<double> dir = make_coordinates(textContent2, *def_list);
         list.sublist(textContent).sublist("Region: Plane").set<Teuchos::Array<double> >("Direction",dir);
 	XMLString::release(&textContent);
 	XMLString::release(&textContent2);
@@ -2130,6 +2155,9 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
       XMLString::release(&tagName);
     }
   }
+  // add array of region names to def_list, use these names to check assigned_regions list against later
+  def_list->sublist("regions") = reg_names; 
+
 
   return list;
   
@@ -2190,10 +2218,16 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::Para
             tagName  = xercesc::XMLString::transcode(curkid->getNodeName());
 	    if (strcmp("assigned_regions",tagName)==0){
 	      //TODO: EIB - if this is more than 1 region -> assuming comma seperated list of strings????
-          textContent2 = xercesc::XMLString::transcode(curkid->getTextContent());
+              textContent2 = xercesc::XMLString::transcode(curkid->getTextContent());
 	      Teuchos::Array<std::string> regs = make_regions_list(textContent2);
 	      matlist.set<Teuchos::Array<std::string> >("Assigned Regions",regs);
 	      XMLString::release(&textContent2);
+	      if (!compare_region_names(regs, def_list)) {
+                std::cout << "Amanzi::InputTranslator: ERROR - invalid region in Materials Section" << std::endl;
+                std::cout << "Amanzi::InputTranslator: valid regions are:" << std::endl;
+		def_list.sublist("regions").print(std::cout,true,false);
+                Exceptions::amanzi_throw(Errors::Message("Exiting due to errors in input xml file"));
+	      }
 	    }
         else if  (strcmp("mechanical_properties",tagName)==0){
               xercesc::DOMNodeList* list = curkid->getChildNodes();
@@ -2463,6 +2497,12 @@ Teuchos::ParameterList get_initial_conditions(xercesc::DOMDocument* xmlDoc, Teuc
 	  Teuchos::Array<std::string> regs = make_regions_list(textContent2);
 	  iclist.set<Teuchos::Array<std::string> >("Assigned Regions",regs);
 	  XMLString::release(&textContent2);
+	  if (!compare_region_names(regs, def_list)) {
+                std::cout << "Amanzi::InputTranslator: ERROR - invalid region in Initial Conditions Section" << std::endl;
+                std::cout << "Amanzi::InputTranslator: valid regions are:" << std::endl;
+		def_list.sublist("regions").print(std::cout,true,false);
+                Exceptions::amanzi_throw(Errors::Message("Exiting due to errors in input xml file"));
+	  }
         }
         else if (strcmp(tagName,"liquid_phase")==0) {
           //TODO: EIB - deal with liquid phase
@@ -2624,6 +2664,12 @@ Teuchos::ParameterList get_boundary_conditions(xercesc::DOMDocument* xmlDoc, Teu
 	  Teuchos::Array<std::string> regs = make_regions_list(textContent2);
 	  bclist.set<Teuchos::Array<std::string> >("Assigned Regions",regs);
 	  XMLString::release(&textContent2);
+	  if (!compare_region_names(regs, def_list)) {
+                std::cout << "Amanzi::InputTranslator: ERROR - invalid region in Boundary Conditions Section" << std::endl;
+                std::cout << "Amanzi::InputTranslator: valid regions are:" << std::endl;
+		def_list.sublist("regions").print(std::cout,true,false);
+                Exceptions::amanzi_throw(Errors::Message("Exiting due to errors in input xml file"));
+	  }
         }
         else if (strcmp(tagName,"liquid_phase")==0) {
           //TODO: EIB - deal with liquid phase
@@ -2979,6 +3025,12 @@ Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 	    Teuchos::Array<std::string> regs = make_regions_list(textContent2);
 	    sclist.set<Teuchos::Array<std::string> >("Assigned Regions",regs);
 	    XMLString::release(&textContent2);
+	    if (!compare_region_names(regs, def_list)) {
+                std::cout << "Amanzi::InputTranslator: ERROR - invalid region in Sources Section" << std::endl;
+                std::cout << "Amanzi::InputTranslator: valid regions are:" << std::endl;
+		def_list.sublist("regions").print(std::cout,true,false);
+                Exceptions::amanzi_throw(Errors::Message("Exiting due to errors in input xml file"));
+	    }
           } else if (strcmp(tagName,"liquid_phase")==0) {
             attrMap = SCNode->getAttributes();
             nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
@@ -3556,6 +3608,29 @@ Teuchos::Array<std::string> make_regions_list(char* char_array)
   }
 
   return regs;
+}
+
+/* 
+ ******************************************************************
+ * Empty
+ ******************************************************************
+ */
+
+bool compare_region_names(Teuchos::Array<std::string> regions, Teuchos::ParameterList def_list)
+{
+  int cnt;
+  cnt = 0;
+  bool status=true;
+  for (int i = 0; i < regions.size(); i++) { 
+    if (def_list.sublist("regions").isParameter(regions[i].c_str())) {
+      cnt++;
+    } else {
+      std::cout << "Amanzi::InputTranslator: ERROR - region "<< regions[i] << " NOT in known regions!" << std::endl;
+      return false;
+    }
+  }
+
+  return status;
 }
 
 /* 

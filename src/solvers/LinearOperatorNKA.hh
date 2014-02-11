@@ -119,7 +119,7 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& f
   if (initialized_) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << num_itrs_ << " ||r||=" << residual_ << endl;
+      *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
     }
   }
   if (criteria_ == LIN_SOLVER_RELATIVE_RHS) {
@@ -151,7 +151,7 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& f
     if (initialized_) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << num_itrs_ << " ||r||=" << residual_ << endl;
+        *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
       }
     }
     if (rnorm > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;

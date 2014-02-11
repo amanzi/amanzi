@@ -278,7 +278,7 @@ double Transport_PK::CalculateTransportDt()
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "cell " << cmin_dT << " has smallest dT, (" << p[0] << ", " << p[1];
       if (p.dim() == 3) *vo_->os() << ", ", p[2];
-      *vo_->os() << ")" << endl;
+      *vo_->os() << ")" << std::endl;
     }
   }
   return dT;
@@ -393,7 +393,7 @@ int Transport_PK::Advance(double dT_MPC)
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << ncycles << " sub-cycles, dT_stable=" << dT_original 
-               << " [sec]  dT_MPC=" << dT_MPC << " [sec]" << endl;
+               << " [sec]  dT_MPC=" << dT_MPC << " [sec]" << std::endl;
 
     double tccmin_vec[number_components];
     double tccmax_vec[number_components];
@@ -417,14 +417,15 @@ int Transport_PK::Advance(double dT_MPC)
     mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_exact, 1);
 
     double mass_loss = mass_exact - mass_tracer;
-    *vo_->os() << "species #0: " << tccmin << " <= concentration <= " << tccmax << endl;
+    *vo_->os() << "species #0: " << tccmin << " <= concentration <= " << tccmax << std::endl;
     *vo_->os() << "species #0: reservoir mass=" << mass_tracer 
-               << " [kg], mass left=" << mass_loss << " [kg]" << endl;
+               << " [kg], mass left=" << mass_loss << " [kg]" << std::endl;
   }
 
   if (dispersion_models_.size() != 0) {
     std::string scheme("tpfa");
     if (mesh_->mesh_type() == AmanziMesh::RECTANGULAR) scheme = "mfd";
+    // scheme = "mfd";
 
     DispersionMatrixFactory mfactory;
     dispersion_matrix_ = mfactory.Create(scheme, &dispersion_models_, mesh_, S_);
@@ -471,7 +472,15 @@ int Transport_PK::Advance(double dT_MPC)
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "dispersion solver (" << solver->name() 
                  << ") ||r||=" << residual / number_components
-                 << " itrs=" << num_itrs / number_components << endl;
+                 << " itrs=" << num_itrs / number_components << std::endl;
+    }
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      int i = dispersion_matrix_->nprimary;
+      int j = dispersion_matrix_->nsecondary;
+      int k = dispersion_matrix_->num_simplex_itrs;
+      if (i > 0) *vo_->os() << "secondary matrices: " << double(100 * j) / ncells_owned << "%" 
+          << ",  average itrs: " << k / (i + 1) << std::endl;
     }
   }
   return 0;

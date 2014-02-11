@@ -17,7 +17,7 @@ SUITE(RESTART) {
 
     Teuchos::ParameterList plist;
 
-    plist.set<string>("file name base","restartdump");
+    plist.set<std::string>("file name base","restartdump");
     plist.set<int>("file name digits", 5);
 
     Teuchos::Array<int> csps(3);
@@ -50,7 +50,7 @@ SUITE(RESTART) {
     
     Teuchos::ParameterList plist;
 
-    plist.set<string>("file name base","restartdump");
+    plist.set<std::string>("file name base","restartdump");
     plist.set<int>("file name digits", 5);    
     
 
@@ -83,7 +83,7 @@ SUITE(RESTART) {
     
     Teuchos::ParameterList plist;
 
-    plist.set<string>("file name base","restartdump");
+    plist.set<std::string>("file name base","restartdump");
     plist.set<int>("file name digits", 5);        
 
     Teuchos::Array<int> csps(3);
@@ -116,7 +116,7 @@ SUITE(RESTART) {
     
     Teuchos::ParameterList plist;
 
-    plist.set<string>("file name base","restartdump");
+    plist.set<std::string>("file name base","restartdump");
     plist.set<int>("file name digits", 5);    
 
     Teuchos::Array<int> csps(3);
@@ -153,7 +153,7 @@ SUITE(RESTART) {
     
     Teuchos::ParameterList plist;
 
-    plist.set<string>("file name base","restartdump");
+    plist.set<std::string>("file name base","restartdump");
     plist.set<int>("file name digits", 5);    
 
     Teuchos::Array<double> tsps(3);
@@ -190,7 +190,7 @@ SUITE(RESTART) {
   TEST(DUMP_DATA) 
   {
     Teuchos::ParameterList plist;
-    // plist.set<string>("File Name Base","restart_dump");
+    // plist.set<std::string>("File Name Base","restart_dump");
     // plist.set<int>("File Name Digits",4);
     // Teuchos::ParameterList& i1_ = plist.sublist("Cycle Data");
     

@@ -40,10 +40,10 @@ TEST(FLOW_2D_DARCY_WELL) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) cout << "Test: 2D specific storage Darcy, homogeneous medium" << endl;
+  if (MyPID == 0) std::cout << "Test: 2D specific storage Darcy, homogeneous medium" << std::endl;
 
   /* read parameter list */
-  string xmlFileName = "test/flow_darcy_well.xml";
+  std::string xmlFileName = "test/flow_darcy_well.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 

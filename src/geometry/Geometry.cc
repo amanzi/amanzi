@@ -328,7 +328,7 @@ namespace Amanzi
     // {
 
     //   if (coords.size() < 3) {
-    //     cout << "Degenerate polygon - Cannot compute normal" << std::endl;	
+    //     std::cout << "Degenerate polygon - Cannot compute normal" << std::endl;	
     //     Point dummynormal(0,0,0);
     //     return dummynormal;
     //   }
@@ -380,7 +380,7 @@ namespace Amanzi
     //     break;
     //   }
     //   default:
-    //     cout << "Invalid coordinate dimensions" << std::endl;
+    //     std::cout << "Invalid coordinate dimensions" << std::endl;
     //   }
 
     //   return normal;

@@ -40,10 +40,10 @@ TEST(FLOW_3D_RICHARDS) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) cout << "Test: 3D Richards, 2-layer model" << endl;
+  if (MyPID == 0) std::cout << "Test: 3D Richards, 2-layer model" << std::endl;
 
   /* read parameter list */
-  string xmlFileName = "test/flow_richards_3D.xml";
+  std::string xmlFileName = "test/flow_richards_3D.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 

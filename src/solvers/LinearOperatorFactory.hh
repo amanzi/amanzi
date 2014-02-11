@@ -34,13 +34,13 @@ class LinearOperatorFactory {
 
   // use name in the solvers list to initialize the solver
   Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> > Create(
-      const string& name,
+      const std::string& name,
       const Teuchos::ParameterList& solvers_list,
       Teuchos::RCP<const Matrix> m,  // Apply() is required
       Teuchos::RCP<const Matrix> h);  // ApplyInverse() is required
 
   Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> > Create(
-      const string& name,
+      const std::string& name,
       const Teuchos::ParameterList& solvers_list,
       Teuchos::RCP<const Matrix> m) {
     return Create(name, solvers_list, m, m);
@@ -68,7 +68,7 @@ class LinearOperatorFactory {
 template<class Matrix, class Vector, class VectorSpace>
 Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> >
 LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
-    const string& name, const Teuchos::ParameterList& solvers_list,
+    const std::string& name, const Teuchos::ParameterList& solvers_list,
     Teuchos::RCP<const Matrix> m,
     Teuchos::RCP<const Matrix> h)
 {
@@ -96,7 +96,7 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
     Teuchos::RCP<const Matrix> h)
 {
   if (slist.isParameter("iterative method")) {
-    std::string method_name = slist.get<string>("iterative method");
+    std::string method_name = slist.get<std::string>("iterative method");
 
     if (method_name == "pcg") {
       Teuchos::RCP<LinearOperatorPCG<Matrix, Vector, VectorSpace> >

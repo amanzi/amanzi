@@ -27,7 +27,7 @@ TEST(ADVANCE_WITH_STK) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "Test: advance with STK" << endl;
+  std::cout << "Test: advance with STK" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -35,7 +35,7 @@ TEST(ADVANCE_WITH_STK) {
 #endif
 
   /* read parameter list */
-  string xmlFileName = "test/transport_advance_stk.xml";
+  std::string xmlFileName = "test/transport_advance_stk.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
@@ -97,7 +97,7 @@ TEST(ADVANCE_WITH_STK) {
 
     if (i < 10) {
       printf("T=%6.2f  C_0(x):", T);
-      for (int k = 0; k < 9; k++) printf("%7.4f", (*tcc)[0][k]); cout << endl;
+      for (int k = 0; k < 9; k++) printf("%7.4f", (*tcc)[0][k]); std::cout << std::endl;
     }
   }
 

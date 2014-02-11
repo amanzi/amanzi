@@ -32,7 +32,7 @@ TEST(DARCY_MASS) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: Mass matrix for Darcy" << endl;
+  std::cout << "Test: Mass matrix for Darcy" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -99,7 +99,7 @@ TEST(DARCY_INVERSE_MASS_3D) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Inverse mass matrix for Darcy" << endl;
+  std::cout << "\nTest: Inverse mass matrix for Darcy" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -178,7 +178,7 @@ TEST(DARCY_FULL_TENSOR) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Inverse mass matrix and full tensor" << endl;
+  std::cout << "\nTest: Inverse mass matrix and full tensor" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -217,8 +217,8 @@ TEST(DARCY_FULL_TENSOR) {
       mfd.MassMatrixInverseMMatrixHex(cell, T, W);
     } else if (method == 5) {
       mfd.MassMatrixInverseMMatrix(cell, T, W);
-      cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << endl;
-      cout << "Functional value=" << mfd.simplex_functional() << endl;
+      std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
+      std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
     }
 
     printf("Inverse of mass matrix for method=%d\n", method);
@@ -264,7 +264,7 @@ TEST(DARCY_STIFFNESS_2D) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Stiffness matrix for Darcy in 2D" << endl;
+  std::cout << "\nTest: Stiffness matrix for Darcy in 2D" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -292,8 +292,8 @@ TEST(DARCY_STIFFNESS_2D) {
       mfd.StiffnessMatrix(cell, T, A);
     } else if (method == 1) {
       mfd.StiffnessMatrixMMatrix(cell, T, A);
-      cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << endl;
-      cout << "Functional value=" << mfd.simplex_functional() << endl;
+      std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
+      std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
     }
 
     printf("Stiffness matrix for cell %3d\n", cell);
@@ -344,7 +344,7 @@ TEST(DARCY_STIFFNESS_3D) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Stiffness matrix for Darcy in 3D" << endl;
+  std::cout << "\nTest: Stiffness matrix for Darcy in 3D" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -375,8 +375,8 @@ TEST(DARCY_STIFFNESS_3D) {
     for (int j=0; j<nnodes; j++ ) printf("%8.4f ", A(i, j)); 
     printf("\n");
   }
-  cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << endl;
-  cout << "Functional value=" << mfd.simplex_functional() << endl;
+  std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
+  std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
 
   // verify SPD propery
   for (int i=0; i<nnodes; i++) CHECK(A(i, i) > 0.0);
@@ -419,7 +419,7 @@ TEST(RECOVER_GRADIENT_MIXED) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Recover gradient from Darcy fluxes" << endl;
+  std::cout << "\nTest: Recover gradient from Darcy fluxes" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -474,7 +474,7 @@ TEST(RECOVER_GRADIENT_NODAL) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Recover gradient from nodal pressures" << endl;
+  std::cout << "\nTest: Recover gradient from nodal pressures" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -527,7 +527,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Inverse mass matrix for Darcy, 2D" << endl;
+  std::cout << "\nTest: Inverse mass matrix for Darcy, 2D" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -558,8 +558,8 @@ TEST(DARCY_INVERSE_MASS_2D) {
   for (int method = 0; method < 1; method++) {
     if (method == 0) {
       ok = mfd.MassMatrixInverseMMatrix(cell, T, W);
-      cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << endl;
-      cout << "Functional value=" << mfd.simplex_functional() << endl;
+      std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
+      std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
     }
 
     printf("Inverse of mass matrix for method=%d  ierr=%d\n", method, ok);
@@ -597,6 +597,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
     }
     CHECK_CLOSE(volume * T(0, 0), vxx, 1e-10);
     CHECK_CLOSE(volume * T(0, 1), vxy, 1e-10);
+    CHECK_CLOSE(mfd.simplex_functional(), 60.0, 1e-2);
   }
 
   delete comm;

@@ -32,7 +32,7 @@ TEST(CONSTRUCTOR) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "Test: read transport XML file" << endl;
+  std::cout << "Test: read transport XML file" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -40,7 +40,7 @@ TEST(CONSTRUCTOR) {
 #endif
 
   /* read parameter list */
-  string xmlFileName = "test/transport_mics.xml";
+  std::string xmlFileName = "test/transport_mics.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();  
  

@@ -1,13 +1,12 @@
 /*
-This is the flow component of the Amanzi code.
+  This is the flow component of the Amanzi code.
 
- 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <vector>
@@ -39,15 +38,16 @@ void Flow_PK::ProcessShiftWaterTableList(const Teuchos::ParameterList& list)
   const std::vector<Amanzi::Functions::Action>& actions = bc_head->actions();
   int nactions = actions.size();
   if (nactions > 0) { 
-    const Epetra_BlockMap& fmap = mesh_->face_map(false);
+    const Epetra_BlockMap& fmap = mesh_->face_map(true);
     shift_water_table_ = Teuchos::rcp(new Epetra_Vector(fmap));
   }
 
   for (int i = 0; i < nactions; i++) {
     int method = actions[i].second;
 
-    if (method == Functions::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE)
-        CalculateShiftWaterTable(actions[i].first);
+    if (method == Functions::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE) {
+      CalculateShiftWaterTable(actions[i].first);
+    }
   }
 }
 
@@ -55,7 +55,8 @@ void Flow_PK::ProcessShiftWaterTableList(const Teuchos::ParameterList& list)
 /* ******************************************************************
 * Calculate distance to the top of a given surface where the water 
 * table is set up. 
-* WARNING: works only in 3D.                                            
+* WARNING: The implemented algorithm works only in 3D.
+* WARNING: We do not distribute computed data. It seems not necessary.
 ****************************************************************** */
 void Flow_PK::CalculateShiftWaterTable(const std::string region)
 {
@@ -217,7 +218,7 @@ void Flow_PK::CalculateShiftWaterTable(const std::string region)
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "found " << nedges/2 << " boundary edges for side set " << region.c_str() << endl;
+    *vo_->os() << "found " << nedges/2 << " boundary edges for side set " << region.c_str() << std::endl;
   }
 }
 

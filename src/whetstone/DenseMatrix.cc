@@ -32,6 +32,16 @@ DenseMatrix::DenseMatrix(int mrow, int ncol)
   access_ = WHETSTONE_DATA_ACCESS_COPY;
 }
 
+/* ******************************************************************
+* Constructor.
+****************************************************************** */
+DenseMatrix::DenseMatrix() 
+{ 
+  m_ = 0;
+  n_ = 0;
+  data_ = NULL; 
+  access_ = WHETSTONE_DATA_ACCESS_COPY;
+}
 
 /* ******************************************************************
 * No memory check is performed: invalid read is possible.
@@ -63,6 +73,17 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B)
   data_ = new double[m_ * n_];
   const double* dataB = B.Values();
   for (int i = 0; i < m_ * n_; i++) data_[i] = dataB[i];
+}
+
+
+/* ******************************************************************
+* Trace operator is extended to rectangular matrices.
+****************************************************************** */
+double DenseMatrix::Trace()
+{
+  double s(0.0);
+  for (int i = 0; i < m_ * n_; i += m_ + 1) s += data_[i];
+  return s;
 }
 
 

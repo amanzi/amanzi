@@ -557,7 +557,7 @@ void Mesh_MOAB::init_pface_dirs() {
 
     result = mbcore->get_adjacencies(&face,1,celldim,false,fcells,MBCore::UNION);
     if (result != MB_SUCCESS) {
-      cout << "Could not get cells of face" << std::endl;
+      std::cout << "Could not get cells of face" << std::endl;
       assert(result == MB_SUCCESS);
     }
 
@@ -611,13 +611,13 @@ void Mesh_MOAB::init_pface_dirs() {
 
   result = mbcomm->exchange_tags(tmp_fc0_tag,AllFaces);
   if (result != MB_SUCCESS) {
-    cout << "Could not get exchange tag data successfully" << std::endl;
+    std::cout << "Could not get exchange tag data successfully" << std::endl;
     assert(result == MB_SUCCESS);
   }
 
   result = mbcomm->exchange_tags(tmp_fc1_tag,AllFaces);
   if (result != MB_SUCCESS) {
-    cout << "Could not get exchange tag data successfully" << std::endl;
+    std::cout << "Could not get exchange tag data successfully" << std::endl;
     assert(result == MB_SUCCESS);
   }
 
@@ -636,19 +636,19 @@ void Mesh_MOAB::init_pface_dirs() {
 
     result = mbcore->tag_get_data(tmp_fc0_tag,&face,1,&master_cell0_gid);
     if (result != MB_SUCCESS) {
-      cout << "Could not get face tag data" << std::endl;
+      std::cout << "Could not get face tag data" << std::endl;
       assert(result == MB_SUCCESS);
     }
     result = mbcore->tag_get_data(tmp_fc1_tag,&face,1,&master_cell1_gid);
     if (result != MB_SUCCESS) {
-      cout << "Could not get face tag data" << std::endl;
+      std::cout << "Could not get face tag data" << std::endl;
       assert(result == MB_SUCCESS);
     }
 
 
     result = mbcore->get_adjacencies(&face,1,celldim,false,fcells,MBCore::UNION);
     if (result != MB_SUCCESS) {
-      cout << "Could not get cells of face" << std::endl;
+      std::cout << "Could not get cells of face" << std::endl;
       assert(result == MB_SUCCESS);
     }
 

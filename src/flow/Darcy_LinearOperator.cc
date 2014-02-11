@@ -67,7 +67,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "pressure solver (" << solver->name() 
                << "): ||r||=" << residual << " itr=" << num_itrs
-               << " code=" << ierr << endl;
+               << " code=" << ierr << std::endl;
   }
 }
 
@@ -92,7 +92,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, const CompositeVector& rhs,
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "pressure solver: ||r||=" << residual << " itr=" << num_itrs 
-               << " code=" << ierr << endl;
+               << " code=" << ierr << std::endl;
   }
 }
 

@@ -70,7 +70,7 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
   // open dataset
   // get dimensions
   // read data
-  cout << "  E>> in upermute" << endl;
+  std::cout << "  E>> in upermute" << std::endl;
   dataset_id = H5Dopen(file_id, name, H5P_DEFAULT) ;
   dataspace = H5Dget_space(dataset_id) ;
   rank = H5Sget_simple_extent_ndims(dataspace) ;
@@ -88,34 +88,34 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
   if (ds_class == H5T_FLOAT) {
     double *data = new double[cdims[0]] ;
     double *new_data = new double[cdims[0]];
-    cout << "    E>> doing FLOAT read" << endl;
+    std::cout << "    E>> doing FLOAT read" << std::endl;
     status = H5Dread(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) ;
     status = H5Dclose(dataset_id) ;
     
     // unpermute data
-    cout << "    E>> compare "<<cdims[0]<<" to #nodes="<<num_nodes<<" or #elems="<<num_elems<<endl;
+    std::cout << "    E>> compare "<<cdims[0]<<" to #nodes="<<num_nodes<<" or #elems="<<num_elems<< std::endl;
     if (cdims[0] == num_nodes) {
-      cout << "    E>> unpermute node data" << endl;
+      std::cout << "    E>> unpermute node data" << std::endl;
       for (int i=0; i<num; ++i) {
         new_data[nodemap[i]] = data[i];
-        cout << "      E>> "<<i<<" to " << nodemap[i]<<endl;
+        std::cout << "      E>> "<<i<<" to " << nodemap[i]<< std::endl;
       }
     }
     else if (cdims[0] == num_elems) {
-      cout << "    E>> unpermute elem data" << endl;
+      std::cout << "    E>> unpermute elem data" << std::endl;
       for (int i=0; i<num; ++i) {
         new_data[elemmap[i]] = data[i];
-        cout << "      E>> "<<i<<" to " << elemmap[i]<<endl;
+        std::cout << "      E>> "<<i<<" to " << elemmap[i]<< std::endl;
       }
     }
     // write data
     dataspace = H5Screate_simple(2, cdims, NULL);
     dataset_id = H5Dcreate(new_fileid, name, ds_ntype, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     if (cdims[0] == num_nodes || cdims[0] == num_elems) {
-      cout << "    E>> write permuted data" << endl;
+      std::cout << "    E>> write permuted data" << std::endl;
       status = H5Dwrite(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, new_data);
     } else {    
-      cout << "    E>> write straight data" << endl;
+      std::cout << "    E>> write straight data" << std::endl;
       status = H5Dwrite(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
     }
     delete[] data;
@@ -125,20 +125,20 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
   else if (ds_class == H5T_INTEGER) {
     int *data = new int[cdims[0]] ;
     int *new_data = new int[cdims[0]];
-    cout << "    E>> doing INT read" << endl;
+    std::cout << "    E>> doing INT read" << std::endl;
     status = H5Dread(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) ;
     status = H5Dclose(dataset_id) ;
     
     // unpermute data
     
     if (cdims[0] == num_nodes) {
-      cout << "    E>> unpermute node data" << endl;
+      std::cout << "    E>> unpermute node data" << std::endl;
       for (int i=0; i<num; ++i) {
         new_data[nodemap[i]] = data[i];
       }
     }
     else if (cdims[0] == num_elems) {
-      cout << "    E>> unpermute elem data" << endl;
+      std::cout << "    E>> unpermute elem data" << std::endl;
       for (int i=0; i<num; ++i) {
         new_data[elemmap[i]] = data[i];
       }
@@ -147,10 +147,10 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
     dataspace = H5Screate_simple(2, cdims, NULL);
     dataset_id = H5Dcreate(new_fileid, name, ds_ntype, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     if (cdims[0] == num_nodes || cdims[0] == num_elems) {
-      cout << "    E>> write permuted data" << endl;
+      std::cout << "    E>> write permuted data" << std::endl;
       status = H5Dwrite(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, new_data);
     } else {    
-      cout << "    E>> write straight data" << endl;
+      std::cout << "    E>> write straight data" << std::endl;
       status = H5Dwrite(dataset_id, ds_ntype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
     }
     delete[] data;
@@ -167,7 +167,7 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
   H5Dclose(dataset_id);
   H5Sclose(dataspace);
   H5Tclose(ds_type);
-  cout << "  E>> done in upermute" << endl;
+  std::cout << "  E>> done in upermute" << std::endl;
   
 }
 
@@ -202,7 +202,7 @@ int main (int argc, char *argv[])
     }
     
     // read Mesh/NodeMap, store num_nodes
-    cout << "E>> read NodeMap" << endl;
+    std::cout << "E>> read NodeMap" << std::endl;
     dataset_id = H5Dopen(mesh_file, "/Mesh/NodeMap", H5P_DEFAULT) ;
     dataspace = H5Dget_space(dataset_id) ;
     rank = H5Sget_simple_extent_ndims(dataspace) ;
@@ -215,7 +215,7 @@ int main (int argc, char *argv[])
     status = H5Dclose(dataset_id) ;
     
     // read Mesh/ElementMap, store num_elems
-    cout << "E>> read ElementMap" << endl;
+    std::cout << "E>> read ElementMap" << std::endl;
     dataset_id = H5Dopen(mesh_file, "/Mesh/ElementMap", H5P_DEFAULT) ;
     dataspace = H5Dget_space(dataset_id) ;
     rank = H5Sget_simple_extent_ndims(dataspace) ;
@@ -230,7 +230,7 @@ int main (int argc, char *argv[])
     // write out unpermuted mesh
     
     // read Mesh
-    cout << "E>> read Nodes" << endl;
+    std::cout << "E>> read Nodes" << std::endl;
     dataset_id = H5Dopen(mesh_file, "/Mesh/Nodes", H5P_DEFAULT);
     dataspace = H5Dget_space(dataset_id);
     rank = H5Sget_simple_extent_ndims(dataspace) ;
@@ -244,38 +244,38 @@ int main (int argc, char *argv[])
       // write a warning to the screen, but keep going
     }
     float nodes[cdims[0]][cdims[1]] ;
-    cout << "  E>> read dims: " << cdims[0] << " x " << cdims[1] << endl;
+    std::cout << "  E>> read dims: " << cdims[0] << " x " << cdims[1] << std::endl;
     status = H5Dread(dataset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, nodes) ;
     status = H5Dclose(dataset_id) ;
     
-    cout << "E>> read mixedelements" << endl;
+    std::cout << "E>> read mixedelements" << std::endl;
     dataset_id = H5Dopen(mesh_file, "/Mesh/MixedElements", H5P_DEFAULT);
     dataspace = H5Dget_space(dataset_id);
     rank = H5Sget_simple_extent_ndims(dataspace) ;
     cdims = (hsize_t*)malloc(rank*sizeof(hsize_t)) ;
     mdims = (hsize_t*)malloc(rank*sizeof(hsize_t)) ;
     H5Sget_simple_extent_dims(dataspace, cdims, mdims) ;
-    cout << "  E>> read dims: " << cdims[0] << " x " << cdims[1] << endl;
+    std::cout << "  E>> read dims: " << cdims[0] << " x " << cdims[1] << std::endl;
     int elem_len = cdims[0] ;
     int elems[elem_len] ;
     status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, elems) ;
     status = H5Dclose(dataset_id) ;
     
     // unpermute nodes
-    cout << "E>> unpermute nodes (" <<num_nodes<<")"<< endl;
+    std::cout << "E>> unpermute nodes (" <<num_nodes<<")"<< std::endl;
     float mapnodes[num_nodes][3];
-    cout << "  E>> working node: ";
+    std::cout << "  E>> working node: ";
     for (int i=0; i<num_nodes; i++) {
-      cout << "  " << i ;
+      std::cout << "  " << i ;
       mapnodes[nodemap[i]][0] = nodes[i][0];
       mapnodes[nodemap[i]][1] = nodes[i][1];
       mapnodes[nodemap[i]][2] = nodes[i][2];
     }
-    cout << endl;
+    std::cout << std::endl;
     
     // unpermute mixed elements
     // loop through elements to get type list
-    cout << "E>> collect element information" << endl;
+    std::cout << "E>> collect element information" << std::endl;
     int elem_types[num_elems][3]; // 0)element type id 1)connectivity length 2)offset is element array
     int elem_cnt = 0;
     for (int i=0; i<num_elems; i++) {
@@ -310,41 +310,41 @@ int main (int argc, char *argv[])
       elem_types[i][1] = conn_len;
       elem_types[i][2] = elem_cnt;
       elem_cnt += conn_len + 1;      
-      cout << "  E>> id = "<<i<<" type = "<<elem_types[i][0]<<" conn_len = "<<elem_types[i][1]<<" offset = "<<elem_types[i][2]<<endl;
+      std::cout << "  E>> id = "<<i<<" type = "<<elem_types[i][0]<<" conn_len = "<<elem_types[i][1]<<" offset = "<<elem_types[i][2]<<std::endl;
     }
     // do element unpermute
     int map_offset = 0;
     int org_offset = 0;
     int mapelems[elem_len];
-    cout << "E>> create reverse elemmap" << endl;
+    std::cout << "E>> create reverse elemmap" << std::endl;
     int rev_elemmap[num_elems];
     for (int i=0; i<num_elems; i++) {
       rev_elemmap[elemmap[i]] = i;
-      cout << "  E>> rev["<<elemmap[i]<<"] = " <<i<<endl;
+      std::cout << "  E>> rev["<<elemmap[i]<<"] = " <<i<< std::endl;
     }
-    cout << "E>> now unpermute the element connectivities" << endl;
+    std::cout << "E>> now unpermute the element connectivities" << std::endl;
     for (int i=0; i<num_elems; i++) {
       int id = rev_elemmap[i];
       org_offset = elem_types[id][2];
       mapelems[map_offset] = elem_types[id][0];
-      cout << "  E>> elem "<<i<<" = "<<id<<" with conn_len = "<<elem_types[i][1]<<" and offset = "<<elem_types[i][2]<<endl;
+      std::cout << "  E>> elem "<<i<<" = "<<id<<" with conn_len = "<<elem_types[i][1]<<" and offset = "<<elem_types[i][2]<< std::endl;
       for (int j=1; j<elem_types[id][1]+1; j++) {
-        cout << "    E>> getting elems[" << org_offset<<"+"<<j<<"] = "<<elems[org_offset+j] << "  to ["<<map_offset+j<<"]"<<endl;
+        std::cout << "    E>> getting elems[" << org_offset<<"+"<<j<<"] = "<<elems[org_offset+j] << "  to ["<<map_offset+j<<"]"<< std::endl;
         mapelems[map_offset+j] = nodemap[elems[org_offset+j]];
       }
       map_offset += elem_types[id][1]+1;
     }
-    cout << "E>> new ordered element connectivities:";
+    std::cout << "E>> new ordered element connectivities:";
     for (int i=0; i<elem_len; i++) {
-      cout << " " << mapelems[i];
+      std::cout << " " << mapelems[i];
     }
-    cout << endl;
+    std::cout << std::endl;
     
     // create Mesh group
     hid_t group = H5Gcreate(new_file, "/Mesh",H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     
     // write out mesh
-    cout << "E>> write out new nodes" << endl;
+    std::cout << "E>> write out new nodes" << std::endl;
     dimsf[0] = num_nodes;
     dimsf[1] = 3;
     dt = H5Tcopy(H5T_NATIVE_FLOAT);
@@ -352,7 +352,7 @@ int main (int argc, char *argv[])
     dataset_id = H5Dcreate(new_file,"/Mesh/Nodes", dt, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     status = H5Dwrite(dataset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, mapnodes);
     
-    cout << "E>> write out new elements" << endl;
+    std::cout << "E>> write out new elements" << std::endl;
     dimsf[0] = elem_len;
     dimsf[1] = 1;
     dt = H5Tcopy(H5T_NATIVE_INT);
@@ -371,30 +371,30 @@ int main (int argc, char *argv[])
       data_file = H5Fopen(argv[2], H5F_ACC_RDWR, H5P_DEFAULT);
       
       // iterate over groups, fill in list of names
-      cout << "E>> iterate to get field names" << endl;
+      std::cout << "E>> iterate to get field names" << std::endl;
       H5Giterate(data_file, "/", NULL, group_info, NULL);
       for (int i=0; i<groupList.size(); ++i) {
-        cout << " " << groupList[i];
+        std::cout << " " << groupList[i];
       }
-      cout << endl;
+      std::cout << std::endl;
       for (int i=0; i<groupList.size(); ++i) {
         stringstream group_name;
         group_name << "/" << groupList[i];
-        cout << "E>> creating " << group_name.str() << endl;
+        std::cout << "E>> creating " << group_name.str() << std::endl;
         hid_t group = H5Gcreate(new_file, group_name.str().c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         datasetList.erase(datasetList.begin(), datasetList.end());
         H5Giterate(data_file, group_name.str().c_str(), NULL, dataset_info, NULL);
         for (int j=0; j<datasetList.size(); j++) {
           stringstream ds_name;
           ds_name << group_name.str() << "/" << datasetList[j];
-          cout << "  E>> unpermute " << ds_name.str() << endl;
+          std::cout << "  E>> unpermute " << ds_name.str() << std::endl;
           status = unpermute(ds_name.str().c_str(), data_file, new_file, nodemap, elemmap);
         }
       }
     }
     
     // close restart file, new file
-    cout << "E>> closing files" << endl;
+    std::cout << "E>> closing files" << std::endl;
     status = H5Fclose(mesh_file);
     status = H5Fclose(data_file);
     status = H5Fclose(new_file);

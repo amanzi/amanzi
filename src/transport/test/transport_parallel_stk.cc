@@ -34,7 +34,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "Test: advance using parallel STK mesh" << endl;
+  std::cout << "Test: advance using parallel STK mesh" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -42,7 +42,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
 #endif
 
   /* read parameter list */
-  string xmlFileName = "test/transport_parallel_stk.xml";
+  std::string xmlFileName = "test/transport_parallel_stk.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
@@ -110,7 +110,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
 
     if (iter < 10 && TPK.MyPID == 2) {
       printf("T=%7.2f  C_0(x):", T);
-      for (int k = 0; k < 2; k++) printf("%7.4f", (*tcc)[0][k]); cout << endl;
+      for (int k = 0; k < 2; k++) printf("%7.4f", (*tcc)[0][k]); std::cout << std::endl;
     }
   }
 

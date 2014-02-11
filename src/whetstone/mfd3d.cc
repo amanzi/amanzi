@@ -400,8 +400,10 @@ int MFD3D::SimplexFindFeasibleSolution_(
     T(m + 1, k) = -q1;
   }
 
-  // work memory
+  // scaling
   double tol = WHETSTONE_SIMPLEX_TOLERANCE * n;
+
+  // work memory
   int ip, kp, itr_max = WHETSTONE_SIMPLEX_MAX_ITERATIONS * n;
   int itr1(0), itr2(0), nl1(n), l1[n + 1];
 

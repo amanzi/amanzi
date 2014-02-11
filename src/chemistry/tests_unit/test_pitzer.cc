@@ -139,7 +139,7 @@ SUITE(TestPitzer) {
     double actw = log10(H2O.act_coef());
     for (int i = 0; i < sp_.size(); i++) {
       gamma[i] = log10(sp_[i].act_coef());
-      // std:: cout << sp_[i].name() << "  " <<gamma[i] << std::endl;
+      // std::cout << sp_[i].name() << "  " <<gamma[i] << std::endl;
     }
     // std::cout << "Testing coeff. 1" << std::endl;
     // Results are compared with PHREEQC
@@ -199,7 +199,7 @@ SUITE(TestPitzer) {
     double actw = log10(H2O.act_coef());
     for (int i = 0; i < sp_.size(); i++) {
       gamma[i] = log10(sp_[i].act_coef());
-      // std:: cout << sp_[i].name() << "  " <<gamma[i] << std::endl;
+      // std::cout << sp_[i].name() << "  " <<gamma[i] << std::endl;
     }
     // Results are compared with PHREEQC
     CHECK_CLOSE(-0.241, gamma[0], 1.0e-2);  // Cl-
@@ -263,7 +263,7 @@ SUITE(TestPitzer) {
     double actw = log10(H2O.act_coef());
     for (int i = 0; i < sp_.size(); i++) {
       gamma[i] = log10(sp_[i].act_coef());
-      // std:: cout << sp_[i].name() << "  " << gamma[i] << std::endl;
+      // std::cout << sp_[i].name() << "  " << gamma[i] << std::endl;
     }
     CHECK_CLOSE(-0.192, gamma[0], 1.0e-2);  // Cl-
     CHECK_CLOSE(0.274, gamma[1], 1.0e-2);  // Na+

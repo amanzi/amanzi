@@ -1,5 +1,6 @@
 #include <utility>
 #include <algorithm>
+#include <sys/resource.h>
 
 #include "errors.hh"
 #include "Teuchos_RCP.hpp"
@@ -35,6 +36,22 @@ namespace Amanzi {
 bool reset_info_compfunc(std::pair<double,double> x, std::pair<double,double> y) {
   return (x.first < y.first);
 }
+
+double rss_usage() { // return ru_maxrss in MBytes
+#if (defined(__unix__) || defined(__unix) || defined(unix) || defined(__APPLE__) || defined(__MACH__))
+  struct rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+#if (defined(__APPLE__) || defined(__MACH__))
+  return static_cast<double>(usage.ru_maxrss)/1024.0/1024.0;
+#else
+  return static_cast<double>(usage.ru_maxrss)/1024.0;
+#endif
+#else
+  return 0.0;
+#endif
+}
+
+
 
 /* *******************************************************************/
 MPC::MPC(Teuchos::ParameterList parameter_list_,
@@ -74,15 +91,15 @@ void MPC::mpc_init() {
   // let users selectively disable individual process kernels
   // to allow for testing of the process kernels separately
   transport_enabled =
-      (mpc_parameter_list.get<string>("disable Transport_PK","no") == "no");
+      (mpc_parameter_list.get<std::string>("disable Transport_PK","no") == "no");
 
-  std::string chemistry_model = mpc_parameter_list.get<string>("Chemistry Model","Off");
+  std::string chemistry_model = mpc_parameter_list.get<std::string>("Chemistry Model","Off");
   if (chemistry_model != "Off") {
     chemistry_enabled = true;
   }
 
   flow_enabled =
-      (mpc_parameter_list.get<string>("disable Flow_PK","no") == "no");
+      (mpc_parameter_list.get<std::string>("disable Flow_PK","no") == "no");
 
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
     *out << "The following process kernels are enabled: ";
@@ -135,7 +152,7 @@ void MPC::mpc_init() {
 
   // flow...
   if (flow_enabled) {
-    flow_model = mpc_parameter_list.get<string>("Flow model", "Darcy");
+    flow_model = mpc_parameter_list.get<std::string>("Flow model", "Darcy");
     if (flow_model == "Darcy") {
       FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, S));
     } else if (flow_model == "Steady State Saturated") {
@@ -145,7 +162,7 @@ void MPC::mpc_init() {
     } else if (flow_model == "Steady State Richards") {
       FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, S));
     } else {
-      cout << "MPC: unknown flow model: " << flow_model << endl;
+      std::cout << "MPC: unknown flow model: " << flow_model << std::endl;
       throw std::exception();
     }
   }
@@ -212,14 +229,14 @@ void MPC::mpc_init() {
 #ifdef ALQUIMIA_ENABLED
         CPK = Teuchos::rcp( new AmanziChemistry::Alquimia_Chemistry_PK(parameter_list, CS, chem_engine) );
 #else
-        cout << "MPC: Alquimia chemistry model is not enabled for this build.\n";
+        std::cout << "MPC: Alquimia chemistry model is not enabled for this build.\n";
         throw std::exception();
 #endif
       } else if (chemistry_model == "Amanzi") {
         Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
         CPK = Teuchos::rcp( new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS) );
       } else {
-        cout << "MPC: unknown chemistry model: " << chemistry_model << endl;
+        std::cout << "MPC: unknown chemistry model: " << chemistry_model << std::endl;
         throw std::exception();
       }
       CPK->InitializeChemistry();
@@ -252,6 +269,7 @@ void MPC::mpc_init() {
   if (parameter_list.isSublist("Visualization Data"))  {
     Teuchos::ParameterList vis_parameter_list = parameter_list.sublist("Visualization Data");
     visualization = Teuchos::ptr(new Amanzi::Visualization(vis_parameter_list, comm));
+    visualization->set_mesh(mesh_maps);
     visualization->CreateFiles();
   } else {  // create a dummy vis object
     visualization = Teuchos::ptr(new Amanzi::Visualization());
@@ -288,7 +306,7 @@ void MPC::mpc_init() {
     Teuchos::ParameterList& restart_parameter_list =
         mpc_parameter_list.sublist("Restart from Checkpoint Data File");
 
-    restart_from_filename = restart_parameter_list.get<string>("Checkpoint Data File Name");
+    restart_from_filename = restart_parameter_list.get<std::string>("Checkpoint Data File Name");
 
     if (restart_requested) {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
@@ -523,7 +541,7 @@ void MPC::cycle_driver() {
 
   // write visualization output as requested
   Amanzi::timer_manager.start("I/O");
-  visualization->set_mesh(mesh_maps);
+  //visualization->set_mesh(mesh_maps);
   visualization->CreateFiles();
 
 
@@ -1058,7 +1076,7 @@ void MPC::cycle_driver() {
 
     if (flow_enabled) {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-	*out << "Cycle " << S->cycle() << ": writing walkabout file" << std::endl;
+        *out << "Cycle " << S->cycle() << ": writing walkabout file" << std::endl;
       }
       FPK->WriteWalkabout(walkabout.ptr());
     }
@@ -1074,6 +1092,41 @@ void MPC::cycle_driver() {
     *out << " and Time(y) = "<< S->time()/ (365.25*60*60*24);
     *out << std::endl;
   }
+  
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+    Epetra_Map cell_map = mesh_maps->cell_epetra_map(false);
+    double mem = rss_usage();
+    
+    double percell(mem);
+    if (cell_map.NumMyElements() > 0) {
+      percell = mem/cell_map.NumMyElements();
+    }
+
+    double max_percell(0.0);
+    double min_percell(0.0);
+    comm->MinAll(&percell,&min_percell,1);
+    comm->MaxAll(&percell,&max_percell,1);
+
+    double total_mem(0.0);
+    double max_mem(0.0);
+    double min_mem(0.0);
+    comm->SumAll(&mem,&total_mem,1);
+    comm->MinAll(&mem,&min_mem,1);
+    comm->MaxAll(&mem,&max_mem,1);
+    
+    *out << endl;
+    *out << "Memory usage (high water mark):" << endl;
+    *out << std::fixed << std::setprecision(1);
+    *out << "  Maximum per core:   " << std::setw(7) << max_mem 
+         << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
+         << " Bytes" << endl;
+    *out << "  Minumum per core:   " << std::setw(7) << min_mem 
+         << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
+         << " Bytes" << endl;
+    *out << "  Total:              " << std::setw(7) << total_mem 
+         << " MBytes,  total per cell:   " << std::setw(7) << total_mem/cell_map.NumGlobalElements()*1024*1024 
+         << " Bytes" << endl;
+  }   
 }
 
 
