@@ -34,7 +34,9 @@ public:
                     std::string face_coef,
                     const Teuchos::RCP<std::vector<WhetStone::Tensor> > K);
 
-  void Update(const Teuchos::Ptr<State>& S);
+  void Update(const Teuchos::Ptr<State>& S,
+              const Teuchos::Ptr<Debugger>& db=Teuchos::null);
+
 
   void CalculateCoefficientsOnFaces(
         const CompositeVector& cell_coef,

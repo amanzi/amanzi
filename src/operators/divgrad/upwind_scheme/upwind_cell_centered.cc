@@ -27,7 +27,9 @@ UpwindCellCentered::UpwindCellCentered(std::string pkname,
     face_coef_(face_coef) {};
 
 
-void UpwindCellCentered::Update(const Teuchos::Ptr<State>& S) {
+void UpwindCellCentered::Update(const Teuchos::Ptr<State>& S,
+                                  const Teuchos::Ptr<Debugger>& db) {
+
   Teuchos::RCP<const CompositeVector> cell = S->GetFieldData(cell_coef_);
   Teuchos::RCP<CompositeVector> face = S->GetFieldData(face_coef_, pkname_);
 

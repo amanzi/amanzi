@@ -19,6 +19,7 @@ namespace Amanzi {
 
 // forward declaration
 class State;
+class Debugger;
 
 namespace Operators {
 
@@ -34,7 +35,7 @@ class Upwinding {
 
  public:
   virtual void
-  Update(const Teuchos::Ptr<State>& S) = 0;
+  Update(const Teuchos::Ptr<State>& S, const Teuchos::Ptr<Debugger>& db=Teuchos::null) = 0;
 };
 
 } // namespace

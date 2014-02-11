@@ -34,7 +34,9 @@ UpwindPotentialDifference::UpwindPotentialDifference(std::string pkname,
 };
 
 
-void UpwindPotentialDifference::Update(const Teuchos::Ptr<State>& S) {
+void UpwindPotentialDifference::Update(const Teuchos::Ptr<State>& S,
+                                       const Teuchos::Ptr<Debugger>& db) {
+
   Teuchos::RCP<const CompositeVector> cell = S->GetFieldData(cell_coef_);
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData(potential_);
   Teuchos::RCP<const CompositeVector> overlap = S->GetFieldData(overlap_);
