@@ -17,21 +17,23 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<State>& S) :
+                                 const std::vector<std::string>& component_names,
+                                 const Teuchos::RCP<State>& S) :
     S_(S),
     ghosted_(true),
     name_("state"),
     plist_(plist),
-    number_of_aqueous_components_(0),
+    number_of_aqueous_components_(component_names.size()),
     number_of_minerals_(0),
     number_of_ion_exchange_sites_(0),
     number_of_sorption_sites_(0),
     using_sorption_(false),
     using_sorption_isotherms_(false),
+    compnames_(component_names),
     num_aux_data_(-1) {
 
   mesh_ = S_->GetMesh();
-  SetupSoluteNames_();
+//  SetupSoluteNames_();
   SetupMineralNames_();
   SetupSorptionSiteNames_();
 
@@ -47,7 +49,7 @@ Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
 
 
 Chemistry_State::Chemistry_State(const Teuchos::RCP<State>& S,
-        int number_of_aqueous_components,
+        const std::vector<std::string>& component_names,
         int number_of_minerals,
         int number_of_ion_exchange_sites,
         int number_of_sorption_sites,
@@ -56,12 +58,13 @@ Chemistry_State::Chemistry_State(const Teuchos::RCP<State>& S,
     S_(S),
     ghosted_(true),
     name_("state"),
-    number_of_aqueous_components_(number_of_aqueous_components),
+    number_of_aqueous_components_(component_names.size()),
     number_of_minerals_(number_of_minerals),
     number_of_ion_exchange_sites_(number_of_ion_exchange_sites),
     number_of_sorption_sites_(number_of_sorption_sites),
     using_sorption_(using_sorption),
     using_sorption_isotherms_(using_sorption_isotherms),
+    compnames_(component_names),
     num_aux_data_(-1) {
   mesh_ = S_->GetMesh();
   RequireData_();
@@ -90,6 +93,7 @@ void Chemistry_State::SetupMineralNames_() {
   }
 }  // end SetupMineralNames()
 
+#if 0
 void Chemistry_State::SetupSoluteNames_() {
   // get the number of component concentrations from the
   // parameter list
@@ -111,6 +115,7 @@ void Chemistry_State::SetupSoluteNames_() {
     }
   }
 }  // end SetupSoluteNames_()
+#endif
 
 void Chemistry_State::SetupSorptionSiteNames_() {
   // could almost generalize the SetupMineralNames and
@@ -755,11 +760,13 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
   }
 }
 
+#if 0
 void Chemistry_State::SetComponentNames(const std::vector<std::string>& comp_names)
 {
   number_of_aqueous_components_ = comp_names.size();
   compnames_ = comp_names;
 }
+#endif
 
 
 #endif

@@ -30,10 +30,11 @@ class Chemistry_State {
  public:
 
   Chemistry_State(Teuchos::ParameterList& plist,
+                  const std::vector<std::string>& component_names,
                   const Teuchos::RCP<State>& S);
 
   Chemistry_State(const Teuchos::RCP<State>& S,
-                  int number_of_aqueous_components,
+                  const std::vector<std::string>& component_names,
                   int number_of_minerals,
                   int number_of_ion_exchange_sites,
                   int number_of_sorption_sites,
@@ -231,7 +232,7 @@ class Chemistry_State {
   }
 
   // Set the solution component names.
-  void SetComponentNames(const std::vector<std::string>& comp_names);
+//  void SetComponentNames(const std::vector<std::string>& comp_names);
 
 #ifdef ALQUIMIA_ENABLED
   // The following methods are designed to help the Chemistry State interact with 
@@ -267,7 +268,7 @@ class Chemistry_State {
                         bool sane_default, double default_val);
 
   void SetupMineralNames_();
-  void SetupSoluteNames_();
+//  void SetupSoluteNames_();
   void SetupSorptionSiteNames_();
   void ParseMeshBlocks_();
   void VerifyMineralogy_(const std::string& region_name,

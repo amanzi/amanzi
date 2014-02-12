@@ -118,30 +118,49 @@ void MPC::mpc_init() {
 
   // create auxilary state objects for the process models
 
+  // Get the transport solute component names from the MPC parameter lists.
+  std::vector<std::string> component_names;
+  {
+    Teuchos::Array<std::string> comp_names;
+    if (mpc_parameter_list.isParameter("component names")) {
+      comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
+    }
+    for (int i = 0; i < comp_names.length(); i++) {
+      component_names.push_back(comp_names[i]);
+    }
+  }
 
   // chemistry...
   if (chemistry_enabled) {
     Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
-    CS = Teuchos::rcp( new AmanziChemistry::Chemistry_State( chemistry_parameter_list, S ) );
+
 #ifdef ALQUIMIA_ENABLED
-    if (!chemistry_parameter_list.isParameter("Engine")) 
-    {
-      Errors::Message msg;
-      msg << "MPC::mpc_init(): \n";
-      msg << "  No 'Engine' parameter found in parameter list for 'Chemistry'.\n";
-      Exceptions::amanzi_throw(msg);
+    if (chemistry_model == "Alquimia") {
+      // Start up the chemistry engine.
+      if (!chemistry_parameter_list.isParameter("Engine")) 
+      {
+        Errors::Message msg;
+        msg << "MPC::mpc_init(): \n";
+        msg << "  No 'Engine' parameter found in parameter list for 'Chemistry'.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+      if (!chemistry_parameter_list.isParameter("Engine Input File")) 
+      {
+        Errors::Message msg;
+        msg << "MPC::mpc_init(): \n";
+        msg << "  No 'Engine Input File' parameter found in parameter list for 'Chemistry'.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+      std::string chemEngineName = chemistry_parameter_list.get<std::string>("Engine");
+      std::string chemEngineInputFile = chemistry_parameter_list.get<std::string>("Engine Input File");
+      chem_engine = Teuchos::rcp( new AmanziChemistry::ChemistryEngine(chemEngineName, chemEngineInputFile) );
+
+      // Overwrite the component names with the primary species names from the engine.
+      chem_engine->GetPrimarySpeciesNames(component_names);
     }
-    if (!chemistry_parameter_list.isParameter("Engine Input File")) 
-    {
-      Errors::Message msg;
-      msg << "MPC::mpc_init(): \n";
-      msg << "  No 'Engine Input File' parameter found in parameter list for 'Chemistry'.\n";
-      Exceptions::amanzi_throw(msg);
-    }
-    std::string chemEngineName = chemistry_parameter_list.get<std::string>("Engine");
-    std::string chemEngineInputFile = chemistry_parameter_list.get<std::string>("Engine Input File");
-    chem_engine = Teuchos::rcp( new AmanziChemistry::ChemistryEngine(chemEngineName, chemEngineInputFile) );
 #endif
+    // Initialize the chemistry state.
+    CS = Teuchos::rcp( new AmanziChemistry::Chemistry_State( chemistry_parameter_list, component_names, S ) );
   }
 
   // transport and chemistry...
@@ -181,17 +200,7 @@ void MPC::mpc_init() {
     }
     else {
 #endif
-      // We use the native Amanzi chemistry package.
-      Teuchos::Array<std::string> comp_names;
-      if (mpc_parameter_list.isParameter("component names")) {
-        comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
-      }
-      std::vector<std::string> names;
-      for (int i = 0; i < comp_names.length(); i++) {
-        names.push_back(comp_names[i]);
-      }
-      CS->SetComponentNames(names);
-      TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, names));
+      TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, component_names));
 #ifdef ALQUIMIA_ENABLED
     }
 #endif
