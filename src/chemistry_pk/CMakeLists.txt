@@ -51,16 +51,21 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 
 file(GLOB chem_inc_files "*hh")
-set(chem_src_files Chemistry_State.cc;chemistry_pk.cc)
+set(chem_src_files)
+if (ENABLE_Unstructured)
+  list(APPEND chem_src_files Chemistry_State.cc;chemistry_pk.cc)
+  if (ENABLE_ALQUIMIA)
+    list(APPEND chem_src_files alquimia_chemistry_pk.cc)
+  endif()
+endif()
 if (ENABLE_ALQUIMIA)
-  list(APPEND chem_src_files alquimia_chemistry_pk.cc;Chemistry_Engine.cc)
-else()
+  list(APPEND chem_src_files Chemistry_Engine.cc)
 endif()
 add_amanzi_library(chemistry_pk
                    SOURCE ${chem_src_files}
                    HEADERS ${chem_inc_files}
                    LINK_LIBS ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
 
-if (BUILD_TESTS)
+if (BUILD_TESTS AND ENABLE_Unstructured)
   add_subdirectory(tests_integration)
 endif()

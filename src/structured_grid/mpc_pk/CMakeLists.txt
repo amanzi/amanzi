@@ -97,7 +97,6 @@ if (BUILD_TESTS)
 
   include_directories(${CCSE_INCLUDE_DIRS})
   link_directories(${CCSE_LIBRARY_DIR})
-  add_definitions("-DENABLE_Structured")
 
   set(structured_grid_libs structured_amanzi ${PETSC_LIBRARIES} ${CCSE_LIBRARIES})
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU)

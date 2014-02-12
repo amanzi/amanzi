@@ -5994,7 +5994,7 @@ PorousMedia::advance_chemistry (Real time,
 	} catch (const Amanzi::AmanziChemistry::ChemistryException& geochem_error) {
 	  
 	  if (verbose_chemistry>-1) {
-	    std::cout << "CHEMSITRY FAILED on level " << level << " at " << iv << " : ";
+	    std::cout << "CHEMISTRY FAILED on level " << level << " at " << iv << " : ";
 	    for (int icmp = 0; icmp < ntracers; icmp++)
 	      std::cout << fab(iv,icmp+ncomps) << ' ';
 	    std::cout << std::endl;

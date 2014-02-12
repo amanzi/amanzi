@@ -270,6 +270,7 @@ PorousMedia::MODEL_ID PorousMedia::model;
 #ifdef AMANZI
 
 #ifdef ALQUIMIA_ENABLED
+Amanzi::AmanziChemistry::Chemistry_Engine* PorousMedia::chemistry_engine;
 #else
 std::string PorousMedia::amanzi_database_file;
 std::string PorousMedia::amanzi_activity_model;
@@ -370,6 +371,10 @@ namespace
 {
     static void PM_Setup_CleanUpStatics() 
     {
+#ifdef ALQUIMIA_ENABLED
+      Amanzi::AmanziChemistry::Chemistry_Engine *chemistry_engine = PorousMedia::GetChemistryEngine();
+      delete chemistry_engine; chemistry_engine = 0;
+#endif
     }
 }
 
@@ -709,6 +714,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_solver = 0;
   PorousMedia::richard_solver_control = 0;
   PorousMedia::richard_solver_data = 0;
+
+  PorousMedia::chemistry_engine = 0;
 }
 
 std::pair<std::string,std::string>
@@ -2613,15 +2620,6 @@ void  PorousMedia::read_source()
   }
 }
 
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Epetra_Comm.h"
-#include "Epetra_MpiComm.h"
-#ifdef ALQUIMIA_ENABLED
-#include "Chemistry_Engine.hh"
-#endif
-
 void  PorousMedia::read_chem()
 {
 
@@ -2640,20 +2638,26 @@ void  PorousMedia::read_chem()
   std::string chemistry_model = "Amanzi"; pp.query("chemistry_model",chemistry_model);
 
   // chemistry...
-  //Amanzi::AmanziChemistry::Chemistry_Engine* chemistry_engine;
-  if (do_tracer_chemistry) {
-    //const Teuchos::ParameterList& chemistry_parameter_list = PorousMedia::InputParameterList().sublist("Chemistry");
-    //chemistry_engine = new Amanzi::AmanziChemistry::Chemistry_Engine(chemistry_parameter_list);
-  }
-
 #ifdef AMANZI
 
-  // get input file name, create SimpleThermoDatabase, process
-  if (do_tracer_chemistry>0)
-    {
-#if ALQUIMIA_ENABLED
-#else
+  if (do_tracer_chemistry) {
 
+#if ALQUIMIA_ENABLED
+      const Teuchos::ParameterList& chemistry_parameter_list = PorousMedia::InputParameterList().sublist("Chemistry");
+      chemistry_engine = new Amanzi::AmanziChemistry::Chemistry_Engine(chemistry_parameter_list);
+      std::vector<std::string> primarySpeciesNames, mineralNames, siteNames, ionExchangeNames, isothermSpeciesNames;
+      chemistry_engine->GetPrimarySpeciesNames(primarySpeciesNames);
+      chemistry_engine->GetMineralNames(mineralNames);
+      chemistry_engine->GetSurfaceSiteNames(siteNames);
+      chemistry_engine->GetIonExchangeNames(ionExchangeNames);
+      chemistry_engine->GetIsothermSpeciesNames(isothermSpeciesNames);
+      int numPrimarySpecies = primarySpeciesNames.size();
+      int numSorbedSpecies = chemistry_engine->NumSorbedSpecies();
+      int numMinerals = mineralNames.size();
+      int numSurfaceSites = chemistry_engine->NumSurfaceSites();
+      int numIonExchangeSites = ionExchangeNames.size();
+      int numIsothermSpecies = isothermSpeciesNames.size();
+#else
       Amanzi::AmanziChemistry::SetupDefaultChemistryOutput();
 
       ParmParse pb("prob.amanzi");
@@ -2685,34 +2689,30 @@ void  PorousMedia::read_chem()
 	  aux_chem_variables[tmpaux[i]] = i;
       }
 
-      if (do_tracer_chemistry)
-      {
-	  ICParmPair solute_chem_options;
-	  solute_chem_options["Free_Ion_Guess"] = 1.e-9;
-	  solute_chem_options["Activity_Coefficient"] = 1;
-	  for (int k=0; k<tNames.size(); ++k) {
-              for (ICParmPair::const_iterator it=solute_chem_options.begin(); it!=solute_chem_options.end(); ++it) {
-                  const std::string& str = it->first;
-                  bool found = false;
-                  for (int i=0; i<materials.size(); ++i) {
-                    const std::string& rname = materials[i].Name();
-                      const std::string prefix("tracer."+tNames[i]+".Initial_Condition");
-                      ParmParse pprs(prefix.c_str());
-                      solute_chem_ics[rname][tNames[k]][str] = it->second; // set to default value
-                      pprs.query(str.c_str(),solute_chem_ics[rname][tNames[k]][str]);                      
-                      //std::cout << "****************** solute_chem_ics[" << rname << "][" << tNames[k] 
-                      //          << "][" << str << "] = " << solute_chem_ics[rname][tNames[k]][str] << std::endl;
-                      const std::string label = str+"_"+tNames[k];
-		      
-		      if (aux_chem_variables.find(label) == aux_chem_variables.end())
-		      {
-			solute_chem_label_map[tNames[k]][str] = aux_chem_variables.size();
-			aux_chem_variables[label]=aux_chem_variables.size()-1;
-		      }
-                  }
-              }
-	  }
+      ICParmPair solute_chem_options;
+      solute_chem_options["Free_Ion_Guess"] = 1.e-9;
+      solute_chem_options["Activity_Coefficient"] = 1;
+      for (int k=0; k<tNames.size(); ++k) {
+        for (ICParmPair::const_iterator it=solute_chem_options.begin(); it!=solute_chem_options.end(); ++it) {
+          const std::string& str = it->first;
+          bool found = false;
+          for (int i=0; i<materials.size(); ++i) {
+            const std::string& rname = materials[i].Name();
+            const std::string prefix("tracer."+tNames[i]+".Initial_Condition");
+            ParmParse pprs(prefix.c_str());
+            solute_chem_ics[rname][tNames[k]][str] = it->second; // set to default value
+            pprs.query(str.c_str(),solute_chem_ics[rname][tNames[k]][str]);
+            const std::string label = str+"_"+tNames[k];
+
+            if (aux_chem_variables.find(label) == aux_chem_variables.end())
+            {
+              solute_chem_label_map[tNames[k]][str] = aux_chem_variables.size();
+              aux_chem_variables[label]=aux_chem_variables.size()-1;
+            }
+          }
+        }
       }
+
       // TODO: add secondary species activity coefficients
 
 

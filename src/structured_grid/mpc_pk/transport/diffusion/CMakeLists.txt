@@ -44,14 +44,12 @@ preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 add_library(strans OBJECT ${FPP_out_files}
                           ${CXX_source_files}
                           ${F90_source_files}
-                          ${F77_source_files}
-                          ${h_inc_files})
+                          ${F77_source_files})
 
 if (BUILD_TESTS)
 
   include_directories(${CCSE_INCLUDE_DIRS})
   link_directories(${CCSE_LIBRARY_DIR})
-  add_definitions("-DENABLE_Structured")
 
   set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
@@ -60,7 +58,6 @@ if (BUILD_TESTS)
     endif()
   endif()
   set(tpl_libs)
-
   set(TRANSTEST "${STRANS_SOURCE_DIR}/test")
   include_directories(${TRANSTEST})
   set(CXX_header_files_1 ${TRANSTEST}/tTensorDiffusion_PK_F.H)
@@ -77,10 +74,11 @@ if (BUILD_TESTS)
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
+
     execute_process(COMMAND ${CMAKE_COMMAND} -E
-                    copy ${TRANSTEST}/tTensorDiffusion_TestRes_H ${STRUCTUREDTRANS_BINARY_DIR})
+                    copy ${TRANSTEST}/tTensorDiffusion_TestRes_H ${STRANS_BINARY_DIR})
     execute_process(COMMAND ${CMAKE_COMMAND} -E
-                    copy ${TRANSTEST}/tTensorDiffusion_TestRes_D ${STRUCTUREDTRANS_BINARY_DIR})
+                    copy ${TRANSTEST}/tTensorDiffusion_TestRes_D ${STRANS_BINARY_DIR})
   endif()
 endif()
 

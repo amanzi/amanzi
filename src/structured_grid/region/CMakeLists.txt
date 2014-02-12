@@ -15,7 +15,7 @@ project(SREGION)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${SREGION_INCLUDE_DIRS})
-include_directories(${STRUCTUREDUTILS_SOURCE_DIR})
+include_directories(${SUTILS_SOURCE_DIR})
 
 # External (TPL) include directories
 #include_directories(${Teuchos_INCLUDE_DIRS})

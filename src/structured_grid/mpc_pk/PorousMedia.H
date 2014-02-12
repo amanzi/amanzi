@@ -30,6 +30,7 @@
 
 // Amanzi chemistry
 #ifdef ALQUIMIA_ENABLED
+#include <Chemistry_Engine.hh>
 #else
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
@@ -984,6 +985,10 @@ public:
 
   PMAmr* PMParent();
 
+#ifdef ALQUIMIA_ENABLED
+  static Amanzi::AmanziChemistry::Chemistry_Engine* GetChemistryEngine() {return chemistry_engine;}
+#endif
+
   MultiFab* UMac_Prev() {return u_mac_prev;}
   MultiFab* UMac_Curr() {return u_mac_curr;}
   MultiFab* LambdaCC_Curr() {return lambdap1_cc;}
@@ -1183,6 +1188,7 @@ protected:
 #ifdef AMANZI
 
 #ifdef ALQUIMIA_ENABLED
+  static Amanzi::AmanziChemistry::Chemistry_Engine* chemistry_engine;
 #else
   static PArray<Amanzi::AmanziChemistry::SimpleThermoDatabase> chemSolve;
   static std::string amanzi_database_file;

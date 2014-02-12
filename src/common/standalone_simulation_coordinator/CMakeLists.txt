@@ -29,12 +29,12 @@ include_directories(${AMANZI_BINARY_DIR}) # required to pick up amanzi_version.h
 #
 if ( ENABLE_Structured )
   include_directories(${CCSE_INCLUDE_DIRS})
-  include_directories(${PMAMR_INCLUDE_DIRS})
+  include_directories(${SAMR_INCLUDE_DIRS})
   link_directories(${CCSE_LIBRARY_DIR})
-  include_directories(${BOXDRIV_SOURCE_DIR})
-  link_directories(${BOXDRIV_SOURCE_DIR})
-  include_directories(${STRUCTUREDUTILS_SOURCE_DIR})
-  link_directories(${STRUCTUREDUTILS_SOURCE_DIR})
+  include_directories(${SDRIVER_SOURCE_DIR})
+  link_directories(${SDRIVER_SOURCE_DIR})
+  include_directories(${SUTILS_SOURCE_DIR})
+  link_directories(${SUTILS_SOURCE_DIR})
   add_definitions("-DENABLE_Structured")
 endif()
 
@@ -87,13 +87,13 @@ endif()
 # Binary: amanzi-demo-driver
 #
 if ( ENABLE_Unstructured )
-  set(ssc_unstructured_grid_libs udriv mpc state transport flow chemistry_pk whetstone matrix_audit)
+  set(ssc_unstructured_grid_libs udriv mpc state transport flow whetstone matrix_audit)
 else()
   set(ssc_unstructured_grid_libs)
 endif()
 
 if(ENABLE_Structured)
-  set(ssc_structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} structured_amanzi ${PETSC_LIBRARIES})
+  set(ssc_structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} structured_amanzi)
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND ssc_structured_grid_libs gfortran)
@@ -104,7 +104,7 @@ else()
 endif()
 
 get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
-set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface atk ${ALQUIMIA_LIBRARIES})
+set(ssc_common_libs error_handling ${GEOCHEM_LIBS} chemistry_pk interface atk)
 
 set(ssc_libs ${ssc_structured_grid_libs}
              ${ssc_unstructured_grid_libs}
@@ -120,12 +120,18 @@ if (ENABLE_Structured)
   list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})
 endif()
 
+if (ENALE_ALQUIMIA)
+  list(APPEND ssc_tpl_libs ${ALQUIMIA_LIBRARIES})
+endif()
+
+list(APPEND ssc_tpl_libs ${PETSC_LIBRARIES})
+
 # 
-# Main: Amanzi
+# Main: Amanzi (seems to require redundant lib listing to resolve everything....not sure why)
 #
 add_amanzi_executable(amanzi
                       SOURCE Main.cc
-                      LINK_LIBS ${ssc_libs} ${ssc_tpl_libs}
+                      LINK_LIBS ${ssc_libs} ${ssc_tpl_libs} ${ssc_libs}
                       OUTPUT_NAME amanzi
                       OUTPUT_DIRECTORY ${SSC_BINARY_DIR})
 

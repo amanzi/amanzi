@@ -37,7 +37,6 @@ if (BUILD_TESTS)
 
   include_directories(${CCSE_INCLUDE_DIRS})
   link_directories(${CCSE_LIBRARY_DIR})
-  add_definitions("-DENABLE_Structured")
 
   set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
@@ -59,10 +58,6 @@ if (BUILD_TESTS)
                ${Boost_LIBRARIES}
                ${XERCES_LIBRARIES}
                ${XERCES_ICU_LIBRARIES})
-
-#if (ENABLE_Structured)
-#  list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})
-#endif()
 
   set(SCHEMTEST "${SCHEM_SOURCE_DIR}/test")
   add_amanzi_test(tMultiFabCellVector tMultiFabCellVector
