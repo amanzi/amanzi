@@ -7,7 +7,7 @@ using std::endl;
 
 #include <Material.H>
 #include <MatFiller.H>
-#include <Region.H>
+#include <RegionManager.H>
 
 static std::map<std::string, Region*> regions;
 
@@ -31,157 +31,32 @@ RegionPtrArray(const Array<std::string>& region_names)
   return ret;
 }
 
-void SetRegions()
-{
-  Array<Real> lo(2), hi(2);
-  std::string r_name, r_purpose;
-  r_name = "SoilLower";
-  r_purpose = "all";
-  lo[0] = 0;
-  lo[1] = 0;
-  hi[0] = 40;
-  hi[1] = 10;
-  regions["SoilLower"] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "SoilRight";
-  r_purpose = "all";
-  lo[0] = 12;
-  lo[1] = 10;
-  hi[0] = 40;
-  hi[1] = 18;
-  regions["SoilRight"] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "SoilUpper";
-  r_purpose = "all";
-  lo[0] = 0;
-  lo[1] = 18;
-  hi[0] = 40;
-  hi[1] = 24;
-  regions["SoilUpper"] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "TankConcFloor";
-  r_purpose = "all";
-  lo[0] = 0.5;
-  lo[1] = 10;
-  hi[0] = 12;
-  hi[1] = 10.3;
-  regions["TankConcFloor"] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "TankConcRoof1";
-  r_purpose = "all";
-  lo[0] = 0;
-  lo[1] = 17.7;
-  hi[0] = 11.67;
-  hi[1] = 18;
-  regions["TankConcRoof1"] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "TankConcRoof2";
-  r_purpose = "all";
-  lo[0] = 11.69;
-  lo[1] = 17.7;
-  hi[0] = 12;
-  hi[1] = 18;
-  regions["TankConcRoof2"] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "TankConcWall";
-  r_purpose = "all";
-  lo[0] = 11.7;
-  lo[1] = 10.3;
-  hi[0] = 12;
-  hi[1] = 17.7;
-  regions["TankConcWall"] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "TankFFfloor";
-  r_purpose = "all";
-  lo[0] = 0;
-  lo[1] = 10;
-  hi[0] = 0.5;
-  hi[1] = 10.31;
-  regions["TankFFfloor"] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "TankFFwall";
-  r_purpose = "all";
-  lo[0] = 11.67;
-  lo[1] = 10.33;
-  hi[0] = 11.69;
-  hi[1] = 18;
-  regions["TankFFwall"] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "TankGrout";
-  r_purpose = "all";
-  lo[0] = 0;
-  lo[1] = 10.33;
-  hi[0] = 11.67;
-  hi[1] = 17.69;
-  regions["TankGrout"] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "TankLinerFloor";
-  r_purpose = "all";
-  lo[0] = 0.5;
-  lo[1] = 10.3;
-  hi[0] = 11.7;
-  hi[1] = 10.31;
-  regions["TankLinerFloor"] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "TankLinerRoof";
-  r_purpose = "all";
-  lo[0] = 0;
-  lo[1] = 17.69;
-  hi[0] = 11.67;
-  hi[1] = 17.7;
-  regions["TankLinerRoof"] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "TankLinerWall";
-  r_purpose = "all";
-  lo[0] = 11.69;
-  lo[1] = 10.31;
-  hi[0] = 11.7;
-  hi[1] = 17.7;
-  regions["TankLinerWall"] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "TankWaste";
-  r_purpose = "all";
-  lo[0] = 0;
-  lo[1] = 10.31;
-  hi[0] = 11.69;
-  hi[1] = 10.33;
-  regions["TankWaste"] = new BoxRegion(r_name,r_purpose,lo,hi);
-}
-
 PArray<Material>
-SetMaterials()
+SetMaterials(RegionManager& rm)
 {
   PArray<Material> materials(5, PArrayManage);
   Array<std::string> region_names;
   Array<const Region*> regionset;
-  region_names.push_back("SoilLower");
-  region_names.push_back("SoilRight");
-  region_names.push_back("SoilUpper");
-  regionset = RegionPtrArray(region_names);
-  materials.set(0,new Material("Soil",regionset));
+  materials.set(0,new Material("Soil",rm.RegionPtrArray(region_names)));
   region_names.clear();
   region_names.push_back("TankConcFloor");
   region_names.push_back("TankConcRoof1");
   region_names.push_back("TankConcRoof2");
   region_names.push_back("TankConcWall");
-  regionset = RegionPtrArray(region_names);
-  materials.set(1,new Material("TankConc",regionset));
+  materials.set(1,new Material("TankConc",rm.RegionPtrArray(region_names)));
   region_names.clear();
   region_names.push_back("TankFFfloor");
   region_names.push_back("TankFFwall");
   region_names.push_back("TankWaste");
-  regionset = RegionPtrArray(region_names);
-  materials.set(2,new Material("TankFF",regionset));
+  materials.set(2,new Material("TankFF",rm.RegionPtrArray(region_names)));
   region_names.clear();
   region_names.push_back("TankGrout");
-  regionset = RegionPtrArray(region_names);
-  materials.set(3,new Material("TankGrout",regionset));
+  materials.set(3,new Material("TankGrout",rm.RegionPtrArray(region_names)));
   region_names.clear();
   region_names.push_back("TankLinerFloor");
   region_names.push_back("TankLinerRoof");
   region_names.push_back("TankLinerWall");
-  regionset = RegionPtrArray(region_names);
-  materials.set(4,new Material("TankLiner",regionset));
+  materials.set(4,new Material("TankLiner",rm.RegionPtrArray(region_names)));
   region_names.clear();
   return materials;
 }
@@ -214,24 +89,24 @@ int
 main (int   argc,
       char* argv[])
 {
-  BoxLib::Initialize(argc,argv,false);
+  BoxLib::Initialize(argc,argv);
 
-  int nLevs = 3;
-  Array<int> n_cells(BL_SPACEDIM); 
-  n_cells[0] = 40; n_cells[1] = 24;
+  ParmParse pp;
+
+  int nLevs = 3; pp.query("nLevs",nLevs);
+  BL_ASSERT(nLevs>0);
+  Array<int> n_cells;
+  pp.getarr("n_cells",n_cells,0,BL_SPACEDIM);
 
   Array<int> rRatio(nLevs-1,4);
-  Array<IntVect> refRatio(nLevs-1);
-  for (int lev=0; lev<nLevs-1; ++lev) {
-    refRatio[lev] = rRatio[lev] * IntVect::TheUnitVector();
+  if (nLevs>1) {
+    pp.getarr("refine_ratio",rRatio,0,nLevs-1);
   }
 
-  int coord = 0;
-  Array<int> is_per(BL_SPACEDIM,0);
-  Array<Real> prob_lo(BL_SPACEDIM,0);
-  Array<Real> prob_hi(BL_SPACEDIM);
-  D_EXPR(prob_hi[0]=40, prob_hi[1]=24, prob_hi[2]=10);
-  const RealBox rb(prob_lo.dataPtr(),prob_hi.dataPtr());
+  Array<IntVect> refRatio(rRatio.size());
+  for (int lev=0; lev<rRatio.size(); ++lev) {
+    refRatio[lev] = rRatio[lev] * IntVect::TheUnitVector();
+  }
 
   Array<Geometry> geomArray(nLevs);
   for (int lev=0; lev<nLevs; ++lev) {
@@ -246,10 +121,9 @@ main (int   argc,
     else {
       domain = Box(geomArray[lev-1].Domain()).refine(refRatio[lev-1]);
     }
-    geomArray[lev] = Geometry(domain,&rb,coord,is_per.dataPtr());
+    geomArray[lev] = Geometry(domain);
   }
 
-  Region::geometry_eps = 1.e-6;
   Region::domlo.resize(BL_SPACEDIM);
   Region::domhi.resize(BL_SPACEDIM);
   for (int d=0; d<BL_SPACEDIM; ++d) {
@@ -257,13 +131,12 @@ main (int   argc,
     Region::domhi[d] = Geometry::ProbHi()[d];
   }
 
-  SetRegions();
-  PArray<Material> materials = SetMaterials();
+  RegionManager rm;
+  PArray<Material> materials = SetMaterials(rm);
 
   MatFiller matFiller(geomArray,refRatio,materials);
 
   bool fail = false;
-
 
   const std::map<std::string,int>& mat_map = matFiller.MatIdx();
 

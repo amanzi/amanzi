@@ -76,22 +76,34 @@ if (BUILD_TESTS)
 
   add_amanzi_test(MaterialIDFiller tMIDf
                   KIND unit
-                  SOURCE tMIDf.cpp
+                  SOURCE test/tMIDf.cpp
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+
+  add_amanzi_test(MIDfill_RM tMIDf_RM "tMIDf_RM.in"
+                  KIND unit
+                  SOURCE test/tMIDf_RM.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   add_amanzi_test(MaterialPropertyFiller tMatFiller
                   KIND unit
-                  SOURCE tMatFiller.cpp
+                  SOURCE test/tMatFiller.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   add_amanzi_test(MaterialPropertyFillerC tMatFillerC
                   KIND unit
-                  SOURCE tMatFillerC.cpp
+                  SOURCE test/tMatFillerC.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   add_amanzi_test(MaterialPropertyFiller4 "./tMatFiller_parallel" "case_size=large"
                   KIND unit
 	          NPROCS 4
-                  SOURCE tMatFiller.cpp
+                  SOURCE test/tMatFiller.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+
+  # Copy input files if an out of source build
+  if (NOT (${SMATERIALS_SOURCE_DIR} EQUAL ${SMATERIALS_BINARY_DIR}) )
+    execute_process(COMMAND ${CMAKE_COMMAND} -E 
+      copy ${SMATERIALS_SOURCE_DIR}/test/tMIDf_RM.in ${SMATERIALS_BINARY_DIR}) 
+  endif()
+
 endif()
