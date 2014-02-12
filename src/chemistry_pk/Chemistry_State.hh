@@ -267,6 +267,7 @@ class Chemistry_State {
                         bool sane_default, double default_val);
 
   void SetupMineralNames_();
+  void SetupSoluteNames_();
   void SetupSorptionSiteNames_();
   void ParseMeshBlocks_();
   void VerifyMineralogy_(const std::string& region_name,

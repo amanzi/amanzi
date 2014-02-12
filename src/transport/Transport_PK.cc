@@ -63,7 +63,7 @@ void Transport_PK::Construct_(Teuchos::ParameterList& glist,
                               std::vector<std::string>& component_names)
 {
   S_ = S;
-  component_names_ = component_names_;
+  component_names_ = component_names;
 
   parameter_list = glist.sublist("Transport");
   preconditioners_list = glist.sublist("Preconditioners");

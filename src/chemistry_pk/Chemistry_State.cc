@@ -31,7 +31,7 @@ Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
     num_aux_data_(-1) {
 
   mesh_ = S_->GetMesh();
-//  SetupSoluteNames_();
+  SetupSoluteNames_();
   SetupMineralNames_();
   SetupSorptionSiteNames_();
 
@@ -90,6 +90,27 @@ void Chemistry_State::SetupMineralNames_() {
   }
 }  // end SetupMineralNames()
 
+void Chemistry_State::SetupSoluteNames_() {
+  // get the number of component concentrations from the
+  // parameter list
+  if (plist_.isParameter("Number of component concentrations")) {
+    number_of_aqueous_components_ =
+        plist_.get<int>("Number of component concentrations");
+  } else {
+    // if the parameter list does not contain this key, then assume we
+    // are being called from a state constructor w/o a valid parameter
+    // list (vis/restart) and the number_of_components variable was
+    // already set to a valid (non-zero?) value....
+  }
+
+  if (number_of_aqueous_components_ > 0) {
+    // read the component names if they are spelled out
+    Teuchos::Array<std::string> comp_names;
+    if (plist_.isParameter("Component Solutes")) {
+      comp_names = plist_.get<Teuchos::Array<std::string> >("Component Solutes");
+    }
+  }
+}  // end SetupSoluteNames_()
 
 void Chemistry_State::SetupSorptionSiteNames_() {
   // could almost generalize the SetupMineralNames and
@@ -736,6 +757,7 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
 
 void Chemistry_State::SetComponentNames(const std::vector<std::string>& comp_names)
 {
+  number_of_aqueous_components_ = comp_names.size();
   compnames_ = comp_names;
 }
 
