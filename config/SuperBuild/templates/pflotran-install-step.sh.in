@@ -9,6 +9,7 @@ cd @PFLOTRAN_source_dir@
 pflotran_dir=@TPL_INSTALL_PREFIX@/pflotran
 tpl_lib_dir=@TPL_INSTALL_PREFIX@/lib
 if [ ! -e ${pflotran_dir} ]; then mkdir -p ${pflotran_dir} ; fi
+if [ ! -e ${tpl_lib_dir} ]; then mkdir -p ${tpl_lib_dir} ; fi
 
 rsync -aH * ${pflotran_dir}
 rc=$?
