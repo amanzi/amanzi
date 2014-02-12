@@ -81,3 +81,10 @@ geometry.TankWaste.purpose = all
 geometry.TankWaste.type = box
 geometry.TankWaste.lo_coordinate =      0 10.31
 geometry.TankWaste.hi_coordinate =  11.69 10.33
+
+materials = Soil TankConc TankFF TankGrout TankLiner
+materials.Soil.regions = SoilLower SoilRight SoilUpper 
+materials.TankConc.regions = TankConcFloor TankConcRoof1 TankConcRoof2 TankConcWall
+materials.TankFF.regions = TankFFfloor TankFFwall TankGrout
+materials.TankGrout.regions = TankGrout
+materials.TankLiner.regions = TankLinerFloor TankLinerRoof TankLinerWall

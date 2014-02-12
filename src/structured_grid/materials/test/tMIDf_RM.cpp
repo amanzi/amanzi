@@ -9,81 +9,25 @@ using std::endl;
 #include <MatFiller.H>
 #include <RegionManager.H>
 
-static std::map<std::string, Region*> regions;
-
-Array<const Region*>
-RegionPtrArray(const Array<std::string>& region_names)
-{
-  Array<const Region*> ret(region_names.size());
-
-  for (int i=0; i<region_names.size(); ++i)
-  {
-    const std::string& name = region_names[i];
-    std::map<std::string, Region*>::const_iterator it = regions.find(name);
-    if (it != regions.end()) {
-      ret[i] = it->second;
-    }
-    else {
-      std::string m = "Named region not found: " + name;
-      BoxLib::Error(m.c_str());
-    }
-  }
-  return ret;
-}
-
 PArray<Material>
 SetMaterials(RegionManager& rm)
 {
-  PArray<Material> materials(5, PArrayManage);
-  Array<std::string> region_names;
-  Array<const Region*> regionset;
-  materials.set(0,new Material("Soil",rm.RegionPtrArray(region_names)));
-  region_names.clear();
-  region_names.push_back("TankConcFloor");
-  region_names.push_back("TankConcRoof1");
-  region_names.push_back("TankConcRoof2");
-  region_names.push_back("TankConcWall");
-  materials.set(1,new Material("TankConc",rm.RegionPtrArray(region_names)));
-  region_names.clear();
-  region_names.push_back("TankFFfloor");
-  region_names.push_back("TankFFwall");
-  region_names.push_back("TankWaste");
-  materials.set(2,new Material("TankFF",rm.RegionPtrArray(region_names)));
-  region_names.clear();
-  region_names.push_back("TankGrout");
-  materials.set(3,new Material("TankGrout",rm.RegionPtrArray(region_names)));
-  region_names.clear();
-  region_names.push_back("TankLinerFloor");
-  region_names.push_back("TankLinerRoof");
-  region_names.push_back("TankLinerWall");
-  materials.set(4,new Material("TankLiner",rm.RegionPtrArray(region_names)));
-  region_names.clear();
+  ParmParse pp;
+  int nmat = pp.countval("materials");
+  PArray<Material> materials;
+  if (nmat) {
+    materials.resize(nmat, PArrayManage);
+    Array<std::string> material_names, region_names;
+    pp.getarr("materials",material_names,0,nmat);
+    for (int i=0; i<nmat; ++i) {
+      const std::string prefix("materials." + material_names[i]);
+      ParmParse ppr(prefix.c_str());
+      ppr.getarr("regions",region_names,0,ppr.countval("regions"));
+      materials.set(i,new Material(material_names[i],rm.RegionPtrArray(region_names)));
+    }
+  }
   return materials;
 }
-
-void
-DestroyRegions()
-{
-  for (std::map<std::string, Region*>::iterator it=regions.begin(), End=regions.end(); it!=End; ++it) {
-    delete it->second;
-  }
-}
-
-void WritePlotfile(const std::string         &pfversion,
-                   const PArray<MultiFab>    &data,
-                   const Real                 time,
-                   const Real                *probLo,
-                   const Real                *probHi,
-                   const Array<int>          &refRatio,
-                   const Array<Box>          &probDomain,
-                   const Array<Array<Real> > &dxLevel,
-                   const int                  coordSys,
-                   const std::string         &oFile,
-                   const Array<std::string>  &names,
-                   const bool                 verbose,
-		   const bool                 isCartGrid,
-		   const Real                *vfeps,
-		   const int                 *levelSteps);
 
 int
 main (int   argc,
@@ -132,9 +76,7 @@ main (int   argc,
   }
 
   RegionManager rm;
-  PArray<Material> materials = SetMaterials(rm);
-
-  MatFiller matFiller(geomArray,refRatio,materials);
+  MatFiller matFiller(geomArray,refRatio,SetMaterials(rm));
 
   bool fail = false;
 
@@ -181,7 +123,6 @@ main (int   argc,
   fail &= bins[3] == 2146;
   fail &= bins[4] == 0;
 
-  DestroyRegions();
   BoxLib::Finalize();
   if (fail) {
     BoxLib::Abort();
