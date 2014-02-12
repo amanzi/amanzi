@@ -45,7 +45,7 @@ class MFD3D_Diffusion : public MFD3D {
   int L2consistency(int cell, const Tensor& T,
                     DenseMatrix& N, DenseMatrix& Mc);
 
-  int L2consistencyInverse(int cell, const Tensor& permeability,
+  int L2consistencyInverse(int cell, const Tensor& T,
                            DenseMatrix& R, DenseMatrix& Wc);
 
   int H1consistency(int cell, const Tensor& T, 
@@ -54,28 +54,33 @@ class MFD3D_Diffusion : public MFD3D {
   int MassMatrix(int cell, const Tensor& permeability, DenseMatrix& M);
 
   int MassMatrixInverse(int cell, const Tensor& permeability, DenseMatrix& W);
+  int MassMatrixInverseMMatrixHex(int cell, const Tensor& permeability, DenseMatrix& W);
 
   int StiffnessMatrix(int cell, const Tensor& permeability, DenseMatrix& A);
 
   int StiffnessMatrixMMatrix(int cell, const Tensor& permeability, DenseMatrix& A);
 
-  // experimental methods
-  int L2consistencyInverseScaled(int cell, const Tensor& permeability,
+  // different scaling of fluxes
+  int L2consistencyInverseScaled(int cell, const Tensor& T,
                                  DenseMatrix& R, DenseMatrix& Wc);
 
   int MassMatrixInverseScaled(int cell, const Tensor& permeability,
                               DenseMatrix& W);
 
+  // experimental methods
   int MassMatrixInverseOptimized(int cell, const Tensor& permeability,
                                  DenseMatrix& W);
 
   int MassMatrixInverseOptimizedScaled(int cell, const Tensor& permeability,
                                        DenseMatrix& W);
 
-  // primary related discetization methods
-  int MassMatrixInverseMMatrixHex(int cell, const Tensor& permeability, DenseMatrix& W);
   int MassMatrixInverseMMatrix(int cell, const Tensor& permeability, DenseMatrix& W);
 
+  // surface methods
+  int L2consistencyInverseSurface(
+      int cell, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
+
+  // primary related discetization methods
   int MassMatrixInverseSO(int cell, const Tensor& permeability, DenseMatrix& W);
 
   int MassMatrixInverseTPFA(int cell, const Tensor& permeability, DenseMatrix& W);

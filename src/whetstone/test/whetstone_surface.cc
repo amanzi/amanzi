@@ -49,48 +49,52 @@ TEST(DARCY_SURFACE) {
  
   MFD3D_Diffusion mfd(mesh);
  
-  /*
-  MFD3D_Diffusion mfd(mesh);
-
-  int nfaces = 6, cell = 0;
-  Tensor T(3, 1);
+  Tensor T(2, 1);
   T(0, 0) = 1;
 
-  DenseMatrix M(nfaces, nfaces);
-  for (int method = 0; method < 1; method++) {
-    mfd.MassMatrix(cell, T, M);
-
-    printf("Mass matrix for cell %3d\n", cell);
-    for (int i=0; i<nfaces; i++) {
-      for (int j=0; j<nfaces; j++ ) printf("%8.4f ", M(i, j)); 
-      printf("\n");
-    }
-
-    // verify SPD propery
-    for (int i=0; i<nfaces; i++) CHECK(M(i, i) > 0.0);
-
-    // verify exact integration property
-    AmanziMesh::Entity_ID_List faces;
+  for (int c = 0; c < 3; c++) {
+    Entity_ID_List faces;
     std::vector<int> dirs;
-    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
-    
-    double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
-    for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
-      xi = mesh->face_normal(f)[0] * dirs[i];
-      yi = mesh->face_normal(f)[1] * dirs[i];
-      for (int j = 0; j < nfaces; j++) {
-        f = faces[j];
-        xj = mesh->face_normal(f)[0] * dirs[j];
-        vxx += M(i, j) * xi * xj;
-        vxy += M(i, j) * yi * xj;
+
+    mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+cout << mesh->cell_volume(c) << endl;
+
+    DenseMatrix M(nfaces, nfaces);
+    DenseMatrix R(nfaces, 3);
+    mfd.L2consistencyInverseSurface(c, T, R, M);
+
+    /*
+      mfd.MassMatrix(cell, T, M);
+
+      printf("Mass matrix for cell %3d\n", cell);
+      for (int i=0; i<nfaces; i++) {
+        for (int j=0; j<nfaces; j++ ) printf("%8.4f ", M(i, j)); 
+        printf("\n");
       }
+
+      // verify SPD propery
+      for (int i=0; i<nfaces; i++) CHECK(M(i, i) > 0.0);
+
+      // verify exact integration property
+      double xi, yi, xj;
+      double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+      for (int i = 0; i < nfaces; i++) {
+        int f = faces[i];
+        xi = mesh->face_normal(f)[0] * dirs[i];
+        yi = mesh->face_normal(f)[1] * dirs[i];
+        for (int j = 0; j < nfaces; j++) {
+          f = faces[j];
+          xj = mesh->face_normal(f)[0] * dirs[j];
+          vxx += M(i, j) * xi * xj;
+          vxy += M(i, j) * yi * xj;
+        }
+      }
+      CHECK_CLOSE(vxx, volume, 1e-10);
+      CHECK_CLOSE(vxy, 0.0, 1e-10);
     }
-    CHECK_CLOSE(vxx, volume, 1e-10);
-    CHECK_CLOSE(vxy, 0.0, 1e-10);
+    */
   }
-  */
 
   delete comm;
 }

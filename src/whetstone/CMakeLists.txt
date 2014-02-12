@@ -38,7 +38,8 @@ include_directories(${Epetra_INCLUDE_DIRS})
 file(GLOB whetstone_inc_files "*.hh")
 add_amanzi_library(whetstone
                    SOURCE mfd3d.cc
-                          mfd3d_diffusion.cc mfd3d_diffusion_other.cc 
+                          mfd3d_diffusion.cc mfd3d_diffusion_surface.cc 
+                          mfd3d_diffusion_other.cc 
                           mfd3d_elasticity.cc 
                           nlfv.cc tensor.cc DenseMatrix.cc
                    HEADERS ${whetstone_inc_files}
