@@ -8,12 +8,16 @@
 # through these variables.
 project(SMATERIALS)
 
-set(CXX_header_files Material.H
+set(CXX_header_files Property.H
+                     Material.H
                      MatFiller.H
-                     MatFiller_F.H)
+                     MatFiller_F.H
+                     RockManager.H)
 
-set(CXX_source_files Material.cpp
-                     MatFiller.cpp)
+set(CXX_source_files Property.cpp
+                     Material.cpp
+                     MatFiller.cpp
+                     RockManager.cpp)
 
 set(FPP_source_files MatFiller_${AMANZI_SPACEDIM}D.F)
 

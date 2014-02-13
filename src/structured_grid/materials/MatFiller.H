@@ -6,6 +6,7 @@
 #include <PArray.H>
 #include <VisMF.H>
 #include <Utility.H>
+#include <iMultiFab.H>
 
 #include <Region.H>
 #include <Material.H>
@@ -77,11 +78,10 @@ public:
                          int                dComp,
                          void*              ctx = 0);
 
-  /* Fill a MultiFab with the ID (a Real-casted integer) of the 
-     material at that location, given a refinement level (as defined 
-     in the ctr), including nGrow cells. The ID is consistent 
-     with MatIdx()*/
-  void SetMaterialID(int level, MultiFab& mf, int nGrow, bool ignore_mixed = false);
+  /* Fill a MultiFab with the ID of the material at that location, given a
+     refinement level (as defined in the ctr), including nGrow cells. The ID
+     is consistent with MatIdx()*/
+  void SetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed = false);
 
 
   /* Access functions follow */
@@ -108,9 +108,8 @@ public:
   const BoxArray& Mixed(int level) const;
 
   /* The internally cached (minimal) data structure at this level containing the 
-     (Real-casted integer) ID of the material at this location.  The ID is consistent 
-     with MatIdx(). */
-  MultiFab& MaterialID(int level) {return materialID[level];}
+     ID of the material at this location.  The ID is consistent with MatIdx(). */
+  iMultiFab& MaterialID(int level) {return materialID[level];}
 
   /* A map of material name to integer used to identify Materials in this class */
   const std::map<std::string,int>& MatIdx() const {return matIdx;}
@@ -196,7 +195,7 @@ protected:
      MatIdx(), except that mixed cells at this level will have the value
      of -1.
   */
-  PArray<MultiFab> materialID;
+  PArray<iMultiFab> materialID;
 
   /* Complete copies of the objects passed in on construction */
   Array<Geometry> geomArray;

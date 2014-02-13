@@ -37,18 +37,32 @@ public:
          const std::string& r_type);
   virtual ~Region() {}
 
-  virtual void setVal(FArrayBox&         fab, 
+  // Note: No virtual templates, must manually create
+  virtual void setVal(BaseFab<Real>&     fab, 
                       const Array<Real>& val, 
                       const Real*        dx, 
                       int                ng,
                       int                scomp,
                       int                ncomp) const;
 
-  virtual void setVal(FArrayBox&  fab,
-                      const Real  val, 
-                      const int   idx,
-                      const Real* dx, 
-                      int         ng) const;
+  virtual void setVal(BaseFab<Real>& fab,
+                      const Real&    val, 
+                      const int      idx,
+                      const Real*    dx, 
+                      int            ng) const;
+  
+  virtual void setVal(BaseFab<int>&     fab, 
+                      const Array<int>& val, 
+                      const Real*       dx, 
+                      int               ng,
+                      int               scomp,
+                      int               ncomp) const;
+
+  virtual void setVal(BaseFab<int>& fab,
+                      const int&    val, 
+                      const int     idx,
+                      const Real*   dx, 
+                      int           ng) const;
   
   virtual bool inRegion (const Array<Real>& x) const = 0;
   virtual std::ostream& print (std::ostream& os) const;
@@ -60,6 +74,16 @@ public:
 
   static Real geometry_eps;
   static Array<Real> domlo, domhi;
+
+protected:
+
+  template<class T>
+  void setVal_DoIt(BaseFab<T>&     fab, 
+                   const Array<T>& val, 
+                   const Real*     dx, 
+                   int             ng,
+                   int             scomp,
+                   int             ncomp) const;
 };
 
 std::ostream& operator<< (std::ostream& os, const Region& rhs);
@@ -73,18 +97,33 @@ public:
                const Array<Real>& coor)
       : Region(r_name,r_purpose,"point"), coor(coor) {} ;
 
-  virtual void setVal(FArrayBox&         fab, 
+
+  // Note: No virtual templates, must manually create
+  virtual void setVal(BaseFab<Real>&     fab, 
                       const Array<Real>& val, 
                       const Real*        dx, 
                       int                ng,
                       int                scomp,
                       int                ncomp) const;
 
-  virtual void setVal(FArrayBox&  fab,
-                      const Real  val, 
-                      const int   idx,
-                      const Real* dx, 
-                      int         ng) const;
+  virtual void setVal(BaseFab<Real>& fab,
+                      const Real&    val, 
+                      const int      idx,
+                      const Real*    dx, 
+                      int            ng) const;
+  
+  virtual void setVal(BaseFab<int>&     fab, 
+                      const Array<int>& val, 
+                      const Real*       dx, 
+                      int               ng,
+                      int               scomp,
+                      int               ncomp) const;
+
+  virtual void setVal(BaseFab<int>& fab,
+                      const int&    val, 
+                      const int     idx,
+                      const Real*   dx, 
+                      int           ng) const;
   
   virtual ~PointRegion() {}
 
@@ -92,6 +131,16 @@ public:
   virtual std::ostream& print (std::ostream& os) const;
 
   Array<Real> coor;
+
+protected:
+
+  template<class T>
+  void setVal_DoIt(BaseFab<T>&     fab, 
+                   const Array<T>& val, 
+                   const Real*     dx, 
+                   int             ng,
+                   int             scomp,
+                   int             ncomp) const;
 };
 
 std::ostream& operator<< (std::ostream& os, const PointRegion& rhs);

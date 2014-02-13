@@ -26,12 +26,35 @@ Region::Region (const std::string& r_name,
 }
 
 void
-Region::setVal(FArrayBox&         fab, 
+Region::setVal(BaseFab<Real>&     fab, 
                const Array<Real>& val, 
                const Real*        dx, 
                int                ng,
                int                scomp,
                int                ncomp) const
+{
+  setVal_DoIt(fab,val,dx,ng,scomp,ncomp);
+}
+
+void
+Region::setVal(BaseFab<int>&     fab, 
+               const Array<int>& val, 
+               const Real*       dx, 
+               int               ng,
+               int               scomp,
+               int               ncomp) const
+{
+  setVal_DoIt(fab,val,dx,ng,scomp,ncomp);
+}
+
+template <class T>
+void
+Region::setVal_DoIt(BaseFab<T>&     fab, 
+                    const Array<T>& val, 
+                    const Real*     dx, 
+                    int             ng,
+                    int             scomp,
+                    int             ncomp) const
 {
   int nval = val.size();
   BL_ASSERT(ncomp-scomp <= nval);
@@ -53,15 +76,24 @@ Region::setVal(FArrayBox&         fab,
   }
 }
 
-
 void
-Region::setVal(FArrayBox&  fab,
-               const Real  val, 
-               const int   idx,
-               const Real* dx, 
-               int         ng) const
+Region::setVal(BaseFab<Real>& fab,
+               const Real&    val, 
+               const int      idx,
+               const Real*    dx, 
+               int            ng) const
 {
     setVal(fab,Array<Real>(1,val),dx,ng,idx,1);
+}
+
+void
+Region::setVal(BaseFab<int>& fab,
+               const int&    val, 
+               const int     idx,
+               const Real*   dx, 
+               int           ng) const
+{
+    setVal(fab,Array<int>(1,val),dx,ng,idx,1);
 }
 
 bool 
@@ -71,12 +103,35 @@ PointRegion::inRegion (const Array<Real>& x) const
 }
 
 void
-PointRegion::setVal(FArrayBox&         fab, 
+PointRegion::setVal(BaseFab<Real>&     fab, 
                     const Array<Real>& val, 
                     const Real*        dx, 
                     int                ng,
                     int                scomp,
                     int                ncomp) const
+{
+  setVal_DoIt(fab,val,dx,ng,scomp,ncomp);
+}
+
+void
+PointRegion::setVal(BaseFab<int>&     fab, 
+                    const Array<int>& val, 
+                    const Real*       dx, 
+                    int               ng,
+                    int               scomp,
+                    int               ncomp) const
+{
+  setVal_DoIt(fab,val,dx,ng,scomp,ncomp);
+}
+
+template<class T>
+void
+PointRegion::setVal_DoIt(BaseFab<T>&     fab, 
+                         const Array<T>& val, 
+                         const Real*     dx, 
+                         int             ng,
+                         int             scomp,
+                         int             ncomp) const
 {
   int nval = val.size();
   BL_ASSERT(ncomp-scomp <= nval);
@@ -103,14 +158,25 @@ PointRegion::setVal(FArrayBox&         fab,
 
 
 void
-PointRegion::setVal(FArrayBox&  fab,
-                    const Real  val, 
-                    const int   idx,
-                    const Real* dx, 
-                    int         ng) const
+PointRegion::setVal(BaseFab<Real>& fab,
+                    const Real&    val, 
+                    const int      idx,
+                    const Real*    dx, 
+                    int            ng) const
 {
   setVal(fab,Array<Real>(1,val),dx,ng,idx,1);
 }
+
+void
+PointRegion::setVal(BaseFab<int>& fab,
+                    const int&    val, 
+                    const int     idx,
+                    const Real*   dx, 
+                    int           ng) const
+{
+  setVal(fab,Array<int>(1,val),dx,ng,idx,1);
+}
+
 
 
 bool 

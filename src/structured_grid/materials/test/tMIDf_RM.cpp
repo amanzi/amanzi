@@ -85,29 +85,29 @@ main (int   argc,
   Array<int> bins(mat_map.size(),0);
 
   for (int lev=0; lev<nLevs; ++lev) {
-    const MultiFab& mf = matFiller.MaterialID(lev);
+    const iMultiFab& mf = matFiller.MaterialID(lev);
     if (lev<nLevs) {
       const BoxArray& ba_mixed = matFiller.Mixed(lev);
       if (ba_mixed.size()>0) {
-        Real maxVal = -1;
+        int maxVal = -1;
         for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
-          const FArrayBox& fab = mf[mfi];
+          const IArrayBox& fab = mf[mfi];
           std::vector< std::pair<int,Box> > isects = ba_mixed.intersections(mfi.validbox());
           for (int ii = 0, N = isects.size(); ii < N; ii++)
           {
             maxVal = std::max(maxVal,fab.max(isects[ii].second,0));
           }
         }        
-        ParallelDescriptor::ReduceRealMax(maxVal);
+        ParallelDescriptor::ReduceIntMax(maxVal);
         fail = (maxVal>-1);
       }
     }
 
     for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
       const Box& vbox = mfi.validbox();
-      const FArrayBox& fab = mf[mfi];
+      const IArrayBox& fab = mf[mfi];
       for (IntVect iv=vbox.smallEnd(), BIG=vbox.bigEnd(); iv<=BIG; vbox.next(iv)) {
-        int val = (int) fab(iv,0);
+        int val = fab(iv,0);
         if (val>0) {
           bins[val]++;
         }

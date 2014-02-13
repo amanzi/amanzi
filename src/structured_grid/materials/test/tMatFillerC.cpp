@@ -332,14 +332,14 @@ main (int   argc,
     }
   }
 
-  Array<Real> bins(materials.size(),0);
+  Array<int> bins(materials.size(),0);
   for (int lev=0; lev<nLevs; ++lev) {
-    MultiFab mat(data[lev].boxArray(),1,0);
+    iMultiFab mat(data[lev].boxArray(),1,0);
     matFiller.SetMaterialID(lev,mat,0);
     for (MFIter mfi(data[lev]); mfi.isValid(); ++mfi) {
       const Box& vbox = mfi.validbox();
       const FArrayBox& fab = data[lev][mfi];
-      const FArrayBox& id = mat[mfi];
+      const IArrayBox& id = mat[mfi];
       for (IntVect iv=vbox.smallEnd(), BIG=vbox.bigEnd(); iv<=BIG; vbox.next(iv)) {
 	int bin = (int) id(iv,0);
 	int val = fab(iv,0);
@@ -350,7 +350,7 @@ main (int   argc,
     }
   }
 
-  ParallelDescriptor::ReduceRealSum(bins.dataPtr(),bins.size());
+  ParallelDescriptor::ReduceIntSum(bins.dataPtr(),bins.size());
 
   Real trueRes_medium[5] = {1374, 1220, 30, 8584, 0};
   Real trueRes_large[5] = {3774776, 79086, 5757, 1499236, 9685};
@@ -385,13 +385,13 @@ main (int   argc,
   }
 
   for (int lev=0; lev<nLevs; ++lev) {
-    MultiFab mat(data[lev].boxArray(),1,0);
+    iMultiFab mat(data[lev].boxArray(),1,0);
     matFiller.SetMaterialID(lev,mat,0);
 
     for (MFIter mfi(data[lev]); mfi.isValid(); ++mfi) {
       const Box& vbox = mfi.validbox();
       const FArrayBox& fab = data[lev][mfi];
-      const FArrayBox& id = mat[mfi];
+      const IArrayBox& id = mat[mfi];
       for (IntVect iv=vbox.smallEnd(), BIG=vbox.bigEnd(); iv<=BIG; vbox.next(iv)) {
 	int bin = (int) id(iv,0);
 	int val = fab(iv,0);
@@ -402,7 +402,7 @@ main (int   argc,
     }
   }
 
-  ParallelDescriptor::ReduceRealSum(bins.dataPtr(),bins.size());
+  ParallelDescriptor::ReduceIntSum(bins.dataPtr(),bins.size());
 
   Real trueRes1_medium[5] = {1374, 1220, 30, 8584, 0};
   Real trueRes1_large[5] = {3774776, 79086, 5757, 1499236, 11622};
@@ -450,7 +450,6 @@ main (int   argc,
 
   DestroyMaterials();
   DestroyRegions();
-  FabArrayBase::verbose = false;
   if (fail) {
     BoxLib::Abort();
   }
