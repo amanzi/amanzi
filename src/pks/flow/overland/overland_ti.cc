@@ -230,10 +230,14 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
 
   // Face error given by mismatch of flux, so relative to flux.
   double enorm_face(0.);
+  int bad_face = -1;
   unsigned int nfaces = res_f.MyLength();
   for (unsigned int f=0; f!=nfaces; ++f) {
     double tmp = 1.e-4 * std::abs(res_f[0][f]) / (atol_ + rtol_*flux_max);
-    enorm_face = std::max<double>(enorm_face, tmp);
+    if (tmp > enorm_face) {
+      enorm_face = tmp;
+      bad_face = f;
+    }
   }
 
 
@@ -243,14 +247,25 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
     res_c.NormInf(&infnorm_c);
     res_f.NormInf(&infnorm_f);
 
+    ENorm_t err_f, err_c;
 #ifdef HAVE_MPI
-    double buf_c(enorm_cell), buf_f(enorm_face);
-    MPI_Allreduce(&buf_c, &enorm_cell, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    ENorm_t l_err_f, l_err_c;
+    l_err_f.value = enorm_face;
+    l_err_f.gid = res_f.Map().GID(bad_face);
+    l_err_c.value = enorm_cell;
+    l_err_c.gid = res_c.Map().GID(bad_cell);
+
+    MPI_Allreduce(&l_err_c, &err_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+    MPI_Allreduce(&l_err_f, &err_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+#else
+    err_f.value = enorm_face;
+    err_f.gid = bad_face;
+    err_c.value = enorm_cell;
+    err_c.gid = bad_cell;
 #endif
 
-    *vo_->os() << "ENorm (cells) = " << enorm_cell << "[" << bad_cell << "] (" << infnorm_c << ")" << std::endl
-               << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")" << std::endl;
+    *vo_->os() << "ENorm (cells) = " << err_c.value << "[" << err_c.gid << "] (" << infnorm_c << ")" << std::endl;
+    *vo_->os() << "ENorm (faces) = " << err_f.value << "[" << err_f.gid << "] (" << infnorm_f << ")" << std::endl;
   }
 
   double enorm_val(std::max<double>(enorm_face, enorm_cell));

@@ -278,10 +278,9 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
   int bad_face = -1;
   unsigned int nfaces = res_f.MyLength();
   for (unsigned int f=0; f!=nfaces; ++f) {
-    //    double tmp = flux_tol_ * std::abs(res_f[0][f]) / (atol_ + rtol_*flux_max);
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
-    double tmp = std::abs(h*res_f[0][f])  / (atol_ * .25*.1*55000.*cv[0][cells[0]] + rtol_*std::abs(wc[0][cells[0]]));
+    double tmp = std::abs(h*res_f[0][f])  / (atol_ * .5*.5*55000.*cv[0][cells[0]] + rtol_*std::abs(wc[0][cells[0]]));
     if (tmp > enorm_face) {
       enorm_face = tmp;
       bad_face = f;
@@ -294,24 +293,29 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
     res_c.NormInf(&infnorm_c);
     res_f.NormInf(&infnorm_f);
 
+    ENorm_t err_f, err_c;
 #ifdef HAVE_MPI
-    double buf_c(enorm_cell), buf_f(enorm_face);
-    MPI_Allreduce(&buf_c, &enorm_cell, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    ENorm_t l_err_f, l_err_c;
+    l_err_f.value = enorm_face;
+    l_err_f.gid = res_f.Map().GID(bad_face);
+    l_err_c.value = enorm_cell;
+    l_err_c.gid = res_c.Map().GID(bad_cell);
+
+    MPI_Allreduce(&l_err_c, &err_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+    MPI_Allreduce(&l_err_f, &err_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+#else
+    err_f.value = enorm_face;
+    err_f.gid = bad_face;
+    err_c.value = enorm_cell;
+    err_c.gid = bad_cell;
 #endif
 
-    AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(bad_face, AmanziMesh::USED, &cells);
-    *vo_->os() << "ENorm (cells) = " << enorm_cell << "[" << bad_cell << "] (" << infnorm_c << ")" << std::endl;
-    if (cells.size() == 1) {
-      *vo_->os() << "ENorm (faces) = " << enorm_face << "[" << cells[0] << "] (" << infnorm_f << ")" << std::endl;
-    } else {
-      *vo_->os() << "ENorm (faces) = " << enorm_face << "[" << cells[0] << "," << cells[1] << "] (" << infnorm_f << ")" << std::endl;
-    }
+    *vo_->os() << "ENorm (cells) = " << err_c.value << "[" << err_c.gid << "] (" << infnorm_c << ")" << std::endl;
+    *vo_->os() << "ENorm (faces) = " << err_f.value << "[" << err_f.gid << "] (" << infnorm_f << ")" << std::endl;
   }
 
   // Communicate and take the max.
-  double enorm_val(std::max<double>(enorm_face, enorm_cell));
+  double enorm_val = std::max<double>(enorm_cell, enorm_face);
 #ifdef HAVE_MPI
   double buf = enorm_val;
   MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);

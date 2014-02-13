@@ -66,6 +66,12 @@ class PKPhysicalBase : public virtual PKDefaultBase {
 
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;
+
+  // ENORM struct
+  typedef struct ENorm_t {
+    double value;
+    int gid;
+  } ENorm_t;
 };
 
 } // namespace
