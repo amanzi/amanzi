@@ -987,35 +987,43 @@ void MPC::cycle_driver() {
         // get the auxillary data
         Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
         if (force || visualization->DumpRequested(S->cycle(), S->time())) {
-          if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-            *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
-          }
-          WriteVis(visualization,S.ptr());
+	  if (!visualization->is_disabled()) {
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	      *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+	    }
+	    WriteVis(visualization,S.ptr());
+	  }
         }
       } else {
         if (force || visualization->DumpRequested(S->cycle(), S->time())) {
-          if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-            *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
-          }
-          WriteVis(visualization,S.ptr());
+	  if (!visualization->is_disabled()) {
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	      *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+	    }
+	    WriteVis(visualization,S.ptr());
+	  }
         }
       }
 
       // write restart dump if requested
       if (force || force_checkpoint || restart->DumpRequested(S->cycle(), S->time())) {
-        if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-          *out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
-        }
-        WriteCheckpoint(restart,S.ptr(),mpc_dT);
+	if (!restart->is_disabled()) {
+	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	    *out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
+	  }
+	  WriteCheckpoint(restart,S.ptr(),mpc_dT);
+	}
       }
 
       // write walkabout data if requested
       if (flow_enabled) {
         if (force || force_checkpoint || walkabout->DumpRequested(S->cycle(), S->time())) {
-          if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-            *out << "Cycle " << S->cycle() << ": writing walkabout data" << std::endl;
-          }
-          FPK->WriteWalkabout(walkabout.ptr());
+	  if (!walkabout->is_disabled()) {
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	      *out << "Cycle " << S->cycle() << ": writing walkabout data" << std::endl;
+	    }
+	    FPK->WriteWalkabout(walkabout.ptr());
+	  }
         }
       }
       
@@ -1030,22 +1038,28 @@ void MPC::cycle_driver() {
     ++iter;
     S->set_cycle(iter);
     Amanzi::timer_manager.start("I/O");
-    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-      *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+    if (!visualization->is_disabled()) {
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	*out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+      }
+      if (flow_enabled) FPK->UpdateAuxilliaryData();
+      WriteVis(visualization,S.ptr());
     }
-    if (flow_enabled) FPK->UpdateAuxilliaryData();
-    WriteVis(visualization,S.ptr());
-
-    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-      *out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
+      
+    if (!restart->is_disabled()) {
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	*out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
+      }
+      WriteCheckpoint(restart,S.ptr(),0.0);
     }
-    WriteCheckpoint(restart,S.ptr(),0.0);
 
     if (flow_enabled) {
-      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-        *out << "Cycle " << S->cycle() << ": writing walkabout file" << std::endl;
+      if (!walkabout->is_disabled()) {
+	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	  *out << "Cycle " << S->cycle() << ": writing walkabout file" << std::endl;
+	}
+	FPK->WriteWalkabout(walkabout.ptr());
       }
-      FPK->WriteWalkabout(walkabout.ptr());
     }
 
     Amanzi::timer_manager.stop("I/O");
