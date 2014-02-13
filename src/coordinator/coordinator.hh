@@ -85,6 +85,7 @@ private:
 
   // vis and checkpointing
   std::vector<Teuchos::RCP<Visualization> > visualization_;
+  std::vector<Teuchos::RCP<Visualization> > failed_visualization_;
   Teuchos::RCP<Checkpoint> checkpoint_;
   bool restart_;
   std::string restart_filename_;

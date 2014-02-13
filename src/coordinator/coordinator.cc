@@ -148,6 +148,7 @@ void Coordinator::initialize() {
     Teuchos::RCP<const AmanziMesh::Mesh> surface_3d = S_->GetMesh("surface_3d");
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S_->GetMesh("surface");
 
+    // vis successful timesteps
     std::string plist_name = "visualization surface";
     Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
     Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
@@ -155,8 +156,18 @@ void Coordinator::initialize() {
     vis->CreateFiles();
     vis->set_mesh(surface);
     visualization_.push_back(vis);
-    // S_->RemoveMesh("surface_3d");
     surface_done = true;
+
+    // vis unsuccesful timesteps
+    std::string fail_plist_name = "visualization surface failed steps";
+    if (parameter_list_->isSublist(fail_plist_name)) {
+      Teuchos::ParameterList& fail_vis_plist = parameter_list_->sublist(fail_plist_name);
+      Teuchos::RCP<Visualization> fail_vis = Teuchos::rcp(new Visualization(fail_vis_plist, comm_));
+      fail_vis->set_mesh(surface_3d);
+      fail_vis->CreateFiles();
+      fail_vis->set_mesh(surface);
+      failed_visualization_.push_back(fail_vis);
+    }
   }
 
   for (State::mesh_iterator mesh=S_->mesh_begin();
@@ -166,18 +177,37 @@ void Coordinator::initialize() {
     } else if ((mesh->first == "surface") && surface_done) {
       // pass
     } else {
+      // vis successful steps
       std::string plist_name = "visualization "+mesh->first;
       // in the case of just a domain mesh, we want to allow no name.
       if ((mesh->first == "domain") && !parameter_list_->isSublist(plist_name)) {
         plist_name = "visualization";
       }
 
-      Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
-      Teuchos::RCP<Visualization> vis =
-        Teuchos::rcp(new Visualization(vis_plist, comm_));
-      vis->set_mesh(mesh->second.first);
-      vis->CreateFiles();
-      visualization_.push_back(vis);
+      if (parameter_list_->isSublist(plist_name)) {
+        Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
+        Teuchos::RCP<Visualization> vis =
+          Teuchos::rcp(new Visualization(vis_plist, comm_));
+        vis->set_mesh(mesh->second.first);
+        vis->CreateFiles();
+        visualization_.push_back(vis);
+      }
+
+      // vis unsuccessful steps
+      std::string fail_plist_name = "visualization "+mesh->first+" failed steps";
+      // in the case of just a domain mesh, we want to allow no name.
+      if ((mesh->first == "domain") && !parameter_list_->isSublist(fail_plist_name)) {
+        fail_plist_name = "visualization failed steps";
+      }
+
+      if (parameter_list_->isSublist(fail_plist_name)) {
+        Teuchos::ParameterList& fail_vis_plist = parameter_list_->sublist(fail_plist_name);
+        Teuchos::RCP<Visualization> fail_vis =
+          Teuchos::rcp(new Visualization(fail_vis_plist, comm_));
+        fail_vis->set_mesh(mesh->second.first);
+        fail_vis->CreateFiles();
+        failed_visualization_.push_back(fail_vis);
+      }
     }
   }
 
@@ -398,8 +428,14 @@ bool Coordinator::advance(double dt) {
     *S_inter_ = *S_next_;
 
   } else {
-    // Failed the timestep.  The timestep sizes have been updated, so we can
-    // try again.
+    // Failed the timestep.  
+    // Potentially write out failed timestep for debugging
+    for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=failed_visualization_.begin();
+         vis!=failed_visualization_.end(); ++vis) {
+      WriteVis((*vis).ptr(), S_next_.ptr());
+    }
+
+    // The timestep sizes have been updated, so copy back old soln and try again.
     *S_next_ = *S_;
   }
   return fail;
