@@ -188,14 +188,16 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
     itr = -1;
   }
 
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    if (itr >= 0) {
+  if (itr >= 0) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "success: " << solver_->num_itrs() << " nonlinear itrs" 
                  << " error=" << solver_->residual() << std::endl;
-    } else {
-      *vo_->os() << vo_->color("red") << "step failed with error code " << itr << vo_->reset() << std::endl;
-      *u = *u0;
     }
+  } else {
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << vo_->color("red") << "step failed with error code " << itr << vo_->reset() << std::endl;
+    }
+    *u = *u0;
   }
 
   // update the next timestep size
