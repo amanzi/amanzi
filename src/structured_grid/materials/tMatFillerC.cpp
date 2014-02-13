@@ -450,7 +450,6 @@ main (int   argc,
 
   DestroyMaterials();
   DestroyRegions();
-  FabArrayBase::verbose = false;
   if (fail) {
     BoxLib::Abort();
   }
