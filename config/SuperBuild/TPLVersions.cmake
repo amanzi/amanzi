@@ -36,6 +36,7 @@
 #   0.91.12      - updated MSTK to version 2.10
 #   0.91.13      - updated METIS to 5.1.0, ParMetis to 4.0.3a, SuperLU to 4.3, SuperLUDist to 3.3 and PETSc to 3.4.3
 #   0.91.14      - updated Trilinos to 10.6.1 and MSTK to 2.11rc2
+#   0.91.15      - updated CCSE to version 1.2.5
 #
 
 include(CMakeParseArguments)
@@ -86,7 +87,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 91)
-set (AMANZI_TPLS_VERSION_PATCH 13)
+set (AMANZI_TPLS_VERSION_PATCH 15)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -153,10 +154,8 @@ set(CCSE_VERSION_MINOR 2)
 set(CCSE_VERSION_PATCH 5)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
-#set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(CCSE_URL_STRING     "file:///home/marc/src/ASCEM/Software/Downloads")
+set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-#set(CCSE_MD5_SUM        4a565639347a9bab5f6db70d89dfbb8b)
 set(CCSE_MD5_SUM        6d86c8f47ef1a267164b288623fd7d6f)
 #
 # TPL: UnitTest
