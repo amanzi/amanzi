@@ -28,6 +28,8 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
   Teuchos::RCP<CompositeVector> pres_guess = up->SubVector(0)->Data();
   Epetra_MultiVector& pres_guess_c = *pres_guess->ViewComponent("cell",false);
 
+  const double p_atm = *S_next_->GetScalarData("atmospheric_pressure");
+
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "  Modifying predictor using SmartEWC algorithm" << std::endl;
     std::vector<std::string> vnames;
@@ -108,11 +110,13 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
     ierr = model_->Evaluate(T_guess, pres_guess_c[0][c],
                             e_tmp, wc_tmp);
     ASSERT(!ierr);
+    bool ewc_completed = false;
 
     if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
       *dcvo->os() << "   Calc wc,e of extrap: " << wc_tmp*cv[0][c] << ", " << e_tmp*cv[0][c] << std::endl
                   << "   -------------" << std::endl;
 
+    // FREEZE-THAW transition
     if (T_guess - T < 0.) {  // decreasing, freezing
       if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   decreasing temps..." << std::endl;
@@ -130,6 +134,7 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
       } else {
         // -- invert for T,p at the projected ewc
         ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], T, p);
+        ewc_completed = true;
         if (ierr) {
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
               *dcvo->os() << "FAILED EWC PREDICTOR" << std::endl;
@@ -166,6 +171,7 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
       } else {
         // in the transition zone of latent heat exchange
         ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], T, p);
+        ewc_completed = true;
         if (ierr) {
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
               *dcvo->os() << "FAILED EWC PREDICTOR" << std::endl;
@@ -174,7 +180,7 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
             *dcvo->os() << "     kept within the transition zone." << std::endl
                         << "   p,T = " << p << ", " << T << std::endl;
-          
+
           // two ways to get a projected T past freezing point:
           //  -- be on the lower branch and overshoot (ewc results in smaller dT)
           //  -- be on the middle branch and get over the hump (ewc results in much larger dT)
@@ -191,6 +197,88 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
       }
 #endif
     }
+
+    // SATURATED-UNSATURATED TRANSITION
+    if (!ewc_completed) { // do not do this if we already are doing ewc for temperature reasons
+      if (p_guess - p < 0.) {  // decreasing, becoming unsaturated
+        if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+          *dcvo->os() << "   decreasing pressures..." << std::endl;
+
+        if (p_guess + 0.1 > p_atm) {
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+            *dcvo->os() << "   still saturated, keep T,p projections" << std::endl;
+          // pass, guesses are good
+          
+        } else if (p_prev + 0.1 < p_atm) {
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+            *dcvo->os() << "   second point past the saturation point, keep T,p projections" << std::endl;
+          // pass, guesses are good
+
+        } else {
+          // -- invert for T,p at the projected ewc
+          ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], T, p);
+          if (ierr) {
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "FAILED EWC PREDICTOR" << std::endl;
+            // pass, keep the T,p projections
+          } else {
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "     kept within the transition zone." << std::endl
+                          << "   p,T = " << p << ", " << T << std::endl;
+
+            // in the transition zone of latent heat exchange
+            if (T > 200.) {
+              temp_guess_c[0][c] = T;
+              pres_guess_c[0][c] = p;
+            } else {
+              if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+                *dcvo->os() << "       not admissible!" << std::endl;
+            }
+          }
+        }
+
+      } else { // increasing, becoming saturated
+        if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+          *dcvo->os() << "   increasing pressures..." << std::endl;
+
+        if (p_prev + 0.1 > p_atm) {
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+            *dcvo->os() << "   saturated, keep T,p projections" << std::endl;
+          // pass, guesses are good
+        } else if (p_guess < p_atm) {
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+            *dcvo->os() << "   projection unsaturated, keep T,p projections" << std::endl;
+          // pass, guesses are good
+
+        } else {
+          // in the transition zone of latent heat exchange
+          ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], T, p);
+          if (ierr) {
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "FAILED EWC PREDICTOR" << std::endl;
+            // pass, keep the T,p projections
+          } else {
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "     kept within the transition zone." << std::endl
+                          << "   p,T = " << p << ", " << T << std::endl;
+          
+            // two ways to get a projected p to saturated:
+            //  -- be on the lower branch and overshoot (ewc results in smaller dp)
+            //  -- be on the middle branch and get over the hump (ewc results in much larger dp)
+            if (p - p_prev < pres_guess_c[0][c] - p_prev) {
+              if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+                *dcvo->os() << "     dp_ewc < dp_std, on the lower branch, using EWC" << std::endl;
+              temp_guess_c[0][c] = T;
+              pres_guess_c[0][c] = p;
+            } else {
+              if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+                *dcvo->os() << "     dp_ewc > dp_std, on the middle branch, use std prediction" << std::endl;
+            }
+          }
+        }
+      }
+    }
+
   }
   return true;
 }
@@ -215,6 +303,7 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
 
   // additional data required
   const Epetra_MultiVector& cv = *S_next_->GetFieldData("cell_volume")->ViewComponent("cell",false);
+  const double p_atm = *S_next_->GetScalarData("atmospheric_pressure");
 
   // old values
   const Epetra_MultiVector& p_old = *S_next_->GetFieldData(pres_key_)->ViewComponent("cell",false);
@@ -242,12 +331,16 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
     double p_std = p_prev - dp_std[0][c];
     bool precon_ewc = false;
 
+    model_->UpdateModel(S_next_.ptr(), c);
+    bool ewc_completed = false;
+
     if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
       *dcvo->os() << "Precon: c = " << c << std::endl;
 
     // only do EWC if corrections are large, ie not clearly converging
-    model_->UpdateModel(S_next_.ptr(), c);
     if (std::abs(dT_std[0][c]) > dT_min || std::abs(dp_std[0][c]) > dp_min) {
+
+      // FREEZE-THAW TRANSITION
       if (-dT_std[0][c] < 0.) {  // decreasing, freezing
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   decreasing temps..." << std::endl;
@@ -285,6 +378,7 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
           // -- invert for T,p at the projected ewc
           double T(T_prev), p(p_old[0][c]);
           int ierr = model_->InverseEvaluate(e_ewc/cv[0][c], wc_ewc/cv[0][c], T, p, verbose);
+          ewc_completed = true;
           if (ierr) {
             if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
               *dcvo->os() << "FAILED EWC PRECON" << std::endl;
@@ -344,6 +438,7 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
           // -- invert for T,p at the projected ewc
           double T(T_prev), p(p_old[0][c]);
           int ierr = model_->InverseEvaluate(e_ewc/cv[0][c], wc_ewc/cv[0][c], T, p);
+          ewc_completed = true;
 
           if (ierr) {
             if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
@@ -377,6 +472,142 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
         }
 #endif
       }
+
+
+      if (!ewc_completed) {
+        // SATURATED-UNSATURATED TRANSITION
+        if (-dp_std[0][c] < 0.) {  // decreasing, going unsaturated
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+            *dcvo->os() << "   decreasing pressures..." << std::endl;
+
+          if (p_std + 0.1 > p_atm) {
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "   guess saturated, keep std correction" << std::endl;
+            // pass, guesses are good
+
+          } else if (p_prev + 0.1 < p_atm) {
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "   linearization point past p_atm, keep std correction" << std::endl;
+            // pass, guesses are good
+
+          } else {
+            // calculate the correction in ewc
+            double wc_ewc = wc_old[0][c]
+              - (jac_[c](0,0) * dp_std[0][c] + jac_[c](0,1) * dT_std[0][c]);
+            double e_ewc = e_old[0][c]
+              - (jac_[c](1,0) * dp_std[0][c] + jac_[c](1,1) * dT_std[0][c]);
+            bool verbose = false;
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME)) {
+              verbose = true;
+              *dcvo->os() << std::setprecision(14)
+                          << "   Prev p,T: " << p_old[0][c] << ", " << T_old[0][c] << std::endl
+                          << "   Prev wc,e: " << wc_old[0][c] << ", " << e_old[0][c] << std::endl
+                          << "   -------------" << std::endl
+                          << "   Std correction dp,dT: " << dp_std[0][c] << ", " << dT_std[0][c] << std::endl
+                          << "   applying the EWC precon:" << std::endl
+                          << "     Jac = [" << jac_[c](0,0) << ", " << jac_[c](0,1) << "] = " << wc_old[0][c] - wc_ewc << std::endl
+                          << "           [" << jac_[c](1,0) << ", " << jac_[c](1,1) << "] = " << e_old[0][c] - e_ewc << std::endl
+                          << "     wc,e_ewc = " << wc_ewc << ", " << e_ewc << std::endl;
+            }
+
+            // -- invert for T,p at the projected ewc
+            double T(T_prev), p(p_old[0][c]);
+            int ierr = model_->InverseEvaluate(e_ewc/cv[0][c], wc_ewc/cv[0][c], T, p, verbose);
+            ewc_completed = true;
+            if (ierr) {
+              if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+                *dcvo->os() << "FAILED EWC PRECON" << std::endl;
+              // pass, keep the T,p projections
+
+            } else {
+              double dT_ewc = T_old[0][c] - T;
+              double dp_ewc = p_old[0][c] - p;
+
+              if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME)) {
+                *dcvo->os() << "     kept within the transition zone." << std::endl
+                            << "   p,T_ewc = " << p << ", " << T << std::endl
+                            << "   dp,dT_ewc = " << dp_ewc << ", " << dT_ewc << std::endl;
+                if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
+                  *dcvo->os() << "  sufficient change" << std::endl;
+                } else {
+                  *dcvo->os() << "  insufficient change" << std::endl;
+                }
+              }
+
+              if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
+                dT_std[0][c] = dT_ewc;
+                dp_std[0][c] = dp_ewc;
+              }
+            }
+          }
+
+        } else { // increasing, thawing
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+            *dcvo->os() << "   increasing pressures..." << std::endl;
+
+          if (p_prev > p_atm) {
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "   saturated, keep std correction" << std::endl;
+            // pass, update is are good
+
+          } else if (p_std < p_atm) {
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "   still unsaturated, keep std correction" << std::endl;
+            // pass, update is are good
+
+          } else {
+            // calculate the correction in ewc
+            double wc_ewc = wc_old[0][c]
+              - (jac_[c](0,0) * dp_std[0][c] + jac_[c](0,1) * dT_std[0][c]);
+            double e_ewc = e_old[0][c]
+              - (jac_[c](1,0) * dp_std[0][c] + jac_[c](1,1) * dT_std[0][c]);
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "   Prev p,T: " << p_old[0][c] << ", " << T_old[0][c] << std::endl
+                          << "   Prev wc,e: " << wc_old[0][c] << ", " << e_old[0][c] << std::endl
+                          << "   -------------" << std::endl
+                          << "   Std correction dp,dT: " << dp_std[0][c] << ", " << dT_std[0][c] << std::endl
+                          << "   applying the EWC precon:" << std::endl
+                          << "     wc,e_ewc = " << wc_ewc << ", " << e_ewc << std::endl;
+
+            // -- invert for T,p at the projected ewc
+            double T(T_prev), p(p_old[0][c]);
+            int ierr = model_->InverseEvaluate(e_ewc/cv[0][c], wc_ewc/cv[0][c], T, p);
+
+            if (ierr) {
+              ewc_completed = true;
+              if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+                *dcvo->os() << "FAILED EWC PRECON" << std::endl;
+              // pass, keep the T,p projections
+
+            } else {
+              double dT_ewc = T_old[0][c] - T;
+              double dp_ewc = p_old[0][c] - p;
+
+              if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME)) {
+                *dcvo->os() << "     within the transition zone." << std::endl
+                            << "   p,T_ewc = " << p << ", " << T << std::endl
+                            << "   dp,dT_ewc = " << dp_ewc << ", " << dT_ewc << std::endl;
+                if ((std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) &&
+                    (std::abs(dp_ewc) < std::abs(dp_std[0][c]))) {
+                  *dcvo->os() << "  sufficient change, and decreased dp (and so on the lower branch), using EWC" << std::endl;
+                } else if ((std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min)) {
+                  *dcvo->os() << "  increased dp (and so on the middle branch), using std" << std::endl;
+                } else {
+                  *dcvo->os() << "  insufficient change" << std::endl;
+                }
+              }
+
+              if ((std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) &&
+                  (std::abs(dp_ewc) < std::abs(dp_std[0][c]))) {
+                ewc_completed = true;
+                dT_std[0][c] = dT_ewc;
+                dp_std[0][c] = dp_ewc;
+              }
+            }
+          }
+        }
+      }
+
     }
   }
 }
