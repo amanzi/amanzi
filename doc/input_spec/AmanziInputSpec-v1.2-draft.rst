@@ -292,7 +292,7 @@ Usage:
 
      * [U] `"CFL`" [double]: Time step limiter, a number less than 1 with default of 1.
 
-     * [U] `"transport subcycling`" [bool]: Accepts `"true`" or `"false`" which corresponds to transport subcycling on or off, respectively. (default: `"true`")
+     * [U] `"transport subcycling`" [bool]: Accepts `"true`" or `"false`" which corresponds to transport subcycling on or off, respectively. (default: `"true`") Note that setting this parameter to false does not always preclude transport from subcycling. Since the estimate for the transport time step is based on velocities from the previous time step, the actual time step that transport can take after the current flow step might be different from its initial estimate.
 
    * [U] `"Chemistry Process Kernel`" [list]: Control parameters for the reactive transport methods
 
