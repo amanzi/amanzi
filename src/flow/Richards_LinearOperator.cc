@@ -52,6 +52,11 @@ void Richards_PK::SolveFullySaturatedProblem(
                << "): ||r||=" << residual << " itr=" << num_itrs 
                << " code=" << ierr << std::endl;
   }
+  if (ierr < 0) {
+    Errors::Message msg;
+    msg << "\nLinear solver returned an unrecoverable error code.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 
@@ -98,6 +103,11 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
     *vo_->os() << "constraints solver (" << solver->name() 
                << "): ||r||=" << residual << " itr=" << num_itrs
                << " code=" << ierr << std::endl;
+  }
+  if (ierr < 0) {
+    Errors::Message msg;
+    msg << "\nLinear solver returned an unrecoverable error code.\n";
+    Exceptions::amanzi_throw(msg);
   }
 }
 
