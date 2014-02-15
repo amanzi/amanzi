@@ -30,14 +30,20 @@ RichardsWaterContent::RichardsWaterContent(Teuchos::ParameterList& plist) :
   dependencies_.insert(std::string("saturation_liquid"));
   dependencies_.insert(std::string("molar_density_liquid"));
 
-  dependencies_.insert(std::string("saturation_gas"));
-  dependencies_.insert(std::string("molar_density_gas"));
-  dependencies_.insert(std::string("mol_frac_gas"));
+  is_vapor_ = plist_.get<bool>("include water vapor", true);
+  if (is_vapor_) {
+    dependencies_.insert(std::string("saturation_gas"));
+    dependencies_.insert(std::string("molar_density_gas"));
+    dependencies_.insert(std::string("mol_frac_gas"));
+  }
+
   dependencies_.insert(std::string("cell_volume"));
 };
 
 RichardsWaterContent::RichardsWaterContent(const RichardsWaterContent& other) :
-    SecondaryVariableFieldEvaluator(other) {};
+    SecondaryVariableFieldEvaluator(other),
+    is_vapor_(other.is_vapor_)
+{};
 
 Teuchos::RCP<FieldEvaluator>
 RichardsWaterContent::Clone() const {
@@ -50,20 +56,26 @@ void RichardsWaterContent::EvaluateField_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell",false);
 
-  const Epetra_MultiVector& s_g = *S->GetFieldData("saturation_gas")->ViewComponent("cell",false);
-  const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell",false);
-  const Epetra_MultiVector& omega_g = *S->GetFieldData("mol_frac_gas")->ViewComponent("cell",false);
-
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell",false);
   const Epetra_MultiVector& cell_volume = *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
   Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
 
-  int ncells = result->size("cell",false);
-  for (int c=0; c!=ncells; ++c) {
-    result_v[0][c] = phi[0][c] * ( s_l[0][c]*n_l[0][c]
-            + s_g[0][c]*n_g[0][c]*omega_g[0][c] );
-    result_v[0][c] *= cell_volume[0][c];
-  }
+  if (is_vapor_) {
+    const Epetra_MultiVector& s_g = *S->GetFieldData("saturation_gas")->ViewComponent("cell",false);
+    const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell",false);
+    const Epetra_MultiVector& omega_g = *S->GetFieldData("mol_frac_gas")->ViewComponent("cell",false);
+    
+    int ncells = result->size("cell",false);
+    for (int c=0; c!=ncells; ++c) {
+      result_v[0][c] = phi[0][c] * ( s_l[0][c]*n_l[0][c]
+              + s_g[0][c]*n_g[0][c]*omega_g[0][c] ) * cell_volume[0][c];
+    }
+  } else {
+    int ncells = result->size("cell",false);
+    for (int c=0; c!=ncells; ++c) {
+      result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c] * cell_volume[0][c];
+    }
+  }      
 };
 
 
@@ -72,44 +84,71 @@ void RichardsWaterContent::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<St
   const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell",false);
 
-  const Epetra_MultiVector& s_g = *S->GetFieldData("saturation_gas")->ViewComponent("cell",false);
-  const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell",false);
-  const Epetra_MultiVector& omega_g = *S->GetFieldData("mol_frac_gas")->ViewComponent("cell",false);
-
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell",false);
   const Epetra_MultiVector& cell_volume = *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
   Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
 
   int ncells = result->size("cell",false);
-  if (wrt_key == "porosity") {
-    for (int c=0; c!=ncells; ++c) {
-      result_v[0][c] = s_l[0][c]*n_l[0][c]
-          + s_g[0][c]*n_g[0][c]*omega_g[0][c];
-    }
-  } else if (wrt_key == "saturation_liquid") {
-    for (int c=0; c!=ncells; ++c) {
-      result_v[0][c] = phi[0][c] * n_l[0][c];
-    }
-  } else if (wrt_key == "molar_density_liquid") {
-    for (int c=0; c!=ncells; ++c) {
-      result_v[0][c] = phi[0][c] * s_l[0][c];
-    }
-  } else if (wrt_key == "saturation_gas") {
-    for (int c=0; c!=ncells; ++c) {
-      result_v[0][c] = phi[0][c] * n_g[0][c]*omega_g[0][c];
-    }
-  } else if (wrt_key == "molar_density_gas") {
-    for (int c=0; c!=ncells; ++c) {
-      result_v[0][c] = phi[0][c] * s_g[0][c]*omega_g[0][c];
-    }
-  } else if (wrt_key == "mol_frac_gas") {
-    for (int c=0; c!=ncells; ++c) {
-      result_v[0][c] = phi[0][c] * s_g[0][c]*n_g[0][c];
-    }
-  }
 
-  for (int c=0; c!=ncells; ++c) {
-    result_v[0][c] *= cell_volume[0][c];
+  if (is_vapor_) {
+    const Epetra_MultiVector& s_g = *S->GetFieldData("saturation_gas")->ViewComponent("cell",false);
+    const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell",false);
+    const Epetra_MultiVector& omega_g = *S->GetFieldData("mol_frac_gas")->ViewComponent("cell",false);
+
+    if (wrt_key == "porosity") {
+      for (int c=0; c!=ncells; ++c) {
+        result_v[0][c] = (s_l[0][c]*n_l[0][c]
+                          + s_g[0][c]*n_g[0][c]*omega_g[0][c]) * cell_volume[0][c];
+      }
+    } else if (wrt_key == "saturation_liquid") {
+      for (int c=0; c!=ncells; ++c) {
+        result_v[0][c] = phi[0][c] * n_l[0][c] * cell_volume[0][c];
+      }
+    } else if (wrt_key == "molar_density_liquid") {
+      for (int c=0; c!=ncells; ++c) {
+        result_v[0][c] = phi[0][c] * s_l[0][c] * cell_volume[0][c];
+      }
+    } else if (wrt_key == "saturation_gas") {
+      for (int c=0; c!=ncells; ++c) {
+      result_v[0][c] = phi[0][c] * n_g[0][c]*omega_g[0][c] * cell_volume[0][c];
+      }
+    } else if (wrt_key == "molar_density_gas") {
+      for (int c=0; c!=ncells; ++c) {
+        result_v[0][c] = phi[0][c] * s_g[0][c]*omega_g[0][c] * cell_volume[0][c];
+      }
+    } else if (wrt_key == "mol_frac_gas") {
+      for (int c=0; c!=ncells; ++c) {
+        result_v[0][c] = phi[0][c] * s_g[0][c]*n_g[0][c] * cell_volume[0][c];
+      }
+    } else if (wrt_key == "cell_volume") {
+      for (int c=0; c!=ncells; ++c) {
+        result_v[0][c] = phi[0][c] * (s_l[0][c]*n_l[0][c]
+                + s_g[0][c]*n_g[0][c]*omega_g[0][c]);
+      }
+    } else {
+      ASSERT(0);
+    }
+    
+  } else {
+    if (wrt_key == "porosity") {
+      for (int c=0; c!=ncells; ++c) {
+        result_v[0][c] = s_l[0][c]*n_l[0][c] * cell_volume[0][c];
+      }
+    } else if (wrt_key == "saturation_liquid") {
+      for (int c=0; c!=ncells; ++c) {
+        result_v[0][c] = phi[0][c] * n_l[0][c] * cell_volume[0][c];
+      }
+    } else if (wrt_key == "molar_density_liquid") {
+      for (int c=0; c!=ncells; ++c) {
+        result_v[0][c] = phi[0][c] * s_l[0][c] * cell_volume[0][c];
+      }
+    } else if (wrt_key == "cell_volume") {
+      for (int c=0; c!=ncells; ++c) {
+        result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c];
+      }
+    } else {
+      ASSERT(0);
+    }
   }
 };
 

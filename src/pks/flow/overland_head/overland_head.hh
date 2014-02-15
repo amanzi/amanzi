@@ -44,7 +44,9 @@ public:
       update_flux_(UPDATE_FLUX_ITERATION),
       full_jacobian_(false),
       niter_(0),
-      source_only_if_unfrozen_(false) {
+      source_only_if_unfrozen_(false),
+      precon_used_(true)
+  {
     plist_->set("primary variable key", "surface_pressure");
     plist_->set("domain name", "surface");
 
@@ -154,6 +156,7 @@ protected:
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;
+  bool precon_used_;
   // note PC is in PKPhysicalBDFBase
 
   bool tpfa_;

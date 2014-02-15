@@ -273,9 +273,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- water content, and evaluator
   S->RequireField("water_content")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList wc_plist = plist_->sublist("water content evaluator");
-  Teuchos::RCP<RichardsWaterContent> wc = Teuchos::rcp(new RichardsWaterContent(wc_plist));
-  S->SetFieldEvaluator("water_content", wc);
+  S->RequireFieldEvaluator("water_content");
 
   // -- Water retention evaluators
   // -- saturation
@@ -684,7 +682,6 @@ bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
       (modify_predictor_first_bc_flux_ && S_next_->cycle() == 0)) {
     changed |= ModifyPredictorFluxBCs_(h,u);
   }
-
 
   if (modify_predictor_wc_) {
     changed |= ModifyPredictorWC_(h,u);

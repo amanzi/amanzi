@@ -5,7 +5,11 @@
 namespace Amanzi {
 
 MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    plist_(plist)
+    plist_(plist),
+    i_domain_(-1),
+    i_surf_(-1),
+    i_Tdomain_(-1),
+    i_Tsurf_(-1)
 {
   // predictor control
   modify_predictor_heuristic_ =

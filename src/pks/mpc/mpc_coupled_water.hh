@@ -1,13 +1,11 @@
 // Rewrite of permafrost PK to simplify
 //
 
-#ifndef PKS_MPC_PERMAFROST_TWO_HH_
-#define PKS_MPC_PERMAFROST_TWO_HH_
+#ifndef PKS_MPC_COUPLED_WATER_HH_
+#define PKS_MPC_COUPLED_WATER_HH_
 
-#include "MatrixMFD_Permafrost.hh"
 #include "MatrixMFD_Surf.hh"
 #include "MatrixMFD_TPFA.hh"
-#include "mpc_delegate_ewc.hh"
 #include "mpc_delegate_water.hh"
 #include "pk_physical_bdf_base.hh"
 
@@ -15,10 +13,10 @@
 
 namespace Amanzi {
 
-class MPCPermafrost2 : public StrongMPC<PKPhysicalBDFBase> {
+class MPCCoupledWater : public StrongMPC<PKPhysicalBDFBase> {
  public:
 
-  MPCPermafrost2(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  MPCCoupledWater(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                  Teuchos::ParameterList& FElist,
                  const Teuchos::RCP<TreeVector>& soln);
 
@@ -52,48 +50,32 @@ class MPCPermafrost2 : public StrongMPC<PKPhysicalBDFBase> {
   UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const TreeVector>& u,
           const Teuchos::RCP<TreeVector>& Pu);
 
-
-  int
-  ModifyCorrection_FrozenSurface_(double h, Teuchos::RCP<const TreeVector> res,
-          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
-  
-  // void
-  // IteratateFlow_(double h, const Teuchos::RCP<TreeVector>& u);
-
  protected:
 
   // sub PKs
   Teuchos::RCP<PKPhysicalBDFBase> domain_flow_pk_;
-  Teuchos::RCP<PKPhysicalBDFBase> domain_energy_pk_;
   Teuchos::RCP<PKPhysicalBDFBase> surf_flow_pk_;
-  Teuchos::RCP<PKPhysicalBDFBase> surf_energy_pk_;
 
   // sub meshes
   Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
 
   // coupled preconditioner
-  Teuchos::RCP<Operators::MatrixMFD_Permafrost> precon_;
-  Teuchos::RCP<Operators::MatrixMFD_Surf_ScaledConstraint> pc_flow_;
-  Teuchos::RCP<Operators::MatrixMFD_Surf> pc_energy_;
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> pc_surf_flow_;
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> pc_surf_energy_;
-
-  // EWC delegate
-  Teuchos::RCP<MPCDelegateEWC> ewc_;
+  Teuchos::RCP<CompositeMatrix> lin_solver_;
+  Teuchos::RCP<Operators::MatrixMFD_Surf> precon_;
+  Teuchos::RCP<Operators::MatrixMFD_TPFA> precon_surf_;
 
   // Water delegate
   Teuchos::RCP<MPCDelegateWater> water_;
   bool consistent_cells_;
   
-
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> domain_db_;
   Teuchos::RCP<Debugger> surf_db_;
 
  private:
   // factory registration
-  static RegisteredPKFactory<MPCPermafrost2> reg_;
+  static RegisteredPKFactory<MPCCoupledWater> reg_;
 
 };
 

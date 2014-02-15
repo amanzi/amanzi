@@ -299,7 +299,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 
   if (assemble_preconditioner_) {
     mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    mfd_preconditioner_->UpdatePreconditioner();
+    if (precon_used_) mfd_preconditioner_->UpdatePreconditioner();
   }
 
   /*

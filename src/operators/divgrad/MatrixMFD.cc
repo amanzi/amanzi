@@ -812,11 +812,11 @@ void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVect
       Teuchos::rcp(new Epetra_MultiVector(*rhs_f));
 
   Afc_->Multiply(true, *uc, *update_f);  // Afc is kept in the transpose form.
-  rhs_f->Update(-1.0, *update_f, 1.0);
+  update_f->Update(1.0, *rhs_f, -1.0);
 
   Aff_op_->Destroy();
   Aff_op_->Update(Aff_);
-  int ierr = Aff_solver_->ApplyInverse(*(*rhs_f)(0), *(*u->ViewComponent("face",false))(0));
+  int ierr = Aff_solver_->ApplyInverse(*(*update_f)(0), *(*u->ViewComponent("face",false))(0));
   ASSERT(!ierr);
 }
 
