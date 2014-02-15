@@ -55,6 +55,17 @@ public:
             const Array<IntVect>&   refRatio,
             const PArray<Material>& materials);
 
+  /*
+    Does this MatFiller know about property "name"?
+   */
+  bool CanDerive(const std::string& property_name) const;
+
+  /*
+    Number of components for this property
+   */
+  int NComp(const std::string& property_name) const;
+
+
   /* Fill a MultiFab with the value of a property, given a time, 
      and refinement level (as defined in the ctr), including
      nGrow cells.  ctx is a user-defined context which is passed

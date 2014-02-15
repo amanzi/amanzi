@@ -228,6 +228,20 @@ MatFiller::FindMixedCells()
   return ba_array;
 }
 
+bool
+MatFiller::CanDerive(const std::string& property_name) const
+{
+  return property_nComps.find(property_name) != property_nComps.end();
+}
+
+int
+MatFiller::NComp(const std::string& property_name) const
+{
+  std::map<std::string,int>::const_iterator it=property_nComps.find(property_name);
+  BL_ASSERT(it!=property_nComps.end());
+  return it->second;
+}
+
 bool 
 MatFiller::SetPropertyDirect(Real               t,
                              int                level,
@@ -248,9 +262,7 @@ MatFiller::SetPropertyDirect(Real               t,
       props[i] = p;
     }
     
-    std::map<std::string,int>::const_iterator it=property_nComps.find(pname);
-    BL_ASSERT(it!=property_nComps.end());
-    int nComp = it->second;
+    int nComp = NComp(pname);
     BL_ASSERT(fab.nComp() >= dComp + nComp);
     IArrayBox idfab(ovlp,nComp); idfab.setVal(-1);
     const Geometry& geom = geomArray[level];

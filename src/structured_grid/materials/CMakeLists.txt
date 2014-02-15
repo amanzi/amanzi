@@ -88,6 +88,11 @@ if (BUILD_TESTS)
                   SOURCE test/tMIDf_RM.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
+  add_amanzi_test(RockManager tRM "tMIDf_RM.in"
+                  KIND unit
+                  SOURCE test/tRM.cpp
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+
   add_amanzi_test(MaterialPropertyFiller tMatFiller
                   KIND unit
                   SOURCE test/tMatFiller.cpp
