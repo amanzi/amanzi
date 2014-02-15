@@ -358,19 +358,19 @@ MPCPermafrost3::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
 
   // Copy consistent faces to surface
   if (modified) {
-    MergeSubsurfaceAndSurfacePressure(u->SubVector(0)->Data().ptr(),
-  				      u->SubVector(1)->Data().ptr(),
-  				      u->SubVector(2)->Data().ptr(),
-  				      u->SubVector(3)->Data().ptr());
+    S_next_->GetFieldEvaluator("surface_relative_permeability")->HasFieldChanged(S_next_.ptr(),name_);
+    Teuchos::RCP<const CompositeVector> kr_surf = S_next_->GetFieldData("surface_relative_permeability");
+    MergeSubsurfaceAndSurfacePressure(u->SubVector(0)->Data().ptr(), u->SubVector(2)->Data().ptr(), *kr_surf);
+    CopySubsurfaceToSurface(*u->SubVector(1)->Data(), u->SubVector(3)->Data().ptr());
   }
 
-  // Make a new TreeVector that is just the surface values (by pointer).
-  Teuchos::RCP<TreeVector> surf_u = Teuchos::rcp(new TreeVector());
-  surf_u->PushBack(u->SubVector(2));
-  surf_u->PushBack(u->SubVector(3));
+  // // Make a new TreeVector that is just the surface values (by pointer).
+  // Teuchos::RCP<TreeVector> surf_u = Teuchos::rcp(new TreeVector());
+  // surf_u->PushBack(u->SubVector(2));
+  // surf_u->PushBack(u->SubVector(3));
 
-  // Surface EWC
-  modified |= surf_ewc_->modify_predictor(h,surf_u);
+  // // Surface EWC
+  // modified |= surf_ewc_->modify_predictor(h,surf_u);
 
   // // Merge surface cells with subsurface faces
   // if (modified)
@@ -387,12 +387,14 @@ MPCPermafrost3::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   modified |= newly_modified;
 
   // -- copy surf --> sub
-  if (newly_modified) {
-    CopySurfaceToSubsurface(*u->SubVector(2)->Data(), u->SubVector(0)->Data().ptr());
-    CopySurfaceToSubsurface(*u->SubVector(3)->Data(), u->SubVector(1)->Data().ptr());
-  }
+  //  if (newly_modified) {
+  CopySurfaceToSubsurface(*u->SubVector(2)->Data(), u->SubVector(0)->Data().ptr());
+  CopySurfaceToSubsurface(*u->SubVector(3)->Data(), u->SubVector(1)->Data().ptr());
+    //  }
 
   // Calculate consistent surface faces
+  sub_pks_[2]->changed_solution();
+  sub_pks_[3]->changed_solution();
   modified |= surf_flow_pk_->modify_predictor(h, u->SubVector(2));
   modified |= surf_energy_pk_->modify_predictor(h, u->SubVector(3));
 

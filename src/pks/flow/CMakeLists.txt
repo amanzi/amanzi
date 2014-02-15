@@ -250,6 +250,11 @@ generate_evaluators_registration_header(
 # richards/
 
 register_evaluator_with_factory(
+  HEADERFILE richards/richards_water_content_reg.hh
+  LISTNAME   RICHARDS_EVAL_FAC
+  )
+
+register_evaluator_with_factory(
   HEADERFILE richards/richards_pk_reg.hh
   LISTNAME   RICHARDS_EVAL_FAC
   )
