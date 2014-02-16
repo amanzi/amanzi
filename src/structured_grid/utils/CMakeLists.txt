@@ -26,12 +26,14 @@ set(CXX_header_files ParmParseHelpers.H
                      InputParser_Structured.H
                      TabularFunction.H
                      EventCoord.H
-                     WritePlotfile.H)
+                     WritePlotfile.H
+                     MonotCubicInterpolator.H)
 set(CXX_source_files ParmParseHelpers.cpp
                      InputParser_Structured.cpp
                      TabularFunction.cpp
                      EventCoord.cpp
-                     WritePlotfile.cpp)
+                     WritePlotfile.cpp
+                     MonotCubicInterpolator.cpp)
 
 add_library(sutils OBJECT ${CXX_source_files}
                           ${CXX_headers_files})

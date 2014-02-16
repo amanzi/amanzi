@@ -3,6 +3,7 @@
 
 #include <RegionManager.H>
 #include <MatFiller.H>
+#include <MonotCubicInterpolator.H>
 
 #include <PArray.H>
 
@@ -128,6 +129,7 @@ protected:
                   const Array<IntVect>&  refRatio);
 
   Array<Array<int> > SortPtsByMaterial(int* matID, int npts);
+  void BuildInterpolators();
 
   const RegionManager* region_manager;
   MatFiller* materialFiller;
@@ -139,6 +141,8 @@ protected:
   bool saturation_threshold_for_vg_Kr;
   std::map<std::string,int> CP_models;
   std::map<std::string,int> Kr_models;
+  PArray<MonotCubicInterpolator> CP_s_interps;
+  bool is_initialized;
 };
 
 #endif

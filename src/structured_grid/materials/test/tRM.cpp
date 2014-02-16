@@ -116,13 +116,13 @@ main (int   argc,
     c[mfi].setVal(0);
     for (IntVect iv(box.smallEnd()), End=box.bigEnd(); iv<=End; box.next(iv)) {
       if (iv[1] < End[1] && iv[1] > box.smallEnd()[1]) {
-        //c[mfi](iv,0) = (sat[mfi](iv+IntVect(0,1),0) - sat[mfi](iv,0))/(pc[mfi](iv+IntVect(0,1),0) - pc[mfi](iv,0));
         c[mfi](iv,0) = 0.5*(sat[mfi](iv+IntVect(0,1),0) - sat[mfi](iv-IntVect(0,1),0))/(pc[mfi](iv+IntVect(0,1),0) - pc[mfi](iv-IntVect(0,1),0));
       }
     }
 
   }
 
+#if 0
   MultiFab pc2(ba,1,nGrow);
   MultiFab::Copy(pc2,pc,0,0,1,nGrow);
   MultiFab::Subtract(pc2,pc1,0,0,1,nGrow);
@@ -134,5 +134,6 @@ main (int   argc,
   VisMF::Write(dsdp,"dsdp");
   VisMF::Write(c,"c");
   VisMF::Write(relperm,"k");
+#endif
   return 0;
 }

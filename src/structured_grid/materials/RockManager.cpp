@@ -36,12 +36,56 @@ static int BC_SR          = 3;
 static int BC_ELL         = 4;
 static int BC_KR_MODEL_ID = 5;
 
+// Interpolators
+static int NUM_INIT_INTERP_EVAL_PTS = 1001;
+static Real krel_smoothing_interval = 1.e-3;
+static Real pc_at_Sr = 1.e11;
+
 RockManager::RockManager(const RegionManager*   _region_manager,
                          const Array<Geometry>& geomArray,
                          const Array<IntVect>&  refRatio)
   : region_manager(_region_manager)
 {
+  is_initialized = false;
   Initialize(geomArray,refRatio);
+  BuildInterpolators();
+  is_initialized = true;
+}
+
+void
+RockManager::BuildInterpolators()
+{
+  CP_s_interps.resize(rock.size(),PArrayManage);
+
+  int nComp = materialFiller->NComp(CapillaryPressureName);
+  static IntVect iv(D_DECL(0,0,0));
+  static Box bx(iv,iv);
+  FArrayBox pc_params(bx,nComp);
+  int level=0; //not really used
+  int dComp=0;
+  Real time = 0;
+
+  for (int n=0; n<rock.size(); ++n) {
+
+    Array<Real> s(NUM_INIT_INTERP_EVAL_PTS);
+    int Npts = s.size();
+    Array<Real> pc(Npts);
+    Array<int> mat(Npts,n);
+
+    pc[0] = pc_at_Sr;
+    InverseCapillaryPressure(pc.dataPtr(),&n,time,&(s[0]),1);
+    Real ds = 1 - s[0];
+    for (int i=1; i<s.size(); ++i) {
+      s[i] = s[0] + ds*Real(i)/(NUM_INIT_INTERP_EVAL_PTS - 1);
+    }
+    CapillaryPressure(s.dataPtr(),mat.dataPtr(),time,pc.dataPtr(),Npts);
+
+    //for (int i=1; i<s.size(); ++i) {
+    //  std::cout << s[i] << " " << pc[i] << std::endl;
+    //}
+
+    CP_s_interps.set(n, new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(pc)));
+  }
 }
 
 void
@@ -685,6 +729,13 @@ RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Re
         
         Real seff = (s - Sr)*omSrI;
         capillaryPressure[idx] = alphaI * std::pow(std::pow(seff,b) - 1,omm);
+
+#if 0
+        if (is_initialized) {
+          Real intVal = CP_s_interps[n](saturation[idx]);
+          std::cout << " " << (intVal - capillaryPressure[idx])/ capillaryPressure[idx] << std::endl;
+        }
+#endif
       }
     }
     else if (is_BC) {
