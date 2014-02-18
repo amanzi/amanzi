@@ -105,16 +105,7 @@ public:
                                  int              dComp,
                                  int              nGrow);
 
-  // Lambda (RelativePermeability / FluidViscosity)
-  void Lambda(const Real* saturation, int* matID, Real* lambda, int npts);
-  void Lambda(const MultiFab&  saturation,
-              const iMultiFab& matID,
-              Real             time,
-              MultiFab&        lambda,
-              int              sComp,
-              int              dComp,
-              int              nGrow);
-
+  // Relative Permeability (given saturation)
   void RelativePermeability(const Real* saturation, int* matID, Real time, Real* kappa, int npts);
   void RelativePermeability(const MultiFab&  saturation,
                             const iMultiFab& matID,
@@ -124,6 +115,7 @@ public:
                             int              dComp,
                             int              nGrow);
 
+  int ID() const {return rock_mgr_ID;}
 protected:
   void Initialize(const Array<Geometry>& geomArray,
                   const Array<IntVect>&  refRatio);
@@ -142,7 +134,9 @@ protected:
   std::map<std::string,int> CP_models;
   std::map<std::string,int> Kr_models;
   PArray<MonotCubicInterpolator> CP_s_interps;
-  bool is_initialized;
+  bool interps_built;
+
+  int rock_mgr_ID;
 };
 
 #endif

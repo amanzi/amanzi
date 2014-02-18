@@ -12,7 +12,8 @@ set(CXX_header_files Property.H
                      Material.H
                      MatFiller.H
                      MatFiller_F.H
-                     RockManager.H)
+                     RockManager.H
+                     RockManager_F.H)
 
 set(CXX_source_files Property.cpp
                      Material.cpp
@@ -78,6 +79,7 @@ if (BUILD_TESTS)
 
   set(tpl_libs)
 
+
   add_amanzi_test(MaterialIDFiller tMIDf
                   KIND unit
                   SOURCE test/tMIDf.cpp
@@ -91,6 +93,12 @@ if (BUILD_TESTS)
   add_amanzi_test(RockManager tRM "tMIDf_RM.in"
                   KIND unit
                   SOURCE test/tRM.cpp
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+
+  include_directories(${SMATERIALS_SOURCE_DIR}/test) 
+  add_amanzi_test(RockManager_fort tRM_fort "tMIDf_RM.in"
+                  KIND unit
+                  SOURCE test/tRM_fort.cpp test/tRM_fort_${AMANZI_SPACEDIM}D.F
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   add_amanzi_test(MaterialPropertyFiller tMatFiller
