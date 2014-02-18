@@ -141,25 +141,26 @@ main (int   argc,
 		       ds.dataPtr(), ARLIM(ds.loVect()), ARLIM(ds.hiVect()));
   }
 
-#if 0
-  VisMF::Write(sat,"s");
-  VisMF::Write(pc,"p");
-  VisMF::Write(dsdp,"dsdp");
-  VisMF::Write(c,"c");
-  VisMF::Write(kr,"k");
-
   MultiFab::Subtract(pc2,pc1,0,0,1,nGrow);
-  VisMF::Write(pc2,"pc2");
+  Real diff_pc = pc2.norm0(0);
 
   MultiFab::Subtract(sat2,sat,0,0,1,nGrow);
-  VisMF::Write(sat2,"sat2");
+  Real diff_sat = sat2.norm0(0);
 
   MultiFab::Subtract(kr2,kr,0,0,1,nGrow);
-  VisMF::Write(kr2,"kr2");
+  Real diff_kr = kr2.norm0(0);
 
   MultiFab::Subtract(dsdp2,dsdp,0,0,1,nGrow);
-  VisMF::Write(dsdp2,"dsdp2");
-#endif
+  Real diff_dsdp = dsdp2.norm0(0);
 
-  return 0;
+  Real max_diff = 1.e-12;
+  bool fail = ( (   diff_pc > max_diff) ||
+                (  diff_sat > max_diff) ||
+                (   diff_kr > max_diff) ||
+                ( diff_dsdp > max_diff) );
+  if (fail) {
+    BoxLib::Abort();
+  }
+
+  return 1;
 }
