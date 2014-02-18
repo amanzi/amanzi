@@ -5,7 +5,7 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ****************************************************************
-* Calculates hydraulic head usin (p - p0) / (rho * g)
+* Calculates hydraulic head using h = z + (p - p0) / (rho * g)
 **************************************************************** */
 void aux_compute_hydraulic_head(
     Epetra_MultiVector& hydraulic_head, double p_atm, const Epetra_MultiVector& pressure, 

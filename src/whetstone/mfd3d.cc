@@ -352,6 +352,9 @@ int MFD3D::StabilityMMatrix_(
   int izrow[mx + 1], iypos[m12 + 1], itrs;
   itrs = SimplexFindFeasibleSolution_(T, m1, m2, 0, izrow, iypos);
   if (itrs < 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+  if (fabs(T(m12 + 1, 0)) > 1e-8) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
   simplex_functional_ = T(0,0); 
   simplex_num_itrs_ = itrs; 
 
@@ -518,22 +521,27 @@ void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
 {
   int m = T.NumRows() - 2;
   int n = T.NumCols() - 1;
-  double qmin, q, qp, q0, tmp;
+  double qmin, q, qp, q0, tmin, tmp;
   double tol = WHETSTONE_SIMPLEX_TOLERANCE * n;
 
   *ip = 0;
   for (int i = 1; i < m + 1; i++) {
     tmp = T(i, kp);
     if (tmp < -tol) {
-      q = -T(i, 0) / tmp;
+      // Round-off errors may generate small but negative RHS, so that 
+      // we take its absolute value
+      q = -fabs(T(i, 0)) / tmp;
 
       if (*ip == 0) {
         *ip = i;
         qmin = q;
+        tmin = tmp;
       } else if (q < qmin) {
         *ip = i;
         qmin = q;
+        tmin = tmp;
       } else if (q == qmin) {  // we have a degeneracy.
+#ifdef WHETSTONE_SIMPLEX_PIVOT_BRANDT
         double tmp0 = T(*ip, kp);
         for (int k = 1; k <= n; k++) {
           qp = -T(*ip, k) / tmp0;
@@ -541,6 +549,14 @@ void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
           if (q0 != qp) break;
         }
         if (q0 < qp) *ip = i;
+#endif
+
+#ifdef WHETSTONE_SIMPLEX_PIVOT_MFD3D
+        if (tmp < tmin) {
+          *ip = i;
+          tmin = tmp;
+        }
+#endif
       }
     }
   }
@@ -548,7 +564,7 @@ void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
 
 
 /* ******************************************************************
-* Exchanges lenf-hand and rihgt-hand variables.
+* Exchanges left-hand and right-hand variables.
 ****************************************************************** */
 void MFD3D::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
 {

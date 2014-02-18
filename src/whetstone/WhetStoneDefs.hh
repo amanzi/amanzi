@@ -39,6 +39,9 @@ const double WHETSTONE_SIMPLEX_UNBOUNDED_PROBLEM = -3;
 const int WHETSTONE_SIMPLEX_FUNCTIONAL_SUMALL = 1;
 const int WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE = 2;
 
+#undef WHETSTONE_SIMPLEX_PIVOT_BRANDT  // select pivot rule
+#define WHETSTONE_SIMPLEX_PIVOT_MFD3D
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

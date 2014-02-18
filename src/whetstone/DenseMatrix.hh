@@ -96,7 +96,7 @@ class DenseMatrix {
   void PrintMatrix() {
     for (int i = 0; i < m_; i++) {
       for (int j = 0; j < n_; j++) {
-        printf("12.5f", *(data_ + j * m_ + i));
+        printf("%12.5f", *(data_ + j * m_ + i));
       }
       printf("\n");
     }
