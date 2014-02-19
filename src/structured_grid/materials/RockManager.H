@@ -116,6 +116,11 @@ public:
                             int              nGrow);
 
   int ID() const {return rock_mgr_ID;}
+  /*
+    Number of components for this property
+   */
+  int NComp(const std::string& property_name) const;
+
 protected:
   void Initialize(const Array<Geometry>& geomArray,
                   const Array<IntVect>&  refRatio);

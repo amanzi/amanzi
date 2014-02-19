@@ -356,7 +356,6 @@ int  PorousMedia::richard_pressure_maxorder;
 bool PorousMedia::richard_scale_solution_before_solve;
 bool PorousMedia::richard_semi_analytic_J;
 bool PorousMedia::richard_centered_diff_J;
-bool PorousMedia::richard_subgrid_krel;
 Real PorousMedia::richard_variable_switch_saturation_threshold;
 Real PorousMedia::richard_dt_thresh_pure_steady;
 
@@ -706,7 +705,6 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_scale_solution_before_solve = true;
   PorousMedia::richard_semi_analytic_J = false;
   PorousMedia::richard_centered_diff_J = true;
-  PorousMedia::richard_subgrid_krel = false;
   PorousMedia::richard_variable_switch_saturation_threshold = -1;
   PorousMedia::richard_dt_thresh_pure_steady = -1;
 
@@ -1089,6 +1087,47 @@ PorousMedia::read_rock()
       && ( user_specified_molecular_diffusion_coefficient || user_specified_dispersivity);
     tensor_tracer_diffusion = diffuse_tracers && user_specified_dispersivity;
 
+
+
+
+
+static std::string CapillaryPressureName    = "capillary_pressure";
+static std::string PorosityName             = "porosity";
+static std::string PermeabilityName         = "permeability";
+static std::string RelativePermeabilityName = "relative_permeability";
+
+static std::string CP_model_None = "None";
+static std::string CP_model_vG = "VanGenuchten";
+static std::string CP_model_BC = "BrooksCorey";
+
+static std::string Kr_model_None = "None";
+static std::string Kr_model_Mualem = "Mualem";
+static std::string Kr_model_Burdine = "Burdine";
+
+static std::string Kr_model_vG_Mualem  = CP_model_vG + "_" + Kr_model_Mualem;
+static std::string Kr_model_vG_Burdine = CP_model_vG + "_" + Kr_model_Burdine;
+static std::string Kr_model_BC_Mualem  = CP_model_BC + "_" + Kr_model_Mualem;
+static std::string Kr_model_BC_Burdine = CP_model_BC + "_" + Kr_model_Burdine;
+
+static std::map<std::string,int> CP_models;
+static std::map<std::string,int> Kr_models;
+static int CP_cnt = 0;
+CP_models[CP_model_None] = CP_cnt++;
+CP_models[CP_model_vG] = CP_cnt++;
+CP_models[CP_model_BC] = CP_cnt++;
+
+static int Kr_cnt = 0;
+Kr_models[Kr_model_None] = Kr_cnt++;
+Kr_models[Kr_model_vG_Mualem] = Kr_cnt++;
+Kr_models[Kr_model_vG_Burdine] = Kr_cnt++;
+Kr_models[Kr_model_BC_Mualem] = Kr_cnt++;
+Kr_models[Kr_model_BC_Burdine] = Kr_cnt++;
+
+static int MAX_CPL_PARAMS = 6; // Must be set to accommodate the model with the most parameters
+
+
+
+
     for (int i = 0; i<nrock; i++)
     {
         const std::string& rname = r_names[i];
@@ -1229,34 +1268,125 @@ PorousMedia::read_rock()
 	for (int j=0;j<BL_SPACEDIM-1;j++) rpermeability[j] = rhpvals[0];
 	// rpermeability will always be of size BL_SPACEDIM
 
-        // relative permeability: include kr_coef, sat_residual
-        int rkrType = 0;  ppr.query("kr_type",rkrType);
-        Array<Real> rkrParam;
-        if (rkrType > 0) {
-            ppr.getarr("kr_param",rkrParam,0,ppr.countval("kr_param"));
-        }
 
-        Array<Real> krPt(rkrParam.size()+1);
-        krPt[0] = Real(rkrType);
-        for (int j=0; j<rkrParam.size(); ++j) {
-          krPt[j+1] = rkrParam[j];
+
+
+        // capillary pressure: include cpl_coef, residual_saturation, sigma
+        const std::string cpl_prefix(prefix+".cpl");
+        ParmParse pp_cpl(cpl_prefix.c_str());
+        std::string cpl_model; pp_cpl.get("type",cpl_model); 
+        std::map<std::string,int>::const_iterator it = CP_models.find(cpl_model);
+        int rcplType = -1;
+        int rKrType = -1;
+
+        Array<Real> rcplParam(MAX_CPL_PARAMS);
+
+        if (it != CP_models.end()) {
+          rcplType = it->second;
+          
+          bool is_vG = (rcplType == CP_models[CP_model_vG]);
+          bool is_BC = (rcplType == CP_models[CP_model_BC]);
+
+          if (rcplType == CP_models[CP_model_None]) {
+            rKrType = Kr_models[Kr_model_None];
+          }
+          else if (is_vG || is_BC)
+          {
+            Real m, lambda;
+            if (is_vG) {
+              pp_cpl.get("m",m);
+              if (m <= 0) {
+                if (ParallelDescriptor::IOProcessor()) {
+                  std::cerr << "Invalid m (= " << m << " ) for Capillary Pressure model in material: \"" 
+                            << rname << "\"" << std::endl;
+                } BoxLib::Abort();
+              }
+            } else {
+              pp_cpl.get("lambda",lambda);
+              if (lambda <= 0) {
+                if (ParallelDescriptor::IOProcessor()) {
+                  std::cerr << "Invalid lambda (= " << lambda << " ) for Capillary Pressure model in material: \""
+                            << rname << "\"" << std::endl;
+                } BoxLib::Abort();
+              }
+            }          
+            Real Sr; pp_cpl.get("Sr",Sr);
+            if (Sr < 0 || Sr > 1) {
+              if (ParallelDescriptor::IOProcessor()) {
+                std::cerr << "Invalid Sr (= " << Sr << " ) for Capillary Pressure model in material: \""
+                          << rname << "\"" << std::endl;
+              } BoxLib::Abort();
+            }
+            
+            Real alpha; pp_cpl.get("alpha",alpha);
+            if (alpha < 0 ) {
+              if (ParallelDescriptor::IOProcessor()) {
+                std::cerr << "Invalid alpha (= " << m << " ) for Capillary Pressure model in material: \""
+                          << rname << "\"" << std::endl;
+              } BoxLib::Abort();
+            }
+
+            Real Kr_ell; ppr.get("Kr_ell",Kr_ell);
+            std::string Kr_model; ppr.get("Kr_model", Kr_model);
+            std::string Kr_full_model_name = cpl_model + "_" + Kr_model;
+            std::map<std::string,int>::const_iterator itKr = Kr_models.find(Kr_full_model_name);
+            if (it != Kr_models.end()) {
+              rKrType = itKr->second;
+            }
+            else {
+              if (ParallelDescriptor::IOProcessor()) {
+                std::cerr << "Invalid Kr model (= \"" << Kr_model
+                          << "\") for Relative Permeability with Capillary Pressure model (\"" << cpl_model
+                          << "\") in material: \"" << rname << "\""<< std::endl;
+              } BoxLib::Abort();
+            }
+
+#define OLDSTYLE
+#ifdef OLDSTYLE
+            // Temporary hack
+            rcplParam.resize(5);
+            rcplParam[0] = 3;
+            rcplParam[1] = m;
+            rcplParam[2] = alpha;
+            rcplParam[3] = Sr;
+#else
+            // Finally, load array of Real numbers for this model
+            rcplParam[CPL_MODEL_ID] = (Real)rcplType;
+            if (is_vG) {
+              rcplParam[VG_M]     = m;
+              rcplParam[VG_ALPHA] = alpha;
+              rcplParam[VG_SR]    = Sr;
+              rcplParam[VG_ELL]   = Kr_ell;
+              rcplParam[VG_KR_MODEL_ID]  = (Real)rKrType;
+            }
+            else {
+              rcplParam[BC_LAMBDA] = lambda;
+              rcplParam[BC_ALPHA]  = alpha;
+              rcplParam[BC_SR]     = Sr;
+              rcplParam[BC_ELL]    = Kr_ell;
+              rcplParam[BC_KR_MODEL_ID]  = (Real)rKrType;
+            }
+#endif
+          }
+          else {
+            if (ParallelDescriptor::IOProcessor()) {
+              std::cerr << "Unknown capillary pressure (" << cpl_model << ") model for " << rname << std::endl;
+            }
+          }
         }
+        
+        Property* cpl_func = new ConstantProperty(CapillaryPressureName,rcplParam,arith_crsn,pc_refine);
+
+#ifdef OLDSTYLE
+        // Temporary hack
+        Array<Real> krPt(4);
+        krPt[0] = 3;
+        krPt[1] = rcplParam[1];
+        krPt[2] = rcplParam[3];
         std::string krel_str = "relative_permeability";
         Property* krel_func = new ConstantProperty(krel_str,krPt,arith_crsn,pc_refine);
+#endif
 
-        // capillary pressure: include cpl_coef, sat_residual, sigma
-        int rcplType = 0;  ppr.query("cpl_type", rcplType);
-        Array<Real> rcplParam;
-        if (rcplType > 0) {
-            ppr.getarr("cpl_param",rcplParam,0,ppr.countval("cpl_param"));
-        }
-        Array<Real> cplPt(rcplParam.size()+1);
-        cplPt[0] = Real(rcplType);
-        for (int j=0; j<rcplParam.size(); ++j) {
-          cplPt[j+1] = rcplParam[j];
-        }
-        std::string cpl_str = "capillary_pressure";
-        Property* cpl_func = new ConstantProperty(cpl_str,cplPt,arith_crsn,pc_refine);
 
         Array<std::string> region_names;
         ppr.getarr("regions",region_names,0,ppr.countval("regions"));
@@ -1647,7 +1777,6 @@ void PorousMedia::read_prob()
   pb.query("richard_scale_solution_before_solve",richard_scale_solution_before_solve);
   pb.query("richard_semi_analytic_J",richard_semi_analytic_J);
   pb.query("richard_centered_diff_J",richard_centered_diff_J);
-  pb.query("richard_subgrid_krel",richard_subgrid_krel);
   pb.query("richard_variable_switch_saturation_threshold",richard_variable_switch_saturation_threshold);
   richard_dt_thresh_pure_steady = 0.99*steady_init_time_step;
   pb.query("richard_dt_thresh_pure_steady",richard_dt_thresh_pure_steady);
@@ -2372,7 +2501,6 @@ void  PorousMedia::read_tracer()
               tbc_array[i].resize(n_tbc+2*BL_SPACEDIM,PArrayManage);
 
               // Explicitly build default BCs
-	      const RegionManager* region_manager = PMAmr::RegionManagerPtr();
               int tbc_cnt = 0;
               for (int n=0; n<BL_SPACEDIM; ++n) {
                 tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n] + "_DEFAULT",
@@ -2837,7 +2965,6 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read tracers."<< std::endl;
 
-  // rock
   read_rock();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read rock."<< std::endl;

@@ -25,6 +25,7 @@ std::map<std::string,EventCoord::Event*> PMAmr::defined_events;
 bool PMAmr::do_output_time_in_years;
 bool PMAmr::attempt_to_recover_failed_step;
 RegionManager* PMAmr::region_manager = 0;
+RockManager* PMAmr::rock_manager = 0;
 
 void
 PMAmr::CleanupStatics ()
@@ -85,6 +86,7 @@ PMAmr::~PMAmr()
 
   delete materialFiller; materialFiller = 0;
   delete region_manager; region_manager = 0;
+  delete rock_manager; rock_manager = 0;
 }
 
 void 
@@ -232,6 +234,7 @@ PMAmr::init (Real t_start,
              Real t_stop)
 {
   SetUpMaterialServer();
+  SetUpRockManager();
   InitializeControlEvents();
 
   if (!restart_chkfile.empty() && restart_chkfile != "init") {
@@ -690,6 +693,23 @@ PMAmr::SetUpMaterialServer()
     materialFiller = new MatFiller(geom,refRatio(),materials);
     if (ParallelDescriptor::IOProcessor() && verbose>0) {
       std::cout << "....MaterialFiller object built" << std::endl;
+    }
+  }
+}
+
+void
+PMAmr::SetUpRockManager()
+{
+  if (rock_manager == 0) {
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "Building Rock Manager..." << std::endl;
+    }
+
+    if (region_manager == 0) region_manager = new RegionManager();
+    rock_manager = new RockManager(region_manager,geom,refRatio());
+
+    if (ParallelDescriptor::IOProcessor() && verbose>0) {
+      std::cout << "....Rock Manager built" << std::endl;
     }
   }
 }

@@ -1483,7 +1483,6 @@ PorousMedia::BuildNLScontrolData(NLScontrol&        nlsc,
   rs_data.upwind_krel = richard_upwind_krel;
   rs_data.pressure_maxorder = richard_pressure_maxorder;
   rs_data.semi_analytic_J = richard_semi_analytic_J;
-  rs_data.subgrid_krel = richard_subgrid_krel;
   rs_data.variable_switch_saturation_threshold = richard_variable_switch_saturation_threshold;
 
   nlsc.max_ls_iterations = richard_max_ls_iterations;
@@ -4073,10 +4072,17 @@ PorousMedia::get_inflow_density(const Orientation& face,
 	ktdat.resize(ccBndBox,BL_SPACEDIM);
 	vdat.resize(ccBndBox,1);
 
-        MatFiller* matFiller = PMParent()->GetMatFiller();
-        matFiller->SetPropertyDirect(t,level,cdat,ccBndBox,"relative_permeability",0);
-        matFiller->SetPropertyDirect(t,level,ktdat,ccBndBox,"permeability",0);
 
+        // FIXME: Pull kr params from database, order as old version expects
+        FArrayBox cp;
+        RockManager* rockMgr = PMParent()->GetRockManager();
+        rockMgr->GetPropertyDirect(t,level,cp,ccBndBox,"capillary_pressure",0);
+        cdat.setVal(0);
+        cdat.setVal((Real)3,0);                // Model ID: old 3 = vG
+        cdat.copy(cp,ccBndBox,1,ccBndBox,1,1); // "m" 
+        cdat.copy(cp,ccBndBox,3,ccBndBox,2,1); // "Sr" 
+        
+        rockMgr->GetPropertyDirect(t,level,ktdat,ccBndBox,"permeability",0);
 	kdat.resize(ccBndBox,1);
 	kdat.copy(ktdat,ccBndBox,face.coordDir(),ccBndBox,0,1);
 
@@ -8611,10 +8617,10 @@ PorousMedia::init_rock_properties ()
   const Real* dx = geom.CellSize();
   const int max_level = parent->maxLevel();
 
-  MatFiller* matFiller = PMParent()->GetMatFiller();
+  RockManager* rockMgr = PMParent()->GetRockManager();
   MultiFab kappatmp(grids,BL_SPACEDIM,nGrowHYP);
-  bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,kappatmp,
-                                    "permeability",0,kappatmp.nGrow());
+  bool ret = rockMgr->GetProperty(state[State_Type].curTime(),level,kappatmp,
+                                  "permeability",0,kappatmp.nGrow());
   if (!ret) BoxLib::Abort("Failed to build permeability");
   
   for (MFIter mfi(kappatmp); mfi.isValid(); ++mfi) {
@@ -8636,8 +8642,8 @@ PorousMedia::init_rock_properties ()
   }
   kappa->mult(1.0/BL_SPACEDIM);
 
-  bool ret1 = matFiller->SetProperty(state[State_Type].curTime(),level,*rock_phi,
-                                     "porosity",0,rock_phi->nGrow());
+  bool ret1 = rockMgr->GetProperty(state[State_Type].curTime(),level,*rock_phi,
+                                   "porosity",0,rock_phi->nGrow());
   if (!ret1) BoxLib::Abort("Failed to build porosity");
 
   if ( (model != PM_SINGLE_PHASE)
@@ -8646,20 +8652,28 @@ PorousMedia::init_rock_properties ()
        && (model != PM_SATURATED) ) {
 
     // FIXME: Fix up covered cells, averaged kr params make no sense
+    MultiFab pcParams(grids,rockMgr->NComp("capillary_pressure"),kr_coef->nGrow());
     bool ignore_mixed = true;
-    bool retKr = matFiller->SetProperty(state[State_Type].curTime(),level,*kr_coef,
-                                        "relative_permeability",0,kr_coef->nGrow(),0,ignore_mixed);
-    if (!retKr) BoxLib::Abort("Failed to build relative_permeability");
+    bool retKr = rockMgr->GetProperty(state[State_Type].curTime(),level,pcParams,
+                                      "capillary_pressure",0,kr_coef->nGrow(),0,ignore_mixed);
+    if (!retKr) BoxLib::Abort("capillary_pressure");
+    kr_coef->setVal(3.0,0,1,kr_coef->nGrow());
+    MultiFab::Copy(*kr_coef,pcParams,1,1,1,kr_coef->nGrow()); // "m"
+    MultiFab::Copy(*kr_coef,pcParams,3,2,1,kr_coef->nGrow()); // "Sr"
 
     // FIXME: Fix up covered cells, averaged cpl params make no sense
-    bool retCpl = matFiller->SetProperty(state[State_Type].curTime(),level,*cpl_coef,
-                                         "capillary_pressure",0,cpl_coef->nGrow(),0,ignore_mixed);
-    if (!retCpl) BoxLib::Abort("Failed to build capillary_pressure");
+    //bool retCpl = rockMgr->GetProperty(state[State_Type].curTime(),level,*cpl_coef,
+    //                                   "capillary_pressure",0,cpl_coef->nGrow(),0,ignore_mixed);
+    //if (!retCpl) BoxLib::Abort("Failed to build capillary_pressure");
+    cpl_coef->setVal(3.0,0,1,kr_coef->nGrow());
+    MultiFab::Copy(*cpl_coef,pcParams,1,1,1,kr_coef->nGrow()); // "m"
+    MultiFab::Copy(*cpl_coef,pcParams,2,2,1,kr_coef->nGrow()); // "sigma" ("alpha")
+    MultiFab::Copy(*cpl_coef,pcParams,3,3,1,kr_coef->nGrow()); // "Sr"
   }
 
   if (model == PM_SATURATED) {
-    bool retSs = matFiller->SetProperty(state[State_Type].curTime(),level,*specific_storage,
-                                        "specific_storage",0,specific_storage->nGrow());
+    bool retSs = rockMgr->GetProperty(state[State_Type].curTime(),level,*specific_storage,
+                                      "specific_storage",0,specific_storage->nGrow());
     if (!retSs) BoxLib::Abort("Failed to build specific_storage");
   }
 }
@@ -10823,11 +10837,11 @@ PorousMedia::calcDiffusivity (const Real time,
 
       BL_ASSERT(dComp_tracs + num_tracs <= diff_cc->nComp());
 
-      MatFiller* matFiller = PMParent()->GetMatFiller();
-      bool retD = matFiller->SetProperty(time,level,*diff_cc,"molecular_diffusion_coefficient",dComp_tracs,nGrow);
+      RockManager* rockMgr = PMParent()->GetRockManager();
+      bool retD = rockMgr->GetProperty(time,level,*diff_cc,"molecular_diffusion_coefficient",dComp_tracs,nGrow);
 
       MultiFab tau(grids,1,nGrow);
-      bool retT = matFiller->SetProperty(time,level,tau,"tortuosity",0,nGrow);
+      bool retT = rockMgr->GetProperty(time,level,tau,"tortuosity",0,nGrow);
 
       if (!retD || !retT) {
         diff_cc->setVal(0,dComp_tracs,num_tracs,nGrow);
@@ -10897,9 +10911,9 @@ PorousMedia::getTensorDiffusivity (MultiFab*  diagonal_diffusivity[BL_SPACEDIM],
   int first_tracer = ncomps;
   getDiffusivity(diagonal_diffusivity,time,first_tracer,0,1);
 
-  MatFiller* matFiller = PMParent()->GetMatFiller();
+  RockManager* rockMgr = PMParent()->GetRockManager();
   std::string pName = "dispersivity";
-  int nCompAlpha = matFiller->nComp(pName);
+  int nCompAlpha = rockMgr->NComp(pName);
   if (nCompAlpha < 1) {
     for (int d=0; d<BL_SPACEDIM; ++d) {
       (*off_diagonal_diffusivity[d]).setVal(0);
@@ -10907,8 +10921,8 @@ PorousMedia::getTensorDiffusivity (MultiFab*  diagonal_diffusivity[BL_SPACEDIM],
     return;
   }
   MultiFab alpha(grids,nCompAlpha,1); // FIXME: This actually never changes
-  bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,alpha,
-                                    pName,0,alpha.nGrow());
+  bool ret = rockMgr->GetProperty(state[State_Type].curTime(),level,alpha,
+                                  pName,0,alpha.nGrow());
   BL_ASSERT(ret);
 
   const MultiFab* u_macG = (whichTime == AmrOldTime) ? u_macG_prev : u_macG_curr;
@@ -12290,10 +12304,16 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
             ktdat.resize(subbox,BL_SPACEDIM);
             kpdat.resize(subbox,1);
 
-            MatFiller* matFiller = PMParent()->GetMatFiller();
-            matFiller->SetPropertyDirect(time,level,cpldat,subbox,"capillary_pressure",0);
-            matFiller->SetPropertyDirect(time,level,ktdat,subbox,"permeability",0);
-            matFiller->SetPropertyDirect(time,level,phidat,subbox,"porosity",0);
+            FArrayBox cp;
+            RockManager* rockMgr = PMParent()->GetRockManager();
+            rockMgr->GetPropertyDirect(time,level,cp,subbox,"capillary_pressure",0);
+            cpldat.setVal(0);
+            cpldat.setVal((Real)3,0);            // Model ID: old 3 = vG
+            cpldat.copy(cp,subbox,1,subbox,1,1); // "m" 
+            cpldat.copy(cp,subbox,3,subbox,2,1); // "Sr" 
+
+            rockMgr->GetPropertyDirect(time,level,ktdat,subbox,"permeability",0);
+            rockMgr->GetPropertyDirect(time,level,phidat,subbox,"porosity",0);
 
             kpdat.copy(ktdat,subbox,it->first.coordDir(),subbox,0,1);
             calcCapillary(prdat,sdat,phidat,kpdat,cpldat,subbox,bc);
@@ -12668,14 +12688,14 @@ PorousMedia::derive_Intrinsic_Permeability(Real      time,
                                            int       dcomp,
                                            int       dir)
 {
-    MatFiller* matFiller = PMParent()->GetMatFiller();
-    MultiFab kappatmp(grids,BL_SPACEDIM,0);
-    bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,kappatmp,
-                                      "permeability",0,mf.nGrow());
-    if (!ret) BoxLib::Abort("Failed to build permeability");
-    MultiFab::Copy(mf,kappatmp,dir,dcomp,1,0);
-    // Return values in mks
-    mf.mult(1/BL_ONEATM,dcomp,1,0);
+  RockManager* rockMgr = PMParent()->GetRockManager();
+  MultiFab kappatmp(grids,BL_SPACEDIM,0);
+  bool ret = rockMgr->GetProperty(state[State_Type].curTime(),level,kappatmp,
+                                  "permeability",0,mf.nGrow());
+  if (!ret) BoxLib::Abort("Failed to build permeability");
+  MultiFab::Copy(mf,kappatmp,dir,dcomp,1,0);
+  // Return values in mks
+  mf.mult(1/BL_ONEATM,dcomp,1,0);
 }
 
 void
@@ -12683,14 +12703,14 @@ PorousMedia::derive_Molecular_Diffusion_Coefficient(Real      time,
                                                     MultiFab& mf,
                                                     int       dcomp)
 {
-    MatFiller* matFiller = PMParent()->GetMatFiller();
-    bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,mf,
-                                      "molecular_diffusion_coefficient",dcomp,mf.nGrow());
-    if (!ret) {
-      // Assume one component, return def
-      Real molecular_diffusion_coefficient_DEF = 0;
-      mf.setVal(molecular_diffusion_coefficient_DEF,dcomp,1);
-    }
+  RockManager* rockMgr = PMParent()->GetRockManager();
+  bool ret = rockMgr->GetProperty(state[State_Type].curTime(),level,mf,
+                                  "molecular_diffusion_coefficient",dcomp,mf.nGrow());
+  if (!ret) {
+    // Assume one component, return def
+    Real molecular_diffusion_coefficient_DEF = 0;
+    mf.setVal(molecular_diffusion_coefficient_DEF,dcomp,1);
+  }
 }
 
 void
@@ -12698,14 +12718,14 @@ PorousMedia::derive_Tortuosity(Real      time,
                                MultiFab& mf,
                                int       dcomp)
 {
-    MatFiller* matFiller = PMParent()->GetMatFiller();
-    bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,mf,
-                                      "tortuosity",dcomp,mf.nGrow());
-    if (!ret) {
-      // Assume one component, return def
-      Real tortuosity_DEF = 1;
-      mf.setVal(tortuosity_DEF,dcomp,1);
-    }
+  RockManager* rockMgr = PMParent()->GetRockManager();
+  bool ret = rockMgr->GetProperty(state[State_Type].curTime(),level,mf,
+                                  "tortuosity",dcomp,mf.nGrow());
+  if (!ret) {
+    // Assume one component, return def
+    Real tortuosity_DEF = 1;
+    mf.setVal(tortuosity_DEF,dcomp,1);
+  }
 }
 
 void
@@ -12713,14 +12733,14 @@ PorousMedia::derive_SpecificStorage(Real      time,
                                     MultiFab& mf,
                                     int       dcomp)
 {
-    MatFiller* matFiller = PMParent()->GetMatFiller();
-    bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,mf,
-                                      "specific_storage",dcomp,mf.nGrow());
-    if (!ret) {
-      // Assume one component, return def
-      Real specific_storage_DEF = 0;
-      mf.setVal(specific_storage_DEF,dcomp,1);
-    }
+  RockManager* rockMgr = PMParent()->GetRockManager();
+  bool ret = rockMgr->GetProperty(state[State_Type].curTime(),level,mf,
+                                  "specific_storage",dcomp,mf.nGrow());
+  if (!ret) {
+    // Assume one component, return def
+    Real specific_storage_DEF = 0;
+    mf.setVal(specific_storage_DEF,dcomp,1);
+  }
 }
 
 void
@@ -12729,20 +12749,20 @@ PorousMedia::derive_Dispersivity(Real      time,
                                  int       dcomp,
                                  int       dir)
 {
-    MatFiller* matFiller = PMParent()->GetMatFiller();
-    std::string name = (dir == 0  ? "Dispersivity_L" : "Dispersivity_T" );
-    std::string pName = "dispersivity";
-    int nComp = matFiller->nComp(pName);
-    if (nComp > 0) {
-      MultiFab dtmp(grids,nComp,0);
-      bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,dtmp,
-                                        "dispersivity",0,mf.nGrow());
-      MultiFab::Copy(mf,dtmp,dir,dcomp,1,0);
-    } else {
-      // Assume one component, return def
-      Real dispersivity_DEF = 0;
-      mf.setVal(dispersivity_DEF,dcomp,1);
-    }
+  RockManager* rockMgr = PMParent()->GetRockManager();
+  std::string name = (dir == 0  ? "Dispersivity_L" : "Dispersivity_T" );
+  std::string pName = "dispersivity";
+  int nComp = rockMgr->NComp(pName);
+  if (nComp > 0) {
+    MultiFab dtmp(grids,nComp,0);
+    bool ret = rockMgr->GetProperty(state[State_Type].curTime(),level,dtmp,
+                                    "dispersivity",0,mf.nGrow());
+    MultiFab::Copy(mf,dtmp,dir,dcomp,1,0);
+  } else {
+    // Assume one component, return def
+    Real dispersivity_DEF = 0;
+    mf.setVal(dispersivity_DEF,dcomp,1);
+  }
 }
 
 MultiFab*
@@ -12778,7 +12798,7 @@ PorousMedia::derive (const std::string& name,
                      int                dcomp)
 {
   const DeriveRec* rec = derive_lst.get(name);
-  MatFiller* matFiller = PMParent()->GetMatFiller();
+  RockManager* rockMgr = PMParent()->GetRockManager();
 
   bool not_found_yet = false;
 
@@ -12816,7 +12836,7 @@ PorousMedia::derive (const std::string& name,
   else if (name=="Porosity") {
     derive_Porosity(time,mf,dcomp);
   }
-  else if (matFiller && matFiller->Initialized())
+  else if (rockMgr)
   {
     if (name == "Intrinsic_Permeability_X" ||
         name == "Intrinsic_Permeability_Y" ||

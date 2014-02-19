@@ -1465,27 +1465,20 @@ namespace Amanzi {
                 rsublist.set("specific_storage",ssublist);
               }
               else if (rlabel=="Capillary Pressure: van Genuchten") {
-                int cpl_type = 3;
-                rsublist.set("cpl_type",cpl_type);
-                            
                 double alpha = rsslist.get<double>("alpha");
-                            
-                Array<double> array_c(4);
-                array_c[1] = alpha*1.01325e5; // convert Pa^-1 to atm^-1 
-                array_c[0] = rsslist.get<double>("m");
-                array_c[2] = rsslist.get<double>("Sr");
-                array_c[3] = 0.0;                  
-                rsublist.set("cpl_param",array_c);
+                ParameterList cpl_pl;
+                cpl_pl.set("type","VanGenuchten");
+                cpl_pl.set("m",rsslist.get<double>("m"));
+                cpl_pl.set("Sr",rsslist.get<double>("Sr"));
+                cpl_pl.set("alpha",alpha*1.01325e5); // convert Pa^-1 to atm^-1 
+                rsublist.set("cpl",cpl_pl);
                 mtest["Capillary_Pressure"] = true;
 
                 std::string krType = rsslist.get<std::string>("Relative Permeability");
                 if (krType=="Mualem") {
-                  Array<double> array_k(3);
-                  array_k[0] = array_c[0];
-                  array_k[1] = array_c[2];
-                  array_k[2] = array_c[3];
-                  rsublist.set("kr_type",cpl_type);
-                  rsublist.set("kr_param",array_k);
+                  rsublist.set("Kr_model",krType);
+                  double Kr_ell = 0.5; // Default
+                  rsublist.set("Kr_ell",Kr_ell);
                   mtest["Relative_Permeability"] = true;
                 }
                 else {

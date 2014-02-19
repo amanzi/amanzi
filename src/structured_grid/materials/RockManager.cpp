@@ -75,6 +75,16 @@ extern "C" {
   }
 }
 
+int
+RockManager::NComp(const std::string& property_name) const
+{
+  int nc = 0;
+  if (materialFiller->CanDerive(property_name)) {
+    nc = materialFiller->NComp(property_name);
+  }
+  return nc;
+}
+
 void
 RockManager::BuildInterpolators()
 {
@@ -122,7 +132,7 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
                         const Array<IntVect>&  refRatio)
 {
   is_saturated = false;
-  is_diffusive = true;
+  is_diffusive = false;
   tensor_diffusion = false;
   use_shifted_Kr_eval = false;
   saturation_threshold_for_vg_Kr = 1;
@@ -139,7 +149,7 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
   Kr_models[Kr_model_BC_Mualem] = Kr_cnt++;
   Kr_models[Kr_model_BC_Burdine] = Kr_cnt++;
 
-  ParmParse pp;
+  ParmParse pp("rock");
   int nrock = pp.countval("rock");
   if (nrock <= 0) {
     BoxLib::Abort("At least one rock type must be defined.");

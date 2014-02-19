@@ -105,10 +105,6 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
 
   BuildOpSkel(Jac);
 
-  if (!rs_data.upwind_krel  &&  rs_data.subgrid_krel) {
-    BuildMLPropEval();
-  }
-
   matfdcoloring = 0;
   ierr = SNESCreate(comm,&snes); CHKPETSC(ierr);
   ierr = SNESSetFunction(snes,RhsV,RichardRes_DpDt,(void*)(this)); CHKPETSC(ierr);
@@ -160,99 +156,6 @@ Join(const BoxArray& ba1, const BoxArray& ba2, bool do_simplify = false)
     bl.simplify();
   }
   return BoxArray(bl);
-}
-
-void
-RichardSolver::BuildMLPropEval()
-{
-  BL_ASSERT(!rs_data.upwind_krel  &&  rs_data.subgrid_krel);
-  BoxLib::Abort("RichardSolver::BuildMLPropEval: subgrid_krel not ready for primetime");
-#if 0
-  MatFiller* matFiller = pm_amr.GetMatFiller();
-  bool ret = matFiller != 0 && matFiller->Initialized();
-  if (!ret) {
-    BoxLib::Abort("RichardSolver::BuildMLPropEval: matFiller not ready");
-  }
-
-  Layout& layout = GetLayout();
-  const Array<BoxArray>& gridArray = layout.GridArray();
-  int num_levs_mixed = matFiller->NumLevels();
-
-  state_to_fill.resize(num_levs_mixed);
-  derive_to_fill.resize(num_levs_mixed);
-
-  for (int lev=0; lev<num_levs_mixed; ++lev) {
-    const BoxArray& stf = (lev==0 ? gridArray[0] : state_to_fill[lev]);
-    BoxArray mixed = BoxLib::intersect(matFiller->Mixed(lev),stf);
-    if (mixed.size()>0) {
-      if (lev<num_levs_mixed-1) {
-	state_to_fill[lev+1] = BoxArray(mixed).refine(matFiller->RefRatio(lev));
-	BoxList bl(state_to_fill[lev+1]); bl.simplify(); state_to_fill[lev+1] = BoxArray(bl);
-      }
-      state_to_fill[lev] = ComplementIn(mixed,state_to_fill[lev],true);
-    }
-  }
-
-  for (int lev=0; lev<num_levs_mixed; ++lev) {
-    if (lev==0) {
-      derive_to_fill[lev] = matFiller->Mixed(lev);
-    }
-    if (lev<num_levs_mixed-1) {
-      derive_to_fill[lev] = Join(derive_to_fill[lev],matFiller->Mixed(lev),true);
-    }
-    if (lev>0) {
-      derive_to_fill[lev] = Join(derive_to_fill[lev],
-				 BoxArray(matFiller->Mixed(lev-1)).refine(matFiller->RefRatio(lev-1)),true);
-    }
-    derive_to_fill[lev].removeOverlap();
-  }
-
-  for (int lev=0; lev<num_levs_mixed; ++lev) {
-    int mg = pm_amr.maxGridSize(lev);
-    if (state_to_fill[lev].size()>0) {
-      state_to_fill[lev].maxSize(mg);
-    }
-    if (derive_to_fill[lev].size()>0) {
-      derive_to_fill[lev].maxSize(mg);
-    }
-  }
-
-  int num_fill = state_to_fill.size();
-  phif.resize(num_fill,PArrayManage);
-  pcPf.resize(num_fill,PArrayManage);
-  kf.resize(num_fill,PArrayManage);
-  krf.resize(num_fill,PArrayManage);
-  pf.resize(num_fill,PArrayManage);
-  lf.resize(num_fill,PArrayManage);
-
-  for (int lev=1; lev<num_fill; ++lev) {
-    const BoxArray& stff = state_to_fill[lev];
-    if (stff.size()>0) {
-      int ncPhi = matFiller->nComp("porosity");
-      phif.set(lev, new MultiFab(stff,ncPhi,0));
-
-      int ncPcP = matFiller->nComp("capillary_pressure");
-      pcPf.set(lev, new MultiFab(stff,ncPcP,0));
-
-      int ncK = matFiller->nComp("permeability");
-      kf.set(lev, new MultiFab(stff,ncK,0));
-
-      int ncKr = matFiller->nComp("relative_permeability");
-      krf.set(lev, new MultiFab(stff,ncKr,0));
-
-      pf.set(lev, new MultiFab(stff,1,0));
-      lf.set(lev, new MultiFab(stff,1,0));
-    }
-  }
-
-  int num_derive = derive_to_fill.size();
-  lc.resize(num_derive,PArrayManage);
-  for (int lev=0; lev<num_derive; ++lev) {
-    if (derive_to_fill[lev].size()>0) {
-      lc.set(lev,new MultiFab(derive_to_fill[lev],BL_SPACEDIM,0));
-    }
-  }
-#endif
 }
 
 #undef __FUNCT__
@@ -1414,82 +1317,6 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
 	}
       }
       
-      if (rs_data.subgrid_krel) {
-	BoxLib::Abort("Subgrid Krel not ready for primetime");
-#if 0
-	const Array<IntVect>& refRatio = layout.RefRatio();
-	const Array<BoxArray>& gridArray = layout.GridArray();
-	const Array<Geometry>& geomArray = layout.GeomArray();
-	MatFiller* matFiller = pm_amr.GetMatFiller();
-	bool ret = matFiller != 0 && matFiller->Initialized();
-	if (!ret) {
-	  BoxLib::Abort("RichardSolver:: matFiller not ready");
-	}
-	int num_levs_mixed = matFiller->NumLevels();
-	int num_fill = state_to_fill.size();
-	
-	for (int lev=1; lev<num_fill; ++lev) {
-	  if (state_to_fill[lev].size()>0) {
-	    
-	    pm[lev].FillCoarsePatch(pf[lev],0,t,Press_Type,0,1);
-	    pf[lev].mult(-1);
-	    
-	    FArrayBox rsf;
-	    for (MFIter mfi(pf[lev]); mfi.isValid(); ++mfi) {
-	      FArrayBox&         lamf = lf[lev][mfi];
-	      const FArrayBox&   pfab = pf[lev][mfi];
-	      const FArrayBox& phifab = phif[lev][mfi];
-	      const FArrayBox&   kfab = kf[lev][mfi];
-	      const FArrayBox& pcPfab = pcPf[lev][mfi];
-	      const FArrayBox&  krfab = krf[lev][mfi];
-	      int ncKr  = krfab.nComp();
-	      int ncPcP = pcPfab.nComp();
-	      rsf.resize(pfab.box(),1);
-	      
-	      PorousMedia::calcInvCapillary(rsf, pfab, phifab, kfab, pcPfab);
-	      PorousMedia::calcLambda(lamf, rsf, krfab);
-	    }
-	  }
-	}
-	
-	// Average down, insert into CoeffCC
-	int num_derive = derive_to_fill.size();
-	for (int lev=num_derive-2; lev>=0; --lev) {
-	  if (derive_to_fill[lev].size()>0) {
-	    const IntVect& crat = matFiller->RefRatio(lev);
-	    const BoxArray& cba = matFiller->Mixed(lev);
-	    BoxArray fcba = BoxArray(cba).refine(crat);
-	    MultiFab tlc(cba,BL_SPACEDIM,0);
-	    MultiFab tlf(fcba,BL_SPACEDIM,0);
-	    tlf.setVal(-1);
-	    tlf.copy(lf[lev+1],0,0,1);
-	    for (int d=1; d<BL_SPACEDIM; ++d) {
-	      tlf.copy(tlf,0,d,1);
-	    }
-	    if (lev<num_derive-2) {
-	      tlf.copy(lc[lev+1],0,0,BL_SPACEDIM);
-	    }
-	    for (MFIter mfi(tlc); mfi.isValid(); ++mfi) {
-	      const Box& crse_box = mfi.validbox();
-	      const Box fine_box = Box(crse_box).refine(crat);
-	      
-	      matFiller->CoarsenData(tlf[mfi],0,tlc[mfi],crse_box,0,BL_SPACEDIM,crat,
-				     matFiller->coarsenRule("relative_permeability"));
-	    }
-	    lc[lev].copy(tlc,0,0,BL_SPACEDIM);
-	    if (lev>0) {
-	      for (int d=0; d<BL_SPACEDIM; ++d) {
-		lc[lev].copy(lf[lev],0,d,1);
-	      }
-	    }
-	    if (lev<nLevs) {
-	      CoeffCC[lev].copy(lc[lev],0,0,BL_SPACEDIM);
-	    }
-	  }
-	}
-#endif
-      }
-
       // Make sure grow cells are consistent
       for (int lev=0; lev<nLevs; ++lev) {
 	CoeffCC[lev].FillBoundary(0,BL_SPACEDIM);
