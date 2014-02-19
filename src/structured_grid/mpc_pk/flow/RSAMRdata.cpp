@@ -44,16 +44,15 @@ RSAMRdata::PropertyManager::UpdateProperty(Real t)
   if (t!=eval_time) {
     eval_time = t;
 
-    MatFiller* matFiller = property_ctx.matFiller;
-    bool ret = matFiller != 0;
+    RockManager* rockMgr = property_ctx.rockMgr;
+    bool ret = rockMgr != 0;
     if (!ret) BoxLib::Abort("MatFiller not properly constructed");
-    if (! (matFiller->Initialized()) ) BoxLib::Abort("MatFiller not properly constructed");
     int nLevs = property_dataPtr->NumLevels();
     for (int lev=0; lev<nLevs && ret; ++lev) {
       (*property_dataPtr)[lev].setVal(0);
       int dComp = 0;
       int nGrow = property_dataPtr->NComp();
-      ret = matFiller->SetProperty(eval_time,lev,(*property_dataPtr)[lev],property_ctx.property_name,dComp,nGrow);
+      ret = rockMgr->GetProperty(eval_time,lev,(*property_dataPtr)[lev],property_ctx.property_name,dComp,nGrow);
     }
     if (!ret) BoxLib::Abort("Failed to build property");
   }
@@ -191,7 +190,7 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
 
   // Setup property managers
   PropertyManagerCtx kappaCCdir_ctx;
-  kappaCCdir_ctx.matFiller = pm_amr->GetMatFiller();
+  kappaCCdir_ctx.rockMgr = pm_amr->GetRockManager();
   kappaCCdir_ctx.property_name = "permeability";
   std::set<PropertyManager*> kappaCCdir_dep; // Empty
   managed_properties[RSdata_KappaCCdir] = new PropertyManager(KappaCCdir,kappaCCdir_dep,kappaCCdir_ctx);

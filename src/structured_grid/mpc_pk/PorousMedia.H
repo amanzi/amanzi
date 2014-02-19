@@ -1427,7 +1427,6 @@ protected:
   static bool richard_scale_solution_before_solve;
   static bool richard_semi_analytic_J;
   static bool richard_centered_diff_J;
-  static bool richard_subgrid_krel;
   static Real richard_variable_switch_saturation_threshold;
   static Real richard_dt_thresh_pure_steady;
   //

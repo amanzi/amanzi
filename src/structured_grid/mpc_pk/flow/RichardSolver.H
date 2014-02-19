@@ -101,8 +101,6 @@ public:
   void UnsetRemainingJacobianReuses();
   bool ReusePreviousJacobian();
 
-  void BuildMLPropEval();
-
   void BuildOpSkel(Mat& J);
 
   void YpambX(MFTower&           Y,
@@ -156,11 +154,6 @@ protected:
   int num_remaining_Jacobian_reuses;
   int current_timestep;
   std::string record_file;
-
-  // Data for "subgrid" material model, off by default
-  Array<BoxArray> state_to_fill;
-  Array<BoxArray> derive_to_fill;
-  PArray<MultiFab> phif, pcPf, kf, krf, pf, lf, lc;
 };
 
 #endif

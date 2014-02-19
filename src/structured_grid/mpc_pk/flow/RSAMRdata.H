@@ -38,7 +38,7 @@ struct RSAMRdata
   };
 
   struct PropertyManagerCtx {
-    MatFiller* matFiller;
+    RockManager* rockMgr;
     std::string property_name;
   };
 
