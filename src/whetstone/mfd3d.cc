@@ -516,7 +516,7 @@ int MFD3D::SimplexFindFeasibleSolution_(
 
 /* ******************************************************************
 * Locates a pivot elements taking degeneracy into account.
-****************************************************************** */
+***************************************************************** */
 void MFD3D::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
 {
   int m = T.NumRows() - 2;

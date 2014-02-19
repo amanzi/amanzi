@@ -63,7 +63,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   // boundary and source teerms
   void ProcessBCs();
   void ComputeBCs(const CompositeVector& pressure);
-  void ValidateBCs() const;
 
   void AddSourceTerms(CompositeVector& rhs);
 
@@ -112,7 +111,11 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
                              std::vector<AmanziGeometry::Point>& velocity,
                              std::vector<double>& porosity, std::vector<double>& saturation);
   void WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk);
-  
+
+  // V&V
+  void VV_ValidateBCs() const;
+  void VV_PrintHeadExtrema(const CompositeVector& pressure) const;
+
   // extensions 
   int BoundaryFaceGetCell(int f);  // of AmanziMesh
 
