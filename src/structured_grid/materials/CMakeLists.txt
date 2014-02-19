@@ -90,13 +90,13 @@ if (BUILD_TESTS)
                   SOURCE test/tMIDf_RM.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
-  add_amanzi_test(RockManager tRM "tMIDf_RM.in"
+  add_amanzi_test(RockManager tRM "tRM.in"
                   KIND unit
                   SOURCE test/tRM.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   include_directories(${SMATERIALS_SOURCE_DIR}/test) 
-  add_amanzi_test(RockManager_fort tRM_fort "tMIDf_RM.in"
+  add_amanzi_test(RockManager_fort tRM_fort "tRM.in"
                   KIND unit
                   SOURCE test/tRM_fort.cpp test/tRM_fort_${AMANZI_SPACEDIM}D.F
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})

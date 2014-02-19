@@ -162,5 +162,5 @@ main (int   argc,
     BoxLib::Abort();
   }
 
-  return 1;
+  return 0;
 }
