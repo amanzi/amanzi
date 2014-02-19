@@ -406,37 +406,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     ti_specs.initialize_with_darcy = false;
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-      double hmin(1.4e+9), hmax(-1.4e+9);  // diameter of the Sun
-      double rho_g = rho_ * fabs(gravity_[dim - 1]);
-      for (int f = 0; f < nfaces_owned; f++) {
-        if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
-          double z = mesh_->face_centroid(f)[dim - 1]; 
-          double h = z + (bc_values[f][0] - atm_pressure_) / rho_g;
-          hmax = std::max(hmax, h);
-          hmin = std::min(hmin, h);
-        }
-      }
-      double tmp = hmin;  // global extrema
-      mesh_->get_comm()->MinAll(&tmp, &hmin, 1);
-      tmp = hmax;
-      mesh_->get_comm()->MinAll(&tmp, &hmax, 1);
-
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "boundary head: min=" << hmin << " max=" << hmax << " [m]" << std::endl;
-
-      hmin =  1.4e+9;
-      hmax = -1.4e+9; 
-      for (int c = 0; c < ncells_owned; c++) {
-        double z = mesh_->cell_centroid(c)[dim - 1];              
-        double h = z + (pressure[0][c] - atm_pressure_) / rho_g;
-        hmax = std::max(hmax, h);
-        hmin = std::min(hmin, h);
-      }
-      tmp = hmin;  // global extrema
-      mesh_->get_comm()->MinAll(&tmp, &hmin, 1);
-      tmp = hmax;
-      mesh_->get_comm()->MinAll(&tmp, &hmax, 1);
-      *vo_->os() << "domain head: min=" << hmin << " max=" << hmax << " [m]" << std::endl;
+      VV_PrintHeadExtrema(*solution);
     }
   }
 }

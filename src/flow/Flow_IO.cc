@@ -47,7 +47,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
   bc_flux = bc_factory.CreateMassFlux(bc_submodel);
   bc_seepage = bc_factory.CreateSeepageFace(atm_pressure_, bc_submodel);
 
-  ValidateBCs();
+  VV_ValidateBCs();
   ProcessBCs();
 
   // Create the source object if any
