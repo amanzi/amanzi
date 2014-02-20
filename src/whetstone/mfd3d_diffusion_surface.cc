@@ -81,7 +81,7 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    v1 = fm - cm;
+    v1 = P * (fm - cm);
     
     for (int k = 0; k < d - 1; k++) R(i, k) = v1[k];
   }
