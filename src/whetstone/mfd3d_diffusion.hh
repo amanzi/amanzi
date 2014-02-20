@@ -79,6 +79,8 @@ class MFD3D_Diffusion : public MFD3D {
   // surface methods
   int L2consistencyInverseSurface(
       int cell, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
+  int MassMatrixInverseSurface(
+      int cell, const Tensor& permeability, DenseMatrix& W);
 
   // primary related discetization methods
   int MassMatrixInverseSO(int cell, const Tensor& permeability, DenseMatrix& W);

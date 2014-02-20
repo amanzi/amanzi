@@ -58,42 +58,37 @@ TEST(DARCY_SURFACE) {
 
     mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
-cout << mesh->cell_volume(c) << endl;
 
-    DenseMatrix M(nfaces, nfaces);
-    DenseMatrix R(nfaces, 3);
-    mfd.L2consistencyInverseSurface(c, T, R, M);
+    DenseMatrix W(nfaces, nfaces);
+    int ok = mfd.MassMatrixInverseSurface(c, T, W);
 
-    /*
-      mfd.MassMatrix(cell, T, M);
-
-      printf("Mass matrix for cell %3d\n", cell);
-      for (int i=0; i<nfaces; i++) {
-        for (int j=0; j<nfaces; j++ ) printf("%8.4f ", M(i, j)); 
-        printf("\n");
-      }
-
-      // verify SPD propery
-      for (int i=0; i<nfaces; i++) CHECK(M(i, i) > 0.0);
-
-      // verify exact integration property
-      double xi, yi, xj;
-      double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
-      for (int i = 0; i < nfaces; i++) {
-        int f = faces[i];
-        xi = mesh->face_normal(f)[0] * dirs[i];
-        yi = mesh->face_normal(f)[1] * dirs[i];
-        for (int j = 0; j < nfaces; j++) {
-          f = faces[j];
-          xj = mesh->face_normal(f)[0] * dirs[j];
-          vxx += M(i, j) * xi * xj;
-          vxy += M(i, j) * yi * xj;
-        }
-      }
-      CHECK_CLOSE(vxx, volume, 1e-10);
-      CHECK_CLOSE(vxy, 0.0, 1e-10);
+    printf("Inverse mass matrix for cell %d  err=%d\n", c, ok);
+    for (int i = 0; i < nfaces; i++) {
+      for (int j = 0; j < nfaces; j++ ) printf("%8.4f ", W(i, j)); 
+      printf("\n");
     }
-    */
+
+    // verify SPD propery
+    for (int i = 0; i < nfaces; i++) CHECK(W(i, i) > 0.0);
+
+    // verify exact integration property
+    W.Inverse();
+
+    double xj, yi, yj;
+    double vyy = 0.0, vxy = 0.0, volume = mesh->cell_volume(c); 
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      yi = mesh->face_normal(f)[1] * dirs[i];
+      for (int j = 0; j < nfaces; j++) {
+        f = faces[j];
+        xj = mesh->face_normal(f)[0] * dirs[j];
+        yj = mesh->face_normal(f)[1] * dirs[j];
+        vxy += W(i, j) * yi * xj;
+        vyy += W(i, j) * yi * yj;
+      }
+    }
+    CHECK_CLOSE(vyy, volume, 1e-10);
+    CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
 
   delete comm;

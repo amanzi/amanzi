@@ -25,6 +25,7 @@ namespace WhetStone {
 * Consistency condition for inverse of mass matrix in space of
 * fluxes for a non-flat surface. Only the upper triangular part of 
 * Wc is calculated. Darcy flux is scaled by the area!
+* WARNING: routine works for scalar T only. 
 ****************************************************************** */
 int MFD3D_Diffusion::L2consistencyInverseSurface(
     int cell, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
@@ -38,26 +39,34 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   if (num_faces != R.NumRows()) return num_faces;  // matrix was not reshaped
 
   int d = mesh_->space_dimension();
-  AmanziGeometry::Point v1(d);
   double volume = mesh_->cell_volume(cell);
 
   // calculate cell normal
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
   const AmanziGeometry::Point& xf1 = mesh_->face_centroid(faces[0]);
   const AmanziGeometry::Point& xf2 = mesh_->face_centroid(faces[1]);
-  AmanziGeometry::Point cell_normal(d);
-  cell_normal = (xf1 - xc)^(xf2 - xc);
+  AmanziGeometry::Point v1(d);
+  v1 = (xf1 - xc)^(xf2 - xc);
 
   // calculate projector
-  DenseMatrix P(d, d); 
-  double a = L22(cell_normal);
-  for (int i = 0; i < d; i++) {};
+  Tensor P(d, 2); 
+  double a = L22(v1);
+  for (int i = 0; i < d; i++) {
+    P(i, i) = 1.0;
+    for (int j = 0; j < d; j++) { 
+      P(i, j) -= v1[i] * v1[j] / a;
+    }
+  }
+
+  // define new tensor
+  Tensor PTP(d, 2);
+  PTP = P * T * P;
 
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-    v1 = T * normal;
+    v1 = PTP * normal;
 
     for (int j = i; j < num_faces; j++) {
       f = faces[j];
@@ -66,14 +75,37 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
     }
   }
 
+  // calculate matrix R
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
 
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    for (int k = 0; k < d; k++) R(i, k) = fm[k] - cm[k];
+    v1 = fm - cm;
+    
+    for (int k = 0; k < d - 1; k++) R(i, k) = v1[k];
   }
 
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Darcy inverse mass matrixi for surface: the standard algorithm
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixInverseSurface(
+    int cell, const Tensor& permeability, DenseMatrix& W)
+{
+  int d = mesh_->space_dimension();
+  int nfaces = W.NumRows();
+
+  DenseMatrix R(nfaces, d - 1);
+  DenseMatrix Wc(nfaces, nfaces);
+
+  int ok = L2consistencyInverseSurface(cell, permeability, R, Wc);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  StabilityScalar(cell, R, Wc, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
