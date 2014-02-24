@@ -139,6 +139,11 @@ RStdata::~RStdata()
   RichardCoefs.clear();
   DarcyVelocity.clear();
   KappaEC.clear();
+
+  delete RhoSatOld;
+  delete RhoSatNew;
+  delete Pnew;
+  delete Pold;
 }
 
 void
