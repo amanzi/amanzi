@@ -38,7 +38,7 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
       max_itrs_(100),
       nka_dim_(10),
       criteria_(LIN_SOLVER_RELATIVE_RHS),
-      initialized_(false) {}
+      initialized_(false) {};
 
   LinearOperatorNKA(const LinearOperatorNKA& other) :
       LinearOperator<Matrix,Vector,VectorSpace>(other),
@@ -47,7 +47,7 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
       max_itrs_(other.max_itrs_),
       nka_dim_(other.nka_dim_),
       criteria_(other.criteria_),
-      initialized_(other.initialized_) {}
+      initialized_(other.initialized_) {};
 
   void Init(Teuchos::ParameterList& plist);
 

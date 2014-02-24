@@ -1,16 +1,16 @@
 /*
-This is the mimetic discretization component of the Amanzi code. 
+  This is the mimetic discretization component of the Amanzi code. 
 
-Tensors of rank 1 are numbers in all dimensions.
-Tensors of rank 2 are square matrices in all dimensions.
-Only symmetric tensors of rank 4 are are considered here.
+  Tensors of rank 1 are numbers in all dimensions.
+  Tensors of rank 2 are square matrices in all dimensions.
+  Only symmetric tensors of rank 4 are are considered here.
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <iostream>
