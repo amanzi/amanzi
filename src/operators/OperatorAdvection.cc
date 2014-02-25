@@ -65,7 +65,7 @@ void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
 
     double umod = fabs(uf[0][f]);
     if (c1 < 0) {
-      Aface(0, 0) = -umod;
+      Aface(0, 0) = umod;
     } else if (c2 < 0) {
       Aface(0, 0) = umod;
     } else {

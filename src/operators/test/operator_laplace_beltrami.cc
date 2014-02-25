@@ -163,7 +163,7 @@ TEST(LAPLACE_BELTRAMI) {
   CompositeVector phi(solution);
   phi.PutScalar(0.2);
 
-  double dT = 0.1;
+  double dT = 2.1;
   op3->UpdateMatrices(solution, phi, dT);
   op3->InitPreconditioner("Hypre AMG", slist);
 
@@ -188,7 +188,7 @@ TEST(LAPLACE_BELTRAMI) {
   CompositeVector u(solution);
   Epetra_MultiVector& uf = *u.ViewComponent("face");
   int nfaces = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  Point vel(1.0, 1.0, 0.0);
+  Point vel(4.0, 1.0, 0.0);
   for (int f = 0; f < nfaces; f++) {
     uf[0][f] = vel * surfmesh->face_normal(f);
   }
