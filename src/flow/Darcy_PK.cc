@@ -404,6 +404,10 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     // Call this initialization procedure only once. Use case: multiple
     // restart of a single phase transient time integrator.
     ti_specs.initialize_with_darcy = false;
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      VV_PrintHeadExtrema(*solution);
+    }
   }
 }
 

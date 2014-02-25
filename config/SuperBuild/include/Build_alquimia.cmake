@@ -55,7 +55,7 @@ set(ALQUIMIA_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${ALQUIMIA_cmake_install})
 ExternalProject_Add(${ALQUIMIA_BUILD_TARGET}
                     DEPENDS   ${ALQUIMIA_PACKAGE_DEPENDS}             # Package dependency target
                     TMP_DIR   ${ALQUIMIA_tmp_dir}                     # Temporary files directory
-                    STAMP_DIR ${ALQUIMIAstamp_dir}                   # Timestamp and log directory
+                    STAMP_DIR ${ALQUIMIA_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
                     URL          ${ALQUIMIA_URL}                      # URL may be a web site OR a local file

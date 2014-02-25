@@ -117,7 +117,7 @@ if __name__ == "__main__":
     try:
         # hardwired for 1d-tracer: Tracer conc, last time = '71'
         time = '71'
-        comp = 'total_component_concentration.cell.Tracer conc'
+        comp = 'total_component_concentration.cell.Tracer' # conc'
 
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")

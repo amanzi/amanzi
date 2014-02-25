@@ -87,7 +87,9 @@ void Matrix_MFD::CreateMassMatrices(int mfd3d_method)
       ok = mfd.MassMatrixInverseMMatrix(c, Kc, Mff);
       if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_WRONG) {
         ok = mfd.MassMatrixInverseTPFA(c, Kc, Mff);
-      }
+        nokay_--;
+        npassed_++;
+      } 
     } else if (mfd3d_method == FLOW_MFD3D_POLYHEDRA) {
       ok = mfd.MassMatrixInverse(c, Kc, Mff);
     } else if (mfd3d_method == FLOW_MFD3D_OPTIMIZED_SCALED) {
@@ -383,7 +385,7 @@ void Matrix_MFD::AddGravityFluxesDarcy(double rho, const AmanziGeometry::Point& 
 
       double outward_flux = (((*K_)[c] * rho_gravity) * normal) * dirs[n]; 
       Ff[n] += outward_flux;
-      Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.
+      Fc -= outward_flux;
     }
   }
 }

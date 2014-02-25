@@ -16,6 +16,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <cstdio>
 #include <iomanip>
 
 #include "lapack.hh"
@@ -67,6 +68,11 @@ class DenseMatrix {
     return *this;
   }
 
+  DenseMatrix& operator+=(const DenseMatrix& A) {
+    for (int i = 0; i < m_ * n_; i++) data_[i] += A.data_[i];
+    return *this;
+  }
+
   int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);
   int Multiply(const DenseVector& A, DenseVector& B, bool transpose);
 
@@ -91,6 +97,14 @@ class DenseMatrix {
       os << "\n";
     }
     return os;
+  }
+  void PrintMatrix() {
+    for (int i = 0; i < m_; i++) {
+      for (int j = 0; j < n_; j++) {
+        printf("%12.5f", *(data_ + j * m_ + i));
+      }
+      printf("\n");
+    }
   }
 
   // first level routines
