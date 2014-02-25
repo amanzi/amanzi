@@ -44,6 +44,9 @@ if (ENABLE_Unstructured)
   # Solvers
   add_subdirectory(solvers)
 
+  # Operators
+  add_subdirectory(operators)
+
   # Time integration
   if (ENABLE_NewTimeIntegrators)
     add_subdirectory(time_integration_new)
