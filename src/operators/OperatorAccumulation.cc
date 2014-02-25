@@ -22,17 +22,45 @@ namespace Operators {
 void OperatorAccumulation::UpdateMatrices(
     const CompositeVector& u0, const CompositeVector& ss, double dT)
 {
-  const Epetra_MultiVector& u0c = *u0.ViewComponent("cell");
-  const Epetra_MultiVector& ssc = *u0.ViewComponent("cell");
+  AmanziMesh::Entity_ID_List nodes;
 
-  Epetra_MultiVector& diag = *diagonal_block_->ViewComponent("cell");
-  Epetra_MultiVector& rhs = *rhs_->ViewComponent("cell");
+  std::string name;
+  std::vector<double> volume;
 
-  for (int c = 0; c < ncells_owned; c++) {
-    double volume = mesh_->cell_volume(c);
-    double factor = volume * ssc[0][c] / dT;
-    diag[0][c] += factor;
-    rhs[0][c] += factor * u0c[0][c];
+  if (ss.HasComponent("cell")) {
+    name = "cell";
+    volume.resize(ncells_owned);
+
+    for (int c = 0; c < ncells_owned; c++) {
+      volume[c] = mesh_->cell_volume(c); 
+    }
+  } else if (ss.HasComponent("face")) {
+    name = "face";
+  } else if (ss.HasComponent("node")) {
+    name = "node";
+    volume.resize(nnodes_owned, 0.0);
+
+    for (int c = 0; c < ncells_owned; c++) {
+      mesh_->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();
+
+      for (int i = 0; i < nnodes; i++) {
+        volume[nodes[i]] += mesh_->cell_volume(c) / nnodes; 
+      }
+    }
+  }
+
+  const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
+  const Epetra_MultiVector& ssc = *ss.ViewComponent(name);
+
+  Epetra_MultiVector& diag = *diagonal_block_->ViewComponent(name);
+  Epetra_MultiVector& rhs = *rhs_->ViewComponent(name);
+
+  int n = u0c.MyLength();
+  for (int i = 0; i < n; i++) {
+    double factor = volume[i] * ssc[0][i] / dT;
+    diag[0][i] += factor;
+    rhs[0][i] += factor * u0c[0][i];
   }
 }
 

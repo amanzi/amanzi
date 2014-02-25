@@ -31,6 +31,8 @@
 #include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionSurface.hh"
+#include "OperatorAccumulation.hh"
+#include "OperatorAdvection.hh"
 
 
 /* *****************************************************************
@@ -64,7 +66,7 @@ TEST(LAPLACE_BELTRAMI) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 20, 20, 5, gm);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 5, gm);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
   // extract surface mesh
@@ -115,7 +117,7 @@ TEST(LAPLACE_BELTRAMI) {
   op->SymbolicAssembleFaces();
   op->AssembleStencilMFD_Faces();
 
-  // create new preconditoner and solve again
+  // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   op->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
 
@@ -135,7 +137,7 @@ TEST(LAPLACE_BELTRAMI) {
             << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
             << " code=" << ierr << std::endl;
 
-  // SECOND PROBLEM: add accumulation operator
+  // SECOND PROBLEM: change preconditioner
   Teuchos::RCP<Operator> op2 = Teuchos::rcp(new Operator(*op));
 
   // create new preconditoner and solve again
@@ -152,6 +154,61 @@ TEST(LAPLACE_BELTRAMI) {
 
   std::cout << "pressure solver (" << solver2->name() 
             << "): ||r||=" << solver2->residual() << " itr=" << solver2->num_itrs()
+            << " code=" << ierr << std::endl;
+
+  // THIRD PROBLEM: add accumulation operator
+  Teuchos::RCP<OperatorAccumulation> op3 = Teuchos::rcp(new OperatorAccumulation(*op2));
+
+  // add time derivative and and solve again
+  CompositeVector phi(solution);
+  phi.PutScalar(0.2);
+
+  double dT = 0.1;
+  op3->UpdateMatrices(solution, phi, dT);
+  op3->InitPreconditioner("Hypre AMG", slist);
+
+  // solve the problem
+  AmanziSolvers::LinearOperatorFactory<OperatorAccumulation, CompositeVector, CompositeVectorSpace> factory3;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorAccumulation, CompositeVector, CompositeVectorSpace> >
+     solver3 = factory3.Create("AztecOO CG", lop_list, op3);
+
+  rhs = *op3->rhs();
+  solution.PutScalar(0.0);
+
+  ierr = solver3->ApplyInverse(rhs, solution);
+
+  std::cout << "pressure solver (" << solver3->name() 
+            << "): ||r||=" << solver3->residual() << " itr=" << solver3->num_itrs()
+            << " code=" << ierr << std::endl;
+
+  // FOURTH PROBLEM: add advection operator
+  Teuchos::RCP<OperatorAdvection> op4 = Teuchos::rcp(new OperatorAdvection(*op3));
+
+  // initialize velocity
+  CompositeVector u(solution);
+  Epetra_MultiVector& uf = *u.ViewComponent("face");
+  int nfaces = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  Point vel(1.0, 1.0, 0.0);
+  for (int f = 0; f < nfaces; f++) {
+    uf[0][f] = vel * surfmesh->face_normal(f);
+  }
+
+  // add advective matrices
+  op4->InitOperator(u);
+  op4->UpdateMatrices(u);
+
+  // solve the problem
+  AmanziSolvers::LinearOperatorFactory<OperatorAdvection, CompositeVector, CompositeVectorSpace> factory4;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorAdvection, CompositeVector, CompositeVectorSpace> >
+     solver4 = factory4.Create("AztecOO CG", lop_list, op4);
+
+  rhs = *op4->rhs();
+  solution.PutScalar(0.0);
+
+  ierr = solver4->ApplyInverse(rhs, solution);
+
+  std::cout << "pressure solver (" << solver4->name() 
+            << "): ||r||=" << solver4->residual() << " itr=" << solver4->num_itrs()
             << " code=" << ierr << std::endl;
 
   // visualization

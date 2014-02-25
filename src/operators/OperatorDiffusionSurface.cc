@@ -53,7 +53,7 @@ void OperatorDiffusionSurface::UpdateMatrices()
   }
 
   if (flag == false) { 
-    nblocks++;
+    m = nblocks++;
     matrix_blocks_type_.push_back(OPERATOR_STENCIL_TYPE_CELL_MFD);
     matrix_blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
   }

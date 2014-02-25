@@ -544,7 +544,7 @@ void Chemistry_State::AllocateAdditionalChemistryStorage(int num_aqueous_compone
     fac->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, num_aqueous_components);
     Teuchos::RCP<CompositeVector> sac = Teuchos::rcp(new CompositeVector(*fac));    
-    S_->GetField("secondary_activity_coeff",name_)->SetData(*fac);
+    S_->GetField("secondary_activity_coeff",name_)->SetData(sac);
     S_->GetField("secondary_activity_coeff",name_)->CreateData();
     S_->GetFieldData("secondary_activity_coeff",name_)->PutScalar(1.0);
   }

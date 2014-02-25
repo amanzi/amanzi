@@ -48,7 +48,13 @@ Operator::Operator(const Operator& op)
 {
   op.data_validity_ = false;
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-};
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+}
 
 
 /* ******************************************************************
@@ -208,7 +214,7 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
   Y.Multiply(1.0, *diagonal_block_, X, 0.0);
 
   // Multiply by the remaining matrix blocks.
-  AmanziMesh::Entity_ID_List faces;
+  AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
 
   int nblocks = matrix_blocks_.size();
@@ -240,6 +246,26 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
           Yf[0][faces[n]] += av(n);
         }
         Yc[0][c] += av(nfaces);
+      } 
+    } else if (type == OPERATOR_STENCIL_TYPE_FACE_TPFA) {
+      const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
+      Epetra_MultiVector& Yc = *Y.ViewComponent("cell", true);
+
+      for (int f = 0; f < nfaces_owned; f++) {
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        int ncells = cells.size();
+
+        WhetStone::DenseVector v(ncells), av(ncells);
+        for (int n = 0; n < ncells; n++) {
+          v(n) = Xc[0][cells[n]];
+        }
+
+        WhetStone::DenseMatrix& Aface = matrix[f];
+        Aface.Multiply(v, av, false);
+
+        for (int n = 0; n < ncells; n++) {
+          Yc[0][cells[n]] += av(n);
+        }
       } 
     }
   }
