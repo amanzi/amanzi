@@ -18,6 +18,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_FECrsMatrix.h"
 
+#include "Mesh.hh"
 #include "DenseMatrix.hh"
 #include "CompositeVector.hh"
 #include "CompositeVectorSpace.hh"
@@ -69,7 +70,8 @@ class Operator {
   Teuchos::RCP<CompositeVector> rhs_;
 
  public:
-  int ncells_owned;
+  int ncells_owned, nfaces_owned, nnodes_owned;
+  int ncells_wghost, nfaces_wghost, nnodes_wghost;
  
   Teuchos::RCP<Epetra_FECrsMatrix> A_;
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;

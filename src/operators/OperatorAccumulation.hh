@@ -1,11 +1,11 @@
 /*
- *   This is the Operator component of the Amanzi code.
- *
- *     License: BSD
- *       Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
- *
- *         Discrete diffusion operator of a surface.
- *         */
+  This is the operators component of the Amanzi code.
+
+  License: BSD
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Discrete accumulation operator.
+*/
 
 #ifndef AMANZI_OPERATOR_ACCUMULATION_HH_
 #define AMANZI_OPERATOR_ACCUMULATION_HH_
