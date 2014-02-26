@@ -47,7 +47,7 @@ add_definitions("-DMSTK_HAVE_MPI")
 file(GLOB operators_inc_files "*.hh")
 add_amanzi_library(operators
                    SOURCE Operator.cc OperatorDiffusionSurface.cc 
-                   OperatorAccumulation.cc OperatorAdvection.cc
+                   OperatorAccumulation.cc OperatorAdvection.cc OperatorGravity.cc
                    HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
 
@@ -69,6 +69,12 @@ if ( BUILD_TESTS )
     add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
                     KIND unit
                     SOURCE test/Main.cc test/operator_laplace_beltrami.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: matrices for surface
+    add_amanzi_test(operators_surface_misc operators_surface_misc
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_surface_misc.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

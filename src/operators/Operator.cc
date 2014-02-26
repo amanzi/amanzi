@@ -111,7 +111,7 @@ void Operator::AssembleStencilMFD_Faces()
   // find location of face-based matrices
   int m, nblocks = matrix_blocks_.size();
   for (int n = 0; n < nblocks; n++) {
-    if (matrix_blocks_type_[n] == OPERATOR_STENCIL_TYPE_CELL_MFD) {
+    if (matrix_blocks_type_[n] == OPERATOR_STENCIL_CELL_CF_CF) {
       m = n;
       break;
     }
@@ -171,7 +171,7 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
     std::vector<WhetStone::DenseMatrix>& matrix = *matrix_blocks_[n];
     int type = matrix_blocks_type_[n];
 
-    if (type == OPERATOR_STENCIL_TYPE_CELL_MFD) {
+    if (type == OPERATOR_STENCIL_CELL_CF_CF) {
       Epetra_MultiVector& rhs_face = *rhs_->ViewComponent("face");
       Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
       Epetra_MultiVector& diagonal = *diagonal_block_->ViewComponent("face");
@@ -222,7 +222,7 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
     std::vector<WhetStone::DenseMatrix>& matrix = *matrix_blocks_[n];
     int type = matrix_blocks_type_[n];
 
-    if (type == OPERATOR_STENCIL_TYPE_CELL_MFD) {
+    if (type == OPERATOR_STENCIL_CELL_CF_CF) {
       const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
       const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
 
@@ -247,7 +247,7 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
         }
         Yc[0][c] += av(nfaces);
       } 
-    } else if (type == OPERATOR_STENCIL_TYPE_FACE_TPFA) {
+    } else if (type == OPERATOR_STENCIL_FACE_C_C) {
       const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
       Epetra_MultiVector& Yc = *Y.ViewComponent("cell", true);
 

@@ -45,7 +45,7 @@ void OperatorDiffusionSurface::UpdateMatrices()
 
   for (int n = 0; n < nblocks; n++) {
     int type = matrix_blocks_type_[n];
-    if (type == OPERATOR_STENCIL_TYPE_CELL_MFD) {
+    if (type == OPERATOR_STENCIL_CELL_CF_CF) {
       m = n;
       flag = true;
       break;
@@ -54,7 +54,7 @@ void OperatorDiffusionSurface::UpdateMatrices()
 
   if (flag == false) { 
     m = nblocks++;
-    matrix_blocks_type_.push_back(OPERATOR_STENCIL_TYPE_CELL_MFD);
+    matrix_blocks_type_.push_back(OPERATOR_STENCIL_CELL_CF_CF);
     matrix_blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
   }
   std::vector<WhetStone::DenseMatrix>& matrix = *matrix_blocks_[m];
@@ -135,7 +135,7 @@ void OperatorDiffusionSurface::InitPreconditioner(
   int m, nblocks = matrix_blocks_type_.size();
   for (int n = 0; n < nblocks; n++) {
     int type = matrix_blocks_type_[n];
-    if (type == OPERATOR_STENCIL_TYPE_CELL_MFD) {
+    if (type == OPERATOR_STENCIL_CELL_CF_CF) {
       m = n;
       break;
     }
@@ -200,7 +200,7 @@ int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVe
   int m, nblocks = matrix_blocks_type_.size();
   for (int n = 0; n < nblocks; n++) {
     int type = matrix_blocks_type_[n];
-    if (type == OPERATOR_STENCIL_TYPE_CELL_MFD) {
+    if (type == OPERATOR_STENCIL_CELL_CF_CF) {
       m = n;
       break;
     }

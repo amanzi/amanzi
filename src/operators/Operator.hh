@@ -57,6 +57,7 @@ class Operator {
 
   // access
   Teuchos::RCP<CompositeVector>& rhs() { return rhs_; }
+  bool data_validity() { return data_validity_; }
 
  public:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

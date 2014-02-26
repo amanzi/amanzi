@@ -36,7 +36,7 @@ void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
   int m, nblocks = matrix_blocks_type_.size();
   for (int n = 0; n < nblocks; n++) {
     int type = matrix_blocks_type_[n];
-    if (type == OPERATOR_STENCIL_TYPE_FACE_TPFA) {
+    if (type == OPERATOR_STENCIL_FACE_C_C) {
       m = n;
       flag = true;
       break;
@@ -45,7 +45,7 @@ void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
 
   if (flag == false) { 
     m = nblocks++;
-    matrix_blocks_type_.push_back(OPERATOR_STENCIL_TYPE_FACE_TPFA);
+    matrix_blocks_type_.push_back(OPERATOR_STENCIL_FACE_C_C);
     matrix_blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
   }
   std::vector<WhetStone::DenseMatrix>& matrix = *matrix_blocks_[m];
