@@ -1171,7 +1171,6 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
           //if ( (++ phase_list.begin()) == phase_list.end() ) {
           if (true) {
             Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
-
             for (Teuchos::ParameterList::ConstIterator i = bc_sublist.begin(); i != bc_sublist.end(); i++) {
               // read the assigned regions
               Teuchos::Array<std::string> regs = bc_sublist.sublist(bc_sublist.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
@@ -1191,18 +1190,27 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
                       std::stringstream compss;
                       compss << *i;
                       if ( comps.sublist(*i).isSublist("BC: Uniform Concentration") ) {
-                        Teuchos::ParameterList& bc = tbc_list.sublist(compss.str()).sublist(bc_root_str);
-                        bc.set<Teuchos::Array<std::string> >("regions",regs);
                         Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Uniform Concentration");
+                        if (bcsub.isParameter("Geochemical Condition")) { // Is this a geochemical condition?
+                          // Add an entry to Transport->boundary conditions->geochemical conditions.
+                          Teuchos::ParameterList& geochem_cond_list = trp_list.sublist("boundary conditions").sublist("geochemical conditions");
+                          std::string geochem_cond_name = bcsub.get<std::string>("Geochemical Condition");
+                          Teuchos::ParameterList& geochem_cond = geochem_cond_list.sublist(geochem_cond_name);
+                          geochem_cond.set<Teuchos::Array<std::string> >("regions", regs);
+                        }
+                        else { // proceed with ordinary Transport BCs.
+                          Teuchos::ParameterList& bc = tbc_list.sublist(compss.str()).sublist(bc_root_str);
+                          bc.set<Teuchos::Array<std::string> >("regions",regs);
 
-                        Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
-                        Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
-                        Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
+                          Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
+                          Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
+                          Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
 
-                        Teuchos::ParameterList &bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
-                        bcfn.set<Teuchos::Array<double> >("y values", values);
-                        bcfn.set<Teuchos::Array<double> >("x values", times);
-                        bcfn.set<Teuchos::Array<std::string> >("forms", translate_forms(time_fns));
+                          Teuchos::ParameterList &bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
+                          bcfn.set<Teuchos::Array<double> >("y values", values);
+                          bcfn.set<Teuchos::Array<double> >("x values", times);
+                          bcfn.set<Teuchos::Array<std::string> >("forms", translate_forms(time_fns));
+                        }
                       }
                     }
                   }
@@ -2733,15 +2741,25 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 
           for (int ii=0; ii<comp_names.size(); ii++) {
             if (ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).isSublist(comp_names[ii])) {
+              Teuchos::ParameterList& conc_ic =  ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration");
 
-              double conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Value");
+              if (conc_ic.isParameter("Geochemical Condition")) { // Geochemical condition?
+                // Add an entry to State->initial conditions->geochemical conditions.
+                Teuchos::ParameterList& geochem_cond_list = stt_ic.sublist("geochemical conditions");
+                std::string geochem_cond_name = conc_ic.get<std::string>("Geochemical Condition");
+                Teuchos::ParameterList& geochem_cond = geochem_cond_list.sublist(geochem_cond_name);
+                geochem_cond.set<Teuchos::Array<std::string> >("regions", regions);
+              }
+              else { // ordinary initial concentration value.
+                double conc = conc_ic.get<double>("Value");
 
-              std::stringstream dof_str;
-              dof_str << "DoF " << ii+1 << " Function";
+                std::stringstream dof_str;
+                dof_str << "DoF " << ii+1 << " Function";
 
-              dof_list.sublist(dof_str.str())
+                dof_list.sublist(dof_str.str())
                   .sublist("function-constant")
                   .set<double>("value",conc);
+              }
             }
           }
         }
