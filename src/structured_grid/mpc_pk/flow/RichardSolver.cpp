@@ -12,6 +12,7 @@ static Real norm0 = -1;
 static Real max_residual_growth_factor = 1.e8; // FIXME: set this with rsparams
 static Real min_dt = 1.e-2; // FIXME: set this with rsparams
 static bool dump_Jacobian = false;
+static int MAX_NUM_COLS = -1;
 
 void
 RichardSolver::SetTheRichardSolver(RichardSolver* ptr)
@@ -89,9 +90,14 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
 
   mftfp->BuildStencil(rs_data.pressure_bc, rs_data.pressure_maxorder);
 
+  bool calcSpace = true;
+  BuildOpSkel(Jac,calcSpace);
+
   // Estmated number of nonzero local columns of J
-  int d_nz = (nlsc.use_dense_Jacobian ? N : 1 + (rs_data.pressure_maxorder-1)*(2*BL_SPACEDIM));
-  int o_nz = 0; // Estimated number of nonzero nonlocal (off-diagonal) columns of J
+  //int d_nz = (nlsc.use_dense_Jacobian ? N : 1 + (rs_data.pressure_maxorder-1)*(2*BL_SPACEDIM));
+  int d_nz = MAX_NUM_COLS;
+  //int o_nz = 2*BL_SPACEDIM + rs_data.pressure_maxorder - 1; // Estimated number of nonzero nonlocal (off-diagonal) columns of J
+  int o_nz = MAX_NUM_COLS;
 
 #if PETSC_VERSION_LT(3,4,3)
   ierr = MatCreateMPIAIJ(comm, n, n, N, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, &Jac); CHKPETSC(ierr);
@@ -99,11 +105,14 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
   ierr = MatCreate(comm, &Jac); CHKPETSC(ierr);
   ierr = MatSetSizes(Jac,n,n,N,N);  CHKPETSC(ierr);
   ierr = MatSetFromOptions(Jac); CHKPETSC(ierr);
-  ierr = MatSeqAIJSetPreallocation(Jac, d_nz*d_nz, PETSC_NULL); CHKPETSC(ierr);
-  ierr = MatMPIAIJSetPreallocation(Jac, d_nz, PETSC_NULL, o_nz, PETSC_NULL); CHKPETSC(ierr);
+  //ierr = MatSeqAIJSetPreallocation(Jac, d_nz*d_nz, PETSC_NULL); CHKPETSC(ierr);
+  //ierr = MatMPIAIJSetPreallocation(Jac, d_nz, PETSC_NULL, o_nz, PETSC_NULL); CHKPETSC(ierr);
+  ierr = MatSeqAIJSetPreallocation(Jac, MAX_NUM_COLS, PETSC_NULL); CHKPETSC(ierr);
+  ierr = MatMPIAIJSetPreallocation(Jac, MAX_NUM_COLS, PETSC_NULL, MAX_NUM_COLS, PETSC_NULL); CHKPETSC(ierr);
 #endif
 
-  BuildOpSkel(Jac);
+  calcSpace = false;
+  BuildOpSkel(Jac, calcSpace);
 
   matfdcoloring = 0;
   ierr = SNESCreate(comm,&snes); CHKPETSC(ierr);
@@ -280,10 +289,8 @@ void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* c
 
   RSdata& rs_data = rs->GetRSdata();
 
-  rs_data.FillStateBndry(PnewMFT,cur_time);
-  rs_data.FillStateBndry(PoldMFT,cur_time-dt);
-  rs_data.calcInvPressure(SnewMFT,PnewMFT);
-  rs_data.calcInvPressure(SoldMFT,PoldMFT);
+  rs_data.calcInvPressure(SnewMFT,PnewMFT,cur_time,0,0,0);
+  rs_data.calcInvPressure(SoldMFT,PoldMFT,cur_time-dt,0,0,0);
 
   for (int lev=0; lev<nLevs; ++lev) {
     SnewMFT[lev].mult(1/rho,0,1);
@@ -518,44 +525,51 @@ AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *c
 
     MFTower& P_MFT = rs->GetPressureNp1();
     MFTower& RS_MFT = rs->GetRhoSatNp1();
-    MFTower& DP_MFT = rs->GetAlpha(); //Handy data container
+    MFTower& DP_MFT = rs->GetLambda(); //Handy data container
     const MFTower& K_MFT = rs->GetKappaCCavg();
 
     Layout& layout = rs->GetLayout();
     ierr = layout.VecToMFTower(P_MFT,pk,0); CHKPETSC(ierr);
     ierr = layout.VecToMFTower(DP_MFT,dp,0); CHKPETSC(ierr);
 
+    Real cur_time = rs->GetTime();
+    Real dt = rs->GetDt();
+
     // Fill (rho.sat)^{n+1,k} from p^{n+1,k}
-    rs->GetRSdata().calcInvPressure(RS_MFT,P_MFT);  
+    rs->GetRSdata().calcInvPressure(RS_MFT,P_MFT,cur_time,0,0,0);
 
     int nLevs = layout.NumLevels();
+
+    MFTower& ALPHA_MFT = rs->GetAlpha();
+    const MFTower& PHI_MFT= rs->GetPorosity();
+    rs->GetRSdata().calcInvPressure(RS_MFT,P_MFT,cur_time,0,0,0);
+    rs->GetRSdata().calcRichardAlpha(ALPHA_MFT,RS_MFT,cur_time,0,0,0); // ALPHA == d(phi.rho.sat)/dPw
+    const RockManager* rm = rs->GetRSdata().GetRockManager();
+    int rmID = rm->ID();
+
+    // Compute the "Alternating Update" according to Krabbenhoft, AWR30 p.483
+    const Real sThresh = rs->GetRSdata().variable_switch_saturation_threshold;
     for (int lev=0; lev<nLevs; ++lev) {
 
-        // Get full set of Pcap parameters directly
-        // (not just the sigma part stored in my copy of PCapParams)
-        const MultiFab& PCapParams = rs->GetPCapParams()[lev];
+      const iMultiFab& MatID = rs->GetMaterialID(lev);
+      for (MFIter mfi(P_MFT[lev]); mfi.isValid(); ++mfi) {
+        const Box& vbox = mfi.validbox();
+        FArrayBox& rsf = RS_MFT[lev][mfi];
+        FArrayBox& dpf = DP_MFT[lev][mfi];
+        const FArrayBox& alf = ALPHA_MFT[lev][mfi];
+        const FArrayBox& phi = PHI_MFT[lev][mfi];
+        const IArrayBox& mat = MatID[mfi];
 
-        // Compute the "Alternating Update" according to Krabbenhoft, AWR30 p.483
-        for (MFIter mfi(P_MFT[lev]); mfi.isValid(); ++mfi) {
-            const Box& vbox = mfi.validbox();
-            const FArrayBox& kcf = K_MFT[lev][mfi];
-            const FArrayBox& cpf = PCapParams[mfi];
-            int n_cp_coefs = cpf.nComp();
-            
-            FArrayBox& rsf = RS_MFT[lev][mfi];
-            FArrayBox& pf  = P_MFT[lev][mfi];
-            FArrayBox& dpf = DP_MFT[lev][mfi];
-
-            FORT_RS_ALTUP(rsf.dataPtr(),ARLIM(rsf.loVect()), ARLIM(rsf.hiVect()),
-                          pf.dataPtr(), ARLIM(pf.loVect()),  ARLIM(pf.hiVect()),
-                          dpf.dataPtr(),ARLIM(dpf.loVect()), ARLIM(dpf.hiVect()),
-                          kcf.dataPtr(),ARLIM(kcf.loVect()), ARLIM(kcf.hiVect()),
-                          cpf.dataPtr(),ARLIM(cpf.loVect()), ARLIM(cpf.hiVect()),
-                          &n_cp_coefs, &ls_factor, vbox.loVect(), vbox.hiVect(),
-                          &(rs->GetRSdata()).variable_switch_saturation_threshold);
-        }
+        FORT_RS_ALTUP(rsf.dataPtr(),ARLIM(rsf.loVect()), ARLIM(rsf.hiVect()),
+                      dpf.dataPtr(),ARLIM(dpf.loVect()), ARLIM(dpf.hiVect()),
+                      alf.dataPtr(),ARLIM(alf.loVect()), ARLIM(alf.hiVect()),
+                      phi.dataPtr(),ARLIM(phi.loVect()), ARLIM(phi.hiVect()),
+                      mat.dataPtr(),ARLIM(mat.loVect()), ARLIM(mat.hiVect()),
+                      &ls_factor, &sThresh, &rmID, &cur_time,
+                      vbox.loVect(), vbox.hiVect());
+      }
     }
-    
+
     // Put modified dp into Vec
     ierr = layout.MFTowerToVec(dp,DP_MFT,0); CHKPETSC(ierr);
 
@@ -712,6 +726,8 @@ PostCheckAlt(SNESLineSearch ls,Vec p,Vec dp,Vec pnew,PetscBool  *changed_dp,Pets
     PetscFunctionReturn(0);
 }
 
+#include <VisMF.H>
+
 #undef __FUNCT__
 #define __FUNCT__ "Solve"
 int
@@ -732,6 +748,18 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
     }
   }
 
+  Layout& layout = GetLayout();
+  const RockManager* rm = GetRSdata().GetRockManager();
+  int Nlevs = layout.NumLevels();
+  materialID.clear();
+  materialID.resize(Nlevs,PArrayManage);
+  bool ignore_mixed = true;
+  int nGrow = 0;
+  for (int lev=0; lev<Nlevs; ++lev) {
+    materialID.set(lev, new iMultiFab(layout.GridArray()[lev],1,0));
+    rm->GetMaterialID(lev,materialID[lev],nGrow,ignore_mixed);
+  }
+
   MFTower& RhsMFT = GetResidual();
   MFTower& SolnMFT = GetPressureNp1();
   MFTower& PCapParamsMFT = GetPCapParams();
@@ -741,7 +769,6 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
   Vec& SolnTypInvV = GetSolnTypInvV();
 
   // Copy from MFTowers in state to Vec structures
-  Layout& layout = GetLayout();
   ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
   ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
 
@@ -786,7 +813,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
   // set dependent data
   rs_data.FillStateBndry(GetPressureN(),prev_time);
   if (!rs_data.IsSaturated()) {
-    rs_data.calcInvPressure(GetRhoSatN(),GetPressureN());
+    rs_data.calcInvPressure(GetRhoSatN(),GetPressureN(),cur_time,0,0,1);
   }
 
   // Evaluate the function
@@ -826,7 +853,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
 #undef __FUNCT__  
 #define __FUNCT__ "BuildOpSkel"
 void
-RichardSolver::BuildOpSkel(Mat& J)
+RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
 {
   int num_rows = 1;
   int rows[1]; // At the moment, only set one row at a time
@@ -853,7 +880,11 @@ RichardSolver::BuildOpSkel(Mat& J)
   
   int myproc = ParallelDescriptor::MyProc();
   int numprocs = ParallelDescriptor::NProcs();
-  
+
+  if (calcSpace) {
+    MAX_NUM_COLS = 0;
+  }
+
   for (int lev=nLevs-1; lev>=0; --lev) 
     {
       const Array<IVSMap>& growCellStencilLev = growCellStencil[lev];
@@ -1067,15 +1098,23 @@ RichardSolver::BuildOpSkel(Mat& J)
 		    cols[cnt++] = *it;
 		  }
 		}
-
-	      ierr = MatSetValues(J,num_rows,rows,num_cols,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
+              if (calcSpace) {
+                MAX_NUM_COLS = std::max(MAX_NUM_COLS,num_cols);
+              } else {
+                ierr = MatSetValues(J,num_rows,rows,num_cols,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
+              }
 	    }
 	  }
       }
     }
 
-  ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
-  ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
+  if (calcSpace) {
+    ParallelDescriptor::ReduceIntMax(MAX_NUM_COLS);
+  }
+  else {
+    ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
+    ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
+  }
 }
 
 void
@@ -1236,6 +1275,7 @@ RichardSolver::FillPatch(MFTower& mft,
   mftfp->FillGrowCells(mft,sComp,nComp,do_piecewise_constant,nLevs);
 }
 
+#include <VisMF.H>
 void 
 RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
                                     Real     t)
@@ -1275,7 +1315,7 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
       rhoSat.SetVal(rho[n],n,1,1);
     }
   } else {
-    rs_data.calcInvPressure(rhoSat,pressure);
+    rs_data.calcInvPressure(rhoSat,pressure,t,0,0,1);
   }
 
   // Convert grow cells of pressure into extrapolated values so that from here on out,
@@ -1287,13 +1327,12 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
   CCtoECgradAdd(darcy_vel,pressure,rhog);
 
   if (rs_data.upwind_krel) {
-
-    rs_data.calcLambda(lambda,rhoSat); // FIXME: Writes/reads only to comp=0, does 1 grow
+    rs_data.calcLambda(lambda,rhoSat,t,0,0,1);
 
     // Get edge-centered lambda (= krel/mu) based on the sign of -(Grad(p) + rho.g)
     const BCRec& pressure_bc = rs_data.pressure_bc;
     CenterToEdgeUpwind(GetRichardCoefs(),lambda,darcy_vel,nComp,pressure_bc);
- 
+
     // Get Darcy velocity = - lambda * kappa * (Grad(p) + rho.g)
     const PArray<MFTower>& kappaEC = GetKappaEC(t);
     for (int d=0; d<BL_SPACEDIM; ++d) {
@@ -1309,7 +1348,7 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
       }
     }
     else {
-      rs_data.calcLambda(lambda,rhoSat);
+      rs_data.calcLambda(lambda,rhoSat,t,0,0,1);
       for (int lev=0; lev<nLevs; ++lev) {
 	MultiFab::Copy(CoeffCC[lev],lambda[lev],0,0,1,1);
 	for (int d=1; d<BL_SPACEDIM; ++d) {
@@ -1339,8 +1378,8 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
 	MultiFab::Multiply(darcy_vel[d][lev],GetRichardCoefs()[d][lev],0,0,1,0);
       }
     }
-  }
-  
+  }  
+
   // Overwrite face velocities at boundary with boundary conditions
   rs_data.SetInflowVelocity(darcy_vel,t);
 
@@ -1405,8 +1444,13 @@ RichardSolver::CalcResidual(MFTower& residual,
     const Array<IntVect>& refRatio = layout.RefRatio();
     FArrayBox source, st;
     int nLevs = rs_data.nLevs;
+    std::vector< std::pair<int,Box> > isects;
     for (int lev=0; lev<nLevs; ++lev) {
       MultiFab& Rlev = residual[lev];
+      BoxArray cfba;
+      if (lev<nLevs-1) {
+        cfba = BoxArray(gridArray[lev+1]).coarsen(refRatio[lev]);
+      }
       for (MFIter mfi(Rlev); mfi.isValid(); ++mfi) {
 	const Box& vbox = mfi.validbox();
 	FArrayBox& Res = Rlev[mfi];
@@ -1468,8 +1512,8 @@ void RichardSolver::CreateJac(Mat& J,
   const Array<int>& rinflow_bc_hi = rs_data.rinflowBCHi();
 
   // may not necessary since this should be same as the residual
-  rs_data.calcInvPressure(GetRhoSatNp1(),pressure); 
-  rs_data.calcLambda(GetLambda(),GetRhoSatNp1()); 
+  rs_data.calcInvPressure (GetRhoSatNp1(),pressure,t,0,0,1);
+  rs_data.calcLambda(GetLambda(),GetRhoSatNp1(),t,0,0,1); 
 
   int do_upwind = (int)rs_data.upwind_krel;
   for (int lev=0; lev<nLevs; ++lev) {
@@ -1969,6 +2013,8 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
   PetscFunctionReturn(0);
 }
 
+#include <VisMF.H>
+
 #undef __FUNCT__  
 #define __FUNCT__ "ComputeRichardAlpha"
 void
@@ -1979,8 +2025,8 @@ RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure,Real t)
   MFTower& aMFT = GetAlpha();
   PetscErrorCode ierr = GetLayout().VecToMFTower(PMFT,Pressure,0); CHKPETSC(ierr);
 
-  rs_data.calcInvPressure(GetRhoSatNp1(),PMFT);
-  rs_data.calcRichardAlpha(aMFT,GetRhoSatNp1(),t);
+  rs_data.calcInvPressure(GetRhoSatNp1(),PMFT,t,0,0,0); // No grow cells needed
+  rs_data.calcRichardAlpha(aMFT,GetRhoSatNp1(),t,0,0,0);
 
   // Put into Vec data structure
   ierr = GetLayout().MFTowerToVec(Alpha,aMFT,0); CHKPETSC(ierr);
@@ -2139,12 +2185,21 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
           epsilon_inv = 0.5/epsilon;
       }
       else {
-          // w2 = F(w3) - F(x1) = F(x1 + dx) - F(x1)
+#if 1 // Forward
+          // w2 = F(w3) - F(x1) = F(x1 + dx) - F(x1) = (1/eps)*(w2 - w1)
           ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
           ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
           ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
           ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
           epsilon_inv = 1/epsilon;
+#else // backward
+          // w2 = F(w1) - F(w4) = F(x1) - F(x1 - dx) = -(1/eps)*(w2 - w1)
+          ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+          ierr = (*f)(sctx,w4,w2,fctx);CHKPETSC(ierr);        
+          ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+          ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+          epsilon_inv = -1/epsilon;
+#endif
       }
       
       // Insert (w2_j / dx) into J_ij [include diagonal term, dR1_i/dpbar_i = alphabar
@@ -2162,6 +2217,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
           if (dt_inv>0 && srow == col) {
               y[row] += a_array[srow] * dt_inv;
           }
+
           ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
       }
       if (ctype == IS_COLORING_GLOBAL) {

@@ -9,7 +9,11 @@ static Real H = 107.52;
 static Real W = H/16;
 static int Nx = 2;
 static int Ny = Nx*16;
-static int Nz = 64;
+
+//static Real W = 40;
+//static Real H = 24;
+//static int Nx = 40;
+//static int Ny = 24;
 
 static Real dt = 1; // Initial
 static int Niter = 60;
@@ -157,29 +161,36 @@ main (int   argc,
   nlsc.max_nl_iterations=15;
   nlsc.time_step_reduction_factor=0.8;
   nlsc.time_step_retry_factor=0.5;
-  //nlsc.max_num_consecutive_success=3;
   nlsc.max_num_consecutive_success=1;
-  //nlsc.min_nl_iterations_for_dt=10;
   nlsc.min_nl_iterations_for_dt=13;
   nlsc.time_step_increase_factor=1.4;
   nlsc.ls_acceptance_factor=5;
   nlsc.monitor_line_search=0;
 
   RStstruct inputs;
-  inputs.kappa = 2.87e-13;
-  inputs.phi = 0.38;
-  inputs.alpha = 3.02e-4;
-  inputs.Sr = 0.354;
-  inputs.m = 0.291;
-  inputs.specific_storage = 0;
   inputs.rho.resize(1,998.2);
   inputs.mu.resize(1,0.001005);
   inputs.g = 9.81117 / RStdata::Pa_per_ATM;
   inputs.saturated = false;
   inputs.inflow_velocity = -1.1091e-10;
-  inputs.Pwt = 0;
+  inputs.Pwt = 1;
 
-  RStdata rs_data(0,nLevs,layout,nlsc,inputs);
+  pp.query("inflow_velocity",inputs.inflow_velocity);
+
+  RegionManager rm;
+
+#if 0
+  if (ParallelDescriptor::IOProcessor()) {
+    std::cout << "The Regions: " << std::endl;
+    const Array<const Region*> regions = rm.RegionPtrArray();
+    for (int i=0; i<regions.size(); ++i) {
+      std::cout << *(regions[i]) << std::endl;
+    }
+  }
+#endif
+
+  RockManager rockManager(&rm,geom_array,refRatio_array);
+  RStdata rs_data(0,nLevs,layout,nlsc,inputs,&rockManager);
   rs_data.upwind_krel=1;
   rs_data.semi_analytic_J=true;
 
@@ -231,24 +242,21 @@ main (int   argc,
   GradFill(Pold,nLevs,grad,geom_array);
   GradFill(Pnew,nLevs,grad,geom_array);
 
-  rs_data.FillStateBndry(Pnew,rs_data.new_time);
-  rs_data.calcInvPressure(RSnew,Pnew);
+  PlusMFT(Pnew,inputs.Pwt);
+  PlusMFT(Pold,inputs.Pwt);
+  rs_data.calcInvPressure(RSnew,Pnew,rs_data.new_time,0,0,0);
 
   Array<MFTower*> output_set;
   Array<std::string> output_names;
   output_set.push_back(&Pnew); output_names.push_back("Pnew");
-  output_set.push_back(&RSnew); output_names.push_back("RSnew");
+  output_set.push_back(&RSnew); output_names.push_back("Snew");
 
   // Write initial data
   if (plt_name!="") {
     std::string outfile=BoxLib::Concatenate(plt_name,step,3);
-    MultMFT(RSnew,1/rs_data.GetDensity()[0]);
-    MultMFT(Pnew,RStdata::Pa_per_ATM);
-    PlusMFT(Pnew,RStdata::Pa_per_ATM);
+    MultMFT(RSnew,1/rs_data.GetDensity()[0]); // S = N / rho
     MFTower::WriteSet(outfile,output_set,output_names,rs_data.new_time);
-    PlusMFT(Pnew,-RStdata::Pa_per_ATM);
-    MultMFT(Pnew,1/RStdata::Pa_per_ATM);
-    MultMFT(RSnew,rs_data.GetDensity()[0]);
+    MultMFT(RSnew,rs_data.GetDensity()[0]); // N = S.rho
   }
 
   Real dt_new;
@@ -262,7 +270,9 @@ main (int   argc,
       if (verbose && ParallelDescriptor::IOProcessor()) {
         std::cout << "................ attempting dt = " << dt << " step " << step << std::endl;
       }
+
       retCode = rs->Solve(rs_data.old_time,rs_data.new_time,step,nlsc);
+
       if (retCode > 0) {
         if (verbose && ParallelDescriptor::IOProcessor()) {
           std::cout << "................ SUCCEEDED dt = " << dt << std::endl;
@@ -290,17 +300,13 @@ main (int   argc,
     }
 
     rs_data.FillStateBndry(Pnew,rs_data.new_time);
-    rs_data.calcInvPressure(RSnew,Pnew);
+    rs_data.calcInvPressure(RSnew,Pnew,rs_data.new_time,0,0,0);
 
     if (plt_name!="") {
       std::string outfile_loc=BoxLib::Concatenate(plt_name,step,3);
-      MultMFT(RSnew,1/rs_data.GetDensity()[0]);
-      MultMFT(Pnew,RStdata::Pa_per_ATM);
-      PlusMFT(Pnew,RStdata::Pa_per_ATM);
+      MultMFT(RSnew,1/rs_data.GetDensity()[0]); // S = N/rho
       MFTower::WriteSet(outfile_loc,output_set,output_names,rs_data.new_time);
-      PlusMFT(Pnew,-RStdata::Pa_per_ATM);
-      MultMFT(Pnew,1/RStdata::Pa_per_ATM);
-      MultMFT(RSnew,rs_data.GetDensity()[0]);
+      MultMFT(RSnew,rs_data.GetDensity()[0]); // N = S.rho
     }
 
     CopyMFT(Pold,Pnew);

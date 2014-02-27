@@ -120,6 +120,8 @@ if (BUILD_TESTS)
   # Copy input files if an out of source build
   if (NOT (${SMATERIALS_SOURCE_DIR} EQUAL ${SMATERIALS_BINARY_DIR}) )
     execute_process(COMMAND ${CMAKE_COMMAND} -E 
+      copy ${SMATERIALS_SOURCE_DIR}/test/tRM.in ${SMATERIALS_BINARY_DIR}) 
+    execute_process(COMMAND ${CMAKE_COMMAND} -E 
       copy ${SMATERIALS_SOURCE_DIR}/test/tMIDf_RM.in ${SMATERIALS_BINARY_DIR}) 
   endif()
 

@@ -4,6 +4,7 @@
   <Parameter name="Amanzi Input Format Version" type="string" value="1.0.0"/>
   <Parameter name="Dump ParmParse Table" type="string" value="flow02/ppfile"/>
   <Parameter name="Petsc Options File" type="string" value="DOTpetsc"/>
+  <Parameter name="Pause For Debug" type="bool" value="true"/>
 
   <ParameterList name="General Description">
     <Parameter name="Simulation name" type="string" value="PhaseII_Flow02"/>
@@ -55,48 +56,27 @@
           <Parameter name="do_richard_sat_solve" type="int" value="0"/>
           <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
           <Parameter name="steady_limit_iterations" type="int" value="20"/>
-          <Parameter name="steady_max_iterations" type="int" value="15"/>
+          <Parameter name="steady_max_iterations" type="int" value="10"/>
           <Parameter name="steady_time_step_reduction_factor" type="double" value="0.7"/>
           <Parameter name="steady_min_iterations" type="int" value="10"/>
           <Parameter name="steady_time_step_increase_factor" type="double" value="1.8"/>
-          <Parameter name="steady_min_iterations_2" type="int" value="2"/>
-          <Parameter name="steady_time_step_increase_factor_2" type="double" value="3"/>
-          <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
-          <Parameter name="steady_time_step_retry_factor_1" type="double" value="0.05"/>
-          <Parameter name="steady_max_consecutive_failures_2" type="int" value="4"/>
-          <Parameter name="steady_time_step_retry_factor_2" type="double" value="0.01"/>
-          <Parameter name="steady_time_step_retry_factor_f" type="double" value="0.001"/>
-          <Parameter name="steady_max_num_consecutive_success" type="int" value="0"/>
-          <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
-          <Parameter name="steady_max_num_consecutive_increases" type="int" value="15"/>
-          <Parameter name="steady_consecutive_increase_reduction_factor" type="double" value="0.4"/>
           <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e11"/>
-          <Parameter name="steady_abort_on_psuedo_timestep_failure" type="int" value="0"/>
-          <Parameter name="steady_use_PETSc_snes" type="bool" value="true"/>
-          <Parameter name="steady_limit_function_evals" type="int" value="100000000"/>
-
           <Parameter name="richard_solver_verbose" type="int" value="2"/>
-          <Parameter name="richard_max_ls_iterations" type="int" value="10"/>
-          <Parameter name="richard_min_ls_factor" type="double" value="1.e-8"/>
           <Parameter name="richard_ls_acceptance_factor" type="double" value="200"/>
-          <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
-          <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
-          <Parameter name="richard_monitor_line_search" type="int" value="1"/>
-
-          <Parameter name="richard_use_fd_jac" type="int" value="1"/>
-          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-4"/>
-          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-12"/>
-          <Parameter name="richard_use_dense_Jacobian" type="int" value="0"/>
+          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-10"/>
           <Parameter name="richard_upwind_krel" type="int" value="1"/>
-          <Parameter name="richard_pressure_maxorder" type="int" value="3"/>
-          <Parameter name="richard_scale_solution_before_solve" type="bool" value="true"/>
+          <Parameter name="richard_scale_solution_before_solve" type="bool" value="false"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="true"/>
+          <Parameter name="richard_semi_analytic_J" type="bool" value="false"/>
           <Parameter name="steady_do_grid_sequence" type="int" value="1"/>
-          <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{1.e-1, 1.e-1, 1.e-3}"/>
+          <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{1.e-5, 1.e-5, 1.e-7}"/>
+          <Parameter name="richard_dt_thresh_pure_steady" type="double" value="1.e11"/>
+          <Parameter name="richard_variable_switch_saturation_threshold" type="double" value="0.995"/>
 
           <Parameter name="verbose" type="double" value="2"/>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="Iterative Linear Solver Control">
         <ParameterList name="Multigrid Algorithm">
           <ParameterList name="Expert Settings">
@@ -106,7 +86,7 @@
       </ParameterList>
 
       <ParameterList name="Adaptive Mesh Refinement Control">
-        <Parameter name="Number Of AMR Levels" type="int" value="4"/>
+        <Parameter name="Number Of AMR Levels" type="int" value="1"/>
         <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4}"/>
         <Parameter name="Regrid Interval" type="Array(int)" value="{200000}"/>
         <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2}"/>
@@ -250,9 +230,6 @@
   </ParameterList>
 
   <ParameterList name="Material Properties">
-    <Parameter name="Permeability Output File" type="string" value="flow02/kp"/>
-    <Parameter name="Porosity Output File" type="string" value="flow02/pp"/>
-    <Parameter name="Saturation Threshold For Kr" type="double" value="0.995"/>
 
     <ParameterList name="Soil">
       <ParameterList name="Porosity: Uniform">
@@ -267,6 +244,9 @@
         <Parameter name="Sr" type="double" value="0.354"/>
         <Parameter name="m" type="double" value="0.291"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+        <Parameter name="krel smoothing interval" type="double" value=".00035"/>
+        <!-- <Parameter name="WRM Plot File" type="string" value="flow01/kr_soil.dat"/> -->
+        <!-- <Parameter name="WRM Plot File Number Of Points" type="int" value="1000001"/> -->
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{SoilLower, SoilUpper, SoilRight}"/>
     </ParameterList>
@@ -284,6 +264,9 @@
         <Parameter name="Sr" type="double" value="0.052"/>
         <Parameter name="m" type="double" value="0.314"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+        <Parameter name="krel smoothing interval" type="double" value=".000081"/>
+        <!-- <Parameter name="WRM Plot File" type="string" value="flow01/kr_gravel.dat"/> -->
+        <!-- <Parameter name="WRM Plot File Number Of Points" type="int" value="1000001"/> -->
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{TankWaste, TankFFfloor, TankFFwall}"/>
     </ParameterList>
@@ -301,6 +284,9 @@
         <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.485"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+        <Parameter name="krel smoothing interval" type="double" value="13.35"/>
+        <!-- <Parameter name="WRM Plot File" type="string" value="flow01/kr_concrete.dat"/> -->
+        <!-- <Parameter name="WRM Plot File Number Of Points" type="int" value="1000001"/> -->
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{TankConcFloor, TankConcWall, TankConcRoof1, TankConcRoof2}"/>
     </ParameterList>
@@ -318,6 +304,9 @@
         <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.485"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+        <Parameter name="krel smoothing interval" type="double" value="13.35"/>
+        <!-- <Parameter name="WRM Plot File" type="string" value="flow01/kr_liner.dat"/> -->
+        <!-- <Parameter name="WRM Plot File Number Of Points" type="int" value="1000001"/> -->
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{TankLinerFloor, TankLinerWall, TankLinerRoof}"/>
     </ParameterList>
@@ -335,6 +324,9 @@
         <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.485"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+        <Parameter name="krel smoothing interval" type="double" value="13.35"/>
+        <!-- <Parameter name="WRM Plot File" type="string" value="flow01/kr_grout.dat"/> -->
+        <!-- <Parameter name="WRM Plot File Number Of Points" type="int" value="1000001"/> -->
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{TankGrout}"/>
     </ParameterList>
@@ -364,7 +356,7 @@
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
-        <Parameter name="Reference Value" type="double" value="0"/>
+        <Parameter name="Reference Value" type="double" value="101325"/>
         <Parameter name="Reference Coordinate" type="Array(double)" value="{0,0}"/>
         <Parameter name="Gradient Value" type="Array(double)" value="{0,-9789.3474 }"/>
       </ParameterList>

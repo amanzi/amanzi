@@ -48,8 +48,9 @@ public:
   RockManager(const RegionManager*   _region_manager,
               const Array<Geometry>& geomArray,
               const Array<IntVect>&  refRatio);
+  ~RockManager();
 
-  bool CanDerive(const std::string& property_name);
+  bool CanDerive(const std::string& property_name) const;
 
   bool GetProperty(Real               time,
                    int                level,
@@ -58,7 +59,7 @@ public:
                    int                dComp,
                    int                nGrow,
                    void*              ctx = 0,
-                   bool               ignore_mixed = false);
+                   bool               ignore_mixed = false) const;
 
   bool GetPropertyDirect(Real               t,
                          int                level,
@@ -66,66 +67,79 @@ public:
                          const Box&         box,
                          const std::string& pname,
                          int                dComp,
-                         void*              ctx = 0);
+                         void*              ctx = 0) const;
 
   /* Fill a MultiFab with the ID of the material at that location, given a
      refinement level (as defined in the ctr), including nGrow cells. The ID
      returned is suitable to be passed as an identifier for evaluating
      state-dependent properties (such as relative permeability) */
-  void GetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed = false);
+  void GetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed = false) const;
 
 
   // Capillary Pressure (given Saturation)
-  void CapillaryPressure(const Real* saturation, int* matID, Real time, Real* capillaryPressure, int npts);
+  void CapillaryPressure(const Real* saturation, int* matID, Real time, Real* capillaryPressure, int npts) const;
   void CapillaryPressure(const MultiFab&  saturation,
                          const iMultiFab& matID,
                          Real             time,
                          MultiFab&        capillaryPressure,
                          int              sComp,
                          int              dComp,
-                         int              nGrow);
+                         int              nGrow) const;
 
   // Inverse Capillary Pressure (Saturation given Capillary Pressure)
-  void InverseCapillaryPressure(const Real* capillaryPressure, int* matID, Real time, Real* saturation, int npts);
+  void InverseCapillaryPressure(const Real* capillaryPressure, int* matID, Real time, Real* saturation, int npts) const;
   void InverseCapillaryPressure(const MultiFab&  capillaryPressure,
                                 const iMultiFab& matID,
                                 Real             time,
                                 MultiFab&        saturation,
                                 int              sComp,
                                 int              dComp,
-                                int              nGrow);
+                                int              nGrow) const;
 
   // D (Saturation) / D(CapillaryPressure)
-  void DInverseCapillaryPressure(const Real* saturation, int* matID, Real time, Real* DsaturationDpressure, int npts);
+  void DInverseCapillaryPressure(const Real* saturation, int* matID, Real time, Real* DsaturationDpressure, int npts) const;
   void DInverseCapillaryPressure(const MultiFab&  saturation,
                                  const iMultiFab& matID,
                                  Real             time,
                                  MultiFab&        DsaturationDpressure,
                                  int              sComp,
                                  int              dComp,
-                                 int              nGrow);
+                                 int              nGrow) const;
 
   // Relative Permeability (given saturation)
-  void RelativePermeability(const Real* saturation, int* matID, Real time, Real* kappa, int npts);
+  void RelativePermeability(const Real* saturation, int* matID, Real time, Real* kappa, int npts) const;
   void RelativePermeability(const MultiFab&  saturation,
                             const iMultiFab& matID,
                             Real             time,
                             MultiFab&        kappa,
                             int              sComp,
                             int              dComp,
-                            int              nGrow);
+                            int              nGrow) const;
 
+  // Residual saturation
+  void ResidualSaturation(int* matID, Real time, Real* Sr, int npts) const;
+  void ResidualSaturation(const iMultiFab& matID,
+                          Real             time,
+                          MultiFab&        Sr,
+                          int              dComp,
+                          int              nGrow) const;
+
+  const MatFiller* GetMatFiller() const {return materialFiller;}
   int ID() const {return rock_mgr_ID;}
   /*
     Number of components for this property
    */
   int NComp(const std::string& property_name) const;
+  const PArray<Material>& GetMaterials() const {return rock;}
+
+  bool Is_CP_model_XX(int model_id, const std::string& str) const;
+  bool Is_Kr_model_XX(int model_id, const std::string& str) const;
 
 protected:
   void Initialize(const Array<Geometry>& geomArray,
                   const Array<IntVect>&  refRatio);
 
-  Array<Array<int> > SortPtsByMaterial(int* matID, int npts);
+  Array<Array<int> > SortPtsByMaterial(int* matID, int npts) const;
   void BuildInterpolators();
 
   const RegionManager* region_manager;
@@ -134,11 +148,11 @@ protected:
   bool is_saturated;
   bool is_diffusive;
   bool tensor_diffusion;
-  bool use_shifted_Kr_eval;
-  bool saturation_threshold_for_vg_Kr;
   std::map<std::string,int> CP_models;
   std::map<std::string,int> Kr_models;
   PArray<MonotCubicInterpolator> CP_s_interps;
+  PArray<MonotCubicInterpolator> Kr_s_interps;
+  Array<std::pair<int,std::string> > WRM_plot_file;
   bool interps_built;
 
   int rock_mgr_ID;

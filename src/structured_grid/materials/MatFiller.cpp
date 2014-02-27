@@ -87,7 +87,7 @@ MatFiller::VerifyProperties()
 }
 
 void 
-MatFiller::SetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed)
+MatFiller::SetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed) const
 {
   BoxArray unfilled(mf.boxArray());
   if (unfilled.size()==0) {
@@ -104,7 +104,12 @@ MatFiller::SetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed)
   for (MFIter mfi(tmf); mfi.isValid(); ++mfi) {
     IArrayBox& tfab = tmf[mfi];
     for (int j=0; j<materials.size(); ++j) {
-      int matID = matIdx[materials[j].Name()];
+      int matID = -1;
+      std::map<std::string,int>::const_iterator it = matIdx.find(materials[j].Name());
+      if (it!=matIdx.end()) {
+        matID = it->second;
+      }
+      BL_ASSERT(matID >= 0);
       materials[j].setVal(tfab,matID,0,dx);
     }
   }
@@ -249,7 +254,7 @@ MatFiller::SetPropertyDirect(Real               t,
                              const Box&         box,
                              const std::string& pname,
                              int                dComp,
-                             void*              ctx)
+                             void*              ctx) const
 {
   Box ovlp = box & fab.box();
   if (ovlp.ok()) {
@@ -268,7 +273,12 @@ MatFiller::SetPropertyDirect(Real               t,
     const Geometry& geom = geomArray[level];
     const Real* dx = geom.CellSize();
     for (int j=0; j<materials.size(); ++j) {
-      int matID = matIdx[materials[j].Name()];
+      int matID = -1;
+      std::map<std::string,int>::const_iterator it = matIdx.find(materials[j].Name());
+      if (it!=matIdx.end()) {
+        matID = it->second;
+      }
+      BL_ASSERT(matID >= 0);
       materials[j].setVal(idfab,matID,0,dx);
     }
     if (idfab.min(0)<0) return false;
@@ -287,7 +297,7 @@ MatFiller::SetProperty(Real               t,
                        int                dComp,
                        int                nGrow,
                        void*              ctx,
-                       bool               ignore_mixed)
+                       bool               ignore_mixed) const
 {
   if (geomArray[level].isAnyPeriodic()) {
     BoxLib::Abort("Periodic not yet supported");
@@ -465,7 +475,7 @@ MatFiller::FillCellsOutsideDomain(Real               t,
                                   const std::string& pname,
                                   int                dComp,
                                   int                nComp,
-                                  int                nGrow)
+                                  int                nGrow) const
 {
   const Array<int> bc(2*BL_SPACEDIM,FOEXTRAP);
   const Geometry& geom = geomArray[level];
@@ -489,7 +499,7 @@ MatFiller::FillCoarseCells(Real               t,
                            const std::string& pname,
                            int                dComp,
                            int                nComp,
-                           void*              ctx)
+                           void*              ctx) const
 {
   int finestLevel = nLevs-1;
   if (level<finestLevel) {

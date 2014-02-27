@@ -51,6 +51,8 @@ public:
   MFTower& GetKrParams() {return *rs_data.KrParams;}
   MFTower& GetCoeffCC() {return *rs_data.CoeffCC;}
 
+  const iMultiFab& GetMaterialID(int lev) const {return materialID[lev];}
+
   // Time-dependent properties
   const MFTower* GetKappaCCdir(Real t) {return rs_data.GetKappaCCdir(t);}
   const PArray<MFTower>& GetKappaEC(Real t) {return rs_data.GetKappaEC(t);}
@@ -101,7 +103,7 @@ public:
   void UnsetRemainingJacobianReuses();
   bool ReusePreviousJacobian();
 
-  void BuildOpSkel(Mat& J);
+  void BuildOpSkel(Mat& J, bool calcSpace);
 
   void YpambX(MFTower&           Y,
 	      const MFTower&     X,
@@ -154,6 +156,8 @@ protected:
   int num_remaining_Jacobian_reuses;
   int current_timestep;
   std::string record_file;
+
+  PArray<iMultiFab> materialID;
 };
 
 #endif

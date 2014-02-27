@@ -1,8 +1,8 @@
 #include <RSAMRdata.H>
 #include <POROUSMEDIA_F.H> // For FORT_RICHARD_ALPHA
 
-RSAMRdata::RSAMRdata(int slev, int nlevs, Layout& _layout, PMAmr* amrp, NLScontrol& nlsc)
-  : RSdata(slev,nlevs,_layout,nlsc), pm_amr(amrp), eval_time_for_source(-1)
+RSAMRdata::RSAMRdata(int slev, int nlevs, Layout& _layout, PMAmr* amrp, NLScontrol& nlsc, const RockManager* rm)
+: RSdata(slev,nlevs,_layout,nlsc,rm), pm_amr(amrp), eval_time_for_source(-1)
 {
   nLevs = layout.NumLevels();
   pm.resize(pm_amr->finestLevel()+1,PArrayNoManage);
@@ -44,7 +44,7 @@ RSAMRdata::PropertyManager::UpdateProperty(Real t)
   if (t!=eval_time) {
     eval_time = t;
 
-    RockManager* rockMgr = property_ctx.rockMgr;
+    const RockManager* rockMgr = property_ctx.rockMgr;
     bool ret = rockMgr != 0;
     if (!ret) BoxLib::Abort("MatFiller not properly constructed");
     int nLevs = property_dataPtr->NumLevels();
@@ -305,51 +305,40 @@ RSAMRdata::FillStateBndry (MFTower& press,
 
 void
 RSAMRdata::calcInvPressure (MFTower&       N,
-			    const MFTower& P) const
+			    const MFTower& P,
+                            Real           time,
+                            int            sComp,
+                            int            dComp,
+                            int            nGrow) const
 {
   for (int lev=0; lev<nLevs; ++lev) {
-    pm[lev].calcInvPressure(N[lev],P[lev]);
-  }
-}
-
-void 
-RSAMRdata::calcLambda (MFTower&       lbd,
-		       const MFTower& N)
-{
-  for (int lev=0; lev<nLevs; ++lev) {
-    pm[lev].calcLambda(&(lbd)[lev],N[lev]);
+    pm[lev].calcInvPressure(N[lev],P[lev],time,sComp,dComp,nGrow);
   }
 }
 
 void
-RSAMRdata::calcRichardAlpha(MFTower&       alpha,
-                            const MFTower& rhoSat,
-                            Real           t)
+RSAMRdata::calcLambda (MFTower&       Lambda,
+                       const MFTower& N,
+                       Real           time,
+                       int            sComp,
+                       int            dComp,
+                       int            nGrow) const
 {
-  const MFTower* kappaCCdir = GetKappaCCdir(t);
-
   for (int lev=0; lev<nLevs; ++lev) {
-    const MultiFab& rs(rhoSat[lev]);
-    for (MFIter mfi(rs); mfi.isValid(); ++mfi) {
-      const Box& vbox = mfi.validbox();
+    pm[lev].calcLambda(Lambda[lev],N[lev],time,sComp,dComp,nGrow);
+  }
+}
 
-      const FArrayBox& pofab = (*Porosity)[lev][mfi];
-      //FArrayBox& kcfab = (*KappaCCavg()[lev][mfi];  // FIXME: Original version uses avg, probably not correct
-      const FArrayBox& kcfab = (*kappaCCdir)[lev][mfi];
-      const FArrayBox& cpfab = (*PCapParams)[lev][mfi];
-      const int n_cp_coef = cpfab.nComp();
-
-      const FArrayBox& nfab = rs[mfi];
-      FArrayBox& afab = alpha[lev][mfi];
-      
-      FORT_RICHARD_ALPHA(afab.dataPtr(), ARLIM(afab.loVect()), ARLIM(afab.hiVect()),
-			 nfab.dataPtr(), ARLIM(nfab.loVect()),ARLIM(nfab.hiVect()),
-			 pofab.dataPtr(), ARLIM(pofab.loVect()),ARLIM(pofab.hiVect()),
-			 kcfab.dataPtr(), ARLIM(kcfab.loVect()), ARLIM(kcfab.hiVect()),
-			 cpfab.dataPtr(), ARLIM(cpfab.loVect()), ARLIM(cpfab.hiVect()), &n_cp_coef,
-			 vbox.loVect(), vbox.hiVect());
-      
-    }
+void
+RSAMRdata::calcRichardAlpha (MFTower&       Alpha,
+                             const MFTower& N,
+                             Real           time,
+                             int            sComp,
+                             int            dComp,
+                             int            nGrow) const
+{
+  for (int lev=0; lev<nLevs; ++lev) {
+    pm[lev].calc_richard_alpha(Alpha[lev],N[lev],time,sComp,dComp,nGrow);
   }
 }
 

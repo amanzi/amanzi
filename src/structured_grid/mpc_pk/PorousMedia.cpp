@@ -83,6 +83,11 @@ verify_is_clean(const std::string& note, const MultiFab& mf,int sComp=0, int nCo
   const int* fabhi = (fab).hiVect();		\
   const Real* fabdat = (fab).dataPtr();
 
+#define DEF_CILIMITS(fab,fabdat,fablo,fabhi)	\
+  const int* fablo = (fab).loVect();		\
+  const int* fabhi = (fab).hiVect();		\
+  const int* fabdat = (fab).dataPtr();
+
 // Couple of handy functions for gdb
 
 extern "C" {
@@ -197,10 +202,6 @@ PorousMedia::CleanupStatics ()
 #else
     delete Amanzi::AmanziChemistry::chem_out;
 #endif
-    delete richard_solver;
-    delete richard_solver_control;
-    delete richard_solver_data;
-
     physics_events_registered = false;
 }
 
@@ -282,6 +283,7 @@ PorousMedia::PorousMedia ()
   kpedge       = 0;
   kr_coef      = 0;
   cpl_coef     = 0;
+  materialID   = 0;
   lambda       = 0;
   lambda_cc    = 0;
   lambdap1_cc  = 0;
@@ -504,6 +506,7 @@ PorousMedia::PorousMedia (Amr&            papa,
   kpedge       = 0;
   kr_coef      = 0;
   cpl_coef     = 0;
+  materialID   = 0;
   lambda       = 0;
   lambda_cc    = 0;
   lambdap1_cc  = 0;
@@ -591,6 +594,9 @@ PorousMedia::PorousMedia (Amr&            papa,
       BL_ASSERT(cpl_coef == 0);
       cpl_coef = new MultiFab(grids,5,3);
       (*cpl_coef).setVal(0.);
+
+      BL_ASSERT(materialID == 0);
+      materialID = new iMultiFab(grids,1,3);
 
       BL_ASSERT(lambda_cc == 0);
       lambda_cc = new MultiFab(grids,ncomps,1);
@@ -687,6 +693,7 @@ PorousMedia::~PorousMedia ()
   delete specific_storage;
   delete kr_coef;
   delete cpl_coef;
+  delete materialID;
   delete lambda_cc;
   delete lambdap1_cc;
   delete dlambda_cc;
@@ -699,6 +706,20 @@ PorousMedia::~PorousMedia ()
   delete sat_old_cached;
   delete sat_new_cached;
   delete source;
+
+  if (level==0) {
+    if (richard_solver != 0) {
+      delete richard_solver;
+    }
+    
+    if (richard_solver_control != 0) {
+      delete richard_solver_control;
+    }
+    
+    if (richard_solver_data != 0) {
+      delete richard_solver_data;
+    }
+  }
 }
 
 void
@@ -831,6 +852,9 @@ PorousMedia::restart (Amr&          papa,
       BL_ASSERT(cpl_coef == 0);
       cpl_coef = new MultiFab(grids,5,3);
       (*cpl_coef).setVal(0.);
+
+      BL_ASSERT(materialID == 0);
+      materialID = new iMultiFab(grids,1,3);
 
       BL_ASSERT(lambda_cc == 0);
       lambda_cc = new MultiFab(grids,ncomps,1);
@@ -1105,28 +1129,32 @@ PorousMedia::initData ()
                           model != PM_SINGLE_PHASE_SOLID);
                 int nc = 1;
 		Array<Real> vals = ic();
-		FArrayBox& cdat = (*cpl_coef)[mfi];
-		const int n_cpl_coef = cpl_coef->nComp();
-		DEF_CLIMITS(cdat,c_ptr,c_lo,c_hi);
-		FArrayBox& kdat = (*kr_coef)[mfi];
+
+                const RockManager* rockMgr = PMParent()->GetRockManager();
+                int rmID = rockMgr->ID();
+
+		IArrayBox& mdat = (*materialID)[mfi];
 		FArrayBox& kpdat = kpedge[BL_SPACEDIM-1][mfi];
-		const int n_kr_coef = kr_coef->nComp();
-		DEF_CLIMITS(kdat,k_ptr,k_lo,k_hi);
+		DEF_CILIMITS(mdat,m_ptr,m_lo,m_hi);
 		DEF_CLIMITS(kpdat,kp_ptr,kp_lo,kp_hi);
+                
 
 		FORT_STEADYSTATE(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
 				 density.dataPtr(),muval.dataPtr(),&ncomps,
 				 kp_ptr, ARLIM(kp_lo),ARLIM(kp_hi), 
-				 k_ptr, ARLIM(k_lo),ARLIM(k_hi), &n_kr_coef,
-				 dx, &vals[0], &nc, &gravity);
+				 m_ptr, ARLIM(m_lo),ARLIM(m_hi),
+				 &rmID,&cur_time,&vals[0], &nc, &gravity,
+                                 vbox.loVect(),vbox.hiVect());
 		
 		// set pressure
 		if (model==PM_RICHARDS) {
 		  const int idx = mfi.index();
-		  Array<int> s_bc = getBCArray(State_Type,idx,0,1);
-		  calcCapillary((*pcnp1_cc)[mfi],S_new[mfi],(*rock_phi)[mfi],
-				(*kappa)[mfi],(*cpl_coef)[mfi],grids[idx],
-				s_bc);
+                  FArrayBox pc(vbox,1);
+                  FArrayBox s(vbox,1); s.copy(sdat);
+                  IArrayBox m(vbox,1); m.copy((*materialID)[mfi]);
+                  rockMgr->CapillaryPressure(s.dataPtr(),m.dataPtr(),cur_time,pc.dataPtr(),vbox.numPts());
+                  (*pcnp1_cc)[mfi].copy(pc);
+		  P_new[mfi].setVal(0);
 		  P_new[mfi].copy((*pcnp1_cc)[mfi]);
 		  P_new[mfi].mult(-1.0);
 		  P_new[mfi].plus(atmospheric_pressure_atm);
@@ -1377,7 +1405,7 @@ PorousMedia::initData ()
         S_new.setVal(density[n],n,1);
       }
     } else {
-      calcInvPressure(S_new,P_new); // Set sat from p
+      calcInvPressure(S_new,P_new,cur_time,0,0,0); // Set sat from p, no grow cells
     }
     if (have_capillary) {
       if (model != PM_RICHARDS || do_richard_sat_solve) {
@@ -1391,7 +1419,7 @@ PorousMedia::initData ()
     if ( (model != PM_STEADY_SATURATED)
 	 && (model != PM_SATURATED) ) {
       if (model == PM_RICHARDS) {
-        calcLambda(lambdap1_cc,get_new_data(State_Type)); // Use rho.sat computed above
+        calcLambda(*lambdap1_cc,get_new_data(State_Type),cur_time,0,0,0); // Use rho.sat computed above
       } else {
         calcLambda(cur_time);
       }
@@ -1631,7 +1659,8 @@ PorousMedia::richard_init_to_steady()
         NLSstatus ret;
 
 	NLScontrol nlsc;
-	RSAMRdata rs_data(0,num_active_levels,layout_sub,PMParent(),nlsc);
+        const RockManager* rockMgr = PMParent()->GetRockManager();
+	RSAMRdata rs_data(0,num_active_levels,layout_sub,PMParent(),nlsc,rockMgr);
         BuildNLScontrolData(nlsc, rs_data, "InitGridSequence");
         RichardSolver* rs = 0;
 
@@ -1858,12 +1887,11 @@ PorousMedia::richard_init_to_steady()
             pmfi.setTimeLevel(t+dt,dt,dt);
           }
           pmf.FillCoarsePatch(pmf.get_new_data(Press_Type),0,t+dt,Press_Type,0,ncomps);
-          pmf.FillStateBndry(t,Press_Type,0,1); // Set boundary data (FIXME: If t-dep, this will set at t_final)
 	  if ( (model == PM_STEADY_SATURATED)
 	       || (model == PM_SATURATED) ) {
 	    pmf.get_new_data(State_Type).setVal(1,0,ncomps);
 	  } else {
-	    pmf.calcInvPressure(pmf.get_new_data(State_Type),pmf.get_new_data(Press_Type));
+	    pmf.calcInvPressure(pmf.get_new_data(State_Type),pmf.get_new_data(Press_Type),cur_time,0,0,0);
 	  }
           solved = false;
           ParallelDescriptor::Barrier();
@@ -2668,11 +2696,9 @@ PorousMedia::get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow)
   BL_ASSERT(kappa->nGrow()>= nGrow);
   BL_ASSERT(rock_phi->nGrow()>= nGrow);
   if (model == PM_RICHARDS) {
-    BL_ASSERT(cpl_coef->boxArray()== grids);
-    BL_ASSERT(cpl_coef->nGrow()>= nGrow);
-    for (FillPatchIterator P_fpi(*this,RhoSat,nGrow,t_eval,Press_Type,0,ncomps); P_fpi.isValid(); ++P_fpi) {
-      calcInvPressure(RhoSat[P_fpi],P_fpi(),(*rock_phi)[P_fpi],(*kappa)[P_fpi],(*cpl_coef)[P_fpi]);
-    }
+    const RockManager* rockMgr = PMParent()->GetRockManager();
+    FillStateBndry(t_eval,Press_Type,0,1);
+    calcInvPressure(RhoSat,get_data(Press_Type,t_eval),t_eval,0,0,nGrow);
   }
   else if ( (model == PM_STEADY_SATURATED)
 	    || (model == PM_SATURATED) ) {
@@ -4075,7 +4101,7 @@ PorousMedia::get_inflow_density(const Orientation& face,
 
         // FIXME: Pull kr params from database, order as old version expects
         FArrayBox cp;
-        RockManager* rockMgr = PMParent()->GetRockManager();
+        const RockManager* rockMgr = PMParent()->GetRockManager();
         rockMgr->GetPropertyDirect(t,level,cp,ccBndBox,"capillary_pressure",0);
         cdat.setVal(0);
         cdat.setVal((Real)3,0);                // Model ID: old 3 = vG
@@ -6862,7 +6888,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
                     std::cout << "     Iteration (p) " << itr_nwt 
                               << " : Error = "       << err_nwt << " (tol: " << max_err_nwt << ")\n";
                 }
-                calcInvPressure (S_new,P_new); 
+                calcInvPressure (S_new,P_new,pcTime,0,0,1); 
                 calcLambda(pcTime);
                 compute_vel_phase(u_mac,0,pcTime);
                 calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
@@ -8542,11 +8568,21 @@ PorousMedia::post_timestep (int crse_iteration)
 PMAmr*
 PorousMedia::PMParent()
 {
-    PMAmr* pm_parent = dynamic_cast<PMAmr*>(parent);
-    if (!pm_parent) {
-        BoxLib::Abort("Bad cast");
-    }
-    return pm_parent;
+  PMAmr* pm_parent = dynamic_cast<PMAmr*>(parent);
+  if (!pm_parent) {
+    BoxLib::Abort("Bad cast");
+  }
+  return pm_parent;
+}
+
+const PMAmr*
+PorousMedia::PMParent() const
+{
+  const PMAmr* pm_parent = dynamic_cast<const PMAmr*>(parent);
+  if (!pm_parent) {
+    BoxLib::Abort("Bad cast");
+  }
+  return pm_parent;
 }
 
 //
@@ -8601,7 +8637,8 @@ PorousMedia::post_regrid (int lbase,
 
       layout.Build();
       richard_solver_control = new NLScontrol();
-      richard_solver_data = new RSAMRdata(0,new_nLevs,layout,pm_parent,*richard_solver_control);
+      const RockManager* rockMgr = PMParent()->GetRockManager();
+      richard_solver_data = new RSAMRdata(0,new_nLevs,layout,pm_parent,*richard_solver_control,rockMgr);
       BuildNLScontrolData(*richard_solver_control,*richard_solver_data,"Flow_PK");
       richard_solver = new RichardSolver(*richard_solver_data,*richard_solver_control);
     }
@@ -8611,13 +8648,18 @@ PorousMedia::post_regrid (int lbase,
 void 
 PorousMedia::init_rock_properties ()
 {
+  const RockManager* rockMgr = PMParent()->GetRockManager();
+  int nGrow = materialID->nGrow();
+  bool ignore_mixed = true;
+  rockMgr->GetMaterialID(level,*materialID,nGrow,ignore_mixed);
+
+
   //
   // Determine rock properties.
   //
   const Real* dx = geom.CellSize();
   const int max_level = parent->maxLevel();
 
-  RockManager* rockMgr = PMParent()->GetRockManager();
   MultiFab kappatmp(grids,BL_SPACEDIM,nGrowHYP);
   bool ret = rockMgr->GetProperty(state[State_Type].curTime(),level,kappatmp,
                                   "permeability",0,kappatmp.nGrow());
@@ -8781,7 +8823,8 @@ PorousMedia::post_init_state ()
       if (steady_use_PETSc_snes) {
         // Compute initial velocity field
         NLScontrol nlsc_init;
-	RSAMRdata rs_data(0,pmamr->finestLevel(),pmamr->GetLayout(),pmamr,nlsc_init);
+        const RockManager* rockMgr = PMParent()->GetRockManager();
+	RSAMRdata rs_data(0,pmamr->finestLevel(),pmamr->GetLayout(),pmamr,nlsc_init,rockMgr);
         BuildNLScontrolData(nlsc_init,rs_data,"Init_Velocity");
         RichardSolver rs(rs_data,nlsc_init);
         rs.ResetRhoSat();
@@ -10239,7 +10282,7 @@ PorousMedia::richard_sync ()
                 if (verbose > 3 && ParallelDescriptor::IOProcessor())
                     std::cout << "Newton iteration " << itr_nwt 
                               << " : Error = "       << err_nwt << "\n"; 
-                calcInvPressure (S_new,P_new); 
+                calcInvPressure (S_new,P_new,pcTime,0,0,1); 
                 if (model != PM_RICHARDS)
                     scalar_adjust_constraint(0,ncomps-1);
                 calcLambda(pcTime);
@@ -10347,8 +10390,8 @@ PorousMedia::richard_sync ()
               MultiFab::Copy(P_tmp,P_new,0,0,1,0);
               P_tmp.mult(-1.0);
               P_tmp.plus(atmospheric_pressure_atm,0);
-              fine_lev.calcInvCapillary(sync_incr,P_tmp);
-              MultiFab::Copy(S_new,sync_incr,0,0,1,0);
+              const Real curr_time = state[State_Type].curTime();
+              fine_lev.calcInvCapillary(S_new,P_tmp,curr_time,0,0,0);
           }
       }
   }
@@ -10837,7 +10880,7 @@ PorousMedia::calcDiffusivity (const Real time,
 
       BL_ASSERT(dComp_tracs + num_tracs <= diff_cc->nComp());
 
-      RockManager* rockMgr = PMParent()->GetRockManager();
+      const RockManager* rockMgr = PMParent()->GetRockManager();
       bool retD = rockMgr->GetProperty(time,level,*diff_cc,"molecular_diffusion_coefficient",dComp_tracs,nGrow);
 
       MultiFab tau(grids,1,nGrow);
@@ -10911,7 +10954,7 @@ PorousMedia::getTensorDiffusivity (MultiFab*  diagonal_diffusivity[BL_SPACEDIM],
   int first_tracer = ncomps;
   getDiffusivity(diagonal_diffusivity,time,first_tracer,0,1);
 
-  RockManager* rockMgr = PMParent()->GetRockManager();
+  const RockManager* rockMgr = PMParent()->GetRockManager();
   std::string pName = "dispersivity";
   int nCompAlpha = rockMgr->NComp(pName);
   if (nCompAlpha < 1) {
@@ -11537,67 +11580,30 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 #endif
 }
 
-void 
-PorousMedia::calc_richard_alpha (MultiFab*     alpha,
-				 const Real    time)
-{
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::calc_richard_alpha()");
-
-  const int nGrow = 1;    
-  MultiFab S(grids,ncomps,nGrow);
-  const int n_cpl_coef = cpl_coef->nComp(); 
-  for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
-       fpi.isValid();
-       ++fpi)
-    {
-      S[fpi].copy(fpi());
-    }
-  calc_richard_alpha(alpha,S);
-}
 
 void 
-PorousMedia::calc_richard_alpha (MultiFab*       alpha,
-				 const MultiFab& S) const
+PorousMedia::calc_richard_alpha (MultiFab&       alpha,
+                                 const MultiFab& N,
+                                 Real            time,
+                                 int             sComp,
+                                 int             dComp,
+                                 int             nGrow) const
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::calc_richard_alpha()");
-  int nGrow = S.nGrow();
-  const int n_cpl_coef = cpl_coef->nComp(); 
-  for (MFIter mfi(S); mfi.isValid(); ++mfi) 
-    {
-      const int idx   = mfi.index();
-      const Box box   = BoxLib::grow(grids[idx],nGrow);
+  BL_ASSERT(N.nGrow() >= nGrow); // Assumes that boundary cells have been properly filled
+  BL_ASSERT(alpha.nGrow() >= nGrow); // Fill boundary cells (in F)
+  BL_ASSERT(N.nComp()>=sComp+ncomps && alpha.nComp()>=dComp+ncomps);
 
-      const int* lo      = mfi.validbox().loVect();
-      const int* hi      = mfi.validbox().hiVect();
-
-      const Real* ndat = S[mfi].dataPtr(); 
-      const int*  n_lo = S[mfi].loVect();
-      const int*  n_hi = S[mfi].hiVect();
-
-      const Real* adat = (*alpha)[mfi].dataPtr();
-      const int*  a_lo = (*alpha)[mfi].loVect();
-      const int*  a_hi = (*alpha)[mfi].hiVect();
-
-      const Real* pdat   = (*rock_phi)[mfi].dataPtr();
-      const int* p_lo    = (*rock_phi)[mfi].loVect();
-      const int* p_hi    = (*rock_phi)[mfi].hiVect();
-
-      const Real* kdat   = (*kappa)[mfi].dataPtr();
-      const int* k_lo    = (*kappa)[mfi].loVect();
-      const int* k_hi    = (*kappa)[mfi].hiVect();
-
-      const Real* cpdat  = (*cpl_coef)[mfi].dataPtr(); 
-      const int*  cp_lo  = (*cpl_coef)[mfi].loVect();
-      const int*  cp_hi  = (*cpl_coef)[mfi].hiVect();
-
-			  
-      FORT_RICHARD_ALPHA(adat, ARLIM(a_lo), ARLIM(a_hi),
-			 ndat, ARLIM(n_lo), ARLIM(n_hi),
-			 pdat, ARLIM(p_lo), ARLIM(p_hi),
-			 kdat, ARLIM(k_lo), ARLIM(k_hi),
-			 cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
-			 &n_cpl_coef, lo, hi);
-    }
+  const RockManager* rockMgr = PMParent()->GetRockManager();
+  MultiFab sat(grids,1,nGrow);
+  MultiFab::Copy(sat,N,0,0,1,nGrow);
+  sat.mult(1/density[0],0,1,nGrow);
+  rockMgr->DInverseCapillaryPressure(sat,*materialID,time,alpha,sComp,dComp,nGrow);
+  alpha.mult(-density[0],dComp,1,nGrow);
+  MultiFab::Multiply(alpha,*rock_phi,0,dComp,1,nGrow);
+  if (nGrow > 0) {
+    alpha.FillBoundary(dComp);
+    geom.FillPeriodicBoundary(alpha,dComp,ncomps);
+  }
 }
 
 void 
@@ -11643,185 +11649,86 @@ PorousMedia::calc_richard_velbc (MultiFab& res,
 #endif
 
 void 
-PorousMedia::calcCapillary (const Real time)
+PorousMedia::calcCapillary (Real time)
 {
-  //
-  // Calculate the capillary pressure.  
-  //
-  MultiFab& S = get_data(State_Type,time);
-  FillStateBndry(time,State_Type,0,ncomps);
-  //
-  // Select time level to work with (N or N+1)
-  //
   const TimeLevel whichTime = which_time(State_Type,time);
   BL_ASSERT(whichTime == AmrOldTime || whichTime == AmrNewTime);
-  MultiFab* pc_cc = (whichTime == AmrOldTime) ? pcn_cc : pcnp1_cc;
-  const int nGrow = 1;
-
-  pc_cc->setVal(-20);
-
-  for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
-       fpi.isValid();
-       ++fpi)
-    {      
-      const int idx  = fpi.index();
-      const Box box   = BoxLib::grow(grids[idx],nGrow);
-      BL_ASSERT(box == fpi().box());
-
-      Array<int> s_bc;
-      s_bc = getBCArray(State_Type,idx,0,1);
-
-      calcCapillary ((*pc_cc)[fpi],fpi(),(*rock_phi)[fpi],(*kappa)[fpi],
-		     (*cpl_coef)[fpi],grids[idx],s_bc);
-    }
- pc_cc->FillBoundary();
+  MultiFab* pc = (whichTime == AmrOldTime) ? pcn_cc : pcnp1_cc;
+  calcCapillary(*pc,get_data(State_Type,time),time,0,0,0);
 }
 
 void 
-PorousMedia::calcCapillary (MultiFab*       pc,
-			    const MultiFab& S,
-			    int             nGrow)
+PorousMedia::calcCapillary (MultiFab&       pc,
+			    const MultiFab& N,
+                            Real            time,
+                            int             sComp,
+                            int             dComp,
+			    int             nGrow) const
 {
-  //
-  // Calculate the capillary pressure for a given state.  
-  //
-  Array<int> s_bc;
-  BL_ASSERT(S.nGrow() >= nGrow); // Assumes that boundary cells have been properly filled
-  BL_ASSERT(pc->nGrow() >= nGrow); // Fill boundary cells (in F)
-  BL_ASSERT(S.nComp()>=ncomps && pc->nComp()>=ncomps);
-  for (MFIter mfi(S); mfi.isValid(); ++mfi) {
-      const int idx  = mfi.index();
-      Box box = BoxLib::grow(mfi.validbox(),nGrow);
-      s_bc = getBCArray(State_Type,idx,0,ncomps);
-      calcCapillary ((*pc)[mfi],S[mfi],(*rock_phi)[mfi],(*kappa)[mfi],
-		     (*cpl_coef)[mfi],box,s_bc);
-  }
+  BL_ASSERT(N.nGrow() >= nGrow); // Assumes that boundary cells have been properly filled
+  BL_ASSERT(pc.nGrow() >= nGrow); // Fill boundary cells (in F)
+  BL_ASSERT(N.nComp()>=ncomps && pc.nComp()>=ncomps);
+
+  const RockManager* rockMgr = PMParent()->GetRockManager();
+  MultiFab sat(grids,1,nGrow);
+  MultiFab::Copy(sat,N,0,0,1,nGrow);
+  sat.mult(1/density[0],0,1,nGrow);
+  rockMgr->CapillaryPressure(sat,*materialID,time,pc,sComp,dComp,nGrow);
   if (nGrow > 0) {
-    pc->FillBoundary();
-    geom.FillPeriodicBoundary(*pc,0,ncomps);
+    pc.FillBoundary(dComp);
+    geom.FillPeriodicBoundary(pc,dComp,ncomps);
   }
 }
 
 void 
-PorousMedia::calcCapillary (FArrayBox&       pc,
-			    const FArrayBox& S,
-			    const FArrayBox& rockphi,
-			    const FArrayBox& rockkappa,
-			    const FArrayBox& cplcoef,
-			    const Box&       grids,
-			    const Array<int>& s_bc)
+PorousMedia::calcInvCapillary (Real time)
 {
-  //
-  // Calculate the capillary pressure for a fab
-  //
-  const int n_cpl_coef = cplcoef.nComp();
-  const int* lo  = grids.loVect();
-  const int* hi  = grids.hiVect();
-  
-  const Real* ndat  = S.dataPtr(); 
-  const int*  n_lo  = S.loVect();
-  const int*  n_hi  = S.hiVect();
-
-  const Real* ddat  = pc.dataPtr(); 
-  const int*  d_lo  = pc.loVect();
-  const int*  d_hi  = pc.hiVect();
-
-  const Real* pdat = rockphi.dataPtr();
-  const int* p_lo  = rockphi.loVect();
-  const int* p_hi  = rockphi.hiVect();
-
-  const Real* kdat = rockkappa.dataPtr();
-  const int* k_lo  = rockkappa.loVect();
-  const int* k_hi  = rockkappa.hiVect();
-
-  const Real* cpdat  = cplcoef.dataPtr(); 
-  const int*  cp_lo  = cplcoef.loVect();
-  const int*  cp_hi  = cplcoef.hiVect();
-
-  FORT_MK_CPL( ddat, ARLIM(d_lo), ARLIM(d_hi),
-	       ndat, ARLIM(n_lo), ARLIM(n_hi),
-	       pdat, ARLIM(p_lo), ARLIM(p_hi),
-	       kdat, ARLIM(k_lo), ARLIM(k_hi),
-	       cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
-	       &n_cpl_coef, lo, hi, s_bc.dataPtr());
-}
-
-void 
-PorousMedia::calcInvCapillary (FArrayBox& n,
-			       const FArrayBox& pc,
-			       const FArrayBox& rock_phi,
-			       const FArrayBox& kappa,
-			       const FArrayBox& cpl_coef)
-{
-  //
-  // Calculate inverse capillary pressure
-  // (ie, compute rho.sat from pcap)
-  //    
-  const int n_cpl_coef = cpl_coef.nComp();
-  const Real* ndat  = n.dataPtr(); 
-  const int*  n_lo  = n.loVect();
-  const int*  n_hi  = n.hiVect();
-
-  const Real* ddat  = pc.dataPtr(); 
-  const int*  d_lo  = pc.loVect();
-  const int*  d_hi  = pc.hiVect();
-  
-  const Real* pdat = rock_phi.dataPtr();
-  const int* p_lo  = rock_phi.loVect();
-  const int* p_hi  = rock_phi.hiVect();
-  
-  const Real* kdat = kappa.dataPtr();
-  const int* k_lo  = kappa.loVect();
-  const int* k_hi  = kappa.hiVect();
-  
-  const Real* cpdat  = cpl_coef.dataPtr(); 
-  const int*  cp_lo  = cpl_coef.loVect();
-  const int*  cp_hi  = cpl_coef.hiVect();
-
-  FORT_MK_INV_CPL( ddat, ARLIM(d_lo), ARLIM(d_hi),
-                   ndat, ARLIM(n_lo), ARLIM(n_hi),
-                   pdat, ARLIM(p_lo), ARLIM(p_hi),
-                   kdat, ARLIM(k_lo), ARLIM(k_hi),
-                   cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
-                   &n_cpl_coef);
+  const TimeLevel whichTime = which_time(State_Type,time);
+  BL_ASSERT(whichTime == AmrOldTime || whichTime == AmrNewTime);
+  MultiFab* pc = (whichTime == AmrOldTime) ? pcn_cc : pcnp1_cc;
+  calcInvCapillary(get_data(State_Type,time),*pc,time,0,0,0);
 }
 
 void 
 PorousMedia::calcInvCapillary (MultiFab&       N,
-			       const MultiFab& pc)
+			       const MultiFab& pc,
+                               Real            time,
+                               int             sComp,
+                               int             dComp,
+                               int             nGrow) const
 {
-  for (MFIter mfi(N); mfi.isValid(); ++mfi) {
-    PorousMedia::calcInvCapillary (N[mfi],pc[mfi],(*rock_phi)[mfi],(*kappa)[mfi],(*cpl_coef)[mfi]);
+  BL_ASSERT(N.nGrow() >= nGrow); // Assumes that boundary cells have been properly filled
+  BL_ASSERT(pc.nGrow() >= nGrow); // Fill boundary cells (in F)
+  BL_ASSERT(N.nComp() >= dComp+ncomps && pc.nComp() >= sComp+ncomps);
+
+  const RockManager* rockMgr = PMParent()->GetRockManager();
+  rockMgr->InverseCapillaryPressure(pc,*materialID,time,N,sComp,dComp,nGrow);
+  N.mult(density[0],dComp,1,nGrow);
+
+  if (nGrow > 0) {
+    N.FillBoundary(dComp,ncomps);
+    geom.FillPeriodicBoundary(N,dComp,ncomps);
   }
 }
 
-void 
-PorousMedia::calcInvPressure (FArrayBox& n,
-                              const FArrayBox& pressure,
-                              const FArrayBox& rock_phi,
-                              const FArrayBox& kappa,
-                              const FArrayBox& cpl_coef) const
-{
-  FArrayBox& pc = const_cast<FArrayBox&>(pressure); // We will be careful!
-  pc.mult(-1,0,ncomps); // Pcap = Pair - Pwater
-  pc.plus(atmospheric_pressure_atm);
-  calcInvCapillary(n,pc,rock_phi,kappa,cpl_coef);
-  pc.mult(-1); // Pwater = Pair - Pcap
-  pc.plus(atmospheric_pressure_atm);
-}
-
-void 
+void
 PorousMedia::calcInvPressure (MultiFab&       N,
-			      const MultiFab& p) const
+                              const MultiFab& P,
+                              Real            time,
+                              int             sComp,
+                              int             dComp,
+                              int             nGrow) const
 {
-  int nGrow = 1;  
-  FArrayBox press;
-  for (MFIter mfi(N); mfi.isValid(); ++mfi) {
-    const Box box = Box(mfi.validbox()).grow(nGrow);
-    press.resize(box,ncomps);
-    press.copy(p[mfi],box,0,box,0,ncomps);
-    calcInvPressure(N[mfi],press,(*rock_phi)[mfi],(*kappa)[mfi],(*cpl_coef)[mfi]);
-  }
+  //
+  // Pcap = Pgas - Pwater, then get N=s.rho from Pcap(s)^{-1}
+  //
+  BL_ASSERT(N.nGrow() >= nGrow  && P.nGrow() >= nGrow);
+  BL_ASSERT(N.nComp() >= dComp+ncomps && P.nComp() >= sComp+ncomps);
+  BL_ASSERT(N.boxArray() == P.boxArray());
+  MultiFab pc(P.boxArray(),1,nGrow);
+  pc.setVal(atmospheric_pressure_atm,0,1,nGrow);
+  MultiFab::Subtract(pc,P,0,0,1,nGrow);
+  calcInvCapillary(N,pc,time,0,dComp,nGrow);
 }
 
 void 
@@ -11852,74 +11759,40 @@ PorousMedia::smooth_pc (MultiFab* pc)
   pc->FillBoundary();
 }
 
-void
-PorousMedia::calcLambda(FArrayBox&       lambda,
-                        const FArrayBox& N,
-                        const FArrayBox& kr_coef)
-{
-  const int n_kr_coef = kr_coef.nComp();
-
-  const Real* ndat  = N.dataPtr(); 
-  const int*  n_lo  = N.loVect();
-  const int*  n_hi  = N.hiVect();
-  
-  const Real* ddat  = lambda.dataPtr(); 
-  const int*  d_lo  = lambda.loVect();
-  const int*  d_hi  = lambda.hiVect();
-  
-  const Real* krdat  = kr_coef.dataPtr(); 
-  const int*  kr_lo  = kr_coef.loVect();
-  const int*  kr_hi  = kr_coef.hiVect();
-  
-  FORT_MK_LAMBDA( ddat, ARLIM(d_lo), ARLIM(d_hi),
-                  ndat, ARLIM(n_lo), ARLIM(n_hi),
-                  krdat, ARLIM(kr_lo),ARLIM(kr_hi),
-                  &n_kr_coef);
-}
-
-
 void 
-PorousMedia::calcLambda (const Real time, MultiFab* lbd_cc)
+PorousMedia::calcLambda (MultiFab&       lambda,
+                         const MultiFab& N,
+                         Real            time,
+                         int             sComp,
+                         int             dComp,
+                         int             nGrow) const
 {
-  //
-  // Calculate the lambda values at cell-center. 
-  //
-  MultiFab& S = get_data(State_Type,time);
-  FillStateBndry(time,State_Type,0,ncomps);
-  MultiFab* lcc;
-  if (lbd_cc == 0)
-    {
-      const TimeLevel whichTime = which_time(State_Type,time);
-      BL_ASSERT(whichTime == AmrOldTime || whichTime == AmrNewTime);
-      lcc = (whichTime == AmrOldTime) ? lambda_cc : lambdap1_cc;
-    }
-  else
-    lcc = lbd_cc;  
+  BL_ASSERT(N.nGrow() >= nGrow); // Assumes that boundary cells have been properly filled
+  BL_ASSERT(lambda.nGrow() >= nGrow); // Fill boundary cells (in F)
+  BL_ASSERT(N.nComp()>=ncomps && lambda.nComp()>=ncomps);
 
-  const int nGrow = 1;
-  for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
-       fpi.isValid();
-       ++fpi)
-    {
-      const int idx   = fpi.index();
-      const Box box   = BoxLib::grow(grids[idx],nGrow);
-      BL_ASSERT(box == fpi().box());
-
-      PorousMedia::calcLambda((*lcc)[fpi], fpi(), (*kr_coef)[fpi]);
-    }
-  lcc->FillBoundary();
-}
-
-void 
-PorousMedia::calcLambda (MultiFab* lbd, const MultiFab& N)
-{
-  //
-  // Calculate the lambda values at cell-center. 
-  //   
-  for (MFIter mfi(N); mfi.isValid(); ++mfi) {
-    calcLambda((*lbd)[mfi], N[mfi], (*kr_coef)[mfi]);
+  const RockManager* rockMgr = PMParent()->GetRockManager();
+  MultiFab sat(grids,1,nGrow);
+  MultiFab::Copy(sat,N,0,0,1,nGrow);
+  sat.mult(1/density[0],0,1,nGrow);
+  rockMgr->RelativePermeability(sat,*materialID,time,lambda,sComp,dComp,nGrow);
+  BL_ASSERT(ncomps==1);
+  lambda.mult(1/muval[0],0,1,nGrow);
+  if (nGrow > 0) {
+    lambda.FillBoundary(dComp);
+    geom.FillPeriodicBoundary(lambda,dComp,ncomps);
   }
-  lbd->FillBoundary();
+}
+
+void 
+PorousMedia::calcLambda (const Real time)
+{
+  MultiFab& N = get_data(State_Type,time);
+  FillStateBndry(time,State_Type,0,ncomps);
+  const TimeLevel whichTime = which_time(State_Type,time);
+  BL_ASSERT(whichTime == AmrOldTime || whichTime == AmrNewTime);
+  MultiFab*lcc = (whichTime == AmrOldTime) ? lambda_cc : lambdap1_cc;
+  calcLambda(*lcc,N,time,0,0,0);
 }
 
 void 
@@ -12279,8 +12152,24 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
       if (subbox.ok()) {
 
         // Set the pressure boundary condition based on the saturation
-        // (will not generate p>0)
         if (model==PM_RICHARDS && do_richard_sat_solve) {
+          //
+          // NOTE: This has been disabled
+          //
+          // If the boundary condition is specified as a Dirichlet condition
+          // on saturation, then the material properties are required in order
+          // to compute the corresponding capillary pressure.  One would like to
+          // use the level-stored materialID iMultiFab to inform this function 
+          // about which material properties to use, but the iMultiFab is a 
+          // parallel data structure, and so is not generally available for 
+          // arbitrary boxes in space.  Alternatively, we can use the RockManager
+          // directly, however that too fills material ids in parallel.  So
+          // some new functionality is required either way.
+          //
+          if (ParallelDescriptor::IOProcessor()) {
+            std::cout << "do_richard_sat_solve=true not currently supported" << std::endl;
+          }
+          BoxLib::Abort();
 
           sdat.resize(subbox,ncomps); 
           prdat.resize(subbox,ncomps); prdat.setVal(0);
@@ -12296,27 +12185,10 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
             { 
               regions[j]->setVal(mask,1,0,dx,0);
             }
-            
-            FArrayBox cpldat, phidat, kpdat, ktdat;
-            const int n_cpl_coef = cpl_coef->nComp();
-            cpldat.resize(subbox,n_cpl_coef);
-            phidat.resize(subbox,1);
-            ktdat.resize(subbox,BL_SPACEDIM);
-            kpdat.resize(subbox,1);
+            const RockManager* rockMgr = PMParent()->GetRockManager();
+            IArrayBox matID; // FIXME: THIS IS NOT YET PROPERLY FILLED SO THE NEXT CALL WILL FAIL!!!
+            rockMgr->CapillaryPressure(sdat.dataPtr(),matID.dataPtr(),time,prdat.dataPtr(),subbox.numPts());
 
-            FArrayBox cp;
-            RockManager* rockMgr = PMParent()->GetRockManager();
-            rockMgr->GetPropertyDirect(time,level,cp,subbox,"capillary_pressure",0);
-            cpldat.setVal(0);
-            cpldat.setVal((Real)3,0);            // Model ID: old 3 = vG
-            cpldat.copy(cp,subbox,1,subbox,1,1); // "m" 
-            cpldat.copy(cp,subbox,3,subbox,2,1); // "Sr" 
-
-            rockMgr->GetPropertyDirect(time,level,ktdat,subbox,"permeability",0);
-            rockMgr->GetPropertyDirect(time,level,phidat,subbox,"porosity",0);
-
-            kpdat.copy(ktdat,subbox,it->first.coordDir(),subbox,0,1);
-            calcCapillary(prdat,sdat,phidat,kpdat,cpldat,subbox,bc);
             for (IntVect iv=subbox.smallEnd(); iv<=subbox.bigEnd(); subbox.next(iv)) {
               if (mask(iv,0) > 0) {
                 for (int n=0; n<ncomps; ++n) {
@@ -12325,7 +12197,6 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
               }
             }
           }
-
         }
         else {
 
@@ -12688,7 +12559,7 @@ PorousMedia::derive_Intrinsic_Permeability(Real      time,
                                            int       dcomp,
                                            int       dir)
 {
-  RockManager* rockMgr = PMParent()->GetRockManager();
+  const RockManager* rockMgr = PMParent()->GetRockManager();
   MultiFab kappatmp(grids,BL_SPACEDIM,0);
   bool ret = rockMgr->GetProperty(state[State_Type].curTime(),level,kappatmp,
                                   "permeability",0,mf.nGrow());
@@ -12703,7 +12574,7 @@ PorousMedia::derive_Molecular_Diffusion_Coefficient(Real      time,
                                                     MultiFab& mf,
                                                     int       dcomp)
 {
-  RockManager* rockMgr = PMParent()->GetRockManager();
+  const RockManager* rockMgr = PMParent()->GetRockManager();
   bool ret = rockMgr->GetProperty(state[State_Type].curTime(),level,mf,
                                   "molecular_diffusion_coefficient",dcomp,mf.nGrow());
   if (!ret) {
@@ -12718,7 +12589,7 @@ PorousMedia::derive_Tortuosity(Real      time,
                                MultiFab& mf,
                                int       dcomp)
 {
-  RockManager* rockMgr = PMParent()->GetRockManager();
+  const RockManager* rockMgr = PMParent()->GetRockManager();
   bool ret = rockMgr->GetProperty(state[State_Type].curTime(),level,mf,
                                   "tortuosity",dcomp,mf.nGrow());
   if (!ret) {
@@ -12733,7 +12604,7 @@ PorousMedia::derive_SpecificStorage(Real      time,
                                     MultiFab& mf,
                                     int       dcomp)
 {
-  RockManager* rockMgr = PMParent()->GetRockManager();
+  const RockManager* rockMgr = PMParent()->GetRockManager();
   bool ret = rockMgr->GetProperty(state[State_Type].curTime(),level,mf,
                                   "specific_storage",dcomp,mf.nGrow());
   if (!ret) {
@@ -12749,7 +12620,7 @@ PorousMedia::derive_Dispersivity(Real      time,
                                  int       dcomp,
                                  int       dir)
 {
-  RockManager* rockMgr = PMParent()->GetRockManager();
+  const RockManager* rockMgr = PMParent()->GetRockManager();
   std::string name = (dir == 0  ? "Dispersivity_L" : "Dispersivity_T" );
   std::string pName = "dispersivity";
   int nComp = rockMgr->NComp(pName);
@@ -12798,7 +12669,7 @@ PorousMedia::derive (const std::string& name,
                      int                dcomp)
 {
   const DeriveRec* rec = derive_lst.get(name);
-  RockManager* rockMgr = PMParent()->GetRockManager();
+  const RockManager* rockMgr = PMParent()->GetRockManager();
 
   bool not_found_yet = false;
 

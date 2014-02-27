@@ -784,12 +784,14 @@ public:
 
   //
   // Calculate the dt term in the jacobian for p-formulation
+  //  (alpha = dN /dPc)
   //
-  void calc_richard_alpha (MultiFab*     alpha,
-			   const Real    time);
-
-  void calc_richard_alpha (MultiFab*       alpha,
-			   const MultiFab& S) const;
+  void calc_richard_alpha (MultiFab&       alpha,
+                           const MultiFab& N,
+                           Real            time,
+                           int             sComp,
+                           int             dComp,
+                           int             nGrow) const;
   //
   // Calculate divergence of velocity boundary condition 
   //
@@ -801,46 +803,44 @@ public:
   //
   // Calculate capillary pressure
   //
-  void calcCapillary (const Real time);
-  void calcCapillary (MultiFab*       pc,
-		      const MultiFab& S,
-		      int             nComp = 1);
-  void calcCapillary (FArrayBox&       pc,
-		      const FArrayBox& S,
-		      const FArrayBox& rockphi,
-		      const FArrayBox& rockkappa,
-		      const FArrayBox& cplcoef,
-		      const Box&       grids,
-		      const Array<int>& s_bc);
+  void calcCapillary (Real time);
+  void calcCapillary (MultiFab&       pc,
+                      const MultiFab& N,
+                      Real            time,
+                      int             sComp,
+                      int             dComp,
+                      int             nGrow) const;
   void smooth_pc (MultiFab* pc);
   //
   // Calculate inverse capillary pressure
   //
-  static void calcInvCapillary (FArrayBox&       n,
-                                const FArrayBox& pc,
-                                const FArrayBox& rock_phi,
-                                const FArrayBox& kappa,
-                                const FArrayBox& cpl_coef);
-
-  void calcInvCapillary (MultiFab& N,const MultiFab& pc);
+  void calcInvCapillary (Real time);
+  void calcInvCapillary (MultiFab&       N,
+                         const MultiFab& pc,
+                         Real            time,
+                         int             sComp,
+                         int             dComp,
+                         int             nGrow) const;
   //
   // Calculate inverse pressure
   //
-  void calcInvPressure (MultiFab& N,const MultiFab& P) const;
-  void calcInvPressure (FArrayBox& n,
-                        const FArrayBox& pressure,
-                        const FArrayBox& rock_phi,
-                        const FArrayBox& kappa,
-                        const FArrayBox& cpl_coef) const;
+  void calcInvPressure (MultiFab&       N,
+                        const MultiFab& P,
+                        Real            time,
+                        int             sComp,
+                        int             dComp,
+                        int             nGrow) const;
   //
   // Calculate lambda = relative permeability/mu
   //
-  static void calcLambda(FArrayBox&       lambda,
-                         const FArrayBox& N,
-                         const FArrayBox& kr_coef);
+  void calcLambda (MultiFab&       lambda,
+                   const MultiFab& N,
+                   Real            time,
+                   int             sComp,
+                   int             dComp,
+                   int             nGrow) const;
+  void calcLambda (const Real time);
 
-  void calcLambda (const Real time, MultiFab* lbd_cc = 0);
-  void calcLambda (MultiFab* lbd, const MultiFab &N);
   //
   // Calculate first derivative of lambda
   //
@@ -984,6 +984,7 @@ public:
   static int Model() {return (int)model;}
 
   PMAmr* PMParent();
+  const PMAmr* PMParent() const;
 
 #ifdef ALQUIMIA_ENABLED
   static Amanzi::AmanziChemistry::Chemistry_Engine* GetChemistryEngine() {return chemistry_engine;}
@@ -1224,6 +1225,7 @@ protected:
   MultiFab* specific_storage;
   MultiFab* kr_coef;
   MultiFab* cpl_coef;
+  iMultiFab* materialID;
   //
   // lambda values and its derivative
   //

@@ -79,7 +79,7 @@ public:
                    int                dComp,
                    int                nGrow,
                    void*              ctx = 0,
-                   bool               ignore_mixed = false);
+                   bool               ignore_mixed = false) const;
 
   bool SetPropertyDirect(Real               t,
                          int                level,
@@ -87,12 +87,12 @@ public:
                          const Box&         box,
                          const std::string& pname,
                          int                dComp,
-                         void*              ctx = 0);
+                         void*              ctx = 0) const;
 
   /* Fill a MultiFab with the ID of the material at that location, given a
      refinement level (as defined in the ctr), including nGrow cells. The ID
      is consistent with MatIdx()*/
-  void SetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed = false);
+  void SetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed = false) const;
 
 
   /* Access functions follow */
@@ -111,7 +111,7 @@ public:
 
   /* The refinement ratio between this level and the next finer. 
      Note, level<NumLevels()-1 */
-  const IntVect& RefRatio(int crse_level) {return refRatio[crse_level];}
+  const IntVect& RefRatio(int crse_level) const {return refRatio[crse_level];}
 
   /* The set of cells that are "mixed" at this level....i.e., when cells in this set are
      refined to the next finer level, they will be composed of finer cells which do not
@@ -174,7 +174,7 @@ protected:
 			       const std::string& pname,
 			       int                dComp,
 			       int                nComp,
-			       void*              ctx = 0);
+			       void*              ctx = 0) const;
 
   /* Fill all cells that are outside the "domain" as defined by
      the Geometry objects passed into the ctr.  By default, this
@@ -186,7 +186,7 @@ protected:
 				      const std::string& pname,
 				      int                dComp,
 				      int                nComp,
-				      int                nGrow);
+				      int                nGrow) const;
 
   /* Ensure that the properties passed in for all materials are consistent,
      e.g. that they return a consistent number of components, and have 

@@ -31,12 +31,14 @@ void
 PMAmr::CleanupStatics ()
 {
     pmamr_initialized = false;
+    region_manager = 0;
+    rock_manager = 0;
 }
 
 static bool initialized = false;
 
 PMAmr::PMAmr()
-  : Amr(), materialFiller(0)
+  : Amr()
 {
     if (!pmamr_initialized) {
         regrid_on_restart        = 0;
@@ -84,9 +86,8 @@ PMAmr::~PMAmr()
     delete it->second;
   }
 
-  delete materialFiller; materialFiller = 0;
-  delete region_manager; region_manager = 0;
   delete rock_manager; rock_manager = 0;
+  delete region_manager; region_manager = 0;
 }
 
 void 
@@ -233,7 +234,6 @@ void
 PMAmr::init (Real t_start,
              Real t_stop)
 {
-  SetUpMaterialServer();
   SetUpRockManager();
   InitializeControlEvents();
 
@@ -678,23 +678,6 @@ PMAmr::coarseTimeStep (Real _stop_time)
             BoxLib::Abort("Aborted by user w/o checkpoint");
         }
     }
-}
-
-void
-PMAmr::SetUpMaterialServer()
-{
-  if (materialFiller == 0 || !materialFiller->Initialized()) {
-    if (ParallelDescriptor::IOProcessor()) {
-      std::cout << "Building MaterialFiller object..." << std::endl;
-    }
-
-    int Nlevs = maxLevel() + 1;
-    const PArray<Material>& materials = PorousMedia::Materials();
-    materialFiller = new MatFiller(geom,refRatio(),materials);
-    if (ParallelDescriptor::IOProcessor() && verbose>0) {
-      std::cout << "....MaterialFiller object built" << std::endl;
-    }
-  }
 }
 
 void

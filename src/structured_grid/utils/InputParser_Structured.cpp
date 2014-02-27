@@ -1472,12 +1472,42 @@ namespace Amanzi {
                 cpl_pl.set("Sr",rsslist.get<double>("Sr"));
                 cpl_pl.set("alpha",alpha*1.01325e5); // convert Pa^-1 to atm^-1 
                 rsublist.set("cpl",cpl_pl);
+                double Kr_smoothing_max_pcap = -1;
+                if (rsslist.isParameter("krel smoothing interval")) {
+                  Kr_smoothing_max_pcap = rsslist.get<double>("krel smoothing interval");
+                }
+                rsublist.set("Kr_smoothing_max_pcap",Kr_smoothing_max_pcap);
+
+                const std::string WRM_plot_file_str = "WRM Plot File";
+                if (rsslist.isParameter(WRM_plot_file_str)) {
+                  std::string WRM_plot_file = rsslist.get<std::string>(WRM_plot_file_str);
+                  rsublist.set("WRM_plot_file",WRM_plot_file);
+
+                  const std::string WRM_plot_file_num_pts_str = "WRM Plot File Number Of Points";
+                  int WRM_plot_file_numPts = 500; // Default
+                  if (rsslist.isParameter(WRM_plot_file_num_pts_str)) {
+                    WRM_plot_file_numPts = rsslist.get<int>(WRM_plot_file_num_pts_str);
+                  }
+                  rsublist.set("WRM_plot_file_num_pts",WRM_plot_file_numPts);
+                }
                 mtest["Capillary_Pressure"] = true;
 
                 std::string krType = rsslist.get<std::string>("Relative Permeability");
                 if (krType=="Mualem") {
                   rsublist.set("Kr_model",krType);
                   double Kr_ell = 0.5; // Default
+                  if (rsslist.isParameter("ell")) {
+                    Kr_ell = rsslist.get<double>("ell");
+                  }
+                  rsublist.set("Kr_ell",Kr_ell);
+                  mtest["Relative_Permeability"] = true;
+                }
+                else if (krType=="Burdine") {
+                  rsublist.set("Kr_model",krType);
+                  double Kr_ell = 2.0; // Default
+                  if (rsslist.isParameter("ell")) {
+                    Kr_ell = rsslist.get<double>("ell");
+                  }
                   rsublist.set("Kr_ell",Kr_ell);
                   mtest["Relative_Permeability"] = true;
                 }

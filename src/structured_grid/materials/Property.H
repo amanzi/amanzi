@@ -18,6 +18,7 @@ public:
     : name(_name), coarsen_rule(_coarsen_rule), refine_rule(_refine_rule) {}
 
   virtual void eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp, void* ctx = 0) const = 0;
+  virtual bool isTimeDependent() const = 0;
 
   virtual ~Property() {}
   virtual Property* clone() const = 0;
@@ -49,6 +50,7 @@ public:
     : Property(_name,_coarsen_rule,_refine_rule) {values = _values;}
 
   virtual void eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp, void* ctx = 0) const;
+  virtual bool isTimeDependent() const {return false;}
 
   virtual ~ConstantProperty() {}
   virtual Property* clone() const;
@@ -77,6 +79,7 @@ public:
     : Property(_name,_coarsen_rule,_refine_rule), funcs(_funcs) {}
 
   virtual void eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp, void* ctx = 0) const;
+  virtual bool isTimeDependent() const {return true;}
 
   virtual ~TabularInTimeProperty() {}
   virtual Property* clone() const;

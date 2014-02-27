@@ -3,8 +3,8 @@
 Real RStdata::Pa_per_ATM = 101325;
 static bool saturated = false;
 
-RStdata::RStdata(int slev, int nlevs, Layout& layout, NLScontrol& nlsc, RStstruct& _inputs)
-  : RSdata(slev,nlevs,layout,nlsc), inputs(_inputs)
+RStdata::RStdata(int slev, int nlevs, Layout& layout, NLScontrol& nlsc, RStstruct& _inputs, const RockManager* rm)
+  : RSdata(slev,nlevs,layout,nlsc,rm), inputs(_inputs)
 {
   Porosity = 0;
   KappaCCavg = 0;
@@ -27,6 +27,15 @@ RStdata::RStdata(int slev, int nlevs, Layout& layout, NLScontrol& nlsc, RStstruc
   density = inputs.rho;
   viscosity = inputs.mu;
   is_saturated = inputs.saturated;
+
+  bool ignore_mixed = true;
+  int nLevs = layout.NumLevels();
+  materialID.resize(nLevs,PArrayManage);
+  for (int lev=0; lev<nLevs; ++lev) {
+    const BoxArray& ba = layout.GridArray()[lev];
+    materialID.set(lev,new iMultiFab(ba,1,3));
+    rock_manager->GetMaterialID(lev,materialID[lev],materialID[lev].nGrow(),ignore_mixed);
+  }
 }
 
 RStdata::~RStdata()
@@ -48,38 +57,87 @@ RStdata::~RStdata()
   KappaEC.clear();
 }
 
+static std::string CP_model_None = "None";
+static std::string CP_model_vG = "VanGenuchten";
+static std::string CP_model_BC = "BrooksCorey";
+
+// FIXME: Pasted in from RockManager.cpp
+static int CPL_MODEL_ID = 0;
+
+static int VG_M                   = 1;
+static int VG_ALPHA               = 2;
+static int VG_SR                  = 3;
+static int VG_ELL                 = 4;
+static int VG_KR_MODEL_ID         = 5;
+static int VG_KR_SMOOTHING_MAX_PC = 6;
+
+static int BC_LAMBDA              = 1;
+static int BC_ALPHA               = 2;
+static int BC_SR                  = 3;
+static int BC_ELL                 = 4;
+static int BC_KR_MODEL_ID         = 5;
+static int BC_KR_SMOOTHING_MAX_PC = 6;
+
 void
-RStdata::SetConstantValue(MFTower& mft,
-                          Real     val,
-                          int      dComp,
-                          int      nComp)
+RStdata::SetPCapParams(Real t)
 {
-  for (int lev=0; lev<nLevs; ++lev) {
-    int nGrow = mft[lev].nGrow();
-    mft[lev].setVal(val,dComp,nComp,nGrow);
+  if (rock_manager->CanDerive("capillary_pressure")) {
+    int nComp = rock_manager->NComp("capillary_pressure");
+    for (int lev=0; lev<nLevs; ++lev) {
+      int nGrow = (*PCapParams)[lev].nGrow();
+      MultiFab pcp((*PCapParams)[lev].boxArray(),nComp,nGrow);
+      bool ret = rock_manager->GetProperty(t,lev,pcp,"capillary_pressure",0,nGrow);
+      if (!ret) BoxLib::Abort("Failed to build capillary_pressure");
+      for (MFIter mfi(pcp); mfi.isValid(); ++mfi) {
+        FArrayBox& res = (*PCapParams)[lev][mfi];
+        const FArrayBox& pc_params = pcp[mfi];
+        const Box& box = pc_params.box();
+        for (IntVect iv(box.smallEnd()), End=box.bigEnd(); iv <= End; box.next(iv)) {
+          bool is_vG = rock_manager->Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_vG);
+          bool is_BC = rock_manager->Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_BC);
+          if (is_vG) {
+            res(iv,0) = 0;
+            res(iv,1) = pc_params(iv,VG_M);
+            res(iv,2) = pc_params(iv,VG_ALPHA) * Pa_per_ATM;
+            res(iv,3) = pc_params(iv,VG_SR);
+            res(iv,4) = pc_params(iv,VG_KR_SMOOTHING_MAX_PC);
+          }
+          else if (is_BC) {
+            res(iv,0) = 0;
+            res(iv,1) = pc_params(iv,BC_LAMBDA);
+            res(iv,2) = pc_params(iv,BC_ALPHA) * Pa_per_ATM;
+            res(iv,3) = pc_params(iv,BC_SR);
+            res(iv,4) = pc_params(iv,BC_KR_SMOOTHING_MAX_PC);
+          }
+          else {
+            BoxLib::Abort("Unknown PC model");
+          }
+        }
+      }
+    }
   }
 }
 
 void
-RStdata::SetPCapParams()
+RStdata::SetPorosity(Real t)
 {
-  Real aval = inputs.alpha * Pa_per_ATM;
-  SetConstantValue(*PCapParams,3,0,1);
-  SetConstantValue(*PCapParams,inputs.m,1,1);
-  SetConstantValue(*PCapParams,aval,2,1);
-  SetConstantValue(*PCapParams,inputs.Sr,3,1);
+  for (int lev=0; lev<nLevs; ++lev) {
+    int nGrow = (*Porosity)[lev].nGrow();
+    bool ret = rock_manager->GetProperty(t,lev,(*Porosity)[lev],"porosity",0,nGrow);
+    if (!ret) BoxLib::Abort("Failed to build porosity");
+  }
 }
 
 void
-RStdata::SetPorosity()
+RStdata::SetSpecificStorage(Real t)
 {
-  SetConstantValue(*Porosity,inputs.phi,0,1);
-}
-
-void
-RStdata::SetSpecificStorage()
-{
-  SetConstantValue(*SpecificStorage,inputs.specific_storage,0,1);
+  for (int lev=0; lev<nLevs; ++lev) {
+    int nGrow = (*SpecificStorage)[lev].nGrow();
+    bool ret = rock_manager->GetProperty(t,lev,(*SpecificStorage)[lev],"specific_storage",0,nGrow);
+    if (!ret) {
+      (*SpecificStorage)[lev].setVal(0);
+    }
+  }
 }
 
 void
@@ -87,16 +145,18 @@ RStdata::SetUpMemory(NLScontrol& nlsc)
 {
   RSdata::SetUpMemory(nlsc);
 
+  Real t = 0;
+
   RhoSatOld = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
   RhoSatNew = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
   Pnew = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
   Pold = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
 
-  Porosity = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs); SetPorosity();
+  Porosity = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs); SetPorosity(t);
   KappaCCavg = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
   Lambda = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
-  PCapParams = new MFTower(layout,IndexType(IntVect::TheZeroVector()),4,1,nLevs); SetPCapParams();
-  SpecificStorage = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs); SetSpecificStorage();
+  PCapParams = new MFTower(layout,IndexType(IntVect::TheZeroVector()),5,1,nLevs); SetPCapParams(t);
+  SpecificStorage = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs); SetSpecificStorage(t);
   Source = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
   KappaCCdir = new MFTower(layout,IndexType(IntVect::TheZeroVector()),BL_SPACEDIM,1,nLevs);
   CoeffCC    = new MFTower(layout,IndexType(IntVect::TheZeroVector()),BL_SPACEDIM,1,nLevs);
@@ -173,7 +233,6 @@ void
 RStdata::FillStateBndry (MFTower& press,
                          Real time)
 {
-  MFTower& P = (IsNewTime(time) ? (*Pnew) : (*Pold) );
   int src_comp = 0;
   int num_comp = 1;
   int dir = BL_SPACEDIM-1;
@@ -183,7 +242,7 @@ RStdata::FillStateBndry (MFTower& press,
     const int* domlo = domain.loVect();
     const int* domhi = domain.hiVect();
     const Real* dx = geom.CellSize();
-    MultiFab& mf = P[lev];
+    MultiFab& mf = press[lev];
     const BoxArray& ba = mf.boxArray();
     for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
       int         i       = mfi.index();
@@ -201,13 +260,13 @@ RStdata::FillStateBndry (MFTower& press,
 
     Box gbox = domain;
     for (int d=0; d<BL_SPACEDIM; ++d) {
-      if (d!=dir) gbox.grow(d,P.NGrow());
+      if (d!=dir) gbox.grow(d,press.NGrow());
     }
     const Box adjCellLo = BoxLib::adjCellLo(gbox,dir,1);
-    for (MFIter mfi(P[lev]); mfi.isValid(); ++mfi) {
-      Box ovlp = P[lev][mfi].box() & adjCellLo;
+    for (MFIter mfi(press[lev]); mfi.isValid(); ++mfi) {
+      Box ovlp = press[lev][mfi].box() & adjCellLo;
       if (ovlp.ok()) {
-        P[lev][mfi].setVal(inputs.Pwt,ovlp,0,1);
+        press[lev][mfi].setVal(inputs.Pwt,ovlp,0,1);
       }
     }
   }
@@ -215,99 +274,97 @@ RStdata::FillStateBndry (MFTower& press,
 
 void
 RStdata::calcInvPressure (MFTower&       N,
-                          const MFTower& P) const
+                          const MFTower& P,
+                          Real           time,
+                          int            sComp,
+                          int            dComp,
+                          int            nGrow) const
 {
+  //
+  // Pcap = Pgas - Pwater, then get N=s.rho from Pcap(s)^{-1}
+  //
+  BL_ASSERT(N.NGrow() >= nGrow  && P.NGrow() >= nGrow);
+  BL_ASSERT(N.NComp() >= dComp && P.NComp() >= sComp);
   Real rho_loc = GetDensity()[0];
+
   for (int lev=0; lev<nLevs; ++lev) {
-    int nGrow = 1;
-    BL_ASSERT(N[lev].nGrow()>=nGrow);
-    BL_ASSERT(P[lev].nGrow()>=nGrow);
-    for (MFIter mfi(N[lev]); mfi.isValid(); ++mfi) {
-      FArrayBox& rhosat = N[lev][mfi];
-      const FArrayBox& pressure = P[lev][mfi];
-      const FArrayBox& pc_params = (*PCapParams)[lev][mfi];
-      const Box& box = Box(mfi.validbox()).grow(nGrow);
-      BL_ASSERT(rhosat.box().contains(box));
-      BL_ASSERT(pressure.box().contains(box));
-      for (IntVect iv=box.smallEnd(), End=box.bigEnd(); iv<=End; box.next(iv)) {
-        Real p = pressure(iv,0);
-        Real seff = 1;
-        Real m_loc = pc_params(iv,1);
-        Real a_loc = pc_params(iv,2);
-        Real Sr_loc = pc_params(iv,3);
-        if (p < 0) {
-          seff = std::pow(1 + std::pow(-p*a_loc, 1./(1-m_loc)), -m_loc);
-        }
-        rhosat(iv,0) = rho_loc*(seff*(1-Sr_loc)+Sr_loc);
-      }
+    BL_ASSERT(N[lev].boxArray() == P[lev].boxArray());
+    MultiFab pc(P[lev].boxArray(),1,nGrow);
+    pc.setVal(inputs.Pwt,0,1,nGrow);
+    MultiFab::Subtract(pc,P[lev],0,0,1,nGrow);
+    pc.mult(Pa_per_ATM,0,1,nGrow);
+    rock_manager->InverseCapillaryPressure(pc,materialID[lev],time,N[lev],0,dComp,nGrow);    
+    N[lev].mult(rho_loc,dComp,1,nGrow);
+    if (nGrow > 0) {
+      N[lev].FillBoundary(dComp,1);
+      const Geometry& geom = rock_manager->GetMatFiller()->Geom(lev);
+      geom.FillPeriodicBoundary(N[lev],dComp,1);
+    }
+  }
+}
+
+static Real vgKr(Real seff, Real m, Real ell) {
+  return std::pow(seff, ell) * std::pow(1-std::pow(1-std::pow(seff,1/m),m),2);
+}
+
+static Real vgPcInv(Real pc, Real m, Real alpha) {
+  Real n = 1/(1-m);
+  return std::pow(1 + std::pow(alpha*pc,n),-m);
+}
+
+void
+RStdata::calcLambda (MFTower&       Lambda,
+                     const MFTower& N,
+                     Real           time,
+                     int            sComp,
+                     int            dComp,
+                     int            nGrow) const
+{
+  Real mu_loc = GetViscosity()[0];
+  Real rho_loc = GetDensity()[0];
+
+  for (int lev=0; lev<nLevs; ++lev) {
+    BL_ASSERT(N[lev].boxArray() == Lambda[lev].boxArray());
+    MultiFab sat(N[lev].boxArray(),1,nGrow);
+    MultiFab::Copy(sat,N[lev],0,0,1,nGrow);
+    sat.mult(1/rho_loc,0,1,nGrow);
+    rock_manager->RelativePermeability(sat,materialID[lev],time,Lambda[lev],0,dComp,nGrow);
+    Lambda[lev].mult(1/mu_loc,dComp,1,nGrow);
+
+    if (nGrow > 0) {
+      Lambda[lev].FillBoundary(dComp,1);
+      const Geometry& geom = rock_manager->GetMatFiller()->Geom(lev);
+      geom.FillPeriodicBoundary(Lambda[lev],dComp,1);
     }
   }
 }
 
 void
-RStdata::calcLambda (MFTower&       lbd,
-                     const MFTower& N)
+RStdata::calcRichardAlpha (MFTower&       Alpha,
+                           const MFTower& N,
+                           Real           time,
+                           int            sComp,
+                           int            dComp,
+                           int            nGrow) const
 {
-  Real mu_loc = GetViscosity()[0];
+  BL_ASSERT(N.NGrow() >= nGrow); // Assumes that boundary cells have been properly filled
+  BL_ASSERT(Alpha.NGrow() >= nGrow); // Fill boundary cells (in F)
+
   Real rho_loc = GetDensity()[0];
   for (int lev=0; lev<nLevs; ++lev) {
-    int nGrow = 1;
-    BL_ASSERT(N[lev].nGrow()>=nGrow);
-    BL_ASSERT(lbd[lev].nGrow()>=nGrow);
-    for (MFIter mfi(N[lev]); mfi.isValid(); ++mfi) {
-      const FArrayBox& rhosat = N[lev][mfi];
-      FArrayBox& lambda = lbd[lev][mfi];
-      const FArrayBox& pc_params = (*PCapParams)[lev][mfi];
-      const Box& box = Box(mfi.validbox()).grow(nGrow);
-      BL_ASSERT(rhosat.box().contains(box));
-      BL_ASSERT(lambda.box().contains(box));
-      for (IntVect iv=box.smallEnd(), End=box.bigEnd(); iv<=End; box.next(iv)) {
-        Real m_loc = pc_params(iv,1);
-        Real a_loc = pc_params(iv,2);
-        Real Sr_loc = pc_params(iv,3);
-        Real seff = (rhosat(iv,0)/rho_loc - Sr_loc)/(1 - Sr_loc);
-        lambda(iv,0) = std::sqrt(seff) * std::pow(1-std::pow(1-std::pow(seff,1/m_loc),m_loc),2) / mu_loc;
-      }
+    const BoxArray& grids = N[lev].boxArray();
+    MultiFab sat(grids,1,nGrow);
+    MultiFab::Copy(sat,N[lev],0,0,1,nGrow);
+    sat.mult(1/rho_loc,0,1,nGrow);
+    rock_manager->DInverseCapillaryPressure(sat,materialID[lev],time,Alpha[lev],sComp,dComp,nGrow);
+    Alpha[lev].mult(-rho_loc,dComp,1,nGrow);
+    MultiFab::Multiply(Alpha[lev],(*Porosity)[lev],0,dComp,1,nGrow);
+    if (nGrow > 0) {
+      Alpha[lev].FillBoundary(dComp,1);
+      const Geometry& geom = rock_manager->GetMatFiller()->Geom(lev);
+      geom.FillPeriodicBoundary(Alpha[lev],dComp,1);
     }
-  }
-}
-
-void
-RStdata::calcRichardAlpha(MFTower&       alpha,
-                          const MFTower& N,
-                          Real           t)
-{
-  Real mu_loc = GetViscosity()[0];
-  Real rho_loc = GetDensity()[0];
-  for (int lev=0; lev<nLevs; ++lev) {
-    int nGrow = 1;
-    BL_ASSERT(N[lev].nGrow()>=nGrow);
-    BL_ASSERT(alpha[lev].nGrow()>=nGrow);
-    for (MFIter mfi(N[lev]); mfi.isValid(); ++mfi) {
-      FArrayBox& afab = alpha[lev][mfi];
-      const FArrayBox& Nfab = N[lev][mfi];
-      const FArrayBox& phifab = (*Porosity)[lev][mfi];
-      const FArrayBox& pc_params = (*PCapParams)[lev][mfi];
-      const Box& box = Box(mfi.validbox()).grow(nGrow);
-      BL_ASSERT(Nfab.box().contains(box));
-      BL_ASSERT(phifab.box().contains(box));
-      for (IntVect iv=box.smallEnd(), End=box.bigEnd(); iv<=End; box.next(iv)) {
-        Real m_loc = pc_params(iv,1);
-        Real a_loc = pc_params(iv,2);
-        Real Sr_loc = pc_params(iv,3);
-        Real seff = (Nfab(iv,0)/rho_loc - Sr_loc)/(1 - Sr_loc);
-
-        seff = std::max(1.e-3,seff);
-
-        Real n_loc = -1/m_loc;
-        Real phi_loc = phifab(iv,0);
-
-        Real sn = std::pow(seff,n_loc);
-        Real dpc_dN = n_loc * (1-m_loc) * std::pow(sn-1,-m_loc) * sn / (seff * a_loc);
-
-        afab(iv,0) = - phi_loc / dpc_dN * rho_loc * (1-inputs.Sr);
-      }
-    }
+    Alpha[lev].mult(Pa_per_ATM,0,1,nGrow);
   }
 }
 
@@ -323,10 +380,11 @@ const MFTower*
 RStdata::GetKappaCCdir(Real t)
 {
   if (t!=eval_time_for_KappaCCdir) {
-    Real kappaval = inputs.kappa * Pa_per_ATM;
     for (int lev=0; lev<nLevs; ++lev) {
       int nGrow = (*KappaCCdir)[lev].nGrow();
-      (*KappaCCdir)[lev].setVal(kappaval,0,BL_SPACEDIM,nGrow);
+      bool ret = rock_manager->GetProperty(t,lev,(*KappaCCdir)[lev],"permeability",0,nGrow);
+      if (!ret) BoxLib::Abort("Failed to build permeability");
+      (*KappaCCdir)[lev].mult(Pa_per_ATM*1.e10,0,BL_SPACEDIM,nGrow);
     }
     eval_time_for_KappaCCdir = t;
   }

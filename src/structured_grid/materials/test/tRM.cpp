@@ -122,7 +122,7 @@ main (int   argc,
 
   }
 
-#if 0
+#if 1
   MultiFab pc2(ba,1,nGrow);
   MultiFab::Copy(pc2,pc,0,0,1,nGrow);
   MultiFab::Subtract(pc2,pc1,0,0,1,nGrow);

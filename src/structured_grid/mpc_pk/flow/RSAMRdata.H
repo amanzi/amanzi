@@ -10,7 +10,7 @@ struct RSAMRdata
   /*
     An RSdata that manages memory and data evals via a PMAmr structure
    */
-  RSAMRdata(int slev, int nlevs, Layout& layout, PMAmr* amrp, NLScontrol& nlsc);
+  RSAMRdata(int slev, int nlevs, Layout& layout, PMAmr* amrp, NLScontrol& nlsc, const RockManager* rm);
   virtual ~RSAMRdata();
   virtual void SetUpMemory(NLScontrol& nlsc);
   virtual void ResetRhoSat();
@@ -19,12 +19,26 @@ struct RSAMRdata
   virtual void FillStateBndry (MFTower& press,
                                Real time);
   virtual void calcInvPressure (MFTower&       N,
-				const MFTower& P) const;
-  virtual void calcLambda (MFTower&       lbd,
-			   const MFTower& N);
-  virtual void calcRichardAlpha(MFTower&       alpha,
-                                const MFTower& rhoSat,
-                                Real           time);
+                                const MFTower& P,
+                                Real           time,
+                                int            sComp,
+                                int            dComp,
+                                int            nGrow) const;
+
+  virtual void calcLambda (MFTower&       Lambda,
+                           const MFTower& N,
+                           Real           time,
+                           int            sComp,
+                           int            dComp,
+                           int            nGrow) const;
+
+  virtual void calcRichardAlpha (MFTower&       Alpha,
+                                 const MFTower& N,
+                                 Real           time,
+                                 int            sComp,
+                                 int            dComp,
+                                 int            nGrow) const;
+
   virtual Array<int>& rinflowBCLo();
   virtual Array<int>& rinflowBCHi();
   virtual void SetDensity();
@@ -38,7 +52,7 @@ struct RSAMRdata
   };
 
   struct PropertyManagerCtx {
-    RockManager* rockMgr;
+    const RockManager* rockMgr;
     std::string property_name;
   };
 

@@ -5,7 +5,7 @@
 
 struct RStstruct
 {
-  Real kappa, phi, alpha, Sr, m, specific_storage, g, inflow_velocity, Pwt;
+  Real g, inflow_velocity, Pwt, Kr_smoothing_max_pcap;
   Array<Real> rho, mu;
   bool saturated;
 };
@@ -14,7 +14,7 @@ struct RStdata
   : public RSdata
 {
 
-  RStdata(int slev, int nlevs, Layout& layout, NLScontrol& nlsc, RStstruct& inputs);
+  RStdata(int slev, int nlevs, Layout& layout, NLScontrol& nlsc, RStstruct& inputs, const RockManager* rm);
   virtual ~RStdata();
   virtual void SetUpMemory(NLScontrol& nlsc);
   virtual void ResetRhoSat();
@@ -23,12 +23,25 @@ struct RStdata
   virtual void FillStateBndry (MFTower& pressure,
                                Real time);
   virtual void calcInvPressure (MFTower&       N,
-				const MFTower& P) const;
-  virtual void calcLambda (MFTower&       lbd,
-			   const MFTower& N);
-  virtual void calcRichardAlpha(MFTower&       alpha,
-                                const MFTower& rhoSat,
-                                Real           time);
+                                const MFTower& P,
+                                Real           time,
+                                int            sComp,
+                                int            dComp,
+                                int            nGrow) const;
+  virtual void calcLambda (MFTower&       Lambda,
+                           const MFTower& N,
+                           Real           time,
+                           int            sComp,
+                           int            dComp,
+                           int            nGrow) const;
+
+  virtual void calcRichardAlpha (MFTower&       Alpha,
+                                 const MFTower& N,
+                                 Real           time,
+                                 int            sComp,
+                                 int            dComp,
+                                 int            nGrow) const;
+
   virtual Array<int>& rinflowBCLo();
   virtual Array<int>& rinflowBCHi();
   virtual void SetDensity() {};
@@ -39,13 +52,9 @@ struct RStdata
   virtual const PArray<MFTower>& GetKappaEC(Real t);
   virtual const MFTower* GetSource(Real t);
 
-  void SetConstantValue(MFTower& mft,
-                        Real     val,
-                        int      dComp,
-                        int      nComp);
-  void SetPCapParams();
-  void SetPorosity();
-  void SetSpecificStorage();
+  void SetPCapParams(Real t);
+  void SetPorosity(Real t);
+  void SetSpecificStorage(Real t);
 
   bool IsNewTime(Real time) const;
   Real old_time, new_time;
@@ -53,6 +62,7 @@ struct RStdata
 
   static Real Pa_per_ATM;
   RStstruct inputs;
+  PArray<iMultiFab> materialID;
 };
 
 #endif

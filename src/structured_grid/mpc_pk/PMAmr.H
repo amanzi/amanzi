@@ -65,8 +65,7 @@ public:
     static RegionManager* RegionManagerPtr() {return region_manager;}
 
     Layout& GetLayout() {return layout;}
-    MatFiller* GetMatFiller() {return materialFiller;}
-    RockManager* GetRockManager() {return rock_manager;}
+    const RockManager* GetRockManager() const {return rock_manager;}
     const Array<Real>& TPCStartTimes() const {return tpc_start_times;}
 
     Real Dt0FromPreviousAdvance() const {return dt0_from_previous_advance;}
@@ -105,7 +104,6 @@ protected:
     int  max_step;
     Real stop_time;
 
-    void SetUpMaterialServer();
     void SetUpRockManager();
 
 private:
@@ -116,7 +114,6 @@ private:
     PMAmr& operator= (const PMAmr& rhs);
 
     // Private data
-    MatFiller* materialFiller;
     static RegionManager* region_manager;
     static RockManager* rock_manager;
     Real dt0_before_event_cut;

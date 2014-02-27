@@ -31,7 +31,8 @@
     <Parameter name="Flow Model" type="string" value="Richards"/>
     <Parameter name="Transport Model" type="string" value="Off"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
-    <ParameterList name="Time Integration Mode">
+ 
+   <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0"/>
         <Parameter name="Switch" type="double" value="1.e11"/>
@@ -89,7 +90,7 @@
           <Parameter name="richard_scale_solution_before_solve" type="bool" value="false"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="true"/>
           <Parameter name="steady_do_grid_sequence" type="int" value="1"/>
-          <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{1.e-1, 1.e-5, 1.e-6}"/>
+          <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{1.e-5, 1.e-5, 1.e-6}"/>
           <Parameter name="richard_dt_thresh_pure_steady" type="double" value="1.e8"/>
 
         </ParameterList>
@@ -361,7 +362,7 @@
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
-        <Parameter name="Reference Value" type="double" value="0"/>
+        <Parameter name="Reference Value" type="double" value="101325"/>
         <Parameter name="Reference Coordinate" type="Array(double)" value="{0,0}"/>
         <Parameter name="Gradient Value" type="Array(double)" value="{0,-9789.3474 }"/>
       </ParameterList>

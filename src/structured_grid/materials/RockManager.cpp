@@ -22,28 +22,36 @@ static std::string Kr_model_vG_Burdine = CP_model_vG + "_" + Kr_model_Burdine;
 static std::string Kr_model_BC_Mualem  = CP_model_BC + "_" + Kr_model_Mualem;
 static std::string Kr_model_BC_Burdine = CP_model_BC + "_" + Kr_model_Burdine;
 
-static int MAX_CPL_PARAMS = 6; // Must be set to accommodate the model with the most parameters
+static int MAX_CPL_PARAMS = 7; // Must be set to accommodate the model with the most parameters
 static int CPL_MODEL_ID = 0;
 
-static int VG_M           = 1;
-static int VG_ALPHA       = 2;
-static int VG_SR          = 3;
-static int VG_ELL         = 4;
-static int VG_KR_MODEL_ID = 5;
+static int VG_M                   = 1;
+static int VG_ALPHA               = 2;
+static int VG_SR                  = 3;
+static int VG_ELL                 = 4;
+static int VG_KR_MODEL_ID         = 5;
+static int VG_KR_SMOOTHING_MAX_PC = 6;
 
-static int BC_LAMBDA      = 1;
-static int BC_ALPHA       = 2;
-static int BC_SR          = 3;
-static int BC_ELL         = 4;
-static int BC_KR_MODEL_ID = 5;
+static int BC_LAMBDA              = 1;
+static int BC_ALPHA               = 2;
+static int BC_SR                  = 3;
+static int BC_ELL                 = 4;
+static int BC_KR_MODEL_ID         = 5;
+static int BC_KR_SMOOTHING_MAX_PC = 6;
+
+static Real Kr_ell_vG_Mualem_DEF = 0.5;
+static Real Kr_ell_vG_Burdine_DEF = 2.0;
+
+static Real Kr_smoothing_max_pcap_DEF = -1;
+static Real Kr_smoothing_min_seff_DEF = 2;
 
 // Interpolators
-static int NUM_INIT_INTERP_EVAL_PTS = 1001;
-static Real krel_smoothing_interval = 1.e-3;
+static int NUM_INIT_INTERP_EVAL_PTS_DEF = 5001;
 static Real pc_at_Sr = 1.e11;
 
 static int Rock_Mgr_ID_ctr=0;
 static std::vector<RockManager*> Rock_Mgr_Ptrs;
+static std::vector<std::pair<bool,Real> > Kr_smoothing_min_seff; // Bool says whether value needs to be updated
 
 RockManager::RockManager(const RegionManager*   _region_manager,
                          const Array<Geometry>& geomArray,
@@ -51,7 +59,7 @@ RockManager::RockManager(const RegionManager*   _region_manager,
   : region_manager(_region_manager), interps_built(false)
 {
   Initialize(geomArray,refRatio);
-  //BuildInterpolators();
+  BuildInterpolators();
 
   rock_mgr_ID = Rock_Mgr_ID_ctr++;
   Rock_Mgr_Ptrs.resize(rock_mgr_ID+1); Rock_Mgr_Ptrs[rock_mgr_ID] = this;
@@ -73,6 +81,10 @@ extern "C" {
   void ROCK_MANAGER_DSDPCAP(int* rockMgrID, const Real* saturation, int* matID, Real* time, Real* dsdpc, int* npts) {
     Rock_Mgr_Ptrs[*rockMgrID]->DInverseCapillaryPressure(saturation,matID,*time,dsdpc,*npts);
   }
+
+  void ROCK_MANAGER_RESIDSAT(int* rockMgrID, int* matID, Real* time, Real* Sr, int* npts) {
+    Rock_Mgr_Ptrs[*rockMgrID]->ResidualSaturation(matID,*time,Sr,*npts);
+  }
 }
 
 int
@@ -85,6 +97,9 @@ RockManager::NComp(const std::string& property_name) const
   return nc;
 }
 
+#include <fstream>
+#include <iomanip>
+#include <Utility.H>
 void
 RockManager::BuildInterpolators()
 {
@@ -99,31 +114,74 @@ RockManager::BuildInterpolators()
   Real time = 0;
 
   for (int n=0; n<rock.size(); ++n) {
+    int Npts = WRM_plot_file[n].first;
+    if (ParallelDescriptor::IOProcessor() && Npts > 0) {
+      Array<Real> s(Npts);
+      Array<Real> pc(Npts);
+      Array<int> mat(Npts,n);
 
-    Array<Real> s(NUM_INIT_INTERP_EVAL_PTS);
+      pc[0] = pc_at_Sr;
+      InverseCapillaryPressure(pc.dataPtr(),&n,time,&(s[0]),1);
+
+      Real ds = 1 - s[0];
+      for (int i=1; i<s.size(); ++i) {
+        s[i] = std::max(s[0], std::min(1.0, s[0] + ds*Real(i)/(Npts - 1)));
+      }
+      CapillaryPressure(s.dataPtr(),mat.dataPtr(),time,pc.dataPtr(),Npts);
+
+      Array<Real> kr(s.size());
+      RelativePermeability(s.dataPtr(),mat.dataPtr(),time,kr.dataPtr(),Npts);
+
+      const std::string& file = WRM_plot_file[n].second;
+      std::cout << "Writing WRM data for material \"" << rock[n].Name()
+                << "\" to file \"" << file << "\"" << std::endl;
+
+      // Find folder name first, and ensure folder exists
+      // FIXME: Will fail on Windows
+      const std::vector<std::string>& tokens = BoxLib::Tokenize(file,"/");
+      std::string dir = (file[0] == '/' ? "/" : "");
+      for (int i=0; i<tokens.size()-1; ++i) {
+        dir += tokens[i];
+        if (i<tokens.size()-2) dir += "/";
+      }
+
+      if(!BoxLib::FileExists(dir)) {
+        if ( ! BoxLib::UtilCreateDirectory(dir, 0755)) {
+          BoxLib::CreateDirectoryFailed(dir);
+	}
+      }
+
+      std::ofstream osf; osf.open(file.c_str());
+      osf << std::setprecision(15);
+      for (int i=1; i<s.size(); ++i) {
+        osf << s[i] << " " << pc[i] << " " << kr[i] << std::endl;
+      }
+      osf.close();
+    }
+  }
+#if 0
+  for (int n=0; n<rock.size(); ++n) {
+
+    Array<Real> s(NUM_INIT_INTERP_EVAL_PTS_DEF);
     int Npts = s.size();
     Array<Real> pc(Npts);
     Array<int> mat(Npts,n);
 
     pc[0] = pc_at_Sr;
     InverseCapillaryPressure(pc.dataPtr(),&n,time,&(s[0]),1);
+
     Real ds = 1 - s[0];
     for (int i=1; i<s.size(); ++i) {
-      s[i] = s[0] + ds*Real(i)/(NUM_INIT_INTERP_EVAL_PTS - 1);
+      s[i] = s[0] + ds*Real(i)/(NUM_INIT_INTERP_EVAL_PTS_DEF - 1);
     }
     CapillaryPressure(s.dataPtr(),mat.dataPtr(),time,pc.dataPtr(),Npts);
     CP_s_interps.set(n, new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(pc)));
 
     Array<Real> kr(s.size());
     RelativePermeability(s.dataPtr(),mat.dataPtr(),time,kr.dataPtr(),Npts);
-
-    if (n==0) {
-      for (int i=1; i<s.size(); ++i) {
-	std::cout << s[i] << " " << kr[i] << std::endl;
-      }
-    }
-
+    Kr_s_interps.set(n, new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(kr)));
   }
+#endif
   interps_built = true;
 }
 
@@ -134,8 +192,6 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
   is_saturated = false;
   is_diffusive = false;
   tensor_diffusion = false;
-  use_shifted_Kr_eval = false;
-  saturation_threshold_for_vg_Kr = 1;
 
   static int CP_cnt = 0;
   CP_models[CP_model_None] = CP_cnt++;
@@ -184,6 +240,12 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
     && ( user_specified_molecular_diffusion_coefficient || user_specified_dispersivity);
   
   bool enable_tensor_diffusion = enable_diffusion && user_specified_dispersivity;
+
+  // setup static database for smoothing interval
+  Kr_smoothing_min_seff.resize(nrock,std::pair<bool,Real>(true,Kr_smoothing_min_seff_DEF));
+
+  // set up static database for WRM plot files
+  WRM_plot_file.resize(nrock,std::pair<int,std::string>(0,""));
 
   for (int i = 0; i<nrock; i++) {
 
@@ -342,8 +404,8 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
     if (it != CP_models.end()) {
       rcplType = it->second;
 
-      bool is_vG = (rcplType == CP_models[CP_model_vG]);
-      bool is_BC = (rcplType == CP_models[CP_model_BC]);
+      bool is_vG = Is_CP_model_XX(rcplType,CP_model_vG);
+      bool is_BC = Is_CP_model_XX(rcplType,CP_model_BC);
 
       if (rcplType == CP_models[CP_model_None]) {
         rKrType = Kr_models[Kr_model_None];
@@ -380,7 +442,6 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
           } BoxLib::Abort();
         }
 
-        Real Kr_ell; ppr.get("Kr_ell",Kr_ell);
         std::string Kr_model; ppr.get("Kr_model", Kr_model);
         std::string Kr_full_model_name = cpl_model + "_" + Kr_model;
         std::map<std::string,int>::const_iterator itKr = Kr_models.find(Kr_full_model_name);
@@ -395,6 +456,28 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
           } BoxLib::Abort();
         }
 
+        // Get the ell value (optional for vG+{Mualem,Burdine}, required for all others
+        Real Kr_ell;
+        if (Is_Kr_model_XX(rKrType,Kr_model_vG_Mualem)) {
+          Kr_ell = Kr_ell_vG_Mualem_DEF; ppr.query("Kr_ell",Kr_ell);
+        }
+        else if (Is_Kr_model_XX(rKrType,Kr_model_vG_Burdine)) {
+          Kr_ell = Kr_ell_vG_Burdine_DEF; ppr.query("Kr_ell",Kr_ell);
+        }
+        else {
+          ppr.get("Kr_ell",Kr_ell);
+        }
+
+        Real Kr_smoothing_max_pcap = Kr_smoothing_max_pcap_DEF;
+        ppr.query("Kr_smoothing_max_pcap",Kr_smoothing_max_pcap);
+
+        if (ppr.countval("WRM_plot_file")>0) {
+          ppr.get("WRM_plot_file",WRM_plot_file[i].second);
+
+          WRM_plot_file[i].first = NUM_INIT_INTERP_EVAL_PTS_DEF;
+          ppr.query("WRM_plot_file_num_pts",WRM_plot_file[i].first);
+        }
+
         // Finally, load array of Real numbers for this model
         rcplParam[CPL_MODEL_ID] = (Real)rcplType;
         if (is_vG) {
@@ -403,6 +486,7 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
           rcplParam[VG_SR]    = Sr;
           rcplParam[VG_ELL]   = Kr_ell;
           rcplParam[VG_KR_MODEL_ID]  = (Real)rKrType;
+          rcplParam[VG_KR_SMOOTHING_MAX_PC] = Kr_smoothing_max_pcap;
         }
         else {
           rcplParam[BC_LAMBDA] = lambda;
@@ -410,6 +494,7 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
           rcplParam[BC_SR]     = Sr;
           rcplParam[BC_ELL]    = Kr_ell;
           rcplParam[BC_KR_MODEL_ID]  = (Real)rKrType;
+          rcplParam[BC_KR_SMOOTHING_MAX_PC] = Kr_smoothing_max_pcap;
         }
       }
       else {
@@ -661,26 +746,15 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
 #endif
 
   materialFiller = new MatFiller(geomArray,refRatio,rock);
+}
 
-  pp.query("Use_Shifted_Kr_Eval",use_shifted_Kr_eval);
-  pp.query("Saturation_Threshold_For_Kr",saturation_threshold_for_vg_Kr);
-
-  if (use_shifted_Kr_eval && saturation_threshold_for_vg_Kr>1) {
-    if (ParallelDescriptor::IOProcessor()) {
-      std::cout << "WARNING: Reducing Saturation_Threshold_For_vg_Kr to 1!" << std::endl;
-    }
-    saturation_threshold_for_vg_Kr = 1;
-  }
-
-#if 0
-  FORT_KR_INIT(&saturation_threshold_for_vg_Kr,
-               &use_shifted_Kr_eval);
-#endif
-
+RockManager::~RockManager()
+{
+  delete materialFiller;
 }
 
 bool
-RockManager::CanDerive(const std::string& property_name)
+RockManager::CanDerive(const std::string& property_name) const
 {
   return materialFiller->CanDerive(property_name);
 }
@@ -693,7 +767,7 @@ RockManager::GetProperty(Real               time,
                          int                dComp,
                          int                nGrow,
                          void*              ctx,
-                         bool               ignore_mixed)
+                         bool               ignore_mixed) const
 {
   return materialFiller->SetProperty(time,level,mf,pname,dComp,nGrow,ctx,ignore_mixed);
 }
@@ -705,21 +779,53 @@ RockManager::GetPropertyDirect(Real               t,
                                const Box&         box,
                                const std::string& pname,
                                int                dComp,
-                               void*              ctx)
+                               void*              ctx) const
 {
   return materialFiller->SetPropertyDirect(t,level,fab,box,pname,dComp,ctx);
 }
 
 void
-RockManager::GetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed)
+RockManager::GetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed) const
 {
   return materialFiller->SetMaterialID(level,mf,nGrow,ignore_mixed);
 }
 
 
-  // Capillary Pressure (given Saturation)
+static Real vgMKr(Real seff, Real m, Real mI, Real ell) {
+  return std::pow(seff, ell) * std::pow(1-std::pow(1-std::pow(seff,mI),m),2);
+}
+
+static Real vgBKr(Real seff, Real m, Real mI, Real ell) {
+  return std::pow(seff, ell) * ( 1 - std::pow(1-std::pow(seff,mI),m) );
+}
+
+static Real vgPc(Real seff, Real mI, Real nI, Real alphaI) {
+  return alphaI * std::pow( std::pow(seff,-mI) - 1, nI);
+}
+
+static Real vgPcInv(Real pc, Real m, Real n, Real alpha) {
+  return std::pow(1 + std::pow(alpha*pc,n),-m);
+}
+
+static Real bcMKr(Real seff, Real lambda, Real ell) {
+  return std::pow(seff,ell+2+2/lambda);
+}
+
+static Real bcBKr(Real seff, Real lambda, Real ell) {
+  return std::pow(seff,ell+1+2/lambda);
+}
+
+static Real bcPc(Real seff, Real lambdaI, Real alphaI) {
+  return alphaI * std::pow(seff,-lambdaI);
+}
+
+static Real bcPcInv(Real pc, Real lambda, Real alpha) {
+  return std::pow(alpha*pc,-lambda);
+}
+
+// Capillary Pressure (given Saturation)
 void
-RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Real* capillaryPressure, int npts)
+RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Real* capillaryPressure, int npts) const
 {
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
 
@@ -731,50 +837,59 @@ RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Re
   int level=0; //not really used
   int dComp=0;
 
-  for (int n=0; n<rock.size(); ++n) {
-    const Property* p = rock[n].Prop(CapillaryPressureName); BL_ASSERT(p!=0);
-    p->eval(time,level,bx,pc_params,dComp);
-    bool is_vG = (pc_params(iv,CPL_MODEL_ID) == (Real)CP_models[CP_model_vG]);
-    bool is_BC = (pc_params(iv,CPL_MODEL_ID) == (Real)CP_models[CP_model_BC]);
+  for (int j=0; j<rock.size(); ++j) {
 
-    if (is_vG) {
-      Real m      = pc_params(iv,VG_M);
-      Real alphaI = 1/pc_params(iv,VG_ALPHA);
-      Real Sr     = pc_params(iv,VG_SR);
-      Real b      = -1/m;
-      Real omm    = 1-m;
-      Real omSrI  = 1/(1-Sr);
+    int N = mat_pts[j].size();
 
-      for (int i=0, End=mat_pts[n].size(); i<End; ++i) {
-        int idx = mat_pts[n][i];
-        Real s = std::min(1.0, std::max(0.0, saturation[idx]));
-        
-        Real seff = (s - Sr)*omSrI;
-        capillaryPressure[idx] = alphaI * std::pow(std::pow(seff,b) - 1,omm);
+    if (N>0) {
+      const Property* p = rock[j].Prop(CapillaryPressureName); BL_ASSERT(p!=0);
+      p->eval(time,level,bx,pc_params,dComp);
+      bool is_vG = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_vG);
+      bool is_BC = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_BC);
+
+      if (is_vG) {
+        Real m      = pc_params(iv,VG_M);
+        Real alpha  = pc_params(iv,VG_ALPHA);
+        Real Sr     = pc_params(iv,VG_SR);
+
+        Real mI     = 1/m;
+        Real omSrI  = 1/(1-Sr);
+        Real alphaI = 1/alpha;
+        Real n      = 1/(1-m);
+        Real nI     = 1-m;
+
+        for (int i=0; i<N; ++i) {
+          int idx = mat_pts[j][i];
+          Real s = std::min(1.0, std::max(0.0, saturation[idx]));        
+          Real seff = (s - Sr)*omSrI;
+          capillaryPressure[idx] = vgPc(seff,mI,nI,alphaI);
+        }
       }
-    }
-    else if (is_BC) {
-      Real mLambdaI = -1/pc_params(iv,BC_LAMBDA);
-      Real alphaI   = 1/pc_params(iv,BC_ALPHA);
-      Real Sr       = pc_params(iv,BC_SR);
-      Real omSrI    = 1/(1-Sr);
+      else if (is_BC) {
+        Real lambda   = pc_params(iv,BC_LAMBDA);
+        Real alpha    = pc_params(iv,BC_ALPHA);
+        Real Sr       = pc_params(iv,BC_SR);
 
-      for (int i=0, End=mat_pts[n].size(); i<End; ++i) {
-        int idx = mat_pts[n][i];
-        Real s = std::min(1.0, std::max(0.0, saturation[idx]));
-        
-        Real seff = (s - Sr)*omSrI;
-        capillaryPressure[idx] = alphaI * std::pow(seff,mLambdaI);
+        Real lambdaI  = 1/lambda;
+        Real alphaI   = 1/alpha;
+        Real omSrI    = 1/(1-Sr);
+
+        for (int i=0; i<N; ++i) {
+          int idx = mat_pts[j][i];
+          Real s = std::min(1.0, std::max(0.0, saturation[idx]));        
+          Real seff = (s - Sr)*omSrI;
+          capillaryPressure[idx] = bcPc(seff,lambdaI,alphaI);
+        }
       }
-    }
-    else {
-      if (ParallelDescriptor::IOProcessor()) {
-        std::cerr << "Invalid Capillary Presure model " << std::endl;
-      } BoxLib::Abort();
+      else {
+        if (ParallelDescriptor::IOProcessor()) {
+          std::cerr << "Invalid Capillary Presure model " << std::endl;
+        } BoxLib::Abort();
+      }
     }
   }
 }
-
+ 
 void
 RockManager::CapillaryPressure(const MultiFab&  saturation,
                                const iMultiFab& matID,
@@ -782,7 +897,7 @@ RockManager::CapillaryPressure(const MultiFab&  saturation,
                                MultiFab&        capillaryPressure,
                                int              sComp,
                                int              dComp,
-                               int              nGrow)
+                               int              nGrow) const
 {
   BL_ASSERT(saturation.boxArray() == capillaryPressure.boxArray());
   BL_ASSERT(sComp < saturation.nComp()  && dComp < capillaryPressure.nComp());
@@ -800,7 +915,7 @@ RockManager::CapillaryPressure(const MultiFab&  saturation,
 }
 
 Array<Array<int> >
-RockManager::SortPtsByMaterial(int* matID, int npts)
+RockManager::SortPtsByMaterial(int* matID, int npts) const
 {
   Array<Array<int> > mat_pts(rock.size());
   for (int i=0; i<npts; ++i) {
@@ -811,7 +926,7 @@ RockManager::SortPtsByMaterial(int* matID, int npts)
 
 // Inverse Capillary Pressure (Saturation given Capillary Pressure)
 void
-RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID, Real time, Real* saturation, int npts)
+RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID, Real time, Real* saturation, int npts) const
 {
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
 
@@ -826,18 +941,18 @@ RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID,
   for (int j=0; j<rock.size(); ++j) {
     const Property* p = rock[j].Prop(CapillaryPressureName); BL_ASSERT(p!=0);
     p->eval(time,level,bx,pc_params,dComp);
-    bool is_vG = (pc_params(iv,CPL_MODEL_ID) == (Real)CP_models[CP_model_vG]);
-    bool is_BC = (pc_params(iv,CPL_MODEL_ID) == (Real)CP_models[CP_model_BC]);
+    bool is_vG = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_vG);
+    bool is_BC = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_BC);
 
     if (is_vG) {
       Real m     = pc_params(iv,VG_M);
       Real alpha = pc_params(iv,VG_ALPHA);
       Real Sr    = pc_params(iv,VG_SR);
       Real n     = 1./(1-m);
-      
       for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
         int idx = mat_pts[j][i];
-        Real seff = std::pow( std::pow(alpha*capillaryPressure[idx],n) + 1, -m);
+        Real seff = (capillaryPressure[idx] <= 0  ? 1 : 
+                     std::pow( std::pow(alpha*capillaryPressure[idx],n) + 1, -m));
         saturation[idx] = seff*(1 - Sr) + Sr;
       }
     }
@@ -848,7 +963,8 @@ RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID,
       
       for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
         int idx = mat_pts[j][i];
-        Real seff = std::pow(alpha*capillaryPressure[idx],mLambda);
+        Real seff = (capillaryPressure[idx] <= 0  ? 1 : 
+                     std::pow(alpha*capillaryPressure[idx],mLambda));
         saturation[idx] = seff*(1 - Sr) + Sr;
       }
     }
@@ -867,7 +983,7 @@ RockManager::InverseCapillaryPressure(const MultiFab&  capillaryPressure,
                                       MultiFab&        saturation,
                                       int              sComp,
                                       int              dComp,
-                                      int              nGrow)
+                                      int              nGrow) const
 {
   BL_ASSERT(saturation.boxArray() == capillaryPressure.boxArray());
   BL_ASSERT(dComp < saturation.nComp()  && sComp < capillaryPressure.nComp());
@@ -886,7 +1002,7 @@ RockManager::InverseCapillaryPressure(const MultiFab&  capillaryPressure,
 
 // D (Saturation) / D(CapillaryPressure)
 void
-RockManager::DInverseCapillaryPressure(const Real* saturation, int* matID, Real time, Real* DsaturationDpressure, int npts)
+RockManager::DInverseCapillaryPressure(const Real* saturation, int* matID, Real time, Real* DsaturationDpressure, int npts) const
 {
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
 
@@ -901,8 +1017,8 @@ RockManager::DInverseCapillaryPressure(const Real* saturation, int* matID, Real 
   for (int j=0; j<rock.size(); ++j) {
     const Property* p = rock[j].Prop(CapillaryPressureName); BL_ASSERT(p!=0);
     p->eval(time,level,bx,pc_params,dComp);
-    bool is_vG = (pc_params(iv,CPL_MODEL_ID) == (Real)CP_models[CP_model_vG]);
-    bool is_BC = (pc_params(iv,CPL_MODEL_ID) == (Real)CP_models[CP_model_BC]);
+    bool is_vG = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_vG);
+    bool is_BC = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_BC);
 
     if (is_vG) {
       Real m     = pc_params(iv,VG_M);
@@ -944,7 +1060,7 @@ RockManager::DInverseCapillaryPressure(const MultiFab&  saturation,
                                        MultiFab&        DsaturationDpressure,
                                        int              sComp,
                                        int              dComp,
-                                       int              nGrow)
+                                       int              nGrow) const
 {
   BL_ASSERT(saturation.boxArray() == DsaturationDpressure.boxArray());
   BL_ASSERT(dComp < saturation.nComp()  && sComp < DsaturationDpressure.nComp());
@@ -961,8 +1077,14 @@ RockManager::DInverseCapillaryPressure(const MultiFab&  saturation,
   }
 }
 
+static Real KrInterp(Real se, Real seth, Real m_th, Real m_int) {
+  Real dels  = 1 - se;
+  Real dels1 = 1 - seth;
+  return 1 + dels*dels * m_int/dels1 +  dels*dels * (dels-dels1) * (m_th - 2*m_int) / (dels1*dels1);
+}
+
 void
-RockManager::RelativePermeability(const Real* saturation, int* matID, Real time, Real* kappa, int npts)
+RockManager::RelativePermeability(const Real* saturation, int* matID, Real time, Real* kappa, int npts) const
 {
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
 
@@ -977,37 +1099,79 @@ RockManager::RelativePermeability(const Real* saturation, int* matID, Real time,
   for (int j=0; j<rock.size(); ++j) {
     const Property* p = rock[j].Prop(CapillaryPressureName); BL_ASSERT(p!=0);
     p->eval(time,level,bx,pc_params,dComp);
-    bool is_vG = (pc_params(iv,CPL_MODEL_ID) == (Real)CP_models[CP_model_vG]);
-    bool is_BC = (pc_params(iv,CPL_MODEL_ID) == (Real)CP_models[CP_model_BC]);
+    bool is_vG = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_vG);
+    bool is_BC = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_BC);
 
     if (is_vG) {
 
-      Real m     = pc_params(iv,VG_M);
-      Real alpha = pc_params(iv,VG_ALPHA);
-      Real Sr    = pc_params(iv,VG_SR);
-      Real ell   = pc_params(iv,VG_ELL);
+      Real m                     = pc_params(iv,VG_M);
+      Real alpha                 = pc_params(iv,VG_ALPHA);
+      Real Sr                    = pc_params(iv,VG_SR);
+      Real ell                   = pc_params(iv,VG_ELL);
+      int  Kr_model              = pc_params(iv,VG_KR_MODEL_ID);
+      Real Kr_smoothing_max_pcap = pc_params(iv,BC_KR_SMOOTHING_MAX_PC);
+
       Real omSrI = 1/(1 - Sr);
+      Real mI = 1/m;
+      Real n = 1/(1-m);
+      bool is_Mualem  = Is_Kr_model_XX(Kr_model,Kr_model_vG_Mualem);
+      bool is_Burdine = Is_Kr_model_XX(Kr_model,Kr_model_vG_Burdine);
 
-      bool is_Mualem  = (pc_params(iv,VG_KR_MODEL_ID) == (Real)Kr_models[Kr_model_vG_Mualem]);
-      bool is_Burdine = (pc_params(iv,VG_KR_MODEL_ID) == (Real)Kr_models[Kr_model_vG_Burdine]);
+      // Find smoothing interval in terms of seff (need to evaluate here since properties may be time-dependent)
+      std::pair<bool,Real>& Kr_min_seff = Kr_smoothing_min_seff[j];
+      if ( (Kr_smoothing_max_pcap > 0)
+           && (p->isTimeDependent() || Kr_min_seff.first) )
+      {
+        Kr_min_seff.second = vgPcInv(Kr_smoothing_max_pcap,m,n,alpha);
+        Kr_min_seff.first = false;
 
-      Real oom = 1./m;
+        if (ParallelDescriptor::IOProcessor()) {
+          std::cout << "For material \"" << rock[j].Name() << "\" seff thresh is " << Kr_min_seff.second << std::endl;
+        }
+      }
+
       if (is_Mualem) {
+        Real Kr_slope_thresh, Kr_slope_interval;
+        if (Kr_smoothing_max_pcap > 0) {
+          Real mI = 1/m;
+          Real ds = (1 - Kr_min_seff.second)*0.001;
+          Real Kr_thresh1 = vgMKr(Kr_min_seff.second   ,m,mI,ell);
+          Real Kr_thresh2 = vgMKr(Kr_min_seff.second+ds,m,mI,ell);
+          Kr_slope_thresh = -(Kr_thresh2 - Kr_thresh1)/ds;
+          Kr_slope_interval = (Kr_thresh1 - 1)/(1 - Kr_min_seff.second);
+        }
+
         for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
           int idx = mat_pts[j][i];
           Real seff = (saturation[idx] - Sr)*omSrI;
-          Real tmp = 1 - std::pow(1 - std::pow(seff,oom),m);
-          kappa[idx] = std::sqrt(seff) * tmp * tmp;
-          //kappa[idx] = std::pow(seff,ell) * tmp * tmp;
+          if (seff > Kr_min_seff.second && seff < 1) {
+            kappa[idx] = KrInterp(seff, Kr_min_seff.second, Kr_slope_thresh, Kr_slope_interval);
+          }
+          else {
+            kappa[idx] = vgMKr(seff,m,mI,ell);
+          }
         }
       }
       else if (is_Burdine) {
+        Real Kr_slope_thresh, Kr_slope_interval;
+        if (Kr_smoothing_max_pcap > 0) {
+          Real mI = 1/m;
+          Real ds = (1 - Kr_min_seff.second)*0.001;
+          Real Kr_thresh1 = vgBKr(Kr_min_seff.second   ,m,mI,ell);
+          Real Kr_thresh2 = vgBKr(Kr_min_seff.second+ds,m,mI,ell);
+          Kr_slope_thresh = -(Kr_thresh2 - Kr_thresh1)/ds;
+          Kr_slope_interval = (Kr_thresh1 - 1)/(1 - Kr_min_seff.second);
+        }
+
         for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
           int idx = mat_pts[j][i];
           Real seff = (saturation[idx] - Sr)*omSrI;
-          Real tmp = 1 - std::pow(1 - std::pow(seff,oom),m);
-          kappa[idx] = seff * seff * tmp;
-          //kappa[idx] = std::pow(seff,ell) * tmp;
+          if (seff > Kr_min_seff.second && seff < 1) {
+            kappa[idx] = KrInterp(seff, Kr_min_seff.second, Kr_slope_thresh, Kr_slope_interval);
+          }
+          else {
+            kappa[idx] = vgBKr(seff,m,mI,ell);
+          }
         }
       }
 
@@ -1019,8 +1183,8 @@ RockManager::RelativePermeability(const Real* saturation, int* matID, Real time,
       Real ell    = pc_params(iv,BC_ELL);
       Real omSrI  = 1/(1 - Sr);
 
-      bool is_Mualem  = (pc_params(iv,VG_KR_MODEL_ID) == (Real)Kr_models[Kr_model_BC_Mualem]);
-      bool is_Burdine = (pc_params(iv,VG_KR_MODEL_ID) == (Real)Kr_models[Kr_model_BC_Burdine]);
+      bool is_Mualem  = Is_Kr_model_XX(pc_params(iv,VG_KR_MODEL_ID),Kr_model_BC_Mualem);
+      bool is_Burdine = Is_Kr_model_XX(pc_params(iv,VG_KR_MODEL_ID),Kr_model_BC_Burdine);
 
       BL_ASSERT(is_Mualem || is_Burdine);
       Real f = (is_Mualem ? ell + 2 + 2/lambda : ell + 1 + 2/lambda);
@@ -1042,7 +1206,7 @@ RockManager::RelativePermeability(const MultiFab&  saturation,
                                   MultiFab&        kappa,
                                   int              sComp,
                                   int              dComp,
-                                  int              nGrow)
+                                  int              nGrow) const
 {
   BL_ASSERT(saturation.boxArray() == kappa.boxArray());
   BL_ASSERT(dComp < saturation.nComp()  && sComp < kappa.nComp());
@@ -1059,4 +1223,78 @@ RockManager::RelativePermeability(const MultiFab&  saturation,
   }
 }
 
+
+void 
+RockManager::ResidualSaturation(int* matID, Real time, Real* Sr, int npts) const
+{
+  Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
+
+  // Make temp structure to interact with Property interface
+  int nComp = materialFiller->NComp(CapillaryPressureName);
+  static IntVect iv(D_DECL(0,0,0));
+  static Box bx(iv,iv);
+  FArrayBox pc_params(bx,nComp);
+  int level=0; //not really used
+  int dComp=0;
+
+  for (int j=0; j<rock.size(); ++j) {
+    const Property* p = rock[j].Prop(CapillaryPressureName); BL_ASSERT(p!=0);
+    p->eval(time,level,bx,pc_params,dComp);
+    bool is_vG = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_vG);
+    bool is_BC = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_BC);
+
+    if (is_vG) {
+      for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
+        int idx = mat_pts[j][i];
+        Sr[idx] = pc_params(iv,VG_SR);
+      }
+    } else if (is_BC) {
+      for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
+        int idx = mat_pts[j][i];
+        Sr[idx] = pc_params(iv,BC_SR);
+      }
+    }
+  }
+}
+
+void
+RockManager::ResidualSaturation(const iMultiFab& matID,
+                                Real             time,
+                                MultiFab&        Sr,
+                                int              dComp,
+                                int              nGrow) const
+{
+  BL_ASSERT(dComp < Sr.nComp());
+  BL_ASSERT(nGrow <= Sr.nGrow());
+  FArrayBox sr;
+  IArrayBox id;
+  for (MFIter mfi(Sr); mfi.isValid(); ++mfi) {
+    Box box = Box(mfi.validbox()).grow(nGrow);
+    id.resize(box,1); id.copy(matID[mfi],box,0,box,0,1);
+    sr.resize(box,1);
+    ResidualSaturation(id.dataPtr(),time,sr.dataPtr(),box.numPts());
+    Sr[mfi].copy(sr,box,0,box,dComp,1);
+  }
+}
+
+// Annoying set of functions necessary make [] operator of maps const
+bool
+RockManager::Is_CP_model_XX(int model_id, const std::string& str) const
+{
+  std::map<std::string,int>::const_iterator it = CP_models.find(str);
+  if (it != CP_models.end()) {
+    return model_id == it->second;
+  }
+  return false;
+}
+
+bool
+RockManager::Is_Kr_model_XX(int model_id, const std::string& str) const
+{
+  std::map<std::string,int>::const_iterator it = Kr_models.find(str);
+  if (it != Kr_models.end()) {
+    return model_id == it->second;
+  }
+  return false;
+}
 
