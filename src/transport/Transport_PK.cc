@@ -62,6 +62,7 @@ void Transport_PK::Construct_(Teuchos::ParameterList& glist,
                               Teuchos::RCP<State> S,
                               std::vector<std::string>& component_names)
 {
+  vo_ = NULL;
   S_ = S;
   component_names_ = component_names;
 
@@ -127,7 +128,9 @@ void Transport_PK::Construct_(Teuchos::ParameterList& glist,
 ****************************************************************** */
 Transport_PK::~Transport_PK()
 { 
-  delete vo_;
+  if (vo_ != NULL) {
+    delete vo_;
+  }
   for (int i=0; i<bcs.size(); i++) delete bcs[i]; 
 }
 
