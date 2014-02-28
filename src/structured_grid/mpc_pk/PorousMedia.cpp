@@ -2696,9 +2696,11 @@ PorousMedia::get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow)
   BL_ASSERT(kappa->nGrow()>= nGrow);
   BL_ASSERT(rock_phi->nGrow()>= nGrow);
   if (model == PM_RICHARDS) {
-    const RockManager* rockMgr = PMParent()->GetRockManager();
-    FillStateBndry(t_eval,Press_Type,0,1);
-    calcInvPressure(RhoSat,get_data(Press_Type,t_eval),t_eval,0,0,nGrow);
+    MultiFab P(grids,ncomps,nGrow);
+    for (FillPatchIterator fpi(*this,P,nGrow,t_eval,Press_Type,0,ncomps); fpi.isValid(); ++fpi) {
+      P[fpi].copy(fpi());
+    }
+    calcInvPressure(RhoSat,P,t_eval,0,0,nGrow);
   }
   else if ( (model == PM_STEADY_SATURATED)
 	    || (model == PM_SATURATED) ) {
