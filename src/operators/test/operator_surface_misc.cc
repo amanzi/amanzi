@@ -39,7 +39,7 @@
 * This test replaves tensor and boundary conditions by continuous
 * functions. This is a prototype for future solvers.
 * **************************************************************** */
-TEST(LAPLACE_BELTRAMI) {
+TEST(SURFACE_MISC) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -66,7 +66,7 @@ TEST(LAPLACE_BELTRAMI) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 5, gm);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 20, 20, 5, gm);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
   // extract surface mesh
@@ -141,45 +141,28 @@ TEST(LAPLACE_BELTRAMI) {
   op3->InitOperator(K);
   op3->UpdateMatrices();
   op3->ApplyBCs(bc_model, bc_values);
-  op3->SymbolicAssembleFaces();
-  op3->AssembleStencilMFD_Faces();
 
-  // create preconditoner
+  // change preconditioner to default
+  int schema = Operators::OPERATOR_DOFS_FACE + Operators::OPERATOR_DOFS_CELL;
+  Teuchos::RCP<Operator> op4 = Teuchos::rcp(new Operator(*op3));
+
+  op4->SymbolicAssembleMatrix(schema);
+  op4->AssembleMatrix(schema);
+
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op3->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+  op4->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
-  std::cout << "Data validity bit for operator3: " << op3->data_validity() << endl;
-
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
-  AmanziSolvers::LinearOperatorFactory<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, op3);
+  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
+     solver = factory.Create("AztecOO CG", lop_list, op4);
 
-  CompositeVector rhs = *op3->rhs();
+  CompositeVector& rhs = *op4->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
 
   std::cout << "pressure solver (" << solver->name() 
             << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-            << " code=" << ierr << std::endl;
-
-  // change preconditioner to default
-  Teuchos::RCP<Operator> op4 = Teuchos::rcp(new Operator(*op3));
-  op4->InitPreconditioner("Hypre AMG", slist);
-
-  // solve the problem
-  std::cout << "Data validity bit for operator3: " << op3->data_validity() << endl;
-
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory2;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver2 = factory2.Create("AztecOO CG", lop_list, op4);
-
-  rhs = *op4->rhs();
-  solution.PutScalar(0.0);
-  ierr = solver2->ApplyInverse(rhs, solution);
-
-  std::cout << "pressure solver (" << solver2->name() 
-            << "): ||r||=" << solver2->residual() << " itr=" << solver2->num_itrs()
             << " code=" << ierr << std::endl;
 
   // visualization

@@ -96,7 +96,7 @@
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
-        <Parameter name="tolerance" type="double" value="1e-10"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

@@ -38,14 +38,10 @@ class Operator {
   // main members
   void Init();
   int Apply(const CompositeVector& X, CompositeVector& Y) const;
-  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const { Y = X; }
+  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
-  void SymbolicAssemble();
-  void SymbolicAssembleNodes();
-  void SymbolicAssembleFaces();
-
-  void AssembleStencilMFD_Nodes();
-  void AssembleStencilMFD_Faces();
+  void SymbolicAssembleMatrix(int schema);
+  void AssembleMatrix(int schema);
 
   void ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_values);
 
@@ -64,9 +60,9 @@ class Operator {
   Teuchos::RCP<const CompositeVectorSpace> cvs_;
   mutable bool data_validity_;
 
-  std::vector<Teuchos::RCP<std::vector<WhetStone::DenseMatrix> > > matrix_blocks_;
-  std::vector<int> matrix_blocks_type_;
-  Teuchos::RCP<CompositeVector> diagonal_block_;
+  std::vector<Teuchos::RCP<std::vector<WhetStone::DenseMatrix> > > blocks_;
+  std::vector<int> blocks_schema_;
+  Teuchos::RCP<CompositeVector> diagonal_;
 
   Teuchos::RCP<CompositeVector> rhs_;
 
@@ -76,6 +72,7 @@ class Operator {
  
   Teuchos::RCP<Epetra_FECrsMatrix> A_;
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
+  int offset_global_[3], offset_my_[3];
 };
 
 }  // namespace Operators

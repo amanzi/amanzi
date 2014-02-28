@@ -15,9 +15,10 @@
 namespace Amanzi {
 namespace Operators {
 
-const int OPERATOR_STENCIL_CELL_CF_CF = 1;  // example: p-lambda systems
-const int OPERATOR_STENCIL_FACE_C_C = 2;  // example: TPFS schemes
-const int OPERATOR_STENCIL_CELL_V_V = 3;  // example: P1 finite elements
+// Constants in the next block must powers of 2.
+const int OPERATOR_DOFS_CELL = 1;
+const int OPERATOR_DOFS_FACE = 2;
+const int OPERATOR_DOFS_NODE = 4;
 
 const int OPERATOR_BC_NONE = 0;
 const int OPERATOR_BC_FACE_DIRICHLET = 1;
