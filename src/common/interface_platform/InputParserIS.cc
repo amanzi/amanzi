@@ -1161,8 +1161,6 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
         }
 
         if (n_transport_bcs >= 0) {
-          Teuchos::ParameterList& tbc_list = trp_list.sublist("boundary conditions").sublist("concentration");
-
           Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
 
           // TODO: these simple checks for one transported phase will not
@@ -1199,6 +1197,7 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
                           geochem_cond.set<Teuchos::Array<std::string> >("regions", regs);
                         }
                         else { // proceed with ordinary Transport BCs.
+                          Teuchos::ParameterList& tbc_list = trp_list.sublist("boundary conditions").sublist("concentration");
                           Teuchos::ParameterList& bc = tbc_list.sublist(compss.str()).sublist(bc_root_str);
                           bc.set<Teuchos::Array<std::string> >("regions",regs);
 

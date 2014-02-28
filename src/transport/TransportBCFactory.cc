@@ -28,7 +28,7 @@ void TransportBCFactory::CreateConcentration(std::vector<TransportBoundaryFuncti
 
   if (list_->isSublist("concentration")) {
     ProcessTracerList(bcs);
-  } else if (list_->isSublist("geochemical condition")) {
+  } else if (list_->isSublist("geochemical conditions")) {
     ProcessGeochemicalConditionList(bcs);
   } else {
     msg << "Transport PK: BC sublist has not been recognized\n";
@@ -169,6 +169,7 @@ void TransportBCFactory::ProcessGeochemicalConditionSpec(Teuchos::ParameterList&
   if (spec.isParameter("regions")) {
     if (spec.isType<Teuchos::Array<std::string> >("regions")) {
       regions = spec.get<Teuchos::Array<std::string> >("regions").toVector();
+      bc->Define(regions);
     } else {
       msg << "parameter \"regions\" is not of type \"Array string\"";
       Exceptions::amanzi_throw(msg);
@@ -177,26 +178,6 @@ void TransportBCFactory::ProcessGeochemicalConditionSpec(Teuchos::ParameterList&
     msg << "parameter \"regions\" is missing";
     Exceptions::amanzi_throw(msg);
   }
-
-  Teuchos::ParameterList* f_list;
-  if (spec.isSublist("boundary concentration")) {
-    f_list = &spec.sublist("boundary concentration");
-  } else {  // "boundary concentration" is not a sublist
-    msg << "parameter \"boundary concentration\" is not a sublist";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  // Make the boundary pressure function.
-  Teuchos::RCP<Amanzi::MultiFunction> f;
-  try {
-    f = Teuchos::rcp(new Amanzi::MultiFunction(*f_list));
-  } catch (Errors::Message& m) {
-    msg << "error in sublist \"boundary concentration\": " << m.what();
-    Exceptions::amanzi_throw(msg);
-  }
-  
-  // Add this BC specification to the boundary function.
-//  bc->Define(regions, f); // , Amanzi::BOUNDARY_FUNCTION_ACTION_NONE); // needs to be fixed
 #else
   msg << "Internal error: Alquimia is not enabled!";
   Exceptions::amanzi_throw(msg);

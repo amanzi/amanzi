@@ -39,11 +39,11 @@ class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
   
   void Compute(double time);
 
- private:
   void Define(const std::vector<std::string> &regions);
 
   void Define(std::string region);
 
+ private:
   // The computational mesh.
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
