@@ -104,7 +104,7 @@
       </ParameterList>
 
       <ParameterList name="Adaptive Mesh Refinement Control">
-        <Parameter name="Number Of AMR Levels" type="int" value="4"/>
+        <Parameter name="Number Of AMR Levels" type="int" value="2"/>
         <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4}"/>
         <Parameter name="Regrid Interval" type="Array(int)" value="{200000}"/>
         <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2}"/>
@@ -248,9 +248,6 @@
   </ParameterList>
 
   <ParameterList name="Material Properties">
-    <Parameter name="Permeability Output File" type="string" value="flow03/kp"/>
-    <Parameter name="Porosity Output File" type="string" value="flow03/pp"/>
-    <Parameter name="Saturation Threshold For Kr" type="double" value="0.9995"/>
 
     <ParameterList name="Soil">
       <ParameterList name="Porosity: Uniform">

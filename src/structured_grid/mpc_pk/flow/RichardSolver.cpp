@@ -12,6 +12,7 @@ static Real norm0 = -1;
 static Real max_residual_growth_factor = 1.e8; // FIXME: set this with rsparams
 static Real min_dt = 1.e-2; // FIXME: set this with rsparams
 static bool dump_Jacobian = false;
+static bool die_after_dumping_Jacobian = false;
 static int MAX_NUM_COLS = -1;
 
 void
@@ -304,7 +305,7 @@ void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* c
       for (IntVect iv=box.smallEnd(), End=box.bigEnd(); iv<=End; box.next(iv)) {
 	const Real& num = DpMFT[lev][mfi](iv,0);
 	const Real& den = Dp_origMFT[lev][mfi](iv,0);
-	fMFT[lev][mfi](iv,0) = den==junk_val ? 1 : std::abs(num/den);
+	fMFT[lev][mfi](iv,0) = den==junk_val ? 1 : (num==0 ? 0 : std::abs(num/den));
       }
     }
   }
@@ -1920,29 +1921,24 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
   }
   else {
       ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
-      if (ctype == IS_COLORING_GLOBAL) {
-          vscale_array = vscale_array - start;
-      }
+      if (ctype == IS_COLORING_GLOBAL) {vscale_array = vscale_array - start;}
       
       for (k=0; k<coloring->ncolors; k++) { 
           coloring->currentcolor = k;
           ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
           ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
-          if (ctype == IS_COLORING_GLOBAL) {
-              w3_array = w3_array - start;
-          }
+          if (ctype == IS_COLORING_GLOBAL) {w3_array = w3_array - start;}
           
           /*
             Loop over each column associated with color 
             adding the perturbation to the vector w3.
           */
+          int sgn_diff = -1;
           for (l=0; l<coloring->ncolumns[k]; l++) {
-              col = coloring->columns[k][l];    /* local column of the matrix we are probing for */
-              w3_array[col] += 1/vscale_array[col];
+            col = coloring->columns[k][l]; // Global column number
+            w3_array[col] += sgn_diff/vscale_array[col];
           } 
-          if (ctype == IS_COLORING_GLOBAL) {
-              w3_array = w3_array + start;
-          }
+          if (ctype == IS_COLORING_GLOBAL) {w3_array = w3_array + start;}
           ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
           
           /*
@@ -1953,27 +1949,22 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
           ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
           ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
           ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
-          
+
           /*
             Loop over rows of vector, putting results into Jacobian matrix
           */
-          
-          
           ierr = VecGetArray(w2,&y);CHKPETSC(ierr);
           for (l=0; l<coloring->nrows[k]; l++) {
               row    = coloring->rows[k][l];             /* local row index */
               col    = coloring->columnsforrow[k][l];    /* global column index */
-              y[row] *= vscale_array[vscaleforrow[k][l]];
+              y[row] *= (sgn_diff * vscale_array[coloring->columnsforrow[k][l]]);
               srow   = row + start;
               ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
           }
           ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
                     
       } /* endof for each color */
-      if (ctype == IS_COLORING_GLOBAL) {
-          vscale_array = vscale_array + start;
-      }
-      
+      if (ctype == IS_COLORING_GLOBAL) {vscale_array = vscale_array + start;}
       ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
   }
    
@@ -2000,8 +1991,11 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
     if (ParallelDescriptor::IOProcessor()) {
       std::cout << "There are " << N << " rows in the Jacobian" << std::endl;
     }
-    //std::string str = "Jacobian written in ASCII to " + viewer_filename + " and run killed from RichardSolver.cpp";
-    //BoxLib::Abort(str.c_str());
+    if (die_after_dumping_Jacobian) {
+      ParallelDescriptor::Barrier();
+      std::string str = "Jacobian written in ASCII to " + viewer_filename + " and run killed from RichardSolver.cpp";
+      BoxLib::Abort(str.c_str());
+    }
   }
 
   flg  = PETSC_FALSE;
@@ -2164,7 +2158,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
       if (ctype == IS_COLORING_GLOBAL) w4_array = w4_array - start;          
 
       for (l=0; l<coloring->ncolumns[k]; l++) {
-          col = coloring->columns[k][l];    /* local column of the matrix we are probing for */
+          col = coloring->columns[k][l];    /* global column of the matrix we are probing for */
           w3_array[col] += epsilon;
           w4_array[col] -= epsilon;
       } 
@@ -2206,22 +2200,16 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
       ierr = VecGetArray(w2,&y);CHKPETSC(ierr);          
       ierr = VecGetArray(AlphaV,&a_array);CHKPETSC(ierr);          
 
-      if (ctype == IS_COLORING_GLOBAL) a_array -= start;          
-
       for (l=0; l<coloring->nrows[k]; l++) {
           row    = coloring->rows[k][l];             /* local row index */
           col    = coloring->columnsforrow[k][l];    /* global column index */
           y[row] *= epsilon_inv;                     /* dx = epsilon */
           srow   = row + start;                      /* global row index */
 
-          if (dt_inv>0 && srow == col) {
-              y[row] += a_array[srow] * dt_inv;
-          }
+          // Add diagonal term
+          if (dt_inv>0 && srow == col) {y[row] += a_array[row] * dt_inv;}
 
           ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
-      }
-      if (ctype == IS_COLORING_GLOBAL) {
-          a_array += start;          
       }
       ierr = VecRestoreArray(AlphaV,&a_array);CHKPETSC(ierr);
       ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
@@ -2231,6 +2219,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   coloring->currentcolor = -1;
   ierr  = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
   ierr  = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+      ParallelDescriptor::Barrier();
   ierr = PetscLogEventEnd(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
 
   static int Jcnt = 0;
@@ -2251,8 +2240,11 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
     if (ParallelDescriptor::IOProcessor()) {
       std::cout << "There are " << N << " rows in the Jacobian" << std::endl;
     }
-    //std::string str = "Jacobian written in ASCII to " + viewer_filename + " and run killed from RichardSolver.cpp";
-    //BoxLib::Abort(str.c_str());
+    if (die_after_dumping_Jacobian) {
+      ParallelDescriptor::Barrier();
+      std::string str = "Jacobian written in ASCII to " + viewer_filename + " and run killed from RichardSolver.cpp";
+      BoxLib::Abort(str.c_str());
+    }
   }
 
   flg  = PETSC_FALSE;

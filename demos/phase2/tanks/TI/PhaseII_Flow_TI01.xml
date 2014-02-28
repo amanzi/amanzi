@@ -65,7 +65,7 @@
           <Parameter name="richard_ls_acceptance_factor" type="double" value="200"/>
           <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-11"/>
           <Parameter name="richard_upwind_krel" type="int" value="1"/>
-          <Parameter name="richard_scale_solution_before_solve" type="bool" value="false"/>
+          <Parameter name="richard_scale_solution_before_solve" type="bool" value="true"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="true"/>
           <Parameter name="steady_do_grid_sequence" type="int" value="1"/>
           <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{1.e-3, 1.e-3, 1.e-3, 1.e-3, 1.e-3}"/>
@@ -82,7 +82,7 @@
       </ParameterList>
 
       <ParameterList name="Adaptive Mesh Refinement Control">
-        <Parameter name="Number Of AMR Levels" type="int" value="4"/>
+        <Parameter name="Number Of AMR Levels" type="int" value="3"/>
         <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4, 4, 4}"/>
         <Parameter name="Regrid Interval" type="Array(int)" value="{200000}"/>
         <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2, 2, 2}"/>
