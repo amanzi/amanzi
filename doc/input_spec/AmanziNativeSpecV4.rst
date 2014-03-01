@@ -1350,7 +1350,20 @@ Internal parameters of Boomer AMG includes
      <Parameter name="smoother sweeps" type="int" value="3"/>
      <Parameter name="cycle applications" type="int" value="5"/>
      <Parameter name="strong threshold" type="double" value="0.5"/>
+     <Parameter name="verbosity" type="int" value="0"/>
+     <Parameter name="relaxation type" type="int" value="6"/>
    </ParameterList>
+
+* `"tolerance`" [double] if is not zero, the preconditioner is dynamic 
+  and approximate the inverse matrix with the prescribed tolerance (in
+  the energy norm ???).
+
+* `"relaxation type`" [int] defines the smoother to be used. Default is 6 
+  which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method.
+
+* `"verbosity`" [int] prints BoomerAMG statistics useful for analysis. 
+  Default is 0.
+
 
 Trilinos ML
 -----------
