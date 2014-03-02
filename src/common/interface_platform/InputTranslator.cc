@@ -269,7 +269,7 @@ Teuchos::ParameterList get_constants(xercesc::DOMDocument* xmlDoc) {
  * Empty
  ****************************************************************** */
 std::string get_amanzi_version(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list) {
-  std::string old_version;
+  std::stringstream old_version;
   
   XMLCh* tag = XMLString::transcode("amanzi_input");
 
@@ -304,7 +304,8 @@ std::string get_amanzi_version(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterL
 
     if ( (major == 2) && (minor == 0) && (micro == 0) ) {
       // now we can proceed, we translate to a v1.2.0 parameterlist
-      old_version = "1.2.0";
+      old_version << AMANZI_OLD_INPUT_VERSION_MAJOR << AMANZI_OLD_INPUT_VERSION_MINOR << AMANZI_OLD_INPUT_VERSION_MICRO; 
+                  // "1.2.0";
     } else {
       std::stringstream ver;
       ver << AMANZI_INPUT_VERSION_MAJOR << "." << AMANZI_INPUT_VERSION_MINOR << "." << AMANZI_INPUT_VERSION_MICRO;      
@@ -315,7 +316,7 @@ std::string get_amanzi_version(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterL
     Exceptions::amanzi_throw(Errors::Message("Amanzi input description does not exist <amanz_input version=...>"));
   }
 
-  return old_version;
+  return old_version.str();
 }
 
 
@@ -3337,17 +3338,17 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
 	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
               visPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
               XMLString::release(&textContent2);
-	    } else if (strcmp(textContent,"time_macro")==0) {
+	    } else if (strcmp(textContent,"time_macros")==0) {
 	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
 	      Teuchos::Array<std::string> macro = make_regions_list(textContent2);
-              visPL.set<Teuchos::Array<std::string> >("Time Macro",macro);
+              visPL.set<Teuchos::Array<std::string> >("Time Macros",macro);
               XMLString::release(&textContent2);
-	    } else if (strcmp(textContent,"cycle_macro")==0) {
+	    } else if (strcmp(textContent,"cycle_macros")==0) {
 	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
 	      Teuchos::Array<std::string> macro;
               macro.append(textContent2);
-              //visPL.set<Teuchos::Array<std::string> >("Cycle Macro",macro);
-              visPL.set<std::string>("Cycle Macro",textContent2);
+              visPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
+              //visPL.set<std::string>("Cycle Macros",textContent2);
               XMLString::release(&textContent2);
 	    }
             XMLString::release(&textContent);
@@ -3373,7 +3374,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
 	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
 	      Teuchos::Array<std::string> macro;
               macro.append(textContent2);
-              //chkPL.set<Teuchos::Array<std::string> >("Cycle Macro",macro);
+              //chkPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
               chkPL.set<std::string >("Cycle Macro",textContent2);
               XMLString::release(&textContent2);
 	    }
