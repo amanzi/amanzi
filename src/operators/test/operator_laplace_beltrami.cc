@@ -108,12 +108,12 @@ TEST(LAPLACE_BELTRAMI) {
   Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, 0));
 
   // populate the diffusion operator
-  int schema = Operators::OPERATOR_DOFS_FACE + Operators::OPERATOR_DOFS_CELL;
+  int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
   op->Init();
   op->InitOperator(K);
   op->UpdateMatrices();
   op->ApplyBCs(bc_model, bc_values);
-  op->SymbolicAssembleMatrix(Operators::OPERATOR_DOFS_FACE);
+  op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
   op->AssembleMatrix(schema);
 
   // create preconditoner

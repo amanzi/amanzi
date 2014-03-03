@@ -46,7 +46,7 @@ void OperatorDiffusionSurface::UpdateMatrices()
 
   for (int n = 0; n < nblocks; n++) {
     int schema = blocks_schema_[n];
-    if (schema & OPERATOR_DOFS_FACE && schema & OPERATOR_DOFS_CELL) {
+    if ((schema & OPERATOR_SCHEMA_DOFS_CELL) && (schema & OPERATOR_SCHEMA_DOFS_FACE)) {
       m = n;
       flag = true;
       break;
@@ -55,7 +55,7 @@ void OperatorDiffusionSurface::UpdateMatrices()
 
   if (flag == false) { 
     m = nblocks++;
-    blocks_schema_.push_back(OPERATOR_DOFS_FACE + OPERATOR_DOFS_CELL);
+    blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL);
     blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
   }
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
@@ -129,16 +129,16 @@ void OperatorDiffusionSurface::CreateMassMatrices_(std::vector<WhetStone::Tensor
 ****************************************************************** */
 void OperatorDiffusionSurface::AssembleMatrix(int schema)
 {
-  if (!(schema & OPERATOR_DOFS_FACE && schema & OPERATOR_DOFS_CELL)) {
+  if (schema != OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE) {
     std::cout << "Schema " << schema << " is not supported" << endl;
     ASSERT(0);
   }
 
   // find location of face-based matrices
   int m, nblocks = blocks_.size();
-  for (int n = 0; n < nblocks; n++) {
-    if ((blocks_schema_[n] & schema) == schema) {
-      m = n;
+  for (int nb = 0; nb < nblocks; nb++) {
+    if (blocks_schema_[nb] == schema) {
+      m = nb;
       break;
     }
   }
@@ -192,10 +192,10 @@ void OperatorDiffusionSurface::InitPreconditioner(
 {
   // find the block of matrices
   int m, nblocks = blocks_schema_.size();
-  for (int n = 0; n < nblocks; n++) {
-    int schema = blocks_schema_[n];
-    if (schema & OPERATOR_DOFS_FACE && schema & OPERATOR_DOFS_CELL) {
-      m = n;
+  for (int nb = 0; nb < nblocks; nb++) {
+    int schema = blocks_schema_[nb];
+    if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
+      m = nb;
       break;
     }
   }
@@ -257,10 +257,10 @@ int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVe
 {
   // find the block of matrices
   int m, nblocks = blocks_.size();
-  for (int n = 0; n < nblocks; n++) {
-    int schema = blocks_schema_[n];
-    if (schema & OPERATOR_DOFS_FACE && schema & OPERATOR_DOFS_CELL) {
-      m = n;
+  for (int nb = 0; nb < nblocks; nb++) {
+    int schema = blocks_schema_[nb];
+    if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
+      m = nb;
       break;
     }
   }

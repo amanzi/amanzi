@@ -31,13 +31,15 @@ void OperatorAdvection::InitOperator(const CompositeVector& u)
 ****************************************************************** */
 void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
 {
+  int new_schema = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
+
   // find the block of matrices
   bool flag(false);
   int m, nblocks = blocks_.size();
-  for (int n = 0; n < nblocks; n++) {
-    int schema = blocks_schema_[n];
-    if (schema == OPERATOR_DOFS_CELL) {
-      m = n;
+  for (int nb = 0; nb < nblocks; nb++) {
+    int schema = blocks_schema_[nb];
+    if (schema == new_schema) {
+      m = nb;
       flag = true;
       break;
     }
@@ -45,7 +47,7 @@ void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
 
   if (flag == false) { 
     m = nblocks++;
-    blocks_schema_.push_back(OPERATOR_DOFS_CELL);
+    blocks_schema_.push_back(new_schema);
     blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
   }
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];

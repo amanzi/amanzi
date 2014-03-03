@@ -16,9 +16,12 @@ namespace Amanzi {
 namespace Operators {
 
 // Constants in the next block must powers of 2.
-const int OPERATOR_DOFS_CELL = 1;
-const int OPERATOR_DOFS_FACE = 2;
-const int OPERATOR_DOFS_NODE = 4;
+const int OPERATOR_SCHEMA_DOFS_FACE =  1;
+const int OPERATOR_SCHEMA_DOFS_CELL =  2;
+const int OPERATOR_SCHEMA_DOFS_NODE =  4;
+const int OPERATOR_SCHEMA_BASE_FACE =  8;
+const int OPERATOR_SCHEMA_BASE_CELL = 16;
+const int OPERATOR_SCHEMA_BASE_NODE = 32;
 
 const int OPERATOR_BC_NONE = 0;
 const int OPERATOR_BC_FACE_DIRICHLET = 1;

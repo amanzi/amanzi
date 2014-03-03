@@ -41,7 +41,7 @@ class Operator {
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
   void SymbolicAssembleMatrix(int schema);
-  void AssembleMatrix(int schema);
+  virtual void AssembleMatrix(int schema);
 
   void ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_values);
 

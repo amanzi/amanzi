@@ -66,7 +66,7 @@ TEST(SURFACE_MISC) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 20, 20, 5, gm);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 40, 40, 5, gm);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
   // extract surface mesh
@@ -127,7 +127,7 @@ TEST(SURFACE_MISC) {
   CompositeVector u(*cvs);
   Epetra_MultiVector& uf = *u.ViewComponent("face");
   int nfaces = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  Point vel(1.0, 2.0, 0.0);
+  Point vel(4.0, 4.0, 0.0);
   for (int f = 0; f < nfaces; f++) {
     uf[0][f] = vel * surfmesh->face_normal(f);
   }
@@ -143,7 +143,8 @@ TEST(SURFACE_MISC) {
   op3->ApplyBCs(bc_model, bc_values);
 
   // change preconditioner to default
-  int schema = Operators::OPERATOR_DOFS_FACE + Operators::OPERATOR_DOFS_CELL;
+  int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + 
+               Operators::OPERATOR_SCHEMA_DOFS_CELL;
   Teuchos::RCP<Operator> op4 = Teuchos::rcp(new Operator(*op3));
 
   op4->SymbolicAssembleMatrix(schema);
