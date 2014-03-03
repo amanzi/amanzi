@@ -2748,6 +2748,15 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
                 std::string geochem_cond_name = conc_ic.get<std::string>("Geochemical Condition");
                 Teuchos::ParameterList& geochem_cond = geochem_cond_list.sublist(geochem_cond_name);
                 geochem_cond.set<Teuchos::Array<std::string> >("regions", regions);
+
+                // Now add fake initial concentrations, since the State requires entries 
+                // of this sort to initialize fields. The chemistry PK will simply 
+                // overwrite these values when it initializes its data.
+                std::stringstream dof_str;
+                dof_str << "DoF " << ii+1 << " Function";
+                dof_list.sublist(dof_str.str())
+                  .sublist("function-constant")
+                  .set<double>("value",0.0);
               }
               else { // ordinary initial concentration value.
                 double conc = conc_ic.get<double>("Value");

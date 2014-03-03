@@ -212,7 +212,7 @@ if __name__ == "__main__":
         path_to_amanzi = "amanzi-native-output"
         run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["calcite.bgd"])
         
-        comp = 'total_component_concentration.cell.Component 2 conc'
+        comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_native = []
         for i, time in enumerate(times):
            x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
@@ -239,7 +239,7 @@ if __name__ == "__main__":
         path_to_amanzi = "amanzi-alquimia-output"
         run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-calcite.in","calcite.dat"])
 
-        comp = 'total_component_concentration.cell.Component 2 conc'
+        comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia = []
         for i, time in enumerate(times):
            x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
@@ -318,9 +318,9 @@ if __name__ == "__main__":
     plt.suptitle("Amanzi 1D Calcite Benchmark",x=0.57,fontsize=20)
     plt.tick_params(axis='x', which='major', labelsize=20)
 
-        #pyplot.show()
-        #plt.savefig(local_path+"calcite_1d.png",format="png")
-        #plt.close()
+    #pyplot.show()
+    #plt.savefig(local_path+"calcite_1d.png",format="png")
+    #plt.close()
 
     #finally:
     #    pass 
