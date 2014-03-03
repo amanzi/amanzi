@@ -68,7 +68,7 @@ if __name__ == "__main__":
     minerals =['Quartz', 'Goethite', 'Kaolinite', 'Schoepite', 'Gibbsite', 'Jurbanite', 'Basaluminite', 'Opal']
 
     # amanzi output
-    amanzi_totc_templ = "total_component_concentration.cell.Component {0} conc"
+    amanzi_totc_templ = "total_component_concentration.cell.H+ conc"
     amanzi_totc = [amanzi_totc_templ.format(x) for x in range(len(components))]
 
     amanzi_sorb_templ = "total_sorbed.cell.{0}"
@@ -261,7 +261,7 @@ if __name__ == "__main__":
     plt.tick_params(axis='both', which='major', labelsize=15)
 
     #pyplot.show()
-    #plt.savefig(root+"_1d.png",format="png")
+    plt.savefig(root+"_1d.png",format="png")
     #plt.close()
 
     #finally:
