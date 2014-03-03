@@ -31,13 +31,15 @@ void OperatorAdvection::InitOperator(const CompositeVector& u)
 ****************************************************************** */
 void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
 {
+  int new_schema = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
+
   // find the block of matrices
   bool flag(false);
-  int m, nblocks = matrix_blocks_type_.size();
-  for (int n = 0; n < nblocks; n++) {
-    int type = matrix_blocks_type_[n];
-    if (type == OPERATOR_STENCIL_TYPE_FACE_TPFA) {
-      m = n;
+  int m, nblocks = blocks_.size();
+  for (int nb = 0; nb < nblocks; nb++) {
+    int schema = blocks_schema_[nb];
+    if (schema == new_schema) {
+      m = nb;
       flag = true;
       break;
     }
@@ -45,10 +47,10 @@ void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
 
   if (flag == false) { 
     m = nblocks++;
-    matrix_blocks_type_.push_back(OPERATOR_STENCIL_TYPE_FACE_TPFA);
-    matrix_blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
+    blocks_schema_.push_back(new_schema);
+    blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
   }
-  std::vector<WhetStone::DenseMatrix>& matrix = *matrix_blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
 
   // apply preconditioner inversion
   AmanziMesh::Entity_ID_List cells;
@@ -65,7 +67,7 @@ void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
 
     double umod = fabs(uf[0][f]);
     if (c1 < 0) {
-      Aface(0, 0) = -umod;
+      Aface(0, 0) = umod;
     } else if (c2 < 0) {
       Aface(0, 0) = umod;
     } else {

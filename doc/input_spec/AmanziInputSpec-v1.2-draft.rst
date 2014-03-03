@@ -1049,6 +1049,10 @@ The following models are currently supported for capillary pressure (Section 3.3
 
  * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing.  Note that running Amanzi under the Structured Grid option, an alternative comparable feature is available as a global option (see `"Saturation Threshold For Kr`" discussed above).
 
+ * [] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
+
+ * [] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
+
 * [U] `"Capillary Pressure: Brooks Corey`" [list] requires
 
  * [U] `"lambda`" [double] to specify lambda in Equation 3.9
@@ -1063,6 +1067,10 @@ The following models are currently supported for capillary pressure (Section 3.3
    relative permeability (either Equation 3.15, or Equation 3.14, respectively)
 
  * [U] `"krel smoothing interval`" [double] (default value gives no relative permeability smoothing).
+
+ * [] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
+
+ * [] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
 
 
 The following models can be specified for particle density (only `"Particle Density: Uniform`" is supported at the moment):

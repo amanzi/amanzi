@@ -491,7 +491,7 @@ int Transport_PK::Advance(double dT_MPC)
 
 
 /* ******************************************************************* 
-* Updates states 
+* Copy theadvected tcc to the provided state.
 ******************************************************************* */
 void Transport_PK::CommitState(Teuchos::RCP<State> S) 
 {

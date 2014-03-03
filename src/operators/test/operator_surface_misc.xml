@@ -80,7 +80,7 @@
        <Parameter name="error tolerance" type="double" value="1e-16"/>
        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
        <Parameter name="maximum number of iterations" type="int" value="200"/>
-       <Parameter name="iterative method" type="string" value="pcg"/>
+       <Parameter name="iterative method" type="string" value="gmres"/>
        <ParameterList name="VerboseObject">
          <Parameter name="Verbosity Level" type="string" value="high"/>
        </ParameterList>
@@ -97,6 +97,7 @@
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
         <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

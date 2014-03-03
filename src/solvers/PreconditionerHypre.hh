@@ -39,7 +39,7 @@ class PreconditionerHypre : public Preconditioner {
 
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
   double tol_, strong_threshold_;
-  int nsmooth_, ncycles_, verbosity_;
+  int nsmooth_, ncycles_, relaxation_type_, verbosity_;
 };
 
 }  // namespace AmanziPreconditioners

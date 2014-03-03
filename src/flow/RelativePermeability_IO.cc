@@ -154,66 +154,38 @@ void RelativePermeability::ProcessStringRelativePermeability(const std::string n
 void RelativePermeability::PlotWRMcurves()
 {
   int MyPID = mesh_->cell_map(false).Comm().MyPID();
-
   if (MyPID == 0) {
-    if (list_.isParameter("plot krel-pc curves")) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "saving krel-pc curves in file flow_krel_pc.txt..." << std::endl;
-      std::ofstream ofile;
-      ofile.open("flow_krel_pc.txt");
+    int mb(0); 
+    for (Teuchos::ParameterList::ConstIterator i = list_.begin(); i != list_.end(); i++) {
+      if (list_.isSublist(list_.name(i))) {
+        Teuchos::ParameterList& wrm_list = list_.sublist(list_.name(i));
 
-      std::vector<double> spe;
-      spe = list_.get<Teuchos::Array<double> >("plot krel-pc curves").toVector();
+        if (wrm_list.isSublist("Output")) {
+          Teuchos::ParameterList& out_list = wrm_list.sublist("Output");
 
-      for (double pc = spe[0]; pc < spe[2]; pc += spe[1]) {
-        ofile << pc << " ";
-        for (int mb = 0; mb < WRM_.size(); mb++) {
-          double krel = WRM_[mb]->k_relative(pc);
-          ofile << krel << " ";
+          std::string fname = out_list.get<std::string>("file");
+          Teuchos::OSTab tab = vo_->getOSTab();
+          *vo_->os() << "saving sat-krel-pc date in file \"" << fname << "\"..." << std::endl;
+          std::ofstream ofile;
+          ofile.open(fname.c_str());
+
+          int ndata = out_list.get<int>("number of points", 100);
+          ndata = std::max(ndata, 1);
+
+          double sr = WRM_[mb]->residualSaturation();
+          double ds = (1.0 - sr) / ndata;
+
+          for (int i = 0; i < ndata; i++) {
+            double sat = sr + ds * (i + 0.5);
+            double pc = WRM_[mb]->capillaryPressure(sat);
+            double krel = WRM_[mb]->k_relative(pc);
+            ofile << sat << " " << krel << " " << pc << std::endl;
+          }
+          ofile << std::endl;
+          ofile.close();
         }
-        ofile << std::endl;
+        mb++; 
       }
-      ofile.close();
-    }
-
-    if (list_.isParameter("plot krel-sat curves")) {
-      *vo_->os() << "saving krel-sat curves in file flow_krel_sat.txt..." << std::endl;
-      std::ofstream ofile;
-      ofile.open("flow_krel_sat.txt");
-
-      std::vector<double> spe;
-      spe = list_.get<Teuchos::Array<double> >("plot krel-sat curves").toVector();
-
-      for (double s = spe[0]; s < spe[2]; s += spe[1]) {
-        ofile << s << " ";
-        for (int mb = 0; mb < WRM_.size(); mb++) {
-          double ss = std::max(s, WRM_[mb]->residualSaturation());
-          double pc = WRM_[mb]->capillaryPressure(ss);
-          double krel = WRM_[mb]->k_relative(pc);
-          ofile << krel << " ";
-        }
-        ofile << std::endl;
-      }
-      ofile.close();
-    }
-
-    if (list_.isParameter("plot sat-pc curves")) {
-      *vo_->os() << "saving sat-pc curves in file flow_sat_pc.txt..." << std::endl;
-      std::ofstream ofile;
-      ofile.open("flow_sat_pc.txt");
-
-      std::vector<double> spe;
-      spe = list_.get<Teuchos::Array<double> >("plot sat-pc curves").toVector();
-
-      for (double pc = spe[0]; pc < spe[2]; pc += spe[1]) {
-        ofile << pc << " ";
-        for (int mb = 0; mb < WRM_.size(); mb++) {
-          double sat = WRM_[mb]->saturation(pc);
-          ofile << sat << " ";
-        }
-        ofile << std::endl;
-      }
-      ofile.close();
     }
   }
 }

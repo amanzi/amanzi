@@ -32,6 +32,7 @@ class OperatorDiffusionSurface : public Operator {
 
   // main members
   void InitOperator(std::vector<WhetStone::Tensor>& K);
+  void AssembleMatrix(int schema);
   void UpdateMatrices();
 
   // local implementation of matrix inversion

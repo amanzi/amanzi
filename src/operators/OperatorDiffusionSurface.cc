@@ -11,6 +11,7 @@
 
 #include <vector>
 
+#include "Epetra_Vector.h"
 #include "Epetra_FECrsGraph.h"
 
 #include "exceptions.hh"
@@ -40,12 +41,12 @@ void OperatorDiffusionSurface::InitOperator(std::vector<WhetStone::Tensor>& K)
 void OperatorDiffusionSurface::UpdateMatrices()
 {
   // find location of matrix blocks
-  int m(0), nblocks = matrix_blocks_.size();
+  int m(0), nblocks = blocks_.size();
   bool flag(false);
 
   for (int n = 0; n < nblocks; n++) {
-    int type = matrix_blocks_type_[n];
-    if (type == OPERATOR_STENCIL_TYPE_CELL_MFD) {
+    int schema = blocks_schema_[n];
+    if ((schema & OPERATOR_SCHEMA_DOFS_CELL) && (schema & OPERATOR_SCHEMA_DOFS_FACE)) {
       m = n;
       flag = true;
       break;
@@ -54,10 +55,10 @@ void OperatorDiffusionSurface::UpdateMatrices()
 
   if (flag == false) { 
     m = nblocks++;
-    matrix_blocks_type_.push_back(OPERATOR_STENCIL_TYPE_CELL_MFD);
-    matrix_blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
+    blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL);
+    blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
   }
-  std::vector<WhetStone::DenseMatrix>& matrix = *matrix_blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
 
   // update matrix blocks
   AmanziMesh::Entity_ID_List faces;
@@ -124,6 +125,64 @@ void OperatorDiffusionSurface::CreateMassMatrices_(std::vector<WhetStone::Tensor
 
 
 /* ******************************************************************
+* Special assemble of elemental face-based matrices. 
+****************************************************************** */
+void OperatorDiffusionSurface::AssembleMatrix(int schema)
+{
+  if (schema != OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE) {
+    std::cout << "Schema " << schema << " is not supported" << endl;
+    ASSERT(0);
+  }
+
+  // find location of face-based matrices
+  int m, nblocks = blocks_.size();
+  for (int nb = 0; nb < nblocks; nb++) {
+    if (blocks_schema_[nb] == schema) {
+      m = nb;
+      break;
+    }
+  }
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+
+  // populate the matrix
+  A_->PutScalar(0.0);
+
+  const Epetra_Map& map = mesh_->face_map(false);
+  const Epetra_Map& map_wghost = mesh_->face_map(true);
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  int faces_LID[OPERATOR_MAX_FACES];
+  int faces_GID[OPERATOR_MAX_FACES];
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; n++) {
+      faces_LID[n] = faces[n];
+      faces_GID[n] = map_wghost.GID(faces_LID[n]);
+    }
+    A_->SumIntoGlobalValues(nfaces, faces_GID, matrix[c].Values());
+  }
+  A_->GlobalAssemble();
+
+  // Add diagonal
+  diagonal_->GatherGhostedToMaster("face", Add);
+  Epetra_MultiVector& diag = *diagonal_->ViewComponent("face");
+
+  Epetra_Vector tmp(A_->RowMap());
+  A_->ExtractDiagonalCopy(tmp);
+  tmp.Update(1.0, diag, 1.0);
+  A_->ReplaceDiagonalValues(tmp);
+
+  // Assemble all right-hand sides
+  rhs_->GatherGhostedToMaster("face", Add);
+}
+
+
+/* ******************************************************************
 * Assembles four matrices: diagonal Acc_, two off-diagonal blocks
 * Acf_ and Afc_, and the Schur complement Sff_.
 ****************************************************************** */
@@ -132,15 +191,15 @@ void OperatorDiffusionSurface::InitPreconditioner(
     std::vector<int>& bc_model, std::vector<double>& bc_values)
 {
   // find the block of matrices
-  int m, nblocks = matrix_blocks_type_.size();
-  for (int n = 0; n < nblocks; n++) {
-    int type = matrix_blocks_type_[n];
-    if (type == OPERATOR_STENCIL_TYPE_CELL_MFD) {
-      m = n;
+  int m, nblocks = blocks_schema_.size();
+  for (int nb = 0; nb < nblocks; nb++) {
+    int schema = blocks_schema_[nb];
+    if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
+      m = nb;
       break;
     }
   }
-  std::vector<WhetStone::DenseMatrix>& matrix = *matrix_blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
 
   // create a face-based stiffness matrix
   Teuchos::RCP<Epetra_FECrsMatrix> S = Teuchos::rcp(new Epetra_FECrsMatrix(*A_));
@@ -197,15 +256,15 @@ void OperatorDiffusionSurface::InitPreconditioner(
 int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
   // find the block of matrices
-  int m, nblocks = matrix_blocks_type_.size();
-  for (int n = 0; n < nblocks; n++) {
-    int type = matrix_blocks_type_[n];
-    if (type == OPERATOR_STENCIL_TYPE_CELL_MFD) {
-      m = n;
+  int m, nblocks = blocks_.size();
+  for (int nb = 0; nb < nblocks; nb++) {
+    int schema = blocks_schema_[nb];
+    if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
+      m = nb;
       break;
     }
   }
-  std::vector<WhetStone::DenseMatrix>& matrix = *matrix_blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
 
   // apply preconditioner inversion
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
@@ -225,7 +284,7 @@ int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVe
   // Tf.Update(1.0, Xf, -1.0);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  Epetra_MultiVector& diag = *diagonal_block_->ViewComponent("cell");
+  Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
 
   Tf = Xf;
   for (int c = 0; c < ncells_owned; c++) {

@@ -42,6 +42,7 @@ void start_data();
 
 // Writes node data to files which has previously been opened with open_data_file.
 void write_node_data(const Epetra_Vector &x, std::string varname);
+void write_node_data(const Epetra_MultiVector &x, const unsigned int component, std::string varname);
 
 // Writes cell data to files which has previously been opened with open_data_file.
 void write_cell_data(const Epetra_Vector &x, std::string varname);

@@ -6,20 +6,26 @@
   <ParameterList name="Regions">
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0,0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{1.0,0.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{1.0,0.0,0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{1.0,1.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Top surface">
+    <ParameterList name="Bottom side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,1.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0.0,-1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Top side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{1.0,1.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -32,7 +38,7 @@
       <Parameter name="discretization method" type="string" value="generic mfd"/>
 
       <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+        <Parameter name="Verbosity Level" type="string" value="medium"/>
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
@@ -62,6 +68,14 @@
       <ParameterList name="boundary conditions">
         <ParameterList name="pressure">
           <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{Top side, Bottom side}"/>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="BC 2">
             <Parameter name="regions" type="Array(string)" value="{Left side, Right side}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
@@ -79,11 +93,8 @@
      <ParameterList name="AztecOO CG">
        <Parameter name="error tolerance" type="double" value="1e-16"/>
        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-       <Parameter name="maximum number of iterations" type="int" value="200"/>
+       <Parameter name="maximum number of iterations" type="int" value="100"/>
        <Parameter name="iterative method" type="string" value="pcg"/>
-       <ParameterList name="VerboseObject">
-         <Parameter name="Verbosity Level" type="string" value="high"/>
-       </ParameterList>
      </ParameterList>
    </ParameterList>
 
@@ -96,7 +107,7 @@
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
-        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="tolerance" type="double" value="1e-10"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

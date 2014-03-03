@@ -53,7 +53,7 @@ void OperatorAccumulation::UpdateMatrices(
   const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
   const Epetra_MultiVector& ssc = *ss.ViewComponent(name);
 
-  Epetra_MultiVector& diag = *diagonal_block_->ViewComponent(name);
+  Epetra_MultiVector& diag = *diagonal_->ViewComponent(name);
   Epetra_MultiVector& rhs = *rhs_->ViewComponent(name);
 
   int n = u0c.MyLength();

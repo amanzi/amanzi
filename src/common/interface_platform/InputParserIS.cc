@@ -453,29 +453,56 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
       }
 
       // Cycle Macro
-      if ( vis_list.isParameter("Cycle Macro") ) {
-        std::string cycle_macro = vis_list.get<std::string>("Cycle Macro");
+      Teuchos::Array<int> all_cycles;
+      all_cycles.clear();
+      if ( vis_list.isParameter("Cycle Macros") ) {
+        std::vector<std::string> cycle_macros;
+       	cycle_macros = vis_list.get<Teuchos::Array<std::string> >("Cycle Macros").toVector();
 
-        //Teuchos::Array<int> cm = get_Cycle_Macro(cycle_macro,plist);
-        Teuchos::ParameterList cycle_macro_list = get_Cycle_Macro(cycle_macro, plist);
+	int j(0);
+        for (int i=0; i < cycle_macros.size(); i++) {
+          //Teuchos::Array<int> cm = get_Cycle_Macro(cycle_macro,plist);
+          Teuchos::ParameterList cycle_macro_list = get_Cycle_Macro(cycle_macros[i], plist);
+          if (cycle_macro_list.isParameter("Start_Period_Stop")) {
+            std::stringstream ss;
+            ss << "cycles start period stop " << j;
+            vis_list.set(ss.str(),cycle_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+            ++j;
+          } else if (cycle_macro_list.isParameter("Values")) {
+            Teuchos::Array<int> cycles;
+            cycles = cycle_macro_list.get<Teuchos::Array<int> >("Values");
 
-        if (cycle_macro_list.isParameter("Start_Period_Stop")) {
-          vis_list.set<Teuchos::Array<int> >("cycles start period stop",cycle_macro_list.get<Teuchos::Array<int> >("Start_Period_Stop"));
-        } else if (cycle_macro_list.isParameter("Values")) {
-          vis_list.set<Teuchos::Array<int> >("cycles",cycle_macro_list.get<Teuchos::Array<int> >("Values"));
-        } else {
-          Exceptions::amanzi_throw(Errors::Message("Cycle Macros must hace either the Values of Start_Period_Stop parameter."));
-        }
+            std::list<int> all_list, cur_list;
+            for (Teuchos::Array<int>::iterator at = all_cycles.begin(); at != all_cycles.end(); ++at) {
+              all_list.push_back(*at);
+            }
+            for (Teuchos::Array<int>::iterator t = cycles.begin(); t != cycles.end(); ++t) {
+              cur_list.push_back(*t);
+            }
+            all_list.sort();
+            cur_list.sort();
+
+            all_list.merge(cur_list);
+            all_list.unique();
+
+            all_cycles.clear();
+            for (std::list<int>::iterator al = all_list.begin(); al != all_list.end(); ++al) {
+              all_cycles.push_back(*al);
+            }
+          } else {
+            Exceptions::amanzi_throw(Errors::Message("Cycle Macros must hace either the Values of Start_Period_Stop parameter."));
+          }
+	}
         // delete the cycle macro
-        vis_list.remove("Cycle Macro");
+        vis_list.remove("Cycle Macros");
       }
 
-      // Time Macro
+      // Time Macros
       Teuchos::Array<double> all_times;
       all_times.clear();
-      if ( vis_list.isParameter("Time Macro") ) {
+      if ( vis_list.isParameter("Time Macros") ) {
         std::vector<std::string> time_macros;
-        time_macros = vis_list.get<Teuchos::Array<std::string> >("Time Macro").toVector();
+        time_macros = vis_list.get<Teuchos::Array<std::string> >("Time Macros").toVector();
 
         int j(0);
         for (int i=0; i < time_macros.size(); i++) {
@@ -510,7 +537,7 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
             }
           }
         }
-        vis_list.remove("Time Macro");
+        vis_list.remove("Time Macros");
       }
       if (all_times.size() != 0) {
         vis_list.set("times", all_times);

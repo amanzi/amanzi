@@ -967,7 +967,7 @@ void MPC::cycle_driver() {
 
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ) {
         Amanzi::timer_manager.start("Transport PK");
-        if (transport_enabled) TPK->CommitState(S);
+        if (transport_enabled && !chemistry_enabled) TPK->CommitState(S);
         Amanzi::timer_manager.stop("Transport PK");
 
         Amanzi::timer_manager.start("Chemistry PK");

@@ -161,6 +161,16 @@ void write_node_data(const Epetra_Vector &x, std::string varname)
 }
 
 
+void write_node_data(const Epetra_MultiVector &x, const unsigned int component, std::string varname) 
+{
+  double **node_data;
+  int err = x.ExtractView(&node_data);
+
+  double *component_data = node_data[component];
+  gmvwrite_variable_name_data(AmanziMesh::NODE, (char*) varname.c_str(), component_data);
+}
+
+
 void write_cell_data(const Epetra_Vector &x, std::string varname) 
 {
   double *cell_data;
