@@ -97,6 +97,74 @@ Here is an overall example for the modle description element.
   </model_description>
 
 
+Definitions
+===========
+
+Definitions allows the user the define and name constants, times, and macros to be used in later sectons of the input file.  This is to streamline the look and readability of the input file.  The user should take care not to reuse names within this section or other sections.  This may have unindented consequences.
+
+Named Times
+-----------
+
+Here the user can specify and name times to be used in other sections of the input file.   Note that if a name is repeated the last read value will be retained and all others will be overwritten.
+
+A *time* requires the attributes `"name`" and `"value`".  If a unit is not specified with the value seconds is taken as the default.
+
+Constants
+---------
+
+Here the user can define and name constants to be used in other sections of the input file.  Note that if a name is repeated the last read value will be retained and all others will be overwritten.
+
+A *constant* has three attributes `"name`", `"type`", and `"value`".  The user can provide any name, but not it should not be repeated anywhere within the input to avoid confusion.  The available types include: `"none`", `"time`", `"constant`", `"numerical`", and `"area_mass_flux`".  Values assigned to constants of type `"time`" can include known units, otherwise seconds will be assumed as the default.
+
+Macros
+------
+
+Three types of macros are currently available *time_macro*, *cycle_macro*, and *variable_macro*.
+
+The *time_macro* requires an attribute `"name`".  The macro can then either take the form of one or more labeled time subelements or the subelements `"start`", `"timestep_interval`", and `"stop`" again containing labeled times.  A `"stop`" value of -1 will continue the cycle macro until the end of the simulation.  The labeled times can be time values assuming the default time unit of seconds or including a known time unit.
+
+The *cycle_macro* requires an attribute `"name`" and the subelements `"start`", `"timestep_interval`", and `"stop`" with integer values.  A `"stop`" value of -1 will continue the cycle macro until the end of the simulation.
+
+The *variable_macro* requires an attribute `"name`"  and one or more subelements `"variable`" containing strings.
+
+
+An example *definitions* section would look as the following:
+
+.. code-block:: xml
+
+  <definitions>
+    <constants>
+      <constant name="zero" type="none" value="0.000"/>
+
+      <constant name ="start"                   type="time" value="1956.0;y"/>
+      <constant name ="B-18_release_end"        type="time" value ="1956.3288;y"/>
+      <constant name="future_recharge"          type="area_mass_flux" value="1.48666E-6"/>
+
+      <numerical_constant name="zero" value="0.000"/>
+
+    </constants>
+
+    <macros>
+
+      <time_macro name="Macro 1">
+        <time>6.17266656E10</time>
+        <time>6.172982136E10</time>
+        <time>6.173297712E10</time>
+        <time>6.3372710016E10</time>
+        <time>6.33834396E10</time>
+      </time_macro>
+
+      <cycle_macro name = "Every_1000_timesteps">
+        <start>0</start>
+        <timestep_interval>1000</timestep_interval>
+        <stop>-1 </stop>
+      </cycle_macro>
+
+    </macros>
+    
+  </definitions>
+
+
 Execution Control
 =================
 
@@ -714,11 +782,13 @@ The ''vis'' element defines the visualization filenaming scheme and how often to
 .. code-block:: xml
 
   <vis>
-      Required Elements: base_filename, num_digits, time_macro
-      Optional Elements: NONE
+      Required Elements: base_filename, num_digits 
+      Optional Elements: time_macros, cycle_macros
   </vis>
 
-The *base_filename* element contain the text component of the how the visualization files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the visualization files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or interation id)  Final the *time_macro* element indicates the previously defined time_macro to be used to determin the frequency at which to write the visualization files.
+The *base_filename* element contain the text component of the how the visualization files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the visualization files.  The *num_digits* elements indicates how many digits to use for the index. 
+
+The presence of the ''vis'' element means that visualization files will be written out after cycle 0 and the final cycle of the simulation.  The optional elements *time_macros* or *cycle_macros* indicate additional points during the simulation at which visualization files are to be written out.  Both elements allow one or more of the appropriate type of macro to be listed.  These macros will be determine the appropriate times or cycles to write out visualization files.  See the `Definitions`_ section for defining individual macros.
 
 (*EIB NOTE* - there should be a comment here about how the output is controlled, i.e. for each PK where do you go to turn on and off fields.  This will probably get filled in as the other sections fill out.)
 
@@ -729,7 +799,7 @@ Example:
   <vis>
      <base_filename>plot</base_filename>
      <num_digits>5</num_digits>
-     <time_macro>Macro 1</time_macro>
+     <time_macros>Macro 1</time_macros>
   </vis>
 
 
