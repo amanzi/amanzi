@@ -125,25 +125,25 @@
           <ParameterList name="Water">
             <ParameterList name="Na+">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="8.65E-02"/>
+                <Parameter name="Geochemical Condition" type="string" value="initial"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Ca++">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.82E-02"/>
+                <Parameter name="Geochemical Condition" type="string" value="initial"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Mg++">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.11E-02"/>
+                <Parameter name="Geochemical Condition" type="string" value="initial"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Cl-">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.451E-01"/>
+                <Parameter name="Geochemical Condition" type="string" value="initial"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
@@ -166,33 +166,25 @@
           <ParameterList name="Water">
             <ParameterList name="Na+">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{9.4E-03, 9.4E-03}"/>
+                <Parameter name="Geochemical Condition" type="string" value="west"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Ca++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{5.0E-04, 5.0E-04}"/>
+                <Parameter name="Geochemical Condition" type="string" value="west"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Mg++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{2.13E-03, 2.13E-03}"/>
+                <Parameter name="Geochemical Condition" type="string" value="west"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Cl-">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.466E-02, 1.466E-02}"/>
+                <Parameter name="Geochemical Condition" type="string" value="west"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
