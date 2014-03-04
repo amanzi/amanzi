@@ -40,7 +40,7 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-SurfaceBalanceSEB::SurfaceBalanceSEB(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+SurfaceBalanceSEBVPL::SurfaceBalanceSEBVPL(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution)  :
     PKPhysicalBase(plist,FElist,solution),
@@ -82,7 +82,7 @@ SurfaceBalanceSEB::SurfaceBalanceSEB(const Teuchos::RCP<Teuchos::ParameterList>&
 }
 
 
-void SurfaceBalanceSEB::setup(const Teuchos::Ptr<State>& S) {
+void SurfaceBalanceSEBVPL::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::setup(S);
 
   // requirements: primary variable
@@ -97,7 +97,7 @@ void SurfaceBalanceSEB::setup(const Teuchos::Ptr<State>& S) {
   // fm = S->GetFieldEvaluator("surface_conducted_energy_source");
   // pvfe_esource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   // if (pvfe_esource_ == Teuchos::null) {
-  //   Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
+  //   Errors::Message message("SurfaceBalanceSEBVPL: error, failure to initialize primary variable");
   //   Exceptions::amanzi_throw(message);
   // }
 
@@ -107,7 +107,7 @@ void SurfaceBalanceSEB::setup(const Teuchos::Ptr<State>& S) {
   fm = S->GetFieldEvaluator("surface_mass_source");
   pvfe_wsource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_wsource_ == Teuchos::null) {
-    Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
+    Errors::Message message("SurfaceBalanceSEBVPL: error, failure to initialize primary variable");
     Exceptions::amanzi_throw(message);
   }
 
@@ -117,7 +117,7 @@ void SurfaceBalanceSEB::setup(const Teuchos::Ptr<State>& S) {
   fm = S->GetFieldEvaluator("surface_mass_source_temperature");
   pvfe_wtemp_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_wtemp_ == Teuchos::null) {
-    Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
+    Errors::Message message("SurfaceBalanceSEBVPL: error, failure to initialize primary variable");
     Exceptions::amanzi_throw(message);
   }
 
@@ -192,7 +192,7 @@ void SurfaceBalanceSEB::setup(const Teuchos::Ptr<State>& S) {
 };
 
 // initialize ICs
-void SurfaceBalanceSEB::initialize(const Teuchos::Ptr<State>& S) {
+void SurfaceBalanceSEBVPL::initialize(const Teuchos::Ptr<State>& S) {
   // this call specifies snow depth
   PKPhysicalBase::initialize(S);
 
@@ -224,7 +224,7 @@ void SurfaceBalanceSEB::initialize(const Teuchos::Ptr<State>& S) {
 };
 
 
-bool SurfaceBalanceSEB::advance(double dt) {
+bool SurfaceBalanceSEBVPL::advance(double dt) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
@@ -317,11 +317,11 @@ bool SurfaceBalanceSEB::advance(double dt) {
       *S_next_->GetFieldData("stored_Qe", name_)->ViewComponent("cell", false);
 
   //0 Create the SEB data structure
-  SurfaceEnergyBalance::LocalData data;
+  SurfaceEnergyBalance_VPL::LocalData data;
   data.st_energy.dt = dt;
   data.st_energy.AlbedoTrans = albedo_trans_;
 
-  SurfaceEnergyBalance::LocalData data_bare;
+  SurfaceEnergyBalance_VPL::LocalData data_bare;
   data_bare.st_energy.dt = dt;
   data_bare.st_energy.AlbedoTrans = albedo_trans_;
 
@@ -377,7 +377,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
 
     if ((data.st_energy.ht_snow > snow_ground_trans_) ||
         (data.st_energy.ht_snow <= 0)) {
-      SurfaceEnergyBalance::SnowEnergyBalance(data);
+      SurfaceEnergyBalance_VPL::SnowEnergyBalance(data);
     } else { // Transition between Snow and bare ground
       double theta=0.0;
 
@@ -387,7 +387,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
 
       // Calculate as if ht_snow is the min value.
       data.st_energy.ht_snow = snow_ground_trans_;
-      SurfaceEnergyBalance::SnowEnergyBalance(data);
+      SurfaceEnergyBalance_VPL::SnowEnergyBalance(data);
 
       // Calculate as if bare ground
       // ATS Calcualted Data
@@ -417,7 +417,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
       data_bare.st_energy.ht_snow = 0.;
       data.st_energy.stored_surface_pressure = stored_surface_pressure[0][c];
 
-      SurfaceEnergyBalance::SnowEnergyBalance(data_bare);
+      SurfaceEnergyBalance_VPL::SnowEnergyBalance(data_bare);
 
       // Calculating Data for ATS
       data.st_energy.fQc = data.st_energy.fQc * theta + data_bare.st_energy.fQc * (1.-theta);
