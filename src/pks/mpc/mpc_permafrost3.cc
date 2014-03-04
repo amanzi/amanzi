@@ -397,10 +397,10 @@ MPCPermafrost3::update_precon(double t,
       S_next_->GetFieldData("dsurface_energy_dsurface_pressure");
 
   // write for debugging
-  vnames.erase();
-  vecs.erase();
-  vnames.push_back("  de_dp surf"); 
-  vecs.push_back(dEdp_surf.ptr());
+  vnames.resize(1);
+  vecs.resize(1);
+  vnames[0] = "  de_dp surf";
+  vecs[0] = dEdp_surf.ptr();
   surf_db_->WriteVectors(vnames, vecs, false);
 
   // Scale by 1/h
