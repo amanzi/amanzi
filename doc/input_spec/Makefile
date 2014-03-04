@@ -12,6 +12,7 @@ SRC = \
 	AmanziNativeSpecV4.rst \
 	AmanziChemistryInputSpec.rst \
 	AmanziInputSpec-v1.2-draft.rst \
+	AmanziInputSpec-v1.2.1-draft.rst \
 	AmanziInputSpec-v2.0-draft.rst
 
 HTML = $(SRC:%.rst=%.html)

@@ -622,7 +622,7 @@ This example specifies that a time-dependent evolution of Richards equation is d
 Domain
 ======
 
-[S] The `"Domain`" parameter list contains the spatial dimension.
+[SU] The `"Domain`" parameter list contains the spatial dimension.
 
 Example:
 
@@ -1268,10 +1268,8 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
     * [SU] COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
-     * [SU] Component IC [list] Parameterized model for initial component conditions; only `"IC: Uniform Concentration`" is supported (see below)
+     * [SU] Component IC [list] Parameterized model for initial component conditions; only `"IC: Uniform Concentration`" is supported (see below) in units of molarity (moles/volume).
 
-      * [SU] `"Concentration Units`" [string] can accept `"Molarity`" (moles/volume), `"Molality`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
-    
 Next, we specify boundary conditions.  Again, support is provided for specifying boundary conditions on the aqueous phase (flow), and on the solutes 
 (total component concentration of primary species in reactive transport).
 
@@ -1289,9 +1287,7 @@ Next, we specify boundary conditions.  Again, support is provided for specifying
 
     * [SU] COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
-     * [SU] BC function [list] Parameterized model to specify the contcentration profile, only `"BC: Uniform Concentration`" is supported (see below).
-
-      * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
+     * [SU] BC function [list] Parameterized model to specify the contcentration profile, only `"BC: Uniform Concentration`" is supported (see below) in units of molarity (moles/volume).
 
 Finally, we specify sources.  Support is provided for specifying sources on the aqueous phase (flow), and for the solutes (total component concentration of primary species in reactive transport).
 
@@ -1309,9 +1305,7 @@ Finally, we specify sources.  Support is provided for specifying sources on the 
 
     * COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
-     * Source function [list] Parameterized model to specify the concentration profile, `"Source: Uniform Concentration`" and `"Source: Flow Weighted Concentration`" are supported (see below).
-
-      * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
+     * Source function [list] Parameterized model to specify the concentration profile, `"Source: Uniform Concentration`" and `"Source: Flow Weighted Concentration`" are supported (see below) in units of molarity (moles/volume).
 
 The following initial condition parameterizations are supported:
 
@@ -1327,7 +1321,7 @@ The following initial condition parameterizations are supported:
 
 * [SU] `"IC: Uniform Concentration`" [list] 
 
-  * [SU] `"Value`" [double]  total component concentration in the units specified by the `"Concentration Units`" entry (see above)
+  * [SU] `"Value`" [double]  total component concentration in units of molarity (moles/volume)
   * [SU] `"Free Ion Guess`" [double]  estimate of the free ion concentration for this solute; used to help convergence of the initial solution of the chemistry.
 
 The following boundary condition parameterizations are supported:
@@ -1488,7 +1482,7 @@ Time macros specify a rule to generate a list of time values.  They are defined 
 
 * [SU] `"Time Macros`" [list] can accept multiple lists for user-named macros TMACRO
 
- * [S] TMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
+ * [SU] TMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
 
   * [SU] `"Values`" [Array double] values of time, or 
 
@@ -1577,7 +1571,7 @@ by machine round errors and randomness due to execution in a parallel computing 
 
   * [SU] `"File Name Base`" [string]
 
-  * [U] `"File Name Digits`" [int] specify the number of digits that should be appended to the file name for the cycle number.
+  * [SU] `"File Name Digits`" [int] specify the number of digits that should be appended to the file name for the cycle number.
 
   * [SU] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
 
@@ -1650,7 +1644,7 @@ Example:
   <ParameterList name="Visualization Data">
     <Parameter name="File Name Base" type="string" value="chk"/>
     <Parameter name="File Name Digits" type="int" value="5"/>
-    <Parameter name="Cycle Macros" type="string" value="Every-10">
+    <Parameter name="Cycle Macros" type="Array string" value="Every-10">
   </ParameterList>
 
 In this example, the liquid pressure and moisture content are written when the cycle number is evenly divisble by 5.
@@ -2211,7 +2205,6 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                      <ParameterList name="IC: Uniform">
                        <Parameter name="Value" type="double" value="0.0"/>
                      </ParameterList>
-               	     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
                    </ParameterList>     
                  </ParameterList>
                </ParameterList>
@@ -2242,7 +2235,6 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
                        <Parameter name="Values" type="Array double" value="{0.}"/>
                      </ParameterList>
-                     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
                    </ParameterList>
                  </ParameterList>
                </ParameterList>
@@ -2269,7 +2261,6 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                        <Parameter name="Time functions" type="Array string" value="{Constant, Constant}"/>
                        <Parameter name="Values" type="Array double" value="{1000., 0.}"/>
                      </ParameterList>
-                     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
                    </ParameterList>
                  </ParameterList>
                </ParameterList>
@@ -2296,7 +2287,6 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                        <Parameter name="Time functions" type="Array string" value="{Constant, Constant, Constant}"/>
                        <Parameter name="Values" type="Array double" value="{0., 900., 0.}"/>
                      </ParameterList>
-                     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
                    </ParameterList>
                  </ParameterList>
                </ParameterList>
