@@ -47,7 +47,8 @@ add_definitions("-DMSTK_HAVE_MPI")
 file(GLOB operators_inc_files "*.hh")
 add_amanzi_library(operators
                    SOURCE Operator.cc OperatorDiffusion.cc OperatorDiffusionSurface.cc 
-                   OperatorAccumulation.cc OperatorAdvection.cc OperatorGravity.cc
+                   OperatorAccumulation.cc OperatorSource.cc 
+                   OperatorAdvection.cc OperatorGravity.cc
                    HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
 
