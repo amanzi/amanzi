@@ -29,8 +29,8 @@
    or condensed on the surface and has a temperature of Air.
    ------------------------------------------------------------------------- */
 
-#ifndef PKS_ENERGY_SEB_HH_
-#define PKS_ENERGY_SEB_HH_
+#ifndef PKS_ENERGY_SEB_VPL_HH_
+#define PKS_ENERGY_SEB_VPL_HH_
 
 #include "pk_factory.hh"
 #include "pk_physical_bdf_base.hh"
@@ -40,18 +40,18 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-class SurfaceBalanceSEB : public PKPhysicalBase {
+class SurfaceBalanceSEBVPL : public PKPhysicalBase {
 
  public:
 
-  SurfaceBalanceSEB(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  SurfaceBalanceSEBVPL(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                     Teuchos::ParameterList& FElist,
                     const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
-  virtual ~SurfaceBalanceSEB() {}
+  virtual ~SurfaceBalanceSEBVPL() {}
 
-  // SurfaceBalanceSEB is a PK
+  // SurfaceBalanceSEBVPL is a PK
   // -- Setup data
   virtual void setup(const Teuchos::Ptr<State>& S);
 
@@ -91,7 +91,7 @@ class SurfaceBalanceSEB : public PKPhysicalBase {
 
  private:
   // factory registration
-  static RegisteredPKFactory<SurfaceBalanceSEB> reg_;
+  static RegisteredPKFactory<SurfaceBalanceSEBVPL> reg_;
 };
 
 } // namespace

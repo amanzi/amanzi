@@ -17,10 +17,10 @@
 
 */
 
-#ifndef SNOW_ENERGY_BALANCE_
-#define SNOW_ENERGY_BALANCE_
+#ifndef SNOW_ENERGY_BALANCE_VPL_HH_
+#define SNOW_ENERGY_BALANCE_VPL_HH_
 
-namespace SurfaceEnergyBalance {
+namespace SurfaceEnergyBalance_VPL {
 
 struct VaporPressure {
   double temp;

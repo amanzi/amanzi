@@ -1,5 +1,5 @@
 /*
-  SurfaceBalanceEvaluator evaluates SEB as a nonlinear source instead of as a PK.
+  SurfaceBalanceEvaluatorVPL evaluates SEB as a nonlinear source instead of as a PK.
 
   License: BSD
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -12,7 +12,7 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-SurfaceBalanceEvaluator::SurfaceBalanceEvaluator(Teuchos::ParameterList& plist) :
+SurfaceBalanceEvaluatorVPL::SurfaceBalanceEvaluatorVPL(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
   // my keys
@@ -46,7 +46,7 @@ SurfaceBalanceEvaluator::SurfaceBalanceEvaluator(Teuchos::ParameterList& plist) 
 };
 
 
-SurfaceBalanceEvaluator::SurfaceBalanceEvaluator(const SurfaceBalanceEvaluator& other) :
+SurfaceBalanceEvaluatorVPL::SurfaceBalanceEvaluatorVPL(const SurfaceBalanceEvaluatorVPL& other) :
     SecondaryVariableFieldEvaluator(other),
     min_wind_speed_(other.min_wind_speed_),
     snow_ground_trans_(other.snow_ground_trans_),
@@ -55,13 +55,13 @@ SurfaceBalanceEvaluator::SurfaceBalanceEvaluator(const SurfaceBalanceEvaluator& 
 
 
 Teuchos::RCP<FieldEvaluator>
-SurfaceBalanceEvaluator::Clone() const {
-  return Teuchos::rcp(new SurfaceBalanceEvaluator(*this));
+SurfaceBalanceEvaluatorVPL::Clone() const {
+  return Teuchos::rcp(new SurfaceBalanceEvaluatorVPL(*this));
 }
 
 
 void
-SurfaceBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+SurfaceBalanceEvaluatorVPL::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
   if (db_ == Teuchos::null) {
     // Debugger
@@ -111,11 +111,11 @@ SurfaceBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   Epetra_MultiVector& Qe = *result->ViewComponent("cell",false);
 
   // Create the SEB data structure
-  SurfaceEnergyBalance::LocalData data;
+  SurfaceEnergyBalance_VPL::LocalData data;
   data.st_energy.dt = 0.;
   data.st_energy.AlbedoTrans = albedo_trans_;
 
-  SurfaceEnergyBalance::LocalData data_bare;
+  SurfaceEnergyBalance_VPL::LocalData data_bare;
   data_bare.st_energy.dt = 0.;
   data_bare.st_energy.AlbedoTrans = albedo_trans_;
 
@@ -167,7 +167,7 @@ SurfaceBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     if ((data.st_energy.ht_snow > snow_ground_trans_) ||
         (data.st_energy.ht_snow <= 0)) {
       // Run the Snow Energy Balance Model as normal.
-      SurfaceEnergyBalance::UpdateEnergyBalance(data);
+      SurfaceEnergyBalance_VPL::UpdateEnergyBalance(data);
 
       std::cout << "  SEB, non-averaged: ht_snow, tmp_snow = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;
                 if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -192,7 +192,7 @@ SurfaceBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
       // Calculate as if ht_snow is the min value.
       data.st_energy.ht_snow = snow_ground_trans_;
-      SurfaceEnergyBalance::UpdateEnergyBalance(data);
+      SurfaceEnergyBalance_VPL::UpdateEnergyBalance(data);
 
       // Calculate as if bare ground
       // ATS Calcualted Data
@@ -219,7 +219,7 @@ SurfaceBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       data_bare.st_energy.density_snow = snow_density[0][c];
       data_bare.st_energy.age_snow = days_of_nosnow[0][c];
       data_bare.st_energy.ht_snow = 0.;
-      SurfaceEnergyBalance::UpdateEnergyBalance(data_bare);
+      SurfaceEnergyBalance_VPL::UpdateEnergyBalance(data_bare);
 
       // Calculating Data for ATS
 //      std::cout << "  SEB, averaged: ht_snow, tmp_snow = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;
@@ -272,7 +272,7 @@ SurfaceBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 }
 
 
-void SurfaceBalanceEvaluator::EvaluateFieldPartialDerivative_(
+void SurfaceBalanceEvaluatorVPL::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
   if (db_ == Teuchos::null) {
@@ -328,11 +328,11 @@ void SurfaceBalanceEvaluator::EvaluateFieldPartialDerivative_(
   Epetra_MultiVector& dQe = *result->ViewComponent("cell",false);
 
   // Create the SEB data structure
-  SurfaceEnergyBalance::LocalData data;
+  SurfaceEnergyBalance_VPL::LocalData data;
   data.st_energy.dt = 0.;
   data.st_energy.AlbedoTrans = albedo_trans_;
 
-  SurfaceEnergyBalance::LocalData data_bare;
+  SurfaceEnergyBalance_VPL::LocalData data_bare;
   data_bare.st_energy.dt = 0.;
   data_bare.st_energy.AlbedoTrans = albedo_trans_;
 
@@ -384,7 +384,7 @@ void SurfaceBalanceEvaluator::EvaluateFieldPartialDerivative_(
     if ((data.st_energy.ht_snow > snow_ground_trans_) ||
         (data.st_energy.ht_snow <= 0)) {
       // Run the Snow Energy Balance Model as normal.
-      SurfaceEnergyBalance::UpdateEnergyBalance(data);
+      SurfaceEnergyBalance_VPL::UpdateEnergyBalance(data);
 
       std::cout << "  SEB, non-averaged: ht_snow, tmp_snow = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;
 
@@ -397,7 +397,7 @@ void SurfaceBalanceEvaluator::EvaluateFieldPartialDerivative_(
 
       // Calculate as if ht_snow is the min value.
       data.st_energy.ht_snow = snow_ground_trans_;
-      SurfaceEnergyBalance::UpdateEnergyBalance(data);
+      SurfaceEnergyBalance_VPL::UpdateEnergyBalance(data);
 
       // Calculate as if bare ground
       // ATS Calcualted Data
@@ -424,7 +424,7 @@ void SurfaceBalanceEvaluator::EvaluateFieldPartialDerivative_(
       data_bare.st_energy.density_snow = snow_density[0][c];
       data_bare.st_energy.age_snow = days_of_nosnow[0][c];
       data_bare.st_energy.ht_snow = 0.;
-      SurfaceEnergyBalance::UpdateEnergyBalance(data_bare);
+      SurfaceEnergyBalance_VPL::UpdateEnergyBalance(data_bare);
 
       // Calculating Data for ATS
       std::cout << "  SEB, averaged: ht_snow, tmp_snow = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;
@@ -437,7 +437,7 @@ void SurfaceBalanceEvaluator::EvaluateFieldPartialDerivative_(
   }
 }
 
-// void SurfaceBalanceEvaluator::EvaluateFieldPartialDerivative_(
+// void SurfaceBalanceEvaluatorVPL::EvaluateFieldPartialDerivative_(
 //     const Teuchos::Ptr<State>& S,
 //     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
 
@@ -474,11 +474,11 @@ void SurfaceBalanceEvaluator::EvaluateFieldPartialDerivative_(
 //   Epetra_MultiVector& Qe = *result->ViewComponent("cell",false);
 
 //   // Create the SEB data structure
-//   SurfaceEnergyBalance::LocalData data;
+//   SurfaceEnergyBalance_VPL::LocalData data;
 //   data.st_energy.dt = 0.;
 //   data.st_energy.AlbedoTrans = albedo_trans_;
 
-//   SurfaceEnergyBalance::LocalData data_bare;
+//   SurfaceEnergyBalance_VPL::LocalData data_bare;
 //   data_bare.st_energy.dt = 0.;
 //   data_bare.st_energy.AlbedoTrans = albedo_trans_;
 
@@ -512,7 +512,7 @@ void SurfaceBalanceEvaluator::EvaluateFieldPartialDerivative_(
 //     if ((data.st_energy.ht_snow > snow_ground_trans_) ||
 //         (data.st_energy.ht_snow <= 0)) {
 //       // Run the Snow Energy Balance Model as normal.
-//       SurfaceEnergyBalance::UpdateEnergyBalanceDerivative(data);
+//       SurfaceEnergyBalance_VPL::UpdateEnergyBalanceDerivative(data);
 
 //       std::cout << "  SEB, non-averaged: ht_snow, tmp_snow = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;
 
@@ -525,7 +525,7 @@ void SurfaceBalanceEvaluator::EvaluateFieldPartialDerivative_(
 
 //       // Calculate as if ht_snow is the min value.
 //       data.st_energy.ht_snow = snow_ground_trans_;
-//       SurfaceEnergyBalance::UpdateEnergyBalanceDerivative(data);
+//       SurfaceEnergyBalance_VPL::UpdateEnergyBalanceDerivative(data);
 
 //       // Calculate as if bare ground
 //       // ATS Calcualted Data
@@ -545,7 +545,7 @@ void SurfaceBalanceEvaluator::EvaluateFieldPartialDerivative_(
 //       data_bare.st_energy.density_snow = snow_density[0][c];
 //       data_bare.st_energy.age_snow = days_of_nosnow[0][c];
 //       data_bare.st_energy.ht_snow = 0.;
-//       SurfaceEnergyBalance::UpdateEnergyBalanceDerivative(data_bare);
+//       SurfaceEnergyBalance_VPL::UpdateEnergyBalanceDerivative(data_bare);
 
 //       // Calculating Data for ATS
 //       std::cout << "  SEB, averaged: ht_snow, tmp_snow = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;

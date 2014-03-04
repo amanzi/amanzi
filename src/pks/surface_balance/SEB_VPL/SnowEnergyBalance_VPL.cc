@@ -26,7 +26,7 @@
 #include "dbc.hh"
 #endif
 
-void SurfaceEnergyBalance::UpdateIncomingRadiation(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::UpdateIncomingRadiation(LocalData& seb) {
   // Calculate incoming short-wave radiation
   seb.st_energy.fQswIn = (1 - seb.st_energy.albedo_value) * seb.st_energy.QswIn;
 
@@ -46,7 +46,7 @@ void SurfaceEnergyBalance::UpdateIncomingRadiation(LocalData& seb) {
 }
 }
 
-void SurfaceEnergyBalance::UpdateIncomingRadiationDerivatives(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::UpdateIncomingRadiationDerivatives(LocalData& seb) {
   // Calculate incoming short-wave radiation
   seb.st_energy.fQswIn = 0.;
 
@@ -64,7 +64,7 @@ void SurfaceEnergyBalance::UpdateIncomingRadiationDerivatives(LocalData& seb) {
 }
 
 
-void SurfaceEnergyBalance::UpdateEFluxesSnow(LocalData& seb, double T) {
+void SurfaceEnergyBalance_VPL::UpdateEFluxesSnow(LocalData& seb, double T) {
   double Sqig;
   if (seb.st_energy.Us == 0.) {
     Sqig = 0.;
@@ -95,7 +95,7 @@ void SurfaceEnergyBalance::UpdateEFluxesSnow(LocalData& seb, double T) {
 
 
 // Determine energy available for melting.
-double SurfaceEnergyBalance::CalcMeltEnergy(LocalData& seb) {
+double SurfaceEnergyBalance_VPL::CalcMeltEnergy(LocalData& seb) {
   // Melt energy is the balance
   return seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut
       + seb.st_energy.fQh + seb.st_energy.fQe - seb.st_energy.fQc;
@@ -103,7 +103,7 @@ double SurfaceEnergyBalance::CalcMeltEnergy(LocalData& seb) {
 
 
 // Energy balance for no-snow case.
-void SurfaceEnergyBalance::UpdateGroundEnergy(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::UpdateGroundEnergy(LocalData& seb) {
   seb.st_energy.fQlwOut = -seb.st_energy.SEtun * seb.st_energy.stephB * std::pow(seb.st_energy.temp_ground,4);
   double porosity=1;
   double porrowaLe;
@@ -301,7 +301,7 @@ void SurfaceEnergyBalance::UpdateGroundEnergy(LocalData& seb) {
 
 
 // Energy balance for no-snow case.
-void SurfaceEnergyBalance::UpdateGroundEnergyDerivatives(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::UpdateGroundEnergyDerivatives(LocalData& seb) {
   seb.st_energy.fQlwOut = -4 * seb.st_energy.SEtun * seb.st_energy.stephB * std::pow(seb.st_energy.temp_ground,3);
 
   double Sqig, dSqig;
@@ -349,7 +349,7 @@ void SurfaceEnergyBalance::UpdateGroundEnergyDerivatives(LocalData& seb) {
 
 
 // Calculate saturated and actual vapor pressures
-void SurfaceEnergyBalance::UpdateVaporPressure(VaporPressure& vp) {
+void SurfaceEnergyBalance_VPL::UpdateVaporPressure(VaporPressure& vp) {
   double temp;
   //Convert from Kelvin to Celsius
   temp = vp.temp-273.15;
@@ -369,7 +369,7 @@ void SurfaceEnergyBalance::UpdateVaporPressure(VaporPressure& vp) {
 
 
 // Take a weighted average to get the albedo.
-double SurfaceEnergyBalance::CalcAlbedo(EnergyBalance& eb) {
+double SurfaceEnergyBalance_VPL::CalcAlbedo(EnergyBalance& eb) {
   double perSnow = 0.0, perTundra=0.0, perWater=0.0;
   // Tundra albedo comes from Grenfell and Perovich, (2004)
   // Water albedo from Cogley J.G. (1979)
@@ -417,7 +417,7 @@ double SurfaceEnergyBalance::CalcAlbedo(EnergyBalance& eb) {
 
 
 // Surface Energy Balance residual
-double SurfaceEnergyBalance::EnergyBalanceResidual(LocalData& seb, double Xx) {
+double SurfaceEnergyBalance_VPL::EnergyBalanceResidual(LocalData& seb, double Xx) {
   UpdateEFluxesSnow(seb, Xx);
 
   // energy balance
@@ -429,7 +429,7 @@ double SurfaceEnergyBalance::EnergyBalanceResidual(LocalData& seb, double Xx) {
 
 
 // Use a bisection method to calculate the temperature of the snow.
-double SurfaceEnergyBalance::CalcSnowTemperature(LocalData& seb) {
+double SurfaceEnergyBalance_VPL::CalcSnowTemperature(LocalData& seb) {
   double tol = 1.e-6;
   double deltaX = 5;
 
@@ -493,7 +493,7 @@ double SurfaceEnergyBalance::CalcSnowTemperature(LocalData& seb) {
 
 
 // Alter mass flux due to melting.
-void SurfaceEnergyBalance::UpdateMassMelt(EnergyBalance& eb) {
+void SurfaceEnergyBalance_VPL::UpdateMassMelt(EnergyBalance& eb) {
   // Melt rate given by energy rate available divided by heat of fusion.
   double melt = eb.Qm / (eb.density_w * eb.Hf);
   eb.Mr += melt;
@@ -502,7 +502,7 @@ void SurfaceEnergyBalance::UpdateMassMelt(EnergyBalance& eb) {
 
 
 // Alter mass fluxes due to sublimation/condensation.
-void SurfaceEnergyBalance::UpdateMassSublCond(EnergyBalance& eb) {
+void SurfaceEnergyBalance_VPL::UpdateMassSublCond(EnergyBalance& eb) {
   double SublR = -eb.fQe / (eb.density_w * eb.Ls); // [m/s]
 
   if (SublR < 0 && eb.temp_snow == 273.15) {
@@ -519,13 +519,13 @@ void SurfaceEnergyBalance::UpdateMassSublCond(EnergyBalance& eb) {
 
 
 // Alter mass fluxes due to evaporation from soil (no snow).
-void SurfaceEnergyBalance::UpdateMassEvap(EnergyBalance& eb) {
+void SurfaceEnergyBalance_VPL::UpdateMassEvap(EnergyBalance& eb) {
   eb.Mr += eb.fQe / (eb.density_w*eb.Le); // [m/s]
 }
 
 
 // Alter mass fluxes in the case of all snow disappearing.
-void SurfaceEnergyBalance::WaterMassCorrection(EnergyBalance& eb) {
+void SurfaceEnergyBalance_VPL::WaterMassCorrection(EnergyBalance& eb) {
   if (eb.MIr < 0) {
     // convert ht_snow to SWE
     double swe = eb.ht_snow * eb.density_snow / eb.density_w;
@@ -540,7 +540,7 @@ void SurfaceEnergyBalance::WaterMassCorrection(EnergyBalance& eb) {
 
 
 // Calculate snow change ~> settling of previously existing snow (Martinec, 1977)
-void SurfaceEnergyBalance::UpdateSnow(EnergyBalance& eb) {
+void SurfaceEnergyBalance_VPL::UpdateSnow(EnergyBalance& eb) {
   if (eb.MIr < 0.) {
     // sublimation, remove snow now
     eb.ht_snow = eb.ht_snow + (eb.MIr * eb.dt * eb.density_w / eb.density_snow);
@@ -589,7 +589,7 @@ void SurfaceEnergyBalance::UpdateSnow(EnergyBalance& eb) {
 
 
 // Main snow energy balance function.
-void SurfaceEnergyBalance::SnowEnergyBalance(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::SnowEnergyBalance(LocalData& seb) {
   // Caculate Vapor pressure and dewpoint temperature from Air
   UpdateVaporPressure(seb.vp_air);
 
@@ -648,7 +648,7 @@ void SurfaceEnergyBalance::SnowEnergyBalance(LocalData& seb) {
 
 
 // Main energy-only function.
-void SurfaceEnergyBalance::UpdateEnergyBalance(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::UpdateEnergyBalance(LocalData& seb) {
   if (seb.st_energy.ht_snow > 0.) {
     // // Caculate Vapor pressure and dewpoint temperature from Air
     // UpdateVaporPressure(seb.vp_air);
@@ -689,7 +689,7 @@ void SurfaceEnergyBalance::UpdateEnergyBalance(LocalData& seb) {
 
 
 // Main energy-only function.
-void SurfaceEnergyBalance::UpdateEnergyBalanceDerivative(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::UpdateEnergyBalanceDerivative(LocalData& seb) {
   if (seb.st_energy.ht_snow > 0.) {
     double Ks = 2.9e-6 * std::pow(seb.st_energy.density_snow,2);
     seb.st_energy.fQc = -Ks / seb.st_energy.ht_snow;
