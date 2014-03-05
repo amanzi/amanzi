@@ -142,6 +142,8 @@ void MPC::mpc_init() {
       FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, S));
     } else if (flow_model == "Steady State Richards") {
       FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, S));
+    } else if (flow_model == "Static Steady State Saturated") {
+      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, S));
     } else {
       std::cout << "MPC: unknown flow model: " << flow_model << std::endl;
       throw std::exception();
@@ -501,7 +503,7 @@ void MPC::cycle_driver() {
           }
         }
       }
-    }
+    } 
   }
   Amanzi::timer_manager.stop("Flow PK");
 
@@ -611,7 +613,7 @@ void MPC::cycle_driver() {
       }
 
       // find the flow time step
-      if (flow_enabled) {
+      if (flow_enabled && (flow_model != "Static Steady State Saturated")) {
         // only if we are actually running with flow
 
         if (!restart_requested) {
@@ -703,7 +705,8 @@ void MPC::cycle_driver() {
       Amanzi::timer_manager.start("Flow PK");
       if (flow_enabled) {
         if ((ti_mode == STEADY) ||
-            (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
+            (ti_mode == TRANSIENT && (flow_model != std::string("Steady State Richards") && 
+				      flow_model != std::string("Static Steady State Saturated"))) || 
             (ti_mode == INIT_TO_STEADY &&
              ( (flow_model == std::string("Steady State Richards") && S->time() >= Tswitch) ||
                (flow_model == std::string("Steady State Saturated") && S->time() >= Tswitch) ||

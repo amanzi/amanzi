@@ -192,6 +192,8 @@ Usage:
 
   * [SU] `"Single-phase`" [string]: Single phase, fully saturated flow
 
+  * [U] `"Transient with Static Flow`" [string]: The flow field is static, no flow solver is called during time stepping, execpt during initialization if the user requests it by setting the parameter `"transient initialize with darcy`" under `"Numerical Control Parameters`"->`"Unstructured Algorithm`"->`"Transient Implicit Time Integration`". In this case the flow field will be single phase fully saturated. Alternatively, the user can initialize the flow field using an initial condition for pressure. The option `"Transient with Static Flow`" must only be used with the time integration mode `"Transient`".
+
  * [SU] `"Transport Model`" [string]: Transport of phases.  Accepts `"Off`" or `"On`" [string]
 
  * [SU] `"Chemistry Model`" [string]: Chemical interface and engine for reaction of constituents.
@@ -1617,11 +1619,9 @@ at intervals corresponding to the numerical time step values; writes are control
 
   * [S] `"Variables`" [Array string] can accept a list of field quantities to include in the file.  At present the unstructured code dumps all of the dependent variables in the system state.
 
-  * [U] `"Regions`" [Array string] (optional) can accept a list of region names of cell regions that will be available to plot separately from the overall mesh. 
+  * [U] `"Write Regions`" [Array(string)] (empty array) write an array into the visualization file that can be used to identify a region or regions. The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. The code ignores entries in the regions array that are not valid regions that contain cells.
 
-  * [U] `"regions`" [Array(string)] (empty array) write an array into the visualization file that can be used to identify a region or regions. The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. The code ignores entries in the regions array that are not valid regions that contain cells.
-
-  * [U] `"write partition`" [bool] (false) if this parameter is true, then write an array into the visualization file that contains the rank number of the processor that owns a mesh cell. 
+  * [U] `"Write Partitions`" [bool] (false) if this parameter is true, then write an array into the visualization file that contains the rank number of the processor that owns a mesh cell. 
 
 
 
