@@ -319,7 +319,7 @@ if __name__ == "__main__":
     plt.tick_params(axis='x', which='major', labelsize=20)
 
     #pyplot.show()
-    #plt.savefig(local_path+"calcite_1d.png",format="png")
+    plt.savefig(local_path+"calcite_1d.png",format="png")
     #plt.close()
 
     #finally:

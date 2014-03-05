@@ -19,7 +19,17 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(const std
                                                                        Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine):
   TransportBoundaryFunction(mesh), mesh_(mesh), cond_name_(cond_name), chem_state_(chem_state), chem_engine_(chem_engine)
 {
-  chem_engine_->InitState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+  if (chem_engine_ != Teuchos::null)
+  {
+    chem_engine_->InitState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+    chem_engine_->GetPrimarySpeciesNames(tcc_names_);
+  }
+  else
+  {
+    Errors::Message msg;
+    msg << "Geochemistry is off, but a geochemical condition was requested.";
+    Exceptions::amanzi_throw(msg); 
+  }
 }
 
 TransportBoundaryFunction_Alquimia::~TransportBoundaryFunction_Alquimia()
@@ -42,8 +52,12 @@ void TransportBoundaryFunction_Alquimia::Define(const std::vector<std::string> &
     mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &face_indices);
 
     // Now get the cells that are attached to these faces.
+    faces_.resize(face_indices.size());
+    values_.resize(face_indices.size());
     for (unsigned int f = 0; f < num_faces; ++f)
     {
+      faces_[f] = face_indices[f];
+      values_[f].resize(chem_engine_->NumPrimarySpecies());
       AmanziMesh::Entity_ID_List cells_for_face;
       mesh_->face_get_cells(face_indices[f], AmanziMesh::OWNED, &cells_for_face);
       assert(cells_for_face.size() == 1); // Only one cell per boundary face, right?
@@ -79,8 +93,9 @@ void TransportBoundaryFunction_Alquimia::Compute(double time)
     chem_engine_->EnforceCondition(cond_name_, time, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 
     // Move the concentrations into place.
-    for (int i = 0; i < tcc_index_.size(); i++) {
+    for (int i = 0; i < values_[n].size(); i++) {
       values_[n][i] = alq_state_.total_mobile.data[i];
+std::cout << "[" << tcc_names_[i] << "] -> " << values_[n][i] << std::endl;
     }
   }
 }
