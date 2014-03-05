@@ -61,7 +61,7 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   int end_cycle;
   time_integration_mode ti_mode;
   
-  bool steady, init_to_steady;
+  bool steady, init_to_steady, static_steady;
   bool flow_enabled, transport_enabled, chemistry_enabled;
 
   int transport_subcycling; 
