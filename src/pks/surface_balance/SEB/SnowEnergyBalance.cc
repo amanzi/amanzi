@@ -31,7 +31,9 @@ void SurfaceEnergyBalance::UpdateIncomingRadiation(LocalData& seb) {
   seb.st_energy.fQswIn = (1 - seb.st_energy.albedo_value) * seb.st_energy.QswIn;
 
   // Calculate incoming long-wave radiation
-    double EmissivityAir = std::pow((0.01*seb.vp_air.actual_vaporpressure),(seb.st_energy.temp_air/2016));
+       // EmissivityAir Needs to be corrected to ... = std::pow((10*seb.vp_air.actual_vaporpressure) ....
+       // When Vapor pressure units are corrected !!!!!
+    double EmissivityAir = std::pow((100*seb.vp_air.actual_vaporpressure),(seb.st_energy.temp_air/2016));
     EmissivityAir = (1 - std::exp(-EmissivityAir));
     EmissivityAir = 1.08 * EmissivityAir;
   seb.st_energy.fQlwIn = EmissivityAir * seb.st_energy.stephB * std::pow(seb.st_energy.temp_air,4);
@@ -214,8 +216,11 @@ void SurfaceEnergyBalance::UpdateVaporPressure(VaporPressure& vp) {
   // Convert Tdp from Celsius to Kelvin
   vp.dewpoint_temp = vp.dewpoint_temp + 273.15;
   // Convert all vapor pressures from hPa to KPa  10 hPa = 1 kPa
-    vp.saturated_vaporpressure = vp.saturated_vaporpressure/10;
-    vp.actual_vaporpressure = vp.actual_vaporpressure/10;
+//  THIS PUTS VAPOR PRESSURE IN [10 * kPa] RATHER THEN kPa !!!!!!!!! *********
+//  LATENT HEAD CALCULATION EXPECTS kPa NOT [10 * kPa]  !!!!!!! *******
+//  UNFORTUNATLY ATS WON'T WORK WHEN LATENT HEAT IS SOO STRONG !!!!!!
+    vp.saturated_vaporpressure = vp.saturated_vaporpressure/10;  // <-- This is wrong !!!  ***DELET THIS CONVERSION***
+    vp.actual_vaporpressure = vp.actual_vaporpressure/10;  // <-- This is wrong !!!  ***DELET THIS CONVERSION***
 }
 
 
