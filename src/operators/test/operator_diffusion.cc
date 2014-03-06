@@ -30,6 +30,7 @@
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusion.hh"
+#include "OperatorSource.hh"
 
 
 double Kxx(const Amanzi::AmanziGeometry::Point& p, double t) {
@@ -201,22 +202,6 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
     }
   }
 
-  // source
-  /*
-  for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    double volume = mesh->cell_volume(c);
-
-    mesh->cell_get_nodes(c, &nodes);
-    int nnodes = nodes.size();
-
-    for (int k = 0; k < nnodes; k++) {
-      int v = nodes[k];
-      (*rhs)[v] += source_exact(xc, 0.0) * volume / nnodes;
-    }
-  }
-  */
-
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh);
@@ -233,9 +218,31 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_NODE);
   op->AssembleMatrix(schema);
 
+  // create source and add it to the operator
+  CompositeVector source(*cvs);
+  source.PutScalar(0.0);
+  
+  Epetra_MultiVector& src = *source.ViewComponent("node");
+  for (int c = 0; c < ncells; c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    double volume = mesh->cell_volume(c);
+
+    AmanziMesh::Entity_ID_List nodes;
+    mesh->cell_get_nodes(c, &nodes);
+    int nnodes = nodes.size();
+
+    for (int k = 0; k < nnodes; k++) {
+      int v = nodes[k];
+      src[0][v] += source_exact(xc, 0.0) * volume / nnodes;
+    }
+  }
+
+  Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(*op));
+  op1->UpdateMatrices(source);
+
   // create preconditoner using the base operator
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  Teuchos::RCP<Operator> op2 = Teuchos::rcp(new Operator(*op));
+  Teuchos::RCP<Operator> op2 = Teuchos::rcp(new Operator(*op1));
   op2->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
