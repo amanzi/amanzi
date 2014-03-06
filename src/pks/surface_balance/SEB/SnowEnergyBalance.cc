@@ -208,19 +208,19 @@ void SurfaceEnergyBalance::UpdateVaporPressure(VaporPressure& vp) {
   temp = vp.temp-273.15;
   // Sat vap. press o/water Dingman D-7 (Bolton, 1980)
 // *** (Bolton, 1980) Calculates vapor pressure in millibars or hPa  ****
-  vp.saturated_vaporpressure = 0.611*std::exp(17.67*temp / (temp+243.5));
+  vp.saturated_vaporpressure = 0.6112*std::exp(17.67*temp / (temp+243.5));
   // (Bolton, 1980)
   vp.actual_vaporpressure = vp.saturated_vaporpressure * vp.relative_humidity;
   // Find dewpoint Temp Dingman D-11
   vp.dewpoint_temp = (std::log(vp.actual_vaporpressure) + 0.4926) / (0.0708-0.00421*std::log(vp.actual_vaporpressure));
   // Convert Tdp from Celsius to Kelvin
   vp.dewpoint_temp = vp.dewpoint_temp + 273.15;
-  // Convert all vapor pressures from hPa to KPa  10 hPa = 1 kPa
+  // Convert all vapor pressures from hPa to KPa  10 hPa = 1 kPa  <-- That comment is now worng !!!
 //  THIS PUTS VAPOR PRESSURE IN [10 * kPa] RATHER THEN kPa !!!!!!!!! *********
 //  LATENT HEAD CALCULATION EXPECTS kPa NOT [10 * kPa]  !!!!!!! *******
 //  UNFORTUNATLY ATS WON'T WORK WHEN LATENT HEAT IS SOO STRONG !!!!!!
-    vp.saturated_vaporpressure = vp.saturated_vaporpressure/10;  // <-- This is wrong !!!  ***DELET THIS CONVERSION***
-    vp.actual_vaporpressure = vp.actual_vaporpressure/10;  // <-- This is wrong !!!  ***DELET THIS CONVERSION***
+    vp.saturated_vaporpressure = vp.saturated_vaporpressure/10;  // <-- This is wrong !!!  ***DELETE THIS CONVERSION***
+    vp.actual_vaporpressure = vp.actual_vaporpressure/10;  // <-- This is wrong !!!  ***DELETE THIS CONVERSION***
 }
 
 
