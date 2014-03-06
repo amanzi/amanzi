@@ -22,13 +22,15 @@ namespace Amanzi {
 namespace Operators {
 
 UpwindTotalFlux::UpwindTotalFlux(std::string pkname,
-        std::string cell_coef,
-        std::string face_coef,
-        std::string flux) :
+                                 std::string cell_coef,
+                                 std::string face_coef,
+                                 std::string flux,
+                                 double flux_eps) :
     pkname_(pkname),
     cell_coef_(cell_coef),
     face_coef_(face_coef),
-    flux_(flux) {};
+    flux_(flux),
+    flux_eps_(flux_eps) {};
 
 
 void UpwindTotalFlux::Update(const Teuchos::Ptr<State>& S,
@@ -99,8 +101,8 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
 
   // Determine the face coefficient of local faces.
   // These parameters may be key to a smooth convergence rate near zero flux.
-  double flow_eps_factor = 1.;
-  double min_flow_eps = 1.e-8;
+  //  double flow_eps_factor = 1.;
+  //  double min_flow_eps = 1.e-8;
   double coefs[2];
 
   int nfaces = face_coef->size("face",false);
@@ -133,16 +135,20 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
 
     // Determine the size of the overlap region, a smooth transition region
     // near zero flux
-    double flow_eps = std::max(( 1.0 - std::abs(coefs[0] - coefs[1]) )
-            * std::sqrt(coefs[0] * coefs[1]) * flow_eps_factor,
-            min_flow_eps);
+    // double flow_eps = std::max(( 1.0 - std::abs(coefs[0] - coefs[1]) )
+    //         * std::sqrt(coefs[0] * coefs[1]) * flow_eps_factor,
+    //         min_flow_eps);
+    double flow_eps = flux_eps_;
 
     // if (dcvo_uw != Teuchos::null)
-    //   *dcvo_uw->os() << "UW Cell " << uw << " of face " << f << ":" << std::endl
-    //                  << "  flux_dir = " << flux_v[0][f] << std::endl
-    //                  << "  flux_eps = " << flow_eps << std::endl
-    //                  << "     coef[uw] = " << coefs[0] << std::endl
-    //                  << "     coef[dw] = " << coefs[1] << std::endl;
+    if (f == 441)
+      std::cout
+    //   *dcvo_uw->os() 
+        << "Face " << f << ":" << std::endl
+        << "  flux_dir = " << flux_v[0][f] << std::endl
+        << "  flux_eps = " << flow_eps << std::endl
+        << "     coef[uw] = " << coefs[0] << std::endl
+        << "     coef[dw] = " << coefs[1] << std::endl;
     // if (dcvo_dw != Teuchos::null)
     //   *dcvo_dw->os() << "DW Cell " << dw << " of face " << f << ":" << std::endl
     //                  << "  flux_dir = " << flux_v[0][f] << std::endl
@@ -163,6 +169,9 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
         std::cout << "  param = " << param << std::endl;
         std::cout << "  flow_eps = " << flow_eps << std::endl;
       }
+
+      if (f == 441)
+        std::cout << "  AVG param = " << param << std::endl;
 
       // if (dcvo_uw != Teuchos::null)
       //   *dcvo_uw->os() << "  AVG param = " << param << std::endl;
