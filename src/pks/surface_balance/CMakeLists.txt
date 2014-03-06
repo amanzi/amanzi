@@ -5,6 +5,8 @@
 
 
 add_subdirectory(SEB)
+add_subdirectory(SEB_VPL)
+
 
 #================================================
 # register evaluators/factories/pks
@@ -21,4 +23,19 @@ generate_evaluators_registration_header(
   LISTNAME   SURFACE_BALANCE_SEB_REG
   INSTALL    True
   )
+
+
+# SEB_VPL
+register_evaluator_with_factory(
+  HEADERFILE SEB_VPL/surface_balance_SEB_VPL_reg.hh
+  LISTNAME   SURFACE_BALANCE_SEB_VPL_REG
+  )
+
+generate_evaluators_registration_header(
+  HEADERFILE surface_balance_SEB_VPL_registration.hh
+  LISTNAME   SURFACE_BALANCE_SEB_VPL_REG
+  INSTALL    True
+  )
+
+
 
