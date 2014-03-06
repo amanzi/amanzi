@@ -29,7 +29,8 @@ public:
   UpwindTotalFlux(std::string pkname,
                   std::string cell_coef,
                   std::string face_coef,
-                  std::string flux);
+                  std::string flux,
+                  double flux_epsilon);
 
   void Update(const Teuchos::Ptr<State>& S,
               const Teuchos::Ptr<Debugger>& db=Teuchos::null);
@@ -48,6 +49,7 @@ private:
   std::string cell_coef_;
   std::string face_coef_;
   std::string flux_;
+  double flux_eps_;
 };
 
 } // namespace

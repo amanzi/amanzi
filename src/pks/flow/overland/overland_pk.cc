@@ -94,7 +94,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     upwind_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
     upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
           "overland_conductivity", "upwind_overland_conductivity",
-            "surface_flux_direction"));
+          "surface_flux_direction", 1.e-8));
   } else if (method_name == "upwind by potential difference") {
     upwind_method_ = Operators::UPWIND_METHOD_POTENTIAL_DIFFERENCE;
     upwinding_ = Teuchos::rcp(new Operators::UpwindPotentialDifference(name_,

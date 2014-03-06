@@ -203,10 +203,10 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     upwind_from_prev_flux_ = plist_->get<bool>("upwind flux from previous iteration", false);
     if (upwind_from_prev_flux_) {
       upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-              "relative_permeability", "numerical_rel_perm", "darcy_flux"));
+                    "relative_permeability", "numerical_rel_perm", "darcy_flux", 1.e-8));
     } else {
       upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-              "relative_permeability", "numerical_rel_perm", "darcy_flux_direction"));
+                    "relative_permeability", "numerical_rel_perm", "darcy_flux_direction", 1.e-8));
     }
     Krel_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
   } else if (method_name == "arithmetic mean") {
