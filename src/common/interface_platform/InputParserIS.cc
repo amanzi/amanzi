@@ -907,6 +907,13 @@ Teuchos::ParameterList create_TimePeriodControl_List(Teuchos::ParameterList* pli
         time_map.erase(start_time);
         time_map.erase(end_time);
       }
+      if (exe_sublist.sublist("Time Integration Mode").isSublist("Transient with Static Flow")) {
+        double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Start");
+        double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("End");
+
+        time_map.erase(start_time);
+        time_map.erase(end_time);
+      }	
     }
   }
 
@@ -1031,12 +1038,8 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
         mpc_list.set<std::string>("disable Flow_PK", "no");
         mpc_list.set<std::string>("Flow model","Steady State Saturated");
         flow_on = true;
-      } else if (exe_sublist.get<std::string>("Flow Model") == "Transient with Static Flow") {
-	mpc_list.set<std::string>("disable Flow_PK", "no");
-	mpc_list.set<std::string>("Flow model","Static Steady State Saturated");
-	flow_on = true;
       } else {
-        Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards, Single Phase, Transient with Static Flow, or Off"));
+        Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards, Single Phase, or Off"));
       }
     } else {
       Exceptions::amanzi_throw(Errors::Message("The parameter Flow Model must be specified."));
@@ -1374,9 +1377,9 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
         disc_method = std::string("two point flux approximation");
       }
 
-      if (flow_model == "Single Phase" || flow_model == "Richards" || flow_model == "Transient with Static Flow") {
+      if (flow_model == "Single Phase" || flow_model == "Richards") {
 
-        if (flow_model == "Single Phase" || flow_model == "Transient with Static Flow") {
+        if (flow_model == "Single Phase") {
           Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem");
           darcy_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
           darcy_problem.set<double>("atmospheric pressure", atm_pres);
