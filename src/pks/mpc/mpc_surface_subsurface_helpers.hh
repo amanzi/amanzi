@@ -14,9 +14,9 @@ CopySubsurfaceToSurface(const CompositeVector& sub,
                         const Teuchos::Ptr<CompositeVector>& surf);
 
 void
-MergeSubsurfaceAndSurfacePressure(const Teuchos::Ptr<CompositeVector>& sub_p,
-        const Teuchos::Ptr<CompositeVector>& surf_p,
-        const CompositeVector& kr_surf);
+MergeSubsurfaceAndSurfacePressure(const CompositeVector& kr_surf,
+				  const Teuchos::Ptr<CompositeVector>& sub_p,
+				  const Teuchos::Ptr<CompositeVector>& surf_p);
 
 
 } // namespace
