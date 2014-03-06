@@ -192,8 +192,6 @@ Usage:
 
   * [SU] `"Single-phase`" [string]: Single phase, fully saturated flow
 
-  * [U] `"Transient with Static Flow`" [string]: The flow field is static, no flow solver is called during time stepping, execpt during initialization if the user requests it by setting the parameter `"transient initialize with darcy`" under `"Numerical Control Parameters`"->`"Unstructured Algorithm`"->`"Transient Implicit Time Integration`". In this case the flow field will be single phase fully saturated. Alternatively, the user can initialize the flow field using an initial condition for pressure. The option `"Transient with Static Flow`" must only be used with the time integration mode `"Transient`".
-
  * [SU] `"Transport Model`" [string]: Transport of phases.  Accepts `"Off`" or `"On`" [string]
 
  * [SU] `"Chemistry Model`" [string]: Chemical interface and engine for reaction of constituents.
@@ -217,6 +215,25 @@ Usage:
    * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver. (default: `"false`")
 
   * [SU] `"Transient`" [list] - A time-accurate evolution is desired
+
+   * [SU] `"Start`" [double] Start time for integration (if a steady mode exists then this time must equal the steady end time) (S: Optional)
+
+   * [SU] `"End`" [double]: End of integration period
+   
+   * [SU] `"Initial Time Step`" [double] The intitial time step for the transient calculation. (S: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`")
+
+   * [S] `"Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
+
+   * [S] `"Maximum Time Step Size`" [double]: The maximum time step size allowed.
+
+   * [S] `"Maximum Time Step Change`" [double]: The maximum allowed increase in successive time steps.
+
+   * [S] `"Maximum Cycle Number`" [double]: The maximum allowed cycle number.
+
+  * [SU] `"Transient with Static Flow`" [list] - The flow field is static so no flow solver is called during time stepping. During initialization the flow 
+    field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; 
+    (2) Boundary conditions for the flow    (e.g., pressure), along with the initial condition for the pressure field are used to solve for the 
+    Darcy velocity.  At present this mode only supports the "Single Phase" flow model.
 
    * [SU] `"Start`" [double] Start time for integration (if a steady mode exists then this time must equal the steady end time) (S: Optional)
 
