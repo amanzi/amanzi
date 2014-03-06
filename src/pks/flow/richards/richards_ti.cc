@@ -84,6 +84,8 @@ void Richards::fun(double t_old,
 
   vnames.push_back("k_rel");
   vecs.push_back(S_next_->GetFieldData("relative_permeability").ptr());
+  vnames.push_back("wind");
+  vecs.push_back(S_next_->GetFieldData("darcy_flux_direction").ptr());
   vnames.push_back("uw_k_rel");
   vecs.push_back(S_next_->GetFieldData("numerical_rel_perm").ptr());
   db_->WriteVectors(vnames,vecs,true);
