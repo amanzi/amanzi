@@ -445,7 +445,7 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time,
   // Copy the state and material information from Amanzi's state within 
   // this cell to Alquimia.
   CopyAmanziStateToAlquimia(cellIndex, 
-                            chemistry_state_->total_component_concentration(), 
+                            total_component_concentration_star, 
                             alq_mat_props_, alq_state_, alq_aux_data_);
 
   // Do the reaction.
@@ -453,8 +453,9 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time,
   chem_engine_->Advance(delta_time, alq_mat_props_, alq_state_, 
                         alq_aux_data_, alq_aux_output_, num_iterations);
 
-  // Move the information back into Amanzi's state.
-  CopyAlquimiaStateToAmanzi(cellIndex, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_, total_component_concentration_star);
+  // Move the information back into Amanzi's state, updating the given total concentration vector.
+  CopyAlquimiaStateToAmanzi(cellIndex, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_, 
+                            chemistry_state_->total_component_concentration());
 
   return num_iterations;
 }

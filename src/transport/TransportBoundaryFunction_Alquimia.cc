@@ -95,7 +95,6 @@ void TransportBoundaryFunction_Alquimia::Compute(double time)
     // Move the concentrations into place.
     for (int i = 0; i < values_[n].size(); i++) {
       values_[n][i] = alq_state_.total_mobile.data[i];
-std::cout << "[" << tcc_names_[i] << "] -> " << values_[n][i] << std::endl;
     }
   }
 }
