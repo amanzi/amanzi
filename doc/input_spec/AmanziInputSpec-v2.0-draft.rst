@@ -18,14 +18,49 @@ individual submodels are consistent between Amanzi, the MRD and this
 document. Where applicable, the relevant sections of the MRD are
 indicated.
 
+All data required to execute Amanzi is specified within an XML formated file layed out according to the Amanzi input schema.  The current version of the Amanzi schema is located with the Amanzi source code repository.  The following discusses each section of the schema, its purpose and provides examples.  Further details can be found in the schema document amanzi.xsd.
+
+Please note, many attributes within the XML list a limited set of specified values.  During validation of the input file or initialization of Amanzi the values in the user provided input file will be compared against the limited set provided in the XML Schema document.  Errors will occur is the values do not match exactly.  These values are CASE SENSITIVE.  The Amanzi schema has been designed will all LOWER CASE values.  Please note this when writing input file.  In particular, `"Exodus II`" will be evaluated as `"exodus ii`".
+
 Amanzi Input
 ============
 
-Here, the user specifies which version of the input the input file adheres to. 
+Here, the user specifies which version of the input the input file adheres to. The user also specifies the overall type of simulation being run.  Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The attribute `"type`" is used to selected between the following:
+
+* `"Structured`": This instructs Amanzi to use BoxLib data structures
+  and an associated paradigm to numerically represent the flow
+  equations.  Data containers in the BoxLib software library,
+  developed by CCSE at LBNL, are based on a hierarchical set of
+  uniform Cartesian grid patches.  `"Structured`" requires that the
+  simulation domain be a single coordinate-aligned rectangle, and that
+  the "base mesh" consists of a logically rectangular set of uniform
+  hexahedral cells.  This option supports a block-structured approach
+  to dynamic mesh refinement, wherein successively refined subregions
+  of the solution are constructed dynamically to track "interesting"
+  features of the evolving solution.  The numerical solution approach
+  implemented under the `"Structured`" framework is highly optimized
+  to exploit regular data and access patterns on massively parallel
+  computing architectures. 
+
+* `"Unstructured`": This instructs Amanzi to use data structures
+  provided in the Trilinos software framework.  To the extent
+  possible, the discretization algorithms implemented under this
+  option are largely independent of the shape and connectivity of the
+  underlying cells.  As a result, this option supports an arbitrarily
+  complex computational mesh structure that enables users to work with
+  numerical meshes that can be aligned with geometrically complex
+  man-made or geostatigraphical features.  Under this option, the user
+  typically provides a mesh file that was generated with an external
+  software package.  The following mesh file formats are currently
+  supported: `"Exodus II`".  Amanzi also provides a rudmentary
+  capability to generate regular meshes within the unstructured
+  framework internally.
+
+An exmample root tag of an input file would look like the following.
 
 .. code-block:: xml
 
-  <amanzi_input version="2.0.0"/>
+  <amanzi_input version="2.0.0" type="unstructured"/>
 
 
 Model Description
@@ -336,43 +371,16 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 Mesh
 ====
 
-Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface.  "Mesh`" is used to select between the following options:
+Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The type of simulation is specified in the root tag `"amanzi_input`".  The `"mesh`" element specifies the internal mesh framework to be utilized and whether the mesh is to be internal generated or read in from an Exodus II file.  The default mesh framework is MSTK.  The other available frameworks are stk::mesh and simple (in serial).
 
-* `"Structured`": This instructs Amanzi to use BoxLib data structures
-  and an associated paradigm to numerically represent the flow
-  equations.  Data containers in the BoxLib software library,
-  developed by CCSE at LBNL, are based on a hierarchical set of
-  uniform Cartesian grid patches.  `"Structured`" requires that the
-  simulation domain be a single coordinate-aligned rectangle, and that
-  the "base mesh" consists of a logically rectangular set of uniform
-  hexahedral cells.  This option supports a block-structured approach
-  to dynamic mesh refinement, wherein successively refined subregions
-  of the solution are constructed dynamically to track "interesting"
-  features of the evolving solution.  The numerical solution approach
-  implemented under the `"Structured`" framework is highly optimized
-  to exploit regular data and access patterns on massively parallel
-  computing architectures. 
+To internally generate a mesh the `"mesh`" element takes the following form.
 
-* `"Unstructured`": This instructs Amanzi to use data structures
-  provided in the Trilinos software framework.  To the extent
-  possible, the discretization algorithms implemented under this
-  option are largely independent of the shape and connectivity of the
-  underlying cells.  As a result, this option supports an arbitrarily
-  complex computational mesh structure that enables users to work with
-  numerical meshes that can be aligned with geometrically complex
-  man-made or geostatigraphical features.  Under this option, the user
-  typically provides a mesh file that was generated with an external
-  software package.  The following mesh file formats are currently
-  supported: `"Exodus 2`".  Amanzi also provides a rudmentary
-  capability to generate regular meshes within the unstructured
-  framework internally.
 
 .. code-block:: xml
 
-   <mesh class=unstructured framework=["mstk"|"stk::mesh"|"moab"|"simple"]>
-
+   <mesh framework=["mstk"|"stk::mesh"|"simple"]>
       <comments> May be included in the Mesh element </comments>
-
+      <dimension>3</dimension>
       <generate>
          <number_of_cells nx = "integer value"  ny = "integer value"  nz = "integer value"/>
          <box  low_coordinates = "x_low,y_low,z_low" high_coordinates = "x_high,y_high,z_high"/>
@@ -380,18 +388,26 @@ Amanzi supports both structured and unstructured numerical solution approaches. 
 
    </mesh>
 
-testing.
+For example:
 
 .. code-block:: xml
 
-  <mesh framework="mstk"> <!-- default is MSTK for unstructured -->
-   <dimension>3</dimension>
+  <mesh framework="mstk"> 
    <generate>
      <number_of_cells nx = "64"  ny = "56"  nz = "107"/>
      <box  low_coordinates = "0.0,0.0,0.0" high_coordinates = "320.0,280.0,107.0"/>
    </generate>
   </mesh>
 
+Currently Amanzi only read Exodus II mesh files.  An example `"mesh`" element would look as the following.
+
+.. code-block:: xml
+
+  <mesh framework="mstk"> 
+   <comments> May be included in the Mesh element </comments>
+   <dimension>3</dimension>
+   <file>mesh.exo</file>
+  </mesh>
 
 Regions
 =======
@@ -435,19 +451,18 @@ A region allows for a box region or a region file.
 .. code-block:: xml
 
   <region name="Name of Region">
-      Required Elements: region  ( OR file - NOT IMPLEMENTED YET)
+      Required Elements: region  
       Optional Elements: comments
   </region>
 
 A region is define as describe above.  A file is define as follows.
 
-REMINDER - FILE OPTION NOT YET IMPLEMENTED
 
 .. code-block:: xml
 
-  <file name="file name" type="color | labeled set" format="exodus ii" entity="cell | face" label="integer"/>
+  <file name="filename" type=["color"|"labeled set"] format=["exodus ii"] entity=["cell"|"face"] label="integer"/>
 
-Some discussion of reading a region file goes here. Talk about the color function or labeled set.  State we only read the ExodusII mesh format files.  State the region file must be specify cells or faces.  Explain what the label is for.
+Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the `"mesh`" element.  PLEASE NOTE the values listed within [] for attributes above are CASE SENSITIVE.  For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
 
 Geochemistry
 ============
@@ -548,11 +563,15 @@ Process Kernels
       Optional Elements: comments
   </process_kernels>
 
+For each process kernel the element `"state`" indicates whether the solution is being calculated or not.  
+
 * `"flow`" has two attributes, `"state`" and `"model`".
       
       * `"state`" = "on | off"
 
-      *  `"model`" = " richards | saturated " 
+      *  `"model`" = " richards | saturated | constant" 
+
+Currently three scenerios are avaiable for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to the a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
 * `"transport`" has two attributes, `"state`" and `"algorithm`".
       
@@ -560,11 +579,17 @@ Process Kernels
 
       *  `"algorithm`" = " explicit first-order | explicit second-order | none " 
 
+      * `"sub_cycling`" = "on | off"
+
+For `"transport`" a combination of `"state`" and `"algorithm`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the integration algorithm must be specified.  Whether sub-cycling is to be utilized within the transport algorithm is also specified here.
+
 * `"chemistry`" has two attributes, `"state`" and `"process_model`".
       
       * `"state`" = "on | off"
 
       *  `"process_model`" = " implicit operator split | none " 
+
+For `"chemistry`" a combination of `"state`" and `"process_model`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the process model must be specified. 
 
 Phases
 ======
@@ -589,7 +614,7 @@ Some general discussion of the `"Phases`" section goes here.
 
 Here is more info on the `"liquid_phase`" elements:
 
-    * `"eos`"="string" - SKIPPED, not currently supported
+    * `"eos`"="string" 
 
     * `"viscosity`"="exponential"
 

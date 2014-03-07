@@ -144,7 +144,7 @@ Changes by TDS June 2013:
       </xs:documentation>
   </xs:annotation>
   <xs:restriction base="xs:token">
-      <xs:pattern value="[(]?( *[-+]? *[0-9]*\.?[0-9]+)?,( *[-+]? *[0-9]*\.?[0-9]+),?( *[-+]? *[0-9]*\.?[0-9]+)?[)]?"/> 
+      <xs:pattern value="[(]?( *[-+]?([0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?)( *,( *[-+]?([0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?))?( *,( *[-+]?([0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?))? *[)]?"/> 
   </xs:restriction>
 </xs:simpleType>
 
@@ -346,6 +346,9 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:simpleType name="typedef_region_file_formats">
 	<xs:restriction base="xs:string">
 		<xs:enumeration value="exodus ii"/>
+		<xs:enumeration value="exodus II"/>
+		<xs:enumeration value="Exodus II"/>
+		<xs:enumeration value="Exodus ii"/>
 	</xs:restriction>
 </xs:simpleType>
 
@@ -732,7 +735,9 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		</xs:choice>
 	</xs:sequence>
 	<xs:attribute name="framework" type="xs:string" use="required"/>
-	<xs:assert  test="@framework = ('mstk','moab', 'exodus ii')"/>	 
+	<xs:assert  test="@framework = ('mstk','stk::mesh','simple')"/>	 
+                                        <!-- EIB: moab current doesn't work, exodus is a file format, boxlib in the future -->
+                                        <!-- EIB: translator default is mstk -->
 </xs:complexType>
 
 <xs:complexType name="typedef_mesh_structured">
@@ -1092,7 +1097,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_liquid_phase">
 	<xs:all>
-		<xs:element name="eos" type="xs:string" minOccurs="1" maxOccurs="1"/>
+		<xs:element name="eos" type="xs:string" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="viscosity" type="typedef_exponential" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="density" type="typedef_exponential" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="dissolved_components" type="typedef_dissolved_components" minOccurs="0" maxOccurs="1"/>
