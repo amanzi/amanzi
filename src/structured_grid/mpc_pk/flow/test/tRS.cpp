@@ -189,7 +189,8 @@ main (int   argc,
   }
 #endif
 
-  RockManager rockManager(&rm,geom_array,refRatio_array);
+  int nGrow = 0;
+  RockManager rockManager(&rm,geom_array,refRatio_array,nGrow);
   RStdata rs_data(0,nLevs,layout,nlsc,inputs,&rockManager);
   rs_data.upwind_krel=1;
   rs_data.semi_analytic_J=true;
