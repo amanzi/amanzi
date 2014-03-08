@@ -73,8 +73,9 @@ main (int   argc,
     Region::domhi[d] = Geometry::ProbHi()[d];
   }
 
+  int nGrowGeom = 3;
   RegionManager rm;
-  RockManager rockManager(&rm,geomArray,refRatio);
+  RockManager rockManager(&rm,geomArray,refRatio,nGrowGeom);
 
   Real time = 0.2;
   int level = 0;
@@ -122,7 +123,7 @@ main (int   argc,
 
   }
 
-#if 1
+#if 0
   MultiFab pc2(ba,1,nGrow);
   MultiFab::Copy(pc2,pc,0,0,1,nGrow);
   MultiFab::Subtract(pc2,pc1,0,0,1,nGrow);

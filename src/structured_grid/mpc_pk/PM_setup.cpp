@@ -16,8 +16,6 @@
 #include <PROB_PM_F.H>
 #include <PMAMR_Labels.H>
 #include <PMAmr.H> 
-#include <POROUS_F.H>
-#include <WritePlotfile.H>
 
 #ifdef _OPENMP
 #include "omp.h"

@@ -64,7 +64,6 @@ set(CXX_header_files BC_TYPES_PM.H
                      Observation.H
                      PMAmr.H
                      PMAMR_Labels.H
-                     POROUS_F.H
                      POROUSMEDIA_F.H
                      PorousMedia.H
                      PressBndry.H
@@ -81,7 +80,6 @@ set(FPP_source_files  EOS_F.F
                       GODUNOV_${AMANZI_SPACEDIM}D.F
                       MACOPERATOR_${AMANZI_SPACEDIM}D.F
                       MACPROJ_${AMANZI_SPACEDIM}D.F
-                      POROUS_${AMANZI_SPACEDIM}D.F
                       POROUSMEDIA_${AMANZI_SPACEDIM}D.F
                       VISCOPERATOR_${AMANZI_SPACEDIM}D.F
                       MFTOWER_${AMANZI_SPACEDIM}D.F)

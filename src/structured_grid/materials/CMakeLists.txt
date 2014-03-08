@@ -13,18 +13,28 @@ set(CXX_header_files Property.H
                      MatFiller.H
                      MatFiller_F.H
                      RockManager.H
-                     RockManager_F.H)
+                     RockManager_F.H
+                     GSLibInt.H
+                     GSLibInt_F.H
+                     RockUtil.H)
 
 set(CXX_source_files Property.cpp
                      Material.cpp
                      MatFiller.cpp
-                     RockManager.cpp)
+                     RockManager.cpp
+                     GSLibInt.cpp)
 
-set(FPP_source_files MatFiller_${AMANZI_SPACEDIM}D.F)
+set(F90_source_files sgsim.f90
+                     geostat.f90)
 
+set(FPP_source_files MatFiller_${AMANZI_SPACEDIM}D.F
+                     GSLibInt_${AMANZI_SPACEDIM}D.F
+                     RockUtil_${AMANZI_SPACEDIM}D.F
+                     RockManager_${AMANZI_SPACEDIM}D.F)
 
 include_directories(${SREGION_SOURCE_DIR})  
 include_directories(${SMATERIALS_SOURCE_DIR})  
+include_directories(${SAMR_SOURCE_DIR})  
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 
@@ -70,7 +80,7 @@ if (BUILD_TESTS)
   link_directories(${CCSE_LIBRARY_DIR})
   add_definitions("-DENABLE_Structured")
 
-  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
+  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES} ${CCSE_LIBRARIES})
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU)
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
@@ -96,9 +106,21 @@ if (BUILD_TESTS)
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   include_directories(${SMATERIALS_SOURCE_DIR}/test) 
+
   add_amanzi_test(RockManager_fort tRM_fort "tRM.in"
                   KIND unit
                   SOURCE test/tRM_fort.cpp test/tRM_fort_${AMANZI_SPACEDIM}D.F
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+
+  add_amanzi_test(RockManager_gs tRM_GS "tRM_GS.in" "nLevs=1"
+                  KIND unit
+                  SOURCE test/tRM_GS.cpp
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+
+  add_amanzi_test(RockManager_gs2 RockManager_gs_parallel "./tRM_GS.in"
+                  KIND unit
+	          NPROCS 2
+                  SOURCE test/tRM_GS.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   add_amanzi_test(MaterialPropertyFiller tMatFiller
@@ -123,6 +145,12 @@ if (BUILD_TESTS)
       copy ${SMATERIALS_SOURCE_DIR}/test/tRM.in ${SMATERIALS_BINARY_DIR}) 
     execute_process(COMMAND ${CMAKE_COMMAND} -E 
       copy ${SMATERIALS_SOURCE_DIR}/test/tMIDf_RM.in ${SMATERIALS_BINARY_DIR}) 
+    execute_process(COMMAND ${CMAKE_COMMAND} -E 
+      copy ${SMATERIALS_SOURCE_DIR}/test/tRM_GS.in ${SMATERIALS_BINARY_DIR}) 
+    execute_process(COMMAND ${CMAKE_COMMAND} -E 
+      copy ${SMATERIALS_SOURCE_DIR}/test/cluster.dat ${SMATERIALS_BINARY_DIR}) 
+    execute_process(COMMAND ${CMAKE_COMMAND} -E 
+      copy ${SMATERIALS_SOURCE_DIR}/test/sgsim.par ${SMATERIALS_BINARY_DIR}) 
   endif()
 
 endif()

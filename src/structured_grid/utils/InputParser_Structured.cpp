@@ -1178,6 +1178,7 @@ namespace Amanzi {
     void convert_PorosityUniform(const ParameterList& fPLin,
                                  ParameterList&       fPLout)
     {
+      fPLout.set<std::string>("distribution_type","uniform");
       Array<std::string> nullList, reqP;
       if (fPLin.isParameter("Values")) {
         const std::string val_name="Values"; reqP.push_back(val_name);
@@ -1202,6 +1203,29 @@ namespace Amanzi {
         std::cout << fPLin << std::endl;
         BoxLib::Abort(str.c_str());
       }
+    }
+
+    void convert_PorosityGSLib(const ParameterList& fPLin,
+                               ParameterList&       fPLout)
+    {
+      fPLout.set<std::string>("distribution_type","gslib");
+      Array<std::string> optP, reqP;
+      const std::string param_file_name="GSLib Parameter File"; reqP.push_back(param_file_name);
+      const std::string shift_name="GSLib Coordinate Shift"; optP.push_back(shift_name);
+      const std::string data_file_name="GSLib Data File"; optP.push_back(data_file_name);
+      PLoptions opt(fPLin,optP,reqP,true,true); 
+
+      fPLout.set<std::string>("gslib_param_file",fPLin.get<std::string>(param_file_name));
+      if (fPLin.isParameter(shift_name)) {
+        const Array<double>& shift = fPLin.get<Array<double> >(shift_name);
+        fPLout.set<Array<double> >("gslib_file_shift",shift);
+      }
+
+      std::string gslib_data_file="porosity_gslib_data";
+      if (fPLin.isParameter(data_file_name)) {
+        gslib_data_file = fPLin.get<std::string>(data_file_name);
+      }
+      fPLout.set<std::string>("gslib_data_file",gslib_data_file);
     }
 
     void convert_PermeabilityAnisotropic(const ParameterList& fPLin,
@@ -1377,8 +1401,8 @@ namespace Amanzi {
       std::map<std::string,double> cation_exchange_capacity;
       std::map<std::string,ParameterList> rsublist_mat;
 
-      const std::string porosity_file_str = "Porosity: Input File";
       const std::string porosity_uniform_str = "Porosity: Uniform";
+      const std::string porosity_gslib_str = "Porosity: GSLib";
       const std::string perm_file_str = "Intrinsic Permeability: Input File";
       const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
       const std::string perm_anisotropic_uniform_str = "Intrinsic Permeability: Anisotropic Uniform";
@@ -1426,14 +1450,18 @@ namespace Amanzi {
             if (rentry.isList())
             {
               const ParameterList& rsslist = rslist.sublist(rlabel);
-              if (rlabel==porosity_file_str || rlabel==porosity_uniform_str){
+              if (rlabel==porosity_gslib_str || rlabel==porosity_uniform_str){
                 if (mtest["Porosity"]) {
-                  std::string str = "More than one of: (\""+porosity_file_str+"\", \""+porosity_uniform_str+
+                  std::string str = "More than one of: (\""+porosity_gslib_str+"\", \""+porosity_uniform_str+
                     "\") specified for material \""+label+"\"";
                   BoxLib::Abort(str.c_str());
                 }
                 ParameterList psublist;
-                convert_PorosityUniform(rsslist,psublist);
+                if (rlabel==porosity_uniform_str) {
+                  convert_PorosityUniform(rsslist,psublist);
+                } else if (rlabel==porosity_gslib_str){
+                  convert_PorosityGSLib(rsslist,psublist);
+                }
                 rsublist.set("porosity",psublist);
                 mtest["Porosity"] = true;
               }

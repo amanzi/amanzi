@@ -7,7 +7,7 @@
 #include "CONSTANTS.H"
 #include "BC_TYPES.H"
 #include "BC_TYPES_PM.H"
-#include "POROUS_F.H" 
+#include "RockUtil_F.H" 
 #include "ArrayLim.H"
 
 #define SDIM 2

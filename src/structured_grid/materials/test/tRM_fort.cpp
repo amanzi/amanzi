@@ -75,8 +75,9 @@ main (int   argc,
     Region::domhi[d] = Geometry::ProbHi()[d];
   }
 
+  int nGrowGeom = 3;
   RegionManager rm;
-  RockManager rockManager(&rm,geomArray,refRatio);
+  RockManager rockManager(&rm,geomArray,refRatio,nGrowGeom);
 
   Real time = 0.2;
   int level = 0;

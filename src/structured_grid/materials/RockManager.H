@@ -6,6 +6,7 @@
 #include <MonotCubicInterpolator.H>
 
 #include <PArray.H>
+#include <DataServices.H>
 
 /*
   RockManager
@@ -47,7 +48,8 @@ class RockManager
 public:
   RockManager(const RegionManager*   _region_manager,
               const Array<Geometry>& geomArray,
-              const Array<IntVect>&  refRatio);
+              const Array<IntVect>&  refRatio,
+              int                    nGrow);
   ~RockManager();
 
   bool CanDerive(const std::string& property_name) const;
@@ -61,20 +63,17 @@ public:
                    void*              ctx = 0,
                    bool               ignore_mixed = false) const;
 
-  bool GetPropertyDirect(Real               t,
-                         int                level,
-                         FArrayBox&         fab,
-                         const Box&         box,
-                         const std::string& pname,
-                         int                dComp,
-                         void*              ctx = 0) const;
-
   /* Fill a MultiFab with the ID of the material at that location, given a
      refinement level (as defined in the ctr), including nGrow cells. The ID
      returned is suitable to be passed as an identifier for evaluating
      state-dependent properties (such as relative permeability) */
   void GetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed = false) const;
 
+  void Porosity(Real      time,
+                int       level,
+                MultiFab& porosity,
+                int       dComp,
+                int       nGrow) const;
 
   // Capillary Pressure (given Saturation)
   void CapillaryPressure(const Real* saturation, int* matID, Real time, Real* capillaryPressure, int npts) const;
@@ -126,11 +125,22 @@ public:
 
   const MatFiller* GetMatFiller() const {return materialFiller;}
   int ID() const {return rock_mgr_ID;}
-  /*
-    Number of components for this property
-   */
   int NComp(const std::string& property_name) const;
+  int NGrow() const {return nGrow;}
+  int FinestLevel() const {return materialFiller->NumLevels()-1;}
   const PArray<Material>& GetMaterials() const {return rock;}
+
+  static void BuildGSLibFile(Real                   avg,
+                             Real                   std,
+                             const std::string&     gslib_param_file,
+                             const std::string&     gslib_data_file,
+                             const Array<Real>&     gslib_file_shift,
+                             const Array<Geometry>& geom_array,
+                             const Array<IntVect>&  ref_ratio,
+                             int                    num_grow,
+                             int                    max_grid_size_fine_gen,
+                             Property::CoarsenRule& crule,
+                             const std::string&     varname);
 
   bool Is_CP_model_XX(int model_id, const std::string& str) const;
   bool Is_Kr_model_XX(int model_id, const std::string& str) const;
@@ -141,6 +151,12 @@ protected:
 
   Array<Array<int> > SortPtsByMaterial(int* matID, int npts) const;
   void BuildInterpolators();
+  void FillBoundary(Real      time,
+                    int       level,
+                    MultiFab& mf,
+                    int       dComp,
+                    int       nComp,
+                    int       nGrow) const;
 
   const RegionManager* region_manager;
   MatFiller* materialFiller;
@@ -156,6 +172,10 @@ protected:
   bool interps_built;
 
   int rock_mgr_ID;
+  int nGrow;
+
+  DataServices *dataServices_phi;
+  std::map<std::string,AmrData*> amrData_phi; 
 };
 
 #endif

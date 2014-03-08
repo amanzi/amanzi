@@ -9,12 +9,35 @@ ConstantProperty::clone() const
   return ret;
 }
 
-void 
-ConstantProperty::eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp, void* ctx) const
+bool
+ConstantProperty::Evaluate(Real t, Array<Real>& result) const
 {
-  for (int i=0, N=values.size(); i<N; ++i) {
-    fab.setVal(values[i],box,dComp+i,1);
+  int N = values.size();
+  result.resize(N);
+  for (int i=0; i<N; ++i) {
+    result[i] = values[i];
   }
+  return true;
+}
+
+Property*
+GSLibProperty::clone() const
+{
+  const GSLibProperty* t = dynamic_cast<const GSLibProperty*>(this);
+  BL_ASSERT(t!=0);
+  GSLibProperty* ret = new GSLibProperty(t->Name(), t->values, t->amrData, t->coarsen_rule, t->refine_rule);
+  return ret;
+}
+
+bool
+GSLibProperty::Evaluate(Real t, Array<Real>& result) const
+{
+  int N = values.size();
+  result.resize(N);
+  for (int i=0; i<N; ++i) {
+    result[i] = values[i];
+  }
+  return false;
 }
 
 
@@ -27,12 +50,13 @@ TabularInTimeProperty::clone() const
   return ret;
 }
 
-void 
-TabularInTimeProperty::eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp, void* ctx) const
+bool
+TabularInTimeProperty::Evaluate(Real t, Array<Real>& result) const
 {
-  for (int i=0, N=funcs.size(); i<N; ++i) {
-    Real val = funcs[i](t);
-    fab.setVal(val,box,dComp+i,1);
+  int N = funcs.size();
+  result.resize(N);
+  for (int i=0; i<N; ++i) {
+    result[i] = funcs[i](t);
   }
+  return true;
 }
-

@@ -5,6 +5,8 @@
 #include <Region.H>
 #include <TabularFunction.H>
 
+#include <AmrData.H>
+
 class Property
 {
 public:
@@ -17,8 +19,8 @@ public:
            Property::RefineRule  _refine_rule = Property::PiecewiseConstant)
     : name(_name), coarsen_rule(_coarsen_rule), refine_rule(_refine_rule) {}
 
-  virtual void eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp, void* ctx = 0) const = 0;
   virtual bool isTimeDependent() const = 0;
+  virtual bool Evaluate(Real t, Array<Real>& result) const = 0;
 
   virtual ~Property() {}
   virtual Property* clone() const = 0;
@@ -49,15 +51,45 @@ public:
                    Property::RefineRule  _refine_rule = Property::PiecewiseConstant)
     : Property(_name,_coarsen_rule,_refine_rule) {values = _values;}
 
-  virtual void eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp, void* ctx = 0) const;
   virtual bool isTimeDependent() const {return false;}
+  virtual bool Evaluate(Real t, Array<Real>& result) const;
 
   virtual ~ConstantProperty() {}
   virtual Property* clone() const;
   virtual int nComp() const {return values.size();}
-  const Array<Real> Values() const {return values;}
 protected:
   Array<Real> values;
+};
+
+
+class GSLibProperty
+  : public ConstantProperty
+{
+public:
+  GSLibProperty(const std::string&    _name,
+                Real                  _value,
+                AmrData*              _amrd,
+                Property::CoarsenRule _coarsen_rule = Property::Arithmetic,
+                Property::RefineRule  _refine_rule = Property::PiecewiseConstant)
+    : ConstantProperty(_name,_value,_coarsen_rule,_refine_rule) {amrData = _amrd;}
+
+  GSLibProperty(const std::string&    _name,
+                const Array<Real>&    _values,
+                AmrData*              _amrd,
+                Property::CoarsenRule _coarsen_rule = Property::Arithmetic,
+                Property::RefineRule  _refine_rule = Property::PiecewiseConstant)
+    : ConstantProperty(_name,_values,_coarsen_rule,_refine_rule) {amrData = _amrd;}
+
+  virtual bool isTimeDependent() const {return false;}
+  virtual bool Evaluate(Real t, Array<Real>& result) const;
+
+  virtual ~GSLibProperty() {}
+  virtual Property* clone() const;
+  virtual int nComp() const {return values.size();}
+
+  const AmrData* GetAmrData() const {return amrData;}
+protected:
+  AmrData* amrData;
 };
 
 
@@ -78,8 +110,8 @@ public:
                         Property::RefineRule          _refine_rule = Property::PiecewiseConstant)
     : Property(_name,_coarsen_rule,_refine_rule), funcs(_funcs) {}
 
-  virtual void eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp, void* ctx = 0) const;
   virtual bool isTimeDependent() const {return true;}
+  virtual bool Evaluate(Real t, Array<Real>& result) const;
 
   virtual ~TabularInTimeProperty() {}
   virtual Property* clone() const;
@@ -89,6 +121,7 @@ public:
 protected:
   Array<TabularFunction> funcs;
 };
+
 
 #endif
 

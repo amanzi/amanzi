@@ -689,7 +689,7 @@ PMAmr::SetUpRockManager()
     }
 
     if (region_manager == 0) region_manager = new RegionManager();
-    rock_manager = new RockManager(region_manager,geom,refRatio());
+    rock_manager = new RockManager(region_manager,geom,refRatio(),3); // FIXME: 3 is HypGrow
 
     if (ParallelDescriptor::IOProcessor() && verbose>0) {
       std::cout << "....Rock Manager built" << std::endl;

@@ -1,7 +1,13 @@
 
+#include <fstream>
+#include <iomanip>
+
+#include <GSLibInt.H>
 #include <RockManager.H>
 #include <RockManager_F.H>
+#include <WritePlotfile.H>
 
+#include <Utility.H>
 #include <ParmParse.H>
 
 static std::string CapillaryPressureName    = "capillary_pressure";
@@ -49,14 +55,21 @@ static Real Kr_smoothing_min_seff_DEF = 2;
 static int NUM_INIT_INTERP_EVAL_PTS_DEF = 5001;
 static Real pc_at_Sr = 1.e11;
 
+static int crse_init_factor = 32;
+static int max_grid_fine_gen = 32;
+
+static std::string MaterialPlotFileVersion = "MaterialPlotFile-V1.0";
+
 static int Rock_Mgr_ID_ctr=0;
 static std::vector<RockManager*> Rock_Mgr_Ptrs;
 static std::vector<std::pair<bool,Real> > Kr_smoothing_min_seff; // Bool says whether value needs to be updated
 
 RockManager::RockManager(const RegionManager*   _region_manager,
                          const Array<Geometry>& geomArray,
-                         const Array<IntVect>&  refRatio)
-  : region_manager(_region_manager), interps_built(false)
+                         const Array<IntVect>&  refRatio,
+                         int                    _nGrow)
+  : region_manager(_region_manager), nGrow(_nGrow), interps_built(false),
+    dataServices_phi(0) 
 {
   Initialize(geomArray,refRatio);
   BuildInterpolators();
@@ -97,9 +110,26 @@ RockManager::NComp(const std::string& property_name) const
   return nc;
 }
 
-#include <fstream>
-#include <iomanip>
-#include <Utility.H>
+static
+void
+EnsureFolderExists(const std::string& full_path)
+{
+  // Find folder name first, and ensure folder exists
+  // FIXME: Will fail on Windows
+  const std::vector<std::string>& tokens = BoxLib::Tokenize(full_path,"/");
+  std::string dir = (full_path[0] == '/' ? "/" : "");
+  for (int i=0; i<tokens.size()-1; ++i) {
+    dir += tokens[i];
+    if (i<tokens.size()-2) dir += "/";
+  }
+  
+  if(!BoxLib::FileExists(dir)) {
+    if ( ! BoxLib::UtilCreateDirectory(dir, 0755)) {
+      BoxLib::CreateDirectoryFailed(dir);
+    }
+  }
+}
+
 void
 RockManager::BuildInterpolators()
 {
@@ -136,21 +166,7 @@ RockManager::BuildInterpolators()
       std::cout << "Writing WRM data for material \"" << rock[n].Name()
                 << "\" to file \"" << file << "\"" << std::endl;
 
-      // Find folder name first, and ensure folder exists
-      // FIXME: Will fail on Windows
-      const std::vector<std::string>& tokens = BoxLib::Tokenize(file,"/");
-      std::string dir = (file[0] == '/' ? "/" : "");
-      for (int i=0; i<tokens.size()-1; ++i) {
-        dir += tokens[i];
-        if (i<tokens.size()-2) dir += "/";
-      }
-
-      if(!BoxLib::FileExists(dir)) {
-        if ( ! BoxLib::UtilCreateDirectory(dir, 0755)) {
-          BoxLib::CreateDirectoryFailed(dir);
-	}
-      }
-
+      EnsureFolderExists(file);
       std::ofstream osf; osf.open(file.c_str());
       osf << std::setprecision(15);
       for (int i=1; i<s.size(); ++i) {
@@ -183,6 +199,205 @@ RockManager::BuildInterpolators()
   }
 #endif
   interps_built = true;
+}
+
+void
+RockManager::BuildGSLibFile(Real                   avg,
+                            Real                   std,
+                            const std::string&     gslib_param_file,
+                            const std::string&     gslib_data_file,
+                            const Array<Real>&     gslib_file_shift,
+                            const Array<Geometry>& geom_array,
+                            const Array<IntVect>&  ref_ratio,
+                            int                    num_grow,
+                            int                    max_grid_size_fine_gen,
+                            Property::CoarsenRule& crule,
+                            const std::string&     varname)
+{
+  int nLev = geom_array.size();
+  int finest_level = nLev - 1;
+  const Geometry& geom = geom_array[finest_level];
+  Box stat_box = Box(geom.Domain());
+
+  if(!BoxLib::FileExists(gslib_param_file)) {
+    const std::string& str = "GSLib parameter file: \"" + gslib_param_file + "\" does not exist";
+    BoxLib::Abort(str.c_str());
+  }
+
+  // Original interface supports layered structure, we disable that for now
+  Array<Real> avgVals(1,avg);
+  Array<int> n_cell(BL_SPACEDIM);
+  const Geometry& geom0 = geom_array[0];
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    n_cell[d] = geom0.Domain().length(d);
+  }
+
+  // Find cummulative refinement ratio
+  int twoexp = 1;
+  for (int i = 1; i<nLev; i++) {
+    twoexp *= ref_ratio[i-1][0];  // FIXME: Assumes uniform refinement
+  }
+
+  max_grid_size_fine_gen = twoexp * 4;
+
+  PArray<MultiFab> stat(nLev,PArrayManage);
+  BoxArray stat_ba(stat_box);
+  stat_ba.maxSize(max_grid_size_fine_gen);
+  int ng_cum = num_grow * twoexp;
+  stat.set(finest_level, new MultiFab(stat_ba,1,ng_cum));
+
+  const Array<Real> prob_lo(geom0.ProbLo(),BL_SPACEDIM);
+  const Array<Real> prob_hi(geom0.ProbHi(),BL_SPACEDIM);
+  
+  GSLibInt::rdpGaussianSim(avgVals,std,n_cell,prob_lo,prob_hi,twoexp,stat[finest_level],
+                           crse_init_factor,max_grid_size_fine_gen,ng_cum,gslib_param_file);
+
+  for (int lev=finest_level-1; lev>=0; --lev) {
+    int ltwoexp = 1;
+    for (int i = 1; i<lev; i++) {
+      ltwoexp *= ref_ratio[i-1][0];  // FIXME: Assumes uniform refinement
+    }
+
+    const Box& domain = geom_array[lev].Domain();
+    BoxArray ba(domain);
+    ba.maxSize(max_grid_size_fine_gen / ref_ratio[lev][0]); // FIXME: Assumes uniform refinement
+    stat.set(lev, new MultiFab(ba,1,num_grow*ltwoexp));
+
+    BoxArray baf = BoxArray(ba).refine(ref_ratio[lev]);
+    MultiFab fine(baf,1,stat[lev].nGrow()*ref_ratio[lev][0]);// FIXME: Assumes uniform refinement
+    BoxArray bafg = BoxArray(baf).grow(fine.nGrow());
+    MultiFab fineg(bafg,1,0);
+    fineg.copy(stat[lev+1]); // parallel copy
+    for (MFIter mfi(fine); mfi.isValid(); ++mfi) {
+      fine[mfi].copy(fineg[mfi]);
+    }
+    fineg.clear();
+
+    for (MFIter mfi(fine); mfi.isValid(); ++mfi) {
+      const FArrayBox& finefab = fine[mfi];
+      FArrayBox& crsefab = stat[lev][mfi];
+      const Box& cbox = crsefab.box();
+      if ( !(finefab.box().contains(Box(cbox).refine(ref_ratio[lev])) ) ) {
+        std::cout << "c,f: " << cbox << " " << finefab.box() << std::endl;
+        BoxLib::Abort();
+      }
+      MatFiller::CoarsenData(fine[mfi],0,stat[lev][mfi],cbox,0,1,ref_ratio[lev],crule);
+    }
+  }
+
+  EnsureFolderExists(gslib_data_file);
+  
+  Array<MultiFab*> data(nLev);
+  Array<Box> prob_domain(nLev);
+  Array<Array<Real> > dx_level(nLev,Array<Real>(BL_SPACEDIM));
+  Array<int> int_ref(nLev-1);
+  for (int lev=0; lev<nLev; ++lev) {
+    data[lev] = &(stat[lev]);
+    prob_domain[lev] = geom_array[lev].Domain();
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      dx_level[lev][d] = geom_array[lev].CellSize(d);
+    }
+    if (lev<finest_level) {
+      int_ref[lev] = ref_ratio[lev][0];
+    }
+  }
+  Real time=0;
+  bool verbose=false;
+  Array<Real> vfeps(BL_SPACEDIM,0);
+  Array<int> level_steps(nLev,0);
+  Array<std::string> varnames(1,varname);
+  bool is_cart_grid = false;
+  WritePlotfile(MaterialPlotFileVersion,data,time,geom0.ProbLo(),geom0.ProbHi(),int_ref,prob_domain,
+                dx_level,geom0.Coord(),gslib_data_file,varnames,verbose,is_cart_grid,vfeps.dataPtr(),
+                level_steps.dataPtr());
+  ParallelDescriptor::Barrier(); // Wait until everyone finished to avoid reading before completely written
+}
+
+// FIXME: Replace with call to MatFiller::FillCellsOutsideDomain
+void
+RockManager::FillBoundary(Real      time,
+                          int       level,
+                          MultiFab& mf,
+                          int       dComp,
+                          int       nComp,
+                          int       nGrow) const
+{
+  const Geometry& geom = materialFiller->Geom(level);
+
+  if (nGrow>0) {
+    const Box& domain = geom.Domain();
+    for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+      FArrayBox& fab = mf[mfi];
+      const Box& vbox = mfi.validbox();
+      Box gbox = Box(vbox).grow(nGrow);
+      if ( !(domain.contains(gbox)) ) {
+        for (int d=0; d<BL_SPACEDIM; ++d) {
+          Box adjCellLo = BoxLib::adjCellLo(vbox,d,1);
+          Box intCellLo = Box(adjCellLo).shift(d,1);
+          for (int i=0; i<nGrow; ++i) {
+            Box ladjCellLo = Box(adjCellLo).shift(d,-i);
+            for (int dd=0; dd<d; ++dd) {
+              ladjCellLo.grow(dd,nGrow);
+            }
+            Box lintCellLo = Box(ladjCellLo).shift(d,i+1);
+            fab.copy(fab,lintCellLo,dComp,ladjCellLo,dComp,1);
+          }
+
+          Box adjCellHi = BoxLib::adjCellHi(vbox,d,1);
+          Box intCellHi = Box(adjCellHi).shift(d,-1);
+          for (int i=0; i<nGrow; ++i) {
+            Box ladjCellHi = Box(adjCellHi).shift(d,i);
+            for (int dd=0; dd<d; ++dd) {
+              ladjCellHi.grow(dd,nGrow);
+            }
+            Box lintCellHi = Box(ladjCellHi).shift(d,-i-1);
+            fab.copy(fab,lintCellHi,dComp,ladjCellHi,dComp,1);
+          }
+        }
+      }
+    }
+    bool local = false;
+    bool corner=true;
+    mf.FillBoundary(dComp,nComp,false,!corner);
+    materialFiller->Geom(level).FillPeriodicBoundary(mf,dComp,nComp,corner,local);
+  }
+}
+
+void
+RockManager::Porosity(Real      time,
+                      int       level,
+                      MultiFab& porosity,
+                      int       dComp,
+                      int       nGrow) const
+{
+  bool ignore_mixed = true;
+  materialFiller->SetProperty(time,level,porosity,PorosityName,dComp,nGrow,0,ignore_mixed);
+  int nComp = NComp(PorosityName);
+  Array<Real> dummy(nComp);
+  for (int i=0; i<rock.size(); ++i) {
+    const Property* prop = rock[i].Prop(PorosityName);
+    const GSLibProperty* gslib_prop = dynamic_cast<const GSLibProperty*>(prop);
+    if (gslib_prop != 0) {
+      const AmrData* this_const_amrData = gslib_prop->GetAmrData();
+      AmrData* this_amrData = const_cast<AmrData*>(this_const_amrData);
+
+      iMultiFab id(porosity.boxArray(),1,0);
+      materialFiller->SetMaterialID(level,id,0,ignore_mixed);
+      MultiFab vals(porosity.boxArray(),nComp,0);
+      this_amrData->FillVar(vals,level,PorosityName,dComp);
+      for (MFIter mfi(porosity); mfi.isValid(); ++mfi) {
+        Box bx = Box(mfi.validbox()).grow(nGrow);
+        const FArrayBox& vfab = vals[mfi];
+        const IArrayBox& idfab = id[mfi];
+        FArrayBox& mfab = porosity[mfi];
+        FORT_FILLPMAT (mfab.dataPtr(), ARLIM(mfab.loVect()),  ARLIM(mfab.hiVect()),
+                       idfab.dataPtr(), ARLIM(idfab.loVect()), ARLIM(idfab.hiVect()),
+                       vfab.dataPtr(),  ARLIM(vfab.loVect()),  ARLIM(idfab.hiVect()),
+                       &i, bx.loVect(), bx.hiVect(), &nComp);        
+      }
+    }
+  }
+  FillBoundary(time,level,porosity,dComp,1,nGrow);
 }
 
 void
@@ -252,6 +467,8 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
     const std::string& rname = r_names[i];
     const std::string prefix("rock." + rname);
     ParmParse ppr(prefix.c_str());
+
+    bool generate_porosity_gslib_file = false;
         
     static Property::CoarsenRule arith_crsn = Property::Arithmetic;
     static Property::CoarsenRule harm_crsn = Property::ComponentHarmonic;
@@ -295,26 +512,82 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
     Property* phi_func = 0;
     Array<Real> rpvals(1), rptimes;
     Array<std::string> rpforms;
-    std::string PorosityValsName = PorosityName+".vals";
-    std::string PorosityTimesName = PorosityName+".times";
-    std::string PorosityFormsName = PorosityName+".forms";
-    if (ppr.countval(PorosityValsName.c_str())) {
-      ppr.getarr(PorosityValsName.c_str(),rpvals,0,ppr.countval(PorosityValsName.c_str()));
-      int nrpvals = rpvals.size();
-      if (nrpvals>1) {
-        ppr.getarr(PorosityTimesName.c_str(),rptimes,0,nrpvals);
-        ppr.getarr(PorosityFormsName.c_str(),rpforms,0,nrpvals-1);
-        TabularFunction pft(rptimes,rpvals,rpforms);
-        phi_func = new TabularInTimeProperty(PorosityName.c_str(),pft,arith_crsn,pc_refine);
+    const std::string porosity_prefix(prefix+"."+PorosityName);
+    ParmParse pprp(porosity_prefix.c_str());
+
+
+    std::string PorosityValsName = "vals";
+    std::string PorosityValName = "val";
+    std::string PorosityStdName = "std";
+    std::string PorosityTimesName = "times";
+    std::string PorosityFormsName = "forms";
+    std::string PorosityDistName = "distribution_type";
+    std::string PorosityGSParamFileName = "gslib_param_file";
+    std::string PorosityGSDataFileName = "gslib_data_file";
+    std::string PorosityGSFileShiftName = "gslib_file_shift";
+
+    std::string phi_dist = "uniform"; pprp.query(PorosityDistName.c_str(),phi_dist);
+
+    if (phi_dist != "uniform" && phi_dist!="gslib") {
+      BoxLib::Abort(std::string("Unrecognized distribution_type for rock: \""+rname).c_str());
+    }
+    if (phi_dist == "uniform") {
+      if (pprp.countval(PorosityValsName.c_str()) > 0) {
+        pprp.getarr(PorosityValsName.c_str(),rpvals,0,pprp.countval(PorosityValsName.c_str()));
+        int nrpvals = rpvals.size();
+        if (nrpvals>1) {
+          pprp.getarr(PorosityTimesName.c_str(),rptimes,0,nrpvals);
+          pprp.getarr(PorosityFormsName.c_str(),rpforms,0,nrpvals-1);
+          TabularFunction pft(rptimes,rpvals,rpforms);
+          phi_func = new TabularInTimeProperty(PorosityName.c_str(),pft,arith_crsn,pc_refine);
+        }
+        else {
+          phi_func = new ConstantProperty(PorosityName,rpvals[0],arith_crsn,pc_refine);
+        }
+      } else if (pprp.countval(PorosityValName.c_str()) == 1) {
+        rpvals.resize(1); pprp.get(PorosityValName.c_str(),rpvals[0]);
+        phi_func = new ConstantProperty(PorosityName,rpvals[0],arith_crsn,pc_refine);
+      } else {
+        BoxLib::Abort("No valid porosity values given for uniform distribution");
+      }
+    }
+    else {
+      // phi_dist == gslib
+      std::string gslib_param_file, gslib_data_file;
+      generate_porosity_gslib_file = (pprp.countval(PorosityGSParamFileName.c_str()) != 0);
+      if (pprp.countval(PorosityGSDataFileName.c_str()) == 0) {
+        pprp.get(PorosityGSParamFileName.c_str(),gslib_param_file);
+        gslib_data_file="porosity.gslib";
       }
       else {
-        phi_func = new ConstantProperty(PorosityName.c_str(),rpvals[0],arith_crsn,pc_refine);
+        pprp.query(PorosityGSParamFileName.c_str(),gslib_param_file);
+        pprp.get(PorosityGSDataFileName.c_str(),gslib_data_file);
       }
-    } else if (ppr.countval(PorosityName.c_str())) {
-      ppr.get(PorosityName.c_str(),rpvals[0]); // FIXME: For backward compatibility
-      phi_func = new ConstantProperty(PorosityName.c_str(),rpvals[0],arith_crsn,pc_refine);
-    } else {
-      BoxLib::Abort(std::string("No porosity function specified for rock: \""+rname).c_str());
+
+      Array<Real> gslib_file_shift(BL_SPACEDIM,0);
+      pprp.queryarr(PorosityGSFileShiftName.c_str(),gslib_file_shift,0,BL_SPACEDIM);
+
+      int num = amrData_phi.count(gslib_data_file);
+      if (num == 0) {
+        if (generate_porosity_gslib_file) {
+          Real porosity_avg; pprp.get(PorosityValName.c_str(),porosity_avg);
+          Real porosity_std; pprp.get(PorosityStdName.c_str(),porosity_std);
+          BuildGSLibFile(porosity_avg, porosity_std, gslib_param_file, gslib_data_file,
+                         gslib_file_shift, geomArray, refRatio, nGrow, max_grid_fine_gen,
+                         arith_crsn,PorosityName);
+        }
+        
+        DataServices::SetBatchMode();
+        Amrvis::FileType fileType(Amrvis::NEWPLT);
+        dataServices_phi = new DataServices(gslib_data_file, fileType);
+        if (!dataServices_phi->AmrDataOk())
+          DataServices::Dispatch(DataServices::ExitRequest, NULL);    
+        amrData_phi[gslib_data_file] = &(dataServices_phi->AmrDataRef());
+      }
+      else {
+        BoxLib::Abort("Cannot assign the same GSLib data file to more than one material");
+      }
+      phi_func = new GSLibProperty(PorosityName,0,amrData_phi[gslib_data_file],arith_crsn,pc_refine);
     }
 
     Property* kappa_func = 0;
@@ -513,27 +786,10 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
       material_regions.push_back(region_names[j]);
     }
 
-    if (ppr.countval("porosity_dist_param")>0) {
-      BoxLib::Abort("porosity_dist_param not currently supported");
-    }
-
-    std::string porosity_dist="uniform"; ppr.query("porosity_dist",porosity_dist);
-    Array<Real> rporosity_dist_param;
-    if (porosity_dist!="uniform") {
-      BoxLib::Abort("porosity_dist != uniform not currently supported");
-      ppr.getarr("porosity_dist_param",rporosity_dist_param,
-                 0,ppr.countval("porosity_dist_param"));
-    }
-        
-    std::string permeability_dist="uniform"; ppr.get("permeability_dist",permeability_dist);
-    Array<Real> rpermeability_dist_param;
-    if (permeability_dist != "uniform") {
-      ppr.getarr("permeability_dist_param",rpermeability_dist_param,
-                 0,ppr.countval("permeability_dist_param"));
-    }
-
     std::vector<Property*> properties;
-    properties.push_back(phi_func);
+    if (phi_func) {
+      properties.push_back(phi_func);
+    }
     properties.push_back(kappa_func);
     if (Dmolec_func) {
       properties.push_back(Dmolec_func);
@@ -772,18 +1028,6 @@ RockManager::GetProperty(Real               time,
   return materialFiller->SetProperty(time,level,mf,pname,dComp,nGrow,ctx,ignore_mixed);
 }
 
-bool
-RockManager::GetPropertyDirect(Real               t,
-                               int                level,
-                               FArrayBox&         fab,
-                               const Box&         box,
-                               const std::string& pname,
-                               int                dComp,
-                               void*              ctx) const
-{
-  return materialFiller->SetPropertyDirect(t,level,fab,box,pname,dComp,ctx);
-}
-
 void
 RockManager::GetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed) const
 {
@@ -831,11 +1075,7 @@ RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Re
 
   // Make temp structure to interact with Property interface
   int nComp = materialFiller->NComp(CapillaryPressureName);
-  static IntVect iv(D_DECL(0,0,0));
-  static Box bx(iv,iv);
-  FArrayBox pc_params(bx,nComp);
-  int level=0; //not really used
-  int dComp=0;
+  Array<Real> pc_params(nComp);
 
   for (int j=0; j<rock.size(); ++j) {
 
@@ -843,14 +1083,14 @@ RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Re
 
     if (N>0) {
       const Property* p = rock[j].Prop(CapillaryPressureName); BL_ASSERT(p!=0);
-      p->eval(time,level,bx,pc_params,dComp);
-      bool is_vG = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_vG);
-      bool is_BC = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_BC);
+      p->Evaluate(time,pc_params);
+      bool is_vG = Is_CP_model_XX(pc_params[CPL_MODEL_ID],CP_model_vG);
+      bool is_BC = Is_CP_model_XX(pc_params[CPL_MODEL_ID],CP_model_BC);
 
       if (is_vG) {
-        Real m      = pc_params(iv,VG_M);
-        Real alpha  = pc_params(iv,VG_ALPHA);
-        Real Sr     = pc_params(iv,VG_SR);
+        Real m      = pc_params[VG_M];
+        Real alpha  = pc_params[VG_ALPHA];
+        Real Sr     = pc_params[VG_SR];
 
         Real mI     = 1/m;
         Real omSrI  = 1/(1-Sr);
@@ -866,9 +1106,9 @@ RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Re
         }
       }
       else if (is_BC) {
-        Real lambda   = pc_params(iv,BC_LAMBDA);
-        Real alpha    = pc_params(iv,BC_ALPHA);
-        Real Sr       = pc_params(iv,BC_SR);
+        Real lambda   = pc_params[BC_LAMBDA];
+        Real alpha    = pc_params[BC_ALPHA];
+        Real Sr       = pc_params[BC_SR];
 
         Real lambdaI  = 1/lambda;
         Real alphaI   = 1/alpha;
@@ -932,22 +1172,18 @@ RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID,
 
   // Make temp structure to interact with Property interface
   int nComp = materialFiller->NComp(CapillaryPressureName);
-  static IntVect iv(D_DECL(0,0,0));
-  static Box bx(iv,iv);
-  FArrayBox pc_params(bx,nComp);
-  int level=0; //not really used
-  int dComp=0;
+  Array<Real> pc_params(nComp);
 
   for (int j=0; j<rock.size(); ++j) {
     const Property* p = rock[j].Prop(CapillaryPressureName); BL_ASSERT(p!=0);
-    p->eval(time,level,bx,pc_params,dComp);
-    bool is_vG = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_vG);
-    bool is_BC = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_BC);
+    p->Evaluate(time,pc_params);
+    bool is_vG = Is_CP_model_XX(pc_params[CPL_MODEL_ID],CP_model_vG);
+    bool is_BC = Is_CP_model_XX(pc_params[CPL_MODEL_ID],CP_model_BC);
 
     if (is_vG) {
-      Real m     = pc_params(iv,VG_M);
-      Real alpha = pc_params(iv,VG_ALPHA);
-      Real Sr    = pc_params(iv,VG_SR);
+      Real m     = pc_params[VG_M];
+      Real alpha = pc_params[VG_ALPHA];
+      Real Sr    = pc_params[VG_SR];
       Real n     = 1./(1-m);
       for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
         int idx = mat_pts[j][i];
@@ -957,9 +1193,9 @@ RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID,
       }
     }
     else if (is_BC) {
-      Real mLambda = -pc_params(iv,BC_LAMBDA);
-      Real alpha   = pc_params(iv,BC_ALPHA);
-      Real Sr      = pc_params(iv,BC_SR);
+      Real mLambda = -pc_params[BC_LAMBDA];
+      Real alpha   =  pc_params[BC_ALPHA];
+      Real Sr      =  pc_params[BC_SR];
       
       for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
         int idx = mat_pts[j][i];
@@ -1008,22 +1244,18 @@ RockManager::DInverseCapillaryPressure(const Real* saturation, int* matID, Real 
 
   // Make temp structure to interact with Property interface
   int nComp = materialFiller->NComp(CapillaryPressureName);
-  static IntVect iv(D_DECL(0,0,0));
-  static Box bx(iv,iv);
-  FArrayBox pc_params(bx,nComp);
-  int level=0; //not really used
-  int dComp=0;
+  Array<Real> pc_params(nComp);
 
   for (int j=0; j<rock.size(); ++j) {
     const Property* p = rock[j].Prop(CapillaryPressureName); BL_ASSERT(p!=0);
-    p->eval(time,level,bx,pc_params,dComp);
-    bool is_vG = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_vG);
-    bool is_BC = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_BC);
+    p->Evaluate(time,pc_params);
+    bool is_vG = Is_CP_model_XX(pc_params[CPL_MODEL_ID],CP_model_vG);
+    bool is_BC = Is_CP_model_XX(pc_params[CPL_MODEL_ID],CP_model_BC);
 
     if (is_vG) {
-      Real m     = pc_params(iv,VG_M);
-      Real alpha = pc_params(iv,VG_ALPHA);
-      Real Sr    = pc_params(iv,VG_SR);
+      Real m     = pc_params[VG_M];
+      Real alpha = pc_params[VG_ALPHA];
+      Real Sr    = pc_params[VG_SR];
       Real n     = 1./(1-m);
       Real b     = -1/m;
       Real fac   = - (1 - Sr)*alpha*m*n;
@@ -1037,9 +1269,9 @@ RockManager::DInverseCapillaryPressure(const Real* saturation, int* matID, Real 
       }
     }
     else if (is_BC) {
-      Real lambda = pc_params(iv,BC_LAMBDA);
-      Real alpha  = pc_params(iv,BC_ALPHA);
-      Real Sr     = pc_params(iv,BC_SR);
+      Real lambda = pc_params[BC_LAMBDA];
+      Real alpha  = pc_params[BC_ALPHA];
+      Real Sr     = pc_params[BC_SR];
       Real fac    = -alpha*lambda;
       Real oplI   = 1+1/lambda;
       Real omSrI = 1/(1 - Sr);
@@ -1090,26 +1322,22 @@ RockManager::RelativePermeability(const Real* saturation, int* matID, Real time,
 
   // Make temp structure to interact with Property interface
   int nComp = materialFiller->NComp(CapillaryPressureName);
-  static IntVect iv(D_DECL(0,0,0));
-  static Box bx(iv,iv);
-  FArrayBox pc_params(bx,nComp);
-  int level=0; //not really used
-  int dComp=0;
+  Array<Real> pc_params(nComp);
 
   for (int j=0; j<rock.size(); ++j) {
     const Property* p = rock[j].Prop(CapillaryPressureName); BL_ASSERT(p!=0);
-    p->eval(time,level,bx,pc_params,dComp);
-    bool is_vG = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_vG);
-    bool is_BC = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_BC);
+    p->Evaluate(time,pc_params);
+    bool is_vG = Is_CP_model_XX(pc_params[CPL_MODEL_ID],CP_model_vG);
+    bool is_BC = Is_CP_model_XX(pc_params[CPL_MODEL_ID],CP_model_BC);
 
     if (is_vG) {
 
-      Real m                     = pc_params(iv,VG_M);
-      Real alpha                 = pc_params(iv,VG_ALPHA);
-      Real Sr                    = pc_params(iv,VG_SR);
-      Real ell                   = pc_params(iv,VG_ELL);
-      int  Kr_model              = pc_params(iv,VG_KR_MODEL_ID);
-      Real Kr_smoothing_max_pcap = pc_params(iv,BC_KR_SMOOTHING_MAX_PC);
+      Real m                     = pc_params[VG_M];
+      Real alpha                 = pc_params[VG_ALPHA];
+      Real Sr                    = pc_params[VG_SR];
+      Real ell                   = pc_params[VG_ELL];
+      int  Kr_model              = pc_params[VG_KR_MODEL_ID];
+      Real Kr_smoothing_max_pcap = pc_params[BC_KR_SMOOTHING_MAX_PC];
 
       Real omSrI = 1/(1 - Sr);
       Real mI = 1/m;
@@ -1177,14 +1405,14 @@ RockManager::RelativePermeability(const Real* saturation, int* matID, Real time,
 
     } else if (is_BC) {
 
-      Real lambda = pc_params(iv,BC_LAMBDA);
-      Real alpha  = pc_params(iv,BC_ALPHA);
-      Real Sr     = pc_params(iv,BC_SR);
-      Real ell    = pc_params(iv,BC_ELL);
+      Real lambda = pc_params[BC_LAMBDA];
+      Real alpha  = pc_params[BC_ALPHA];
+      Real Sr     = pc_params[BC_SR];
+      Real ell    = pc_params[BC_ELL];
       Real omSrI  = 1/(1 - Sr);
 
-      bool is_Mualem  = Is_Kr_model_XX(pc_params(iv,VG_KR_MODEL_ID),Kr_model_BC_Mualem);
-      bool is_Burdine = Is_Kr_model_XX(pc_params(iv,VG_KR_MODEL_ID),Kr_model_BC_Burdine);
+      bool is_Mualem  = Is_Kr_model_XX(pc_params[VG_KR_MODEL_ID],Kr_model_BC_Mualem);
+      bool is_Burdine = Is_Kr_model_XX(pc_params[VG_KR_MODEL_ID],Kr_model_BC_Burdine);
 
       BL_ASSERT(is_Mualem || is_Burdine);
       Real f = (is_Mualem ? ell + 2 + 2/lambda : ell + 1 + 2/lambda);
@@ -1231,27 +1459,23 @@ RockManager::ResidualSaturation(int* matID, Real time, Real* Sr, int npts) const
 
   // Make temp structure to interact with Property interface
   int nComp = materialFiller->NComp(CapillaryPressureName);
-  static IntVect iv(D_DECL(0,0,0));
-  static Box bx(iv,iv);
-  FArrayBox pc_params(bx,nComp);
-  int level=0; //not really used
-  int dComp=0;
+  Array<Real> pc_params(nComp);
 
   for (int j=0; j<rock.size(); ++j) {
     const Property* p = rock[j].Prop(CapillaryPressureName); BL_ASSERT(p!=0);
-    p->eval(time,level,bx,pc_params,dComp);
-    bool is_vG = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_vG);
-    bool is_BC = Is_CP_model_XX(pc_params(iv,CPL_MODEL_ID),CP_model_BC);
+    p->Evaluate(time,pc_params);
+    bool is_vG = Is_CP_model_XX(pc_params[CPL_MODEL_ID],CP_model_vG);
+    bool is_BC = Is_CP_model_XX(pc_params[CPL_MODEL_ID],CP_model_BC);
 
     if (is_vG) {
       for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
         int idx = mat_pts[j][i];
-        Sr[idx] = pc_params(iv,VG_SR);
+        Sr[idx] = pc_params[VG_SR];
       }
     } else if (is_BC) {
       for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
         int idx = mat_pts[j][i];
-        Sr[idx] = pc_params(iv,BC_SR);
+        Sr[idx] = pc_params[BC_SR];
       }
     }
   }

@@ -15,11 +15,10 @@ static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::Aman
 
 #include <PorousMedia.H>
 #include <PROB_PM_F.H>
-#include <POROUS_F.H>
 #include <POROUSMEDIA_F.H>
 #include <VISCOPERATOR_F.H>
-
 #include <RSAMRdata.H>
+#include <RockUtil_F.H>  // FIXME: Should functions in this file be called from here?
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -4081,6 +4080,12 @@ PorousMedia::get_inflow_density(const Orientation& face,
 				const Box&         ccBndBox,
 				Real               t)
 {
+  if (ParallelDescriptor::IOProcessor()) {
+    std::cout << "get_inflow_density needs to be rewritten to work in parallel" << std::endl;
+  }
+  BoxLib::Abort();
+
+#if 0
   Box ovlp = ccBndBox & fab.box();
   if ( (model == PM_STEADY_SATURATED)
        || (model == PM_SATURATED) ) {
@@ -4140,6 +4145,7 @@ PorousMedia::get_inflow_density(const Orientation& face,
 			     dx, &nc, &gravity, lo, hi);
     }
   }
+#endif
 }
 
 
@@ -12054,6 +12060,13 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
     }
   }
 
+#if 0
+  // 
+  // Note: If this is required, it will have to be moved, perhaps to 
+  // set_preferred_boundary_values, where boundary cells are filled
+  // in parallel, since we can only get material properties in parallel
+  // (fills multifabs not fabs)
+  //
   Array<int> bc(BL_SPACEDIM*2,0); // FIXME: Never set, why do we need this
   if (bc_descriptor_map.size()) 
   {
@@ -12094,6 +12107,7 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
       }
     }
   }
+#endif
 }  
 
 void

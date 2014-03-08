@@ -81,14 +81,6 @@ public:
                    void*              ctx = 0,
                    bool               ignore_mixed = false) const;
 
-  bool SetPropertyDirect(Real               t,
-                         int                level,
-                         FArrayBox&         fab,
-                         const Box&         box,
-                         const std::string& pname,
-                         int                dComp,
-                         void*              ctx = 0) const;
-
   /* Fill a MultiFab with the ID of the material at that location, given a
      refinement level (as defined in the ctr), including nGrow cells. The ID
      is consistent with MatIdx()*/
@@ -107,11 +99,11 @@ public:
   int nComp(const std::string& property_name) const;
 
   /* The Geometry object at this level  */
-  const Geometry& Geom(int level) const {return geomArray[level];}
+  const Geometry& Geom(int level) const;
 
   /* The refinement ratio between this level and the next finer. 
      Note, level<NumLevels()-1 */
-  const IntVect& RefRatio(int crse_level) const {return refRatio[crse_level];}
+  const IntVect& RefRatio(int crse_level) const;
 
   /* The set of cells that are "mixed" at this level....i.e., when cells in this set are
      refined to the next finer level, they will be composed of finer cells which do not
@@ -120,38 +112,38 @@ public:
 
   /* The internally cached (minimal) data structure at this level containing the 
      ID of the material at this location.  The ID is consistent with MatIdx(). */
-  iMultiFab& MaterialID(int level) {return materialID[level];}
+  iMultiFab& MaterialID(int level);
 
   /* A map of material name to integer used to identify Materials in this class */
-  const std::map<std::string,int>& MatIdx() const {return matIdx;}
+  const std::map<std::string,int>& MatIdx() const;
 
   /* The number of AMR levels used to uniquely determine the material ID of the cells. */
-  const int NumLevels() const {return nLevs;}
+  int NumLevels() const;
 
   /* Currently, not really critical, since there is no default constructor */
   bool Initialized() const {return initialized;}
 
   /* Given fine property values, generate coarse property values
-     per the coarsen rule registered for this property. */
-  virtual void CoarsenData(const FArrayBox&   fineFab,
-                           int                sComp,
-                           FArrayBox&         crseFab,
-                           const Box&         crseBox,
-                           int                dComp,
-                           int                nComp,
-                           const IntVect&     ref,
-                           const Property::CoarsenRule& rule) const;
-
-  /* Given crse property values, generate fine property values 
-     per the refine rule registered for this property */
-  virtual void RefineData(const FArrayBox&   crseFab,
+     per the given coarsen rule. */
+  static void CoarsenData(const FArrayBox&   fineFab,
                           int                sComp,
-                          FArrayBox&         fineFab,
+                          FArrayBox&         crseFab,
                           const Box&         crseBox,
                           int                dComp,
                           int                nComp,
                           const IntVect&     ref,
-                          const Property::RefineRule& rule) const;
+                          const Property::CoarsenRule& rule);
+
+  /* Given crse property values, generate fine property values 
+     per the given refine rule */
+  static void RefineData(const FArrayBox&   crseFab,
+                         int                sComp,
+                         FArrayBox&         fineFab,
+                         const Box&         crseBox,
+                         int                dComp,
+                         int                nComp,
+                         const IntVect&     ref,
+                         const Property::RefineRule& rule);
 
 protected:
 
