@@ -138,7 +138,7 @@ Results and Comparison
     :align: center
 
 
- .. include:: table_values.txt
+.. .. include:: table_values.txt
 
 
 References
