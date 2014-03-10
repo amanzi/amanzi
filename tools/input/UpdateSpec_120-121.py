@@ -94,7 +94,7 @@ def WriteModel(xml_output,Model_lines):
             continue
         elif ( TransientWithStatic_fix ):
             if ( 'name="Flow Model"' in line ):
-                xml_output.write("%s\n" % ( re.sub(r'value="Off"','value="Single-phase"', line)) )
+                xml_output.write("%s\n" % ( re.sub(r'value="Off"','value="Single Phase"', line)) )
             elif ( 'name="Time Integration Mode"' in line ):
                 TIMode_tag=True
                 xml_output.write("%s\n" % ( line ) )
