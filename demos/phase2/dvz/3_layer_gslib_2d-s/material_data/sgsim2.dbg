@@ -9,6 +9,6 @@
 
 
  Realization : number   =   114756
-               mean     =       0.0618 (close to 0.0?)
-               variance =       1.2000 (close to gammabar(V,V)? approx. 1.0)
+               mean     =       0.4872 (close to 0.0?)
+               variance =       1.1613 (close to gammabar(V,V)? approx. 1.0)
 
