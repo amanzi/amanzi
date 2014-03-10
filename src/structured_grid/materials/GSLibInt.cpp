@@ -1,6 +1,7 @@
 #include <winstd.H>
 #include <iostream>
 #include <fstream>
+#include <unistd.h>
 
 #include <GSLibInt.H>
 #include <GSLibInt_F.H>
@@ -268,10 +269,9 @@ GSLibInt::cndGaussianSim(const Array<Real>& kappaval,
     ParallelDescriptor::Bcast(scratch_c.dataPtr(),c_sz,IOProc);
   }
 
-  
   bx.refine(twoexp);
   BoxArray ba(bx); 
-  ba.maxSize(max_grid_size_fine_gen);
+  //ba.maxSize(max_grid_size_fine_gen);
   MultiFab mf(ba,1,ngrow_fine_gen);
   mf.setVal(0.);
   

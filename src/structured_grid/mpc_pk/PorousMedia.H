@@ -405,7 +405,6 @@ public:
   static void setup_list ();
   static void read_params ();   // Read input file
   static void read_geometry ();
-  static void read_rock ();
   static void read_prob ();
   static void read_comp (); 
   static void read_tracer (); 

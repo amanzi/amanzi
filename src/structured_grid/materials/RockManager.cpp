@@ -238,8 +238,6 @@ RockManager::BuildGSLibFile(Real                   avg,
     twoexp *= ref_ratio[i-1][0];  // FIXME: Assumes uniform refinement
   }
 
-  max_grid_size_fine_gen = twoexp * 4;
-
   PArray<MultiFab> stat(nLev,PArrayManage);
   BoxArray stat_ba(stat_box);
   stat_ba.maxSize(max_grid_size_fine_gen);

@@ -1209,23 +1209,29 @@ namespace Amanzi {
                                ParameterList&       fPLout)
     {
       fPLout.set<std::string>("distribution_type","gslib");
-      Array<std::string> optP, reqP;
-      const std::string param_file_name="GSLib Parameter File"; reqP.push_back(param_file_name);
-      const std::string shift_name="GSLib Coordinate Shift"; optP.push_back(shift_name);
-      const std::string data_file_name="GSLib Data File"; optP.push_back(data_file_name);
-      PLoptions opt(fPLin,optP,reqP,true,true); 
+      Array<std::string> nullList, reqP;
+      const std::string param_file_name="GSLib Parameter File";
+      const std::string data_file_name="GSLib Data File"; reqP.push_back(data_file_name);
+      const std::string value_name="Value"; reqP.push_back(value_name);
+      const std::string std_name="Std";
+      PLoptions opt(fPLin,nullList,reqP,false,false);
 
-      fPLout.set<std::string>("gslib_param_file",fPLin.get<std::string>(param_file_name));
-      if (fPLin.isParameter(shift_name)) {
-        const Array<double>& shift = fPLin.get<Array<double> >(shift_name);
-        fPLout.set<Array<double> >("gslib_file_shift",shift);
+      fPLout.set<std::string>("gslib_data_file",fPLin.get<std::string>(data_file_name));
+      fPLout.set<double>("val",fPLin.get<double>(value_name));
+      const Array<std::string>& optP = opt.OptParms();
+      for (int i=0; i<optP.size(); ++i) {
+	if (optP[i] == param_file_name) {
+	  fPLout.set<std::string>("gslib_param_file",fPLin.get<std::string>(param_file_name));
+	}
+	else if (optP[i] == std_name) {
+	  fPLout.set<double>("std",fPLin.get<double>(std_name));
+	}
+	else {
+          std::string str = "Unrecognized \"Porosity: GSLib\" option";
+          std::cout << fPLin << std::endl;
+          BoxLib::Abort(str.c_str());
+	}
       }
-
-      std::string gslib_data_file="porosity_gslib_data";
-      if (fPLin.isParameter(data_file_name)) {
-        gslib_data_file = fPLin.get<std::string>(data_file_name);
-      }
-      fPLout.set<std::string>("gslib_data_file",gslib_data_file);
     }
 
     void convert_PermeabilityAnisotropic(const ParameterList& fPLin,

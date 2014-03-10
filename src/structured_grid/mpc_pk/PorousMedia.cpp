@@ -8661,16 +8661,12 @@ PorousMedia::init_rock_properties ()
   bool ignore_mixed = true;
   rockMgr->GetMaterialID(level,*materialID,nGrow,ignore_mixed);
 
-
-  //
-  // Determine rock properties.
-  //
   const Real* dx = geom.CellSize();
   const int max_level = parent->maxLevel();
+  Real cur_time = state[State_Type].curTime();
 
   MultiFab kappatmp(grids,BL_SPACEDIM,nGrowHYP);
-  bool ret = rockMgr->GetProperty(state[State_Type].curTime(),level,kappatmp,
-                                  "permeability",0,kappatmp.nGrow());
+  bool ret = rockMgr->GetProperty(cur_time,level,kappatmp,"permeability",0,kappatmp.nGrow());
   if (!ret) BoxLib::Abort("Failed to build permeability");
   
   for (MFIter mfi(kappatmp); mfi.isValid(); ++mfi) {
@@ -8692,9 +8688,7 @@ PorousMedia::init_rock_properties ()
   }
   kappa->mult(1.0/BL_SPACEDIM);
 
-  bool ret1 = rockMgr->GetProperty(state[State_Type].curTime(),level,*rock_phi,
-                                   "porosity",0,rock_phi->nGrow());
-  if (!ret1) BoxLib::Abort("Failed to build porosity");
+  rockMgr->Porosity(cur_time,level,*rock_phi,0,rock_phi->nGrow());
 
   if ( (model != PM_SINGLE_PHASE)
        && (model != PM_SINGLE_PHASE_SOLID)
@@ -12330,18 +12324,12 @@ PorousMedia::derive_Material_ID(Real      time,
 {
   BL_ASSERT(dcomp < mf.nComp());  
   const int ngrow = mf.nGrow();
-  const Real* dx = geom.CellSize();
-  
-  BoxArray dstBA(mf.boxArray());
-  mf.setVal(-1,dcomp,1,ngrow);  
   for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
     FArrayBox& fab = mf[mfi];
-    for (int i=0; i<materials.size(); ++i) {
-      Real val = (Real)i;
-      const Array<const Region*>& mat_regions = materials[i].Regions();
-      for (int j=0; j<mat_regions.size(); ++j) {
-        mat_regions[j]->setVal(fab,val,dcomp,dx,0);
-      }
+    const IArrayBox& ifab = (*materialID)[mfi];
+    Box box=Box(mfi.validbox()).grow(ngrow);
+    for (IntVect iv=box.smallEnd(), End=box.bigEnd(); iv<=End; box.next(iv)) {
+      fab(iv,dcomp) = ifab(iv,0);
     }
   }
 }
