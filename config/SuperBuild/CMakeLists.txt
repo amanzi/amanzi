@@ -63,8 +63,11 @@ set(SuperBuild_TEMPLATE_FILES_DIR "${SuperBuild_SOURCE_DIR}/templates")
 include(FortranCInterface)
 FortranCInterface_VERIFY()
 
-include(DefineCompilerVersion)
-define_compiler_version()
+#include(DefineCompilerVersion)
+#define_compiler_version()
+message(STATUS "CMake C compiler version -- ${CMAKE_C_COMPILER_VERSION}")
+message(STATUS "CMake C++ compiler version -- ${CMAKE_CXX_COMPILER_VERSION}")
+#message(STATUS "CMake Fortran compiler version -- ${CMAKE_FORTRAN_COMPILER_VERSION}")
 
 include(CheckMPISourceCompiles)
 check_mpi_source_compiles(MPI_WRAPPERS_IN_USE)
