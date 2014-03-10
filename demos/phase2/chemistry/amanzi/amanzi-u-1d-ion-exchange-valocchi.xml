@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="1D Flow and Transport with ion exchange"/>
   </ParameterList>
@@ -163,28 +163,24 @@
                 <Parameter name="Value" type="double" value="8.674633E-02"/>
                 <Parameter name="Free Ion Guess" type="double" value="8.674633E-02"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Ca++">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.825183E-02"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.825183E-02"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Mg++">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.113161E-02"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.113161E-02"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Cl-">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.4551321E-01"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.4551321E-01"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -210,7 +206,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{9.426769E-03, 9.426769E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Ca++">
               <ParameterList name="BC: Uniform Concentration">
@@ -218,7 +213,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{5.014239E-04, 5.014239E-04}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Mg++">
               <ParameterList name="BC: Uniform Concentration">
@@ -226,7 +220,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.136066E-03, 2.136066E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Cl-">
               <ParameterList name="BC: Uniform Concentration">
@@ -234,7 +227,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.47017488E-02, 1.47017488E-02}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -256,7 +248,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Ca++">
               <ParameterList name="BC: Zero Gradient">
@@ -264,7 +255,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Mg++">
               <ParameterList name="BC: Zero Gradient">
@@ -272,7 +262,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Cl-">
               <ParameterList name="BC: Zero Gradient">
@@ -280,7 +269,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -303,9 +291,9 @@
     </ParameterList>
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="ion-exchange-valocchi"/>
-      <Parameter name="File Name Digits" type="string" value="5"/>
-<!--      <Parameter name="Time Macro" type="string" value="Every_0.05_year"/> -->
-      <Parameter name="Cycle Macro" type="string" value="Every_step"/>
+      <Parameter name="File Name Digits" type="int" value="5"/>
+<!--      <Parameter name="Time Macros" type="string" value="Every_0.05_year"/> -->
+      <Parameter name="Cycle Macros" type="Array(string)" value="Every_step"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Chemistry">

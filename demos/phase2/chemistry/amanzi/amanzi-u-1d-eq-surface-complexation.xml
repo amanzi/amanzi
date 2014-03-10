@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="1D Flow and Transport with equilibrium surface complexation"/>
   </ParameterList>
@@ -164,25 +164,21 @@
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.0e-06"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Na+">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.0e-6"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="NO3-">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="4.0e-6"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Zn++">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.0e-6"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -207,7 +203,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0e-5,1.0e-5}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Na+">
               <ParameterList name="BC: Uniform Concentration">
@@ -215,7 +210,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0e-01,1.0e-01}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="NO3-">
               <ParameterList name="BC: Uniform Concentration">
@@ -223,7 +217,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0003e-01,1.0003e-01}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Zn++">
               <ParameterList name="BC: Uniform Concentration">
@@ -231,7 +224,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0e-05,1.0e-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -253,7 +245,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Na+">
               <ParameterList name="BC: Zero Gradient">
@@ -261,7 +252,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="NO3-">
               <ParameterList name="BC: Zero Gradient">
@@ -269,7 +259,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Zn++">
               <ParameterList name="BC: Zero Gradient">
@@ -277,7 +266,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -292,8 +280,8 @@
     </ParameterList>
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="surface-complexation"/>
-      <Parameter name="File Name Digits" type="string" value="5"/>
-      <Parameter name="Time Macro" type="Array(string)" value="{Every_0.05_year}"/>
+      <Parameter name="File Name Digits" type="int" value="5"/>
+      <Parameter name="Time Macros" type="Array(string)" value="{Every_0.05_year}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Chemistry">
