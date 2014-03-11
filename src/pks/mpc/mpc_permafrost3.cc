@@ -106,15 +106,13 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   precon_->InitPreconditioner();
 
   // Potential create the solver
-  // NOTE: for this to be enabled, we must first implement the forward
-  // operator's assembly for MatrixMFD_Coupled_Surf -- etc
-  // if (plist_->isSublist("Coupled Solver")) {
-  //   Teuchos::ParameterList linsolve_sublist = plist_->sublist("Coupled Solver");
-  //   AmanziSolvers::LinearOperatorFactory<TreeMatrix,TreeVector,TreeVectorSpace> fac;
-  //   lin_solver_ = fac.Create(linsolve_sublist, precon_);
-  // } else {
+  if (plist_->isSublist("Coupled Solver")) {
+    Teuchos::ParameterList linsolve_sublist = plist_->sublist("Coupled Solver");
+    AmanziSolvers::LinearOperatorFactory<TreeMatrix,TreeVector,TreeVectorSpace> fac;
+    lin_solver_ = fac.Create(linsolve_sublist, precon_);
+  } else {
     lin_solver_ = precon_;
-  // }
+  }
 
   // select the method used for preconditioning
   std::string precon_string = plist_->get<std::string>("preconditioner type", "picard");
@@ -380,6 +378,13 @@ MPCPermafrost3::update_precon(double t,
   Teuchos::RCP<const CompositeVector> dEdp_domain =
       S_next_->GetFieldData("denergy_dpressure");
 
+  // write for debugging
+  std::vector<std::string> vnames;
+  vnames.push_back("  dwc_dT"); vnames.push_back("  de_dp"); 
+  std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+  vecs.push_back(dWCdT_domain.ptr()); vecs.push_back(dEdp_domain.ptr());
+  domain_db_->WriteVectors(vnames, vecs, false);
+
   // ALWAYS 0!
   // S_next_->GetFieldEvaluator("surface_water_content")
   //     ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "surface_temperature");
@@ -391,21 +396,22 @@ MPCPermafrost3::update_precon(double t,
   Teuchos::RCP<const CompositeVector> dEdp_surf =
       S_next_->GetFieldData("dsurface_energy_dsurface_pressure");
 
+  // write for debugging
+  vnames.erase();
+  vecs.erase();
+  vnames.push_back("  de_dp surf"); 
+  vecs.push_back(dEdp_surf.ptr());
+  surf_db_->WriteVectors(vnames, vecs, false);
+
+  // Scale by 1/h
   precon_->SetOffDiagonals(dWCdT_domain->ViewComponent("cell",false),
                            dEdp_domain->ViewComponent("cell",false),
                            Teuchos::null, // dWC_dT = 0
                            dEdp_surf->ViewComponent("cell",false),
                            1./h);
 
-  // Assemble the PC
+  // Assemble the precon, form Schur complement
   precon_->ComputeSchurComplement();
-
-  // // dump the schur complement
-  // Teuchos::RCP<const Epetra_FEVbrMatrix> sc = precon_->Schur();
-  // std::stringstream filename_s;
-  // filename_s << "schur_" << S_next_->cycle() << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-
   precon_->UpdatePreconditioner();
 
   // ewc precon

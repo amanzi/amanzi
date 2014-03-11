@@ -36,7 +36,6 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
           const Teuchos::RCP<const Epetra_MultiVector>& Ccc_surf=Teuchos::null,
           const Teuchos::RCP<const Epetra_MultiVector>& Dcc_surf=Teuchos::null,
           double scaling=1.) {
-    scaling_ = scaling;
     MatrixMFD_Coupled::SetOffDiagonals(Ccc,Dcc,scaling);
     if (Ccc_surf == Teuchos::null) {
       Teuchos::RCP<Epetra_MultiVector> Ccc_s = 
@@ -56,16 +55,9 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
       Dcc_surf_ = Dcc_surf;
     }
   }
-
-  
   
   void SetSurfaceOperators(const Teuchos::RCP<MatrixMFD_TPFA>& surface_A,
-                           const Teuchos::RCP<MatrixMFD_TPFA>& surface_B) {
-    surface_A_ = surface_A;
-    surface_B_ = surface_B;
-    ASSERT(surface_A_->Mesh() == surface_B_->Mesh());
-    surface_mesh_ = surface_A_->Mesh();
-  }
+                           const Teuchos::RCP<MatrixMFD_TPFA>& surface_B);
 
   void GetSurfaceOperators(Teuchos::RCP<MatrixMFD_TPFA>& surface_A,
                            Teuchos::RCP<MatrixMFD_TPFA>& surface_B) {
@@ -73,6 +65,15 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
     surface_B = surface_B_;
   }
 
+  virtual int Apply(const TreeVector& X,
+                    TreeVector& Y) const;
+  virtual void Apply(const TreeVector& X,
+                     const Teuchos::Ptr<TreeVector>& Y) const {
+    Apply(X,*Y); }
+
+  virtual void UpdateConsistentFaceCorrection(const TreeVector& u,
+          const Teuchos::Ptr<TreeVector>& Pu);
+  
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh_;
   Teuchos::RCP<MatrixMFD_TPFA> surface_A_;
@@ -81,6 +82,9 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
   Teuchos::RCP<const Epetra_MultiVector> Ccc_surf_;
   Teuchos::RCP<const Epetra_MultiVector> Dcc_surf_;
 
+  Teuchos::RCP<const Epetra_Import> surf_importer_;
+  Teuchos::RCP<const Epetra_Map> surf_map_in_subsurf_;
+  
   double scaling_;
   bool dump_schur_;
 };

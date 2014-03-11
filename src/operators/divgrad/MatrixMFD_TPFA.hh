@@ -50,6 +50,9 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
   virtual int ApplyInverse(const CompositeVector& X,
                             CompositeVector& Y) const;
 
+  int Apply(const Epetra_MultiVector& X,
+            Epetra_MultiVector& Y) const;
+  
   void AnalyticJacobian(const CompositeVector& height,
                         const CompositeVector& potential,
                         const CompositeVector& Krel,

@@ -322,8 +322,8 @@ int MatrixMFD_TPFA::Apply(const CompositeVector& X,
 			   CompositeVector& Y) const {
   AssertAssembledOperator_or_die_();
 
-  int ierr = (*Spp_).Multiply(false, *X.ViewComponent("cell",false),
-          *Y.ViewComponent("cell",false));
+  int ierr = Spp_->Multiply(false, *X.ViewComponent("cell",false),
+                            *Y.ViewComponent("cell",false));
 
   if (Y.HasComponent("face")) {
     Epetra_MultiVector& Yf = *Y.ViewComponent("face",false);
@@ -337,6 +337,19 @@ int MatrixMFD_TPFA::Apply(const CompositeVector& X,
   }
   return ierr;
 }
+
+// Apply, for the cell-only system
+int MatrixMFD_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+  AssertAssembledOperator_or_die_();
+
+  int ierr = Spp_->Multiply(false, X, Y);
+  if (ierr) {
+    Errors::Message msg("MatrixMFD_TPFA::Apply has failed to calculate y = A*x.");
+    Exceptions::amanzi_throw(msg);
+  }
+  return ierr;
+}
+
 
 
 

@@ -100,41 +100,19 @@ void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
     Teuchos::RCP<const CompositeVector> dA_dy2 = S_next_->GetFieldData(dA_dy2_key_);
     Teuchos::RCP<const CompositeVector> dB_dy1 = S_next_->GetFieldData(dB_dy1_key_);
 
-    // collect derivatives
-    Teuchos::RCP<Epetra_MultiVector> Ccc =
-        Teuchos::rcp(new Epetra_MultiVector(*dA_dy2->ViewComponent("cell",false)));
-    (*Ccc) = *dA_dy2->ViewComponent("cell",false);
-
-    Teuchos::RCP<Epetra_MultiVector> Dcc =
-        Teuchos::rcp(new Epetra_MultiVector(*dB_dy1->ViewComponent("cell",false)));
-    (*Dcc) = *dB_dy1->ViewComponent("cell",false);
-
-    Teuchos::RCP<const CompositeVector> dsi_dp = S_next_->GetFieldData("dsaturation_ice_dpressure");
-    Teuchos::RCP<const CompositeVector> dsi_dT = S_next_->GetFieldData("dsaturation_ice_dtemperature");
-
+    // write for debugging
     std::vector<std::string> vnames;
     vnames.push_back("  dwc_dT"); vnames.push_back("  de_dp"); 
-    vnames.push_back("    dsi_dp"); vnames.push_back("    dsi_dT");
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
     vecs.push_back(dA_dy2.ptr()); vecs.push_back(dB_dy1.ptr());
-    vecs.push_back(dsi_dp.ptr()); vecs.push_back(dsi_dT.ptr());
     db_->WriteVectors(vnames, vecs, false);
 
     // scale by 1/h
-    Ccc->Scale(1./h);
-    Dcc->Scale(1./h);
-    mfd_preconditioner_->SetOffDiagonals(Ccc,Dcc);
-
-    // compute
-    if (std::abs(S_next_->time() - 3.04746e+07) < 68690.3) {
-    //    if (std::abs(S_next_->time() - 3.03337e+07) < 68690.3) {
-      std::cout << "DUMPING SCHUR!" << std::endl;
-      mfd_preconditioner_->ComputeSchurComplement(true);
-    } else {
-      mfd_preconditioner_->ComputeSchurComplement();
-    }
+    mfd_preconditioner_->SetOffDiagonals(dA_dy2->ViewComponent("cell",false),
+            dB_dy1->ViewComponent("cell",false), 1./h);
 
     // Assemble the precon, form Schur complement
+    mfd_preconditioner_->ComputeSchurComplement();
     mfd_preconditioner_->UpdatePreconditioner();
   }
 }
