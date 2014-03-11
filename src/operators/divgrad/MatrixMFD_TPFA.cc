@@ -268,6 +268,8 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
 
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       Bpp(n, n) = Dcc_c[0][c] / faces.size();
+      ASSERT(std::abs(Dcc_c[0][c] / faces.size()) < 1.e40);
+
       if (c < ncells_owned) {
         int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
         ASSERT(i>=0);
@@ -282,14 +284,35 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
     for (int n = 0; n < mcells; n++) {
       for (int m = 0; m < mcells; m++) {
         Bpp(n, m) -= Acf_copy[n] / Dff_f[0][f] * Afc_copy[m];
+	ASSERT(std::abs(Acf_copy[n] / Dff_f[0][f] * Afc_copy[m]) < 1.e40);
       }
     }
 
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Bpp.values());
   }
   (*Spp_).GlobalAssemble();
+
+  // Check min
+#ifdef ENABLE_DBC
+  Epetra_Vector Spp_diag(mesh_->cell_map(false));
+  Spp_->ExtractDiagonalCopy(Spp_diag);
+  double minval;
+  double maxval;
+  Spp_diag.MinValue(&minval);
+  Spp_diag.MaxValue(&maxval);
+  ASSERT(std::abs(minval) < 1.e40);
+  ASSERT(std::abs(maxval) < 1.e40);
+#endif
 }
 
+
+void
+MatrixMFD_TPFA::ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
+				       const std::vector<double>& bc_values) {
+  AssertAssembledOperator_or_die_();
+  assembled_schur_ = true;
+  Sff_ = Spp_;
+}
 
 
 /* ******************************************************************
@@ -297,6 +320,7 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
  ****************************************************************** */
 int MatrixMFD_TPFA::Apply(const CompositeVector& X,
 			   CompositeVector& Y) const {
+  AssertAssembledOperator_or_die_();
 
   int ierr = (*Spp_).Multiply(false, *X.ViewComponent("cell",false),
           *Y.ViewComponent("cell",false));
@@ -318,6 +342,9 @@ int MatrixMFD_TPFA::Apply(const CompositeVector& X,
 
 int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
 				 CompositeVector& Y) const {
+  AssertAssembledOperator_or_die_();
+  AssertAssembledSchur_or_die_();
+
   // Solve the Schur complement system Spp * Yc = Xc.
   int ierr = 0;
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell",false);
@@ -354,6 +381,7 @@ int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
 
 void MatrixMFD_TPFA::UpdateConsistentFaceConstraints(
     const Teuchos::Ptr<CompositeVector>& u) {
+  AssertAssembledOperator_or_die_();
 
   Teuchos::RCP<const Epetra_MultiVector> uc = u->ViewComponent("cell", false);
   Epetra_MultiVector& uf = *u->ViewComponent("face", false);
@@ -373,6 +401,7 @@ void MatrixMFD_TPFA::UpdateConsistentFaceConstraints(
 
 void MatrixMFD_TPFA::UpdateConsistentFaceCorrection(const CompositeVector& u,
     const Teuchos::Ptr<CompositeVector>& Pu) {
+  AssertAssembledOperator_or_die_();
 
   Teuchos::RCP<const Epetra_MultiVector> Pu_c = Pu->ViewComponent("cell", false);
   Epetra_MultiVector& Pu_f = *Pu->ViewComponent("face", false);
@@ -399,6 +428,8 @@ void MatrixMFD_TPFA::AnalyticJacobian(const CompositeVector& height,
         const CompositeVector& dKrel_dp,
         const CompositeVector& Krel_cell,
         const CompositeVector& dKrel_cell_dp) {
+
+  AssertAssembledOperator_or_die_();
 
   // maps and counts
   AmanziMesh::Entity_ID_List faces;
@@ -479,6 +510,18 @@ void MatrixMFD_TPFA::AnalyticJacobian(const CompositeVector& height,
   }
 
   Spp_->GlobalAssemble();
+
+  // Check min
+#ifdef ENABLE_DBC
+  Epetra_Vector Spp_diag(mesh_->cell_map(false));
+  Spp_->ExtractDiagonalCopy(Spp_diag);
+  double minval;
+  double maxval;
+  Spp_diag.MinValue(&minval);
+  Spp_diag.MaxValue(&maxval);
+  ASSERT(std::abs(minval) < 1.e40);
+  ASSERT(std::abs(maxval) < 1.e40);
+#endif
 }
 
 
