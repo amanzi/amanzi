@@ -24,10 +24,10 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
 
   // -- turn off PC assembly: <Parameter name="assemble preconditioner" type="bool" value="false"/>
-  plist_->sublist("PKs").sublist(names[0]).set("assemble preconditioner", false);
-  plist_->sublist("PKs").sublist(names[1]).set("assemble preconditioner", false);
-  plist_->sublist("PKs").sublist(names[2]).set("assemble preconditioner", false);
-  plist_->sublist("PKs").sublist(names[3]).set("assemble preconditioner", false);
+  plist_->sublist("PKs").sublist(names[0]).set("assemble preconditioner", true);
+  plist_->sublist("PKs").sublist(names[1]).set("assemble preconditioner", true);
+  plist_->sublist("PKs").sublist(names[2]).set("assemble preconditioner", true);
+  plist_->sublist("PKs").sublist(names[3]).set("assemble preconditioner", true);
 
   // -- turn on coupling
   plist_->sublist("PKs").sublist(names[0]).set("coupled to surface via flux", true);
@@ -36,8 +36,8 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   plist_->sublist("PKs").sublist(names[3]).set("coupled to subsurface via flux", true);
 
   // -- set up PC coupling
-  plist_->sublist("PKs").sublist(names[0]).sublist("Diffusion PC").set("coupled to surface", true);
-  plist_->sublist("PKs").sublist(names[1]).sublist("Diffusion PC").set("coupled to surface", true);
+  //  plist_->sublist("PKs").sublist(names[0]).sublist("Diffusion PC").set("coupled to surface", true);
+  //  plist_->sublist("PKs").sublist(names[1]).sublist("Diffusion PC").set("coupled to surface", true);
   plist_->sublist("PKs").sublist(names[2]).sublist("Diffusion PC").set("TPFA", true);
   plist_->sublist("PKs").sublist(names[3]).sublist("Diffusion PC").set("TPFA", true);
 
@@ -66,10 +66,19 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   precon_ = Teuchos::rcp(new Operators::MatrixMFD_Coupled_Surf(pc_sublist, domain_mesh_));
 
   // -- Collect the sub-blocks.
+/*
   pc_flow_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(
       domain_flow_pk_->preconditioner());
   ASSERT(pc_flow_ != Teuchos::null);
   pc_energy_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(
+      domain_energy_pk_->preconditioner());
+  ASSERT(pc_energy_ != Teuchos::null);
+*/
+
+  pc_flow_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(
+      domain_flow_pk_->preconditioner());
+  ASSERT(pc_flow_ != Teuchos::null);
+  pc_energy_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(
       domain_energy_pk_->preconditioner());
   ASSERT(pc_energy_ != Teuchos::null);
 
@@ -80,6 +89,7 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
       surf_energy_pk_->preconditioner());
   ASSERT(pc_surf_energy_ != Teuchos::null);
 
+/*
   // -- Subsurface blocks include their surface operators.
   pc_flow_->SetSurfaceOperator(pc_surf_flow_);
   pc_energy_->SetSurfaceOperator(pc_surf_energy_);
@@ -87,6 +97,7 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   // -- must re-symbolic assemble surf operators, now that they have a surface operator
   pc_flow_->SymbolicAssembleGlobalMatrices();
   pc_energy_->SymbolicAssembleGlobalMatrices();
+*/
 
   // -- finally, set the sub blocks in the coupled PC
   precon_->SetSubBlocks(pc_flow_, pc_energy_);
@@ -104,7 +115,22 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   // } else {
     lin_solver_ = precon_;
   // }
-  
+
+  // select the method used for preconditioning
+  std::string precon_string = plist_->get<std::string>("preconditioner type", "picard");
+  if (precon_string == "none") {
+    precon_type_ = PRECON_NONE;
+  } else if (precon_string == "picard") {
+    precon_type_ = PRECON_PICARD;
+  } else if (precon_string == "ewc") {
+    precon_type_ = PRECON_EWC;
+  } else if (precon_string == "smart ewc") {
+    precon_type_ = PRECON_EWC;
+  } else {
+    Errors::Message message(std::string("Invalid preconditioner type ")+precon_string);
+    Exceptions::amanzi_throw(message);
+  }
+
   // set up the EWC delegates
   Teuchos::RCP<Teuchos::ParameterList> sub_ewc_list = Teuchos::sublist(plist_, "subsurface ewc delegate");
   sub_ewc_list->set("PK name", name_);
@@ -250,6 +276,46 @@ MPCPermafrost3::precon(Teuchos::RCP<const TreeVector> u,
     *vo_->os() << "Precon applying coupled subsurface operator." << std::endl;
   lin_solver_->ApplyInverse(*domain_u_tv, *domain_Pu_tv);
 
+  // call EWC precon
+  if (precon_type_ == PRECON_EWC) {
+    // dump std correction to screen
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      std::vector<std::string> vnames;
+      vnames.push_back("p");
+      vnames.push_back("PC*p");
+      vnames.push_back("T");
+      vnames.push_back("PC*T");
+
+      std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+      vecs.push_back(domain_u_tv->SubVector(0)->Data().ptr());
+      vecs.push_back(domain_Pu_tv->SubVector(0)->Data().ptr());
+      vecs.push_back(domain_u_tv->SubVector(1)->Data().ptr());
+      vecs.push_back(domain_Pu_tv->SubVector(1)->Data().ptr());
+
+      *vo_->os() << " Subsurface precon (pre-EWC):" << std::endl;
+      domain_db_->WriteVectors(vnames, vecs, true);
+    }
+
+    // make sure we can back-calc face corrections that preserve residuals on faces
+    Teuchos::RCP<TreeVector> res0 = Teuchos::rcp(new TreeVector(*domain_u_tv));
+    res0->PutScalar(0.);
+    Teuchos::RCP<TreeVector> Pu_std = Teuchos::rcp(new TreeVector(*domain_Pu_tv));
+    *Pu_std = *domain_Pu_tv;
+
+    // call EWC, which does Pu_p <-- Pu_p_std + dPu_p
+    sub_ewc_->precon(domain_u_tv, domain_Pu_tv);
+
+    // calculate dPu_lambda from dPu_p
+    Pu_std->Update(1.0, *domain_Pu_tv, -1.0);
+    precon_->UpdateConsistentFaceCorrection(*res0, Pu_std.ptr());
+
+    // update Pu_lambda <-- Pu_lambda_std + dPu_lambda
+    domain_Pu_tv->SubVector(0)->Data()->ViewComponent("face",false)->Update(1.,
+            *Pu_std->SubVector(0)->Data()->ViewComponent("face",false), 1.);
+    domain_Pu_tv->SubVector(1)->Data()->ViewComponent("face",false)->Update(1.,
+            *Pu_std->SubVector(1)->Data()->ViewComponent("face",false), 1.);
+  }
+
   // Copy subsurface face corrections to surface cell corrections
   CopySubsurfaceToSurface(*Pu->SubVector(0)->Data(),
                           Pu->SubVector(2)->Data().ptr());
@@ -297,7 +363,11 @@ MPCPermafrost3::update_precon(double t,
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
   // Create the on-diagonal block PCs
-  StrongMPC<PKPhysicalBDFBase>::update_precon(t,up,h);
+  //  StrongMPC<PKPhysicalBDFBase>::update_precon(t,up,h);
+  sub_pks_[2]->update_precon(t, up->SubVector(2), h);
+  sub_pks_[3]->update_precon(t, up->SubVector(3), h);
+  sub_pks_[0]->update_precon(t, up->SubVector(0), h);
+  sub_pks_[1]->update_precon(t, up->SubVector(1), h);
 
   // Add the off-diagonal blocks.
   S_next_->GetFieldEvaluator("water_content")
@@ -337,6 +407,11 @@ MPCPermafrost3::update_precon(double t,
   // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
 
   precon_->UpdatePreconditioner();
+
+  // ewc precon
+  if (precon_type_ == PRECON_EWC) {
+    sub_ewc_->update_precon(t, up, h);
+  }
 }
 
 // -- Modify the predictor.

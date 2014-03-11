@@ -62,6 +62,12 @@ class MPCPermafrost3 : public StrongMPC<PKPhysicalBDFBase> {
   // IteratateFlow_(double h, const Teuchos::RCP<TreeVector>& u);
 
  protected:
+  enum PreconditionerType {
+    PRECON_NONE = 0,
+    PRECON_BLOCK_DIAGONAL = 1,
+    PRECON_PICARD = 2,
+    PRECON_EWC = 3
+  };
 
   // sub PKs
   Teuchos::RCP<PKPhysicalBDFBase> domain_flow_pk_;
@@ -77,9 +83,14 @@ class MPCPermafrost3 : public StrongMPC<PKPhysicalBDFBase> {
   Teuchos::RCP<TreeMatrix> lin_solver_;
   Teuchos::RCP<Operators::MatrixMFD_Coupled_Surf> precon_;
 
+  // preconditioner methods
+  PreconditionerType precon_type_;
+
   // subblocks of the preconditioner
-  Teuchos::RCP<Operators::MatrixMFD_Surf> pc_flow_;
-  Teuchos::RCP<Operators::MatrixMFD_Surf> pc_energy_;
+  // Teuchos::RCP<Operators::MatrixMFD_Surf> pc_flow_;
+  // Teuchos::RCP<Operators::MatrixMFD_Surf> pc_energy_;
+  Teuchos::RCP<Operators::MatrixMFD> pc_flow_;
+  Teuchos::RCP<Operators::MatrixMFD> pc_energy_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> pc_surf_flow_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> pc_surf_energy_;
 
