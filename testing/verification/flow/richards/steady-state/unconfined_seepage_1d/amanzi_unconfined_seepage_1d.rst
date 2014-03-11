@@ -130,13 +130,15 @@ are summarized as:
 	* variable: :math:`2.5 ft \leqslant \Delta z \leqslant 5 ft`
 
 Results and Comparison
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
-  .. include:: table_values.txt
 
-  .. plot:: amanzi_unconfined_seepage_1d.py 
-     :width: 5in
-     :align: left
+ .. image:: figures/hydraulic_head.png
+    :width: 4in
+    :align: center
+
+
+.. .. include:: table_values.txt
 
 
 References

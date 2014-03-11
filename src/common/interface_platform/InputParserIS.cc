@@ -907,6 +907,13 @@ Teuchos::ParameterList create_TimePeriodControl_List(Teuchos::ParameterList* pli
         time_map.erase(start_time);
         time_map.erase(end_time);
       }
+      if (exe_sublist.sublist("Time Integration Mode").isSublist("Transient with Static Flow")) {
+        double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Start");
+        double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("End");
+
+        time_map.erase(start_time);
+        time_map.erase(end_time);
+      }	
     }
   }
 
@@ -1031,12 +1038,8 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
         mpc_list.set<std::string>("disable Flow_PK", "no");
         mpc_list.set<std::string>("Flow model","Steady State Saturated");
         flow_on = true;
-      } else if (exe_sublist.get<std::string>("Flow Model") == "Transient with Static Flow") {
-	mpc_list.set<std::string>("disable Flow_PK", "no");
-	mpc_list.set<std::string>("Flow model","Static Steady State Saturated");
-	flow_on = true;
       } else {
-        Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards, Single Phase, Transient with Static Flow, or Off"));
+        Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards, Single Phase, or Off"));
       }
     } else {
       Exceptions::amanzi_throw(Errors::Message("The parameter Flow Model must be specified."));
@@ -1381,9 +1384,9 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
         disc_method = std::string("two point flux approximation");
       }
 
-      if (flow_model == "Single Phase" || flow_model == "Richards" || flow_model == "Transient with Static Flow") {
+      if (flow_model == "Single Phase" || flow_model == "Richards") {
 
-        if (flow_model == "Single Phase" || flow_model == "Transient with Static Flow") {
+        if (flow_model == "Single Phase") {
           Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem");
           darcy_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
           darcy_problem.set<double>("atmospheric pressure", atm_pres);
@@ -1410,9 +1413,9 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
         // insert the flow BC sublist
         Teuchos::ParameterList flow_bc; // = flow_list->sublist("boundary conditions");
         flow_bc = create_SS_FlowBC_List(plist);
-        if ( flow_bc.begin() != flow_bc.end() ) {
+        //if ( flow_bc.begin() != flow_bc.end() ) {
           flow_list->sublist("boundary conditions") = flow_bc;
-        }
+	//}
 
         // insert sources, if they exist
         Teuchos::ParameterList flow_src; // = flow_list->sublist("source terms");
@@ -1715,28 +1718,30 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
     // look at sublists
     if (src_sublist.isSublist(src_sublist.name(i))) {
       Teuchos::ParameterList& src = src_sublist.sublist(src_sublist.name(i));
-      // get name
-      std::string name = src_sublist.name(i);
-
-      // create src sublist
-      Teuchos::ParameterList& src_sub_out = src_list.sublist(name);
-      // get the regions
-      Teuchos::Array<std::string> regions = src.get<Teuchos::Array<std::string> >("Assigned Regions");
-      src_sub_out.set<Teuchos::Array<std::string> >("regions",regions);
-      // get source function
       Teuchos::ParameterList src_fn;
+      Teuchos::ParameterList src_sub_out;      
       if (src.isSublist("Source: Volume Weighted")) {
         src_sub_out.set<std::string>("spatial distribution method","volume");
         src_fn = src.sublist("Source: Volume Weighted");
+	if (!src.sublist("Source: Volume Weighted").isParameter("Values")) continue;
       } else if (src.isSublist("Source: Permeability Weighted")) {
         src_sub_out.set<std::string>("spatial distribution method","permeability");
         src_fn = src.sublist("Source: Permeability Weighted");
+	if (!src.sublist("Source: Permeability Weighted").isParameter("Values")) continue;
       } else if (src.isSublist("Source: Uniform")) {
         src_sub_out.set<std::string>("spatial distribution method","none");
         src_fn = src.sublist("Source: Uniform");
+	if (!src.sublist("Source: Uniform").isParameter("Values")) continue;
       } else {
         Exceptions::amanzi_throw(Errors::Message("In the definition of Sources: you must either specify 'Source: Volume Weighted', 'Source: Permeability Weighted', or 'Source: Uniform'"));
       }
+
+      std::string name = src_sublist.name(i);
+
+      // get the regions
+      Teuchos::Array<std::string> regions = src.get<Teuchos::Array<std::string> >("Assigned Regions");
+      src_sub_out.set<Teuchos::Array<std::string> >("regions",regions);
+
       // create time function
       Teuchos::ParameterList& src_sub_out_fn = src_sub_out.sublist("sink");
       Teuchos::Array<double> values = src_fn.get<Teuchos::Array<double> >("Values");
@@ -1767,6 +1772,7 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
       } else {
         // something is wrong with the input
       }
+      src_list.sublist(name) = src_sub_out;
     }
   }
 

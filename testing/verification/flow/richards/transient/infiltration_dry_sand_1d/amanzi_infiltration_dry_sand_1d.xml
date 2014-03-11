@@ -2,7 +2,7 @@
     <!-- 1USUnsFlow1a: Transient infiltration into dry SAND -->
     <!-- Vanderborght et al. 2005, A set of analytical benchmarks to test numerical -->
     <!-- models of flow and transport in soils, Vadose Zone Journal 4:206.221 -->
-    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
     <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
       <Parameter name="Author" type="string" value="Yabusaki"/>
@@ -136,7 +136,6 @@
                 <ParameterList name="IC: Uniform Concentration">
                   <Parameter name="Value" type="double" value="0"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="TBC"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -173,13 +172,13 @@
       <ParameterList name="Observation Data"/>
       <ParameterList name="Visualization Data">
         <Parameter name="File Name Base" type="string" value="plot"/>
-        <Parameter name="File Name Digits" type="string" value="5"/>
-        <Parameter name="Time Macro" type="Array(string)" value="{Every_0.1_day}"/>
+        <Parameter name="File Name Digits" type="int" value="5"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Every_0.1_day}"/>
       </ParameterList>
       <ParameterList name="Checkpoint Data">
         <Parameter name="File Name Base" type="string" value="checkpoint"/>
         <Parameter name="File Name Digit" type="int" value="5"/>
-        <Parameter name="Time Macro" type="Array(string)" value="{Every_0.1_day}"/>
+        <Parameter name="Time Macros" type="Array(string)" value="{Every_0.1_day}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

@@ -211,7 +211,7 @@ void Tensor::SpectralBounds(double* lower, double* upper) const
 /* ******************************************************************
 * Multiplication by a constant.
 ****************************************************************** */
-Tensor& Tensor::operator*=(const double& c)
+Tensor& Tensor::operator*=(double c)
 {
   for (int i = 0; i < size_*size_; i++) data_[i] *= c;
   return *this;

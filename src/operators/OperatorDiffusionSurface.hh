@@ -19,6 +19,7 @@
 
 #include "Operator.hh"
 #include "OperatorTypeDefs.hh"
+#include "NonlinearCoefficient.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -31,7 +32,7 @@ class OperatorDiffusionSurface : public Operator {
   ~OperatorDiffusionSurface() {};
 
   // main members
-  void InitOperator(std::vector<WhetStone::Tensor>& K);
+  void InitOperator(std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k);
   void AssembleMatrix(int schema);
   void UpdateMatrices();
 
@@ -47,6 +48,7 @@ class OperatorDiffusionSurface : public Operator {
 
  private:
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
+  Teuchos::RCP<NonlinearCoefficient> k_;
 };
 
 }  // namespace Operators

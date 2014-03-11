@@ -193,6 +193,7 @@ int BackTracking<Vector>::LineSearch(
     f2 = f;
     alam = std::max(tmplam, 0.1 * alam);  // lambda > 0.1 lambda_1
   } 
+  return 0;
 }
 
 

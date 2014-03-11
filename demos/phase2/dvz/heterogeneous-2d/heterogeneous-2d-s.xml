@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="TBD"/>
     <Parameter name="Author" type="string" value="Chandrika"/>
@@ -314,7 +314,6 @@
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="0"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -338,7 +337,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -364,7 +362,6 @@
                   value="{Constant, Constant, Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 1.881389E-06, 0.0, 0.0}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -392,7 +389,6 @@
                 <Parameter name="Values" type="Array(double)"
                   value="{0.0, 0.0, 2.266885E-06, 0.0, 0.0}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -417,7 +413,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -442,7 +437,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -467,7 +461,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>

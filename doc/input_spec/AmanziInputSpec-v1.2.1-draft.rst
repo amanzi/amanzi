@@ -137,9 +137,7 @@ Conventions:
 Version
 =======
 
-Each input set contains at the top level a string variable `"Amanzi Input Format Version`".  As of the most recent update of this specification, the
-current version of the Amanzi input is `"1.2.0`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  Release notes documenting the
-evolving input specification version can be found *here*.
+Each input set contains at the top level a string variable `"Amanzi Input Format Version`".  As of the most recent update of this specification, the current version of the Amanzi input is `"1.2.1`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  Release notes documenting the evolving input specification version can be found *here*.
 
 * [SU] "Amanzi Input Format Version" [string] Three part version string
 
@@ -148,7 +146,7 @@ Example:
 .. code-block:: xml
 
   <ParameterList name="Main">
-    <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
   </ParameterList>
 
 General Description
@@ -190,7 +188,7 @@ Usage:
 
   * [SU] `"Richards`" [string]: Single phase, variably saturated flow (assume constant gas pressure)
 
-  * [SU] `"Single-phase`" [string]: Single phase, fully saturated flow
+  * [SU] `"Single Phase`" [string]: Single phase, fully saturated flow
 
  * [SU] `"Transport Model`" [string]: Transport of phases.  Accepts `"Off`" or `"On`" [string]
 

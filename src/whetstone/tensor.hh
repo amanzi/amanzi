@@ -44,7 +44,7 @@ class Tensor {
   void SpectralBounds(double* lower, double* upper) const;
 
   // elementary operators
-  Tensor& operator*=(const double& c);
+  Tensor& operator*=(double c);
   Tensor& operator=(const Tensor& T);
   friend AmanziGeometry::Point operator*(const Tensor& T, const AmanziGeometry::Point& p);
   friend Tensor operator*(const Tensor& T1, const Tensor& T2);

@@ -180,8 +180,6 @@ void MPC::mpc_init() {
       FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, S));
     } else if (flow_model == "Steady State Richards") {
       FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, S));
-    } else if (flow_model == "Static Steady State Saturated") {
-      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, S));
     } else {
       std::cout << "MPC: unknown flow model: " << flow_model << std::endl;
       throw std::exception();
@@ -207,6 +205,8 @@ void MPC::mpc_init() {
     }
 #endif
   }
+
+ 
 
   S->Setup();
   S->InitializeFields();
@@ -380,6 +380,17 @@ void MPC::read_parameter_list()  {
     dTsteady = 1e+99;
 
     do_picard_ = false;
+  } else if ( ti_list.isSublist("Transient with Static Flow") ) {
+    ti_mode = TRANSIENT_STATIC_FLOW;
+
+    Teuchos::ParameterList& transient_list = ti_list.sublist("Transient with Static Flow");
+
+    T0 = transient_list.get<double>("Start");
+    T1 = transient_list.get<double>("End");
+    dTtransient =  transient_list.get<double>("Initial Time Step");
+    dTsteady = 1e+99;
+
+    do_picard_ = false;
   } else {
     Errors::Message message("MPC: no valid Time Integration Mode was specified, you must specify exactly one of Initialize To Steady, Steady, or Transient.");
     Exceptions::amanzi_throw(message);
@@ -503,6 +514,8 @@ void MPC::cycle_driver() {
       FPK->InitSteadyState(S->time(), dTsteady);
     } else if ( ti_mode == TRANSIENT && flow_model !=std::string("Steady State Richards")) {
       FPK->InitTransient(S->time(), dTtransient);
+    } else if ( ti_mode == TRANSIENT_STATIC_FLOW ) {
+      FPK->InitTransient(S->time(), dTtransient);
     } else if ( (ti_mode == INIT_TO_STEADY || ti_mode == STEADY) && flow_model == std::string("Steady State Saturated")) {
       // this is the case where we need to solve the Darcy problem first
       // and then either stop (in the STEADY case), or move to the switch time
@@ -581,7 +594,7 @@ void MPC::cycle_driver() {
       }
       if (ti_mode == STEADY || ti_mode == INIT_TO_STEADY) {
         WriteCheckpoint(restart,S.ptr(),dTsteady);
-      } else if (ti_mode == TRANSIENT) {
+      } else if ( (ti_mode == TRANSIENT) || (ti_mode == TRANSIENT_STATIC_FLOW) ) {
         WriteCheckpoint(restart,S.ptr(),dTtransient);
       }
     }
@@ -655,7 +668,7 @@ void MPC::cycle_driver() {
       }
 
       // find the flow time step
-      if (flow_enabled && (flow_model != "Static Steady State Saturated")) {
+      if (flow_enabled && (ti_mode != TRANSIENT_STATIC_FLOW)) {
         // only if we are actually running with flow
 
         if (!restart_requested) {
@@ -673,7 +686,9 @@ void MPC::cycle_driver() {
       }
       Amanzi::timer_manager.stop("Flow PK");
 
-      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch)) {
+      if ( (ti_mode == TRANSIENT) || 
+	   (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) || 
+	   (ti_mode == TRANSIENT_STATIC_FLOW) ) {
         if (transport_enabled) {
           Amanzi::timer_manager.start("Transport PK");
           double transport_dT_tmp = TPK->EstimateTransportDt();
@@ -747,12 +762,11 @@ void MPC::cycle_driver() {
       Amanzi::timer_manager.start("Flow PK");
       if (flow_enabled) {
         if ((ti_mode == STEADY) ||
-            (ti_mode == TRANSIENT && (flow_model != std::string("Steady State Richards") && 
-				      flow_model != std::string("Static Steady State Saturated"))) || 
+            (ti_mode == TRANSIENT && (flow_model != std::string("Steady State Richards"))) || 
             (ti_mode == INIT_TO_STEADY &&
              ( (flow_model == std::string("Steady State Richards") && S->time() >= Tswitch) ||
                (flow_model == std::string("Steady State Saturated") && S->time() >= Tswitch) ||
-               (flow_model == std::string("Richards")) ) ) ) {
+               (flow_model == std::string("Richards")))) ) {
           bool redo(false);
           do {
             redo = false;
@@ -789,7 +803,9 @@ void MPC::cycle_driver() {
       }
 
       // then advance transport and chemistry
-      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ) {
+      if ( (ti_mode == TRANSIENT) || 
+	   (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) || 
+	   (ti_mode == TRANSIENT_STATIC_FLOW) ) {
         double tc_dT(mpc_dT);
         double c_dT(chemistry_dT);
         int ntc(1);
@@ -968,7 +984,9 @@ void MPC::cycle_driver() {
       // we're done with this time step, commit the state
       // in the process kernels
 
-      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ) {
+      if ( (ti_mode == TRANSIENT) || 
+	   (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ||
+	   (ti_mode == TRANSIENT_STATIC_FLOW) ) {
         Amanzi::timer_manager.start("Transport PK");
         if (transport_enabled && !chemistry_enabled) TPK->CommitState(S);
         Amanzi::timer_manager.stop("Transport PK");

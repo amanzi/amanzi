@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
     <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
       <Parameter name="Author" type="string" value="Chandrika"/>
@@ -210,7 +210,6 @@
                 <ParameterList name="IC: Uniform Concentration">
                   <Parameter name="Value" type="double" value="0"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="TBC"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -234,7 +233,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -257,7 +255,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 2.266885E-06, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -287,8 +284,8 @@
       <ParameterList name="Observation Data"/>
       <ParameterList name="Visualization Data">
         <Parameter name="File Name Base" type="string" value="plot"/>
-        <Parameter name="File Name Digits" type="string" value="5"/>
- 	<Parameter name="Time Macro" type="Array(string)" value="{Every 100 years}"/> 
+        <Parameter name="File Name Digits" type="int" value="5"/>
+ 	<Parameter name="Time Macros" type="Array(string)" value="{Every 100 years}"/> 
       </ParameterList>
       <ParameterList name="Checkpoint Data">
         <Parameter name="File Name Base" type="string" value="checkpoint"/>

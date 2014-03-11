@@ -29,8 +29,10 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator.                                           
 ****************************************************************** */
-void OperatorDiffusionSurface::InitOperator(std::vector<WhetStone::Tensor>& K)
+void OperatorDiffusionSurface::InitOperator(
+    std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k)
 {
+  k_ = k;
   CreateMassMatrices_(K);
 }
 
@@ -112,7 +114,14 @@ void OperatorDiffusionSurface::CreateMassMatrices_(std::vector<WhetStone::Tensor
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix Wff(nfaces, nfaces);
-    int ok = mfd.MassMatrixInverseSurface(c, K[c], Wff);
+    int ok; 
+    if (k_ == Teuchos::null) {
+      ok = mfd.MassMatrixInverseSurface(c, K[c], Wff);
+    } else {
+      WhetStone::Tensor Kk(K[c]); 
+      Kk *= (*k_->cdata())[c];
+      ok = mfd.MassMatrixInverseSurface(c, Kk, Wff);
+    }
 
     Wff_cells_.push_back(Wff);
 

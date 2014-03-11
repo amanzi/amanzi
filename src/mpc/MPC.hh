@@ -23,7 +23,7 @@
 
 namespace Amanzi {
 
-enum time_integration_mode { STEADY, TRANSIENT, INIT_TO_STEADY };
+  enum time_integration_mode { STEADY, TRANSIENT, INIT_TO_STEADY, TRANSIENT_STATIC_FLOW };
 
 class MPC : public Teuchos::VerboseObject<MPC> {
  public:
