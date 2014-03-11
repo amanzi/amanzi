@@ -43,7 +43,7 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
   virtual void SymbolicAssembleGlobalMatrices();
   virtual void AssembleGlobalMatrices();
   virtual void ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
-          const std::vector<double>& bc_values) { Sff_ = Spp_; }
+				      const std::vector<double>& bc_values);
 
   virtual int Apply(const CompositeVector& X,
                      CompositeVector& Y) const;
