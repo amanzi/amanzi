@@ -156,10 +156,10 @@ int BackTracking<Vector>::LineSearch(
     // Convergence on Delta x.
     if (alam < alamin) {
       x = xold;
-      return;
+      return 0;
     // Sufficient function decrease
     } else if (f <= fold + alpha * alam * slope) {
-      return;
+      return 0;
     // Backtracking
     } else {
       if (alam == 1.0) {
@@ -193,6 +193,7 @@ int BackTracking<Vector>::LineSearch(
     f2 = f;
     alam = std::max(tmplam, 0.1 * alam);  // lambda > 0.1 lambda_1
   } 
+  return 0;
 }
 
 
