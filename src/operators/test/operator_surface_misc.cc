@@ -138,7 +138,7 @@ TEST(SURFACE_MISC) {
 
   // add the diffusion operator. It is the last due to BCs.
   Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2));
-  op3->InitOperator(K);
+  op3->InitOperator(K, Teuchos::null);
   op3->UpdateMatrices();
   op3->ApplyBCs(bc_model, bc_values);
 

@@ -158,7 +158,6 @@ void Operator::SymbolicAssembleMatrix(int schema)
   for (int nb = 0; nb < nblocks; nb++) {
     int subschema = blocks_schema_[nb] & schema;
 
-cout << nb << " " << blocks_schema_[nb] << " " << subschema << endl;
     if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
       for (int c = 0; c < ncells_owned; c++) {
         int nd;

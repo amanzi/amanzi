@@ -110,7 +110,7 @@ TEST(LAPLACE_BELTRAMI) {
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
   op->Init();
-  op->InitOperator(K);
+  op->InitOperator(K, Teuchos::null);
   op->UpdateMatrices();
   op->ApplyBCs(bc_model, bc_values);
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
