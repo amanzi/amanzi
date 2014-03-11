@@ -9,7 +9,10 @@ MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     MatrixMFD_Coupled(plist,mesh),
     scaling_(1.)
-{}
+{
+  // dump
+  dump_schur_ = plist_.get<bool>("dump Schur complement", false);
+}
 
 MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(const MatrixMFD_Coupled_Surf& other) :
     MatrixMFD_Coupled(other),
@@ -114,9 +117,11 @@ void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
   ASSERT(!ierr);
 
   // DEBUG dump
-  // std::stringstream filename_s;
-  // filename_s << "coupled_schur_" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
+  if (dump_schur_) {
+    std::stringstream filename_s;
+    filename_s << "schur_MatrixMFD_Coupled_Surf_" << 0 << ".txt";
+    EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
+  }
 
   delete[] indicesA;
   delete[] indicesB;
