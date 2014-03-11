@@ -30,6 +30,7 @@ include_directories(${SREGION_SOURCE_DIR})
 include_directories(${SMATERIALS_SOURCE_DIR})   
 include_directories(${PETSC_INCLUDE_DIRS})
 include_directories(${CHEMPK_SOURCE_DIR})
+include_directories(${GEOCHEM_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -52,7 +53,7 @@ if (BUILD_TESTS)
 
   link_directories(${CCSE_LIBRARY_DIR})
   if ( ENABLE_Unstructured )
-    set(unstructured_grid_libs udriv mpc state transport flow chemistry_pk whetstone matrix_audit)
+    set(unstructured_grid_libs udriv mpc state transport flow whetstone matrix_audit)
   else()
     set(unstructured_grid_libs)
   endif()
@@ -72,7 +73,7 @@ if (BUILD_TESTS)
   endif()
 
   get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
-  set(my_common_libs error_handling ${GEOCHEM_LIBS} chemistry_pk interface atk)
+  set(my_common_libs error_handling ${GEOCHEM_LIBS} interface atk)
 
   set(my_libs ${structured_grid_libs}
               ${unstructured_grid_libs}

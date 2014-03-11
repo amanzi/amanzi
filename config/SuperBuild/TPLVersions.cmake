@@ -34,9 +34,10 @@
 #   0.91.10      - updated MSTK to version 2.10rc5
 #   0.91.11      - updated PFlotran to commit 1afe88d.
 #   0.91.12      - updated MSTK to version 2.10
-#   0.91.13      - updated METIS to 5.1.0, ParMetis to 4.0.3a, SuperLU to 4.3, SuperLUDist to 3.3 and PETSc to 3.4.3
-#   0.91.14      - updated Trilinos to 10.6.1 and MSTK to 2.11rc2
-#   0.91.15      - updated CCSE to version 1.2.5
+#   0.91.12a     - updated METIS to 5.1.0, ParMetis to 4.0.3a, SuperLU to 4.3, SuperLUDist to 3.3 and PETSc to 3.4.3
+#   0.91.12b     - updated Trilinos to 10.6.1 and MSTK to 2.11rc2
+#   0.91.12c     - updated CCSE to version 1.2.5
+#   0.92.0       - Merge lib updates through 0.91.12c
 #
 
 include(CMakeParseArguments)

@@ -2169,8 +2169,13 @@ void  PorousMedia::read_chem()
   if (do_tracer_chemistry) {
 
 #if ALQUIMIA_ENABLED
-      const Teuchos::ParameterList& chemistry_parameter_list = PorousMedia::InputParameterList().sublist("Chemistry");
-      chemistry_engine = new Amanzi::AmanziChemistry::Chemistry_Engine(chemistry_parameter_list);
+      const Teuchos::ParameterList& pl = PorousMedia::InputParameterList();
+      BL_ASSERT(pl.isSublist("Chemistry"));
+      const Teuchos::ParameterList& chpl = pl.sublist("Chemistry");
+      std::string chem_engine_name = chpl.get<std::string>("Engine");
+      std::string chem_engine_input_filename = chpl.get<std::string>("Engine Input File");
+      //chemistry_engine = new Amanzi::AmanziChemistry::Chemistry_Engine(chem_engine_name,chem_engine_input_filename);
+      chemistry_engine = new Amanzi::AmanziChemistry::Chemistry_Engine(chem_engine_name);
       std::vector<std::string> primarySpeciesNames, mineralNames, siteNames, ionExchangeNames, isothermSpeciesNames;
       chemistry_engine->GetPrimarySpeciesNames(primarySpeciesNames);
       chemistry_engine->GetMineralNames(mineralNames);

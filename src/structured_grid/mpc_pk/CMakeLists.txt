@@ -27,6 +27,8 @@ include_directories(${SUTILS_SOURCE_DIR})
 include_directories(${PETSC_INCLUDE_DIRS})
 include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
+include_directories(${GEOCHEM_STATE_DIR}) 
+include_directories(${GEOCHEM_SOURCE_DIR}) 
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
