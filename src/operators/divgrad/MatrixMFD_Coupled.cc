@@ -78,6 +78,9 @@ void MatrixMFD_Coupled::InitializeFromPList_() {
 
   // verbose object
   vo_ = Teuchos::rcp(new VerboseObject("MatrixMFD", plist_));
+
+  // dump
+  dump_schur_ = plist_.get<bool>("dump Schur complement", false);
 }
 
 
@@ -404,9 +407,9 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
   is_matrix_constructed_ = true;
 
   // DEBUG dump
-  if (dump) {
+  if (dump || dump_schur_) {
     std::stringstream filename_s;
-    filename_s << "schur_" << 0 << ".txt";
+    filename_s << "schur_MatrixMFD_Coupled_" << 0 << ".txt";
     EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
   }
 
