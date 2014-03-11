@@ -87,13 +87,8 @@ void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
     ierr = P2f2f_->BeginSumIntoGlobalValues(frow_global, entriesA, indicesA);
     ASSERT(!ierr);
 
-    for (int m=0; m!=entriesA; ++m) {
-      // if (indicesA[m] == 500) {
-      //   std::cout << "Adding Value from TPFA on surface to subsurface." << std::endl;
-      //   std::cout << "  val from A = " << valuesA[m] << std::endl;
-      //   std::cout << "  val from B = " << valuesB[m] << std::endl;
-      // }
 
+    for (int m=0; m!=entriesA; ++m) {
       block(0,0) = std::max(valuesA[m], 1.e-10);
       block(1,1) = valuesB[m];
 
