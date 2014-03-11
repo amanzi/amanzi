@@ -148,6 +148,7 @@ class MatrixMFD_Coupled : public TreeMatrix {
   // flags
   bool is_matrix_constructed_;
   bool decoupled_;
+  bool dump_schur_;
 
   // preconditioner for Schur complement
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> S_pc_;
