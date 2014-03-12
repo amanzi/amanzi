@@ -1498,13 +1498,25 @@ namespace Amanzi {
                 convert_SpecificStorageUniform(rsslist,ssublist);
                 rsublist.set("specific_storage",ssublist);
               }
-              else if (rlabel=="Capillary Pressure: van Genuchten") {
+              else if (rlabel=="Capillary Pressure: van Genuchten" || rlabel=="Capillary Pressure: Brooks Corey") {
                 double alpha = rsslist.get<double>("alpha");
                 ParameterList cpl_pl;
-                cpl_pl.set("type","VanGenuchten");
-                cpl_pl.set("m",rsslist.get<double>("m"));
+                double ell;
+                if (rlabel=="Capillary Pressure: van Genuchten") {
+                  cpl_pl.set("type","VanGenuchten");
+                  cpl_pl.set("m",rsslist.get<double>("m"));
+                  ell = 0.5;
+                } else {
+                  cpl_pl.set("type","BrooksCorey");
+                  cpl_pl.set("lambda",rsslist.get<double>("lambda"));
+                  ell = 2;
+                }
                 cpl_pl.set("Sr",rsslist.get<double>("Sr"));
                 cpl_pl.set("alpha",alpha*1.01325e5); // convert Pa^-1 to atm^-1 
+                if (rsslist.isParameter("ell")) {
+                  ell = rsslist.get<double>("ell");
+                }
+                cpl_pl.set("Kr_ell",ell);
                 rsublist.set("cpl",cpl_pl);
                 double Kr_smoothing_max_pcap = -1;
                 if (rsslist.isParameter("krel smoothing interval")) {
