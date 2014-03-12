@@ -35,7 +35,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Simplest possible constructor: extracts lists and requires fields.
 ****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
+Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_PK()
 {
   S_ = S;
 
@@ -146,12 +146,17 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
 ****************************************************************** */
 Darcy_PK::~Darcy_PK()
 {
-  delete bc_pressure;
-  delete bc_head;
-  delete bc_flux;
-  delete bc_seepage;
+  if (bc_pressure != NULL) delete bc_pressure;
+  if (bc_head != NULL) delete bc_head;
+  if (bc_flux != NULL) delete bc_flux;
+  if (bc_seepage != NULL) delete bc_seepage;
 
-  if (ti_specs != NULL) OutputTimeHistory(dp_list_, ti_specs->dT_history);
+  if (ti_specs != NULL) {
+    OutputTimeHistory(dp_list_, ti_specs->dT_history);
+  }
+
+  if (src_sink != NULL) delete src_sink;
+  if (vo_ != NULL) delete vo_;
 }
 
 
@@ -222,10 +227,11 @@ void Darcy_PK::InitPK()
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
-  if (shift_water_table_.getRawPtr() == NULL)
+  if (shift_water_table_.getRawPtr() == NULL) {
     bc_head->Compute(time);
-  else
+  } else {
     bc_head->ComputeShift(time, shift_water_table_->Values());
+  }
 
   const CompositeVector& pressure = *S_->GetFieldData("pressure");
   ComputeBCs(pressure);
@@ -398,6 +404,10 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     // Call this initialization procedure only once. Use case: multiple
     // restart of a single phase transient time integrator.
     ti_specs.initialize_with_darcy = false;
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      VV_PrintHeadExtrema(*solution);
+    }
   }
 }
 

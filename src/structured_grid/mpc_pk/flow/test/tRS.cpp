@@ -19,7 +19,6 @@ static Real dt = 1; // Initial
 static int Niter = 60;
 static std::string plt_name = "";
 static bool verbose = false;
-
 //
 // Components are  Interior, Inflow, Outflow, Symmetry, SlipWall, NoSlipWall.
 //

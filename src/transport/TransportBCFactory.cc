@@ -1,12 +1,12 @@
 /*
-  This is the transport component of the Amanzi code. 
+This is the transport component of the Amanzi code. 
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
-  provided in the top-level COPYRIGHT file.
+Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided in the top-level COPYRIGHT file.
 
-  Authors:  Konstantin Lipnikov (lipnikov@lanl.gov)
+Authors:  Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <vector>
@@ -14,9 +14,6 @@
 #include "errors.hh"
 
 #include "TransportBCFactory.hh"
-#include "TransportBoundaryFunction_Tracer.hh"
-#include "TransportBoundaryFunction_Alquimia.hh"
-
 #include "TransportDefs.hh"
 
 namespace Amanzi {
@@ -31,7 +28,7 @@ void TransportBCFactory::CreateConcentration(std::vector<TransportBoundaryFuncti
 
   if (list_->isSublist("concentration")) {
     ProcessTracerList(bcs);
-  } else if (list_->isSublist("geochemical condition")) {
+  } else if (list_->isSublist("geochemical conditions")) {
     ProcessGeochemicalConditionList(bcs);
   } else {
     msg << "Transport PK: BC sublist has not been recognized\n";
@@ -129,29 +126,62 @@ void TransportBCFactory::ProcessTracerSpec(
 * **************************************************************** */
 void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBoundaryFunction*>& bcs) const
 {
+#ifdef ALQUIMIA_ENABLED
   Errors::Message msg;
-  Teuchos::ParameterList& clist = list_->get<Teuchos::ParameterList>("geochemical condition");
+  if (!list_->isSublist("geochemical conditions"))
+  {
+    msg << "  No 'geochemical conditions' list was found in 'Transport->boundary conditions'!\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  Teuchos::ParameterList& clist = list_->get<Teuchos::ParameterList>("geochemical conditions");
 
   for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
-    std::string name = it->first;
-    if (clist.isSublist(name)) {
-      Teuchos::ParameterList& spec = clist.sublist(name);
+    std::string cond_name = it->first;
+    if (clist.isSublist(cond_name)) {
+      Teuchos::ParameterList& spec = clist.sublist(cond_name);
       try {
-        TransportBoundaryFunction_Alquimia* bc = new TransportBoundaryFunction_Alquimia(mesh_);
+        TransportBoundaryFunction_Alquimia* bc = 
+          new TransportBoundaryFunction_Alquimia(cond_name, mesh_, chem_state_, chem_engine_);
         ProcessGeochemicalConditionSpec(spec, bc);
-        // bc->tcc_names().push_back(name);
 
         TransportBoundaryFunction* bc_base = bc;
         bcs.push_back(bc_base);
       } catch (Errors::Message& m) {
-        msg << "in sublist \"" << name.c_str() << "\": " << m.what();
+        msg << "in sublist \"" << cond_name << "\": " << m.what();
         Exceptions::amanzi_throw(msg);
       }
     } else {
-      msg << "parameter \"" << name.c_str() << "\" is not a sublist.\n";
+      msg << "parameter \"" << cond_name << "\" is not a sublist.\n";
       Exceptions::amanzi_throw(msg);
     }
   }
+#endif
+}
+
+// Process a geochemical condition.
+void TransportBCFactory::ProcessGeochemicalConditionSpec(Teuchos::ParameterList& spec, 
+                                                         TransportBoundaryFunction_Alquimia* bc) const
+{
+#ifdef ALQUIMIA_ENABLED
+  Errors::Message msg;
+  std::vector<std::string> regions;
+
+  if (spec.isParameter("regions")) {
+    if (spec.isType<Teuchos::Array<std::string> >("regions")) {
+      regions = spec.get<Teuchos::Array<std::string> >("regions").toVector();
+      bc->Define(regions);
+    } else {
+      msg << "parameter \"regions\" is not of type \"Array string\"";
+      Exceptions::amanzi_throw(msg);
+    }
+  } else {
+    msg << "parameter \"regions\" is missing";
+    Exceptions::amanzi_throw(msg);
+  }
+#else
+  msg << "Internal error: Alquimia is not enabled!";
+  Exceptions::amanzi_throw(msg);
+#endif
 }
 
 }  // namespace AmanziTransport

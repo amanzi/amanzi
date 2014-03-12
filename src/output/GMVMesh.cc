@@ -6,6 +6,7 @@ namespace GMV {
 static inline void write_mesh_to_file_(const AmanziMesh::Mesh &mesh_map, std::string filename)
 {
   int dim = mesh_map.space_dimension();
+  int dim_cell = mesh_map.cell_dimension();
   gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
 
   // Write node info
@@ -43,8 +44,10 @@ static inline void write_mesh_to_file_(const AmanziMesh::Mesh &mesh_map, std::st
     int nnodes = cnodes.size();
     for (int j=0; j<nnodes; j++) xh[j] = cnodes[j] + 1;
 
-    if (dim == 3) {
+    if (dim == 3 && dim_cell == 3) {
       gmvwrite_cell_type((char*) "phex8", 8, xh);
+    } else if (dim == 3 && dim_cell == 2) {
+      gmvwrite_cell_type((char*) "general 1", nnodes, xh);
     } else if (dim == 2) {
       if (nnodes == 4) 
         gmvwrite_cell_type((char*) "quad", 4, xh);
@@ -155,6 +158,16 @@ void write_node_data(const Epetra_Vector &x, std::string varname)
   double *node_data;
   int err = x.ExtractView(&node_data);
   gmvwrite_variable_name_data(AmanziMesh::NODE, (char*) varname.c_str(), node_data);
+}
+
+
+void write_node_data(const Epetra_MultiVector &x, const unsigned int component, std::string varname) 
+{
+  double **node_data;
+  int err = x.ExtractView(&node_data);
+
+  double *component_data = node_data[component];
+  gmvwrite_variable_name_data(AmanziMesh::NODE, (char*) varname.c_str(), component_data);
 }
 
 

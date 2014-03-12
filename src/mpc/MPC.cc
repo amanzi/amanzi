@@ -118,11 +118,49 @@ void MPC::mpc_init() {
 
   // create auxilary state objects for the process models
 
+  // Get the transport solute component names from the MPC parameter lists.
+  std::vector<std::string> component_names;
+  {
+    Teuchos::Array<std::string> comp_names;
+    if (mpc_parameter_list.isParameter("component names")) {
+      comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
+    }
+    for (int i = 0; i < comp_names.length(); i++) {
+      component_names.push_back(comp_names[i]);
+    }
+  }
 
   // chemistry...
   if (chemistry_enabled) {
     Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
-    CS = Teuchos::rcp( new AmanziChemistry::Chemistry_State( chemistry_parameter_list, S ) );
+
+#ifdef ALQUIMIA_ENABLED
+    if (chemistry_model == "Alquimia") {
+      // Start up the chemistry engine.
+      if (!chemistry_parameter_list.isParameter("Engine")) 
+      {
+        Errors::Message msg;
+        msg << "MPC::mpc_init(): \n";
+        msg << "  No 'Engine' parameter found in parameter list for 'Chemistry'.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+      if (!chemistry_parameter_list.isParameter("Engine Input File")) 
+      {
+        Errors::Message msg;
+        msg << "MPC::mpc_init(): \n";
+        msg << "  No 'Engine Input File' parameter found in parameter list for 'Chemistry'.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+      std::string chemEngineName = chemistry_parameter_list.get<std::string>("Engine");
+      std::string chemEngineInputFile = chemistry_parameter_list.get<std::string>("Engine Input File");
+      chem_engine = Teuchos::rcp( new AmanziChemistry::ChemistryEngine(chemEngineName, chemEngineInputFile) );
+
+      // Overwrite the component names with the primary species names from the engine.
+      chem_engine->GetPrimarySpeciesNames(component_names);
+    }
+#endif
+    // Initialize the chemistry state.
+    CS = Teuchos::rcp( new AmanziChemistry::Chemistry_State( chemistry_parameter_list, component_names, S ) );
   }
 
   // transport and chemistry...
@@ -153,16 +191,22 @@ void MPC::mpc_init() {
   }
 
   if (transport_enabled) {
-    Teuchos::Array<std::string> comp_names;
-    if (mpc_parameter_list.isParameter("component names")) {
-      comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
+#ifdef ALQUIMIA_ENABLED
+    if (chemistry_model == "Alquimia") {
+      // When Alquimia is used, the Transport PK must interact with the 
+      // chemistry engine to obtain boundary values for the components.
+      // The component names are fetched from the chemistry engine.
+      TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, CS, chem_engine));
     }
-    std::vector<std::string> names;
-    for (int i = 0; i < comp_names.length(); i++) {
-      names.push_back(comp_names[i]);
+    else {
+#endif
+      TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, component_names));
+#ifdef ALQUIMIA_ENABLED
     }
-    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, names));
+#endif
   }
+
+ 
 
   S->Setup();
   S->InitializeFields();
@@ -194,7 +238,7 @@ void MPC::mpc_init() {
     try {
       if (chemistry_model == "Alquimia") {
 #ifdef ALQUIMIA_ENABLED
-        CPK = Teuchos::rcp( new AmanziChemistry::Alquimia_Chemistry_PK(parameter_list, CS) );
+        CPK = Teuchos::rcp( new AmanziChemistry::Alquimia_Chemistry_PK(parameter_list, CS, chem_engine) );
 #else
         std::cout << "MPC: Alquimia chemistry model is not enabled for this build.\n";
         throw std::exception();
@@ -214,8 +258,8 @@ void MPC::mpc_init() {
 
       Errors::Message message(error_message.str());
       Exceptions::amanzi_throw(message);
-    }
-  }
+    }   
+  } 
   // done creating auxilary state objects and  process models
 
   // create the observations
@@ -329,6 +373,17 @@ void MPC::read_parameter_list()  {
     ti_mode = TRANSIENT;
 
     Teuchos::ParameterList& transient_list = ti_list.sublist("Transient");
+
+    T0 = transient_list.get<double>("Start");
+    T1 = transient_list.get<double>("End");
+    dTtransient =  transient_list.get<double>("Initial Time Step");
+    dTsteady = 1e+99;
+
+    do_picard_ = false;
+  } else if ( ti_list.isSublist("Transient with Static Flow") ) {
+    ti_mode = TRANSIENT_STATIC_FLOW;
+
+    Teuchos::ParameterList& transient_list = ti_list.sublist("Transient with Static Flow");
 
     T0 = transient_list.get<double>("Start");
     T1 = transient_list.get<double>("End");
@@ -459,6 +514,8 @@ void MPC::cycle_driver() {
       FPK->InitSteadyState(S->time(), dTsteady);
     } else if ( ti_mode == TRANSIENT && flow_model !=std::string("Steady State Richards")) {
       FPK->InitTransient(S->time(), dTtransient);
+    } else if ( ti_mode == TRANSIENT_STATIC_FLOW ) {
+      FPK->InitTransient(S->time(), dTtransient);
     } else if ( (ti_mode == INIT_TO_STEADY || ti_mode == STEADY) && flow_model == std::string("Steady State Saturated")) {
       // this is the case where we need to solve the Darcy problem first
       // and then either stop (in the STEADY case), or move to the switch time
@@ -501,7 +558,7 @@ void MPC::cycle_driver() {
           }
         }
       }
-    }
+    } 
   }
   Amanzi::timer_manager.stop("Flow PK");
 
@@ -537,7 +594,7 @@ void MPC::cycle_driver() {
       }
       if (ti_mode == STEADY || ti_mode == INIT_TO_STEADY) {
         WriteCheckpoint(restart,S.ptr(),dTsteady);
-      } else if (ti_mode == TRANSIENT) {
+      } else if ( (ti_mode == TRANSIENT) || (ti_mode == TRANSIENT_STATIC_FLOW) ) {
         WriteCheckpoint(restart,S.ptr(),dTtransient);
       }
     }
@@ -611,7 +668,7 @@ void MPC::cycle_driver() {
       }
 
       // find the flow time step
-      if (flow_enabled) {
+      if (flow_enabled && (ti_mode != TRANSIENT_STATIC_FLOW)) {
         // only if we are actually running with flow
 
         if (!restart_requested) {
@@ -629,7 +686,9 @@ void MPC::cycle_driver() {
       }
       Amanzi::timer_manager.stop("Flow PK");
 
-      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch)) {
+      if ( (ti_mode == TRANSIENT) || 
+	   (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) || 
+	   (ti_mode == TRANSIENT_STATIC_FLOW) ) {
         if (transport_enabled) {
           Amanzi::timer_manager.start("Transport PK");
           double transport_dT_tmp = TPK->EstimateTransportDt();
@@ -703,11 +762,11 @@ void MPC::cycle_driver() {
       Amanzi::timer_manager.start("Flow PK");
       if (flow_enabled) {
         if ((ti_mode == STEADY) ||
-            (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
+            (ti_mode == TRANSIENT && (flow_model != std::string("Steady State Richards"))) || 
             (ti_mode == INIT_TO_STEADY &&
              ( (flow_model == std::string("Steady State Richards") && S->time() >= Tswitch) ||
                (flow_model == std::string("Steady State Saturated") && S->time() >= Tswitch) ||
-               (flow_model == std::string("Richards")) ) ) ) {
+               (flow_model == std::string("Richards")))) ) {
           bool redo(false);
           do {
             redo = false;
@@ -744,7 +803,9 @@ void MPC::cycle_driver() {
       }
 
       // then advance transport and chemistry
-      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ) {
+      if ( (ti_mode == TRANSIENT) || 
+	   (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) || 
+	   (ti_mode == TRANSIENT_STATIC_FLOW) ) {
         double tc_dT(mpc_dT);
         double c_dT(chemistry_dT);
         int ntc(1);
@@ -923,9 +984,11 @@ void MPC::cycle_driver() {
       // we're done with this time step, commit the state
       // in the process kernels
 
-      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ) {
+      if ( (ti_mode == TRANSIENT) || 
+	   (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ||
+	   (ti_mode == TRANSIENT_STATIC_FLOW) ) {
         Amanzi::timer_manager.start("Transport PK");
-        if (transport_enabled) TPK->CommitState(S);
+        if (transport_enabled && !chemistry_enabled) TPK->CommitState(S);
         Amanzi::timer_manager.stop("Transport PK");
 
         Amanzi::timer_manager.start("Chemistry PK");
@@ -987,35 +1050,43 @@ void MPC::cycle_driver() {
         // get the auxillary data
         Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
         if (force || visualization->DumpRequested(S->cycle(), S->time())) {
-          if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-            *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
-          }
-          WriteVis(visualization,S.ptr());
+	  if (!visualization->is_disabled()) {
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	      *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+	    }
+	    WriteVis(visualization,S.ptr());
+	  }
         }
       } else {
         if (force || visualization->DumpRequested(S->cycle(), S->time())) {
-          if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-            *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
-          }
-          WriteVis(visualization,S.ptr());
+	  if (!visualization->is_disabled()) {
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	      *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+	    }
+	    WriteVis(visualization,S.ptr());
+	  }
         }
       }
 
       // write restart dump if requested
       if (force || force_checkpoint || restart->DumpRequested(S->cycle(), S->time())) {
-        if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-          *out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
-        }
-        WriteCheckpoint(restart,S.ptr(),mpc_dT);
+	if (!restart->is_disabled()) {
+	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	    *out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
+	  }
+	  WriteCheckpoint(restart,S.ptr(),mpc_dT);
+	}
       }
 
       // write walkabout data if requested
       if (flow_enabled) {
         if (force || force_checkpoint || walkabout->DumpRequested(S->cycle(), S->time())) {
-          if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-            *out << "Cycle " << S->cycle() << ": writing walkabout data" << std::endl;
-          }
-          FPK->WriteWalkabout(walkabout.ptr());
+	  if (!walkabout->is_disabled()) {
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	      *out << "Cycle " << S->cycle() << ": writing walkabout data" << std::endl;
+	    }
+	    FPK->WriteWalkabout(walkabout.ptr());
+	  }
         }
       }
       
@@ -1030,22 +1101,28 @@ void MPC::cycle_driver() {
     ++iter;
     S->set_cycle(iter);
     Amanzi::timer_manager.start("I/O");
-    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-      *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+    if (!visualization->is_disabled()) {
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	*out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+      }
+      if (flow_enabled) FPK->UpdateAuxilliaryData();
+      WriteVis(visualization,S.ptr());
     }
-    if (flow_enabled) FPK->UpdateAuxilliaryData();
-    WriteVis(visualization,S.ptr());
-
-    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-      *out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
+      
+    if (!restart->is_disabled()) {
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	*out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
+      }
+      WriteCheckpoint(restart,S.ptr(),0.0);
     }
-    WriteCheckpoint(restart,S.ptr(),0.0);
 
     if (flow_enabled) {
-      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-        *out << "Cycle " << S->cycle() << ": writing walkabout file" << std::endl;
+      if (!walkabout->is_disabled()) {
+	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	  *out << "Cycle " << S->cycle() << ": writing walkabout file" << std::endl;
+	}
+	FPK->WriteWalkabout(walkabout.ptr());
       }
-      FPK->WriteWalkabout(walkabout.ptr());
     }
 
     Amanzi::timer_manager.stop("I/O");

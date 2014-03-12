@@ -38,7 +38,8 @@ include_directories(${Epetra_INCLUDE_DIRS})
 file(GLOB whetstone_inc_files "*.hh")
 add_amanzi_library(whetstone
                    SOURCE mfd3d.cc
-                          mfd3d_diffusion.cc mfd3d_diffusion_other.cc 
+                          mfd3d_diffusion.cc mfd3d_diffusion_surface.cc 
+                          mfd3d_diffusion_other.cc 
                           mfd3d_elasticity.cc 
                           nlfv.cc tensor.cc DenseMatrix.cc
                    HEADERS ${whetstone_inc_files}
@@ -74,6 +75,12 @@ if ( BUILD_TESTS )
     add_amanzi_test(whetstone_tensors whetstone_tensors
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_tensors.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: vsurface matrices for diffusion
+    add_amanzi_test(whetstone_surface whetstone_surface
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_surface.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

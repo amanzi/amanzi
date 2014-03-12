@@ -1,6 +1,6 @@
-========================================
-Amanzi Native XML Input Specification V3
-========================================
+==============================================
+Amanzi Native XML Input Specification V3 (EOL)
+==============================================
 
 .. contents:: **Table of Contents**
 

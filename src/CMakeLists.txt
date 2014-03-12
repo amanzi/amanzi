@@ -13,9 +13,11 @@ add_subdirectory(geometry)
 # Grid-option agnostic chemistry and interfaces
 if (ENABLE_Physics)
   add_subdirectory(chemistry)
+
   if (ENABLE_ALQUIMIA)
     # Use Alquimia as a chemistry engine.
     add_definitions(-DALQUIMIA_ENABLED)
+    add_subdirectory(common/geochemistry)
   endif()
 endif()
 
@@ -44,6 +46,9 @@ if (ENABLE_Unstructured)
   # Solvers
   add_subdirectory(solvers)
 
+  # Operators
+  add_subdirectory(operators)
+
   # Time integration
   if (ENABLE_NewTimeIntegrators)
     add_subdirectory(time_integration_new)
@@ -56,9 +61,8 @@ if (ENABLE_Unstructured)
 
 endif()
 
-add_subdirectory(chemistry_pk)
-
 if (ENABLE_Unstructured AND ENABLE_Physics)  
+  add_subdirectory(chemistry_pk) 
   add_subdirectory(flow)
   add_subdirectory(transport)
 

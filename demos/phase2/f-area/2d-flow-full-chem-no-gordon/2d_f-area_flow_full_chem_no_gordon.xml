@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
 
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="Transient Richards"/>
@@ -486,7 +486,6 @@
                 <Parameter name="Value" type="double" value="2.9578630770689822E-06"/>
                 <Parameter name="Free Ion Guess" type="double" value="4.4349219948232250E-06"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 
             <ParameterList name="Al+++">
@@ -494,7 +493,6 @@
                 <Parameter name="Value" type="double" value="2.2134319178343449E-08"/>
                 <Parameter name="Free Ion Guess" type="double" value="5.7872778934634030E-09"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 
             <ParameterList name="Ca++">
@@ -502,7 +500,6 @@
                 <Parameter name="Value" type="double" value="1.0000000000000001E-05"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.0028381797381277E-05"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 
             <ParameterList name="Cl-">
@@ -510,7 +507,6 @@
                 <Parameter name="Value" type="double" value="9.9892245160353443E-03"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.0017671789459564E-02"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 
             <ParameterList name="Fe+++">
@@ -518,7 +514,6 @@
                 <Parameter name="Value" type="double" value="2.5231281704019796E-16"/>
                 <Parameter name="Free Ion Guess" type="double" value="2.5303135246636987E-16"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 
             <ParameterList name="CO2(aq)">
@@ -526,7 +521,6 @@
                 <Parameter name="Value" type="double" value="1.2146187645233065E-05"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.0742367360218137E-05"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 
             <ParameterList name="K+">
@@ -534,7 +528,6 @@
                 <Parameter name="Value" type="double" value="3.3200000000000001E-05"/>
                 <Parameter name="Free Ion Guess" type="double" value="3.3294546826549702E-05"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 
             <ParameterList name="Mg++">
@@ -542,7 +535,6 @@
                 <Parameter name="Value" type="double" value="5.3499999999999997E-03"/>
                 <Parameter name="Free Ion Guess" type="double" value="5.3651825870676614E-03"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 
             <ParameterList name="Na+">
@@ -550,7 +542,6 @@
                 <Parameter name="Value" type="double" value="2.7799999999999998E-04"/>
                 <Parameter name="Free Ion Guess" type="double" value="2.7879126028761809E-04"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 
             <ParameterList name="SiO2(aq)">
@@ -558,7 +549,6 @@
                 <Parameter name="Value" type="double" value="1.7728213902597242E-04"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.7778699932375911E-04"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 
             <ParameterList name="SO4--">
@@ -566,7 +556,6 @@
                 <Parameter name="Value" type="double" value="2.2500000000000001E-05"/>
                 <Parameter name="Free Ion Guess" type="double" value="2.2564075409559286E-05"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 
             <ParameterList name="Tritium">
@@ -574,7 +563,6 @@
                 <Parameter name="Value" type="double" value="1.0000000000000001E-15"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.0028477959804128E-15"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 
             <ParameterList name="NO3-">
@@ -582,7 +570,6 @@
                 <Parameter name="Value" type="double" value="1.0000000000000000E-03"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.0028477959449073E-03"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 
             <ParameterList name="UO2++">
@@ -590,7 +577,6 @@
                 <Parameter name="Value" type="double" value="1.2499999999951748E-10"/>
                 <Parameter name="Free Ion Guess" type="double" value="3.0944807860172163E-11"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molarity"/>
             </ParameterList>
 	    
           </ParameterList>
@@ -620,7 +606,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.9578630770689822E-06, 2.9578630770689822E-06}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 	    
             <ParameterList name="Al+++">
@@ -629,7 +614,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.2134319178343449E-08, 2.2134319178343449E-08}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Ca++">
@@ -638,7 +622,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-05, 1.0000000000000001E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Cl-">
@@ -647,7 +630,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{9.9892245160353443E-03, 9.9892245160353443E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Fe+++">
@@ -656,7 +638,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.5231281704019796E-16, 2.5231281704019796E-16}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="CO2(aq)">
@@ -665,7 +646,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.2146187645233065E-05, 1.2146187645233065E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="K+">
@@ -674,7 +654,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{3.3200000000000001E-05, 3.3200000000000001E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Mg++">
@@ -683,7 +662,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{5.3499999999999997E-03, 5.3499999999999997E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Na+">
@@ -692,7 +670,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.7799999999999998E-04, 2.7799999999999998E-04}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="SiO2(aq)">
@@ -701,7 +678,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.7728213902597242E-04, 1.7728213902597242E-04}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="SO4--">
@@ -710,7 +686,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.2500000000000001E-05, 2.2500000000000001E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Tritium">
@@ -719,7 +694,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-15, 1.0000000000000001E-15}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="NO3-">
@@ -728,7 +702,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0000000000000000E-03, 1.0000000000000000E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="UO2++">
@@ -737,7 +710,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.2499999999951748E-10, 1.2499999999951748E-10}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
           </ParameterList>
@@ -763,7 +735,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.9578630770689822E-06, 2.9578630770689822E-06}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Al+++">
@@ -772,7 +743,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.2134319178343449E-08, 2.2134319178343449E-08}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Ca++">
@@ -781,7 +751,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-05, 1.0000000000000001E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Cl-">
@@ -790,7 +759,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{9.9892245160353443E-03, 9.9892245160353443E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Fe+++">
@@ -799,7 +767,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.5231281704019796E-16, 2.5231281704019796E-16}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="CO2(aq)">
@@ -808,7 +775,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.2146187645233065E-05, 1.2146187645233065E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="K+">
@@ -817,7 +783,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{3.3200000000000001E-05, 3.3200000000000001E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Mg++">
@@ -826,7 +791,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{5.3499999999999997E-03, 5.3499999999999997E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Na+">
@@ -835,7 +799,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.7799999999999998E-04, 2.7799999999999998E-04}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="SiO2(aq)">
@@ -844,7 +807,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.7728213902597242E-04, 1.7728213902597242E-04}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="SO4--">
@@ -853,7 +815,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.2500000000000001E-05, 2.2500000000000001E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Tritium">
@@ -862,7 +823,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-15, 1.0000000000000001E-15}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="NO3-">
@@ -871,7 +831,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0000000000000000E-03, 1.0000000000000000E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="UO2++">
@@ -880,7 +839,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.2499999999951748E-10, 1.2499999999951748E-10}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
           </ParameterList>
@@ -907,7 +865,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.9578630770689822E-06, 9.7317820303283020E-03, 2.9578630770689822E-06}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Al+++">
@@ -916,7 +873,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.2134319178343449E-08, 1.0000000000000002E-08, 2.2134319178343449E-08}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Ca++">
@@ -925,7 +881,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-05, 1.0000000000000001E-05, 1.0000000000000001E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Cl-">
@@ -934,7 +889,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{9.9892245160353443E-03, 3.3899999999999997E-05, 9.9892245160353443E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Fe+++">
@@ -943,7 +897,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.5231281704019796E-16, 2.4142508014351454E-06, 2.5231281704019796E-16}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="CO2(aq)">
@@ -952,7 +905,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.2146187645233065E-05, 1.0712465873417377E-05, 1.2146187645233065E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="K+">
@@ -961,7 +913,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{3.3200000000000001E-05, 1.7200000000000000E-06, 3.3200000000000001E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Mg++">
@@ -970,7 +921,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{5.3499999999999997E-03, 2.4700000000000001E-06, 5.3499999999999997E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Na+">
@@ -979,7 +929,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.7799999999999998E-04, 3.0398521726429520E-04, 2.7799999999999998E-04}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="SiO2(aq)">
@@ -988,7 +937,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.7728213902597242E-04, 1.1800000000000000E-04, 1.7728213902597242E-04}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="SO4--">
@@ -997,7 +945,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.2500000000000001E-05, 4.8000000000000001E-05, 2.2500000000000001E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Tritium">
@@ -1006,7 +953,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-15, 2.1700000000000002E-09, 1.0000000000000001E-15}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="NO3-">
@@ -1015,7 +961,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0000000000000000E-03, 1.0000000000000000E-02, 1.0000000000000000E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="UO2++">
@@ -1024,7 +969,6 @@
 		<Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.2499999999951748E-10, 3.0099999999999854E-05, 1.2499999999951748E-10}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
           </ParameterList>
@@ -1050,7 +994,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.9578630770689822E-06, 2.9578630770689822E-06}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Al+++">
@@ -1059,7 +1002,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.2134319178343449E-08, 2.2134319178343449E-08}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Ca++">
@@ -1068,7 +1010,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-05, 1.0000000000000001E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Cl-">
@@ -1077,7 +1018,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{9.9892245160353443E-03, 9.9892245160353443E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Fe+++">
@@ -1086,7 +1026,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.5231281704019796E-16, 2.5231281704019796E-16}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="CO2(aq)">
@@ -1095,7 +1034,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.2146187645233065E-05, 1.2146187645233065E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="K+">
@@ -1104,7 +1042,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{3.3200000000000001E-05, 3.3200000000000001E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Mg++">
@@ -1113,7 +1050,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{5.3499999999999997E-03, 5.3499999999999997E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Na+">
@@ -1122,7 +1058,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.7799999999999998E-04, 2.7799999999999998E-04}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="SiO2(aq)">
@@ -1131,7 +1066,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.7728213902597242E-04, 1.7728213902597242E-04}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="SO4--">
@@ -1140,7 +1074,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{2.2500000000000001E-05, 2.2500000000000001E-05}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="Tritium">
@@ -1149,7 +1082,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0000000000000001E-15, 1.0000000000000001E-15}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="NO3-">
@@ -1158,7 +1090,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.0000000000000000E-03, 1.0000000000000000E-03}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
             <ParameterList name="UO2++">
@@ -1167,7 +1098,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{1.2499999999951748E-10, 1.2499999999951748E-10}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
 
           </ParameterList>
@@ -1290,7 +1220,7 @@
 
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="plot"/>
-      <Parameter name="Time Macro" type="Array(string)" value="{Active Basin, Plume evolution: every year, Plume evolution: every five years}"/>
+      <Parameter name="Time Macros" type="Array(string)" value="{Active Basin, Plume evolution: every year, Plume evolution: every five years}"/>
     </ParameterList>
 
     <ParameterList name="Checkpoint Data">

@@ -1,6 +1,6 @@
 <ParameterList name="Main">
 
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
 
   <!--
      Getting started on a simple 2D steady-state saturated test
@@ -32,7 +32,7 @@
       <ParameterList name="Unstructured Algorithm">
         <ParameterList name="Linear Solver">
           <Parameter name="linear solver tolerance" type="double" value="1e-18"/>
-          <Parameter name="linear solver maximum iterations" type="int" value="10"/>
+          <Parameter name="linear solver maximum iterations" type="int" value="15"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -334,8 +334,8 @@ Intrinsic Permeability: Uniform, or Intrinsic Permeability: Anisotropic Uniform"
 
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="steady-flow"/>
-      <Parameter name="File Name Digits" type="string" value="5"/>
-      <Parameter name="Time Macro" type="Array(string)" value="{Steady State}"/>
+      <Parameter name="File Name Digits" type="int" value="5"/>
+      <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
     </ParameterList>
 
   </ParameterList>

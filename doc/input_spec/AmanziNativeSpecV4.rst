@@ -443,44 +443,43 @@ An example with two soils having different water retention models is:
 
   <ParameterList name="Water retention models">
     <ParameterList name="Soil 1">
-       <Parameter name="region" type="string" value="Top Half"/>
-       <Parameter name="water retention model" type="string" value="van Genuchten"/>
-       <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
-       <Parameter name="van Genuchten m" type="double" value="0.28571"/>
-       <Parameter name="van Genuchten l" type="double" value="0.5"/>
-       <Parameter name="residual saturation" type="double" value="0.103"/>
-       <Parameter name="relative permeability model" type="string" value="Mualem"/>
+      <Parameter name="region" type="string" value="Top Half"/>
+      <Parameter name="water retention model" type="string" value="van Genuchten"/>
+      <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
+      <Parameter name="van Genuchten m" type="double" value="0.28571"/>
+      <Parameter name="van Genuchten l" type="double" value="0.5"/>
+      <Parameter name="residual saturation" type="double" value="0.103"/>
+      <Parameter name="relative permeability model" type="string" value="Mualem"/>
+      <ParameterList name="Output"/>
+        <Parameter name="file" type="string" value="soil1.txt"/>
+        <Parameter name="number of points" type="int" value="1000"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="Soil 2">
-       <Parameter name="region" type="string" value="Bottom Half"/>
-       <Parameter name="water retention model" type="string" value="Brooks Corey"/>
-       <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
-       <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>
-       <Parameter name="Brooks Corey l" type="double" value="0.51"/>
-       <Parameter name="residual saturation" type="double" value="0.103"/>
-       <Parameter name="regularization interval" type="double" value="0.0"/>
-       <Parameter name="relative permeability model" type="string" value="Burdine"/>
+      <Parameter name="region" type="string" value="Bottom Half"/>
+      <Parameter name="water retention model" type="string" value="Brooks Corey"/>
+      <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
+      <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>
+      <Parameter name="Brooks Corey l" type="double" value="0.51"/>
+      <Parameter name="residual saturation" type="double" value="0.103"/>
+      <Parameter name="regularization interval" type="double" value="0.0"/>
+      <Parameter name="relative permeability model" type="string" value="Burdine"/>
     </ParameterList>
   </ParameterList>
 
 
 Amanzi performs rudimentary checks of validity of the provided parameters. 
-The relative permeability curves can be calculated and saved in the file krel_pc.txt
-and krel_sat.txt using the following optional commands (that go to `"Water retention models`" list):
+The relative permeability curves can be calculated and saved in an ASCI file 
+if the list `"Output`" is provided. This list has two mandatory parameters:
 
-.. code-block:: xml
+* `"file`" [string] A user defined file name. It should be different for 
+  each soil. 
 
-  <ParameterList name="Water retention models">
-    ...
-    <Parameter name="plot krel-pc curves" type="Array(double)" value="{0.0, 0.1, 3000.0}"/>
-    <Parameter name="plot krel-sat curves" type="Array(double)" value="{0.0001, 0.01, 1.0}"/>
-  </ParameterList>
-
-The triple of doubles means the starting capillary pressure (resp., saturation), the period, and 
-the final capillary pressure (resp., saturation).
-Each line in the output file will contain the capillary pressure (resp., saturation) and relative 
-permeability values for all water retention models in the order they appear in the input spec.
+* `"number of points`" [int] A number of data points. 
+  Each file will contain a table with three columns: saturation, relative permeability, and
+  capillary pressure. The data points are equidistributed between the residual saturation
+  and 1.
 
 
 Boundary conditions
@@ -544,6 +543,7 @@ of the other available functions:
        </ParameterList>
 
        <ParameterList name="seepage face">
+         <Parameter name="reference pressure" type="double" value="101325.0"/>
          <ParameterList name="BC 3">
            <Parameter name="regions" type="Array(string)" value="{East side Bottom}"/>
            <ParameterList name="outward mass flux">
@@ -565,6 +565,8 @@ parameters described below. Mix and match of parameters is allowed.
 * `"relative to top`" [bool] indicates that the static head is defined with respect
   to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
   Default value is `"false`". 
+
+* `"reference pressure`" [double] defaults to the atmospheric pressure. 
 
 * `"submodel`" [string] indicates different models for the seepage face boundary condition.
   It can take values `"PFloTran`", `"FACT`", and `"Amanzi`". The first option leads to a 
@@ -1146,12 +1148,12 @@ Given values :math:`x_i, y_i, i=0, ... n-1`, a tabular function :math:`f(x)` is
 defined piecewise: 
 
 .. math::
-  \begin{array}{rcl}
-  f(x) &=& x_0, \quad x \le x_0,\\
+  \begin{matrix}
+  f(x) &=& x_0, & x \le x_0,\\
   f(x) &=& f(x_{i-1}) + (x - x_{i-1}) \frac{f(x_i) - f(x_{i-1})}{x_i - x_{i-1}},
-  \quad x \in (x_{i-1}, x_i],\\
-  f(x) &=& x_{n-1}, \quad x > x_{n-1}.
-  \end{array}
+  & x \in (x_{i-1}, x_i],\\
+  f(x) &=& x_{n-1}, & x > x_{n-1}.
+  \end{matrix}
 
 This function is continuous and linear between two consecutive points.
 This behavior can be changed using parameter `"forms`".
@@ -1217,7 +1219,7 @@ A multi-variable linear function is formally defined by
 .. math::
   f(x) = y_0 + \sum_{j=0}^{n-1} g_j (x_j - x_{0,j}) 
 
-with the constant term "math:`y_0` and gradient :math:`g_0,\, g_1\,\dots, g_{n-1}`.
+with the constant term "math:`y_0` and gradient :math:`g_0,\, g_1\,..., g_{n-1}`.
 If the reference point :math:`x_0` is specified, it must have the same
 number of values as the gradient.  Otherwise, it defaults to zero.
 Note that one of the parameters in a multi-valued linear function can be time.
@@ -1237,7 +1239,7 @@ Separable function
 A separable function is defined as the product of other functions such as
 
 .. math::
-  f(x_0, x_1,\dots,x_{n-1}) = f_1(x_0)\, f_2(x_1,\dots,x_{n-1})
+  f(x_0, x_1,...,x_{n-1}) = f_1(x_0)\, f_2(x_1,...,x_{n-1})
 
 where :math:`f_1` is defined by the `"function1`" sublist, and 
 :math:`f_2` by the `"function2`" sublist:
@@ -1348,7 +1350,20 @@ Internal parameters of Boomer AMG includes
      <Parameter name="smoother sweeps" type="int" value="3"/>
      <Parameter name="cycle applications" type="int" value="5"/>
      <Parameter name="strong threshold" type="double" value="0.5"/>
+     <Parameter name="verbosity" type="int" value="0"/>
+     <Parameter name="relaxation type" type="int" value="6"/>
    </ParameterList>
+
+* `"tolerance`" [double] if is not zero, the preconditioner is dynamic 
+  and approximate the inverse matrix with the prescribed tolerance (in
+  the energy norm ???).
+
+* `"relaxation type`" [int] defines the smoother to be used. Default is 6 
+  which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method.
+
+* `"verbosity`" [int] prints BoomerAMG statistics useful for analysis. 
+  Default is 0.
+
 
 Trilinos ML
 -----------

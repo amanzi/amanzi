@@ -17,20 +17,23 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<State>& S) :
+                                 const std::vector<std::string>& component_names,
+                                 const Teuchos::RCP<State>& S) :
     S_(S),
     ghosted_(true),
     name_("state"),
     plist_(plist),
-    number_of_aqueous_components_(0),
+    number_of_aqueous_components_(component_names.size()),
     number_of_minerals_(0),
     number_of_ion_exchange_sites_(0),
     number_of_sorption_sites_(0),
     using_sorption_(false),
-    using_sorption_isotherms_(false) {
+    using_sorption_isotherms_(false),
+    compnames_(component_names),
+    num_aux_data_(-1) {
 
   mesh_ = S_->GetMesh();
-  SetupSoluteNames_();
+//  SetupSoluteNames_();
   SetupMineralNames_();
   SetupSorptionSiteNames_();
 
@@ -46,7 +49,7 @@ Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
 
 
 Chemistry_State::Chemistry_State(const Teuchos::RCP<State>& S,
-        int number_of_aqueous_components,
+        const std::vector<std::string>& component_names,
         int number_of_minerals,
         int number_of_ion_exchange_sites,
         int number_of_sorption_sites,
@@ -55,38 +58,17 @@ Chemistry_State::Chemistry_State(const Teuchos::RCP<State>& S,
     S_(S),
     ghosted_(true),
     name_("state"),
-    number_of_aqueous_components_(number_of_aqueous_components),
+    number_of_aqueous_components_(component_names.size()),
     number_of_minerals_(number_of_minerals),
     number_of_ion_exchange_sites_(number_of_ion_exchange_sites),
     number_of_sorption_sites_(number_of_sorption_sites),
     using_sorption_(using_sorption),
-    using_sorption_isotherms_(using_sorption_isotherms) {
+    using_sorption_isotherms_(using_sorption_isotherms),
+    compnames_(component_names),
+    num_aux_data_(-1) {
   mesh_ = S_->GetMesh();
   RequireData_();
 }
-
-
-void Chemistry_State::SetupSoluteNames_() {
-  // get the number of component concentrations from the
-  // parameter list
-  if (plist_.isParameter("Number of component concentrations")) {
-    number_of_aqueous_components_ =
-        plist_.get<int>("Number of component concentrations");
-  } else {
-    // if the parameter list does not contain this key, then assume we
-    // are being called from a state constructor w/o a valid parameter
-    // list (vis/restart) and the number_of_components variable was
-    // already set to a valid (non-zero?) value....
-  }
-
-  if (number_of_aqueous_components_ > 0) {
-    // read the component names if they are spelled out
-    Teuchos::Array<std::string> comp_names;
-    if (plist_.isParameter("Component Solutes")) {
-      comp_names = plist_.get<Teuchos::Array<std::string> >("Component Solutes");
-    }
-  }
-}  // end SetupSoluteNames()
 
 void Chemistry_State::SetupMineralNames_() {
   // do we need to worry about minerals?
@@ -111,6 +93,29 @@ void Chemistry_State::SetupMineralNames_() {
   }
 }  // end SetupMineralNames()
 
+#if 0
+void Chemistry_State::SetupSoluteNames_() {
+  // get the number of component concentrations from the
+  // parameter list
+  if (plist_.isParameter("Number of component concentrations")) {
+    number_of_aqueous_components_ =
+        plist_.get<int>("Number of component concentrations");
+  } else {
+    // if the parameter list does not contain this key, then assume we
+    // are being called from a state constructor w/o a valid parameter
+    // list (vis/restart) and the number_of_components variable was
+    // already set to a valid (non-zero?) value....
+  }
+
+  if (number_of_aqueous_components_ > 0) {
+    // read the component names if they are spelled out
+    Teuchos::Array<std::string> comp_names;
+    if (plist_.isParameter("Component Solutes")) {
+      comp_names = plist_.get<Teuchos::Array<std::string> >("Component Solutes");
+    }
+  }
+}  // end SetupSoluteNames_()
+#endif
 
 void Chemistry_State::SetupSorptionSiteNames_() {
   // could almost generalize the SetupMineralNames and
@@ -316,16 +321,19 @@ void Chemistry_State::RequireData_() {
 
   // Require my data
   if (number_of_aqueous_components_ > 0) {
-    // TCC
-    if (compnames_.size() != number_of_aqueous_components_) {
-      compnames_.clear();
-      for (int i=0; i!=number_of_aqueous_components_; ++i) {
+
+    // Make dummy names if our component names haven't already been set.
+    if (compnames_.empty())
+    {
+      for (int i = 0; i < number_of_aqueous_components_; ++i)
+      {
         std::stringstream ss;
-        ss << "Component " << i;
+        ss << "Component " << i << std::ends;
         compnames_.push_back(ss.str());
       }
     }
 
+    // TCC
     if (!S_->HasField("total_component_concentration")) {    
       // set the names for vis
       std::vector<std::vector<std::string> > conc_names_cv(1);
@@ -536,11 +544,232 @@ void Chemistry_State::AllocateAdditionalChemistryStorage(int num_aqueous_compone
     fac->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, num_aqueous_components);
     Teuchos::RCP<CompositeVector> sac = Teuchos::rcp(new CompositeVector(*fac));    
-    S_->GetField("secondary_activity_coeff",name_)->SetData(*fac);
+    S_->GetField("secondary_activity_coeff",name_)->SetData(sac);
     S_->GetField("secondary_activity_coeff",name_)->CreateData();
     S_->GetFieldData("secondary_activity_coeff",name_)->PutScalar(1.0);
   }
 }
+
+#ifdef ALQUIMIA_ENABLED
+
+void Chemistry_State::CopyToAlquimia(const int cell_id,
+                                     AlquimiaMaterialProperties& mat_props,
+                                     AlquimiaState& state,
+                                     AlquimiaAuxiliaryData& aux_data)
+{
+  CopyToAlquimia(cell_id, total_component_concentration(), mat_props, state, aux_data);
+}
+
+void Chemistry_State::CopyToAlquimia(const int cell_id,
+                                     Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
+                                     AlquimiaMaterialProperties& mat_props,
+                                     AlquimiaState& state,
+                                     AlquimiaAuxiliaryData& aux_data)
+{
+  state.water_density = (*this->water_density())[cell_id];
+  state.porosity = (*this->porosity())[cell_id];
+
+  for (unsigned int c = 0; c < number_of_aqueous_components(); c++) 
+  {
+    double* cell_components = (*aqueous_components)[c];
+    double total_mobile = cell_components[cell_id];
+    state.total_mobile.data[c] = total_mobile;
+    if (using_sorption()) 
+    {
+      double* cell_total_sorbed = (*this->total_sorbed())[c];
+      double immobile = cell_total_sorbed[cell_id];
+      state.total_immobile.data[c] = immobile;
+    }  // end if(using_sorption)
+  }
+
+  // minerals
+  assert(state.mineral_volume_fraction.size == number_of_minerals());
+  assert(state.mineral_specific_surface_area.size == number_of_minerals());
+  for (unsigned int m = 0; m < number_of_minerals(); m++) 
+  {
+    double* cell_minerals = (*this->mineral_volume_fractions())[m];
+    state.mineral_volume_fraction.data[m] = cell_minerals[cell_id];
+    if (this->mineral_specific_surface_area() != Teuchos::null) 
+    {
+      double* cells_ssa = (*this->mineral_specific_surface_area())[m];
+      state.mineral_specific_surface_area.data[m] = cells_ssa[cell_id];
+    }
+  }
+
+  // ion exchange
+  assert(state.cation_exchange_capacity.size == number_of_ion_exchange_sites());
+  if (number_of_ion_exchange_sites() > 0) 
+  {
+    for (unsigned int i = 0; i < number_of_ion_exchange_sites(); i++) 
+    {
+      double* cell_ion_exchange_sites = (*this->ion_exchange_sites())[i];
+      state.cation_exchange_capacity.data[i] = cell_ion_exchange_sites[cell_id];
+    }
+  }
+  
+  // surface complexation
+  if (number_of_sorption_sites() > 0) 
+  {
+    assert(number_of_sorption_sites() == state.surface_site_density.size);
+    for (int s = 0; s < number_of_sorption_sites(); ++s) 
+    {
+      // FIXME: Need site density names, too?
+      double* cell_sorption_sites = (*this->sorption_sites())[s];
+      state.surface_site_density.data[s] = cell_sorption_sites[cell_id];
+      // TODO(bandre): need to save surface complexation free site conc here!
+    }
+  }
+
+  // Auxiliary data -- block copy.
+  if (num_aux_data_ != -1) 
+  {
+    int num_aux_ints = aux_data.aux_ints.size;
+    int num_aux_doubles = aux_data.aux_doubles.size;
+    for (int i = 0; i < num_aux_ints; i++) 
+    {
+      double* cell_aux_ints = (*aux_data_)[i];
+      aux_data.aux_ints.data[i] = (int)cell_aux_ints[cell_id];
+    }
+    for (int i = 0; i < num_aux_doubles; i++) 
+    {
+      double* cell_aux_doubles = (*aux_data_)[i + num_aux_ints];
+      aux_data.aux_doubles.data[i] = cell_aux_doubles[cell_id];
+    }
+  }
+
+  mat_props.volume = (*this->volume())[cell_id];
+  mat_props.saturation = (*this->water_saturation())[cell_id];
+
+  // sorption isotherms
+  if (using_sorption_isotherms()) 
+  {
+    for (unsigned int i = 0; i < number_of_aqueous_components(); ++i) 
+    {
+      double* cell_data = (*this->isotherm_kd())[i];
+      mat_props.isotherm_kd.data[i] = cell_data[cell_id];
+      
+      cell_data = (*this->isotherm_freundlich_n())[i];
+      mat_props.freundlich_n.data[i] = cell_data[cell_id];
+      
+      cell_data = (*this->isotherm_langmuir_b())[i];
+      mat_props.langmuir_b.data[i] = cell_data[cell_id];
+    }
+  }
+}
+
+void Chemistry_State::CopyFromAlquimia(const int cell_id,
+                                       const AlquimiaMaterialProperties& mat_props,
+                                       const AlquimiaState& state,
+                                       const AlquimiaAuxiliaryData& aux_data,
+                                       Teuchos::RCP<const Epetra_MultiVector> aqueous_components)
+{
+  // If the chemistry has modified the porosity and/or density, it needs to 
+  // be updated here.
+  //(this->water_density())[cell_id] = state.water_density;
+  //(this->porosity())[cell_id] = state.porosity;
+  for (unsigned int c = 0; c < number_of_aqueous_components(); c++) 
+  {
+    double mobile = state.total_mobile.data[c];
+
+    // NOTE: We place our mobile concentrations into the chemistry state's
+    // NOTE: total component concentrations, not the aqueous concentrations.
+    // NOTE: I assume this has to do with our operator splitting technique.
+    double total = mobile;
+    double* cell_components = (*aqueous_components)[c];
+    cell_components[cell_id] = total;
+
+    if (using_sorption())
+    {
+      double immobile = state.total_immobile.data[c];
+      double* cell_total_sorbed = (*this->total_sorbed())[c];
+      cell_total_sorbed[cell_id] = immobile;
+    }
+  }
+
+  // minerals
+  for (unsigned int m = 0; m < number_of_minerals(); m++) 
+  {
+    double* cell_minerals = (*this->mineral_volume_fractions())[m];
+    cell_minerals[cell_id] = state.mineral_volume_fraction.data[m];
+    if (this->mineral_specific_surface_area() != Teuchos::null) 
+    {
+      cell_minerals = (*this->mineral_specific_surface_area())[m];
+      cell_minerals[cell_id] = state.mineral_specific_surface_area.data[m];
+    }
+  }
+
+  // ion exchange
+  for (unsigned int i = 0; i < number_of_ion_exchange_sites(); i++) 
+  {
+    double* cell_ion_exchange_sites = (*this->ion_exchange_sites())[i];
+    cell_ion_exchange_sites[cell_id] = state.cation_exchange_capacity.data[i];
+  }
+
+  // surface complexation
+  if (number_of_sorption_sites() > 0)
+  {
+    for (unsigned int i = 0; i < number_of_sorption_sites(); i++) 
+    {
+      double* cell_sorption_sites = (*this->sorption_sites())[i];
+      cell_sorption_sites[cell_id] = state.surface_site_density.data[i];
+    }
+  }
+
+  // Auxiliary data -- block copy.
+  int num_aux_ints = aux_data.aux_ints.size;
+  int num_aux_doubles = aux_data.aux_doubles.size;
+  if (num_aux_data_ == -1) 
+  {
+    assert(num_aux_ints >= 0);
+    assert(num_aux_doubles >= 0);
+    num_aux_data_ = num_aux_ints + num_aux_doubles;
+    aux_data_ = Teuchos::rcp(new Epetra_MultiVector(this->mesh_maps()->cell_map(false), num_aux_data_));
+  }
+  else
+  {
+    assert(num_aux_data_ == num_aux_ints + num_aux_doubles);
+  }
+  for (int i = 0; i < num_aux_ints; i++) 
+  {
+    double* cell_aux_ints = (*aux_data_)[i];
+    cell_aux_ints[cell_id] = (double)aux_data.aux_ints.data[i];
+  }
+  for (int i = 0; i < num_aux_doubles; i++) 
+  {
+    double* cell_aux_doubles = (*aux_data_)[i + num_aux_ints];
+    cell_aux_doubles[cell_id] = aux_data.aux_doubles.data[i];
+  }
+
+  // NOTE: volume and water saturation are read-only from the chemistry state, so they can't be 
+  // NOTE: altered by Alquimia.
+
+  // sorption isotherms
+  if (using_sorption_isotherms()) 
+  {
+    for (unsigned int i = 0; i < number_of_aqueous_components(); ++i) 
+    {
+      double* cell_data = (*this->isotherm_kd())[i];
+      cell_data[cell_id] = mat_props.isotherm_kd.data[i];
+
+      cell_data = (*this->isotherm_freundlich_n())[i];
+      cell_data[cell_id] = mat_props.freundlich_n.data[i];
+
+      cell_data = (*this->isotherm_langmuir_b())[i];
+      cell_data[cell_id] = mat_props.langmuir_b.data[i];
+    }
+  }
+}
+
+#if 0
+void Chemistry_State::SetComponentNames(const std::vector<std::string>& comp_names)
+{
+  number_of_aqueous_components_ = comp_names.size();
+  compnames_ = comp_names;
+}
+#endif
+
+
+#endif
 
 } // namespace AmanziChemistry
 } // namespace Amanzi

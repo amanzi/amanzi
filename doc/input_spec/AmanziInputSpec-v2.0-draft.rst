@@ -18,14 +18,49 @@ individual submodels are consistent between Amanzi, the MRD and this
 document. Where applicable, the relevant sections of the MRD are
 indicated.
 
+All data required to execute Amanzi is specified within an XML formated file layed out according to the Amanzi input schema.  The current version of the Amanzi schema is located with the Amanzi source code repository.  The following discusses each section of the schema, its purpose and provides examples.  Further details can be found in the schema document amanzi.xsd.
+
+Please note, many attributes within the XML list a limited set of specified values.  During validation of the input file or initialization of Amanzi the values in the user provided input file will be compared against the limited set provided in the XML Schema document.  Errors will occur is the values do not match exactly.  These values are CASE SENSITIVE.  The Amanzi schema has been designed will all LOWER CASE values.  Please note this when writing input file.  In particular, `"Exodus II`" will be evaluated as `"exodus ii`".
+
 Amanzi Input
 ============
 
-Here, the user specifies which version of the input the input file adheres to. 
+Here, the user specifies which version of the input the input file adheres to. The user also specifies the overall type of simulation being run.  Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The attribute `"type`" is used to selected between the following:
+
+* `"Structured`": This instructs Amanzi to use BoxLib data structures
+  and an associated paradigm to numerically represent the flow
+  equations.  Data containers in the BoxLib software library,
+  developed by CCSE at LBNL, are based on a hierarchical set of
+  uniform Cartesian grid patches.  `"Structured`" requires that the
+  simulation domain be a single coordinate-aligned rectangle, and that
+  the "base mesh" consists of a logically rectangular set of uniform
+  hexahedral cells.  This option supports a block-structured approach
+  to dynamic mesh refinement, wherein successively refined subregions
+  of the solution are constructed dynamically to track "interesting"
+  features of the evolving solution.  The numerical solution approach
+  implemented under the `"Structured`" framework is highly optimized
+  to exploit regular data and access patterns on massively parallel
+  computing architectures. 
+
+* `"Unstructured`": This instructs Amanzi to use data structures
+  provided in the Trilinos software framework.  To the extent
+  possible, the discretization algorithms implemented under this
+  option are largely independent of the shape and connectivity of the
+  underlying cells.  As a result, this option supports an arbitrarily
+  complex computational mesh structure that enables users to work with
+  numerical meshes that can be aligned with geometrically complex
+  man-made or geostatigraphical features.  Under this option, the user
+  typically provides a mesh file that was generated with an external
+  software package.  The following mesh file formats are currently
+  supported: `"Exodus II`".  Amanzi also provides a rudmentary
+  capability to generate regular meshes within the unstructured
+  framework internally.
+
+An exmample root tag of an input file would look like the following.
 
 .. code-block:: xml
 
-  <amanzi_input version="2.0.0"/>
+  <amanzi_input version="2.0.0" type="unstructured"/>
 
 
 Model Description
@@ -95,6 +130,74 @@ Here is an overall example for the modle description element.
       <conc_unit>molar</conc_unit>
     </units>
   </model_description>
+
+
+Definitions
+===========
+
+Definitions allows the user the define and name constants, times, and macros to be used in later sectons of the input file.  This is to streamline the look and readability of the input file.  The user should take care not to reuse names within this section or other sections.  This may have unindented consequences.
+
+Named Times
+-----------
+
+Here the user can specify and name times to be used in other sections of the input file.   Note that if a name is repeated the last read value will be retained and all others will be overwritten.
+
+A *time* requires the attributes `"name`" and `"value`".  If a unit is not specified with the value seconds is taken as the default.
+
+Constants
+---------
+
+Here the user can define and name constants to be used in other sections of the input file.  Note that if a name is repeated the last read value will be retained and all others will be overwritten.
+
+A *constant* has three attributes `"name`", `"type`", and `"value`".  The user can provide any name, but not it should not be repeated anywhere within the input to avoid confusion.  The available types include: `"none`", `"time`", `"constant`", `"numerical`", and `"area_mass_flux`".  Values assigned to constants of type `"time`" can include known units, otherwise seconds will be assumed as the default.
+
+Macros
+------
+
+Three types of macros are currently available *time_macro*, *cycle_macro*, and *variable_macro*.
+
+The *time_macro* requires an attribute `"name`".  The macro can then either take the form of one or more labeled time subelements or the subelements `"start`", `"timestep_interval`", and `"stop`" again containing labeled times.  A `"stop`" value of -1 will continue the cycle macro until the end of the simulation.  The labeled times can be time values assuming the default time unit of seconds or including a known time unit.
+
+The *cycle_macro* requires an attribute `"name`" and the subelements `"start`", `"timestep_interval`", and `"stop`" with integer values.  A `"stop`" value of -1 will continue the cycle macro until the end of the simulation.
+
+The *variable_macro* requires an attribute `"name`"  and one or more subelements `"variable`" containing strings.
+
+
+An example *definitions* section would look as the following:
+
+.. code-block:: xml
+
+  <definitions>
+    <constants>
+      <constant name="zero" type="none" value="0.000"/>
+
+      <constant name ="start"                   type="time" value="1956.0;y"/>
+      <constant name ="B-18_release_end"        type="time" value ="1956.3288;y"/>
+      <constant name="future_recharge"          type="area_mass_flux" value="1.48666E-6"/>
+
+      <numerical_constant name="zero" value="0.000"/>
+
+    </constants>
+
+    <macros>
+
+      <time_macro name="Macro 1">
+        <time>6.17266656E10</time>
+        <time>6.172982136E10</time>
+        <time>6.173297712E10</time>
+        <time>6.3372710016E10</time>
+        <time>6.33834396E10</time>
+      </time_macro>
+
+      <cycle_macro name = "Every_1000_timesteps">
+        <start>0</start>
+        <timestep_interval>1000</timestep_interval>
+        <stop>-1 </stop>
+      </cycle_macro>
+
+    </macros>
+    
+  </definitions>
 
 
 Execution Control
@@ -268,43 +371,16 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 Mesh
 ====
 
-Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface.  "Mesh`" is used to select between the following options:
+Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The type of simulation is specified in the root tag `"amanzi_input`".  The `"mesh`" element specifies the internal mesh framework to be utilized and whether the mesh is to be internal generated or read in from an Exodus II file.  The default mesh framework is MSTK.  The other available frameworks are stk::mesh and simple (in serial).
 
-* `"Structured`": This instructs Amanzi to use BoxLib data structures
-  and an associated paradigm to numerically represent the flow
-  equations.  Data containers in the BoxLib software library,
-  developed by CCSE at LBNL, are based on a hierarchical set of
-  uniform Cartesian grid patches.  `"Structured`" requires that the
-  simulation domain be a single coordinate-aligned rectangle, and that
-  the "base mesh" consists of a logically rectangular set of uniform
-  hexahedral cells.  This option supports a block-structured approach
-  to dynamic mesh refinement, wherein successively refined subregions
-  of the solution are constructed dynamically to track "interesting"
-  features of the evolving solution.  The numerical solution approach
-  implemented under the `"Structured`" framework is highly optimized
-  to exploit regular data and access patterns on massively parallel
-  computing architectures. 
+To internally generate a mesh the `"mesh`" element takes the following form.
 
-* `"Unstructured`": This instructs Amanzi to use data structures
-  provided in the Trilinos software framework.  To the extent
-  possible, the discretization algorithms implemented under this
-  option are largely independent of the shape and connectivity of the
-  underlying cells.  As a result, this option supports an arbitrarily
-  complex computational mesh structure that enables users to work with
-  numerical meshes that can be aligned with geometrically complex
-  man-made or geostatigraphical features.  Under this option, the user
-  typically provides a mesh file that was generated with an external
-  software package.  The following mesh file formats are currently
-  supported: `"Exodus 2`".  Amanzi also provides a rudmentary
-  capability to generate regular meshes within the unstructured
-  framework internally.
 
 .. code-block:: xml
 
-   <mesh class=unstructured framework=["mstk"|"stk::mesh"|"moab"|"simple"]>
-
+   <mesh framework=["mstk"|"stk::mesh"|"simple"]>
       <comments> May be included in the Mesh element </comments>
-
+      <dimension>3</dimension>
       <generate>
          <number_of_cells nx = "integer value"  ny = "integer value"  nz = "integer value"/>
          <box  low_coordinates = "x_low,y_low,z_low" high_coordinates = "x_high,y_high,z_high"/>
@@ -312,18 +388,26 @@ Amanzi supports both structured and unstructured numerical solution approaches. 
 
    </mesh>
 
-testing.
+For example:
 
 .. code-block:: xml
 
-  <mesh framework="mstk"> <!-- default is MSTK for unstructured -->
-   <dimension>3</dimension>
+  <mesh framework="mstk"> 
    <generate>
      <number_of_cells nx = "64"  ny = "56"  nz = "107"/>
      <box  low_coordinates = "0.0,0.0,0.0" high_coordinates = "320.0,280.0,107.0"/>
    </generate>
   </mesh>
 
+Currently Amanzi only read Exodus II mesh files.  An example `"mesh`" element would look as the following.
+
+.. code-block:: xml
+
+  <mesh framework="mstk"> 
+   <comments> May be included in the Mesh element </comments>
+   <dimension>3</dimension>
+   <file>mesh.exo</file>
+  </mesh>
 
 Regions
 =======
@@ -367,19 +451,18 @@ A region allows for a box region or a region file.
 .. code-block:: xml
 
   <region name="Name of Region">
-      Required Elements: region  ( OR file - NOT IMPLEMENTED YET)
+      Required Elements: region  
       Optional Elements: comments
   </region>
 
 A region is define as describe above.  A file is define as follows.
 
-REMINDER - FILE OPTION NOT YET IMPLEMENTED
 
 .. code-block:: xml
 
-  <file name="file name" type="color | labeled set" format="exodus ii" entity="cell | face" label="integer"/>
+  <file name="filename" type=["color"|"labeled set"] format=["exodus ii"] entity=["cell"|"face"] label="integer"/>
 
-Some discussion of reading a region file goes here. Talk about the color function or labeled set.  State we only read the ExodusII mesh format files.  State the region file must be specify cells or faces.  Explain what the label is for.
+Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the `"mesh`" element.  PLEASE NOTE the values listed within [] for attributes above are CASE SENSITIVE.  For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
 
 Geochemistry
 ============
@@ -480,11 +563,15 @@ Process Kernels
       Optional Elements: comments
   </process_kernels>
 
+For each process kernel the element `"state`" indicates whether the solution is being calculated or not.  
+
 * `"flow`" has two attributes, `"state`" and `"model`".
       
       * `"state`" = "on | off"
 
-      *  `"model`" = " richards | saturated " 
+      *  `"model`" = " richards | saturated | constant" 
+
+Currently three scenerios are avaiable for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to the a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
 * `"transport`" has two attributes, `"state`" and `"algorithm`".
       
@@ -492,11 +579,17 @@ Process Kernels
 
       *  `"algorithm`" = " explicit first-order | explicit second-order | none " 
 
+      * `"sub_cycling`" = "on | off"
+
+For `"transport`" a combination of `"state`" and `"algorithm`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the integration algorithm must be specified.  Whether sub-cycling is to be utilized within the transport algorithm is also specified here.
+
 * `"chemistry`" has two attributes, `"state`" and `"process_model`".
       
       * `"state`" = "on | off"
 
       *  `"process_model`" = " implicit operator split | none " 
+
+For `"chemistry`" a combination of `"state`" and `"process_model`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the process model must be specified. 
 
 Phases
 ======
@@ -521,7 +614,7 @@ Some general discussion of the `"Phases`" section goes here.
 
 Here is more info on the `"liquid_phase`" elements:
 
-    * `"eos`"="string" - SKIPPED, not currently supported
+    * `"eos`"="string" 
 
     * `"viscosity`"="exponential"
 
@@ -714,11 +807,13 @@ The ''vis'' element defines the visualization filenaming scheme and how often to
 .. code-block:: xml
 
   <vis>
-      Required Elements: base_filename, num_digits, time_macro
-      Optional Elements: NONE
+      Required Elements: base_filename, num_digits 
+      Optional Elements: time_macros, cycle_macros
   </vis>
 
-The *base_filename* element contain the text component of the how the visualization files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the visualization files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or interation id)  Final the *time_macro* element indicates the previously defined time_macro to be used to determin the frequency at which to write the visualization files.
+The *base_filename* element contain the text component of the how the visualization files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the visualization files.  The *num_digits* elements indicates how many digits to use for the index. 
+
+The presence of the ''vis'' element means that visualization files will be written out after cycle 0 and the final cycle of the simulation.  The optional elements *time_macros* or *cycle_macros* indicate additional points during the simulation at which visualization files are to be written out.  Both elements allow one or more of the appropriate type of macro to be listed.  These macros will be determine the appropriate times or cycles to write out visualization files.  See the `Definitions`_ section for defining individual macros.
 
 (*EIB NOTE* - there should be a comment here about how the output is controlled, i.e. for each PK where do you go to turn on and off fields.  This will probably get filled in as the other sections fill out.)
 
@@ -729,7 +824,7 @@ Example:
   <vis>
      <base_filename>plot</base_filename>
      <num_digits>5</num_digits>
-     <time_macro>Macro 1</time_macro>
+     <time_macros>Macro 1</time_macros>
   </vis>
 
 

@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
 
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Richards"/>
@@ -304,8 +304,8 @@
 
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="plot"/>
-      <Parameter name="File Name Digits" type="string" value="5"/>
-      <Parameter name="Time Macro" type="Array(string)" value="{EndTime}"/>
+      <Parameter name="File Name Digits" type="int" value="5"/>
+      <Parameter name="Time Macros" type="Array(string)" value="{EndTime}"/>
     </ParameterList>
   </ParameterList>
 </ParameterList> 

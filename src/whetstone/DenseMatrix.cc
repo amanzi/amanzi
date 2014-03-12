@@ -77,6 +77,17 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B)
 
 
 /* ******************************************************************
+* Trace operator is extended to rectangular matrices.
+****************************************************************** */
+double DenseMatrix::Trace()
+{
+  double s(0.0);
+  for (int i = 0; i < m_ * n_; i += m_ + 1) s += data_[i];
+  return s;
+}
+
+
+/* ******************************************************************
 * Matrix-matrix product. The matrices are ordered by columns.
 ****************************************************************** */
 int DenseMatrix::Multiply(const DenseMatrix& A, 

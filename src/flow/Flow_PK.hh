@@ -13,9 +13,8 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Teuchos_RCP.hpp"
 
-#include "flow_boundary_function.hh"
-#include "flow_domain_function.hh"
-#include "unique_mesh_function.hh"
+#include "FlowBoundaryFunction.hh"
+#include "FlowDomainFunction.hh"
 #include "BDFFnBase.hh"
 #include "CompositeVectorSpace.hh"
 #include "VerboseObject.hh"
@@ -40,7 +39,7 @@ double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
 
 class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
  public:
-  Flow_PK() { passwd_ = "state"; }
+  Flow_PK();
   virtual ~Flow_PK() {};
 
   // main methods
@@ -64,7 +63,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   // boundary and source teerms
   void ProcessBCs();
   void ComputeBCs(const CompositeVector& pressure);
-  void ValidateBCs() const;
 
   void AddSourceTerms(CompositeVector& rhs);
 
@@ -113,7 +111,11 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
                              std::vector<AmanziGeometry::Point>& velocity,
                              std::vector<double>& porosity, std::vector<double>& saturation);
   void WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk);
-  
+
+  // V&V
+  void VV_ValidateBCs() const;
+  void VV_PrintHeadExtrema(const CompositeVector& pressure) const;
+
   // extensions 
   int BoundaryFaceGetCell(int f);  // of AmanziMesh
 

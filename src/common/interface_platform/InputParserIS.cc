@@ -453,29 +453,56 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
       }
 
       // Cycle Macro
-      if ( vis_list.isParameter("Cycle Macro") ) {
-        std::string cycle_macro = vis_list.get<std::string>("Cycle Macro");
+      Teuchos::Array<int> all_cycles;
+      all_cycles.clear();
+      if ( vis_list.isParameter("Cycle Macros") ) {
+        std::vector<std::string> cycle_macros;
+       	cycle_macros = vis_list.get<Teuchos::Array<std::string> >("Cycle Macros").toVector();
 
-        //Teuchos::Array<int> cm = get_Cycle_Macro(cycle_macro,plist);
-        Teuchos::ParameterList cycle_macro_list = get_Cycle_Macro(cycle_macro, plist);
+	int j(0);
+        for (int i=0; i < cycle_macros.size(); i++) {
+          //Teuchos::Array<int> cm = get_Cycle_Macro(cycle_macro,plist);
+          Teuchos::ParameterList cycle_macro_list = get_Cycle_Macro(cycle_macros[i], plist);
+          if (cycle_macro_list.isParameter("Start_Period_Stop")) {
+            std::stringstream ss;
+            ss << "cycles start period stop " << j;
+            vis_list.set(ss.str(),cycle_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+            ++j;
+          } else if (cycle_macro_list.isParameter("Values")) {
+            Teuchos::Array<int> cycles;
+            cycles = cycle_macro_list.get<Teuchos::Array<int> >("Values");
 
-        if (cycle_macro_list.isParameter("Start_Period_Stop")) {
-          vis_list.set<Teuchos::Array<int> >("cycles start period stop",cycle_macro_list.get<Teuchos::Array<int> >("Start_Period_Stop"));
-        } else if (cycle_macro_list.isParameter("Values")) {
-          vis_list.set<Teuchos::Array<int> >("cycles",cycle_macro_list.get<Teuchos::Array<int> >("Values"));
-        } else {
-          Exceptions::amanzi_throw(Errors::Message("Cycle Macros must hace either the Values of Start_Period_Stop parameter."));
-        }
+            std::list<int> all_list, cur_list;
+            for (Teuchos::Array<int>::iterator at = all_cycles.begin(); at != all_cycles.end(); ++at) {
+              all_list.push_back(*at);
+            }
+            for (Teuchos::Array<int>::iterator t = cycles.begin(); t != cycles.end(); ++t) {
+              cur_list.push_back(*t);
+            }
+            all_list.sort();
+            cur_list.sort();
+
+            all_list.merge(cur_list);
+            all_list.unique();
+
+            all_cycles.clear();
+            for (std::list<int>::iterator al = all_list.begin(); al != all_list.end(); ++al) {
+              all_cycles.push_back(*al);
+            }
+          } else {
+            Exceptions::amanzi_throw(Errors::Message("Cycle Macros must hace either the Values of Start_Period_Stop parameter."));
+          }
+	}
         // delete the cycle macro
-        vis_list.remove("Cycle Macro");
+        vis_list.remove("Cycle Macros");
       }
 
-      // Time Macro
+      // Time Macros
       Teuchos::Array<double> all_times;
       all_times.clear();
-      if ( vis_list.isParameter("Time Macro") ) {
+      if ( vis_list.isParameter("Time Macros") ) {
         std::vector<std::string> time_macros;
-        time_macros = vis_list.get<Teuchos::Array<std::string> >("Time Macro").toVector();
+        time_macros = vis_list.get<Teuchos::Array<std::string> >("Time Macros").toVector();
 
         int j(0);
         for (int i=0; i < time_macros.size(); i++) {
@@ -510,7 +537,7 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
             }
           }
         }
-        vis_list.remove("Time Macro");
+        vis_list.remove("Time Macros");
       }
       if (all_times.size() != 0) {
         vis_list.set("times", all_times);
@@ -880,6 +907,13 @@ Teuchos::ParameterList create_TimePeriodControl_List(Teuchos::ParameterList* pli
         time_map.erase(start_time);
         time_map.erase(end_time);
       }
+      if (exe_sublist.sublist("Time Integration Mode").isSublist("Transient with Static Flow")) {
+        double start_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("Start");
+        double end_time = exe_sublist.sublist("Time Integration Mode").sublist("Transient with Static Flow").get<double>("End");
+
+        time_map.erase(start_time);
+        time_map.erase(end_time);
+      }	
     }
   }
 
@@ -1161,8 +1195,6 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
         }
 
         if (n_transport_bcs >= 0) {
-          Teuchos::ParameterList& tbc_list = trp_list.sublist("boundary conditions").sublist("concentration");
-
           Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
 
           // TODO: these simple checks for one transported phase will not
@@ -1171,7 +1203,6 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
           //if ( (++ phase_list.begin()) == phase_list.end() ) {
           if (true) {
             Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
-
             for (Teuchos::ParameterList::ConstIterator i = bc_sublist.begin(); i != bc_sublist.end(); i++) {
               // read the assigned regions
               Teuchos::Array<std::string> regs = bc_sublist.sublist(bc_sublist.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
@@ -1191,18 +1222,28 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
                       std::stringstream compss;
                       compss << *i;
                       if ( comps.sublist(*i).isSublist("BC: Uniform Concentration") ) {
-                        Teuchos::ParameterList& bc = tbc_list.sublist(compss.str()).sublist(bc_root_str);
-                        bc.set<Teuchos::Array<std::string> >("regions",regs);
                         Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Uniform Concentration");
+                        if (bcsub.isParameter("Geochemical Condition")) { // Is this a geochemical condition?
+                          // Add an entry to Transport->boundary conditions->geochemical conditions.
+                          Teuchos::ParameterList& geochem_cond_list = trp_list.sublist("boundary conditions").sublist("geochemical conditions");
+                          std::string geochem_cond_name = bcsub.get<std::string>("Geochemical Condition");
+                          Teuchos::ParameterList& geochem_cond = geochem_cond_list.sublist(geochem_cond_name);
+                          geochem_cond.set<Teuchos::Array<std::string> >("regions", regs);
+                        }
+                        else { // proceed with ordinary Transport BCs.
+                          Teuchos::ParameterList& tbc_list = trp_list.sublist("boundary conditions").sublist("concentration");
+                          Teuchos::ParameterList& bc = tbc_list.sublist(compss.str()).sublist(bc_root_str);
+                          bc.set<Teuchos::Array<std::string> >("regions",regs);
 
-                        Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
-                        Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
-                        Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
+                          Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
+                          Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
+                          Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
 
-                        Teuchos::ParameterList &bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
-                        bcfn.set<Teuchos::Array<double> >("y values", values);
-                        bcfn.set<Teuchos::Array<double> >("x values", times);
-                        bcfn.set<Teuchos::Array<std::string> >("forms", translate_forms(time_fns));
+                          Teuchos::ParameterList &bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
+                          bcfn.set<Teuchos::Array<double> >("y values", values);
+                          bcfn.set<Teuchos::Array<double> >("x values", times);
+                          bcfn.set<Teuchos::Array<std::string> >("forms", translate_forms(time_fns));
+                        }
                       }
                     }
                   }
@@ -1372,9 +1413,9 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
         // insert the flow BC sublist
         Teuchos::ParameterList flow_bc; // = flow_list->sublist("boundary conditions");
         flow_bc = create_SS_FlowBC_List(plist);
-        if ( flow_bc.begin() != flow_bc.end() ) {
+        //if ( flow_bc.begin() != flow_bc.end() ) {
           flow_list->sublist("boundary conditions") = flow_bc;
-        }
+	//}
 
         // insert sources, if they exist
         Teuchos::ParameterList flow_src; // = flow_list->sublist("source terms");
@@ -1677,28 +1718,30 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
     // look at sublists
     if (src_sublist.isSublist(src_sublist.name(i))) {
       Teuchos::ParameterList& src = src_sublist.sublist(src_sublist.name(i));
-      // get name
-      std::string name = src_sublist.name(i);
-
-      // create src sublist
-      Teuchos::ParameterList& src_sub_out = src_list.sublist(name);
-      // get the regions
-      Teuchos::Array<std::string> regions = src.get<Teuchos::Array<std::string> >("Assigned Regions");
-      src_sub_out.set<Teuchos::Array<std::string> >("regions",regions);
-      // get source function
       Teuchos::ParameterList src_fn;
+      Teuchos::ParameterList src_sub_out;      
       if (src.isSublist("Source: Volume Weighted")) {
         src_sub_out.set<std::string>("spatial distribution method","volume");
         src_fn = src.sublist("Source: Volume Weighted");
+	if (!src.sublist("Source: Volume Weighted").isParameter("Values")) continue;
       } else if (src.isSublist("Source: Permeability Weighted")) {
         src_sub_out.set<std::string>("spatial distribution method","permeability");
         src_fn = src.sublist("Source: Permeability Weighted");
+	if (!src.sublist("Source: Permeability Weighted").isParameter("Values")) continue;
       } else if (src.isSublist("Source: Uniform")) {
         src_sub_out.set<std::string>("spatial distribution method","none");
         src_fn = src.sublist("Source: Uniform");
+	if (!src.sublist("Source: Uniform").isParameter("Values")) continue;
       } else {
         Exceptions::amanzi_throw(Errors::Message("In the definition of Sources: you must either specify 'Source: Volume Weighted', 'Source: Permeability Weighted', or 'Source: Uniform'"));
       }
+
+      std::string name = src_sublist.name(i);
+
+      // get the regions
+      Teuchos::Array<std::string> regions = src.get<Teuchos::Array<std::string> >("Assigned Regions");
+      src_sub_out.set<Teuchos::Array<std::string> >("regions",regions);
+
       // create time function
       Teuchos::ParameterList& src_sub_out_fn = src_sub_out.sublist("sink");
       Teuchos::Array<double> values = src_fn.get<Teuchos::Array<double> >("Values");
@@ -1729,6 +1772,7 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
       } else {
         // something is wrong with the input
       }
+      src_list.sublist(name) = src_sub_out;
     }
   }
 
@@ -2733,15 +2777,34 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 
           for (int ii=0; ii<comp_names.size(); ii++) {
             if (ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).isSublist(comp_names[ii])) {
+              Teuchos::ParameterList& conc_ic =  ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration");
 
-              double conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Value");
+              if (conc_ic.isParameter("Geochemical Condition")) { // Geochemical condition?
+                // Add an entry to State->initial conditions->geochemical conditions.
+                Teuchos::ParameterList& geochem_cond_list = stt_ic.sublist("geochemical conditions");
+                std::string geochem_cond_name = conc_ic.get<std::string>("Geochemical Condition");
+                Teuchos::ParameterList& geochem_cond = geochem_cond_list.sublist(geochem_cond_name);
+                geochem_cond.set<Teuchos::Array<std::string> >("regions", regions);
 
-              std::stringstream dof_str;
-              dof_str << "DoF " << ii+1 << " Function";
+                // Now add fake initial concentrations, since the State requires entries 
+                // of this sort to initialize fields. The chemistry PK will simply 
+                // overwrite these values when it initializes its data.
+                std::stringstream dof_str;
+                dof_str << "DoF " << ii+1 << " Function";
+                dof_list.sublist(dof_str.str())
+                  .sublist("function-constant")
+                  .set<double>("value",0.0);
+              }
+              else { // ordinary initial concentration value.
+                double conc = conc_ic.get<double>("Value");
 
-              dof_list.sublist(dof_str.str())
+                std::stringstream dof_str;
+                dof_str << "DoF " << ii+1 << " Function";
+
+                dof_list.sublist(dof_str.str())
                   .sublist("function-constant")
                   .set<double>("value",conc);
+              }
             }
           }
         }

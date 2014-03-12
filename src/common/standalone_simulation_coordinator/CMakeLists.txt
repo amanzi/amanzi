@@ -87,7 +87,7 @@ endif()
 # Binary: amanzi-demo-driver
 #
 if ( ENABLE_Unstructured )
-  set(ssc_unstructured_grid_libs udriv mpc state transport flow whetstone matrix_audit)
+  set(ssc_unstructured_grid_libs udriv mpc state transport flow whetstone matrix_audit chemistry_pk)
 else()
   set(ssc_unstructured_grid_libs)
 endif()
@@ -104,7 +104,7 @@ else()
 endif()
 
 get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
-set(ssc_common_libs error_handling ${GEOCHEM_LIBS} chemistry_pk interface atk)
+set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface atk)
 
 set(ssc_libs ${ssc_structured_grid_libs}
              ${ssc_unstructured_grid_libs}

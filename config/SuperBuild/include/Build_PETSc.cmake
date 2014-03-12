@@ -146,7 +146,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     BUILD_COMMAND     $(MAKE) -j 1 PETSC_DIR=${PETSc_source_dir} # Run the CMake script to build
                     BUILD_IN_SOURCE   ${PETSc_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${petsc_install_dir}  # Install directory, NOT in the usual directory
+                    INSTALL_DIR       ${petsc_install_dir}  # Install directory, NOT in the usual directory
                     INSTALL_COMMAND   $(MAKE) install PETSC_DIR=${PETSc_source_dir} # Install directory, NOT in the usual directory
                     # -- Output control
                     ${PETSc_logging_args})

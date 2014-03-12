@@ -37,7 +37,10 @@
 #   0.91.12a     - updated METIS to 5.1.0, ParMetis to 4.0.3a, SuperLU to 4.3, SuperLUDist to 3.3 and PETSc to 3.4.3
 #   0.91.12b     - updated Trilinos to 10.6.1 and MSTK to 2.11rc2
 #   0.91.12c     - updated CCSE to version 1.2.5
-#   0.92.0       - Merge lib updates through 0.91.12c
+#   0.91.13      - updated MSTK to version 2.11rc3
+#   0.91.14      - updated MSTK to version 2.11rc4 (fixes memory leaks)
+#   0.91.15      - updated MSTK to version 2.11rc5 (fixes memory leaks)
+#   0.92.0       - Merge lib updates through 0.91.15
 #
 
 include(CMakeParseArguments)
@@ -87,8 +90,8 @@ endmacro(amanzi_tpl_version_write)
 
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
-set (AMANZI_TPLS_VERSION_MINOR 91)
-set (AMANZI_TPLS_VERSION_PATCH 15)
+set (AMANZI_TPLS_VERSION_MINOR 92)
+set (AMANZI_TPLS_VERSION_PATCH 0)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -255,11 +258,11 @@ set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
 #
 set(MSTK_VERSION_MAJOR 2)
 set(MSTK_VERSION_MINOR 11)
-set(MSTK_VERSION_PATCH rc2)
+set(MSTK_VERSION_PATCH rc5)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        8b7fd0a181ebe8732e8e8d718eec69d0)
+set(MSTK_MD5_SUM        69295e3ffea66e96409e0cbf21e84590)
 
 #
 # TPL: MOAB
@@ -329,12 +332,12 @@ set(PETSc_MD5_SUM        db40d8f811f5445ac510dc85ae738573)
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 11)
-set(Trilinos_VERSION_MINOR 6)
-set(Trilinos_VERSION_PATCH 1)
+set(Trilinos_VERSION_MINOR 0)
+set(Trilinos_VERSION_PATCH 3)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}.${Trilinos_VERSION_MINOR}.${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(Trilinos_ARCHIVE_FILE   trilinos-${Trilinos_VERSION}-Source.tar.bz2)
-set(Trilinos_MD5_SUM        b97d882535fd1856599b1c7338f5b45a)
+set(Trilinos_MD5_SUM        edd4cbb84ff5874dc96e846ceeab50b7)
 
 #
 # TPL: SEACAS

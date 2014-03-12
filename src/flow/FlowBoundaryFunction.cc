@@ -1,18 +1,18 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see $AMANZI_DIR/COPYRIGHT
+  License: see $AMANZI_DIR/COPYRIGHT
 
-Author (v1): Neil Carlson
-       (v2): Ethan Coon
+  Author (v1): Neil Carlson
+         (v2): Ethan Coon
 */
 
-#include "flow_boundary_function.hh"
+#include "FlowBoundaryFunction.hh"
 
 namespace Amanzi {
 namespace Functions {
@@ -133,7 +133,7 @@ void FlowBoundaryFunction::ComputeShift(double time, double* shift)
       for (int i = 0; i != dim; ++i) xargs[i] = xc[i];
       // Careful tracing of the typedefs is required here: spec_and_ids->first
       //  is a RCP<Spec>, and the Spec's second is an RCP to the function.
-      value_[*id] = (*(*spec_and_ids)->first->second)(args)[0]  + shift[*id];
+      value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] + shift[*id];
     }
   }
 

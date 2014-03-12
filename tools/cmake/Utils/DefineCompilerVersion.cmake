@@ -29,8 +29,8 @@ function(DEFINE_COMPILER_VERSION)
          # For now, I assume the version option is the same for all languages in
          # a compiler group. This may need tweaking in the future.
          if ( ${_compiler_id_uc} STREQUAL "GNU" )
-           set(_version_cmd_opt "-v")
-           set(_regexp_pattern ".*gcc[ ]+version[ ]+([0-9]+\\.[0-9]+\\.[0-9]+).*")
+           set(_version_cmd_opt "--version")
+           set(_regexp_pattern ".*\(GCC\)[ ]+([0-9]+\\.[0-9]+\\.[0-9]+).*")
          elseif(${_compiler_id_uc} STREQUAL "PGI" )
            set(_version_cmd_opt "-V")
            set(_regexp_pattern ".*pgcc[ ]+([0-9]+\\.[0-9]+-[0-9]+).*")

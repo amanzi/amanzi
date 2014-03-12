@@ -7,31 +7,43 @@
 #include <xercesc/sax/SAXParseException.hpp>
 #include <xercesc/validators/common/Grammar.hpp>
 
-class AmanziErrorHandler : public ErrorHandler
+class AmanziErrorHandler : public xercesc::ErrorHandler
 {
     private:
-        void reportParseException(const SAXParseException& ex)
+        void reportParseException(const xercesc::SAXParseException& ex)
         {
-            char* msg = XMLString::transcode(ex.getMessage());
-            fprintf(stderr, "at line %lu column %lu, %s\n",
-                    ex.getColumnNumber(), ex.getLineNumber(), msg);
-            XMLString::release(&msg);
+            char* msg = xercesc::XMLString::transcode(ex.getMessage());
+            fprintf(stderr, " at line %lu column %lu, %s\n",
+                    ex.getLineNumber(), ex.getColumnNumber(), msg);
+            xercesc::XMLString::release(&msg);
         }
  
     public:
-        void warning(const SAXParseException& ex)
+        void warning(const xercesc::SAXParseException& ex)
         {
-            reportParseException(ex);
+            //reportParseException(ex);
+            char* msg = xercesc::XMLString::transcode(ex.getMessage());
+            fprintf(stderr, "WARNING at line %lu column %lu, %s\n",
+                    ex.getLineNumber(), ex.getColumnNumber(), msg);
+            xercesc::XMLString::release(&msg);
         }
  
-        void error(const SAXParseException& ex)
+        void error(const xercesc::SAXParseException& ex)
         {
-            reportParseException(ex);
+            //reportParseException(ex);
+            char* msg = xercesc::XMLString::transcode(ex.getMessage());
+            fprintf(stderr, "ERROR at line %lu column %lu, %s\n",
+                    ex.getLineNumber(), ex.getColumnNumber(), msg);
+            xercesc::XMLString::release(&msg);
         }
  
-        void fatalError(const SAXParseException& ex)
+        void fatalError(const xercesc::SAXParseException& ex)
         {
-            reportParseException(ex);
+            //reportParseException(ex);
+            char* msg = xercesc::XMLString::transcode(ex.getMessage());
+            fprintf(stderr, "FATAL ERROR at line %lu column %lu, %s\n",
+                    ex.getLineNumber(), ex.getColumnNumber(), msg);
+            xercesc::XMLString::release(&msg);
         }
  
         void resetErrors()

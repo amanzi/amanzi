@@ -30,7 +30,7 @@
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "flow_boundary_function.hh"
+#include "FlowBoundaryFunction.hh"
 
 #include "FlowTypeDefs.hh"
 

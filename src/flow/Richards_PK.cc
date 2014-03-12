@@ -41,7 +41,8 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Simplest possible constructor: extracts lists and requires fields.
 ****************************************************************** */
-Richards_PK::Richards_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
+Richards_PK::Richards_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) :
+  Flow_PK()
 {
   S_ = S;
 
@@ -145,12 +146,17 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
 ****************************************************************** */
 Richards_PK::~Richards_PK()
 {
-  delete bc_pressure;
-  delete bc_flux;
-  delete bc_head;
-  delete bc_seepage;
+  if (bc_pressure != NULL) delete bc_pressure;
+  if (bc_flux != NULL) delete bc_flux;
+  if (bc_head != NULL) delete bc_head;
+  if (bc_seepage != NULL) delete bc_seepage;
 
-  if (ti_specs != NULL) OutputTimeHistory(rp_list_, ti_specs->dT_history);
+  if (ti_specs != NULL) {
+    OutputTimeHistory(rp_list_, ti_specs->dT_history);
+  }
+
+  if (src_sink != NULL) delete src_sink;
+  if (vo_ != NULL) delete vo_;
 }
 
 

@@ -45,9 +45,9 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
   bc_pressure = bc_factory.CreatePressure(bc_submodel);
   bc_head = bc_factory.CreateStaticHead(atm_pressure_, rho, gravity_, bc_submodel);
   bc_flux = bc_factory.CreateMassFlux(bc_submodel);
-  bc_seepage = bc_factory.CreateSeepageFace(bc_submodel);
+  bc_seepage = bc_factory.CreateSeepageFace(atm_pressure_, bc_submodel);
 
-  ValidateBCs();
+  VV_ValidateBCs();
   ProcessBCs();
 
   // Create the source object if any
@@ -100,7 +100,8 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
 
   } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "steady-state calculation was not requested." << std::endl;
+    *vo_->os() << vo_->color("yellow") << "steady-state calculation was not requested." 
+               << vo_->reset() << std::endl;
   }
 
   // Time integrator for period III, called transient time integrator
@@ -123,7 +124,8 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
 
   } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "missing sublist '\"transient time integrator'\"" << std::endl;
+    *vo_->os() << vo_->color("yellow") << "no sublist '\"transient time integrator'\"" 
+               << vo_->reset() << std::endl;
   }
 }
 

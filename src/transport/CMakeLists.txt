@@ -18,6 +18,9 @@ include(TestManager)
 # through these variables.
 project(TRANSPORT)
 
+# Get the includes directory for chemistry (needed for Chemistry_State and BCs).
+get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
+
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
@@ -30,6 +33,8 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
+include_directories(${CHEM_INCLUDES_DIR})
+include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
@@ -69,7 +74,7 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
                    LINK_LIBS geometry mesh error_handling state data_structures 
-                             time_integration ${Epetra_LIBRARIES})
+                             geochemistry chemistry_pk time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
 

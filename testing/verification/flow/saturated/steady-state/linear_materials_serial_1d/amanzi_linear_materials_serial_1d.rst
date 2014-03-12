@@ -133,7 +133,8 @@ from Equation :eq:`domainDarcyVel`.
 Amanzi verification test results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. plot:: amanzi_linear_materials_serial_1d.py
+
 .. include:: table_values.txt
 
-.. plot:: amanzi_linear_materials_serial_1d.py
 

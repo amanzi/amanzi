@@ -27,6 +27,21 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
+* default constructor that initializes all pointers to NULL
+****************************************************************** */
+Flow_PK::Flow_PK() :
+    bc_pressure(NULL),
+    bc_flux(NULL),
+    bc_head(NULL),
+    bc_seepage(NULL),
+    src_sink(NULL),
+    ti_specs(NULL),
+    vo_(NULL),
+    passwd_("state")
+{
+}
+
+/* ******************************************************************
 * Initiazition of fundamental flow sturctures.                                              
 ****************************************************************** */
 void Flow_PK::Init()
@@ -118,12 +133,13 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
 
   if (u.HasComponent("face")) {
     const Epetra_MultiVector& u_faces = *u.ViewComponent("face");
+    double ref_pressure = bc_seepage->reference_pressure();
 
     for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
       int f = bc->first;
 
       if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {  // Model I.
-        if (u_faces[0][f] < atm_pressure_) {
+        if (u_faces[0][f] < ref_pressure) {
           bc_model[f] = FLOW_BC_FACE_FLUX;
           bc_values[f][0] = bc->second * rainfall_factor[f];
         } else {
@@ -133,7 +149,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
             bc_values[f][0] = bc->second * rainfall_factor[f];
           } else {
             bc_model[f] = FLOW_BC_FACE_PRESSURE;
-            bc_values[f][0] = atm_pressure_;
+            bc_values[f][0] = ref_pressure;
             flag_essential_bc = 1;
             nseepage++;
             area_seepage += mesh_->face_area(f);
@@ -147,13 +163,13 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
         double pcmin = 3 * pcreg / 2;
         double pcmax = pcreg / 2;
 
-        double pc = u_faces[0][f] - atm_pressure_;
+        double pc = u_faces[0][f] - ref_pressure;
         if (pc < pcmin) {
           bc_model[f] = FLOW_BC_FACE_FLUX;
           bc_values[f][0] = influx;
         } else if (pc >= pcmax) {
           bc_model[f] = FLOW_BC_FACE_MIXED;
-          bc_values[f][0] = I * atm_pressure_;
+          bc_values[f][0] = I * ref_pressure;
           bc_values[f][1] = -I;  // Impedance I should be positive.
           flag_essential_bc = 1;
           nseepage++;
@@ -169,7 +185,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
         double influx = bc->second * rainfall_factor[f];
         double pcreg = -FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
 
-        double pc = u_faces[0][f] - atm_pressure_;
+        double pc = u_faces[0][f] - ref_pressure;
         if (pc < pcreg) {
           bc_model[f] = FLOW_BC_FACE_FLUX;
           bc_values[f][0] = influx;
@@ -180,7 +196,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
             bc_values[f][0] = influx;
           } else {
             bc_model[f] = FLOW_BC_FACE_PRESSURE;
-            bc_values[f][0] = atm_pressure_;
+            bc_values[f][0] = ref_pressure;
             flag_essential_bc = 1;
             nseepage++;
             area_seepage += mesh_->face_area(f);

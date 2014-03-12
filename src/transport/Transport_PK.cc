@@ -41,8 +41,31 @@ namespace AmanziTransport {
 ****************************************************************** */
 Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
                            std::vector<std::string>& component_names)
-    : S_(S), component_names_(component_names)
 {
+  Construct_(glist, S, component_names);
+}
+
+#ifdef ALQUIMIA_ENABLED
+Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
+                           Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
+                           Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
+    : chem_state_(chem_state), chem_engine_(chem_engine)
+{
+  // Retrieve the component names from the chemistry engine.
+  std::vector<std::string> comp_names;
+  chem_engine_->GetPrimarySpeciesNames(comp_names);
+  Construct_(glist, S, comp_names);
+}
+#endif
+
+void Transport_PK::Construct_(Teuchos::ParameterList& glist, 
+                              Teuchos::RCP<State> S,
+                              std::vector<std::string>& component_names)
+{
+  vo_ = NULL;
+  S_ = S;
+  component_names_ = component_names;
+
   parameter_list = glist.sublist("Transport");
   preconditioners_list = glist.sublist("Preconditioners");
   solvers_list = glist.sublist("Solvers");
@@ -99,14 +122,15 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
   }
 }
 
-
 /* ******************************************************************
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
 Transport_PK::~Transport_PK()
 { 
-  delete vo_;
+  if (vo_ != NULL) {
+    delete vo_;
+  }
   for (int i=0; i<bcs.size(); i++) delete bcs[i]; 
 }
 
@@ -404,6 +428,7 @@ int Transport_PK::Advance(double dT_MPC)
   if (dispersion_models_.size() != 0) {
     std::string scheme("tpfa");
     if (mesh_->mesh_type() == AmanziMesh::RECTANGULAR) scheme = "mfd";
+    // scheme = "mfd";
 
     DispersionMatrixFactory mfactory;
     dispersion_matrix_ = mfactory.Create(scheme, &dispersion_models_, mesh_, S_);
@@ -453,8 +478,12 @@ int Transport_PK::Advance(double dT_MPC)
                  << " itrs=" << num_itrs / number_components << std::endl;
     }
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-      int i =dispersion_matrix_->nfailed;
-      if (i > 0) *vo_->os() << "failed matrices: " << (100 * i) / ncells_owned << "%" << std::endl;
+      Teuchos::OSTab tab = vo_->getOSTab();
+      int i = dispersion_matrix_->nprimary;
+      int j = dispersion_matrix_->nsecondary;
+      int k = dispersion_matrix_->num_simplex_itrs;
+      if (i > 0) *vo_->os() << "secondary matrices: " << double(100 * j) / ncells_owned << "%" 
+          << ",  average itrs: " << k / (i + 1) << std::endl;
     }
   }
   return 0;
@@ -462,7 +491,7 @@ int Transport_PK::Advance(double dT_MPC)
 
 
 /* ******************************************************************* 
-* Updates states 
+* Copy theadvected tcc to the provided state.
 ******************************************************************* */
 void Transport_PK::CommitState(Teuchos::RCP<State> S) 
 {

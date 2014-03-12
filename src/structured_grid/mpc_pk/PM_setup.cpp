@@ -268,7 +268,7 @@ PorousMedia::MODEL_ID PorousMedia::model;
 #ifdef AMANZI
 
 #ifdef ALQUIMIA_ENABLED
-Amanzi::AmanziChemistry::Chemistry_Engine* PorousMedia::chemistry_engine;
+Amanzi::AmanziChemistry::ChemistryEngine* PorousMedia::chemistry_engine;
 #else
 std::string PorousMedia::amanzi_database_file;
 std::string PorousMedia::amanzi_activity_model;
@@ -369,7 +369,7 @@ namespace
     static void PM_Setup_CleanUpStatics() 
     {
 #ifdef ALQUIMIA_ENABLED
-      Amanzi::AmanziChemistry::Chemistry_Engine *chemistry_engine = PorousMedia::GetChemistryEngine();
+      Amanzi::AmanziChemistry::ChemistryEngine *chemistry_engine = PorousMedia::GetChemistryEngine();
       delete chemistry_engine; chemistry_engine = 0;
 #endif
     }
@@ -2161,9 +2161,6 @@ void  PorousMedia::read_chem()
       do_full_strang = 0;
     }
       
-  std::string chemistry_model = "Amanzi"; pp.query("chemistry_model",chemistry_model);
-
-  // chemistry...
 #ifdef AMANZI
 
   if (do_tracer_chemistry) {
@@ -2174,8 +2171,7 @@ void  PorousMedia::read_chem()
       const Teuchos::ParameterList& chpl = pl.sublist("Chemistry");
       std::string chem_engine_name = chpl.get<std::string>("Engine");
       std::string chem_engine_input_filename = chpl.get<std::string>("Engine Input File");
-      //chemistry_engine = new Amanzi::AmanziChemistry::Chemistry_Engine(chem_engine_name,chem_engine_input_filename);
-      chemistry_engine = new Amanzi::AmanziChemistry::Chemistry_Engine(chem_engine_name);
+      chemistry_engine = new Amanzi::AmanziChemistry::ChemistryEngine(chem_engine_name,chem_engine_input_filename);
       std::vector<std::string> primarySpeciesNames, mineralNames, siteNames, ionExchangeNames, isothermSpeciesNames;
       chemistry_engine->GetPrimarySpeciesNames(primarySpeciesNames);
       chemistry_engine->GetMineralNames(mineralNames);

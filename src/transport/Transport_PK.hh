@@ -36,6 +36,10 @@
 #include "TransportSourceFactory.hh"
 #include "Dispersion.hh"
 
+#ifdef ALQUIMIA_ENABLED
+#include "Chemistry_State.hh"
+#include "ChemistryEngine.hh"
+#endif
 
 /*
 This is Amanzi Transport Process Kernel (PK).
@@ -57,6 +61,11 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 class Transport_PK : public Explicit_TI::fnBase {
  public:
   Transport_PK();
+#ifdef ALQUIMIA_ENABLED
+  Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
+               Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state = Teuchos::null,
+               Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine = Teuchos::null);
+#endif
   Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
                std::vector<std::string>& component_names);
   ~Transport_PK();
@@ -109,6 +118,12 @@ class Transport_PK : public Explicit_TI::fnBase {
                              Teuchos::RCP<Epetra_Vector> limiter);
 
  private:
+
+  // Helper for constructors.
+  void Construct_(Teuchos::ParameterList& glist, 
+                  Teuchos::RCP<State> S,
+                  std::vector<std::string>& component_names);
+
   // advection members
   void AdvanceDonorUpwind(double dT);
   void AdvanceSecondOrderUpwindGeneric(double dT);
@@ -183,6 +198,11 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Epetra_MultiVector> darcy_flux;
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
   
+#ifdef ALQUIMIA_ENABLED
+  Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state_;
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
+#endif
+
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
 
@@ -221,6 +241,10 @@ class Transport_PK : public Explicit_TI::fnBase {
   int nnodes_wghost;
  
   std::vector<std::string> component_names_;
+
+  // Forbidden.
+  Transport_PK(const Transport_PK&);
+  Transport_PK& operator=(const Transport_PK&);
 };
 
 }  // namespace AmanziTransport

@@ -50,6 +50,10 @@ else()
                   "to define the OpenSSL installation prefix.")
 endif()
 
+if (DEFINED ENV{NERSC_HOST})
+  set(ssl_pkg_config "")
+endif()
+
 # Now build the CPPFLAGS string WHITESPACE is needed here!
 include(BuildWhitespaceString)
 build_whitespace_string(curl_cflags -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_CFLAGS})

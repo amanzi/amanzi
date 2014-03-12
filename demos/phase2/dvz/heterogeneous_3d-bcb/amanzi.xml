@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
     <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
       <Parameter name="Author" type="string" value="ellen"/>
@@ -347,7 +347,6 @@
                 <ParameterList name="IC: Uniform Concentration">
                   <Parameter name="Value" type="double" value="0.0"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="TBC"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -371,7 +370,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -393,7 +391,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -415,7 +412,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -437,7 +433,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -459,7 +454,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -481,7 +475,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -503,7 +496,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -525,7 +517,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -547,7 +538,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -588,7 +578,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 3.8e-6, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -632,7 +621,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 3.800e-6, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -676,7 +664,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 3.524e-6, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -717,7 +704,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 2.886e-6, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -761,7 +747,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 3.798e-6, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -805,7 +790,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant, Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 3.164e-6, 0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -827,7 +811,6 @@
                   <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
                   <Parameter name="Values" type="Array(double)" value="{0.0, 0.0}"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -909,8 +892,8 @@
       <ParameterList name="Variable Macros"/>
       <ParameterList name="Visualization Data">
         <Parameter name="File Name Base" type="string" value="plot"/>
-        <Parameter name="File Name Digits" type="string" value="5"/>
- 	<Parameter name="Time Macro" type="Array(string)" value="{Cribs discharging, Plume evolution: every year, Plume evolution: every five years}"/>
+        <Parameter name="File Name Digits" type="int" value="5"/>
+ 	<Parameter name="Time Macros" type="Array(string)" value="{Cribs discharging, Plume evolution: every year, Plume evolution: every five years}"/>
       </ParameterList>
       <ParameterList name="Observation Data"/>
       <!--  Not ready for this yet, we need a region 

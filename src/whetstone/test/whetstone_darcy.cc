@@ -597,6 +597,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
     }
     CHECK_CLOSE(volume * T(0, 0), vxx, 1e-10);
     CHECK_CLOSE(volume * T(0, 1), vxy, 1e-10);
+    CHECK_CLOSE(mfd.simplex_functional(), 60.0, 1e-2);
   }
 
   delete comm;

@@ -37,6 +37,7 @@ void PreconditionerHypre::Init(const std::string& name, const Teuchos::Parameter
   nsmooth_ = list_.get<int>("smoother sweeps", 3);
   tol_ = list_.get<double>("tolerance", 0.0);
   strong_threshold_ = list_.get<double>("strong threshold", 0.0);
+  relaxation_type_ = list_.get<int>("relaxation type", 6);
   verbosity_ = list_.get<int>("verbosity", 0);
 #else
   Errors::Message msg("Hypre is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
@@ -58,7 +59,7 @@ void PreconditionerHypre::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   functs[1] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel, verbosity_));
   functs[2] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNumSweeps, nsmooth_));
   functs[3] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxIter, ncycles_));
-  functs[4] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType, 6));
+  functs[4] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType, relaxation_type_));
   functs[5] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetStrongThreshold, strong_threshold_));
   functs[6] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol, tol_));
   functs[7] = Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleType, 1));
