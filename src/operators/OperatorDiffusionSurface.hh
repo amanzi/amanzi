@@ -32,7 +32,8 @@ class OperatorDiffusionSurface : public Operator {
   ~OperatorDiffusionSurface() {};
 
   // main members
-  void InitOperator(std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k);
+  void InitOperator(std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k,
+                    const Teuchos::ParameterList& plist);
   void AssembleMatrix(int schema);
   void UpdateMatrices();
 
@@ -47,7 +48,10 @@ class OperatorDiffusionSurface : public Operator {
   void CreateMassMatrices_(std::vector<WhetStone::Tensor>& K);
 
  private:
+  Teuchos::ParameterList plist_;
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
+
+  int upwind_;
   Teuchos::RCP<NonlinearCoefficient> k_;
 };
 

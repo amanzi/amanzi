@@ -30,10 +30,20 @@ namespace Operators {
 * Initialization of the operator.                                           
 ****************************************************************** */
 void OperatorDiffusionSurface::InitOperator(
-    std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k)
+    std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k,
+    const Teuchos::ParameterList& plist)
 {
+  plist_ = plist; 
   k_ = k;
   CreateMassMatrices_(K);
+
+  // if upwind is requested, we will need to update nonlinear coefficient 
+  std::string str_upwind = plist_.get<std::string>("upwind method", "amanzi");
+
+  upwind_ = 0;
+  if (str_upwind == "amanzi") {
+    upwind_ = 1; 
+  }
 }
 
 
@@ -42,6 +52,11 @@ void OperatorDiffusionSurface::InitOperator(
 ****************************************************************** */
 void OperatorDiffusionSurface::UpdateMatrices()
 {
+  // update nonlinear coefficient
+  if (k_ != Teuchos::null) {
+    k_->UpdateCellValues();
+  }
+
   // find location of matrix blocks
   int m(0), nblocks = blocks_.size();
   bool flag(false);
@@ -73,11 +88,16 @@ void OperatorDiffusionSurface::UpdateMatrices()
     WhetStone::DenseMatrix& Wff = Wff_cells_[c];
     WhetStone::DenseMatrix Acell(nfaces + 1, nfaces + 1);
 
+    double kc(1.0); 
+    if (k_ != Teuchos::null) {
+      kc = (*k_->cdata())[c];
+    }
+
     double matsum = 0.0;  // elimination of mass matrix
     for (int n = 0; n < nfaces; n++) {
       double rowsum = 0.0;
       for (int m = 0; m < nfaces; m++) {
-        double tmp = Wff(n, m);
+        double tmp = Wff(n, m) * kc;
         rowsum += tmp;
         Acell(n, m) = tmp;
       }
@@ -114,14 +134,7 @@ void OperatorDiffusionSurface::CreateMassMatrices_(std::vector<WhetStone::Tensor
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix Wff(nfaces, nfaces);
-    int ok; 
-    if (k_ == Teuchos::null) {
-      ok = mfd.MassMatrixInverseSurface(c, K[c], Wff);
-    } else {
-      WhetStone::Tensor Kk(K[c]); 
-      Kk *= (*k_->cdata())[c];
-      ok = mfd.MassMatrixInverseSurface(c, Kk, Wff);
-    }
+    int ok = mfd.MassMatrixInverseSurface(c, K[c], Wff);
 
     Wff_cells_.push_back(Wff);
 
@@ -288,9 +301,6 @@ int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVe
   Epetra_MultiVector& Tf = *T.ViewComponent("face", true);
 
   // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
-  // Tc.ReciprocalMultiply(1.0, diag, Xc, 0.0);
-  // (*Afc_).Multiply(true, Tc, Tf);  // Afc is kept in transpose form
-  // Tf.Update(1.0, Xf, -1.0);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
@@ -314,9 +324,6 @@ int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVe
   preconditioner_->ApplyInverse(Tf, Yf);
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
-  // (*Acf_).Multiply(false, Yf, Tc);  // It performs the required parallel communications.
-  // Tc.Update(1.0, Xc, -1.0);
-  // Yc.ReciprocalMultiply(1.0, diag, Tc, 0.0);
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();

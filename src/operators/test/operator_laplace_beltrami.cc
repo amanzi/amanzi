@@ -108,9 +108,10 @@ TEST(LAPLACE_BELTRAMI) {
   Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, 0));
 
   // populate the diffusion operator
+  Teuchos::ParameterList olist;
   int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
   op->Init();
-  op->InitOperator(K, Teuchos::null);
+  op->InitOperator(K, Teuchos::null, olist);
   op->UpdateMatrices();
   op->ApplyBCs(bc_model, bc_values);
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);

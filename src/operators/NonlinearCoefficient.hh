@@ -28,6 +28,7 @@ class NonlinearCoefficient {
   ~NonlinearCoefficient() {};
 
   // main methods
+  void UpdateCellValues() {};
   void UpwindCellValues();
 
   // access
