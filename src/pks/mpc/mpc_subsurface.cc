@@ -117,6 +117,22 @@ void MPCSubsurface::update_precon(double t, Teuchos::RCP<const TreeVector> up, d
 // -----------------------------------------------------------------------------
 void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Precon application:" << std::endl;
+
+  // write residuals
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "Residuals:" << std::endl;
+    std::vector<std::string> vnames;
+    vnames.push_back("  r_p"); vnames.push_back("  r_T"); 
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(u->SubVector(0)->Data().ptr()); 
+    vecs.push_back(u->SubVector(1)->Data().ptr()); 
+    db_->WriteVectors(vnames, vecs, true);
+  }
+  
+    
   if (precon_type_ == PRECON_NONE) {
     *Pu = *u;
   } else if (precon_type_ == PRECON_BLOCK_DIAGONAL) {
@@ -125,6 +141,16 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
     MPCCoupledCells::precon(u,Pu);
   } else if (precon_type_ == PRECON_EWC) {
     MPCCoupledCells::precon(u,Pu);
+
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "PC_std * residuals:" << std::endl;
+      std::vector<std::string> vnames;
+      vnames.push_back("  PC*r_p"); vnames.push_back("  PC*r_T"); 
+      std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+      vecs.push_back(Pu->SubVector(0)->Data().ptr()); 
+      vecs.push_back(Pu->SubVector(1)->Data().ptr()); 
+      db_->WriteVectors(vnames, vecs, true);
+    }
 
     // make sure we can back-calc face corrections that preserve residuals on faces
     Teuchos::RCP<TreeVector> res0 = Teuchos::rcp(new TreeVector(*u));
@@ -145,8 +171,10 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
     Pu->SubVector(1)->Data()->ViewComponent("face",false)->Update(1.,
             *Pu_std->SubVector(1)->Data()->ViewComponent("face",false), 1.);
 
-    // write residuals
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) *vo_->os() << "EWC Precon Correction:" << std::endl;
+  }
+
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "PC * residuals:" << std::endl;
     std::vector<std::string> vnames;
     vnames.push_back("  PC*r_p"); vnames.push_back("  PC*r_T"); 
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
@@ -162,14 +190,15 @@ bool MPCSubsurface::modify_correction(double h,
         Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> du) {
 
-  // write residuals
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) *vo_->os() << "NKA'd Correction:" << std::endl;
-  std::vector<std::string> vnames;
-  vnames.push_back("  NKA*PC*r_p"); vnames.push_back("  NKA*PC*r_T"); 
-  std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-  vecs.push_back(du->SubVector(0)->Data().ptr()); 
-  vecs.push_back(du->SubVector(1)->Data().ptr()); 
-  db_->WriteVectors(vnames, vecs, true);
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "NKA * PC * residuals:" << std::endl;
+    std::vector<std::string> vnames;
+    vnames.push_back("  NKA*PC*r_p"); vnames.push_back("  NKA*PC*r_T"); 
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(du->SubVector(0)->Data().ptr()); 
+    vecs.push_back(du->SubVector(1)->Data().ptr()); 
+    db_->WriteVectors(vnames, vecs, true);
+  }
 
   return false;
 }
