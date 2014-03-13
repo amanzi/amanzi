@@ -120,28 +120,8 @@ void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
 
 // applies preconditioner to u and returns the result in Pu
 void MPCCoupledCells::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
-  Teuchos::OSTab tab = vo_->getOSTab();
-
   if (decoupled_) return StrongMPC<PKPhysicalBDFBase>::precon(u,Pu);
-
-  // write residuals
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) *vo_->os() << "Residuals:" << std::endl;
-  std::vector<std::string> vnames;
-  vnames.push_back("  r_p"); vnames.push_back("  r_T"); 
-  std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-  vecs.push_back(u->SubVector(0)->Data().ptr()); 
-  vecs.push_back(u->SubVector(1)->Data().ptr()); 
-  db_->WriteVectors(vnames, vecs, true);
-
-  // Apply
   linsolve_preconditioner_->ApplyInverse(*u, *Pu);
-
-  // write corrections
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) *vo_->os() << "Preconditioned Updates:" << std::endl;
-  vnames[0] = "  PC*r_p"; vnames[1] = "  PC*r_T"; 
-  vecs[0] = Pu->SubVector(0)->Data().ptr();
-  vecs[1] = Pu->SubVector(1)->Data().ptr(); 
-  db_->WriteVectors(vnames, vecs, true);
 }
 
 

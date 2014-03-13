@@ -257,6 +257,23 @@ MPCPermafrost3::precon(Teuchos::RCP<const TreeVector> u,
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Precon application:" << std::endl;
 
+  // write residuals
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "Residuals (surface):" << std::endl;
+    std::vector<std::string> vnames;
+    vnames.push_back("  r_ps"); vnames.push_back("  r_Ts"); 
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(u->SubVector(2)->Data().ptr()); 
+    vecs.push_back(u->SubVector(3)->Data().ptr()); 
+    surf_db_->WriteVectors(vnames, vecs, true);
+
+    *vo_->os() << "Residuals (subsurface):" << std::endl;
+    vnames[0] = "  r_p"; vnames[1] = "  r_T"; 
+    vecs[0] = u->SubVector(0)->Data().ptr(); 
+    vecs[1] = u->SubVector(1)->Data().ptr(); 
+    domain_db_->WriteVectors(vnames, vecs, true);
+  }
+  
   // make a new TreeVector that is just the subsurface values (by pointer).
   // -- note these const casts are necessary to create the new TreeVector, but
   //    since the TreeVector COULD be const (it is only used in a single method,
@@ -278,19 +295,18 @@ MPCPermafrost3::precon(Teuchos::RCP<const TreeVector> u,
   if (precon_type_ == PRECON_EWC) {
     // dump std correction to screen
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "PC_std * residuals (surface):" << std::endl;
       std::vector<std::string> vnames;
-      vnames.push_back("p");
-      vnames.push_back("PC*p");
-      vnames.push_back("T");
-      vnames.push_back("PC*T");
-
+      vnames.push_back("  PC_std * r_ps"); vnames.push_back("  PC_std * r_Ts"); 
       std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-      vecs.push_back(domain_u_tv->SubVector(0)->Data().ptr());
-      vecs.push_back(domain_Pu_tv->SubVector(0)->Data().ptr());
-      vecs.push_back(domain_u_tv->SubVector(1)->Data().ptr());
-      vecs.push_back(domain_Pu_tv->SubVector(1)->Data().ptr());
+      vecs.push_back(Pu->SubVector(2)->Data().ptr()); 
+      vecs.push_back(Pu->SubVector(3)->Data().ptr()); 
+      surf_db_->WriteVectors(vnames, vecs, true);
 
-      *vo_->os() << " Subsurface precon (pre-EWC):" << std::endl;
+      *vo_->os() << "PC_std * residuals (subsurface):" << std::endl;
+      vnames[0] = "  PC_std * r_p"; vnames[1] = "  PC_std * r_T"; 
+      vecs[0] = Pu->SubVector(0)->Data().ptr(); 
+      vecs[1] = Pu->SubVector(1)->Data().ptr(); 
       domain_db_->WriteVectors(vnames, vecs, true);
     }
 
@@ -327,28 +343,19 @@ MPCPermafrost3::precon(Teuchos::RCP<const TreeVector> u,
 
   // dump to screen
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "PC * residuals (surface):" << std::endl;
     std::vector<std::string> vnames;
-    vnames.push_back("p");
-    vnames.push_back("PC*p");
-    vnames.push_back("T");
-    vnames.push_back("PC*T");
-
+    vnames.push_back("  PC * r_ps"); vnames.push_back("  PC * r_Ts"); 
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    vecs.push_back(u->SubVector(0)->Data().ptr());
-    vecs.push_back(Pu->SubVector(0)->Data().ptr());
-    vecs.push_back(u->SubVector(1)->Data().ptr());
-    vecs.push_back(Pu->SubVector(1)->Data().ptr());
-
-    *vo_->os() << " Subsurface precon:" << std::endl;
+    vecs.push_back(Pu->SubVector(2)->Data().ptr()); 
+    vecs.push_back(Pu->SubVector(3)->Data().ptr()); 
+    surf_db_->WriteVectors(vnames, vecs, true);
+    
+    *vo_->os() << "PC * residuals (subsurface):" << std::endl;
+    vnames[0] = "  PC * r_p"; vnames[1] = "  PC * r_T"; 
+    vecs[0] = Pu->SubVector(0)->Data().ptr(); 
+    vecs[1] = Pu->SubVector(1)->Data().ptr(); 
     domain_db_->WriteVectors(vnames, vecs, true);
-
-    vecs[0] = u->SubVector(2)->Data().ptr();
-    vecs[1] = Pu->SubVector(2)->Data().ptr();
-    vecs[2] = u->SubVector(3)->Data().ptr();
-    vecs[3] = Pu->SubVector(3)->Data().ptr();
-
-    *vo_->os() << " Surface precon:" << std::endl;
-    surf_db_->WriteVectors(vnames, vecs, true);    
   }
 }
 
@@ -472,34 +479,23 @@ bool
 MPCPermafrost3::modify_correction(double h, Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
-  // dump to screen
+
+  // dump NKAd correction to screen
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    *vo_->os() << "NKA'd, PC'd correction." << std::endl;
-
+    *vo_->os() << "NKA * PC * residuals (surface):" << std::endl;
     std::vector<std::string> vnames;
-    vnames.push_back("p");
-    vnames.push_back("PC*p");
-    vnames.push_back("T");
-    vnames.push_back("PC*T");
-
+    vnames.push_back("  NKA*PC*r_ps"); vnames.push_back("  NKA*PC*r_Ts"); 
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    vecs.push_back(res->SubVector(0)->Data().ptr());
-    vecs.push_back(du->SubVector(0)->Data().ptr());
-    vecs.push_back(res->SubVector(1)->Data().ptr());
-    vecs.push_back(du->SubVector(1)->Data().ptr());
+    vecs.push_back(du->SubVector(2)->Data().ptr()); 
+    vecs.push_back(du->SubVector(3)->Data().ptr()); 
+    surf_db_->WriteVectors(vnames, vecs, true);
 
-    *vo_->os() << " Subsurface precon:" << std::endl;
+    *vo_->os() << "NKA * PC * residuals (subsurface):" << std::endl;
+    vnames[0] = "  NKA*PC*r_p"; vnames[1] = "  NKA*PC*r_T"; 
+    vecs[0] = du->SubVector(0)->Data().ptr(); 
+    vecs[1] = du->SubVector(1)->Data().ptr(); 
     domain_db_->WriteVectors(vnames, vecs, true);
-
-    vecs[0] = res->SubVector(2)->Data().ptr();
-    vecs[1] = du->SubVector(2)->Data().ptr();
-    vecs[2] = res->SubVector(3)->Data().ptr();
-    vecs[3] = du->SubVector(3)->Data().ptr();
-
-    *vo_->os() << " Surface precon:" << std::endl;
-    surf_db_->WriteVectors(vnames, vecs, true);    
   }
-
 
   // modify correction using water approaches
   int n_modified = 0;
@@ -544,34 +540,23 @@ MPCPermafrost3::modify_correction(double h, Teuchos::RCP<const TreeVector> res,
     UpdateConsistentFaceCorrectionWater_(res, du);
   }
 
-  // dump to screen
+  // dump modified correction to screen
   if (modified && vo_->os_OK(Teuchos::VERB_HIGH)) {
-    *vo_->os() << "Modified correction." << std::endl;
-
+    *vo_->os() << "Modified correction:" << std::endl;
     std::vector<std::string> vnames;
-    vnames.push_back("p");
-    vnames.push_back("PC*p");
-    vnames.push_back("T");
-    vnames.push_back("PC*T");
-
+    vnames.push_back("  Mod NKA*PC*r_ps"); vnames.push_back("  Mod NKA*PC*r_Ts"); 
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    vecs.push_back(res->SubVector(0)->Data().ptr());
-    vecs.push_back(du->SubVector(0)->Data().ptr());
-    vecs.push_back(res->SubVector(1)->Data().ptr());
-    vecs.push_back(du->SubVector(1)->Data().ptr());
+    vecs.push_back(du->SubVector(2)->Data().ptr()); 
+    vecs.push_back(du->SubVector(3)->Data().ptr()); 
+    surf_db_->WriteVectors(vnames, vecs, true);
 
-    *vo_->os() << " Subsurface precon:" << std::endl;
+    *vo_->os() << "Modified correction:" << std::endl;
+    vnames[0] = "  Mod NKA*PC*r_p"; vnames[1] = "  Mod NKA*PC*r_T"; 
+    vecs[0] = du->SubVector(0)->Data().ptr(); 
+    vecs[1] = du->SubVector(1)->Data().ptr(); 
     domain_db_->WriteVectors(vnames, vecs, true);
-
-    vecs[0] = res->SubVector(2)->Data().ptr();
-    vecs[1] = du->SubVector(2)->Data().ptr();
-    vecs[2] = res->SubVector(3)->Data().ptr();
-    vecs[3] = du->SubVector(3)->Data().ptr();
-
-    *vo_->os() << " Surface precon:" << std::endl;
-    surf_db_->WriteVectors(vnames, vecs, true);    
   }
-  
+
   return modified;
 }
 
