@@ -90,6 +90,8 @@ class SurfaceBalanceSEBVPL : public PKPhysicalBase {
   double snow_ground_trans_;
   double no_snow_trans_;
 
+  Teuchos::RCP<const AmanziMesh::Mesh> subsurf_mesh_;
+
  private:
   // factory registration
   static RegisteredPKFactory<SurfaceBalanceSEBVPL> reg_;

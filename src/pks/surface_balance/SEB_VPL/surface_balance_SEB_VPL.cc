@@ -58,11 +58,11 @@ SurfaceBalanceSEBVPL::SurfaceBalanceSEBVPL(const Teuchos::RCP<Teuchos::Parameter
       FElist.sublist("surface_mass_source");
   wsource_sublist.set("evaluator name", "surface_mass_source");
   wsource_sublist.set("field evaluator type", "primary variable");
-  
+
   // -- VaporMassSource for VaporFlux at cell center 
-    Teuchos::ParameterList& w_v_source_sublist =
-      FElist.sublist("surface_vapor_mass_source");
-  w_v_source_sublist.set("evaluator name", "surface_vapor_mass_source");
+  Teuchos::ParameterList& w_v_source_sublist =
+    FElist.sublist("mass_source");
+  w_v_source_sublist.set("evaluator name", "mass_source");
   w_v_source_sublist.set("field evaluator type", "primary variable");
 
   // -- surface energy temperature
@@ -90,6 +90,7 @@ SurfaceBalanceSEBVPL::SurfaceBalanceSEBVPL(const Teuchos::RCP<Teuchos::Parameter
 
 void SurfaceBalanceSEBVPL::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::setup(S);
+  subsurf_mesh_ = S->GetMesh(); // needed for VPL, which is treated as subsurface source
 
   // requirements: primary variable
   S->RequireField(key_, name_)->SetMesh(mesh_)->
@@ -117,10 +118,10 @@ void SurfaceBalanceSEBVPL::setup(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
-    S->RequireField("vapor_mass_source", name_)->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("vapor_mass_source");
-  fm = S->GetFieldEvaluator("vapor_mass_source");
+  S->RequireField("mass_source", name_)->SetMesh(subsurf_mesh_)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator("mass_source");
+  fm = S->GetFieldEvaluator("mass_source");
   pvfe_w_v_source_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_w_v_source_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
@@ -234,8 +235,8 @@ void SurfaceBalanceSEBVPL::initialize(const Teuchos::Ptr<State>& S) {
   //  S->GetField("surface_conducted_energy_source",name_)->set_initialized();
   S->GetFieldData("surface_mass_source",name_)->PutScalar(0.);
   S->GetField("surface_mass_source",name_)->set_initialized();
-    S->GetFieldData("surface_vapor_mass_source",name_)->PutScalar(0.);
-  S->GetField("surface_vapor_mass_source",name_)->set_initialized();
+    S->GetFieldData("mass_source",name_)->PutScalar(0.);
+  S->GetField("mass_source",name_)->set_initialized();
   S->GetFieldData("surface_mass_source_temperature",name_)->PutScalar(273.15);
   S->GetField("surface_mass_source_temperature",name_)->set_initialized();
 
@@ -315,7 +316,8 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
       *S_next_->GetFieldData("surface_mass_source", name_)->ViewComponent("cell", false);
   
   Epetra_MultiVector& surface_vapor_flux =
-      *S_next_->GetFieldData("surface_vapor_mass_source", name_)->ViewComponent("cell", false);
+      *S_next_->GetFieldData("mass_source", name_)->ViewComponent("cell", false);
+  surface_vapor_flux.PutScalar(0.);
 
   Epetra_MultiVector& surf_water_temp =
       *S_next_->GetFieldData("surface_mass_source_temperature", name_)->ViewComponent("cell", false);
@@ -471,8 +473,18 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
     // STUFF ATS WANTS
    //     surf_energy_flux[0][c] = data.st_energy.fQc;  
     surface_water_flux[0][c] = data.st_energy.Mr;
-    surface_vapor_flux[0][c] = data.st_energy.SurfaceVaporFlux;
     surf_water_temp[0][c] = data.st_energy.Trw;
+
+    // surface vapor flux is treated as a volumetric source for the subsurface.
+    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    AmanziMesh::Entity_ID_List cells;
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    ASSERT(cells.size() == 1);
+    // surface mass sources are in m^3 water / (m^2 s)
+    // subsurface mass sources are in mol water / (m^3 s)
+    surface_vapor_flux[0][cells[0]] = data.st_energy.SurfaceVaporFlux 
+      * mesh_->cell_volume(c) * data.st_energy.density_w / 0.0180153
+      / subsurf_mesh_->cell_volume(cells[0]);
 
     // STUFF SnowEnergyBalance NEEDS STORED FOR NEXT TIME STEP
     snow_depth[0][c] = data.st_energy.ht_snow;
@@ -518,7 +530,7 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
     vnames.push_back("soil vapor mol fraction"); vecs.push_back(S_next_->GetFieldData("surface_vapor_pressure").ptr());
     vnames.push_back("T_ground"); vecs.push_back(S_next_->GetFieldData("surface_temperature").ptr());
     vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source").ptr());
-    vnames.push_back("surface_vapor_source"); vecs.push_back(S_next_->GetFieldData("surface_vapor_mass_source").ptr());
+    vnames.push_back("surface_vapor_source"); vecs.push_back(S_next_->GetFieldData("mass_source").ptr());
     //    vnames.push_back("e_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
     db_->WriteVectors(vnames, vecs, true);
   }
