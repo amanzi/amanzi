@@ -133,7 +133,15 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // scaling for permeability
   perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
 
-
+  // source terms
+  is_source_term_ = plist_->get<bool>("source term", false);
+  if (is_source_term_) {
+    explicit_source_ = plist_->get<bool>("explicit source term", false);
+    S->RequireField("mass_source")->SetMesh(mesh_)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator("mass_source");
+  }
+  
   // Create the boundary condition data structures.
   Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
   FlowBCFactory bc_factory(mesh_, bc_plist);

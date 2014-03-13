@@ -96,10 +96,15 @@ void Richards::fun(double t_old,
   // accumulation term
   AddAccumulation_(res.ptr());
 
-#if DEBUG_FLAG
-  db_->WriteVector("res (acc)", res.ptr(), true);
-#endif
-
+  // source term
+  if (is_source_term_) {
+    if (explicit_source_) {
+      AddSources_(S_inter_.ptr(), res.ptr());
+    } else {
+      AddSources_(S_next_.ptr(), res.ptr());
+    }
+  }
+  
 #if DEBUG_RES_FLAG
   if (niter_ < 23) {
     std::stringstream namestream;
@@ -215,9 +220,11 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   unsigned int ncells = dwc_dp.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
     Acc_cells[c] += dwc_dp[0][c] / h;
-    Fc_cells[c] += pres[0][c] * dwc_dp[0][c] / h;
   }
 
+  // -- update preconditioner with source term derivatives if needed
+  AddSourcesToPrecon_(S_next_.ptr(), h);
+  
   // Assemble and precompute the Schur complement for inversion.
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 

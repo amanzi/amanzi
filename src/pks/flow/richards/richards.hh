@@ -96,6 +96,11 @@ protected:
   // -- accumulation term
   virtual void AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g);
 
+  // -- Add any source terms into the residual.
+  virtual void AddSources_(const Teuchos::Ptr<State>& S,
+                           const Teuchos::Ptr<CompositeVector>& f);
+  virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h);
+  
   // -- gravity contributions to matrix or vector
   virtual void AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
           const Teuchos::Ptr<const CompositeVector>& rel_perm,
@@ -133,7 +138,9 @@ protected:
   bool modify_predictor_wc_;
   bool symmetric_;
   bool precon_wc_;
-
+  bool is_source_term_;
+  bool explicit_source_;
+  
   // coupling terms
   bool coupled_to_surface_via_head_; // surface-subsurface Dirichlet coupler
   bool coupled_to_surface_via_flux_; // surface-subsurface Neumann coupler
