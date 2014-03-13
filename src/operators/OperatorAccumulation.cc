@@ -36,6 +36,7 @@ void OperatorAccumulation::UpdateMatrices(
     }
   } else if (ss.HasComponent("face")) {
     name = "face";
+    // Missing code.
   } else if (ss.HasComponent("node")) {
     name = "node";
     volume.resize(nnodes_owned, 0.0);

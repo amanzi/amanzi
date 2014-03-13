@@ -233,6 +233,8 @@ void OperatorDiffusionSurface::InitPreconditioner(
   int faces_LID[OPERATOR_MAX_FACES];
   int faces_GID[OPERATOR_MAX_FACES];
 
+  Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
+
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -240,7 +242,7 @@ void OperatorDiffusionSurface::InitPreconditioner(
     WhetStone::DenseMatrix Scell(nfaces, nfaces);
     WhetStone::DenseMatrix& Acell = matrix[c];
 
-    double tmp = Acell(nfaces, nfaces);
+    double tmp = Acell(nfaces, nfaces) + diag[0][c];
     for (int n = 0; n < nfaces; n++) {
       for (int m = 0; m < nfaces; m++) {
         Scell(n, m) = Acell(n, m) - Acell(n, nfaces) * Acell(nfaces, m) / tmp;

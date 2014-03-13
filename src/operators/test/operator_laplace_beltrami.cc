@@ -31,6 +31,7 @@
 #include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionSurface.hh"
+#include "OperatorAccumulation.hh"
 #include "OperatorSource.hh"
 
 
@@ -48,7 +49,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Laplace Beltrami solver" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Singular-perturbed Laplace Beltrami solver" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_laplace_beltrami.xml";
@@ -102,38 +103,48 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   source.PutScalar(0.0);
   
   Epetra_MultiVector& src = *source.ViewComponent("cell");
-  src[0][0] = 1.0;
+  for (int c = 0; c < 20; c++) {
+    src[0][c] = 1.0;
+  }
 
   Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(cvs, 0));
+  op1->Init();
   op1->UpdateMatrices(source);
 
+  // create accumulation operator
+  Teuchos::RCP<OperatorAccumulation> op2 = Teuchos::rcp(new OperatorAccumulation(*op1));
+
+  CompositeVector solution(*cvs);
+  solution.PutScalar(0.0);  // solution at time T=0
+
+  CompositeVector phi(*cvs);
+  phi.PutScalar(0.2);
+
+  double dT = 10.0;
+  op2->UpdateMatrices(solution, phi, dT);
 
   // add the diffusion operator
-  Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1));
+  Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2));
 
   Teuchos::ParameterList olist;
   int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
-  op2->Init();
-  op2->InitOperator(K, Teuchos::null, olist);
-  op2->UpdateMatrices();
-  op2->ApplyBCs(bc_model, bc_values);
-  op2->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-  op2->AssembleMatrix(schema);
+  op3->InitOperator(K, Teuchos::null, olist);
+  op3->UpdateMatrices();
+  op3->ApplyBCs(bc_model, bc_values);
+  op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
+  op3->AssembleMatrix(schema);
 
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op2->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+  op3->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
   AmanziSolvers::LinearOperatorFactory<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, op2);
+     solver = factory.Create("AztecOO CG", lop_list, op3);
 
-  CompositeVector rhs = *op2->rhs();
-  CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
-
+  CompositeVector rhs = *op3->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
 
   std::cout << "pressure solver (" << solver->name() 
