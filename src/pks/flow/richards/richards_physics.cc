@@ -76,7 +76,7 @@ void Richards::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 
 
 // ---------------------------------------------------------------------
-// Add in mass source, which are accumulated by a single evaluator.
+// Add in mass source, in units of mol / m^3 s
 // ---------------------------------------------------------------------
 void Richards::AddSources_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
@@ -87,19 +87,22 @@ void Richards::AddSources_(const Teuchos::Ptr<State>& S,
     Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 
     // Update the source term
-    S_next_->GetFieldEvaluator("mass_source")->HasFieldChanged(S_next_.ptr(), name_);
+    S->GetFieldEvaluator("mass_source")->HasFieldChanged(S, name_);
     const Epetra_MultiVector& source1 =
-        *S_next_->GetFieldData("mass_source")->ViewComponent("cell",false);
+        *S->GetFieldData("mass_source")->ViewComponent("cell",false);
+
+    const Epetra_MultiVector& cv =
+        *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
 
     // Add into residual
     unsigned int ncells = g_c.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
-      g_c[0][c] -= source1[0][c];
+      g_c[0][c] -= source1[0][c] * cv[0][c];
     }
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "Adding external source term" << std::endl;
-      db_->WriteVector("  Q_ext", S_next_->GetFieldData("mass_source").ptr(), false);
+      db_->WriteVector("  Q_ext", S->GetFieldData("mass_source").ptr(), false);
       db_->WriteVector("res (src)", g, false);
     }
   }
