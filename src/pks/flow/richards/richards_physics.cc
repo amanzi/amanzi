@@ -70,7 +70,57 @@ void Richards::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   // Water content only has cells, while the residual has cells and faces.
   g->ViewComponent("cell",false)->Update(1.0/dt, *wc1->ViewComponent("cell",false),
           -1.0/dt, *wc0->ViewComponent("cell",false), 1.0);
+
+  db_->WriteVector("res (acc)", g, true);
 };
+
+
+// ---------------------------------------------------------------------
+// Add in mass source, which are accumulated by a single evaluator.
+// ---------------------------------------------------------------------
+void Richards::AddSources_(const Teuchos::Ptr<State>& S,
+        const Teuchos::Ptr<CompositeVector>& g) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  // external sources of energy
+  if (is_source_term_) {
+    Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
+
+    // Update the source term
+    S_next_->GetFieldEvaluator("mass_source")->HasFieldChanged(S_next_.ptr(), name_);
+    const Epetra_MultiVector& source1 =
+        *S_next_->GetFieldData("mass_source")->ViewComponent("cell",false);
+
+    // Add into residual
+    unsigned int ncells = g_c.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
+      g_c[0][c] -= source1[0][c];
+    }
+
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_->os() << "Adding external source term" << std::endl;
+      db_->WriteVector("  Q_ext", S_next_->GetFieldData("mass_source").ptr(), false);
+      db_->WriteVector("res (src)", g, false);
+    }
+  }
+}
+
+
+void Richards::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
+  // external sources of energy (temperature dependent source)
+  if (is_source_term_ && !explicit_source_ &&
+      S->GetFieldEvaluator("mass_source")->IsDependency(S, key_)) {
+    std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
+
+    S->GetFieldEvaluator("mass_source")->HasFieldDerivativeChanged(S, name_, key_);
+    const Epetra_MultiVector& dsource_dp =
+        *S->GetFieldData("dmass_source_dpressure")->ViewComponent("cell",false);
+    unsigned int ncells = dsource_dp.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
+      Acc_cells[c] -= dsource_dp[0][c];
+    }
+  }
+}
 
 
 // -------------------------------------------------------------
