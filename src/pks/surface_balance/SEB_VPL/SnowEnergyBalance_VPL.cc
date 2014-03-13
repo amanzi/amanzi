@@ -149,37 +149,24 @@ void SurfaceEnergyBalance_VPL::UpdateGroundEnergy(LocalData& seb) {
     porrowaLe = seb.st_energy.rowaLe;
     } 
 
-    if (seb.st_energy.water_depth < 0.01) { // smoothing ponded water transition ****LAGGING CAPILLARY PRESSURE*****
-    // Average ponded water Latent heat [ Qe ] with lagged (capillary presssure bare ground Laten heat [ Qe ]
+    if (seb.st_energy.water_depth < 0.01) { // smoothing ponded water transition 
+    // Average ponded water Latent heat [ Qe ] 
     double Ponded_Qe;
     double Dry_Qe;
     double Qe_Factor = seb.st_energy.water_depth/0.01;
-
-  //  Surface Pressure SMoothing --> In ponded water loop.  AVERAGE CAPILLARY PRESSURE
-//      if (std::abs(seb.st_energy.surface_pressure-seb.st_energy.stored_surface_pressure) > 1000000){
-//         if (Pc!=(101325 - (seb.st_energy.surface_pressure + seb.st_energy.stored_surface_pressure)/2)){
-//             std::cout<<"In Ponded Current Surface Pressure: "<<seb.st_energy.surface_pressure<<"  Stored Surface Pressure: "<<seb.st_energy.stored_surface_pressure<<std::endl;
-//             Pc = 101325 - ( seb.st_energy.stored_surface_pressure);
-//             std::cout<<"Surface Pressure: "<<seb.st_energy.surface_pressure<<"  Ave Surface Pressure: "<< (seb.st_energy.surface_pressure + seb.st_energy.stored_surface_pressure)/2<<"  Capillary Pressure: "<<Pc<<std::endl;  
-//            }else{
-//            // Its all good.
-//            Pc = 101325 - seb.st_energy.stored_surface_pressure;
-//            std::cout<<"In Ponded Surface Pressure: "<<seb.st_energy.surface_pressure<<"  Capillary Pressure: "<<Pc<<std::endl;
-//         }  
-//      }  
   
     Ponded_Qe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
        * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
     
     //Calculate vapor pressure lowering for Dry_Qe
-   //Pc = 101325 - seb.st_energy.stored_surface_pressure;
-   std::cout<<"Stored Surface Pressure: "<<seb.st_energy.stored_surface_pressure<<"  Capillary Pressure: "<<Pc<<std::endl;
-   Pvl = seb.vp_ground.saturated_vaporpressure*std::exp(-Pc/(seb.st_energy.density_w*461.52*seb.st_energy.temp_ground));
-   std::cout<<"Bare Ground, Ground Sat. VP: "<<seb.vp_ground.saturated_vaporpressure<<"  Air VP: "<<seb.vp_air.actual_vaporpressure<<std::endl;
-   std::cout<<"Ground VP Lowered: "<<Pvl<<std::endl;
-   std::cout<<"Surface Porostiy: "<<porosity<<std::endl;
-   // freeze smoothing for Latent heat
-     if (seb.st_energy.temp_ground<275){
+    //Pc = 101325 - seb.st_energy.stored_surface_pressure;
+    std::cout<<"Stored Surface Pressure: "<<seb.st_energy.stored_surface_pressure<<"  Capillary Pressure: "<<Pc<<std::endl;
+    Pvl = seb.vp_ground.saturated_vaporpressure*std::exp(-Pc/(seb.st_energy.density_w*461.52*seb.st_energy.temp_ground));
+    std::cout<<"Bare Ground, Ground Sat. VP: "<<seb.vp_ground.saturated_vaporpressure<<"  Air VP: "<<seb.vp_air.actual_vaporpressure<<std::endl;
+    std::cout<<"Ground VP Lowered: "<<Pvl<<std::endl;
+    std::cout<<"Surface Porostiy: "<<porosity<<std::endl;
+    // freeze smoothing for Latent heat
+    if (seb.st_energy.temp_ground<275){
         if(seb.st_energy.temp_ground>273.0){
           double QLsmooth = -(273.0 - seb.st_energy.temp_ground);
           QLsmooth = QLsmooth/2;
@@ -203,7 +190,7 @@ void SurfaceEnergyBalance_VPL::UpdateGroundEnergy(LocalData& seb) {
           Dry_Qe=0;
           std::cout<<"Too cold for evaporation!"<<std::endl;
         }
-     }else{
+    }else{
          Dry_Qe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
           * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
          std::cout<<"Warm enough for full evaporation Qe = "<<Dry_Qe<<std::endl;
@@ -212,7 +199,7 @@ void SurfaceEnergyBalance_VPL::UpdateGroundEnergy(LocalData& seb) {
          Dry_Qe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
           * (seb.vp_air.actual_vaporpressure-Pvl) / seb.st_energy.Apa;
          std::cout<<"Vapor Pressure Lowering Qe = "<<Dry_Qe<<std::endl;
-     }
+    }
     
     std::cout<<"Dry Qe: "<<Dry_Qe<<"  Ponded Qe: "<<Ponded_Qe<<"  Qe Factor: "<<Qe_Factor<<std::endl;
     double GroundFlux = 0.0;
@@ -225,6 +212,12 @@ void SurfaceEnergyBalance_VPL::UpdateGroundEnergy(LocalData& seb) {
     Dry_Qe = (1.-Qe_Factor) * Dry_Qe;
      Ponded_Qe =  Ponded_Qe * Qe_Factor;
     seb.st_energy.fQe = Ponded_Qe + Dry_Qe;
+    
+    // Assinging Vapor Mass Flux While subtracting the mass of water added to melt/precipitation in ponded condition 
+    // ****** IS THIS APPROPRATE IN THE BARE GROUND TO PONDED TRANSITIOINS ?????  ****
+    seb.st_energy.SurfaceVaporFlux = seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); // [m/s]     
+    seb.st_energy.Mr -= seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); //Accounting for later addition of water to surface source 
+
     }else{
 
      seb.st_energy.fQe =  porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
@@ -232,8 +225,7 @@ void SurfaceEnergyBalance_VPL::UpdateGroundEnergy(LocalData& seb) {
     }    
 
    std::cout<<"Surface Porostiy: "<<porosity<<std::endl;
-  } else {
-    // no standing water
+  } else { // no standing water
    UpdateVaporPressure(seb.vp_ground);
    porosity = seb.st_energy.surface_porosity;
    porrowaLe = porosity * seb.st_energy.rowaLe;
@@ -262,21 +254,29 @@ void SurfaceEnergyBalance_VPL::UpdateGroundEnergy(LocalData& seb) {
             * (seb.vp_air.actual_vaporpressure-Pvl) / seb.st_energy.Apa;
           seb.st_energy.fQe = QLsmooth * QLraw;
           std::cout<<"VP Low --> Qe: "<<seb.st_energy.fQe<<std::endl;
+          // Assinging Vapor Mass Flux While subtracting the mass of water added to melt/precipitation in ponded condition
+          seb.st_energy.SurfaceVaporFlux = seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); // [m/s]     
+          seb.st_energy.Mr -= seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); //Accounting for later addition of water to surface source
+
         }else{ // Too cold for evaporation!
           seb.st_energy.fQe=0;
           std::cout<<"Too cold for evaporation!"<<std::endl;
         }
      }else{
-   seb.st_energy.fQe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+      seb.st_energy.fQe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
         * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
-  std::cout<<"Warm enough for full evaporation Qe = "<<seb.st_energy.fQe<<std::endl;
+      std::cout<<"Warm enough for full evaporation Qe = "<<seb.st_energy.fQe<<std::endl;
    
-  //VP Lowering
+     //VP Lowering
      seb.st_energy.fQe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
         * (seb.vp_air.actual_vaporpressure-Pvl) / seb.st_energy.Apa;
-  std::cout<<"Vapor Pressure Lowering Qe = "<<seb.st_energy.fQe<<std::endl;
+     std::cout<<"Vapor Pressure Lowering Qe = "<<seb.st_energy.fQe<<std::endl;
+
+     // Assinging Vapor Mass Flux While subtracting the mass of water added to melt/precipitation in ponded condition
+     seb.st_energy.SurfaceVaporFlux = seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); // [m/s] 
+     seb.st_energy.Mr -= seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); //Accounting for later addition of water to surface source 
+     }
   }
-}
 //if (seb.st_energy.stored_fQe == 9999999){// Explicite loop
 // Heat flux to ground surface is the balance.
   seb.st_energy.fQc = seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut
