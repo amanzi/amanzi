@@ -67,10 +67,21 @@ if ( BUILD_TESTS )
     set(amanzi_libs geometry atk mesh mesh_audit mesh_factory data_structures operators whetstone output)
 
     # Test: matrices for diffusion
-    add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_laplace_beltrami.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )
+        add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(operators_parabolic_surface operators_parabolic_surface
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_parabolic_surface.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    else()
+        add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_laplace_beltrami.cc test/operator_parabolic_surface.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    endif()
 
     add_amanzi_test(operators_diffusion operators_diffusion
                     KIND unit
