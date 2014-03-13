@@ -58,6 +58,12 @@ SurfaceBalanceSEBVPL::SurfaceBalanceSEBVPL(const Teuchos::RCP<Teuchos::Parameter
       FElist.sublist("surface_mass_source");
   wsource_sublist.set("evaluator name", "surface_mass_source");
   wsource_sublist.set("field evaluator type", "primary variable");
+  
+  // -- VaporMassSource for VaporFlux at cell center 
+    Teuchos::ParameterList& w_v_source_sublist =
+      FElist.sublist("surface_vapor_mass_source");
+  w_v_source_sublist.set("evaluator name", "surface_vapor_mass_source");
+  w_v_source_sublist.set("field evaluator type", "primary variable");
 
   // -- surface energy temperature
   Teuchos::ParameterList& wtemp_sublist =
@@ -108,6 +114,16 @@ void SurfaceBalanceSEBVPL::setup(const Teuchos::Ptr<State>& S) {
   pvfe_wsource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_wsource_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceSEBVPL: error, failure to initialize primary variable");
+    Exceptions::amanzi_throw(message);
+  }
+
+    S->RequireField("vapor_mass_source", name_)->SetMesh(mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator("vapor_mass_source");
+  fm = S->GetFieldEvaluator("vapor_mass_source");
+  pvfe_w_v_source_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+  if (pvfe_w_v_source_ == Teuchos::null) {
+    Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
     Exceptions::amanzi_throw(message);
   }
 
@@ -218,6 +234,8 @@ void SurfaceBalanceSEBVPL::initialize(const Teuchos::Ptr<State>& S) {
   //  S->GetField("surface_conducted_energy_source",name_)->set_initialized();
   S->GetFieldData("surface_mass_source",name_)->PutScalar(0.);
   S->GetField("surface_mass_source",name_)->set_initialized();
+    S->GetFieldData("surface_vapor_mass_source",name_)->PutScalar(0.);
+  S->GetField("surface_vapor_mass_source",name_)->set_initialized();
   S->GetFieldData("surface_mass_source_temperature",name_)->PutScalar(273.15);
   S->GetField("surface_mass_source_temperature",name_)->set_initialized();
 
@@ -295,6 +313,9 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
 
   Epetra_MultiVector& surface_water_flux =
       *S_next_->GetFieldData("surface_mass_source", name_)->ViewComponent("cell", false);
+  
+  Epetra_MultiVector& surface_vapor_flux =
+      *S_next_->GetFieldData("surface_vapor_mass_source", name_)->ViewComponent("cell", false);
 
   Epetra_MultiVector& surf_water_temp =
       *S_next_->GetFieldData("surface_mass_source_temperature", name_)->ViewComponent("cell", false);
@@ -450,6 +471,7 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
     // STUFF ATS WANTS
    //     surf_energy_flux[0][c] = data.st_energy.fQc;  
     surface_water_flux[0][c] = data.st_energy.Mr;
+    surface_vapor_flux[0][c] = data.st_energy.SurfaceVaporFlux;
     surf_water_temp[0][c] = data.st_energy.Trw;
 
     // STUFF SnowEnergyBalance NEEDS STORED FOR NEXT TIME STEP
@@ -482,6 +504,7 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
   solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
   //  pvfe_esource_->SetFieldAsChanged(S_next_.ptr());
   pvfe_wsource_->SetFieldAsChanged(S_next_.ptr());
+  pvfe_w_v_source_->SetFieldAsChanged(S_next_.ptr());
   pvfe_wtemp_->SetFieldAsChanged(S_next_.ptr());
 
   // debug
@@ -495,6 +518,7 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
     vnames.push_back("soil vapor mol fraction"); vecs.push_back(S_next_->GetFieldData("surface_vapor_pressure").ptr());
     vnames.push_back("T_ground"); vecs.push_back(S_next_->GetFieldData("surface_temperature").ptr());
     vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source").ptr());
+    vnames.push_back("surface_vapor_source"); vecs.push_back(S_next_->GetFieldData("surface_vapor_mass_source").ptr());
     //    vnames.push_back("e_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
     db_->WriteVectors(vnames, vecs, true);
   }

@@ -88,6 +88,7 @@ struct EnergyBalance {
   double stored_surface_pressure;
   //double stored_fQe;
   double surface_porosity;
+  double SurfaceVaporFlux;  // Second mass flux for cell center  
 
   double Mr;
   double MIr;

@@ -81,6 +81,7 @@ class SurfaceBalanceSEBVPL : public PKPhysicalBase {
   // multiple primary variables
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_esource_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_wsource_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_w_v_source_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_wtemp_;
 
   double dt_;
