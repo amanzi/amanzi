@@ -529,7 +529,7 @@ void SurfaceEnergyBalance_VPL::WaterMassCorrection(EnergyBalance& eb) {
   if (eb.MIr < 0) {
     // convert ht_snow to SWE
     double swe = eb.ht_snow * eb.density_snow / eb.density_w;
-    double swe_change = (eb.MIr + eb.Ps) * eb.dt;
+    double swe_change = (eb.MIr * eb.dt) + eb.Ps;
     if (swe + swe_change < 0) {
       // No more snow!  Take the rest out of the ground.
       // -- AA re-visit: should we take some from sublimation?

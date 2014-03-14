@@ -33,7 +33,7 @@ void SurfaceEnergyBalance::UpdateIncomingRadiation(LocalData& seb) {
   // Calculate incoming long-wave radiation
        // EmissivityAir Needs to be corrected to ... = std::pow((10*seb.vp_air.actual_vaporpressure) ....
        // When Vapor pressure units are corrected !!!!!
-    double EmissivityAir = std::pow((100*seb.vp_air.actual_vaporpressure),(seb.st_energy.temp_air/2016));
+    double EmissivityAir = std::pow((10*seb.vp_air.actual_vaporpressure),(seb.st_energy.temp_air/2016));
     EmissivityAir = (1 - std::exp(-EmissivityAir));
     EmissivityAir = 1.08 * EmissivityAir;
   seb.st_energy.fQlwIn = EmissivityAir * seb.st_energy.stephB * std::pow(seb.st_energy.temp_air,4);
@@ -219,8 +219,8 @@ void SurfaceEnergyBalance::UpdateVaporPressure(VaporPressure& vp) {
 //  THIS PUTS VAPOR PRESSURE IN [10 * kPa] RATHER THEN kPa !!!!!!!!! *********
 //  LATENT HEAD CALCULATION EXPECTS kPa NOT [10 * kPa]  !!!!!!! *******
 //  UNFORTUNATLY ATS WON'T WORK WHEN LATENT HEAT IS SOO STRONG !!!!!!
-    vp.saturated_vaporpressure = vp.saturated_vaporpressure/10;  // <-- This is wrong !!!  ***DELETE THIS CONVERSION***
-    vp.actual_vaporpressure = vp.actual_vaporpressure/10;  // <-- This is wrong !!!  ***DELETE THIS CONVERSION***
+//    vp.saturated_vaporpressure = vp.saturated_vaporpressure/10;  // <-- This is wrong !!!  ***DELETE THIS CONVERSION***
+//    vp.actual_vaporpressure = vp.actual_vaporpressure/10;  // <-- This is wrong !!!  ***DELETE THIS CONVERSION***
 }
 
 
@@ -385,7 +385,7 @@ void SurfaceEnergyBalance::WaterMassCorrection(EnergyBalance& eb) {
   if (eb.MIr < 0) {
     // convert ht_snow to SWE
     double swe = eb.ht_snow * eb.density_snow / eb.density_w;
-    double swe_change = (eb.MIr + eb.Ps) * eb.dt;
+    double swe_change = (eb.MIr * eb.dt) + eb.Ps;
     if (swe + swe_change < 0) {
       // No more snow!  Take the rest out of the ground.
       // -- AA re-visit: should we take some from sublimation?
