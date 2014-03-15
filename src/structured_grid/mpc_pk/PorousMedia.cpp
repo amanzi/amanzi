@@ -1120,7 +1120,6 @@ PorousMedia::initData ()
 
               FORT_LINEAR_PRESSURE(lo, hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
                                    dx, problo, probhi, ref_val, ref_loc, gradp);
-
 	    }
             else if (type == "zero_total_velocity")
 	    {	     
@@ -8668,7 +8667,6 @@ PorousMedia::init_rock_properties ()
   MultiFab kappatmp(grids,BL_SPACEDIM,nGrowHYP);
   bool ret = rockMgr->GetProperty(cur_time,level,kappatmp,"permeability",0,kappatmp.nGrow());
   if (!ret) BoxLib::Abort("Failed to build permeability");
-  
   for (MFIter mfi(kappatmp); mfi.isValid(); ++mfi) {
     const Box& cbox = mfi.validbox();
     const FArrayBox& cdat = kappatmp[mfi];

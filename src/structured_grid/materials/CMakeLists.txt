@@ -27,6 +27,10 @@ set(CXX_source_files Property.cpp
 set(F90_source_files sgsim.f90
                      geostat.f90)
 
+if(${AMANZI_SPACEDIM} EQUAL 3)
+  list (APPEND F90_source_files bivar.f90)
+endif()
+
 set(FPP_source_files MatFiller_${AMANZI_SPACEDIM}D.F
                      GSLibInt_${AMANZI_SPACEDIM}D.F
                      RockUtil_${AMANZI_SPACEDIM}D.F
@@ -89,68 +93,73 @@ if (BUILD_TESTS)
 
   set(tpl_libs)
 
-
-  add_amanzi_test(MaterialIDFiller tMIDf
-                  KIND unit
-                  SOURCE test/tMIDf.cpp
-                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
-
-  add_amanzi_test(MIDfill_RM tMIDf_RM "tMIDf_RM.in"
-                  KIND unit
-                  SOURCE test/tMIDf_RM.cpp
-                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+  include_directories(${SMATERIALS_SOURCE_DIR}/test) 
 
   add_amanzi_test(RockManager tRM "tRM.in"
                   KIND unit
                   SOURCE test/tRM.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
-  include_directories(${SMATERIALS_SOURCE_DIR}/test) 
-
   add_amanzi_test(RockManager_fort tRM_fort "tRM.in"
                   KIND unit
                   SOURCE test/tRM_fort.cpp test/tRM_fort_${AMANZI_SPACEDIM}D.F
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
-  add_amanzi_test(RockManager_gs tRM_GS "tRM_GS.in" "nLevs=1"
-                  KIND unit
-                  SOURCE test/tRM_GS.cpp
-                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+  if(${AMANZI_SPACEDIM} EQUAL 2)
+    add_amanzi_test(MaterialIDFiller tMIDf
+                    KIND unit
+                    SOURCE test/tMIDf.cpp
+                    LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
-  add_amanzi_test(RockManager_gs2 RockManager_gs_parallel "./tRM_GS.in"
-                  KIND unit
-	          NPROCS 2
-                  SOURCE test/tRM_GS.cpp
-                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+    add_amanzi_test(MIDfill_RM tMIDf_RM "tMIDf_RM.in"
+                    KIND unit
+                    SOURCE test/tMIDf_RM.cpp
+                    LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
-  add_amanzi_test(MaterialPropertyFiller tMatFiller
-                  KIND unit
-                  SOURCE test/tMatFiller.cpp
-                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+    add_amanzi_test(RockManager_gs tRM_GS "tRM_GS.in" "nLevs=1"
+                    KIND unit
+                    SOURCE test/tRM_GS.cpp
+                    LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
-  add_amanzi_test(MaterialPropertyFillerC tMatFillerC
-                  KIND unit
-                  SOURCE test/tMatFillerC.cpp
-                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+    add_amanzi_test(RockManager_gs2 RockManager_gs_parallel "./tRM_GS.in"
+                    KIND unit
+                    NPROCS 2
+                    SOURCE test/tRM_GS.cpp
+                    LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
-  add_amanzi_test(MaterialPropertyFiller4 "./tMatFiller_parallel" "case_size=large"
-                  KIND unit
-	          NPROCS 4
-                  SOURCE test/tMatFiller.cpp
-                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+    add_amanzi_test(MaterialPropertyFiller tMatFiller
+                    KIND unit
+                    SOURCE test/tMatFiller.cpp
+                    LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+
+    add_amanzi_test(MaterialPropertyFillerC tMatFillerC
+                    KIND unit
+                    SOURCE test/tMatFillerC.cpp
+                    LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+
+    add_amanzi_test(MaterialPropertyFiller4 "./tMatFiller_parallel" "case_size=large"
+                    KIND unit
+                    NPROCS 4
+                    SOURCE test/tMatFiller.cpp
+                    LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+  endif()
 
   # Copy input files if an out of source build
   if (NOT (${SMATERIALS_SOURCE_DIR} EQUAL ${SMATERIALS_BINARY_DIR}) )
+
     execute_process(COMMAND ${CMAKE_COMMAND} -E 
       copy ${SMATERIALS_SOURCE_DIR}/test/tRM.in ${SMATERIALS_BINARY_DIR}) 
-    execute_process(COMMAND ${CMAKE_COMMAND} -E 
-      copy ${SMATERIALS_SOURCE_DIR}/test/tMIDf_RM.in ${SMATERIALS_BINARY_DIR}) 
-    execute_process(COMMAND ${CMAKE_COMMAND} -E 
-      copy ${SMATERIALS_SOURCE_DIR}/test/tRM_GS.in ${SMATERIALS_BINARY_DIR}) 
-    execute_process(COMMAND ${CMAKE_COMMAND} -E 
-      copy ${SMATERIALS_SOURCE_DIR}/test/cluster.dat ${SMATERIALS_BINARY_DIR}) 
-    execute_process(COMMAND ${CMAKE_COMMAND} -E 
-      copy ${SMATERIALS_SOURCE_DIR}/test/sgsim.par ${SMATERIALS_BINARY_DIR}) 
+
+    if(${AMANZI_SPACEDIM} EQUAL 2)
+      execute_process(COMMAND ${CMAKE_COMMAND} -E 
+        copy ${SMATERIALS_SOURCE_DIR}/test/tMIDf_RM.in ${SMATERIALS_BINARY_DIR}) 
+      execute_process(COMMAND ${CMAKE_COMMAND} -E 
+        copy ${SMATERIALS_SOURCE_DIR}/test/tRM_GS.in ${SMATERIALS_BINARY_DIR}) 
+      execute_process(COMMAND ${CMAKE_COMMAND} -E 
+        copy ${SMATERIALS_SOURCE_DIR}/test/cluster.dat ${SMATERIALS_BINARY_DIR}) 
+      execute_process(COMMAND ${CMAKE_COMMAND} -E 
+        copy ${SMATERIALS_SOURCE_DIR}/test/sgsim.par ${SMATERIALS_BINARY_DIR}) 
+    endif()
   endif()
 
 endif()

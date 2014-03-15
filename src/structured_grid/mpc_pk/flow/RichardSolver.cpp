@@ -1323,7 +1323,7 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
   // the values are only used to compute gradients at faces.
   bool do_piecewise_constant = false;
   FillPatch(pressure,0,nComp,do_piecewise_constant);
-  
+
   // Get  -(Grad(p) + rho.g)
   CCtoECgradAdd(darcy_vel,pressure,rhog);
 

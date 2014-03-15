@@ -165,6 +165,83 @@ public:
 
 std::ostream& operator<< (std::ostream& os, const BoxRegion& rhs);
 
+
+#if BL_SPACEDIM == 2
+class PolygonRegion : public Region
+{
+public: 
+  enum PLANE {XYPLANE, YZPLANE, XZPLANE};
+
+  PolygonRegion (const std::string&   r_name,
+                 const std::string&   r_purpose,
+                 const Array<Real>&   v1vector,
+                 const Array<Real>&   v2vector
+    );
+  virtual ~PolygonRegion() {}
+
+  virtual bool inRegion (const Array<Real>& x) const;
+  virtual std::ostream& print (std::ostream& os) const;
+
+  Array<Real> vector1;
+  Array<Real> vector2;
+};
+
+#else
+
+class SweptPolygonRegion : public Region
+{
+public: 
+  enum PLANE {XYPLANE, YZPLANE, XZPLANE};
+
+  SweptPolygonRegion (const std::string&   r_name,
+                      const std::string&   r_purpose,
+                      const Array<Real>&   v1vector,
+                      const Array<Real>&   v2vector,
+                      const PLANE&         plane,
+                      const Array<Real>&   extent);
+  virtual ~SweptPolygonRegion() {}
+
+  virtual bool inRegion (const Array<Real>& x) const;
+  virtual std::ostream& print (std::ostream& os) const;
+
+  Array<Real> vector1;
+  Array<Real> vector2;
+  PLANE plane;
+  Array<Real> extent;
+};
+
+class RotatedPolygonRegion : public Region
+{
+public: 
+  enum PLANE {XYPLANE, YZPLANE, XZPLANE};
+
+  RotatedPolygonRegion(const std::string& r_name,
+                       const std::string& r_purpose,
+                       const Array<Real>& v1vector,
+                       const Array<Real>& v2vector,
+                       const PLANE&       _plane,
+                       const Array<Real>& _reference_pt,
+                       const std::string& axis);
+  virtual ~RotatedPolygonRegion() {}
+
+  virtual bool inRegion (const Array<Real>& x) const;
+  virtual std::ostream& print (std::ostream& os) const;
+
+  int n, t1, t2;
+  Array<Real> vector1;
+  Array<Real> vector2;
+  PLANE plane;
+  Array<Real> reference_pt;
+  std::string axis;
+};
+#endif
+
+#if BL_SPACEDIM == 2
+std::ostream& operator<< (std::ostream& os, const PolygonRegion& rhs);
+#else
+std::ostream& operator<< (std::ostream& os, const SweptPolygonRegion& rhs);
+#endif
+
 class ColorFunctionRegion : public BoxRegion
 {
 public: 
@@ -188,6 +265,48 @@ public:
 
 std::ostream& operator<< (std::ostream& os, const ColorFunctionRegion& rhs);
 
+
+class ComplementRegion : public Region
+{
+public:
+  ComplementRegion (const std::string& r_name,
+                    const std::string& r_purpose,
+                    Region*            exclude_region);
+  virtual ~ComplementRegion() {}
+  virtual void SetExcludeRegion(Region* region) {exclude_region = region;}
+
+  virtual bool inRegion (const Array<Real>& x) const;
+  virtual std::ostream& print (std::ostream& os) const;
+  Region* exclude_region;
+};
+
+class UnionRegion : public Region
+{
+public:
+  UnionRegion (const std::string&    r_name,
+               const std::string&    r_purpose,
+               const Array<Region*>& regions);
+  virtual ~UnionRegion() {}
+  virtual void SetUnionRegions(const Array<Region*>& regions);
+
+  virtual bool inRegion (const Array<Real>& x) const;
+  virtual std::ostream& print (std::ostream& os) const;
+  Array<Region*> regions;
+};
+
+class SubtractionRegion : public Region
+{
+public:
+  SubtractionRegion (const std::string&    r_name,
+                     const std::string&    r_purpose,
+                     const Array<Region*>& regions);
+  virtual ~SubtractionRegion() {}
+  virtual void SetRegions(const Array<Region*>& regions);
+
+  virtual bool inRegion (const Array<Real>& x) const;
+  virtual std::ostream& print (std::ostream& os) const;
+  Array<Region*> regions;
+};
 
 class CompoundRegion : public Region
 {

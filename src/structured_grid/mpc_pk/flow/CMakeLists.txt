@@ -101,21 +101,36 @@ if (BUILD_TESTS)
 
   preprocess_boxlib_fortran(FPP_out_files_1 ${FPP_source_files_1})
 
-  # (seems to require redundant lib listing to resolve everything....not sure why
-  add_amanzi_test(tRS tRS "tRS.in"
-                  KIND unit
-                  SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} ${F77_source_files_1}
-                  LINK_LIBS ${my_libs} ${my_tpl_libs} ${my_libs})
+  if(${AMANZI_SPACEDIM} EQUAL 2)
+    # (seems to require redundant lib listing to resolve everything....not sure why
+    add_amanzi_test(tRS tRS "tRS.in"
+                    KIND unit
+                    SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} ${F77_source_files_1}
+                    LINK_LIBS ${my_libs} ${my_tpl_libs} ${my_libs})
+  else()
+    # (seems to require redundant lib listing to resolve everything....not sure why
+    add_amanzi_test(tRS tRS "tRS_3D.in"
+                    KIND unit
+                    SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} ${F77_source_files_1}
+                    LINK_LIBS ${my_libs} ${my_tpl_libs} ${my_libs})
+  endif()
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
   endif()
 
   # Copy input files if an out of source build
   if (NOT (${SFLOW_SOURCE_DIR} EQUAL ${SFLOW_BINARY_DIR}) )
+
     execute_process(COMMAND ${CMAKE_COMMAND} -E
                     copy ${FLOWTEST}/.petsc ${SFLOW_BINARY_DIR})
-    execute_process(COMMAND ${CMAKE_COMMAND} -E 
-                    copy ${FLOWTEST}/tRS.in ${SFLOW_BINARY_DIR}) 
+
+    if(${AMANZI_SPACEDIM} EQUAL 2)
+      execute_process(COMMAND ${CMAKE_COMMAND} -E 
+                      copy ${FLOWTEST}/tRS.in ${SFLOW_BINARY_DIR}) 
+    else()
+      execute_process(COMMAND ${CMAKE_COMMAND} -E 
+                      copy ${FLOWTEST}/tRS_3D.in ${SFLOW_BINARY_DIR}) 
+    endif()
   endif()
 
 endif()

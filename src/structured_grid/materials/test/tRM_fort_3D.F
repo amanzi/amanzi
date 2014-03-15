@@ -89,24 +89,25 @@
       subroutine FORT_TEST_DSDPCAP (rmID, time, lo, hi,
      &     s,  DIMS(s),
      &     m,  DIMS(m),
-     &     dsdp, DIMS(dsdp))
+     &     d, DIMS(d))
       implicit none
       integer rmID
       REAL_T  time
       integer lo(SDIM), hi(SDIM)
       integer DIMDEC(s)
       integer DIMDEC(m)
-      integer DIMDEC(dsdp)
+      integer DIMDEC(d)
       REAL_T  s(DIMV(s))
       integer m(DIMV(m))
-      REAL_T  dsdp(DIMV(dsdp))
+      REAL_T  d(DIMV(d))
       integer i,j,k,Nx
 
       Nx = hi(1) - lo(1) + 1
       do k = lo(3),hi(3)
       do j = lo(2),hi(2)
-         call ROCK_MANAGER_DSDPCAP(rmID,s(ARG_L1(s),j,k),m(ARG_L1(m),j,k),
-     &        time,dsdp(ARG_L1(dsdp),j,k),Nx)
+         call ROCK_MANAGER_DSDPCAP(rmID,s(ARG_L1(s),j,k),
+     &        m(ARG_L1(m),j,k),time,
+     &        d(ARG_L1(d),j,k),Nx)
       end do
       end do
       end

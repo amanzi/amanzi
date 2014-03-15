@@ -5,20 +5,24 @@
 #include <VisMF.H>
 #include <Utility.H>
 
+#if BL_SPACEDIM==2
 static Real H = 107.52;
 static Real W = H/16;
 static int Nx = 2;
 static int Ny = Nx*16;
-
-//static Real W = 40;
-//static Real H = 24;
-//static int Nx = 40;
-//static int Ny = 24;
+#else
+static Real H = 107.52;
+static Real W = H/16;
+static int Nx = 2;
+static int Ny = 2;
+static int Nz = Nx*16;
+#endif
 
 static Real dt = 1; // Initial
 static int Niter = 60;
 static std::string plt_name = "";
 static bool verbose = false;
+
 //
 // Components are  Interior, Inflow, Outflow, Symmetry, SlipWall, NoSlipWall.
 //

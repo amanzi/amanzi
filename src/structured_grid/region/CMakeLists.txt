@@ -53,14 +53,34 @@ if (BUILD_TESTS)
     endif()
   endif()
 
-  #set(common_libs error_handling ${GEOCHEM_LIBS} interface atk)
+  # Copy input files if an out of source build
+  if (NOT (${SREGION_SOURCE_DIR} EQUAL ${SREGION_BINARY_DIR}) )
+    if(${AMANZI_SPACEDIM} EQUAL 2)
+      execute_process(COMMAND ${CMAKE_COMMAND} -E
+        copy ${SREGION_SOURCE_DIR}/test/tR.in ${SREGION_BINARY_DIR})
+    else()
+      execute_process(COMMAND ${CMAKE_COMMAND} -E
+        copy ${SREGION_SOURCE_DIR}/test/tR_3D.in ${SREGION_BINARY_DIR})
+    endif()
 
-  #set(tpl_libs ${Teuchos_LIBRARIES})
+  endif()
 
   add_amanzi_test(tRegion tRegion
                   KIND unit
                   SOURCE test/tRegion.cpp
                   LINK_LIBS ${structured_grid_libs} ${common_libs} ${tpl_libs})
+
+  if(${AMANZI_SPACEDIM} EQUAL 2)
+    add_amanzi_test(tR tR "tR.in"
+                    KIND unit
+                    SOURCE test/tR.cpp
+                    LINK_LIBS ${structured_grid_libs} ${common_libs} ${tpl_libs})
+  else()
+    add_amanzi_test(tR tR "tR_3D.in"
+                    KIND unit
+                    SOURCE test/tR.cpp
+                    LINK_LIBS ${structured_grid_libs} ${common_libs} ${tpl_libs})
+  endif()
 
 endif()
 

@@ -189,6 +189,214 @@ BoxRegion::inRegion(const Array<Real>& x) const
     return inflag;
 }
 
+static bool
+pnpoly(const Array<Real>& vertx,
+       const Array<Real>& verty,
+       const Array<Real>& x)
+{
+  int i, j;
+  bool ret = false;
+  int nvert = vertx.size();
+  BL_ASSERT(verty.size()==nvert);
+  BL_ASSERT(x.size()==2);
+  for (i = 0, j = nvert-1; i < nvert; j = i++) {
+    if ( ((verty[i]>x[1]) != (verty[j]>x[1])) &&
+	 (x[0] < (vertx[j]-vertx[i]) * (x[1]-verty[i]) / (verty[j]-verty[i]) + vertx[i]) ) {
+      ret = !ret;
+    }
+  }
+  return ret;
+}
+
+#if BL_SPACEDIM==2
+PolygonRegion::PolygonRegion (const std::string& r_name,
+                              const std::string& r_purpose,
+                              const Array<Real>& v1vector,
+                              const Array<Real>& v2vector
+#if BL_SPACEDIM == 3
+                              , const PLANE&     _plane,
+                              const Array<Real>& _extent
+#endif
+  ) : Region(r_name,r_purpose,"polygon")
+{
+  BL_ASSERT(v1vector.size()==v2vector.size());
+  int N = v1vector.size();
+  vector1.resize(N);
+  vector2.resize(N);
+  for (int i=0; i<N; ++i) {
+    vector1[i] = v1vector[i];
+    vector2[i] = v2vector[i];
+  }
+#if BL_SPACEDIM == 3
+  plane = _plane;
+  extent.resize(2);
+  for (int i=0; i<2; ++i) {
+    extent[i] = _extent[i];
+  }
+#endif
+}
+
+
+bool
+PolygonRegion::inRegion (const Array<Real>& x) const
+{
+  return pnpoly(vector1,vector2,x);
+}
+
+std::ostream&
+PolygonRegion::print(std::ostream& os) const
+{
+  Region::print(os);
+  os << "    polygon nodes ";
+  for (int i=0; i<vector1.size(); ++i) {
+    os << "(" << vector1[i] << ", " << vector2[i] << ") ";
+  }
+  os << '\n';
+  return os;
+}
+
+#else
+
+SweptPolygonRegion::SweptPolygonRegion (const std::string& r_name,
+                                        const std::string& r_purpose,
+                                        const Array<Real>& v1vector,
+                                        const Array<Real>& v2vector,
+                                        const PLANE&       _plane,
+                                        const Array<Real>& _extent)
+  : Region(r_name,r_purpose,"polygon")
+{
+  BL_ASSERT(v1vector.size()==v2vector.size());
+  int N = v1vector.size();
+  vector1.resize(N);
+  vector2.resize(N);
+  for (int i=0; i<N; ++i) {
+    vector1[i] = v1vector[i];
+    vector2[i] = v2vector[i];
+  }
+  plane = _plane;
+  extent.resize(2);
+  for (int i=0; i<2; ++i) {
+    extent[i] = _extent[i];
+  }
+}
+
+
+bool
+SweptPolygonRegion::inRegion (const Array<Real>& x) const
+{
+  Array<Real> xproj(2);
+  bool ret = true;
+  if (plane == XYPLANE) {
+    xproj[0] = x[0];
+    xproj[1] = x[1];
+    ret &= x[2] >= extent[0] & x[2] < extent[1];
+  }
+  else if (plane == YZPLANE) {
+    xproj[0] = x[1];
+    xproj[1] = x[2];
+    ret &= x[0] >= extent[0] & x[0] < extent[1];
+  }
+  else {
+    xproj[0] = x[0];
+    xproj[1] = x[2];
+    ret &= x[1] >= extent[0] & x[1] < extent[1];
+  }
+  if (!ret) {
+    return ret;
+  }
+  return pnpoly(vector1,vector2,xproj);
+}
+
+std::ostream&
+SweptPolygonRegion::print(std::ostream& os) const
+{
+  Region::print(os);
+  os << "    polygon nodes ";
+  std::string plStr = (plane==XYPLANE ? "XY" : (plane == YZPLANE ? "YZ" : "XZ"));
+  os << "in the " << plStr << " plane: ";
+  for (int i=0; i<vector1.size(); ++i) {
+    os << "(" << vector1[i] << ", " << vector2[i] << ") ";
+  }
+  os << '\n';
+  os << "    extent: (" << extent[0] << ", " << extent[1] << ")";
+  os << '\n';
+  return os;
+}
+
+
+RotatedPolygonRegion::RotatedPolygonRegion (const std::string& r_name,
+                                            const std::string& r_purpose,
+                                            const Array<Real>& v1vector,
+                                            const Array<Real>& v2vector,
+                                            const PLANE&       _plane,
+                                            const Array<Real>& _reference_pt,
+                                            const std::string& _axis)
+  : Region(r_name,r_purpose,"rotated_polygon")
+{
+  BL_ASSERT(v1vector.size()==v2vector.size());
+  int N = v1vector.size();
+  vector1.resize(N);
+  vector2.resize(N);
+  for (int i=0; i<N; ++i) {
+    vector1[i] = v1vector[i];
+    vector2[i] = v2vector[i];
+  }
+  plane = _plane;
+  reference_pt.resize(BL_SPACEDIM);
+  for (int i=0; i<reference_pt.size(); ++i) {
+    reference_pt[i] = _reference_pt[i];
+  }
+  axis = _axis;
+  BL_ASSERT(axis=="X" || axis=="Y" || axis=="Z");
+  n = (axis=="X" ?  0 :  (axis=="Y" ? 1 : 2));
+  if (plane==XYPLANE) {
+    t1 = (n==0 ? 1 : 0);
+    t2 = 2;
+  }
+  else if (plane==YZPLANE) {
+    t1 = 0;
+    t2 = (n==1 ? 2 : 1);
+  }
+  else  {
+    BL_ASSERT(plane==XZPLANE);
+    t1 = 1;
+    t2 = (n==2 ? 0 : 2);
+  }
+}
+
+
+bool
+RotatedPolygonRegion::inRegion (const Array<Real>& x) const
+{
+  Array<Real> xproj(2);
+  Real d1 = x[t1]-reference_pt[t1];
+  Real d2 = x[t2]-reference_pt[t2];
+  Real d3 = x[n]-reference_pt[n];
+
+  xproj[0] = std::sqrt( d1*d1 + d2*d2 );
+  xproj[1] = d3;
+
+  return pnpoly(vector1,vector2,xproj);
+}
+
+std::ostream&
+RotatedPolygonRegion::print(std::ostream& os) const
+{
+  Region::print(os);
+  os << "    polygon nodes ";
+  std::string plStr = (plane==XYPLANE ? "XY" : (plane == YZPLANE ? "YZ" : "XZ"));
+  os << "in the " << plStr << " plane: ";
+  for (int i=0; i<vector1.size(); ++i) {
+    os << "(" << vector1[i] << ", " << vector2[i] << ") ";
+  }
+  os << '\n';
+  return os;
+}
+
+#endif
+
+
+
 ColorFunctionRegion::ColorFunctionRegion (const std::string& r_name,
                                           const std::string& r_purpose,
 					  const std::string& file_name,
@@ -342,8 +550,7 @@ ColorFunctionRegion::inRegion (const Array<Real>& x) const
 
 std::ostream& operator<< (std::ostream& os, const Region& rhs)
 {
-    rhs.print(os);
-    return os;
+  return rhs.print(os);
 }
 
 std::ostream&
@@ -469,6 +676,121 @@ AllBCRegion::inRegion(const Array<Real>& x) const
     return true;
 }
 #endif
+
+ComplementRegion::ComplementRegion (const std::string& r_name,
+                                    const std::string& r_purpose,
+                                    Region*            _exclude_region)
+  : Region(r_name,r_purpose,"complement")
+{
+  exclude_region = _exclude_region;
+}
+
+bool
+ComplementRegion::inRegion (const Array<Real>& x) const
+{
+  return (exclude_region==0 ? true : !exclude_region->inRegion(x));
+}
+
+std::ostream&
+ComplementRegion::print (std::ostream& os) const
+{
+  Region::print(os);
+  os << "    contains entire domain except the region: " << exclude_region->name << '\n';
+  return os;
+}
+
+
+UnionRegion::UnionRegion (const std::string&    r_name,
+                          const std::string&    r_purpose,
+                          const Array<Region*>& _regions)
+  : Region(r_name,r_purpose,"union")
+{
+  SetUnionRegions(_regions);
+}
+
+void
+UnionRegion::SetUnionRegions(const Array<Region*>& _regions)
+{
+  regions.resize(_regions.size());
+  for (int i=0; i<_regions.size(); ++i) {
+    regions[i] = _regions[i];
+  }
+}
+
+bool
+UnionRegion::inRegion (const Array<Real>& x) const
+{
+  if (regions.size()==0) {
+    return false;
+  }
+
+  bool ret = false;
+  for(int i=0; !ret && i<regions.size(); ++i) {
+    ret |= regions[i]->inRegion(x);
+  }
+  return ret;
+}
+
+std::ostream&
+UnionRegion::print (std::ostream& os) const
+{
+  os << "The union of the following regions: \n";
+  for(int i=0; i<regions.size(); ++i) {
+    regions[i]->print(os);
+  }
+  return os;
+}
+
+
+
+SubtractionRegion::SubtractionRegion (const std::string&    r_name,
+                          const std::string&    r_purpose,
+                          const Array<Region*>& _regions)
+  : Region(r_name,r_purpose,"union")
+{
+  SetRegions(_regions);
+}
+
+void
+SubtractionRegion::SetRegions(const Array<Region*>& _regions)
+{
+  regions.resize(_regions.size());
+  for (int i=0; i<_regions.size(); ++i) {
+    regions[i] = _regions[i];
+  }
+}
+
+bool
+SubtractionRegion::inRegion (const Array<Real>& x) const
+{
+  if (regions.size() == 0) return true; // Default master region to All, remove no other regions
+  if (! (regions[0]->inRegion(x)) ) return false;
+
+  for(int i=1; i<regions.size(); ++i) {
+    if (regions[i]->inRegion(x)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+std::ostream&
+SubtractionRegion::print (std::ostream& os) const
+{
+  if (regions.size()>0) {
+    os << "Within the region: \n";
+    regions[0]->print(os);
+    if (regions.size()>1) {
+      os << "  but outside the region: \n";
+      for(int i=1; i<regions.size(); ++i) {
+        regions[i]->print(os);
+      }
+    }
+  }
+  return os;
+}
+
+
 
 CompoundRegion::CompoundRegion (const std::string& r_name,
                                 const std::string& r_purpose,

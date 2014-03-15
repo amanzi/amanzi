@@ -23,4 +23,6 @@ protected:
   std::map<std::string,int> name_to_region_idx;
 };
 
+std::ostream& operator<<(std::ostream& os, const RegionManager& rm);
+
 #endif

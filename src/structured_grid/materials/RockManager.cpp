@@ -589,32 +589,40 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
     }
 
     Property* kappa_func = 0;
-    Array<Real> rvpvals(1), rhpvals(1), rvptimes(1), rhptimes(1);
-    Array<std::string> rvpforms, rhpforms;
+    Array<Real> rvpvals(1), rhpvals(1), rh1pvals(1), rvptimes(1), rhptimes(1), rh1ptimes(1);
+    Array<std::string> rvpforms, rhpforms, rh1pforms;
 
-    Array<Real> rperm_in(2);
+    Array<Real> rperm_in(BL_SPACEDIM);
     if (ppr.countval(PermeabilityName.c_str())) {
-      ppr.getarr(PermeabilityName.c_str(),rperm_in,0,2);
+      ppr.getarr(PermeabilityName.c_str(),rperm_in,0,BL_SPACEDIM);
       rhpvals[0] = rperm_in[0];
-      rvpvals[0] = rperm_in[1];
+      rvpvals[0] = rperm_in[BL_SPACEDIM-1];
+#if BL_SPACEDIM==3
+      rh1pvals[0] = rperm_in[0];
+#endif
     }
     else {
 
       std::string PermeabilityVertValName = PermeabilityName+".vertical.vals";
       std::string PermeabilityVertTimesName = PermeabilityName+".vertical.times";
       std::string PermeabilityVertFormsName = PermeabilityName+".vertical.forms";
-      std::string PermeabilityHoriValName = PermeabilityName+".horizontal.vals";
-      std::string PermeabilityHoriTimesName = PermeabilityName+".horizontal.times";
-      std::string PermeabilityHoriFormsName = PermeabilityName+".horizontal.forms";
+
       int nrvpvals = ppr.countval(PermeabilityVertValName.c_str());
-      int nrhpvals = ppr.countval(PermeabilityHoriValName.c_str());
-      if (nrvpvals>0 && nrhpvals>0) {
+      if (nrvpvals>0) {
         ppr.getarr(PermeabilityVertValName.c_str(),rvpvals,0,nrvpvals);
         if (nrvpvals>1) {
           ppr.getarr(PermeabilityVertTimesName.c_str(),rvptimes,0,nrvpvals);
           ppr.getarr(PermeabilityVertFormsName.c_str(),rvpforms,0,nrvpvals-1);
         }
+      } else {
+        BoxLib::Abort(std::string("No vertical permeability function specified for rock: \""+rname).c_str());
+      }
 
+      std::string PermeabilityHoriValName = PermeabilityName+".horizontal.vals";
+      std::string PermeabilityHoriTimesName = PermeabilityName+".horizontal.times";
+      std::string PermeabilityHoriFormsName = PermeabilityName+".horizontal.forms";
+      int nrhpvals = ppr.countval(PermeabilityHoriValName.c_str());
+      if (nrhpvals>0) {
         ppr.getarr(PermeabilityHoriValName.c_str(),rhpvals,0,nrhpvals);
         if (nrhpvals>1) {
           ppr.getarr(PermeabilityHoriTimesName.c_str(),rhptimes,0,nrhpvals);
@@ -622,8 +630,25 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
         }
 
       } else {
-        BoxLib::Abort(std::string("No permeability function specified for rock: \""+rname).c_str());
+        BoxLib::Abort(std::string("No horizontal permeability function specified for rock: \""+rname).c_str());
       }
+
+#if BL_SPACEDIM==3
+      std::string PermeabilityHori1ValName = PermeabilityName+".horizontal1.vals";
+      std::string PermeabilityHori1TimesName = PermeabilityName+".horizontal1.times";
+      std::string PermeabilityHori1FormsName = PermeabilityName+".horizontal1.forms";
+      int nrh1pvals = ppr.countval(PermeabilityHori1ValName.c_str());
+      if (nrh1pvals>0) {
+        ppr.getarr(PermeabilityHori1ValName.c_str(),rh1pvals,0,nrh1pvals);
+        if (nrh1pvals>1) {
+          ppr.getarr(PermeabilityHori1TimesName.c_str(),rh1ptimes,0,nrh1pvals);
+          ppr.getarr(PermeabilityHori1FormsName.c_str(),rh1pforms,0,nrh1pvals-1);
+        }
+
+      } else {
+        BoxLib::Abort(std::string("No horizontal1 permeability function specified for rock: \""+rname).c_str());
+      }
+#endif
     }
 
     // The permeability is specified in mDa.  
@@ -639,21 +664,33 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
     // value of kappa  (NOTE: We will have to know that this is done however
     // if kappa is used as a diagnostic or in some way for a derived quantity).
     //
-    for (int j=0; j<rhpvals.size(); ++j) {
-      rhpvals[j] *= 1.e-10;
-    }
     for (int j=0; j<rvpvals.size(); ++j) {
       rvpvals[j] *= 1.e-10;
     }
+    for (int j=0; j<rhpvals.size(); ++j) {
+      rhpvals[j] *= 1.e-10;
+    }
+#if BL_SPACEDIM==3
+    for (int j=0; j<rh1pvals.size(); ++j) {
+      rh1pvals[j] *= 1.e-10;
+    }
+#endif
 
     if (rvpvals.size()>1 || rhpvals.size()>1) {
-      Array<TabularFunction> pft(2);
+      Array<TabularFunction> pft(BL_SPACEDIM);
       pft[0] = TabularFunction(rhptimes,rhpvals,rhpforms);
-      pft[1] = TabularFunction(rvptimes,rvpvals,rvpforms);
+      pft[BL_SPACEDIM-1] = TabularFunction(rvptimes,rvpvals,rvpforms);
+#if BL_SPACEDIM==3
+      pft[1] = TabularFunction(rh1ptimes,rh1pvals,rh1pforms);
+#endif
       kappa_func = new TabularInTimeProperty(PermeabilityName,pft,harm_crsn,pc_refine);
     }
     else {
-      Array<Real> vals(2); vals[0] = rhpvals[0]; vals[1] = rvpvals[0];
+      Array<Real> vals(BL_SPACEDIM);
+      vals[0] = rhpvals[0]; vals[BL_SPACEDIM-1] = rvpvals[0];
+#if BL_SPACEDIM==3
+      vals[1] = rh1pvals[0];
+#endif
       kappa_func = new ConstantProperty(PermeabilityName,vals,harm_crsn,pc_refine);
     }
 

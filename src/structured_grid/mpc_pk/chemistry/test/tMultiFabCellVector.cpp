@@ -68,7 +68,11 @@ main (int   argc,
     ParallelDescriptor::ReduceRealSum(tot1);
     ParallelDescriptor::ReduceRealSum(tot2);
 
+#if BL_SPACEDIM==2
     if (tot0 != set_val * cnt  ||  tot1 != 80  ||  tot2 != 120) {
+#else
+    if (tot0 != 1280  ||  tot1 != 576  ||  tot2 != 864) {
+#endif
       cout << "tot0: " << tot0 << endl;
       cout << "tot1: " << tot1 << endl;
       cout << "tot2: " << tot2 << endl;

@@ -185,7 +185,6 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
     RichardCoefs.set(d, new MFTower(layout,ctmp[d],nLevs));
     utmp.clear();
   }
-
   KappaCCdir = new MFTower(layout,IndexType(IntVect::TheZeroVector()),BL_SPACEDIM,1,nLevs);
 
   // Setup property managers

@@ -77,7 +77,7 @@ c ::: internal variables
       call riemann_est_eig(s,DIMS(s),lam,dlam,d2lam,DIMS(lam),
      &     uedge,DIMS(uedge),kappax,DIMS(kpx),rphi,DIMS(rphi),
      &     krcoef,DIMS(krcoef),nkrcoef,
-     &     1,0,0,lo,hi,ncomps,gravx,rhoval,muval,model,dx,bc,eigmax(1))
+     &     1,0,0,lo,hi,ncomps,gravx,rhoval,muval,dx,bc,eigmax(1))
       call riemann_est_eig(s,DIMS(s),lam,dlam,d2lam,DIMS(lam),
      &     vedge,DIMS(vedge),kappay,DIMS(kpy),rphi,DIMS(rphi),
      &     krcoef,DIMS(krcoef),nkrcoef,
@@ -1335,7 +1335,6 @@ c
       subroutine FORT_ESTATE_TRACER(s, DIMS(s),
      &     capInv, DIMS(capInv), 
      &     dcapdt, DIMS(dcapdt), 
-     &     tforces, DIMS(tforces),
      &     tforces, DIMS(tforces),
      &     xlo, xhi, sx, slxscr, stxlo, stxhi,
      &     uedge, DIMS(uedge), xstate, DIMS(xstate),
@@ -6000,10 +5999,16 @@ c
 
       integer i, j, k, n, idx
 
+      integer cWater
+
 !$omp parallel do private(i,j,k,n,idx)
 
 c     First update all tracers with no change
       cn(:,:,:,1:nt) = co(:,:,:,1:nt)
+
+c     Then, advect/force those in the "Total" group
+c     FIXME: Assume first component is water, and that all tracers of interest are in water
+      cWater = 1
 
       do k = lo(3), hi(3)
          do j = lo(2), hi(2) 
@@ -6011,7 +6016,7 @@ c     First update all tracers with no change
                do n = 1,idx_total_n
                   idx = idx_total(n)
                   if (sn(i,j,k,1) .gt. zero) then
-                     cn(i,j,,kidx) = (so(i,j,k,cWater)*co(i,j,k,idx)
+                     cn(i,j,k,idx) = (so(i,j,k,cWater)*co(i,j,k,idx)
      &                    + dt*(tforces(i,j,k,idx)-aofs(i,j,k,idx))/rockphi(i,j,k))/sn(i,j,k,cWater)
                   end if
                end do

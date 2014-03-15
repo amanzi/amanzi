@@ -61,8 +61,96 @@
       endif
       end     
 
+      subroutine FORT_CC_TO_EC_AVG(avg,DIMS(avg),
+     &     c,DIMS(c),lo,hi,mult,dir,nc,do_harm)
+      implicit none      
+      integer DIMDEC(avg)
+      integer DIMDEC(c)
+      integer lo(SDIM),hi(SDIM)
+      REAL_T  avg(DIMV(avg),0:nc-1)
+      REAL_T  c(DIMV(c),0:nc-1)
+      REAL_T  mult
+      integer dir, nc, do_harm
+      
+      integer i, j, k, n
+      REAL_T tmult
+
+      if (dir.ne.0 .and. dir.ne.1 .and. dir.ne. 2) then
+         print *, 'FORT_CC_TO_EC_AVG::bad dir: ',dir
+         call bl_pd_abort()
+      endif
+
+      if (do_harm .eq. 1) then
+         tmult = mult*2.d0
+         if (dir.eq.0) then
+            do n=0,nc-1
+               do k = lo(3),hi(3)
+                  do j = lo(2),hi(2)
+                     do i = lo(1),hi(1)+1
+                        avg(i,j,k,n) = tmult/(1.d0/c(i,j,k,n) + 1.d0/c(i-1,j,k,n))
+                     enddo
+                  enddo
+               enddo
+            enddo
+         else if (dir.eq.1) then
+            do n=0,nc-1
+               do k = lo(3),hi(3)
+                  do j = lo(2),hi(2)+1
+                     do i = lo(1),hi(1)
+                        avg(i,j,k,n) = tmult/(1.d0/c(i,j,k,n) + 1.d0/c(i,j-1,k,n))
+                     enddo
+                  enddo
+               enddo
+            enddo
+         else if (dir.eq.2) then
+            do n=0,nc-1
+               do k = lo(3),hi(3)+1
+                  do j = lo(2),hi(2)
+                     do i = lo(1),hi(1)
+                        avg(i,j,k,n) = tmult/(1.d0/c(i,j,k,n) + 1.d0/c(i,j,k-1,n))
+                     enddo
+                  enddo
+               enddo
+            enddo
+         endif
+      else
+         tmult = mult*0.5d0
+         if (dir.eq.0) then
+            do n=0,nc-1
+               do k = lo(3),hi(3)
+                  do j = lo(2),hi(2)
+                     do i = lo(1),hi(1)+1
+                        avg(i,j,k,n) = tmult*(c(i,j,k,n) + c(i-1,j,k,n))
+                     enddo
+                  enddo
+               enddo
+            enddo
+         else if (dir.eq.1) then
+            do n=0,nc-1
+               do k = lo(3),hi(3)
+                  do j = lo(2),hi(2)+1
+                     do i = lo(1),hi(1)
+                        avg(i,j,k,n) = tmult*(c(i,j,k,n) + c(i,j-1,k,n))
+                     enddo
+                  enddo
+               enddo
+            enddo
+         else if (dir.eq.2) then
+            do n=0,nc-1
+               do k = lo(3),hi(3)+1
+                  do j = lo(2),hi(2)
+                     do i = lo(1),hi(1)
+                        avg(i,j,k,n) = tmult*(c(i,j,k,n) + c(i,j,k-1,n))
+                     enddo
+                  enddo
+               enddo
+            enddo
+         endif
+      endif
+      end     
+
       subroutine FORT_EC_TO_CC_DIV(div,DIMS(div),
-     &     e,DIMS(e),a,DIMS(a),v,DIMS(v),lo,hi,dx,mult,dir,nc)
+     &     e,DIMS(e),a,DIMS(a),v,DIMS(v),lo,hi,mult,dir,nc)
       implicit none      
       integer dir, nc
       integer DIMDEC(div)
@@ -82,7 +170,7 @@
             do k = lo(3),hi(3)
                do j = lo(2),hi(2)
                   do i = lo(1),hi(1)
-                     div(i,j,k,n) = div(i,j,kn) + mult(n)*(e(i+1,j,k,n)*a(i+1,j,k) - e(i,j,k,n)*a(i,j,k))/v(i,j,k)
+                     div(i,j,k,n) = div(i,j,k,n) + mult(n)*(e(i+1,j,k,n)*a(i+1,j,k) - e(i,j,k,n)*a(i,j,k))/v(i,j,k)
                   enddo
                enddo
             enddo
@@ -162,12 +250,14 @@
          do n=1,nc
             do ir=0,rim1
                do kr=0,rkm1
-                  kk = ratio(3)*k + kr
-                  do i = celo(1),cehi(1)
-                     ii = ratio(1)*i + ir
-                     do j = celo(2),cehi(2)
-                        jj = ratio(2)*j
-                        ce(i,j,k,n) = ce(i,j,k,n) + fe(ii,jj,kk,n)
+                  do k = celo(3),cehi(3)
+                     kk = ratio(3)*k + kr
+                     do i = celo(1),cehi(1)
+                        ii = ratio(1)*i + ir
+                        do j = celo(2),cehi(2)
+                           jj = ratio(2)*j
+                           ce(i,j,k,n) = ce(i,j,k,n) + fe(ii,jj,kk,n)
+                        enddo
                      enddo
                   enddo
                enddo

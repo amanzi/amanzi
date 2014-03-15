@@ -103,7 +103,7 @@ hypre=${TRUE}
 alquimia=${FALSE}
 pflotran=${FALSE}
 shared=${FALSE}
-
+spacedim=2
 
 
 # ---------------------------------------------------------------------------- #
@@ -263,6 +263,8 @@ Configuration:
 
   --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
   
+  --spacedim=DIM          dimension of structured build (DIM=2 or 3) ['"${spacedim}"']
+  
 Build features:
 Each feature listed here can be enabled/disabled with --[enable|disable]-[feature]
 Value in brackets indicates default setting.
@@ -352,6 +354,7 @@ Build configuration:
     tpl_config_file     ='"${tpl_config_file}"'
     parallel            ='"${parallel_jobs}"'
     shared              ='"${shared}"'
+    spacedim            ='"${spacedim}"'
 
 Build Features:   
     structured          ='"${structured}"'
@@ -430,6 +433,10 @@ function parse_argv()
 
       --branch=*)
                  amanzi_branch=`parse_option_with_equal "${opt}" 'branch'`
+                 ;;
+
+      --spacedim=*)
+                 spacedim=`parse_option_with_equal "${opt}" 'spacedim'`
                  ;;
 
       --with-c-compiler=*)
@@ -1081,6 +1088,7 @@ if [ -z "${tpl_config_file}" ]; then
                 -DENABLE_ALQUIMIA:BOOL=${alquimia} \
                 -DENABLE_PFLOTRAN:BOOL=${plotran} \
                 -DBUILD_SHARED_LIBS:BOOL=${shared} \
+                -DCCSE_BL_SPACEDIM:INT=${spacedim} \
                 ${tpl_build_src_dir}
 
   if [ $? -ne 0 ]; then
@@ -1163,6 +1171,7 @@ ${cmake_binary} \
               -DENABLE_ALQUIMIA:BOOL=${alquimia} \
               -DENABLE_PFLOTRAN:BOOL=${plotran} \
               -DBUILD_SHARED_LIBS:BOOL=${shared} \
+              -DCCSE_BL_SPACEDIM:INT=${spacedim} \
               ${amanzi_source_dir}
 
 if [ $? -ne 0 ]; then

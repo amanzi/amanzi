@@ -8,6 +8,26 @@ using std::endl;
 
 #include <RockManager.H>
 
+static
+void
+EnsureFolderExists(const std::string& full_path)
+{
+  // Find folder name first, and ensure folder exists
+  // FIXME: Will fail on Windows
+  const std::vector<std::string>& tokens = BoxLib::Tokenize(full_path,"/");
+  std::string dir = (full_path[0] == '/' ? "/" : "");
+  for (int i=0; i<tokens.size()-1; ++i) {
+    dir += tokens[i];
+    if (i<tokens.size()-2) dir += "/";
+  }
+  
+  if(!BoxLib::FileExists(dir)) {
+    if ( ! BoxLib::UtilCreateDirectory(dir, 0755)) {
+      BoxLib::CreateDirectoryFailed(dir);
+    }
+  }
+}
+
 static void
 GradFill (MultiFab&          mf,
           const Array<Real>& grad,
@@ -117,24 +137,34 @@ main (int   argc,
     c[mfi].setVal(0);
     for (IntVect iv(box.smallEnd()), End=box.bigEnd(); iv<=End; box.next(iv)) {
       if (iv[1] < End[1] && iv[1] > box.smallEnd()[1]) {
-        c[mfi](iv,0) = 0.5*(sat[mfi](iv+IntVect(0,1),0) - sat[mfi](iv-IntVect(0,1),0))/(pc[mfi](iv+IntVect(0,1),0) - pc[mfi](iv-IntVect(0,1),0));
+        c[mfi](iv,0) = 0.5*(sat[mfi](iv+IntVect(D_DECL(0,1,0)),0) - sat[mfi](iv-IntVect(D_DECL(0,1,0)),0)) /
+	  (pc[mfi](iv+IntVect(D_DECL(0,1,0)),0) - pc[mfi](iv-IntVect(D_DECL(0,1,0)),0));
       }
     }
 
   }
 
-#if 0
-  MultiFab pc2(ba,1,nGrow);
-  MultiFab::Copy(pc2,pc,0,0,1,nGrow);
-  MultiFab::Subtract(pc2,pc1,0,0,1,nGrow);
+  std::string dumpDir; pp.query("dumpDir",dumpDir);
+  if (!dumpDir.empty()) {
 
-  VisMF::Write(sat,"s");
-  VisMF::Write(pc,"p");
-  VisMF::Write(pc1,"p1");
-  VisMF::Write(pc2,"dp");
-  VisMF::Write(dsdp,"dsdp");
-  VisMF::Write(c,"c");
-  VisMF::Write(relperm,"k");
-#endif
+    dumpDir += "/";
+    std::string regFile = dumpDir + "regions.txt";
+    EnsureFolderExists(regFile);
+    std::ofstream osf; osf.open(regFile.c_str());
+    osf << rm;
+    osf.close();
+
+    MultiFab pc2(ba,1,nGrow);
+    MultiFab::Copy(pc2,pc,0,0,1,nGrow);
+    MultiFab::Subtract(pc2,pc1,0,0,1,nGrow);
+    
+    VisMF::Write(sat,dumpDir+"s");
+    VisMF::Write(pc,dumpDir+"p");
+    VisMF::Write(pc1,dumpDir+"p1");
+    VisMF::Write(pc2,dumpDir+"dp");
+    VisMF::Write(dsdp,dumpDir+"dsdp");
+    VisMF::Write(c,dumpDir+"c");
+    VisMF::Write(relperm,dumpDir+"k");
+  }
   return 0;
 }

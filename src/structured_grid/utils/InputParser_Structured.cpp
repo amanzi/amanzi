@@ -1068,6 +1068,172 @@ namespace Amanzi {
       rsublist.set("purpose",purpose);
     }
 
+    void convert_Region_Logical(const ParameterList& rslist,
+                                const std::string&   rlabel,
+                                ParameterList&       rsublist)
+    {
+      const std::string Op_str = "Operation";
+      const std::string Comp_str = "Complement";
+      const std::string Union_str = "Union";
+      const std::string Sub_str = "Subtraction";
+      const std::string CompReg_str = "Region";
+      const std::string Regs_str = "Regions";
+
+      const ParameterList& rsslist = rslist.sublist(rlabel);
+
+      if (!rsslist.isParameter(Op_str)) {
+        MyAbort("Keyword \""+Op_str+"\" required for \""+rlabel + "\"");
+      }
+      const std::string& op = rsslist.get<std::string>(Op_str);
+      if (op==Comp_str) {
+        if (!rsslist.isParameter(CompReg_str)) {
+          MyAbort("\""+CompReg_str+"\" required with "+"\""+Op_str+"\" = \"" + Comp_str + "\" "
+                  "for \"" + rlabel + "\"");
+        }
+        const std::string& comp_reg = rsslist.get<std::string>(CompReg_str);
+        rsublist.set("operation","complement");
+        rsublist.set("region",underscore(comp_reg));
+      }
+      else if (op==Union_str) {
+        if (!rsslist.isParameter(Regs_str)) {
+          MyAbort("\""+Regs_str+"\" required with "+"\""+Op_str+"\" = \"" + Union_str + "\" "
+                  "for \"" + rlabel + "\"");
+        }
+        const Array<std::string>& u_reg = rsslist.get<Array<std::string> >(Regs_str);
+        rsublist.set("operation","union");
+        rsublist.set("regions",underscore(u_reg));
+      }
+      else if (op==Sub_str) {
+        if (!rsslist.isParameter(Regs_str)) {
+          MyAbort("\""+Regs_str+"\" required with "+"\""+Op_str+"\" = \"" + Sub_str + "\" "
+                  "for \"" + rlabel + "\"");
+        }
+        const Array<std::string>& s_reg = rsslist.get<Array<std::string> >(Regs_str);
+        rsublist.set("operation","subtraction");
+        rsublist.set("regions",underscore(s_reg));
+      }
+      else {
+        MyAbort("Unknown \""+Op_str+"\" for \"" + rlabel + "\" (\""+op+"\")");
+      }
+
+      int iPurpose = 6;
+      std::string purpose = underscore(PMAMR::RpurposeDEF[iPurpose]);
+      rsublist.set("purpose",purpose);
+      rsublist.set("type", "logical");
+    }
+
+#if BL_SPACEDIM == 2
+    void convert_Region_Polygon(const ParameterList& rslist,
+                                const std::string&   rlabel,
+                                ParameterList&       rsublist)
+    {
+      const std::string V1_str = "VerticesV1";
+      const std::string V2_str = "VerticesV1";
+      const std::string Extent_str = "Extent";
+      const std::string Plane_str = "Plane";
+      const std::string Reg_str = "Region: Polygon";
+
+      const ParameterList& rsslist = rslist.sublist(rlabel);
+      const Array<double>& verticesV1 = rsslist.get<Array<double> >(V1_str);
+      const Array<double>& verticesV2 = rsslist.get<Array<double> >(V2_str);
+      if (verticesV1.size() != verticesV2.size()) {
+        MyAbort("\""+V1_str+"\", and \""+V2_str+"\" must have same number of points"+
+                "for \""+Reg_str+"\" region \"" + rlabel);
+      }
+          
+      rsublist.set<Array<double> >("v1",verticesV1);
+      rsublist.set<Array<double> >("v2",verticesV2);
+      rsublist.set("type", "polygon");
+      int iPurpose = 6;
+      std::string purpose = underscore(PMAMR::RpurposeDEF[iPurpose]);
+      rsublist.set("purpose",purpose);
+    }
+#else
+    void convert_Region_SweptPolygon(const ParameterList& rslist,
+                                     const std::string&   rlabel,
+                                     ParameterList&       rsublist)
+    {
+      const std::string V1_str = "VerticesV1";
+      const std::string V2_str = "VerticesV1";
+      const std::string Extent_str = "Extent";
+      const std::string Plane_str = "Plane";
+      const std::string Reg_str = "Region: Swept Polygon";
+
+      const ParameterList& rsslist = rslist.sublist(rlabel);
+      const Array<double>& verticesV1 = rsslist.get<Array<double> >(V1_str);
+      const Array<double>& verticesV2 = rsslist.get<Array<double> >(V2_str);
+      if (verticesV1.size() != verticesV2.size()) {
+        MyAbort("\""+V1_str+"\", and \""+V2_str+"\" must have same number of points"+
+                "for \""+Reg_str+"\" region \"" + rlabel);
+      }
+      const std::string plane = rsslist.get<std::string>(Plane_str);
+      if (plane != "XY" && plane != "YZ" && plane != "XZ") {
+        MyAbort("\""+Plane_str+"\" must be \"XY\", \"YZ\" or \"XZ\" "+
+                "for \""+Reg_str+"\" region \"" + rlabel);
+      }
+      const Array<double>& extent = rsslist.get<Array<double> >(Extent_str);
+      if (extent.size() != 2) {
+        MyAbort("\""+Extent_str+"\" must be 2-element Array of doubles"+
+                "for \""+Reg_str+"\" region \"" + rlabel);
+      }
+
+      rsublist.set<Array<double> >("v1",verticesV1);
+      rsublist.set<Array<double> >("v2",verticesV2);
+      rsublist.set<std::string>("plane",plane);
+      rsublist.set("type", "swept_polygon");
+      int iPurpose = 6;
+      std::string purpose = underscore(PMAMR::RpurposeDEF[iPurpose]);
+      rsublist.set("purpose",purpose);
+    }
+
+    void convert_Region_RotatedPolygon(const ParameterList& rslist,
+                                       const std::string&   rlabel,
+                                       ParameterList&       rsublist)
+    {
+      const std::string V1_str = "VerticesV1";
+      const std::string V2_str = "VerticesV2";
+      const std::string Axis_str = "Axis";
+      const std::string Plane_str = "Plane";
+      const std::string Ref_str = "Reference Point";
+      const std::string Reg_str = "Region: Rotated Polygon";
+
+      const ParameterList& rsslist = rslist.sublist(rlabel);
+      const Array<double>& verticesV1 = rsslist.get<Array<double> >(V1_str);
+      const Array<double>& verticesV2 = rsslist.get<Array<double> >(V2_str);
+      if (verticesV1.size() != verticesV2.size()) {
+        MyAbort("\""+V1_str+"\", and \""+V2_str+"\" must have same number of points"+
+                "for \""+Reg_str+"\" region \"" + rlabel);
+      }
+      const std::string plane = rsslist.get<std::string>(Plane_str);
+      if (plane != "XY" && plane != "YZ" && plane != "XZ") {
+        MyAbort("\""+Plane_str+"\" must be \"XY\", \"YZ\" or \"XZ\" "+
+                "for \""+Reg_str+"\" region \"" + rlabel);
+      }
+
+      const std::string axis = rsslist.get<std::string>(Axis_str);
+      if (axis != "X" && axis != "Y" && axis != "Z") {
+        MyAbort("\""+Axis_str+"\" must be \"X\", \"Y\" or \"Z\" "+
+                "for \""+Reg_str+"\" region \"" + rlabel);
+      }
+
+      const Array<double>& refPt = rsslist.get<Array<double> >(Ref_str);
+      if (refPt.size() != BL_SPACEDIM) {
+        const std::string d = BL_SPACEDIM==2 ? "2" : "3";
+        MyAbort("\""+Ref_str+"\" must be a "+d+"-element Array of doubles"+
+                "for \""+Reg_str+"\" region \"" + rlabel);
+      }
+
+      rsublist.set<Array<double> >("v1",verticesV1);
+      rsublist.set<Array<double> >("v2",verticesV2);
+      rsublist.set<std::string>("plane",plane);
+      rsublist.set<std::string>("axis",axis);
+      rsublist.set("type", "rotated_polygon");
+      rsublist.set<Array<double> >("reference_pt",refPt);
+      int iPurpose = 6;
+      std::string purpose = underscore(PMAMR::RpurposeDEF[iPurpose]);
+      rsublist.set("purpose",purpose);
+    }
+#endif
 
     Array<std::string>
     generate_default_regions(ParameterList& rsublist)
@@ -1135,7 +1301,8 @@ namespace Amanzi {
           
           const std::string& rlabel = rslist.name(j);
           const ParameterEntry& rentry = rslist.getEntry(rlabel);
-          
+      
+          bool fail = false;
           if (rentry.isList()) {
             if (rlabel=="Region: Color Function") {
               convert_Region_ColorFunction(rslist,rlabel,rsublist);
@@ -1149,8 +1316,30 @@ namespace Amanzi {
             else if (rlabel=="Region: Plane") {
               convert_Region_Plane(rslist,rlabel,rsublist);
             }
+            else if (rlabel=="Region: Logical") {
+              convert_Region_Logical(rslist,rlabel,rsublist);
+            }
+#if BL_SPACEDIM==2
+            else if (rlabel=="Region: Polygon") {
+              convert_Region_Polygon(rslist,rlabel,rsublist);
+            }
+#else
+            else if (rlabel=="Region: Swept Polygon") {
+              convert_Region_SweptPolygon(rslist,rlabel,rsublist);
+            }
+            else if (rlabel=="Region: Rotated Polygon") {
+              convert_Region_RotatedPolygon(rslist,rlabel,rsublist);
+            }
+#endif
+            else {
+              fail = true;
+            }
           }
           else {
+            fail = true;
+          }
+
+          if (fail) {
             std::cerr << rlabel << " is not a valid region type for structured.\n";
             throw std::exception();
           }
@@ -1239,8 +1428,11 @@ namespace Amanzi {
     {
       /* Handle isotropic and anisotropic permeabilities here */
       Array<std::string> nullList, reqP;
-      const std::string vertical_str = "y";
+      const std::string vertical_str = (BL_SPACEDIM==3 ? "z" : "y");
       const std::string horizontal_str = "x";
+#if BL_SPACEDIM==3
+      const std::string horizontal1_str = "y";
+#endif
       const std::string uniform_value_str = "Value";
       const std::string values_str = "Values";
       const std::string times_str = "Times";
@@ -1250,11 +1442,13 @@ namespace Amanzi {
         /* Isotropic */
         Array<double> local_val(1); local_val[0] = fPLin.get<double>(uniform_value_str);
         local_val[0] *= 1.01325e15; // convert from m^2 to mDa
-        ParameterList vlist, hlist;
+        ParameterList vlist, hlist, h1list;
         vlist.set<Array<double> >("vals",local_val);
         fPLout.set("vertical",vlist);
         hlist.set<Array<double> >("vals",local_val);
         fPLout.set("horizontal",hlist);
+        h1list.set<Array<double> >("vals",local_val);
+        fPLout.set("horizontal1",h1list);
       } else {
         /* Ansisotropic */
         Array<double> local_vvals(1);
@@ -1313,6 +1507,37 @@ namespace Amanzi {
         }
         hlist.set<Array<double> >("vals",local_hvals);
         fPLout.set("horizontal",hlist);
+
+#if BL_SPACEDIM==3
+        Array<double> local_h1vals(1); // local copy because we need to convert from m^2 to mD here
+        ParameterList h1list;
+        if (fPLin.isSublist(horizontal1_str)) {
+          const ParameterList& h1PLin = fPLin.sublist(horizontal1_str);
+          reqP.push_back(values_str);
+          reqP.push_back(times_str);
+          reqP.push_back(forms_str);
+          PLoptions opt(h1PLin,nullList,reqP,true,true);
+          local_h1vals = h1PLin.get<Array<double> >(values_str);
+          if (local_h1vals.size()>1) {
+            h1list.set<Array<double> >("times",h1PLin.get<Array<double> >(times_str));
+            h1list.set<Array<std::string> >("forms",h1PLin.get<Array<std::string> >(forms_str));
+          }
+        }
+        else if (fPLin.isParameter(horizontal1_str)) {
+          local_h1vals[0] = fPLin.get<double>(horizontal1_str);
+        }
+        else {
+          std::string str = "Unrecognized horizontal1 permeability function parameters";
+          std::cout << fPLin << std::endl;
+          BoxLib::Abort(str.c_str());
+        }
+
+        for (int k=0; k<local_h1vals.size(); k++) {
+          local_h1vals[k] *= 1.01325e15; // convert from m^2 to mDa
+        }
+        h1list.set<Array<double> >("vals",local_h1vals);
+        fPLout.set("horizontal1",h1list);
+#endif
       }
     }
 

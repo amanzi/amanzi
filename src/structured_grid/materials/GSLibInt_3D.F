@@ -5,9 +5,7 @@
 
 #include "REAL.H"
 #include "CONSTANTS.H"
-#include "BC_TYPES.H"
-#include "BC_TYPES_PM.H"
-#include "GSLIB_F.H" 
+#include "GSLibInt_F.H" 
 #include "ArrayLim.H"
 
 #define SDIM 3
@@ -16,15 +14,15 @@
 c :: ----------------------------------------------------------
 c :: Read GSLIB parameters
 c :: ----------------------------------------------------------
-      subroutine FORT_INIT_GSLIB(paramfl,paramsz,nx_in,xsiz_in,xmn_in)
+      subroutine FORT_INIT_GSLIB(paramfl,paramsz,nx_in,xsiz_in,xmn_in,rseed)
 
-      integer   paramsz
+      integer   paramsz, rseed
       character paramfl(paramsz)
 
       integer nx_in(3)
       REAL_T  xsiz_in(3),xmn_in(3)
 
-      call readparm(paramfl,paramsz,nx_in,xsiz_in,xmn_in)
+      call readparm(paramfl,nx_in,xsiz_in,xmn_in,rseed)
 
       end
 
@@ -32,18 +30,17 @@ c :: ----------------------------------------------------------
 c :: Read GSLIB parameters version 2
 c :: ----------------------------------------------------------
       subroutine FORT_INIT_GSLIB2(paramfl,paramsz,c_sz,c_idx, 
-     &     real_sz,real_idx,int_sz,int_idx,cond_option)
+     &     real_sz,real_idx,int_sz,int_idx,cond_option,rseed)
 
-      integer   paramsz,cond_option
+      integer   paramsz,cond_option,rseed
       integer   c_sz,real_sz,int_sz
       integer   c_idx(10),real_idx(20),int_idx(20)
       character paramfl(paramsz)
 
       call readparm2(paramfl,c_sz,c_idx,
-     &     real_sz,real_idx,int_sz,int_idx,cond_option)
-      
-      end
+     &     real_sz,real_idx,int_sz,int_idx,cond_option,rseed)
 
+      end
       
 c :: ----------------------------------------------------------
 c :: Conditioned the data using internal values. One big fab.  WRONG!!!
