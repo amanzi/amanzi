@@ -5,15 +5,15 @@ include(LibraryManager)
 include(PreprocessBoxLibFortran)
 
 # Set locations for amr-related source files, make available outside this dir afterward
-set(PMAMR_REL_INCLUDE_DIRS mpc_pk
-                           problem_setup
+set(PMAMR_REL_INCLUDE_DIRS problem_setup
                            simulation_driver
                            utils
                            materials
                            region
                            mpc_pk/transport/diffusion
                            mpc_pk/flow
-                           mpc_pk/chemistry)
+                           mpc_pk/chemistry
+                           mpc_pk)
 set(PMAMR_INCLUDE_DIRS)
 foreach(d ${PMAMR_REL_INCLUDE_DIRS})
   list(APPEND PMAMR_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/${d})
