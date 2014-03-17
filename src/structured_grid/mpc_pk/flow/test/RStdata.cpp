@@ -184,7 +184,7 @@ void
 RStdata::SetInflowVelocity(PArray<MFTower>& velocity,
                            Real             time)
 {
-  int dir = 1;
+  int dir = BL_SPACEDIM-1;
   for (int lev=0; lev<nLevs; ++lev) {
     const Box bdryHi = BoxLib::bdryHi(layout.GeomArray()[lev].Domain(),dir,1);
     for (MFIter mfi(velocity[dir][lev]); mfi.isValid(); ++mfi) {
