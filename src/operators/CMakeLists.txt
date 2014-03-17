@@ -36,6 +36,7 @@ include_directories(${OUTPUT_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${MSTK_INCLUDE_DIRS})
 
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
