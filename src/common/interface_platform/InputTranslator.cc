@@ -106,15 +106,14 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
   // grab the mesh type
   //new_list.sublist(framework) = ...;
 
-  def_list.sublist("constants") = get_constants(doc);
+  // grab verbosity early
+  def_list.sublist("simulation") = get_verbosity(doc);
+    
+  def_list.sublist("constants") = get_constants(doc, def_list);
 
-  //std::cout << "EIB>> getting General Description" << std::endl;
   new_list.sublist("General Description") = get_model_description(doc, def_list);
-  //std::cout << "EIB>> getting Mesh" << std::endl;
   new_list.sublist("Mesh") = get_Mesh(doc, def_list);
-  //std::cout << "EIB>> getting Domain" << std::endl;
   new_list.sublist("Domain").set<int>("Spatial Dimension",dimension_);
-  //std::cout << "EIB>> getting Execution Control" << std::endl;
   new_list.sublist("Execution Control") = get_execution_controls(doc, &def_list);
   new_list.sublist("Phase Definitions") = get_phases(doc, def_list);
   new_list.sublist("Regions") = get_regions(doc, &def_list);
@@ -133,9 +132,48 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
 }
 
 /* ******************************************************************
+* Empty
+****************************************************************** */
+Teuchos::ParameterList get_verbosity(DOMDocument* xmlDoc) {
+    
+    DOMNodeList* nodeList;
+    DOMNode* nodeAttr;
+    DOMNamedNodeMap* attrMap;
+    char* textContent;
+    
+    // get execution contorls node
+    nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("execution_controls"));
+    Teuchos::ParameterList simPL;
+    
+    for (int i=0; i<nodeList->getLength(); i++) {
+        DOMNode* ecNode = nodeList->item(i);
+        if (DOMNode::ELEMENT_NODE == ecNode->getNodeType()) {
+            //loop over children
+            DOMNodeList* children = ecNode->getChildNodes();
+            for (int j=0; j<children->getLength(); j++) {
+                DOMNode* currentNode = children->item(j) ;
+                if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+                    char* tagname = XMLString::transcode(currentNode->getNodeName());
+                    if (strcmp(tagname,"verbosity")==0) {
+                        attrMap = currentNode->getAttributes();
+                        nodeAttr = attrMap->getNamedItem(XMLString::transcode("level"));
+                        textContent = XMLString::transcode(nodeAttr->getNodeValue());
+                        simPL.set<std::string>("verbosity",textContent);
+                        XMLString::release(&textContent);
+                    }
+                }
+            }
+        }
+    }
+    return simPL;
+    
+
+}
+    
+/* ******************************************************************
  * Empty
  ****************************************************************** */
-Teuchos::ParameterList get_constants(DOMDocument* xmlDoc) {
+Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList def_list) {
 
   Teuchos::ParameterList list;
 
@@ -147,6 +185,12 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc) {
   char* char_array;
   double time;
 
+  if (def_list.sublist("simulation").isParameter("verbosity")) {
+    std::string verbosity = def_list.sublist("simulation").get<std::string>("verbosity") ;
+    if (verbosity == "extreme") {
+        std::cout << "Amanzi::InputTranslator: Getting Constants."<< std::endl;
+    }
+  }
   // read in new stuff
   DOMNodeList* nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("definitions"));
 
@@ -334,6 +378,12 @@ Teuchos::ParameterList get_model_description(DOMDocument* xmlDoc, Teuchos::Param
 
   Teuchos::ParameterList list;
 
+  if (def_list.sublist("simulation").isParameter("verbosity")) {
+    std::string verbosity = def_list.sublist("simulation").get<std::string>("verbosity") ;
+    if (verbosity == "extreme") {
+        std::cout << "Amanzi::InputTranslator: Getting Model Description."<< std::endl;
+    }
+  }
   // read in new stuff
   XMLCh* tag = XMLString::transcode("model_description");
   DOMNodeList* nodeList = xmlDoc->getElementsByTagName(tag);
@@ -385,6 +435,14 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
   bool file = false;
   char *framework;
   Teuchos::ParameterList mesh_list;
+
+    
+  if (def_list.sublist("simulation").isParameter("verbosity")) {
+    std::string verbosity = def_list.sublist("simulation").get<std::string>("verbosity") ;
+    if (verbosity == "extreme") {
+        std::cout << "Amanzi::InputTranslator: Getting Mesh."<< std::endl;
+    }
+  }
 
   // read in new stuff
   XMLCh* tag = XMLString::transcode("mesh");
@@ -438,17 +496,13 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
 	  DOMNode* node = nodeList->item(0);
 	  DOMElement* elementNode = static_cast<DOMElement*>(node);
 	  DOMNamedNodeMap *attrMap = node->getAttributes();
-	  DOMNode* namednode = attrMap->getNamedItem(XMLString::transcode("nx"));
-	  char* temp = XMLString::transcode(namednode->getNodeValue());
-	  ncells.append(get_int_constant(temp,def_list));
-	  XMLString::release(&temp);
-	  namednode = attrMap->getNamedItem(XMLString::transcode("ny"));
-	  temp = XMLString::transcode(namednode->getNodeValue());
-	  ncells.append(get_int_constant(temp,def_list));
-	  XMLString::release(&temp);
-	  if (dimension_>2) {
-	    namednode = attrMap->getNamedItem(XMLString::transcode("nz"));
-	    temp = XMLString::transcode(namednode->getNodeValue());
+          DOMNode* nodeAttr;
+          char* attrName;
+	  char* temp;
+	  for (int j=0; j<attrMap->getLength(); j++) {
+	    nodeAttr = attrMap->item(j);
+	    attrName =XMLString::transcode(nodeAttr->getNodeName());
+	    temp = XMLString::transcode(nodeAttr->getNodeValue());
 	    ncells.append(get_int_constant(temp,def_list));
 	    XMLString::release(&temp);
 	  }
@@ -561,15 +615,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
   bool transportON=false;
   bool chemistryON=false;
   // get process kernels node
-  // don't have verbosity yet, this section got moved
-  /*
   if (def_list->sublist("simulation").isParameter("verbosity")) {
     std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
     if (verbosity == "extreme") {
 	    std::cout << "Amanzi::InputTranslator: Getting Process Kernels."<< std::endl;
     }
   }
-  */
   nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("process_kernels"));
   for (int i=0; i<nodeList->getLength(); i++) {
     DOMNode* pkNode = nodeList->item(i);
@@ -714,10 +765,10 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("level"));
               textContent = XMLString::transcode(nodeAttr->getNodeValue());
               list.set<std::string>("Verbosity",textContent);
-	      simPL.set<std::string>("verbosity",textContent);
+              simPL.set<std::string>("verbosity",textContent);
               XMLString::release(&textContent);
 
-	  } else if (strcmp(tagname,"execution_control_defaults")==0) {
+	      } else if (strcmp(tagname,"execution_control_defaults")==0) {
               attrMap = currentNode->getAttributes();
               for (int k=0; k<attrMap->getLength(); k++) {
 		nodeAttr = attrMap->item(k);
@@ -977,8 +1028,10 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             Value = ecsPL.sublist(it->first).get<std::string>("init_dt");
             gotValue = true;
 	} else {
+	  if (defPL.isParameter("init_dt")) {
             Value = defPL.get<std::string>("init_dt");
             gotValue = true;
+	  } 
 	}
         if (gotValue) {
 	    init_steps.append(get_time_value(Value,*def_list));
@@ -1005,8 +1058,8 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         }
       }
       transPL.set<double>("Start",start_times[0]);
-      transPL.set<double>("Initial Time Step",init_steps[0]);
-      if ( max_steps.length()>0) transPL.set<double>("Maximum Time Step Size",max_steps[0]);
+      if ( init_steps.length() > 0 ) transPL.set<double>("Initial Time Step",init_steps[0]);
+      if ( max_steps.length() > 0 ) transPL.set<double>("Maximum Time Step Size",max_steps[0]);
       if  (!staticflowON) {
         list.sublist("Time Integration Mode").sublist("Transient") = transPL;
       } else {
@@ -1016,8 +1069,8 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 	// to include "Time Period Control" list
         Teuchos::ParameterList tpcPL;
 	tpcPL.set<Teuchos::Array<double> >("Start Times",start_times);
-	tpcPL.set<Teuchos::Array<double> >("Initial Time Step",init_steps);
-	if ( max_steps.length()>0) tpcPL.set<Teuchos::Array<double> >("Maximum Time Step",max_steps);
+	if ( init_steps.length() > 0 ) tpcPL.set<Teuchos::Array<double> >("Initial Time Step",init_steps);
+	if ( max_steps.length() > 0 ) tpcPL.set<Teuchos::Array<double> >("Maximum Time Step",max_steps);
 	list.sublist("Time Period Control") = tpcPL;
       }
     } else {
@@ -2656,6 +2709,9 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 
   // get BCs node
   nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("boundary_conditions"));
+
+  if (nodeList->getLength() > 0 ){ // boundary conditions tag does not have to exist
+
   DOMNode* nodeBC = nodeList->item(0);
   DOMElement* elementBC = static_cast<DOMElement*>(nodeBC);
 
@@ -2993,6 +3049,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
     }
   }
 
+  }
 
   return list;
   
