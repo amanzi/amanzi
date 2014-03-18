@@ -8,6 +8,27 @@
 
 static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::AmanziInput::AMRToAmanziLabelMap();
 
+static
+void
+EnsureFolderExists(const std::string& full_path)
+{
+  // Find folder name first, and ensure folder exists
+  // FIXME: Will fail on Windows
+  const std::vector<std::string>& tokens = BoxLib::Tokenize(full_path,"/");
+  std::string dir = (full_path[0] == '/' ? "/" : "");
+  for (int i=0; i<tokens.size()-1; ++i) {
+    dir += tokens[i];
+    if (i<tokens.size()-2) dir += "/";
+  }
+  
+  if(!BoxLib::FileExists(dir)) {
+    if ( ! BoxLib::UtilCreateDirectory(dir, 0755)) {
+      BoxLib::CreateDirectoryFailed(dir);
+    }
+  }
+}
+
+
 void
 Structured_observations(const PArray<Observation>& observation_array,
 			Amanzi::ObservationData& observation_data)
@@ -93,6 +114,18 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     PorousMedia::SetInputParameterList(converted_parameter_list);
 
     BoxLib::Initialize_ParmParse(converted_parameter_list);
+
+    if (input_parameter_list.isParameter("Dump ParmParse Table") ) {
+      if (ParallelDescriptor::IOProcessor()) {
+        const std::string& pp_file = Teuchos::getParameter<std::string>(input_parameter_list, "Dump ParmParse Table");
+        EnsureFolderExists(pp_file);
+        std::ofstream ofs; ofs.open(pp_file.c_str());
+        bool prettyPrint = false;
+        ParmParse::dumpTable(ofs,prettyPrint);
+        ofs.close();
+      }
+      ParallelDescriptor::Barrier();
+    }
 
     const Real run_strt = ParallelDescriptor::second();
 
