@@ -103,6 +103,9 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   cvs->SetOwned(false);
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
+  CompositeVector solution(*cvs);
+  solution.PutScalar(0.0);
+
   Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, 0));
 
   // populate the diffusion operator
@@ -110,7 +113,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
   op->Init();
   op->InitOperator(K, Teuchos::null, olist);
-  op->UpdateMatrices();
+  op->UpdateMatrices(solution);
   op->ApplyBCs(bc_model, bc_values);
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
   op->AssembleMatrix(schema);
@@ -126,9 +129,6 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
      solver = factory.Create("AztecOO CG", lop_list, op);
 
   CompositeVector rhs = *op->rhs();
-  CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
-
   int ierr = solver->ApplyInverse(rhs, solution);
 
   std::cout << "pressure solver (" << solver->name() 

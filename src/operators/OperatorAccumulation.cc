@@ -25,41 +25,45 @@ void OperatorAccumulation::UpdateMatrices(
   AmanziMesh::Entity_ID_List nodes;
 
   std::string name;
-  std::vector<double> volume;
+  CompositeVector entity_volume(ss);
 
   if (ss.HasComponent("cell")) {
     name = "cell";
-    volume.resize(ncells_owned);
+    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name); 
 
     for (int c = 0; c < ncells_owned; c++) {
-      volume[c] = mesh_->cell_volume(c); 
+      volume[0][c] = mesh_->cell_volume(c); 
     }
   } else if (ss.HasComponent("face")) {
     name = "face";
     // Missing code.
   } else if (ss.HasComponent("node")) {
     name = "node";
-    volume.resize(nnodes_owned, 0.0);
+    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
+    volume.PutScalar(0.0);
 
     for (int c = 0; c < ncells_owned; c++) {
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
 
       for (int i = 0; i < nnodes; i++) {
-        volume[nodes[i]] += mesh_->cell_volume(c) / nnodes; 
+        volume[0][nodes[i]] += mesh_->cell_volume(c) / nnodes; 
       }
     }
+
+    entity_volume.GatherGhostedToMaster(name);
   }
 
   const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
   const Epetra_MultiVector& ssc = *ss.ViewComponent(name);
 
+  Epetra_MultiVector& volume = *entity_volume.ViewComponent(name); 
   Epetra_MultiVector& diag = *diagonal_->ViewComponent(name);
   Epetra_MultiVector& rhs = *rhs_->ViewComponent(name);
 
   int n = u0c.MyLength();
   for (int i = 0; i < n; i++) {
-    double factor = volume[i] * ssc[0][i] / dT;
+    double factor = volume[0][i] * ssc[0][i] / dT;
     diag[0][i] += factor;
     rhs[0][i] += factor * u0c[0][i];
   }

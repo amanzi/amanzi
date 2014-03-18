@@ -75,6 +75,15 @@ void Operator::Init()
 {
   diagonal_->PutScalar(0.0);
   rhs_->PutScalar(0.0);
+
+  int n = blocks_.size();
+  for (int i = 0; i < n; i++) { 
+    std::vector<WhetStone::DenseMatrix> matrix = *blocks_[i];
+    int m = matrix.size();
+    for (int k = 0; k < m; k++) {
+      matrix[k] = 0.0;
+    }
+  }
 }
 
 

@@ -50,11 +50,12 @@ void OperatorDiffusionSurface::InitOperator(
 /* ******************************************************************
 * Basic routine of each operator: creation of matrices.
 ****************************************************************** */
-void OperatorDiffusionSurface::UpdateMatrices()
+void OperatorDiffusionSurface::UpdateMatrices(const CompositeVector& u)
 {
   // update nonlinear coefficient
   if (k_ != Teuchos::null) {
-    k_->UpdateCellValues();
+    k_->UpdateValues(u);
+    k_->UpdateDerivatives(u);
   }
 
   // find location of matrix blocks
@@ -88,9 +89,25 @@ void OperatorDiffusionSurface::UpdateMatrices()
     WhetStone::DenseMatrix& Wff = Wff_cells_[c];
     WhetStone::DenseMatrix Acell(nfaces + 1, nfaces + 1);
 
+    // update terms due to nonlinear coefficient
     double kc(1.0); 
     if (k_ != Teuchos::null) {
-      kc = (*k_->cdata())[c];
+      kc = (*k_->cvalues())[c];
+
+      /*
+      WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
+      for (int n = 0; n < nfaces; n++) {
+         v(n) = Xf[0][faces[n]];
+      }
+      v(nfaces) = Xc[0][c];
+
+      WhetStone::DenseMatrix& Acell = matrix[c];
+      Acell.Multiply(v, av, false);
+
+      for (int n = 0; n < nfaces; n++) {
+        Yf[0][faces[n]] += av(n);
+      }
+      */
     }
 
     double matsum = 0.0;  // elimination of mass matrix

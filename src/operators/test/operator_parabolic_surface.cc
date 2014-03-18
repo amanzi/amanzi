@@ -129,7 +129,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   Teuchos::ParameterList olist;
   int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
   op3->InitOperator(K, Teuchos::null, olist);
-  op3->UpdateMatrices();
+  op3->UpdateMatrices(solution);
   op3->ApplyBCs(bc_model, bc_values);
   op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
   op3->AssembleMatrix(schema);
@@ -146,6 +146,27 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
 
   CompositeVector rhs = *op3->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
+
+  std::cout << "pressure solver (" << solver->name() 
+            << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+            << " code=" << ierr << std::endl;
+
+  // repeat the above without destroying the operators.
+  op1->Init();
+  op1->UpdateMatrices(source);
+
+  solution.PutScalar(0.0); 
+  op2->UpdateMatrices(solution, phi, dT);
+
+  op3->InitOperator(K, Teuchos::null, olist);
+  op3->UpdateMatrices(solution);
+  op3->ApplyBCs(bc_model, bc_values);
+  op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
+  op3->AssembleMatrix(schema);
+  op3->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+
+  rhs = *op3->rhs();
+  ierr = solver->ApplyInverse(rhs, solution);
 
   std::cout << "pressure solver (" << solver->name() 
             << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
