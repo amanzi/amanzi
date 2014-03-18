@@ -72,6 +72,7 @@ set(CXX_header_files BC_TYPES_PM.H
                      RegType.H
                      Source.H
                      ViscBndry.H
+                     probdata.H
                      VISCOPERATOR_F.H)
 
 set(F90_source_files )

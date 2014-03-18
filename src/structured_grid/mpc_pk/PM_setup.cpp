@@ -711,7 +711,9 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_solver_control = 0;
   PorousMedia::richard_solver_data = 0;
 
+#ifdef ALQUIMIA_ENABLED
   PorousMedia::chemistry_engine = 0;
+#endif
 }
 
 std::pair<std::string,std::string>
