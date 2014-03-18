@@ -58,6 +58,20 @@ each section.  Note that tags for all sections must be present for an
 input file to be valid even if no elements within that section are
 required.
 
+Please note, many attributes within the XML list a limited set of specified values.  During validation of the input file or initialization of Amanzi the values in the user provided input file will be compared against the limited set provided in the XML Schema document.  Errors will occur is the values do not match exactly.  These values are CASE SENSITIVE.  The Amanzi schema has been designed will all LOWER CASE values.  Please note this when writing input file.  In particular, `"Exodus II`" will be evaluated as `"exodus ii`".
+
+Amanzi Input
+------------
+
+The entire input file is encapsulated under the root tag ``amanzi_input``.  At this level the version of the input schema and the type of simulation to be conducted are specified through required attributes.  The version is specified with the attribute ``version``.  The current schema can be found in the repository and install location amanzi.xsd.  The simulation type is specified using the attribute ``type`` as either *structured* or *unstructured*.  
+
+For an unstructured simulations the root tag would looks as the following.
+
+.. code-block:: xml
+
+    <amanzi_input version="2.0.0" type="unstructured">
+    </amanzi_input>
+
 Model Description
 -------------------
 
@@ -353,17 +367,14 @@ internally or imported from an existing `Exodus II
 meshes in both frameworks are always regular uniformly spaced meshes.
 
 Mesh parameters are specified in the ``mesh`` section. If the mesh is
-unstructured the opening tag of the ``mesh`` section takes an
-*optional* expert attribute called called ``framework`` which can take
-the value of ``mstk``, ``stk::mesh``, ``moab`` or ``simple``. This
-specifies which mesh infrastructure library is to be used for managing
-the mesh queries under-the-hood. *Most users will not need to specify
-this attribute*. In the case of a structured mesh this attribute is
-not used.
+unstructured the opening tag of the ``mesh`` section takes an attribute called called ``framework`` which can take the value of ``mstk``, ``stk::mesh``, ``moab`` or ``simple``. This specifies which mesh infrastructure library is to be used for managing
+the mesh queries under-the-hood. 
 
 The ``mesh`` section takes a ``dimension`` element which indicates if
 the mesh is 2D or 3D. A 2D mesh can be given in 3D space with a third
-coordinate of 0. This section also takes an element indicating if the
+coordinate of 0. If a 2D mesh is specified this impacts other aspects of the input file.  It is up to the user to ensure consistency within the input file.  Other effected parts of the input file include region definitions and initial conditions which use coordinates, the material property permeability which must be specified using the correct subset of x, y, and z coordinates, and the initial condiction velocity which also requires the correct subset of x, y, and z coordinates.
+
+This section also takes an element indicating if the
 mesh is to be internally generated (structured and unstructured) or
 read from an external file (unstructured only). If the mesh is to be
 generated internally, a ``generate`` element is specified with details
@@ -379,7 +390,7 @@ Here is an example specification for a structured ``mesh`` element.
 
 .. code-block:: xml
 
-  <mesh class="structured"> 
+  <mesh framework="mstk"> 
     <comments>3D block</comments>
     <dimension>3</dimension>
     <generate>
@@ -393,7 +404,7 @@ mesh.
 
 .. code-block:: xml
 
-  <mesh class="unstructured" framework="mstk"> 
+  <mesh framework="mstk"> 
     <comments>Pseudo 2D</comments>
     <dimension>3</dimension>
     <generate>
@@ -407,10 +418,10 @@ given below.
 
 .. code-block:: xml
 
-  <mesh class="unstructured"> 
+  <mesh framework="mstk"> 
     <comments>Read from Exodus II</comments>
     <dimension>3</dimension>
-    <file name="dvz.exo" format="Exodus II">
+    <file>dvz.exo</file>
   </mesh>
 
 Regions
@@ -475,23 +486,24 @@ direction of the plane
 Labeled Set
 -----------
 
-A labeled set region is a predefined set of mesh entities defined in the Exodus II mesh file. This type of region is useful when applying boundary conditions on an irregular surface that has been tagged in the external mesh generator
+A labeled set region is a predefined set of mesh entities defined in the Exodus II mesh file. This type of region is useful when applying boundary conditions on an irregular surface that has been tagged in the external mesh generator.  Please note that both the format and entity attribute values are case sensitive.
 
 .. code-block:: xml
 
   <region name="region name">
-      <region_file label="integer label" name="filename" type="labeled set" format="exodus ii" />
+      <region_file label="integer label" name="filename" type="labeled set" format="exodus ii" entity=["cell"|"face"] />
   </region>
 
 Color function
 --------------
 
-A color function region defines a region based on a specified integer color in a structured color function file. The color values may be specified at the nodes or cells of the color function grid. A computational cell is assigned the color of the data grid cell containing its cell centroid or the data grid nearest its cell-centroid. Computational cell sets are then build from all cells with the specified color value. In order to avoid gaps and overlaps in specifying materials, it is strongly recommended that regions be defined using a single color function file.  At this time, Exodus II is the only file format available.
+A color function region defines a region based on a specified integer color in a structured color function file. The color values may be specified at the nodes or cells of the color function grid. A computational cell is assigned the color of the data grid cell containing its cell centroid or the data grid nearest its cell-centroid. Computational cell sets are then build from all cells with the specified color value. In order to avoid gaps and overlaps in specifying materials, it is strongly recommended that regions be defined using a single color function file.  At this time, Exodus II is the only file format available.   Please note that both the format and entity attribute values are case sensitive.
+
 
 .. code-block:: xml
 
   <region name="region name">
-      <region_file label="integer label" name="filename" type="color" format="exodus ii" />
+      <region_file label="integer label" name="filename" type="color" format="exodus ii"  entity=["cell"|"face"]/>
   </region>
 
 .. EIB:  The following are not exposed through the current XML Schema, only the OLD input spec.  I've commented out the text until a future date when they might be exposed.
@@ -592,10 +604,16 @@ those kernels.  The ``process_kernels`` element is as follows:
 
   <process_kernels>
     <comments>Comment text here</comments>
-    <flow state = "on | off" model = "richards | saturated"/>
+    <flow state = "on | off" model = "richards | saturated | constant"/>
     <transport state = "on | off" algorithm = "explicit first-order | explicit second-order | implicit upwind | none" sub_cycling = "on | off"/>
     <chemistry state = "on | off" process_model="implicit operator split | none"/>
   </process_kernels>
+
+Currently three scenerios are avaiable for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to the a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
+
+For `"transport`" a combination of `"state`" and `"algorithm`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the integration algorithm must be specified.  Whether sub-cycling is to be utilized within the transport algorithm is also specified here.
+
+For `"chemistry`" a combination of `"state`" and `"process_model`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the process model must be specified. 
 
 An example ``process_kernels`` is as follows:
 
@@ -944,8 +962,8 @@ contain the text component of the how the visualization files will be
 named.  The ``base_filename`` is appended with an index number to
 indicate the sequential order of the visualization files.  The
 ``num_digits`` elements indicates how many digits to use for the
-index.  Finally, the ``time_macro`` or ``cycle_macro`` element
-indicates the previously defined time_macro or cycle_macro to be used
+index.  Finally, the ``time_macros`` or ``cycle_macros`` element
+indicates previously defined time_macro or cycle_macro to be used
 to determine the frequency at which to write the visualization files.
 One or more macro can be listed in a comma separated list.  Amanzi
 will converted the list of macros to a single list of times or cycles
@@ -958,7 +976,7 @@ An example ``vis`` element looks like the following.
    <vis>
         <base_filename>plot</base_filename>
 	<num_digits>5</num_digits>
-	<time_macro>Macro 1</time_macro>
+	<time_macros>Macro 1</time_macros>
    </vis>
 
 Checkpoint
