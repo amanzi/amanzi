@@ -23,6 +23,8 @@ include_directories(${STRANS_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
+include_directories(${PMAMR_INCLUDE_DIRS})
+
 set(CXX_header_files TensorDiffusionBndry.H
                      TensorDiffusion_PK.H
                      TensorOp_F.H

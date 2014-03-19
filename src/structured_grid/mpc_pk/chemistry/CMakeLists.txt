@@ -17,6 +17,8 @@ endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
 
+include_directories(${PMAMR_INCLUDE_DIRS})
+
 set(CXX_header_files MultiFabCellIterator.H
                      MultiFabCellVector.H)
 

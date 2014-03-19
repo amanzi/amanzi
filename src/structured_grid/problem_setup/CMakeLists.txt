@@ -16,6 +16,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${SAMR_SOURCE_DIR})
 
+include_directories(${PMAMR_INCLUDE_DIRS})
+
 set(CXX_source_files)
 set(F90_source_files)
 set(F77_source_files)

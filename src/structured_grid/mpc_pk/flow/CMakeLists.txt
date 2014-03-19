@@ -35,6 +35,8 @@ include_directories(${GEOCHEM_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
+include_directories(${PMAMR_INCLUDE_DIRS})
+
 set(CXX_header_files RichardSolver.H RICHARDSOLVER_F.H NLScontrol.H NLSstatus.H RSdata.H RSAMRdata.H)
 set(CXX_source_files RichardSolver.cpp NLScontrol.cpp RSdata.cpp RSAMRdata.cpp)
 set(F90_source_files )
