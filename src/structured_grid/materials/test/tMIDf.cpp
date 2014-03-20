@@ -11,18 +11,17 @@ using std::endl;
 
 static std::map<std::string, Region*> regions;
 
-
-PArray<Region>
-build_region_PArray(const Array<std::string>& region_names)
+Array<const Region*>
+RegionPtrArray(const Array<std::string>& region_names)
 {
-  PArray<Region> ret(region_names.size(), PArrayNoManage);
+  Array<const Region*> ret(region_names.size());
 
   for (int i=0; i<region_names.size(); ++i)
   {
     const std::string& name = region_names[i];
     std::map<std::string, Region*>::const_iterator it = regions.find(name);
     if (it != regions.end()) {
-      ret.set(i,it->second);
+      ret[i] = it->second;
     }
     else {
       std::string m = "Named region not found: " + name;
@@ -154,34 +153,34 @@ SetMaterials()
 {
   PArray<Material> materials(5, PArrayManage);
   Array<std::string> region_names;
-  PArray<Region> regionset;
+  Array<const Region*> regionset;
   region_names.push_back("SoilLower");
   region_names.push_back("SoilRight");
   region_names.push_back("SoilUpper");
-  regionset = build_region_PArray(region_names);
+  regionset = RegionPtrArray(region_names);
   materials.set(0,new Material("Soil",regionset));
   region_names.clear();
   region_names.push_back("TankConcFloor");
   region_names.push_back("TankConcRoof1");
   region_names.push_back("TankConcRoof2");
   region_names.push_back("TankConcWall");
-  regionset = build_region_PArray(region_names);
+  regionset = RegionPtrArray(region_names);
   materials.set(1,new Material("TankConc",regionset));
   region_names.clear();
   region_names.push_back("TankFFfloor");
   region_names.push_back("TankFFwall");
   region_names.push_back("TankWaste");
-  regionset = build_region_PArray(region_names);
+  regionset = RegionPtrArray(region_names);
   materials.set(2,new Material("TankFF",regionset));
   region_names.clear();
   region_names.push_back("TankGrout");
-  regionset = build_region_PArray(region_names);
+  regionset = RegionPtrArray(region_names);
   materials.set(3,new Material("TankGrout",regionset));
   region_names.clear();
   region_names.push_back("TankLinerFloor");
   region_names.push_back("TankLinerRoof");
   region_names.push_back("TankLinerWall");
-  regionset = build_region_PArray(region_names);
+  regionset = RegionPtrArray(region_names);
   materials.set(4,new Material("TankLiner",regionset));
   region_names.clear();
   return materials;
@@ -216,6 +215,7 @@ main (int   argc,
       char* argv[])
 {
   BoxLib::Initialize(argc,argv,false);
+  ParmParse pp;
 
   int nLevs = 3;
   Array<int> n_cells(BL_SPACEDIM); 
@@ -271,29 +271,29 @@ main (int   argc,
   Array<int> bins(mat_map.size(),0);
 
   for (int lev=0; lev<nLevs; ++lev) {
-    const MultiFab& mf = matFiller.MaterialID(lev);
+    const iMultiFab& mf = matFiller.MaterialID(lev);
     if (lev<nLevs) {
       const BoxArray& ba_mixed = matFiller.Mixed(lev);
       if (ba_mixed.size()>0) {
-        Real maxVal = -1;
+        int maxVal = -1;
         for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
-          const FArrayBox& fab = mf[mfi];
+          const IArrayBox& fab = mf[mfi];
           std::vector< std::pair<int,Box> > isects = ba_mixed.intersections(mfi.validbox());
           for (int ii = 0, N = isects.size(); ii < N; ii++)
           {
             maxVal = std::max(maxVal,fab.max(isects[ii].second,0));
           }
         }        
-        ParallelDescriptor::ReduceRealMax(maxVal);
+        ParallelDescriptor::ReduceIntMax(maxVal);
         fail = (maxVal>-1);
       }
     }
 
     for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
       const Box& vbox = mfi.validbox();
-      const FArrayBox& fab = mf[mfi];
+      const IArrayBox& fab = mf[mfi];
       for (IntVect iv=vbox.smallEnd(), BIG=vbox.bigEnd(); iv<=BIG; vbox.next(iv)) {
-        int val = (int) fab(iv,0);
+        int val = fab(iv,0);
         if (val>0) {
           bins[val]++;
         }

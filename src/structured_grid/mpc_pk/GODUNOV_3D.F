@@ -77,7 +77,7 @@ c ::: internal variables
       call riemann_est_eig(s,DIMS(s),lam,dlam,d2lam,DIMS(lam),
      &     uedge,DIMS(uedge),kappax,DIMS(kpx),rphi,DIMS(rphi),
      &     krcoef,DIMS(krcoef),nkrcoef,
-     &     1,0,0,lo,hi,ncomps,gravx,rhoval,muval,model,dx,bc,eigmax(1))
+     &     1,0,0,lo,hi,ncomps,gravx,rhoval,muval,dx,bc,eigmax(1))
       call riemann_est_eig(s,DIMS(s),lam,dlam,d2lam,DIMS(lam),
      &     vedge,DIMS(vedge),kappay,DIMS(kpy),rphi,DIMS(rphi),
      &     krcoef,DIMS(krcoef),nkrcoef,
@@ -1336,7 +1336,6 @@ c
      &     capInv, DIMS(capInv), 
      &     dcapdt, DIMS(dcapdt), 
      &     tforces, DIMS(tforces),
-     &     tforces, DIMS(tforces),
      &     xlo, xhi, sx, slxscr, stxlo, stxhi,
      &     uedge, DIMS(uedge), xstate, DIMS(xstate),
      &     ylo, yhi, sy, slyscr, stylo, styhi,
@@ -1344,14 +1343,14 @@ c
      &     zlo, zhi, sz, slzscr, stzlo, stzhi,
      &     wedge, DIMS(wedge), zstate, DIMS(zstate),
      &     DIMS(work),
-     &     bc,lo,hi,dt,dx,use_minion,iconserv,seps)
+     &     bc,lo,hi,dt,dx,n,use_minion,iconserv,seps)
       implicit none
 
-      integer i,j,n
+      integer i,j,k,n
       integer lo(SDIM),hi(SDIM),bc(SDIM,2)
       integer imin,jmin,kmin,imax,jmax,kmax
-      REAL_T hx, hy, hz, dt, dth, dthx, dthy, hxi, hyi, hzi
-      REAL_T tr,ubar,vbar,wbar,stx,sty,stzfu,fv,dx(SDIM)
+      REAL_T hx, hy, hz, dt, dth, dthx, dthy, dthz, hxi, hyi, hzi
+      REAL_T tr1,tr2,ubar,vbar,wbar,stx,sty,stz,fu,fv,fw,dx(SDIM)
       REAL_T eps,eps_for_bc,spi,divum,divup
       parameter( eps        = zero )
       parameter( eps_for_bc = zero )
@@ -1373,7 +1372,7 @@ c
       REAL_T dcapdt(DIMV(dcapdt))
       REAL_T stxlo(DIM1(s)),stxhi(DIM1(s)),slxscr(DIM1(s),4)
       REAL_T stylo(DIM2(s)),styhi(DIM2(s)),slyscr(DIM2(s),4)
-      REAL_T stzlo(DIM3(s)),stzhi(DIM3(s)),slzscr(DIM3(s),4)
+      REAL_T stzlo(DIM2(s)),stzhi(DIM2(s)),slzscr(DIM2(s),4)
 
       REAL_T uedge(DIMV(uedge)), xstate(DIMV(xstate))
       REAL_T vedge(DIMV(vedge)), ystate(DIMV(ystate))
@@ -1386,14 +1385,507 @@ c
       REAL_T  sy(DIMV(work))
       REAL_T  sz(DIMV(work))
       REAL_T tforces(DIMV(tforces))
-      REAL_T seps
-     
-      REAL_T spx,smx,spy,smy,spz,smz,strans,spip,spim
+      REAL_T seps, smx, spx, smy, spy, spz, smz, strans, divu
 
       integer use_minion, iconserv
       integer inc
 
-      call bl_abort("3D Godunov tracer predict not implemented yet")
+      dth  = half*dt
+      dthx = half*dt / dx(1)
+      dthy = half*dt / dx(2)
+      dthz = half*dt / dx(3)
+      hx   = dx(1)
+      hy   = dx(2)
+      hz   = dx(3)
+      imin = lo(1)
+      jmin = lo(2)
+      kmin = lo(3)
+      imax = hi(1)
+      jmax = hi(2)
+      kmax = hi(3)
+      hxi = 1.d0 / hx
+      hyi = 1.d0 / hy
+      hzi = 1.d0 / hz
+c
+c     compute the slopes
+c
+      call FORT_SLOPES(ALL,
+     &     s,DIMS(s),
+     &     sx,sy,sz,DIMS(work),
+     &     lo,hi,slxscr,slyscr,slzscr,bc)
+
+      i = imin-1
+      if (bc(1,1).eq.EXT_DIR) then
+         do k = kmin,kmax
+            do j = jmin,jmax
+               uedge(i,j,k) = uedge(imin,j,k)
+            enddo
+         enddo
+      endif
+
+      i = imax+2
+      if (bc(1,2).eq.EXT_DIR) then
+         do k = kmin,kmax
+            do j = jmin,jmax
+               uedge(i,j,j) = uedge(imax+1,j,k)
+            enddo
+         enddo
+      endif
+
+      j = jmin-1
+      if (bc(2,1).eq.EXT_DIR) then
+         do k = kmin,kmax
+            do i = imin,imax
+               vedge(i,j,k) = vedge(i,jmin,k)
+            enddo
+         enddo
+      endif
+
+      j = jmax+2
+      if (bc(2,2).eq.EXT_DIR) then
+         do k = kmin,kmax
+            do i = imin,imax
+               vedge(i,j,k) = vedge(i,jmax+1,k)
+            enddo
+         enddo
+      endif
+
+      k = kmin-1
+      if (bc(3,1).eq.EXT_DIR) then
+         do j = jmin,jmax
+            do i = imin,imax
+               vedge(i,j,k) = vedge(i,j,kmin)
+            enddo
+         enddo
+      endif
+
+      k = kmax+2
+      if (bc(3,2).eq.EXT_DIR) then
+         do j = jmin,jmax
+            do i = imin,imax
+               vedge(i,j,k) = vedge(i,j,kmax+1)
+            enddo
+         enddo
+      endif
+c
+c     trace the state to the cell edges
+c
+      do k = kmin-1,kmax+1
+         do j = jmin-1,jmax+1
+            do i = imin,  imax+1
+               xlo(i,j,k) = s(i-1,j,k) + (half  - dthx*uedge(i,j,k)*capInv(i-1,j,k))*sx(i-1,j,k)
+               xhi(i,j,k) = s(i,  j,k) + (-half - dthx*uedge(i,j,k)*capInv(i  ,j,k))*sx(i,  j,k)
+            end do
+         end do
+      end do
+
+      if(use_minion.eq.1)then
+         do k = kmin-1,kmax+1
+            do j = jmin-1,jmax+1
+               do i = imin,  imax+1
+                  xlo(i,j,k) = xlo(i,j,k) + dth*tforces(i-1,j,k)*capInv(i-1,j,k)
+                  xhi(i,j,k) = xhi(i,j,k) + dth*tforces(i,  j,k)*capInv(i  ,j,k)
+               end do
+            end do
+         end do
+         if (iconserv .eq. 1) then
+           do k = kmin-1,kmax+1
+             do j = jmin-1,jmax+1
+               do i = imin,  imax+1
+                  divup = (uedge(i+1,j  ,k)-uedge(i  ,j  ,k))*hxi
+     &                 +  (vedge(i  ,j+1,k)-vedge(i  ,j  ,k))*hyi
+     &                 +  (wedge(i  ,j,k+1)-wedge(i  ,j  ,k))*hzi
+                  divum = (uedge(i  ,j  ,k)-uedge(i-1,j  ,k))*hxi
+     &                 +  (vedge(i-1,j+1,k)-vedge(i-1,j  ,k))*hyi
+     &                 +  (wedge(i-1,j,k+1)-wedge(i-1,j  ,k))*hzi
+                  xlo(i,j,k) = xlo(i,j,k) - dth*s(i-1,j,k)*(divum + dcapdt(i-1,j,k))*capInv(i-1,j,k)
+                  xhi(i,j,k) = xhi(i,j,k) - dth*s(i  ,j,k)*(divup + dcapdt(i  ,j,k))*capInv(i  ,j,k)
+               end do
+             end do
+           end do
+         end if
+
+      end if
+
+      do k = kmin-1,kmax+1
+         do j = jmin-1,jmax+1
+            do i = imin,  imax+1
+               fu  = merge(zero,one,abs(uedge(i,j,k)).lt.eps)
+               stx = merge(xlo(i,j,k),xhi(i,j,k),uedge(i,j,k)>=zero)
+               xlo(i,j,k) = fu*stx + (one - fu)*half*(xhi(i,j,k)+xlo(i,j,k))
+            end do
+         end do
+      end do
+
+      call trans_xbc(
+     &     s,DIMS(s),
+     &     xlo,xhi,DIMS(work),uedge,DIMS(uedge),
+     &     lo,hi,n,bc,eps_for_bc)
+
+      do k = kmin-1,kmax+1
+         do j = jmin,  jmax+1
+            do i = imin-1,imax+1
+               ylo(i,j,k) = s(i,j-1,k) + (half  - dthy*vedge(i,j,k)*capInv(i,j-1,k))*sy(i,j-1,k)
+               yhi(i,j,k) = s(i,j, k)  + (-half - dthy*vedge(i,j,k)*capInv(i,j  ,k))*sy(i,j  ,k)
+            end do
+         end do
+      end do
+
+      if (use_minion.eq.1)then
+         do k = kmin-1,kmax+1
+            do j = jmin, jmax+1
+               do i = imin-1,  imax+1
+                  ylo(i,j,k) = ylo(i,j,k) + dth*tforces(i,j-1,k)*capInv(i,j-1,k)
+                  yhi(i,j,k) = yhi(i,j,k) + dth*tforces(i,j,  k)*capInv(i,j  ,k)
+               end do
+            end do
+         end do
+         if (iconserv .eq. 1) then
+           do k = kmin-1,kmax+1
+             do j = jmin, jmax+1
+               do i = imin-1,  imax+1
+                  divup = (uedge(i+1,j  ,k  )-uedge(i  ,j  ,k))*hxi
+     &                 +  (vedge(i  ,j+1,k  )-vedge(i  ,j  ,k))*hyi
+     &                 +  (wedge(i  ,j  ,k+1)-wedge(i  ,j  ,k))*hzi
+                  divum = (uedge(i+1,j-1,k  )-uedge(i  ,j-1,k))*hxi
+     &                 +  (vedge(i  ,j  ,k  )-vedge(i  ,j-1,k))*hyi
+     &                 +  (wedge(i  ,j  ,k+1)-wedge(i  ,j-1,k))*hzi
+                  ylo(i,j,k) = ylo(i,j,k) - dth*s(i,j-1,k)*(divum + dcapdt(i,j-1,k))*capInv(i,j-1,k)
+                  yhi(i,j,k) = yhi(i,j,k) - dth*s(i,j  ,k)*(divup + dcapdt(i,j  ,k))*capInv(i,j  ,k)
+               end do
+             end do
+           end do
+         end if
+      end if
+
+      call trans_ybc(
+     &     s,DIMS(s),
+     &     ylo,yhi,DIMS(work),vedge,DIMS(vedge),
+     &     lo,hi,n,bc,eps_for_bc)
+
+      do k = kmin-1,kmax+1
+         do j = jmin,  jmax+1
+            do i = imin-1,imax+1
+               fv  = merge(zero,one,abs(vedge(i,j,k)).lt.eps)
+               sty = merge(ylo(i,j,k),yhi(i,j,k),vedge(i,j,k)>=zero)
+               ylo(i,j,k) = fv*sty + (one - fv)*half*(yhi(i,j,k)+ylo(i,j,k))
+            end do
+         end do
+      end do
+
+      do k = kmin,kmax+1
+         do j = jmin-1,jmax+1
+            do i = imin-1,imax+1
+               zlo(i,j,k) = s(i,j,k-1) + (half  - dthz*wedge(i,j,k)*capInv(i,j,k-1))*sz(i,j,k-1)
+               zhi(i,j,k) = s(i,j,k  ) + (-half - dthz*wedge(i,j,k)*capInv(i,j,k  ))*sz(i,j,k  )
+            end do
+         end do
+      end do
+
+      if (use_minion.eq.1)then
+         do k = kmin,kmax+1
+            do j = jmin-1,jmax+1
+               do i = imin-1,  imax+1
+                  zlo(i,j,k) = zlo(i,j,k) + dth*tforces(i,j,k-1)*capInv(i,j,k-1)
+                  zhi(i,j,k) = zhi(i,j,k) + dth*tforces(i,j,k  )*capInv(i,j,k  )
+               end do
+            end do
+         end do
+         if (iconserv .eq. 1) then
+           do k = kmin,kmax+1
+             do j = jmin-1,jmax+1
+               do i = imin-1,  imax+1
+                  divup = (uedge(i+1,j  ,k  )-uedge(i  ,j  ,k))*hxi
+     &                 +  (vedge(i  ,j+1,k  )-vedge(i  ,j  ,k))*hyi
+     &                 +  (wedge(i  ,j  ,k+1)-wedge(i  ,j  ,k))*hzi
+                  divum = (uedge(i+1,j  ,k-1)-uedge(i  ,j,k-1))*hxi
+     &                 +  (vedge(i  ,j  ,k-1)-vedge(i  ,j,k-1))*hyi
+     &                 +  (wedge(i  ,j  ,k  )-wedge(i  ,j,k-1))*hzi
+                  zlo(i,j,k) = zlo(i,j,k) - dth*s(i,j,k-1)*(divum + dcapdt(i,j,k-1))*capInv(i,j,k-1)
+                  zhi(i,j,k) = zhi(i,j,k) - dth*s(i,j,k  )*(divup + dcapdt(i,j,k  ))*capInv(i,j,k  )
+               end do
+             end do
+           end do
+         end if
+      end if
+
+      call trans_zbc(
+     &     s,DIMS(s),
+     &     zlo,zhi,DIMS(work),wedge,DIMS(wedge),
+     &     lo,hi,n,bc,eps_for_bc)
+
+      do k = kmin,kmax+1
+         do j = jmin-1,jmax+1
+            do i = imin-1,imax+1
+               fw  = merge(zero,one,abs(wedge(i,j,k)).lt.eps)
+               stz = merge(zlo(i,j,k),zhi(i,j,k),wedge(i,j,k)>=zero)
+               zlo(i,j,k) = fw*stz + (one-fw)*half*(zhi(i,j,k)+zlo(i,j,k))
+            end do
+         end do
+      end do
+c
+c     compute the xedge states
+c
+      do k = kmin,kmax
+            do j = jmin,jmax
+               do i = imin-1,imax+1
+
+                  divu = (uedge(i+1,j  ,k  )-uedge(i  ,j  ,k))*hxi
+     &                 + (vedge(i  ,j+1,k  )-vedge(i  ,j  ,k))*hyi
+     &                 + (wedge(i  ,j  ,k+1)-wedge(i  ,j  ,k))*hzi
+                  spx = s(i,j,k) + half*sx(i,j,k) - dth*s(i,j,k)*(divu + dcapdt(i,j,k))*capInv(i,j,k)
+                  smx = s(i,j,k) - half*sx(i,j,k) - dth*s(i,j,k)*(divu + dcapdt(i,j,k))*capInv(i,j,k)
+
+                  if (iconserv.eq.1) then
+                     strans = -(vedge(i,j+1,k)*ylo(i,j+1,k) - vedge(i,j,k)*ylo(i,j,k))*hyi
+     &                    -    (wedge(i,j,k+1)*zlo(i,j,k+1) - wedge(i,j,k)*zlo(i,j,k))*hzi
+     &                    + s(i,j,k)*(vedge(i,j+1,k)-vedge(i,j,k))*hyi
+     &                    + s(i,j,k)*(wedge(i,j,k+1)-wedge(i,j,k))*hzi
+                  else
+
+                     if (vedge(i,j,k)*vedge(i,j+1,k).le.zero) then
+                        vbar = half*(vedge(i,j,k)+vedge(i,j+1,k))
+                        if (vbar.lt.zero) then
+                           inc = 1
+                        else
+                           inc = 0
+                        endif
+                        tr1 = vbar*(s(i,j+inc,k)-s(i,j+inc-1,k))*hyi
+                     else
+                        tr1 = half*(vedge(i,j+1,k) + vedge(i,j,k)) *
+     &                               (ylo(i,j+1,k) -   ylo(i,j,k)  ) * hyi
+                     endif
+
+                     if (wedge(i,j,k)*wedge(i,j,k+1).lt.zero) then
+                        wbar = half*(wedge(i,j,k)+wedge(i,j,k+1))
+                        if (wbar.lt.zero) then
+                           inc = 1
+                        else
+                           inc = 0
+                        endif
+                        tr2 = wbar*(s(i,j,k+inc)-s(i,j,k+inc-1))*hzi
+                     else
+                        tr2 = half*(wedge(i,j,k+1) + wedge(i,j,k)) *
+     &                               (zlo(i,j,k+1) -   zlo(i,j,k)  ) * hzi
+                     endif
+                     strans = - tr1 - tr2
+
+                  endif
+
+                  stxlo(i+1)= spx - dthx*capInv(i,j,k)*uedge(i+1,j,k)*sx(i,j,k)
+     &                 + dth*capInv(i,j,k)*(strans + tforces(i,j,k))
+                  stxhi(i  )= smx - dthx*capInv(i,j,k)*uedge(i  ,j,k)*sx(i,j,k)
+     &                 + dth*capInv(i,j,k)*(strans + tforces(i,j,k))
+
+               end do
+
+               if (bc(1,1).eq.EXT_DIR .and. uedge(imin,j,k).ge.zero) then
+                  stxhi(imin) = s(imin-1,j,k)
+                  stxlo(imin) = s(imin-1,j,k)
+               else if (bc(1,1).eq.EXT_DIR .and. uedge(imin,j,k).lt.zero) then
+                  stxlo(imin) = stxhi(imin)
+               else if (bc(1,1).eq.FOEXTRAP.or.bc(1,1).eq.HOEXTRAP
+     &                 .or.bc(1,1).eq.REFLECT_EVEN) then
+                  stxlo(imin) = stxhi(imin)
+               else if (bc(1,1).eq.REFLECT_ODD) then
+                  stxhi(imin) = zero
+                  stxlo(imin) = zero
+               end if
+               if (bc(1,2).eq.EXT_DIR .and. uedge(imax+1,j,k).le.zero) then
+                  stxlo(imax+1) = s(imax+1,j,k)
+                  stxhi(imax+1) = s(imax+1,j,k)
+               else if (bc(1,2).eq.EXT_DIR .and. uedge(imax+1,j,k).gt.zero) then
+                  stxhi(imax+1) = stxlo(imax+1)
+               else if (bc(1,2).eq.FOEXTRAP.or.bc(1,2).eq.HOEXTRAP
+     &                 .or.bc(1,2).eq.REFLECT_EVEN) then
+                  stxhi(imax+1) = stxlo(imax+1)
+               else if (bc(1,2).eq.REFLECT_ODD) then
+                  stxlo(imax+1) = zero
+                  stxhi(imax+1) = zero
+               end if
+
+               do i = imin, imax+1
+                  xstate(i,j,k) = merge(stxlo(i),stxhi(i),uedge(i,j,k)>=zero)
+                  xstate(i,j,k) = merge(half*(stxlo(i)+stxhi(i)),xstate(i,j,k)
+     &                 ,abs(uedge(i,j,k)).lt.eps)
+                  xstate(i,j,k) = xstate(i,j,k) * uedge(i,j,k)
+               end do
+            end do
+      end do
+c
+c     compute the yedge states
+c
+      do k = kmin,kmax
+         do i = imin,imax
+            do j = jmin-1,jmax+1
+               divu = (uedge(i+1,j  ,k  )-uedge(i,j,k))*hxi
+     &              + (vedge(i  ,j+1,k  )-vedge(i,j,k))*hyi
+     &              + (wedge(i  ,j  ,k+1)-wedge(i,j,k))*hzi
+               spy = s(i,j,k) + half*sy(i,j,k) - dth*s(i,j,k)*(divu + dcapdt(i,j,k))*capInv(i,j,k)
+               smy = s(i,j,k) - half*sy(i,j,k) - dth*s(i,j,k)*(divu + dcapdt(i,j,k))*capInv(i,j,k)
+
+               if (iconserv.eq.1) then
+                  strans = -(uedge(i+1,j,k)*xlo(i+1,j,k) - uedge(i,j,k)*xlo(i,j,k))*hxi
+     &                 -    (wedge(i,j,k+1)*zlo(i,j,k+1) - wedge(i,j,k)*zlo(i,j,k))*hzi
+     &                 + s(i,j,k)*(uedge(i+1,j,k)-uedge(i,j,k))*hxi
+     &                 + s(i,j,k)*(wedge(i,j,k+1)-wedge(i,j,k))*hzi
+                  else
+                     if (uedge(i,j,k)*uedge(i+1,j,k).le.zero) then
+                        ubar = half*(uedge(i,j,k)+uedge(i+1,j,k))
+                        if (ubar.lt.zero) then
+                           inc = 1
+                        else
+                           inc = 0
+                        endif
+                        tr1 = ubar*(s(i+inc,j,k)-s(i+inc-1,j,k))*hxi
+                     else
+                        tr1 = half*(uedge(i+1,j,k) + uedge(i,j,k)) *
+     &                               (xlo(i+1,j,k) -   xlo(i,j,k)  ) * hxi
+                     endif
+
+                     if (wedge(i,j,k)*wedge(i,j,k+1).lt.zero) then
+                        wbar = half*(wedge(i,j,k)+wedge(i,j,k+1))
+                        if (wbar.lt.zero) then
+                           inc = 1
+                        else
+                           inc = 0
+                        endif
+                        tr2 = wbar*(s(i,j,k+inc)-s(i,j,k+inc-1))*hzi
+                     else
+                        tr2 = half*(wedge(i,j,k+1) + wedge(i,j,k)) *
+     &                               (zlo(i,j,k+1) -   zlo(i,j,k)  ) * hzi
+                     endif
+
+                     strans = - tr1 - tr2
+
+                  endif
+
+                  stylo(j+1)= spy - dthy*capInv(i,j,k)*vedge(i,j+1,k)*sy(i,j,k)
+     &                 + dth*capInv(i,j,k)*(strans + tforces(i,j,k))
+                  styhi(j  )= smy - dthy*capInv(i,j,k)*vedge(i,j  ,k)*sy(i,j,k)
+     &                 + dth*capInv(i,j,k)*(strans + tforces(i,j,k))
+               end do
+
+               if (bc(2,1).eq.EXT_DIR .and. vedge(i,jmin,k).ge.zero) then
+                  styhi(jmin) = s(i,jmin-1,k)
+                  stylo(jmin) = s(i,jmin-1,k)
+               else if (bc(2,1).eq.EXT_DIR .and. vedge(i,jmin,k).lt.zero) then
+                  stylo(jmin) = styhi(jmin)
+               else if (bc(2,1).eq.FOEXTRAP.or.bc(2,1).eq.HOEXTRAP
+     &                 .or.bc(2,1).eq.REFLECT_EVEN) then
+                  stylo(jmin) = styhi(jmin)
+               else if (bc(2,1).eq.REFLECT_ODD) then
+                  styhi(jmin) = zero
+                  stylo(jmin) = zero
+               end if
+               
+               if (bc(2,2).eq.EXT_DIR .and. vedge(i,jmax+1,k).le.zero) then
+                  stylo(jmax+1) = s(i,jmax+1,k)
+                  styhi(jmax+1) = s(i,jmax+1,k)
+               else if (bc(2,2).eq.EXT_DIR .and. vedge(i,jmax+1,k).le.zero) then
+                  styhi(jmax+1) = stylo(jmax+1)
+               else if (bc(2,2).eq.FOEXTRAP.or.bc(2,2).eq.HOEXTRAP
+     &                 .or.bc(2,2).eq.REFLECT_EVEN) then
+                  styhi(jmax+1) = stylo(jmax+1)
+               else if (bc(2,2).eq.REFLECT_ODD) then
+                  stylo(jmax+1) = zero
+                  styhi(jmax+1) = zero
+               end if
+
+               do j=jmin,jmax+1
+                  ystate(i,j,k) = merge(stylo(j),styhi(j),vedge(i,j,k)>=zero)
+                  ystate(i,j,k) = merge(half*(stylo(j)+styhi(j)),ystate(i,j,k),
+     &                 abs(vedge(i,j,k)).lt.eps)
+                  ystate(i,j,k) = ystate(i,j,k) * vedge(i,j,k)
+               end do
+            end do
+      end do
+c
+c     compute the zedge states
+c
+      do j = jmin,jmax
+         do i = imin,imax
+            do k = kmin-1,kmax+1
+               divu = (uedge(i+1,j  ,k  )-uedge(i,j,k))*hxi
+     &              + (vedge(i  ,j+1,k  )-vedge(i,j,k))*hyi
+     &              + (wedge(i  ,j  ,k+1)-wedge(i,j,k))*hzi
+               spz = s(i,j,k) + half * sz(i,j,k) - dth*s(i,j,k)*(divu + dcapdt(i,j,k))*capInv(i,j,k)
+               smz = s(i,j,k) - half * sz(i,j,k) - dth*s(i,j,k)*(divu + dcapdt(i,j,k))*capInv(i,j,k)
+
+               if (iconserv.eq.1) then
+                  strans = -(uedge(i+1,j,k)*xlo(i+1,j,k) - uedge(i,j,k)*xlo(i,j,k))*hxi
+     &                 -    (vedge(i,j+1,k)*ylo(i,j+1,k) - vedge(i,j,k)*ylo(i,j,k))*hyi
+     &                 + s(i,j,k)*(uedge(i+1,j,k)-uedge(i,j,k))*hxi
+     &                 + s(i,j,k)*(vedge(i,j+1,k)-vedge(i,j,k))*hyi
+               else
+                  if (uedge(i,j,k)*uedge(i+1,j,k).le.zero) then
+                     ubar = half*(uedge(i,j,k)+uedge(i+1,j,k))
+                     if (ubar.lt.zero) then
+                        inc = 1
+                     else
+                        inc = 0
+                     endif
+                     tr1 = ubar*(s(i+inc,j,k)-s(i+inc-1,j,k))/hx
+                  else
+                     tr1 = half*(uedge(i+1,j,k) + uedge(i,j,k)) *
+     &                    (xlo(i+1,j,k) - xlo(i,j,k)  ) / hx
+                  endif
+
+                  if (vedge(i,j,k)*vedge(i,j+1,k).lt.zero) then
+                     vbar = half*(vedge(i,j,k)+vedge(i,j+1,k))
+                     if (vbar.lt.zero) then
+                        inc = 1
+                     else
+                        inc = 0
+                     endif
+                     tr2 = vbar*(s(i,j+inc,k)-s(i,j+inc-1,k))/hy
+                  else
+                     tr2 = half*(vedge(i,j+1,k) + vedge(i,j,k)) *
+     &                    (ylo(i,j+1,k) - ylo(i,j,k)  ) / hy
+                  endif
+                  strans = - tr1 -tr2
+               endif
+
+               stzlo(k+1)= spz - dthz*capInv(i,j,k)*wedge(i,j,k+1)*sz(i,j,k)
+     &              + dth*capInv(i,j,k)*(strans + tforces(i,j,k))
+               stzhi(k  )= smz - dthz*capInv(i,j,k)*wedge(i,j,k  )*sz(i,j,k)
+     &              + dth*capInv(i,j,k)*(strans + tforces(i,j,k))
+
+            end do
+
+            if (bc(3,1).eq.EXT_DIR .and. wedge(i,j,kmin).ge.zero) then
+               stzlo(kmin) = s(i,j,kmin-1)
+               stzhi(kmin) = s(i,j,kmin-1)
+            else if (bc(3,1).eq.EXT_DIR .and. wedge(i,j,kmin).lt.zero) then
+               stzlo(kmin) = stzhi(kmin)
+            else if (bc(3,1).eq.FOEXTRAP.or.bc(3,1).eq.HOEXTRAP
+     &              .or.bc(3,1).eq.REFLECT_EVEN) then
+               stzlo(kmin) = stzhi(kmin)
+            else if (bc(3,1).eq.REFLECT_ODD) then
+               stzlo(kmin) = zero
+               stzhi(kmin) = zero
+            end if
+            if (bc(3,2).eq.EXT_DIR .and. wedge(i,j,kmax+1).le.zero) then
+               stzlo(kmax+1) = s(i,j,kmax+1)
+               stzhi(kmax+1) = s(i,j,kmax+1)
+            else if (bc(3,2).eq.EXT_DIR .and. wedge(i,j,kmax+1).gt.zero) then
+               stzhi(kmax+1) = stzlo(kmax+1)
+            else if (bc(3,2).eq.FOEXTRAP.or.bc(3,2).eq.HOEXTRAP
+     &              .or.bc(3,2).eq.REFLECT_EVEN) then
+               stzhi(kmax+1) = stzlo(kmax+1)
+            else if (bc(3,2).eq.REFLECT_ODD) then
+               stzlo(kmax+1) = zero
+               stzhi(kmax+1) = zero
+            end if
+
+            do k = kmin,kmax+1
+               zstate(i,j,k) = merge(stzlo(k),stzhi(k),wedge(i,j,k)>=zero)
+               zstate(i,j,k) = merge(half*(stzlo(k)+stzhi(k)),zstate(i,j,k),
+     &              abs(wedge(i,j,k)).lt.eps)
+               zstate(i,j,k) = zstate(i,j,k) * wedge(i,j,k)
+            end do
+         end do
+      end do
 
       end
 #else
@@ -6000,10 +6492,16 @@ c
 
       integer i, j, k, n, idx
 
+      integer cWater
+
 !$omp parallel do private(i,j,k,n,idx)
 
 c     First update all tracers with no change
       cn(:,:,:,1:nt) = co(:,:,:,1:nt)
+
+c     Then, advect/force those in the "Total" group
+c     FIXME: Assume first component is water, and that all tracers of interest are in water
+      cWater = 1
 
       do k = lo(3), hi(3)
          do j = lo(2), hi(2) 
@@ -6011,7 +6509,7 @@ c     First update all tracers with no change
                do n = 1,idx_total_n
                   idx = idx_total(n)
                   if (sn(i,j,k,1) .gt. zero) then
-                     cn(i,j,,kidx) = (so(i,j,k,cWater)*co(i,j,k,idx)
+                     cn(i,j,k,idx) = (so(i,j,k,cWater)*co(i,j,k,idx)
      &                    + dt*(tforces(i,j,k,idx)-aofs(i,j,k,idx))/rockphi(i,j,k))/sn(i,j,k,cWater)
                   end if
                end do

@@ -2,13 +2,13 @@
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   STRUCTUREDUTILS_SOURCE_DIR
-#   STRUCTUREDUTILS_BINARY_DIR
+#   SUTILS_SOURCE_DIR
+#   SUTILS_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
-project(STRUCTUREDUTILS)
+project(SUTILS)
 
-include_directories(${STRUCTUREDUTILS_SOURCE_DIR})
+include_directories(${SUTILS_SOURCE_DIR})
 
 
 if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
@@ -17,32 +17,38 @@ if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
 endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
-include_directories(${PMAMR_INCLUDE_DIRS})
+include_directories(${SAMR_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
+
+include_directories(${PMAMR_INCLUDE_DIRS})
 
 set(CXX_header_files ParmParseHelpers.H
                      InputParser_Structured.H
                      TabularFunction.H
                      EventCoord.H
-                     WritePlotfile.H)
+                     WritePlotfile.H
+                     MonotCubicInterpolator.H)
 set(CXX_source_files ParmParseHelpers.cpp
                      InputParser_Structured.cpp
                      TabularFunction.cpp
                      EventCoord.cpp
-                     WritePlotfile.cpp)
+                     WritePlotfile.cpp
+                     MonotCubicInterpolator.cpp)
 
-add_library(structutils OBJECT ${CXX_source_files}
-                               ${CXX_headers_files})
+add_library(sutils OBJECT ${CXX_source_files}
+                          ${CXX_headers_files})
+
+# This library depends on samr.
+add_dependencies(sutils samr)
 
 if (BUILD_TESTS)
 
   include_directories(${CCSE_INCLUDE_DIRS})
   link_directories(${CCSE_LIBRARY_DIR})
-  add_definitions("-DENABLE_Structured")
 
-  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES})
+  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
@@ -58,7 +64,7 @@ if (BUILD_TESTS)
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
     execute_process(COMMAND ${CMAKE_COMMAND} -E
-                    copy ${STRUCTUREDUTILS_SOURCE_DIR}/sample.xml ${STRUCTUREDUTILS_BINARY_DIR})
+                    copy ${SUTILS_SOURCE_DIR}/sample.xml ${SUTILS_BINARY_DIR})
   endif()
 
   add_amanzi_test(tEC tEC

@@ -825,7 +825,7 @@ Diffusion::diffuse_iter_CPL (Real                   dt,
   MultiFab::Add(S_new,Soln,0,nc,1,0);
   pm_level->scalar_adjust_constraint(0,ncomps-1);
   pm_level->FillStateBndry(cur_time,State_Type,0,ncomps);
-  pm_level->calcCapillary(cur_time);
+  pm_level->calcCapillary(*pm_level->pcnp1_cc,S_new,cur_time,0,0,1);
   pm_level->calcLambda(cur_time);
   pm_level->calcDiffusivity_CPL(betatmp,pm_level->lambdap1_cc);
   residual_CPL(visc_bndry_0,
@@ -844,7 +844,7 @@ Diffusion::diffuse_iter_CPL (Real                   dt,
       Soln.mult(0.33);
       pm_level->scalar_adjust_constraint(0,ncomps-1);
       pm_level->FillStateBndry(cur_time,State_Type,0,ncomps);
-      pm_level->calcCapillary(cur_time);
+      pm_level->calcCapillary(*pm_level->pcnp1_cc,S_new,cur_time,0,0,1);
       pm_level->calcLambda(cur_time);
       pm_level->calcDiffusivity_CPL(betatmp,pm_level->lambdap1_cc);
       residual_CPL(visc_bndry_0,
@@ -1228,11 +1228,11 @@ Diffusion::richard_iter (Real                   dt,
 
   // determine new capillary pressure
   MultiFab pctmp(grids,1,1);
-  pm_level->calcCapillary(&pctmp,Stmp);
+  pm_level->calcCapillary(pctmp,Stmp,cur_time,0,0,1);
   pctmp.mult(-1.0);
   // determine new lambda_1 and beta
   MultiFab lambda(grids,pm_level->ncomps,1);
-  pm_level->calcLambda(&lambda,Stmp);
+  pm_level->calcLambda(lambda,Stmp,cur_time,0,0,1);
   MultiFab** betatmp;
   allocFluxBoxesLevel(betatmp,0,1);
   pm_level->calc_richard_coef(betatmp,&lambda,umac,0,do_upwind);
@@ -1285,9 +1285,9 @@ Diffusion::richard_iter (Real                   dt,
       MultiFab::Copy(Stmp,S_new,nc,0,1,1);
       MultiFab::Add(Stmp,Rhs,0,0,1,1);
 
-      pm_level->calcCapillary(&pctmp,Stmp);
+      pm_level->calcCapillary(pctmp,Stmp,cur_time,0,0,1);
       pctmp.mult(-1.0);
-      pm_level->calcLambda(&lambda,Stmp);
+      pm_level->calcLambda(lambda,Stmp,cur_time,0,0,1);
       pm_level->calc_richard_coef(betatmp,&lambda,umac,0,do_upwind);
       setBeta (visc_op,0,betatmp,false);
       MultiFab::Copy(Rhsp1,res_fix,0,0,1,0);
@@ -1519,9 +1519,9 @@ Diffusion::richard_composite_iter (Real                      dt,
       MultiFab::Copy(Stmp[lev],Snew[lev],nc,0,1,1);
       MultiFab::Add(Stmp[lev],Soln[lev],0,0,1,0);
 
-      pm[lev].calcCapillary(&Pnew_p[lev],Stmp[lev]);
+      pm[lev].calcCapillary(Pnew_p[lev],Stmp[lev],cur_time,0,0,1);
       Pnew_p[lev].mult(-1);
-      pm[lev].calcLambda(&(lambda[lev]),Stmp[lev]);
+      pm[lev].calcLambda(lambda[lev],Stmp[lev],cur_time,0,0,1);
       pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
     }
   mgt_solver.set_porous_coefficients(a1_p, a2_p, beta, b, xa, xb, nc_opt); 
@@ -1555,9 +1555,9 @@ Diffusion::richard_composite_iter (Real                      dt,
 	  Stmp[lev].mult(status.ls_factor);
           MultiFab::Add(Stmp[lev],Snew[lev],0,0,1,1);
 
-	  pm[lev].calcCapillary(&Pnew_p[lev],Stmp[lev]);
+	  pm[lev].calcCapillary(Pnew_p[lev],Stmp[lev],cur_time,0,0,1);
 	  Pnew_p[lev].mult(-1);
-	  pm[lev].calcLambda(&(lambda[lev]),Stmp[lev]);
+	  pm[lev].calcLambda(lambda[lev],Stmp[lev],cur_time,0,0,1);
 	  pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
       }
       mgt_solver.set_porous_coefficients(a1_p, a2_p, beta, b, xa, xb, nc_opt); 
@@ -1660,8 +1660,8 @@ Diffusion::richard_iter_p (Real                   dt,
   MultiFab Stmp(grids,1,1);
   MultiFab ptmp(grids,1,1);
   MultiFab lambda(grids,pm_level->ncomps,1);
-  pm_level->calcInvPressure(Stmp,P_new);
-  pm_level->calcLambda(&lambda,Stmp);
+  pm_level->calcInvPressure(Stmp,P_new,cur_time,0,0,1);
+  pm_level->calcLambda(lambda,Stmp,cur_time,0,0,1);
 
   MultiFab** betatmp;
   allocFluxBoxesLevel(betatmp,0,1);
@@ -1751,12 +1751,8 @@ Diffusion::richard_iter_p (Real                   dt,
   Rhsp1.setVal(0.);
   MultiFab::Copy(ptmp,P_new,nc,0,1,1);
   MultiFab::Add(ptmp,Soln,0,0,1,0);
-  pm_level->calcInvPressure(Stmp,ptmp);
-  // determine new lambda_1 and beta
-  //MultiFab lambda(grids,pm_level->ncomps,1);
-  pm_level->calcLambda(&lambda,Stmp);
-  //MultiFab** betatmp;
-  //allocFluxBoxesLevel(betatmp,0,1);
+  pm_level->calcInvPressure(Stmp,ptmp,cur_time,0,0,1);
+  pm_level->calcLambda(lambda,Stmp,cur_time,0,0,1);
   pm_level->calc_richard_coef(betatmp,&lambda,umac,0,do_upwind);
   // Compute residual
   setBeta (visc_op,0,betatmp,false);
@@ -1790,8 +1786,8 @@ Diffusion::richard_iter_p (Real                   dt,
 
       MultiFab::Copy(ptmp,P_new,nc,0,1,1);
       MultiFab::Add(ptmp,Ptmp,0,0,1,1);
-      pm_level->calcInvPressure(Stmp,ptmp);
-      pm_level->calcLambda(&lambda,Stmp);
+      pm_level->calcInvPressure(Stmp,ptmp,cur_time,0,0,1);
+      pm_level->calcLambda(lambda,Stmp,cur_time,0,0,1);
       pm_level->calc_richard_coef(betatmp,&lambda,umac,0,do_upwind);
       setBeta (visc_op,0,betatmp,false);
       MultiFab::Copy(Rhsp1,res_fix,0,0,1,0);
@@ -2002,8 +1998,8 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 
   for (int lev=0; lev<nlevs; lev++)
     {  
-      pm[lev].calcInvPressure(Snew[lev],Pnew_p[lev]); // Set sat from p
-      pm[lev].calcLambda(&lambda[lev],Snew[lev]);
+      pm[lev].calcInvPressure(Snew[lev],Pnew_p[lev],cur_time,0,0,1); // Set sat from p
+      pm[lev].calcLambda(lambda[lev],Snew[lev],cur_time,0,0,1);
       pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
       if (update_jac)
 	pm[lev].calc_richard_jac(beta_ldp[lev].dataPtr(),&(dalpha[lev]),&(lambda[lev]),umac[lev],
@@ -2172,8 +2168,8 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       Ptmp.set(lev, new MultiFab(bav[lev],1,1));
       MultiFab::Copy(Ptmp[lev],Pnew_p[lev],0,0,1,1);
       MultiFab::Add(Ptmp[lev],Soln[lev],0,0,1,0); // Now Ptmp has new trial pressure
-      pm[lev].calcInvPressure(Snew[lev],Ptmp[lev]);   
-      pm[lev].calcLambda(&(lambda[lev]),Snew[lev]);
+      pm[lev].calcInvPressure(Snew[lev],Ptmp[lev],cur_time,0,0,1);   
+      pm[lev].calcLambda(lambda[lev],Snew[lev],cur_time,0,0,1);
       pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);  
   }
 
@@ -2211,8 +2207,8 @@ Diffusion::richard_composite_iter_p (Real                      dt,
           Ptmp[lev].mult(status.ls_factor);
           MultiFab::Add(Ptmp[lev],Pnew_p[lev],0,0,1,1); // Now Ptmp has new trial pressure
 	  
-          pm[lev].calcInvPressure(Snew[lev],Ptmp[lev]);
-          pm[lev].calcLambda(&(lambda[lev]),Snew[lev]);
+          pm[lev].calcInvPressure(Snew[lev],Ptmp[lev],cur_time,0,0,1);
+          pm[lev].calcLambda(lambda[lev],Snew[lev],cur_time,0,0,1);
           pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
       }
  
@@ -2261,7 +2257,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   for (int lev=0; lev<nlevs;lev++) {
       MultiFab::Copy(Pnew_p[lev],Ptmp[lev],0,nc,1,1);
       pm[lev].FillStateBndry(cur_time,Press_Type,0,1);
-      pm[lev].calcInvPressure(Snew[lev],Pnew_p[lev]); 
+      pm[lev].calcInvPressure(Snew[lev],Pnew_p[lev],cur_time,0,0,1); 
       pm[lev].compute_vel_phase(umac[lev],0,cur_time);
   }
 
@@ -2326,6 +2322,7 @@ Diffusion::jac_richard (int                    nc,
   // This routine computes jacobian*soln and preconditioned it with beta_dp
   //
   MultiFab& S_new = caller->get_new_data(State_Type);
+  const Real cur_time = caller->get_state_data(State_Type).curTime();
   MultiFab res_old(grids,1,0);
   MultiFab::Copy(res_old,soln_old,0,0,1,0);
   res_old.mult(-1.0);
@@ -2337,10 +2334,10 @@ Diffusion::jac_richard (int                    nc,
   // determie new capillary pressure
   PorousMedia* pm_level = dynamic_cast<PorousMedia*>(&parent->getLevel(level));
   MultiFab pc(grids,1,1);
-  pm_level->calcCapillary(&pc,soln);
+  pm_level->calcCapillary(pc,soln,cur_time,0,0,1);
   // determine new lambda_1 and beta
   MultiFab lambda(grids,pm_level->ncomps,1);
-  pm_level->calcLambda(&lambda,soln);
+  pm_level->calcLambda(lambda,soln,cur_time,0,0,1);
   MultiFab** betatmp;
   allocFluxBoxesLevel(betatmp,0,1);
   pm_level->calc_richard_coef(betatmp,&lambda,0);

@@ -2,13 +2,13 @@
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   STRUCTUREDFLOW_SOURCE_DIR
-#   STRUCTUREDFLOW_BINARY_DIR
+#   SFLOW_SOURCE_DIR
+#   SFLOW_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
-project(STRUCTUREDFLOW)
+project(SFLOW)
 
-include_directories(${STRUCTUREDFLOW_SOURCE_DIR})
+include_directories(${SFLOW_SOURCE_DIR})
 
 if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
   include_directories(${CHEM_SOURCE_DIR}/includes)
@@ -20,13 +20,22 @@ include_directories(${CHEM_SOURCE_DIR}/includes)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
-include_directories(${STRUCTUREDFLOW_SOURCE_DIR})
-include_directories(${STRUCTUREDUTILS_SOURCE_DIR})
-include_directories(${PMAMR_INCLUDE_DIRS})
+include_directories(${SFLOW_SOURCE_DIR})
+include_directories(${SUTILS_SOURCE_DIR})  
+include_directories(${SFLOW_SOURCE_DIR})  
+include_directories(${STRANS_SOURCE_DIR})  
+include_directories(${SPROB_SOURCE_DIR})  
+include_directories(${SAMR_SOURCE_DIR})  
+include_directories(${SREGION_SOURCE_DIR})   
+include_directories(${SMATERIALS_SOURCE_DIR})   
 include_directories(${PETSC_INCLUDE_DIRS})
+include_directories(${CHEMPK_SOURCE_DIR})
+include_directories(${GEOCHEM_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
+
+include_directories(${PMAMR_INCLUDE_DIRS})
 
 set(CXX_header_files RichardSolver.H RICHARDSOLVER_F.H NLScontrol.H NLSstatus.H RSdata.H RSAMRdata.H)
 set(CXX_source_files RichardSolver.cpp NLScontrol.cpp RSdata.cpp RSAMRdata.cpp)
@@ -45,10 +54,8 @@ add_library(sflow OBJECT ${FPP_out_files}
 if (BUILD_TESTS)
 
   link_directories(${CCSE_LIBRARY_DIR})
-  add_definitions("-DENABLE_Structured")
-
   if ( ENABLE_Unstructured )
-    set(unstructured_grid_libs udriv mpc state transport flow chemistry_pk whetstone matrix_audit)
+    set(unstructured_grid_libs udriv mpc state transport flow whetstone matrix_audit)
   else()
     set(unstructured_grid_libs)
   endif()
@@ -78,31 +85,54 @@ if (BUILD_TESTS)
                   ${Epetra_LIBRARIES}
                   ${Boost_LIBRARIES}
                   ${XERCES_LIBRARIES}
-                  ${XERCES_ICU_LIBRARIES})
-
+                  ${XERCES_ICU_LIBRARIES}
+                  ${PETSC_LIBRARIES})
 
   if (ENABLE_Structured)
     list(APPEND my_tpl_libs ${CCSE_EXT_LIBRARIES})
   endif()
 
 
-  set(FLOWTEST "${STRUCTUREDFLOW_SOURCE_DIR}/test")
+  set(FLOWTEST "${SFLOW_SOURCE_DIR}/test")
   include_directories(${FLOWTEST})
-  set(CXX_header_files_1 ${FLOWTEST}/tRS.H)
-  set(CXX_source_files_1 ${FLOWTEST}/tRS.cpp)
+  set(CXX_header_files_1 ${FLOWTEST}/RStdata.H)
+  set(CXX_source_files_1 ${FLOWTEST}/tRS.cpp ${FLOWTEST}/RStdata.cpp)
   set(F90_source_files_1 )
   set(F77_source_files_1 )
   set(FPP_source_files_1 )
 
   preprocess_boxlib_fortran(FPP_out_files_1 ${FPP_source_files_1})
 
-  add_amanzi_test(tRS tRS
-                  KIND unit
-                  SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} ${F77_source_files_1}
-                  LINK_LIBS ${my_libs} ${my_tpl_libs})
+  if(${AMANZI_SPACEDIM} EQUAL 2)
+    # (seems to require redundant lib listing to resolve everything....not sure why
+    add_amanzi_test(tRS tRS "tRS.in"
+                    KIND unit
+                    SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} ${F77_source_files_1}
+                    LINK_LIBS ${my_libs} ${my_tpl_libs} ${my_libs})
+  else()
+    # (seems to require redundant lib listing to resolve everything....not sure why
+    add_amanzi_test(tRS tRS "tRS_3D.in"
+                    KIND unit
+                    SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} ${F77_source_files_1}
+                    LINK_LIBS ${my_libs} ${my_tpl_libs} ${my_libs})
+  endif()
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
-    execute_process(COMMAND ${CMAKE_COMMAND} -E
-                    copy ${FLOWTEST}/.petsc ${STRUCTUREDFLOW_BINARY_DIR})
   endif()
+
+  # Copy input files if an out of source build
+  if (NOT (${SFLOW_SOURCE_DIR} EQUAL ${SFLOW_BINARY_DIR}) )
+
+    execute_process(COMMAND ${CMAKE_COMMAND} -E
+                    copy ${FLOWTEST}/.petsc ${SFLOW_BINARY_DIR})
+
+    if(${AMANZI_SPACEDIM} EQUAL 2)
+      execute_process(COMMAND ${CMAKE_COMMAND} -E 
+                      copy ${FLOWTEST}/tRS.in ${SFLOW_BINARY_DIR}) 
+    else()
+      execute_process(COMMAND ${CMAKE_COMMAND} -E 
+                      copy ${FLOWTEST}/tRS_3D.in ${SFLOW_BINARY_DIR}) 
+    endif()
+  endif()
+
 endif()

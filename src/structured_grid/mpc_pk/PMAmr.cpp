@@ -24,17 +24,21 @@ EventCoord PMAmr::event_coord;
 std::map<std::string,EventCoord::Event*> PMAmr::defined_events;
 bool PMAmr::do_output_time_in_years;
 bool PMAmr::attempt_to_recover_failed_step;
+RegionManager* PMAmr::region_manager = 0;
+RockManager* PMAmr::rock_manager = 0;
 
 void
 PMAmr::CleanupStatics ()
 {
     pmamr_initialized = false;
+    region_manager = 0;
+    rock_manager = 0;
 }
 
 static bool initialized = false;
 
 PMAmr::PMAmr()
-  : Amr(), materialFiller(0)
+  : Amr()
 {
     if (!pmamr_initialized) {
         regrid_on_restart        = 0;
@@ -82,7 +86,8 @@ PMAmr::~PMAmr()
     delete it->second;
   }
 
-  delete materialFiller;
+  delete rock_manager; rock_manager = 0;
+  delete region_manager; region_manager = 0;
 }
 
 void 
@@ -229,7 +234,7 @@ void
 PMAmr::init (Real t_start,
              Real t_stop)
 {
-  SetUpMaterialServer();
+  SetUpRockManager();
   InitializeControlEvents();
 
   if (!restart_chkfile.empty() && restart_chkfile != "init") {
@@ -676,18 +681,18 @@ PMAmr::coarseTimeStep (Real _stop_time)
 }
 
 void
-PMAmr::SetUpMaterialServer()
+PMAmr::SetUpRockManager()
 {
-  if (materialFiller == 0 || !materialFiller->Initialized()) {
+  if (rock_manager == 0) {
     if (ParallelDescriptor::IOProcessor()) {
-      std::cout << "Building MaterialFiller object..." << std::endl;
+      std::cout << "Building Rock Manager..." << std::endl;
     }
 
-    int Nlevs = maxLevel() + 1;
-    const PArray<Material>& materials = PorousMedia::Materials();
-    materialFiller = new MatFiller(geom,refRatio(),materials);
+    if (region_manager == 0) region_manager = new RegionManager();
+    rock_manager = new RockManager(region_manager,geom,refRatio(),3); // FIXME: 3 is HypGrow
+
     if (ParallelDescriptor::IOProcessor() && verbose>0) {
-      std::cout << "....MaterialFiller object built" << std::endl;
+      std::cout << "....Rock Manager built" << std::endl;
     }
   }
 }
@@ -886,7 +891,7 @@ void PMAmr::InitializeControlEvents()
       std::string obs_type; ppr.get("obs_type",obs_type);
       std::string obs_field; ppr.get("field",obs_field);
       Array<std::string> region_names(1); ppr.get("region",region_names[0]);
-      const PArray<Region> obs_regions = PorousMedia::build_region_PArray(region_names);//Should not be a static function
+      const Array<const Region*> obs_regions = region_manager->RegionPtrArray(region_names);
 
       std::string obs_time_macro, obs_cycle_macro;
       ppr.query("cycle_macro",obs_cycle_macro);
@@ -920,7 +925,7 @@ void PMAmr::InitializeControlEvents()
         BoxLib::Abort(m.c_str());
       }
 
-      observations.set(i, new Observation(obs_names[i],obs_field,obs_regions[0],obs_type,event_label));
+      observations.set(i, new Observation(obs_names[i],obs_field,*(obs_regions[0]),obs_type,event_label));
     }
 
     // filename for output

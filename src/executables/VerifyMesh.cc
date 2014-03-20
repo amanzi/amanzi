@@ -165,21 +165,21 @@ int main (int argc, char* argv[])
     if (me == 0) {
       std::cout << "Node Epetra Map: " << std::endl;
     }
-    (mesh->node_epetra_map(false)).Print(std::cout);
+    (mesh->node_map(false)).Print(std::cout);
   }
 
   if (dump_face_map) {
     if (me == 0) {
       std::cout << "Face Epetra Map: " << std::endl;
     }
-    (mesh->face_epetra_map(false)).Print(std::cout);
+    (mesh->face_map(false)).Print(std::cout);
   }
 
   if (dump_cell_map) {
     if (me == 0) {
       std::cout << "Cell Epetra Map: " << std::endl;
     }
-    (mesh->cell_epetra_map(false)).Print(std::cout);
+    (mesh->cell_map(false)).Print(std::cout);
   }
 
   return status;

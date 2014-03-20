@@ -119,7 +119,13 @@ SUITE(GeochemistryTestsChemistryPK) {
     chemistry_parameter_list_ = parameter_list.sublist("Chemistry");
 
     // create the chemistry state object
-    chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(chemistry_parameter_list_, state_));
+    std::vector<std::string> component_names;
+    component_names.push_back("Al+++");
+    component_names.push_back("H+");
+    component_names.push_back("HP04--");
+    component_names.push_back("SiO2(aq)");
+    component_names.push_back("UO2++");
+    chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(chemistry_parameter_list_, component_names, state_));
 
     state_->Setup();
     chemistry_state_->Initialize();

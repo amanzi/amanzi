@@ -2,6 +2,7 @@
 #define _RSdata_H_
 
 #include <Layout.H>
+#include <RockManager.H>
 
 class NLScontrol; // forward ref
 
@@ -14,7 +15,7 @@ struct RSdata
     and data structures but one that does not rely on a fully constructed porous media integrator
     framework.
    */
-  RSdata(int slev, int nlevs, Layout& layout, NLScontrol& nlsc);
+  RSdata(int slev, int nlevs, Layout& layout, NLScontrol& nlsc, const RockManager* rm);
   virtual ~RSdata();
 
   virtual void SetUpMemory(NLScontrol& nlsc);
@@ -25,12 +26,26 @@ struct RSdata
   virtual void FillStateBndry (MFTower& press,
                                Real time) = 0;
   virtual void calcInvPressure (MFTower&       N,
-				const MFTower& P) const = 0;
-  virtual void calcLambda (MFTower&       lbd,
-			   const MFTower& N) = 0;
-  virtual void calcRichardAlpha(MFTower&       alpha,
-                                const MFTower& rhoSat,
-                                Real           time) = 0;
+                                const MFTower& P,
+                                Real           time,
+                                int            sComp,
+                                int            dComp,
+                                int            nGrow) const = 0;
+
+  virtual void calcLambda (MFTower&       Lambda,
+                           const MFTower& N,
+                           Real           time,
+                           int            sComp,
+                           int            dComp,
+                           int            nGrow) const = 0;
+
+  virtual void calcRichardAlpha (MFTower&       Alpha,
+                                 const MFTower& N,
+                                 Real           time,
+                                 int            sComp,
+                                 int            dComp,
+                                 int            nGrow) const = 0;
+
   virtual Array<int>& rinflowBCLo() = 0;
   virtual Array<int>& rinflowBCHi() = 0;
 
@@ -43,11 +58,9 @@ struct RSdata
   virtual const MFTower* GetKappaCCdir(Real t) {return KappaCCdir;}
   virtual const MFTower* GetSource(Real time) {return Source;}
 
-
   // Algorithm switches for Richard Solver
   bool semi_analytic_J;                      // Explicitly use dPc/ds relationship in computing the Jacobian
   bool upwind_krel;                          // Upwind Krel based on sign of Darcy forcing
-  bool subgrid_krel;                         // Where mixed cells, generate coarse krel by averaging refined krel
   Real variable_switch_saturation_threshold; // Newton iterate s if this is less than s, otherwise p
 
   int  pressure_maxorder;                    // Polynomial order of boundary condition extrapolation
@@ -59,6 +72,7 @@ struct RSdata
   void SetCurrentTimestep(int step) {time_step = step;}
   int GetCurrentTimestep() const {return time_step;}
 
+  const RockManager* GetRockManager() const {return rock_manager;}
 
   // Cell-centered data
   Array<PArray<MultiFab> > ctmp;
@@ -108,6 +122,8 @@ protected:
   Array<Real> density;
   Array<Real> viscosity;
   bool is_saturated;
+
+  const RockManager* rock_manager;
 };
 
 #endif

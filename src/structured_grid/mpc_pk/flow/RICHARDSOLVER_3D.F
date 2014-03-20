@@ -24,7 +24,6 @@
       
       integer i, j, k, n
       REAL_T tmult
-
       if (dir.eq.0) then
          tmult = 1.d0/dx(dir+1)
          do n=1,nc
@@ -51,7 +50,7 @@
          tmult = 1.d0/dx(dir+1)
          do n=1,nc
             do k = lo(3),hi(3)+1
-               do j = lo(2),hi(2)+1
+               do j = lo(2),hi(2)
                   do i = lo(1),hi(1)
                      e(i,j,k,n) = -( tmult*(c(i,j,k,n) - c(i,j,k-1,n)) + a(n))
                   enddo
@@ -106,7 +105,7 @@
       if (dir.eq.0) then
          if (do_upwind.eq.1) then
             do n=0,nc-1
-               do k = lo(3),hi()
+               do k = lo(3),hi(3)
                   do j = lo(2),hi(2)
                      do i = lo(1),hi(1)+1
                         coef(i,j,k,n) = merge(lam(i-1,j,k,n),lam(i,j,k,n),vel(i,j,k)>=zero)

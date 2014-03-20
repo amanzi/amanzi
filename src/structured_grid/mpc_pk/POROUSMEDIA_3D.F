@@ -585,7 +585,7 @@ c ::: ----------------------------------------------------------------
       REAL_T    psv(DIMV(psv))
       REAL_T  psadx(DIMV(psadx))
       REAL_T  psady(DIMV(psady))
-      REAL_T  psady(DIMV(psadz))
+      REAL_T  psadz(DIMV(psadz))
       REAL_T  denom, vol, dx, dy, dz, dyz, dxz, dxy
       integer i, j, k
 
@@ -2884,11 +2884,12 @@ c ::: ---------------------------------------------------------
 c ::: Define linear pressure profile
 c ::: ---------------------------------------------------------
 
-      subroutine FORT_LINEAR_PRESSURE(p,DIMS(p),ncomps,
+      subroutine FORT_LINEAR_PRESSURE(lo,hi,p,DIMS(p),ncomps,
      &     dx,problo,probhi,ref_val,ref_loc,gradp)
 
       implicit none
 
+      integer lo(SDIM), hi(SDIM)
       integer DIMDEC(p)
       integer ncomps
       REAL_T  p(DIMV(p))
@@ -2903,16 +2904,16 @@ c ::: ---------------------------------------------------------
       integer i,j,k
       REAL_T  dp(SDIM), x, y,z
 
-      do k = ARG_L3(p), ARG_H3(p)
+      do k = lo(3), hi(3)
          z = MAX(problo(3), MIN(probhi(3), (dble(k)+half)*dx(3) + problo(3)))
          dp(3) = (z-ref_loc(3))*gradp(3)
-         do j = ARG_L2(p), ARG_H2(p)
+         do j = lo(2), hi(2)
             y = MAX(problo(2), MIN(probhi(2), (dble(j)+half)*dx(2) + problo(2)))
             dp(2) = (y-ref_loc(2))*gradp(2)
-            do i = ARG_L1(p), ARG_H1(p)
+            do i = lo(1), hi(1)
                x = MAX(problo(1), MIN(probhi(1), (dble(i)+half)*dx(1) + problo(1)))
                dp(1) = (x-ref_loc(1))*gradp(1)
-               p(i,j) = ref_val + dp(1) + dp(2) + dp(3)
+               p(i,j,k) = ref_val + dp(1) + dp(2) + dp(3)
             end do
          end do
       end do
@@ -2951,7 +2952,7 @@ c ::: ---------------------------------------------------------
                enddo
             enddo
          enddo
-      else if (gdir.eq.2) then
+      else if (gdir.eq.1) then
          do n = 1,nc
             fac = 1.d0 / rhog(n)
             do k = ARG_L3(ph), ARG_H3(ph)
@@ -2983,9 +2984,9 @@ c ::: ------------------------------------------------------------------
 c ::: Define approximate steady state condition based on inflow velocity
 c ::: ------------------------------------------------------------------
       
-      subroutine FORT_STEADYSTATE(rho,DIMS(rho),rhoval,muval,ncomps,
-     &     kappa,DIMS(kappa),krcoef,DIMS(krcoef),nkrcoef,
-     &     dx,inflow_vel,nc,grav)
+      subroutine FORT_STEADYSTATE_FAB(rho,DIMS(rho),rhoval,muval,ncomps,
+     &     kappa,DIMS(kappa),krcoef,DIMS(krcoef),nkrcoef,vel,DIMS(vel),
+     &     mask,DIMS(mask),dx,nc,grav,lo,hi)
 
       implicit none
 
@@ -2993,6 +2994,8 @@ c ::: ------------------------------------------------------------------
       integer DIMDEC(rho)
       integer DIMDEC(kappa)
       integer DIMDEC(krcoef)
+      integer DIMDEC(vel)
+      integer DIMDEC(mask)
       integer ncomps, nkrcoef
       REAL_T  rho(DIMV(rho),ncomps)
       REAL_T  kappa(DIMV(kappa))
@@ -3000,37 +3003,98 @@ c ::: ------------------------------------------------------------------
       REAL_T  rhoval(ncomps)
       REAL_T  muval(ncomps)
       REAL_T  dx(SDIM)
-      REAL_T  inflow_vel
+      REAL_T  vel(DIMV(vel))
+      REAL_T  mask(DIMV(mask))
       REAL_T  grav
+      integer lo(SDIM),hi(SDIM)
       
       integer i,j,k,l_kr_type
       REAL_T  l_kr_coef, l_sat_res
       REAL_T  vtot, gstar, sol
 
       vtot  = zero
-      do k = ARG_L3(rho), ARG_H3(rho)
-         do j = ARG_L2(rho), ARG_H2(rho)
-            do i = ARG_L1(rho), ARG_H1(rho)
-               l_kr_type = nint(krcoef(i,j,k,1))
-               l_kr_coef = krcoef(i,j,k,2)
-               l_sat_res = krcoef(i,j,k,3)
+      do k = lo(3), hi(3)
+         do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+               if (mask(i,j,k).gt.0) then
 
+                  l_kr_type = nint(krcoef(i,j,k,1))
+                  l_kr_coef = krcoef(i,j,k,2)
+                  l_sat_res = krcoef(i,j,k,3)
+               
+                  if (ncomps == 1) then
+                     gstar = -kappa(i,j,k)*rhoval(1)*grav
+                     call FORT_FIND_INV_RFLUX(sol,vel(i,j,k),gstar,muval,
+     &                    ncomps,l_kr_type,l_kr_coef)
+                  else
+                     gstar = -kappa(i,j,k)*(rhoval(1)-rhoval(2))*grav
+                     call FORT_FIND_INV_FLUX(sol,vel(i,j,k),nc,vtot,gstar,muval,
+     &                    ncomps,l_kr_type,l_kr_coef)
+                  end if
+               
+                  sol = sol*(1.0-l_sat_res)+l_sat_res
+            
+                  rho(i,j,k,1) = rhoval(1)*sol
+               
+                  if (ncomps > 1) then
+                     rho(i,j,k,2) = rhoval(2)*(1.0-sol)
+                  endif
+               
+               endif
+            end do
+         end do
+      end do 
+
+      end
+
+c ::: ------------------------------------------------------------------
+c ::: Define approximate steady state condition based on inflow velocity
+c ::: ------------------------------------------------------------------
+      
+      subroutine FORT_STEADYSTATE(rho,DIMS(rho),rhoval,muval,ncomps,
+     &     kappa,DIMS(kappa),matID,DIMS(matID),rmID,time,inflow_vel,
+     &     nc,grav,lo,hi)
+
+      implicit none
+
+      integer nc, rmID
+      integer lo(SDIM), hi(SDIM)
+      integer DIMDEC(rho)
+      integer DIMDEC(kappa)
+      integer DIMDEC(matID)
+      integer ncomps
+      REAL_T  rho(DIMV(rho),ncomps)
+      REAL_T  kappa(DIMV(kappa))
+      integer matID(DIMV(matID))
+      REAL_T  rhoval(ncomps)
+      REAL_T  muval(ncomps)
+      REAL_T  inflow_vel
+      REAL_T  grav, time
+      
+      integer i,j,k
+      REAL_T  l_kr_coef, l_sat_res
+      REAL_T  vtot, gstar, sol
+
+      vtot  = zero
+      do k = ARG_L3(rho), ARG_H3(rho)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
                if (ncomps == 1) then
                   gstar = -kappa(i,j,k)*rhoval(1)*grav
+                  call FORT_FIND_INV_RFLUX(sol,inflow_vel,gstar,muval,
+     &                 ncomps,rmID,matID,time)
                else
                   gstar = -kappa(i,j,k)*(rhoval(1)-rhoval(2))*grav
+                  call FORT_FIND_INV_FLUX(sol,inflow_vel,nc,vtot,gstar,muval,
+     &                 ncomps,rmID,matID,time)
                end if
-               
-               call FORT_FIND_INV_FLUX(sol,inflow_vel,nc,vtot,gstar,muval,
-     &              ncomps,l_kr_type,l_kr_coef)
-               
-               sol = sol*(1.0-l_sat_res)+l_sat_res
-               
-               rho(i,j,k,1) = rhoval(1)*sol
 
+               rho(i,j,k,1) = max(rho(i,j,k,1),rhoval(1)*sol)
+               
                if (ncomps > 1) then
-                  rho(i,j,k,2) = rhoval(2)*(1.0-sol)
+                  rho(i,j,k,2) = min(rho(i,j,k,2),rhoval(2)*(1.0-sol))
                endif
+
             end do
          end do
       end do 
@@ -3157,7 +3221,7 @@ c     x-faces
       REAL_T  bz(DIMV(bz))
       REAL_T  b1z(DIMV(b1z),NCROSS)
       
-      integer i,j
+      integer i,j,k
       REAL_T u00, u01, u10, u11
       REAL_T v00, v01, v10, v11
       REAL_T w00, w01, w10, w11

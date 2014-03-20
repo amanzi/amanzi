@@ -49,6 +49,48 @@ MatFiller::define(const Array<Geometry>& _geomArray,
   Initialize();
 }
 
+const Geometry&
+MatFiller::Geom(int level) const
+{
+  if (! Initialized() ) {
+    BoxLib::Abort("MatFiller not initialized");
+  }
+  return geomArray[level];
+}
+
+const IntVect&
+MatFiller::RefRatio(int crse_level) const
+{
+  return refRatio[crse_level];
+}
+
+iMultiFab&
+MatFiller::MaterialID(int level)
+{
+  if (! Initialized() ) {
+    BoxLib::Abort("MatFiller not initialized");
+  }
+  return materialID[level];
+}
+
+const std::map<std::string,int>&
+MatFiller::MatIdx() const
+{
+  if (! Initialized() ) {
+    BoxLib::Abort("MatFiller not initialized");
+  }
+  return matIdx;
+}
+
+int
+MatFiller::NumLevels() const
+{
+  if (! Initialized() ) {
+    BoxLib::Abort("MatFiller not initialized");
+  }
+  return nLevs;
+}
+
 void
 MatFiller::VerifyProperties()
 {
@@ -87,7 +129,7 @@ MatFiller::VerifyProperties()
 }
 
 void 
-MatFiller::SetMaterialID(int level, MultiFab& mf, int nGrow, bool ignore_mixed)
+MatFiller::SetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed) const
 {
   BoxArray unfilled(mf.boxArray());
   if (unfilled.size()==0) {
@@ -95,16 +137,20 @@ MatFiller::SetMaterialID(int level, MultiFab& mf, int nGrow, bool ignore_mixed)
   }
 
   unfilled.grow(nGrow);
-  MultiFab tmf(unfilled,1,0);
+  iMultiFab tmf(unfilled,1,0);
 
-  BL_ASSERT(level<NumLevels());
   const Geometry& geom = geomArray[level];
   const Real* dx = geom.CellSize();
-  FArrayBox tfab;
+  IArrayBox tfab;
   for (MFIter mfi(tmf); mfi.isValid(); ++mfi) {
-    FArrayBox& tfab = tmf[mfi];
+    IArrayBox& tfab = tmf[mfi];
     for (int j=0; j<materials.size(); ++j) {
-      int matID = matIdx[materials[j].Name()];
+      int matID = -1;
+      std::map<std::string,int>::const_iterator it = matIdx.find(materials[j].Name());
+      if (it!=matIdx.end()) {
+        matID = it->second;
+      }
+      BL_ASSERT(matID >= 0);
       materials[j].setVal(tfab,matID,0,dx);
     }
   }
@@ -112,7 +158,7 @@ MatFiller::SetMaterialID(int level, MultiFab& mf, int nGrow, bool ignore_mixed)
   if (!ignore_mixed && level<ba_mixed.size() && ba_mixed[level].size()>0) {
     BoxArray mixed = BoxLib::intersect(ba_mixed[level], unfilled);
     if (mixed.size()>0) {
-      MultiFab mmf(mixed,1,0);
+      iMultiFab mmf(mixed,1,0);
       mmf.setVal(-1); // Something invalid
       tmf.copy(mmf);
     }
@@ -138,17 +184,17 @@ MatFiller::Initialize()
   int finestLevel = ba_mixed.size();
   materialID.resize(finestLevel+1,PArrayManage);
   int nGrow = 0;
-  materialID.set(0,new MultiFab(BoxArray(geomArray[0].Domain()), 1, nGrow));  
+  materialID.set(0,new iMultiFab(BoxArray(geomArray[0].Domain()), 1, nGrow));  
   for (int lev=0; lev<ba_mixed.size(); ++lev) {
     BoxList fbl(ba_mixed[lev]); fbl.refine(RefRatio(lev));
     fbl.simplify(); fbl.maxSize(max_grid_size);
     BoxArray fba(fbl);
     BL_ASSERT(fba.isDisjoint());
     if (fba.size()!=0) { 
-      materialID.set(lev+1,new MultiFab(fba, 1, nGrow));
+      materialID.set(lev+1,new iMultiFab(fba, 1, nGrow));
     }
     else {
-      materialID.set(lev+1,new MultiFab);
+      materialID.set(lev+1,new iMultiFab);
     }
   }
   for (int lev=0; lev<materialID.size(); ++lev) {
@@ -177,7 +223,7 @@ MatFiller::FindMixedCells()
   }
 
   Box cbox;
-  FArrayBox finestFab, coarseFab;
+  IArrayBox finestFab, coarseFab;
   const Real* dxFinest = geomArray[nLevs-1].CellSize();
   const Box& box = geomArray[0].Domain();
   for (IntVect civ=box.smallEnd(), CEnd=box.bigEnd(); civ<=CEnd; box.next(civ)) {
@@ -228,43 +274,18 @@ MatFiller::FindMixedCells()
   return ba_array;
 }
 
-bool 
-MatFiller::SetPropertyDirect(Real               t,
-                             int                level,
-                             FArrayBox&         fab,
-                             const Box&         box,
-                             const std::string& pname,
-                             int                dComp,
-                             void*              ctx)
+bool
+MatFiller::CanDerive(const std::string& property_name) const
 {
-  Box ovlp = box & fab.box();
-  if (ovlp.ok()) {
+  return property_nComps.find(property_name) != property_nComps.end();
+}
 
-    // Make a handy data structure
-    std::vector<const Property*> props(materials.size());
-    for (int i=0; i<materials.size(); ++i) {
-      const Property* p = materials[i].Prop(pname);
-      if (p==0) return false;
-      props[i] = p;
-    }
-    
-    std::map<std::string,int>::const_iterator it=property_nComps.find(pname);
-    BL_ASSERT(it!=property_nComps.end());
-    int nComp = it->second;
-    BL_ASSERT(fab.nComp() >= dComp + nComp);
-    FArrayBox idfab(ovlp,nComp); idfab.setVal(-1);
-    const Geometry& geom = geomArray[level];
-    const Real* dx = geom.CellSize();
-    for (int j=0; j<materials.size(); ++j) {
-      int matID = matIdx[materials[j].Name()];
-      materials[j].setVal(idfab,matID,0,dx);
-    }
-    if (idfab.min(0)<0) return false;
-    for (IntVect iv=ovlp.smallEnd(), End=ovlp.bigEnd(); iv<=End; ovlp.next(iv)) {
-      props[idfab(iv,0)]->eval(t,level,Box(iv,iv),fab,0,ctx);
-    }
-  }
-  return true;
+int
+MatFiller::NComp(const std::string& property_name) const
+{
+  std::map<std::string,int>::const_iterator it=property_nComps.find(property_name);
+  BL_ASSERT(it!=property_nComps.end());
+  return it->second;
 }
 
 bool 
@@ -275,7 +296,7 @@ MatFiller::SetProperty(Real               t,
                        int                dComp,
                        int                nGrow,
                        void*              ctx,
-                       bool               ignore_mixed)
+                       bool               ignore_mixed) const
 {
   if (geomArray[level].isAnyPeriodic()) {
     BoxLib::Abort("Periodic not yet supported");
@@ -297,16 +318,19 @@ MatFiller::SetProperty(Real               t,
   BL_ASSERT(mf.nComp() >= dComp + nComp);
   MultiFab tmf(unfilled,nComp,0);
 
-  // Make a handy data structure
-  std::vector<const Property*> props(materials.size());
+  Array<Real> tmpv;
+  Array<Array<Real> > values(nComp, Array<Real>(materials.size()));
   for (int i=0; i<materials.size(); ++i) {
     const Property* p = materials[i].Prop(pname);
     if (p==0) {
       return false;
     }
-    props[i] = p;
+    p->Evaluate(t,tmpv);
+    for (int n=0; n<nComp; ++n) {
+      values[n][i] = tmpv[n];
+    }
   }
-  
+
   BoxArray baM;
   if (level<ba_mixed.size() && ba_mixed[level].size()>0) {
     baM = BoxLib::intersect(ba_mixed[level],unfilled); 
@@ -314,14 +338,16 @@ MatFiller::SetProperty(Real               t,
       baM.removeOverlap();
       MultiFab mixed(baM,nComp,0);
       if (ignore_mixed) {
-        MultiFab id(baM,nComp,0);
+        iMultiFab id(baM,nComp,0);
         SetMaterialID(level,id,0,ignore_mixed);
         for (MFIter mfi(id); mfi.isValid(); ++mfi) {
-          const FArrayBox& idfab = id[mfi];
+          const IArrayBox& idfab = id[mfi];
           FArrayBox& mfab = mixed[mfi];
           const Box& bx = mfi.validbox();
-          for (IntVect iv=bx.smallEnd(), End=bx.bigEnd(); iv<=End; bx.next(iv)) {
-            props[idfab(iv,0)]->eval(t,level,Box(iv,iv),mfab,0,ctx);
+          for (int n=0; n<nComp; ++n) {
+            FORT_FILLP (mfab.dataPtr(n), ARLIM(mfab.loVect()),  ARLIM(mfab.hiVect()),
+                        idfab.dataPtr(), ARLIM(idfab.loVect()), ARLIM(idfab.hiVect()),
+                        bx.loVect(), bx.hiVect(), values[n].dataPtr());
           }
         }
       } else {
@@ -343,6 +369,7 @@ MatFiller::SetProperty(Real               t,
   // Of the unfilled ones, first fill the ones we can at this level, then go to coarser
 
   if (unfilled.ok() && level<materialID.size()) {
+    ParallelDescriptor::Barrier();
     BL_ASSERT(materialID[level].boxArray().isDisjoint());
 
     // Find portion of unfilled that are fillable by non-mixed cells in the materialID struct at this level
@@ -353,17 +380,17 @@ MatFiller::SetProperty(Real               t,
       bl_fillable.simplify();
       BoxArray ba_fillable(bl_fillable);
       MultiFab fillData(ba_fillable,nComp,0);
-      MultiFab fillID(ba_fillable,1,0); 
-      BL_ASSERT(level<materialID.size() && materialID[level].ok() && materialID[level].nComp()>=1);
+      iMultiFab fillID(ba_fillable,1,0); 
       fillID.copy(materialID[level]); // guaranteed to be filled completely
       for (MFIter mfi(fillData); mfi.isValid(); ++mfi) {
 	const Box& ovlp = mfi.validbox();
-	const FArrayBox& idfab = fillID[mfi];
+	const IArrayBox& idfab = fillID[mfi];
 	FArrayBox& matfab = fillData[mfi];
-	for (IntVect iv=ovlp.smallEnd(), End=ovlp.bigEnd(); iv<=End; ovlp.next(iv)) {
-          BL_ASSERT(idfab(iv,0)>=0);
-          props[idfab(iv,0)]->eval(t,level,Box(iv,iv),matfab,0,ctx);
-	}
+        for (int n=0; n<nComp; ++n) {
+          FORT_FILLP (matfab.dataPtr(n), ARLIM(matfab.loVect()), ARLIM(matfab.hiVect()),
+                      idfab.dataPtr(),   ARLIM(idfab.loVect()),  ARLIM(idfab.hiVect()),
+                      ovlp.loVect(), ovlp.hiVect(), values[n].dataPtr());
+        }
       }
       tmf.copy(fillData);
     }
@@ -453,7 +480,7 @@ MatFiller::FillCellsOutsideDomain(Real               t,
                                   const std::string& pname,
                                   int                dComp,
                                   int                nComp,
-                                  int                nGrow)
+                                  int                nGrow) const
 {
   const Array<int> bc(2*BL_SPACEDIM,FOEXTRAP);
   const Geometry& geom = geomArray[level];
@@ -477,7 +504,7 @@ MatFiller::FillCoarseCells(Real               t,
                            const std::string& pname,
                            int                dComp,
                            int                nComp,
-                           void*              ctx)
+                           void*              ctx) const
 {
   int finestLevel = nLevs-1;
   if (level<finestLevel) {
@@ -524,7 +551,7 @@ MatFiller::CoarsenData(const FArrayBox&   fineFab,
                        int                dComp,
                        int                nComp,
                        const IntVect&     ref,
-                       const Property::CoarsenRule& rule) const
+                       const Property::CoarsenRule& rule)
 {
   // Shift to +ve indices so that coarsening stuff works correctly
   IntVect cshift;
@@ -561,7 +588,7 @@ MatFiller::RefineData(const FArrayBox&   crseFab,
                       int                dComp,
                       int                nComp,
                       const IntVect&     ref,
-                      const Property::RefineRule& rule) const
+                      const Property::RefineRule& rule)
 {
   // Shift to +ve indices so that coarsening stuff works correctly
   IntVect cshift;

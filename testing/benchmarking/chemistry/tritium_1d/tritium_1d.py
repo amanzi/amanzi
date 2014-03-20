@@ -81,7 +81,7 @@ if __name__ == "__main__":
     try:
         # hardwired for 1d-calcite: Tritium = component 0, last time = '71'
         time = '71'
-        comp = 'total_component_concentration.cell.Component 0 conc'
+        comp = 'total_component_concentration.cell.Tritium conc'
 
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
@@ -126,9 +126,9 @@ if __name__ == "__main__":
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
 
-        #pyplot.show()
-        #plt.savefig(root+"_1d.png",format="png")
-        #plt.close()
+    #pyplot.show()
+    plt.savefig(root+"_1d.png",format="png")
+    #plt.close()
 
     # finally:
     #    pass 

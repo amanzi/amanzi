@@ -7,7 +7,7 @@
 #include "CONSTANTS.H"
 #include "BC_TYPES.H"
 #include "BC_TYPES_PM.H"
-#include "POROUS_F.H"
+#include "RockUtil_F.H"
 #include "ArrayLim.H"
 
 #define SDIM 3
@@ -247,7 +247,7 @@ c     ::: y-dir  Harmonic in y, arithmetic in x, z
          fk = ratio(3)*k
          do j = lo(2),hi(2)
             fj = ratio(2)*j
-            do i = imin,imax
+            do i = lo(1),hi(1)
                fi = ratio(1)*i
                do kk = 0,ratio(3)-1
                   do ii = 0,ratio(1)-1
@@ -350,8 +350,9 @@ c     FIXME: add support for vector kappa
       REAL_T  kappa(DIMV(kappa))
       REAL_T  kappax(DIMV(kpx)),kappay(DIMV(kpy)),kappaz(DIMV(kpz))
 
-      integer i,j,k,ii,jj,kk,n
+      integer dir,i,j,k,ii,jj,kk,n
       integer fi,fj,fk
+      integer imin, imax, jmin, jmax, kmin, kmax
       REAL_T  k1, k2, kl1, kl2
 
       imin = lo(1) - 1
@@ -541,7 +542,7 @@ c ::: -----------------------------------------------------------
       integer   n,ci,cj,ck,fi,fj,fk,ii,jj,kk
       REAL      volInv, areaInv, tmp
 
-      areInv = 1.d0 / (ratio*ratio)
+      areaInv = 1.d0 / (ratio*ratio)
       volInv = 1.d0 / (ratio*ratio*ratio)
 
       kcrse = zero

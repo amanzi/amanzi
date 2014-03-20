@@ -174,8 +174,8 @@ TEST(MOAB_HEX_2x2x1)
 
   std::vector<unsigned int>  c2f(6);
   std::vector<int> c2fdirs;
-  Epetra_Map cell_map(mesh.cell_epetra_map(true));
-  Epetra_Map face_map(mesh.face_epetra_map(false));
+  Epetra_Map cell_map(mesh.cell_map(true));
+  Epetra_Map face_map(mesh.face_map(false));
 
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {

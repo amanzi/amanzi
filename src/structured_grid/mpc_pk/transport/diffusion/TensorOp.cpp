@@ -479,7 +479,7 @@ TensorOp::applyBC (MultiFab&      inout,
         exttdptr,                    ARLIM(fslo),              ARLIM(fshi),
         tdfab.dataPtr(bndryComp),    ARLIM(tdfab.loVect()),    ARLIM(tdfab.hiVect()),
         inout.box(gn).loVect(), inout.box(gn).hiVect(),
-        &nc, h[level]);
+        &num_comp, h[level]);
 #endif
     }
   }

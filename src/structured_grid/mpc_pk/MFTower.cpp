@@ -956,7 +956,8 @@ MFTower::SetVal(Real     val,
     const Layout& layout = GetLayout();
     for (int lev=0; lev<numLevs; ++lev)
     {
-        mft[lev].setVal(val,sComp,nComp);
+        int nGrow = mft[lev].nGrow();
+        mft[lev].setVal(val,sComp,nComp,nGrow);
     }
 }
 

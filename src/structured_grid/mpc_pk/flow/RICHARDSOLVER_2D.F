@@ -7,6 +7,7 @@
 #include "CONSTANTS.H"
 #include "RICHARDSOLVER_F.H"
 #include "ArrayLim.H"
+#include "RockManager_F.H"
 
 #define SDIM 2
 
@@ -223,71 +224,45 @@ c     On input, Res contains Div(rho.DarcyVel)
       enddo
       end
 
-      subroutine FORT_RS_ALTUP(rhosat,DIMS(rhosat),p,DIMS(p),
-     &     dp,DIMS(dp),kappa,DIMS(kappa),coef,DIMS(coef),n_coef,
-     &     ls_factor,lo,hi,sTOL)
+      subroutine FORT_RS_ALTUP(rhosat,DIMS(rhosat),
+     &     del_p,DIMS(del_p),alpha,DIMS(alpha),phi,DIMS(phi),
+     &     matID,DIMS(matID),ls_factor,sThreshVS,rmID,time,lo,hi)
 
       implicit none
 
 #include "probdata.H"
 
+      integer rmID,lo(SDIM),hi(SDIM)
+      REAL_T ls_factor,sThreshVS,time
       integer DIMDEC(rhosat)
       integer DIMDEC(p)
-      integer DIMDEC(dp)
-      integer DIMDEC(kappa)
-      integer DIMDEC(coef)
-      integer n_coef
-      REAL_T  ls_factor
-      integer lo(SDIM),hi(SDIM)
-      REAL_T  rhosat(DIMV(rhosat),ncomps)
-      REAL_T  p(DIMV(p),ncomps)
-      REAL_T  dp(DIMV(dp),ncomps)
-      REAL_T  kappa(DIMV(kappa))
-      REAL_T  coef(DIMV(coef),n_coef)
-      REAL_T  sTOL
+      integer DIMDEC(del_p)
+      integer DIMDEC(alpha)
+      integer DIMDEC(phi)
+      integer DIMDEC(matID)
+      REAL_T  rhosat(DIMV(rhosat))
+      REAL_T   del_p(DIMV(del_p))
+      REAL_T   alpha(DIMV(alpha))
+      REAL_T     phi(DIMV(phi))
+      integer  matID(DIMV(matID))
 
       integer i,j
-      integer l_cpl_type
-      REAL_T  l_cpl_coef, l_sigma, l_sat_res, dpcdse, tphi, pcap_new
-      REAL_T  rs_old, s_old, s_new, ds, p_new, pcap_old, rs_new, ds_1
-      logical is_saturated
-      REAL_T  saturated_s_thresh
-      parameter (saturated_s_thresh = 1.d0 - 1.d-8)
+      REAL_T dsdpc, del_s, s_k, s_kp1, rInv, pcap_k, pcap_kp1, lsInv
 
-      tphi = one
-      if (ncomps.ne.1) then
-         call bl_pd_abort('Richard solver only works for single comp')
-      endif
-
+      rInv = 1/rhoval(1)
+      lsInv = 1 / ls_factor
       do j = lo(2),hi(2)
          do i = lo(1),hi(1)
-
-            l_cpl_type = nint(coef(i,j,1))
-            l_cpl_coef = coef(i,j,2)
-            l_sigma    = coef(i,j,3)
-            l_sat_res  = coef(i,j,4)
-
-
-c     Get s^{k+1,*} = s^{k}  -  (ds/dp)^k . fac.dp,  ds/dp = - 1 / [(dpc/dse).(dse/ds)] 
-c     If s^{k+1,*} < sTOL, then s^{k+1} = s^{k+1,*}, p^{k+1} from s^{k+1}
-c       else p^{k+1} = p^{k} - fac.dp, s^{k+1} from p^{k+1}
-c
-            rs_old = rhosat(i,j,1) 
-            s_old = rs_old / rhoval(1)
-            
-            call get_dcplds(dpcdse,rs_old,rhoval(1),tphi,kappa(i,j),
-     &           l_sigma,ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
-            ds = -ls_factor*(one-l_sat_res)*dp(i,j,1)/dpcdse
-            
-            s_new = s_old - ds
-            s_new = MIN(one,MAX(zero,s_new))
-            
-            if (s_new .lt. sTOL) then
-               call get_cpl(pcap_new,s_new*rhoval(1),rhoval(1),tphi,
-     &              kappa(i,j),l_sigma,ncomps,l_sat_res,l_cpl_type)
-               p_new = -pcap_new
-               dp(i,j,1) = (p(i,j,1) - p_new)/ls_factor
+            s_k = rhosat(i,j)*rInv
+            call ROCK_MANAGER_DSDPCAP(rmID,s_k,matID(i,j),time,dsdpc,1)
+            del_s = - ls_factor * del_p(i,j) * dsdpc * rInv
+            s_kp1 = s_k - del_s
+            if (s_kp1 .lt. sThreshVS) then
+               call ROCK_MANAGER_PCAP(rmID,s_k  ,matID(i,j),time,pcap_k  ,1)
+               call ROCK_MANAGER_PCAP(rmID,s_kp1,matID(i,j),time,pcap_kp1,1)
+               del_p(i,j) = (pcap_kp1 - pcap_k) * lsInv
             endif
          end do 
       end do
+
       end

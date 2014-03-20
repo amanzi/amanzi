@@ -1,5 +1,5 @@
-#ifndef _POROUS_F_H_
-#define _POROUS_F_H_
+#ifndef _RockUtil_F_H_
+#define _RockUtil_F_H_
 
 #ifdef BL_LANG_FORT
 #    define FORT_INITKAPPA   initkappa
@@ -151,4 +151,4 @@ extern "C" {
   
 }
 #endif
-#endif /*_POROUS_F_H_*/
+#endif /*_RockUtil_F_H_*/

@@ -28,6 +28,8 @@
 
 -ksp_rtol 1.e-16
 -ksp_atol 1.e-16
+-ksp_rtol 1.e-20
+-ksp_atol 1.e-20
 -ksp_divtol 1000
 #-ksp_diagonal_scale
 #-ksp_monitor_true_residual
@@ -66,9 +68,10 @@
 #-snes_view
 -snes_monitor
 #-snes_type tr
--snes_ls basic
-#-snes_ls cubic
-#-snes_ls_monitor
+
+#  LS type: basic, bt, l2, cp, shell
+-snes_linesearch_type l2
+
 #-snes_max_it 30
 -snes_atol 1.e-10
 -snes_rtol 1.e-10

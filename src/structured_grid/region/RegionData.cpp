@@ -1,10 +1,7 @@
 #include <RegionData.H>
-#include <PorousMedia.H>
-#include <POROUSMEDIA_F.H>
-
 
 RegionData::RegionData(const std::string&    label,
-                       const PArray<Region>& regions,
+                       const Array<const Region*>& regions,
                        const std::string&    typeStr,
                        const Array<Real>&    vals)
     : label(label), type(typeStr), vals(vals), nComp(vals.size())
@@ -13,7 +10,7 @@ RegionData::RegionData(const std::string&    label,
 }
 
 RegionData::RegionData(const std::string&    label,
-                       const PArray<Region>& regions,
+                       const Array<const Region*>& regions,
                        const std::string&    typeStr,
                        Real                  val)
     : label(label), type(typeStr), nComp(1), vals(Array<Real>(nComp,val))
@@ -23,18 +20,15 @@ RegionData::RegionData(const std::string&    label,
 
 
 void
-RegionData::setRegions(const PArray<Region>& regions_)
+RegionData::setRegions(const Array<const Region*>& regions_)
 {
-    regions.clear();
     int nregions=regions_.size();
 
     // Get a copy of the pointers to regions in a structure that wont 
     //   remove them when it leaves scope
-    regions.resize(nregions,PArrayNoManage);
-    for (int i=0; i<nregions; ++i)
-    {
-        Region& r = const_cast<Region&>(regions_[i]);
-        regions.set(i,&(r));
+    regions.resize(nregions);
+    for (int i=0; i<nregions; ++i) {
+      regions[i] = regions_[i];
     }
 }
 
@@ -50,7 +44,7 @@ RegionData::apply(FArrayBox&  fab,
     FArrayBox mask(box,1); mask.setVal(-1);
     for (int j=0; j<regions.size(); ++j)
     { 
-        regions[j].setVal(mask,1,0,dx,0);
+        regions[j]->setVal(mask,1,0,dx,0);
     }
     for (IntVect iv=box.smallEnd(); iv<=box.bigEnd(); box.next(iv)) {
         if (mask(iv,0) > 0) {
@@ -65,7 +59,7 @@ ArrayRegionData::ArrayRegionData(const std::string&                label,
                                  const Array<Array<Real> >&        x,
                                  const Array<Array<Real> >&        y,
                                  const Array<Array<std::string> >& form,
-                                 const PArray<Region>&             regions,
+                                 const Array<const Region*>&             regions,
                                  const std::string&                typeStr)
     : RegionData(label,regions,typeStr,Array<Real>(x.size()))
 {
@@ -81,7 +75,7 @@ ArrayRegionData::ArrayRegionData(const std::string&       label,
                                  const Array<Real>&       x,
                                  const Array<Real>&       y,
                                  const Array<std::string> form,
-                                 const PArray<Region>&    regions,
+                                 const Array<const Region*>&    regions,
                                  const std::string&       typeStr,
                                  int                      nComp)
     : RegionData(label,regions,typeStr,Array<Real>(nComp))

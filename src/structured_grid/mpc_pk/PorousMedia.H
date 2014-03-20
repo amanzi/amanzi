@@ -30,10 +30,13 @@
 
 // Amanzi chemistry
 #ifdef ALQUIMIA_ENABLED
+#include <ChemistryEngine.hh>
 #else
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
 #endif
+
+#include "Teuchos_ParameterList.hpp"
 
 static Real BL_ONEATM = 101325.0;
 
@@ -83,16 +86,15 @@ public:
         pmef(0), value(), min_time(), max_time(), max_level() {}
     
     PM_Error_Value (Real min_time, Real max_time, int max_level, 
-                    const PArray<Region>& regions);
+                    const Array<const Region*>& regions);
 
     PM_Error_Value (PMEF pmef, Real value, Real min_time,
-                    Real max_time, int max_level, const PArray<Region>& regions);
+                    Real max_time, int max_level, const Array<const Region*>& regions);
 
     virtual ~PM_Error_Value () {}
     
-    virtual ErrorRec::ErrorFunc* clone () const
-    {
-        return new PM_Error_Value(pmef,value,min_time,max_time,max_level,regions);
+    virtual ErrorRec::ErrorFunc* clone () const {
+      return new PM_Error_Value(pmef,value,min_time,max_time,max_level,regions);
     }
 
     bool regionOnly() const {return pmef==0;}
@@ -109,14 +111,14 @@ public:
     Real MinTime() const {return min_time;}
     Real MaxTime() const {return max_time;}
     Real Value() const {return value;}
-    const PArray<Region>& Regions () const {return regions;}
+    const Array<const Region*>& Regions () const {return regions;}
 
 protected:
-    void set_regions(const PArray<Region>& regions);
+    void set_regions(const Array<const Region*>& regions);
     PMEF pmef;
     Real value, min_time, max_time;
     int max_level;
-    PArray<Region> regions;
+    Array<const Region*> regions;
 };
 
 class PorousMedia
@@ -139,6 +141,9 @@ public:
 	       Real            time);
 
   virtual ~PorousMedia ();
+
+  static const Teuchos::ParameterList&InputParameterList() {return input_parameter_list;}
+  static void SetInputParameterList(const Teuchos::ParameterList& pl) {input_parameter_list=pl;}
 
   virtual void restart (Amr&          papa,
 			std::istream& is,
@@ -375,7 +380,7 @@ public:
 				       const Orientation& _Face); 
 
   static const Array<std::string>& UserDerives() {return user_derive_list;}
-  static PArray<Region>& Regions() {return regions;}
+
   static PArray<Material>& Materials() {return materials;}
   static const Array<Real>& Density() {return density;}
   static const Array<Real>& Viscosity() {return muval;}
@@ -400,7 +405,6 @@ public:
   static void setup_list ();
   static void read_params ();   // Read input file
   static void read_geometry ();
-  static void read_rock ();
   static void read_prob ();
   static void read_comp (); 
   static void read_tracer (); 
@@ -408,7 +412,6 @@ public:
   static void read_observation (); 
   static void read_chem (); 
 
-  static PArray<Region> build_region_PArray(const Array<std::string>& region_names);
   static const Material& find_material(const std::string& name);
 
   virtual void sum_integrated_quantities ();
@@ -780,12 +783,14 @@ public:
 
   //
   // Calculate the dt term in the jacobian for p-formulation
+  //  (alpha = dN /dPc)
   //
-  void calc_richard_alpha (MultiFab*     alpha,
-			   const Real    time);
-
-  void calc_richard_alpha (MultiFab*       alpha,
-			   const MultiFab& S) const;
+  void calc_richard_alpha (MultiFab&       alpha,
+                           const MultiFab& N,
+                           Real            time,
+                           int             sComp,
+                           int             dComp,
+                           int             nGrow) const;
   //
   // Calculate divergence of velocity boundary condition 
   //
@@ -797,46 +802,44 @@ public:
   //
   // Calculate capillary pressure
   //
-  void calcCapillary (const Real time);
-  void calcCapillary (MultiFab*       pc,
-		      const MultiFab& S,
-		      int             nComp = 1);
-  void calcCapillary (FArrayBox&       pc,
-		      const FArrayBox& S,
-		      const FArrayBox& rockphi,
-		      const FArrayBox& rockkappa,
-		      const FArrayBox& cplcoef,
-		      const Box&       grids,
-		      const Array<int>& s_bc);
+  void calcCapillary (Real time);
+  void calcCapillary (MultiFab&       pc,
+                      const MultiFab& N,
+                      Real            time,
+                      int             sComp,
+                      int             dComp,
+                      int             nGrow) const;
   void smooth_pc (MultiFab* pc);
   //
   // Calculate inverse capillary pressure
   //
-  static void calcInvCapillary (FArrayBox&       n,
-                                const FArrayBox& pc,
-                                const FArrayBox& rock_phi,
-                                const FArrayBox& kappa,
-                                const FArrayBox& cpl_coef);
-
-  void calcInvCapillary (MultiFab& N,const MultiFab& pc);
+  void calcInvCapillary (Real time);
+  void calcInvCapillary (MultiFab&       N,
+                         const MultiFab& pc,
+                         Real            time,
+                         int             sComp,
+                         int             dComp,
+                         int             nGrow) const;
   //
   // Calculate inverse pressure
   //
-  void calcInvPressure (MultiFab& N,const MultiFab& P) const;
-  void calcInvPressure (FArrayBox& n,
-                        const FArrayBox& pressure,
-                        const FArrayBox& rock_phi,
-                        const FArrayBox& kappa,
-                        const FArrayBox& cpl_coef) const;
+  void calcInvPressure (MultiFab&       N,
+                        const MultiFab& P,
+                        Real            time,
+                        int             sComp,
+                        int             dComp,
+                        int             nGrow) const;
   //
   // Calculate lambda = relative permeability/mu
   //
-  static void calcLambda(FArrayBox&       lambda,
-                         const FArrayBox& N,
-                         const FArrayBox& kr_coef);
+  void calcLambda (MultiFab&       lambda,
+                   const MultiFab& N,
+                   Real            time,
+                   int             sComp,
+                   int             dComp,
+                   int             nGrow) const;
+  void calcLambda (const Real time);
 
-  void calcLambda (const Real time, MultiFab* lbd_cc = 0);
-  void calcLambda (MultiFab* lbd, const MultiFab &N);
   //
   // Calculate first derivative of lambda
   //
@@ -980,6 +983,11 @@ public:
   static int Model() {return (int)model;}
 
   PMAmr* PMParent();
+  const PMAmr* PMParent() const;
+
+#ifdef ALQUIMIA_ENABLED
+  static Amanzi::AmanziChemistry::ChemistryEngine* GetChemistryEngine() {return chemistry_engine;}
+#endif
 
   MultiFab* UMac_Prev() {return u_mac_prev;}
   MultiFab* UMac_Curr() {return u_mac_curr;}
@@ -1082,7 +1090,7 @@ protected:
   bool            FillPatchedOldState_ok;
 
   static Real geometry_eps;
-  static PArray<Region> regions;
+  //static PArray<Region> regions;
   static std::string surf_file;
 
   static PArray<Material> materials;
@@ -1180,6 +1188,7 @@ protected:
 #ifdef AMANZI
 
 #ifdef ALQUIMIA_ENABLED
+  static Amanzi::AmanziChemistry::ChemistryEngine* chemistry_engine;
 #else
   static PArray<Amanzi::AmanziChemistry::SimpleThermoDatabase> chemSolve;
   static std::string amanzi_database_file;
@@ -1215,6 +1224,7 @@ protected:
   MultiFab* specific_storage;
   MultiFab* kr_coef;
   MultiFab* cpl_coef;
+  iMultiFab* materialID;
   //
   // lambda values and its derivative
   //
@@ -1418,7 +1428,6 @@ protected:
   static bool richard_scale_solution_before_solve;
   static bool richard_semi_analytic_J;
   static bool richard_centered_diff_J;
-  static bool richard_subgrid_krel;
   static Real richard_variable_switch_saturation_threshold;
   static Real richard_dt_thresh_pure_steady;
   //
@@ -1445,6 +1454,7 @@ protected:
   MultiFab *sat_old_cached, *sat_new_cached;
   Real t_sat_old_cached, t_sat_new_cached;
 
+  static Teuchos::ParameterList input_parameter_list;
 };
 
 #endif /*_PorousMedia_H_*/

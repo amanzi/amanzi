@@ -10,12 +10,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "chemistry_pk_base.hh"
-
-#include "alquimia_memory.h"
-#include "alquimia_util.h"
-#include "alquimia_constants.h"
-#include "alquimia_containers.h"
-#include "alquimia_interface.h"
+#include "ChemistryEngine.hh"
 
 // forward declarations
 class Epetra_MultiVector;
@@ -33,7 +28,8 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   // to this PK so that it has access to all information about the 
   // problem.
   Alquimia_Chemistry_PK(const Teuchos::ParameterList& param_list,
-                        Teuchos::RCP<Chemistry_State> chem_state);
+                        Teuchos::RCP<Chemistry_State> chem_state,
+                        Teuchos::RCP<ChemistryEngine> chem_engine);
 
   ~Alquimia_Chemistry_PK();
 
@@ -107,27 +103,22 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   // parameter lists
   Teuchos::ParameterList main_param_list_, chem_param_list_;
 
-  // Alquimia data structures.
   bool chem_initialized_;
-  AlquimiaInterface chem_;
-  AlquimiaEngineStatus chem_status_;
-  AlquimiaData chem_data_;
 
-  // Mapping of region names to geochemical conditions. A region is identified 
+  // Chemistry engine.
+  Teuchos::RCP<ChemistryEngine> chem_engine_;
+
+  // Alquimia data structures.
+  AlquimiaState alq_state_;
+  AlquimiaMaterialProperties alq_mat_props_;
+  AlquimiaAuxiliaryData alq_aux_data_;
+  AlquimiaAuxiliaryOutputData alq_aux_output_;
+
+  // Mapping of region names to geochemical condition names. A region is identified 
   // by a string, and all cells within a region will have all geochemical 
-  // conditions in the corresponding condition vector applied to them. NOTE
-  // that these maps do not own the geochemical conditions--they only hold 
-  // pointers to the objects.
-  std::map<std::string, AlquimiaGeochemicalCondition*> chem_initial_conditions_;
-  std::map<std::string, AlquimiaGeochemicalCondition*> chem_boundary_conditions_;
+  // conditions in the corresponding condition vector applied to them. 
+  std::map<std::string, std::string> chem_initial_conditions_;
   
-  // Vector that takes responsibility for ownership of geochemical conditions.
-  std::vector<AlquimiaGeochemicalCondition*> all_chem_conditions_;
-
-  // Back-end engine name and input file.
-  std::string chem_engine_inputfile_;
-  std::string chem_engine_name_;
-
   double current_time_;
   double saved_time_;
 
@@ -135,33 +126,30 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   std::vector<std::string> aux_names_;
   Teuchos::RCP<Epetra_MultiVector> aux_output_;
 
-  // Auxiliary data, maintained by Amanzi and updated
-  Teuchos::RCP<Epetra_MultiVector> aux_data_;
-
   void UpdateChemistryStateStorage(void);
-  int InitializeSingleCell(int cellIndex, AlquimiaGeochemicalCondition* condition);
+  int InitializeSingleCell(int cellIndex, const std::string& condition);
   int AdvanceSingleCell(double delta_time, 
                         Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star,
-                        int cellIndex, AlquimiaGeochemicalCondition* condition);
+                        int cellIndex);
 
   void ParseChemicalConditions(const Teuchos::ParameterList& param_list,
-                               std::map<std::string, AlquimiaGeochemicalCondition*>& conditions);
+                               std::map<std::string, std::string>& conditions);
   void XMLParameters(void);
-  void SetupAuxiliaryOutput(void);
 
-  // These helpers copy data at the given cell from Amanzi's chemistry state to 
-  // their corresponding locations within Alquimia.
-  void CopyAmanziStateToAlquimia(
-      const int cell_id,
-      Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
-  void CopyAmanziMaterialPropertiesToAlquimia(
-      const int cell_id,
-      Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
-
-  // These helpers copy Alquimia's data to Amanzi's chemistry state at the 
+  // These helpers copy data back and forth between a set of buffers and the chemistry state.
   // given cell.
-  void CopyAlquimiaStateToAmanzi(const int cell_id);
-  void CopyAlquimiaMaterialPropertiesToAmanzi(const int cell_id);
+  void CopyAmanziStateToAlquimia(const int cell_id,
+                                 Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
+                                 AlquimiaMaterialProperties& mat_props,
+                                 AlquimiaState& state,
+                                 AlquimiaAuxiliaryData& aux_data);
+
+  void CopyAlquimiaStateToAmanzi(const int cell_id,
+                                 const AlquimiaMaterialProperties& mat_props,
+                                 const AlquimiaState& state,
+                                 const AlquimiaAuxiliaryData& aux_data,
+                                 const AlquimiaAuxiliaryOutputData& aux_output,
+                                 Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
 
 };
 

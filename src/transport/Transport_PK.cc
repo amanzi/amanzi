@@ -41,8 +41,31 @@ namespace AmanziTransport {
 ****************************************************************** */
 Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
                            std::vector<std::string>& component_names)
-    : S_(S), component_names_(component_names)
 {
+  Construct_(glist, S, component_names);
+}
+
+#ifdef ALQUIMIA_ENABLED
+Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
+                           Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
+                           Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
+    : chem_state_(chem_state), chem_engine_(chem_engine)
+{
+  // Retrieve the component names from the chemistry engine.
+  std::vector<std::string> comp_names;
+  chem_engine_->GetPrimarySpeciesNames(comp_names);
+  Construct_(glist, S, comp_names);
+}
+#endif
+
+void Transport_PK::Construct_(Teuchos::ParameterList& glist, 
+                              Teuchos::RCP<State> S,
+                              std::vector<std::string>& component_names)
+{
+  vo_ = NULL;
+  S_ = S;
+  component_names_ = component_names;
+
   parameter_list = glist.sublist("Transport");
   preconditioners_list = glist.sublist("Preconditioners");
   solvers_list = glist.sublist("Solvers");
@@ -99,14 +122,15 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
   }
 }
 
-
 /* ******************************************************************
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
 Transport_PK::~Transport_PK()
 { 
-  delete vo_;
+  if (vo_ != NULL) {
+    delete vo_;
+  }
   for (int i=0; i<bcs.size(); i++) delete bcs[i]; 
 }
 

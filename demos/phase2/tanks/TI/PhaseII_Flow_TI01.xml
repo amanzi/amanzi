@@ -31,6 +31,7 @@
     <Parameter name="Flow Model" type="string" value="Richards"/>
     <Parameter name="Transport Model" type="string" value="Off"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
+
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0"/>
@@ -62,19 +63,16 @@
           <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e11"/>
           <Parameter name="richard_solver_verbose" type="int" value="2"/>
           <Parameter name="richard_ls_acceptance_factor" type="double" value="200"/>
-          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-13"/>
+          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-11"/>
           <Parameter name="richard_upwind_krel" type="int" value="1"/>
           <Parameter name="richard_scale_solution_before_solve" type="bool" value="true"/>
-          <Parameter name="richard_scale_solution_before_solve" type="bool" value="false"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="true"/>
           <Parameter name="steady_do_grid_sequence" type="int" value="1"/>
-          <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{1.e-1, 1.e-3, 1.e-7}"/>
-          <Parameter name="richard_dt_thresh_pure_steady" type="double" value="1.e11"/>
-          <!-- <Parameter name="steady_record_file" type="string" value="JUNK"/> -->
-
-
+          <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{1.e-3, 1.e-3, 1.e-3, 1.e-3, 1.e-3}"/>
+          <Parameter name="richard_dt_thresh_pure_steady" type="double" value="1.e8"/>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="Iterative Linear Solver Control">
         <ParameterList name="Multigrid Algorithm">
           <ParameterList name="Expert Settings">
@@ -84,12 +82,12 @@
       </ParameterList>
 
       <ParameterList name="Adaptive Mesh Refinement Control">
-        <Parameter name="Number Of AMR Levels" type="int" value="4"/>
-        <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4}"/>
+        <Parameter name="Number Of AMR Levels" type="int" value="3"/>
+        <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4, 4, 4}"/>
         <Parameter name="Regrid Interval" type="Array(int)" value="{200000}"/>
-        <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2}"/>
-        <Parameter name="Maximum Grid Size" type="Array(int)" value="{64, 64, 64, 64}"/>
-        <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1, 1}"/>
+        <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2, 2, 2}"/>
+        <Parameter name="Maximum Grid Size" type="Array(int)" value="{32, 32, 32, 32, 32, 32}"/>
+        <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1, 1, 1, 1}"/>
 	<Parameter name="Refinement Indicators" type="Array(string)" value="{Soil ref, wasteFF ref, Conc ref, Liner ref, Grout ref}"/>
 
         <ParameterList name="Soil ref">
@@ -100,7 +98,7 @@
         <ParameterList name="wasteFF ref">
           <Parameter name="Regions" type="Array(string)" value="{TankWaste, TankFFfloor, TankFFwall}"/>
           <Parameter name="Inside Region" type="bool" value="TRUE"/>
-          <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+          <Parameter name="Maximum Refinement Level" type="int" value="5"/>
         </ParameterList>
         <ParameterList name="Conc ref">
           <Parameter name="Regions" type="Array(string)" value="{TankConcFloor, TankConcWall, TankConcRoof1, TankConcRoof2}"/>
@@ -110,7 +108,7 @@
         <ParameterList name="Liner ref">
           <Parameter name="Regions" type="Array(string)" value="{TankLinerFloor, TankLinerWall, TankLinerRoof}"/>
           <Parameter name="Inside Region" type="bool" value="TRUE"/>
-          <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+          <Parameter name="Maximum Refinement Level" type="int" value="5"/>
         </ParameterList>
         <ParameterList name="Grout ref">
           <Parameter name="Regions" type="Array(string)" value="{TankGrout}"/>
@@ -228,9 +226,6 @@
   </ParameterList>
 
   <ParameterList name="Material Properties">
-    <Parameter name="Permeability Output File" type="string" value="flow01/kp"/>
-    <Parameter name="Porosity Output File" type="string" value="flow01/pp"/>
-    <Parameter name="Saturation Threshold For Kr" type="double" value="0.9995"/>
 
     <ParameterList name="Soil">
       <ParameterList name="Porosity: Uniform">
@@ -245,6 +240,9 @@
         <Parameter name="Sr" type="double" value="0.354"/>
         <Parameter name="m" type="double" value="0.291"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+        <Parameter name="krel smoothing interval" type="double" value=".00035"/>
+        <!-- <Parameter name="WRM Plot File" type="string" value="flow01/kr_soil.dat"/> -->
+        <!-- <Parameter name="WRM Plot File Number Of Points" type="int" value="1000001"/> -->
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{SoilLower, SoilUpper, SoilRight}"/>
     </ParameterList>
@@ -262,6 +260,9 @@
         <Parameter name="Sr" type="double" value="0.052"/>
         <Parameter name="m" type="double" value="0.314"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+        <Parameter name="krel smoothing interval" type="double" value=".000081"/>
+        <!-- <Parameter name="WRM Plot File" type="string" value="flow01/kr_gravel.dat"/> -->
+        <!-- <Parameter name="WRM Plot File Number Of Points" type="int" value="1000001"/> -->
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{TankWaste}"/>
     </ParameterList>
@@ -279,6 +280,9 @@
         <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.485"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+        <Parameter name="krel smoothing interval" type="double" value="13.35"/>
+        <!-- <Parameter name="WRM Plot File" type="string" value="flow01/kr_concrete.dat"/> -->
+        <!-- <Parameter name="WRM Plot File Number Of Points" type="int" value="1000001"/> -->
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{TankConcFloor, TankConcWall, TankConcRoof1, TankConcRoof2}"/>
     </ParameterList>
@@ -296,6 +300,9 @@
         <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.485"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+        <Parameter name="krel smoothing interval" type="double" value="13.35"/>
+        <!-- <Parameter name="WRM Plot File" type="string" value="flow01/kr_liner.dat"/> -->
+        <!-- <Parameter name="WRM Plot File Number Of Points" type="int" value="1000001"/> -->
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{TankLinerFloor, TankLinerWall, TankLinerRoof}"/>
     </ParameterList>
@@ -313,6 +320,9 @@
         <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.485"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+        <Parameter name="krel smoothing interval" type="double" value="13.35"/>
+        <!-- <Parameter name="WRM Plot File" type="string" value="flow01/kr_grout.dat"/> -->
+        <!-- <Parameter name="WRM Plot File Number Of Points" type="int" value="1000001"/> -->
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{TankGrout, TankFFfloor, TankFFwall}"/>
     </ParameterList>
@@ -342,7 +352,7 @@
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
-        <Parameter name="Reference Value" type="double" value="0"/>
+        <Parameter name="Reference Value" type="double" value="101325"/>
         <Parameter name="Reference Coordinate" type="Array(double)" value="{0,0}"/>
         <Parameter name="Gradient Value" type="Array(double)" value="{0,-9789.3474 }"/>
       </ParameterList>

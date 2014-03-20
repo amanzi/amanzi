@@ -89,6 +89,9 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
         Teuchos::writeParameterListToXmlFile(converted_parameter_list,EchoXMLfile);
       }
 
+    // Stuff away a static copy of the input parameters
+    PorousMedia::SetInputParameterList(converted_parameter_list);
+
     BoxLib::Initialize_ParmParse(converted_parameter_list);
 
     const Real run_strt = ParallelDescriptor::second();

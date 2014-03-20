@@ -21,7 +21,7 @@ MultiFabCellIterator::idx_to_intvect(const Box& box, long idx)
   long newVal = idx;
 #if BL_SPACEDIM==3
   retIdx[2] = (int)(newVal/(size[0]*size[1]));
-  newVal -= retVal[2] * size[0]*size[1];
+  newVal -= retIdx[2] * size[0]*size[1];
 #endif
   retIdx[1] = (int)(newVal/size[0]);
   retIdx[0] = newVal - retIdx[1] * size[0];

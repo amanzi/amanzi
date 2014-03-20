@@ -16,8 +16,6 @@
 #include <PROB_PM_F.H>
 #include <PMAMR_Labels.H>
 #include <PMAmr.H> 
-#include <POROUS_F.H>
-#include <WritePlotfile.H>
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -97,8 +95,7 @@ int PorousMedia::num_state_type;
 //
 // Region.
 //
-std::string    PorousMedia::surf_file;
-PArray<Region> PorousMedia::regions;
+std::string      PorousMedia::surf_file;
 PArray<Material> PorousMedia::materials;
 //
 // Rock
@@ -271,6 +268,7 @@ PorousMedia::MODEL_ID PorousMedia::model;
 #ifdef AMANZI
 
 #ifdef ALQUIMIA_ENABLED
+Amanzi::AmanziChemistry::ChemistryEngine* PorousMedia::chemistry_engine;
 #else
 std::string PorousMedia::amanzi_database_file;
 std::string PorousMedia::amanzi_activity_model;
@@ -356,7 +354,6 @@ int  PorousMedia::richard_pressure_maxorder;
 bool PorousMedia::richard_scale_solution_before_solve;
 bool PorousMedia::richard_semi_analytic_J;
 bool PorousMedia::richard_centered_diff_J;
-bool PorousMedia::richard_subgrid_krel;
 Real PorousMedia::richard_variable_switch_saturation_threshold;
 Real PorousMedia::richard_dt_thresh_pure_steady;
 
@@ -371,6 +368,10 @@ namespace
 {
     static void PM_Setup_CleanUpStatics() 
     {
+#ifdef ALQUIMIA_ENABLED
+      Amanzi::AmanziChemistry::ChemistryEngine *chemistry_engine = PorousMedia::GetChemistryEngine();
+      delete chemistry_engine; chemistry_engine = 0;
+#endif
     }
 }
 
@@ -702,7 +703,6 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_scale_solution_before_solve = true;
   PorousMedia::richard_semi_analytic_J = false;
   PorousMedia::richard_centered_diff_J = true;
-  PorousMedia::richard_subgrid_krel = false;
   PorousMedia::richard_variable_switch_saturation_threshold = -1;
   PorousMedia::richard_dt_thresh_pure_steady = -1;
 
@@ -710,6 +710,10 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_solver = 0;
   PorousMedia::richard_solver_control = 0;
   PorousMedia::richard_solver_data = 0;
+
+#ifdef ALQUIMIA_ENABLED
+  PorousMedia::chemistry_engine = 0;
+#endif
 }
 
 std::pair<std::string,std::string>
@@ -907,7 +911,7 @@ PorousMedia::variableSetUp ()
 
   if (do_tracer_chemistry && ntracers > 0)
   {
-      // NOTE: aux_chem_variables is setup by read_rock and read_chem as data is
+      // NOTE: aux_chem_variables is setup by RockManager and read_chem as data is
       // parsed in.  By the time we get here, we have figured out all the variables
       // for which we need to make space.
 
@@ -991,8 +995,7 @@ PorousMedia::variableSetUp ()
   //
   // **************  DEFINE ERROR ESTIMATION QUANTITIES  *************
   //
-  //err_list.add("gradn",1,ErrorRec::Special,ErrorFunc(FORT_ADVERROR));
-
+  const RegionManager* region_manager = PMAmr::RegionManagerPtr();
   Array<std::string> refinement_indicators;
   pp.queryarr("refinement_indicators",refinement_indicators,0,pp.countval("refinement_indicators"));
   for (int i=0; i<refinement_indicators.size(); ++i)
@@ -1007,7 +1010,7 @@ PorousMedia::variableSetUp ()
       if (nreg) {
           ppr.getarr("regions",region_names,0,nreg);
       }
-      PArray<Region> regions = build_region_PArray(region_names);
+      Array<const Region*> regions = region_manager->RegionPtrArray(region_names);
       if (ppr.countval("val_greater_than")) {
           Real value; ppr.get("val_greater_than",value);
           std::string field; ppr.get("field",field);
@@ -1042,565 +1045,6 @@ PorousMedia::variableSetUp ()
 
 }
 
-//
-//  Read input file
-//
-void PorousMedia::read_geometry()
-{
-  //
-  // Get geometry-related parameters.  
-  // Note: 1. The domain size and periodity information are read in 
-  //          automatically.  This function deals primarily with region
-  //          definition.
-  //       2. regions defined in PorousMedia.H as PArray<Region>
-  //
-  ParmParse pp("geometry");
-
-  Array<Real> problo, probhi;
-  pp.getarr("prob_lo",problo,0,BL_SPACEDIM);
-  pp.getarr("prob_hi",probhi,0,BL_SPACEDIM);
-  Region::domlo = problo;
-  Region::domhi = probhi;
-  
-  Real geometry_eps = -1; pp.get("geometry_eps",geometry_eps);
-  Region::geometry_eps = geometry_eps;
-
-  // set up  1+2*BL_SPACEDIM default regions
-  bool generate_default_regions = true; pp.query("generate_default_regions",generate_default_regions);
-  int nregion_DEF = 0;
-  regions.clear();
-  if (generate_default_regions) {
-      nregion_DEF = 1 + 2*BL_SPACEDIM;
-      regions.resize(nregion_DEF,PArrayManage);
-      regions.set(0, new   AllRegion());
-      regions.set(1, new AllBCRegion(0,0));
-      regions.set(2, new AllBCRegion(0,1));
-      regions.set(3, new AllBCRegion(1,0));
-      regions.set(4, new AllBCRegion(1,1));
-#if BL_SPACEDIM == 3
-      regions.set(5, new AllBCRegion(2,0));
-      regions.set(6, new AllBCRegion(2,1));
-#endif
-  }
-
-  // Get parameters for each user defined region 
-  int nregion = nregion_DEF;
-
-  int nregion_user = pp.countval("regions");
-
-  if (!generate_default_regions  && nregion_user==0) {
-      BoxLib::Abort("Default regions not generated and none provided.  Perhaps omitted regions list?");
-  }
-  if (nregion_user)
-    {
-      std::string r_purpose, r_type;
-      Array<std::string> r_name;
-      pp.getarr("regions",r_name,0,nregion_user);
-      nregion += nregion_user;
-      regions.resize(nregion,PArrayManage);
-
-      for (int j=0; j<nregion_user; ++j)
-      {
-          const std::string prefix("geometry." + r_name[j]);
-          ParmParse ppr(prefix.c_str());
-	  ppr.get("purpose",r_purpose);
-	  ppr.get("type",r_type);      
-
-	  if (r_type == "point")
-          {
-	      Array<Real> coor;
-	      ppr.getarr("coordinate",coor,0,BL_SPACEDIM);
-              regions.set(nregion_DEF+j, new PointRegion(r_name[j],r_purpose,coor));
-	    }
-	  else if (r_type == "box" || r_type == "surface")
-	    {
-	      Array<Real> lo_coor,hi_coor;
-	      ppr.getarr("lo_coordinate",lo_coor,0,BL_SPACEDIM);
-	      ppr.getarr("hi_coordinate",hi_coor,0,BL_SPACEDIM);
-              regions.set(nregion_DEF+j, new BoxRegion(r_name[j],r_purpose,lo_coor,hi_coor));
-	    }
-	  else if (r_type == "color_function")
-          {
-              int color_value; ppr.get("color_value",color_value);
-              std::string color_file; ppr.get("color_file",color_file);
-              ColorFunctionRegion* cfr = new ColorFunctionRegion(r_name[j],r_purpose,color_file,color_value);
-	      regions.set(nregion_DEF+j, cfr);
-          }
-          else {
-              std::string m = "region type not supported \"" + r_type + "\"";
-              BoxLib::Abort(m.c_str());
-          }
-	}
-      pp.query("surf_file",surf_file);
-    }
-}
-
-void
-PorousMedia::read_rock()
-{
-    //
-    // Get parameters related to rock
-    //
-    ParmParse pp("rock");
-    int nrock = pp.countval("rock");
-    if (nrock <= 0) {
-        BoxLib::Abort("At least one rock type must be defined.");
-    }
-    Array<std::string> r_names;  pp.getarr("rock",r_names,0,nrock);
-
-    materials.clear();
-    materials.resize(nrock,PArrayManage);
-    Array<std::string> material_regions;
-
-    // Scan materials for properties that must be defined for all
-    //   if defined for one. 
-    bool user_specified_molecular_diffusion_coefficient = false;
-    bool user_specified_dispersivity = false;
-    bool user_specified_tortuosity = false;
-    bool user_specified_specific_storage = false;
-    for (int i = 0; i<nrock; i++)
-    {
-        const std::string& rname = r_names[i];
-        const std::string prefix("rock." + rname);
-        ParmParse ppr(prefix.c_str());
-        user_specified_molecular_diffusion_coefficient = ppr.countval("molecular_diffusion.val");
-        user_specified_tortuosity = ppr.countval("tortuosity.val");
-        user_specified_dispersivity = ppr.countval("dispersivity.alphaL");
-        user_specified_specific_storage = ppr.countval("specific_storage.val");
-    }
-
-    if (model == PM_SATURATED) {
-      user_specified_specific_storage = true; // Will use default if not specified
-    }
-
-    diffuse_tracers = do_tracer_diffusion
-      && ( user_specified_molecular_diffusion_coefficient || user_specified_dispersivity);
-    tensor_tracer_diffusion = diffuse_tracers && user_specified_dispersivity;
-
-    for (int i = 0; i<nrock; i++)
-    {
-        const std::string& rname = r_names[i];
-        const std::string prefix("rock." + rname);
-        ParmParse ppr(prefix.c_str());
-        
-        static Property::CoarsenRule arith_crsn = Property::Arithmetic;
-        static Property::CoarsenRule harm_crsn = Property::ComponentHarmonic;
-        static Property::RefineRule pc_refine = Property::PiecewiseConstant;
-
-        Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
-
-        Real rDmolec = 0;
-        Property* Dmolec_func = 0;
-        if (user_specified_molecular_diffusion_coefficient) {
-          ppr.query("molecular_diffusion.val",rDmolec);
-          std::string Dmolec_str = "molecular_diffusion_coefficient";
-          Dmolec_func = new ConstantProperty(Dmolec_str,rDmolec,harm_crsn,pc_refine);
-        }
-
-        Array<Real> rDispersivity(2,0);
-        Property* Dispersivity_func = 0;
-        if (user_specified_dispersivity) {
-          ppr.query("dispersivity.alphaL",rDispersivity[0]);
-          ppr.query("dispersivity.alphaT",rDispersivity[1]);
-          std::string Dispersivity_str = "dispersivity";
-          Dispersivity_func = new ConstantProperty(Dispersivity_str,rDispersivity,harm_crsn,pc_refine);
-        }
-
-        Real rTortuosity = 1;
-        Property* Tortuosity_func = 0;
-        if (user_specified_tortuosity) {
-          ppr.query("tortuosity.val",rTortuosity);
-          std::string Tortuosity_str = "tortuosity";
-          Tortuosity_func = new ConstantProperty(Tortuosity_str,rTortuosity,harm_crsn,pc_refine);
-        }
-
-        Real rSpecificStorage = 0;
-        Property* SpecificStorage_func = 0;
-        if (user_specified_specific_storage) {
-          ppr.query("specific_storage.val",rSpecificStorage);
-          std::string SpecificStorage_str = "specific_storage";
-          SpecificStorage_func = new ConstantProperty(SpecificStorage_str,rSpecificStorage,arith_crsn,pc_refine);
-        }
-
-        Property* phi_func = 0;
-        std::string phi_str = "porosity";
-        Array<Real> rpvals(1), rptimes;
-        Array<std::string> rpforms;
-        if (ppr.countval("porosity.vals")) {
-          ppr.getarr("porosity.vals",rpvals,0,ppr.countval("porosity.vals"));
-          int nrpvals = rpvals.size();
-          if (nrpvals>1) {
-            ppr.getarr("porosity.times",rptimes,0,nrpvals);
-            ppr.getarr("porosity.forms",rpforms,0,nrpvals-1);
-            TabularFunction pft(rptimes,rpvals,rpforms);
-            phi_func = new TabularInTimeProperty(phi_str,pft,arith_crsn,pc_refine);
-          }
-          else {
-            phi_func = new ConstantProperty(phi_str,rpvals[0],arith_crsn,pc_refine);
-          }
-        } else if (ppr.countval("porosity")) {
-          ppr.get("porosity",rpvals[0]); // FIXME: For backward compatibility
-          phi_func = new ConstantProperty(phi_str,rpvals[0],arith_crsn,pc_refine);
-        } else {
-          BoxLib::Abort(std::string("No porosity function specified for rock: \""+rname).c_str());
-        }
-
-
-        Property* kappa_func = 0;
-        std::string kappa_str = "permeability";
-        Array<Real> rvpvals(1), rhpvals(1), rvptimes(1), rhptimes(1);
-        Array<std::string> rvpforms, rhpforms;
-
-        Array<Real> rperm_in(2);
-        if (ppr.countval("permeability")) {
-          ppr.getarr("permeability",rperm_in,0,2);
-          rhpvals[0] = rperm_in[0];
-          rvpvals[0] = rperm_in[1];
-        }
-        else {
-
-          int nrvpvals = ppr.countval("permeability.vertical.vals");
-          int nrhpvals = ppr.countval("permeability.horizontal.vals");
-          if (nrvpvals>0 && nrhpvals>0) {
-            ppr.getarr("permeability.vertical.vals",rvpvals,0,nrvpvals);
-            if (nrvpvals>1) {
-              ppr.getarr("permeability.vertical.times",rvptimes,0,nrvpvals);
-              ppr.getarr("permeability.vertical.forms",rvpforms,0,nrvpvals-1);
-            }
-
-            ppr.getarr("permeability.horizontal.vals",rhpvals,0,nrhpvals);
-            if (nrhpvals>1) {
-              ppr.getarr("permeability.horizontal.times",rhptimes,0,nrhpvals);
-              ppr.getarr("permeability.horizontal.forms",rhpforms,0,nrhpvals-1);
-            }
-
-          } else {
-            BoxLib::Abort(std::string("No permeability function specified for rock: \""+rname).c_str());
-          }
-        }
-
-        // The permeability is specified in mDa.  
-        // This needs to be multiplied with 1e-10 to be consistent 
-        // with the other units in the code.  What this means is that
-        // we will be evaluating the darcy velocity as:
-        //
-        //  u_Darcy [m/s] = ( kappa [X . mD] / mu [Pa.s] ).Grad(p) [atm/m]
-        //
-        // where X is the factor necessary to have this formula be dimensionally
-        // consistent.  X here is 1.e-10, and can be combined with kappa for the 
-        // the moment because no other derived quantities depend directly on the 
-        // value of kappa  (NOTE: We will have to know that this is done however
-        // if kappa is used as a diagnostic or in some way for a derived quantity).
-        //
-        for (int j=0; j<rhpvals.size(); ++j) {
-          rhpvals[j] *= 1.e-10;
-        }
-        for (int j=0; j<rvpvals.size(); ++j) {
-          rvpvals[j] *= 1.e-10;
-        }
-
-        // Define Property functions for Material Property server.  Eventually, these
-        // will replace "Rock", but not yet
-        if (rvpvals.size()>1 || rhpvals.size()>1) {
-          Array<TabularFunction> pft(2);
-          pft[0] = TabularFunction(rhptimes,rhpvals,rhpforms);
-          pft[1] = TabularFunction(rvptimes,rvpvals,rvpforms);
-          kappa_func = new TabularInTimeProperty(kappa_str,pft,harm_crsn,pc_refine);
-        }
-        else {
-          Array<Real> vals(2); vals[0] = rhpvals[0]; vals[1] = rvpvals[0];
-          kappa_func = new ConstantProperty(kappa_str,vals,harm_crsn,pc_refine);
-        }
-
-        // Set old-style values
-	Array<Real> rpermeability(BL_SPACEDIM,rvpvals[0]);
-	for (int j=0;j<BL_SPACEDIM-1;j++) rpermeability[j] = rhpvals[0];
-	// rpermeability will always be of size BL_SPACEDIM
-
-        // relative permeability: include kr_coef, sat_residual
-        int rkrType = 0;  ppr.query("kr_type",rkrType);
-        Array<Real> rkrParam;
-        if (rkrType > 0) {
-            ppr.getarr("kr_param",rkrParam,0,ppr.countval("kr_param"));
-        }
-
-        Array<Real> krPt(rkrParam.size()+1);
-        krPt[0] = Real(rkrType);
-        for (int j=0; j<rkrParam.size(); ++j) {
-          krPt[j+1] = rkrParam[j];
-        }
-        std::string krel_str = "relative_permeability";
-        Property* krel_func = new ConstantProperty(krel_str,krPt,arith_crsn,pc_refine);
-
-        // capillary pressure: include cpl_coef, sat_residual, sigma
-        int rcplType = 0;  ppr.query("cpl_type", rcplType);
-        Array<Real> rcplParam;
-        if (rcplType > 0) {
-            ppr.getarr("cpl_param",rcplParam,0,ppr.countval("cpl_param"));
-        }
-        Array<Real> cplPt(rcplParam.size()+1);
-        cplPt[0] = Real(rcplType);
-        for (int j=0; j<rcplParam.size(); ++j) {
-          cplPt[j+1] = rcplParam[j];
-        }
-        std::string cpl_str = "capillary_pressure";
-        Property* cpl_func = new ConstantProperty(cpl_str,cplPt,arith_crsn,pc_refine);
-
-        Array<std::string> region_names;
-        ppr.getarr("regions",region_names,0,ppr.countval("regions"));
-        PArray<Region> rregions = build_region_PArray(region_names);
-        for (int j=0; j<region_names.size(); ++j) {
-            material_regions.push_back(region_names[j]);
-        }
-
-        if (ppr.countval("porosity_dist_param")>0) {
-          BoxLib::Abort("porosity_dist_param not currently supported");
-        }
-
-        std::string porosity_dist="uniform"; ppr.query("porosity_dist",porosity_dist);
-        Array<Real> rporosity_dist_param;
-        if (porosity_dist!="uniform") {
-          BoxLib::Abort("porosity_dist != uniform not currently supported");
-          ppr.getarr("porosity_dist_param",rporosity_dist_param,
-                     0,ppr.countval("porosity_dist_param"));
-        }
-        
-        std::string permeability_dist="uniform"; ppr.get("permeability_dist",permeability_dist);
-        Array<Real> rpermeability_dist_param;
-        if (permeability_dist != "uniform")
-        {
-          ppr.getarr("permeability_dist_param",rpermeability_dist_param,
-                     0,ppr.countval("permeability_dist_param"));
-        }
-
-        std::vector<Property*> properties;
-        properties.push_back(phi_func);
-        properties.push_back(kappa_func);
-        if (Dmolec_func) {
-          properties.push_back(Dmolec_func);
-        }
-        if (Dispersivity_func) {
-          properties.push_back(Dispersivity_func);
-        }
-        if (Tortuosity_func) {
-          properties.push_back(Tortuosity_func);
-        }
-        if (SpecificStorage_func) {
-          properties.push_back(SpecificStorage_func);
-        }
-        properties.push_back(krel_func);
-        properties.push_back(cpl_func);
-        materials.set(i,new Material(rname,rregions,properties));
-        delete phi_func;
-        delete kappa_func;
-        delete Dmolec_func;
-        delete Tortuosity_func;
-        delete Dispersivity_func;
-        delete SpecificStorage_func;
-        delete krel_func;
-        delete cpl_func;
-    }
-
-    // Read rock parameters associated with chemistry
-    using_sorption = false;
-    aux_chem_variables.clear();
-
-    if (do_tracer_chemistry>0)
-      {
-        ParmParse ppm("mineral");
-        nminerals = ppm.countval("minerals");
-        minerals.resize(nminerals);
-        if (nminerals>0) {
-	  ppm.getarr("minerals",minerals,0,nminerals);
-        }
-
-        ParmParse pps("sorption_site");
-        nsorption_sites = pps.countval("sorption_sites");
-        sorption_sites.resize(nsorption_sites);
-        if (nsorption_sites>0) {
-	  pps.getarr("sorption_sites",sorption_sites,0,nsorption_sites);
-        }
-
-	ICParmPair sorption_isotherm_options;
-	sorption_isotherm_options[          "Kd"] = 0;
-	sorption_isotherm_options[  "Langmuir_b"] = 0;
-	sorption_isotherm_options["Freundlich_n"] = 1;
-	
-	for (int k=0; k<tNames.size(); ++k) {
-	  for (ICParmPair::const_iterator it=sorption_isotherm_options.begin();
-	       it!=sorption_isotherm_options.end(); ++it) {
-	    const std::string& str = it->first;
-	    bool found = false;
-	    for (int i=0; i<nrock; ++i) {
-	      const std::string prefix("rock."+r_names[i]+".Sorption_Isotherms."+tNames[k]);
-	      ParmParse pprs(prefix.c_str());
-	      if (pprs.countval(str.c_str())) {
-		pprs.get(str.c_str(),sorption_isotherm_ics[r_names[i]][tNames[k]][str]);
-		found = true;
-	      }
-	    }
-	    
-	    if (found) {
-              using_sorption = true;
-              nsorption_isotherms = ntracers;
-	      for (int i=0; i<nrock; ++i) {
-		if (sorption_isotherm_ics[r_names[i]][tNames[k]].count(str) == 0) {
-		  sorption_isotherm_ics[r_names[i]][tNames[k]][str] = it->second; // set to default value
-		}
-	      }
-	      const std::string label = str+"_"+tNames[k];
-	      if (aux_chem_variables.find(label) == aux_chem_variables.end()) {
-		sorption_isotherm_label_map[tNames[k]][str] = aux_chem_variables.size();
-		aux_chem_variables[label]=aux_chem_variables.size()-1;
-	      }
-	    }
-	  }
-	}
-
-	ICParmPair cation_exchange_options;
-	cation_exchange_options["Cation_Exchange_Capacity"] = 0;
-	{
-	  for (ICParmPair::const_iterator it=cation_exchange_options.begin(); it!=cation_exchange_options.end(); ++it) {
-	    const std::string& str = it->first;
-	    bool found = false;
-	    for (int i=0; i<nrock; ++i) {
-	      const std::string prefix("rock."+r_names[i]);
-	      ParmParse pprs(prefix.c_str());
-	      if (pprs.countval(str.c_str())) {
-		pprs.get(str.c_str(),cation_exchange_ics[r_names[i]]);
-		found = true;
-	      }
-	    }
-	    
-	    if (found) {
-              using_sorption = true;
-              ncation_exchange = 1;
-	      for (int i=0; i<nrock; ++i) {
-		if (cation_exchange_ics.count(r_names[i]) == 0) {
-		  cation_exchange_ics[r_names[i]] = it->second; // set to default value
-		}
-	      }
-
-	      const std::string label = str;
-	      if (aux_chem_variables.find(label) == aux_chem_variables.end())  {
-		cation_exchange_label_map[str] = aux_chem_variables.size();
-		aux_chem_variables[label]=aux_chem_variables.size()-1;
-	      }
-	      //std::cout << "****************** cation_exchange_ics[" << r_names[i] << "] = " 
-	      //	  << cation_exchange_ics[r_names[i]] << std::endl;
-	    }
-	  }
-	}
-
-	ICParmPair mineralogy_options;
-	mineralogy_options[      "Volume_Fraction"] = 0;
-	mineralogy_options["Specific_Surface_Area"] = 0;
-	for (int k=0; k<minerals.size(); ++k) {
-	  for (ICParmPair::const_iterator it=mineralogy_options.begin(); it!=mineralogy_options.end(); ++it) {
-	    const std::string& str = it->first;
-	    bool found = false;
-	    for (int i=0; i<nrock; ++i) {
-              const std::string prefix("rock."+r_names[i]+".mineralogy."+minerals[k]);
-	      ParmParse pprs(prefix.c_str());
-	      if (pprs.countval(str.c_str())) {
-		pprs.get(str.c_str(),mineralogy_ics[r_names[i]][minerals[k]][str]);
-		found = true;
-	      }
-	    }
-	    
-	    if (found) {
-              using_sorption = true;
-	      for (int i=0; i<nrock; ++i) {
-		if (mineralogy_ics[r_names[i]][minerals[k]].count(str) == 0) {
-		  mineralogy_ics[r_names[i]][minerals[k]][str] = it->second; // set to default value
-		}
-	      }
-		//std::cout << "****************** mineralogy_ics[" << r_names[i] << "][" << minerals[k] 
-		//	  << "][" << str << "] = " << mineralogy_ics[r_names[i]][minerals[k]][str] 
-		//	  << std::endl;
-
-	      const std::string label = str+"_"+minerals[k];
-	      if (aux_chem_variables.find(label) == aux_chem_variables.end()) {
-		mineralogy_label_map[minerals[k]][str] = aux_chem_variables.size();
-		aux_chem_variables[label]=aux_chem_variables.size()-1;
-	      }
-	    }
-	  }
-	}
-
-	ICParmPair complexation_options;
-	complexation_options["Site_Density"] = 0;
-	for (int k=0; k<sorption_sites.size(); ++k) {
-	  for (ICParmPair::const_iterator it=complexation_options.begin(); it!=complexation_options.end(); ++it) {
-	    const std::string& str = it->first;
-	    bool found = false;
-	    for (int i=0; i<nrock; ++i) {
-	      const std::string prefix("rock."+r_names[i]+".Surface_Complexation_Sites."+sorption_sites[k]);
-	      ParmParse pprs(prefix.c_str());
-	      if (pprs.countval(str.c_str())) {
-		pprs.get(str.c_str(),surface_complexation_ics[r_names[i]][sorption_sites[k]][str]);
-		found = true;
-	      }
-	    }
-	    
-	    if (found) {
-              using_sorption = true;
-	      for (int i=0; i<nrock; ++i) {
-		if (surface_complexation_ics[r_names[i]][sorption_sites[k]].count(str) == 0) {
-		  surface_complexation_ics[r_names[i]][sorption_sites[k]][str] = it->second; // set to default value
-		}
-	      }
-	      //std::cout << "****************** surface_complexation_ics[" << r_names[i] << "][" << sorption_sites[k] 
-	      //	  << "][" << str << "] = " << sorption_isotherm_ics[r_names[i]][sorption_sites[k]][str] 
-	      //	  << std::endl;
-	      
-	      const std::string label = str+"_"+sorption_sites[k];
-	      if (aux_chem_variables.find(label) == aux_chem_variables.end()) {
-		surface_complexation_label_map[sorption_sites[k]][str] = aux_chem_variables.size();
-		aux_chem_variables[label]=aux_chem_variables.size()-1;
-	      }
-	    }
-	  }
-	}
-
-        if (using_sorption) 
-        {
-            ICParmPair sorption_chem_options; // these are domain-wide, specified per solute
-            sorption_chem_options["Total_Sorbed"] = 1.e-40;
-            for (int k=0; k<tNames.size(); ++k) {
-                for (ICParmPair::const_iterator it=sorption_chem_options.begin(); it!=sorption_chem_options.end(); ++it) {
-                    const std::string& str = it->first;
-                    const std::string prefix("tracer."+tNames[k]+".Initial_Condition."+str);
-                    ParmParse pprs(prefix.c_str());
-                    sorption_chem_ics[tNames[k]][str] = it->second; // set to default value
-                    pprs.query(str.c_str(),sorption_chem_ics[tNames[k]][str]);                      
-                    //std::cout << "****************** sorption_chem_ics[" << tNames[k] 
-                    //              << "][" << str << "] = " << sorption_chem_ics[tNames[k]][str] << std::endl;
-                    const std::string label = str+"_"+tNames[k];
-		    if (aux_chem_variables.find(label) == aux_chem_variables.end()){
-		      sorption_chem_label_map[tNames[k]][str] = aux_chem_variables.size();
-		      aux_chem_variables[label]=aux_chem_variables.size()-1;
-		    }
-                }
-            }
-        }
-    }
-    
-    pp.query("Use_Shifted_Kr_Eval",use_shifted_Kr_eval);
-    pp.query("Saturation_Threshold_For_Kr",saturation_threshold_for_vg_Kr);
-
-    if (use_shifted_Kr_eval!=1 && saturation_threshold_for_vg_Kr>1) {
-        if (ParallelDescriptor::IOProcessor()) {
-            std::cout << "WARNING: Reducing Saturation_Threshold_For_vg_Kr to 1!" << std::endl;
-        }
-        saturation_threshold_for_vg_Kr = 1;
-    }
-
-    FORT_KR_INIT(&saturation_threshold_for_vg_Kr,
-		 &use_shifted_Kr_eval);
-
-}
-    
 void PorousMedia::read_prob()
 {
   ParmParse pp;
@@ -1733,7 +1177,6 @@ void PorousMedia::read_prob()
   pb.query("richard_scale_solution_before_solve",richard_scale_solution_before_solve);
   pb.query("richard_semi_analytic_J",richard_semi_analytic_J);
   pb.query("richard_centered_diff_J",richard_centered_diff_J);
-  pb.query("richard_subgrid_krel",richard_subgrid_krel);
   pb.query("richard_variable_switch_saturation_threshold",richard_variable_switch_saturation_threshold);
   richard_dt_thresh_pure_steady = 0.99*steady_init_time_step;
   pb.query("richard_dt_thresh_pure_steady",richard_dt_thresh_pure_steady);
@@ -1799,30 +1242,6 @@ void PorousMedia::read_prob()
 //
 // Construct bc functions
 //
-
-PArray<Region>
-PorousMedia::build_region_PArray(const Array<std::string>& region_names)
-{
-    PArray<Region> ret(region_names.size(), PArrayNoManage);
-    for (int i=0; i<region_names.size(); ++i)
-    {
-        const std::string& name = region_names[i];
-        bool found = false;
-        for (int j=0; j<regions.size() && !found; ++j)
-        {
-            Region& r = regions[j];
-            if (regions[j].name == name) {
-                found = true;
-                ret.set(i,&r);
-            }
-        }
-        if (!found) {
-            std::string m = "Named region not found: \"" + name + "\"";
-            BoxLib::Error(m.c_str());
-        }
-    }
-    return ret;
-}
 
 const Material&
 PorousMedia::find_material(const std::string& name)
@@ -2002,6 +1421,7 @@ void  PorousMedia::read_comp()
       cp.getarr("ic_labels",ic_names,0,n_ics);
       ic_array.resize(n_ics,PArrayManage);
       do_constant_vel = false;
+      const RegionManager* region_manager = PMAmr::RegionManagerPtr();
       for (int i = 0; i<n_ics; i++)
       {
           const std::string& icname = ic_names[i];
@@ -2011,7 +1431,7 @@ void  PorousMedia::read_comp()
 	  int n_ic_regions = ppr.countval("regions");
           Array<std::string> region_names;
 	  ppr.getarr("regions",region_names,0,n_ic_regions);
-          PArray<Region> ic_regions = build_region_PArray(region_names);
+	  Array<const Region*> ic_regions = region_manager->RegionPtrArray(region_names);
 
           std::string ic_type; ppr.get("type",ic_type);
 	  BL_ASSERT(!do_constant_vel); // If this is ever set, it must be the only IC so we should never see this true here
@@ -2158,6 +1578,7 @@ void  PorousMedia::read_comp()
 	pres_bc.setHi(j,1);
       }
 
+      const RegionManager* region_manager = PMAmr::RegionManagerPtr();
       for (int i = 0; i<n_bcs; i++)
       {
           int ibc = i;
@@ -2168,7 +1589,7 @@ void  PorousMedia::read_comp()
 	  int n_bc_regions = ppr.countval("regions");
           Array<std::string> region_names;
 	  ppr.getarr("regions",region_names,0,n_bc_regions);
-          const PArray<Region> bc_regions = build_region_PArray(region_names);
+	  Array<const Region*> bc_regions = region_manager->RegionPtrArray(region_names);
           std::string bc_type; ppr.get("type",bc_type);
 
           bool is_inflow = false;
@@ -2309,7 +1730,7 @@ void  PorousMedia::read_comp()
               int is_hi = -1;
               for (int j=0; j<bc_regions.size(); ++j)
               {
-                  const std::string purpose = bc_regions[j].purpose;
+                  const std::string purpose = bc_regions[j]->purpose;
                   for (int k=0; k<7; ++k) {
                       if (purpose == PMAMR::RpurposeDEF[k]) {
 			  if (k == 6) {
@@ -2358,7 +1779,7 @@ void  PorousMedia::read_comp()
 
           for (int j=0; j<bc_regions.size(); ++j)
           {
-              const std::string purpose = bc_regions[j].purpose;
+              const std::string purpose = bc_regions[j]->purpose;
               int dir = -1, is_hi;
               for (int k=0; k<7; ++k) {
                   if (purpose == PMAMR::RpurposeDEF[k]) {
@@ -2449,6 +1870,7 @@ void  PorousMedia::read_tracer()
           ppr.getarr("tinits",tic_names,0,n_ic);
           tic_array[i].resize(n_ic,PArrayManage);
           
+	  const RegionManager* region_manager = PMAmr::RegionManagerPtr();
           for (int n = 0; n<n_ic; n++)
           {
               const std::string prefixIC(prefix + "." + tic_names[n]);
@@ -2456,7 +1878,7 @@ void  PorousMedia::read_tracer()
               int n_ic_region = ppri.countval("regions");
               Array<std::string> region_names;
               ppri.getarr("regions",region_names,0,n_ic_region);
-              const PArray<Region> tic_regions = build_region_PArray(region_names);
+	      Array<const Region*> tic_regions = region_manager->RegionPtrArray(region_names);
               std::string tic_type; ppri.get("type",tic_type);
               
               if (tic_type == "concentration")
@@ -2482,13 +1904,11 @@ void  PorousMedia::read_tracer()
               int tbc_cnt = 0;
               for (int n=0; n<BL_SPACEDIM; ++n) {
                 tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n] + "_DEFAULT",
-                                                           build_region_PArray(Array<std::string>(1,RlabelDEF[n])),
+                                                           region_manager->RegionPtrArray(Array<std::string>(1,RlabelDEF[n])),
                                                            std::string("noflow"),0));
-		//std::string("concentration"),0));
                 tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n+3] + "_DEFAULT",
-                                                           build_region_PArray(Array<std::string>(1,RlabelDEF[n+3])),
+                                                           region_manager->RegionPtrArray(Array<std::string>(1,RlabelDEF[n+3])),
                                                            std::string("noflow"),0));
-		//std::string("concentration"),0));
               }
 
               Array<int> orient_types(6,-1);
@@ -2501,7 +1921,7 @@ void  PorousMedia::read_tracer()
                   Array<std::string> tbc_region_names;
                   ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
 
-                  const PArray<Region> tbc_regions = build_region_PArray(tbc_region_names);
+                  Array<const Region*> tbc_regions = region_manager->RegionPtrArray(tbc_region_names);
                   std::string tbc_type; ppri.get("type",tbc_type);
 
                   // When we get the BCs, we need to translate to AMR-standardized type id.  By
@@ -2552,7 +1972,7 @@ void  PorousMedia::read_tracer()
 
                   for (int j=0; j<tbc_regions.size(); ++j)
                   {
-                    const std::string purpose = tbc_regions[j].purpose;
+                    const std::string purpose = tbc_regions[j]->purpose;
                     int dir = -1, is_hi, k;
                     for (int kt=0; kt<7 && dir<0; ++kt) {
                       if (purpose == PMAMR::RpurposeDEF[kt]) {
@@ -2627,7 +2047,8 @@ void  PorousMedia::read_source()
       int n_src_regions = pps.countval("regions");
       Array<std::string> src_region_names; 
       pps.getarr("regions",src_region_names,0,n_src_regions);
-      const PArray<Region> source_regions = build_region_PArray(src_region_names);
+      const RegionManager* region_manager = PMAmr::RegionManagerPtr();
+      const Array<const Region*> source_regions = region_manager->RegionPtrArray(src_region_names);
 
       if (pps.countval("type")) {
 	std::string source_type; pps.get("type",source_type);
@@ -2642,7 +2063,7 @@ void  PorousMedia::read_source()
 
             if (source_type == "point") {
               BL_ASSERT(source_regions.size() == 1);
-              BL_ASSERT(source_regions[0].type=="point");
+              BL_ASSERT(source_regions[0]->type=="point");
             }
 
 	    source_array.set(i, new RegionData(source_name,source_regions,source_type,vals));
@@ -2744,12 +2165,28 @@ void  PorousMedia::read_chem()
       
 #ifdef AMANZI
 
-  // get input file name, create SimpleThermoDatabase, process
-  if (do_tracer_chemistry>0)
-    {
-#if ALQUIMIA_ENABLED
-#else
+  if (do_tracer_chemistry) {
 
+#if ALQUIMIA_ENABLED
+      const Teuchos::ParameterList& pl = PorousMedia::InputParameterList();
+      BL_ASSERT(pl.isSublist("Chemistry"));
+      const Teuchos::ParameterList& chpl = pl.sublist("Chemistry");
+      std::string chem_engine_name = chpl.get<std::string>("Engine");
+      std::string chem_engine_input_filename = chpl.get<std::string>("Engine Input File");
+      chemistry_engine = new Amanzi::AmanziChemistry::ChemistryEngine(chem_engine_name,chem_engine_input_filename);
+      std::vector<std::string> primarySpeciesNames, mineralNames, siteNames, ionExchangeNames, isothermSpeciesNames;
+      chemistry_engine->GetPrimarySpeciesNames(primarySpeciesNames);
+      chemistry_engine->GetMineralNames(mineralNames);
+      chemistry_engine->GetSurfaceSiteNames(siteNames);
+      chemistry_engine->GetIonExchangeNames(ionExchangeNames);
+      chemistry_engine->GetIsothermSpeciesNames(isothermSpeciesNames);
+      int numPrimarySpecies = primarySpeciesNames.size();
+      int numSorbedSpecies = chemistry_engine->NumSorbedSpecies();
+      int numMinerals = mineralNames.size();
+      int numSurfaceSites = chemistry_engine->NumSurfaceSites();
+      int numIonExchangeSites = ionExchangeNames.size();
+      int numIsothermSpecies = isothermSpeciesNames.size();
+#else
       Amanzi::AmanziChemistry::SetupDefaultChemistryOutput();
 
       ParmParse pb("prob.amanzi");
@@ -2781,34 +2218,30 @@ void  PorousMedia::read_chem()
 	  aux_chem_variables[tmpaux[i]] = i;
       }
 
-      if (do_tracer_chemistry)
-      {
-	  ICParmPair solute_chem_options;
-	  solute_chem_options["Free_Ion_Guess"] = 1.e-9;
-	  solute_chem_options["Activity_Coefficient"] = 1;
-	  for (int k=0; k<tNames.size(); ++k) {
-              for (ICParmPair::const_iterator it=solute_chem_options.begin(); it!=solute_chem_options.end(); ++it) {
-                  const std::string& str = it->first;
-                  bool found = false;
-                  for (int i=0; i<materials.size(); ++i) {
-                    const std::string& rname = materials[i].Name();
-                      const std::string prefix("tracer."+tNames[i]+".Initial_Condition");
-                      ParmParse pprs(prefix.c_str());
-                      solute_chem_ics[rname][tNames[k]][str] = it->second; // set to default value
-                      pprs.query(str.c_str(),solute_chem_ics[rname][tNames[k]][str]);                      
-                      //std::cout << "****************** solute_chem_ics[" << rname << "][" << tNames[k] 
-                      //          << "][" << str << "] = " << solute_chem_ics[rname][tNames[k]][str] << std::endl;
-                      const std::string label = str+"_"+tNames[k];
-		      
-		      if (aux_chem_variables.find(label) == aux_chem_variables.end())
-		      {
-			solute_chem_label_map[tNames[k]][str] = aux_chem_variables.size();
-			aux_chem_variables[label]=aux_chem_variables.size()-1;
-		      }
-                  }
-              }
-	  }
+      ICParmPair solute_chem_options;
+      solute_chem_options["Free_Ion_Guess"] = 1.e-9;
+      solute_chem_options["Activity_Coefficient"] = 1;
+      for (int k=0; k<tNames.size(); ++k) {
+        for (ICParmPair::const_iterator it=solute_chem_options.begin(); it!=solute_chem_options.end(); ++it) {
+          const std::string& str = it->first;
+          bool found = false;
+          for (int i=0; i<materials.size(); ++i) {
+            const std::string& rname = materials[i].Name();
+            const std::string prefix("tracer."+tNames[i]+".Initial_Condition");
+            ParmParse pprs(prefix.c_str());
+            solute_chem_ics[rname][tNames[k]][str] = it->second; // set to default value
+            pprs.query(str.c_str(),solute_chem_ics[rname][tNames[k]][str]);
+            const std::string label = str+"_"+tNames[k];
+
+            if (aux_chem_variables.find(label) == aux_chem_variables.end())
+            {
+              solute_chem_label_map[tNames[k]][str] = aux_chem_variables.size();
+              aux_chem_variables[label]=aux_chem_variables.size()-1;
+            }
+          }
+        }
       }
+
       // TODO: add secondary species activity coefficients
 
 
@@ -2902,15 +2335,17 @@ void PorousMedia::read_params()
   // problem-specific
   read_prob();
 
-  // geometry
-  read_geometry();
+  PMAmr::SetRegionManagerPtr(new RegionManager());
+  RegionManager* region_manager = PMAmr::RegionManagerPtr();
+
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read geometry." << std::endl;
 
   if (echo_inputs && ParallelDescriptor::IOProcessor()) {
       std::cout << "The Regions: " << std::endl;
+      const Array<const Region*> regions = region_manager->RegionPtrArray();
       for (int i=0; i<regions.size(); ++i) {
-          std::cout << regions[i] << std::endl;
+	std::cout << *(regions[i]) << std::endl;
       }
   }
 
@@ -2920,7 +2355,7 @@ void PorousMedia::read_params()
     std::cout << "Read components."<< std::endl;
   
   // chem requires the number of tracers and rocks be setup before we
-  // can do anything, but read_tracer and read_rock depend on do_tracer_chemistry
+  // can do anything, but read_tracer depends on do_tracer_chemistry
   // already being set. We'll query that now and do the remaining
   // chemistry after everything else has been read
   ParmParse pp("prob");
@@ -2930,19 +2365,6 @@ void PorousMedia::read_params()
   read_tracer();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read tracers."<< std::endl;
-
-  // rock
-  read_rock();
-  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-    std::cout << "Read rock."<< std::endl;
-
-  // FIXME
-  if (echo_inputs && ParallelDescriptor::IOProcessor()) {
-      std::cout << "The Materials: " << std::endl;
-      for (int i=0; i<materials.size(); ++i) {
-        //std::cout << materials[i] << std::endl;
-      }
-  }
 
   // chemistry. Needs to come after tracers (and rock?) have been setup.
   if (verbose > 1 && ParallelDescriptor::IOProcessor())

@@ -166,12 +166,14 @@ Stencil::operator*=(Real val)
 Layout::Layout(Amr* _parent,
 	       int  _nLevs)
     : initialized(false),
+      nLevs(_nLevs),
       nGrow(1),
       parent(_parent)
 {
   if (parent != 0) {
-    SetGridsFromParent(_nLevs);
-    Build(_nLevs);
+    if (nLevs<0) nLevs = parent->finestLevel() + 1;
+    SetGridsFromParent();
+    Build();
   }
 }
 
@@ -184,6 +186,7 @@ Layout::Layout(const Array<IntVect>&  refRatio_array,
       parent(0),
       nLevs(n_levs)
 {
+  BL_ASSERT(nLevs>0);
   BL_ASSERT(refRatio_array.size() >= nLevs-1);
   BL_ASSERT(grid_array.size() >= nLevs);
   BL_ASSERT(geom_array.size() >= nLevs);
@@ -198,7 +201,7 @@ Layout::Layout(const Array<IntVect>&  refRatio_array,
       refRatio[i] = refRatio_array[i];
     }
   }
-  Build(nLevs);
+  Build();
 }
 
 Layout::~Layout()
@@ -307,10 +310,9 @@ Layout::Area(int lev, int dir) const
 }
 
 void
-Layout::SetGridsFromParent(int _nLevs)
+Layout::SetGridsFromParent()
 {
   BL_ASSERT(parent!=0);
-  nLevs = (_nLevs > 0 ? _nLevs : parent->finestLevel()+1);
   BL_ASSERT(nLevs <= parent->finestLevel()+1);
   gridArray.resize(nLevs);
   geomArray.resize(nLevs);
@@ -325,18 +327,13 @@ Layout::SetGridsFromParent(int _nLevs)
 }
 
 void 
-Layout::Build(int _nLevs)
+Layout::Build()
 {
     nGrow = 1;
 
     if (parent!=0) {
-      SetGridsFromParent(_nLevs);
-    }
-    else {
-      if (_nLevs > 0) {
-        BL_ASSERT(_nLevs <= nLevs); // Otherwise, will not have enough data to do this
-        nLevs = _nLevs;
-      }
+      if (nLevs <= 0) nLevs = parent->finestLevel()+1;
+      SetGridsFromParent();
     }
 
     BuildMetrics();
@@ -620,11 +617,20 @@ Layout::Build(int _nLevs)
     int d_nz = 1 + 2*BL_SPACEDIM; // Number of nonzero local columns of J
     int o_nz = 0; // Number of nonzero nonlocal (off-diagonal) columns of J
 
-    PetscErrorCode ierr = 
-        MatCreateMPIAIJ(ParallelDescriptor::Communicator(), m, n, M, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, &J_mat);
-    CHKPETSC(ierr);
+    PetscErrorCode ierr;
+    MPI_Comm comm = ParallelDescriptor::Communicator();
+
+#if PETSC_VERSION_LT(3,4,3)
+    ierr = MatCreateMPIAIJ(comm, n, n, N, N, d_nz, PETSC_NULL, o_nz, PETSC_NULL, &J_mat); CHKPETSC(ierr);
+#else
+    ierr = MatCreate(comm, &J_mat); CHKPETSC(ierr);
+    ierr = MatSetSizes(J_mat,n,n,N,N);  CHKPETSC(ierr);
+    ierr = MatSetFromOptions(J_mat); CHKPETSC(ierr);
+    ierr = MatSeqAIJSetPreallocation(J_mat, d_nz*d_nz, PETSC_NULL); CHKPETSC(ierr);
+    ierr = MatMPIAIJSetPreallocation(J_mat, d_nz, PETSC_NULL, o_nz, PETSC_NULL); CHKPETSC(ierr);
+#endif
     mats_I_created.push_back(&J_mat);
-    ierr = VecCreateMPI(ParallelDescriptor::Communicator(),nNodes_local,nNodes_global,&JRowScale_vec); CHKPETSC(ierr);        
+    ierr = VecCreateMPI(comm,nNodes_local,nNodes_global,&JRowScale_vec); CHKPETSC(ierr);        
     vecs_I_created.push_back(&JRowScale_vec);
 #endif
     initialized = true;

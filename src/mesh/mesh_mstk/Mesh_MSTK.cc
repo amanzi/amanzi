@@ -3962,7 +3962,7 @@ void Mesh_MSTK::label_celltype() {
     
     
 inline 
-const Epetra_Map& Mesh_MSTK::cell_epetra_map (const bool include_ghost) const
+const Epetra_Map& Mesh_MSTK::cell_map (const bool include_ghost) const
 {
   if (serial_run)
     return *cell_map_wo_ghosts_;
@@ -3971,7 +3971,7 @@ const Epetra_Map& Mesh_MSTK::cell_epetra_map (const bool include_ghost) const
 }
     
 inline 
-const Epetra_Map& Mesh_MSTK::face_epetra_map (const bool include_ghost) const
+const Epetra_Map& Mesh_MSTK::face_map (const bool include_ghost) const
 {
   if (serial_run)
     return *face_map_wo_ghosts_;
@@ -3980,7 +3980,7 @@ const Epetra_Map& Mesh_MSTK::face_epetra_map (const bool include_ghost) const
 }
     
 inline 
-const Epetra_Map& Mesh_MSTK::node_epetra_map (const bool include_ghost) const
+const Epetra_Map& Mesh_MSTK::node_map (const bool include_ghost) const
 {
   if (serial_run)
     return *node_map_wo_ghosts_;
@@ -3990,7 +3990,7 @@ const Epetra_Map& Mesh_MSTK::node_epetra_map (const bool include_ghost) const
 
 
 inline
-const Epetra_Map& Mesh_MSTK::exterior_face_epetra_map(void) const
+const Epetra_Map& Mesh_MSTK::exterior_face_map(void) const
 {
   return *extface_map_wo_ghosts_;
 }

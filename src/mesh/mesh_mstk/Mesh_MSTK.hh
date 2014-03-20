@@ -428,13 +428,13 @@ public:
   //------------
     
     
-  const Epetra_Map& cell_epetra_map (bool include_ghost) const;
+  const Epetra_Map& cell_map (bool include_ghost) const;
     
-  const Epetra_Map& face_epetra_map (bool include_ghost) const; 
+  const Epetra_Map& face_map (bool include_ghost) const; 
 
-  const Epetra_Map& node_epetra_map (bool include_ghost) const;
+  const Epetra_Map& node_map (bool include_ghost) const;
     
-  const Epetra_Map& exterior_face_epetra_map (void) const; 
+  const Epetra_Map& exterior_face_map (void) const; 
     
   const Epetra_Import& exterior_face_importer(void) const;
     

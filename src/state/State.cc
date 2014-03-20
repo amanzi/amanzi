@@ -599,7 +599,7 @@ void State::Setup() {
     if (!evaluator->second->ProvidesKey(evaluator->first)) {
       std::stringstream messagestream;
       messagestream << "Field Evaluator " << evaluator->first
-                    << " does not provide it's own key.";
+                    << " does not provide its own key.";
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
     }

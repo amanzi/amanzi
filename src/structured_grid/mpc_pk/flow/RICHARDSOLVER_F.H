@@ -69,13 +69,14 @@ extern "C"
 			   const Real* src, ARLIM_P(srclo), ARLIM_P(srchi),
 			   const Real* dt, const int*  lo, const int*  hi, const int* nc);
 
-  void FORT_RS_ALTUP(Real* rhosat,   ARLIM_P(rslo), ARLIM_P(rshi),
-                     Real* p,        ARLIM_P(plo),  ARLIM_P(phi),
-                     const Real* dp, ARLIM_P(dplo), ARLIM_P(dphi),
-                     const Real* k,  ARLIM_P(klo),  ARLIM_P(khi),
-                     const Real* c,  ARLIM_P(clo),  ARLIM_P(chi),
-                     const int* n_coef, const Real* ls_factor, 
-                     const int* lo, const int* hi, const Real* s_thresh);
+  void FORT_RS_ALTUP(Real* rhosat,     ARLIM_P(rslo),  ARLIM_P(rshi),
+                     Real* del_p,      ARLIM_P(dplo),  ARLIM_P(dphi),
+                     const Real* al,   ARLIM_P(allo),  ARLIM_P(alhi),
+                     const Real* phi,  ARLIM_P(phlo),  ARLIM_P(phhi),
+                     const int*  mat,  ARLIM_P(malo),  ARLIM_P(mahi),
+                     const Real* ls_factor, const Real* s_thresh,
+                     const int* rmID,       const Real* time,
+                     const int* lo,         const int* hi);
 }
 
 #endif

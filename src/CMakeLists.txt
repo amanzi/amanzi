@@ -13,9 +13,11 @@ add_subdirectory(geometry)
 # Grid-option agnostic chemistry and interfaces
 if (ENABLE_Physics)
   add_subdirectory(chemistry)
+
   if (ENABLE_ALQUIMIA)
     # Use Alquimia as a chemistry engine.
     add_definitions(-DALQUIMIA_ENABLED)
+    add_subdirectory(common/geochemistry)
   endif()
 endif()
 
@@ -59,18 +61,14 @@ if (ENABLE_Unstructured)
 
 endif()
 
-if (ENABLE_Unstructured AND ENABLE_Physics)
-
-  add_subdirectory(chemistry_pk)
-
+if (ENABLE_Unstructured AND ENABLE_Physics)  
+  add_subdirectory(chemistry_pk) 
   add_subdirectory(flow)
   add_subdirectory(transport)
 
   # Multiprocess coordinator
   add_subdirectory(mpc)
-endif()
 
-if (ENABLE_Unstructured AND ENABLE_Physics)
   # unstructured grid simualtion driver, and Amanzi binaries
   add_subdirectory(executables)
 endif()

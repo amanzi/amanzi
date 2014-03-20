@@ -6,6 +6,7 @@
 #include <PArray.H>
 #include <VisMF.H>
 #include <Utility.H>
+#include <iMultiFab.H>
 
 #include <Region.H>
 #include <Material.H>
@@ -54,6 +55,17 @@ public:
             const Array<IntVect>&   refRatio,
             const PArray<Material>& materials);
 
+  /*
+    Does this MatFiller know about property "name"?
+   */
+  bool CanDerive(const std::string& property_name) const;
+
+  /*
+    Number of components for this property
+   */
+  int NComp(const std::string& property_name) const;
+
+
   /* Fill a MultiFab with the value of a property, given a time, 
      and refinement level (as defined in the ctr), including
      nGrow cells.  ctx is a user-defined context which is passed
@@ -67,21 +79,12 @@ public:
                    int                dComp,
                    int                nGrow,
                    void*              ctx = 0,
-                   bool               ignore_mixed = false);
+                   bool               ignore_mixed = false) const;
 
-  bool SetPropertyDirect(Real               t,
-                         int                level,
-                         FArrayBox&         fab,
-                         const Box&         box,
-                         const std::string& pname,
-                         int                dComp,
-                         void*              ctx = 0);
-
-  /* Fill a MultiFab with the ID (a Real-casted integer) of the 
-     material at that location, given a refinement level (as defined 
-     in the ctr), including nGrow cells. The ID is consistent 
-     with MatIdx()*/
-  void SetMaterialID(int level, MultiFab& mf, int nGrow, bool ignore_mixed = false);
+  /* Fill a MultiFab with the ID of the material at that location, given a
+     refinement level (as defined in the ctr), including nGrow cells. The ID
+     is consistent with MatIdx()*/
+  void SetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed = false) const;
 
 
   /* Access functions follow */
@@ -96,11 +99,11 @@ public:
   int nComp(const std::string& property_name) const;
 
   /* The Geometry object at this level  */
-  const Geometry& Geom(int level) const {return geomArray[level];}
+  const Geometry& Geom(int level) const;
 
   /* The refinement ratio between this level and the next finer. 
      Note, level<NumLevels()-1 */
-  const IntVect& RefRatio(int crse_level) {return refRatio[crse_level];}
+  const IntVect& RefRatio(int crse_level) const;
 
   /* The set of cells that are "mixed" at this level....i.e., when cells in this set are
      refined to the next finer level, they will be composed of finer cells which do not
@@ -108,40 +111,39 @@ public:
   const BoxArray& Mixed(int level) const;
 
   /* The internally cached (minimal) data structure at this level containing the 
-     (Real-casted integer) ID of the material at this location.  The ID is consistent 
-     with MatIdx(). */
-  MultiFab& MaterialID(int level) {return materialID[level];}
+     ID of the material at this location.  The ID is consistent with MatIdx(). */
+  iMultiFab& MaterialID(int level);
 
   /* A map of material name to integer used to identify Materials in this class */
-  const std::map<std::string,int>& MatIdx() const {return matIdx;}
+  const std::map<std::string,int>& MatIdx() const;
 
   /* The number of AMR levels used to uniquely determine the material ID of the cells. */
-  const int NumLevels() const {return nLevs;}
+  int NumLevels() const;
 
   /* Currently, not really critical, since there is no default constructor */
   bool Initialized() const {return initialized;}
 
   /* Given fine property values, generate coarse property values
-     per the coarsen rule registered for this property. */
-  virtual void CoarsenData(const FArrayBox&   fineFab,
-                           int                sComp,
-                           FArrayBox&         crseFab,
-                           const Box&         crseBox,
-                           int                dComp,
-                           int                nComp,
-                           const IntVect&     ref,
-                           const Property::CoarsenRule& rule) const;
-
-  /* Given crse property values, generate fine property values 
-     per the refine rule registered for this property */
-  virtual void RefineData(const FArrayBox&   crseFab,
+     per the given coarsen rule. */
+  static void CoarsenData(const FArrayBox&   fineFab,
                           int                sComp,
-                          FArrayBox&         fineFab,
+                          FArrayBox&         crseFab,
                           const Box&         crseBox,
                           int                dComp,
                           int                nComp,
                           const IntVect&     ref,
-                          const Property::RefineRule& rule) const;
+                          const Property::CoarsenRule& rule);
+
+  /* Given crse property values, generate fine property values 
+     per the given refine rule */
+  static void RefineData(const FArrayBox&   crseFab,
+                         int                sComp,
+                         FArrayBox&         fineFab,
+                         const Box&         crseBox,
+                         int                dComp,
+                         int                nComp,
+                         const IntVect&     ref,
+                         const Property::RefineRule& rule);
 
 protected:
 
@@ -164,7 +166,7 @@ protected:
 			       const std::string& pname,
 			       int                dComp,
 			       int                nComp,
-			       void*              ctx = 0);
+			       void*              ctx = 0) const;
 
   /* Fill all cells that are outside the "domain" as defined by
      the Geometry objects passed into the ctr.  By default, this
@@ -176,7 +178,7 @@ protected:
 				      const std::string& pname,
 				      int                dComp,
 				      int                nComp,
-				      int                nGrow);
+				      int                nGrow) const;
 
   /* Ensure that the properties passed in for all materials are consistent,
      e.g. that they return a consistent number of components, and have 
@@ -196,7 +198,7 @@ protected:
      MatIdx(), except that mixed cells at this level will have the value
      of -1.
   */
-  PArray<MultiFab> materialID;
+  PArray<iMultiFab> materialID;
 
   /* Complete copies of the objects passed in on construction */
   Array<Geometry> geomArray;

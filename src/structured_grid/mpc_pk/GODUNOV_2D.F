@@ -1239,6 +1239,11 @@ c
          end if
       end if
 
+      call trans_xbc(
+     &     s,DIMS(s),
+     &     xlo,xhi,DIMS(work),uedge,DIMS(uedge),
+     &     lo,hi,n,bc,eps_for_bc)
+
       do j = jmin-1,jmax+1
          do i = imin,  imax+1
             fu  = merge(zero,one,abs(uedge(i,j)).lt.eps)
@@ -1246,11 +1251,6 @@ c
             xlo(i,j) = fu*stx + (one - fu)*half*(xhi(i,j)+xlo(i,j))
          end do
       end do
-
-      call trans_xbc(
-     &     s,DIMS(s),
-     &     xlo,xhi,DIMS(work),uedge,DIMS(uedge),
-     &     lo,hi,n,bc,eps_for_bc)
 
       do j = jmin,  jmax+1
          do i = imin-1,imax+1
@@ -1381,10 +1381,10 @@ c
                      else
                         inc = 0
                      endif
-                     tr = ubar*(s(i+inc,j)-s(i+inc-1,j))/hx
+                     tr = ubar*(s(i+inc,j)-s(i+inc-1,j))*hxi
                   else
                      tr = half*(uedge(i+1,j) + uedge(i,j)) *
-     &                           (xlo(i+1,j) -   xlo(i,j)  ) / hx
+     &                           (xlo(i+1,j) -   xlo(i,j)  ) * hxi
                   endif
                   strans = -tr
 

@@ -16,6 +16,11 @@ accessing the new state-dev from the old Flow PK.
 #include "State.hh"
 #include "beaker.hh"
 
+#ifdef ALQUIMIA_ENABLED
+#include "Teuchos_RCP.hpp"
+#include "ChemistryEngine.hh"
+#endif
+
 namespace Amanzi {
 namespace AmanziChemistry {
 
@@ -25,10 +30,11 @@ class Chemistry_State {
  public:
 
   Chemistry_State(Teuchos::ParameterList& plist,
+                  const std::vector<std::string>& component_names,
                   const Teuchos::RCP<State>& S);
 
   Chemistry_State(const Teuchos::RCP<State>& S,
-                  int number_of_aqueous_components,
+                  const std::vector<std::string>& component_names,
                   int number_of_minerals,
                   int number_of_ion_exchange_sites,
                   int number_of_sorption_sites,
@@ -225,12 +231,44 @@ class Chemistry_State {
     return using_sorption_isotherms_;
   }
 
+  // Set the solution component names.
+//  void SetComponentNames(const std::vector<std::string>& comp_names);
+
+#ifdef ALQUIMIA_ENABLED
+  // The following methods are designed to help the Chemistry State interact with 
+  // Alquimia via the ChemistryEngine.
+
+  // Copies the chemistry state in the given cell to the given Alquimia containers.
+  void CopyToAlquimia(const int cell_id,
+                      AlquimiaMaterialProperties& mat_props,
+                      AlquimiaState& state,
+                      AlquimiaAuxiliaryData& aux_data);
+
+  // Copies the chemistry state in the given cell to the given Alquimia containers, 
+  // taking the aqueous components from the given multivector.
+  void CopyToAlquimia(const int cell_id,
+                      Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
+                      AlquimiaMaterialProperties& mat_props,
+                      AlquimiaState& state,
+                      AlquimiaAuxiliaryData& aux_data);
+
+  // Copies the data in the given Alquimia containers to the given cell within the 
+  // chemistry state. The aqueous component concentrations are placed into 
+  // the aqueous_components multivector.
+  void CopyFromAlquimia(const int cell_id,
+                        const AlquimiaMaterialProperties& mat_props,
+                        const AlquimiaState& state,
+                        const AlquimiaAuxiliaryData& aux_data,
+                        Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
+
+#endif
+
  protected:
   void InitializeField_(Teuchos::ParameterList& ic_plist, std::string fieldname,
                         bool sane_default, double default_val);
 
-  void SetupSoluteNames_();
   void SetupMineralNames_();
+//  void SetupSoluteNames_();
   void SetupSorptionSiteNames_();
   void ParseMeshBlocks_();
   void VerifyMineralogy_(const std::string& region_name,
@@ -244,6 +282,7 @@ class Chemistry_State {
  private:
   // not implemented
   Chemistry_State(const Chemistry_State& other);
+  Chemistry_State& operator=(const Chemistry_State& other);
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -269,6 +308,11 @@ class Chemistry_State {
 
   mutable bool water_density_initialized_;
   Teuchos::RCP<Epetra_Vector> water_density_;
+
+  // Auxiliary data, maintained by Amanzi and updated
+  int num_aux_data_;
+  Teuchos::RCP<Epetra_MultiVector> aux_data_;
+
 
 };
 } // namespace

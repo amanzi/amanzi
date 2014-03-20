@@ -93,10 +93,10 @@ if __name__ == "__main__":
     
     # hardwired for 1d-exchange:  last time = '71'
     times = ['0','71']
-    amanzi_components = ['total_component_concentration.cell.Component 0 conc', \
-                         'total_component_concentration.cell.Component 1 conc', \
-                         'total_component_concentration.cell.Component 2 conc', \
-                         'total_component_concentration.cell.Component 3 conc']
+    amanzi_components = ['total_component_concentration.cell.Na+ conc', \
+                         'total_component_concentration.cell.Ca++ conc', \
+                         'total_component_concentration.cell.Mg++ conc', \
+                         'total_component_concentration.cell.Cl- conc']
     amanzi_sorbed     = ['total_sorbed.cell.0', \
                          'total_sorbed.cell.1', \
                          'total_sorbed.cell.2', \
@@ -185,9 +185,9 @@ if __name__ == "__main__":
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=15)
 
-        #pyplot.show()
-        #plt.savefig(root+"_1d.png",format="png")
-        #plt.close()
+    #pyplot.show()
+    plt.savefig(root+"_1d.png",format="png")
+    #plt.close()
 
     # finally:
     #    pass 

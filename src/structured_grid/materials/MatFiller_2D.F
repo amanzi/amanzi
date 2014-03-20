@@ -10,6 +10,22 @@
 
 #define SDIM 2
 
+      subroutine FORT_FILLP (p, DIMS(p),id,DIMS(id),lo,hi,vals)
+      implicit none
+      integer DIMDEC(p)
+      integer DIMDEC(id)
+      integer lo(SDIM), hi(SDIM)
+      REAL_T   p(DIMV(p))
+      integer id(DIMV(id))
+      REAL_T vals(*)
+      integer i,j
+      do j = lo(2),hi(2)
+         do i = lo(1),hi(1)
+            p(i,j) = vals(id(i,j)+1)
+         end do
+      end do
+      end
+
       subroutine FORT_CRSNHARM (fdat, DIMS(fdat),
      &     cdat,DIMS(cdat),lo,hi,ratio,nc)
       implicit none

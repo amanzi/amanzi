@@ -10,6 +10,8 @@
 #include "PROB_PM_F.H" 
 #include "ArrayLim.H"
 
+#include "RockManager_F.H"
+
 
 c ::: -----------------------------------------------------------
 c ::: Initiate data in probdata.H 
@@ -313,6 +315,9 @@ c ::: -----------------------------------------------------------
       REAL_T  js,m
       REAL_T  sat(ncomps)
 
+      print *,'Should not be in get_cpl'
+      call bl_abort()
+
       call get_st(sat,s,rho,sres,ncomps)
 
       if (cpl_type .eq. 0) then 
@@ -367,6 +372,9 @@ c ::: -----------------------------------------------------------
 
       REAL_T  m
       REAL_T  sat(ncomps)
+
+      print *,'Should not be in get_invcpl'
+      call bl_abort()
 
       if (cpl_type .eq. 0) then 
          sat = zero
@@ -452,6 +460,9 @@ c ::: -----------------------------------------------------------
       REAL_T  js,m,n
       REAL_T  sat(ncomps)
 
+      print *,'Should not bin in get_dcplds'
+      call bl_abort()
+
       call get_st(sat,s,rho,sres,ncomps)
 
       if (cpl_type .eq. 0) then 
@@ -516,6 +527,9 @@ c ::: -----------------------------------------------------------
       REAL_T k_st, k_st1, k_sat, msat, mt, ds, dels, dels1, vgk, sa
 
       vgk(m,sa) = sqrt(sa)*(one-(one-sa**(one/m))**m)**2.d0
+
+      print *,'Should not be in get_kr'
+      call bl_abort()
 
       call get_st(sat,s,rho,sres,nc)
 
@@ -613,6 +627,8 @@ c ::: ---------------------------------------------------------------
       REAL_T  rho(ncomps)
       REAL_T  sres
 
+      print *,'Should not be in get_st'
+      call bl_abort()
       s(1) = min(rho(1),s(1))
       s(1) = max(zero,s(1))
 
@@ -641,6 +657,9 @@ c ::: ---------------------------------------------------------------
       REAL_T  sres
 
       integer n
+
+      print *,'Should not be in get_invst'
+      call bl_abort()
 
       s(1) = st(1)*(one-sres)+sres
       s(1) = max(sres,s(1))
@@ -678,6 +697,9 @@ c ::: -----------------------------------------------------------
       REAL_T  sres
 
       integer i
+
+      print *,'Should not be in get_ld'
+      call bl_abort()
 
       if (kr_type .ge. 0) then
          call get_kr(kr,s,rho,ncomps,kr_type,kr_coef,sres)
@@ -876,90 +898,19 @@ c         write(*,*) 'second derivative check', d2ld(1),d2ld(2),sat(1)
 
       end
 
-#if 0
-c     orig
       subroutine FORT_FIND_INV_FLUX(sol,vel,nc,vtot,gstar,muval,
-     &     ncomps,kr_type,kr_coef)
+     &     ncomps,rmID,matID,time)
 c     given a velocity of a phase, find the corresponding saturation 
 
       implicit none
 
-      integer nc,ncomps,kr_type,n
+      integer nc,ncomps,rmID,matID,n
+      REAL_T time
       REAL_T sol,muval(ncomps)
-      REAL_T vel,vtot,gstar,kr_coef
+      REAL_T vel,vtot,gstar,Sr,kr
 
-      REAL_T ld(2),rtmp(2),mtmp(2),srestmp
-      REAL_T s1,s2,stmp(2),f1,f2,ftmp
-      REAL_T, parameter :: eps = 1.0d-14
-
-      s1  = eps
-      s2  = 0.99
-
-      mtmp(1:ncomps) = muval(1:ncomps)
-      if (ncomps < 2) then
-         mtmp(2) = 0.018
-      end if
-
-      rtmp = one
-      srestmp = zero
-      
-      stmp(1) = s1
-      stmp(2) = one - s1
-      call get_ld(ld,stmp,rtmp,mtmp,2,kr_type,kr_coef,srestmp)
-      if (nc .eq. 1) then
-         f1 = vel - ld(1)/(ld(1)+ld(2))*(vtot + ld(2)*gstar) 
-      else
-         f1 = vel - ld(2)/(ld(1)+ld(2))*(vtot - ld(1)*gstar) 
-      end if     
- 60   stmp(1) = s2
-      stmp(2) = one - s2
-      call get_ld(ld,stmp,rtmp,mtmp,2,kr_type,kr_coef,srestmp)
-      if (nc .eq. 1) then
-         f2 = vel - ld(1)/(ld(1)+ld(2))*(vtot + ld(2)*gstar) 
-      else
-         f2 = vel - ld(2)/(ld(1)+ld(2))*(vtot - ld(1)*gstar) 
-      end if
-
-      if (sign(one,f1)-sign(one,f2) .ne. zero) then
-         do n = 1,100
-            stmp(1) = half*(s1+s2)
-            stmp(2) = one - stmp(1)
-            call get_ld(ld,stmp,rtmp,mtmp,2,kr_type,kr_coef,srestmp)
-            if (nc .eq. 1) then
-               ftmp = vel - ld(1)/(ld(1)+ld(2))*(vtot + ld(2)*gstar) 
-            else
-               ftmp = vel - ld(2)/(ld(1)+ld(2))*(vtot - ld(1)*gstar) 
-            end if
-
-            if (ftmp*f1 .lt. zero) then
-               f2 = ftmp
-               s2 = stmp(1)
-            elseif (ftmp*f2 .lt. zero) then
-               f1 = ftmp
-               s1 = stmp(1)
-            endif
-
-            if (dabs(s1-s2) .lt. eps) then
-               goto 70
-            endif
-         enddo
-      endif
-
- 70   sol = half*(s1+s2)
-      end
-#else
-      subroutine FORT_FIND_INV_FLUX(sol,vel,nc,vtot,gstar,muval,
-     &     ncomps,kr_type,kr_coef)
-c     given a velocity of a phase, find the corresponding saturation 
-
-      implicit none
-
-      integer nc,ncomps,kr_type,n
-      REAL_T sol,muval(ncomps)
-      REAL_T vel,vtot,gstar,kr_coef
-
-      REAL_T ld(2),rtmp(2),mtmp(2),srestmp
-      REAL_T s1,s2,stmp(2),f1,f2,ftmp
+      REAL_T ld(2),stmp,rtmp(2),mtmp(2)
+      REAL_T s1,s2,f1,f2,ftmp
       REAL_T, parameter :: eps = 1.0d-14
 
       if (ncomps < 2) then
@@ -968,18 +919,19 @@ c     given a velocity of a phase, find the corresponding saturation
          call bl_abort('FORT_FIND_INV_FLUX only works for 2-phase flow!')
       end if
 
-      s1 = 0
-      s2 = 0
+      call ROCK_MANAGER_RESIDSAT(rmID,matID,time,Sr,1)
+
+      s1 = Sr
+      s2 = Sr
       f2 = 1e20
       rtmp = one
-      srestmp = zero
 
 c     first find the minimum for vT = 0
       do n = 1,100
          s1 = s1 + 0.01
-         stmp(1) = s1
-         stmp(2) = one-s1
-         call  get_ld(ld,stmp,rtmp,mtmp,2,kr_type,kr_coef,srestmp)
+         call ROCK_MANAGER_RELPERM(rmID,s1,matID,time,kr,1)
+         ld(1) = kr / muval(1)
+         ld(2) = (1.d0 - kr) / muval(2)
          if (nc .eq. 1) then
             f1 = ld(1)/(ld(1)+ld(2))*(vtot + ld(2)*gstar) 
          else
@@ -991,21 +943,22 @@ c     first find the minimum for vT = 0
          end if
       end do
 
-      s1 = eps
+      s1 = Sr + eps
       if (abs(vel) .lt. 1e-15) then
          sol  = zero
       else
-      stmp(1) = s1
-      stmp(2) = one - s1
-      call get_ld(ld,stmp,rtmp,mtmp,2,kr_type,kr_coef,srestmp)
+      call ROCK_MANAGER_RELPERM(rmID,s1,matID,time,kr,1)
+      ld(1) = kr / muval(1)
+      ld(2) = (1.d0 - kr) / muval(2)
       if (nc .eq. 1) then
          f1 = vel - ld(1)/(ld(1)+ld(2))*(vtot + ld(2)*gstar) 
       else
          f1 = vel - ld(2)/(ld(1)+ld(2))*(vtot - ld(1)*gstar) 
       end if     
- 60   stmp(1) = s2
-      stmp(2) = one - s2
-      call get_ld(ld,stmp,rtmp,mtmp,2,kr_type,kr_coef,srestmp)
+ 60   s1 = s2
+      call ROCK_MANAGER_RELPERM(rmID,s1,matID,time,kr,1)
+      ld(1) = kr / muval(1)
+      ld(2) = (1.d0 - kr) / muval(2)
       if (nc .eq. 1) then
          f2 = vel - ld(1)/(ld(1)+ld(2))*(vtot + ld(2)*gstar) 
       else
@@ -1013,9 +966,10 @@ c     first find the minimum for vT = 0
       end if
       if (sign(one,f1)-sign(one,f2) .ne. zero) then
          do n = 1,100
-            stmp(1) = half*(s1+s2)
-            stmp(2) = one - stmp(1)
-            call get_ld(ld,stmp,rtmp,mtmp,2,kr_type,kr_coef,srestmp)
+            stmp = half*(s1+s2)
+            call ROCK_MANAGER_RELPERM(rmID,stmp,matID,time,kr,1)
+            ld(1) = kr / muval(1)
+            ld(2) = (1.d0 - kr) / muval(2)
             if (nc .eq. 1) then
                ftmp = vel - ld(1)/(ld(1)+ld(2))*(vtot + ld(2)*gstar) 
             else
@@ -1024,10 +978,10 @@ c     first find the minimum for vT = 0
 
             if (ftmp*f1 .lt. zero) then
                f2 = ftmp
-               s2 = stmp(1)
+               s2 = stmp
             elseif (ftmp*f2 .lt. zero) then
                f1 = ftmp
-               s1 = stmp(1)
+               s1 = stmp
             endif
 
             if (dabs(s1-s2) .lt. eps) then
@@ -1039,52 +993,46 @@ c     first find the minimum for vT = 0
  70   sol = half*(s1+s2)
       end if
       end
-#endif
 
       subroutine FORT_FIND_INV_RFLUX(sol,vel,gstar,muval,
-     &     ncomps,kr_type,kr_coef)
+     &     ncomps,rmID,matID,time)
 c     given the inflow velocity, find the saturation based on richard's equation 
 
       implicit none
 
-      integer ncomps,kr_type,n
+      integer ncomps,rmID,matID,n
       REAL_T  sol,muval(ncomps)
-      REAL_T  vel,gstar,kr_coef
+      REAL_T  vel,gstar,time,Sr,kr
 
-      REAL_T ld(ncomps),rtmp(ncomps),mtmp(ncomps),srestmp
-      REAL_T s1,s2,stmp(ncomps),f1,f2,ftmp
+      REAL_T s1,s2,stmp,f1,f2,ftmp
       REAL_T, parameter :: eps = 1.0d-14
 
-      mtmp(1) = muval(1)
-      rtmp(1) = one
+      call ROCK_MANAGER_RESIDSAT(rmID,matID,time,Sr,1)
 
-      s1 = zero
-      s2 = zero
+      s1 = Sr
+      s2 = Sr
       f2 = 1e20
-      srestmp = zero
 
-      stmp(1) = zero
-      s1 = zero
-      call  get_ld(ld,stmp,rtmp,mtmp,ncomps,kr_type,kr_coef,srestmp)
-      f1 = vel - ld(1)*gstar
+      s1 = Sr
+      call ROCK_MANAGER_RELPERM(rmID,s1,matID,time,kr,1)
+      f1 = vel - kr*gstar/muval(1)
 
-      stmp(1) = one
       s2 = one
-      call  get_ld(ld,stmp,rtmp,mtmp,ncomps,kr_type,kr_coef,srestmp)
-      f2 = vel - ld(1)*gstar
+      call ROCK_MANAGER_RELPERM(rmID,s2,matID,time,kr,1)
+      f2 = vel - kr*gstar/muval(1)
 
       if (sign(one,f1)-sign(one,f2) .ne. zero) then
          do n = 1,100
-            stmp(1) = half*(s1+s2)
-            call get_ld(ld,stmp,rtmp,mtmp,ncomps,kr_type,kr_coef,srestmp)
-            ftmp = vel-ld(1)*gstar
+            stmp = half*(s1+s2)
+            call ROCK_MANAGER_RELPERM(rmID,stmp,matID,time,kr,1)
+            ftmp = vel - kr*gstar/muval(1)
 
             if (ftmp*f1 .lt. zero) then
                f2 = ftmp
-               s2 = stmp(1)
+               s2 = stmp
             elseif (ftmp*f2 .lt. zero) then
                f1 = ftmp
-               s1 = stmp(1)
+               s1 = stmp
             endif
 
             if (dabs(s1-s2) .lt. eps) then

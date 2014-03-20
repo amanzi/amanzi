@@ -118,11 +118,49 @@ void MPC::mpc_init() {
 
   // create auxilary state objects for the process models
 
+  // Get the transport solute component names from the MPC parameter lists.
+  std::vector<std::string> component_names;
+  {
+    Teuchos::Array<std::string> comp_names;
+    if (mpc_parameter_list.isParameter("component names")) {
+      comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
+    }
+    for (int i = 0; i < comp_names.length(); i++) {
+      component_names.push_back(comp_names[i]);
+    }
+  }
 
   // chemistry...
   if (chemistry_enabled) {
     Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
-    CS = Teuchos::rcp( new AmanziChemistry::Chemistry_State( chemistry_parameter_list, S ) );
+
+#ifdef ALQUIMIA_ENABLED
+    if (chemistry_model == "Alquimia") {
+      // Start up the chemistry engine.
+      if (!chemistry_parameter_list.isParameter("Engine")) 
+      {
+        Errors::Message msg;
+        msg << "MPC::mpc_init(): \n";
+        msg << "  No 'Engine' parameter found in parameter list for 'Chemistry'.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+      if (!chemistry_parameter_list.isParameter("Engine Input File")) 
+      {
+        Errors::Message msg;
+        msg << "MPC::mpc_init(): \n";
+        msg << "  No 'Engine Input File' parameter found in parameter list for 'Chemistry'.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+      std::string chemEngineName = chemistry_parameter_list.get<std::string>("Engine");
+      std::string chemEngineInputFile = chemistry_parameter_list.get<std::string>("Engine Input File");
+      chem_engine = Teuchos::rcp( new AmanziChemistry::ChemistryEngine(chemEngineName, chemEngineInputFile) );
+
+      // Overwrite the component names with the primary species names from the engine.
+      chem_engine->GetPrimarySpeciesNames(component_names);
+    }
+#endif
+    // Initialize the chemistry state.
+    CS = Teuchos::rcp( new AmanziChemistry::Chemistry_State( chemistry_parameter_list, component_names, S ) );
   }
 
   // transport and chemistry...
@@ -153,15 +191,19 @@ void MPC::mpc_init() {
   }
 
   if (transport_enabled) {
-    Teuchos::Array<std::string> comp_names;
-    if (mpc_parameter_list.isParameter("component names")) {
-      comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
+#ifdef ALQUIMIA_ENABLED
+    if (chemistry_model == "Alquimia") {
+      // When Alquimia is used, the Transport PK must interact with the 
+      // chemistry engine to obtain boundary values for the components.
+      // The component names are fetched from the chemistry engine.
+      TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, CS, chem_engine));
     }
-    std::vector<std::string> names;
-    for (int i = 0; i < comp_names.length(); i++) {
-      names.push_back(comp_names[i]);
+    else {
+#endif
+      TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, component_names));
+#ifdef ALQUIMIA_ENABLED
     }
-    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, names));
+#endif
   }
 
  
@@ -196,7 +238,7 @@ void MPC::mpc_init() {
     try {
       if (chemistry_model == "Alquimia") {
 #ifdef ALQUIMIA_ENABLED
-        CPK = Teuchos::rcp( new AmanziChemistry::Alquimia_Chemistry_PK(parameter_list, CS) );
+        CPK = Teuchos::rcp( new AmanziChemistry::Alquimia_Chemistry_PK(parameter_list, CS, chem_engine) );
 #else
         std::cout << "MPC: Alquimia chemistry model is not enabled for this build.\n";
         throw std::exception();
@@ -216,8 +258,8 @@ void MPC::mpc_init() {
 
       Errors::Message message(error_message.str());
       Exceptions::amanzi_throw(message);
-    }
-  }
+    }   
+  } 
   // done creating auxilary state objects and  process models
 
   // create the observations
@@ -1096,7 +1138,7 @@ void MPC::cycle_driver() {
   }
   
   if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-    Epetra_Map cell_map = mesh_maps->cell_epetra_map(false);
+    Epetra_Map cell_map = mesh_maps->cell_map(false);
     double mem = rss_usage();
     
     double percell(mem);
@@ -1116,18 +1158,18 @@ void MPC::cycle_driver() {
     comm->MinAll(&mem,&min_mem,1);
     comm->MaxAll(&mem,&max_mem,1);
     
-    *out << endl;
-    *out << "Memory usage (high water mark):" << endl;
+    *out << std::endl;
+    *out << "Memory usage (high water mark):" << std::endl;
     *out << std::fixed << std::setprecision(1);
     *out << "  Maximum per core:   " << std::setw(7) << max_mem 
          << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
-         << " Bytes" << endl;
+         << " Bytes" << std::endl;
     *out << "  Minumum per core:   " << std::setw(7) << min_mem 
          << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
-         << " Bytes" << endl;
+         << " Bytes" << std::endl;
     *out << "  Total:              " << std::setw(7) << total_mem 
          << " MBytes,  total per cell:   " << std::setw(7) << total_mem/cell_map.NumGlobalElements()*1024*1024 
-         << " Bytes" << endl;
+         << " Bytes" << std::endl;
   }   
 }
 

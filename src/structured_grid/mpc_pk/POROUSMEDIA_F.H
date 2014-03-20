@@ -526,9 +526,10 @@ extern "C" {
   void FORT_STEADYSTATE(Real* rho, ARLIM_P(rlo), ARLIM_P(rhi), 
 			const Real* rhoval, const Real* muval, const int* ncomps,
 			const Real* kappa, ARLIM_P(klo), ARLIM_P(khi),
-			const Real* krcoef, ARLIM_P(clo), ARLIM_P(chi),
-			const int* nkrcoef,const Real* dx, 
-			const Real* inflow_vel, const int* nc, const Real* grav);  
+			const int*  mid,   ARLIM_P(mlo), ARLIM_P(mhi),
+			const int* rmID, const Real* time, 
+			const Real* inflow_vel, const int* nc, const Real* grav,
+			const int* lo, const int* hi);  
 
   void FORT_STEADYSTATE_FAB(Real* rho, ARLIM_P(rlo), ARLIM_P(rhi), 
 			    const Real* rhoval, const Real* muval, const int* ncomps,
@@ -556,8 +557,8 @@ extern "C" {
                        const Real* b1y, ARLIM_P(b1ylo), ARLIM_P(b1yhi),
 
 #if BL_SPACEDIM>2
-                       const Real* w, ARLIM_P(wlo), ARLIM_P(whi)
-                       const Real* bz, ARLIM_P(bzlo), ARLIM_P(bzhi)
+                       const Real* w, ARLIM_P(wlo), ARLIM_P(whi),
+                       const Real* bz, ARLIM_P(bzlo), ARLIM_P(bzhi),
                        const Real* b1z, ARLIM_P(b1zlo), ARLIM_P(b1zhi),
 #endif
                        const int* bc);

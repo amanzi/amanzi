@@ -285,10 +285,10 @@ ABecHelper::Fapply (MultiFab&       out,
                h[level]);
 #endif
 #if (BL_SPACEDIM ==3)
-    FORT_ADOTX(yfab.dataPtr(dst_comp),
-               ARLIM(yfab.loVect()), ARLIM(yfab.hiVect()),
-               xfab.dataPtr(src_comp),
-               ARLIM(xfab.loVect()), ARLIM(xfab.hiVect()),
+    FORT_ADOTX(outfab.dataPtr(dst_comp),
+               ARLIM(outfab.loVect()),ARLIM(outfab.hiVect()),
+               infab.dataPtr(src_comp),
+               ARLIM(infab.loVect()), ARLIM(infab.hiVect()),
                &_alpha, &_beta, afab.dataPtr(alphaComp), 
                ARLIM(afab.loVect()), ARLIM(afab.hiVect()),
                bxfab.dataPtr(betaComp), 
@@ -393,7 +393,7 @@ ABecHelper::Fsmooth (MultiFab&       solnL,
 #if (BL_SPACEDIM == 3)
     FORT_GSRB(solnfab.dataPtr(solnComp), ARLIM(solnfab.loVect()),ARLIM(solnfab.hiVect()),
               rhsfab.dataPtr(rhsComp), ARLIM(rhsfab.loVect()), ARLIM(rhsfab.hiVect()),
-              &alpha, &beta,
+              &_alpha, &_beta,
               afab.dataPtr(alphaComp), ARLIM(afab.loVect()), ARLIM(afab.hiVect()),
               bxfab.dataPtr(betaComp), ARLIM(bxfab.loVect()), ARLIM(bxfab.hiVect()),
               byfab.dataPtr(betaComp), ARLIM(byfab.loVect()), ARLIM(byfab.hiVect()),
