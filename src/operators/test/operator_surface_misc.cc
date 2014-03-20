@@ -137,9 +137,10 @@ TEST(SURFACE_MISC) {
   op2->UpdateMatrices(u);
 
   // add the diffusion operator. It is the last due to BCs.
+  Teuchos::ParameterList olist;
   Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2));
-  op3->InitOperator(K, Teuchos::null);
-  op3->UpdateMatrices();
+  op3->InitOperator(K, Teuchos::null, olist);
+  op3->UpdateMatrices(solution);
   op3->ApplyBCs(bc_model, bc_values);
 
   // change preconditioner to default
@@ -162,14 +163,16 @@ TEST(SURFACE_MISC) {
   CompositeVector& rhs = *op4->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
 
-  std::cout << "pressure solver (" << solver->name() 
-            << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-            << " code=" << ierr << std::endl;
+  if (MyPID == 0) {
+    std::cout << "pressure solver (" << solver->name() 
+              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+              << " code=" << ierr << std::endl;
 
-  // visualization
-  const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-  GMV::open_data_file(*surfmesh, (std::string)"surface.gmv");
-  GMV::start_data();
-  GMV::write_cell_data(p, 0, "solution");
-  GMV::close_data_file();
+    // visualization
+    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+    GMV::open_data_file(*surfmesh, (std::string)"surface.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(p, 0, "solution");
+    GMV::close_data_file();
+  }
 }

@@ -22,6 +22,7 @@ namespace Operators {
 ****************************************************************** */
 void OperatorAdvection::InitOperator(const CompositeVector& u)
 {
+  u.ScatterMasterToGhosted("face");
   IdentifyUpwindCells_(u);
 }
 

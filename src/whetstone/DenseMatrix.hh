@@ -58,6 +58,11 @@ class DenseMatrix {
     return (*this);
   }
 
+  DenseMatrix& operator=(double val) {
+    for (int i = 0; i < m_ * n_; i++) data_[i] = val;
+    return *this;
+  }
+
   DenseMatrix& operator*=(double val) {
     for (int i = 0; i < m_ * n_; i++) data_[i] *= val;
     return *this;

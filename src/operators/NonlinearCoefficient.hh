@@ -18,24 +18,31 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "CompositeVector.hh"
+
 namespace Amanzi {
 namespace Operators {
 
 class NonlinearCoefficient {
  public:
-  NonlinearCoefficient(const Teuchos::RCP<Epetra_Vector> cdata) 
-      : cdata_(cdata) {};
+  NonlinearCoefficient() {}; 
   ~NonlinearCoefficient() {};
 
   // main methods
-  void UpwindCellValues();
+  void UpdateValues(const CompositeVector& u) {};
+  void UpdateDerivatives(const CompositeVector& u) {};
 
   // access
-  const Teuchos::RCP<Epetra_Vector> cdata() { return cdata_; }
+  const Teuchos::RCP<Epetra_Vector> cvalues() { return cvalues_; }
+  const Teuchos::RCP<Epetra_Vector> fvalues() { return fvalues_; }
+
+  const Teuchos::RCP<Epetra_Vector> fderivatives() { return fderivatives_; }
 
  private:
-  const Teuchos::RCP<Epetra_Vector> cdata_;
-  Teuchos::RCP<Epetra_Vector> fdata_;
+  Teuchos::RCP<Epetra_Vector> cvalues_;
+  Teuchos::RCP<Epetra_Vector> fvalues_;
+
+  Teuchos::RCP<Epetra_Vector> fderivatives_;
 };
 
 }  // namespace Operators
