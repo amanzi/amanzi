@@ -163,14 +163,16 @@ TEST(SURFACE_MISC) {
   CompositeVector& rhs = *op4->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
 
-  std::cout << "pressure solver (" << solver->name() 
-            << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-            << " code=" << ierr << std::endl;
+  if (MyPID == 0) {
+    std::cout << "pressure solver (" << solver->name() 
+              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+              << " code=" << ierr << std::endl;
 
-  // visualization
-  const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-  GMV::open_data_file(*surfmesh, (std::string)"surface.gmv");
-  GMV::start_data();
-  GMV::write_cell_data(p, 0, "solution");
-  GMV::close_data_file();
+    // visualization
+    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+    GMV::open_data_file(*surfmesh, (std::string)"surface.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(p, 0, "solution");
+    GMV::close_data_file();
+  }
 }

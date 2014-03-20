@@ -53,8 +53,7 @@ void OperatorDiffusion::UpdateMatricesStiffness(std::vector<WhetStone::Tensor>& 
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List nodes;
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c = 0; c < ncells; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
