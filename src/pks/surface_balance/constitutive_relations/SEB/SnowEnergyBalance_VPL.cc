@@ -290,13 +290,6 @@ void SurfaceEnergyBalance_VPL::UpdateGroundEnergy(LocalData& seb) {
 //   std::cout<<"Implicit Loop - fQe: "<<seb.st_energy.stored_fQe<<std::endl;
 //}
 
-  std::cout << "Energy summary:" << std::endl
-            << "  fQswIn  = " << seb.st_energy.fQswIn << std::endl
-            << "  fQlwIn  = " << seb.st_energy.fQlwIn << std::endl
-            << "  fQlwOut = " << seb.st_energy.fQlwOut << std::endl
-            << "  fQh (s) = " << seb.st_energy.fQh << std::endl
-            << "  fQe (l) = " << seb.st_energy.fQe << std::endl
-            << "  fQc (c) = " << seb.st_energy.fQc << std::endl;
 }
 
 
@@ -644,6 +637,22 @@ void SurfaceEnergyBalance_VPL::SnowEnergyBalance(LocalData& seb) {
 
   // set water temp
   seb.st_energy.Trw = seb.st_energy.ht_snow > 0. ? 273.15 : seb.st_energy.temp_air;
+
+  std::cout << "Energy summary:" << std::endl
+            << "  fQswIn  = " << seb.st_energy.fQswIn << std::endl
+            << "  fQlwIn  = " << seb.st_energy.fQlwIn << std::endl
+            << "  fQlwOut = " << seb.st_energy.fQlwOut << std::endl
+            << "  fQh (s) = " << seb.st_energy.fQh << std::endl
+            << "  fQe (l) = " << seb.st_energy.fQe << std::endl
+            << "  fQc (c) = " << seb.st_energy.fQc << std::endl;
+  std::cout << "Mass summary:" << std::endl
+            << "  Mr      = " << seb.st_energy.Mr << std::endl
+            << "  VapFlux = " << seb.st_energy.SurfaceVaporFlux << std::endl;
+  std::cout << "  Snow:" << std::endl
+            << "    new ht   = " << seb.st_energy.ht_snow << std::endl
+            << "    new age  = " << seb.st_energy.age_snow << std::endl
+            << "    new dens = " << seb.st_energy.density_snow << std::endl;
+
 }
 
 
