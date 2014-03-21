@@ -108,6 +108,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
   f.Norm2(&fnorm);
   if (fnorm == 0.0) {
     x.PutScalar(0.0);
+    residual_ = 0.0;
     return criteria;  // Convergence for all criteria
   }
 

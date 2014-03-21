@@ -75,6 +75,15 @@ void Operator::Init()
 {
   diagonal_->PutScalar(0.0);
   rhs_->PutScalar(0.0);
+
+  int n = blocks_.size();
+  for (int i = 0; i < n; i++) { 
+    std::vector<WhetStone::DenseMatrix> matrix = *blocks_[i];
+    int m = matrix.size();
+    for (int k = 0; k < m; k++) {
+      matrix[k] = 0.0;
+    }
+  }
 }
 
 
@@ -117,7 +126,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
   offset_my_[2] = offset;
   if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
     vmap.MyGlobalElements(&(gids[offset]));
-    for (int v = 0; v < ncells_owned; v++) gids[offset + v] += ndof_global;
+    for (int v = 0; v < nnodes_owned; v++) gids[offset + v] += ndof_global;
     offset += nnodes_owned;
     ndof_global += vmap.NumGlobalElements();
   }
@@ -193,7 +202,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
           nd = nnodes;
         }
 
-        ff_graph.InsertGlobalIndices(nd, lid, nd, gid);
+        ff_graph.InsertGlobalIndices(nd, gid, nd, gid);
       }
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_FACE) {
       for (int f = 0; f < nfaces_owned; f++) {
@@ -209,7 +218,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
           nd = ncells;
         }
 
-        ff_graph.InsertGlobalIndices(nd, lid, nd, gid);
+        ff_graph.InsertGlobalIndices(nd, gid, nd, gid);
       }
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_NODE) {
       // not implemented yet

@@ -158,11 +158,11 @@ void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBo
 #endif
 }
 
+#ifdef ALQUIMIA_ENABLED
 // Process a geochemical condition.
 void TransportBCFactory::ProcessGeochemicalConditionSpec(Teuchos::ParameterList& spec, 
                                                          TransportBoundaryFunction_Alquimia* bc) const
 {
-#ifdef ALQUIMIA_ENABLED
   Errors::Message msg;
   std::vector<std::string> regions;
 
@@ -178,11 +178,8 @@ void TransportBCFactory::ProcessGeochemicalConditionSpec(Teuchos::ParameterList&
     msg << "parameter \"regions\" is missing";
     Exceptions::amanzi_throw(msg);
   }
-#else
-  msg << "Internal error: Alquimia is not enabled!";
-  Exceptions::amanzi_throw(msg);
-#endif
 }
+#endif
 
 }  // namespace AmanziTransport
 }  // namespace Amanzi

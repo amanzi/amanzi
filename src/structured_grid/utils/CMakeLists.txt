@@ -22,6 +22,8 @@ include_directories(${SAMR_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
+include_directories(${PMAMR_INCLUDE_DIRS})
+
 set(CXX_header_files ParmParseHelpers.H
                      InputParser_Structured.H
                      TabularFunction.H
@@ -37,6 +39,9 @@ set(CXX_source_files ParmParseHelpers.cpp
 
 add_library(sutils OBJECT ${CXX_source_files}
                           ${CXX_headers_files})
+
+# This library depends on samr.
+add_dependencies(sutils samr)
 
 if (BUILD_TESTS)
 

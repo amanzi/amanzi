@@ -19,9 +19,9 @@
 #include "Mesh.hh"
 #include "TransportBoundaryFunction.hh"
 #include "TransportBoundaryFunction_Tracer.hh"
-#include "TransportBoundaryFunction_Alquimia.hh"
 
 #ifdef ALQUIMIA_ENABLED
+#include "TransportBoundaryFunction_Alquimia.hh"
 #include "Chemistry_State.hh"
 #include "ChemistryEngine.hh"
 #endif
@@ -33,9 +33,11 @@ class TransportBCFactory {
  public:
   TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                      const Teuchos::RCP<Teuchos::ParameterList>& list)
-     : mesh_(mesh), list_(list),
 #ifdef ALQUIMIA_ENABLED
+     : mesh_(mesh), list_(list),
        chem_state_(Teuchos::null), chem_engine_(Teuchos::null) {};
+#else
+     : mesh_(mesh), list_(list) {};
 #endif
 
   // Alquimia-enabled constructor.
@@ -58,8 +60,10 @@ class TransportBCFactory {
 
   // reactive components
   void ProcessGeochemicalConditionList(std::vector<TransportBoundaryFunction*>& bcs) const;
+#ifdef ALQUIMIA_ENABLED
   void ProcessGeochemicalConditionSpec(
       Teuchos::ParameterList& spec, TransportBoundaryFunction_Alquimia* bc) const;
+#endif
 
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;

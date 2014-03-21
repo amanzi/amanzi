@@ -71,10 +71,13 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
                         TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
                         TransportDomainFunction.cc)
 
+if (ENABLE_ALQUIMIA)
+  set(geochem_lib geochemistry)
+endif()
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
                    LINK_LIBS geometry mesh error_handling state data_structures 
-                             geochemistry chemistry_pk time_integration ${Epetra_LIBRARIES})
+                             ${geochem_lib} chemistry_pk time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
 

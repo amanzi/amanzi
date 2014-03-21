@@ -174,7 +174,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   /* modify diffusion coefficient */
   std::vector<WhetStone::Tensor> K;
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -190,10 +190,10 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   // create boundary data
   Point xv(2);
-  std::vector<int> bc_model(nnodes);
-  std::vector<double> bc_values(nnodes);
+  std::vector<int> bc_model(nnodes_wghost);
+  std::vector<double> bc_values(nnodes_wghost);
 
-  for (int v = 0; v < nnodes; v++) {
+  for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
     if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
         fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
@@ -220,9 +220,9 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   // create source and add it to the operator
   CompositeVector source(*cvs);
-  source.PutScalar(0.0);
-  
-  Epetra_MultiVector& src = *source.ViewComponent("node");
+  Epetra_MultiVector& src = *source.ViewComponent("node", true);
+  src.PutScalar(0.0);
+
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     double volume = mesh->cell_volume(c);
@@ -236,11 +236,12 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
       src[0][v] += source_exact(xc, 0.0) * volume / nnodes;
     }
   }
+  source.GatherGhostedToMaster();
 
   Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(*op));
   op1->UpdateMatrices(source);
 
-  // create preconditoner using the base operator
+  // create preconditoner using the base operator class
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   Teuchos::RCP<Operator> op2 = Teuchos::rcp(new Operator(*op1));
   op2->InitPreconditioner("Hypre AMG", slist);
@@ -257,14 +258,18 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   int ierr = solver->ApplyInverse(rhs, solution);
 
-  std::cout << "pressure solver (" << solver->name() 
-            << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-            << " code=" << ierr << std::endl;
+  if (MyPID == 0) {
+    std::cout << "pressure solver (" << solver->name() 
+              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+              << " code=" << ierr << std::endl;
 
-  // visualization
-  const Epetra_MultiVector& p = *solution.ViewComponent("node");
-  GMV::open_data_file(*mesh, (std::string)"operator.gmv");
-  GMV::start_data();
-  GMV::write_node_data(p, 0, "solution");
-  GMV::close_data_file();
+    // visualization
+    const Epetra_MultiVector& p = *solution.ViewComponent("node");
+    GMV::open_data_file(*mesh, (std::string)"operator.gmv");
+    GMV::start_data();
+    GMV::write_node_data(p, 0, "solution");
+    GMV::close_data_file();
+  }
+
+  CHECK(solver->num_itrs() < 10);
 }

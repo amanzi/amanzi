@@ -3,7 +3,7 @@
   <Parameter name="grid_option" type="string" value="Unstructured"/>
 
   <!--  REGIONS  -->
-  <ParameterList name="Regions">
+  <ParameterList name="Regions Flat">
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
         <Parameter name="Location" type="Array(double)" value="{0.0,0.0,0.0}"/>
@@ -20,6 +20,17 @@
       <ParameterList name="Region: Plane">
         <Parameter name="Location" type="Array(double)" value="{0.0,0.0,1.0}"/>
         <Parameter name="Direction" type="Array(double)" value="{0.0,0.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Regions Closed">
+    <ParameterList name="Top surface">
+      <ParameterList name="Region: Labeled Set">
+        <Parameter name="Label" type="string" value="1"/>
+        <Parameter name="File" type="string" value="test/sphere.exo"/>
+        <Parameter name="Format" type="string" value="Exodus II"/>
+        <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

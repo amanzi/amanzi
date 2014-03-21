@@ -30,18 +30,34 @@ namespace Operators {
 * Initialization of the operator.                                           
 ****************************************************************** */
 void OperatorDiffusionSurface::InitOperator(
-    std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k)
+    std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k,
+    const Teuchos::ParameterList& plist)
 {
+  plist_ = plist; 
   k_ = k;
   CreateMassMatrices_(K);
+
+  // if upwind is requested, we will need to update nonlinear coefficient 
+  std::string str_upwind = plist_.get<std::string>("upwind method", "amanzi");
+
+  upwind_ = 0;
+  if (str_upwind == "amanzi") {
+    upwind_ = 1; 
+  }
 }
 
 
 /* ******************************************************************
 * Basic routine of each operator: creation of matrices.
 ****************************************************************** */
-void OperatorDiffusionSurface::UpdateMatrices()
+void OperatorDiffusionSurface::UpdateMatrices(const CompositeVector& u)
 {
+  // update nonlinear coefficient
+  if (k_ != Teuchos::null) {
+    k_->UpdateValues(u);
+    k_->UpdateDerivatives(u);
+  }
+
   // find location of matrix blocks
   int m(0), nblocks = blocks_.size();
   bool flag(false);
@@ -73,11 +89,32 @@ void OperatorDiffusionSurface::UpdateMatrices()
     WhetStone::DenseMatrix& Wff = Wff_cells_[c];
     WhetStone::DenseMatrix Acell(nfaces + 1, nfaces + 1);
 
+    // update terms due to nonlinear coefficient
+    double kc(1.0); 
+    if (k_ != Teuchos::null) {
+      kc = (*k_->cvalues())[c];
+
+      /*
+      WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
+      for (int n = 0; n < nfaces; n++) {
+         v(n) = Xf[0][faces[n]];
+      }
+      v(nfaces) = Xc[0][c];
+
+      WhetStone::DenseMatrix& Acell = matrix[c];
+      Acell.Multiply(v, av, false);
+
+      for (int n = 0; n < nfaces; n++) {
+        Yf[0][faces[n]] += av(n);
+      }
+      */
+    }
+
     double matsum = 0.0;  // elimination of mass matrix
     for (int n = 0; n < nfaces; n++) {
       double rowsum = 0.0;
       for (int m = 0; m < nfaces; m++) {
-        double tmp = Wff(n, m);
+        double tmp = Wff(n, m) * kc;
         rowsum += tmp;
         Acell(n, m) = tmp;
       }
@@ -114,14 +151,7 @@ void OperatorDiffusionSurface::CreateMassMatrices_(std::vector<WhetStone::Tensor
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix Wff(nfaces, nfaces);
-    int ok; 
-    if (k_ == Teuchos::null) {
-      ok = mfd.MassMatrixInverseSurface(c, K[c], Wff);
-    } else {
-      WhetStone::Tensor Kk(K[c]); 
-      Kk *= (*k_->cdata())[c];
-      ok = mfd.MassMatrixInverseSurface(c, Kk, Wff);
-    }
+    int ok = mfd.MassMatrixInverseSurface(c, K[c], Wff);
 
     Wff_cells_.push_back(Wff);
 
@@ -220,6 +250,8 @@ void OperatorDiffusionSurface::InitPreconditioner(
   int faces_LID[OPERATOR_MAX_FACES];
   int faces_GID[OPERATOR_MAX_FACES];
 
+  Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
+
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -227,7 +259,7 @@ void OperatorDiffusionSurface::InitPreconditioner(
     WhetStone::DenseMatrix Scell(nfaces, nfaces);
     WhetStone::DenseMatrix& Acell = matrix[c];
 
-    double tmp = Acell(nfaces, nfaces);
+    double tmp = Acell(nfaces, nfaces) + diag[0][c];
     for (int n = 0; n < nfaces; n++) {
       for (int m = 0; m < nfaces; m++) {
         Scell(n, m) = Acell(n, m) - Acell(n, nfaces) * Acell(nfaces, m) / tmp;
@@ -288,9 +320,6 @@ int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVe
   Epetra_MultiVector& Tf = *T.ViewComponent("face", true);
 
   // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
-  // Tc.ReciprocalMultiply(1.0, diag, Xc, 0.0);
-  // (*Afc_).Multiply(true, Tc, Tf);  // Afc is kept in transpose form
-  // Tf.Update(1.0, Xf, -1.0);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
@@ -314,9 +343,6 @@ int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVe
   preconditioner_->ApplyInverse(Tf, Yf);
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
-  // (*Acf_).Multiply(false, Yf, Tc);  // It performs the required parallel communications.
-  // Tc.Update(1.0, Xc, -1.0);
-  // Yc.ReciprocalMultiply(1.0, diag, Tc, 0.0);
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
