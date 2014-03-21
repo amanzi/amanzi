@@ -269,6 +269,7 @@ PorousMedia::MODEL_ID PorousMedia::model;
 
 #ifdef ALQUIMIA_ENABLED
 Amanzi::AmanziChemistry::ChemistryEngine* PorousMedia::chemistry_engine;
+AlquimiaHelper_Structured* PorousMedia::alquimia_helper;
 #else
 std::string PorousMedia::amanzi_database_file;
 std::string PorousMedia::amanzi_activity_model;
@@ -369,6 +370,9 @@ namespace
     static void PM_Setup_CleanUpStatics() 
     {
 #ifdef ALQUIMIA_ENABLED
+      AlquimiaHelper_Structured *alquimia_helper = PorousMedia::GetAlquimiaHelper();
+      delete alquimia_helper; alquimia_helper = 0;
+
       Amanzi::AmanziChemistry::ChemistryEngine *chemistry_engine = PorousMedia::GetChemistryEngine();
       delete chemistry_engine; chemistry_engine = 0;
 #endif
@@ -712,6 +716,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_solver_data = 0;
 
   PorousMedia::chemistry_engine = 0;
+  PorousMedia::alquimia_helper = 0;
 }
 
 std::pair<std::string,std::string>
@@ -1881,8 +1886,14 @@ void  PorousMedia::read_tracer()
               
               if (tic_type == "concentration")
               {
+                if (ppri.countval("geochemical_condition")) {
+                  std::string geocond; ppri.get("geochemical_condition",geocond);
+                  tic_array[i].set(n, new GeoCondRegionData(tNames[i],tic_regions,tic_type,geocond));
+                }
+                else {
                   Real val = 0; ppri.query("val",val);
                   tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,val));
+                }
               }
               else {
                   std::string m = "Tracer IC: \"" + tic_names[n] 
@@ -1925,8 +1936,15 @@ void  PorousMedia::read_tracer()
                   // When we get the BCs, we need to translate to AMR-standardized type id.  By
                   // convention, components are  Interior, Inflow, Outflow, Symmetry, SlipWall, NoSlipWall.
                   int AMR_BC_tID = -1;
+
                   if (tbc_type == "concentration")
                   {
+                    if (ppri.countval("geochemical_condition")) {
+                      std::string geocond; ppri.get("geochemical_condition",geocond);
+                      tbc_array[i].set(tbc_cnt++, new GeoCondRegionData(tbc_names[n],tbc_regions,tbc_type,geocond));
+                      BoxLib::Abort("geochemical_condition BCs not yet supported");
+                    }
+                    else {
                       Array<Real> times, vals;
                       Array<std::string> forms;
                       int nv = ppri.countval("vals");
@@ -1947,7 +1965,8 @@ void  PorousMedia::read_tracer()
                       }
                       int nComp = 1;
                       tbc_array[i].set(tbc_cnt++, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
-                      AMR_BC_tID = 1; // Inflow
+                    }
+                    AMR_BC_tID = 1; // Inflow
                   }
                   else if (tbc_type == "noflow")
                   {
@@ -2166,24 +2185,32 @@ void  PorousMedia::read_chem()
   if (do_tracer_chemistry) {
 
 #if ALQUIMIA_ENABLED
-      const Teuchos::ParameterList& pl = PorousMedia::InputParameterList();
-      BL_ASSERT(pl.isSublist("Chemistry"));
-      const Teuchos::ParameterList& chpl = pl.sublist("Chemistry");
-      std::string chem_engine_name = chpl.get<std::string>("Engine");
-      std::string chem_engine_input_filename = chpl.get<std::string>("Engine Input File");
+      ParmParse pc("Chemistry");
+
+      const std::string Chemistry_Engine_stru = "Engine";
+      const std::string Chemistry_Engine_Input_stru = "Engine_Input_File";
+      std::string chem_engine_name; pc.get(Chemistry_Engine_stru.c_str(),chem_engine_name);
+      std::string chem_engine_input_filename; pc.get(Chemistry_Engine_Input_stru.c_str(),chem_engine_input_filename);
       chemistry_engine = new Amanzi::AmanziChemistry::ChemistryEngine(chem_engine_name,chem_engine_input_filename);
-      std::vector<std::string> primarySpeciesNames, mineralNames, siteNames, ionExchangeNames, isothermSpeciesNames;
+      alquimia_helper = new AlquimiaHelper_Structured(chemistry_engine);
+      aux_chem_variables = alquimia_helper->AuxChemVariablesMap();
+
+      // convert arrays to those of PM internals
+      std::vector<std::string> primarySpeciesNames;
       chemistry_engine->GetPrimarySpeciesNames(primarySpeciesNames);
+      ntracers = primarySpeciesNames.size();
+      tNames.resize(ntracers);
+      for (int i=0; i<ntracers; ++i) {
+        tNames[i] = primarySpeciesNames[i];
+      }
+
+      std::vector<std::string> mineralNames;
       chemistry_engine->GetMineralNames(mineralNames);
-      chemistry_engine->GetSurfaceSiteNames(siteNames);
-      chemistry_engine->GetIonExchangeNames(ionExchangeNames);
-      chemistry_engine->GetIsothermSpeciesNames(isothermSpeciesNames);
-      int numPrimarySpecies = primarySpeciesNames.size();
-      int numSorbedSpecies = chemistry_engine->NumSorbedSpecies();
-      int numMinerals = mineralNames.size();
-      int numSurfaceSites = chemistry_engine->NumSurfaceSites();
-      int numIonExchangeSites = ionExchangeNames.size();
-      int numIsothermSpecies = isothermSpeciesNames.size();
+      nminerals = mineralNames.size();
+      minerals.resize(nminerals);
+      for (int i=0; i<nminerals; ++i) {
+        minerals[i] = mineralNames[i];
+      }
 #else
       Amanzi::AmanziChemistry::SetupDefaultChemistryOutput();
 

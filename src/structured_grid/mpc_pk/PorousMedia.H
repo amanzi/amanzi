@@ -31,6 +31,7 @@
 // Amanzi chemistry
 #ifdef ALQUIMIA_ENABLED
 #include <ChemistryEngine.hh>
+#include <AlquimiaHelper_Structured.H>
 #else
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
@@ -388,6 +389,7 @@ public:
   static const Array<std::string>& componentNames() {return cNames;}
   static const Array<std::string>& phaseNames() {return pNames;}
   static const Array<std::string>& soluteNames() {return tNames;}
+  static bool DoSoluteChemistry() {return do_tracer_chemistry;}
 
   static PArray<RegionData>& BCs() {return bc_array;}
   static PArray<RegionData>& TBCs(int iTrac) {return tbc_array[iTrac];}
@@ -987,6 +989,7 @@ public:
 
 #ifdef ALQUIMIA_ENABLED
   static Amanzi::AmanziChemistry::ChemistryEngine* GetChemistryEngine() {return chemistry_engine;}
+  static AlquimiaHelper_Structured* GetAlquimiaHelper() {return alquimia_helper;}
 #endif
 
   MultiFab* UMac_Prev() {return u_mac_prev;}
@@ -1189,6 +1192,7 @@ protected:
 
 #ifdef ALQUIMIA_ENABLED
   static Amanzi::AmanziChemistry::ChemistryEngine* chemistry_engine;
+  static AlquimiaHelper_Structured* alquimia_helper;
 #else
   static PArray<Amanzi::AmanziChemistry::SimpleThermoDatabase> chemSolve;
   static std::string amanzi_database_file;

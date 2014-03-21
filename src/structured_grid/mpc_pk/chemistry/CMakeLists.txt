@@ -16,11 +16,12 @@ if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
 endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
+include_directories(${GEOCHEM_STATE_DIR}) 
+include_directories(${GEOCHEM_SOURCE_DIR}) 
 
-set(CXX_header_files MultiFabCellIterator.H
-                     MultiFabCellVector.H)
+set(CXX_header_files AlquimiaHelper_Structured.H)
 
-set(CXX_source_files MultiFabCellIterator.cpp)
+set(CXX_source_files AlquimiaHelper_Structured.cpp)
 set(F90_source_files )
 set(F77_source_files )
 set(FPP_source_files )

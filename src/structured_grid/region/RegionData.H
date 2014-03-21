@@ -69,6 +69,27 @@ protected:
     Array<TabularFunction> funcs;
 };
 
+class GeoCondRegionData
+    : public RegionData
+{
+public:
+  GeoCondRegionData(const std::string&    label,
+                    const Array<const Region*>& regions,
+                    const std::string&    typeStr,
+                    const std::string&    geocond_name);
+
+  virtual ~GeoCondRegionData() {}
+    
+  virtual Array<Real> time() const;
+
+  virtual Array<Real> operator() (Real time=0) const;
+
+  virtual const std::string& GetGeochemicalConditionName() const {return geochemical_condition_name;}
+
+protected:
+  std::string geochemical_condition_name;
+};
+
 
 struct ArrayTransform
 {

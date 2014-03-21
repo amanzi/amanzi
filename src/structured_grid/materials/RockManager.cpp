@@ -64,14 +64,15 @@ static int Rock_Mgr_ID_ctr=0;
 static std::vector<RockManager*> Rock_Mgr_Ptrs;
 static std::vector<std::pair<bool,Real> > Kr_smoothing_min_seff; // Bool says whether value needs to be updated
 
-RockManager::RockManager(const RegionManager*   _region_manager,
-                         const Array<Geometry>& geomArray,
-                         const Array<IntVect>&  refRatio,
-                         int                    _nGrow)
+RockManager::RockManager(const RegionManager*      _region_manager,
+                         const Array<Geometry>&    geomArray,
+                         const Array<IntVect>&     refRatio,
+                         int                       _nGrow,
+                         const Array<std::string>* solute_names)
   : region_manager(_region_manager), nGrow(_nGrow), interps_built(false),
     dataServices_phi(0) 
 {
-  Initialize(geomArray,refRatio);
+  Initialize(geomArray,refRatio,solute_names);
   BuildInterpolators();
 
   rock_mgr_ID = Rock_Mgr_ID_ctr++;
@@ -399,8 +400,9 @@ RockManager::Porosity(Real      time,
 }
 
 void
-RockManager::Initialize(const Array<Geometry>& geomArray,
-                        const Array<IntVect>&  refRatio)
+RockManager::Initialize(const Array<Geometry>&    geomArray,
+                        const Array<IntVect>&     refRatio,
+                        const Array<std::string>* solute_names)
 {
   is_saturated = false;
   is_diffusive = false;
@@ -702,7 +704,7 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
     // capillary pressure: include cpl_coef, residual_saturation, sigma
     const std::string cpl_prefix(prefix+".cpl");
     ParmParse pp_cpl(cpl_prefix.c_str());
-    std::string cpl_model; pp_cpl.get("type",cpl_model); 
+    std::string cpl_model = CP_model_None; pp_cpl.query("type",cpl_model); 
     std::map<std::string,int>::const_iterator it = CP_models.find(cpl_model);
     int rcplType = -1;
     int rKrType = -1;
@@ -849,13 +851,15 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
     delete cpl_func;
   }
 
-#if 0
-  // Read rock parameters associated with chemistry
-  using_sorption = false;
-  aux_chem_variables.clear();
+  // if solute_names != 0, assume material properties for solute chemistry present
+  if (solute_names != 0) {
+    const Array<std::string>& tNames = *solute_names;
+    int ntracers = tNames.size();
 
-  if (do_tracer_chemistry>0)
-  {
+    // Read rock parameters associated with chemistry
+    using_sorption = false;
+    aux_chem_variables.clear();
+    
     ParmParse ppm("mineral");
     nminerals = ppm.countval("minerals");
     minerals.resize(nminerals);
@@ -888,7 +892,7 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
             found = true;
           }
         }
-	    
+
         if (found) {
           using_sorption = true;
           nsorption_isotherms = ntracers;
@@ -1034,7 +1038,6 @@ RockManager::Initialize(const Array<Geometry>& geomArray,
       }
     }
   }
-#endif
 
   materialFiller = new MatFiller(geomArray,refRatio,rock);
 }

@@ -581,6 +581,9 @@ PorousMedia::PorousMedia (Amr&            papa,
   BL_ASSERT(rock_phi == 0);
   rock_phi = new MultiFab(grids,1,3);
 
+  BL_ASSERT(materialID == 0);
+  materialID = new iMultiFab(grids,1,3);
+
   if (model != PM_SINGLE_PHASE
       && (model != PM_SINGLE_PHASE_SOLID)
       && (model != PM_STEADY_SATURATED)
@@ -593,9 +596,6 @@ PorousMedia::PorousMedia (Amr&            papa,
       BL_ASSERT(cpl_coef == 0);
       cpl_coef = new MultiFab(grids,5,3);
       (*cpl_coef).setVal(0.);
-
-      BL_ASSERT(materialID == 0);
-      materialID = new iMultiFab(grids,1,3);
 
       BL_ASSERT(lambda_cc == 0);
       lambda_cc = new MultiFab(grids,ncomps,1);
@@ -1189,6 +1189,16 @@ PorousMedia::initData ()
                     }
                     else if (tic_type == "concentration") 
                     {
+                      const GeoCondRegionData* geo = dynamic_cast<const GeoCondRegionData*>(&tic);
+                      if (geo != 0) {
+                        const std::string& geochemical_condition_name = geo->GetGeochemicalConditionName();
+                        FArrayBox& aux = get_new_data(Aux_Chem_Type)[mfi];
+                        alquimia_helper->EnforceCondition(sdat,0,pdat,0,(*rock_phi)[mfi],0,volume[mfi],0,
+                                                          sdat,ncomps,sdat,ncomps+ntracers,aux,
+                                                          density[0],298,vbox,geochemical_condition_name,
+                                                          cur_time);
+                      }
+                      else {
                         Array<Real> val = tic();
                         for (int jt=0; jt<tic_regions.size(); ++jt) {
                             BL_ASSERT(val.size()>=1);
@@ -1197,6 +1207,7 @@ PorousMedia::initData ()
 
                             tic_regions[jt]->setVal(sdat,val[0],ncomps+iTracer,dx,0);
                         }
+                      }
                     }
                     else {
                         std::string m = "Unrecognized tracer ic type: " + tic_type;
@@ -5765,6 +5776,7 @@ PorousMedia::advance_chemistry (Real time,
 
   std::set<int> types_advanced;
   types_advanced.insert(State_Type);
+  types_advanced.insert(Press_Type);
   types_advanced.insert(FuncCount_Type);
   types_advanced.insert(Aux_Chem_Type);
 
@@ -5787,14 +5799,17 @@ PorousMedia::advance_chemistry (Real time,
 #endif
 
   MultiFab& S_old = get_old_data(State_Type);
+  MultiFab& P_old = get_old_data(Press_Type);
   MultiFab& Aux_old = get_old_data(Aux_Chem_Type);
   MultiFab& Fcnt_old = get_old_data(FuncCount_Type);
 
   MultiFab& S_new = get_new_data(State_Type);
+  MultiFab& P_new = get_new_data(Press_Type);
   MultiFab& Aux_new = get_new_data(Aux_Chem_Type);
   MultiFab& Fcnt_new = get_new_data(FuncCount_Type);
 
   MultiFab::Copy(S_new,S_old,0,0,ncomps,S_new.nGrow());
+  MultiFab::Copy(P_new,P_old,0,0,ncomps,P_new.nGrow());
 
   BL_ASSERT(S_old.nComp() >= ncomps+ntracers);
   for (int ithread = 0; ithread < tnum; ithread++)
@@ -5823,12 +5838,14 @@ PorousMedia::advance_chemistry (Real time,
   int          ngrow_tmp = 0;
   BoxArray            ba = ChemistryGrids(S_old, parent, level, ngrow_tmp);
   DistributionMapping dm = getFuncCountDM(ba,ngrow_tmp);
-  MultiFab stateTemp, phiTemp, volTemp, fcnCntTemp, auxTemp;
+  MultiFab stateTemp, pressTemp, phiTemp, volTemp, fcnCntTemp, auxTemp;
 
   stateTemp.define(ba, S_old.nComp(), 0, dm, Fab_allocate);
+  pressTemp.define(ba, P_old.nComp(), 0, dm, Fab_allocate);
   auxTemp.define(ba, Aux_old.nComp(), 0, dm, Fab_allocate);
 
   stateTemp.copy(S_old,0,0,ncomps+ntracers);  // Parallel copy.
+  pressTemp.copy(P_old,0,0,ncomps);           // Parallel copy.
   auxTemp.copy(Aux_old,0,0,Aux_old.nComp());  // Parallel copy.
   Real tagVal = -1;
   if (ngrow_tmp>0) {
@@ -5876,6 +5893,30 @@ PorousMedia::advance_chemistry (Real time,
   for (MFIter mfi(volTemp); mfi.isValid(); ++mfi)
     geom.GetVolume(volTemp[mfi], volTemp.boxArray(), mfi.index(), 0);
   
+
+#ifdef ALQUIMIA_ENABLED
+//  HACK...should be unnecessary
+  for (MFIter mfi(stateTemp); mfi.isValid(); ++mfi) {
+    setPhysBoundaryValues(stateTemp[mfi],State_Type,time,0,0,ncomps+ntracers);
+  }
+
+  for (MFIter mfi(stateTemp); mfi.isValid() && chem_ok; ++mfi) {
+    Box box = mfi.validbox();
+    FArrayBox& sat_fab   = stateTemp[mfi]; sat_fab.mult(1/density[0],0,1);
+    FArrayBox& press_fab = pressTemp[mfi];
+    FArrayBox& phi_fab = phiTemp[mfi];
+    FArrayBox& vol_fab = volTemp[mfi];
+    FArrayBox& fct_fab = fcnCntTemp[mfi];
+    FArrayBox& aux_fab = auxTemp[mfi];
+
+    alquimia_helper->Advance(sat_fab,0,press_fab,0,phi_fab,0,vol_fab,0,sat_fab,ncomps,
+                             sat_fab,ncomps+ntracers,fct_fab,0,aux_fab,density[0],298,box,dt);
+
+    sat_fab.mult(density[0],0,1);
+  }
+
+#else
+
   // Make some handy indices, do some more checking to be sure all is set up correctly
   Array<int> guess_comp(ntracers,-1);
   Array<int> activity_comp(ntracers,-1);
@@ -5951,6 +5992,7 @@ PorousMedia::advance_chemistry (Real time,
   for (MFIter mfi(stateTemp); mfi.isValid() && chem_ok; ++mfi) {
     Box box = mfi.validbox();
     FArrayBox& fab     = stateTemp[mfi];
+    FArrayBox& press_fab = pressTemp[mfi];
     FArrayBox& phi_fab = phiTemp[mfi];
     FArrayBox& vol_fab = volTemp[mfi];
     FArrayBox& fct_fab = fcnCntTemp[mfi];
@@ -5969,19 +6011,16 @@ PorousMedia::advance_chemistry (Real time,
 #else
       int threadid = 0;
 #endif
-
-#ifdef ALQUIMIA_ENABLED
-#else
-      Amanzi::AmanziChemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
-      Amanzi::AmanziChemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
-      Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
-      
-      Box thread_box(box);
-      thread_box.setSmall(BL_SPACEDIM-1,tli);
-      thread_box.setBig(BL_SPACEDIM-1,tli);
-
+    
       for (IntVect iv=thread_box.smallEnd(), End=thread_box.bigEnd(); iv<=End; thread_box.next(iv)) {
-	
+        Amanzi::AmanziChemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
+        Amanzi::AmanziChemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
+        Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
+      
+        Box thread_box(box);
+        thread_box.setSmall(BL_SPACEDIM-1,tli);
+        thread_box.setBig(BL_SPACEDIM-1,tli);
+
 	// Fill local struct
 	bool is_neg = false;
 	for (int i = 0; i < ntracers; ++i) {
@@ -6073,10 +6112,10 @@ PorousMedia::advance_chemistry (Real time,
 	  }
 	}
       }
-#endif
     }
   }
-    
+#endif
+
   phiTemp.clear();
   volTemp.clear();
     
@@ -6157,6 +6196,55 @@ PorousMedia::set_preferred_boundary_values (MultiFab& S,
               aux_boundary_data_old.copyTo(S, src_comp, dst_comp, num_comp);
           }
       }
+
+
+#if 0
+      // FIXME: Implement geochemical conditions
+      if (state_index==State_Type) {
+        int last_comp = src_comp + num_comp - 1;
+        int n_t = 0;
+        int s_t = -1;
+        
+        if (last_comp >= ncomps) {
+          s_t = std::max(ncomps, src_comp);
+          n_t = std::min(ncomps+ntracers-1,last_comp) - s_t + 1;
+        }
+        
+        if (n_t > 0) {
+
+          Real t_eval = AdjustBCevalTime(State_Type,time,false);
+
+          FArrayBox bndFab;
+          for (int n=0; n<nComp; ++n) 
+          {
+            int tracer_idx = sComp+n-ncomps;
+            if (tbc_descriptor_map[tracer_idx].size()) 
+            {
+              const Box domain = geom.Domain();
+              const Real* dx   = geom.CellSize();
+
+              for (std::map<Orientation,BCDesc>::const_iterator
+                     it=tbc_descriptor_map[tracer_idx].begin(); it!=tbc_descriptor_map[tracer_idx].end(); ++it) 
+              {
+                const Box bndBox = Box(it->second.first) & fab.box();
+                if (bndBox.ok()) {
+                  bndFab.resize(bndBox,1);
+                  bndFab.copy(fab,dComp+n,0,1);
+                  const Array<int>& face_bc_idxs = it->second.second;
+                  for (int i=0; i<face_bc_idxs.size(); ++i) {
+                    const RegionData& face_tbc = tbc_array[tracer_idx][face_bc_idxs[i]];
+                    face_tbc.apply(bndFab,dx,0,1,t_eval);
+                  }
+                  fab.copy(bndFab,0,dComp+n,1);
+                }
+              }
+            }    
+          }
+
+
+        }
+      }
+#endif
   }
 }
 
@@ -8714,9 +8802,14 @@ PorousMedia::init_rock_properties ()
   }
 
   if (model == PM_SATURATED) {
-    bool retSs = rockMgr->GetProperty(state[State_Type].curTime(),level,*specific_storage,
-                                      "specific_storage",0,specific_storage->nGrow());
-    if (!retSs) BoxLib::Abort("Failed to build specific_storage");
+    if (rockMgr->CanDerive("specific_storage")) {
+      bool retSs = rockMgr->GetProperty(state[State_Type].curTime(),level,*specific_storage,
+                                        "specific_storage",0,specific_storage->nGrow());
+      if (!retSs) BoxLib::Abort("Failed to build specific_storage");
+    }
+    else {
+      specific_storage->setVal(0);
+    }
   }
 }
 

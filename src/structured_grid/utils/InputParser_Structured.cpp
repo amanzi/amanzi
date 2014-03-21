@@ -273,7 +273,7 @@ namespace Amanzi {
         prob_out_list.set("do_chem",0);
         do_chem = false;
       }
-      else if (chem_mode == "On") {
+      else if (chem_mode == "Amanzi") {
         prob_out_list.set("do_chem",1);
         do_chem = true;
         const ParameterList& chem_list = parameter_list.sublist(chem_str);
@@ -311,6 +311,62 @@ namespace Amanzi {
             chem_out_list.set(_name,chem_list.get<Array<std::string> >(name));
           }
         }
+      }
+      else if (chem_mode == "Alquimia") {
+        prob_out_list.set("do_chem",1);
+        do_chem = true;
+        const ParameterList& chem_list = parameter_list.sublist(chem_str);
+
+        const std::string ThermoDB_str = "Thermodynamic Database";
+        const std::string ThermoDB_Fmt_str = "Format";
+        const std::string ThermoDB_File_str = "File";
+        const std::string Chemistry_Engine_str = "Engine";
+        const std::string Chemistry_Engine_Input_str = "Engine Input File";
+        const std::string Chemistry_Verbosity_str = "Verbosity";
+        const std::string Chemistry_Activity_Model_str = "Activity Model";
+        const std::string Chemistry_Tol_str = "Tolerance";
+        const std::string Chemistry_Newton_str = "Maximum Newton Iterations";
+        const std::string Chemistry_Aux_str = "Auxiliary Data";
+        const std::string Chemistry_Max_Step_str = "Max Time Step (s)";
+        const std::string Chemistry_Max_Step_str_tr = "Max Time Step";
+
+        reqP.clear(); reqL.clear();
+        reqL.push_back(ThermoDB_str);
+        reqP.push_back(Chemistry_Engine_str);
+        reqP.push_back(Chemistry_Engine_Input_str);
+        reqP.push_back(Chemistry_Verbosity_str);
+        reqP.push_back(Chemistry_Activity_Model_str);
+        reqP.push_back(Chemistry_Tol_str);
+        reqP.push_back(Chemistry_Newton_str);
+        reqP.push_back(Chemistry_Max_Step_str);
+
+        PLoptions CHopt(chem_list,reqL,reqP,true,false); 
+        const Array<std::string>& CHoptP = CHopt.OptParms();
+
+        const Teuchos::ParameterList& thermoPL = chem_list.sublist(ThermoDB_str);
+        Array<std::string> treqL, treqP;
+        treqP.push_back(ThermoDB_Fmt_str);
+        treqP.push_back(ThermoDB_File_str);
+        PLoptions ThDBopt(thermoPL,treqL,treqP,true,true); 
+        chem_out_list.set<std::string>(underscore(ThermoDB_str)+"_"+underscore(ThermoDB_Fmt_str), underscore(thermoPL.get<std::string>(ThermoDB_Fmt_str)));
+        chem_out_list.set<std::string>(underscore(ThermoDB_str)+"_"+underscore(ThermoDB_File_str), thermoPL.get<std::string>(ThermoDB_File_str));
+
+        chem_out_list.set<std::string>(underscore(Chemistry_Engine_str), underscore(chem_list.get<std::string>(Chemistry_Engine_str)));
+        chem_out_list.set<std::string>(underscore(Chemistry_Engine_Input_str), underscore(chem_list.get<std::string>(Chemistry_Engine_Input_str)));
+        chem_out_list.set<std::string>(underscore(Chemistry_Verbosity_str), underscore(chem_list.get<std::string>(Chemistry_Verbosity_str)));
+        chem_out_list.set<std::string>(underscore(Chemistry_Activity_Model_str), underscore(chem_list.get<std::string>(Chemistry_Activity_Model_str)));
+        chem_out_list.set<double>(underscore(Chemistry_Tol_str), chem_list.get<double>(Chemistry_Tol_str));
+        chem_out_list.set<int>(underscore(Chemistry_Newton_str), chem_list.get<int>(Chemistry_Newton_str));
+        chem_out_list.set<double>(underscore(Chemistry_Max_Step_str_tr), chem_list.get<double>(Chemistry_Max_Step_str));
+
+        for (int i=0; i<CHoptP.size(); ++i) {
+          const std::string& name = CHoptP[i];
+          std::string _name = underscore(name);
+          if (name==Chemistry_Aux_str) {
+            chem_out_list.set(_name,underscore(chem_list.get<Array<std::string> >(name)));
+          }
+        }
+        struc_out_list.set(underscore(chem_str),chem_out_list);
       }
       else {
         MyAbort("Chemistry Model \"" + chem_mode + "\" not yet supported" );
@@ -1348,8 +1404,8 @@ namespace Amanzi {
           // need to remove empty spaces
           arrayregions.push_back(_label); 
         }
-        geom_list.set("regions",arrayregions);
       }
+      geom_list.set("regions",arrayregions);
     }
 
     typedef std::map<std::string,bool> MTEST;
@@ -2336,10 +2392,8 @@ namespace Amanzi {
               const ParameterList& compPL = phasePL.sublist(compNames[icc]);
               PLoptions soluteOPTs(compPL,nullList,nullList,false,true); // Expect only solute names here
               const Array<std::string>& soluteNames = soluteOPTs.OptLists();
-
-              for (int ics=0; ics<soluteNames.size(); ++ics) {                          
+              for (int ics=0; ics<soluteNames.size(); ++ics) {
                 const ParameterList& solutePL = compPL.sublist(soluteNames[ics]);
-                          
                 Array<std::string> funcL, funcP;
                 PLoptions soluteOPTf(solutePL,nullList,funcP,false,true);
                           
@@ -2495,36 +2549,35 @@ namespace Amanzi {
       const std::string& solute_ic_Amanzi_type = solute_ic.Amanzi_Type();
       const std::string& solute_ic_label = solute_ic.Label();
 
-      Array<std::string> reqP, nullList;
-      const std::string val_name="Value"; reqP.push_back(val_name);
+      const std::string geo_name="Geochemical Condition";
+      const std::string val_name="Value";
+      const std::string vals_name="Values";
+      const std::string time_name="Times";
+      const std::string form_name="Time Functions";
       const std::string ion_name="Free Ion Guess";
-      if (do_chem) {
-        reqP.push_back(ion_name);
+
+      if (fPLin.isParameter(geo_name)) {
+        fPLout.set<std::string>("geochemical_condition",fPLin.get<std::string>(geo_name));
+      } else if (fPLin.isParameter(val_name)) {
+        fPLout.set<double>("vals",fPLin.get<double>(val_name));
+      } else if (fPLin.isParameter(vals_name)) {
+        Array<double> vals = fPLin.get<Array<double> >(vals_name);
+        fPLout.set<Array<double> >("vals",vals);
+        if (vals.size() > 1) {
+          fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
+          fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
+        }
+      } else {
+        const std::string str = "Solute Concentration for IC \""+solute_ic_label+
+          "\" must be specified using \""+geo_name+"\", \""+val_name+"\" or \""+vals_name;
+        MyAbort(str);
       }
-      PLoptions opt(fPLin,nullList,reqP,true,false);  
-      fPLout.set<double>("val",fPLin.get<double>(val_name));
-      if (do_chem) {
+
+      fPLout.set<std::string>("type","concentration");
+
+      if (do_chem && fPLin.isParameter(ion_name)) {
         fPLout.set<double>(underscore(ion_name),fPLin.get<double>(ion_name));
       }
-      // Adjust dimensions of data
-      //if (solute_ic_units=="Molar Concentration" 
-      //    || solute_ic_units=="Molal Concentration")
-      //{
-        //std::cerr << "IC label \"" << solute_ic_label
-        //            << "\" function: \"" << solute_ic_Amanzi_type
-        //            << "\" requests unsupported units: \"" << solute_ic_units
-        //            << "\"" << std::endl;
-        //  throw std::exception();
-      //}
-      //else if (solute_ic_units=="Specific Concentration") {
-        // This is the units expected by the structured code
-      //}
-      //else {
-        //std::cerr << "Unsupported Solute IC function: \"" << solute_ic_units << "\"" << std::endl;
-        //throw std::exception();
-      //}
-    
-      fPLout.set<std::string>("type","concentration");
     }
 
     void
@@ -2819,40 +2872,30 @@ namespace Amanzi {
       const std::string& solute_bc_Amanzi_type = solute_bc.Amanzi_Type();
       const std::string& solute_bc_label = solute_bc.Label();
 
-      Array<std::string> reqP, nullList;
-      const std::string val_name="Values"; reqP.push_back(val_name);
-      const std::string time_name="Times"; reqP.push_back(time_name);
-      const std::string form_name="Time Functions"; reqP.push_back(form_name);
-    
-      PLoptions opt(fPLin,nullList,reqP,true,true);  
-      Array<double> vals = fPLin.get<Array<double> >(val_name);
-      fPLout.set<Array<double> >("vals",vals);
-      if (vals.size() > 1) {
-        fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
-        fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
+      const std::string geo_name="Geochemical Condition";
+      const std::string val_name="Value";
+      const std::string vals_name="Values";
+      const std::string time_name="Times";
+      const std::string form_name="Time Functions";
+
+      if (fPLin.isParameter(geo_name)) {
+        fPLout.set<std::string>("geochemical_condition",fPLin.get<std::string>(geo_name));
+      } else if (fPLin.isParameter(val_name)) {
+        fPLout.set<double>("vals",fPLin.get<double>(val_name));
+      } else if (fPLin.isParameter(vals_name)) {
+        Array<double> vals = fPLin.get<Array<double> >(vals_name);
+        fPLout.set<Array<double> >("vals",vals);
+        if (vals.size() > 1) {
+          fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
+          fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
+        }
+      } else {
+        const std::string str = "Solute Concentration for BC \""+solute_bc_label+"\" must be specified using \""+geo_name+"\", \""+val_name+"\" or \""+vals_name;
+        MyAbort(str);
       }
-    
-      // Adjust dimensions of data
-      //if (solute_bc_units=="Molar Concentration" 
-      //    || solute_bc_units=="Molal Concentration")
-      //{
-        //std::cerr << "BC label \"" << solute_bc_label
-        //           << "\" function: \"" << solute_bc_Amanzi_type
-        //          << "\" requests unsupported units: \"" << solute_bc_units
-        //          << "\"" << std::endl;
-        //throw std::exception();
-      //}
-      //else if (solute_bc_units=="Specific Concentration") {
-        // This is the units expected by the structured code
-      //} 
-      //else {
-        //std::cerr << "Solute BC - invalid units: \"" << solute_bc_units << "\"" << std::endl;
-        //throw std::exception();
-      //}
-    
+
       fPLout.set<std::string>("type","concentration");
     }
-
 
     void convert_solute_BCOutflow(const ICBCFunc& solute_bc,
                                   ParameterList&  fPLout)
@@ -3593,7 +3636,7 @@ namespace Amanzi {
         }
       }
             
-      if (do_chem && state.HasSolidChem()) {
+      if (0 && do_chem && state.HasSolidChem()) { // FIXME: All this data currently managed by Alquimia, work interface later...
         if (struc_list.isSublist("tracer")) {
           const Array<std::string>& solute_names = struc_list.sublist("tracer").get<Array<std::string> >("tracers");
           for (int i=0; i<solute_names.size(); ++i) {

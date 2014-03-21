@@ -108,3 +108,23 @@ ArrayRegionData::time() const
       newVals = funcs[0].x_;
   return newVals;
 };
+
+GeoCondRegionData::GeoCondRegionData(const std::string&          label,
+                                     const Array<const Region*>& regions,
+                                     const std::string&          typeStr,
+                                     const std::string&          geocond_name)
+  : RegionData(label,regions,typeStr,Array<Real>(1,-1)), 
+    geochemical_condition_name(geocond_name)
+{
+}
+
+Array<Real>
+GeoCondRegionData::operator() (Real time) const
+{
+};
+
+Array<Real>
+GeoCondRegionData::time() const
+{
+  return Array<Real>(1,0);
+};

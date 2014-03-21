@@ -21,6 +21,7 @@ include_directories(${SPROB_SOURCE_DIR})
 include_directories(${STRANS_SOURCE_DIR})
 include_directories(${SMATERIALS_SOURCE_DIR})  
 include_directories(${SFLOW_SOURCE_DIR})  
+include_directories(${SCHEM_SOURCE_DIR})  
 
 include_directories(${SAMR_SOURCE_DIR})  
 include_directories(${SUTILS_SOURCE_DIR})  

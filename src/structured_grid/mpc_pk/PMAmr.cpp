@@ -689,7 +689,11 @@ PMAmr::SetUpRockManager()
     }
 
     if (region_manager == 0) region_manager = new RegionManager();
-    rock_manager = new RockManager(region_manager,geom,refRatio(),3); // FIXME: 3 is HypGrow
+    //bool do_solute_chemistry = PorousMedia::DoSoluteChemistry();
+    bool do_solute_chemistry = false;  // FIXME: All rock data associated with solute chemistry managed by Alquimia
+    const Array<std::string>& solute_names = PorousMedia::soluteNames();
+    const Array<std::string>* sn = (do_solute_chemistry ? &solute_names : 0);
+    rock_manager = new RockManager(region_manager,geom,refRatio(),3,sn); // FIXME: 3 is HypGrow
 
     if (ParallelDescriptor::IOProcessor() && verbose>0) {
       std::cout << "....Rock Manager built" << std::endl;
