@@ -61,17 +61,8 @@ if (BUILD_TESTS)
                ${XERCES_ICU_LIBRARIES})
 
   set(SCHEMTEST "${SCHEM_SOURCE_DIR}/test")
-  add_amanzi_test(tMultiFabCellVector tMultiFabCellVector
-                  KIND unit
-                  SOURCE ${SCHEMTEST}/tMultiFabCellVector.cpp
-                  LINK_LIBS ${structured_grid_libs} ${common_libs} ${tpl_libs})
 
-  add_amanzi_test(tMultiFabCellVector4 tMultiFabCellVector4
-                  KIND unit
-	          NPROCS 4
-                  SOURCE ${SCHEMTEST}/tMultiFabCellVector.cpp
-                  LINK_LIBS ${structured_grid_libs} ${common_libs} ${tpl_libs})
-
+  #  tests removed #
 
 endif()
 
