@@ -308,6 +308,10 @@ public:
   // Sets all vectors to value.
   int PutScalar(double scalar);
 
+  // Sets all vectors to value including ghosted elements.
+  // Different name is given so it cannot be used in a templated code.   
+  int PutScalarMasterAndGhosted(double scalar);
+
   // v(name,:,:) = scalar
   int PutScalar(std::string name, double scalar);
 
@@ -410,6 +414,12 @@ inline int
 CompositeVector::PutScalar(double scalar) {
   ChangedValue();
   return mastervec_->PutScalar(scalar);
+}
+
+inline int
+CompositeVector::PutScalarMasterAndGhosted(double scalar) {
+  ChangedValue();
+  return ghostvec_->PutScalar(scalar);
 }
 
 inline int
