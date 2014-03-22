@@ -147,9 +147,11 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   CompositeVector rhs = *op3->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
 
-  std::cout << "pressure solver (" << solver->name() 
-            << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-            << " code=" << ierr << std::endl;
+  if (MyPID == 0) {
+    std::cout << "pressure solver (" << solver->name() 
+              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+              << " code=" << ierr << std::endl;
+  }
 
   // repeat the above without destroying the operators.
   op1->Init();
@@ -168,16 +170,18 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   rhs = *op3->rhs();
   ierr = solver->ApplyInverse(rhs, solution);
 
-  std::cout << "pressure solver (" << solver->name() 
-            << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-            << " code=" << ierr << std::endl;
+  if (MyPID == 0) {
+    std::cout << "pressure solver (" << solver->name() 
+              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+              << " code=" << ierr << std::endl;
 
-  // visualization
-  const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-  GMV::open_data_file(*surfmesh, (std::string)"surface_closed.gmv");
-  GMV::start_data();
-  GMV::write_cell_data(p, 0, "solution");
-  GMV::close_data_file();
+    // visualization
+    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+    GMV::open_data_file(*surfmesh, (std::string)"surface_closed.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(p, 0, "solution");
+    GMV::close_data_file();
+  }
 }
 
 

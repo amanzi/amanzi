@@ -296,6 +296,9 @@ void OperatorDiffusionSurface::InitPreconditioner(
 ****************************************************************** */
 int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
+  // Y = X;
+  // return 0;
+
   // find the block of matrices
   int m, nblocks = blocks_.size();
   for (int nb = 0; nb < nblocks; nb++) {

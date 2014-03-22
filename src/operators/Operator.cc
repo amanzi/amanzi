@@ -420,6 +420,8 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
 ******************************************************************* */
 int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
 {
+  Y.PutScalarMasterAndGhosted(0.0);
+
   // Multiply by the diagonal block.
   Y.Multiply(1.0, *diagonal_, X, 0.0);
 

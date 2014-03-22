@@ -128,8 +128,7 @@ void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBo
 {
 #ifdef ALQUIMIA_ENABLED
   Errors::Message msg;
-  if (!list_->isSublist("geochemical conditions"))
-  {
+  if (!list_->isSublist("geochemical conditions")) {
     msg << "  No 'geochemical conditions' list was found in 'Transport->boundary conditions'!\n";
     Exceptions::amanzi_throw(msg);
   }
@@ -158,10 +157,11 @@ void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBo
 #endif
 }
 
+
 #ifdef ALQUIMIA_ENABLED
 // Process a geochemical condition.
-void TransportBCFactory::ProcessGeochemicalConditionSpec(Teuchos::ParameterList& spec, 
-                                                         TransportBoundaryFunction_Alquimia* bc) const
+void TransportBCFactory::ProcessGeochemicalConditionSpec(
+    Teuchos::ParameterList& spec, TransportBoundaryFunction_Alquimia* bc) const
 {
   Errors::Message msg;
   std::vector<std::string> regions;
