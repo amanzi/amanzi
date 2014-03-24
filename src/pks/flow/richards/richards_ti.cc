@@ -230,18 +230,17 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
 
   if (assemble_preconditioner_) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "  assembling..." << std::endl;
+      *vo_->os() << "  assembling forward PC operator..." << std::endl;
+    // -- assemble
     mfd_preconditioner_->AssembleGlobalMatrices();
-    mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
 
-    // dump the schur complement
-    // Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
-    // std::stringstream filename_s;
-    // filename_s << "schur_" << S_next_->cycle() << ".txt";
-    // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-    // *vo_->os() << "updated precon " << S_next_->cycle() << std::endl;
-
-    mfd_preconditioner_->UpdatePreconditioner();
+    if (precon_used_) {
+      // -- form and prep the Schur complement for inversion
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "  assembling Schur complement..." << std::endl;
+      mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+      mfd_preconditioner_->UpdatePreconditioner();
+    }
   }
 };
 

@@ -23,9 +23,16 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   // tweak the sub-PK parameter lists
   Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
 
-  // -- turn off PC assembly: <Parameter name="assemble preconditioner" type="bool" value="false"/>
-  plist_->sublist("PKs").sublist(names[0]).set("assemble preconditioner", true);
-  plist_->sublist("PKs").sublist(names[1]).set("assemble preconditioner", true);
+  // -- turn off PC assembly in the subsurface unless we need the forward operator
+  if (plist_->isSublist("Coupled Solver")) {
+    plist_->sublist("PKs").sublist(names[0]).set("assemble preconditioner", true);
+    plist_->sublist("PKs").sublist(names[1]).set("assemble preconditioner", true);
+  } else {
+    plist_->sublist("PKs").sublist(names[0]).set("assemble preconditioner", false);
+    plist_->sublist("PKs").sublist(names[1]).set("assemble preconditioner", false);
+  }
+  
+  // -- always use the TPFA forward operator for surface
   plist_->sublist("PKs").sublist(names[2]).set("assemble preconditioner", true);
   plist_->sublist("PKs").sublist(names[3]).set("assemble preconditioner", true);
 

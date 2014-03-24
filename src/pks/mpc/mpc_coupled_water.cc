@@ -17,7 +17,9 @@ void
 MPCCoupledWater::setup(const Teuchos::Ptr<State>& S) {
   // tweak the sub-PK parameter lists
   Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
-
+  plist_->sublist("PKs").sublist(names[0]).set("assemble preconditioner", true);
+  plist_->sublist("PKs").sublist(names[1]).set("assemble preconditioner", true);
+  
   // -- turn on coupling
   plist_->sublist("PKs").sublist(names[0]).set("coupled to surface via flux", true);
   plist_->sublist("PKs").sublist(names[1]).set("coupled to subsurface via flux", true);

@@ -207,7 +207,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   mfd_preconditioner_->set_symmetric(true);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
-  mfd_preconditioner_->InitPreconditioner();
+  precon_used_ = mfd_pc_plist.isSublist("preconditioner");
+  if (precon_used_)  mfd_preconditioner_->InitPreconditioner();
 
   // constraint on max delta T, which kicks us out of bad iterates faster?
   dT_max_ = plist_->get<double>("maximum temperature change", 10.);
