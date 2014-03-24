@@ -7,8 +7,7 @@ namespace Operators {
 
 MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-    MatrixMFD_Coupled(plist,mesh),
-    scaling_(1.)
+    MatrixMFD_Coupled(plist,mesh)
 {
   // dump
   dump_schur_ = plist_.get<bool>("dump Schur complement", false);
@@ -18,8 +17,7 @@ MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(const MatrixMFD_Coupled_Surf& oth
     MatrixMFD_Coupled(other),
     surface_mesh_(other.surface_mesh_),
     surface_A_(other.surface_A_),
-    surface_B_(other.surface_B_),
-    scaling_(other.scaling_)
+    surface_B_(other.surface_B_)
 {}
 
 

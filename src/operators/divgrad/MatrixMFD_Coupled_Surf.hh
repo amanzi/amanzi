@@ -85,7 +85,6 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
   Teuchos::RCP<const Epetra_Import> surf_importer_;
   Teuchos::RCP<const Epetra_Map> surf_map_in_subsurf_;
   
-  double scaling_;
   bool dump_schur_;
 };
 
