@@ -530,7 +530,7 @@ struct FrameworkTraits {
     struct parallel : 
       mpl::eval_if<
       mpl::bool_< M == MSTK >
-      , mpl::bool_< DIM == 3 >
+      , mpl::bool_< DIM >= 2 >
       , mpl::false_
       >::type {};
   
