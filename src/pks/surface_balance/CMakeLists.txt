@@ -17,6 +17,7 @@ add_library(pk_surface_balance_SEB
        SEB/surface_balance_evaluator.cc
        SEB_VPL/surface_balance_SEB_VPL.cc
        SEB_VPL/surface_balance_evaluator_VPL.cc
+       explicit/surface_balance_explicit.cc
        implicit/surface_balance_implicit.cc)
 
 
@@ -24,6 +25,12 @@ install(TARGETS pk_surface_balance_SEB DESTINATION lib)
 
 #================================================
 # register evaluators/factories/pks
+
+# SEB explicit
+register_evaluator_with_factory(
+  HEADERFILE explicit/surface_balance_explicit_reg.hh
+  LISTNAME SURFACE_BALANCE_SEB_REG
+)
 
 # SEB implicit
 register_evaluator_with_factory(
