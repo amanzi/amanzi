@@ -67,14 +67,11 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 // Setup data
 // -------------------------------------------------------------
 void Richards::setup(const Teuchos::Ptr<State>& S) {
-  plist_->print(std::cout);
-
   PKPhysicalBDFBase::setup(S);
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
 
   flux_tol_ = plist_->get<double>("flux tolerance", 1.e-4);
-  plist_->print(std::cout);
 };
 
 
@@ -250,7 +247,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
   mfd_preconditioner_->set_symmetric(symmetric_);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
-  mfd_preconditioner_->InitPreconditioner();
+  precon_used_ = mfd_pc_plist.isSublist("preconditioner");
+  if (precon_used_)  mfd_preconditioner_->InitPreconditioner();
 
   // wc preconditioner
   precon_wc_ = plist_->get<bool>("precondition using WC", false);
@@ -327,8 +325,6 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // Initialize PK
 // -------------------------------------------------------------
 void Richards::initialize(const Teuchos::Ptr<State>& S) {
-  plist_->print(std::cout);
-
   // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);
 
