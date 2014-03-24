@@ -16,16 +16,16 @@
 
 #include "seb_physics_defs.hh"
 #include "seb_physics_funcs.hh"
-#include "surface_balance_implicit.hh"
+#include "surface_balance_explicit.hh"
 
 namespace Amanzi {
 namespace SurfaceBalance {
 
-SurfaceBalanceImplicit::SurfaceBalanceImplicit(
+SurfaceBalanceExplicit::SurfaceBalanceExplicit(
            const Teuchos::RCP<Teuchos::ParameterList>& plist,
            Teuchos::ParameterList& FElist,
            const Teuchos::RCP<TreeVector>& solution) :
-    PKPhysicalBDFBase(plist, FElist, solution),
+    PKPhysicalBase(plist, FElist, solution),
     PKDefaultBase(plist, FElist, solution) {
   // set up additional primary variables -- this is very hacky...
   // -- surface energy source
@@ -52,6 +52,9 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
   wtemp_sublist.set("evaluator name", "surface_mass_source_temperature");
   wtemp_sublist.set("field evaluator type", "primary variable");
 
+  // timestep size
+  dt_ = plist_->get<double>("max time step", 1.e99);
+
   // min wind speed
   min_wind_speed_ = plist_->get<double>("minimum wind speed", 1.0);
 
@@ -67,8 +70,8 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
 // main methods
 // -- Setup data.
 void
-SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::setup(S);
+SurfaceBalanceExplicit::setup(const Teuchos::Ptr<State>& S) {
+  PKPhysicalBase::setup(S);
 
   // requirements: primary variable
   S->RequireField(key_, name_)->SetMesh(mesh_)->
@@ -177,8 +180,8 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
 
 // -- Initialize owned (dependent) variables.
 void
-SurfaceBalanceImplicit::initialize(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::initialize(S);
+SurfaceBalanceExplicit::initialize(const Teuchos::Ptr<State>& S) {
+  PKPhysicalBase::initialize(S);
 
   // initialize snow density
   S->GetFieldData("snow_density",name_)->PutScalar(100.);
@@ -208,21 +211,26 @@ SurfaceBalanceImplicit::initialize(const Teuchos::Ptr<State>& S) {
 
 
 // computes the non-linear functional g = g(t,u,udot)
-void
-SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
-  // pull residual vector
-  Epetra_MultiVector& res = *g->Data()->ViewComponent("cell",false);
+bool
+SurfaceBalanceExplicit::advance(double dt) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "----------------------------------------------------------------" << std::endl
+               << "Advancing: t0 = " << S_inter_->time()
+               << " t1 = " << S_next_->time() << " h = " << dt << std::endl
+               << "----------------------------------------------------------------" << std::endl;
 
   // pull old snow data
-  const Epetra_MultiVector& snow_depth_old = *u_old->Data()->ViewComponent("cell",false);
+  const Epetra_MultiVector& snow_depth_old = *S_inter_->GetFieldData("snow_depth")
+      ->ViewComponent("cell",false);
   const Epetra_MultiVector& snow_age_old = *S_inter_->GetFieldData("snow_age")
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& snow_dens_old = *S_inter_->GetFieldData("snow_density")
       ->ViewComponent("cell",false);
 
   // pull current snow data
-  Epetra_MultiVector& snow_depth_new = *u_new->Data()->ViewComponent("cell",false);
+  Epetra_MultiVector& snow_depth_new = *S_next_->GetFieldData("snow_depth", name_)
+      ->ViewComponent("cell",false);
   Epetra_MultiVector& snow_temp_new = *S_next_->GetFieldData("snow_temperature", name_)
       ->ViewComponent("cell",false);
   Epetra_MultiVector& snow_age_new = *S_next_->GetFieldData("snow_age", name_)
@@ -292,8 +300,6 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       *S_next_->GetFieldData("surface_mass_source_temperature", name_)->ViewComponent("cell", false);
 
 
-  double dt = t_new - t_old;
-
   unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (unsigned int c=0; c!=ncells; ++c) {
     if (snow_depth_old[0][c] >= snow_ground_trans_ ||
@@ -346,9 +352,6 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
 
       // Run the model
       SEBPhysics::CalculateSurfaceBalance(seb);
-
-      // Evaluate the residual
-      res[0][c] = seb.out.snow_new.ht - snow_depth_new[0][c];
 
       // Pull the output
       // -- fluxes
@@ -451,10 +454,6 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       SEBPhysics::CalculateSurfaceBalance(seb);
       SEBPhysics::CalculateSurfaceBalance(seb_bare);
 
-      // Evaluate the residual
-      res[0][c] = theta * seb.out.snow_new.ht + (1-theta) * seb_bare.out.snow_new.ht
-          - snow_depth_new[0][c];
-
       // Pull the output
       // -- fluxes
       surf_energy_flux[0][c] = theta * seb.out.eb.fQc + (1-theta) * seb_bare.out.eb.fQc;
@@ -486,44 +485,15 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
     }
   }
 
+  // Mark primary variables as changed.
+  solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
+  pvfe_esource_->SetFieldAsChanged(S_next_.ptr());
+  pvfe_wsource_->SetFieldAsChanged(S_next_.ptr());
+  pvfe_w_v_source_->SetFieldAsChanged(S_next_.ptr());
+  pvfe_wtemp_->SetFieldAsChanged(S_next_.ptr());
+
+  return false;
 }
-
-// applies preconditioner to u and returns the result in Pu
-void
-SurfaceBalanceImplicit::precon(Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<TreeVector> Pu) {
-  *Pu = *u;
-}
-
-
-// updates the preconditioner
-void
-SurfaceBalanceImplicit::update_precon(double t,
-        Teuchos::RCP<const TreeVector> up, double h) {}
-
-
-// error monitor
-double
-SurfaceBalanceImplicit::enorm(Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<const TreeVector> du) {
-  double err;
-  du->NormInf(&err);
-  return err;
-}
-
-
-bool
-SurfaceBalanceImplicit::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
-  Epetra_MultiVector& u_vec = *u->Data()->ViewComponent("cell",false);
-  unsigned int ncells = u_vec.MyLength();
-  for (unsigned int c=0; c!=ncells; ++c) {
-    u_vec[0][c] = std::max(0., u_vec[0][c]);
-  }
-  return true;
-}
-
-
-
 
 } // namespace
 } // namespace
