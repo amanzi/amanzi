@@ -559,7 +559,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
   }
 
 
-  if (inmesh.space_dimension() == 2 && flatten) {
+  if (inmesh.cell_dimension() == 2 && flatten) {
     Errors::Message mesg("Requested mesh constructor produces 1D mesh which is not supported by the discretization");
     amanzi_throw(mesg);
   }
