@@ -31,7 +31,6 @@
 #include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionSurface.hh"
-#include "OperatorAccumulation.hh"
 #include "OperatorSource.hh"
 
 
@@ -104,7 +103,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   CompositeVector solution(*cvs);
-  solution.PutScalar(0.0);
+  solution.PutScalarMasterAndGhosted(0.0);
 
   Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, 0));
 
@@ -131,14 +130,16 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   CompositeVector rhs = *op->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
 
-  std::cout << "pressure solver (" << solver->name() 
-            << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-            << " code=" << ierr << std::endl;
+  if (MyPID == 0) {
+    std::cout << "pressure solver (" << solver->name() 
+              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+              << " code=" << ierr << std::endl;
 
-  // visualization
-  const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-  GMV::open_data_file(*surfmesh, (std::string)"surface_flat.gmv");
-  GMV::start_data();
-  GMV::write_cell_data(p, 0, "solution");
-  GMV::close_data_file();
+    // visualization
+    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+    GMV::open_data_file(*surfmesh, (std::string)"surface_flat.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(p, 0, "solution");
+    GMV::close_data_file();
+  }
 }

@@ -30,6 +30,7 @@
 
 #include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
+#include "Operator.hh"
 #include "OperatorDiffusionSurface.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorSource.hh"
@@ -100,11 +101,11 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
 
   // create source and add it to the operator
   CompositeVector source(*cvs);
-  source.PutScalar(0.0);
+  source.PutScalarMasterAndGhosted(0.0);
   
   Epetra_MultiVector& src = *source.ViewComponent("cell");
   for (int c = 0; c < 20; c++) {
-    src[0][c] = 1.0;
+    if (MyPID == 0) src[0][c] = 1.0;
   }
 
   Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(cvs, 0));
@@ -145,6 +146,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
      solver = factory.Create("AztecOO CG", lop_list, op3);
 
   CompositeVector rhs = *op3->rhs();
+  solution.PutScalar(0.0);
   int ierr = solver->ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
@@ -154,6 +156,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   }
 
   // repeat the above without destroying the operators.
+  op1->Clone(*op3);
   op1->Init();
   op1->UpdateMatrices(source);
 

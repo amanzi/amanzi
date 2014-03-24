@@ -93,21 +93,6 @@ void OperatorDiffusionSurface::UpdateMatrices(const CompositeVector& u)
     double kc(1.0); 
     if (k_ != Teuchos::null) {
       kc = (*k_->cvalues())[c];
-
-      /*
-      WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
-      for (int n = 0; n < nfaces; n++) {
-         v(n) = Xf[0][faces[n]];
-      }
-      v(nfaces) = Xc[0][c];
-
-      WhetStone::DenseMatrix& Acell = matrix[c];
-      Acell.Multiply(v, av, false);
-
-      for (int n = 0; n < nfaces; n++) {
-        Yf[0][faces[n]] += av(n);
-      }
-      */
     }
 
     double matsum = 0.0;  // elimination of mass matrix
@@ -174,7 +159,7 @@ void OperatorDiffusionSurface::AssembleMatrix(int schema)
   }
 
   // find location of face-based matrices
-  int m, nblocks = blocks_.size();
+  int m(0), nblocks = blocks_.size();
   for (int nb = 0; nb < nblocks; nb++) {
     if (blocks_schema_[nb] == schema) {
       m = nb;
@@ -230,7 +215,7 @@ void OperatorDiffusionSurface::InitPreconditioner(
     std::vector<int>& bc_model, std::vector<double>& bc_values)
 {
   // find the block of matrices
-  int m, nblocks = blocks_schema_.size();
+  int m(0), nblocks = blocks_schema_.size();
   for (int nb = 0; nb < nblocks; nb++) {
     int schema = blocks_schema_[nb];
     if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
@@ -247,8 +232,7 @@ void OperatorDiffusionSurface::InitPreconditioner(
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  int faces_LID[OPERATOR_MAX_FACES];
-  int faces_GID[OPERATOR_MAX_FACES];
+  int gid[OPERATOR_MAX_FACES];
 
   Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
 
@@ -275,10 +259,9 @@ void OperatorDiffusionSurface::InitPreconditioner(
     }
 
     for (int n = 0; n < nfaces; n++) {
-      faces_LID[n] = faces[n];
-      faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
+      gid[n] = fmap_wghost.GID(faces[n]);
     }
-    S->SumIntoGlobalValues(nfaces, faces_GID, Scell.Values());
+    S->SumIntoGlobalValues(nfaces, gid, Scell.Values());
   }
   S->GlobalAssemble();
 
@@ -319,7 +302,6 @@ int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVe
 
   // Temporary cell and face vectors.
   CompositeVector T(X);
-  Epetra_MultiVector& Tc = *T.ViewComponent("cell");
   Epetra_MultiVector& Tf = *T.ViewComponent("face", true);
 
   // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
@@ -327,7 +309,6 @@ int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVe
   std::vector<int> dirs;
   Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
 
-  Tf = Xf;
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -342,8 +323,11 @@ int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVe
   }
 
   // Solve the Schur complement system Sff * Yf = Tf.
-  T.GatherGhostedToMaster(Add);
+  T.GatherGhostedToMaster("face", Add);
+
   preconditioner_->ApplyInverse(Tf, Yf);
+
+  Y.ScatterMasterToGhosted("face");
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
   for (int c = 0; c < ncells_owned; c++) {

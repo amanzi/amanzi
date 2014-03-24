@@ -37,6 +37,7 @@ class Operator {
 
   // main members
   void Init();
+  void Clone(const Operator& op);
   int Apply(const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
