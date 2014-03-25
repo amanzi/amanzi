@@ -213,10 +213,12 @@ void
 SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
+  double dt = t_new - t_old;
+
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
                << "Residual calculation: t0 = " << t_old
-               << " t1 = " << t_new << " h = " << h << std::endl;
+               << " t1 = " << t_new << " h = " << dt << std::endl;
 
   // pull residual vector
   Epetra_MultiVector& res = *g->Data()->ViewComponent("cell",false);
@@ -297,9 +299,6 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
 
   Epetra_MultiVector& surf_water_flux_temp =
       *S_next_->GetFieldData("surface_mass_source_temperature", name_)->ViewComponent("cell", false);
-
-
-  double dt = t_new - t_old;
 
   unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (unsigned int c=0; c!=ncells; ++c) {
@@ -398,11 +397,11 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       seb.in.vp_ground.pressure = surf_pres[0][c];
 
       // -- snow properties
-      seb.in.snow_old.ht = snow_depth_old[0][c];
+      seb.in.snow_old.ht = snow_ground_trans_;
       seb.in.snow_old.density = snow_dens_old[0][c];
       seb.in.snow_old.age = snow_age_old[0][c];
 
-      seb.out.snow_new.ht = snow_ground_trans_;
+      seb.out.snow_new.ht = snow_depth_new[0][c];
       seb.out.snow_new.density = snow_dens_new[0][c];
       seb.out.snow_new.age = snow_age_new[0][c];
 
