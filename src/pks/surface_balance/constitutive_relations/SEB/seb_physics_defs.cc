@@ -11,8 +11,6 @@ namespace Amanzi {
 namespace SurfaceBalance {
 namespace SEBPhysics {
 
-
-
 void ThermoProperties::UpdateVaporPressure() {
   if (std::isnan(relative_humidity)) {
     if (pressure < 101325.) {

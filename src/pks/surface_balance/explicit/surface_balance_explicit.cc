@@ -72,6 +72,7 @@ SurfaceBalanceExplicit::SurfaceBalanceExplicit(
 void
 SurfaceBalanceExplicit::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::setup(S);
+  subsurf_mesh_ = S->GetMesh(); // needed for VPL, which is treated as subsurface source
 
   // requirements: primary variable
   S->RequireField(key_, name_)->SetMesh(mesh_)->
@@ -458,8 +459,12 @@ SurfaceBalanceExplicit::advance(double dt) {
       // -- fluxes
       surf_energy_flux[0][c] = theta * seb.out.eb.fQc + (1-theta) * seb_bare.out.eb.fQc;
       surf_water_flux[0][c] = theta * seb.out.mb.MWg + (1-theta) * seb_bare.out.mb.MWg;
-      surf_water_flux_temp[0][c] = (theta * seb.out.mb.MWg * seb.out.mb.MWg_temp
-              + (1-theta) * seb_bare.out.mb.MWg * seb_bare.out.mb.MWg_temp) / surf_water_flux[0][c];
+      if (std::abs(surf_water_flux[0][c]) > 0.) {
+        surf_water_flux_temp[0][c] = (theta * seb.out.mb.MWg * seb.out.mb.MWg_temp
+                                      + (1-theta) * seb_bare.out.mb.MWg * seb_bare.out.mb.MWg_temp) / surf_water_flux[0][c];
+      } else {
+        surf_water_flux_temp[0][c] = seb.out.mb.MWg_temp;
+      }
 
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
@@ -491,6 +496,24 @@ SurfaceBalanceExplicit::advance(double dt) {
   pvfe_wsource_->SetFieldAsChanged(S_next_.ptr());
   pvfe_w_v_source_->SetFieldAsChanged(S_next_.ptr());
   pvfe_wtemp_->SetFieldAsChanged(S_next_.ptr());
+
+  // debug
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    std::vector<std::string> vnames;
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vnames.push_back("air_temp"); vecs.push_back(S_next_->GetFieldData("air_temperature").ptr());
+    vnames.push_back("Qsw_in"); vecs.push_back(S_next_->GetFieldData("incoming_shortwave_radiation").ptr());
+    vnames.push_back("precip_rain"); vecs.push_back(S_next_->GetFieldData("precipitation_rain").ptr());
+    vnames.push_back("precip_snow"); vecs.push_back(S_next_->GetFieldData("precipitation_snow").ptr());
+    vnames.push_back("T_ground"); vecs.push_back(S_next_->GetFieldData("surface_temperature").ptr());
+    vnames.push_back("p_ground"); vecs.push_back(S_next_->GetFieldData("surface_pressure").ptr());
+    vnames.push_back("energy_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
+    vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source").ptr());
+    vnames.push_back("surface_vapor_source"); vecs.push_back(S_next_->GetFieldData("mass_source").ptr());
+    vnames.push_back("T_water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source_temperature").ptr());
+    db_->WriteVectors(vnames, vecs, true);
+  }
+
 
   return false;
 }
