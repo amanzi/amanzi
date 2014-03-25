@@ -6,9 +6,7 @@
 #include <algorithm>
 #include <boost/math/tools/roots.hpp>
 
-#ifdef ENABLE_DBC
 #include "dbc.hh"
-#endif
 
 #include "seb_physics_funcs.hh"
 
@@ -49,7 +47,7 @@ void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf, Energy
   double air_temp = seb.in.met.vp_air.temp;
   double Ri  = seb.params.gravity * seb.params.Zr * (air_temp - vp_surf.temp)
       / (air_temp * std::pow(seb.in.met.Us,2));
-  if (seb.out.snow_new.ht > 0. || Ri >= 0.) {
+  if (Ri >= 0.) {
     // stable condition or snow?
     Sqig = 1 / (1 + 10*Ri);
   } else {
@@ -164,7 +162,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     // -- water source to ground is (corrected) melt and rainfall
     mb.MWg = mb.Mm + seb.in.met.Pr;
     mb.MWg_subsurf = 0.;
-    mb.MWg_temp = (mb.Mm * 273.15 + seb.in.met.Pr * seb.in.met.vp_air.temp) / mb.MWg;
+    mb.MWg_temp = mb.MWg > 0. ? (mb.Mm * 273.15 + seb.in.met.Pr * seb.in.met.vp_air.temp) / mb.MWg : seb.in.met.vp_air.temp;
 
 
   } else {
@@ -177,6 +175,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     // set the water properties
     // -- water source to ground is rainfall + condensation
     // -- evaporation is taken from ground if ponded water, from cell source if not (with transition)
+    mb.MWg_temp = seb.in.met.vp_air.temp;
     mb.MWg = seb.in.met.Pr;
     mb.MWg_subsurf = 0.;
     if (mb.Me > 0.) {
@@ -195,7 +194,6 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
       mb.MWg_subsurf += trans_factor * mb.Me;
     }
   }
-  mb.MWg_temp = seb.in.met.vp_air.temp;
 
 
   if (debug) {

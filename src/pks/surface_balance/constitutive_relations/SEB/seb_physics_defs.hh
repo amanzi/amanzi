@@ -13,6 +13,14 @@
 
 #include <limits>
 
+#if 0
+#define MY_LOCAL_NAN std::numeric_limits<double>::signaling_NaN()
+#else
+#define MY_LOCAL_NAN std::numeric_limits<double>::quiet_NaN()
+#endif
+
+
+
 namespace Amanzi {
 namespace SurfaceBalance {
 namespace SEBPhysics {
@@ -30,14 +38,14 @@ struct ThermoProperties {
   double dewpoint_temp;                 // [K]
 
   ThermoProperties() :
-      temp(std::numeric_limits<double>::signaling_NaN()),
+      temp(MY_LOCAL_NAN),
       pressure(101325.),
       porosity(1.),
       density_w(1000.),
-      relative_humidity(std::numeric_limits<double>::signaling_NaN()),
-      saturated_vaporpressure(std::numeric_limits<double>::signaling_NaN()),
-      actual_vaporpressure(std::numeric_limits<double>::signaling_NaN()),
-      dewpoint_temp(std::numeric_limits<double>::signaling_NaN()) {}
+      relative_humidity(MY_LOCAL_NAN),
+      saturated_vaporpressure(MY_LOCAL_NAN),
+      actual_vaporpressure(MY_LOCAL_NAN),
+      dewpoint_temp(MY_LOCAL_NAN) {}
 
   void UpdateVaporPressure();
 };
@@ -50,9 +58,9 @@ struct SnowProperties {
   double age;                   // snow age [days]
 
   SnowProperties() :
-      ht(std::numeric_limits<double>::signaling_NaN()),
-      density(std::numeric_limits<double>::signaling_NaN()),
-      age(std::numeric_limits<double>::signaling_NaN()) {}
+      ht(MY_LOCAL_NAN),
+      density(MY_LOCAL_NAN),
+      age(MY_LOCAL_NAN) {}
 };
 
 
@@ -63,9 +71,9 @@ struct SurfaceProperties {
   double emissivity;
 
   SurfaceProperties() :
-      albedo(std::numeric_limits<double>::signaling_NaN()),
-      Zo(std::numeric_limits<double>::signaling_NaN()),
-      emissivity(std::numeric_limits<double>::signaling_NaN()) {}
+      albedo(MY_LOCAL_NAN),
+      Zo(MY_LOCAL_NAN),
+      emissivity(MY_LOCAL_NAN) {}
 };
 
 
@@ -78,10 +86,10 @@ struct MetData {
   ThermoProperties vp_air;
 
   MetData() :
-      Us(std::numeric_limits<double>::signaling_NaN()),
-      QswIn(std::numeric_limits<double>::signaling_NaN()),
-      Ps(std::numeric_limits<double>::signaling_NaN()),
-      Pr(std::numeric_limits<double>::signaling_NaN()),
+      Us(MY_LOCAL_NAN),
+      QswIn(MY_LOCAL_NAN),
+      Ps(MY_LOCAL_NAN),
+      Pr(MY_LOCAL_NAN),
       vp_air() {}
 };
 
@@ -133,7 +141,7 @@ struct ModelInput {
   MetData met;
 
   ModelInput() :
-      dt(std::numeric_limits<double>::signaling_NaN()),
+      dt(MY_LOCAL_NAN),
       vp_ground(),
       vp_snow(),
       surf(),
@@ -154,14 +162,14 @@ struct EnergyBalance {  // all are [J/ (m^2 s)]
   double Dhe;           // special constant for use in e and h, precalculated for efficiency
 
   EnergyBalance() :
-      fQswIn(std::numeric_limits<double>::signaling_NaN()),
-      fQlwIn(std::numeric_limits<double>::signaling_NaN()),
-      fQlwOut(std::numeric_limits<double>::signaling_NaN()),
-      fQh(std::numeric_limits<double>::signaling_NaN()),
-      fQe(std::numeric_limits<double>::signaling_NaN()),
-      fQc(std::numeric_limits<double>::signaling_NaN()),
-      fQm(std::numeric_limits<double>::signaling_NaN()),
-      Dhe(std::numeric_limits<double>::signaling_NaN()) {}
+      fQswIn(MY_LOCAL_NAN),
+      fQlwIn(MY_LOCAL_NAN),
+      fQlwOut(MY_LOCAL_NAN),
+      fQh(MY_LOCAL_NAN),
+      fQe(MY_LOCAL_NAN),
+      fQc(MY_LOCAL_NAN),
+      fQm(MY_LOCAL_NAN),
+      Dhe(MY_LOCAL_NAN) {}
 
   void BalanceViaMelt();
   void BalanceViaConduction();
@@ -178,9 +186,9 @@ struct MassBalance {    // all are in [m/s] of WATER, i.e. snow are in SWE
   double MWg_temp; // temperature of sources
 
   MassBalance() :
-      Me(std::numeric_limits<double>::signaling_NaN()),
-      Mm(std::numeric_limits<double>::signaling_NaN()),
-      MWg(std::numeric_limits<double>::signaling_NaN()) {}
+      Me(MY_LOCAL_NAN),
+      Mm(MY_LOCAL_NAN),
+      MWg(MY_LOCAL_NAN) {}
 };
 
 
