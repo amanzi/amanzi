@@ -395,7 +395,7 @@ SurfaceBalanceExplicit::advance(double dt) {
       seb.in.vp_ground.pressure = surf_pres[0][c];
 
       // -- snow properties
-      seb.in.snow_old.ht = snow_depth_old[0][c];
+      seb.in.snow_old.ht = snow_ground_trans_;
       seb.in.snow_old.density = snow_dens_old[0][c];
       seb.in.snow_old.age = snow_age_old[0][c];
 
@@ -507,6 +507,18 @@ SurfaceBalanceExplicit::advance(double dt) {
     vnames.push_back("precip_snow"); vecs.push_back(S_next_->GetFieldData("precipitation_snow").ptr());
     vnames.push_back("T_ground"); vecs.push_back(S_next_->GetFieldData("surface_temperature").ptr());
     vnames.push_back("p_ground"); vecs.push_back(S_next_->GetFieldData("surface_pressure").ptr());
+    db_->WriteVectors(vnames, vecs, true);
+    db_->WriteDivider();
+
+    vnames.clear();
+    vecs.clear();
+    vnames.push_back("snow_ht"); vecs.push_back(S_next_->GetFieldData("snow_depth").ptr());
+    vnames.push_back("snow_temp"); vecs.push_back(S_next_->GetFieldData("snow_temperature").ptr());
+    db_->WriteVectors(vnames, vecs, true);
+    db_->WriteDivider();
+
+    vnames.clear();
+    vecs.clear();
     vnames.push_back("energy_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
     vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source").ptr());
     vnames.push_back("surface_vapor_source"); vecs.push_back(S_next_->GetFieldData("mass_source").ptr());

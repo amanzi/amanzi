@@ -93,7 +93,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
 
     double swe_new = swe_old + seb.in.met.Ps - mb.Mm*seb.in.dt + mb.Me*seb.in.dt; // CHECK SIGNS!
     if (swe_new < 0.) {
-      // Too much melt energy allowed.  Fix the energy balance by pushing the
+      // too much melt energy allowed.  Fix the energy balance by pushing the
       // extra into the subsurface.
       mb.Mm = mb.Mm * swe_old / (swe_old - swe_new);
 
