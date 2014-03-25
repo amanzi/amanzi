@@ -270,8 +270,9 @@ namespace Amanzi {
       //
       std::string chem_mode = ec_list.get<std::string>(chem_mod_str);
       if (chem_mode == "Off") {
-        prob_out_list.set("do_chem",0);
-        do_chem = false;
+	// NOTE: Need chemistry info even if no reactions
+        //prob_out_list.set("do_chem",0);
+        //do_chem = false;
       }
       else if (chem_mode == "Amanzi") {
         prob_out_list.set("do_chem",1);

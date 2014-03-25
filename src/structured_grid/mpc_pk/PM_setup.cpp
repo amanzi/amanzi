@@ -1850,18 +1850,35 @@ void  PorousMedia::read_tracer()
     tbc_array.resize(ntracers);
       pp.getarr("tracers",tNames,0,ntracers);
 
+      // FIXME: Amanzi input MUST be consistent with chemistry_engine
+      std::vector<std::string> primarySpeciesNames; chemistry_engine->GetPrimarySpeciesNames(primarySpeciesNames);
+      BL_ASSERT(ntracers==chemistry_engine->NumPrimarySpecies());
+      int Nimmobile = chemistry_engine->NumSorbedSpecies();
+      int Nmobile = chemistry_engine->NumPrimarySpecies() - Nimmobile;
+      for (int i = 0; i<Nmobile; i++) {
+	BL_ASSERT(primarySpeciesNames[i] == tNames[i]);
+      }
+      for (int i = 0; i<Nimmobile; i++) {
+	BL_ASSERT(primarySpeciesNames[Nmobile+i] == tNames[Nmobile+i]);
+      }
+
+      if (do_tracer_chemistry>0  ||  do_tracer_advection  ||  do_tracer_diffusion) {
+	setup_tracer_transport = true;
+	for (int i = 0; i<Nmobile; i++) {
+	  group_map["Total"].push_back(i+ncomps);
+	}
+	for (int i = 0; i<Nimmobile; i++) {
+	  group_map["Immobile"].push_back(i+ncomps+Nmobile);
+	}
+      }
+      else {
+	setup_tracer_transport = false;
+      }
+
       for (int i = 0; i<ntracers; i++)
       {
           const std::string prefix("tracer." + tNames[i]);
 	  ParmParse ppr(prefix.c_str());
-          if (do_tracer_chemistry>0  ||  do_tracer_advection  ||  do_tracer_diffusion) {
-              setup_tracer_transport = true;
-              std::string g="Total"; ppr.query("group",g); // FIXME: is this relevant anymore?
-              group_map[g].push_back(i+ncomps);
-          }
-          else {
-              setup_tracer_transport = false;
-          }
 
           // Initial condition and boundary condition  
           Array<std::string> tic_names;
@@ -1886,14 +1903,20 @@ void  PorousMedia::read_tracer()
               
               if (tic_type == "concentration")
               {
+		Real val;
                 if (ppri.countval("geochemical_condition")) {
                   std::string geocond; ppri.get("geochemical_condition",geocond);
-                  tic_array[i].set(n, new GeoCondRegionData(tNames[i],tic_regions,tic_type,geocond));
+		  Real cur_time = 0; // FIXME
+		  Box boxTMP(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(0,0,0)));
+		  const std::map<std::string,int>& auxChemVariablesMap = alquimia_helper->AuxChemVariablesMap();
+		  FArrayBox primTMP(boxTMP,Nmobile+Nimmobile);
+		  alquimia_helper->EnforceCondition(primTMP,0,primTMP,Nmobile,boxTMP,geocond, cur_time);
+		  val = primTMP.dataPtr()[i];
                 }
                 else {
-                  Real val = 0; ppri.query("val",val);
-                  tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,val));
+                  val = 0; ppri.query("val",val);
                 }
+		tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,val));
               }
               else {
                   std::string m = "Tracer IC: \"" + tic_names[n] 
@@ -1939,33 +1962,39 @@ void  PorousMedia::read_tracer()
 
                   if (tbc_type == "concentration")
                   {
+		    Array<Real> times, vals;
+		    Array<std::string> forms;
+
                     if (ppri.countval("geochemical_condition")) {
                       std::string geocond; ppri.get("geochemical_condition",geocond);
-                      tbc_array[i].set(tbc_cnt++, new GeoCondRegionData(tbc_names[n],tbc_regions,tbc_type,geocond));
-                      BoxLib::Abort("geochemical_condition BCs not yet supported");
-                    }
+		      Real cur_time = 0; // FIXME
+		      Box boxTMP(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(0,0,0)));
+		      const std::map<std::string,int>& auxChemVariablesMap = alquimia_helper->AuxChemVariablesMap();
+		      FArrayBox primTMP(boxTMP,Nmobile+Nimmobile);
+		      alquimia_helper->EnforceCondition(primTMP,0,primTMP,Nmobile,boxTMP,geocond, cur_time);
+		      times.resize(1,0);
+		      vals.resize(1,primTMP.dataPtr()[i]);
+		    }
                     else {
-                      Array<Real> times, vals;
-                      Array<std::string> forms;
                       int nv = ppri.countval("vals");
                       if (nv) {
-                          ppri.getarr("vals",vals,0,nv);
-                          if (nv>1) {
-                              ppri.getarr("times",times,0,nv);
-                              ppri.getarr("forms",forms,0,nv-1);
-                          }
-                          else {
-                              times.resize(1,0);
-                          }
+			ppri.getarr("vals",vals,0,nv);
+			if (nv>1) {
+			  ppri.getarr("times",times,0,nv);
+			  ppri.getarr("forms",forms,0,nv-1);
+			}
+			else {
+			  times.resize(1,0);
+			}
                       }
                       else {
                           vals.resize(1,0); // Default tracers to zero for all time
                           times.resize(1,0);
                           forms.resize(0);
                       }
-                      int nComp = 1;
-                      tbc_array[i].set(tbc_cnt++, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
-                    }
+		    }
+		    int nComp = 1;
+		    tbc_array[i].set(tbc_cnt++, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
                     AMR_BC_tID = 1; // Inflow
                   }
                   else if (tbc_type == "noflow")
@@ -2182,7 +2211,7 @@ void  PorousMedia::read_chem()
       
 #ifdef AMANZI
 
-  if (do_tracer_chemistry) {
+  //  if (do_tracer_chemistry) {
 
 #if ALQUIMIA_ENABLED
       ParmParse pc("Chemistry");
@@ -2346,7 +2375,7 @@ void  PorousMedia::read_chem()
       }
      
 #endif
-    }
+      //}
 #endif
 
   pp.query("use_funccount",use_funccount);
@@ -2386,15 +2415,15 @@ void PorousMedia::read_params()
   ParmParse pp("prob");
   pp.query("do_chem",do_tracer_chemistry);
 
+  // chemistry
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+    std::cout << "Read chemistry."<< std::endl;
+  read_chem();
+
   // tracers
   read_tracer();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read tracers."<< std::endl;
-
-  // chemistry. Needs to come after tracers (and rock?) have been setup.
-  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-    std::cout << "Read chemistry."<< std::endl;
-  read_chem();
 
   // source
   read_source();

@@ -168,6 +168,9 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
                                           AlquimiaAuxiliaryData&       aux_input,
                                           AlquimiaAuxiliaryOutputData& aux_output)
 {
+  mat_props.volume = volume(iv,sVol);
+  mat_props.saturation = aqueous_saturation(iv,sSat);
+
   chem_state.water_density = water_density;
   chem_state.porosity = porosity(iv,sPhi);
   chem_state.temperature = temperature;
@@ -178,6 +181,8 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
   for (int i=0; i<Nimmobile; ++i) {
     chem_state.total_immobile.data[i] = primary_species_immobile(iv,sPrimImmob+i);
   }
+
+#if 0
   for (int i=0; i<Nminerals; ++i) {
     const std::string label=mineralNames[i] + "_Volume_Fraction"; 
     chem_state.mineral_volume_fraction.data[i] = aux_data(iv,aux_chem_variables[label]);
@@ -194,9 +199,7 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
     const std::string label=ionExchangeNames[i] + "_Ion_Exchange_Capacity"; 
     chem_state.cation_exchange_capacity.data[i] = aux_data(iv,aux_chem_variables[label]);
   }
-        
-  mat_props.volume = volume(iv,sVol);
-  mat_props.saturation = aqueous_saturation(iv,sSat);
+
   for (int i=0; i<isothermSpeciesNames.size(); ++i) {
     const std::string label=isothermSpeciesNames[i] + "_Isotherm_Kd"; 
     mat_props.isotherm_kd.data[i] = aux_data(iv,aux_chem_variables[label]);
@@ -223,16 +226,12 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
     const std::string label=BoxLib::Concatenate("Auxiliary_Doubles_",i,ndigits_doubles); 
     aux_input.aux_doubles.data[i] = aux_data(iv,aux_chem_variables[label]);
   }
+#endif
 }
 
 void
-AlquimiaHelper_Structured::EnforceCondition(const FArrayBox& aqueous_saturation,       int sSat,
-                                            const FArrayBox& aqueous_pressure,         int sPress,
-                                            const FArrayBox& porosity,                 int sPhi,
-                                            const FArrayBox& volume,                   int sVol,
-                                            FArrayBox&       primary_species_mobile,   int sPrimMob,
-                                            FArrayBox&       primary_species_immobile, int sPrimImmob,
-                                            FArrayBox&       aux_data, Real water_density, Real temperature,
+AlquimiaHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
+                                            FArrayBox& primary_species_immobile, int sPrimImmob,
                                             const Box& box, const std::string& condition_name, Real time)
 {
 #if (BL_SPACEDIM == 3) && defined(_OPENMP)
@@ -242,6 +241,14 @@ AlquimiaHelper_Structured::EnforceCondition(const FArrayBox& aqueous_saturation,
   int thread_outer_lo = box.smallEnd()[BL_SPACEDIM-1];
   int thread_outer_hi = box.bigEnd()[BL_SPACEDIM-1];
   bool chem_ok = true;
+
+  FArrayBox dumS(box,1); dumS.setVal(1); int sDumS=0;
+  FArrayBox dumP(box,1); dumP.setVal(101325); int sDumP=0;
+  FArrayBox dumPhi(box,1); dumPhi.setVal(1); int sDumPhi=0;
+  FArrayBox dumV(box,1); dumV.setVal(1); int sDumV=0;
+  FArrayBox dumA(box,aux_chem_variables.size()); dumA.setVal(0);
+  Real dumRho = 998.2;
+  Real dumTemp = 295;
   
   for (int tli=thread_outer_lo; tli<=thread_outer_hi && chem_ok; tli++) {
 #if (BL_SPACEDIM == 3) && defined(_OPENMP)
@@ -256,14 +263,14 @@ AlquimiaHelper_Structured::EnforceCondition(const FArrayBox& aqueous_saturation,
     
     for (IntVect iv=thread_box.smallEnd(), End=thread_box.bigEnd(); iv<=End; thread_box.next(iv)) {
       
-      BL_to_Alquimia(aqueous_saturation,sSat,aqueous_pressure,sPress,porosity,sPhi,volume,sVol,
+      BL_to_Alquimia(dumS,sDumS,dumP,sDumP,dumPhi,sDumPhi,dumV,sDumV,
                      primary_species_mobile,sPrimMob,primary_species_immobile,sPrimImmob,
-                     aux_data,iv,water_density,temperature,
+		     dumA,iv,dumRho,dumTemp,
                      alquimia_material_properties[threadid],
                      alquimia_state[threadid],
                      alquimia_aux_in[threadid],
                      alquimia_aux_out[threadid]);
-      
+
       engine->EnforceCondition(condition_name,time,
                                alquimia_material_properties[threadid],
                                alquimia_state[threadid],
@@ -272,14 +279,13 @@ AlquimiaHelper_Structured::EnforceCondition(const FArrayBox& aqueous_saturation,
         
       Alquimia_to_BL(primary_species_mobile,   sPrimMob,
                      primary_species_immobile, sPrimImmob,
-                     aux_data, iv,
+                     dumA, iv,
                      alquimia_material_properties[threadid],
                      alquimia_state[threadid],
                      alquimia_aux_out[threadid]);
     }
   }
 }
-
 
 void
 AlquimiaHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       int sSat,
@@ -347,10 +353,10 @@ AlquimiaHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       in
 void
 AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   int sPrimMob,
                                           FArrayBox& primary_species_immobile, int sPrimImmob,
-                                          FArrayBox& aux_data,
-                                          const IntVect& iv,
-                                          AlquimiaMaterialProperties& mat_props,
-                                          AlquimiaState& chem_state,
+                                          FArrayBox&                   aux_data,
+                                          const IntVect&               iv,
+                                          AlquimiaMaterialProperties&  mat_props,
+                                          AlquimiaState&               chem_state,
                                           AlquimiaAuxiliaryOutputData& aux_output)
 {
   for (int i=0; i<Nmobile; ++i) {
@@ -359,6 +365,7 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
   for (int i=0; i<Nimmobile; ++i) {
     primary_species_immobile(iv,sPrimImmob+i) = chem_state.total_immobile.data[i];
   }
+
   for (int i=0; i<Nminerals; ++i) {
     const std::string label=mineralNames[i] + "_Volume_Fraction"; 
     aux_data(iv,aux_chem_variables[label]) = chem_state.mineral_volume_fraction.data[i];

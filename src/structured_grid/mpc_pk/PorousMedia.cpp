@@ -1187,26 +1187,14 @@ PorousMedia::initData ()
                                   << "a file has not been implemented yet.\n";
                         BoxLib::Abort("PorousMedia::initData()");
                     }
-                    else if (tic_type == "concentration") 
-                    {
-                      const GeoCondRegionData* geo = dynamic_cast<const GeoCondRegionData*>(&tic);
-                      if (geo != 0) {
-                        const std::string& geochemical_condition_name = geo->GetGeochemicalConditionName();
-                        FArrayBox& aux = get_new_data(Aux_Chem_Type)[mfi];
-                        alquimia_helper->EnforceCondition(sdat,0,pdat,0,(*rock_phi)[mfi],0,volume[mfi],0,
-                                                          sdat,ncomps,sdat,ncomps+ntracers,aux,
-                                                          density[0],298,vbox,geochemical_condition_name,
-                                                          cur_time);
-                      }
-                      else {
-                        Array<Real> val = tic();
-                        for (int jt=0; jt<tic_regions.size(); ++jt) {
-                            BL_ASSERT(val.size()>=1);
-                            BL_ASSERT(sdat.nComp()>ncomps+iTracer);
-                            BL_ASSERT(tic_regions.size()>jt);
-
-                            tic_regions[jt]->setVal(sdat,val[0],ncomps+iTracer,dx,0);
-                        }
+                    else if (tic_type == "concentration") {
+		      Array<Real> val = tic();
+		      for (int jt=0; jt<tic_regions.size(); ++jt) {
+			BL_ASSERT(val.size()>=1);
+			BL_ASSERT(sdat.nComp()>ncomps+iTracer);
+			BL_ASSERT(tic_regions.size()>jt);
+			
+			tic_regions[jt]->setVal(sdat,val[0],ncomps+iTracer,dx,0);
                       }
                     }
                     else {

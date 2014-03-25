@@ -15,11 +15,35 @@
         <Parameter name="End" type="double" value="1.5778463e9"/>
         <Parameter name="Switch" type="double" value="0.0"/>
         <Parameter name="Steady Initial Time Step" type="double" value="1.5768e+5"/>
+        <Parameter name="Steady Initial Time Step" type="double" value="1.e20"/>
         <Parameter name="Transient Initial Time Step" type="double" value="1.5768e+5"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="Verbosity" type="string" value="High"/>
     <ParameterList name="Numerical Control Parameters">
+      <ParameterList name="Basic Algorithm Control">
+        <ParameterList name="Expert Settings">
+          <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
+          <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
+          <Parameter name="steady_max_psuedo_time" type="double" value="1.e30"/>
+          <Parameter name="richard_semi_analytic_J" type="bool" value="false"/>
+          <Parameter name="richard_dt_thresh_pure_steady" type="double" value="1.e18"/>
+          <Parameter name="gravity_dir" type="int" value="2"/> 
+          <Parameter name="z_location" type="double" value="0"/> 
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Iterative Linear Solver Control">
+        <ParameterList name="Multigrid Algorithm">
+          <ParameterList name="Expert Settings">
+            <Parameter name="v" type="int" value="0"/>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="Conjugate Gradient Algorithm">
+          <ParameterList name="Expert Settings">
+            <Parameter name="v" type="int" value="0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Domain">
@@ -29,7 +53,7 @@
     <ParameterList name="Structured">
       <Parameter name="Number of Cells" type="Array(int)" value="{100, 2}"/>
       <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0}" />
-      <Parameter name="Domain High Corner" type="Array(double)" value="{100.0, 1.0}" />
+      <Parameter name="Domain High Corner" type="Array(double)" value="{100.0, 2.0}" />
     </ParameterList>
   </ParameterList>
   <ParameterList name="Regions">
@@ -105,9 +129,7 @@
     <ParameterList name="West BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XLOBC}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{7.91317859e-6, 7.91317859e-6}"/>
+        <Parameter name="Inward Mass Flux" type="Array(double)" value="{7.91317859e-6}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
@@ -134,9 +156,7 @@
     <ParameterList name="East BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XHIBC}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Values" type="Array(double)" value="{201325.0, 201325.0}"/>       
+        <Parameter name="Values" type="Array(double)" value="{201325.0}"/>       
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
@@ -167,10 +187,15 @@
         <Parameter name="Start_Period_Stop" type="Array(double)" value="{0.0, 31556926.0, -1}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Cycle Macros">
+      <ParameterList name="Every_step">
+        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 1, -1}"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="run_data/calcite"/>
       <Parameter name="File Name Digits" type="int" value="5"/>
-      <Parameter name="Time Macros" type="Array(string)" value="{Every_year}"/>
+      <Parameter name="Cycle Macros" type="Array(string)" value="{Every_step}"/>
     </ParameterList>
   </ParameterList>
 
