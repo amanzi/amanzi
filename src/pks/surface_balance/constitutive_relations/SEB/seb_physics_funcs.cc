@@ -90,17 +90,43 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
   // Snow balance
   if (seb.in.snow_old.ht > 0.) {
     double swe_old = seb.in.snow_old.ht * seb.in.snow_old.density / seb.in.vp_ground.density_w;
+    double swe_new = swe_old + (seb.in.met.Ps - mb.Mm + mb.Me)*seb.in.dt;
 
-    double swe_new = swe_old + seb.in.met.Ps - mb.Mm*seb.in.dt + mb.Me*seb.in.dt; // CHECK SIGNS!
+    // First do a pass to ensure we are not melting or sublimation ALL
+    // of the available snow.  If so, adjust...
     if (swe_new < 0.) {
-      // too much melt energy allowed.  Fix the energy balance by pushing the
-      // extra into the subsurface.
-      mb.Mm = mb.Mm * swe_old / (swe_old - swe_new);
+      // Must adjust... we are melting or sublimating all of the available snow.
+      if (mb.Mm > 0.) {
+	// -- stop melting, and push the extra heat off into the ground
+	double swe_new_nomelting = swe_old + (seb.in.met.Ps + mb.Me)*seb.in.dt;
 
-      eb.fQc += eb.fQm * (-swe_new) / (swe_old - swe_new);
-      eb.fQm = eb.fQm * swe_old / (swe_old - swe_new);
+	double swe_melt = 0.;
+	if (swe_new_nomelting >= 0) {
+	  swe_melt = swe_new_nomelting;  // melt all we have
+	}
+	mb.Mm = swe_melt / seb.in.dt;
+	swe_new = swe_old + (seb.in.met.Ps - mb.Mm + mb.Me)*seb.in.dt;
 
-      swe_new = 0.;
+	// fix energy balance
+	double fQm_new = mb.Mm * (seb.in.vp_ground.density_w * seb.params.Hf);
+	eb.fQc += eb.fQm - fQm_new;
+	eb.fQm = fQm_new;
+      }
+
+      if (swe_new < 0.) {
+	// -- Either there was no melting (sublimating it all) or we have
+	// turned off all melting and are still in the negative
+	// (sublimating too much of it).  Turn down sublimation.
+	// Note we do not fix the energy balance, as I'm not sure how to do so...
+	double swe_subl = -mb.Me * seb.in.dt;
+	ASSERT(swe_subl > 0.);
+	swe_subl += swe_new;
+	ASSERT(swe_subl >= 0.);
+	mb.Me = -swe_subl / seb.in.dt;
+
+	swe_new = swe_old + (seb.in.met.Ps - mb.Mm + mb.Me)*seb.in.dt;
+      }
+      ASSERT(swe_new > -1.e-20);
     }
 
     // age the old snow
@@ -116,17 +142,38 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     double age_precip = seb.in.dt / 86400.;
 
     // determine the new height
-    double swe_settled = swe_old + (mb.Me < 0. ? mb.Me*seb.in.dt : 0.);
+    // -- sources
+    double swe_settled = swe_old;
     double swe_frost = mb.Me > 0. ? mb.Me*seb.in.dt : 0.;
     double swe_precip = seb.in.met.Ps*seb.in.dt;
 
-    ASSERT(swe_settled >= 0.);
-    ASSERT(swe_frost >= 0.);
-    ASSERT(swe_precip >= 0.);
-    double swe_tot = swe_settled + swe_frost + swe_precip;
+    // -- sinks
+    double swe_subl =  mb.Me < 0. ? -mb.Me*seb.in.dt : 0.;
+    double swe_melt = mb.Mm * seb.in.dt;
+
+    // -- sublimate precip first
+    ASSERT(swe_subl >= 0.);
+    if (swe_subl > 0.) {
+      if (swe_subl > swe_precip) {
+	swe_precip = 0.;
+	swe_subl -= swe_precip;
+      } else {
+	swe_precip -= swe_subl;
+	swe_subl = 0.;
+      }
+    }
+
+    // -- next sublimate settled snow
+    if (swe_subl > 0.) {
+      if (swe_subl > swe_settled) {
+	ASSERT(false);
+      } else {
+	swe_settled -= swe_subl;
+	swe_subl = 0.;
+      }
+    }
 
     // -- melt settled snow first
-    double swe_melt = mb.Mm;
     ASSERT(swe_melt >= 0.);
     if (swe_melt > 0.) {
       if (swe_melt > swe_settled) {
@@ -140,9 +187,14 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
 
     // -- now melt frost, precip by even amounts
     if (swe_melt > 0.) {
-      swe_frost -= swe_melt / (swe_frost + swe_precip);
-      swe_precip -= swe_melt / (swe_frost + swe_precip);
+      double swe_melt_from_frost = swe_melt * (swe_frost / (swe_frost + swe_precip));
+      double swe_melt_from_precip = swe_melt - swe_melt_from_frost;
+
+      swe_frost -= swe_melt_from_frost;
+      swe_precip -= swe_melt_from_precip;
     }
+
+    // -- check we didn't screw up
     ASSERT(swe_settled >= 0.);
     ASSERT(swe_frost >= 0.);
     ASSERT(swe_precip >= 0.);
