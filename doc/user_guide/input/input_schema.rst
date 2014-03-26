@@ -553,6 +553,7 @@ A ``material`` element can contain the following:
         <tortuosity value="Value"/>
     </mechanical_properties>
     <permeability x="Value" y="Value" z="Value"/>
+    <hydraulic_conductivity x="Value" y="Value" z="Value"/>
     <cap_pressure model="van_genuchten | brooks_corey | none">
  	<parameters m="Value" alpha="Value" sr="Value"/>
              ( for van_genuchten or for brooks_corey )
