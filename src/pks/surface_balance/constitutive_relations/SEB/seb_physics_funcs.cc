@@ -81,6 +81,9 @@ void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf, Energy
 
 
 void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowProperties& snow_new, bool debug) {
+  // this dt is the max timestep that may be taken to conserve snow mass
+  mb.dt = seb.in.dt;
+
   // Melt rate given by available energy rate divided by heat of fusion.
   mb.Mm = eb.fQm / (seb.in.vp_ground.density_w * seb.params.Hf);
 
@@ -93,70 +96,46 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     double swe_new = swe_old + (seb.in.met.Ps - mb.Mm + mb.Me)*seb.in.dt;
 
     // First do a pass to ensure we are not melting or sublimation ALL
-    // of the available snow.  If so, adjust...
+    // of the available snow.  If so, adjust dt
     if (swe_new < 0.) {
       // Must adjust... we are melting or sublimating all of the available snow.
-      if (mb.Mm > 0.) {
-	// -- stop melting, and push the extra heat off into the ground
-	double swe_new_nomelting = swe_old + (seb.in.met.Ps + mb.Me)*seb.in.dt;
-
-	double swe_melt = 0.;
-	if (swe_new_nomelting >= 0) {
-	  swe_melt = swe_new_nomelting;  // melt all we have
-	}
-	mb.Mm = swe_melt / seb.in.dt;
-	swe_new = swe_old + (seb.in.met.Ps - mb.Mm + mb.Me)*seb.in.dt;
-
-	// fix energy balance
-	double fQm_new = mb.Mm * (seb.in.vp_ground.density_w * seb.params.Hf);
-	eb.fQc += eb.fQm - fQm_new;
-	eb.fQm = fQm_new;
-      }
-
-      if (swe_new < 0.) {
-	// -- Either there was no melting (sublimating it all) or we have
-	// turned off all melting and are still in the negative
-	// (sublimating too much of it).  Turn down sublimation.
-	// Note we do not fix the energy balance, as I'm not sure how to do so...
-	double swe_subl = -mb.Me * seb.in.dt;
-	ASSERT(swe_subl > 0.);
-	swe_subl += swe_new;
-	ASSERT(swe_subl >= 0.);
-	mb.Me = -swe_subl / seb.in.dt;
-
-	swe_new = swe_old + (seb.in.met.Ps - mb.Mm + mb.Me)*seb.in.dt;
-      }
-      ASSERT(swe_new > -1.e-20);
+      ASSERT(seb.in.met.Ps - mb.Mm + mb.Me < 0.);
+      mb.dt = -swe_old / (seb.in.met.Ps - mb.Mm + mb.Me);
+      swe_new = 0.;
     }
 
+    // All future calculations work with the new dt, which will
+    // exactly result in 0 snow height (if it would have been negative).
+
     // age the old snow
-    double age_settled = seb.in.snow_old.age + seb.in.dt / 86400.;
+    double age_settled = seb.in.snow_old.age + mb.dt / 86400.;
     double dens_settled = seb.params.density_freshsnow
         * std::max(std::pow(age_settled, 0.3), 1.);
 
     // Match frost age with assigned density -- Calculate which day frost
     // density matched snow defermation function from (Martinec, 1977)
-    double age_frost = std::pow((seb.params.density_frost / seb.params.density_freshsnow),(1/0.3)) - 1 + seb.in.dt / 86400.;
+    double age_frost = std::pow((seb.params.density_frost / seb.params.density_freshsnow),
+				(1/0.3)) - 1 + mb.dt / 86400.;
 
     // precip
-    double age_precip = seb.in.dt / 86400.;
+    double age_precip = mb.dt / 86400.;
 
     // determine the new height
     // -- sources
     double swe_settled = swe_old;
-    double swe_frost = mb.Me > 0. ? mb.Me*seb.in.dt : 0.;
-    double swe_precip = seb.in.met.Ps*seb.in.dt;
+    double swe_frost = mb.Me > 0. ? mb.Me*mb.dt : 0.;
+    double swe_precip = seb.in.met.Ps*mb.dt;
 
     // -- sinks
-    double swe_subl =  mb.Me < 0. ? -mb.Me*seb.in.dt : 0.;
-    double swe_melt = mb.Mm * seb.in.dt;
+    double swe_subl =  mb.Me < 0. ? -mb.Me*mb.dt : 0.;
+    double swe_melt = mb.Mm * mb.dt;
 
     // -- sublimate precip first
     ASSERT(swe_subl >= 0.);
     if (swe_subl > 0.) {
       if (swe_subl > swe_precip) {
-	swe_precip = 0.;
 	swe_subl -= swe_precip;
+	swe_precip = 0.;
       } else {
 	swe_precip -= swe_subl;
 	swe_subl = 0.;
@@ -165,20 +144,17 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
 
     // -- next sublimate settled snow
     if (swe_subl > 0.) {
-      if (swe_subl > swe_settled) {
-	ASSERT(false);
-      } else {
-	swe_settled -= swe_subl;
-	swe_subl = 0.;
-      }
+      ASSERT(swe_subl <= swe_settled + 1.e-20);
+      swe_settled -= swe_subl;
+      swe_subl = 0.;
     }
 
     // -- melt settled snow first
-    ASSERT(swe_melt >= 0.);
+    ASSERT(swe_melt >= -1.e-20);
     if (swe_melt > 0.) {
       if (swe_melt > swe_settled) {
-        swe_settled = 0.;
         swe_melt -= swe_settled;
+        swe_settled = 0.;
       } else {
         swe_settled -= swe_melt;
         swe_melt = 0.;
@@ -195,9 +171,9 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     }
 
     // -- check we didn't screw up
-    ASSERT(swe_settled >= 0.);
-    ASSERT(swe_frost >= 0.);
-    ASSERT(swe_precip >= 0.);
+    ASSERT(swe_settled >= -1.e-20);
+    ASSERT(swe_frost >= -1.e-20);
+    ASSERT(swe_precip >= -1.e-20);
 
     // -- convert these to heights
     double ht_settled = swe_settled * seb.in.vp_ground.density_w / dens_settled;
@@ -205,17 +181,17 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     double ht_precip = swe_precip * seb.in.vp_ground.density_w / seb.params.density_freshsnow;
 
     // set the snow properties
-    snow_new.ht = ht_settled + ht_frost + ht_precip;
+    snow_new.ht = std::max(ht_settled + ht_frost + ht_precip, 0.);
     snow_new.age = (swe_settled*age_settled + swe_frost*age_frost + swe_precip*age_precip)
         / (swe_settled + swe_frost + swe_precip);
-    snow_new.density = swe_new * seb.in.vp_ground.density_w / snow_new.ht;
+    snow_new.density = snow_new.ht > 0. ? swe_new * seb.in.vp_ground.density_w / snow_new.ht : seb.params.density_freshsnow;
 
     // set the water properties
     // -- water source to ground is (corrected) melt and rainfall
+    // NOTE: these rates can only be correct if over mb.dt
     mb.MWg = mb.Mm + seb.in.met.Pr;
     mb.MWg_subsurf = 0.;
     mb.MWg_temp = mb.MWg > 0. ? (mb.Mm * 273.15 + seb.in.met.Pr * seb.in.met.vp_air.temp) / mb.MWg : seb.in.met.vp_air.temp;
-
 
   } else {
     // set the snow properties
@@ -239,14 +215,10 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
           surf_p < seb.params.Apa*1000. - seb.params.evap_transition_width ? 1. :
           (seb.params.Apa*1000. - surf_p) / seb.params.evap_transition_width;
 
-      std::cout << "ground pres = " << surf_p << std::endl;
-      std::cout << "trans factor = " << trans_factor << std::endl;
-
       mb.MWg += (1-trans_factor) * mb.Me;
       mb.MWg_subsurf += trans_factor * mb.Me;
     }
   }
-
 
   if (debug) {
     std::cout << "Mass Balance:\n"
@@ -280,6 +252,8 @@ double DetermineSnowTemperature(const SEB& seb, ThermoProperties& vp_snow,
     left = vp_snow.temp - 1.;
     res_left = func(left);
     while (res_left < 0.) {
+      right = left;
+      res_right = res_left;
       left = left - 1.;
       res_left = func(left);
     }
@@ -290,6 +264,8 @@ double DetermineSnowTemperature(const SEB& seb, ThermoProperties& vp_snow,
     right = vp_snow.temp + 1.;
     res_right = func(right);
     while (res_right > 0.) {
+      left = right;
+      res_left = res_left;
       right = right + 1.;
       res_right = func(right);
     }

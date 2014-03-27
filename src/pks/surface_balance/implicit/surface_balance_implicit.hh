@@ -68,6 +68,8 @@ public:
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_w_v_source_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_wtemp_;
 
+  bool eval_derivatives_;
+
   double min_wind_speed_;
   double snow_ground_trans_;
   double min_snow_trans_;

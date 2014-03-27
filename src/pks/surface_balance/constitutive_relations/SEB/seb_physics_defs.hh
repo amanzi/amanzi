@@ -184,6 +184,7 @@ struct MassBalance {    // all are in [m/s] of WATER, i.e. snow are in SWE
   double MWg;   // water source to ground
   double MWg_subsurf; // water source to subsurface cell
   double MWg_temp; // temperature of sources
+  double dt;    // max dt that may be taken to conserve snow swe
 
   MassBalance() :
       Me(MY_LOCAL_NAN),
@@ -194,6 +195,7 @@ struct MassBalance {    // all are in [m/s] of WATER, i.e. snow are in SWE
 
 // Global struct of all model output.
 struct ModelOutput {
+  double dt;                    // time step size physically possible [s]
   EnergyBalance eb;
   MassBalance mb;
   SnowProperties snow_new;

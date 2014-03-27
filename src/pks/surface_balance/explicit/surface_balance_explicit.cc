@@ -352,7 +352,7 @@ SurfaceBalanceExplicit::advance(double dt) {
       seb.in.surf.Zo = SEBPhysics::CalcRoughnessFactor(seb.in.met.vp_air.temp);
 
       // Run the model
-      SEBPhysics::CalculateSurfaceBalance(seb);
+      SEBPhysics::CalculateSurfaceBalance(seb, true);
 
       // Pull the output
       // -- fluxes
@@ -452,8 +452,8 @@ SurfaceBalanceExplicit::advance(double dt) {
       seb_bare.in.vp_ground.porosity = other_part.Interpolate(1., 1., 1., surf_porosity[0][c]);
 
       // Run the model for both snowy case and bare case
-      SEBPhysics::CalculateSurfaceBalance(seb);
-      SEBPhysics::CalculateSurfaceBalance(seb_bare);
+      SEBPhysics::CalculateSurfaceBalance(seb, true);
+      SEBPhysics::CalculateSurfaceBalance(seb_bare, true);
 
       // Pull the output
       // -- fluxes
@@ -483,9 +483,14 @@ SurfaceBalanceExplicit::advance(double dt) {
       double total_swe = theta * seb.out.snow_new.ht * seb.out.snow_new.density / seb.in.vp_ground.density_w
           + (1-theta) * seb_bare.out.snow_new.ht * seb_bare.out.snow_new.density / seb_bare.in.vp_ground.density_w;
       snow_depth_new[0][c] = theta * seb.out.snow_new.ht + (1-theta) * seb_bare.out.snow_new.ht;
-      snow_age_new[0][c] = (theta * seb.out.snow_new.ht * seb.out.snow_new.age
-                            + (1-theta) * seb_bare.out.snow_new.ht * seb_bare.out.snow_new.age) / snow_depth_new[0][c];
-      snow_dens_new[0][c] = total_swe * seb.in.vp_ground.density_w / seb.out.snow_new.ht;
+      if (snow_depth_new[0][c] > 0.) {
+        snow_age_new[0][c] = (theta * seb.out.snow_new.ht * seb.out.snow_new.age
+                              + (1-theta) * seb_bare.out.snow_new.ht * seb_bare.out.snow_new.age) / snow_depth_new[0][c];
+        snow_dens_new[0][c] = total_swe * seb.in.vp_ground.density_w / snow_depth_new[0][c];
+      } else {
+        snow_age_new[0][c] = 0.;
+        snow_dens_new[0][0] = seb.out.snow_new.density;
+      }
       snow_temp_new[0][c] = seb.in.vp_snow.temp;
     }
   }
