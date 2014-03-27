@@ -1848,214 +1848,226 @@ void  PorousMedia::read_tracer()
   {
     tic_array.resize(ntracers);
     tbc_array.resize(ntracers);
-      pp.getarr("tracers",tNames,0,ntracers);
-
+    pp.getarr("tracers",tNames,0,ntracers);
+    
+    int Nimmobile = 0;
+    int Nmobile = ntracers;
+    if (chemistry_engine != 0) {
       // FIXME: Amanzi input MUST be consistent with chemistry_engine
       std::vector<std::string> primarySpeciesNames; chemistry_engine->GetPrimarySpeciesNames(primarySpeciesNames);
       BL_ASSERT(ntracers==chemistry_engine->NumPrimarySpecies());
-      int Nimmobile = chemistry_engine->NumSorbedSpecies();
-      int Nmobile = chemistry_engine->NumPrimarySpecies() - Nimmobile;
+      Nimmobile = chemistry_engine->NumSorbedSpecies();
+      Nmobile = chemistry_engine->NumPrimarySpecies() - Nimmobile;
       for (int i = 0; i<Nmobile; i++) {
-	BL_ASSERT(primarySpeciesNames[i] == tNames[i]);
+        BL_ASSERT(primarySpeciesNames[i] == tNames[i]);
       }
       for (int i = 0; i<Nimmobile; i++) {
-	BL_ASSERT(primarySpeciesNames[Nmobile+i] == tNames[Nmobile+i]);
+        BL_ASSERT(primarySpeciesNames[Nmobile+i] == tNames[Nmobile+i]);
       }
+    }
+    if (do_tracer_chemistry>0  ||  do_tracer_advection  ||  do_tracer_diffusion) {
+      setup_tracer_transport = true;
+      for (int i = 0; i<Nmobile; i++) {
+        group_map["Total"].push_back(i+ncomps);
+      }
+      for (int i = 0; i<Nimmobile; i++) {
+        group_map["Immobile"].push_back(i+ncomps+Nmobile);
+      }
+    }
+    else {
+      setup_tracer_transport = false;
+    }
+    
+    for (int i = 0; i<ntracers; i++)
+    {
+      const std::string prefix("tracer." + tNames[i]);
+      ParmParse ppr(prefix.c_str());
 
-      if (do_tracer_chemistry>0  ||  do_tracer_advection  ||  do_tracer_diffusion) {
-	setup_tracer_transport = true;
-	for (int i = 0; i<Nmobile; i++) {
-	  group_map["Total"].push_back(i+ncomps);
-	}
-	for (int i = 0; i<Nimmobile; i++) {
-	  group_map["Immobile"].push_back(i+ncomps+Nmobile);
-	}
-      }
-      else {
-	setup_tracer_transport = false;
-      }
-
-      for (int i = 0; i<ntracers; i++)
+      // Initial condition and boundary condition  
+      Array<std::string> tic_names;
+      int n_ic = ppr.countval("tinits");
+      if (n_ic <= 0)
       {
-          const std::string prefix("tracer." + tNames[i]);
-	  ParmParse ppr(prefix.c_str());
-
-          // Initial condition and boundary condition  
-          Array<std::string> tic_names;
-          int n_ic = ppr.countval("tinits");
-          if (n_ic <= 0)
-          {
-              BoxLib::Abort("each tracer must be initialized");
-          }
-          ppr.getarr("tinits",tic_names,0,n_ic);
-          tic_array[i].resize(n_ic,PArrayManage);
+        BoxLib::Abort("each tracer must be initialized");
+      }
+      ppr.getarr("tinits",tic_names,0,n_ic);
+      tic_array[i].resize(n_ic,PArrayManage);
           
-	  const RegionManager* region_manager = PMAmr::RegionManagerPtr();
-          for (int n = 0; n<n_ic; n++)
-          {
-              const std::string prefixIC(prefix + "." + tic_names[n]);
-              ParmParse ppri(prefixIC.c_str());
-              int n_ic_region = ppri.countval("regions");
-              Array<std::string> region_names;
-              ppri.getarr("regions",region_names,0,n_ic_region);
-	      Array<const Region*> tic_regions = region_manager->RegionPtrArray(region_names);
-              std::string tic_type; ppri.get("type",tic_type);
+      const RegionManager* region_manager = PMAmr::RegionManagerPtr();
+      for (int n = 0; n<n_ic; n++)
+      {
+        const std::string prefixIC(prefix + "." + tic_names[n]);
+        ParmParse ppri(prefixIC.c_str());
+        int n_ic_region = ppri.countval("regions");
+        Array<std::string> region_names;
+        ppri.getarr("regions",region_names,0,n_ic_region);
+        Array<const Region*> tic_regions = region_manager->RegionPtrArray(region_names);
+        std::string tic_type; ppri.get("type",tic_type);
               
-              if (tic_type == "concentration")
-              {
-		Real val;
-                if (ppri.countval("geochemical_condition")) {
-                  std::string geocond; ppri.get("geochemical_condition",geocond);
-		  Real cur_time = 0; // FIXME
-		  Box boxTMP(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(0,0,0)));
-		  const std::map<std::string,int>& auxChemVariablesMap = alquimia_helper->AuxChemVariablesMap();
-		  FArrayBox primTMP(boxTMP,Nmobile+Nimmobile);
-		  alquimia_helper->EnforceCondition(primTMP,0,primTMP,Nmobile,boxTMP,geocond, cur_time);
-		  val = primTMP.dataPtr()[i];
+        if (tic_type == "concentration")
+        {
+          if (ppri.countval("geochemical_condition")) {
+            std::string geocond; ppri.get("geochemical_condition",geocond);
+            Real cur_time = 0; // FIXME
+            Box boxTMP(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(0,0,0)));
+            const std::map<std::string,int>& auxChemVariablesMap = alquimia_helper->AuxChemVariablesMap();
+            FArrayBox primTMP(boxTMP,Nmobile+Nimmobile);
+            int Naux = auxChemVariablesMap.size();
+            FArrayBox auxTMP(boxTMP,Naux);
+            bool initAux = true;
+            alquimia_helper->EnforceCondition(primTMP,0,primTMP,Nmobile,auxTMP,initAux,boxTMP,geocond, cur_time);
+            Array<Real> vals(auxTMP.dataPtr(),Naux);
+            vals.resize(Naux+1); vals[Naux] = primTMP.dataPtr()[i];
+            tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,vals));
+          }
+          else {
+            Real val = 0; ppri.query("val",val);
+            tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,val));
+          }
+        }
+        else {
+          std::string m = "Tracer IC: \"" + tic_names[n] 
+            + "\": Unsupported tracer IC type: \"" + tic_type + "\"";
+          BoxLib::Abort(m.c_str());
+        }
+      }
+
+      if (setup_tracer_transport)
+      {
+        Array<std::string> tbc_names;
+        int n_tbc = ppr.countval("tbcs");
+        ppr.getarr("tbcs",tbc_names,0,n_tbc);
+        tbc_array[i].resize(n_tbc+2*BL_SPACEDIM,PArrayManage);
+
+        // Explicitly build default BCs
+        int tbc_cnt = 0;
+        for (int n=0; n<BL_SPACEDIM; ++n) {
+          tbc_array[i].set(tbc_cnt++,
+                           new RegionData(RlabelDEF[n] + "_DEFAULT",
+                                          region_manager->RegionPtrArray(Array<std::string>(1,RlabelDEF[n])),
+                                          std::string("noflow"),0));
+          tbc_array[i].set(tbc_cnt++,
+                           new RegionData(RlabelDEF[n+3] + "_DEFAULT",
+                                          region_manager->RegionPtrArray(Array<std::string>(1,RlabelDEF[n+3])),
+                                          std::string("noflow"),0));
+        }
+
+        Array<int> orient_types(6,-1);
+        for (int n = 0; n<n_tbc; n++)
+        {
+          const std::string prefixTBC(prefix + "." + tbc_names[n]);
+          ParmParse ppri(prefixTBC.c_str());
+                  
+          int n_tbc_region = ppri.countval("regions");
+          Array<std::string> tbc_region_names;
+          ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
+
+          Array<const Region*> tbc_regions = region_manager->RegionPtrArray(tbc_region_names);
+          std::string tbc_type; ppri.get("type",tbc_type);
+
+          // When we get the BCs, we need to translate to AMR-standardized type id.  By
+          // convention, components are  Interior, Inflow, Outflow, Symmetry, SlipWall, NoSlipWall.
+          int AMR_BC_tID = -1;
+
+          if (tbc_type == "concentration")
+          {
+            Array<Real> times, vals;
+            Array<std::string> forms;
+
+            if (ppri.countval("geochemical_condition")) {
+              std::string geocond; ppri.get("geochemical_condition",geocond);
+              Real cur_time = 0; // FIXME
+              Box boxTMP(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(0,0,0)));
+              const std::map<std::string,int>& auxChemVariablesMap = alquimia_helper->AuxChemVariablesMap();
+              FArrayBox primTMP(boxTMP,Nmobile+Nimmobile);
+              int Naux = auxChemVariablesMap.size();
+              FArrayBox auxTMP(boxTMP,Naux);
+              bool initAux = false;
+              alquimia_helper->EnforceCondition(primTMP,0,primTMP,Nmobile,auxTMP,initAux,boxTMP,geocond, cur_time);
+              times.resize(1,0);
+              vals.resize(1,primTMP.dataPtr()[i]);
+            }
+            else {
+              int nv = ppri.countval("vals");
+              if (nv) {
+                ppri.getarr("vals",vals,0,nv);
+                if (nv>1) {
+                  ppri.getarr("times",times,0,nv);
+                  ppri.getarr("forms",forms,0,nv-1);
                 }
                 else {
-                  val = 0; ppri.query("val",val);
+                  times.resize(1,0);
                 }
-		tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,val));
               }
               else {
-                  std::string m = "Tracer IC: \"" + tic_names[n] 
-                      + "\": Unsupported tracer IC type: \"" + tic_type + "\"";
-                  BoxLib::Abort(m.c_str());
+                vals.resize(1,0); // Default tracers to zero for all time
+                times.resize(1,0);
+                forms.resize(0);
               }
+            }
+            int nComp = 1;
+            tbc_array[i].set(tbc_cnt++, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
+            AMR_BC_tID = 1; // Inflow
           }
-
-          if (setup_tracer_transport)
+          else if (tbc_type == "noflow")
           {
-              Array<std::string> tbc_names;
-              int n_tbc = ppr.countval("tbcs");
-              ppr.getarr("tbcs",tbc_names,0,n_tbc);
-              tbc_array[i].resize(n_tbc+2*BL_SPACEDIM,PArrayManage);
-
-              // Explicitly build default BCs
-              int tbc_cnt = 0;
-              for (int n=0; n<BL_SPACEDIM; ++n) {
-                tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n] + "_DEFAULT",
-                                                           region_manager->RegionPtrArray(Array<std::string>(1,RlabelDEF[n])),
-                                                           std::string("noflow"),0));
-                tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n+3] + "_DEFAULT",
-                                                           region_manager->RegionPtrArray(Array<std::string>(1,RlabelDEF[n+3])),
-                                                           std::string("noflow"),0));
-              }
-
-              Array<int> orient_types(6,-1);
-              for (int n = 0; n<n_tbc; n++)
-              {
-                  const std::string prefixTBC(prefix + "." + tbc_names[n]);
-                  ParmParse ppri(prefixTBC.c_str());
-                  
-                  int n_tbc_region = ppri.countval("regions");
-                  Array<std::string> tbc_region_names;
-                  ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
-
-                  Array<const Region*> tbc_regions = region_manager->RegionPtrArray(tbc_region_names);
-                  std::string tbc_type; ppri.get("type",tbc_type);
-
-                  // When we get the BCs, we need to translate to AMR-standardized type id.  By
-                  // convention, components are  Interior, Inflow, Outflow, Symmetry, SlipWall, NoSlipWall.
-                  int AMR_BC_tID = -1;
-
-                  if (tbc_type == "concentration")
-                  {
-		    Array<Real> times, vals;
-		    Array<std::string> forms;
-
-                    if (ppri.countval("geochemical_condition")) {
-                      std::string geocond; ppri.get("geochemical_condition",geocond);
-		      Real cur_time = 0; // FIXME
-		      Box boxTMP(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(0,0,0)));
-		      const std::map<std::string,int>& auxChemVariablesMap = alquimia_helper->AuxChemVariablesMap();
-		      FArrayBox primTMP(boxTMP,Nmobile+Nimmobile);
-		      alquimia_helper->EnforceCondition(primTMP,0,primTMP,Nmobile,boxTMP,geocond, cur_time);
-		      times.resize(1,0);
-		      vals.resize(1,primTMP.dataPtr()[i]);
-		    }
-                    else {
-                      int nv = ppri.countval("vals");
-                      if (nv) {
-			ppri.getarr("vals",vals,0,nv);
-			if (nv>1) {
-			  ppri.getarr("times",times,0,nv);
-			  ppri.getarr("forms",forms,0,nv-1);
-			}
-			else {
-			  times.resize(1,0);
-			}
-                      }
-                      else {
-                          vals.resize(1,0); // Default tracers to zero for all time
-                          times.resize(1,0);
-                          forms.resize(0);
-                      }
-		    }
-		    int nComp = 1;
-		    tbc_array[i].set(tbc_cnt++, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
-                    AMR_BC_tID = 1; // Inflow
-                  }
-                  else if (tbc_type == "noflow")
-                  {
-                      Array<Real> val(1,0);
-                      tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
-                      AMR_BC_tID = 2;
-                  }
-                  else if (tbc_type == "outflow")
-                  {
-                      Array<Real> val(1,0);
-                      tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
-                      AMR_BC_tID = 3; // Outflow
-                  }
-                  else {
-                      std::string m = "Tracer BC: \"" + tbc_names[n] 
-                          + "\": Unsupported tracer BC type: \"" + tbc_type + "\"";
-                      BoxLib::Abort(m.c_str());
-                  }
-
-
-                  for (int j=0; j<tbc_regions.size(); ++j)
-                  {
-                    const std::string purpose = tbc_regions[j]->purpose;
-                    int dir = -1, is_hi, k;
-                    for (int kt=0; kt<7 && dir<0; ++kt) {
-                      if (purpose == PMAMR::RpurposeDEF[kt]) {
-                        BL_ASSERT(kt != 6);
-                        dir = kt%3;
-                        is_hi = kt>=3;
-                        k = kt;
-                      }
-                    }
-                    if (dir<0 || dir > BL_SPACEDIM) {
-                      std::cout << "Bad region for boundary: \n" << tbc_regions[j] << std::endl;
-                      BoxLib::Abort();
-                    }
-
-                    if (orient_types[k] < 0) {
-                      orient_types[k] = AMR_BC_tID;
-                    } else {
-                      if (orient_types[k] != AMR_BC_tID) {
-                        BoxLib::Abort("BC for tracers must all be of same type on each side");
-                      }
-                    }
-                  }
-              }
-              // Set the default BC type
-              for (int k=0; k<orient_types.size(); ++k) {
-                if (orient_types[k] < 0) orient_types[k] = 2;
-              }
-
-              BCRec phys_bc_trac;
-              for (int i = 0; i < BL_SPACEDIM; i++) {
-                phys_bc_trac.setLo(i,orient_types[i]);
-                phys_bc_trac.setHi(i,orient_types[i+3]);
-              }
-              set_tracer_bc(trac_bc,phys_bc_trac);
+            Array<Real> val(1,0);
+            tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+            AMR_BC_tID = 2;
           }
+          else if (tbc_type == "outflow")
+          {
+            Array<Real> val(1,0);
+            tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+            AMR_BC_tID = 3; // Outflow
+          }
+          else {
+            std::string m = "Tracer BC: \"" + tbc_names[n] 
+              + "\": Unsupported tracer BC type: \"" + tbc_type + "\"";
+            BoxLib::Abort(m.c_str());
+          }
+
+
+          for (int j=0; j<tbc_regions.size(); ++j)
+          {
+            const std::string purpose = tbc_regions[j]->purpose;
+            int dir = -1, is_hi, k;
+            for (int kt=0; kt<7 && dir<0; ++kt) {
+              if (purpose == PMAMR::RpurposeDEF[kt]) {
+                BL_ASSERT(kt != 6);
+                dir = kt%3;
+                is_hi = kt>=3;
+                k = kt;
+              }
+            }
+            if (dir<0 || dir > BL_SPACEDIM) {
+              std::cout << "Bad region for boundary: \n" << tbc_regions[j] << std::endl;
+              BoxLib::Abort();
+            }
+
+            if (orient_types[k] < 0) {
+              orient_types[k] = AMR_BC_tID;
+            } else {
+              if (orient_types[k] != AMR_BC_tID) {
+                BoxLib::Abort("BC for tracers must all be of same type on each side");
+              }
+            }
+          }
+        }
+        // Set the default BC type
+        for (int k=0; k<orient_types.size(); ++k) {
+          if (orient_types[k] < 0) orient_types[k] = 2;
+        }
+
+        BCRec phys_bc_trac;
+        for (int i = 0; i < BL_SPACEDIM; i++) {
+          phys_bc_trac.setLo(i,orient_types[i]);
+          phys_bc_trac.setHi(i,orient_types[i+3]);
+        }
+        set_tracer_bc(trac_bc,phys_bc_trac);
       }
-      ndiff += ntracers;
+    }
+    ndiff += ntracers;
   }
 }
 
@@ -2218,27 +2230,34 @@ void  PorousMedia::read_chem()
 
       const std::string Chemistry_Engine_stru = "Engine";
       const std::string Chemistry_Engine_Input_stru = "Engine_Input_File";
-      std::string chem_engine_name; pc.get(Chemistry_Engine_stru.c_str(),chem_engine_name);
-      std::string chem_engine_input_filename; pc.get(Chemistry_Engine_Input_stru.c_str(),chem_engine_input_filename);
-      chemistry_engine = new Amanzi::AmanziChemistry::ChemistryEngine(chem_engine_name,chem_engine_input_filename);
-      alquimia_helper = new AlquimiaHelper_Structured(chemistry_engine);
-      aux_chem_variables = alquimia_helper->AuxChemVariablesMap();
 
-      // convert arrays to those of PM internals
-      std::vector<std::string> primarySpeciesNames;
-      chemistry_engine->GetPrimarySpeciesNames(primarySpeciesNames);
-      ntracers = primarySpeciesNames.size();
-      tNames.resize(ntracers);
-      for (int i=0; i<ntracers; ++i) {
-        tNames[i] = primarySpeciesNames[i];
-      }
-
-      std::vector<std::string> mineralNames;
-      chemistry_engine->GetMineralNames(mineralNames);
-      nminerals = mineralNames.size();
-      minerals.resize(nminerals);
-      for (int i=0; i<nminerals; ++i) {
-        minerals[i] = mineralNames[i];
+      int nc = pc.countval(Chemistry_Engine_stru.c_str());
+      if (nc==0) {
+        chemistry_engine = 0;
+        alquimia_helper = 0;
+      } else {
+        std::string chem_engine_name; pc.get(Chemistry_Engine_stru.c_str(),chem_engine_name);
+        std::string chem_engine_input_filename; pc.get(Chemistry_Engine_Input_stru.c_str(),chem_engine_input_filename);
+        chemistry_engine = new Amanzi::AmanziChemistry::ChemistryEngine(chem_engine_name,chem_engine_input_filename);
+        alquimia_helper = new AlquimiaHelper_Structured(chemistry_engine);
+        aux_chem_variables = alquimia_helper->AuxChemVariablesMap();
+        
+        // convert arrays to those of PM internals
+        std::vector<std::string> primarySpeciesNames;
+        chemistry_engine->GetPrimarySpeciesNames(primarySpeciesNames);
+        ntracers = primarySpeciesNames.size();
+        tNames.resize(ntracers);
+        for (int i=0; i<ntracers; ++i) {
+          tNames[i] = primarySpeciesNames[i];
+        }
+        
+        std::vector<std::string> mineralNames;
+        chemistry_engine->GetMineralNames(mineralNames);
+        nminerals = mineralNames.size();
+        minerals.resize(nminerals);
+        for (int i=0; i<nminerals; ++i) {
+          minerals[i] = mineralNames[i];
+        }
       }
 #else
       Amanzi::AmanziChemistry::SetupDefaultChemistryOutput();

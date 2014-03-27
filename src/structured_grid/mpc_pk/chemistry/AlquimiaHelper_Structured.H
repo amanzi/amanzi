@@ -28,6 +28,7 @@ public:
 
   void EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
 			FArrayBox& primary_species_immobile, int sPrimImmob,
+			FArrayBox& auxiliary_data, bool initialize_auxiliary_data,
 			const Box& box, const std::string& condition_name, Real time);
 
   const std::map<std::string,int>& AuxChemVariablesMap() const {return aux_chem_variables;}
@@ -41,6 +42,7 @@ protected:
                       FArrayBox&       primary_species_mobile,   int sPrimMob,
                       FArrayBox&       primary_species_immobile, int sPrimImmob,
                       FArrayBox&                   aux_data,
+                      bool                         auxiliary_data_initialized,
                       const IntVect&               iv,
                       Real                         water_density,
                       Real                         temperature,
@@ -52,6 +54,7 @@ protected:
   void Alquimia_to_BL(FArrayBox& primary_species_mobile,   int sPrimMob,
                       FArrayBox& primary_species_immobile, int sPrimImmob,
                       FArrayBox&                   aux_data,
+                      bool                         initialize_auxiliary_data,
                       const IntVect&               iv,
                       AlquimiaMaterialProperties&  mat_props,
                       AlquimiaState&               chem_state,

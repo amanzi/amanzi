@@ -3587,6 +3587,30 @@ namespace Amanzi {
       }
     }
 
+    static bool gravity_is_nonzero(const ParameterList& parameter_list)
+    {
+      bool is_nonzero = true;
+      if (parameter_list.isSublist("Execution Control")) {
+        const ParameterList& ec_list = parameter_list.sublist("Execution Control");
+        if (ec_list.isSublist("Numerical Control Parameters")) {
+          const ParameterList& ncp_list = ec_list.sublist("Numerical Control Parameters");
+          if (ncp_list.isSublist("Basic Algorithm Control")) {
+            const ParameterList& bac_list = ncp_list.sublist("Basic Algorithm Control");
+            if (bac_list.isSublist("Expert Settings")) {
+              const ParameterList& es_list = bac_list.sublist("Expert Settings");
+              if (es_list.isParameter("gravity")) {
+                double gravity_mag = es_list.get<double>("gravity");
+                if (gravity_mag == 0) {
+                  is_nonzero = false;
+                }
+              }
+            }
+          }
+        }
+      }
+      return is_nonzero;
+    }
+
     //
     // convert output to structured format
     //
@@ -3609,7 +3633,10 @@ namespace Amanzi {
       user_derive_list.push_back(underscore("Porosity"));
       user_derive_list.push_back(underscore("Aqueous Saturation"));
       user_derive_list.push_back(underscore("Aqueous Pressure"));
-      user_derive_list.push_back(underscore("Hydraulic Head"));
+
+      if (gravity_is_nonzero(parameter_list)) {
+        user_derive_list.push_back(underscore("Hydraulic Head"));
+      }
       user_derive_list.push_back(underscore("Aqueous Volumetric Flux X"));
       user_derive_list.push_back(underscore("Aqueous Volumetric Flux Y"));
 #if BL_SPACEDIM==3

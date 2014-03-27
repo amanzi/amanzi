@@ -1194,7 +1194,23 @@ PorousMedia::initData ()
 			BL_ASSERT(sdat.nComp()>ncomps+iTracer);
 			BL_ASSERT(tic_regions.size()>jt);
 			
-			tic_regions[jt]->setVal(sdat,val[0],ncomps+iTracer,dx,0);
+			tic_regions[jt]->setVal(sdat,val[val.size()-1],ncomps+iTracer,dx,0);
+
+                      }
+
+                      if (val.size() > 1) {
+                        // If this is an array, all the but last values are intended to initialize aux
+                        BL_ASSERT(alquimia_helper != 0);
+                        int Naux = alquimia_helper->AuxChemVariablesMap().size();
+                        BL_ASSERT(val.size() == Naux + 1);
+
+                        for (int jt=0; jt<tic_regions.size(); ++jt) {
+                          for (int iAux=0; iAux<Naux; ++iAux) {
+                            FArrayBox& aux = get_new_data(Aux_Chem_Type)[mfi];
+                            tic_regions[jt]->setVal(aux,val[iAux],iAux,dx,0);
+                          }
+                        }
+
                       }
                     }
                     else {
@@ -1206,6 +1222,8 @@ PorousMedia::initData ()
         }
     }
 
+#if ALQUIMIA_ENABLED
+#else
     if (do_tracer_chemistry>0) 
     {
         if (ntracers>0)
@@ -1391,6 +1409,7 @@ PorousMedia::initData ()
             }
         }
     }
+#endif
 
     if (do_tracer_chemistry!=0) {
         get_new_data(FuncCount_Type).setVal(1);
@@ -5358,6 +5377,22 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       BL_ASSERT(area[0].size()>i);
       BL_ASSERT(area[1].size()>i);
 
+      if (0) {
+        Box ebox = BoxLib::bdryLo(box,0,1); ebox.growHi(0,2);
+        FArrayBox t(ebox,ntracers); t.setVal(0);
+        t.copy(u_macG[0][i]);
+        std::cout << "Velocity " << std::endl;
+        std::cout << t << std::endl;
+      }
+
+      if (0) {
+        Box cbox = BoxLib::adjCellLo(box,0,3); //cbox.shift(0,1);
+        FArrayBox tc(cbox,1);
+        tc.copy(divu);
+        std::cout << "Divu in grow" << std::endl;
+        std::cout << tc << std::endl;
+      }
+
       godunov->AdvectTracer(grids[i], dx, dt, 
 			    area[0][i], u_macG[0][i], flux[0], 
 			    area[1][i], u_macG[1][i], flux[1], 
@@ -5370,6 +5405,22 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
 			    (*aofs)[i], Aidx, (*rock_phi)[i], use_conserv_diff,
 			    state_bc.dataPtr(), volume[i], ntracers);
 
+      if (0) {
+        Box ebox = BoxLib::bdryLo(box,0,1); ebox.growHi(0,2);
+        FArrayBox t(ebox,ntracers); t.setVal(0);
+        t.copy(flux[0]);
+        std::cout << "Flux " << std::endl;
+        std::cout << t << std::endl;
+      }
+
+      if (0) {
+        Box cbox = BoxLib::adjCellLo(box,0,3); //cbox.shift(0,1);
+        FArrayBox tc(cbox,ntracers);
+        tc.copy(C_new_fpi());
+        std::cout << "State in grow" << std::endl;
+        std::cout << tc << std::endl;
+      }
+
       // Compute C_new such that:
       //
       //    (S_new.C_new.phi-S_old.C_old.phi)/dt + A = SRCext
@@ -5379,6 +5430,14 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
                                sat_old[i], sat_new[i], Sidx, ncomps,
                                (*aofs)[i], Aidx, *SrcPtr, SRCidx, (*rock_phi)[i],
                                grids[i], idx_total, dt); 
+
+      if (0) {
+        Box cbox = BoxLib::adjCellLo(box,0,1); cbox.shift(0,1);
+        FArrayBox tc(cbox,ntracers);
+        tc.copy(C_new_fpi());
+        std::cout << "State after " << std::endl;
+        std::cout << tc << std::endl;
+      }
 
       // Copy new tracer concentrations into "new" state
       get_new_data(State_Type)[i].copy(C_new_fpi(),Cidx,first_tracer,ntracers);
@@ -5775,7 +5834,6 @@ PorousMedia::advance_chemistry (Real time,
     state[*it].allocOldData();
     state[*it].swapTimeLevels(dt); // Set old_time=new_time, swap state data ptrs
   }
-
   //
   // ngrow == 0 -> we're working on the valid region of state.
   //
@@ -5798,6 +5856,7 @@ PorousMedia::advance_chemistry (Real time,
 
   MultiFab::Copy(S_new,S_old,0,0,ncomps,S_new.nGrow());
   MultiFab::Copy(P_new,P_old,0,0,ncomps,P_new.nGrow());
+  MultiFab::Copy(Aux_new,Aux_old,0,0,Aux_new.nComp(),Aux_new.nGrow());
 
   BL_ASSERT(S_old.nComp() >= ncomps+ntracers);
   for (int ithread = 0; ithread < tnum; ithread++)
@@ -12212,6 +12271,14 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp,
             face_tbc.apply(bndFab,dx,0,1,t_eval);
           }
           fab.copy(bndFab,0,dComp+n,1);
+
+          // if (it->first == Orientation(0,Orientation::low)) {
+          //   Box cbox = BoxLib::adjCellLo(domain,0,1) & bndBox;
+          //   FArrayBox tc(cbox,1);
+          //   tc.copy(bndFab);
+          //   std::cout << "TBC " << std::endl;
+          //   std::cout << tc << std::endl;
+          // }
         }
       }
     }    
