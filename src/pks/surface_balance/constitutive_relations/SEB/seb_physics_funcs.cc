@@ -26,7 +26,7 @@ void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug) {
   e_air = 1.08 * (1 - std::exp(-e_air));
   eb.fQlwIn = e_air * seb.params.stephB * std::pow(vp_air.temp,4);
 
-  // Calculate D_h, D_e, sqig
+  // Calculate D_h, D_e, 
   eb.Dhe = std::pow(seb.params.VKc,2) * seb.in.met.Us
                        / std::pow(std::log(seb.params.Zr / seb.in.surf.Zo), 2);
 
@@ -45,7 +45,7 @@ void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf, Energy
   // Calculate outgoing long-wave radiation
   eb.fQlwOut = -seb.in.surf.emissivity*seb.params.stephB*std::pow(vp_surf.temp,4);
 
-  double Sqig;          // special constant for use in e and h, precalculated for efficiency
+  double Sqig;          // Stability function for use in e and h, precalculated for efficiency
   double air_temp = seb.in.met.vp_air.temp;
   double Ri  = seb.params.gravity * seb.params.Zr * (air_temp - vp_surf.temp)
       / (air_temp * std::pow(seb.in.met.Us,2));
