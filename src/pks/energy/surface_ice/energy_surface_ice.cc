@@ -321,6 +321,12 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
     for (unsigned int c=0; c!=ncells; ++c) {
       Acc_cells[c] -= dsource_dT[0][c] * cell_vol[0][c];
     }
+
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_->os() << "Adding hacked source to PC:" << std::endl;
+      db_->WriteVector("de_src_dT", S->GetFieldData("dsurface_conducted_energy_source_dsurface_temperature").ptr(), false);
+    }
+
   }
 }
 
