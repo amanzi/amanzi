@@ -128,7 +128,7 @@ if __name__ == "__main__":
         # Amanzi-Alquimia
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+".in",root+".dat"])
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+"-trim.in",root+".dat"])
 
         u_amanzi_alquimia = [[[] for x in range(len(amanzi_components))] for x in range(len(times))]
         for i, time in enumerate(times):

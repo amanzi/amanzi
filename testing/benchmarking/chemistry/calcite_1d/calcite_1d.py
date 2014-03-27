@@ -237,7 +237,7 @@ if __name__ == "__main__":
         # Amanzi-Alquimia
         input_filename = os.path.join("amanzi-u-1d-calcite-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-calcite.in","calcite.dat"])
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-calcite-trim.in","calcite.dat"])
 
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia = []

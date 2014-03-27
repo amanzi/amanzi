@@ -259,5 +259,6 @@
   <ParameterList name="Chemistry">
     <Parameter name="Engine" type="string" value="PFloTran"/>
     <Parameter name="Engine Input File" type="string" value="1d-ion-exchange-trim.in"/>
+    <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
   </ParameterList> <!-- Chemistry -->
 </ParameterList>

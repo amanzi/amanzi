@@ -171,7 +171,7 @@ if __name__ == "__main__":
         # Amanzi-Alquimia
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["ascem-2012-1d-"+root+".in","ascem-2012-"+root+".dat"])
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["ascem-2012-1d-"+root+"-trim.in","ascem-2012-"+root+".dat"])
 
         # tot concentration
         u_amanzi_alquimia = [[[] for x in range(len(totcama))] for x in range(len(timesama))]
