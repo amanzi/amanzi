@@ -303,7 +303,7 @@ double WRMImplicitPermafrostModel::si_frozen_unsaturated_nospline_(double pc_liq
   // solve implicit equation for s_i
   SatIceFunctor_ func(pc_liq, pc_ice, wrm_);
   Tol_ tol(eps_);
-  uintmax_t max_it(max_it_);
+  boost::uintmax_t max_it(max_it_);
   double left = 0.;
   double right = 1.;
 

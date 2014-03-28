@@ -100,8 +100,8 @@ int PredictorDelegateBCFlux::CalculateLambdaToms_(int f,
   // -- convergence criteria
   double eps = std::max(1.e-4 * std::abs((*bc_values_)[f]), 1.e-8);
   Tol_ tol(eps);
-  uintmax_t max_it = 100;
-  uintmax_t actual_it(max_it);
+  boost::uintmax_t max_it = 100;
+  boost::uintmax_t actual_it(max_it);
 
   double res = (*func)(lambda);
   double left = 0.;
