@@ -295,5 +295,41 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
 
 }
 
+
+void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
+  // Deals with nonlinear source terms that are implemented correctly as an evaluator
+  EnergyBase::AddSourcesToPrecon_(S,h);
+
+  // Additionally deal with nonlinear source terms that are NOT
+  // implemented correctly, as they are part of a PK (surface energy
+  // balance!)
+  if (is_source_term_ && 
+      S->HasFieldEvaluator("surface_conducted_energy_source") &&
+      !S->GetFieldEvaluator("surface_conducted_energy_source")->IsDependency(S, key_) &&
+      S->HasField("dsurface_conducted_energy_source_dsurface_temperature")) {
+    // This checks if 1, there is a source, and, 2, there is a
+    // conducted component to that source, and 4, someone, somewhere
+    // (i.e. SEB PK) has defined a dsource_dT, but 3, the source
+    // evaluator does not think it depends upon T (because it is
+    // hacked in by the PK).
+    std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
+
+    const Epetra_MultiVector& dsource_dT =
+        *S->GetFieldData("dsurface_conducted_energy_source_dsurface_temperature")->ViewComponent("cell",false);
+    const Epetra_MultiVector& cell_vol = *S->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
+    unsigned int ncells = dsource_dT.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
+      Acc_cells[c] -= dsource_dT[0][c] * cell_vol[0][c];
+    }
+
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_->os() << "Adding hacked source to PC:" << std::endl;
+      db_->WriteVector("de_src_dT", S->GetFieldData("dsurface_conducted_energy_source_dsurface_temperature").ptr(), false);
+    }
+
+  }
+}
+
+
 } // namespace
 } // namespace

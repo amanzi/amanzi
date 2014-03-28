@@ -152,7 +152,7 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 
   // tack on the variable change
   const Epetra_MultiVector& dh_dp =
-      *S_next_->GetFieldData("dponded_depth_d"+key_)->ViewComponent("cell",false);
+      *S_next_->GetFieldData("dponded_depth_bar_d"+key_)->ViewComponent("cell",false);
   Epetra_MultiVector& Pu_c = *Pu->Data()->ViewComponent("cell",false);
   unsigned int ncells = Pu_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
@@ -230,10 +230,9 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
   // 3.b: Assemble the operator if requested
-  if (coupled_to_subsurface_via_head_ ||
-      coupled_to_subsurface_via_flux_ || assemble_preconditioner_) {
+  if (assemble_preconditioner_) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "  assembling..." << std::endl;
+      *vo_->os() << "  assembling forward PC operator..." << std::endl;
     mfd_preconditioner_->AssembleGlobalMatrices();
   }
 
@@ -297,9 +296,9 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     ASSERT(!ierr);
   }
 
-  if (assemble_preconditioner_) {
+  if (assemble_preconditioner_ && precon_used_) {
     mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    if (precon_used_) mfd_preconditioner_->UpdatePreconditioner();
+    mfd_preconditioner_->UpdatePreconditioner();
   }
 
   /*
