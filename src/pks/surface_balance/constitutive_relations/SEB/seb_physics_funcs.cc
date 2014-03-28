@@ -243,7 +243,7 @@ double DetermineSnowTemperature(const SEB& seb, ThermoProperties& vp_snow,
         EnergyBalance& eb, std::string method) {
   SnowTemperatureFunctor_ func(&seb, &vp_snow, &eb);
   Tol_ tol(1.e-6);
-  uintmax_t max_it(50);
+  boost::uintmax_t max_it(50);
   double left, right;
   double res_left, res_right;
 
