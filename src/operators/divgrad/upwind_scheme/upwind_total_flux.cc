@@ -140,23 +140,6 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
     //         min_flow_eps);
     double flow_eps = flux_eps_;
 
-    // if (dcvo_uw != Teuchos::null)
-    if (f == 441)
-      std::cout
-    //   *dcvo_uw->os() 
-        << "Face " << f << ":" << std::endl
-        << "  flux_dir = " << flux_v[0][f] << std::endl
-        << "  flux_eps = " << flow_eps << std::endl
-        << "     coef[uw] = " << coefs[0] << std::endl
-        << "     coef[dw] = " << coefs[1] << std::endl;
-    // if (dcvo_dw != Teuchos::null)
-    //   *dcvo_dw->os() << "DW Cell " << dw << " of face " << f << ":" << std::endl
-    //                  << "  flux_dir = " << flux_v[0][f] << std::endl
-    //                  << "  flux_eps = " << flow_eps << std::endl
-    //                  << "     coef[uw] = " << coefs[0] << std::endl
-    //                  << "     coef[dw] = " << coefs[1] << std::endl;
-        
-
     // Determine the coefficient
     if (abs(flux_v[0][f]) >= flow_eps) {
       coef_faces[0][f] = coefs[0];
@@ -169,9 +152,6 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
         std::cout << "  param = " << param << std::endl;
         std::cout << "  flow_eps = " << flow_eps << std::endl;
       }
-
-      if (f == 441)
-        std::cout << "  AVG param = " << param << std::endl;
 
       // if (dcvo_uw != Teuchos::null)
       //   *dcvo_uw->os() << "  AVG param = " << param << std::endl;
