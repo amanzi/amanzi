@@ -1406,6 +1406,7 @@ c
       hxi = 1.d0 / hx
       hyi = 1.d0 / hy
       hzi = 1.d0 / hz
+
 c
 c     compute the slopes
 c
@@ -1454,7 +1455,7 @@ c
       if (bc(3,1).eq.EXT_DIR) then
          do j = jmin,jmax
             do i = imin,imax
-               vedge(i,j,k) = vedge(i,j,kmin)
+               wedge(i,j,k) = wedge(i,j,kmin)
             enddo
          enddo
       endif
@@ -1463,7 +1464,7 @@ c
       if (bc(3,2).eq.EXT_DIR) then
          do j = jmin,jmax
             do i = imin,imax
-               vedge(i,j,k) = vedge(i,j,kmax+1)
+               wedge(i,j,k) = wedge(i,j,kmax+1)
             enddo
          enddo
       endif
@@ -1712,6 +1713,7 @@ c
                end do
             end do
       end do
+
 c
 c     compute the yedge states
 c
@@ -1886,7 +1888,6 @@ c
             end do
          end do
       end do
-
       end
 #else
       subroutine FORT_ESTATE_TRACER (s, DIMS(s),
@@ -6507,7 +6508,7 @@ c     FIXME: Assume first component is water, and that all tracers of interest a
          do j = lo(2), hi(2) 
             do i = lo(1), hi(1) 
                do n = 1,idx_total_n
-                  idx = idx_total(n)
+                  idx = idx_total(n) + 1
                   if (sn(i,j,k,1) .gt. zero) then
                      cn(i,j,k,idx) = (so(i,j,k,cWater)*co(i,j,k,idx)
      &                    + dt*(tforces(i,j,k,idx)-aofs(i,j,k,idx))/rockphi(i,j,k))/sn(i,j,k,cWater)

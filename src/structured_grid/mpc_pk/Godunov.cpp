@@ -1095,7 +1095,7 @@ Godunov::edge_states_tracer (const Box&  grd,
 		       sty_dat,    ARLIM(sty_lo),    ARLIM(sty_hi),
 #if (BL_SPACEDIM == 3)
 		       zlo_dat, zhi_dat, slz_dat, slzscr, stzlo, stzhi, 
-		       uedge_dat,  ARLIM(ue_lo),     ARLIM(ue_hi),
+		       wedge_dat,  ARLIM(we_lo),     ARLIM(we_hi),
 		       stz_dat,    ARLIM(stz_lo),    ARLIM(stz_hi),
 #endif
 		       ARLIM(ww_lo),ARLIM(ww_hi),

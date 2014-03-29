@@ -5377,22 +5377,6 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       BL_ASSERT(area[0].size()>i);
       BL_ASSERT(area[1].size()>i);
 
-      if (0) {
-        Box ebox = BoxLib::bdryLo(box,0,1); ebox.growHi(0,2);
-        FArrayBox t(ebox,ntracers); t.setVal(0);
-        t.copy(u_macG[0][i]);
-        std::cout << "Velocity " << std::endl;
-        std::cout << t << std::endl;
-      }
-
-      if (0) {
-        Box cbox = BoxLib::adjCellLo(box,0,3); //cbox.shift(0,1);
-        FArrayBox tc(cbox,1);
-        tc.copy(divu);
-        std::cout << "Divu in grow" << std::endl;
-        std::cout << tc << std::endl;
-      }
-
       godunov->AdvectTracer(grids[i], dx, dt, 
 			    area[0][i], u_macG[0][i], flux[0], 
 			    area[1][i], u_macG[1][i], flux[1], 
@@ -5405,22 +5389,6 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
 			    (*aofs)[i], Aidx, (*rock_phi)[i], use_conserv_diff,
 			    state_bc.dataPtr(), volume[i], ntracers);
 
-      if (0) {
-        Box ebox = BoxLib::bdryLo(box,0,1); ebox.growHi(0,2);
-        FArrayBox t(ebox,ntracers); t.setVal(0);
-        t.copy(flux[0]);
-        std::cout << "Flux " << std::endl;
-        std::cout << t << std::endl;
-      }
-
-      if (0) {
-        Box cbox = BoxLib::adjCellLo(box,0,3); //cbox.shift(0,1);
-        FArrayBox tc(cbox,ntracers);
-        tc.copy(C_new_fpi());
-        std::cout << "State in grow" << std::endl;
-        std::cout << tc << std::endl;
-      }
-
       // Compute C_new such that:
       //
       //    (S_new.C_new.phi-S_old.C_old.phi)/dt + A = SRCext
@@ -5430,14 +5398,6 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
                                sat_old[i], sat_new[i], Sidx, ncomps,
                                (*aofs)[i], Aidx, *SrcPtr, SRCidx, (*rock_phi)[i],
                                grids[i], idx_total, dt); 
-
-      if (0) {
-        Box cbox = BoxLib::adjCellLo(box,0,1); cbox.shift(0,1);
-        FArrayBox tc(cbox,ntracers);
-        tc.copy(C_new_fpi());
-        std::cout << "State after " << std::endl;
-        std::cout << tc << std::endl;
-      }
 
       // Copy new tracer concentrations into "new" state
       get_new_data(State_Type)[i].copy(C_new_fpi(),Cidx,first_tracer,ntracers);
