@@ -152,7 +152,7 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 
   // tack on the variable change
   const Epetra_MultiVector& dh_dp =
-      *S_next_->GetFieldData("dponded_depth_d"+key_)->ViewComponent("cell",false);
+      *S_next_->GetFieldData("dponded_depth_bar_d"+key_)->ViewComponent("cell",false);
   Epetra_MultiVector& Pu_c = *Pu->Data()->ViewComponent("cell",false);
   unsigned int ncells = Pu_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
