@@ -175,9 +175,9 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("ponded_depth")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-//   S->RequireFieldEvaluator("saturation_liquid");
-  S->RequireField("saturation_liquid")->SetMesh(subsurf_mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+ //   S->RequireFieldEvaluator("saturation_liquid");
+   S->RequireField("saturation_liquid")->SetMesh(subsurf_mesh_)
+       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator("unfrozen_fraction");
   S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
@@ -277,9 +277,9 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
   const Epetra_MultiVector& ponded_depth =
       *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell", false);
 
-//  S_next_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& saturation_liquid =
-    *S_next_->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
+ //  S_next_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_next_.ptr(), name_);
+   const Epetra_MultiVector& saturation_liquid =
+     *S_next_->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
 
   S_next_->GetFieldEvaluator("unfrozen_fraction")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& unfrozen_fraction =
@@ -346,6 +346,11 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       // -- ground properties
       seb.in.vp_ground.temp = surf_temp[0][c];
       seb.in.vp_ground.pressure = surf_pres[0][c];
+    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    AmanziMesh::Entity_ID_List cells;
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    ASSERT(cells.size() == 1);
+      seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
 
       // -- snow properties
       seb.in.snow_old.ht = snow_depth_old[0][c] < min_snow_trans_ ? 0. : snow_depth_old[0][c];
@@ -398,8 +403,8 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
 
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
-      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-      AmanziMesh::Entity_ID_List cells;
+//      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+//      AmanziMesh::Entity_ID_List cells;
       subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
       ASSERT(cells.size() == 1);
       // surface mass sources are in m^3 water / (m^2 s)
@@ -436,6 +441,11 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       // -- ground properties
       seb.in.vp_ground.temp = surf_temp[0][c];
       seb.in.vp_ground.pressure = surf_pres[0][c];
+    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    AmanziMesh::Entity_ID_List cells;
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    ASSERT(cells.size() == 1);
+      seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
 
       // -- snow properties
       seb.in.snow_old.ht = snow_ground_trans_;
@@ -515,8 +525,8 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
 
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
-      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-      AmanziMesh::Entity_ID_List cells;
+//      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+//      AmanziMesh::Entity_ID_List cells;
       subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
       ASSERT(cells.size() == 1);
       // surface mass sources are in m^3 water / (m^2 s)
@@ -553,19 +563,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
         
         (*dsurf_energy_flux_dT)[0][c] = (eflux2 - surf_energy_flux[0][c]) / 0.01;
       }
-std::cout << "Snow depth, snowtemp = " << seb.out.snow_new.ht << ", " << seb.in.vp_snow.temp << std::endl;
-std::cout << "Melt heat, Melt water temp = " <<  surf_water_flux[0][c]  <<", " << seb.out.mb.MWg_temp << std::endl;
-
     }
-
-   //   std::cout << "Snow depth, snowtemp = " << seb.out.snow_new.ht << ", " << seb.in.vp_snow.temp << std::endl;
-   //   std::cout << "Melt heat, Melt water temp = " <<  surf_water_flux[0][c]  <<", " << seb.out.mb.MWg_temp << std::endl;
-   //   std::cout << "Latent heat = " << data.st_energy.fQe << std::endl;
-   //   std::cout << "Sensible heat = " << data.st_energy.fQh << std::endl;
-   //   std::cout << "GROUND HEAT Qex = " << data.st_energy.fQc << std::endl;
-   //   std::cout << "Ice condensation rate = " << data.st_energy.MIr << std::endl;
-   //   std::cout << "ALBEDO = " << data.st_energy.albedo_value << std::endl;
-
   }  // END CELL LOOP ###############################
 
   // debug

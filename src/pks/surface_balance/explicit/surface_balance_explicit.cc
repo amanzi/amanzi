@@ -169,6 +169,10 @@ SurfaceBalanceExplicit::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("ponded_depth")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
+//   S->RequireFieldEvaluator("saturation_liquid");
+   S->RequireField("saturation_liquid")->SetMesh(subsurf_mesh_)
+       ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   S->RequireFieldEvaluator("unfrozen_fraction");
   S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -252,6 +256,10 @@ SurfaceBalanceExplicit::advance(double dt) {
   const Epetra_MultiVector& ponded_depth =
       *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell", false);
 
+ //  S_next_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_next_.ptr(), name_);
+   const Epetra_MultiVector& saturation_liquid =
+     *S_next_->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
+
   S_next_->GetFieldEvaluator("unfrozen_fraction")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& unfrozen_fraction =
       *S_next_->GetFieldData("unfrozen_fraction")->ViewComponent("cell", false);
@@ -313,6 +321,11 @@ SurfaceBalanceExplicit::advance(double dt) {
       // -- ground properties
       seb.in.vp_ground.temp = surf_temp[0][c];
       seb.in.vp_ground.pressure = surf_pres[0][c];
+    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    AmanziMesh::Entity_ID_List cells;
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    ASSERT(cells.size() == 1);
+      seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
 
       // -- snow properties
       seb.in.snow_old.ht = snow_depth_old[0][c] < min_snow_trans_ ? 0. : snow_depth_old[0][c];
@@ -362,8 +375,8 @@ SurfaceBalanceExplicit::advance(double dt) {
 
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
-      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-      AmanziMesh::Entity_ID_List cells;
+//      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+//      AmanziMesh::Entity_ID_List cells;
       subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
       ASSERT(cells.size() == 1);
       // surface mass sources are in m^3 water / (m^2 s)
@@ -393,6 +406,11 @@ SurfaceBalanceExplicit::advance(double dt) {
       // -- ground properties
       seb.in.vp_ground.temp = surf_temp[0][c];
       seb.in.vp_ground.pressure = surf_pres[0][c];
+    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    AmanziMesh::Entity_ID_List cells;
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    ASSERT(cells.size() == 1);
+      seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
 
       // -- snow properties
       seb.in.snow_old.ht = snow_ground_trans_;
@@ -468,8 +486,8 @@ SurfaceBalanceExplicit::advance(double dt) {
 
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
-      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-      AmanziMesh::Entity_ID_List cells;
+//      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+//      AmanziMesh::Entity_ID_List cells;
       subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
       ASSERT(cells.size() == 1);
       // surface mass sources are in m^3 water / (m^2 s)
