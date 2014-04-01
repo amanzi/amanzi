@@ -323,6 +323,10 @@ void ChemistryEngine::InitState(AlquimiaMaterialProperties& mat_props,
   AllocateAlquimiaState(&sizes_, &chem_state);
   AllocateAlquimiaAuxiliaryData(&sizes_, &aux_data);
   AllocateAlquimiaAuxiliaryOutputData(&sizes_, &aux_output);
+
+  // Make sure the auxiliary ints/doubles are zeroed out.
+  std::fill(aux_data.aux_ints.data, aux_data.aux_ints.data + aux_data.aux_ints.size, 0);
+  std::fill(aux_data.aux_doubles.data, aux_data.aux_doubles.data + aux_data.aux_doubles.size, 0.0);
 }
                  
 void ChemistryEngine::FreeState(AlquimiaMaterialProperties& mat_props,
