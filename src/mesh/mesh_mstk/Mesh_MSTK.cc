@@ -559,7 +559,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
   }
 
 
-  if (inmesh.cell_dimension() == 2 && setkind == FACE && flatten) {
+  if ((inmesh.cell_dimension() == 2) && (setkind == FACE) && flatten) {
     Errors::Message mesg("Requested mesh constructor produces 1D mesh which is not supported by Amanzi");
     amanzi_throw(mesg);
   }
