@@ -168,6 +168,7 @@ function(ADD_AMANZI_TEST test_name)
     # Create the executable if SOURCE is defined
     if(AMANZI_TEST_SOURCE)
       add_executable(${test_exec} ${AMANZI_TEST_SOURCE})
+      set_target_properties(${test_exec} PROPERTIES COMPILE_FLAGS "-DCMAKE_BINARY_DIR=\\\"${CMAKE_BINARY_DIR}\\\" -DCMAKE_SOURCE_DIR=\\\"${CMAKE_SOURCE_DIR}\\\"")
     endif()
 
     # Add link libraries if needed
@@ -254,7 +255,7 @@ function(ADD_AMANZI_TEST test_name)
 
   # Timeout
   if ( TESTS_TIMEOUT_THRESHOLD )
-    list(APPEND test_properties TIMEOUT ${TESTS_TMIEOUT_THRESHOLD})
+    list(APPEND test_properties TIMEOUT ${TESTS_TIMEOUT_THRESHOLD})
   endif()
 
   # CTest needs to know how procs this test needs

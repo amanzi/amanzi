@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <UnitTest++.h>
+#include <cstdlib>
 #include <TestReporterStdout.h>
-#include "Teuchos_GlobalMPISession.hpp"
 #include "hdf5.h"
 
 // This computes the L2 error norm for the given component in the output file by comparing 
@@ -23,6 +23,7 @@ SUITE(ChemistryBenchmarkTests) {
 
    protected:
     std::string amanzi_exe_;
+    std::string benchmark_dir_;
   };  
 
   Chemistry1DBenchmarkTest::Chemistry1DBenchmarkTest() {
@@ -30,8 +31,11 @@ SUITE(ChemistryBenchmarkTests) {
     // Initialize the HDF5 library.
     H5open();
 
-    // Figure out where Amanzi lives.
+    // Figure out where Amanzi lives. 
+    amanzi_exe_ = std::string(CMAKE_BINARY_DIR) + std::string("/src/common/standalone_simulation_coordinator/amanzi");
 
+    // Figure out the 1D chemistry benchmark directory.
+    benchmark_dir_ = std::string(CMAKE_SOURCE_DIR) + std::string("/testing/benchmarking/chemistry");
   }
 
   Chemistry1DBenchmarkTest::~Chemistry1DBenchmarkTest() {
@@ -48,12 +52,17 @@ SUITE(ChemistryBenchmarkTests) {
 
     // Construct the Calcite benchmark directory.
     char test_dir[1024];
-    // FIXME
+    snprintf(test_dir, 1024, "%s/calcite_1d", benchmark_dir_.c_str());
+
+    // Copy the contents of the directory to cwd.
+    char command[1024];
+    snprintf(command, 1024, "cp -R %s/* .", test_dir);
+    int status = std::system(command);
 
     // Run Amanzi.
-    char command[1024];
     snprintf(command, 1024, "%s --xml_file=%s/amanzi-u-1d-calcite.xml", amanzi_exe_.c_str(), test_dir);
-    system(command);
+    status = std::system(command);
+    CHECK_EQUAL(0, status);
 
     // Fetch the newly-created output and the reference data.
     hid_t output = H5Fopen("calcite_data.h5", H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -77,6 +86,5 @@ SUITE(ChemistryBenchmarkTests) {
 }  // end SUITE(ChemistryBenchmarkTests)
 
 int main(int argc, char* argv[]) {
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   return UnitTest::RunAllTests();
 }
