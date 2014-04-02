@@ -21,7 +21,7 @@ SUITE(ChemistryBenchmarkTests) {
  
     void RunTest(const std::string name, double* gamma);
 
-   private:
+   protected:
     std::string amanzi_exe_;
   };  
 
@@ -52,13 +52,13 @@ SUITE(ChemistryBenchmarkTests) {
 
     // Run Amanzi.
     char command[1024];
-    snprintf(command, 1024, "%s --xml_file=%s/amanzi-u-1d-calcite.xml", amanzi_exe, test_dir);
+    snprintf(command, 1024, "%s --xml_file=%s/amanzi-u-1d-calcite.xml", amanzi_exe_.c_str(), test_dir);
     system(command);
 
     // Fetch the newly-created output and the reference data.
     hid_t output = H5Fopen("calcite_data.h5", H5F_ACC_RDONLY, H5P_DEFAULT);
     char reference_file[1024];
-    snprintf(reference_file, 1024, "%s/pflotran/1d-calcite.h5");
+    snprintf(reference_file, 1024, "%s/pflotran/1d-calcite.h5", test_dir);
     hid_t reference = H5Fopen(reference_file, H5F_ACC_RDONLY, H5P_DEFAULT);
 
     // Compute the L2 error norm for the Calcite concentration by reading data from 
