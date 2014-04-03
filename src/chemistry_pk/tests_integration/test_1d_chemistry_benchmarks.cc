@@ -1,15 +1,62 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <UnitTest++.h>
+#include <vector>
 #include <cstdlib>
+#include <cmath>
+#include <float.h>
 #include <TestReporterStdout.h>
 #include "hdf5.h"
 
 // This computes the L2 error norm for the given component in the output file by comparing 
 // its values with those in the given reference file.
-double ComputeL2Error(hid_t output, hid_t reference, const std::string& component)
+double ComputeL2Error(hid_t output, const std::string& output_component_name,
+                      hid_t reference, const std::string& reference_component_name,
+                      int step, double time)
 {
+  // The name of the dataset for the Amanzi file is the time step number, and datasets 
+  // are stored in groups that are named after the component.
+  char output_dataset_name[128];
+  snprintf(output_dataset_name, 128, "%d", step);
+  hid_t output_group = H5Gopen2(output, output_component_name.c_str(), H5P_DEFAULT);
+  if (output_group < 0) return FLT_MAX;
+  hid_t output_data = H5Dopen2(output_group, output_dataset_name, H5P_DEFAULT);
+  if (output_data < 0) return FLT_MAX;
+  hsize_t o_size = H5Dget_storage_size(output_data);
+  std::vector<double> o_data((size_t)(o_size/sizeof(double)));
+  H5Dread(output_data, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &o_data[0]);
+  H5Dclose(output_data);
+  H5Gclose(output_group);
 
-  return 0.0;
+  // Currently we use PFlotran as a benchmark. In PFlotran files, the Group "/" contains 
+  // a Group for each time, in the format "Time:  x.yzxyzE+xy y". Within a Group for the 
+  // Time, we search for the given component.
+  hid_t slash = H5Gopen2(reference, "/", H5P_DEFAULT);
+  char reference_group_name[1024];
+  snprintf(reference_group_name, 1024, "Time:  %1.5E y", time);
+  hid_t reference_group = H5Gopen2(slash, reference_group_name, H5P_DEFAULT);
+  if (reference_group < 0) return FLT_MAX;
+  hid_t reference_data = H5Dopen2(reference_group, reference_component_name.c_str(), H5P_DEFAULT);
+  if (reference_data < 0) return FLT_MAX;
+  hsize_t r_size = H5Dget_storage_size(reference_data);
+  std::vector<double> r_data((size_t)(r_size/sizeof(double)));
+  H5Dread(reference_data, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &r_data[0]);
+  H5Dclose(reference_data);
+  H5Gclose(reference_group);
+  H5Gclose(slash);
+
+  // Make sure the datasets are the same size (for now).
+  if (o_data.size() != r_data.size())
+    return FLT_MAX;
+
+  // Now that everything is in place, compute the L2 error norm.
+  double L2 = 0.0;
+  for (size_t i = 0; i < o_data.size(); ++i)
+  {
+    double err = o_data[i] - r_data[i];
+    L2 += std::sqrt(err*err);
+  }
+
+  return L2;
 }
 
 SUITE(ChemistryBenchmarkTests) {
@@ -72,10 +119,16 @@ SUITE(ChemistryBenchmarkTests) {
 
     // Compute the L2 error norm for the Calcite concentration by reading data from 
     // the HDF5 files.
-    double conc_L2 = ComputeL2Error(output, reference, "Total Ca++ [M]");
+    double conc_L2 = ComputeL2Error(output, "total_component_concentration.cell.Ca++ conc",
+                                    reference, "Total_Ca++ [M]", 71, 9.0);
+    std::cout << "Ca++ concentration L2 norm: " << conc_L2 << std::endl;
+    CHECK(conc_L2 < 0.0227654);
 
     // Compute the L2 error norm for the Calcite volume fraction.
-    double VF_L2 = ComputeL2Error(output, reference, "Calcite_VF");
+    double VF_L2 = ComputeL2Error(output, "mineral_volume_fractions.cell.Calcite vol frac",
+                                  reference, "Calcite_VF", 71, 9.0);
+    std::cout << "Ca++ volume fraction L2 norm: " << VF_L2 << std::endl;
+    CHECK(VF_L2 < 0.000175007);
 
     // Close the files.
     H5Fclose(output);
