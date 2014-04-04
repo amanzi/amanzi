@@ -84,7 +84,8 @@ struct EnergyBalance {
   double fQc;
   double Qm;
   double Trw;
-  double surface_pressure; 
+  double surface_pressure;
+  double saturation_liquid;  
   double stored_surface_pressure;
   //double stored_fQe;
   double surface_porosity;

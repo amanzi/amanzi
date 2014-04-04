@@ -11,6 +11,7 @@
 #include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
+
 namespace Amanzi {
 
 class Debugger;
@@ -42,7 +43,8 @@ class SurfaceBalanceEvaluatorVPL : public SecondaryVariableFieldEvaluator {
   bool initialized_;
 
   Teuchos::RCP<Debugger> db_;
-
+  Teuchos::RCP<const AmanziMesh::Mesh> subsurf_mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,SurfaceBalanceEvaluatorVPL> reg_;
