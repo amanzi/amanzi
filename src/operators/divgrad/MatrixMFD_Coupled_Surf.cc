@@ -1,6 +1,8 @@
 #include "EpetraExt_RowMatrixOut.h"
+#include "Epetra_FECrsGraph.h"
 
 #include "MatrixMFD_Coupled_Surf.hh"
+#include "MatrixMFD_Surf.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -42,6 +44,60 @@ MatrixMFD_Coupled_Surf::SetSurfaceOperators(const Teuchos::RCP<MatrixMFD_TPFA>& 
   surf_importer_ = Teuchos::rcp(new Epetra_Import(*surf_map_in_subsurf_,face_map));
 }
 
+void MatrixMFD_Coupled_Surf::SymbolicAssembleGlobalMatrices() {
+  // Identical to MatrixMFD_Coupled, but does the FillMatrixGraph call
+  // with a _Surf matrix, which must first be created.
+  int ierr(0);
+  const Epetra_BlockMap& cmap = mesh_->cell_map(false);
+  const Epetra_BlockMap& fmap = mesh_->face_map(false);
+  const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
+
+  // Make the double maps
+  double_fmap_ = Teuchos::rcp(new Epetra_BlockMap(fmap.NumGlobalPoints(),
+          fmap.NumMyPoints(), fmap.MyGlobalElements(), 2,
+          fmap.IndexBase(), fmap.Comm() ));
+
+  double_cmap_ = Teuchos::rcp(new Epetra_BlockMap(cmap.NumGlobalPoints(),
+          cmap.NumMyPoints(), cmap.MyGlobalElements(), 2,
+          cmap.IndexBase(), cmap.Comm() ));
+
+  double_fmap_wghost_ = Teuchos::rcp(
+      new Epetra_BlockMap(fmap_wghost.NumGlobalPoints(),
+                          fmap_wghost.NumMyPoints(),
+                          fmap_wghost.MyGlobalElements(), 2,
+                          fmap_wghost.IndexBase(), fmap_wghost.Comm() ));
+
+  // Make the matrix graphs
+  int avg_entries_row = 6;
+  Teuchos::RCP<Epetra_CrsGraph> cf_graph =
+      Teuchos::rcp(new Epetra_CrsGraph(Copy, *double_cmap_, *double_fmap_wghost_,
+              avg_entries_row, false));
+  Teuchos::RCP<Epetra_FECrsGraph> ff_graph =
+      Teuchos::rcp(new Epetra_FECrsGraph(Copy, *double_fmap_, 2*avg_entries_row - 1,
+              false));
+
+  // Fill the graphs from the symbolic patterns in matrix_mfd from one of the
+  // sub-block matrices.
+
+  // IT IS ASSUMED that the two sub-block matrices fill in identical ways!
+  // Create a MatrixMFD_Surf operator for filling.
+  MatrixMFD_Surf blockA_surf(blockA_->plist_, blockA_->mesh_);
+  blockA_surf.SetSurfaceOperator(surface_A_);
+  blockA_surf.FillMatrixGraphs_(cf_graph.ptr(), ff_graph.ptr());
+
+  // Assemble the graphs
+  ierr = cf_graph->FillComplete(*double_fmap_, *double_cmap_);
+  ASSERT(!ierr);
+  ierr = ff_graph->GlobalAssemble();  // Symbolic graph is complete.
+  ASSERT(!ierr);
+
+  // Create the matrices
+  A2f2c_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, *cf_graph)); // stored in transpose
+  A2c2f_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, *cf_graph));
+  P2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, *ff_graph, false));
+  ierr = P2f2f_->GlobalAssemble();
+  ASSERT(!ierr);
+}
 
 void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
   // Base ComputeSchurComplement() gets the standard face parts

@@ -51,6 +51,7 @@ class MatrixMFD_Surf : virtual public MatrixMFD {
   Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh_;
   Teuchos::RCP<MatrixMFD_TPFA> surface_A_;
 
+  friend class MatrixMFD_Coupled_Surf;
 };
 
 
