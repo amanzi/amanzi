@@ -29,6 +29,7 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
     MatrixMFD_Coupled::SetSubBlocks(blockA, blockB);
   }
 
+  virtual void SymbolicAssembleGlobalMatrices();
   virtual void ComputeSchurComplement();
 
   virtual void SetOffDiagonals(const Teuchos::RCP<const Epetra_MultiVector>& Ccc,
