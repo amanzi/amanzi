@@ -229,6 +229,9 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
   Teuchos::OSTab tab = vo_->getOSTab();
   double dt = t_new - t_old;
 
+  bool debug = false;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) debug = true;
+
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "----------------------------------------------------------------" << std::endl
                << "Residual calculation: t0 = " << t_old
@@ -377,7 +380,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       seb.in.surf.Zo = SEBPhysics::CalcRoughnessFactor(seb.in.met.vp_air.temp);
 
       // Run the model
-      SEBPhysics::CalculateSurfaceBalance(seb, true);
+      SEBPhysics::CalculateSurfaceBalance(seb, debug);
 
       // Evaluate the residual
       res[0][c] =  snow_depth_new[0][c] - seb.out.snow_new.ht;
@@ -487,8 +490,8 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       seb_bare.in.vp_ground.porosity = other_part.Interpolate(1., 1., 1., surf_porosity[0][c]);
 
       // Run the model for both snowy case and bare case
-      SEBPhysics::CalculateSurfaceBalance(seb, true);
-      SEBPhysics::CalculateSurfaceBalance(seb_bare, true);
+      SEBPhysics::CalculateSurfaceBalance(seb, debug);
+      SEBPhysics::CalculateSurfaceBalance(seb_bare, debug);
 
       // Evaluate the residual
       double snow_depth_new_tmp = theta * seb.out.snow_new.ht + (1-theta) * seb_bare.out.snow_new.ht;
@@ -573,7 +576,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
     vecs.clear();
     vnames.push_back("energy_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
     vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source").ptr());
-    vnames.push_back("surface_vapor_source"); vecs.push_back(S_next_->GetFieldData("mass_source").ptr());
+    //    vnames.push_back("surface_vapor_source"); vecs.push_back(S_next_->GetFieldData("mass_source").ptr());
     vnames.push_back("T_water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source_temperature").ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
