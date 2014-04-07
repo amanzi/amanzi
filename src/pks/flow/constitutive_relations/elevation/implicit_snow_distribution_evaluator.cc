@@ -97,7 +97,7 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     dt = ktmax_ / nsteps;
 
     // scale report
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << "Snow Distribution: taking " << nsteps << " steps of size " << dt
                  << " s for travel length " << kL_ << " m." << std::endl
                  << "  L     = " << kL_ << std::endl
