@@ -919,14 +919,15 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
 
+  // update the rel perm according to the scheme of choice
+  changed_solution();
+  UpdatePermeabilityData_(S_next_.ptr());
+
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_head_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr());
-
-  // update the rel perm according to the scheme of choice
-  UpdatePermeabilityData_(S_next_.ptr());
 
   // update the stiffness matrix
   Teuchos::RCP<const CompositeVector> cond =

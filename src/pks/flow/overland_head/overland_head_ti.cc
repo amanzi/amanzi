@@ -61,6 +61,7 @@ void OverlandHeadFlow::fun( double t_old,
   std::vector<std::string> vnames;
   vnames.push_back("p_old");
   vnames.push_back("p_new");
+  vnames.push_back("z");
   vnames.push_back("h_old");
   vnames.push_back("h_new");
   vnames.push_back("h+z");
@@ -68,6 +69,7 @@ void OverlandHeadFlow::fun( double t_old,
   std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
   vecs.push_back(S_inter_->GetFieldData(key_).ptr());
   vecs.push_back(u.ptr());
+  vecs.push_back(S_inter_->GetFieldData("elevation").ptr());
   vecs.push_back(S_inter_->GetFieldData("ponded_depth").ptr());
   vecs.push_back(S_next_->GetFieldData("ponded_depth").ptr());
   vecs.push_back(S_next_->GetFieldData("pres_elev").ptr());
