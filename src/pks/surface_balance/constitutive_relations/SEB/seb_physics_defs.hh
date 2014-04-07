@@ -69,11 +69,13 @@ struct SurfaceProperties {
   double albedo;
   double Zo;
   double emissivity;
+  double saturation_liquid; // Actually a supsurface property
 
   SurfaceProperties() :
       albedo(MY_LOCAL_NAN),
       Zo(MY_LOCAL_NAN),
-      emissivity(MY_LOCAL_NAN) {}
+      emissivity(MY_LOCAL_NAN),
+      saturation_liquid(MY_LOCAL_NAN) {}
 };
 
 
@@ -160,6 +162,7 @@ struct EnergyBalance {  // all are [J/ (m^2 s)]
   double fQc;           // heat conducted to ground surface
   double fQm;           // energy available for melting snow
   double Dhe;           // special constant for use in e and h, precalculated for efficiency
+  double Evap_Resistance;  // Rair + Rsoil See Sakaguchi & Zeng 2009
 
   EnergyBalance() :
       fQswIn(MY_LOCAL_NAN),
@@ -169,7 +172,8 @@ struct EnergyBalance {  // all are [J/ (m^2 s)]
       fQe(MY_LOCAL_NAN),
       fQc(MY_LOCAL_NAN),
       fQm(MY_LOCAL_NAN),
-      Dhe(MY_LOCAL_NAN) {}
+      Dhe(MY_LOCAL_NAN),
+      Evap_Resistance(MY_LOCAL_NAN) {}
 
   void BalanceViaMelt();
   void BalanceViaConduction();
