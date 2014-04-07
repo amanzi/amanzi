@@ -187,9 +187,9 @@ void SurfaceBalanceSEBVPL::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("ponded_depth")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-//    S->RequireFieldEvaluator("pressure");
-//  S->RequireField("pressure")->SetMesh(mesh_)
-//      ->AddComponent("cell", AmanziMesh::CELL, 1);
+//   S->RequireFieldEvaluator("saturation_liquid");
+   S->RequireField("saturation_liquid")->SetMesh(subsurf_mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   
     S->RequireFieldEvaluator("surface_pressure");
   S->RequireField("surface_pressure")->SetMesh(mesh_)
@@ -203,7 +203,7 @@ void SurfaceBalanceSEBVPL::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("surface_porosity")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator("surface_vapor_pressure"); // atually mole_fraction not vapor pressure ~ AA
+  S->RequireFieldEvaluator("surface_vapor_pressure"); // actually mole_fraction not vapor pressure ~ AA
   S->RequireField("surface_vapor_pressure")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 };
@@ -260,9 +260,9 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
   const Epetra_MultiVector& ponded_depth =
       *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell", false);
 
-//  S_next_->GetFieldEvaluator("pressure")->HasFieldChanged(S_next_.ptr(), name_);
-//  const Epetra_MultiVector& pressure =
-//    *S_next_->GetFieldData("pressure")->ViewComponent("cell", false);
+//  S_next_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_next_.ptr(), name_);
+  const Epetra_MultiVector& saturation_liquid =
+    *S_next_->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
 
   S_next_->GetFieldEvaluator("surface_pressure")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& surface_pressure =
@@ -370,7 +370,13 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
     // ATS Calcualted Data
     double density_air = 1.275;       // Density of Air ------------------- [kg/m^3]
     data.st_energy.water_depth = ponded_depth[0][c]; 
-    //data.st_energy.surface_pressure = pressure[1][c];
+    
+    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    AmanziMesh::Entity_ID_List cells;
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    ASSERT(cells.size() == 1);
+    data.st_energy.saturation_liquid = saturation_liquid[0][cells[0]];
+
     data.st_energy.surface_pressure = surface_pressure[0][c];
     //data.st_energy.stored_pressure = surface_pressure[0][c];
     data.st_energy.water_fraction = unfrozen_fraction[0][c];
@@ -415,7 +421,13 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
       // Calculate as if bare ground
       // ATS Calcualted Data
       data_bare.st_energy.water_depth = ponded_depth[0][c];
-      //data_bare.st_energy.surface_pressure = pressure[1][c];
+
+    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    AmanziMesh::Entity_ID_List cells;
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    ASSERT(cells.size() == 1);
+      data_bare.st_energy.saturation_liquid = saturation_liquid[0][cells[0]];  
+
       data_bare.st_energy.surface_pressure = surface_pressure[0][c];
       data_bare.st_energy.stored_surface_pressure = stored_surface_pressure[0][c];
       data_bare.st_energy.water_fraction = unfrozen_fraction[0][c];
@@ -476,10 +488,10 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
     surf_water_temp[0][c] = data.st_energy.Trw;
 
     // surface vapor flux is treated as a volumetric source for the subsurface.
-    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-    AmanziMesh::Entity_ID_List cells;
-    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
-    ASSERT(cells.size() == 1);
+  //  AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+  //  AmanziMesh::Entity_ID_List cells;
+  //  subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+  //  ASSERT(cells.size() == 1);
     // surface mass sources are in m^3 water / (m^2 s)
     // subsurface mass sources are in mol water / (m^3 s)
     surface_vapor_flux[0][cells[0]] = data.st_energy.SurfaceVaporFlux 
@@ -499,7 +511,7 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
  
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "Snow depth, snowtemp = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;
-      *vo_->os() << "Melt heat = " << data.st_energy.Qm << std::endl;
+      *vo_->os() << "Melt heat, Melt water temp = " << data.st_energy.Qm <<", " << data.st_energy.Trw << std::endl;
       *vo_->os() << "ShortWave = " << data.st_energy.fQswIn << std::endl;
       *vo_->os() << "LongWave IN = " << data.st_energy.fQlwIn << std::endl;
       *vo_->os() << "LongWave OUT = " << data.st_energy.fQlwOut << std::endl;
