@@ -519,9 +519,20 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       // -- fluxes
       surf_energy_flux[0][c] = theta * seb.out.eb.fQc + (1-theta) * seb_bare.out.eb.fQc;
       surf_water_flux[0][c] = theta * seb.out.mb.MWg + (1-theta) * seb_bare.out.mb.MWg;
-      if (std::abs(surf_water_flux[0][c]) > 0.) {
-        surf_water_flux_temp[0][c] = (theta * seb.out.mb.MWg * seb.out.mb.MWg_temp
-                                      + (1-theta) * seb_bare.out.mb.MWg * seb_bare.out.mb.MWg_temp) / surf_water_flux[0][c];
+      if (surf_water_flux[0][c] > 0.) {
+        if (seb.out.mb.MWg > 0.) {
+          if (seb_bare.out.mb.Mwg > 0.) {
+            // both are positive, sources from both, average temp
+            surf_water_flux_temp[0][c] = (theta * seb.out.mb.MWg * seb.out.mb.MWg_temp
+                                          + (1-theta) * seb_bare.out.mb.MWg * seb_bare.out.mb.MWg_temp) / surf_water_flux[0][c];
+          } else {
+            // snow portion is positive, bare is negative, so take only from snow
+            surf_water_flux_temp[0][c] = seb.out.mb.MWg_temp;
+          }
+        } else {
+          // snow portion is negative, take only from snow.  Note if both are negative, both temps are just the air temp, which is fine.
+          surf_water_flux_temp[0][c] = seb_bare.out.mb.Mwg;
+        }
       } else {
         surf_water_flux_temp[0][c] = seb.out.mb.MWg_temp;
       }
