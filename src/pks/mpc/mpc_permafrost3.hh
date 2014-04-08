@@ -35,8 +35,8 @@ class MPCPermafrost3 : public StrongMPC<PKPhysicalBDFBase> {
   virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
-  // -- Apply preconditioner to u and returns the result in Pu.
-  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  // -- Apply preconditioner to r and returns the result in Pr.
+  virtual void precon(Teuchos::RCP<const TreeVector> r, Teuchos::RCP<TreeVector> Pr);
 
   // -- Update the preconditioner.
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
@@ -45,13 +45,14 @@ class MPCPermafrost3 : public StrongMPC<PKPhysicalBDFBase> {
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
 
   // -- Modify the correction.
-  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> res,
+  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> r,
           Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
  protected:
   void
-  UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const TreeVector>& u,
-          const Teuchos::RCP<TreeVector>& Pu);
+  UpdateConsistentFaceCorrectionWater_(const Teuchos::Ptr<const TreeVector>& r,
+				       const Teuchos::Ptr<const TreeVector>& u,
+				       const Teuchos::Ptr<TreeVector>& du);
 
 
   int
