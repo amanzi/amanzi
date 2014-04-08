@@ -261,19 +261,20 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     dcond_dh.ViewComponent("cell",false)->ReciprocalMultiply(1., dh_dp,
             *dcond_dp->ViewComponent("cell",false), 0.);
 
-    // -- Krel_cell gets n_liq
+    // -- Krel_cell gets 1
     Teuchos::RCP<const CompositeVector> uw_cond =
         S_next_->GetFieldData("upwind_overland_conductivity");
     CompositeVector duw_cond_cell_dh(*uw_cond);
-    duw_cond_cell_dh.ViewComponent("face",false)->PutScalar(0.);
+    duw_cond_cell_dh.PutScalar(0.);
+    //    duw_cond_cell_dh.ViewComponent("face",false)->PutScalar(0.);
 
-    S_next_->GetFieldEvaluator("surface_molar_density_liquid")
-        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-    const Epetra_MultiVector& dn_liq_dp =
-        *S_next_->GetFieldData("dsurface_molar_density_liquid_dsurface_pressure")
-        ->ViewComponent("cell",false);
-    duw_cond_cell_dh.ViewComponent("cell",false)
-        ->ReciprocalMultiply(1., dh_dp, dn_liq_dp, 0.);
+    // S_next_->GetFieldEvaluator("surface_molar_density_liquid")
+    //     ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+    // const Epetra_MultiVector& dn_liq_dp =
+    //     *S_next_->GetFieldData("dsurface_molar_density_liquid_dsurface_pressure")
+    //     ->ViewComponent("cell",false);
+    // duw_cond_cell_dh.ViewComponent("cell",false)
+    //     ->ReciprocalMultiply(1., dh_dp, dn_liq_dp, 0.);
 
     // -- Add in the Jacobian
     tpfa_preconditioner_->AnalyticJacobian(*depth, *pres_elev, *cond, dcond_dh,

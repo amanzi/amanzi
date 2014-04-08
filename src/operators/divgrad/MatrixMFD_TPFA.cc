@@ -524,17 +524,17 @@ void MatrixMFD_TPFA::AnalyticJacobian(const CompositeVector& height,
 
   Spp_->GlobalAssemble();
 
-  // Check min
-#ifdef ENABLE_DBC
-  Epetra_Vector Spp_diag(mesh_->cell_map(false));
-  Spp_->ExtractDiagonalCopy(Spp_diag);
-  double minval;
-  double maxval;
-  Spp_diag.MinValue(&minval);
-  Spp_diag.MaxValue(&maxval);
-  ASSERT(std::abs(minval) < 1.e40);
-  ASSERT(std::abs(maxval) < 1.e40);
-#endif
+  // Check min -- this is not correct when coupled
+// #ifdef ENABLE_DBC
+//   Epetra_Vector Spp_diag(mesh_->cell_map(false));
+//   Spp_->ExtractDiagonalCopy(Spp_diag);
+//   double minval;
+//   double maxval;
+//   Spp_diag.MinValue(&minval);
+//   Spp_diag.MaxValue(&maxval);
+//   ASSERT(std::abs(minval) < 1.e40);
+//   ASSERT(std::abs(maxval) < 1.e40);
+// #endif
 }
 
 
