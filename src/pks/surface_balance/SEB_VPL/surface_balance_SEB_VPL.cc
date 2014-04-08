@@ -175,7 +175,7 @@ void SurfaceBalanceSEBVPL::setup(const Teuchos::Ptr<State>& S) {
 
   S->RequireField("stored_surface_pressure", name_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField("stored_Qe", name_)->SetMesh(mesh_)
+  S->RequireField("stored_SWE", name_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // information from ATS data
@@ -228,8 +228,8 @@ void SurfaceBalanceSEBVPL::initialize(const Teuchos::Ptr<State>& S) {
   // initialize stored surface pressure
   S->GetFieldData("stored_surface_pressure",name_)->PutScalar(0.);
   S->GetField("stored_surface_pressure", name_)->set_initialized();
-  S->GetFieldData("stored_Qe",name_)->PutScalar(0.);
-  S->GetField("stored_Qe", name_)->set_initialized();
+  S->GetFieldData("stored_SWE",name_)->PutScalar(0.);
+  S->GetField("stored_SWE", name_)->set_initialized();
   // initialize sources, temps
   //  S->GetFieldData("surface_conducted_energy_source",name_)->PutScalar(0.);
   //  S->GetField("surface_conducted_energy_source",name_)->set_initialized();
@@ -336,8 +336,8 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
 
   Epetra_MultiVector& stored_surface_pressure =
       *S_next_->GetFieldData("stored_surface_pressure", name_)->ViewComponent("cell", false);
-  Epetra_MultiVector& stored_Qe =
-      *S_next_->GetFieldData("stored_Qe", name_)->ViewComponent("cell", false);
+  Epetra_MultiVector& stored_SWE =
+      *S_next_->GetFieldData("stored_SWE", name_)->ViewComponent("cell", false);
 
   //0 Create the SEB data structure
   SurfaceEnergyBalance_VPL::LocalData data;
@@ -507,7 +507,7 @@ bool SurfaceBalanceSEBVPL::advance(double dt) {
    // stored_surface_pressure[0][c] = surface_pressure[0][c];  
     stored_surface_pressure[0][c] = surface_pressure[0][c]; 
     std::cout<<"SEB:: Surface_pressure: "<<surface_pressure[0][c]<<"  Stored Surface Pressure: "<<stored_surface_pressure[0][c]<<std::endl;
-    //stored_Qe[0][c] = data.st_energy.fQe;    
+    stored_SWE[0][c] = data.st_energy.SWE;    
  
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "Snow depth, snowtemp = " << data.st_energy.ht_snow << ", " << data.st_energy.temp_snow << std::endl;

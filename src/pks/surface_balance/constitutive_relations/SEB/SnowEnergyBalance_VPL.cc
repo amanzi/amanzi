@@ -44,6 +44,7 @@ void SurfaceEnergyBalance_VPL::UpdateIncomingRadiation(LocalData& seb) {
   seb.st_energy.Dhe = (std::pow(seb.st_energy.VKc,2) * seb.st_energy.Us
                        / std::pow(std::log(seb.st_energy.Zr / 0.03), 2));
 }
+std::cout<<"Windspeed, Zo: "<<seb.st_energy.Us<<"  "<<seb.st_energy.Zo<<std::endl;
 }
 
 void SurfaceEnergyBalance_VPL::UpdateIncomingRadiationDerivatives(LocalData& seb) {
@@ -165,7 +166,7 @@ void SurfaceEnergyBalance_VPL::UpdateGroundEnergy(LocalData& seb) {
     Pvl = seb.vp_ground.saturated_vaporpressure*std::exp(-Pc/(seb.st_energy.density_w*461.52*seb.st_energy.temp_ground));
     std::cout<<"Bare Ground, Ground Sat. VP: "<<seb.vp_ground.saturated_vaporpressure<<"  Air VP: "<<seb.vp_air.actual_vaporpressure<<std::endl;
     std::cout<<"Ground VP Lowered: "<<Pvl<<std::endl;
-    std::cout<<"Surface Porostiy: "<<porosity<<std::endl;
+    std::cout<<"Surface Porosity: "<<porosity<<std::endl;
     // freeze smoothing for Latent heat
     if (seb.st_energy.temp_ground<275){
         if(seb.st_energy.temp_ground>273.0){
@@ -228,7 +229,7 @@ void SurfaceEnergyBalance_VPL::UpdateGroundEnergy(LocalData& seb) {
        * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
     }    
 
-   std::cout<<"Surface Porostiy: "<<porosity<<std::endl;
+   std::cout<<"Surface Porositiy: "<<porosity<<std::endl;
   } else { // no standing water
    UpdateVaporPressure(seb.vp_ground);
    porosity = seb.st_energy.surface_porosity;
@@ -581,12 +582,19 @@ void SurfaceEnergyBalance_VPL::UpdateSnow(EnergyBalance& eb) {
 
   // settle the pre-existing snow
   eb.age_snow += eb.dt / 86400.;
+  if (eb.age_snow<0){
+      eb.age_snow=0;
+  }
   double ndensity = std::pow(eb.age_snow,0.3);
+//   ndensity = 1;                                                                                                        //TAKE-OUT-AA 
   if (ndensity < 1){// Formula only works from snow older the 1 day
      ndensity = 1;
    }
   double dens_settled = eb.density_freshsnow*ndensity;
+std::cout<<"dens_settled: "<<dens_settled<<" density_fresh: "<<eb.density_freshsnow<<" ndensity: "<<ndensity<<std::endl;//TAKE-OUT-AA
+//  eb.density_snow = 250;                                                                                                //TAKE-OUT-AA
   double ht_settled = eb.ht_snow * eb.density_snow / dens_settled;
+std::cout<<"Ht_settled: "<<ht_settled<<" ht_snow: "<<eb.ht_snow<<" DensFact: "<<eb.density_snow/dens_settled<<std::endl;//TAKE-OUT-AA
 
   // Match Frost Age with Assinged density
      //Calculating which Day frost density matched snow Defermation fucntion from (Martinec, 1977) 
@@ -606,6 +614,7 @@ void SurfaceEnergyBalance_VPL::UpdateSnow(EnergyBalance& eb) {
   if (eb.ht_snow > 0.) {
     eb.density_snow = (ht_precip * eb.density_freshsnow + ht_frost * eb.density_frost
                        + ht_settled * dens_settled) / eb.ht_snow;
+//    eb.density_snow = 250;                                                                                             //TAKE-OUT-AA 
   } else {
     eb.density_snow = eb.density_freshsnow;
   }
@@ -618,6 +627,7 @@ void SurfaceEnergyBalance_VPL::UpdateSnow(EnergyBalance& eb) {
    } else {
     eb.age_snow = 0;
   }
+eb.SWE = eb.ht_snow * eb.density_snow / eb.density_w;
 }
 
 
@@ -628,7 +638,7 @@ void SurfaceEnergyBalance_VPL::SnowEnergyBalance(LocalData& seb) {
 
   // Find effective Albedo
   seb.st_energy.albedo_value = CalcAlbedo(seb.st_energy);
-
+std::cout<<"OLD-SWE: "<<seb.st_energy.ht_snow * seb.st_energy.density_snow / seb.st_energy.density_w<<std::endl;
   // Update temperature-independent fluxes, the short- and long-wave incoming
   // radiation.
   UpdateIncomingRadiation(seb);
@@ -664,6 +674,9 @@ void SurfaceEnergyBalance_VPL::SnowEnergyBalance(LocalData& seb) {
 
     // Make sure proper mass of snowpack water gets delivered to AT
     WaterMassCorrection(seb.st_energy);
+
+    std::cout<<"Air Vapor Pres: "<<seb.vp_air.actual_vaporpressure<<"  Snow Vapor Pressure: "<<seb.vp_snow.saturated_vaporpressure<<std::endl;
+    std::cout<<"Evap Resistance: "<<1/seb.st_energy.Dhe<<std::endl;    
 
   } else { // no snow
     // Energy balance

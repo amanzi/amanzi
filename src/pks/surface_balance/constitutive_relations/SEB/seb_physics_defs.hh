@@ -56,11 +56,13 @@ struct SnowProperties {
   double ht;                    // snow depth [m] (NOT SWE!)
   double density;               // snow density [ kg / m^3 ]
   double age;                   // snow age [days]
+  double SWE;                   // SNOW WATER EQUIVALANCE [m]  
 
   SnowProperties() :
       ht(MY_LOCAL_NAN),
       density(MY_LOCAL_NAN),
-      age(MY_LOCAL_NAN) {}
+      age(MY_LOCAL_NAN),
+      SWE(MY_LOCAL_NAN) {}
 };
 
 
@@ -124,7 +126,7 @@ struct ModelParams {
       Le(2497848.),             // Latent heat of vaporization ------ [J/kg]
       Cp(1004.0),               // Specific heat of air ------------- [J/K kg]
       VKc(0.41),                // Von Karman Constant -------------- [-]
-      Zr(2.0),                  // Reference height of wind speed --- [m]
+      Zr(10.0),                  // Reference height of wind speed --- [m]
       stephB(0.00000005670373), // Stephan-Boltzmann constant ------- [W/m^2 K^4]
       Apa(101.325),             // atmospheric pressure ------------- [kPa]
       evap_transition_width(100.), // transition on evaporation from surface to evaporation from subsurface [m]
