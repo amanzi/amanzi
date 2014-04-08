@@ -14,7 +14,7 @@ namespace Amanzi {
 namespace SurfaceBalance {
 namespace SEBPhysics {
 
-#define SWE_EPS 1.e-16
+#define SWE_EPS 1.e-12
 
 void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug) {
   // Calculate incoming short-wave radiation
@@ -245,7 +245,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     // NOTE: these rates can only be correct if over mb.dt
     mb.MWg = mb.Mm + seb.in.met.Pr;
     mb.MWg_subsurf = 0.;
-    mb.MWg_temp = mb.MWg > 0. ? (mb.Mm * 273.15 + seb.in.met.Pr * seb.in.met.vp_air.temp) / mb.MWg : seb.in.met.vp_air.temp;
+    mb.MWg_temp = (mb.MWg > 0. && mb.Mm > 0.) ? (mb.Mm * 273.15 + seb.in.met.Pr * seb.in.met.vp_air.temp) / mb.MWg : seb.in.met.vp_air.temp;
 
   } else {
     // set the snow properties
