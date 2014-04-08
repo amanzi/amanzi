@@ -166,6 +166,7 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_;
 
   // needed physical models
   Teuchos::RCP<FlowRelations::HeightModel> height_model_;
