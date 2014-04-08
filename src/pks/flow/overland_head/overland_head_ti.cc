@@ -84,6 +84,7 @@ void OverlandHeadFlow::fun( double t_old,
   bc_pressure_->Compute(t_new);
   bc_head_->Compute(t_new);
   bc_flux_->Compute(t_new);
+  bc_seepage_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // diffusion term, treated implicitly
