@@ -369,7 +369,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       // -- met data
       seb.in.met.Us = std::max(wind_speed[0][c], min_wind_speed_);
       seb.in.met.QswIn = incoming_shortwave[0][c];
-      seb.in.met.Ps = precip_snow[0][c];
+      seb.in.met.Ps = std::max(precip_snow[0][c],0.); // protect against wayward snow distribution models
       seb.in.met.Pr = precip_rain[0][c];
       seb.in.met.vp_air.temp = air_temp[0][c];
       seb.in.met.vp_air.relative_humidity = relative_humidity[0][c];
