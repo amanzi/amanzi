@@ -199,6 +199,130 @@ int ChemistryEngine::NumFreeIonSpecies() const
   return sizes_.num_primary;
 }
 
+void ChemistryEngine::CreateCondition(const std::string& condition_name)
+{
+  // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 
+  // NOTE: the backend engine's input file. 
+  AlquimiaGeochemicalCondition* condition = new AlquimiaGeochemicalCondition();
+  int num_aq = 0, num_min = 0;
+  AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, num_aq, num_min, condition);
+  std::strcpy(condition->name, condition_name.c_str());
+
+  // Add this to the conditions map.
+  chem_conditions_[condition_name] = condition;
+}
+
+void ChemistryEngine::AddMineralConstraint(const std::string& condition_name,
+                                           const std::string& mineral_name,
+                                           double volume_fraction,
+                                           double specific_surface_area)
+{
+  assert(condition_name.length() > 0);
+  assert(volume_fraction >= 0.0);
+  assert(specific_surface_area >= 0.0);
+
+  std::map<std::string, AlquimiaGeochemicalCondition*>::iterator iter = chem_conditions_.find(condition_name);
+  if (iter != chem_conditions_.end())
+  {
+    AlquimiaGeochemicalCondition* condition = iter->second;
+
+    // Do we have an existing constraint?
+    int index = -1;
+    for (int i = 0; i < condition->mineral_constraints.size; ++i)
+    {
+      if (!std::strcmp(condition->mineral_constraints.data[i].mineral_name, mineral_name.c_str()))
+      {
+        // Overwrite the old constraint.
+        index = i;
+        free(condition->mineral_constraints.data[index].mineral_name);
+      }
+    }
+    if (index == -1)
+    {
+      // New constraint!
+      index = condition->mineral_constraints.size;
+      condition->mineral_constraints.size++;
+      condition->mineral_constraints.data = (AlquimiaMineralConstraint*)realloc(condition->mineral_constraints.data, sizeof(AlquimiaMineralConstraint) * (index+1));
+    }
+
+    // Add the mineral constraint.
+    condition->mineral_constraints.data[index].mineral_name = strdup(mineral_name.c_str());
+    condition->mineral_constraints.data[index].volume_fraction = volume_fraction;
+    condition->mineral_constraints.data[index].specific_surface_area = specific_surface_area;
+  }
+  else
+  {
+    Errors::Message msg;
+    msg << "ChemistryEngine::AddMineralConstraint: no condition named '" << condition_name << "'.";
+    Exceptions::amanzi_throw(msg); 
+  }
+}
+
+void ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
+                                           const std::string& primary_species_name,
+                                           const std::string& constraint_type,
+                                           const std::string& associated_species)
+{
+  assert(condition_name.length() > 0);
+  assert(primary_species_name.length() > 0);
+  assert((constraint_type == "total_aqueous") || (constraint_type == "charge") || 
+         (constraint_type == "free") || (constraint_type == "mineral") ||
+         (constraint_type == "gas") || (constraint_type == "pH"));
+  assert(associated_species.length() > 0);
+
+  std::map<std::string, AlquimiaGeochemicalCondition*>::iterator iter = chem_conditions_.find(condition_name);
+  if (iter != chem_conditions_.end())
+  {
+    AlquimiaGeochemicalCondition* condition = iter->second;
+
+    // Is there a mineral constraint for the associated species?
+    bool found_mineral = false;
+    for (int i = 0; i < condition->mineral_constraints.size; ++i)
+    {
+      if (!std::strcmp(condition->mineral_constraints.data[i].mineral_name, associated_species.c_str()))
+        found_mineral = true;
+    }
+    if (!found_mineral)
+    {
+      Errors::Message msg;
+      msg << "ChemistryEngine::AddAqueousConstraint: the condition '" << condition_name << "' does not have a mineral constraint for '" << associated_species << "'.";
+      Exceptions::amanzi_throw(msg); 
+    }
+
+    // Do we have an existing constraint?
+    int index = -1;
+    for (int i = 0; i < condition->aqueous_constraints.size; ++i)
+    {
+      if (!std::strcmp(condition->aqueous_constraints.data[i].primary_species_name, primary_species_name.c_str()))
+      {
+        // Overwrite the old constraint.
+        index = i;
+        free(condition->aqueous_constraints.data[index].primary_species_name);
+        free(condition->aqueous_constraints.data[index].constraint_type);
+        free(condition->aqueous_constraints.data[index].associated_species);
+      }
+    }
+    if (index == -1)
+    {
+      // New constraint!
+      index = condition->aqueous_constraints.size;
+      condition->aqueous_constraints.size++;
+      condition->aqueous_constraints.data = (AlquimiaAqueousConstraint*)realloc(condition->aqueous_constraints.data, sizeof(AlquimiaAqueousConstraint) * (index+1));
+    }
+
+    // Add the aqueous constraint.
+    condition->aqueous_constraints.data[index].primary_species_name = strdup(primary_species_name.c_str());
+    condition->aqueous_constraints.data[index].constraint_type = strdup(constraint_type.c_str());
+    condition->aqueous_constraints.data[index].associated_species = strdup(associated_species.c_str());
+  }
+  else
+  {
+    Errors::Message msg;
+    msg << "ChemistryEngine::AddAqueousConstraint: no condition named '" << condition_name << "'.";
+    Exceptions::amanzi_throw(msg); 
+  }
+}
+
 void ChemistryEngine::EnforceCondition(const std::string& condition_name,
                                        const double time,
                                        const AlquimiaMaterialProperties& mat_props,
@@ -212,15 +336,7 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
   std::map<std::string, AlquimiaGeochemicalCondition*>::iterator iter = chem_conditions_.find(condition_name);
   if (iter == chem_conditions_.end())
   {
-    // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 
-    // NOTE: the backend engine's input file. 
-    AlquimiaGeochemicalCondition* condition = new AlquimiaGeochemicalCondition();
-    int num_aq = 0, num_min = 0;
-    AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, num_aq, num_min, condition);
-    std::strcpy(condition->name, condition_name.c_str());
-
-    // Add this to the conditions map.
-    chem_conditions_[condition_name] = condition;
+    CreateCondition(condition_name);
     iter = chem_conditions_.find(condition_name);
   }
 
