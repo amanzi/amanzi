@@ -56,7 +56,8 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
   eval_derivatives_ = plist_->get<bool>("evaluate source derivatives", true);
 
   // min wind speed
-  min_wind_speed_ = plist_->get<double>("minimum wind speed", 1.0);
+  min_wind_speed_ = plist_->get<double>("minimum wind speed [m/s]?", 1.0);
+  wind_speed_ref_ht_ = plist_->get<double>("wind speed reference height [m]", 2.0);
 
   // transition snow depth
   snow_ground_trans_ = plist_->get<double>("snow-ground transitional depth", 0.02);
@@ -367,6 +368,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       seb.in.vp_snow.temp = 270.15;
 
       // -- met data
+      seb.params.Zr = wind_speed_ref_ht_;
       seb.in.met.Us = std::max(wind_speed[0][c], min_wind_speed_);
       seb.in.met.QswIn = incoming_shortwave[0][c];
       seb.in.met.Ps = std::max(precip_snow[0][c],0.); // protect against wayward snow distribution models
@@ -462,6 +464,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       seb.in.vp_snow.temp = 270.15;
 
       // -- met data
+      seb.params.Zr = wind_speed_ref_ht_;
       seb.in.met.Us = std::max(wind_speed[0][c], min_wind_speed_);
       seb.in.met.QswIn = incoming_shortwave[0][c];
       seb.in.met.Ps = precip_snow[0][c];
@@ -489,6 +492,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
 
       // Initialize a second model, with bare ground
       SEBPhysics::SEB seb_bare(seb);
+      seb_bare.params.Zr = wind_speed_ref_ht_;
 
       // -- snow properties
       seb_bare.in.snow_old.ht = 0.;
@@ -567,7 +571,9 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       if (eval_derivatives_) {
         // evaluate FD derivative of energy flux wrt surface temperature
         SEBPhysics::SEB seb2(seb);
+        seb2.params.Zr = wind_speed_ref_ht_;
         SEBPhysics::SEB seb2_bare(seb_bare);
+        seb2_bare.params.Zr = wind_speed_ref_ht_;
         seb2.in.vp_ground.temp += 0.01;
         seb2_bare.in.vp_ground.temp += 0.01;
         // for now ignore the effect on unfrozen fraction, and therefore on albedo and emissivity
