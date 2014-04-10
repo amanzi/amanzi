@@ -41,7 +41,7 @@ public:
   }
 
   Teuchos::RCP<Functions::BoundaryFunction> CreateSeepageFace() const {
-    return CreateWithFunction("seepage face", "outward mass flux");
+    return CreateWithFunction("seepage face", "boundary head");
   }
 
 };
