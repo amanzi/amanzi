@@ -272,10 +272,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   // 3.d: Rescale to use as a pressure matrix if used in a coupler
   if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
     ASSERT(tpfa_);
-    Teuchos::RCP<Operators::MatrixMFD_TPFA> precon_tpfa =
-        Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_TPFA>(mfd_preconditioner_);
-    ASSERT(precon_tpfa != Teuchos::null);
-    Teuchos::RCP<Epetra_FECrsMatrix> Spp = precon_tpfa->TPFA();
+    ASSERT(tpfa_preconditioner_ != Teuchos::null);
+    Teuchos::RCP<Epetra_FECrsMatrix> Spp = tpfa_preconditioner_->TPFA();
 
     // Scale Spp by dh/dp (h, NOT h_bar), clobbering rows with p < p_atm
     S_next_->GetFieldEvaluator("ponded_depth")
