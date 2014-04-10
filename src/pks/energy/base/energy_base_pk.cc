@@ -357,6 +357,7 @@ void EnergyBase::UpdateBoundaryConditions_() {
 
       // -- set that value to Neumann
       bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+      // flux is in units of J / s, whereas Neumann BCs are J/s/A
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
     }
   }
