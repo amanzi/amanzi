@@ -141,11 +141,11 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
     double flow_eps = flux_eps_;
 
     // Determine the coefficient
-    if (abs(flux_v[0][f]) >= flow_eps) {
+    if (std::abs(flux_v[0][f]) >= flow_eps) {
       coef_faces[0][f] = coefs[0];
     } else {
       // Parameterization of a linear scaling between upwind and downwind.
-      double param = abs(flux_v[0][f]) / (2*flow_eps) + 0.5;
+      double param = std::abs(flux_v[0][f]) / (2*flow_eps) + 0.5;
       if (!(param >= 0.5) || !(param <= 1.0)) {
         std::cout << "BAD FLUX! on face " << f << std::endl;
         std::cout << "  flux = " << flux_v[0][f] << std::endl;
@@ -166,5 +166,153 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
   }
 };
 
+
+void
+UpwindTotalFlux::UpdateDerivatives(const Teuchos::Ptr<State>& S,
+                                        std::string potential_key, 
+                                        const CompositeVector& dconductivity,
+                                        const std::vector<MatrixBC>& bc_markers,
+                                        const std::vector<double>& bc_values,
+                                        std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > >* Jpp_faces) const {
+  // Grab derivatives
+  dconductivity.ScatterMasterToGhosted("cell");
+  const Epetra_MultiVector& dcell_v = *dconductivity.ViewComponent("cell",true);
+
+  // Grab potential
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(potential_key);
+  pres->ScatterMasterToGhosted("cell");
+  const Epetra_MultiVector& pres_v = *pres->ViewComponent("cell",true);
+
+  // Grab flux direction
+  const Epetra_MultiVector& flux_v = *S->GetFieldData(flux_)->ViewComponent("face",false);
+
+  // Grab mesh and allocate space
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = dconductivity.Mesh();
+  unsigned int nfaces_owned = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
+  Jpp_faces->resize(nfaces_owned);
+
+  // workspace
+  double dK_dp[2];
+  double p[2];
+  
+
+  // Identify upwind/downwind cells for each local face.  Note upwind/downwind
+  // may be a ghost cell.
+  Epetra_IntVector upwind_cell(mesh->face_map(true));
+  upwind_cell.PutValue(-1);
+  Epetra_IntVector downwind_cell(mesh->face_map(true));
+  downwind_cell.PutValue(-1);
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> fdirs;
+
+  int ncells = dcell_v.MyLength();
+  for (int c=0; c!=ncells; ++c) {
+    mesh->cell_get_faces_and_dirs(c, &faces, &fdirs);
+
+    for (unsigned int n=0; n!=faces.size(); ++n) {
+      int f = faces[n];
+
+      if (f < nfaces_owned) {
+        if (flux_v[0][f] * fdirs[n] > 0) {
+          upwind_cell[f] = c;
+        } else if (flux_v[0][f] * fdirs[n] < 0) {
+          downwind_cell[f] = c;
+        } else {
+          // We don't care, but we have to get one into upwind and the other
+          // into downwind.
+          if (upwind_cell[f] == -1) {
+            upwind_cell[f] = c;
+          } else {
+            downwind_cell[f] = c;
+          }
+        }
+      }
+    }
+  }
+
+
+  for (unsigned int f=0; f!=nfaces_owned; ++f) {
+    int uw = upwind_cell[f];
+    int dw = downwind_cell[f];
+    ASSERT(!((uw == -1) && (dw == -1)));
+
+    AmanziMesh::Entity_ID_List cells;
+    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    int mcells = cells.size();
+
+    // uw coef
+    if (uw == -1) {
+      // boundary, upwind is the boundary
+      if (std::abs(flux_v[0][f]) >= flux_eps_) {
+        // flux coming from boundary, derivs are zero
+        dK_dp[0] = 0.;
+      } else {
+        // Parameterization of a linear scaling between upwind and downwind.
+        double param = std::abs(flux_v[0][f]) / (2*flux_eps_) + 0.5;
+        
+        // ignoring dparam_dp... not sure how we would include that
+        dK_dp[0] = (1.-param) * dcell_v[0][dw];
+      }
+
+    } else if (dw == -1) {
+      // boundary, upwind is the cell
+      if (std::abs(flux_v[0][f]) >= flux_eps_) {
+        dK_dp[0] = dcell_v[0][uw];
+      } else {
+        double param = std::abs(flux_v[0][f]) / (2*flux_eps_) + 0.5;
+        dK_dp[0] = param * dcell_v[0][uw];
+      }
+
+    } else {
+      // non-boundary
+      if (std::abs(flux_v[0][f]) >= flux_eps_) {
+        if (uw == cells[0]) {
+          dK_dp[0] = dcell_v[0][uw];
+          dK_dp[1] = 0.;
+        } else {
+          dK_dp[1] = dcell_v[0][uw];
+          dK_dp[0] = 0.;
+        }
+      } else {
+        double param = std::abs(flux_v[0][f]) / (2*flux_eps_) + 0.5;
+        if (uw == cells[0]) {
+          dK_dp[0] = param * dcell_v[0][uw];
+          dK_dp[1] = (1-param) * dcell_v[0][dw];
+        } else {
+          dK_dp[1] = param * dcell_v[0][uw];
+          dK_dp[0] = (1-param) * dcell_v[0][dw];
+        }
+      }
+    }
+
+    // create the local matrix
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > Jpp =
+      Teuchos::rcp(new Teuchos::SerialDenseMatrix<int, double>(mcells, mcells));
+    (*Jpp_faces)[f] = Jpp;
+
+    if (mcells == 1) {
+      if (bc_markers[f] == MATRIX_BC_DIRICHLET) {
+        // determine flux
+        p[0] = pres_v[0][cells[0]];
+        p[1] = bc_values[f];
+        double dp = p[0] - p[1];
+
+        (*Jpp)(0,0) = dp * mesh->face_area(f) * dK_dp[0];
+      } else {
+        (*Jpp)(0,0) = 0.;
+      }
+
+    } else {
+      p[0] = pres_v[0][cells[0]];
+      p[1] = pres_v[0][cells[1]];
+
+      (*Jpp)(0,0) = (p[0] - p[1]) * mesh->face_area(f) * dK_dp[0];
+      (*Jpp)(0,1) = (p[0] - p[1]) * mesh->face_area(f) * dK_dp[1];
+      (*Jpp)(1,0) = -(*Jpp)(0,0);
+      (*Jpp)(1,1) = -(*Jpp)(0,1);
+    }
+  }
+}
 } //namespace
 } //namespace

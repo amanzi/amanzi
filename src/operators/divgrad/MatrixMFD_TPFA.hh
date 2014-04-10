@@ -22,6 +22,7 @@
 #include "Ifpack.h"
 
 #include "MatrixMFD.hh"
+#include "upwinding.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -53,12 +54,12 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
   int Apply(const Epetra_MultiVector& X,
             Epetra_MultiVector& Y) const;
   
-  void AnalyticJacobian(const CompositeVector& height,
-                        const CompositeVector& potential,
-                        const CompositeVector& Krel,
-                        const CompositeVector& dKrel_dp,
-                        const CompositeVector& Krel_cell,
-                        const CompositeVector& dKrel_cell_dp);
+  void AnalyticJacobian(const Upwinding& upwinding,
+			const Teuchos::Ptr<State>& S,
+			std::string potential_key,
+			const CompositeVector& dconductivity,
+			const std::vector<MatrixBC>& bc_markers,
+			const std::vector<double>& bc_values);
 
   Teuchos::RCP<Epetra_FECrsMatrix> TPFA() {
     AssertAssembledOperator_or_die_();
@@ -68,18 +69,6 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
   virtual void UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u);
   virtual void UpdateConsistentFaceCorrection(const CompositeVector& u,
           const Teuchos::Ptr<CompositeVector>& Pu);
-
- protected:
-  void ComputeJacobianLocal(int mcells,
-                            int face_id,
-                            double dist,
-                            double *height,
-                            double *potential,
-                            double *k_rel,
-                            double *dk_rel_dp,
-                            double *k_rel_cell,
-                            double *dk_rel_cell_dp,
-                            Teuchos::SerialDenseMatrix<int, double>& Jpp);
 
  protected:
   Teuchos::RCP<CompositeVector> Dff_;
