@@ -532,6 +532,7 @@ void SurfaceEnergyBalance_VPL::UpdateMassMelt(EnergyBalance& eb) {
   double melt = eb.Qm / (eb.density_w * eb.Hf);
   eb.Mr += melt;
   eb.MIr -= melt;
+  std::cout<<"Mr-1: "<<eb.Mr<<std::endl;
 }
 
 
@@ -586,13 +587,13 @@ void SurfaceEnergyBalance_VPL::UpdateSnow(EnergyBalance& eb) {
       eb.age_snow=0;
   }
   double ndensity = std::pow(eb.age_snow,0.3);
-//   ndensity = 1;                                                                                                        //TAKE-OUT-AA 
+  ndensity = 1;                                                                                                        //TAKE-OUT-AA 
   if (ndensity < 1){// Formula only works from snow older the 1 day
      ndensity = 1;
    }
   double dens_settled = eb.density_freshsnow*ndensity;
 std::cout<<"dens_settled: "<<dens_settled<<" density_fresh: "<<eb.density_freshsnow<<" ndensity: "<<ndensity<<std::endl;//TAKE-OUT-AA
-//  eb.density_snow = 250;                                                                                                //TAKE-OUT-AA
+  eb.density_snow = 250;                                                                                                //TAKE-OUT-AA
   double ht_settled = eb.ht_snow * eb.density_snow / dens_settled;
 std::cout<<"Ht_settled: "<<ht_settled<<" ht_snow: "<<eb.ht_snow<<" DensFact: "<<eb.density_snow/dens_settled<<std::endl;//TAKE-OUT-AA
 
@@ -614,7 +615,7 @@ std::cout<<"Ht_settled: "<<ht_settled<<" ht_snow: "<<eb.ht_snow<<" DensFact: "<<
   if (eb.ht_snow > 0.) {
     eb.density_snow = (ht_precip * eb.density_freshsnow + ht_frost * eb.density_frost
                        + ht_settled * dens_settled) / eb.ht_snow;
-//    eb.density_snow = 250;                                                                                             //TAKE-OUT-AA 
+    eb.density_snow = 250;                                                                                             //TAKE-OUT-AA 
   } else {
     eb.density_snow = eb.density_freshsnow;
   }
@@ -676,7 +677,7 @@ std::cout<<"OLD-SWE: "<<seb.st_energy.ht_snow * seb.st_energy.density_snow / seb
     WaterMassCorrection(seb.st_energy);
 
     std::cout<<"Air Vapor Pres: "<<seb.vp_air.actual_vaporpressure<<"  Snow Vapor Pressure: "<<seb.vp_snow.saturated_vaporpressure<<std::endl;
-    std::cout<<"Evap Resistance: "<<1/seb.st_energy.Dhe<<std::endl;    
+    std::cout<<"Evap Resistance: "<<1/seb.st_energy.Dhe<<" Ponded_Depth: "<<seb.st_energy.water_depth<<std::endl;    
 
   } else { // no snow
     // Energy balance
@@ -691,6 +692,11 @@ std::cout<<"OLD-SWE: "<<seb.st_energy.ht_snow * seb.st_energy.density_snow / seb
 
   // set water temp
   seb.st_energy.Trw = seb.st_energy.ht_snow > 0. ? 273.15 : seb.st_energy.temp_air;
+
+  //Final water flux check
+   if ((seb.st_energy.ht_snow<0.02)&&(seb.st_energy.Mr<0)){
+       seb.st_energy.Mr = 0;
+   }
 
   std::cout << "Energy summary:" << std::endl
             << "  fQswIn  = " << seb.st_energy.fQswIn << std::endl

@@ -116,11 +116,11 @@ struct LocalData {
 
     st_energy.density_w = 1000;         // Density of Water ----------------- [kg/m^3]
     double density_air = 1.275;       // Density of Air ------------------- [kg/m^3]
-    st_energy.density_frost = 200;      // Density of Frost (condensation) -- [kg/m^3]
-    st_energy.density_freshsnow = 100;  // Density of Freshly fallebn snow -- [kg/m^3]
+//    st_energy.density_frost = 200;      // Density of Frost (condensation) -- [kg/m^3]
+//    st_energy.density_freshsnow = 100;  // Density of Freshly fallebn snow -- [kg/m^3]
 
-//    st_energy.density_frost = 250;
-//    st_energy.density_freshsnow = 250;
+    st_energy.density_frost = 250;
+    st_energy.density_freshsnow = 250;
 
     st_energy.gZr = 9.807*st_energy.Zr;
     st_energy.rowaCp = density_air*Cp;
