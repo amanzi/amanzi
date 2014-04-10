@@ -140,28 +140,28 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
   EnergyBase::initialize(S);
 
   // Set the cell initial condition if it is taken from the subsurface
-  Teuchos::ParameterList& ic_plist = plist_->sublist("initial condition");
-  if (ic_plist.get<bool>("initialize surface temperature from subsurface",false)) {
-    Teuchos::RCP<CompositeVector> surf_temp_cv = S->GetFieldData(key_, name_);
-    Epetra_MultiVector& surf_temp = *surf_temp_cv->ViewComponent("cell",false);
-    const Epetra_MultiVector& temp = *S->GetFieldData("temperature")
+  if (!S->GetField(key_)->initialized()) {
+    Teuchos::ParameterList& ic_plist = plist_->sublist("initial condition");
+    if (ic_plist.get<bool>("initialize surface temperature from subsurface",false)) {
+      Teuchos::RCP<CompositeVector> surf_temp_cv = S->GetFieldData(key_, name_);
+      Epetra_MultiVector& surf_temp = *surf_temp_cv->ViewComponent("cell",false);
+      const Epetra_MultiVector& temp = *S->GetFieldData("temperature")
         ->ViewComponent("face",false);
 
-    unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
-    for (unsigned int c=0; c!=ncells_surface; ++c) {
-      // -- get the surface cell's equivalent subsurface face and neighboring cell
-      AmanziMesh::Entity_ID f =
+      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+      for (unsigned int c=0; c!=ncells_surface; ++c) {
+        // -- get the surface cell's equivalent subsurface face and neighboring cell
+        AmanziMesh::Entity_ID f =
           mesh_->entity_get_parent(AmanziMesh::CELL, c);
-      surf_temp[0][c] = temp[0][f];
-    }
+        surf_temp[0][c] = temp[0][f];
+      }
 
-    // -- Update faces from cells if needed.
-    if (ic_plist.get<bool>("initialize faces from cells", false)) {
-      DeriveFaceValuesFromCellValues_(surf_temp_cv.ptr());
-    }
+      // -- Update faces from cells if needed.
+      if (ic_plist.get<bool>("initialize faces from cells", false)) {
+        DeriveFaceValuesFromCellValues_(surf_temp_cv.ptr());
+      }
 
-    // mark as initialized
-    if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
+      // mark as initialized
       S->GetField(key_,name_)->set_initialized();
     }
   }
