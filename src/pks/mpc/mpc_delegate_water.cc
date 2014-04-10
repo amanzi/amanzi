@@ -93,7 +93,7 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtDamp(double h, Teuchos::RCP<const T
         double my_damp = ((patm + cap_size_) - p_old) / (p_new - p_old);
         damp = std::min(damp, my_damp);
 	if (vo_->os_OK(Teuchos::VERB_EXTREME))
-	  std::cout << "   DAMPING THE SPURT (sc=" << cs << "): p_old = " << p_old << ", p_new = " << p_new << ", coef = " << my_damp << std::endl;
+	  std::cout << "   DAMPING THE SPURT (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", coef = " << my_damp << std::endl;
       }
     }
 
@@ -135,7 +135,7 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtCap(double h, Teuchos::RCP<const Tr
         domain_Pu_f[0][f] = p_old - (patm + cap_size_);
         n_modified++;
         if (vo_->os_OK(Teuchos::VERB_HIGH))
-	  std::cout << "  CAPPING THE SPURT (sc=" << cs << "): p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << p_old - domain_Pu_f[0][f] << std::endl;
+	  std::cout << "  CAPPING THE SPURT (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << p_old - domain_Pu_f[0][f] << std::endl;
       }
     }
   }
@@ -229,13 +229,13 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
         double my_damp = ((patm + cap_size_) - p_old) / (p_new - p_old);
         damp = std::min(damp, my_damp);
 	if (vo_->os_OK(Teuchos::VERB_EXTREME))
-	  std::cout << "   DAMPING THE SPURT (1st over) (sc=" << cs << "): p_old = " << p_old << ", p_new = " << p_new << ", coef = " << my_damp << std::endl;
+	  std::cout << "   DAMPING THE SPURT (1st over) (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", coef = " << my_damp << std::endl;
       } else if ((p_old > patm) && (p_new - p_old > p_old - patm)) {
         // second over
         double my_damp = ((patm + 2*(p_old - patm)) - p_old) / (p_new - p_old);
         damp = std::min(damp, my_damp);
 	if (vo_->os_OK(Teuchos::VERB_EXTREME))
-	  std::cout << "   DAMPING THE SPURT (2nd over) (sc=" << cs << "): p_old = " << p_old << ", p_new = " << p_new << ", coef = " << my_damp << std::endl;
+	  std::cout << "   DAMPING THE SPURT (2nd over) (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", coef = " << my_damp << std::endl;
       }
     }
 
@@ -261,13 +261,13 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
           domain_pnew_f[0][f] = patm + cap_size_;
           surf_pnew_c[0][cs] = domain_pnew_f[0][f];
 	  if (vo_->os_OK(Teuchos::VERB_HIGH))
-	    std::cout << "  CAPPING THE SPURT (1st over) (sc=" << cs << "): p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << domain_pnew_f[0][f] << std::endl;
+	    std::cout << "  CAPPING THE SPURT (1st over) (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << domain_pnew_f[0][f] << std::endl;
         } else if ((p_old > patm) && (p_new - p_old > p_old - patm)) {
           // second over
           domain_pnew_f[0][f] = patm + 2*(p_old - patm);
           surf_pnew_c[0][cs] = domain_pnew_f[0][f];
 	  if (vo_->os_OK(Teuchos::VERB_HIGH))
-	    std::cout << "  CAPPING THE SPURT (2nd over) (sc=" << cs << "): p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << domain_pnew_f[0][f] << std::endl;
+	    std::cout << "  CAPPING THE SPURT (2nd over) (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << domain_pnew_f[0][f] << std::endl;
         } else {
           surf_pnew_c[0][cs] = domain_pnew_f[0][f];
         }
