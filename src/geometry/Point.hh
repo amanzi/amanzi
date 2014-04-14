@@ -17,6 +17,8 @@ Authors: Rao Garimella
 #include <vector>
 #include <cmath>
 
+#include "dbc.hh"
+
 namespace Amanzi {
 namespace AmanziGeometry {
 
@@ -24,67 +26,59 @@ class Point {
  public:
   Point() {
     d = 0;
-    xyz = NULL;
+    xyz[0] = xyz[1] = xyz[2] = 0.0;
   }
   Point(const Point& p) {
-    d = 0;
-    xyz = NULL;
-    init(p.dim());
-    for (int i = 0; i < d; i++) xyz[i] = p.xyz[i];
+    d = p.d;
+    std::copy(p.xyz,p.xyz+d,xyz);
   }
   explicit Point(const int N) {
-    d = 0;
-    xyz = NULL;
-    init(N);
+    d = N;
+    xyz[0] = xyz[1] = xyz[2] = 0.0;    
   }
   Point(const double& x, const double& y) {
-    d = 0;
-    xyz = NULL;
-    init(2);
+    d = 2;
     xyz[0] = x;
     xyz[1] = y;
   }
   Point(const double& x, const double& y, const double& z) {
-    d = 0;
-    xyz = NULL;
-    init(3);
+    d = 3;
     xyz[0] = x;
     xyz[1] = y;
     xyz[2] = z;
   }
-  ~Point() { if (xyz != NULL) delete [] xyz; }
+  ~Point() {}
 
   // main members
   void init(const int N) {
-    if (!xyz) {
-      xyz = new double[N];
-    } else if (d < N) {  // If it was reinitialized to be a higher dim point
-      delete [] xyz;
-      xyz = new double[N];
-    }
     d = N;
-    for (int i = 0; i < d; i++) xyz[i] = 0.0;
+    xyz[0] = xyz[1] = xyz[2] = 0.0;
   }
 
   void set(const double& val) {
-    if (this == NULL) throw std::exception();
+    ASSERT(this);
     for (int i = 0; i < d; i++) xyz[i] = val;
   }
   void set(const Point& p) {
-    if (d != p.d) throw std::exception();
-    for (int i = 0; i < d; i++) xyz[i] = p[i];
+    ASSERT(d == p.d);
+    std::copy(p.xyz,p.xyz+d,xyz);
   }
   void set(const double *val) {
-    if (val == NULL) throw std::exception();
-    for (int i = 0; i < d; i++) xyz[i] = val[i];
+    ASSERT(val);
+    std::copy(val,val+d,xyz);
+  }
+  void set(const int N, const double *val) {
+    ASSERT(val);
+    d = N;
+    std::copy(val,val+d,xyz);
   }
   void set(const double& x, const double& y) {
-    if (d != 2) throw std::exception();
+    ASSERT(d == 2);
     xyz[0] = x;
     xyz[1] = y;
   }
   void set(const double& x, const double& y, const double& z) {
-    if (d != 3) throw std::exception();
+    ASSERT(d == 3);
     xyz[0] = x;
     xyz[1] = y;
     xyz[2] = z;
@@ -98,14 +92,14 @@ class Point {
 
   double x() const { return xyz[0]; }
   double y() const { return xyz[1]; }
-  double z() const { return (this->d == 3) ? xyz[2] : 0.0; }
+  double z() const { return (d == 3) ? xyz[2] : 0.0; }
 
   int dim() const { return d; }
 
   // operators
   Point& operator=(const Point& p) {
-    init(p.dim());
-    for (int i = 0; i < d; i++) xyz[i] = p[i];
+    d = p.d;
+    std::copy(p.xyz,p.xyz+d,xyz);
     return *this;
   }
 
@@ -168,7 +162,7 @@ class Point {
 
  private:
   int d;
-  double *xyz;
+  double xyz[3];
 };  // end class Point
 
 /* miscellaneous */
