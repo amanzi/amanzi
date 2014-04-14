@@ -41,8 +41,6 @@ TEST(MAPS) {
                             {0,2,6,4},
                             {1,3,7,5}};
 
-  int expfacedirs[6] = {-1,1,1,-1,-1,1};
-                              
 
   CHECK_EQUAL(1,Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED));
   CHECK_EQUAL(6,Mm.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED));
@@ -51,7 +49,6 @@ TEST(MAPS) {
   vector<Amanzi::AmanziGeometry::Point> x(8);
   vector<Amanzi::AmanziMesh::Entity_ID> nodes(8);
   vector<Amanzi::AmanziMesh::Entity_ID> faces(6);
-  vector<int> face_dirs(6);
   
   for (Amanzi::AmanziMesh::Entity_ID i=0; i<Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED); i++)
     {
@@ -66,7 +63,7 @@ TEST(MAPS) {
         CHECK_ARRAY_EQUAL(expnodecoords[expcellnodes[j]],x[j],3);
       }
 
-      Mm.cell_get_faces_and_dirs(i, &faces, &face_dirs, true);
+      Mm.cell_get_faces(i, &faces, true);
       double xx[4][3];
       for (int j=0; j<6; j++) {
         Amanzi::AmanziMesh::Entity_ID_List fnodes;
