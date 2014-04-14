@@ -66,7 +66,6 @@ void Dispersion_TPFA::SymbolicAssembleMatrix()
 void Dispersion_TPFA::AssembleMatrix(const Epetra_MultiVector& p)
 {
   AmanziMesh::Entity_ID_List cells, faces;
-  std::vector<int> dirs;
 
   // populate transmissibilities
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
@@ -81,7 +80,7 @@ void Dispersion_TPFA::AssembleMatrix(const Epetra_MultiVector& p)
 
   Ttmp.PutScalar(0.0);
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix Mff(nfaces, nfaces);

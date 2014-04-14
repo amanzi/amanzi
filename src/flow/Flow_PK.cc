@@ -390,12 +390,11 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux)
   double rho = *(S_->GetScalarData("fluid_density"));
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   std::vector<int> flag(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
     AmanziGeometry::Point Kg = K[c] * gravity_;
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; n++) {
@@ -420,7 +419,6 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux,
   double rho = *(S_->GetScalarData("fluid_density"));
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   std::vector<int> flag(nfaces_wghost, 0);
 
   Epetra_MultiVector& Krel_cells = *rel_perm.Krel().ViewComponent("cell");
@@ -429,7 +427,7 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux,
 
   for (int c = 0; c < ncells_owned; c++) {
     AmanziGeometry::Point Kg = K[c] * gravity_;
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; n++) {

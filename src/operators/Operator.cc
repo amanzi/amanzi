@@ -188,7 +188,6 @@ void Operator::SymbolicAssembleMatrix(int schema)
 
   // populate matrix graph using blocks that fit the schema
   AmanziMesh::Entity_ID_List cells, faces, nodes;
-  std::vector<int> dirs;
 
   int lid[OPERATOR_MAX_NODES];
   int gid[OPERATOR_MAX_NODES];
@@ -201,7 +200,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
       for (int c = 0; c < ncells_owned; c++) {
         int nd;
         if (subschema == OPERATOR_SCHEMA_DOFS_FACE) {
-          mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+          mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           for (int n = 0; n < nfaces; n++) {
@@ -210,7 +209,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
           }
           nd = nfaces;
         } else if (subschema == OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
-          mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+          mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           for (int n = 0; n < nfaces; n++) {
@@ -276,7 +275,6 @@ void Operator::AssembleMatrix(int schema)
   A_->PutScalar(0.0);
 
   AmanziMesh::Entity_ID_List cells, faces, nodes;
-  std::vector<int> dirs;
 
   int lid[OPERATOR_MAX_NODES + 1];
   int gid[OPERATOR_MAX_NODES + 1];
@@ -289,7 +287,7 @@ void Operator::AssembleMatrix(int schema)
     if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
       for (int c = 0; c < ncells_owned; c++) {
         if (subschema == OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
-          mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+          mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           for (int n = 0; n < nfaces; n++) {
@@ -302,7 +300,7 @@ void Operator::AssembleMatrix(int schema)
           A_->SumIntoGlobalValues(nfaces + 1, gid, matrix[c].Values());
 
         } else if (subschema == OPERATOR_SCHEMA_DOFS_FACE) {
-          mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+          mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           for (int n = 0; n < nfaces; n++) {
@@ -378,7 +376,6 @@ void Operator::AssembleMatrix(int schema)
 void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_values)
 {
   AmanziMesh::Entity_ID_List faces, nodes;
-  std::vector<int> dirs;
 
   int nblocks = blocks_.size();
   for (int nb = 0; nb < nblocks; nb++) {
@@ -392,7 +389,7 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
         Epetra_MultiVector& diag = *diagonal_->ViewComponent("face");
 
         for (int c = 0; c < ncells_owned; c++) {
-          mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+          mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           WhetStone::DenseMatrix& Acell = matrix[c];
@@ -459,7 +456,6 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
 
   // Multiply by the remaining matrix blocks.
   AmanziMesh::Entity_ID_List faces, cells, nodes;
-  std::vector<int> dirs;
 
   int nblocks = blocks_.size();
   for (int nb = 0; nb < nblocks; nb++) {
@@ -475,7 +471,7 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
         Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
         for (int c = 0; c < ncells_owned; c++) {
-          mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+          mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);

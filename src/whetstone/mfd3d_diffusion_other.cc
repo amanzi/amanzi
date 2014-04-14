@@ -70,8 +70,7 @@ int MFD3D_Diffusion::MassMatrixInverseDiagonal(int cell, const Tensor& permeabil
   double volume = mesh_->cell_volume(cell);
 
   Entity_ID_List faces;
-  std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  mesh_->cell_get_faces(cell, &faces);
   int nfaces = faces.size();
 
   W.PutScalar(0.0);

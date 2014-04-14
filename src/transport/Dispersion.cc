@@ -86,10 +86,9 @@ void Dispersion::CalculateDispersionTensor(
           WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
           AmanziMesh::Entity_ID_List faces;
-          std::vector<int> dirs;
           AmanziGeometry::Point velocity(dim);
 
-          mesh_->cell_get_faces_and_dirs(*c, &faces, &dirs);
+          mesh_->cell_get_faces(*c, &faces);
           int nfaces = faces.size();
 
           std::vector<double> flux(nfaces);

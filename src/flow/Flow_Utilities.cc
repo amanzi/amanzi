@@ -39,7 +39,6 @@ void Flow_PK::CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz,
   std::vector<int> face_marker(nfaces_wghost);  
 
   AmanziMesh::Entity_ID_List nodes, faces, cells;
-  std::vector<int> dirs;
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -66,7 +65,7 @@ void Flow_PK::CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz,
   double rhs[d];
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     for (int i = 0; i < d; i++) rhs[i] = 0.0;
