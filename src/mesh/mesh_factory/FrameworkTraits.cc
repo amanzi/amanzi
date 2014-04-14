@@ -139,7 +139,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
       const Amanzi::AmanziMesh::Entity_kind kind) const
   { return 0; }
 
-  void cell_get_faces_and_dirs (const Amanzi::AmanziMesh::Entity_ID cellid,
+  void cell_get_faces_and_dirs_internal (const Amanzi::AmanziMesh::Entity_ID cellid,
                                 Amanzi::AmanziMesh::Entity_ID_List *faceids,
                                 std::vector<int> *face_dirs,
                                 const bool ordered=false) const
