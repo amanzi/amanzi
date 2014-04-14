@@ -20,6 +20,80 @@ Entity_ID Mesh::entity_get_parent(const Entity_kind kind, const Entity_ID entid)
 }
 
 
+unsigned int Mesh::cell_get_num_faces(const Entity_ID cellid) const {
+  if (!cell_faceids_current) {
+
+    int ncells = num_entities(CELL,USED);
+    cell_face_ids.resize(ncells);
+    cell_face_dirs.resize(ncells);
+
+    for (int c = 0; c < ncells; c++) {
+      Entity_ID_List cfaceids;
+      std::vector<int> cfacedirs;
+
+      cell_get_faces_and_dirs_internal(c, &cfaceids, &cfacedirs, false);
+      
+      int nfaces = cfaceids.size();
+      cell_face_ids[c].resize(nfaces);
+      cell_face_dirs[c].resize(nfaces);
+
+      cell_face_ids[c] = cfaceids;    // these are copy operations
+      cell_face_dirs[c] = cfacedirs;
+    }
+
+    cell_faceids_current = true;
+  }
+
+  return cell_face_ids[cellid].size();
+}
+
+
+void Mesh::cell_get_faces_and_dirs(const Entity_ID cellid, 
+                                   Entity_ID_List *faceids,
+                                   std::vector<int> *face_dirs, 
+                                   const bool ordered) const {
+
+  if (!cell_faceids_current) {
+
+    int ncells = num_entities(CELL,USED);
+    cell_face_ids.resize(ncells);
+    cell_face_dirs.resize(ncells);
+
+    for (int c = 0; c < ncells; c++) {
+      Entity_ID_List cfaceids;
+      std::vector<int> cfacedirs;
+
+      cell_get_faces_and_dirs_internal(c, &cfaceids, &cfacedirs, false);
+      
+      int nfaces = cfaceids.size();
+      cell_face_ids[c].resize(nfaces);
+      cell_face_dirs[c].resize(nfaces);
+
+      cell_face_ids[c] = cfaceids;    // these are copy operations
+      cell_face_dirs[c] = cfacedirs;
+    }
+
+    cell_faceids_current = true;
+  }
+
+  if (ordered)
+    cell_get_faces_and_dirs_internal(cellid, faceids, face_dirs, ordered);
+  else {
+    Entity_ID_List &cfaceids = cell_face_ids[cellid];
+
+    int nfaces = cfaceids.size();
+    faceids->resize(nfaces);
+    *faceids = cfaceids; // copy operation
+
+    if (face_dirs) {
+      std::vector<int> &cfacedirs = cell_face_dirs[cellid];
+      face_dirs->resize(nfaces);
+      *face_dirs = cfacedirs; // copy operation
+    }
+  }
+}
+
+
 int Mesh::compute_geometric_quantities() const {
 
   // this might be called after mesh deformation,

@@ -28,11 +28,13 @@ class Mesh
  private:
 
   unsigned int celldim, spacedim;
-  mutable bool geometry_precomputed, columns_built;
+  mutable bool geometry_precomputed, columns_built, cell_faceids_current;
   mutable std::vector<double> cell_volumes, face_areas;
   mutable std::vector<AmanziGeometry::Point> cell_centroids,
     face_centroids, face_normal0, face_normal1;
   mutable Entity_ID_List cell_cellabove, cell_cellbelow, node_nodeabove;
+  mutable std::vector<Entity_ID_List> cell_face_ids;
+  mutable std::vector< std::vector<int> > cell_face_dirs;
   mutable Mesh_type mesh_type_;
   AmanziGeometry::GeometricModelPtr geometric_model_;
 
@@ -54,13 +56,20 @@ class Mesh
 
   int compute_geometric_quantities() const;
 
+
+  virtual
+  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+                                         Entity_ID_List *faceids,
+                                         std::vector<int> *face_dirs,
+                                         const bool ordered=false) const = 0;
+
  public:
 
   // constructor
 
   Mesh()
     : spacedim(3), celldim(3), mesh_type_(GENERAL), geometry_precomputed(false), 
-      columns_built(false), comm(NULL), geometric_model_(NULL)
+      columns_built(false), cell_faceids_current(false), comm(NULL), geometric_model_(NULL)
   {
   }
 
@@ -168,6 +177,20 @@ class Mesh
 
   // Get faces of a cell.
 
+  // The Amanzi coding guidelines regarding function arguments is purposely
+  // violated here to allow for a default input argument
+
+  // On a distributed mesh, this will return all the faces of the
+  // cell, OWNED or GHOST. If ordered = true, the faces will be
+  // returned in a standard order according to Exodus II convention
+  // for standard cells; in all other situations (ordered = false or
+  // non-standard cells), the list of faces will be in arbitrary order
+
+  unsigned int cell_get_num_faces(const Entity_ID cellid) const;
+
+  void cell_get_faces (const Entity_ID cellid,
+                       Entity_ID_List *faceids,
+                       const bool ordered=false) const;
 
   // Get faces of a cell and directions in which the cell uses the face 
 
@@ -185,13 +208,10 @@ class Mesh
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
 
-  virtual
   void cell_get_faces_and_dirs (const Entity_ID cellid,
                                 Entity_ID_List *faceids,
                                 std::vector<int> *face_dirs,
-				const bool ordered=false) const = 0;
-
-
+				const bool ordered=false) const;
 
   virtual
   void cell_get_nodes (const Entity_ID cellid,
@@ -527,6 +547,15 @@ class Mesh
   }
 
 }; // End class Mesh
+
+
+inline
+void Mesh::cell_get_faces(const Entity_ID cellid, Entity_ID_List *faceids,
+                          const bool ordered) const {
+  cell_get_faces_and_dirs(cellid, faceids, NULL, ordered);
+}
+
+
 
 
 } // end namespace AmanziMesh
