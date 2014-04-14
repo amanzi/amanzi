@@ -15,7 +15,6 @@ TEST(MSTK_HEX_3x3x3)
 
   int i, j, k, err, nc, nf, nv;
   Amanzi::AmanziMesh::Entity_ID faces[6], nodes[8];
-  int facedirs[6];
 
   int NV = 64;
   int NF = 108;
@@ -35,13 +34,12 @@ TEST(MSTK_HEX_3x3x3)
 
 
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
-  std::vector<int> c2fdirs(6);
   Epetra_Map cell_map(mesh->cell_map(false));
   Epetra_Map face_map(mesh->face_map(false));
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
       CHECK_EQUAL(cell_map.GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
-      mesh->cell_get_faces_and_dirs(c, &c2f, &c2fdirs, true);
+      mesh->cell_get_faces(c, &c2f, true);
       for (int j=0; j<6; j++)
 	{
 	  int f = face_map.LID(c2f[j]);
