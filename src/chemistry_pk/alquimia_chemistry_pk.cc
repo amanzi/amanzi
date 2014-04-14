@@ -280,6 +280,43 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
     }
   }
 
+  // Add any geochemical conditions we find in the Chemistry section of the file.
+  if (chem_param_list_.isParameter("Geochemical Conditions")) 
+  {
+    Teuchos::ParameterList conditions = chem_param_list_.sublist("Geochemical Conditions");
+    for (Teuchos::ParameterList::ConstIterator iter = conditions.begin();
+         iter != conditions.end(); ++iter)
+    {
+      // This parameter list contains sublists, each corresponding to a
+      // geochemical condition. 
+      std::string cond_name = conditions.name(iter);
+      assert(conditions.isSublist(cond_name));
+      const Teuchos::ParameterList& cond_sublist = conditions.sublist(cond_name);
+
+      // Create the entry for this geochemical condition within the chemistry engine,
+      // overwriting any previous definition.
+      chem_engine_->CreateCondition(cond_name);
+
+      // Now mine the entry for details.
+      for (Teuchos::ParameterList::ConstIterator iter2 = cond_sublist.begin();
+           iter2 != cond_sublist.end(); ++iter2)
+      {
+        std::string species_name = cond_sublist.name(iter);
+        assert(cond_sublist.isSublist(species_name));
+        const Teuchos::ParameterList& aqueous_constraint = cond_sublist.sublist(species_name);
+        
+        // If the primary species has an associated mineral, we need to retrieve its information.
+        if (aqueous_constraint.isSublist("species"))
+        {
+          // FIXME
+        }
+
+        // What kind of aqueous constraint do we have on this species?
+        // FIXME
+      }
+    }
+  }
+
   // Now set up chemical conditions based on initial and boundary conditions
   // elsewhere in the file.
 
