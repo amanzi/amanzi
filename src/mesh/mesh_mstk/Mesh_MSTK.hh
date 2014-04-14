@@ -63,6 +63,7 @@ private:
   
   MSet_ptr AllCells, OwnedCells, GhostCells;
 
+  int notwownedmark;
 
   // Deleted entity lists if some pre-processing had to be done
   // to the mesh to eliminate degenerate entities
@@ -181,6 +182,41 @@ private:
 
   int hessian_inverse(const double H[3][3],double iH[3][3]) const;
 
+
+
+  // Downward Adjacencies
+  //---------------------
+    
+  // Get faces of a cell and directions in which the cell uses the face 
+
+  // The Amanzi coding guidelines regarding function arguments is purposely
+  // violated here to allow for a default input argument
+
+  // On a distributed mesh, this will return all the faces of the
+  // cell, OWNED or GHOST. If ordered = true, the faces will be
+  // returned in a standard order according to Exodus II convention
+  // for standard cells; in all other situations (ordered = false or
+  // non-standard cells), the list of faces will be in arbitrary order
+
+  // In 3D, direction is 1 if face normal points out of cell
+  // and -1 if face normal points into cell
+  // In 2D, direction is 1 if face/edge is defined in the same
+  // direction as the cell polygon, and -1 otherwise
+
+  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+                                         Entity_ID_List *faceids,
+                                         std::vector<int> *face_dirs,
+                                         const bool ordered=false) const;
+
+  void cell_get_faces_and_dirs_ordered (const Entity_ID cellid,
+                                         Entity_ID_List *faceids,
+                                         std::vector<int> *face_dirs) const;
+
+  void cell_get_faces_and_dirs_unordered (const Entity_ID cellid,
+                                         Entity_ID_List *faceids,
+                                          std::vector<int> *face_dirs) const;
+
+
 public:
 
   // Constructors that read the mesh from a file
@@ -281,32 +317,6 @@ public:
   //
   // Mesh Entity Adjacencies 
   //-------------------------
-
-
-  // Downward Adjacencies
-  //---------------------
-    
-  // Get faces of a cell and directions in which the cell uses the face 
-
-  // The Amanzi coding guidelines regarding function arguments is purposely
-  // violated here to allow for a default input argument
-
-  // On a distributed mesh, this will return all the faces of the
-  // cell, OWNED or GHOST. If ordered = true, the faces will be
-  // returned in a standard order according to Exodus II convention
-  // for standard cells; in all other situations (ordered = false or
-  // non-standard cells), the list of faces will be in arbitrary order
-
-  // In 3D, direction is 1 if face normal points out of cell
-  // and -1 if face normal points into cell
-  // In 2D, direction is 1 if face/edge is defined in the same
-  // direction as the cell polygon, and -1 otherwise
-
-  void cell_get_faces_and_dirs (const Entity_ID cellid,
-                                Entity_ID_List *faceids,
-                                std::vector<int> *face_dirs,
-				const bool ordered=false) const;
-
     
   // Get nodes of cell 
   // On a distributed mesh, all nodes (OWNED or GHOST) of the cell 
