@@ -62,9 +62,7 @@ namespace AmanziChemistry {
 Alquimia_Chemistry_PK::Alquimia_Chemistry_PK(const Teuchos::ParameterList& param_list,
                                              Teuchos::RCP<Chemistry_State> chem_state,
                                              Teuchos::RCP<ChemistryEngine> chem_engine)
-    : debug_(false),
-      display_free_columns_(false),
-      max_time_step_(9.9e9),
+    : max_time_step_(9.9e9),
       chemistry_state_(chem_state),
       main_param_list_(param_list),
       chem_param_list_(),
@@ -107,10 +105,6 @@ int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex, const std::string
 void Alquimia_Chemistry_PK::InitializeChemistry(void) 
 {
   Errors::Message msg;
-  if (debug()) 
-  {
-    std::cout << "  Alquimia_Chemistry_PK::InitializeChemistry()" << std::endl;
-  }
 
   // Read XML parameters from our input file.
   XMLParameters();
@@ -137,10 +131,6 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
     for (unsigned int i = 0; i < num_cells; ++i) 
     {
       int cell = cell_indices[i];
-      if (debug()) 
-      {
-        std::cout << "Initial speciation in cell " << cell << std::endl;
-      }
       ierr = InitializeSingleCell(cell, condition);
     }
   }
@@ -162,8 +152,8 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
  **  initialization helper functions
  **
  ******************************************************************************/
-void Alquimia_Chemistry_PK::ParseChemicalConditions(const Teuchos::ParameterList& param_list,
-                                                    std::map<std::string, std::string>& conditions)
+void Alquimia_Chemistry_PK::ParseChemicalConditionRegions(const Teuchos::ParameterList& param_list,
+                                                          std::map<std::string, std::string>& conditions)
 {
   Errors::Message msg;
 
@@ -180,7 +170,7 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const Teuchos::ParameterList
     // Apply this condition to all desired regions.
     if (!cond_sublist.isType<Teuchos::Array<std::string> >("regions"))
     {
-      msg << "Alquimia_Chemistry_PK::ParseChemicalConditions(): \n";
+      msg << "Alquimia_Chemistry_PK::ParseChemicalConditionRegions(): \n";
       msg << "  Geochemical condition '" << cond_name << "' has no valid 'regions' entry.\n";
       Exceptions::amanzi_throw(msg);
     }
@@ -193,7 +183,7 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const Teuchos::ParameterList
       if (!mesh->valid_set_name(regions[r], AmanziMesh::CELL) &&
           !mesh->valid_set_name(regions[r], AmanziMesh::FACE))
       {
-        msg << "Alquimia_Chemistry_PK::ParseChemicalConditions(): \n";
+        msg << "Alquimia_Chemistry_PK::ParseChemicalConditionRegions(): \n";
         msg << "  Invalid region '" << regions[r] << "' given for geochemical condition '" << cond_name << "'.\n";
         Exceptions::amanzi_throw(msg);
       }
@@ -208,12 +198,6 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
 
   // NOTE that our parameter list should be the top-level parameter list "Main", 
   // not the "Chemistry" one used by the native Amanzi Chemistry PK.
-
-  // Debugging flag.
-  if (chem_param_list_.isParameter("Debug Process Kernel")) 
-  {
-    set_debug(true);
-  }
 
   // Auxiliary Data
   aux_names_.clear();
@@ -306,21 +290,87 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
         const Teuchos::ParameterList& aqueous_constraint = cond_sublist.sublist(species_name);
         
         // If the primary species has an associated mineral, we need to retrieve its information.
-        if (aqueous_constraint.isSublist("species"))
+        std::string mineral_name;
+        if (aqueous_constraint.isParameter("species"))
         {
-          // FIXME
+          mineral_name = aqueous_constraint.get<std::string>("species");
+
+          // The information for this mineral species must appear alongside the 
+          // aqueous constraint in the geochemical condition.
+          if (!cond_sublist.isSublist(mineral_name))
+          {
+            msg << "Aqueous constraint for " << species_name << " requires a mineral constraint for\n";
+            msg << mineral_name << ", but no such constraint is present.\n";
+            Exceptions::amanzi_throw(msg);
+          }
+
+          const Teuchos::ParameterList& mineral_constraint = cond_sublist.sublist(mineral_name);
+
+          if (!mineral_constraint.isParameter("Volume Fraction") || 
+              !mineral_constraint.isParameter("Specific Surface Area"))
+          {
+            msg << "Mineral constraint for " << mineral_name << " requires 'Volume Fraction' and\n";
+            msg << "'Specific Surface Area' to be specified, but they are not.\n";
+            Exceptions::amanzi_throw(msg);
+          }
+          double volume_fraction = mineral_constraint.get<double>("Volume Fraction");
+          if (volume_fraction < 0.0)
+          {
+            msg << "Negative volume fraction given for mineral constraint '" << mineral_name << "'.\n";
+            Exceptions::amanzi_throw(msg);
+          }
+          double specific_surface_area = mineral_constraint.get<double>("Specific Surface Area");
+          if (specific_surface_area < 0.0)
+          {
+            msg << "Negative specific surface area given for mineral constraint '" << mineral_name << "'.\n";
+            Exceptions::amanzi_throw(msg);
+          }
+          // Convert specific surface area to m**2/m**3 from cm**2/cm**3.
+          specific_surface_area *= 100.0;
+
+          // Add the mineral constraint to the chemistry engine.
+          chem_engine_->AddMineralConstraint(cond_name, mineral_name, volume_fraction, specific_surface_area);
         }
 
         // What kind of aqueous constraint do we have on this species?
-        // FIXME
+        static const char* valid_types[] = {"total_aqueous", "total_sorb", "free",
+                                            "mineral", "gas", "pH", "charge"};
+        static int num_valid_types = 7;
+        std::string type;
+        for (int i = 0; i < num_valid_types; ++i)
+        {
+          if (aqueous_constraint.isParameter(valid_types[i]))
+            type = std::string(valid_types[i]);
+        }
+        if (!type.empty())
+        {
+          // It's a valid aqueous constraint, so we add it to the chemistry engine
+          // under the current geochemical condition.
+          chem_engine_->AddAqueousConstraint(cond_name, species_name, type, mineral_name);
+        }
+        else
+        {
+          // This is either a mineral constraint or an invalid aqueous constraint.
+          if (aqueous_constraint.isParameter("Volume Fraction") && 
+              aqueous_constraint.isParameter("Specific Surface Area"))
+          {
+            // It's a mineral constraint. We process these separately above.
+            continue;
+          }
+          else
+          {
+            // We have an invalid aqueous contraint.
+            msg << "Invalid aqueous constraint type for " << species_name << ".\n";
+            msg << "Valid types are total_aqueous, total_sorb, free, mineral, gas, pH, and charge.\n";
+            Exceptions::amanzi_throw(msg);
+          }
+        }
       }
     }
   }
 
-  // Now set up chemical conditions based on initial and boundary conditions
-  // elsewhere in the file.
-
-  // Initial conditions.
+  // Now associate regions with chemical conditions based on initial 
+  // condition specifications in the file.
   if (!main_param_list_.isSublist("State"))
   {
     msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
@@ -336,7 +386,7 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
     Exceptions::amanzi_throw(msg);
   }
   Teuchos::ParameterList geochem_conditions = initial_conditions.sublist("geochemical conditions");
-  ParseChemicalConditions(geochem_conditions, chem_initial_conditions_);
+  ParseChemicalConditionRegions(geochem_conditions, chem_initial_conditions_);
   if (chem_initial_conditions_.empty())
   {
     msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
@@ -569,31 +619,6 @@ void Alquimia_Chemistry_PK::advance(
     }
   }
 
-  // This shouldn't be necessary, as the Chemistry Engine handles errors.
-#if 0
-  int recv = 0;
-  chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
-  if (recv != 0) 
-  {
-    msg << "Error in Alquimia_Chemistry_PK::advance: ";
-    msg << chem_status_.message;
-    Exceptions::amanzi_throw(msg); 
-  }
-#endif
-  
-#ifdef GLENN_DEBUG
-  if (debug() == kDebugChemistryProcessKernel) 
-  {
-    std::stringstream message;
-    message << "  Alquimia_Chemistry_PK::advance() : "
-            << "max iterations - " << max_iterations << " " << "  cell id: " << imax << std::endl;
-    message << "  Alquimia_Chemistry_PK::advance() : "
-            << "min iterations - " << min_iterations << " " << "  cell id: " << imin << std::endl;
-    message << "  Alquimia_Chemistry_PK::advance() : "
-            << "ave iterations - " << static_cast<float>(ave_iterations) / num_cells << std::endl;
-  }
-#endif
-
 }  // end advance()
 
 
@@ -604,24 +629,7 @@ void Alquimia_Chemistry_PK::advance(
 void Alquimia_Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
                                          const double& delta_time) 
 {
-//  if (debug() == kDebugChemistryProcessKernel) 
-//  {
-//    chem_out->Write(kVerbose,
-//                    "  Alquimia_Chemistry_PK::commit_state() : Committing internal state.\n");
-//  }
-
   saved_time_ += delta_time;
-
-  // FIXME: I'm not sure there's anything else we have to do here.
-#if 0
-  if (debug() && false) 
-  {
-    chem_->Speciate(&beaker_components_, beaker_parameters_);
-    chem_->DisplayResults();
-    chem_->DisplayTotalColumnHeaders(display_free_columns_);
-    chem_->DisplayTotalColumns(saved_time_, beaker_components_, true);
-  }
-#endif
 }  // end commit_state()
 
 

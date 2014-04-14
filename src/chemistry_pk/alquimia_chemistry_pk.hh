@@ -79,14 +79,6 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
     return chemistry_state_->using_sorption_isotherms();
   }
 
-  bool debug(void) const {
-    return debug_;
-  }
-
-  void set_debug(const bool value) {
-    debug_ = value;
-  }
-
   // Ben: the following routine provides the interface for
   // output of auxillary cellwise data from chemistry
   Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
@@ -94,8 +86,6 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
  protected:
 
  private:
-  bool debug_;
-  bool display_free_columns_;
   double max_time_step_;
   // auxilary state for process kernel
   Teuchos::RCP<Chemistry_State> chemistry_state_;
@@ -132,8 +122,8 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
                         Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star,
                         int cellIndex);
 
-  void ParseChemicalConditions(const Teuchos::ParameterList& param_list,
-                               std::map<std::string, std::string>& conditions);
+  void ParseChemicalConditionRegions(const Teuchos::ParameterList& param_list,
+                                     std::map<std::string, std::string>& conditions);
   void XMLParameters(void);
 
   // These helpers copy data back and forth between a set of buffers and the chemistry state.
