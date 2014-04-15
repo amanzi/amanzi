@@ -268,7 +268,6 @@ void ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
   assert((constraint_type == "total_aqueous") || (constraint_type == "charge") || 
          (constraint_type == "free") || (constraint_type == "mineral") ||
          (constraint_type == "gas") || (constraint_type == "pH"));
-  assert(associated_species.length() > 0);
 
   std::map<std::string, AlquimiaGeochemicalCondition*>::iterator iter = chem_conditions_.find(condition_name);
   if (iter != chem_conditions_.end())
@@ -276,17 +275,20 @@ void ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
     AlquimiaGeochemicalCondition* condition = iter->second;
 
     // Is there a mineral constraint for the associated species?
-    bool found_mineral = false;
-    for (int i = 0; i < condition->mineral_constraints.size; ++i)
+    if (!associated_species.empty())
     {
-      if (!std::strcmp(condition->mineral_constraints.data[i].mineral_name, associated_species.c_str()))
-        found_mineral = true;
-    }
-    if (!found_mineral)
-    {
-      Errors::Message msg;
-      msg << "ChemistryEngine::AddAqueousConstraint: the condition '" << condition_name << "' does not have a mineral constraint for '" << associated_species << "'.";
-      Exceptions::amanzi_throw(msg); 
+      bool found_mineral = false;
+      for (int i = 0; i < condition->mineral_constraints.size; ++i)
+      {
+        if (!std::strcmp(condition->mineral_constraints.data[i].mineral_name, associated_species.c_str()))
+          found_mineral = true;
+      }
+      if (!found_mineral)
+      {
+        Errors::Message msg;
+        msg << "ChemistryEngine::AddAqueousConstraint: the condition '" << condition_name << "' does not have a mineral constraint for '" << associated_species << "'.";
+        Exceptions::amanzi_throw(msg); 
+      }
     }
 
     // Do we have an existing constraint?
@@ -299,7 +301,8 @@ void ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
         index = i;
         free(condition->aqueous_constraints.data[index].primary_species_name);
         free(condition->aqueous_constraints.data[index].constraint_type);
-        free(condition->aqueous_constraints.data[index].associated_species);
+        if (condition->aqueous_constraints.data[index].associated_species != NULL)
+          free(condition->aqueous_constraints.data[index].associated_species);
       }
     }
     if (index == -1)
@@ -313,7 +316,10 @@ void ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
     // Add the aqueous constraint.
     condition->aqueous_constraints.data[index].primary_species_name = strdup(primary_species_name.c_str());
     condition->aqueous_constraints.data[index].constraint_type = strdup(constraint_type.c_str());
-    condition->aqueous_constraints.data[index].associated_species = strdup(associated_species.c_str());
+    if (!associated_species.empty())
+      condition->aqueous_constraints.data[index].associated_species = strdup(associated_species.c_str());
+    else
+      condition->aqueous_constraints.data[index].associated_species = NULL;
   }
   else
   {
