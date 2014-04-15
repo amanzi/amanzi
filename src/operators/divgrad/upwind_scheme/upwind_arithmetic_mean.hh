@@ -30,12 +30,21 @@ public:
                      std::string cell_coef,
                      std::string face_coef);
 
-  void Update(const Teuchos::Ptr<State>& S,
-              const Teuchos::Ptr<Debugger>& db=Teuchos::null);
+  virtual void Update(const Teuchos::Ptr<State>& S,
+                      const Teuchos::Ptr<Debugger>& db=Teuchos::null);
 
   void CalculateCoefficientsOnFaces(
         const CompositeVector& cell_coef,
         const Teuchos::Ptr<CompositeVector>& face_coef);
+
+  virtual void
+  UpdateDerivatives(const Teuchos::Ptr<State>& S, 
+                    std::string potential_key,
+                    const CompositeVector& dconductivity,
+                    const std::vector<MatrixBC>& bc_markers,
+                    const std::vector<double>& bc_values,
+                    std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > >* Jpp_faces) const;
+
 
 private:
 

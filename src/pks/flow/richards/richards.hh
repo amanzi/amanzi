@@ -141,6 +141,7 @@ protected:
   bool is_source_term_;
   bool explicit_source_;
   bool precon_used_;
+  bool clobber_surf_kr_;
   
   // coupling terms
   bool coupled_to_surface_via_head_; // surface-subsurface Dirichlet coupler

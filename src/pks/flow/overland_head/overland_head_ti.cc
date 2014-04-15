@@ -81,7 +81,6 @@ void OverlandHeadFlow::fun( double t_old,
   solution_to_state(u_new, S_next_);
 
   // update boundary conditions
-  bc_pressure_->Compute(t_new);
   bc_head_->Compute(t_new);
   bc_flux_->Compute(t_new);
   bc_seepage_->Compute(t_new);
@@ -185,7 +184,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 
   // 1.a: Pre-assembly updates.
   // -- update boundary condition markers, which set the BC type
-  UpdateBoundaryConditionsMarkers_(S_next_.ptr());
+  //  UpdateBoundaryConditionsMarkers_(S_next_.ptr());
+  UpdateBoundaryConditions_(S_next_.ptr());
 
   // -- update the rel perm according to the boundary info and upwinding
   // -- scheme of choice
@@ -262,33 +262,18 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     dcond_dh.ViewComponent("cell",false)->ReciprocalMultiply(1., dh_dp,
             *dcond_dp->ViewComponent("cell",false), 0.);
 
-    // -- Krel_cell gets 1
-    Teuchos::RCP<const CompositeVector> uw_cond =
-        S_next_->GetFieldData("upwind_overland_conductivity");
-    CompositeVector duw_cond_cell_dh(*uw_cond);
-    duw_cond_cell_dh.PutScalar(0.);
-    //    duw_cond_cell_dh.ViewComponent("face",false)->PutScalar(0.);
-
-    // S_next_->GetFieldEvaluator("surface_molar_density_liquid")
-    //     ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-    // const Epetra_MultiVector& dn_liq_dp =
-    //     *S_next_->GetFieldData("dsurface_molar_density_liquid_dsurface_pressure")
-    //     ->ViewComponent("cell",false);
-    // duw_cond_cell_dh.ViewComponent("cell",false)
-    //     ->ReciprocalMultiply(1., dh_dp, dn_liq_dp, 0.);
-
     // -- Add in the Jacobian
-    tpfa_preconditioner_->AnalyticJacobian(*depth, *pres_elev, *cond, dcond_dh,
-            *uw_cond, duw_cond_cell_dh);
+    tpfa_preconditioner_->AnalyticJacobian(*upwinding_,
+                                           S_next_.ptr(), "pres_elev",
+                                           dcond_dh, bc_markers_,
+                                           bc_values_);
   }
 
   // 3.d: Rescale to use as a pressure matrix if used in a coupler
   if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
     ASSERT(tpfa_);
-    Teuchos::RCP<Operators::MatrixMFD_TPFA> precon_tpfa =
-        Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_TPFA>(mfd_preconditioner_);
-    ASSERT(precon_tpfa != Teuchos::null);
-    Teuchos::RCP<Epetra_FECrsMatrix> Spp = precon_tpfa->TPFA();
+    ASSERT(tpfa_preconditioner_ != Teuchos::null);
+    Teuchos::RCP<Epetra_FECrsMatrix> Spp = tpfa_preconditioner_->TPFA();
 
     // Scale Spp by dh/dp (h, NOT h_bar), clobbering rows with p < p_atm
     S_next_->GetFieldEvaluator("ponded_depth")
