@@ -1226,7 +1226,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
 
 int Mesh_simple::deform(const std::vector<double>& target_cell_volumes_in, 
                         const std::vector<double>& min_cell_volumes_in, 
-                        const std::vector<std::string>& fixed_set_names,
+                        const Entity_ID_List& fixed_nodes,
                         const bool move_vertical) 
 {
   Errors::Message mesg("Deformation not implemented for Mesh_simple");

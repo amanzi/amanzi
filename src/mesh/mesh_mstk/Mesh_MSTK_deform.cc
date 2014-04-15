@@ -18,7 +18,7 @@ namespace AmanziMesh
 
 int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
                       const std::vector<double>& min_cell_volumes_in,
-                      const std::vector<std::string>& fixed_set_names,
+                      const Entity_ID_List& fixed_nodes,
                       const bool move_vertical) {  
   int idx, id;
   MVertex_ptr mv;
@@ -33,39 +33,28 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     amanzi_throw(mesg);
   }
 
-  // Access all the fixed sets to make sure they get
-  // created within MSTK (they get created the first time
-  // this set is accessed)
-  int nsets = fixed_set_names.size();
-  for (int i = 0; i < nsets; i++)
-    get_set_size(fixed_set_names[i],NODE,OWNED);
-    
+  int nv = num_entities(NODE,OWNED);  
 
+  // ---- Begin code by ETC ----
   int fixedmk = MSTK_GetMarker();
   List_ptr fixed_verts = List_New(0);
-  for (int i = 0; i < nsets; i++) {
-    AmanziGeometry::GeometricModelPtr gm = geometric_model();
-    AmanziGeometry::RegionPtr rgn = gm->FindRegion(fixed_set_names[i]);
-
-    std::string internal_name = internal_name_of_set(rgn,NODE);
-    MSet_ptr mset = MESH_MSetByName(mesh,internal_name.c_str());
-
-    idx = 0;
-    while ((mv = (MVertex_ptr) MSet_Next_Entry(mset,&idx))) {
+  for (Entity_ID_List::const_iterator v=fixed_nodes.begin();
+       v!=fixed_nodes.end(); ++v) {
+    if (*v < nv) {
+      MVertex_ptr mv = vtx_id_to_handle[*v];
       if (!MEnt_IsMarked(mv,fixedmk)) {
         List_Add(fixed_verts,mv);
         MEnt_Mark(mv,fixedmk);
       }
     }
   }
+  // ---- End code by ETC ----
 
 
   // store mesh node coordinates in temporary linear array to save on
   // the cost of retrieving each coordinate and decrease cache misses
-  
+
   // Simultaneously get the extents of the problem
-  
-  int nv = num_entities(NODE,USED);  
   meshxyz = new double [3*nv];        // class variable
   double *newxyz = new double [3*nv];
 
@@ -321,9 +310,9 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   MSTK_FreeMarker(fixedmk);
 
   if (space_dimension() == 2)
-    MESH_ExportToGMV(mesh,"deformed2.gmv",0,NULL,NULL,0);
+    MESH_ExportToGMV(mesh,"deformed2.gmv",0,NULL,NULL,NULL);
   else
-    MESH_ExportToGMV(mesh,"deformed3.gmv",0,NULL,NULL,0);
+    MESH_ExportToGMV(mesh,"deformed3.gmv",0,NULL,NULL,NULL);
 
 
   // recompute all geometric quantities

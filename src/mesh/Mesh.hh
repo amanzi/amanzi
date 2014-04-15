@@ -423,9 +423,9 @@ class Mesh
   // Nodes in any set in the fixed_sets will not be permitted to move.
 
   virtual
-  int deform (const std::vector<double>& target_cell_volumes_in, 
-              const std::vector<double>& min_cell_volumes_in, 
-              const std::vector<std::string>& fixed_set_names,
+  int deform (const std::vector<double>& target_cell_volumes_in,
+              const std::vector<double>& min_cell_volumes_in,
+              const Entity_ID_List& fixed_nodes,
               const bool move_vertical) = 0;
 
 
