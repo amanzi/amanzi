@@ -285,7 +285,7 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
       for (Teuchos::ParameterList::ConstIterator iter2 = cond_sublist.begin();
            iter2 != cond_sublist.end(); ++iter2)
       {
-        std::string species_name = cond_sublist.name(iter);
+        std::string species_name = cond_sublist.name(iter2);
         assert(cond_sublist.isSublist(species_name));
         const Teuchos::ParameterList& aqueous_constraint = cond_sublist.sublist(species_name);
         
