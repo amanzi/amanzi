@@ -920,7 +920,12 @@ int Mesh::build_columns() const {
 
     double dp = negzvec*normal;
 
-    if (fabs(dp-1.0) > 1.0e-06) continue;
+    // Face normals not necessarily -1, may be tilted, so this misses some faces
+    //    if (fabs(dp-1.0) > 1.0e-06) continue;
+
+    if (dp < 1.e-8) continue; // instead, all non-top/bottom faces have 
+                              // a zero z component, and all top faces are 
+                              // negative dot products
 
     // found a boundary face with a downward facing normal
 
@@ -936,7 +941,8 @@ int Mesh::build_columns() const {
 
     dp = negzvec*cfvec;
 
-    if (fabs(dp-1.0) > 1.0e-06) continue;
+    //    if (fabs(dp-1.0) > 1.0e-06) continue;
+    if (dp < 1.e-08) continue;
 
     // Now we are quite sure that this is a face at the bottom of the
     // mesh/domain
@@ -975,7 +981,8 @@ int Mesh::build_columns() const {
       }
 
 
-      assert(top_face != bot_face);
+      ASSERT(top_face != bot_face);
+      ASSERT(top_face != -1);
 
 
       // record the cell above and cell below
