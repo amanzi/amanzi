@@ -47,12 +47,8 @@ void MatrixMFD_ScaledConstraint::CreateMFDstiffnessMatrices(
     assembled_operator_ = false;
 
     // store a copy of Krel on faces
-    if (Krel != Teuchos::null) {
-      Krel->ScatterMasterToGhosted("face");
-      *Krel_ = *(*Krel->ViewComponent("face", true))(0);
-    } else {
-      Krel_->PutScalar(1.);
-    }
+    Krel->ScatterMasterToGhosted("face");
+    *Krel_ = *(*Krel->ViewComponent("face", true))(0);
 
     int dim = mesh_->space_dimension();
     WhetStone::MFD3D_Diffusion mfd(mesh_);
