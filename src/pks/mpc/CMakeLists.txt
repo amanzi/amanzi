@@ -20,6 +20,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/inte
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
+include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
 add_library(mpc
   weak_mpc.cc

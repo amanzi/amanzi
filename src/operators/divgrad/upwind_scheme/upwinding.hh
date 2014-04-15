@@ -14,6 +14,11 @@
 #define AMANZI_UPWINDING_SCHEME_
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+
+#include "dbc.hh"
+#include "MatrixMFD_Defs.hh"
+#include "CompositeVector.hh"
 
 namespace Amanzi {
 
@@ -36,6 +41,17 @@ class Upwinding {
  public:
   virtual void
   Update(const Teuchos::Ptr<State>& S, const Teuchos::Ptr<Debugger>& db=Teuchos::null) = 0;
+
+  virtual void
+  UpdateDerivatives(const Teuchos::Ptr<State>& S, 
+                    std::string potential_key,
+                    const CompositeVector& dconductivity,
+                    const std::vector<MatrixBC>& bc_markers,
+                    const std::vector<double>& bc_values,
+                    std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > >* Jpp_faces) const {
+    ASSERT(0);
+  }
+
 };
 
 } // namespace
