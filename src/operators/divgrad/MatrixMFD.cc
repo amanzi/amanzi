@@ -184,6 +184,10 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
   assembled_schur_ = false;
   assembled_operator_ = false;
 
+  // communicate as necessary
+  if (Krel.get() && Krel->HasComponent("face"))
+    Krel->ScatterMasterToGhosted("face");
+
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
@@ -228,7 +232,6 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
         }
       }
     } else if (!Krel->HasComponent("cell") && Krel->HasComponent("face")) {
-      Krel->ScatterMasterToGhosted("face");
       const Epetra_MultiVector& Krel_f = *Krel->ViewComponent("face",true);
 
       for (int n=0; n!=nfaces; ++n) {
@@ -237,7 +240,6 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
         }
       }
     } else if (Krel->HasComponent("cell") && Krel->HasComponent("face")) {
-      Krel->ScatterMasterToGhosted("face");
       const Epetra_MultiVector& Krel_f = *Krel->ViewComponent("face",true);
       const Epetra_MultiVector& Krel_c = *Krel->ViewComponent("cell",false);
 
@@ -679,8 +681,6 @@ void MatrixMFD::UpdatePreconditioner() {
  * once (using flag) and in exactly the same manner as in routine
  * Flow_PK::addGravityFluxes_DarcyFlux.
  *
- * WARNING: THIS ASSUMES solution has previously be communicated to update
- * ghost faces.
  ****************************************************************** */
 void MatrixMFD::DeriveFlux(const CompositeVector& solution,
                            const Teuchos::Ptr<CompositeVector>& flux) const {
