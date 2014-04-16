@@ -33,7 +33,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     amanzi_throw(mesg);
   }
 
-  int nv = num_entities(NODE,OWNED);  
+  int nv = num_entities(NODE,USED);  
 
   // ---- Begin code by ETC ----
   int fixedmk = MSTK_GetMarker();
