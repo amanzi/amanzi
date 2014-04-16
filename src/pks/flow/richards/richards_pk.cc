@@ -129,8 +129,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     (*K_)[c].init(mesh_->space_dimension(),1);
   }
   // scaling for permeability
-  //  perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
-  perm_scale_ = 1.;
+  perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
 
   // source terms
   is_source_term_ = plist_->get<bool>("source term", false);
@@ -303,6 +302,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   S->RequireField("relative_permeability")->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
+  wrm_plist.set<double>("permeability rescaling", perm_scale_);
   Teuchos::RCP<FlowRelations::RelPermEvaluator> rel_perm_evaluator =
       Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
   S->SetFieldEvaluator("relative_permeability", rel_perm_evaluator);
@@ -312,10 +312,6 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("molar_density_liquid")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("molar_density_liquid");
-
-  // S->RequireField("viscosity_liquid")->SetMesh(mesh_)->SetGhosted()
-  //     ->AddComponent("cell", AmanziMesh::CELL, 1);
-  // S->RequireFieldEvaluator("viscosity_liquid");
 
   // -- liquid mass density for the gravity fluxes
   S->RequireField("mass_density_liquid")->SetMesh(mesh_)->SetGhosted()
