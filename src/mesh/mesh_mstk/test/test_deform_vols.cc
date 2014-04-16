@@ -43,7 +43,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
     mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-1.5,0.0,1.5,1.0,5,5,comm.get(),gm));
 
   int nc = 
-    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
 
   // Request target volume of 50% for bottom two cells in center column
   // The others are unconstrained except for a barrier of minimum volume
