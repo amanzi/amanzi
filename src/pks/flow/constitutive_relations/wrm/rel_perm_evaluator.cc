@@ -80,8 +80,7 @@ void RelPermEvaluator::InitializeFromPlist_() {
   
   // cutoff above 0?
   min_val_ = plist_.get<double>("minimum rel perm cutoff", 0.);
-  //  perm_scale_ = plist_.get<double>("permeability rescaling"); // eventually this can default to 1
-  perm_scale_ = 1.;
+  perm_scale_ = plist_.get<double>("permeability rescaling");
 }
 
 
