@@ -1108,6 +1108,50 @@ The `"Transport`" parameters useful for developers are:
   divergence-free condition. The default value is 1e-6.
 
 
+Chemistry
+=========
+
+This chemistry list specifies a third-party geochemical engine. 
+Details are provided in the trimmed PFloTran file `"1d-tritium-trim.in`".
+
+.. code-block:: xml
+
+  <ParameterList name="Chemistry">
+    <Parameter name="Engine" type="string" value="PFloTran"/>
+    <Parameter name="Engine Input File" type="string" value="1d-tritium-trim.in"/>
+    <Parameter name="Max Time Step (s)" type="double" value="1.57784630000000000e+07"/>
+    <Parameter name="Number of component concentrations" type="int" value="1"/>
+  </ParameterList>
+
+Initial conditions
+------------------
+
+This sublist completes initialization of state variable, see list `"State`" for 
+more detail.
+
+.. code-block:: xml
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="free_ion_species">
+        <ParameterList name="function">
+          <ParameterList name="Entire Domain">
+            <Parameter name="region" type="string" value="Entire Domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="Number of DoFs" type="int" value="1"/>
+              <Parameter name="Function type" type="string" value="composite function"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.0e-09"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+
 Functions
 =========
 
