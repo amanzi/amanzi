@@ -17,7 +17,8 @@ namespace FlowRelations {
 EffectiveHeightEvaluator::EffectiveHeightEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   // my keys are for saturation and rel perm.
-  my_key_ = plist_.get<string>("effective height key", "effective_height");
+  if (my_key_ == "")
+    my_key_ = plist_.get<string>("effective height key", "effective_height");
 
   // my dependencies
   height_key_ = plist_.get<string>("height key", "ponded_depth");
