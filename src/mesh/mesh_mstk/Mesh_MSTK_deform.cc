@@ -98,6 +98,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     idx = 0;
     while ((mv = MESH_Next_Vertex(mesh, &idx))) {
       if (MEnt_IsMarked(mv,fixedmk)) continue;  // vertex cannot move
+      //      if (MV_PType(mv) == PGHOST) continue; // Fails if we don;t move ghost vertices
 
       int gtype = MV_GEntDim(mv);
       
@@ -279,6 +280,14 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
     iter_global++;
 
+    // Update coordinates in mesh data structures
+    
+    idx = 0;
+    while ((mv = MESH_Next_Vertex(mesh,&idx))) {
+      id = MV_ID(mv);
+      MV_Set_Coords(mv,&(meshxyz[3*(id-1)]));
+    }
+
     if (get_comm()->NumProc() > 1)
       MESH_UpdateVertexCoords(mesh,mpicomm);
 
@@ -293,14 +302,6 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   //  if (iter_global >= maxiter_global)
   //    std::cerr << "INCREASE MAXITER_GLOBAL....!!" << std::endl;
     
-  // Update coordinates in mesh data structures
-  
-  idx = 0;
-  while ((mv = MESH_Next_Vertex(mesh,&idx))) {
-    id = MV_ID(mv);
-    MV_Set_Coords(mv,&(meshxyz[3*(id-1)]));
-  }
-
   delete [] meshxyz;
   delete [] target_cell_volumes;
   delete [] min_cell_volumes;
