@@ -25,12 +25,15 @@ void MatrixMFD_TPFA_ScaledConstraint::CreateMFDstiffnessMatrices(
 
   if (Krel == Teuchos::null || !Krel->HasComponent("face")) {
     MatrixMFD_TPFA::CreateMFDstiffnessMatrices(Krel);
+    Krel_->PutScalar(1.);
+
   } else {
     // tag global matrices as invalid
     assembled_schur_ = false;
     assembled_operator_ = false;
 
     // store a copy of Krel on faces
+    Krel->ScatterMasterToGhosted("face");
     *Krel_ = *(*Krel->ViewComponent("face", true))(0);
 
     int dim = mesh_->space_dimension();

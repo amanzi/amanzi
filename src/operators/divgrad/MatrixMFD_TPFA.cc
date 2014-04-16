@@ -39,6 +39,10 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
   assembled_schur_ = false;
   assembled_operator_ = false;
 
+  // communicate as necessary
+  if (Krel.get() && Krel->HasComponent("face"))
+    Krel->ScatterMasterToGhosted("face");
+
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;

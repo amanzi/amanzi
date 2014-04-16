@@ -17,6 +17,7 @@
 #include "Point.hh"
 
 #include "wrm_partition.hh"
+#include "compressible_porosity_model_partition.hh"
 #include "ewc_model_base.hh"
 
 namespace Amanzi {
@@ -25,7 +26,6 @@ namespace Flow {
 namespace FlowRelations {
 class PCIceWater;
 class PCLiqAtm;
-class CompressiblePorosityModel;
 }
 }
 
@@ -62,6 +62,7 @@ class PermafrostModel : public EWCModelBase {
   Teuchos::RCP<Energy::EnergyRelations::IEMWaterVapor> gas_iem_;
   Teuchos::RCP<Energy::EnergyRelations::IEM> ice_iem_;
   Teuchos::RCP<Energy::EnergyRelations::IEM> rock_iem_;
+  Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityModelPartition> poro_models_;
   Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityModel> poro_model_;
   double p_atm_;
   double poro_;

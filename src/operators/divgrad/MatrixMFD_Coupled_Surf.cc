@@ -162,6 +162,17 @@ void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
       indicesA[m] = fmap_wghost.GID(indicesA[m]);
     }
 
+    /*
+    if (sc == 65) {
+      std::cout << "MatrixMFD_Coupled_Surf sc(65), surf terms:\n"
+		<< "     scaling=" << scaling_ << "\n"
+		<< "  App_surf[65,65] = " << valuesA[diag] << "\n"
+		<< "  Bpp_surf[65,65] = " << valuesB[diag] << "\n"
+		<< "  Ccc_surf[65,65] = " << (*Ccc_surf_)[0][sc]*scaling_ << "\n"
+		<< "  Dcc_surf[65,65] = " << (*Dcc_surf_)[0][sc]*scaling_ << std::endl;
+    }
+    */
+
     // Add the entries
     ierr = P2f2f_->BeginSumIntoGlobalValues(frow_global, entriesA, indicesA);
     ASSERT(!ierr);

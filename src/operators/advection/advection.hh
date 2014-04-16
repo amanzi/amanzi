@@ -30,8 +30,8 @@ public:
   Teuchos::RCP<const CompositeVector> flux() const { return flux_; }
   virtual void set_flux(const Teuchos::RCP<const CompositeVector>& flux);
 
-  int num_dofs() const { return num_dofs_; }
-  virtual void set_num_dofs(int num_dofs);
+  unsigned int num_dofs() const { return num_dofs_; }
+  virtual void set_num_dofs(unsigned int num_dofs);
 
   Teuchos::RCP<CompositeVector> field() { return field_; }
 
@@ -39,7 +39,7 @@ public:
                      bool include_bc_fluxes=true) = 0;
 
 protected:
-  int num_dofs_;
+  unsigned int num_dofs_;
   Teuchos::RCP<const CompositeVector> flux_;
   Teuchos::RCP<CompositeVector> field_;
 

@@ -129,7 +129,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     (*K_)[c].init(mesh_->space_dimension(),1);
   }
   // scaling for permeability
-  perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
+  //  perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
+  perm_scale_ = 1.;
 
   // source terms
   is_source_term_ = plist_->get<bool>("source term", false);
