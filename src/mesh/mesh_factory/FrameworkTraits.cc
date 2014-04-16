@@ -256,7 +256,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 
   int deform (const std::vector<double>& target_cell_volumes_in, 
               const std::vector<double>& min_cell_volumes_in, 
-              const Entity_ID_List& fixed_nodes,
+              const Amanzi::AmanziMesh::Entity_ID_List& fixed_nodes,
               const bool move_vertical)
   {}
 
