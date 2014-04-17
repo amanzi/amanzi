@@ -67,6 +67,30 @@ void Richards::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
   Teuchos::RCP<const CompositeVector> wc0 = S_inter_->GetFieldData("water_content");
 
+  S_next_->GetFieldEvaluator("pressure")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("pressure")->HasFieldChanged(S_inter_.ptr(), name_);
+
+  const Epetra_MultiVector& pres_next  = *S_next_->GetFieldData("pressure")->ViewComponent("face",false);
+  const Epetra_MultiVector& pres_inter = *S_inter_->GetFieldData("pressure")->ViewComponent("face",false);
+
+  S_next_->GetFieldEvaluator("temperature")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("temperature")->HasFieldChanged(S_inter_.ptr(), name_);
+
+  const Epetra_MultiVector& temp_next  = *S_next_->GetFieldData("temperature")->ViewComponent("cell",false);
+  const Epetra_MultiVector& temp_inter = *S_inter_->GetFieldData("temperature")->ViewComponent("cell",false);
+
+  // cout.precision(10);
+  // for (int i=0;i<10;i++){
+  //   cout<<"pres: next "<<pres_next[0][i]<<" inter "<<pres_inter[0][i];
+  //   cout<<" "<<temp_next[0][i]<<" inter "<<temp_inter[0][i];
+  //   cout<<endl;
+  // }
+
+  // cout<<"WC1\n";
+  // cout<<*wc1->ViewComponent("cell",false);
+  // cout<<"WC0\n";
+  // cout<<*wc0->ViewComponent("cell",false);
+
   // Water content only has cells, while the residual has cells and faces.
   g->ViewComponent("cell",false)->Update(1.0/dt, *wc1->ViewComponent("cell",false),
           -1.0/dt, *wc0->ViewComponent("cell",false), 1.0);
@@ -302,6 +326,133 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
     }
   }
 };
+
+// -------------------------------------------------------------
+// Diffusion term, div -\phi s \tau n D grad \omega
+// -------------------------------------------------------------
+void Richards::AddVaporDiffusionResidual_(const Teuchos::Ptr<State>& S,
+        const Teuchos::Ptr<CompositeVector>& g) {
+
+  //res_vapor = Teuchos::rcp(new CompositeVector(*S->GetFieldData("pressure"))); 
+  //res_vapor = Teuchos::rcp(new CompositeVector(*g)); 
+  res_vapor->PutScalar(0.0);
+  //Teuchos::RCP<CompositeVector> res_en = Teuchos::rcp(new CompositeVector(*g)); 
+  //res_en->PutScalar(0.);
+
+  // derive fluxes
+  Teuchos::RCP<const CompositeVector> pres   = S->GetFieldData("pressure");
+  Teuchos::RCP<const CompositeVector> temp   = S->GetFieldData("temperature");
+
+
+  Teuchos::RCP<CompositeVector> vapor_diff_pres = S->GetFieldData("vapor_diffusion_pressure", name_);
+  Teuchos::RCP<CompositeVector> vapor_diff_temp = S->GetFieldData("vapor_diffusion_temperature", name_);
+
+  ///****** Compute contribution for pressure gradient
+
+  //Epetra_MultiVector& coef_pr = *vapor_diff_pres->ViewComponent("cell",false);
+  ComputeVaporDiffusionCoef(S, vapor_diff_pres, "pressure");
+
+  // update the stiffness matrix
+  matrix_vapor_->CreateMFDstiffnessMatrices(vapor_diff_pres.ptr());
+  matrix_vapor_->CreateMFDrhsVectors();
+  // assemble the stiffness matrix
+  //matrix_vapor_->ApplyBoundaryConditions(bc_markers_, bc_values_, false);
+  matrix_vapor_->AssembleGlobalMatrices();
+  // calculate the residual
+  matrix_vapor_->ComputeNegativeResidual(*pres, res_vapor.ptr());
+
+  g->Update(1., *res_vapor, 1.);
+
+  res_vapor->PutScalar(0.0);
+
+  ///****** Compute contribution for temperature gradient
+  Epetra_MultiVector& coef_tm = *S->GetFieldData("vapor_diffusion_temperature", name_)
+                                   ->ViewComponent("cell",false);
+
+  ComputeVaporDiffusionCoef(S, vapor_diff_temp, "temperature");
+  // update the stiffness matrix
+  matrix_vapor_->CreateMFDstiffnessMatrices(vapor_diff_temp.ptr());
+  matrix_vapor_->CreateMFDrhsVectors();
+  // assemble the stiffness matrix
+  //matrix_vapor_->ApplyBoundaryConditions(bc_markers_, bc_values_, false);
+  matrix_vapor_->AssembleGlobalMatrices();
+  // calculate the residual
+  matrix_vapor_->ComputeNegativeResidual(*temp, res_vapor.ptr());
+
+  g->Update(1., *res_vapor, 1.);
+
+
+}
+
+  void Richards::ComputeVaporDiffusionCoef(const Teuchos::Ptr<State>& S, 
+                                          Teuchos::RCP<CompositeVector>& vapor_diff, 
+                                          std::string var_name){
+
+   Epetra_MultiVector& diff_coef = *vapor_diff->ViewComponent("cell",false);
+
+   S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S.ptr(), name_);
+   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell",false);
+
+   S->GetFieldEvaluator("molar_density_gas")->HasFieldChanged(S.ptr(), name_);
+   const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell",false);
+
+   S->GetFieldEvaluator("porosity")->HasFieldChanged(S.ptr(), name_);
+   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell",false);
+
+   S->GetFieldEvaluator("saturation_gas")->HasFieldChanged(S.ptr(), name_);
+   const Epetra_MultiVector& s_g = *S->GetFieldData("saturation_gas")->ViewComponent("cell",false);
+
+   S->GetFieldEvaluator("mol_frac_gas")->HasFieldChanged(S.ptr(), name_);
+   const Epetra_MultiVector& mlf_g = *S->GetFieldData("mol_frac_gas")->ViewComponent("cell",false);
+
+   std::string key_t = "temperature";
+   S->GetFieldEvaluator("mol_frac_gas")->HasFieldDerivativeChanged(S.ptr(), name_, key_t);
+   const Epetra_MultiVector& dmlf_g_dt = *S->GetFieldData("dmol_frac_gas_dtemperature")->ViewComponent("cell",false);
+
+   const Epetra_MultiVector& temp = *S->GetFieldData("temperature")->ViewComponent("cell",false);
+   const Epetra_MultiVector& pressure = *S->GetFieldData("pressure")->ViewComponent("cell",false);
+   const double& Patm = *S->GetScalarData("atmospheric_pressure");
+   const double R = 8.3144621;
+
+   unsigned int ncells = diff_coef.MyLength();
+
+   const double a = 4./3.;
+   const double b = 10./3.;
+   const double D_ref = 0.282;
+   const double P_ref = Patm;
+   const double T_ref = 298;
+   double D;
+
+   for (unsigned int c=0; c!=ncells; ++c){
+
+     D = D_ref*(P_ref/Patm)*pow(temp[0][c]/T_ref, 1.8);
+
+     diff_coef[0][c] = D*pow(phi[0][c], a)*pow(s_g[0][c], b)*n_g[0][c];
+     diff_coef[0][c] *= exp(-(Patm - pressure[0][c])/(n_l[0][c]*R*temp[0][c]));
+   }
+
+   if (var_name == "pressure"){
+     //cout<<"Pressure vapor_diff\n";
+     for (unsigned int c=0; c!=ncells; ++c){
+       diff_coef[0][c] *= mlf_g[0][c] * (1./ (n_l[0][c]*R*temp[0][c]));
+       //diff_coef[0][c] *= 0.;
+       //cout<<diff_coef[0][c]<<" ";
+     }
+     //cout<<endl;
+   }
+   else if (var_name == "temperature"){
+     for (unsigned int c=0; c!=ncells; ++c){
+       diff_coef[0][c] *= (1./Patm)*dmlf_g_dt[0][c] + mlf_g[0][c]* (Patm - pressure[0][c])/ (n_l[0][c]*R*temp[0][c]*temp[0][c]);
+       //diff_coef[0][c] =0;
+     }
+     
+   }
+   else{
+     // Unknown variable name
+     ASSERT(0);
+   }    
+
+}
 
 } //namespace
 } //namespace

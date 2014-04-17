@@ -69,6 +69,12 @@ void Richards::fun(double t_old,
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
+  
+  if (vapor_diffusion_) AddVaporDiffusionResidual_(S_next_.ptr(), res.ptr());
+
+  // cout<<"Residual\n";
+  // cout<<*res->ViewComponent("cell",false);
+
 #if DEBUG_FLAG
   // dump s_old, s_new
   vnames[0] = "sl_old"; vnames[1] = "sl_new";
@@ -95,6 +101,9 @@ void Richards::fun(double t_old,
 
   // accumulation term
   AddAccumulation_(res.ptr());
+
+  // cout<<"Residual after AddAccumulation\n";
+  // cout<<*res->ViewComponent("face",false);
 
 #if DEBUG_FLAG
   db_->WriteVector("res (acc)", res.ptr(), true);
@@ -193,6 +202,17 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   mfd_preconditioner_->CreateMFDrhsVectors();
   AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), mfd_preconditioner_.ptr());
 
+  if (vapor_diffusion_){
+    Teuchos::RCP<CompositeVector> vapor_diff_pres = S_next_->GetFieldData("vapor_diffusion_pressure", name_);
+    ComputeVaporDiffusionCoef(S_next_.ptr(), vapor_diff_pres, "pressure");   
+
+  // // update the stiffness matrix
+    matrix_vapor_->CreateMFDstiffnessMatrices(vapor_diff_pres.ptr());    
+    mfd_preconditioner_->Add2MFDstiffnessMatrices(&matrix_vapor_->Acc_cells(),
+                                                  &matrix_vapor_->Aff_cells(),
+                                                  &matrix_vapor_->Acf_cells(),
+                                                  &matrix_vapor_->Afc_cells());
+  }
   // Update the preconditioner with accumulation terms.
   // -- update the accumulation derivatives
   S_next_->GetFieldEvaluator("water_content")
@@ -226,14 +246,12 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
       *vo_->os() << "  assembling..." << std::endl;
     mfd_preconditioner_->AssembleGlobalMatrices();
     mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-
     // dump the schur complement
     // Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
     // std::stringstream filename_s;
     // filename_s << "schur_" << S_next_->cycle() << ".txt";
     // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
     // *vo_->os() << "updated precon " << S_next_->cycle() << std::endl;
-
     mfd_preconditioner_->UpdatePreconditioner();
   }
 };
