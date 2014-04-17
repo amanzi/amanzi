@@ -20,7 +20,7 @@ void Advection::set_flux(const Teuchos::RCP<const CompositeVector>& flux) {
   flux_ = flux;
 }
 
-void Advection::set_num_dofs(int num_dofs) {
+void Advection::set_num_dofs(unsigned int num_dofs) {
   if (field_ == Teuchos::null || num_dofs_ != num_dofs) {
     num_dofs_ = num_dofs;
     std::vector<int> ndofs_tmp(2,num_dofs_);
@@ -36,7 +36,6 @@ void Advection::set_num_dofs(int num_dofs) {
     Teuchos::RCP<CompositeVectorSpace> space = Teuchos::rcp(new CompositeVectorSpace());
     space->SetMesh(mesh_)->SetGhosted()->SetComponents(names,locations,ndofs_tmp);
     field_ = Teuchos::rcp(new CompositeVector(*space));
-
   }
 }
 

@@ -123,6 +123,7 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
 // ---------------------------------------------------------------------
 // Add in energy source, which are accumulated by a single evaluator.
+// Note that that evaluator applies the factor of cell volume.
 // ---------------------------------------------------------------------
 void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
@@ -133,9 +134,9 @@ void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
     Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 
     // Update the source term
-    S_next_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_next_.ptr(), name_);
+    S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
     const Epetra_MultiVector& source1 =
-        *S_next_->GetFieldData(source_key_)->ViewComponent("cell",false);
+        *S->GetFieldData(source_key_)->ViewComponent("cell",false);
 
     // Add into residual
     unsigned int ncells = g_c.MyLength();
@@ -145,7 +146,7 @@ void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "Adding external source term" << std::endl;
-      db_->WriteVector("  Q_ext", S_next_->GetFieldData(source_key_).ptr(), false);
+      db_->WriteVector("  Q_ext", S->GetFieldData(source_key_).ptr(), false);
       db_->WriteVector("res (src)", g, false);
     }
   }

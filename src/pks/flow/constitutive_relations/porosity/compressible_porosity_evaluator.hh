@@ -11,12 +11,11 @@
 
 #include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
+#include "compressible_porosity_model_partition.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
-
-class CompressiblePorosityModel;
 
 class CompressiblePorosityEvaluator : public SecondaryVariableFieldEvaluator {
  public:
@@ -31,13 +30,13 @@ class CompressiblePorosityEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
-  Teuchos::RCP<CompressiblePorosityModel> get_Model() { return model_; }
+  Teuchos::RCP<CompressiblePorosityModelPartition> get_Models() { return models_; }
 
 protected:
   Key poro_key_;
   Key pres_key_;
 
-  Teuchos::RCP<CompressiblePorosityModel> model_;
+  Teuchos::RCP<CompressiblePorosityModelPartition> models_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,CompressiblePorosityEvaluator> fac_;

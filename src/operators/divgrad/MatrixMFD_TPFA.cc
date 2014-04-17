@@ -39,6 +39,10 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
   assembled_schur_ = false;
   assembled_operator_ = false;
 
+  // communicate as necessary
+  if (Krel.get() && Krel->HasComponent("face"))
+    Krel->ScatterMasterToGhosted("face");
+
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
@@ -268,6 +272,8 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
 
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       Bpp(n, n) = Dcc_c[0][c] / faces.size();
+      ASSERT(std::abs(Dcc_c[0][c] / faces.size()) < 1.e40);
+
       if (c < ncells_owned) {
         int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
         ASSERT(i>=0);
@@ -282,14 +288,35 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
     for (int n = 0; n < mcells; n++) {
       for (int m = 0; m < mcells; m++) {
         Bpp(n, m) -= Acf_copy[n] / Dff_f[0][f] * Afc_copy[m];
+	ASSERT(std::abs(Acf_copy[n] / Dff_f[0][f] * Afc_copy[m]) < 1.e40);
       }
     }
 
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Bpp.values());
   }
   (*Spp_).GlobalAssemble();
+
+  // Check min
+#ifdef ENABLE_DBC
+  Epetra_Vector Spp_diag(mesh_->cell_map(false));
+  Spp_->ExtractDiagonalCopy(Spp_diag);
+  double minval;
+  double maxval;
+  Spp_diag.MinValue(&minval);
+  Spp_diag.MaxValue(&maxval);
+  ASSERT(std::abs(minval) < 1.e40);
+  ASSERT(std::abs(maxval) < 1.e40);
+#endif
 }
 
+
+void
+MatrixMFD_TPFA::ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
+				       const std::vector<double>& bc_values) {
+  AssertAssembledOperator_or_die_();
+  assembled_schur_ = true;
+  Sff_ = Spp_;
+}
 
 
 /* ******************************************************************
@@ -297,9 +324,10 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
  ****************************************************************** */
 int MatrixMFD_TPFA::Apply(const CompositeVector& X,
 			   CompositeVector& Y) const {
+  AssertAssembledOperator_or_die_();
 
-  int ierr = (*Spp_).Multiply(false, *X.ViewComponent("cell",false),
-          *Y.ViewComponent("cell",false));
+  int ierr = Spp_->Multiply(false, *X.ViewComponent("cell",false),
+                            *Y.ViewComponent("cell",false));
 
   if (Y.HasComponent("face")) {
     Epetra_MultiVector& Yf = *Y.ViewComponent("face",false);
@@ -314,10 +342,26 @@ int MatrixMFD_TPFA::Apply(const CompositeVector& X,
   return ierr;
 }
 
+// Apply, for the cell-only system
+int MatrixMFD_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+  AssertAssembledOperator_or_die_();
+
+  int ierr = Spp_->Multiply(false, X, Y);
+  if (ierr) {
+    Errors::Message msg("MatrixMFD_TPFA::Apply has failed to calculate y = A*x.");
+    Exceptions::amanzi_throw(msg);
+  }
+  return ierr;
+}
+
+
 
 
 int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
 				 CompositeVector& Y) const {
+  AssertAssembledOperator_or_die_();
+  AssertAssembledSchur_or_die_();
+
   // Solve the Schur complement system Spp * Yc = Xc.
   int ierr = 0;
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell",false);
@@ -354,6 +398,7 @@ int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
 
 void MatrixMFD_TPFA::UpdateConsistentFaceConstraints(
     const Teuchos::Ptr<CompositeVector>& u) {
+  AssertAssembledOperator_or_die_();
 
   Teuchos::RCP<const Epetra_MultiVector> uc = u->ViewComponent("cell", false);
   Epetra_MultiVector& uf = *u->ViewComponent("face", false);
@@ -373,6 +418,7 @@ void MatrixMFD_TPFA::UpdateConsistentFaceConstraints(
 
 void MatrixMFD_TPFA::UpdateConsistentFaceCorrection(const CompositeVector& u,
     const Teuchos::Ptr<CompositeVector>& Pu) {
+  AssertAssembledOperator_or_die_();
 
   Teuchos::RCP<const Epetra_MultiVector> Pu_c = Pu->ViewComponent("cell", false);
   Epetra_MultiVector& Pu_f = *Pu->ViewComponent("face", false);
@@ -393,12 +439,14 @@ void MatrixMFD_TPFA::UpdateConsistentFaceCorrection(const CompositeVector& u,
 // MANY ASSUMPTIONS!  THIS IS NOT GENERAL!
 // -- K_abs = 1
 // -- upwinding is potential difference, with height overlap
-void MatrixMFD_TPFA::AnalyticJacobian(const CompositeVector& height,
-        const CompositeVector& potential,
-        const CompositeVector& Krel,
-        const CompositeVector& dKrel_dp,
-        const CompositeVector& Krel_cell,
-        const CompositeVector& dKrel_cell_dp) {
+void MatrixMFD_TPFA::AnalyticJacobian(const Upwinding& upwinding,
+				      const Teuchos::Ptr<State>& S,
+				      std::string potential_key,
+				      const CompositeVector& dconductivity,
+				      const std::vector<MatrixBC>& bc_markers,
+				      const std::vector<double>& bc_values) {
+
+  AssertAssembledOperator_or_die_();
 
   // maps and counts
   AmanziMesh::Entity_ID_List faces;
@@ -409,160 +457,29 @@ void MatrixMFD_TPFA::AnalyticJacobian(const CompositeVector& height,
 
   // local work arrays
   AmanziMesh::Entity_ID_List cells;
-  int cells_LID[2], cells_GID[2];
-  double perm_abs_vert[2];
-  double perm_abs_horz[2];
-  double k_rel[2];
-  double dkrel_dp[2];
-  double k_rel_cell[2];
-  double dkrel_cell_dp[2];
-  double height_l[2];
-  double potential_l[2];
-  AmanziGeometry::Point cntr_cell[2];
-  double dist = 0;
+  int cells_GID[2];
+  int ierr = 0;
 
-  // local pointers
-  height.ScatterMasterToGhosted();
-  potential.ScatterMasterToGhosted();
-  Krel.ScatterMasterToGhosted();
-  dKrel_dp.ScatterMasterToGhosted();
-  Krel_cell.ScatterMasterToGhosted();
-  dKrel_cell_dp.ScatterMasterToGhosted();
-  const Epetra_MultiVector& height_c = *height.ViewComponent("cell",true);
-  const Epetra_MultiVector& potential_c = *potential.ViewComponent("cell",true);
-  const Epetra_MultiVector& Krel_c = *Krel.ViewComponent("cell",true);
-  const Epetra_MultiVector& dKrel_dp_c = *dKrel_dp.ViewComponent("cell",true);
-  const Epetra_MultiVector& Krel_cell_c = *Krel_cell.ViewComponent("cell",true);
-  const Epetra_MultiVector& dKrel_cell_dp_c = *dKrel_cell_dp.ViewComponent("cell",true);
+  // Get the derivatives
+  std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > > Jpp_faces;
+  upwinding.UpdateDerivatives(S, potential_key, dconductivity, bc_markers, bc_values, &Jpp_faces);
+  ASSERT(Jpp_faces.size() == nfaces_owned);
 
-  for (int f=0; f!=nfaces_owned; ++f){
+  // Assemble into Spp
+  for (unsigned int f=0; f!=nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+
     int mcells = cells.size();
-    Teuchos::SerialDenseMatrix<int, double> Jpp(mcells, mcells);
-    AmanziGeometry::Point face_cntr = mesh_->face_centroid(f);
-
     for (int n=0; n!=mcells; ++n) {
-      cells_LID[n] = cells[n];
-      cells_GID[n] = cmap_wghost.GID(cells_LID[n]);
-
-      height_l[n] = height_c[0][cells_LID[n]];
-      potential_l[n] = potential_c[0][cells_LID[n]];
-      k_rel[n] = Krel_c[0][cells_LID[n]];
-      dkrel_dp[n] = dKrel_dp_c[0][cells_LID[n]];
-      k_rel_cell[n] = Krel_cell_c[0][cells_LID[n]];
-      dkrel_cell_dp[n] = dKrel_cell_dp_c[0][cells_LID[n]];
-      cntr_cell[n] = mesh_->cell_centroid(cells_LID[n]);
+      cells_GID[n] = cmap_wghost.GID(cells[n]);
     }
-
-    if (mcells == 2) {
-      dist = norm(cntr_cell[0] - cntr_cell[1]);
-    } else if (mcells == 1) {
-      dist = norm(cntr_cell[0] - face_cntr);
-      height_l[1] = height("face",f);
-      potential_l[1] = potential("face",f);
-      k_rel[1] = Krel_cell("face",f);
-      dkrel_dp[1] = 0.;
-      k_rel_cell[1] = 0.;
-      dkrel_cell_dp[1] = 0.;
-
-    } else {
-      ASSERT(0);
-    }
-
-    AmanziGeometry::Point normal = mesh_->face_normal(f, false, cells_LID[0]);
-    normal *= 1./ mesh_->face_area(f);
-
-    ComputeJacobianLocal(mcells, f, dist, height_l, potential_l,
-                         k_rel, dkrel_dp, k_rel_cell, dkrel_cell_dp, Jpp);
-
-    (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp.values());
+    ierr = (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp_faces[f]->values());
+    ASSERT(!ierr);
   }
 
-  Spp_->GlobalAssemble();
-}
-
-
-/* ******************************************************************
-* Computation of a local submatrix of 
-* Analytical Jacobian (nonlinear part) on a particular face.
-// MANY ASSUMPTIONS!  THIS IS NOT GENERAL!
-// -- K_abs = 1
-// -- upwinding is potential difference, with height overlap
-****************************************************************** */
-void MatrixMFD_TPFA::ComputeJacobianLocal(int mcells,
-        int face_id,
-        double dist,
-        double *height,
-        double *potential,
-        double *k_rel,
-        double *dk_rel_dp,
-        double *k_rel_cell,
-        double *dk_rel_cell_dp,
-        Teuchos::SerialDenseMatrix<int, double>& Jpp) {
-
-  // Determine Kface (via upwinding) and dKface_dp for each cell.
-  double dKface_dp[2];
-  double Kface;
-  if (mcells == 1) {
-    if (potential[0] >= potential[1]) {
-      Kface = k_rel[0];
-      dKface_dp[0] = dk_rel_dp[0];
-    } else {
-      Kface = k_rel[1];
-      dKface_dp[0] = 0.;
-    }
-  } else {
-    // determine the overlap tolerance
-    double ol0 = std::max(0., height[0]);
-    double ol1 = std::max(0., height[1]);
-    double flow_eps = 0.;
-    if ((ol0 > 0) || (ol1 > 0)) {
-      flow_eps = (ol0 * ol1) / (ol0 + ol1);
-    }
-    flow_eps = std::max(flow_eps, 1.e-16);
-
-    // upwind
-    if (potential[0] - potential[1] > flow_eps) {
-      // 0 is up
-      Kface = k_rel[0];
-      dKface_dp[0] = dk_rel_dp[0];
-      dKface_dp[1] = 0.;
-    } else if (potential[1] - potential[0] > flow_eps) {
-      // 1 is up
-      Kface = k_rel[1];
-      dKface_dp[0] = 0.;
-      dKface_dp[1] = dk_rel_dp[1];
-    } else {
-      // Parameterization of a linear scaling between 0 and 1
-      double param;
-      if (flow_eps < 2*1.e-16) {
-        param = 0.5;
-      } else {
-        param = (potential[1] - potential[0]) / (2*flow_eps) + 0.5;
-      }
-      ASSERT(param >= 0.0);
-      ASSERT(param <= 1.0);
-
-      Kface = param * k_rel[1] + (1.-param) * k_rel[0];
-      dKface_dp[0] = (1-param) * dk_rel_dp[0];
-      dKface_dp[1] = param * dk_rel_dp[1];
-    }
-  }
-
-  // Calculate J
-  double dphi = (potential[0] - potential[1]) / dist;
-  if (mcells == 1) {
-    Jpp(0,0) = dphi * (Kface * dk_rel_cell_dp[0] + dKface_dp[0] * k_rel_cell[0])
-        * mesh_->face_area(face_id);
-  } else {
-    Jpp(0, 0) = dphi * (Kface * dk_rel_cell_dp[0] + dKface_dp[0] * k_rel_cell[0])
-        * mesh_->face_area(face_id);
-    Jpp(0, 1) = dphi * (Kface * dk_rel_cell_dp[1] + dKface_dp[1] * k_rel_cell[1])
-        * mesh_->face_area(face_id);
-
-    Jpp(1, 0) = -Jpp(0, 0);
-    Jpp(1, 1) = -Jpp(0, 1);
-  }
+  // finish assembly
+  ierr = Spp_->GlobalAssemble();
+  ASSERT(!ierr);
 }
 
 }  // namespace AmanziFlow

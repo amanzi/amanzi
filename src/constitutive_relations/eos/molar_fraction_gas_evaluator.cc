@@ -23,13 +23,8 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
       plist_.sublist("vapor pressure model parameters"));
 
   // process the list for my provided field.
-  if (plist_.isParameter("molar fraction key")) {
+  if (my_key_ == "")
     my_key_ = plist_.get<string>("molar fraction key");
-  } else {
-    std::string name = plist_.name();
-    std::size_t start = name.find_last_of(">");
-    my_key_ = name.substr(start+1);
-  }
 
   // set up dependencies
   std::size_t end = my_key_.find_first_of("_");

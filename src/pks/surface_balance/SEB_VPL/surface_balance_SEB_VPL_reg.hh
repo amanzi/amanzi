@@ -14,11 +14,11 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-RegisteredPKFactory<SurfaceBalanceSEB>
-SurfaceBalanceSEB::reg_("surface balance SEB VPL");
+RegisteredPKFactory<SurfaceBalanceSEBVPL>
+SurfaceBalanceSEBVPL::reg_("surface balance SEB VPL");
 
-Utils::RegisteredFactory<FieldEvaluator,SurfaceBalanceEvaluator>
-SurfaceBalanceEvaluator::reg_("surface balance SEB VPL");
+Utils::RegisteredFactory<FieldEvaluator,SurfaceBalanceEvaluatorVPL>
+SurfaceBalanceEvaluatorVPL::reg_("surface balance SEB VPL");
 
 } // namespace
 } // namespace

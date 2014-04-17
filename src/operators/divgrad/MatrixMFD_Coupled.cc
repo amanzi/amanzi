@@ -78,6 +78,9 @@ void MatrixMFD_Coupled::InitializeFromPList_() {
 
   // verbose object
   vo_ = Teuchos::rcp(new VerboseObject("MatrixMFD", plist_));
+
+  // dump
+  dump_schur_ = plist_.get<bool>("dump Schur complement", false);
 }
 
 
@@ -287,15 +290,32 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
     }
     A2c2c_cells_Inv_[c] = cell_inv;
 
+    /*
+    if (c == 131) {
+      std::cout << "MatrixMFD_Coupled c(131), f(595) terms:\n"
+		<< "   scaling=" << scaling_ << "\n"
+		<< "  Acc(131,131) = " << Acc[c] << "\n"
+		<< "  Bcc(131,131) = " << Bcc[c] << "\n"
+		<< "  Ccc(131,131) = " << (*Ccc_)[0][c] * scaling_ << "\n"
+		<< "  Dcc(131,131) = " << (*Dcc_)[0][c] * scaling_ << "\n"
+		<< "     (det = " << det_cell << ")\n"
+		<< "  ------" << std::endl;
+    }
+    */
+
+
     // Make the cell-local Schur complement
     for (int i=0; i!=nfaces; ++i) {
       for (int j=0; j!=nfaces; ++j) {
         S2f2f(i, j) = Aff[c](i, j) - Afc[c](i)*cell_inv(0, 0)*Acf[c](j);
         if ((i == j) && std::abs(S2f2f(i,j)) < 1.e-40) {
-          std::cout << "MatrixMFD_Coupled: Schur complement pressure diagonal is zero" << std::endl;
+	  std::cout << "MatrixMFD_Coupled: Schur complement pressure diagonal is zero" << std::endl;
           //          ASSERT(0);
           //          Exceptions::amanzi_throw(Errors::CutTimeStep());
         }
+
+	//	if (c == 131 && faces_GID[i] == 595 && i == j)
+	  //	  std::cout << "  ( Aff[595]= " << Aff[c](i,j) << " ) - ( Afc*c_inv*Acf = " << Afc[c](i)*cell_inv(0, 0)*Acf[c](j) << ")" << std::endl;
 
       }
     }
@@ -308,6 +328,9 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
           //          ASSERT(0);
           //          Exceptions::amanzi_throw(Errors::CutTimeStep());
         }
+	//	if (c == 131 && faces_GID[i] == 595 && i == j)
+	//	  std::cout << "  ( Bff[595]= " << Bff[c](i,j) << " ) - ( Bfc*c_inv*Bcf = " << Bfc[c](i)*cell_inv(1, 1)*Bcf[c](j) << ")" << std::endl;
+
       }
     }
 
@@ -317,12 +340,20 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
         if (std::abs(S2f2f(i,nfaces+j)) > 1.e+21) {
           std::cout << "BREAKING!" << std::endl;
         }
+
+	//	if (c == 131 && faces_GID[i] == 595 && i == j)
+	//	  std::cout << "   - ( Afc*c_inv*Bcf = " << Afc[c](i)*cell_inv(0, 1)*Bcf[c](j) << std::endl;
+
       }
     }
 
     for (int i=0; i!=nfaces; ++i) {
       for (int j=0; j!=nfaces; ++j) {
         S2f2f(nfaces + i, j) = - Bfc[c](i)*cell_inv(1, 0)*Acf[c](j);
+
+	//	if (c == 131 && faces_GID[i] == 595 && i == j)
+	//	  std::cout << "   - ( Bfc*c_inv*Acf = " << Bfc[c](i)*cell_inv(1,0)*Acf[c](j) << "\n  -------" << std::endl;
+
       }
     }
 
@@ -349,6 +380,16 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
         values(0,1) = S2f2f(i,j + nfaces);
         values(1,0) = S2f2f(i + nfaces,j);
         values(1,1) = S2f2f(i+ nfaces,j+ nfaces);
+
+	/*
+	if (c == 131 && faces_GID[i] == 595 && i == j) {
+	  std::cout << "total values =" << "\n"
+		    << "      Sff_pp[65,65] = " << values(0,0) << "\n"
+		    << "      Sff_TT[65,65] = " << values(1,1) << "\n"
+		    << "      Sff_pT[65,65] = " << values(0,1) << "\n"
+		    << "      Sff_Tp[65,65] = " << values(1,0) << "\n  ------" << std::endl;
+	}
+	*/
 
         //ierr = P2f2f_->SubmitBlockEntry(values);  // Bug in Trilinos 10.10 FeVbrMatrix
         ierr = P2f2f_->SubmitBlockEntry(values.A(), values.LDA(),
@@ -404,9 +445,9 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
   is_matrix_constructed_ = true;
 
   // DEBUG dump
-  if (dump) {
+  if (dump || dump_schur_) {
     std::stringstream filename_s;
-    filename_s << "schur_" << 0 << ".txt";
+    filename_s << "schur_MatrixMFD_Coupled_" << 0 << ".txt";
     EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
   }
 

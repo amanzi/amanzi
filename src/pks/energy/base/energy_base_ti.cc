@@ -201,18 +201,19 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
   // Assemble
-  if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
+  if (assemble_preconditioner_) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "  assembling..." << std::endl;
-    mfd_preconditioner_->AssembleGlobalMatrices();
-  } else if (assemble_preconditioner_) {
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "  assembling..." << std::endl;
+      *vo_->os() << "  assembling forward PC operator..." << std::endl;
     // -- assemble
     mfd_preconditioner_->AssembleGlobalMatrices();
-    // -- form and prep the Schur complement for inversion
-    mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    mfd_preconditioner_->UpdatePreconditioner();
+
+    if (precon_used_) {
+      // -- form and prep the Schur complement for inversion
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "  assembling Schur complement..." << std::endl;
+      mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+      mfd_preconditioner_->UpdatePreconditioner();
+    }
   }
 };
 

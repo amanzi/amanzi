@@ -48,9 +48,6 @@ class SurfaceBalanceSEB : public PKPhysicalBase {
                     Teuchos::ParameterList& FElist,
                     const Teuchos::RCP<TreeVector>& solution);
 
-  // Virtual destructor
-  virtual ~SurfaceBalanceSEB() {}
-
   // SurfaceBalanceSEB is a PK
   // -- Setup data
   virtual void setup(const Teuchos::Ptr<State>& S);
