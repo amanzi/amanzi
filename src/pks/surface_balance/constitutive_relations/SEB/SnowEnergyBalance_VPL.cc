@@ -20,20 +20,18 @@
 #include <iostream>
 #include <cmath>
 
-#include "SnowEnergyBalance.hh"
+#include "SnowEnergyBalance_VPL.hh"
 
 #ifdef ENABLE_DBC
 #include "dbc.hh"
 #endif
 
-void SurfaceEnergyBalance::UpdateIncomingRadiation(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::UpdateIncomingRadiation(LocalData& seb) {
   // Calculate incoming short-wave radiation
   seb.st_energy.fQswIn = (1 - seb.st_energy.albedo_value) * seb.st_energy.QswIn;
 
   // Calculate incoming long-wave radiation
-       // EmissivityAir Needs to be corrected to ... = std::pow((10*seb.vp_air.actual_vaporpressure) ....
-       // When Vapor pressure units are corrected !!!!!
-    double EmissivityAir = std::pow((100*seb.vp_air.actual_vaporpressure),(seb.st_energy.temp_air/2016));
+    double EmissivityAir = std::pow((10*seb.vp_air.actual_vaporpressure),(seb.st_energy.temp_air/2016));
     EmissivityAir = (1 - std::exp(-EmissivityAir));
     EmissivityAir = 1.08 * EmissivityAir;
   seb.st_energy.fQlwIn = EmissivityAir * seb.st_energy.stephB * std::pow(seb.st_energy.temp_air,4);
@@ -48,7 +46,7 @@ void SurfaceEnergyBalance::UpdateIncomingRadiation(LocalData& seb) {
 }
 }
 
-void SurfaceEnergyBalance::UpdateIncomingRadiationDerivatives(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::UpdateIncomingRadiationDerivatives(LocalData& seb) {
   // Calculate incoming short-wave radiation
   seb.st_energy.fQswIn = 0.;
 
@@ -66,7 +64,7 @@ void SurfaceEnergyBalance::UpdateIncomingRadiationDerivatives(LocalData& seb) {
 }
 
 
-void SurfaceEnergyBalance::UpdateEFluxesSnow(LocalData& seb, double T) {
+void SurfaceEnergyBalance_VPL::UpdateEFluxesSnow(LocalData& seb, double T) {
   double Sqig;
   if (seb.st_energy.Us == 0.) {
     Sqig = 0.;
@@ -97,7 +95,7 @@ void SurfaceEnergyBalance::UpdateEFluxesSnow(LocalData& seb, double T) {
 
 
 // Determine energy available for melting.
-double SurfaceEnergyBalance::CalcMeltEnergy(LocalData& seb) {
+double SurfaceEnergyBalance_VPL::CalcMeltEnergy(LocalData& seb) {
   // Melt energy is the balance
   return seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut
       + seb.st_energy.fQh + seb.st_energy.fQe - seb.st_energy.fQc;
@@ -105,9 +103,12 @@ double SurfaceEnergyBalance::CalcMeltEnergy(LocalData& seb) {
 
 
 // Energy balance for no-snow case.
-void SurfaceEnergyBalance::UpdateGroundEnergy(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::UpdateGroundEnergy(LocalData& seb) {
   seb.st_energy.fQlwOut = -seb.st_energy.SEtun * seb.st_energy.stephB * std::pow(seb.st_energy.temp_ground,4);
-
+  double porosity=1;
+  double porrowaLe;
+  double Pc=0.0;
+  double Pvl = 0.0;
   double Sqig;
   if (seb.st_energy.Us == 0.) {
     Sqig = 0.;
@@ -121,40 +122,222 @@ void SurfaceEnergyBalance::UpdateGroundEnergy(LocalData& seb) {
     }
   }
 
+// }else{
+  Pc = 101325 - seb.st_energy.surface_pressure;
+  std::cout<<"Surface Pressure: "<<seb.st_energy.surface_pressure<<"  Capillary Pressure: "<<Pc<<std::endl;
+  std::cout<<"Surface Cell Saturation Liquid: "<< seb.st_energy.saturation_liquid <<std::endl; 
+   
+    
+    
+// }
+
   seb.st_energy.fQh = seb.st_energy.rowaCp * seb.st_energy.Dhe * Sqig * (seb.st_energy.temp_air - seb.st_energy.temp_ground);
-  //  seb.st_energy.fQh = 0.;
-  //  std::cout << "fQh: Dhe = " << seb.st_energy.Dhe << ", zeta = " << Sqig << ", Ta = " << seb.st_energy.temp_air << ", Tg = " << seb.st_energy.temp_ground <<", ALBEDO = " << seb.st_energy.albedo_value << std::endl;
+  std::cout << "fQh: Dhe = " << seb.st_energy.Dhe << ", zeta = " << Sqig << ", Ta = " << seb.st_energy.temp_air << ", Tg = " << seb.st_energy.temp_ground <<", ALBEDO = " << seb.st_energy.albedo_value <<"  rowaLe: "<<seb.st_energy.rowaLe<< std::endl;
+
+  double Rair = 1/seb.st_energy.Dhe;
+  std::cout << "Rair: "<<Rair<<std::endl;
 
   if (seb.st_energy.water_depth > 0.0) {
     // Checking for standing water
     UpdateVaporPressure(seb.vp_ground);
-    seb.st_energy.fQe = seb.st_energy.rowaLe * seb.st_energy.Dhe * Sqig * 0.622
-        * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
-  } else {
-    // no standing water
-   UpdateVaporPressure(seb.vp_ground);
-  //  seb.st_energy.fQe = seb.st_energy.porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
-  //      * (seb.vp_air.actual_vaporpressure-seb.vp_ground.actual_vaporpressure) / seb.st_energy.Apa;
-    seb.st_energy.fQe = seb.st_energy.porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
-        * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
-  }
+    std::cout<<"Ponded Water, Depth = "<<seb.st_energy.water_depth<<std::endl;     
+    // Porosity Smoothing function
+    if (seb.st_energy.water_depth < 0.02) {
+       double PorosityFactor = seb.st_energy.water_depth/0.02;
+       porrowaLe = ((seb.st_energy.surface_porosity * (1-PorosityFactor)) + (1*PorosityFactor)) *  seb.st_energy.rowaLe;
+       porosity = ((seb.st_energy.surface_porosity * (1-PorosityFactor)) + (1*PorosityFactor));
+    } else {// No porosity 
+    porrowaLe = seb.st_energy.rowaLe;
+    } 
 
-  // Heat flux to ground surface is the balance.
+    if (seb.st_energy.water_depth < 0.01) { // smoothing ponded water transition 
+    // Average ponded water Latent heat [ Qe ] 
+    double Ponded_Qe;
+    double Dry_Qe;
+    double Qe_Factor = seb.st_energy.water_depth/0.01;
+  
+    Ponded_Qe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+       * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
+    
+    //Calculate vapor pressure lowering for Dry_Qe
+    //Pc = 101325 - seb.st_energy.stored_surface_pressure;
+    std::cout<<"Stored Surface Pressure: "<<seb.st_energy.stored_surface_pressure<<"  Capillary Pressure: "<<Pc<<std::endl;
+    Pvl = seb.vp_ground.saturated_vaporpressure*std::exp(-Pc/(seb.st_energy.density_w*461.52*seb.st_energy.temp_ground));
+    std::cout<<"Bare Ground, Ground Sat. VP: "<<seb.vp_ground.saturated_vaporpressure<<"  Air VP: "<<seb.vp_air.actual_vaporpressure<<std::endl;
+    std::cout<<"Ground VP Lowered: "<<Pvl<<std::endl;
+    std::cout<<"Surface Porostiy: "<<porosity<<std::endl;
+    // freeze smoothing for Latent heat
+    if (seb.st_energy.temp_ground<275){
+        if(seb.st_energy.temp_ground>273.0){
+          double QLsmooth = -(273.0 - seb.st_energy.temp_ground);
+          QLsmooth = QLsmooth/2;
+
+          Dry_Qe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+            * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
+          std::cout<<"Cool Ground Smoothing Function  -->  BUT NOT SMOOTHING"<<std::endl;
+          std::cout<<"Origonal Qe: "<<Dry_Qe<<std::endl;
+
+          double QLraw = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+            * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
+        //  Dry_Qe = QLsmooth * QLraw;
+          std::cout<<"New --> Qe: "<<Dry_Qe<<std::endl;
+
+          // Vapor Pressure Lowering
+          QLraw = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+            * (seb.vp_air.actual_vaporpressure-Pvl) / seb.st_energy.Apa;
+          //Dry_Qe = QLsmooth * QLraw;
+          Dry_Qe = QLraw;
+          std::cout<<"VP Low --> Qe: "<<Dry_Qe<<std::endl;
+       }else{ // Too cold for evaporation!
+     //    Dry_Qe=0;
+     //    std::cout<<"Too cold for evaporation!  --> BUT STILL EVAPORATING"<<std::endl;
+            Dry_Qe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+            * (seb.vp_air.actual_vaporpressure-Pvl) / seb.st_energy.Apa;
+       }
+    }else{
+         Dry_Qe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+          * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
+         std::cout<<"Warm enough for full evaporation Qe = "<<Dry_Qe<<std::endl;
+
+        //VP Lowering
+         Dry_Qe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+          * (seb.vp_air.actual_vaporpressure-Pvl) / seb.st_energy.Apa;
+         std::cout<<"Vapor Pressure Lowering Qe = "<<Dry_Qe<<std::endl;
+    }
+    
+    std::cout<<"Dry Qe: "<<Dry_Qe<<"  Ponded Qe: "<<Ponded_Qe<<"  Qe Factor: "<<Qe_Factor<<std::endl;
+    double GroundFlux = 0.0;
+    GroundFlux = seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut
+      + seb.st_energy.fQh + Dry_Qe;
+    std::cout<<"Dry groundFlux: "<<GroundFlux;
+    GroundFlux = seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut
+      + seb.st_energy.fQh + Ponded_Qe;
+    std::cout<<"  Ponded groundFlux: "<<GroundFlux<<std::endl;
+    Dry_Qe = (1.-Qe_Factor) * Dry_Qe;
+     Ponded_Qe =  Ponded_Qe * Qe_Factor;
+    seb.st_energy.fQe = Ponded_Qe + Dry_Qe;
+    
+    // Assinging Vapor Mass Flux While subtracting the mass of water added to melt/precipitation in ponded condition 
+    // ****** IS THIS APPROPRATE IN THE BARE GROUND TO PONDED TRANSITIOINS ?????  ****
+    seb.st_energy.SurfaceVaporFlux = seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); // [m/s]     
+    seb.st_energy.Mr -= seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); //Accounting for later addition of water to surface source 
+
+    }else{
+
+     seb.st_energy.fQe =  porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+       * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
+    }    
+
+   std::cout<<"Surface Porostiy: "<<porosity<<std::endl;
+  } else { // no standing water
+   UpdateVaporPressure(seb.vp_ground);
+   porosity = seb.st_energy.surface_porosity;
+   porrowaLe = porosity * seb.st_energy.rowaLe;
+   Pvl = seb.vp_ground.saturated_vaporpressure*std::exp(-Pc/(seb.st_energy.density_w*461.52*seb.st_energy.temp_ground));
+   std::cout<<"Bare Ground, Ground Sat. VP: "<<seb.vp_ground.saturated_vaporpressure<<"  Air VP: "<<seb.vp_air.actual_vaporpressure<<std::endl;
+   std::cout<<"Ground VP Lowered: "<<Pvl<<std::endl;
+   std::cout<<"Surface Porostiy: "<<porosity<<std::endl;
+   double Vaper_direction = seb.vp_air.actual_vaporpressure-Pvl;  //
+   std::cout<<"Vapor Direction: "<<Vaper_direction<<std::endl;
+   // Equation for reduced vapor diffusivity See Sakagucki and Zeng 2009 eqaution (9) and Moldrup et al., 2004. 
+   double Clab_Horn_b = 1;
+   double Surface_Vap_Diffusion = std::pow((1-(0.0556/porosity)),(2+3*Clab_Horn_b));
+   Surface_Vap_Diffusion = 0.000022 * (std::pow(porosity,2)) * Surface_Vap_Diffusion;
+   // Sakagucki and Zeng 2009 eqaution (10)
+   double cell_dimension = 0.01/2; // This is from cell center to the boundary.
+   double VWC = seb.st_energy.saturation_liquid * porosity;
+   double L_Rsoil = std::exp(std::pow((1-(VWC/porosity)),5));
+   L_Rsoil = cell_dimension * (L_Rsoil -1) * (1/(2.718-1));
+   double Rsoil = L_Rsoil/Surface_Vap_Diffusion;
+   if(Vaper_direction <= 0){
+    std::cout<<"Surface_Vap_Diffusion: "<< Surface_Vap_Diffusion <<"  L_Rsoil:  "<<L_Rsoil<<"  Rsoil: "<<Rsoil<<"   VWC: "<<VWC<<std::endl;
+    }else{
+    Rsoil = 0.0;
+    std::cout<<"Surface_Vap_Diffusion: "<< Surface_Vap_Diffusion <<"  L_Rsoil:  "<<L_Rsoil<<"  Rsoil: "<<Rsoil<<"   VWC: "<<VWC<<std::endl;
+    }
+   // freeze smoothing for Latent heat
+     if (seb.st_energy.temp_ground<275){
+        if(seb.st_energy.temp_ground>273.0){
+          double QLsmooth = -(273.0 - seb.st_energy.temp_ground); 
+          QLsmooth = QLsmooth/2;         
+ 
+          seb.st_energy.fQe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+            * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
+          std::cout<<"Cool Ground Smoothing Function --> BUT NOT SMOOTHING"<<std::endl; 
+          std::cout<<"Origonal Qe: "<<seb.st_energy.fQe<<std::endl;
+
+          double QLraw = porrowaLe * (1/(Rair+Rsoil)) * Sqig * 0.622
+            * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
+          //seb.st_energy.fQe = QLsmooth * QLraw;
+          seb.st_energy.fQe = QLraw;
+          std::cout<<"New --> Qe: "<<seb.st_energy.fQe<<std::endl;
+
+          // Vapor Pressure Lowering
+          QLraw = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+            * (seb.vp_air.actual_vaporpressure-Pvl) / seb.st_energy.Apa;
+          //seb.st_energy.fQe = QLsmooth * QLraw;
+          seb.st_energy.fQe = QLraw;
+          std::cout<<"VP Low --> Qe: "<<seb.st_energy.fQe<<std::endl;
+
+          QLraw = porrowaLe * (1/(Rair+Rsoil)) * Sqig * 0.622
+            * (seb.vp_air.actual_vaporpressure-Pvl) / seb.st_energy.Apa;
+          //seb.st_energy.fQe = QLsmooth * QLraw;
+          seb.st_energy.fQe = QLraw;
+          std::cout<<"VP Low --> Qe (SOIL RESISTANCE): "<<seb.st_energy.fQe<<std::endl;
+
+          // Assinging Vapor Mass Flux While subtracting the mass of water added to melt/precipitation in ponded condition
+          seb.st_energy.SurfaceVaporFlux = seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); // [m/s]     
+          seb.st_energy.Mr -= seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); //Accounting for later addition of water to surface source
+
+        }else{ // Too cold for evaporation!
+         // seb.st_energy.fQe=0;
+          std::cout<<"Too cold for evaporation! --> BUT STILL EVAPORATING"<<std::endl;
+         seb.st_energy.fQe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+            * (seb.vp_air.actual_vaporpressure-Pvl) / seb.st_energy.Apa;
+          std::cout<<"VP Low --> Qe: "<<seb.st_energy.fQe<<std::endl;
+         seb.st_energy.fQe = porrowaLe * (1/(Rair+Rsoil)) * Sqig * 0.622
+            * (seb.vp_air.actual_vaporpressure-Pvl) / seb.st_energy.Apa;
+          std::cout<<"VP Low --> Qe: "<<seb.st_energy.fQe <<std::endl;
+                  // Assinging Vapor Mass Flux While subtracting the mass of water added to melt/precipitation in ponded condition
+          seb.st_energy.SurfaceVaporFlux = seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); // [m/s]     
+          seb.st_energy.Mr -= seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); //Accounting for later addition of water to surface source
+        }
+     }else{
+      seb.st_energy.fQe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+        * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
+      std::cout<<"Warm enough for full evaporation Qe = "<<seb.st_energy.fQe<<std::endl;
+
+     seb.st_energy.fQe = porrowaLe * (1/(Rair+Rsoil))  * Sqig * 0.622
+        * (seb.vp_air.actual_vaporpressure-seb.vp_ground.saturated_vaporpressure) / seb.st_energy.Apa;
+
+       std::cout<<"Warm enough for full evaporation Qe (SOIL RESISTANCE) = "<<seb.st_energy.fQe<<std::endl;
+   
+     //VP Lowering
+     seb.st_energy.fQe = porrowaLe * seb.st_energy.Dhe * Sqig * 0.622
+        * (seb.vp_air.actual_vaporpressure-Pvl) / seb.st_energy.Apa;
+     std::cout<<"Vapor Pressure Lowering Qe = "<<seb.st_energy.fQe<<std::endl;
+
+     seb.st_energy.fQe = porrowaLe * (1/(Rair+Rsoil))  * Sqig * 0.622
+        * (seb.vp_air.actual_vaporpressure-Pvl) / seb.st_energy.Apa;
+     std::cout<<"Vapor Pressure Lowering Qe (SOIL RESISTANCE) = "<<seb.st_energy.fQe<<std::endl;
+
+
+     // Assinging Vapor Mass Flux While subtracting the mass of water added to melt/precipitation in ponded condition
+     seb.st_energy.SurfaceVaporFlux = seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); // [m/s] 
+     seb.st_energy.Mr -= seb.st_energy.fQe / (seb.st_energy.density_w*seb.st_energy.Le); //Accounting for later addition of water to surface source 
+     }
+  }
+// Heat flux to ground surface is the balance.
   seb.st_energy.fQc = seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut
       + seb.st_energy.fQh + seb.st_energy.fQe;
+//}else{ // implicit loop
+//}
 
-    // std::cout << "Energy summary:" << std::endl
-    //         << "  fQswIn  = " << seb.st_energy.fQswIn << std::endl
-    //         << "  fQlwIn  = " << seb.st_energy.fQlwIn << std::endl
-    //         << "  fQlwOut = " << seb.st_energy.fQlwOut << std::endl
-    //         << "  fQh (s) = " << seb.st_energy.fQh << std::endl
-    //         << "  fQe (l) = " << seb.st_energy.fQe << std::endl
-    //         << "  fQc (c) = " << seb.st_energy.fQc << std::endl;
 }
 
 
 // Energy balance for no-snow case.
-void SurfaceEnergyBalance::UpdateGroundEnergyDerivatives(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::UpdateGroundEnergyDerivatives(LocalData& seb) {
   seb.st_energy.fQlwOut = -4 * seb.st_energy.SEtun * seb.st_energy.stephB * std::pow(seb.st_energy.temp_ground,3);
 
   double Sqig, dSqig;
@@ -191,23 +374,23 @@ void SurfaceEnergyBalance::UpdateGroundEnergyDerivatives(LocalData& seb) {
   seb.st_energy.fQc = seb.st_energy.fQswIn + seb.st_energy.fQlwIn + seb.st_energy.fQlwOut
       + seb.st_energy.fQh + seb.st_energy.fQe;
 
-  // std::cout << "Energy summary:" << std::endl
-  //           << "  dfQswIn  = " << seb.st_energy.fQswIn << std::endl
-  //           << "  dfQlwIn  = " << seb.st_energy.fQlwIn << std::endl
-  //           << "  dfQlwOut = " << seb.st_energy.fQlwOut << std::endl
-  //           << "  dfQh (s) = " << seb.st_energy.fQh << std::endl
-  //           << "  dfQe (l) = " << seb.st_energy.fQe << std::endl
-  //           << "  dfQc (c) = " << seb.st_energy.fQc << std::endl;
+  std::cout << "Energy summary:" << std::endl
+            << "  dfQswIn  = " << seb.st_energy.fQswIn << std::endl
+            << "  dfQlwIn  = " << seb.st_energy.fQlwIn << std::endl
+            << "  dfQlwOut = " << seb.st_energy.fQlwOut << std::endl
+            << "  dfQh (s) = " << seb.st_energy.fQh << std::endl
+            << "  dfQe (l) = " << seb.st_energy.fQe << std::endl
+            << "  dfQc (c) = " << seb.st_energy.fQc << std::endl;
 }
 
 
 // Calculate saturated and actual vapor pressures
-void SurfaceEnergyBalance::UpdateVaporPressure(VaporPressure& vp) {
+void SurfaceEnergyBalance_VPL::UpdateVaporPressure(VaporPressure& vp) {
   double temp;
   //Convert from Kelvin to Celsius
   temp = vp.temp-273.15;
   // Sat vap. press o/water Dingman D-7 (Bolton, 1980)
-// *** (Bolton, 1980) Calculates vapor pressure in millibars or hPa  ****
+// *** (Bolton, 1980) Calculates vapor pressure in [kPa]  ****
   vp.saturated_vaporpressure = 0.6112*std::exp(17.67*temp / (temp+243.5));
   // (Bolton, 1980)
   vp.actual_vaporpressure = vp.saturated_vaporpressure * vp.relative_humidity;
@@ -215,17 +398,11 @@ void SurfaceEnergyBalance::UpdateVaporPressure(VaporPressure& vp) {
   vp.dewpoint_temp = (std::log(vp.actual_vaporpressure) + 0.4926) / (0.0708-0.00421*std::log(vp.actual_vaporpressure));
   // Convert Tdp from Celsius to Kelvin
   vp.dewpoint_temp = vp.dewpoint_temp + 273.15;
-  // Convert all vapor pressures from hPa to KPa  10 hPa = 1 kPa  <-- That comment is now worng !!!
-//  THIS PUTS VAPOR PRESSURE IN [10 * kPa] RATHER THEN kPa !!!!!!!!! *********
-//  LATENT HEAD CALCULATION EXPECTS kPa NOT [10 * kPa]  !!!!!!! *******
-//  UNFORTUNATLY ATS WON'T WORK WHEN LATENT HEAT IS SOO STRONG !!!!!!
-    vp.saturated_vaporpressure = vp.saturated_vaporpressure/10;  // <-- This is wrong !!!  ***DELETE THIS CONVERSION***
-    vp.actual_vaporpressure = vp.actual_vaporpressure/10;  // <-- This is wrong !!!  ***DELETE THIS CONVERSION***
 }
 
 
 // Take a weighted average to get the albedo.
-double SurfaceEnergyBalance::CalcAlbedo(EnergyBalance& eb) {
+double SurfaceEnergyBalance_VPL::CalcAlbedo(EnergyBalance& eb) {
   double perSnow = 0.0, perTundra=0.0, perWater=0.0;
   // Tundra albedo comes from Grenfell and Perovich, (2004)
   // Water albedo from Cogley J.G. (1979)
@@ -273,7 +450,7 @@ double SurfaceEnergyBalance::CalcAlbedo(EnergyBalance& eb) {
 
 
 // Surface Energy Balance residual
-double SurfaceEnergyBalance::EnergyBalanceResidual(LocalData& seb, double Xx) {
+double SurfaceEnergyBalance_VPL::EnergyBalanceResidual(LocalData& seb, double Xx) {
   UpdateEFluxesSnow(seb, Xx);
 
   // energy balance
@@ -285,7 +462,7 @@ double SurfaceEnergyBalance::EnergyBalanceResidual(LocalData& seb, double Xx) {
 
 
 // Use a bisection method to calculate the temperature of the snow.
-double SurfaceEnergyBalance::CalcSnowTemperature(LocalData& seb) {
+double SurfaceEnergyBalance_VPL::CalcSnowTemperature(LocalData& seb) {
   double tol = 1.e-6;
   double deltaX = 5;
 
@@ -349,7 +526,7 @@ double SurfaceEnergyBalance::CalcSnowTemperature(LocalData& seb) {
 
 
 // Alter mass flux due to melting.
-void SurfaceEnergyBalance::UpdateMassMelt(EnergyBalance& eb) {
+void SurfaceEnergyBalance_VPL::UpdateMassMelt(EnergyBalance& eb) {
   // Melt rate given by energy rate available divided by heat of fusion.
   double melt = eb.Qm / (eb.density_w * eb.Hf);
   eb.Mr += melt;
@@ -358,7 +535,7 @@ void SurfaceEnergyBalance::UpdateMassMelt(EnergyBalance& eb) {
 
 
 // Alter mass fluxes due to sublimation/condensation.
-void SurfaceEnergyBalance::UpdateMassSublCond(EnergyBalance& eb) {
+void SurfaceEnergyBalance_VPL::UpdateMassSublCond(EnergyBalance& eb) {
   double SublR = -eb.fQe / (eb.density_w * eb.Ls); // [m/s]
 
   if (SublR < 0 && eb.temp_snow == 273.15) {
@@ -375,17 +552,17 @@ void SurfaceEnergyBalance::UpdateMassSublCond(EnergyBalance& eb) {
 
 
 // Alter mass fluxes due to evaporation from soil (no snow).
-void SurfaceEnergyBalance::UpdateMassEvap(EnergyBalance& eb) {
+void SurfaceEnergyBalance_VPL::UpdateMassEvap(EnergyBalance& eb) {
   eb.Mr += eb.fQe / (eb.density_w*eb.Le); // [m/s]
 }
 
 
 // Alter mass fluxes in the case of all snow disappearing.
-void SurfaceEnergyBalance::WaterMassCorrection(EnergyBalance& eb) {
+void SurfaceEnergyBalance_VPL::WaterMassCorrection(EnergyBalance& eb) {
   if (eb.MIr < 0) {
     // convert ht_snow to SWE
     double swe = eb.ht_snow * eb.density_snow / eb.density_w;
-    double swe_change = (eb.MIr + eb.Ps) * eb.dt;
+    double swe_change = (eb.MIr * eb.dt) + eb.Ps;
     if (swe + swe_change < 0) {
       // No more snow!  Take the rest out of the ground.
       // -- AA re-visit: should we take some from sublimation?
@@ -396,7 +573,7 @@ void SurfaceEnergyBalance::WaterMassCorrection(EnergyBalance& eb) {
 
 
 // Calculate snow change ~> settling of previously existing snow (Martinec, 1977)
-void SurfaceEnergyBalance::UpdateSnow(EnergyBalance& eb) {
+void SurfaceEnergyBalance_VPL::UpdateSnow(EnergyBalance& eb) {
   if (eb.MIr < 0.) {
     // sublimation, remove snow now
     eb.ht_snow = eb.ht_snow + (eb.MIr * eb.dt * eb.density_w / eb.density_snow);
@@ -445,7 +622,7 @@ void SurfaceEnergyBalance::UpdateSnow(EnergyBalance& eb) {
 
 
 // Main snow energy balance function.
-void SurfaceEnergyBalance::SnowEnergyBalance(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::SnowEnergyBalance(LocalData& seb) {
   // Caculate Vapor pressure and dewpoint temperature from Air
   UpdateVaporPressure(seb.vp_air);
 
@@ -462,6 +639,7 @@ void SurfaceEnergyBalance::SnowEnergyBalance(LocalData& seb) {
   // Initialize mass change rates
   seb.st_energy.Mr = seb.st_energy.Pr / seb.st_energy.dt; // precipitation rain
   seb.st_energy.MIr = 0;
+  seb.st_energy.SurfaceVaporFlux = 0.;
 
   if (seb.st_energy.ht_snow > 0) { // If snow
     // Step 1: Energy Balance
@@ -500,11 +678,27 @@ void SurfaceEnergyBalance::SnowEnergyBalance(LocalData& seb) {
 
   // set water temp
   seb.st_energy.Trw = seb.st_energy.ht_snow > 0. ? 273.15 : seb.st_energy.temp_air;
+
+  std::cout << "Energy summary:" << std::endl
+            << "  fQswIn  = " << seb.st_energy.fQswIn << std::endl
+            << "  fQlwIn  = " << seb.st_energy.fQlwIn << std::endl
+            << "  fQlwOut = " << seb.st_energy.fQlwOut << std::endl
+            << "  fQh (s) = " << seb.st_energy.fQh << std::endl
+            << "  fQe (l) = " << seb.st_energy.fQe << std::endl
+            << "  fQc (c) = " << seb.st_energy.fQc << std::endl;
+  std::cout << "Mass summary:" << std::endl
+            << "  Mr      = " << seb.st_energy.Mr << std::endl
+            << "  VapFlux = " << seb.st_energy.SurfaceVaporFlux << std::endl;
+  std::cout << "  Snow:" << std::endl
+            << "    new ht   = " << seb.st_energy.ht_snow << std::endl
+            << "    new age  = " << seb.st_energy.age_snow << std::endl
+            << "    new dens = " << seb.st_energy.density_snow << std::endl;
+
 }
 
 
 // Main energy-only function.
-void SurfaceEnergyBalance::UpdateEnergyBalance(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::UpdateEnergyBalance(LocalData& seb) {
   if (seb.st_energy.ht_snow > 0.) {
     // // Caculate Vapor pressure and dewpoint temperature from Air
     // UpdateVaporPressure(seb.vp_air);
@@ -545,7 +739,7 @@ void SurfaceEnergyBalance::UpdateEnergyBalance(LocalData& seb) {
 
 
 // Main energy-only function.
-void SurfaceEnergyBalance::UpdateEnergyBalanceDerivative(LocalData& seb) {
+void SurfaceEnergyBalance_VPL::UpdateEnergyBalanceDerivative(LocalData& seb) {
   if (seb.st_energy.ht_snow > 0.) {
     double Ks = 2.9e-6 * std::pow(seb.st_energy.density_snow,2);
     seb.st_energy.fQc = -Ks / seb.st_energy.ht_snow;

@@ -40,12 +40,6 @@ class IcyOverlandFlow : public OverlandHeadFlow {
   // setup methods
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 
-  virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
-
- protected:
-  Teuchos::RCP<FlowRelations::IcyHeightModel> icy_height_model_;
-  Teuchos::RCP<const FlowRelations::UnfrozenFractionModel> uf_model_;
-
  private:
   // factory registration
   static RegisteredPKFactory<IcyOverlandFlow> reg_;

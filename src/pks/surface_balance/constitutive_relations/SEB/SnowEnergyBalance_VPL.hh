@@ -17,10 +17,10 @@
 
 */
 
-#ifndef SNOW_ENERGY_BALANCE_
-#define SNOW_ENERGY_BALANCE_
+#ifndef SNOW_ENERGY_BALANCE_VPL_HH_
+#define SNOW_ENERGY_BALANCE_VPL_HH_
 
-namespace SurfaceEnergyBalance {
+namespace SurfaceEnergyBalance_VPL {
 
 struct VaporPressure {
   double temp;
@@ -84,10 +84,12 @@ struct EnergyBalance {
   double fQc;
   double Qm;
   double Trw;
-  double surface_pressure; 
+  double surface_pressure;
+  double saturation_liquid;  
   double stored_surface_pressure;
   //double stored_fQe;
   double surface_porosity;
+  double SurfaceVaporFlux;  // Second mass flux for cell center  
 
   double Mr;
   double MIr;

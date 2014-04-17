@@ -56,7 +56,7 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     precon_wc_(false),
     niter_(0),
     dynamic_mesh_(false),
-    vapor_diffusion_(false),
+    clobber_surf_kr_(false),
     perm_scale_(1.)
 {
   // set a few parameters before setup
@@ -68,14 +68,11 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 // Setup data
 // -------------------------------------------------------------
 void Richards::setup(const Teuchos::Ptr<State>& S) {
-  plist_->print(std::cout);
-
   PKPhysicalBDFBase::setup(S);
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
 
   flux_tol_ = plist_->get<double>("flux tolerance", 1.e-4);
-  plist_->print(std::cout);
 };
 
 
@@ -134,7 +131,15 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // scaling for permeability
   perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
 
-
+  // source terms
+  is_source_term_ = plist_->get<bool>("source term", false);
+  if (is_source_term_) {
+    explicit_source_ = plist_->get<bool>("explicit source term", false);
+    S->RequireField("mass_source")->SetMesh(mesh_)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator("mass_source");
+  }
+  
   // Create the boundary condition data structures.
   Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
   FlowBCFactory bc_factory(mesh_, bc_plist);
@@ -191,6 +196,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("numerical_rel_perm",name_)->set_io_vis(false);
 
+  clobber_surf_kr_ = plist_->get<bool>("clobber surface rel perm", false);
   string method_name = plist_->get<string>("relative permeability method", "upwind with gravity");
   symmetric_ = false;
   if (method_name == "upwind with gravity") {
@@ -272,7 +278,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
   mfd_preconditioner_->set_symmetric(symmetric_);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
-  mfd_preconditioner_->InitPreconditioner();
+  precon_used_ = mfd_pc_plist.isSublist("preconditioner");
+  if (precon_used_)  mfd_preconditioner_->InitPreconditioner();
 
   // wc preconditioner
   precon_wc_ = plist_->get<bool>("precondition using WC", false);
@@ -324,6 +331,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   S->RequireField("relative_permeability")->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
+  wrm_plist.set<double>("permeability rescaling", perm_scale_);
   Teuchos::RCP<FlowRelations::RelPermEvaluator> rel_perm_evaluator =
       Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
   S->SetFieldEvaluator("relative_permeability", rel_perm_evaluator);
@@ -333,10 +341,6 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("molar_density_liquid")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("molar_density_liquid");
-
-  // S->RequireField("viscosity_liquid")->SetMesh(mesh_)->SetGhosted()
-  //     ->AddComponent("cell", AmanziMesh::CELL, 1);
-  // S->RequireFieldEvaluator("viscosity_liquid");
 
   // -- liquid mass density for the gravity fluxes
   S->RequireField("mass_density_liquid")->SetMesh(mesh_)->SetGhosted()
@@ -349,8 +353,6 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // Initialize PK
 // -------------------------------------------------------------
 void Richards::initialize(const Teuchos::Ptr<State>& S) {
-  plist_->print(std::cout);
-
   // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);
 
@@ -584,16 +586,12 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
     // Upwind, only overwriting boundary faces if the wind says to do so.
     upwinding_->Update(S);
-  }
 
-  // // Scale cells by n/mu
-  // if (update_perm) {
-  //   Epetra_MultiVector& uw_rel_perm_c = *uw_rel_perm->ViewComponent("cell",false);
-  //   int ncells = uw_rel_perm_c.MyLength();
-  //   for (unsigned int c=0; c!=ncells; ++c) {
-  //     uw_rel_perm_c[0][c] *= n_liq[0][c] / visc[0][c] / perm_scale_;
-  //   }
-  // }
+    if (clobber_surf_kr_) {
+      Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
+      uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
+    }
+  }
 
   // debugging
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {

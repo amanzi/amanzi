@@ -204,12 +204,12 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   decreasing pressures..." << std::endl;
 
-        if (p_guess + 0.1 > p_atm) {
+        if (p_guess + 100. > p_atm) {
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
             *dcvo->os() << "   still saturated, keep T,p projections" << std::endl;
           // pass, guesses are good
           
-        } else if (p_prev + 0.1 < p_atm) {
+        } else if (p_prev + 100. < p_atm) {
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
             *dcvo->os() << "   second point past the saturation point, keep T,p projections" << std::endl;
           // pass, guesses are good
@@ -241,7 +241,7 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   increasing pressures..." << std::endl;
 
-        if (p_prev + 0.1 > p_atm) {
+        if (p_prev + 10. > p_atm) {
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
             *dcvo->os() << "   saturated, keep T,p projections" << std::endl;
           // pass, guesses are good
@@ -480,12 +480,12 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
             *dcvo->os() << "   decreasing pressures..." << std::endl;
 
-          if (p_std + 0.1 > p_atm) {
+          if (p_std + 100. > p_atm) {
             if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
               *dcvo->os() << "   guess saturated, keep std correction" << std::endl;
             // pass, guesses are good
 
-          } else if (p_prev + 0.1 < p_atm) {
+          } else if (p_prev + 100. < p_atm) {
             if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
               *dcvo->os() << "   linearization point past p_atm, keep std correction" << std::endl;
             // pass, guesses are good

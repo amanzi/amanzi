@@ -11,6 +11,7 @@ include_directories(${ATS_SOURCE_DIR}/src/state)
 include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/eos)
 include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/ewc)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/porosity)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm/models)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/richards)
@@ -20,6 +21,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/inte
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
+include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
 add_library(mpc
   weak_mpc.cc
