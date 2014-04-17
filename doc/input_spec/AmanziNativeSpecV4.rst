@@ -1108,6 +1108,85 @@ The `"Transport`" parameters useful for developers are:
   divergence-free condition. The default value is 1e-6.
 
 
+Chemistry
+=========
+
+Geochemical engines
+-------------------
+
+This is work in progress... 
+This chemistry list specifies the default and the third-party geochemical engines. 
+In the case of the third-party engine most details are provided in the trimmed 
+PFloTran file `"1d-tritium-trim.in`".
+
+.. code-block:: xml
+
+  <ParameterList name="Chemistry">
+    <ParameterList name="Thermodynamic Database">
+      <Parameter name="Format" type="string" value="simple"/>
+      <Parameter name="File" type="string" value="tritium.bgd"/>
+    </ParameterList>
+    <Parameter name="Engine" type="string" value="PFloTran"/>
+    <Parameter name="Engine Input File" type="string" value="1d-tritium-trim.in"/>
+    <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
+    <Parameter name="Activity Model" type="string" value="unit"/>
+    <Parameter name="Tolerance" type="double" value="1.5e-12"/>
+    <Parameter name="Maximum Newton Iterations" type="int" value="25"/>
+    <Parameter name="Max Time Step (s)" type="double" value="1.5778463e+07"/>
+    <Parameter name="Number of component concentrations" type="int" value="1"/>
+  </ParameterList>
+
+
+Initial conditions
+------------------
+
+This sublist completes initialization of state variable, see list `"State`" for 
+more detail.
+
+.. code-block:: xml
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="free_ion_species">
+        <ParameterList name="function">
+          <ParameterList name="Entire Domain">
+            <Parameter name="region" type="string" value="Entire Domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="Number of DoFs" type="int" value="1"/>
+              <Parameter name="Function type" type="string" value="composite function"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.0e-09"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Initial Conditions">
+      <ParameterList name="initial">
+        <Parameter name="PFloTran Constraint" type="string" value="initial"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
+      </ParameterList>
+    </ParameterList>
+
+
+Boundary conditions
+-------------------
+
+.. code-block:: xml
+
+    <ParameterList name="Boundary Conditions">
+      <ParameterList name="West BC">
+        <Parameter name="PFloTran Constraint" type="string" value="west"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{West}"/>
+      </ParameterList>
+    </ParameterList>
+
+
+
 Functions
 =========
 
