@@ -125,7 +125,7 @@ void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityEvaluator> poro_me =
       Teuchos::rcp_dynamic_cast<Flow::FlowRelations::CompressiblePorosityEvaluator>(me);
   ASSERT(poro_me != Teuchos::null);
-  poro_model_ = poro_me->get_Model();
+  poro_models_ = poro_me->get_Models();
 
 }
 
@@ -136,11 +136,13 @@ void PermafrostModel::UpdateModel(const Teuchos::Ptr<State>& S, int c) {
   rho_rock_ = (*S->GetFieldData("density_rock")->ViewComponent("cell"))[0][c];
   poro_ = (*S->GetFieldData("base_porosity")->ViewComponent("cell"))[0][c];
   wrm_ = wrms_->second[(*wrms_->first)[c]];
+  poro_model_ = poro_models_->second[(*poro_models_->first)[c]];
   ASSERT(IsSetUp_());
 }
 
 bool PermafrostModel::IsSetUp_() {
   if (wrm_ == Teuchos::null) return false;
+  if (poro_model_ == Teuchos::null) return false;
   if (liquid_eos_ == Teuchos::null) return false;
   if (gas_eos_ == Teuchos::null) return false;
   if (ice_eos_ == Teuchos::null) return false;

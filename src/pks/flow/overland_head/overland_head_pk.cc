@@ -724,16 +724,19 @@ void OverlandHeadFlow::UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State
 
   // Seepage face boundary condition
   const Epetra_MultiVector& h_cells = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
+  const Epetra_MultiVector& elevation_faces = *S->GetFieldData("elevation")->ViewComponent("face");
+  const Epetra_MultiVector& elevation_cells = *S->GetFieldData("elevation")->ViewComponent("cell");
 
   for (Functions::BoundaryFunction::Iterator bc = bc_seepage_->begin(); 
        bc != bc_seepage_->end(); ++bc) {
     int f = bc->first;
-    double h0 = bc->second;
-
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int c = cells[0];
 
-    if (h_cells[0][c] < h0) {
+    double h0 = bc->second;
+    double dz = elevation_cells[0][c] - elevation_faces[0][f];
+
+    if (h_cells[0][c] + dz < h0) {
       bc_markers_[f] = Operators::MATRIX_BC_NULL;
     } else {
       bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
