@@ -10,6 +10,7 @@ Painter's permafrost model.
 
 #include <boost/cstdint.hpp>
 #include <boost/math/tools/roots.hpp>
+#include <boost/cstdint.hpp>
 
 #include "wrm_permafrost_model.hh"
 #include "wrm_permafrost_factory.hh"

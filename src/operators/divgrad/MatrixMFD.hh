@@ -227,6 +227,7 @@ class MatrixMFD : public CompositeMatrix {
   Teuchos::RCP<VerboseObject> vo_;
 
   friend class MatrixMFD_Coupled;
+  friend class MatrixMFD_Coupled_Surf;
 };
 
 

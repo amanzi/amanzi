@@ -27,7 +27,7 @@ SurfaceBalanceEvaluatorVPL::SurfaceBalanceEvaluatorVPL(Teuchos::ParameterList& p
   dependencies_.insert("surface_temperature");
   dependencies_.insert("snow_depth");
   dependencies_.insert("ponded_depth");
-//  dependencies_.insert("pressure");
+//  dependencies_.insert("saturation_liquid");
   dependencies_.insert("surface_pressure");
   dependencies_.insert("unfrozen_fraction");
   dependencies_.insert("surface_porosity");
@@ -67,6 +67,9 @@ SurfaceBalanceEvaluatorVPL::EvaluateField_(const Teuchos::Ptr<State>& S,
     // Debugger
     db_ = Teuchos::rcp(new Debugger(S->GetMesh("surface"), my_key_, plist_));
   }
+  subsurf_mesh_ = S->GetMesh();
+  mesh_ = S->GetMesh("surface");
+
 
   // Pull dependencies out of state.
   const Epetra_MultiVector& snow_temp = *S->GetFieldData("snow_temperature")
@@ -81,8 +84,8 @@ SurfaceBalanceEvaluatorVPL::EvaluateField_(const Teuchos::Ptr<State>& S,
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& ponded_depth = *S->GetFieldData("ponded_depth")
       ->ViewComponent("cell",false);
-//  const Epetra_MultiVector& pressure = *S->GetFieldData("pressure")
-//      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& saturation_liquid = *S->GetFieldData("saturation_liquid")
+      ->ViewComponent("cell",false);
   const Epetra_MultiVector& surface_pressure = *S->GetFieldData("surface_pressure")
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& stored_surface_pressure = *S->GetFieldData("stored_surface_pressure")
@@ -135,7 +138,13 @@ SurfaceBalanceEvaluatorVPL::EvaluateField_(const Teuchos::Ptr<State>& S,
     // ATS Calcualted Data
     double density_air = 1.275; // [kg/m^3]
     data.st_energy.water_depth = ponded_depth[0][c];
-    //data.st_energy.surface_pressure = pressure[1][c];
+
+   AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+   AmanziMesh::Entity_ID_List cells;
+   subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+   ASSERT(cells.size() == 1);
+    data.st_energy.saturation_liquid = saturation_liquid[0][cells[0]];
+   
     data.st_energy.surface_pressure = surface_pressure[0][c];
     data.st_energy.stored_surface_pressure = stored_surface_pressure[0][c];
     //data.st_energy.stored_fQe = stored_Qe[0][c];
@@ -197,7 +206,13 @@ SurfaceBalanceEvaluatorVPL::EvaluateField_(const Teuchos::Ptr<State>& S,
       // Calculate as if bare ground
       // ATS Calcualted Data
       data_bare.st_energy.water_depth = ponded_depth[0][c];
-      //data_bare.st_energy.surface_pressure = pressure[1][c];
+     
+    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    AmanziMesh::Entity_ID_List cells;
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    ASSERT(cells.size() == 1); 
+      data_bare.st_energy.saturation_liquid = saturation_liquid[0][cells[0]];
+    
       data_bare.st_energy.surface_pressure = surface_pressure[0][c];
       data_bare.st_energy.stored_surface_pressure = stored_surface_pressure[0][c];
       //data_bare.st_energy.stored_fQe = stored_Qe[0][c];
@@ -280,6 +295,9 @@ void SurfaceBalanceEvaluatorVPL::EvaluateFieldPartialDerivative_(
     db_ = Teuchos::rcp(new Debugger(S->GetMesh("surface"), my_key_, plist_));
   }
 
+  subsurf_mesh_ = S->GetMesh();
+  mesh_ = S->GetMesh("surface");
+
   // Pull dependencies out of state.
   const Epetra_MultiVector& snow_temp = *S->GetFieldData("snow_temperature")
       ->ViewComponent("cell",false);
@@ -293,8 +311,8 @@ void SurfaceBalanceEvaluatorVPL::EvaluateFieldPartialDerivative_(
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& ponded_depth = *S->GetFieldData("ponded_depth")
       ->ViewComponent("cell",false);
-//  const Epetra_MultiVector& pressure = *S->GetFieldData("pressure")
-//      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& saturation_liquid= *S->GetFieldData("saturation_liquid")
+      ->ViewComponent("cell",false);
   const Epetra_MultiVector& surface_pressure = *S->GetFieldData("surface_pressure")
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& stored_surface_pressure = *S->GetFieldData("stored_surface_pressure")
@@ -352,7 +370,11 @@ void SurfaceBalanceEvaluatorVPL::EvaluateFieldPartialDerivative_(
     // ATS Calcualted Data
     double density_air = 1.275; // [kg/m^3]
     data.st_energy.water_depth = ponded_depth[0][c];
-    //data.st_energy.surface_pressure = pressure[1][c];
+  AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+  AmanziMesh::Entity_ID_List cells;
+  subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+  ASSERT(cells.size() == 1);
+    data.st_energy.saturation_liquid = saturation_liquid[0][cells[0]];
     data.st_energy.surface_pressure = surface_pressure[0][c];
     data.st_energy.stored_surface_pressure = stored_surface_pressure[0][c];
     //data.st_energy.stored_fQe = stored_Qe[0][c];
@@ -402,7 +424,11 @@ void SurfaceBalanceEvaluatorVPL::EvaluateFieldPartialDerivative_(
       // Calculate as if bare ground
       // ATS Calcualted Data
       data_bare.st_energy.water_depth = ponded_depth[0][c];
-     // data_bare.st_energy.surface_pressure = pressure[1][c];
+    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    AmanziMesh::Entity_ID_List cells;
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    ASSERT(cells.size() == 1);
+      data_bare.st_energy.saturation_liquid = saturation_liquid[0][cells[0]]; 
       data_bare.st_energy.surface_pressure = surface_pressure[0][c];
       data_bare.st_energy.stored_surface_pressure = stored_surface_pressure[0][c];
       //data_bare.st_energy.stored_fQe = stored_Qe[0][c];

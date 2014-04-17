@@ -499,6 +499,7 @@ void SurfaceEnergyBalance::SnowEnergyBalance(LocalData& seb) {
   UpdateSnow(seb.st_energy);
 
   // set water temp
+// Ensures that water moving through the snow will have a near freezing temperature 
   seb.st_energy.Trw = seb.st_energy.ht_snow > 0. ? 273.15 : seb.st_energy.temp_air;
 }
 

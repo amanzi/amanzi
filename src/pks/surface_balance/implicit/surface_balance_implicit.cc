@@ -56,7 +56,8 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
   eval_derivatives_ = plist_->get<bool>("evaluate source derivatives", true);
 
   // min wind speed
-  min_wind_speed_ = plist_->get<double>("minimum wind speed", 1.0);
+  min_wind_speed_ = plist_->get<double>("minimum wind speed [m/s]?", 1.0);
+  wind_speed_ref_ht_ = plist_->get<double>("wind speed reference height [m]", 2.0);
 
   // transition snow depth
   snow_ground_trans_ = plist_->get<double>("snow-ground transitional depth", 0.02);
@@ -175,6 +176,10 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("ponded_depth")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
+ //   S->RequireFieldEvaluator("saturation_liquid");
+   S->RequireField("saturation_liquid")->SetMesh(subsurf_mesh_)
+       ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   S->RequireFieldEvaluator("unfrozen_fraction");
   S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -228,6 +233,10 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
   double dt = t_new - t_old;
+  double T_eps = 0.0001;
+
+  bool debug = false;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) debug = true;
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "----------------------------------------------------------------" << std::endl
@@ -272,6 +281,10 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
   S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& ponded_depth =
       *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell", false);
+
+ //  S_next_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_next_.ptr(), name_);
+   const Epetra_MultiVector& saturation_liquid =
+     *S_next_->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
 
   S_next_->GetFieldEvaluator("unfrozen_fraction")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& unfrozen_fraction =
@@ -327,7 +340,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       *S_next_->GetFieldData("surface_mass_source_temperature", name_)->ViewComponent("cell", false);
 
   unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (unsigned int c=0; c!=ncells; ++c) {
+  for (unsigned int c=0; c!=ncells; ++c) {             // START CELL LOOP  ##########################
     if (snow_depth_old[0][c] >= snow_ground_trans_ ||
         snow_depth_old[0][c] < min_snow_trans_) {
       // Evaluate the model as usual
@@ -338,6 +351,11 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       // -- ground properties
       seb.in.vp_ground.temp = surf_temp[0][c];
       seb.in.vp_ground.pressure = surf_pres[0][c];
+    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    AmanziMesh::Entity_ID_List cells;
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    ASSERT(cells.size() == 1);
+      seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
 
       // -- snow properties
       seb.in.snow_old.ht = snow_depth_old[0][c] < min_snow_trans_ ? 0. : snow_depth_old[0][c];
@@ -351,9 +369,10 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       seb.in.vp_snow.temp = 270.15;
 
       // -- met data
+      seb.params.Zr = wind_speed_ref_ht_;
       seb.in.met.Us = std::max(wind_speed[0][c], min_wind_speed_);
       seb.in.met.QswIn = incoming_shortwave[0][c];
-      seb.in.met.Ps = precip_snow[0][c];
+      seb.in.met.Ps = std::max(precip_snow[0][c],0.); // protect against wayward snow distribution models
       seb.in.met.Pr = precip_rain[0][c];
       seb.in.met.vp_air.temp = air_temp[0][c];
       seb.in.met.vp_air.relative_humidity = relative_humidity[0][c];
@@ -377,7 +396,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       seb.in.surf.Zo = SEBPhysics::CalcRoughnessFactor(seb.in.met.vp_air.temp);
 
       // Run the model
-      SEBPhysics::CalculateSurfaceBalance(seb, true);
+      SEBPhysics::CalculateSurfaceBalance(seb, debug);
 
       // Evaluate the residual
       res[0][c] =  snow_depth_new[0][c] - seb.out.snow_new.ht;
@@ -390,8 +409,8 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
 
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
-      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-      AmanziMesh::Entity_ID_List cells;
+//      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+//      AmanziMesh::Entity_ID_List cells;
       subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
       ASSERT(cells.size() == 1);
       // surface mass sources are in m^3 water / (m^2 s)
@@ -408,10 +427,11 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       if (eval_derivatives_) {
         // evaluate FD derivative of energy flux wrt surface temperature
         SEBPhysics::SEB seb2(seb);
-        seb2.in.vp_ground.temp += 0.01;
+        seb.params.Zr = wind_speed_ref_ht_;
+        seb2.in.vp_ground.temp += T_eps;
         // for now ignore the effect on unfrozen fraction, and therefore on albedo and emissivity
         SEBPhysics::CalculateSurfaceBalance(seb2);
-        (*dsurf_energy_flux_dT)[0][c] = (seb2.out.eb.fQc - seb.out.eb.fQc) / 0.01;
+        (*dsurf_energy_flux_dT)[0][c] = (seb2.out.eb.fQc - seb.out.eb.fQc) / T_eps;
       }
 
     } else {
@@ -428,6 +448,11 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       // -- ground properties
       seb.in.vp_ground.temp = surf_temp[0][c];
       seb.in.vp_ground.pressure = surf_pres[0][c];
+    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    AmanziMesh::Entity_ID_List cells;
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    ASSERT(cells.size() == 1);
+      seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
 
       // -- snow properties
       seb.in.snow_old.ht = snow_ground_trans_;
@@ -441,6 +466,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       seb.in.vp_snow.temp = 270.15;
 
       // -- met data
+      seb.params.Zr = wind_speed_ref_ht_;
       seb.in.met.Us = std::max(wind_speed[0][c], min_wind_speed_);
       seb.in.met.QswIn = incoming_shortwave[0][c];
       seb.in.met.Ps = precip_snow[0][c];
@@ -468,6 +494,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
 
       // Initialize a second model, with bare ground
       SEBPhysics::SEB seb_bare(seb);
+      seb_bare.params.Zr = wind_speed_ref_ht_;
 
       // -- snow properties
       seb_bare.in.snow_old.ht = 0.;
@@ -487,8 +514,8 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       seb_bare.in.vp_ground.porosity = other_part.Interpolate(1., 1., 1., surf_porosity[0][c]);
 
       // Run the model for both snowy case and bare case
-      SEBPhysics::CalculateSurfaceBalance(seb, true);
-      SEBPhysics::CalculateSurfaceBalance(seb_bare, true);
+      SEBPhysics::CalculateSurfaceBalance(seb, debug);
+      SEBPhysics::CalculateSurfaceBalance(seb_bare, debug);
 
       // Evaluate the residual
       double snow_depth_new_tmp = theta * seb.out.snow_new.ht + (1-theta) * seb_bare.out.snow_new.ht;
@@ -498,17 +525,28 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       // -- fluxes
       surf_energy_flux[0][c] = theta * seb.out.eb.fQc + (1-theta) * seb_bare.out.eb.fQc;
       surf_water_flux[0][c] = theta * seb.out.mb.MWg + (1-theta) * seb_bare.out.mb.MWg;
-      if (std::abs(surf_water_flux[0][c]) > 0.) {
-        surf_water_flux_temp[0][c] = (theta * seb.out.mb.MWg * seb.out.mb.MWg_temp
-                                      + (1-theta) * seb_bare.out.mb.MWg * seb_bare.out.mb.MWg_temp) / surf_water_flux[0][c];
+      if (surf_water_flux[0][c] > 0.) {
+        if (seb.out.mb.MWg > 0.) {
+          if (seb_bare.out.mb.MWg > 0.) {
+            // both are positive, sources from both, average temp
+            surf_water_flux_temp[0][c] = (theta * seb.out.mb.MWg * seb.out.mb.MWg_temp
+                                          + (1-theta) * seb_bare.out.mb.MWg * seb_bare.out.mb.MWg_temp) / surf_water_flux[0][c];
+          } else {
+            // snow portion is positive, bare is negative, so take only from snow
+            surf_water_flux_temp[0][c] = seb.out.mb.MWg_temp;
+          }
+        } else {
+          // snow portion is negative, take only from snow.  Note if both are negative, both temps are just the air temp, which is fine.
+          surf_water_flux_temp[0][c] = seb_bare.out.mb.MWg;
+        }
       } else {
         surf_water_flux_temp[0][c] = seb.out.mb.MWg_temp;
       }
 
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
-      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-      AmanziMesh::Entity_ID_List cells;
+//      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+//      AmanziMesh::Entity_ID_List cells;
       subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
       ASSERT(cells.size() == 1);
       // surface mass sources are in m^3 water / (m^2 s)
@@ -535,19 +573,20 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       if (eval_derivatives_) {
         // evaluate FD derivative of energy flux wrt surface temperature
         SEBPhysics::SEB seb2(seb);
+        seb2.params.Zr = wind_speed_ref_ht_;
         SEBPhysics::SEB seb2_bare(seb_bare);
-        seb2.in.vp_ground.temp += 0.01;
-        seb2_bare.in.vp_ground.temp += 0.01;
+        seb2_bare.params.Zr = wind_speed_ref_ht_;
+        seb2.in.vp_ground.temp += T_eps;
+        seb2_bare.in.vp_ground.temp += T_eps;
         // for now ignore the effect on unfrozen fraction, and therefore on albedo and emissivity
         SEBPhysics::CalculateSurfaceBalance(seb2);
         SEBPhysics::CalculateSurfaceBalance(seb2_bare);
         double eflux2 = theta * seb2.out.eb.fQc + (1-theta) * seb2_bare.out.eb.fQc;
         
-        (*dsurf_energy_flux_dT)[0][c] = (eflux2 - surf_energy_flux[0][c]) / 0.01;
+        (*dsurf_energy_flux_dT)[0][c] = (eflux2 - surf_energy_flux[0][c]) / T_eps;
       }
-
     }
-  }
+  }  // END CELL LOOP ###############################
 
   // debug
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -573,7 +612,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
     vecs.clear();
     vnames.push_back("energy_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
     vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source").ptr());
-    vnames.push_back("surface_vapor_source"); vecs.push_back(S_next_->GetFieldData("mass_source").ptr());
+    //    vnames.push_back("surface_vapor_source"); vecs.push_back(S_next_->GetFieldData("mass_source").ptr());
     vnames.push_back("T_water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source_temperature").ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();

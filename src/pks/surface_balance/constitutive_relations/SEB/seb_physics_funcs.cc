@@ -14,7 +14,7 @@ namespace Amanzi {
 namespace SurfaceBalance {
 namespace SEBPhysics {
 
-#define SWE_EPS 1.e-16
+#define SWE_EPS 1.e-12
 
 void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug) {
   // Calculate incoming short-wave radiation
@@ -26,7 +26,7 @@ void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug) {
   e_air = 1.08 * (1 - std::exp(-e_air));
   eb.fQlwIn = e_air * seb.params.stephB * std::pow(vp_air.temp,4);
 
-  // Calculate D_h, D_e, sqig
+  // Calculate D_h, D_e, 
   eb.Dhe = std::pow(seb.params.VKc,2) * seb.in.met.Us
                        / std::pow(std::log(seb.params.Zr / seb.in.surf.Zo), 2);
 
@@ -38,6 +38,46 @@ void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug) {
 
 }
 
+void UpdateEvapResistance(const SEB& seb, const ThermoProperties& vp_surf, EnergyBalance& eb, bool debug) {
+   const ThermoProperties& vp_air = seb.in.met.vp_air;
+   
+   double Vaper_direction = vp_air.actual_vaporpressure - vp_surf.actual_vaporpressure;  //
+   
+// Equation for reduced vapor diffusivity See Sakagucki and Zeng 2009 eqaution (9) and Moldrup et al., 2004. 
+   double Clab_Horn_b = 1;
+   double Surface_Vap_Diffusion = std::pow((1-(0.0556/vp_surf.porosity)),(2+3*Clab_Horn_b));
+   Surface_Vap_Diffusion = 0.000022 * (std::pow(vp_surf.porosity,2)) * Surface_Vap_Diffusion;
+// Sakagucki and Zeng 2009 eqaution (10)
+   double cell_dimension = 0.01/2; // This is from cell center to the boundary.
+   double VWC = seb.in.surf.saturation_liquid * vp_surf.porosity;
+   double L_Rsoil = std::exp(std::pow((1-(VWC/vp_surf.porosity)),5));
+   L_Rsoil = cell_dimension * (L_Rsoil -1) * (1/(2.718-1));
+   double Rsoil = 0.0;
+   
+   if(Vaper_direction <= 0){
+      Rsoil = L_Rsoil/Surface_Vap_Diffusion;
+      }else{
+      Rsoil = 0.0;
+   }
+   double Rair = 1/eb.Dhe;
+   eb.Evap_Resistance = Rair;
+
+   if((seb.in.snow_old.ht==0)&&(seb.in.surf.saturation_liquid < 1)) {
+      eb.Evap_Resistance = Rair + Rsoil;
+   }else{  
+      eb.Evap_Resistance = Rair;
+   }
+
+   if (debug) {
+   std::cout<<"Snow ht: "<<seb.out.snow_new.ht<<"  Saturation: "<<seb.in.surf.saturation_liquid<<std::endl;
+   std::cout<<"Air_Temp: "<<vp_air.temp<<" Ground Temp: "<<vp_surf.temp<< std::endl;
+   std::cout<<"Vapor Direction: "<<Vaper_direction<<" Air Vapor Pres: "<<vp_air.actual_vaporpressure<<" Surf Vapor Pres: "<<vp_surf.actual_vaporpressure << std::endl;
+   std::cout<<"Surface_Vap_Diffusion: "<< Surface_Vap_Diffusion <<"  L_Rsoil:  "<<L_Rsoil<<"  Rsoil: "<<Rsoil<<"   VWC: "<<VWC<<std::endl;
+   std::cout<<"Air Resistance: "<<Rair<<std::endl;
+   std::cout<<"Evap Resistance: "<<eb.Evap_Resistance<<std::endl; 
+   }
+}
+
 
 void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf, EnergyBalance& eb, bool debug) {
   const ThermoProperties& vp_air = seb.in.met.vp_air;
@@ -45,7 +85,7 @@ void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf, Energy
   // Calculate outgoing long-wave radiation
   eb.fQlwOut = -seb.in.surf.emissivity*seb.params.stephB*std::pow(vp_surf.temp,4);
 
-  double Sqig;          // special constant for use in e and h, precalculated for efficiency
+  double Sqig;          // Stability function for use in e and h, precalculated for efficiency
   double air_temp = seb.in.met.vp_air.temp;
   double Ri  = seb.params.gravity * seb.params.Zr * (air_temp - vp_surf.temp)
       / (air_temp * std::pow(seb.in.met.Us,2));
@@ -61,8 +101,19 @@ void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf, Energy
   eb.fQh = seb.params.density_air * seb.params.Cp * eb.Dhe * Sqig * (vp_air.temp - vp_surf.temp);
 
   // Calculate latent heat flux
-  eb.fQe = vp_surf.porosity * seb.params.density_air * seb.params.Ls * eb.Dhe * Sqig * 0.622
+  double LatenHeatOf = 0.0; 
+  if (seb.in.snow_old.ht > 0.){
+    LatenHeatOf = seb.params.Ls;
+   }else{
+    LatenHeatOf = seb.params.Le;
+  } 
+
+  // With New Evaporation resistance term
+  eb.fQe = vp_surf.porosity * seb.params.density_air * LatenHeatOf * (1/eb.Evap_Resistance) * Sqig * 0.622
       * (vp_air.actual_vaporpressure - vp_surf.actual_vaporpressure) / seb.params.Apa;
+  if (debug) {
+    std::cout<<"Porosity: "<<vp_surf.porosity<<"  LatentHeatOf: "<<LatenHeatOf<<"  Sqig: "<<Sqig<<std::endl;
+  }
 
   // Calculate heat conducted to ground, if snow
   if (seb.in.snow_old.ht > 0.) {
@@ -194,7 +245,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     // NOTE: these rates can only be correct if over mb.dt
     mb.MWg = mb.Mm + seb.in.met.Pr;
     mb.MWg_subsurf = 0.;
-    mb.MWg_temp = mb.MWg > 0. ? (mb.Mm * 273.15 + seb.in.met.Pr * seb.in.met.vp_air.temp) / mb.MWg : seb.in.met.vp_air.temp;
+    mb.MWg_temp = (mb.MWg > 0. && mb.Mm > 0.) ? (mb.Mm * 273.15 + seb.in.met.Pr * seb.in.met.vp_air.temp) / mb.MWg : seb.in.met.vp_air.temp;
 
   } else {
     // set the snow properties
@@ -227,7 +278,10 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     std::cout << "Mass Balance:\n"
               << "  Mm   = " << mb.Mm << "\n"
               << "  Me   = " << mb.Me << "\n"
+	      << "  Ps   = " << seb.in.met.Ps << "\n"
+	      << "  Pr   = " << seb.in.met.Pr << "\n"
               << "  Snow Melt:\n"
+              << "    old ht   = " << seb.in.snow_old.ht << "\n"
               << "    new ht   = " << snow_new.ht << "\n"
               << "    new age  = " << snow_new.age << "\n"
               << "    new dens = " << snow_new.density << "\n"
@@ -288,9 +342,14 @@ double DetermineSnowTemperature(const SEB& seb, ThermoProperties& vp_snow,
 void CalculateSurfaceBalance(SEB& seb, bool debug) {
   // initialize the data
   seb.in.met.vp_air.UpdateVaporPressure();
+  seb.in.vp_ground.UpdateVaporPressure();  // This ground vapor pressure will be ignored in the case of snow
 
   // Energy balance
   UpdateIncomingRadiation(seb, seb.out.eb, debug);
+  
+  // Evaporation Resistance Term
+  UpdateEvapResistance(seb, seb.in.vp_ground, seb.out.eb, debug);  
+
   if (seb.in.snow_old.ht > 0.) {
     // snow on the ground, solve for snow temperature
     double T_snow = DetermineSnowTemperature(seb, seb.in.vp_snow, seb.out.eb);

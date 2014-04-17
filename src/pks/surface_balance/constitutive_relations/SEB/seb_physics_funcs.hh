@@ -15,6 +15,7 @@ namespace SEBPhysics {
 
 // Main SEB functions
 void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug=false);
+void UpdateEvapResistance(const SEB& seb, EnergyBalance& eb, bool debug=false);
 void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf,
                          EnergyBalance& eb, bool debug=false);
 
