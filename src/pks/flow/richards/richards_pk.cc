@@ -57,6 +57,7 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     niter_(0),
     dynamic_mesh_(false),
     clobber_surf_kr_(false),
+    vapor_diffusion_(false),
     perm_scale_(1.)
 {
   // set a few parameters before setup
