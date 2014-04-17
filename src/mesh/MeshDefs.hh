@@ -69,6 +69,7 @@ bool entity_valid_kind (const Entity_kind kind) {
     
 enum Parallel_type 
 {
+  PTYPE_UNKNOWN = 0, // Initializer
   OWNED = 1,         // Owned by this processor
   GHOST = 2,         // Owned by another processor
   USED  = 3          // OWNED + GHOST
@@ -85,7 +86,7 @@ bool entity_valid_ptype (const Parallel_type ptype) {
 
 enum Cell_type 
 {
-  UNKNOWN = 0,
+  CELLTYPE_UNKNOWN = 0,
   TRI = 1,
   QUAD,
   POLYGON,
