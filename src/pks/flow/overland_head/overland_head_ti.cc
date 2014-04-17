@@ -220,6 +220,9 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       *S_next_->GetFieldData("dsurface_water_content_bar_d"+key_)
       ->ViewComponent("cell",false);
 
+  db_->WriteVector("    dwc_dp", S_next_->GetFieldData("dsurface_water_content_bar_dsurface_pressure").ptr());
+  db_->WriteVector("    dh_dp", S_next_->GetFieldData("dponded_depth_bar_dsurface_pressure").ptr());
+
   // -- pull out other needed data
   std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
   unsigned int ncells = Acc_cells.size();
@@ -282,6 +285,9 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
         *S_next_->GetFieldData("dponded_depth_d"+key_)
         ->ViewComponent("cell",false);
     int ierr = Spp->RightScale(*dh0_dp(0));
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "  Right scaling TPFA" << std::endl;
+    db_->WriteVector("    dh_dp", S_next_->GetFieldData("dponded_depth_dsurface_pressure").ptr());
     ASSERT(!ierr);
   }
 
