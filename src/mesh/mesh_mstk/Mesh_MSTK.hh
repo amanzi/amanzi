@@ -54,14 +54,14 @@ private:
   //
   // 2. GHOST - not owned by this processor
   
-  // ALL = OWNED + GHOST
+  // ALL = OWNED + GHOST in parallel, ALL = OWNED in serial
   
 
-  MSet_ptr AllVerts, OwnedVerts, NotOwnedVerts;
+  MSet_ptr OwnedVerts, NotOwnedVerts;
   
-  MSet_ptr AllFaces, OwnedFaces, NotOwnedFaces;
+  MSet_ptr OwnedFaces, NotOwnedFaces;
   
-  MSet_ptr AllCells, OwnedCells, GhostCells;
+  MSet_ptr OwnedCells, GhostCells;
 
   int notwownedmark;
 

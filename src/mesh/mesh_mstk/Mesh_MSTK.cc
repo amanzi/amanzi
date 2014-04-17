@@ -1092,13 +1092,10 @@ Mesh_MSTK::~Mesh_MSTK() {
   delete owned_to_extface_importer_;
   delete [] faceflip;
 
-  if (AllVerts) MSet_Delete(AllVerts);
   if (OwnedVerts) MSet_Delete(OwnedVerts);
   if (NotOwnedVerts) MSet_Delete(NotOwnedVerts);
-  if (AllFaces) MSet_Delete(AllFaces);
   if (OwnedFaces) MSet_Delete(OwnedFaces);
   if (NotOwnedFaces) MSet_Delete(NotOwnedFaces);
-  if (AllCells) MSet_Delete(AllCells);
   if (OwnedCells) MSet_Delete(OwnedCells);
   if (GhostCells) MSet_Delete(GhostCells);
 
@@ -1136,13 +1133,13 @@ unsigned int Mesh_MSTK::num_entities (const Entity_kind kind,
 
     switch (ptype) {
     case OWNED:
-      return !serial_run ? MSet_Num_Entries(OwnedVerts) : MSet_Num_Entries(AllVerts);
+      return MSet_Num_Entries(OwnedVerts);
       break;
     case GHOST:
       return !serial_run ? MSet_Num_Entries(NotOwnedVerts) : 0;
       break;
     case USED:
-      return MSet_Num_Entries(AllVerts);
+      return MESH_Num_Vertices(mesh);
       break;
     default:
       return 0;
@@ -1153,13 +1150,13 @@ unsigned int Mesh_MSTK::num_entities (const Entity_kind kind,
   case FACE:
     switch (ptype) {
     case OWNED:
-      return !serial_run ? MSet_Num_Entries(OwnedFaces) : MSet_Num_Entries(AllFaces);
+      return MSet_Num_Entries(OwnedFaces);
       break;
     case GHOST:
       return !serial_run ? MSet_Num_Entries(NotOwnedFaces) : 0;
       break;
     case USED:
-      return MSet_Num_Entries(AllFaces);
+      return (cell_dimension() == 2 ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh));
       break;
     default:
       return 0;
@@ -1171,13 +1168,13 @@ unsigned int Mesh_MSTK::num_entities (const Entity_kind kind,
 
     switch (ptype) {
     case OWNED:
-      return !serial_run ? MSet_Num_Entries(OwnedCells) : MSet_Num_Entries(AllCells);
+      return MSet_Num_Entries(OwnedCells);
       break;
     case GHOST:
       return !serial_run ? MSet_Num_Entries(GhostCells) : 0;
       break;
     case USED:
-      return MSet_Num_Entries(AllCells);
+      return ((cell_dimension() == 2) ? MESH_Num_Faces(mesh) : MESH_Num_Regions(mesh));
       break;
     default:
       return 0;
@@ -2996,12 +2993,12 @@ void Mesh_MSTK::init_cell_map ()
     cell_map_w_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
 
   }
-  else {
-    ncell = MSet_Num_Entries(AllCells);
+  else {    
+    ncell = MSet_Num_Entries(OwnedCells);
     cell_gids = new int[ncell];
 
     idx = 0; i = 0;
-    while ((ment = MSet_Next_Entry(AllCells,&idx)))      
+    while ((ment = MSet_Next_Entry(OwnedCells,&idx)))      
       cell_gids[i++] = MEnt_ID(ment)-1;
 
     cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
@@ -3074,29 +3071,44 @@ void Mesh_MSTK::init_face_map ()
 
   }
   else {
-    nface = MSet_Num_Entries(AllFaces);
-    face_gids = new int[nface];
-    extface_gids = new int[nface];
 
-    idx = 0; i = 0; j = 0;
-    while ((ment = MSet_Next_Entry(AllFaces,&idx))) {
-      int gid = MEnt_ID(ment);
-      face_gids[i++] = gid-1;
+    if (cell_dimension() == 3) {
 
-      if (cell_dimension() == 3) {
+      nface = MESH_Num_Faces(mesh);
+      face_gids = new int[nface];
+      extface_gids = new int[nface];
+      
+      idx = 0; i = 0; j = 0;
+      while ((ment = MESH_Next_Face(mesh,&idx))) {
+        int gid = MEnt_ID(ment);
+        face_gids[i++] = gid-1;
+        
         List_ptr fregs = MF_Regions((MFace_ptr) ment);
         if (List_Num_Entries(fregs) == 1)
           extface_gids[j++] = gid-1;
         if (fregs)
           List_Delete(fregs);
       }
-      else if (cell_dimension() == 2) {
+      
+    }
+    else if (cell_dimension() == 2) {
+      
+      nface = MESH_Num_Edges(mesh);
+      face_gids = new int[nface];
+      extface_gids = new int[nface];
+      
+      idx = 0; i = 0; j = 0;
+      while ((ment = MESH_Next_Edge(mesh,&idx))) {
+        int gid = MEnt_ID(ment);
+        face_gids[i++] = gid-1;
+        
         List_ptr efaces = ME_Faces((MEdge_ptr) ment);
         if (List_Num_Entries(efaces) == 1)
           extface_gids[j++] = gid-1;
         if (efaces)
           List_Delete(efaces);
       }
+      
     }
     n_extface = j;
 
@@ -3155,12 +3167,12 @@ void Mesh_MSTK::init_node_map ()
 
   }
   else {
-    nvert = MSet_Num_Entries(AllVerts);
+    nvert = MSet_Num_Entries(OwnedVerts);
 
     vert_gids = new int[nvert];
 
     idx = 0; i = 0;
-    while ((ment = MSet_Next_Entry(AllVerts,&idx)))
+    while ((ment = MSet_Next_Entry(OwnedVerts,&idx)))
       vert_gids[i++] = MEnt_ID(ment)-1;
 
     node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
@@ -3265,9 +3277,9 @@ void Mesh_MSTK::clear_internals_ ()
 
   mesh = NULL;
 
-  AllVerts = OwnedVerts = NotOwnedVerts = NULL;
-  AllFaces = OwnedFaces = NotOwnedFaces = NULL;
-  AllCells = OwnedCells = GhostCells = NULL;
+  OwnedVerts = NotOwnedVerts = NULL;
+  OwnedFaces = NotOwnedFaces = NULL;
+  OwnedCells = GhostCells = NULL;
 
   celltype_att = NULL;
   rparentatt = fparentatt = eparentatt = vparentatt = NULL;
@@ -3287,7 +3299,7 @@ void Mesh_MSTK::init_id_handle_maps() {
   
   // Amanzi has IDs starting from 0, MSTK has IDs starting from 1
 
-  nv = List_Num_Entries(AllVerts);
+  nv = MESH_Num_Vertices(mesh);
 
   vtx_id_to_handle.reserve(nv);
 
@@ -3306,7 +3318,7 @@ void Mesh_MSTK::init_id_handle_maps() {
   }
     
 
-  nf = MSet_Num_Entries(AllFaces);
+  nf = (cell_dimension() == 2) ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh);
 
   face_id_to_handle.reserve(nf);
 
@@ -3326,7 +3338,7 @@ void Mesh_MSTK::init_id_handle_maps() {
     
 
 
-  nc = MSet_Num_Entries(AllCells);
+  nc = (cell_dimension() == 2) ? MESH_Num_Faces(mesh) : MESH_Num_Regions(mesh);
 
   cell_id_to_handle.reserve(nc);
 
@@ -3359,13 +3371,11 @@ void Mesh_MSTK::init_pvert_lists() {
 
   // Get all vertices on this processor 
 
-  AllVerts = MSet_New(mesh,"AllVerts",MVERTEX);
   NotOwnedVerts = MSet_New(mesh,"NotOwnedVerts",MVERTEX);
   OwnedVerts = MSet_New(mesh,"OwnedVerts",MVERTEX);
 
   idx = 0;
   while ((vtx = MESH_Next_Vertex(mesh,&idx))) {
-    MSet_Add(AllVerts,vtx);
     if (MV_PType(vtx) == PGHOST)
       MSet_Add(NotOwnedVerts,vtx);
     else
@@ -3384,13 +3394,11 @@ void Mesh_MSTK::init_pface_lists() {
 
     MFace_ptr face;
 
-    AllFaces = MSet_New(mesh,"AllFaces",MFACE);
     NotOwnedFaces = MSet_New(mesh,"NotOwnedFaces",MFACE);
     OwnedFaces = MSet_New(mesh,"OwnedFaces",MFACE);
 
     idx = 0;
     while ((face = MESH_Next_Face(mesh,&idx))) {
-      MSet_Add(AllFaces,face);
       if (MF_PType(face) == PGHOST)
 	MSet_Add(NotOwnedFaces,face);
       else
@@ -3401,13 +3409,11 @@ void Mesh_MSTK::init_pface_lists() {
 
     MEdge_ptr edge;
 
-    AllFaces = MSet_New(mesh,"AllFaces",MFACE);
     NotOwnedFaces = MSet_New(mesh,"NotOwnedFaces",MFACE);
     OwnedFaces = MSet_New(mesh,"OwnedFaces",MFACE);
 
     idx = 0;
     while ((edge = MESH_Next_Edge(mesh,&idx))) {
-      MSet_Add(AllFaces,edge);
       if (ME_PType(edge) == PGHOST)
 	MSet_Add(NotOwnedFaces,edge);
       else
@@ -3433,10 +3439,11 @@ void Mesh_MSTK::init_pface_dirs() {
   int local_faceid0, local_faceid1;
   int remote_faceid0, remote_faceid1;
 
+  int nf = (cell_dimension() == 2) ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh);
 
   if (serial_run) {
-    faceflip = new bool[MSet_Num_Entries(AllFaces)];
-    for (int i = 0; i < MSet_Num_Entries(AllFaces); i++) faceflip[i] = false;
+    faceflip = new bool[nf];
+    for (int i = 0; i < nf; i++) faceflip[i] = false;
   }
   else {
     // Do some additional processing to see if ghost faces and their masters
@@ -3506,8 +3513,8 @@ void Mesh_MSTK::init_pface_dirs() {
 
 
 
-    faceflip = new bool[MSet_Num_Entries(AllFaces)];
-    for (int i = 0; i < MSet_Num_Entries(AllFaces); i++) faceflip[i] = false;
+    faceflip = new bool[nf];
+    for (int i = 0; i < nf; i++) faceflip[i] = false;
     
     if (cell_dimension() == 3) {
       double rval;
@@ -3592,13 +3599,11 @@ void Mesh_MSTK::init_pcell_lists() {
   if (cell_dimension() == 3) {
     MRegion_ptr region;
 
-    AllCells = MSet_New(mesh,"AllCells",MREGION);
     OwnedCells = MSet_New(mesh,"OwnedCells",MREGION);
     GhostCells = MSet_New(mesh,"GhostCells",MREGION);
 
     idx = 0;
     while ((region = MESH_Next_Region(mesh,&idx))) {
-      MSet_Add(AllCells,region);
       if (MR_PType(region) == PGHOST)
 	MSet_Add(GhostCells,region);
       else
@@ -3608,13 +3613,11 @@ void Mesh_MSTK::init_pcell_lists() {
   else if (cell_dimension() == 2) {
     MFace_ptr face;
 
-    AllCells = MSet_New(mesh,"AllCells",MFACE);
     OwnedCells = MSet_New(mesh,"OwnedCells",MFACE);
     GhostCells = MSet_New(mesh,"GhostCells",MFACE);
 
     idx = 0;
     while ((face = MESH_Next_Face(mesh,&idx))) {
-      MSet_Add(AllCells,face);
       if (MF_PType(face) == PGHOST)
 	MSet_Add(GhostCells,face);
       else
@@ -4515,9 +4518,9 @@ void Mesh_MSTK::pre_create_steps_(const int space_dimension,
 
   parent_mesh = NULL;
 
-  AllVerts = OwnedVerts = NotOwnedVerts = NULL;
-  AllFaces = OwnedFaces = NotOwnedFaces = NULL;
-  AllCells = OwnedCells = GhostCells = NULL;
+  OwnedVerts = NotOwnedVerts = NULL;
+  OwnedFaces = NotOwnedFaces = NULL;
+  OwnedCells = GhostCells = NULL;
   deleted_vertices = deleted_edges = deleted_faces = deleted_regions = NULL;
   entities_deleted = false;
 }
