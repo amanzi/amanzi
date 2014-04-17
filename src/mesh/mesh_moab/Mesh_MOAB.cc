@@ -1743,9 +1743,9 @@ void Mesh_MOAB::node_get_cell_faces (const Entity_ID nodeid,
     
 // Cells connected to a face
 
-void Mesh_MOAB::face_get_cells (const Entity_ID faceid, 
-				const Parallel_type ptype,
-				Entity_ID_List *cellids) const
+void Mesh_MOAB::face_get_cells_internal (const Entity_ID faceid, 
+                                         const Parallel_type ptype,
+                                         Entity_ID_List *cellids) const
 {
   throw std::exception();
 }

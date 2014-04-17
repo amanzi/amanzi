@@ -127,7 +127,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 
   Amanzi::AmanziMesh::Cell_type 
   cell_get_type(const Amanzi::AmanziMesh::Entity_ID cellid) const
-  { return Amanzi::AmanziMesh::UNKNOWN; }
+  { return Amanzi::AmanziMesh::CELLTYPE_UNKNOWN; }
 
   unsigned int 
   num_entities (const Amanzi::AmanziMesh::Entity_kind kind,
@@ -170,9 +170,9 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
                             Amanzi::AmanziMesh::Entity_ID_List *faceids) const
   {}
     
-  void face_get_cells (const Amanzi::AmanziMesh::Entity_ID faceid, 
-                       const Amanzi::AmanziMesh::Parallel_type ptype,
-                       Amanzi::AmanziMesh::Entity_ID_List *cellids) const
+  void face_get_cells_internal (const Amanzi::AmanziMesh::Entity_ID faceid, 
+                                const Amanzi::AmanziMesh::Parallel_type ptype,
+                                Amanzi::AmanziMesh::Entity_ID_List *cellids) const
   {}
 
   void cell_get_face_adj_cells(const Amanzi::AmanziMesh::Entity_ID cellid,

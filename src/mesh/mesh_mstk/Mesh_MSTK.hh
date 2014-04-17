@@ -217,6 +217,13 @@ private:
                                           std::vector<int> *face_dirs) const;
 
 
+  // Cells connected to a face
+    
+  void face_get_cells_internal (const Entity_ID faceid, 
+                                const Parallel_type ptype,
+                                Entity_ID_List *cellids) const;
+    
+
 public:
 
   // Constructors that read the mesh from a file
@@ -367,13 +374,6 @@ public:
 			    const Parallel_type ptype,
 			    Entity_ID_List *faceids) const;    
     
-  // Cells connected to a face
-    
-  void face_get_cells (const Entity_ID faceid, 
-		       const Parallel_type ptype,
-		       Entity_ID_List *cellids) const;
-    
-
 
   // Same level adjacencies
   //-----------------------

@@ -667,9 +667,9 @@ void Mesh_simple::node_get_cell_faces (const AmanziMesh::Entity_ID nodeid,
     
 // Cells connected to a face
     
-void Mesh_simple::face_get_cells (const AmanziMesh::Entity_ID faceid, 
-                                  const AmanziMesh::Parallel_type ptype,
-                                  AmanziMesh::Entity_ID_List *cellids) const
+void Mesh_simple::face_get_cells_internal (const AmanziMesh::Entity_ID faceid, 
+                                         const AmanziMesh::Parallel_type ptype,
+                                         AmanziMesh::Entity_ID_List *cellids) const
 {
   unsigned int offset = (unsigned int) 2*faceid;
 

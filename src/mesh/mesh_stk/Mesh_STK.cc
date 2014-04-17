@@ -152,7 +152,7 @@ Mesh_STK::cell_get_type(const Entity_ID cellid) const
 
   // FIXME: Polyhedral, 2D not yet supported
 
-  Cell_type result(UNKNOWN);
+  Cell_type result(CELLTYPE_UNKNOWN);
   ASSERT(topo != NULL);
   switch (topo->node_count) {
     case (8):
@@ -421,9 +421,9 @@ Mesh_STK::node_get_cell_faces(const Entity_ID nodeid,
 // Mesh_STK::face_get_cells
 // -------------------------------------------------------------
 void
-Mesh_STK::face_get_cells(const Entity_ID faceid, 
-                         const Parallel_type ptype,
-                         Entity_ID_List *outcellids) const
+Mesh_STK::face_get_cells_internal(const Entity_ID faceid, 
+                                  const Parallel_type ptype,
+                                  Entity_ID_List *outcellids) const
 {
   stk::mesh::EntityId global_face_id = 
       this->face_map(true).GID(faceid);

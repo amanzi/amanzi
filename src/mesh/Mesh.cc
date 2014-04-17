@@ -94,6 +94,62 @@ void Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
 }
 
 
+// Cells connected to a face - cache the results the first time it
+// is called and then return the cached results subsequently
+
+  void Mesh::face_get_cells (const Entity_ID faceid, const Parallel_type ptype,
+                             Entity_ID_List *cellids) const {
+
+  if (!face_cellids_current) {
+
+    int nfaces = num_entities(FACE,USED);
+    face_cell_ids.resize(nfaces);
+    face_cell_ptype.resize(nfaces);
+
+    std::vector<Entity_ID> fcells;
+
+    for (int f = 0; f < nfaces; f++) {      
+      face_get_cells_internal(f, USED, &fcells);
+
+      face_cell_ids[f].resize(2);
+      face_cell_ptype[f].resize(2);
+
+      for (int i = 0; i < fcells.size(); i++) {
+        int c = fcells[i];
+        face_cell_ids[f][i] = c;
+        face_cell_ptype[f][i] = entity_get_ptype(CELL,c);
+      }
+      for (int i = fcells.size(); i < 2; i++) {
+        face_cell_ids[f][i] = -1;
+        face_cell_ptype[f][i] = PTYPE_UNKNOWN;
+      }
+    }
+
+    face_cellids_current = true;
+  }
+
+  cellids->clear();
+
+  switch (ptype) {
+  case USED:
+    for (int i = 0; i < 2; i++)
+      if (face_cell_ptype[faceid][i] != PTYPE_UNKNOWN)
+        cellids->push_back(face_cell_ids[faceid][i]);
+    break;
+  case OWNED:
+    for (int i = 0; i < 2; i++)
+      if (face_cell_ptype[faceid][i] == OWNED) 
+        cellids->push_back(face_cell_ids[faceid][i]);
+    break;
+  case GHOST:
+    for (int i = 0; i < 2; i++)
+      if (face_cell_ptype[faceid][i] == GHOST)
+        cellids->push_back(face_cell_ids[faceid][i]);
+    break;
+  }
+}
+
+
 int Mesh::compute_geometric_quantities() const {
 
   // this might be called after mesh deformation,

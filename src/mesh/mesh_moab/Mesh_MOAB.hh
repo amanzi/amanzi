@@ -168,6 +168,13 @@ class Mesh_MOAB : public Mesh
 				const bool ordered=false) const;
 
 
+  // Cells connected to a face
+    
+  void face_get_cells_internal (const Entity_ID faceid, 
+                                const Parallel_type ptype,
+                                Entity_ID_List *cellids) const;
+    
+
 public:
   
   Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm, 
@@ -282,13 +289,6 @@ public:
 			    const Parallel_type ptype,
 			    Entity_ID_List *faceids) const;    
     
-  // Cells connected to a face
-    
-  void face_get_cells (const Entity_ID faceid, 
-		       const Parallel_type ptype,
-		       Entity_ID_List *cellids) const;
-    
-
 
   // Same level adjacencies
   //-----------------------

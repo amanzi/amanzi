@@ -154,13 +154,6 @@ public:
 			    const Parallel_type ptype,
 			    std::vector<Entity_ID> *faceids) const;    
     
-  // Cells connected to a face
-    
-  void face_get_cells (const Entity_ID faceid, 
-		       const Parallel_type ptype,
-		       std::vector<Entity_ID> *cellids) const;
-    
-
 
   // Same level adjacencies
   //-----------------------
@@ -375,6 +368,12 @@ private:
                                 Entity_ID_List *faceids,
                                 std::vector<int> *face_dirs,
                                 const bool ordered=false) const;
+
+  // Cells connected to a face
+    
+  void face_get_cells_internal (const Entity_ID faceid, 
+                                const Parallel_type ptype,
+                                std::vector<Entity_ID> *cellids) const;
 
 
 };

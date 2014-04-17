@@ -197,12 +197,6 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
                             const Parallel_type ptype,
                             Entity_ID_List *faceids) const;    
     
-  // Cells connected to a face
-  void face_get_cells (const Entity_ID faceid, 
-                       const Parallel_type ptype,
-                       Entity_ID_List *cellids) const;
-    
-
 
   // Same level adjacencies
   //-----------------------
@@ -399,6 +393,14 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
                                 Entity_ID_List *faceids,
                                 std::vector<int> *face_dirs,
                                 const bool ordered=false) const;
+
+  // Cells connected to a face
+
+  void face_get_cells_internal (const Entity_ID faceid, 
+                                const Parallel_type ptype,
+                                Entity_ID_List *cellids) const;
+    
+
 
 };
 

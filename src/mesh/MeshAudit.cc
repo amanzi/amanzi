@@ -657,7 +657,7 @@ bool MeshAudit::check_cell_to_faces_to_nodes() const
     // If this is a general, non-standard element there is nothing to
     // to check against
 
-    if (ctype == AmanziMesh::UNKNOWN || 
+    if (ctype == AmanziMesh::CELLTYPE_UNKNOWN || 
 	ctype == AmanziMesh::POLYGON || 
 	ctype == AmanziMesh::POLYHED)
       continue;
