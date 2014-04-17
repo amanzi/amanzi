@@ -186,6 +186,9 @@ void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
       if (frow_global == indicesA[m]) {
         block(0,1) = (*Ccc_surf_)[0][sc] * scaling_;
         block(1,0) = (*Dcc_surf_)[0][sc] * scaling_;
+      } else {
+        block(0,1) = 0.;
+        block(1,0) = 0.;
       }
 
       ierr = P2f2f_->SubmitBlockEntry(block.A(), block.LDA(), block.M(), block.N());
