@@ -231,7 +231,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
 
 
-  vapor_diffusion_ = true;
+  vapor_diffusion_ = false;
   if (vapor_diffusion_){
   // Create the vapor diffusion vectors
     S->RequireField("vapor_diffusion_pressure", name_)->SetMesh(mesh_)->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
