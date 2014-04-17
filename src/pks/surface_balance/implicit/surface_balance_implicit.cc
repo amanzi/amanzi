@@ -238,6 +238,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
   double dt = t_new - t_old;
+  double T_eps = 0.0001;
 
   bool debug = false;
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) debug = true;
@@ -438,10 +439,11 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       if (eval_derivatives_) {
         // evaluate FD derivative of energy flux wrt surface temperature
         SEBPhysics::SEB seb2(seb);
-        seb2.in.vp_ground.temp += 0.01;
+        seb.params.Zr = wind_speed_ref_ht_;
+        seb2.in.vp_ground.temp += T_eps;
         // for now ignore the effect on unfrozen fraction, and therefore on albedo and emissivity
         SEBPhysics::CalculateSurfaceBalance(seb2);
-        (*dsurf_energy_flux_dT)[0][c] = (seb2.out.eb.fQc - seb.out.eb.fQc) / 0.01;
+        (*dsurf_energy_flux_dT)[0][c] = (seb2.out.eb.fQc - seb.out.eb.fQc) / T_eps;
       }
 
     } else {
@@ -590,14 +592,14 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
         seb2.params.Zr = wind_speed_ref_ht_;
         SEBPhysics::SEB seb2_bare(seb_bare);
         seb2_bare.params.Zr = wind_speed_ref_ht_;
-        seb2.in.vp_ground.temp += 0.01;
-        seb2_bare.in.vp_ground.temp += 0.01;
+        seb2.in.vp_ground.temp += T_eps;
+        seb2_bare.in.vp_ground.temp += T_eps;
         // for now ignore the effect on unfrozen fraction, and therefore on albedo and emissivity
         SEBPhysics::CalculateSurfaceBalance(seb2);
         SEBPhysics::CalculateSurfaceBalance(seb2_bare);
         double eflux2 = theta * seb2.out.eb.fQc + (1-theta) * seb2_bare.out.eb.fQc;
         
-        (*dsurf_energy_flux_dT)[0][c] = (eflux2 - surf_energy_flux[0][c]) / 0.01;
+        (*dsurf_energy_flux_dT)[0][c] = (eflux2 - surf_energy_flux[0][c]) / T_eps;
       }
     }
   }  // END CELL LOOP ###############################

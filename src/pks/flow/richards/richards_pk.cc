@@ -57,6 +57,7 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     niter_(0),
     dynamic_mesh_(false),
     clobber_surf_kr_(false),
+    vapor_diffusion_(false),
     perm_scale_(1.)
 {
   // set a few parameters before setup
@@ -190,6 +191,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("sc_numerical_rel_perm",name_)->set_io_vis(false);
 
+
+
   S->RequireField("numerical_rel_perm", name_)->SetMesh(mesh_)->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("numerical_rel_perm",name_)->set_io_vis(false);
@@ -227,6 +230,22 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
+
+  vapor_diffusion_ = false;
+  if (vapor_diffusion_){
+  // Create the vapor diffusion vectors
+    S->RequireField("vapor_diffusion_pressure", name_)->SetMesh(mesh_)->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->GetField("vapor_diffusion_pressure",name_)->set_io_vis(true);
+
+
+    S->RequireField("vapor_diffusion_temperature", name_)->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->GetField("vapor_diffusion_temperature",name_)->set_io_vis(true);
+
+  }
+
+
+
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
   scaled_constraint_ = mfd_plist.get<bool>("scaled constraint equation", false);
@@ -235,6 +254,17 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   matrix_->set_symmetric(symmetric_);
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->InitPreconditioner();
+
+  if (vapor_diffusion_){
+    // operator for the vapor diffusion terms
+    matrix_vapor_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
+    symmetric_ = false;
+    matrix_vapor_ ->set_symmetric(symmetric_);
+    matrix_vapor_ ->SymbolicAssembleGlobalMatrices();
+    matrix_vapor_ ->InitPreconditioner();
+  }
+
+
 
   // operator with no krel for flux direction, consistent faces
   face_matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
@@ -302,6 +332,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   S->RequireField("relative_permeability")->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
+  wrm_plist.set<double>("permeability rescaling", perm_scale_);
   Teuchos::RCP<FlowRelations::RelPermEvaluator> rel_perm_evaluator =
       Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
   S->SetFieldEvaluator("relative_permeability", rel_perm_evaluator);
@@ -311,10 +342,6 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("molar_density_liquid")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("molar_density_liquid");
-
-  // S->RequireField("viscosity_liquid")->SetMesh(mesh_)->SetGhosted()
-  //     ->AddComponent("cell", AmanziMesh::CELL, 1);
-  // S->RequireFieldEvaluator("viscosity_liquid");
 
   // -- liquid mass density for the gravity fluxes
   S->RequireField("mass_density_liquid")->SetMesh(mesh_)->SetGhosted()
@@ -360,6 +387,14 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData("sc_numerical_rel_perm",name_)->PutScalar(1.0);
   S->GetField("sc_numerical_rel_perm",name_)->set_initialized();
 
+  if (vapor_diffusion_){
+    S->GetFieldData("vapor_diffusion_pressure",name_)->PutScalar(1.0);
+    S->GetField("vapor_diffusion_pressure",name_)->set_initialized();
+    S->GetFieldData("vapor_diffusion_temperature",name_)->PutScalar(1.0);
+    S->GetField("vapor_diffusion_temperature",name_)->set_initialized();
+  }
+
+
   S->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
   S->GetField("darcy_flux", name_)->set_initialized();
   S->GetFieldData("darcy_flux_direction", name_)->PutScalar(0.0);
@@ -373,6 +408,14 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   // operators
   matrix_->CreateMFDmassMatrices(K_.ptr());
   mfd_preconditioner_->CreateMFDmassMatrices(K_.ptr());
+
+  if (vapor_diffusion_){
+    //vapor diffusion
+    matrix_vapor_->CreateMFDmassMatrices(Teuchos::null);
+    // residual vector for vapor diffusion
+    res_vapor = Teuchos::rcp(new CompositeVector(*S->GetFieldData("pressure"))); 
+  }
+  
 
   face_matrix_->CreateMFDmassMatrices(K_.ptr());
   face_matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
