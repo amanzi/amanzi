@@ -264,6 +264,8 @@ void Richards_PK::InitPK()
   CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
   UpdateSourceBoundaryData(time, pressure);
 
+  darcy_flux = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("darcy_flux", passwd_)));
+
   // Other quantatities: injected water mass
   mass_bc = 0.0;
 }
@@ -504,8 +506,12 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   } else {
     CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
     UpdateSourceBoundaryData(Tp, *solution);
-    rel_perm->Compute(pressure, bc_model, bc_values);
+    *darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+    rel_perm->Compute(pressure, *darcy_flux, bc_model, bc_values);
   }
+
+ // Epetra_MultiVector& lambda = *solution->ViewComponent("face", true);
+ // lambda.PutScalar(0.0);
 
   // nonlinear solver control options
   ti_specs.num_itrs = 0;
@@ -543,6 +549,41 @@ int Richards_PK::Advance(double dT_MPC)
   cv->ScatterMasterToGhosted("face");
   Epetra_MultiVector& flux = *cv->ViewComponent("face", true);
 
+  // Teuchos::RCP<CompositeVector> pressure = S_->GetFieldData("pressure", passwd_);
+  Epetra_MultiVector& sol_cell  = *solution->ViewComponent("cell", false);
+  // Epetra_MultiVector& sol_faces = *solution->ViewComponent("face", false);
+  // Epetra_MultiVector& pres_cell  = *pressure->ViewComponent("cell", false);
+  // Epetra_MultiVector& pres_faces = *pressure->ViewComponent("face", false);
+  // //  pr_faces.PutScalar(0.);
+
+  double l2_norm_cell(0.0), l2_norm_face(0.);
+  double inf_norm_cell(0.0), inf_norm_face(0.);
+  double l2_total(0.0), inf_total(0.);
+
+  sol_cell.Norm2(&l2_norm_cell);
+  // sol_faces.Norm2(&l2_norm_face);
+  sol_cell.NormInf(&inf_norm_cell);
+  // sol_faces.NormInf(&inf_norm_face);
+  solution->Norm2(&l2_total);
+  solution->NormInf(&inf_total);
+
+  *vo_->os() << "cell l2: "<<l2_norm_cell<<" inf: "<< inf_norm_cell  << std::endl;
+  // *vo_->os() << "face l2: "<<l2_norm_face<<" inf: "<< inf_norm_face  << std::endl;
+  *vo_->os() << "total l2: "<<l2_total<<" inf: "<< inf_total  << std::endl;
+
+  // pres_cell.Norm2(&l2_norm_cell);
+  // pres_faces.Norm2(&l2_norm_face);
+  // pres_cell.NormInf(&inf_norm_cell);
+  // pres_faces.NormInf(&inf_norm_face);
+  // pressure ->Norm2(&l2_total);
+  // pressure ->NormInf(&inf_total);
+
+  // *vo_->os() << "cell l2: "<<l2_norm_cell<<" inf: "<< inf_norm_cell  << std::endl;
+  // *vo_->os() << "face l2: "<<l2_norm_face<<" inf: "<< inf_norm_face  << std::endl;
+  // *vo_->os() << "total l2: "<<l2_total<<" inf: "<< inf_total  << std::endl;
+
+  // exit(0);
+  
   dT = dT_MPC;
   double time = S_->time();
   if (time >= 0.0) T_physics = time;

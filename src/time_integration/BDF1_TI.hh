@@ -149,6 +149,11 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   // print some info about the time step
   double tlast = state_->uhist->MostRecentTime();
   double tnew = tlast + dt;
+  double l2_norm(0.0), inf_norm(0.0);
+
+  // u->Norm2(&l2_norm);
+  // u->NormInf(&inf_norm);
+  // *vo_->os() <<"solution l2: "<<l2_norm<<" inf: "<<inf_norm<<std::endl;
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "step " << state_->seq << " T = " << tlast
@@ -163,12 +168,15 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   // Predicted solution (initial value for the nonlinear solver)
   if (state_->extrapolate_guess) {
     if (state_->uhist->history_size() > 1) {
+
       state_->uhist->InterpolateSolution(tnew, *u);
+
+
       fn_->changed_solution();
 
       if (fn_->is_admissible(u)) {
-	bool changed = fn_->ModifyPredictor(dt, u0, u);
-	if (changed) fn_->changed_solution();
+    	bool changed = fn_->ModifyPredictor(dt, u0, u);
+    	if (changed) fn_->changed_solution();
       } else {
 	*u = *u0;
 	fn_->changed_solution();
@@ -179,6 +187,12 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   // Set up the solver fn
   solver_fn_->SetTimes(tlast, tnew);
   solver_fn_->SetPreviousTimeSolution(u0);
+
+
+
+  // u->Norm2(&l2_norm);
+  // u->NormInf(&inf_norm);
+  // *vo_->os() <<"solution l2: "<<l2_norm<<" inf: "<<inf_norm<<std::endl;
 
   // Solve the nonlinear BCE system.
   int itr;
@@ -200,8 +214,10 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
     *u = *u0;
   }
 
+  *vo_->os() <<"dt "<<dt<<" dt_next "<<dt_next<<"\n";
   // update the next timestep size
   dt_next = ts_control->get_timestep(dt, itr);
+  *vo_->os() <<"dt "<<dt<<" dt_next "<<dt_next<<"\n";
 
   // update the preconditioner lag
   if (itr < 0) {

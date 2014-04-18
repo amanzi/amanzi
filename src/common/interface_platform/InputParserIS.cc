@@ -1381,7 +1381,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
       }
       // discretization method must be two point flux approximation for if newton is used
       if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
-        disc_method = std::string("two point flux approximation");
+        disc_method = std::string("finite volume");
       }
 
       if (flow_model == "Single Phase" || flow_model == "Richards") {

@@ -125,15 +125,16 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
 
   // initialize the iteration counter
   num_itrs_ = 0;
+ 
 
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
   Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
 
   // variables to monitor the progress of the nonlinear solver
-  double error(0.0), previous_error(0.0), l2_error(0.0);
+  double error(0.0), previous_error(0.0), l2_error(0.0), sol_norm(0.);
   double l2_error_initial(0.0);
-  double du_norm(0.0), previous_du_norm(0.0);
+  double du_norm(0.0), previous_du_norm(0.0), du_norm_test(0.);
   int divergence_count(0);
 
   do {
@@ -144,6 +145,8 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
                    << "  error = " << error << std::endl;
       return SOLVER_MAX_ITERATIONS;
     }
+    //u->Norm2(&sol_norm);
+    //*vo_->os() << "Solution norm "<<sol_norm<<std::endl;
 
     // Update the preconditioner.
     pc_calls_++;
@@ -184,6 +187,7 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
     pc_calls_++;
     fn_->ApplyPreconditioner(r, du);
 
+   
     // Hack the correction
     if (modify_correction_) {
       bool hacked = fn_->ModifyCorrection(r, u, du);
@@ -224,6 +228,7 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
 
     // Next solution iterate and error estimate: u  = u - du
     u->Update(-1.0, *du, 1.0);
+    
 
     // If we monitor the update...
     if (monitor_ == SOLVER_MONITOR_UPDATE) {

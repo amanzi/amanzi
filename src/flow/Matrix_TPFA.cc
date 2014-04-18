@@ -234,17 +234,18 @@ int Matrix_TPFA::ApplyPreconditioner(const CompositeVector& X, CompositeVector& 
   Teuchos::ParameterList plist;
   Teuchos::ParameterList& slist = plist.sublist("gmres");
   slist.set<string>("iterative method", "gmres");
-  slist.set<double>("error tolerance", 1e-18);
+  slist.set<double>("error tolerance", 1e-12);
   slist.set<int>("maximum number of iterations", 200);
   Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
-  vlist.set("Verbosity Level", "low");
+  vlist.set("Verbosity Level", "extreme");
 
   Teuchos::RCP<const Matrix_TPFA> matrix_tmp = Teuchos::rcp(this, false);
 
   AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> > 
       solver = factory.Create("gmres", plist, matrix_tmp, matrix_tmp);
-   
+
+  Y.PutScalar(0.);
   int ok = solver->ApplyInverse(X, Y);
 
   // if (ok != 1) {
@@ -293,6 +294,7 @@ void Matrix_TPFA::ApplyBoundaryConditions(std::vector<int>& bc_model,
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       double value = bc_values[f][0];
+
 
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
 	rhs_cells[0][c] += value * (*transmissibility_)[f] * Krel_faces[0][f];

@@ -42,13 +42,13 @@ class RelativePermeability {
   void Init(double p0, Teuchos::RCP<State> S);
   void ProcessParameterList();
 
-  void Compute(const CompositeVector& pressure, 
+  void Compute(const CompositeVector& pressure, const CompositeVector& flux,
                const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
   void ComputeInCells(const CompositeVector& pressure);
-  void ComputeOnFaces(const CompositeVector& pressure,
+  void ComputeOnFaces(const CompositeVector& pressure, const CompositeVector& flux,
                       const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
   void ComputeDerivativeOnFaces(
-      const CompositeVector& pressure,
+      const CompositeVector& pressure, const CompositeVector& flux,
       const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
 
   void DerivedSdP(const Epetra_MultiVector& p, Epetra_MultiVector& ds);
