@@ -264,17 +264,6 @@ void RelativePermeability::FaceUpwindFlux_(
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
 
-      /// ***** TEST  <--
-      // if (f == 108496 ){
-      // 	const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      // 	const AmanziGeometry::Point& cntr = mesh_->face_centroid(f);
-      // 	//double cos_angle = (normal * Kgravity_unit_[c]) * dirs[n] / mesh_->face_area(f);
-      // 	std::cout<<"FaceUpwindFlux_:"<<f<<" cntr "<<cntr<<" norm "<<normal;
-      // 	std::cout<<" flux "<<flux[0][f]<< " dir "<<dirs[n]<<" tol "<<tol<<std::endl;
-      // }
-
-      /// ***** TEST  -->
-
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && flux[0][f] * dirs[n] < -tol) {
           double pc = atm_pressure - bc_values[f][0];
@@ -290,6 +279,7 @@ void RelativePermeability::FaceUpwindFlux_(
         }
       }
     }
+
   }
 }
 

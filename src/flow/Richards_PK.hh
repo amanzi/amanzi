@@ -158,6 +158,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Grav_term_faces;
 
   bool is_matrix_symmetric;
+  int update_upwind;
   double mass_bc, mass_amanzi;
 
  private:

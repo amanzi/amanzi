@@ -122,11 +122,6 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRESRestart_(
   int ierr(LIN_SOLVER_MAX_ITERATIONS);
   while (ierr == LIN_SOLVER_MAX_ITERATIONS && max_itrs_left > 0) {
 
-    x.Norm2(&x_norm);
-    f.Norm2(&f_norm);
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "xnorm "<< x_norm<<" fnorm "<<f_norm <<" tol "<<tol<< std::endl;    
-
     ierr = GMRES_(f, x, tol, max_itrs_left, criteria);
     if (ierr == LIN_SOLVER_RESIDUAL_OVERFLOW) return ierr;
 

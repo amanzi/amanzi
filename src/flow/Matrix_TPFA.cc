@@ -235,7 +235,7 @@ int Matrix_TPFA::ApplyPreconditioner(const CompositeVector& X, CompositeVector& 
   slist.set<double>("error tolerance", 1e-12);
   slist.set<int>("maximum number of iterations", 200);
   Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
-  vlist.set("Verbosity Level", "extreme");
+  vlist.set("Verbosity Level", "low");
 
   Teuchos::RCP<const Matrix_TPFA> matrix_tmp = Teuchos::rcp(this, false);
 
@@ -420,7 +420,6 @@ void Matrix_TPFA::DeriveMassFlux(
 	    Errors::Message msg("Flow PK: These boundary conditions are not supported by TPFA.");
 	    Exceptions::amanzi_throw(msg);
 	  }
-
           if (c == cells[0]){
             flux[0][f] = dirs[n] * (*transmissibility_)[f] * (p[0][cells[0]] - p[0][cells[1]]) + (*gravity_term_)[f];
           } else {
