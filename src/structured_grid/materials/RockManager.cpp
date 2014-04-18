@@ -2,10 +2,8 @@
 #include <fstream>
 #include <iomanip>
 
-#include <GSLibInt.H>
 #include <RockManager.H>
 #include <RockManager_F.H>
-#include <WritePlotfile.H>
 
 #include <Utility.H>
 #include <ParmParse.H>
@@ -55,25 +53,15 @@ static Real Kr_smoothing_min_seff_DEF = 2;
 static int NUM_INIT_INTERP_EVAL_PTS_DEF = 5001;
 static Real pc_at_Sr = 1.e11;
 
-static int crse_init_factor = 32;
-static int max_grid_fine_gen = 32;
-
-static std::string MaterialPlotFileVersion = "MaterialPlotFile-V1.0";
-
 static int Rock_Mgr_ID_ctr=0;
 static std::vector<RockManager*> Rock_Mgr_Ptrs;
 static std::vector<std::pair<bool,Real> > Kr_smoothing_min_seff; // Bool says whether value needs to be updated
 
-RockManager::RockManager(const RegionManager*      _region_manager,
-                         const Array<Geometry>&    geomArray,
-                         const Array<IntVect>&     refRatio,
-                         int                       _nGrow,
+RockManager::RockManager(const RegionManager*     _region_manager,
                          const Array<std::string>* solute_names)
-  : region_manager(_region_manager), nGrow(_nGrow), interps_built(false),
-    dataServices_phi(0) 
+  : region_manager(_region_manager), interps_built(false)
 {
-  Initialize(geomArray,refRatio,solute_names);
-  BuildInterpolators();
+  Initialize(solute_names);
 
   rock_mgr_ID = Rock_Mgr_ID_ctr++;
   Rock_Mgr_Ptrs.resize(rock_mgr_ID+1); Rock_Mgr_Ptrs[rock_mgr_ID] = this;
@@ -101,16 +89,6 @@ extern "C" {
   }
 }
 
-int
-RockManager::NComp(const std::string& property_name) const
-{
-  int nc = 0;
-  if (materialFiller->CanDerive(property_name)) {
-    nc = materialFiller->NComp(property_name);
-  }
-  return nc;
-}
-
 static
 void
 EnsureFolderExists(const std::string& full_path)
@@ -129,6 +107,72 @@ EnsureFolderExists(const std::string& full_path)
       BoxLib::CreateDirectoryFailed(dir);
     }
   }
+}
+
+int
+RockManager::NComp(const std::string& property_name) const
+{
+  int nc = 0;
+  if (materialFiller->CanDerive(property_name)) {
+    nc = materialFiller->NComp(property_name);
+  }
+  return nc;
+}
+
+const Material&
+RockManager::FindMaterial(const std::string& name) const
+{
+  bool found=false;
+  int iMat = -1;
+  const PArray<Material>& mats = GetMaterials();
+  for (int i=0; i<mats.size() && !found; ++i) {
+    const Material& mat = mats[i];
+    if (name == mat.Name()) {
+      found = true;
+      iMat = i;
+    }
+  } 
+  if (iMat < 0) {
+    std::string m = "Named material not found " + name;
+    BoxLib::Abort(m.c_str());
+  }
+  return mats[iMat];
+}
+
+const Material&
+RockManager::FindMaterialInRegions(const Array<std::string>& region_names) const
+{
+  int iMat = -1;
+  const PArray<Material>& mats = GetMaterials();
+  for (int i=0; i<mats.size() && iMat<0; ++i) {
+    const Material& mat = mats[i];
+    const Array<const Region*>& thisRegions = mat.Regions();
+
+    bool contains_one = false;
+    bool contains_all = true;
+    for (int j=0; j<thisRegions.size() && iMat<0; ++j) {
+      for (int k=0; k<region_names.size(); ++k) {
+        if (region_names[k] == thisRegions[j]->name) {
+          contains_one = true;
+        }
+        else if (contains_one) {
+          contains_all = false;
+        }
+      }
+      if (contains_one) {
+        if (contains_all) {
+          iMat = i;
+        }
+        else {
+          BoxLib::Abort("Single Material does contain all regions for this boundary");
+        }
+      }
+    }
+  }
+  if (iMat < 0) {
+    BoxLib::Abort("No single material found containing all specified regions");
+  }
+  return mats[iMat];
 }
 
 void
@@ -202,115 +246,6 @@ RockManager::BuildInterpolators()
   interps_built = true;
 }
 
-void
-RockManager::BuildGSLibFile(Real                   avg,
-                            Real                   std,
-                            const std::string&     gslib_param_file,
-                            const std::string&     gslib_data_file,
-                            const Array<Real>&     gslib_file_shift,
-                            const Array<Geometry>& geom_array,
-                            const Array<IntVect>&  ref_ratio,
-                            int                    num_grow,
-                            int                    max_grid_size_fine_gen,
-                            Property::CoarsenRule& crule,
-                            const std::string&     varname)
-{
-  int nLev = geom_array.size();
-  int finest_level = nLev - 1;
-  const Geometry& geom = geom_array[finest_level];
-  Box stat_box = Box(geom.Domain());
-
-  if(!BoxLib::FileExists(gslib_param_file)) {
-    const std::string& str = "GSLib parameter file: \"" + gslib_param_file + "\" does not exist";
-    BoxLib::Abort(str.c_str());
-  }
-
-  // Original interface supports layered structure, we disable that for now
-  Array<Real> avgVals(1,avg);
-  Array<int> n_cell(BL_SPACEDIM);
-  const Geometry& geom0 = geom_array[0];
-  for (int d=0; d<BL_SPACEDIM; ++d) {
-    n_cell[d] = geom0.Domain().length(d);
-  }
-
-  // Find cummulative refinement ratio
-  int twoexp = 1;
-  for (int i = 1; i<nLev; i++) {
-    twoexp *= ref_ratio[i-1][0];  // FIXME: Assumes uniform refinement
-  }
-
-  PArray<MultiFab> stat(nLev,PArrayManage);
-  BoxArray stat_ba(stat_box);
-  stat_ba.maxSize(max_grid_size_fine_gen);
-  int ng_cum = num_grow * twoexp;
-  stat.set(finest_level, new MultiFab(stat_ba,1,ng_cum));
-
-  const Array<Real> prob_lo(geom0.ProbLo(),BL_SPACEDIM);
-  const Array<Real> prob_hi(geom0.ProbHi(),BL_SPACEDIM);
-  
-  GSLibInt::rdpGaussianSim(avgVals,std,n_cell,prob_lo,prob_hi,twoexp,stat[finest_level],
-                           crse_init_factor,max_grid_size_fine_gen,ng_cum,gslib_param_file);
-
-  for (int lev=finest_level-1; lev>=0; --lev) {
-    int ltwoexp = 1;
-    for (int i = 1; i<lev; i++) {
-      ltwoexp *= ref_ratio[i-1][0];  // FIXME: Assumes uniform refinement
-    }
-
-    const Box& domain = geom_array[lev].Domain();
-    BoxArray ba(domain);
-    ba.maxSize(max_grid_size_fine_gen / ref_ratio[lev][0]); // FIXME: Assumes uniform refinement
-    stat.set(lev, new MultiFab(ba,1,num_grow*ltwoexp));
-
-    BoxArray baf = BoxArray(ba).refine(ref_ratio[lev]);
-    MultiFab fine(baf,1,stat[lev].nGrow()*ref_ratio[lev][0]);// FIXME: Assumes uniform refinement
-    BoxArray bafg = BoxArray(baf).grow(fine.nGrow());
-    MultiFab fineg(bafg,1,0);
-    fineg.copy(stat[lev+1]); // parallel copy
-    for (MFIter mfi(fine); mfi.isValid(); ++mfi) {
-      fine[mfi].copy(fineg[mfi]);
-    }
-    fineg.clear();
-
-    for (MFIter mfi(fine); mfi.isValid(); ++mfi) {
-      const FArrayBox& finefab = fine[mfi];
-      FArrayBox& crsefab = stat[lev][mfi];
-      const Box& cbox = crsefab.box();
-      if ( !(finefab.box().contains(Box(cbox).refine(ref_ratio[lev])) ) ) {
-        std::cout << "c,f: " << cbox << " " << finefab.box() << std::endl;
-        BoxLib::Abort();
-      }
-      MatFiller::CoarsenData(fine[mfi],0,stat[lev][mfi],cbox,0,1,ref_ratio[lev],crule);
-    }
-  }
-
-  EnsureFolderExists(gslib_data_file);
-  
-  Array<MultiFab*> data(nLev);
-  Array<Box> prob_domain(nLev);
-  Array<Array<Real> > dx_level(nLev,Array<Real>(BL_SPACEDIM));
-  Array<int> int_ref(nLev-1);
-  for (int lev=0; lev<nLev; ++lev) {
-    data[lev] = &(stat[lev]);
-    prob_domain[lev] = geom_array[lev].Domain();
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-      dx_level[lev][d] = geom_array[lev].CellSize(d);
-    }
-    if (lev<finest_level) {
-      int_ref[lev] = ref_ratio[lev][0];
-    }
-  }
-  Real time=0;
-  bool verbose=false;
-  Array<Real> vfeps(BL_SPACEDIM,0);
-  Array<int> level_steps(nLev,0);
-  Array<std::string> varnames(1,varname);
-  bool is_cart_grid = false;
-  WritePlotfile(MaterialPlotFileVersion,data,time,geom0.ProbLo(),geom0.ProbHi(),int_ref,prob_domain,
-                dx_level,geom0.Coord(),gslib_data_file,varnames,verbose,is_cart_grid,vfeps.dataPtr(),
-                level_steps.dataPtr());
-  ParallelDescriptor::Barrier(); // Wait until everyone finished to avoid reading before completely written
-}
 
 // FIXME: Replace with call to MatFiller::FillCellsOutsideDomain
 void
@@ -369,6 +304,9 @@ RockManager::Porosity(Real      time,
                       int       dComp,
                       int       nGrow) const
 {
+  if (!interps_built) {
+    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
+  }
   bool ignore_mixed = true;
   materialFiller->SetProperty(time,level,porosity,PorosityName,dComp,nGrow,0,ignore_mixed);
   int nComp = NComp(PorosityName);
@@ -400,10 +338,36 @@ RockManager::Porosity(Real      time,
 }
 
 void
-RockManager::Initialize(const Array<Geometry>&    geomArray,
-                        const Array<IntVect>&     refRatio,
-                        const Array<std::string>* solute_names)
+RockManager::FinalizeBuild(const Array<Geometry>& geomArray,
+                           const Array<IntVect>&  refRatio,
+                           int                    nGrow)
 {
+  for (int i=0; i<rock.size(); ++i) {
+    Array<std::string> propNames = rock[i].PropertyNames();
+    for (int j=0; j<propNames.size(); ++j) {      
+      const Property* p = rock[i].Prop(propNames[j]);
+      GSLibProperty* t = dynamic_cast<GSLibProperty*>(const_cast<Property*>(p));
+      if (t!=0) {
+        int max_grid_size_fine_gen = 32;
+        t->BuildDataFile(geomArray,refRatio,nGrow,max_grid_size_fine_gen,p->coarsenRule(),propNames[j]);
+      }
+    }
+  }
+  materialFiller = new MatFiller(geomArray,refRatio,rock);
+  BuildInterpolators();
+}
+
+void
+RockManager::Initialize(const Array<std::string>* solute_names)
+{
+  if (solute_names != 0) {
+    int num_solutes = solute_names->size();
+    known_solutes.resize(num_solutes);
+    for (int i=0; i<num_solutes; ++i) {
+      known_solutes[i] = (*solute_names)[i];
+    }
+  }
+
   is_saturated = false;
   is_diffusive = false;
   tensor_diffusion = false;
@@ -567,27 +531,10 @@ RockManager::Initialize(const Array<Geometry>&    geomArray,
       Array<Real> gslib_file_shift(BL_SPACEDIM,0);
       pprp.queryarr(PorosityGSFileShiftName.c_str(),gslib_file_shift,0,BL_SPACEDIM);
 
-      int num = amrData_phi.count(gslib_data_file);
-      if (num == 0) {
-        if (generate_porosity_gslib_file) {
-          Real porosity_avg; pprp.get(PorosityValName.c_str(),porosity_avg);
-          Real porosity_std; pprp.get(PorosityStdName.c_str(),porosity_std);
-          BuildGSLibFile(porosity_avg, porosity_std, gslib_param_file, gslib_data_file,
-                         gslib_file_shift, geomArray, refRatio, nGrow, max_grid_fine_gen,
-                         arith_crsn,PorosityName);
-        }
-        
-        DataServices::SetBatchMode();
-        Amrvis::FileType fileType(Amrvis::NEWPLT);
-        dataServices_phi = new DataServices(gslib_data_file, fileType);
-        if (!dataServices_phi->AmrDataOk())
-          DataServices::Dispatch(DataServices::ExitRequest, NULL);    
-        amrData_phi[gslib_data_file] = &(dataServices_phi->AmrDataRef());
-      }
-      else {
-        BoxLib::Abort("Cannot assign the same GSLib data file to more than one material");
-      }
-      phi_func = new GSLibProperty(PorosityName,0,amrData_phi[gslib_data_file],arith_crsn,pc_refine);
+      Real avg; pprp.get(PorosityValName.c_str(),avg);
+      Real std; pprp.get(PorosityStdName.c_str(),std);
+
+      phi_func = new GSLibProperty(PorosityName,avg,std,gslib_param_file,gslib_data_file,gslib_file_shift,arith_crsn,pc_refine);
     }
 
     Property* kappa_func = 0;
@@ -825,7 +772,7 @@ RockManager::Initialize(const Array<Geometry>&    geomArray,
 
     std::vector<Property*> properties;
     if (phi_func) {
-      properties.push_back(phi_func);
+      properties.push_back(phi_func->clone());
     }
     properties.push_back(kappa_func);
     if (Dmolec_func) {
@@ -842,6 +789,7 @@ RockManager::Initialize(const Array<Geometry>&    geomArray,
     }
     properties.push_back(cpl_func);
     rock.set(i,new Material(rname,rregions,properties));
+
     delete phi_func;
     delete kappa_func;
     delete Dmolec_func;
@@ -851,13 +799,10 @@ RockManager::Initialize(const Array<Geometry>&    geomArray,
     delete cpl_func;
   }
 
-  // if solute_names != 0, assume material properties for solute chemistry present
-  if (solute_names != 0) {
-    const Array<std::string>& tNames = *solute_names;
-    int ntracers = tNames.size();
+  if (known_solutes.size() > 0) {
 
     // Read rock parameters associated with chemistry
-    using_sorption = false;
+    using_sorption = false; // TRUE if CationExchangeCapacity, SorptionIsotherms, or SorptionSites specified
     aux_chem_variables.clear();
     
     ParmParse ppm("mineral");
@@ -871,39 +816,40 @@ RockManager::Initialize(const Array<Geometry>&    geomArray,
     nsorption_sites = pps.countval("sorption_sites");
     sorption_sites.resize(nsorption_sites);
     if (nsorption_sites>0) {
+      using_sorption = true;
       pps.getarr("sorption_sites",sorption_sites,0,nsorption_sites);
     }
 
     ICParmPair sorption_isotherm_options;
-    sorption_isotherm_options[          "Kd"] = 0;
-    sorption_isotherm_options[  "Langmuir_b"] = 0;
+    sorption_isotherm_options[          "Kd"] = -1;
+    sorption_isotherm_options[  "Langmuir_b"] = 1;
     sorption_isotherm_options["Freundlich_n"] = 1;
 	
-    for (int k=0; k<tNames.size(); ++k) {
+    for (int k=0; k<known_solutes.size(); ++k) {
       for (ICParmPair::const_iterator it=sorption_isotherm_options.begin();
            it!=sorption_isotherm_options.end(); ++it) {
         const std::string& str = it->first;
         bool found = false;
         for (int i=0; i<nrock; ++i) {
-          const std::string prefix("rock."+r_names[i]+".Sorption_Isotherms."+tNames[k]);
+          const std::string prefix("rock."+r_names[i]+".Sorption_Isotherms."+known_solutes[k]);
           ParmParse pprs(prefix.c_str());
           if (pprs.countval(str.c_str())) {
-            pprs.get(str.c_str(),sorption_isotherm_ics[r_names[i]][tNames[k]][str]);
+            pprs.get(str.c_str(),sorption_isotherm_ics[r_names[i]][known_solutes[k]][str]);
             found = true;
           }
         }
 
         if (found) {
           using_sorption = true;
-          nsorption_isotherms = ntracers;
+          nsorption_isotherms = known_solutes.size();
           for (int i=0; i<nrock; ++i) {
-            if (sorption_isotherm_ics[r_names[i]][tNames[k]].count(str) == 0) {
-              sorption_isotherm_ics[r_names[i]][tNames[k]][str] = it->second; // set to default value
+            if (sorption_isotherm_ics[r_names[i]][known_solutes[k]].count(str) == 0) {
+              sorption_isotherm_ics[r_names[i]][known_solutes[k]][str] = it->second; // set to default value
             }
           }
-          const std::string label = str+"_"+tNames[k];
+          const std::string label = str+"_"+known_solutes[k];
           if (aux_chem_variables.find(label) == aux_chem_variables.end()) {
-            sorption_isotherm_label_map[tNames[k]][str] = aux_chem_variables.size();
+            sorption_isotherm_label_map[known_solutes[k]][str] = aux_chem_variables.size();
             aux_chem_variables[label]=aux_chem_variables.size()-1;
           }
         }
@@ -912,35 +858,38 @@ RockManager::Initialize(const Array<Geometry>&    geomArray,
 
     ICParmPair cation_exchange_options;
     cation_exchange_options["Cation_Exchange_Capacity"] = 0;
-    {
+    cation_exchange_options["Ion_Exchange_Reference_Cation_Concentration_0"] = 1.e-9;
+    ncation_exchange = 0;
+
+    bool ceopt_found = false;
+    for (ICParmPair::const_iterator it=cation_exchange_options.begin(); it!=cation_exchange_options.end(); ++it) {
+      const std::string& parm_name = it->first;
+      for (int i=0; i<nrock; ++i) {
+        const std::string prefix("rock."+r_names[i]);
+        ParmParse pprs(prefix.c_str());
+        if (pprs.countval(parm_name.c_str())) {
+          pprs.get(parm_name.c_str(),cation_exchange_ics[r_names[i]][parm_name]);
+          ceopt_found = true;
+        }
+      }
+    }
+
+    // If any of these found, all all of them
+    if (ceopt_found) {
       for (ICParmPair::const_iterator it=cation_exchange_options.begin(); it!=cation_exchange_options.end(); ++it) {
-        const std::string& str = it->first;
-        bool found = false;
+        const std::string& parm_name = it->first;
+        using_sorption = true;
+        ncation_exchange = 1;
         for (int i=0; i<nrock; ++i) {
-          const std::string prefix("rock."+r_names[i]);
-          ParmParse pprs(prefix.c_str());
-          if (pprs.countval(str.c_str())) {
-            pprs.get(str.c_str(),cation_exchange_ics[r_names[i]]);
-            found = true;
+          if (cation_exchange_ics[r_names[i]].count(parm_name) == 0) {
+            cation_exchange_ics[r_names[i]][parm_name] = it->second; // set to default value
           }
         }
-	    
-        if (found) {
-          using_sorption = true;
-          ncation_exchange = 1;
-          for (int i=0; i<nrock; ++i) {
-            if (cation_exchange_ics.count(r_names[i]) == 0) {
-              cation_exchange_ics[r_names[i]] = it->second; // set to default value
-            }
-          }
-
-          const std::string label = str;
-          if (aux_chem_variables.find(label) == aux_chem_variables.end())  {
-            cation_exchange_label_map[str] = aux_chem_variables.size();
-            aux_chem_variables[label]=aux_chem_variables.size()-1;
-          }
-          //std::cout << "****************** cation_exchange_ics[" << r_names[i] << "] = " 
-          //	  << cation_exchange_ics[r_names[i]] << std::endl;
+        
+        // Add a aux_chem variable slot for this quantity
+        if (aux_chem_variables.find(parm_name) == aux_chem_variables.end())  {
+          cation_exchange_label_map[parm_name] = aux_chem_variables.size();
+          aux_chem_variables[parm_name]=aux_chem_variables.size()-1;
         }
       }
     }
@@ -953,7 +902,7 @@ RockManager::Initialize(const Array<Geometry>&    geomArray,
         const std::string& str = it->first;
         bool found = false;
         for (int i=0; i<nrock; ++i) {
-          const std::string prefix("rock."+r_names[i]+".mineralogy."+minerals[k]);
+          const std::string prefix("rock."+r_names[i]+".Mineralogy."+minerals[k]);
           ParmParse pprs(prefix.c_str());
           if (pprs.countval(str.c_str())) {
             pprs.get(str.c_str(),mineralogy_ics[r_names[i]][minerals[k]][str]);
@@ -962,7 +911,6 @@ RockManager::Initialize(const Array<Geometry>&    geomArray,
         }
 	    
         if (found) {
-          using_sorption = true;
           for (int i=0; i<nrock; ++i) {
             if (mineralogy_ics[r_names[i]][minerals[k]].count(str) == 0) {
               mineralogy_ics[r_names[i]][minerals[k]][str] = it->second; // set to default value
@@ -1015,31 +963,7 @@ RockManager::Initialize(const Array<Geometry>&    geomArray,
         }
       }
     }
-
-    if (using_sorption) 
-    {
-      ICParmPair sorption_chem_options; // these are domain-wide, specified per solute
-      sorption_chem_options["Total_Sorbed"] = 1.e-40;
-      for (int k=0; k<tNames.size(); ++k) {
-        for (ICParmPair::const_iterator it=sorption_chem_options.begin(); it!=sorption_chem_options.end(); ++it) {
-          const std::string& str = it->first;
-          const std::string prefix("tracer."+tNames[k]+".Initial_Condition."+str);
-          ParmParse pprs(prefix.c_str());
-          sorption_chem_ics[tNames[k]][str] = it->second; // set to default value
-          pprs.query(str.c_str(),sorption_chem_ics[tNames[k]][str]);                      
-          //std::cout << "****************** sorption_chem_ics[" << tNames[k] 
-          //              << "][" << str << "] = " << sorption_chem_ics[tNames[k]][str] << std::endl;
-          const std::string label = str+"_"+tNames[k];
-          if (aux_chem_variables.find(label) == aux_chem_variables.end()){
-            sorption_chem_label_map[tNames[k]][str] = aux_chem_variables.size();
-            aux_chem_variables[label]=aux_chem_variables.size()-1;
-          }
-        }
-      }
-    }
   }
-
-  materialFiller = new MatFiller(geomArray,refRatio,rock);
 }
 
 RockManager::~RockManager()
@@ -1069,6 +993,9 @@ RockManager::GetProperty(Real               time,
 void
 RockManager::GetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed) const
 {
+  if (!interps_built) {
+    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
+  }
   return materialFiller->SetMaterialID(level,mf,nGrow,ignore_mixed);
 }
 
@@ -1109,6 +1036,9 @@ static Real bcPcInv(Real pc, Real lambda, Real alpha) {
 void
 RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Real* capillaryPressure, int npts) const
 {
+  if (!interps_built) {
+    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
+  }
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
 
   // Make temp structure to interact with Property interface
@@ -1177,6 +1107,9 @@ RockManager::CapillaryPressure(const MultiFab&  saturation,
                                int              dComp,
                                int              nGrow) const
 {
+  if (!interps_built) {
+    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
+  }
   BL_ASSERT(saturation.boxArray() == capillaryPressure.boxArray());
   BL_ASSERT(sComp < saturation.nComp()  && dComp < capillaryPressure.nComp());
   BL_ASSERT(nGrow <= saturation.nGrow() && nGrow <= capillaryPressure.nGrow());
@@ -1206,6 +1139,9 @@ RockManager::SortPtsByMaterial(int* matID, int npts) const
 void
 RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID, Real time, Real* saturation, int npts) const
 {
+  if (!interps_built) {
+    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
+  }
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
 
   // Make temp structure to interact with Property interface
@@ -1259,6 +1195,9 @@ RockManager::InverseCapillaryPressure(const MultiFab&  capillaryPressure,
                                       int              dComp,
                                       int              nGrow) const
 {
+  if (!interps_built) {
+    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
+  }
   BL_ASSERT(saturation.boxArray() == capillaryPressure.boxArray());
   BL_ASSERT(dComp < saturation.nComp()  && sComp < capillaryPressure.nComp());
   BL_ASSERT(nGrow <= saturation.nGrow() && nGrow <= capillaryPressure.nGrow());
@@ -1278,6 +1217,9 @@ RockManager::InverseCapillaryPressure(const MultiFab&  capillaryPressure,
 void
 RockManager::DInverseCapillaryPressure(const Real* saturation, int* matID, Real time, Real* DsaturationDpressure, int npts) const
 {
+  if (!interps_built) {
+    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
+  }
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
 
   // Make temp structure to interact with Property interface
@@ -1332,6 +1274,9 @@ RockManager::DInverseCapillaryPressure(const MultiFab&  saturation,
                                        int              dComp,
                                        int              nGrow) const
 {
+  if (!interps_built) {
+    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
+  }
   BL_ASSERT(saturation.boxArray() == DsaturationDpressure.boxArray());
   BL_ASSERT(dComp < saturation.nComp()  && sComp < DsaturationDpressure.nComp());
   BL_ASSERT(nGrow <= saturation.nGrow() && nGrow <= DsaturationDpressure.nGrow());
@@ -1356,6 +1301,9 @@ static Real KrInterp(Real se, Real seth, Real m_th, Real m_int) {
 void
 RockManager::RelativePermeability(const Real* saturation, int* matID, Real time, Real* kappa, int npts) const
 {
+  if (!interps_built) {
+    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
+  }
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
 
   // Make temp structure to interact with Property interface
@@ -1474,6 +1422,9 @@ RockManager::RelativePermeability(const MultiFab&  saturation,
                                   int              dComp,
                                   int              nGrow) const
 {
+  if (!interps_built) {
+    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
+  }
   BL_ASSERT(saturation.boxArray() == kappa.boxArray());
   BL_ASSERT(dComp < saturation.nComp()  && sComp < kappa.nComp());
   BL_ASSERT(nGrow <= saturation.nGrow() && nGrow <= kappa.nGrow());
@@ -1493,6 +1444,9 @@ RockManager::RelativePermeability(const MultiFab&  saturation,
 void 
 RockManager::ResidualSaturation(int* matID, Real time, Real* Sr, int npts) const
 {
+  if (!interps_built) {
+    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
+  }
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
 
   // Make temp structure to interact with Property interface
@@ -1526,6 +1480,9 @@ RockManager::ResidualSaturation(const iMultiFab& matID,
                                 int              dComp,
                                 int              nGrow) const
 {
+  if (!interps_built) {
+    BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
+  }
   BL_ASSERT(dComp < Sr.nComp());
   BL_ASSERT(nGrow <= Sr.nGrow());
   FArrayBox sr;
@@ -1560,3 +1517,231 @@ RockManager::Is_Kr_model_XX(int model_id, const std::string& str) const
   return false;
 }
 
+void
+RockManager::RockChemistryProperties(FArrayBox&  fab,
+                                     const Real* dx)
+{
+  fab.setVal(0);
+  int nSolutes = known_solutes.size();
+  if (nSolutes>0) {
+
+    // Note: sorption_isotherm_ics[rockname][solute][property] = val
+    for (ChemICMap::const_iterator it=sorption_isotherm_ics.begin(); it!=sorption_isotherm_ics.end(); ++it) {
+      const std::string& material_name = it->first;
+      const ICLabelParmPair& solute_to_pp = it->second; 
+      for (ICLabelParmPair::const_iterator it1=solute_to_pp.begin(); it1!=solute_to_pp.end(); ++it1) {
+        const std::string& solute_name = it1->first;
+        const ICParmPair& parm_pairs = it1->second;
+        for (ICParmPair::const_iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) {
+          const std::string& parameter = it2->first;
+          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(solute_name,"Isotherm",parameter);
+          std::map<std::string,int>::const_iterator it3 = aux_chem_variables.find(key);
+          if (it3 == aux_chem_variables.end() && ParallelDescriptor::IOProcessor()) {
+            std::cout << "RockManager::RockChemistryProperties Unable to locate parameter in aux_data (material,solute,parameter): "
+                      << material_name << "   "
+                      << solute_name << "    "
+                      << parameter << "  key: " << key << std::endl;
+            BoxLib::Abort();
+          }
+          int comp = it3->second;
+          Real value = it2->second;
+          const Array<const Region*>& rock_regions = FindMaterial(material_name).Regions();
+          for (int j=0; j<rock_regions.size(); ++j) {
+            rock_regions[j]->setVal(fab,value,comp,dx,0);
+          }
+        }
+      }
+    }
+  }
+
+  if (nminerals>0) {
+    // Note: mineralogy_ics[rockname][mineralname][property] = val
+    for (ChemICMap::const_iterator it=mineralogy_ics.begin(); it!=mineralogy_ics.end(); ++it) {
+      const std::string& material_name = it->first;
+      const ICLabelParmPair& mineral_to_pp = it->second; 
+      for (ICLabelParmPair::const_iterator it1=mineral_to_pp.begin(); it1!=mineral_to_pp.end(); ++it1) {
+        const std::string& mineral_name = it1->first;
+        const ICParmPair& parm_pairs = it1->second;
+        for (ICParmPair::const_iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) {
+          const std::string& parameter = it2->first;
+          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(mineral_name,parameter);
+          std::map<std::string,int>::const_iterator it3 = aux_chem_variables.find(key);
+          if (it3 == aux_chem_variables.end() && ParallelDescriptor::IOProcessor()) {
+            std::cout << "RockManager::RockChemistryProperties  Unable to locate parameter in aux_data (material,mineral,parameter): "
+                      << material_name << "   "
+                      << mineral_name << "    "
+                      << parameter << "  key: " << key << std::endl;
+            BoxLib::Abort();
+          }
+          int comp = it3->second;
+          Real value = it2->second;
+          const Array<const Region*>& rock_regions = FindMaterial(material_name).Regions();
+          for (int j=0; j<rock_regions.size(); ++j) {
+            rock_regions[j]->setVal(fab,value,comp,dx,0);
+          }
+        }
+      }
+    }
+  }     
+
+  if (nsorption_sites>0) {
+    // Note: surface_complexation_ics[rockname][sorptionsitename][property]) = val
+    for (ChemICMap::const_iterator it=surface_complexation_ics.begin(); it!=surface_complexation_ics.end(); ++it) {
+      const std::string& material_name = it->first;
+      const ICLabelParmPair& sorption_site_to_pp = it->second; 
+      for (ICLabelParmPair::const_iterator it1=sorption_site_to_pp.begin(); it1!=sorption_site_to_pp.end(); ++it1) {
+        const std::string& sorption_site_name = it1->first;
+        const ICParmPair& parm_pairs = it1->second;
+        for (ICParmPair::const_iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) {
+          const std::string& parameter = it2->first;
+          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(sorption_site_name,"Surface_Complexation",parameter);
+          std::map<std::string,int>::const_iterator it3 = aux_chem_variables.find(key);
+          if (it3 == aux_chem_variables.end() && ParallelDescriptor::IOProcessor()) {
+            std::cout << "RockManager::RockChemistryProperties  Unable to locate parameter in aux_data (material,sorption_site,parameter): "
+                      << material_name << "   "
+                      << sorption_site_name << "    "
+                      << parameter << "  key: " << key << std::endl;
+            BoxLib::Abort();
+          }
+          int comp = it3->second;
+          Real value = it2->second;
+          const Array<const Region*>& rock_regions = FindMaterial(material_name).Regions();
+          for (int j=0; j<rock_regions.size(); ++j) {
+            rock_regions[j]->setVal(fab,value,comp,dx,0);
+          }
+        }
+      }
+    }
+  }
+ 
+  if (ncation_exchange>0) {
+    // Note: cation_exchange_ics[rockname][property] = val
+    for (ICLabelParmPair::const_iterator it=cation_exchange_ics.begin(); it!=cation_exchange_ics.end(); ++it) {
+      const std::string& material_name = it->first;
+      const ICParmPair& parm_pairs = it->second;
+      for (ICParmPair::const_iterator it1=parm_pairs.begin(); it1!=parm_pairs.end(); ++it1) {
+        const std::string& key = it1->first;
+        std::map<std::string,int>::const_iterator it3 = aux_chem_variables.find(key);
+        if (it3 == aux_chem_variables.end() && ParallelDescriptor::IOProcessor()) {
+          std::cout << "RockManager::RockChemistryProperties Unable to locate parameter aux_data: " << key << std::endl;
+          BoxLib::Abort();
+        }
+        int comp = it3->second;
+        Real value = it1->second;
+        const Array<const Region*>& rock_regions = FindMaterial(material_name).Regions();
+        for (int j=0; j<rock_regions.size(); ++j) {
+          rock_regions[j]->setVal(fab,value,comp,dx,0);
+        }
+      }
+    }
+  }
+}
+
+void
+RockManager::RockChemistryProperties(FArrayBox&         fab,
+                                     const std::string& material_name)
+{
+  fab.setVal(0);
+  int nSolutes = known_solutes.size();
+  if (nSolutes>0) {
+
+    // Note: sorption_isotherm_ics[rockname][solute][property] = val
+    ChemICMap::const_iterator it = sorption_isotherm_ics.find(material_name);
+    if (it != sorption_isotherm_ics.end()) {
+      const ICLabelParmPair& solute_to_pp = it->second; 
+      for (ICLabelParmPair::const_iterator it1=solute_to_pp.begin(); it1!=solute_to_pp.end(); ++it1) {
+        const std::string& solute_name = it1->first;
+        const ICParmPair& parm_pairs = it1->second;
+        for (ICParmPair::const_iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) {
+          const std::string& parameter = it2->first;
+          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(solute_name,"Isotherm",parameter);
+          std::map<std::string,int>::const_iterator it3 = aux_chem_variables.find(key);
+          if (it3 == aux_chem_variables.end() && ParallelDescriptor::IOProcessor()) {
+            std::cout << "RockManager::RockChemistryProperties Unable to locate parameter in aux_data (material,solute,parameter): "
+                      << material_name << "   "
+                      << solute_name << "    "
+                      << parameter << "  key: " << key << std::endl;
+            BoxLib::Abort();
+          }
+          int comp = it3->second;
+          Real value = it2->second;
+          fab.setVal(value,comp);
+        }
+      }
+    }
+  }
+
+  if (nminerals>0) {
+    // Note: mineralogy_ics[rockname][mineralname][property] = val
+    ChemICMap::const_iterator it=mineralogy_ics.find(material_name);
+    if (it != mineralogy_ics.find(material_name))
+    {
+      const ICLabelParmPair& mineral_to_pp = it->second; 
+      for (ICLabelParmPair::const_iterator it1=mineral_to_pp.begin(); it1!=mineral_to_pp.end(); ++it1) {
+        const std::string& mineral_name = it1->first;
+        const ICParmPair& parm_pairs = it1->second;
+        for (ICParmPair::const_iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) {
+          const std::string& parameter = it2->first;
+          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(mineral_name,parameter);
+          std::map<std::string,int>::const_iterator it3 = aux_chem_variables.find(key);
+          if (it3 == aux_chem_variables.end() && ParallelDescriptor::IOProcessor()) {
+            std::cout << "RockManager::RockChemistryProperties  Unable to locate parameter in aux_data (material,mineral,parameter): "
+                      << material_name << "   "
+                      << mineral_name << "    "
+                      << parameter << "  key: " << key << std::endl;
+            BoxLib::Abort();
+          }
+          int comp = it3->second;
+          Real value = it2->second;
+          fab.setVal(value,comp);
+        }
+      }
+    }
+  }     
+
+  if (nsorption_sites>0) {
+    // Note: surface_complexation_ics[rockname][sorptionsitename][property]) = val
+    ChemICMap::const_iterator it=surface_complexation_ics.find(material_name);
+    if (it != surface_complexation_ics.end()) {
+      const ICLabelParmPair& sorption_site_to_pp = it->second; 
+      for (ICLabelParmPair::const_iterator it1=sorption_site_to_pp.begin(); it1!=sorption_site_to_pp.end(); ++it1) {
+        const std::string& sorption_site_name = it1->first;
+        const ICParmPair& parm_pairs = it1->second;
+        for (ICParmPair::const_iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) {
+          const std::string& parameter = it2->first;
+          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(sorption_site_name,"Surface_Complexation",parameter);
+          std::map<std::string,int>::const_iterator it3 = aux_chem_variables.find(key);
+          if (it3 == aux_chem_variables.end() && ParallelDescriptor::IOProcessor()) {
+            std::cout << "RockManager::RockChemistryProperties  Unable to locate parameter in aux_data (material,sorption_site,parameter): "
+                      << material_name << "   "
+                      << sorption_site_name << "    "
+                      << parameter << "  key: " << key << std::endl;
+            BoxLib::Abort();
+          }
+          int comp = it3->second;
+          Real value = it2->second;
+          fab.setVal(value,comp);
+        }
+      }
+    }
+  }
+ 
+  if (ncation_exchange>0) {
+    // Note: cation_exchange_ics[rockname][property] = val
+    ICLabelParmPair::const_iterator it=cation_exchange_ics.find(material_name);
+    if (it != cation_exchange_ics.end()) {
+      const ICParmPair& parm_pairs = it->second;
+      for (ICParmPair::const_iterator it1=parm_pairs.begin(); it1!=parm_pairs.end(); ++it1) {
+        const std::string& key = it1->first;
+        std::map<std::string,int>::const_iterator it3 = aux_chem_variables.find(key);
+        if (it3 == aux_chem_variables.end() && ParallelDescriptor::IOProcessor()) {
+          std::cout << "RockManager::RockChemistryProperties Unable to locate parameter aux_data: " << key << std::endl;
+          BoxLib::Abort();
+        }
+        int comp = it3->second;
+        Real value = it1->second;
+        fab.setVal(value,comp);
+      }
+    }
+  }
+}

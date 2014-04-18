@@ -14,17 +14,15 @@ AlquimiaHelper_Structured::AlquimiaHelper_Structured(Amanzi::AmanziChemistry::Ch
   engine->GetIonExchangeNames(ionExchangeNames);
   engine->GetIsothermSpeciesNames(isothermSpeciesNames);
   Nimmobile = engine->NumSorbedSpecies();
-  Nmobile = engine->NumPrimarySpecies() - Nimmobile;
+  Nmobile = engine->NumPrimarySpecies();
   num_aux_ints = alq_sizes.num_aux_integers;
   ndigits_int = std::log(num_aux_ints + 1) + 1;
   num_aux_doubles = alq_sizes.num_aux_doubles;
   ndigits_doubles = std::log(num_aux_doubles + 1) + 1;
   num_free_ion_species = engine->NumFreeIonSpecies();
-  ndigits_freeion = std::log(num_free_ion_species + 1) + 1;
+  BL_ASSERT(num_free_ion_species==Nmobile);
 
-  std::vector<std::string> primarySpeciesNames;
   engine->GetPrimarySpeciesNames(primarySpeciesNames);
-  std::vector<std::string> mineralNames;
   engine->GetMineralNames(mineralNames);
 
   // Setup input maps
@@ -43,11 +41,26 @@ AlquimiaHelper_Structured::AlquimiaHelper_Structured(Amanzi::AmanziChemistry::Ch
     aux_chem_variables[label] = aux_chem_variables.size()-1;
   }
   std::vector<std::string> ionExchangeNames; engine->GetIonExchangeNames(ionExchangeNames);
-  for (int i=0; i<ionExchangeNames.size(); ++i) {
-    const std::string label=ionExchangeNames[i] + "_Ion_Exchange_Capacity"; 
+  num_ion_exchange = ionExchangeNames.size();
+  int ndigIES = std::log(num_ion_exchange+1);
+  for (int i=0; i<num_ion_exchange; ++i) {
+    const std::string label = BoxLib::Concatenate("Ion_Exchange_Site_Density_",i,ndigIES);
     aux_chem_variables[label] = aux_chem_variables.size()-1;
   }
-  std::vector<std::string> isothermSpeciesNames; engine->GetIsothermSpeciesNames(isothermSpeciesNames);
+  if (Nimmobile>0) {
+    BL_ASSERT(Nmobile == Nimmobile);
+    for (int i=0; i<primarySpeciesNames.size(); ++i) {
+      const std::string label=primarySpeciesNames[i] + "_Sorbed_Concentration"; 
+      aux_chem_variables[label] = aux_chem_variables.size()-1;
+    }
+  }
+  for (int i=0; i<primarySpeciesNames.size(); ++i) {
+    const std::string label=primarySpeciesNames[i] + "_Activity_Coefficient"; 
+    aux_chem_variables[label] = aux_chem_variables.size()-1;
+  }
+
+  std::vector<std::string> isothermSpeciesNames;
+  engine->GetIsothermSpeciesNames(isothermSpeciesNames);
   for (int i=0; i<isothermSpeciesNames.size(); ++i) {
     const std::string label=isothermSpeciesNames[i] + "_Isotherm_Kd"; 
     aux_chem_variables[label] = aux_chem_variables.size()-1;
@@ -60,10 +73,8 @@ AlquimiaHelper_Structured::AlquimiaHelper_Structured(Amanzi::AmanziChemistry::Ch
     const std::string label=isothermSpeciesNames[i] + "_Langmuir_b"; 
     aux_chem_variables[label] = aux_chem_variables.size()-1;
   }
-  int num_free_ion_species = engine->NumFreeIonSpecies();
-  int ndigits = std::log(num_free_ion_species + 1) + 1;
-  for (int i=0; i<num_free_ion_species; ++i) {
-    const std::string label=BoxLib::Concatenate("Free_Ion_Species_",i,ndigits); 
+  for (int i=0; i<Nmobile; ++i) {
+    const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
     aux_chem_variables[label] = aux_chem_variables.size()-1;
   }
   
@@ -98,7 +109,7 @@ AlquimiaHelper_Structured::AlquimiaHelper_Structured(Amanzi::AmanziChemistry::Ch
                       alquimia_aux_out[ithread]);
   }
 
-  bool dump = false;
+  bool dump = true;
   if (dump) {
     std::cout << "AlquimiaHelper_Structured:" << std::endl;
     std::cout << "  Primary Species Names: " << std::endl;
@@ -158,7 +169,6 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
                                           const FArrayBox& porosity,                 int sPhi,
                                           const FArrayBox& volume,                   int sVol,
                                           FArrayBox&       primary_species_mobile,   int sPrimMob,
-                                          FArrayBox&       primary_species_immobile, int sPrimImmob,
                                           FArrayBox&                   aux_data,
                                           bool                         auxilary_data_initialized,
                                           const IntVect&               iv,
@@ -179,8 +189,10 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
   for (int i=0; i<Nmobile; ++i) {
     chem_state.total_mobile.data[i] = primary_species_mobile(iv,sPrimMob+i);
   }
-  for (int i=0; i<Nimmobile; ++i) {
-    chem_state.total_immobile.data[i] = primary_species_immobile(iv,sPrimImmob+i);
+
+  // HACK!
+  for (int i=0; i<num_ion_exchange; ++i) {
+    chem_state.cation_exchange_capacity.data[i] = 750;
   }
 
   if (auxilary_data_initialized) {
@@ -196,11 +208,18 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
       const std::string label=surfSiteNames[i] + "_Surface_Site_Density"; 
       chem_state.surface_site_density.data[i] = aux_data(iv,aux_chem_variables[label]);
     }
-    for (int i=0; i<ionExchangeNames.size(); ++i) {
-      const std::string label=ionExchangeNames[i] + "_Ion_Exchange_Capacity"; 
+    int ndigIES = std::log(num_ion_exchange+1);
+    for (int i=0; i<num_ion_exchange; ++i) {
+      const std::string label = BoxLib::Concatenate("Ion_Exchange_Site_Density_",i,ndigIES);
       chem_state.cation_exchange_capacity.data[i] = aux_data(iv,aux_chem_variables[label]);
     }
-
+    if (Nimmobile>0) {
+      BL_ASSERT(Nmobile == Nimmobile);
+      for (int i=0; i<primarySpeciesNames.size(); ++i) {
+        const std::string label=primarySpeciesNames[i] + "_Sorbed_Concentration"; 
+        chem_state.total_immobile.data[i] = aux_data(iv,aux_chem_variables[label]);
+      }
+    }
     for (int i=0; i<isothermSpeciesNames.size(); ++i) {
       const std::string label=isothermSpeciesNames[i] + "_Isotherm_Kd"; 
       mat_props.isotherm_kd.data[i] = aux_data(iv,aux_chem_variables[label]);
@@ -214,9 +233,13 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
       mat_props.langmuir_b.data[i] = aux_data(iv,aux_chem_variables[label]);
     }
 
-    for (int i=0; i<num_free_ion_species; ++i) {
-      const std::string label=BoxLib::Concatenate("Free_Ion_Species_",i,ndigits_freeion); 
+    for (int i=0; i<primarySpeciesNames.size(); ++i) {
+      const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
       aux_output.primary_free_ion_concentration.data[i] = aux_data(iv,aux_chem_variables[label]);
+    }
+    for (int i=0; i<primarySpeciesNames.size(); ++i) {
+      const std::string label=primarySpeciesNames[i] + "_Activity_Coefficient"; 
+      aux_output.primary_activity_coeff.data[i] = aux_data(iv,aux_chem_variables[label]);
     }
 
     for (int i=0; i<num_aux_ints; ++i) {
@@ -232,7 +255,6 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
 
 void
 AlquimiaHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
-                                            FArrayBox& primary_species_immobile, int sPrimImmob,
                                             FArrayBox& auxiliary_data, bool initialize_auxiliary_data,
                                             const Box& box, const std::string& condition_name, Real time)
 {
@@ -267,7 +289,7 @@ AlquimiaHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,  
     for (IntVect iv=thread_box.smallEnd(), End=thread_box.bigEnd(); iv<=End; thread_box.next(iv)) {
       
       BL_to_Alquimia(dumS,sDumS,dumP,sDumP,dumPhi,sDumPhi,dumV,sDumV,
-                     primary_species_mobile,sPrimMob,primary_species_immobile,sPrimImmob,
+                     primary_species_mobile,sPrimMob,
 		     auxiliary_data,auxiliary_data_initialized,iv,dumRho,dumTemp,
                      alquimia_material_properties[threadid],
                      alquimia_state[threadid],
@@ -281,27 +303,11 @@ AlquimiaHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,  
                                alquimia_aux_out[threadid]);
 
       Alquimia_to_BL(primary_species_mobile,   sPrimMob,
-                     primary_species_immobile, sPrimImmob,
                      auxiliary_data, initialize_auxiliary_data, iv,
                      alquimia_material_properties[threadid],
                      alquimia_state[threadid],
+                     alquimia_aux_in[threadid],
                      alquimia_aux_out[threadid]);
-      // {
-      //   Box cbox = BoxLib::adjCellLo(box,0,1); cbox.shift(0,1);
-      //   FArrayBox tc(cbox,Nmobile);
-      //   tc.copy(primary_species_mobile,sPrimMob,0,Nmobile);
-      //   std::cout << "Constraint state" << std::endl;
-      //   std::cout << tc << std::endl;
-      //   FArrayBox ac(cbox,auxiliary_data.nComp());
-      //   ac.copy(auxiliary_data);
-      //   std::cout << ac << std::endl;
-      //   FArrayBox vc(cbox,1); vc.copy(dumV,sDumV,0,1);
-      //   FArrayBox sc(cbox,1); sc.copy(dumS,sDumS,0,1);
-      //   FArrayBox pc(cbox,1); pc.copy(dumPhi,sDumPhi,0,1);
-      //   std::cout << vc << std::endl;
-      //   std::cout << sc << std::endl;
-      //   std::cout << pc << std::endl;
-      // }
     }
   }
 }
@@ -312,11 +318,17 @@ AlquimiaHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       in
                                    const FArrayBox& porosity,                 int sPhi,
                                    const FArrayBox& volume,                   int sVol,
                                    FArrayBox&       primary_species_mobile,   int sPrimMob,
-                                   FArrayBox&       primary_species_immobile, int sPrimImmob,
                                    FArrayBox&       fcnCnt,                   int sFunc,
                                    FArrayBox&       aux_data, Real water_density, Real temperature,
-                                   const Box& box, Real dt)
+                                   const Box& box, Real dt, bool initialize)
 {
+  // Should already be initialized
+  // FIXME: May not be initialized...should put in explicit call to do this
+  if (initialize) {
+    BoxLib::Abort();
+    return;
+  }
+
   bool auxiliary_data_initialized = true;
   bool initialize_auxiliary_data = false;
 
@@ -327,23 +339,6 @@ AlquimiaHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       in
   int thread_outer_lo = box.smallEnd()[BL_SPACEDIM-1];
   int thread_outer_hi = box.bigEnd()[BL_SPACEDIM-1];
   bool chem_ok = true;
-  // {
-  //   Box cbox = BoxLib::adjCellLo(box,0,1); cbox.shift(0,1);
-  //   FArrayBox tc(cbox,Nmobile);
-  //   tc.copy(primary_species_mobile,sPrimMob,0,Nmobile);
-  //   std::cout << "Chem State before" << std::endl;
-  //   std::cout << tc << std::endl;
-  //   FArrayBox ac(cbox,aux_data.nComp());
-  //   ac.copy(aux_data);
-  //   std::cout << ac << std::endl;
-  //   FArrayBox vc(cbox,1); vc.copy(volume,sVol,0,1);
-  //   FArrayBox sc(cbox,1); sc.copy(aqueous_saturation,sSat,0,1);
-  //   FArrayBox pc(cbox,1); pc.copy(porosity,sPhi,0,1);
-  //   std::cout << vc << std::endl;
-  //   std::cout << sc << std::endl;
-  //   std::cout << pc << std::endl;
-  //   std::cout << water_density << " " << temperature << " dt=" << dt << std::endl;
-  // }
   for (int tli=thread_outer_lo; tli<=thread_outer_hi && chem_ok; tli++) {
 #if (BL_SPACEDIM == 3) && defined(_OPENMP)
     int threadid = omp_get_thread_num();
@@ -356,16 +351,12 @@ AlquimiaHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       in
     thread_box.setBig(BL_SPACEDIM-1,tli);
 
     for (IntVect iv=thread_box.smallEnd(), End=thread_box.bigEnd(); iv<=End; thread_box.next(iv)) {
-	
-      // Fill local struct
-      bool is_neg = false;
 
       BL_to_Alquimia(aqueous_saturation,       sSat,
                      aqueous_pressure,         sPress,
                      porosity,                 sPhi,
                      volume,                   sVol,
                      primary_species_mobile,   sPrimMob,
-                     primary_species_immobile, sPrimImmob,
                      aux_data, auxiliary_data_initialized, iv, water_density, temperature,
                      alquimia_material_properties[threadid],
                      alquimia_state[threadid],
@@ -377,55 +368,34 @@ AlquimiaHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       in
                       alquimia_aux_in[threadid],alquimia_aux_out[threadid],newton_iters);
         
       Alquimia_to_BL(primary_species_mobile,   sPrimMob,
-                     primary_species_immobile, sPrimImmob,
                      aux_data, initialize_auxiliary_data, iv,
                      alquimia_material_properties[threadid],
                      alquimia_state[threadid],
+                     alquimia_aux_in[threadid],
                      alquimia_aux_out[threadid]);
 
       fcnCnt(iv,sFunc) = newton_iters;
     }
   }
-  // {
-  //   Box cbox = BoxLib::adjCellLo(box,0,1); cbox.shift(0,1);
-  //   FArrayBox tc(cbox,Nmobile);
-  //   tc.copy(primary_species_mobile,sPrimMob,0,Nmobile);
-  //   std::cout << "Chem State after" << std::endl;
-  //   std::cout << tc << std::endl;
-  //   FArrayBox ac(cbox,aux_data.nComp());
-  //   ac.copy(aux_data);
-  //   std::cout << ac << std::endl;
-  //   FArrayBox vc(cbox,1); vc.copy(volume,sVol,0,1);
-  //   FArrayBox sc(cbox,1); sc.copy(aqueous_saturation,sSat,0,1);
-  //   FArrayBox pc(cbox,1); pc.copy(porosity,sPhi,0,1);
-  //   std::cout << vc << std::endl;
-  //   std::cout << sc << std::endl;
-  //   std::cout << pc << std::endl;
-  //   std::cout << water_density << " " << temperature << std::endl;
-  // }
 }
 
 void
 AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   int sPrimMob,
-                                          FArrayBox& primary_species_immobile, int sPrimImmob,
                                           FArrayBox&                   aux_data,
                                           bool                         initialize_auxiliary_data,
                                           const IntVect&               iv,
                                           AlquimiaMaterialProperties&  mat_props,
                                           AlquimiaState&               chem_state,
+                                          AlquimiaAuxiliaryData&       aux_input,
                                           AlquimiaAuxiliaryOutputData& aux_output)
 {
   for (int i=0; i<Nmobile; ++i) {
     primary_species_mobile(iv,sPrimMob+i) = chem_state.total_mobile.data[i];
   }
-  for (int i=0; i<Nimmobile; ++i) {
-    primary_species_immobile(iv,sPrimImmob+i) = chem_state.total_immobile.data[i];
-  }
-
   if (initialize_auxiliary_data) {
 
     for (int n=0; n<aux_data.nComp(); ++n) {
-      aux_data(iv,n) = 1.e-8;
+      aux_data(iv,n) = 1.e-20;
     }
 
     for (int i=0; i<Nminerals; ++i) {
@@ -440,13 +410,33 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
       const std::string label=surfSiteNames[i] + "_Surface_Site_Density"; 
       aux_data(iv,aux_chem_variables[label]) = chem_state.surface_site_density.data[i];
     }
-    for (int i=0; i<ionExchangeNames.size(); ++i) {
-      const std::string label=ionExchangeNames[i] + "_Ion_Exchange_Capacity"; 
+    int ndigIES = std::log(num_ion_exchange+1);
+    for (int i=0; i<num_ion_exchange; ++i) {
+      const std::string label = BoxLib::Concatenate("Ion_Exchange_Site_Density_",i,ndigIES);
       aux_data(iv,aux_chem_variables[label]) = chem_state.cation_exchange_capacity.data[i];
     }
-    for (int i=0; i<num_free_ion_species; ++i) {
-      const std::string label=BoxLib::Concatenate("Free_Ion_Species_",i,ndigits_freeion); 
-      aux_data(iv,aux_chem_variables[label]) = aux_output.primary_free_ion_concentration.data[i]; 
+    for (int i=0; i<primarySpeciesNames.size(); ++i) {
+      const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
+      //aux_data(iv,aux_chem_variables[label]) = aux_output.primary_free_ion_concentration.data[i];
+      aux_data(iv,aux_chem_variables[label]) = chem_state.total_mobile.data[i];
+    }
+    if (Nimmobile>0) {
+      for (int i=0; i<primarySpeciesNames.size(); ++i) {
+        const std::string label=primarySpeciesNames[i] + "_Sorbed_Concentration"; 
+        aux_data(iv,aux_chem_variables[label]) = chem_state.total_immobile.data[i];
+      }
+    }
+    for (int i=0; i<primarySpeciesNames.size(); ++i) {
+      const std::string label=primarySpeciesNames[i] + "_Activity_Coefficient"; 
+      aux_data(iv,aux_chem_variables[label]) = aux_output.primary_activity_coeff.data[i];
+    }
+    for (int i=0; i<num_aux_ints; ++i) {
+      const std::string label=BoxLib::Concatenate("Auxiliary_Integers_",i,ndigits_int); 
+      aux_data(iv,aux_chem_variables[label]) = (int) aux_input.aux_ints.data[i];
+    }
+    for (int i=0; i<num_aux_doubles; ++i) {
+      const std::string label=BoxLib::Concatenate("Auxiliary_Doubles_",i,ndigits_doubles); 
+      aux_data(iv,aux_chem_variables[label]) = aux_input.aux_doubles.data[i];
     }
   }
 }

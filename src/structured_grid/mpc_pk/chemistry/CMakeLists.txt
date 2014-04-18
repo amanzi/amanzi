@@ -10,18 +10,16 @@ project(SCHEM)
 
 include_directories(${SCHEM_SOURCE_DIR})
 
-if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
-  include_directories(${CHEM_SOURCE_DIR}/includes)
-  include_directories(${DBC_SOURCE_DIR})
-endif()
+include_directories(${CHEM_SOURCE_DIR}/includes)
+include_directories(${DBC_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${GEOCHEM_STATE_DIR}) 
 include_directories(${GEOCHEM_SOURCE_DIR}) 
 
-set(CXX_header_files AlquimiaHelper_Structured.H)
+set(CXX_header_files ChemistryHelper_Structured.cpp AlquimiaHelper_Structured.H AmanziChemHelper_Structured.H)
 
-set(CXX_source_files AlquimiaHelper_Structured.cpp)
+set(CXX_source_files AlquimiaHelper_Structured.cpp AmanziChemHelper_Structured.cpp)
 set(F90_source_files )
 set(F77_source_files )
 set(FPP_source_files )

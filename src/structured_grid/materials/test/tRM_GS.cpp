@@ -56,7 +56,8 @@ main (int   argc,
 
   int nGrow = 3;
   RegionManager rm;
-  RockManager rockManager(&rm,geomArray,refRatio,nGrow);
+  RockManager rockManager(&rm);
+  rockManager.FinalizeBuild(geomArray,refRatio,nGrow);
 
   int maxSize=32;  pp.query("maxSize",maxSize);
   Real time = 0;
@@ -67,6 +68,9 @@ main (int   argc,
     MultiFab phi(ba,1,nGrow);
     ParallelDescriptor::Barrier();
     rockManager.Porosity(time,lev,phi,0,nGrow);
+
+    if (lev==nLevs-1) 
+      VisMF::Write(phi,"PHI");
   }
   BoxLib::Finalize();
   return 0;

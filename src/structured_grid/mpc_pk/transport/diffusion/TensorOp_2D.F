@@ -66,6 +66,10 @@
       REAL_T hx, hxx, hx4
       REAL_T hy, hyy, hy4
 
+      REAL_T fluxw(:,:)
+      allocatable fluxw
+      allocate(fluxw(lo(1):hi(1)+1,lo(2):hi(2)))
+
       hx = 1.d0/h(1)
       hxx = hx*hx
       hx4 = 0.25*hx
@@ -456,6 +460,7 @@ c ::: case 2a: north side, do fluxes at (i-1/2,j), (i,j-1/2) and (i,j+1/2)
          else
             dudyw = (U(i-1,j+1) + U(i  ,j+1) - U(i-1,j-1) - U(i  ,j-1))*hy4
          endif
+         dudxs = (U(i+1,j  ) + U(i+1,j-1) - U(i-1,j  ) - U(i-1,j-1))*hx4
          xflux(i,j) = -dudxw*muX(i,j) - dudyw*mu1X(i,j)
          yflux(i,j) = -dudxs*mu1Y(i,j) - dudys*muY(i,j)
          yflux(i,j+1) = -dudxn*mu1Y(i,j+1) - dudyn*muY(i,j+1)
@@ -518,6 +523,7 @@ c ::: case 3a: north-east corner, do fluxes at (i-1/2,j), (i,j-1/2), (i+1/2,j) a
       j=hi(2)
       i=hi(1)
       dudxe = (U(i+1,j  ) - U(i  ,j  ))*hx
+      dudxw = (U(i  ,j  ) - U(i-1,j  ))*hx
       dudyn = (U(i  ,j+1) - U(i  ,j  ))*hy
       dudys = (U(i  ,j  ) - U(i  ,j-1))*hy
       dudye = trandere(i+1,j)
@@ -544,6 +550,7 @@ c ::: case 3b: south-east corner, do fluxes at (i-1/2,j), (i,j-1/2), (i+1/2,j)
       j=lo(2)
       i=hi(1)
       dudxe = (U(i+1,j  ) - U(i  ,j  ))*hx
+      dudxw = (U(i  ,j  ) - U(i-1,j  ))*hx
       dudys = (U(i  ,j  ) - U(i  ,j-1))*hy
       dudye = trandere(i+1,j)
       dudxs = tranders(i,j-1)
@@ -581,12 +588,6 @@ c ::: case 3d: north-west corner, , do fluxes at (i-1/2,j), (i,j-1/2), (i+1/2,j)
      &        -    U(i+2,j-1) + 4*U(i+1,j-1) - 3*U(i  ,j-1))*hx4
       else
          dudxs = (U(i+1,j  ) + U(i+1,j-1) - U(i-1,j  ) - U(i-1,j-1))*hx4
-      endif
-      if( maskn(i+1,j+1).gt.0 .or. maskn(i,j+1).gt.0 ) then
-         dudye = (U(i+1,j-2) - 4*U(i+1,j-1) + 3*U(i+1,j  )
-     &        +   U(i  ,j-2) - 4*U(i  ,j-1) + 3*U(i  ,j  ))*hy4
-      else
-         dudye = (U(i  ,j+1) + U(i+1,j+1) - U(i  ,j-1) - U(i+1,j-1))*hy4
       endif
       xflux(i,j) = -dudxw*muX(i,j) - dudyw*mu1X(i,j)
       yflux(i,j) = -dudxs*mu1Y(i,j) - dudys*muY(i,j)

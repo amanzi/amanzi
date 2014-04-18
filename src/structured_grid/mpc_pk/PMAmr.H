@@ -11,8 +11,6 @@ class MFTGrowFill;
 #include <MatFiller.H>
 #include <Observation.H>
 #include <EventCoord.H>
-#include <RegionManager.H>
-#include <RockManager.H>
 
 class PMAmr
     : public Amr
@@ -61,11 +59,7 @@ public:
                         EventCoord& event_coord,
                         Real time, int iter);
 
-    static void SetRegionManagerPtr(RegionManager* rmp) {region_manager = rmp;}
-    static RegionManager* RegionManagerPtr() {return region_manager;}
-
     Layout& GetLayout() {return layout;}
-    const RockManager* GetRockManager() const {return rock_manager;}
     const Array<Real>& TPCStartTimes() const {return tpc_start_times;}
 
     Real Dt0FromPreviousAdvance() const {return dt0_from_previous_advance;}
@@ -104,8 +98,6 @@ protected:
     int  max_step;
     Real stop_time;
 
-    void SetUpRockManager();
-
 private:
     //
     // Disallowed
@@ -114,8 +106,6 @@ private:
     PMAmr& operator= (const PMAmr& rhs);
 
     // Private data
-    static RegionManager* region_manager;
-    static RockManager* rock_manager;
     Real dt0_before_event_cut;
     Real dt0_from_previous_advance;
     static bool do_output_time_in_years;

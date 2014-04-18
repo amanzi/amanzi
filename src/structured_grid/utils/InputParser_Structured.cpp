@@ -39,6 +39,7 @@ namespace Amanzi {
     }
 
     double atmToMKS = 101325;
+    double gravity_mag_DEF = 9.8;
 
     std::string underscore(const std::string& instring)
     {
@@ -178,7 +179,8 @@ namespace Amanzi {
     void
     convert_to_structured_control(const ParameterList& parameter_list, 
                                   ParameterList&       struc_out_list,
-                                  bool&                do_tracer_transport,
+                                  bool&                do_tracer_advection,
+                                  bool&                do_tracer_diffusion,
                                   bool&                do_chem)
     {
       std::string ec_str = "Execution Control";
@@ -213,8 +215,6 @@ namespace Amanzi {
       ParameterList& io_out_list      = struc_out_list.sublist("vismf");
       ParameterList& fabarr_out_list  = struc_out_list.sublist("fabarray");
       ParameterList& fab_out_list     = struc_out_list.sublist("fab");
-
-      ParameterList& chem_out_list    = prob_out_list.sublist("amanzi");
 
       bool echo_inputs = false;
       std::string echo_str = "Echo Inputs";
@@ -261,60 +261,20 @@ namespace Amanzi {
       // Set transport model
       //
       std::string transport_mode = ec_list.get<std::string>(trans_str);
-      do_tracer_transport = (transport_mode == "Off"  ?  0  :  1);
-      prob_out_list.set<int>("do_tracer_advection",do_tracer_transport);
-      prob_out_list.set<int>("do_tracer_diffusion",do_tracer_transport);
+      do_tracer_advection = (transport_mode == "Off"  ?  0  :  1);
+      do_tracer_diffusion = false; 
 
       //
       // Set chemistry model
       //
       std::string chem_mode = ec_list.get<std::string>(chem_mod_str);
+      ParameterList chem_out_list;
+      prob_out_list.set("chemistry_model",chem_mode);
       if (chem_mode == "Off") {
-	// NOTE: Need chemistry info even if no reactions
-        //prob_out_list.set("do_chem",0);
-        //do_chem = false;
+	// FIXME: Do we need chemistry info even if no reactions?
+        do_chem = false;
       }
-      else if (chem_mode == "Amanzi") {
-        prob_out_list.set("do_chem",1);
-        do_chem = true;
-        const ParameterList& chem_list = parameter_list.sublist(chem_str);
-        reqP.clear(); reqL.clear();
-        PLoptions CHopt(chem_list,reqL,reqP,true,false); 
-        const Array<std::string>& CHoptP = CHopt.OptParms();
-        for (int i=0; i<CHoptP.size(); ++i) {
-          const std::string& name = CHoptP[i];
-          std::string _name = underscore(name);
-          if (name=="Thermodynamic Database Format") {
-            chem_out_list.set(_name,chem_list.get<std::string>(name));
-          }
-          else if (name=="Thermodynamic Database File") {
-            chem_out_list.set("chem_database_file",chem_list.get<std::string>(name));
-          }
-          else if (name=="Verbosity") {
-            chem_out_list.set("verbose_chemistry_init",chem_list.get<std::string>(name));
-          }
-          else if (name=="Activity Model") {
-            chem_out_list.set(_name,chem_list.get<std::string>(name));
-          }
-          else if (name=="Tolerance") {
-            chem_out_list.set(_name,chem_list.get<double>(name));
-          }
-          else if (name=="Maximum Newton Iterations") {
-            chem_out_list.set(_name,chem_list.get<int>(name));
-          }
-          else if (name=="Output File Name") {
-            chem_out_list.set(_name,chem_list.get<std::string>(name));
-          }
-          else if (name=="Use Standard Out") {
-            chem_out_list.set(_name,chem_list.get<bool>(name));
-          }
-          else if (name=="Auxiliary Data") {
-            chem_out_list.set(_name,chem_list.get<Array<std::string> >(name));
-          }
-        }
-      }
-      else if (chem_mode == "Alquimia") {
-        prob_out_list.set("do_chem",1);
+      else if (chem_mode == "Alquimia" || chem_mode == "Amanzi") {
         do_chem = true;
         const ParameterList& chem_list = parameter_list.sublist(chem_str);
 
@@ -334,7 +294,9 @@ namespace Amanzi {
         reqP.clear(); reqL.clear();
         reqL.push_back(ThermoDB_str);
         reqP.push_back(Chemistry_Engine_str);
-        reqP.push_back(Chemistry_Engine_Input_str);
+        if (chem_mode == "Alquimia") {
+          reqP.push_back(Chemistry_Engine_Input_str);
+        }
         reqP.push_back(Chemistry_Verbosity_str);
         reqP.push_back(Chemistry_Activity_Model_str);
         reqP.push_back(Chemistry_Tol_str);
@@ -353,7 +315,9 @@ namespace Amanzi {
         chem_out_list.set<std::string>(underscore(ThermoDB_str)+"_"+underscore(ThermoDB_File_str), thermoPL.get<std::string>(ThermoDB_File_str));
 
         chem_out_list.set<std::string>(underscore(Chemistry_Engine_str), underscore(chem_list.get<std::string>(Chemistry_Engine_str)));
-        chem_out_list.set<std::string>(underscore(Chemistry_Engine_Input_str), underscore(chem_list.get<std::string>(Chemistry_Engine_Input_str)));
+        if (chem_mode=="Alquimia") {
+          chem_out_list.set<std::string>(underscore(Chemistry_Engine_Input_str), underscore(chem_list.get<std::string>(Chemistry_Engine_Input_str)));
+        }
         chem_out_list.set<std::string>(underscore(Chemistry_Verbosity_str), underscore(chem_list.get<std::string>(Chemistry_Verbosity_str)));
         chem_out_list.set<std::string>(underscore(Chemistry_Activity_Model_str), underscore(chem_list.get<std::string>(Chemistry_Activity_Model_str)));
         chem_out_list.set<double>(underscore(Chemistry_Tol_str), chem_list.get<double>(Chemistry_Tol_str));
@@ -367,11 +331,11 @@ namespace Amanzi {
             chem_out_list.set(_name,underscore(chem_list.get<Array<std::string> >(name)));
           }
         }
-        struc_out_list.set(underscore(chem_str),chem_out_list);
       }
       else {
         MyAbort("Chemistry Model \"" + chem_mode + "\" not yet supported" );
       }
+      struc_out_list.set(underscore(chem_str),chem_out_list);
 
       //
       // Set time evolution mode
@@ -1481,7 +1445,8 @@ namespace Amanzi {
     }
 
     void convert_PermeabilityAnisotropic(const ParameterList& fPLin,
-                                         ParameterList&       fPLout)
+                                         ParameterList&       fPLout,
+                                         double               scale)
     {
       /* Handle isotropic and anisotropic permeabilities here */
       Array<std::string> nullList, reqP;
@@ -1498,7 +1463,7 @@ namespace Amanzi {
       if (fPLin.isParameter(uniform_value_str)) {
         /* Isotropic */
         Array<double> local_val(1); local_val[0] = fPLin.get<double>(uniform_value_str);
-        local_val[0] *= 1.01325e15; // convert from m^2 to mDa
+        local_val[0] *= 1.01325e15 * scale; // convert from m^2 to mDa
         ParameterList vlist, hlist, h1list;
         vlist.set<Array<double> >("vals",local_val);
         fPLout.set("vertical",vlist);
@@ -1531,7 +1496,7 @@ namespace Amanzi {
         }
 
         for (int k=0; k<local_vvals.size(); k++) {
-          local_vvals[k] *= 1.01325e15; // convert from m^2 to mDa
+          local_vvals[k] *= 1.01325e15 * scale; // convert from m^2 to mDa
         }
         vlist.set<Array<double> >("vals",local_vvals);
         fPLout.set("vertical",vlist);
@@ -1560,7 +1525,7 @@ namespace Amanzi {
         }
 
         for (int k=0; k<local_hvals.size(); k++) {
-          local_hvals[k] *= 1.01325e15; // convert from m^2 to mDa
+          local_hvals[k] *= 1.01325e15 * scale; // convert from m^2 to mDa
         }
         hlist.set<Array<double> >("vals",local_hvals);
         fPLout.set("horizontal",hlist);
@@ -1590,7 +1555,7 @@ namespace Amanzi {
         }
 
         for (int k=0; k<local_h1vals.size(); k++) {
-          local_h1vals[k] *= 1.01325e15; // convert from m^2 to mDa
+          local_h1vals[k] *= 1.01325e15 * scale; // convert from m^2 to mDa
         }
         h1list.set<Array<double> >("vals",local_h1vals);
         fPLout.set("horizontal1",h1list);
@@ -1598,7 +1563,7 @@ namespace Amanzi {
       }
     }
 
-    void convert_MolecularDiffusionUniform(const ParameterList& fPLin,
+    bool convert_MolecularDiffusionUniform(const ParameterList& fPLin,
                                            ParameterList&       fPLout)
     {
       Array<std::string> nullList, reqP;
@@ -1606,6 +1571,7 @@ namespace Amanzi {
         const std::string val_name="Value"; reqP.push_back(val_name);
         PLoptions opt(fPLin,nullList,reqP,true,true);
         double val = fPLin.get<double>(val_name);
+        if (val == 0) return false;
         fPLout.set<double>("val",val);
       }
       else {
@@ -1613,6 +1579,7 @@ namespace Amanzi {
         std::cout << fPLin << std::endl;
         BoxLib::Abort(str.c_str());
       }
+      return true;
     }
 
     void convert_TortuosityUniform(const ParameterList& fPLin,
@@ -1649,7 +1616,7 @@ namespace Amanzi {
       }
     }
 
-    void convert_DispersionTensorUniform(const ParameterList& fPLin,
+    bool convert_DispersionTensorUniform(const ParameterList& fPLin,
                                          ParameterList&       fPLout)
     {
       const std::string alphaL_str = "alphaL";
@@ -1657,10 +1624,40 @@ namespace Amanzi {
       Array<std::string> nullList, reqP;
       reqP.push_back(alphaL_str);
       reqP.push_back(alphaT_str);
+      bool is_nonzero = true;
       PLoptions opt(fPLin,nullList,reqP,true,true);
       for (int i=0; i<reqP.size(); ++i) {
-        fPLout.set<double>(reqP[i],fPLin.get<double>(reqP[i]));
+        double val = fPLin.get<double>(reqP[i]);
+        is_nonzero &= (val != 0);
+        fPLout.set<double>(reqP[i],val);
       }
+      return is_nonzero;
+    }
+
+    static double gravity_magnitude(const ParameterList& parameter_list)
+    {
+      double gravity_mag = gravity_mag_DEF;
+      if (parameter_list.isSublist("Execution Control")) {
+        const ParameterList& ec_list = parameter_list.sublist("Execution Control");
+        if (ec_list.isSublist("Numerical Control Parameters")) {
+          const ParameterList& ncp_list = ec_list.sublist("Numerical Control Parameters");
+          if (ncp_list.isSublist("Basic Algorithm Control")) {
+            const ParameterList& bac_list = ncp_list.sublist("Basic Algorithm Control");
+            if (bac_list.isSublist("Expert Settings")) {
+              const ParameterList& es_list = bac_list.sublist("Expert Settings");
+              if (es_list.isParameter("gravity")) {
+                gravity_mag = es_list.get<double>("gravity");
+              }
+            }
+          }
+        }
+      }
+      return gravity_mag;
+    }
+
+    static bool gravity_is_nonzero(const ParameterList& parameter_list)
+    {
+      return gravity_magnitude(parameter_list) != 0;
     }
 
     //
@@ -1669,7 +1666,9 @@ namespace Amanzi {
     void
     convert_to_structured_material(const ParameterList& parameter_list, 
                                    ParameterList&       struc_list,
-                                   StateDef&            state)
+                                   StateDef&            state,
+                                   bool&                do_tracer_advection,
+                                   bool&                do_tracer_diffusion)
     {
       ParameterList& rock_list = struc_list.sublist("rock");
         
@@ -1691,6 +1690,7 @@ namespace Amanzi {
 
       const std::string porosity_uniform_str = "Porosity: Uniform";
       const std::string porosity_gslib_str = "Porosity: GSLib";
+      const std::string hydraulic_conductivity_uniform_str = "Hydraulic Conductivity: Uniform";
       const std::string perm_file_str = "Intrinsic Permeability: Input File";
       const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
       const std::string perm_anisotropic_uniform_str = "Intrinsic Permeability: Anisotropic Uniform";
@@ -1755,15 +1755,50 @@ namespace Amanzi {
               }
               else if (rlabel==perm_uniform_str || rlabel==perm_anisotropic_uniform_str) {
                 ParameterList psublist;
-                convert_PermeabilityAnisotropic(rsslist,psublist);
+                convert_PermeabilityAnisotropic(rsslist,psublist,1.0);
+                rsublist.set("permeability",psublist);
+                rsublist.set("permeability_dist","uniform");
+                mtest["Intrinsic_Permeability"] = true;
+              }
+              else if (rlabel==hydraulic_conductivity_uniform_str) {
+                const std::string aq = "Aqueous";
+                if (state.getPhases().count(aq) == 0) {
+                  std::string str = "Hydraulic conductivity specified for material \""+label
+                    +"\" but phase \""+aq+"\" does not exist";
+                  BoxLib::Abort(str.c_str());       
+                }
+                double density = state.getPhases()[aq].Density();
+                if (density == 0) {
+                  std::string str = "Hydraulic conductivity specified for material \""+label
+                    +"\" but density of \""+aq+"\"  = 0";
+                  BoxLib::Abort(str.c_str());
+                }
+                double viscosity = state.getPhases()[aq].Viscosity();
+                if (viscosity == 0) {
+                  std::string str = "Hydraulic conductivity specified for material \""+label
+                    +"\" but viscosity of \""+aq+"\"  = 0";
+                  BoxLib::Abort(str.c_str());
+                }
+                double gravity_mag = gravity_magnitude(parameter_list);
+                if (gravity_mag == 0) {
+                  std::string str = "Hydraulic conductivity specified for material \""+label
+                    +"\" but gravity magnitude = 0";
+                  BoxLib::Abort(str.c_str());
+                }
+                double factor = viscosity / (density * gravity_mag);
+                ParameterList psublist;
+                convert_PermeabilityAnisotropic(rsslist,psublist,factor);
                 rsublist.set("permeability",psublist);
                 rsublist.set("permeability_dist","uniform");
                 mtest["Intrinsic_Permeability"] = true;
               }
               else if (rlabel==molec_diff_uniform_str) {
                 ParameterList dsublist;
-                convert_MolecularDiffusionUniform(rsslist,dsublist);
-                rsublist.set("molecular_diffusion",dsublist);
+                bool is_nonzero = convert_MolecularDiffusionUniform(rsslist,dsublist);
+                if (is_nonzero) {
+                  rsublist.set("molecular_diffusion",dsublist);
+                  do_tracer_diffusion = do_tracer_advection; 
+                }
               }
               else if (rlabel==tortuosity_str) {
                 ParameterList dsublist;
@@ -1772,8 +1807,11 @@ namespace Amanzi {
               }
               else if (rlabel==dispersivity_str) {
                 ParameterList dsublist;
-                convert_DispersionTensorUniform(rsslist,dsublist);
-                rsublist.set("dispersivity",dsublist);
+                bool is_nonzero = convert_DispersionTensorUniform(rsslist,dsublist);
+                if (is_nonzero) {
+                  rsublist.set("dispersivity",dsublist);
+                  do_tracer_diffusion = do_tracer_advection; 
+                }
               }
               else if (rlabel==specific_storage_uniform_str) {
                 ParameterList ssublist;
@@ -2244,17 +2282,17 @@ namespace Amanzi {
                     
           // Start with a phase def and then add components
           const ParameterList& ppsublist = pplist.sublist(reqLp[0]);
-                    
+
           PLoptions optPP(ppsublist,nullList,nullList,false,true);
-                    
+
           Array<std::string> optLpp = optPP.OptLists();
-                    
+
           double density=-1;
           double viscosity=-1; // FIXME: Assumes constant is only model so stores values
           double diffusivity=-1;
           for (int j=0; j<optLpp.size(); ++j) {
             const std::string& propLabel = optLpp[j];
-                        
+
             const ParameterList& ppolist = ppsublist.sublist(propLabel);
                         
             if (propLabel == "Density: Uniform") {
@@ -2552,7 +2590,6 @@ namespace Amanzi {
 
       const std::string geo_name="Geochemical Condition";
       const std::string val_name="Value";
-      const std::string vals_name="Values";
       const std::string time_name="Times";
       const std::string form_name="Time Functions";
       const std::string ion_name="Free Ion Guess";
@@ -2560,17 +2597,10 @@ namespace Amanzi {
       if (fPLin.isParameter(geo_name)) {
         fPLout.set<std::string>("geochemical_condition",fPLin.get<std::string>(geo_name));
       } else if (fPLin.isParameter(val_name)) {
-        fPLout.set<double>("vals",fPLin.get<double>(val_name));
-      } else if (fPLin.isParameter(vals_name)) {
-        Array<double> vals = fPLin.get<Array<double> >(vals_name);
-        fPLout.set<Array<double> >("vals",vals);
-        if (vals.size() > 1) {
-          fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
-          fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
-        }
+        fPLout.set<double>("val",fPLin.get<double>(val_name));
       } else {
         const std::string str = "Solute Concentration for IC \""+solute_ic_label+
-          "\" must be specified using \""+geo_name+"\", \""+val_name+"\" or \""+vals_name;
+          "\" must be specified using \""+geo_name+"\" or \""+val_name+"\"";
         MyAbort(str);
       }
 
@@ -3316,14 +3346,23 @@ namespace Amanzi {
       }
     }
 
-
     void
     convert_to_structured_state(const ParameterList& parameter_list, 
                                 ParameterList&       struc_list,
                                 StateDef&            stateDef,
-                                bool                 do_tracer_transport,
-                                bool                 do_chem)
+                                bool&                do_tracer_advection,
+                                bool&                do_tracer_diffusion,
+                                bool&                do_chem)
     {
+      // FIXME: Molecular diffusivities should be specified as a property of
+      //        solutes (and tortuosity as a property of the materials)
+      //        The arguments to this function are to suggest that if Dmolec
+      //        is specified for any solute, diffusion should be turned on
+      //        (if transport is on....checked here by looking at do_tracer_advection)
+      //
+      // However, this is not implemented yet in the Amanzi input spec (v1.2.1 so far)
+      // Rather, tau.D is specified for all solutes as a material property
+      //
       ParameterList& phase_list  = struc_list.sublist("phase");
       ParameterList& comp_list   = struc_list.sublist("comp"); 
       ParameterList& solute_list = struc_list.sublist("tracer"); 
@@ -3414,7 +3453,7 @@ namespace Amanzi {
       }
 
       // Only do solute BCs if do_tracer_transport
-      if (do_tracer_transport)
+      if (do_tracer_advection)
       {
         SolutePLMMap solute_to_bctype = convert_solute_bcs(struc_list,stateDef);
 
@@ -3587,30 +3626,6 @@ namespace Amanzi {
       }
     }
 
-    static bool gravity_is_nonzero(const ParameterList& parameter_list)
-    {
-      bool is_nonzero = true;
-      if (parameter_list.isSublist("Execution Control")) {
-        const ParameterList& ec_list = parameter_list.sublist("Execution Control");
-        if (ec_list.isSublist("Numerical Control Parameters")) {
-          const ParameterList& ncp_list = ec_list.sublist("Numerical Control Parameters");
-          if (ncp_list.isSublist("Basic Algorithm Control")) {
-            const ParameterList& bac_list = ncp_list.sublist("Basic Algorithm Control");
-            if (bac_list.isSublist("Expert Settings")) {
-              const ParameterList& es_list = bac_list.sublist("Expert Settings");
-              if (es_list.isParameter("gravity")) {
-                double gravity_mag = es_list.get<double>("gravity");
-                if (gravity_mag == 0) {
-                  is_nonzero = false;
-                }
-              }
-            }
-          }
-        }
-      }
-      return is_nonzero;
-    }
-
     //
     // convert output to structured format
     //
@@ -3664,14 +3679,17 @@ namespace Amanzi {
         }
       }
             
-      if (0 && do_chem && state.HasSolidChem()) { // FIXME: All this data currently managed by Alquimia, work interface later...
+      if (1 && do_chem && state.HasSolidChem()) { // FIXME: All this data currently managed by Alquimia, work interface later...
         if (struc_list.isSublist("tracer")) {
           const Array<std::string>& solute_names = struc_list.sublist("tracer").get<Array<std::string> >("tracers");
           for (int i=0; i<solute_names.size(); ++i) {
             const std::string& name = solute_names[i];
+            /*
+            // Not currently handling "Total Sorbed"
             if (state.getSolid().UsingSorption()) {
               user_derive_list.push_back(underscore("Total Sorbed "+name));
             }
+            */
             // Not going to put optional Freundlich and Langmuir output in the derived-list for now.  
             /*
               if (SolidChem::HasSorptionIsotherm(name)) {
@@ -3685,9 +3703,9 @@ namespace Amanzi {
               }
               }
             */
-            user_derive_list.push_back(underscore("Kd "+name));
-            user_derive_list.push_back(underscore("Free Ion Guess "+name));
-            user_derive_list.push_back(underscore("Activity Coefficient "+name));
+            //user_derive_list.push_back(underscore(name+" Isotherm Kd"));
+            //user_derive_list.push_back(underscore(name+" Free Ion Guess"));
+            //user_derive_list.push_back(underscore(name+" Activity Coefficient"));
           }
         }
 
@@ -3698,8 +3716,8 @@ namespace Amanzi {
         const Array<std::string>& mineral_names = state.getSolid().mineral_names;
         for (int i=0; i<mineral_names.size(); ++i) {
           const std::string& name = mineral_names[i];
-          user_derive_list.push_back(underscore("Volume Fraction "+name));
-          user_derive_list.push_back(underscore("Specific Surface Area "+name));
+          user_derive_list.push_back(underscore(name + " Volume Fraction"));
+          user_derive_list.push_back(underscore(name + " Specific Surface Area"));
         }
 
         const Array<std::string>& sorption_site_names = state.getSolid().sorption_site_names;
@@ -4160,7 +4178,7 @@ namespace Amanzi {
     convert_to_structured(const ParameterList& parameter_list)
     {
       ParameterList struc_list = setup_structured();
-      bool do_tracer_transport, do_chem;
+      bool do_tracer_advection, do_tracer_diffusion, do_chem;
       //
       // determine spatial dimension of the problem
       // 
@@ -4172,7 +4190,7 @@ namespace Amanzi {
       //
       // Execution control
       //
-      convert_to_structured_control(parameter_list,struc_list, do_tracer_transport, do_chem);
+      convert_to_structured_control(parameter_list,struc_list, do_tracer_advection, do_tracer_diffusion, do_chem);
       //
       // Regions
       //
@@ -4181,15 +4199,21 @@ namespace Amanzi {
       // State 
       //
       StateDef stateDef(parameter_list);
-      convert_to_structured_state(parameter_list, struc_list, stateDef, do_tracer_transport, do_chem);
+      convert_to_structured_state(parameter_list, struc_list, stateDef,
+                                  do_tracer_advection, do_tracer_diffusion, do_chem);
       //
       // Materials
       //
-      convert_to_structured_material(parameter_list, struc_list, stateDef);
+      convert_to_structured_material(parameter_list, struc_list, stateDef,
+                                     do_tracer_advection, do_tracer_diffusion);
       //
       // Output
       // 
-      convert_to_structured_output(parameter_list, struc_list,stateDef,do_chem);
+      convert_to_structured_output(parameter_list,struc_list,stateDef,do_chem);
+
+      ParameterList& prob_out_list = struc_list.sublist("prob");
+      prob_out_list.set("do_tracer_advection",do_tracer_advection);
+      prob_out_list.set("do_tracer_diffusion",do_tracer_diffusion);
 
       std::string dump_str = "Structured Native Input File";
       if (parameter_list.isParameter(dump_str)) {
