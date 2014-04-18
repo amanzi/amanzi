@@ -33,9 +33,9 @@ unsigned int Mesh::cell_get_num_faces(const Entity_ID cellid) const {
 
       cell_get_faces_and_dirs_internal(c, &cfaceids, &cfacedirs, false);
       
-      int nfaces = cfaceids.size();
-      cell_face_ids[c].resize(nfaces);
-      cell_face_dirs[c].resize(nfaces);
+      //      int nfaces = cfaceids.size();
+      //      cell_face_ids[c].resize(nfaces);
+      //      cell_face_dirs[c].resize(nfaces);
 
       cell_face_ids[c] = cfaceids;    // these are copy operations
       cell_face_dirs[c] = cfacedirs;
@@ -65,9 +65,9 @@ void Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
 
       cell_get_faces_and_dirs_internal(c, &cfaceids, &cfacedirs, false);
       
-      int nfaces = cfaceids.size();
-      cell_face_ids[c].resize(nfaces);
-      cell_face_dirs[c].resize(nfaces);
+      //      int nfaces = cfaceids.size();
+      //      cell_face_ids[c].resize(nfaces);
+      //      cell_face_dirs[c].resize(nfaces);
 
       cell_face_ids[c] = cfaceids;    // these are copy operations
       cell_face_dirs[c] = cfacedirs;
@@ -81,13 +81,13 @@ void Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
   else {
     Entity_ID_List &cfaceids = cell_face_ids[cellid];
 
-    int nfaces = cfaceids.size();
-    faceids->resize(nfaces);
+    //    int nfaces = cfaceids.size();
+    //    faceids->resize(nfaces);
     *faceids = cfaceids; // copy operation
 
     if (face_dirs) {
       std::vector<int> &cfacedirs = cell_face_dirs[cellid];
-      face_dirs->resize(nfaces);
+      //      face_dirs->resize(nfaces);
       *face_dirs = cfacedirs; // copy operation
     }
   }
