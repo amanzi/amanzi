@@ -308,7 +308,7 @@ void MatrixMFD::CreateMFDrhsVectors() {
  * adds contributions to elemental rigth-hand-sides.
  ****************************************************************** */
 void MatrixMFD::ApplyBoundaryConditions(const std::vector<MatrixBC>& bc_markers,
-        const std::vector<double>& bc_values) {
+					const std::vector<double>& bc_values, bool ADD_BC_FLUX) {
   // tag global matrices as invalid
   assembled_schur_ = false;
   assembled_operator_ = false;
@@ -342,7 +342,7 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<MatrixBC>& bc_markers,
 
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f];
-      } else if (bc_markers[f] == MATRIX_BC_FLUX) {
+      } else if ((bc_markers[f] == MATRIX_BC_FLUX)&&(ADD_BC_FLUX)) {
         Ff[n] -= bc_values[f] * mesh_->face_area(f);
       }
     }
@@ -904,6 +904,37 @@ void MatrixMFD::AssertAssembledSchur_or_die_() const {
     Errors::Message msg("MatrixMFD: Schur complement has not been assembled.");
     Exceptions::amanzi_throw(msg);
   }
+}
+
+void MatrixMFD::Add2MFDstiffnessMatrices(std::vector<double> *Acc_ptr,
+			      std::vector<Teuchos::SerialDenseMatrix<int, double> > *Aff_ptr,
+			      std::vector<Epetra_SerialDenseVector> *Acf_ptr,
+			      std::vector<Epetra_SerialDenseVector> *Afc_ptr){
+
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  if (Acc_ptr){
+    for (int c=0; c!=ncells; ++c) {
+      //cout<<Acc_cells_[c]<<" "<<(*Acc_ptr)[c]<<endl;
+      Acc_cells_[c] += (*Acc_ptr)[c];
+    }
+  }
+  if (Afc_ptr){
+    for (int c=0; c!=ncells; ++c) {
+      Afc_cells_[c] += Afc_ptr->at(c);
+    }
+  }
+  if (Acf_ptr){
+    for (int c=0; c!=ncells; ++c) {
+      Acf_cells_[c] += Acf_ptr->at(c);
+    }
+  }
+  if (Aff_ptr){
+    for (int c=0; c!=ncells; ++c) {
+      Aff_cells_[c] += Aff_ptr->at(c);
+    }
+  }
+
 }
 
 }  // namespace Operators

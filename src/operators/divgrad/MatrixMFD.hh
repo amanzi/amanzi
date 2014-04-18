@@ -133,9 +133,14 @@ class MatrixMFD : public CompositeMatrix {
   virtual void CreateMFDstiffnessMatrices(
       const Teuchos::Ptr<const CompositeVector>& Krel);
   virtual void CreateMFDrhsVectors();
+  virtual void Add2MFDstiffnessMatrices(std::vector<double>* Acc_ptr,
+					std::vector<Teuchos::SerialDenseMatrix<int, double> >* Aff_ptr,
+					std::vector<Epetra_SerialDenseVector>* Acf_ptr,
+					std::vector<Epetra_SerialDenseVector>* Afc_ptr);
 
   virtual void ApplyBoundaryConditions(const std::vector<MatrixBC>& bc_markers,
-          const std::vector<double>& bc_values);
+				       const std::vector<double>& bc_values,
+				       bool ADD_BC_FLUX=true);
 
   // -- global matrices
   virtual void SymbolicAssembleGlobalMatrices();

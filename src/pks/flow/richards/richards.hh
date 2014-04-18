@@ -93,6 +93,14 @@ protected:
   virtual void ApplyDiffusion_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& g);
 
+  virtual void AddVaporDiffusionResidual_(const Teuchos::Ptr<State>& S,
+          const Teuchos::Ptr<CompositeVector>& g);
+  virtual void ComputeVaporDiffusionCoef(const Teuchos::Ptr<State>& S, 
+                                         Teuchos::RCP<CompositeVector>& vapor_diff, 
+                                         std::string var_name);
+ 
+
+
   // -- accumulation term
   virtual void AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g);
 
@@ -160,7 +168,12 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
+  Teuchos::RCP<Operators::MatrixMFD> matrix_vapor_;
+  //Teuchos::RCP<Operators::MatrixMFD> matrix_vapor_en_;
   Teuchos::RCP<Operators::MatrixMFD> face_matrix_;
+
+  // residual vector for vapor diffusion
+  Teuchos::RCP<CompositeVector> res_vapor;
   // note PC is in PKPhysicalBDFBase
 
   // custom enorm tolerances
@@ -180,6 +193,9 @@ protected:
 
   // is this a dynamic mesh problem
   bool dynamic_mesh_;
+
+  // is vapor turned on
+  bool vapor_diffusion_;
 
   // using constraint equations scaled by rel perm?
   bool scaled_constraint_;
