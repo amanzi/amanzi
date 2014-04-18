@@ -1807,7 +1807,7 @@ PorousMedia::richard_init_to_steady()
             dt = std::min(dt_new, t_max-t);
           }
         } // time-step
-		
+
         delete rs;
 
         if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
@@ -1828,7 +1828,9 @@ PorousMedia::richard_init_to_steady()
           pmf.FillCoarsePatch(pmf.get_new_data(Press_Type),0,t+dt,Press_Type,0,ncomps);
 	  if ( (model == PM_STEADY_SATURATED)
 	       || (model == PM_SATURATED) ) {
-	    pmf.get_new_data(State_Type).setVal(1,0,ncomps);
+            for (int i=0; i<ncomps; ++i) {
+              pmf.get_new_data(State_Type).setVal(density[i],i,1);
+            }
 	  } else {
 	    pmf.calcInvPressure(pmf.get_new_data(State_Type),pmf.get_new_data(Press_Type),cur_time,0,0,0);
 	  }
