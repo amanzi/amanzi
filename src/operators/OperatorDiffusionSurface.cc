@@ -80,10 +80,9 @@ void OperatorDiffusionSurface::UpdateMatrices(const CompositeVector& u)
 
   // update matrix blocks
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix& Wff = Wff_cells_[c];
@@ -127,12 +126,11 @@ void OperatorDiffusionSurface::CreateMassMatrices_(std::vector<WhetStone::Tensor
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   Wff_cells_.clear();
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix Wff(nfaces, nfaces);
@@ -175,13 +173,12 @@ void OperatorDiffusionSurface::AssembleMatrix(int schema)
   const Epetra_Map& map_wghost = mesh_->face_map(true);
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   int faces_LID[OPERATOR_MAX_FACES];
   int faces_GID[OPERATOR_MAX_FACES];
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; n++) {
@@ -231,13 +228,12 @@ void OperatorDiffusionSurface::InitPreconditioner(
 
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   int gid[OPERATOR_MAX_FACES];
 
   Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix Scell(nfaces, nfaces);
@@ -306,11 +302,10 @@ int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVe
 
   // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix& Acell = matrix[c];
@@ -331,7 +326,7 @@ int OperatorDiffusionSurface::ApplyInverse(const CompositeVector& X, CompositeVe
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix& Acell = matrix[c];

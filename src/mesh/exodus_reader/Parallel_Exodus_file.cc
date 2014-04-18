@@ -127,12 +127,12 @@ Parallel_Exodus_file::read_mesh(void)
 
   for (int b = 0; b < nblk; b++) {
     int mytype(my_mesh->element_block(b).element_type());
-    std::vector<int> alltype(np, AmanziMesh::UNKNOWN);
+    std::vector<int> alltype(np, AmanziMesh::CELLTYPE_UNKNOWN);
     my_comm->GatherAll(&mytype, &alltype[0], 1);
 
     std::vector<int>::iterator junk;
     junk = std::remove(alltype.begin(), alltype.end(),
-                       AmanziMesh::UNKNOWN);
+                       AmanziMesh::CELLTYPE_UNKNOWN);
     alltype.erase(junk, alltype.end());
     junk = std::unique(alltype.begin(), alltype.end());
     alltype.erase(junk, alltype.end());
@@ -167,7 +167,7 @@ Parallel_Exodus_file::read_mesh(void)
       AmanziMesh::Cell_type
         thetype(static_cast<AmanziMesh::Cell_type>(alltype.front()));
 
-      if (my_mesh->element_block(b).element_type() == AmanziMesh::UNKNOWN) {
+      if (my_mesh->element_block(b).element_type() == AmanziMesh::CELLTYPE_UNKNOWN) {
         my_mesh->element_block(b).element_type(thetype);
       }
     }

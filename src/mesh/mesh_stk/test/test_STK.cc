@@ -31,12 +31,12 @@ TEST(STK_HEX1)
 		       {0, 1, 1},
 		       {1, 1, 1}};
   Amanzi::AmanziMesh::Entity_ID local_cellnodes[8] = {0,1,2,3,4,5,6,7};
-  Amanzi::AmanziMesh::Entity_ID local_facenodes[6][4] = {{0,4,5,1},
-                                                         {1,5,6,2},
-                                                         {2,6,7,3},
-                                                         {0,3,7,4},
-                                                         {0,1,2,3},
-                                                         {4,7,6,5}};
+  Amanzi::AmanziMesh::Entity_ID local_facenodes[6][4] = {{0,1,5,4},
+                                                         {1,2,6,5},
+                                                         {2,3,7,6},
+                                                         {3,0,4,7},
+                                                         {0,3,2,1},
+                                                         {4,5,6,7}};
 
 
   Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));

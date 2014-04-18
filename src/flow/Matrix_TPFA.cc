@@ -122,7 +122,6 @@ void Matrix_TPFA::AddGravityFluxesRichards(double rho, const AmanziGeometry::Poi
   Epetra_MultiVector& Krel_faces = *rel_perm_->Krel().ViewComponent("face", true);
 
   AmanziMesh::Entity_ID_List cells;
-  std::vector<int> dirs;
 
 
   for (int f = 0; f < nfaces_wghost; f++) {
@@ -153,7 +152,6 @@ void Matrix_TPFA::Assemble()
   Epetra_MultiVector& Krel_faces = *rel_perm_->Krel().ViewComponent("face", true);
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   AmanziMesh::Entity_ID_List cells;
@@ -283,12 +281,11 @@ void Matrix_TPFA::ApplyBoundaryConditions(std::vector<int>& bc_model,
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell");
 
   for (int c = 0; c < ncells; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; n++) {
@@ -339,7 +336,6 @@ double Matrix_TPFA::ComputeNegativeResidual(const CompositeVector& u, CompositeV
 
   AmanziMesh::Entity_ID_List faces;
   AmanziMesh::Entity_ID_List cells;
-  std::vector<int> dirs;
 
   r.PutScalar(0.0);
   Epetra_MultiVector& rc = *r.ViewComponent("cell");
@@ -451,7 +447,6 @@ void Matrix_TPFA::AnalyticJacobian_(const CompositeVector& u,
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   AmanziMesh::Entity_ID_List cells;
@@ -576,8 +571,6 @@ void Matrix_TPFA::ComputeTransmissibilities_()
   AmanziGeometry::Point a_dist;
   double h[2], perm[2], perm_test[2], h_test[2];
   double trans_f;
-
-  std::vector<int> dirs;
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);

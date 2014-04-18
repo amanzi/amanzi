@@ -104,30 +104,6 @@ public:
   // Downward Adjacencies
   //---------------------
     
-  // Get faces of a cell.
-
-  // Get faces of a cell and directions in which the cell uses the face 
-
-  // The Amanzi coding guidelines regarding function arguments is purposely
-  // violated here to allow for a default input argument
-
-  // On a distributed mesh, this will return all the faces of the
-  // cell, OWNED or GHOST. If ordered = true, the faces will be
-  // returned in a standard order according to Exodus II convention
-  // for standard cells; in all other situations (ordered = false or
-  // non-standard cells), the list of faces will be in arbitrary order
-
-  // In 3D, direction is 1 if face normal points out of cell
-  // and -1 if face normal points into cell
-  // In 2D, direction is 1 if face/edge is defined in the same
-  // direction as the cell polygon, and -1 otherwise
-
-  virtual
-  void cell_get_faces_and_dirs (const Entity_ID cellid,
-                                Entity_ID_List *faceids,
-                                std::vector<int> *face_dirs,
-                                const bool ordered=false) const;
-
     
   // Get nodes of cell 
   // On a distributed mesh, all nodes (OWNED or GHOST) of the cell 
@@ -178,13 +154,6 @@ public:
 			    const Parallel_type ptype,
 			    std::vector<Entity_ID> *faceids) const;    
     
-  // Cells connected to a face
-    
-  void face_get_cells (const Entity_ID faceid, 
-		       const Parallel_type ptype,
-		       std::vector<Entity_ID> *cellids) const;
-    
-
 
   // Same level adjacencies
   //-----------------------
@@ -327,7 +296,7 @@ public:
   
   int deform(const std::vector<double>& target_cell_volumes_in, 
              const std::vector<double>& min_cell_volumes_in, 
-             const std::vector<std::string>& fixed_set_names,
+             const Entity_ID_List& fixed_nodes,
              const bool move_vertical);  
 
 private:
@@ -375,6 +344,37 @@ private:
   mutable std::vector<AmanziGeometry::RegionPtr> element_block_regions_;
   mutable std::vector<AmanziGeometry::RegionPtr> side_set_regions_;
   mutable std::vector<AmanziGeometry::RegionPtr> node_set_regions_;
+
+
+  // Get faces of a cell.
+
+  // Get faces of a cell and directions in which the cell uses the face 
+
+  // The Amanzi coding guidelines regarding function arguments is purposely
+  // violated here to allow for a default input argument
+
+  // On a distributed mesh, this will return all the faces of the
+  // cell, OWNED or GHOST. If ordered = true, the faces will be
+  // returned in a standard order according to Exodus II convention
+  // for standard cells; in all other situations (ordered = false or
+  // non-standard cells), the list of faces will be in arbitrary order
+
+  // In 3D, direction is 1 if face normal points out of cell
+  // and -1 if face normal points into cell
+  // In 2D, direction is 1 if face/edge is defined in the same
+  // direction as the cell polygon, and -1 otherwise
+
+  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+                                Entity_ID_List *faceids,
+                                std::vector<int> *face_dirs,
+                                const bool ordered=false) const;
+
+  // Cells connected to a face
+    
+  void face_get_cells_internal (const Entity_ID faceid, 
+                                const Parallel_type ptype,
+                                std::vector<Entity_ID> *cellids) const;
+
 
 };
 

@@ -33,9 +33,8 @@ int MFD3D_Elasticity::L2consistency(int cell, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Mc)
 {
   Entity_ID_List faces;
-  std::vector<int> dirs;
 
-  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  mesh_->cell_get_faces(cell, &faces);
   int nfaces = faces.size();
 
   int d = mesh_->space_dimension();

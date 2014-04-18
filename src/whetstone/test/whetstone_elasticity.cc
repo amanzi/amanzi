@@ -87,7 +87,6 @@ TEST(ELASTICITY_STIFFNESS_2D) {
 
     // verify exact integration property
     AmanziMesh::Entity_ID_List nodes;
-    std::vector<int> dirs;
     mesh->cell_get_nodes(cell, &nodes);
     
     int d = mesh->space_dimension();
@@ -164,7 +163,6 @@ TEST(ELASTICITY_STIFFNESS_3D) {
 
   // verify exact integration property
   AmanziMesh::Entity_ID_List nodes;
-  std::vector<int> dirs;
   mesh->cell_get_nodes(cell, &nodes);
     
   int d = mesh->space_dimension();

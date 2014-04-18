@@ -79,6 +79,30 @@ class ChemistryEngine {
                  AlquimiaAuxiliaryData& aux_data,
                  AlquimiaAuxiliaryOutputData& aux_output);
 
+  // Creates a geochemical condition with the given name within the chemistry engine.
+  void CreateCondition(const std::string& condition_name);
+
+  // Adds a mineral constraint to the geochemical condition with the given name. If another 
+  // constraint with the same mineral name exists for this condition, it is replaced by 
+  // this one.
+  void AddMineralConstraint(const std::string& condition_name,
+                            const std::string& mineral_name,
+                            double volume_fraction,
+                            double specific_surface_area);
+
+  // Adds an aqueous constraint to the geochemical condition with the given name. If another 
+  // constraint involving the same primary species exists for this condition, it is replaced by 
+  // this one.
+  // The constraint type may be "total_aqueous", "total_sorb", "free", "mineral", "gas",
+  // "pH", or "charge".
+  // The associated (mineral) species must be the name of a mineral mentioned 
+  // in a mineral constraint that has been previously added to this condition 
+  // using AddMineralConstraint().
+  void AddAqueousConstraint(const std::string& condition_name,
+                            const std::string& primary_species_name,
+                            const std::string& constraint_type,
+                            const std::string& associated_species);
+
   // Enforces the geochemical condition with the given name on the chemical configuration 
   // represented by the given array of concentrations at the given time. The order of the 
   // concentrations in the array matches that of the species names returned by GetSpeciesNames.

@@ -17,7 +17,6 @@ TEST(MOAB_HEX1)
   int i, j, k, err, nc, nv;
   unsigned int nodes[8];
   Amanzi::AmanziMesh::Entity_ID_List faces;
-  std::vector<int> facedirs;
   double ccoords[24], fcoords[12];
 
   int NV = 8;
@@ -66,7 +65,7 @@ TEST(MOAB_HEX1)
   CHECK_EQUAL(NC,nc);
 
     
-  mesh.cell_get_faces_and_dirs(0,&faces,&facedirs,true);
+  mesh.cell_get_faces(0,&faces,true);
 
   for (j = 0; j < 6; j++) {
     mesh.face_to_nodes(faces[j],nodes,nodes+4);

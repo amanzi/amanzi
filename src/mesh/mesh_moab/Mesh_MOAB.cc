@@ -1049,10 +1049,10 @@ unsigned int Mesh_MOAB::num_entities (Entity_kind kind,
   // direction as the cell polygon, and -1 otherwise
 
  
-void Mesh_MOAB::cell_get_faces_and_dirs (const Entity_ID cellid,
-                                         Entity_ID_List *faceids,
-                                         std::vector<int> *face_dirs,
-					 const bool ordered) const
+void Mesh_MOAB::cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+                                                  Entity_ID_List *faceids,
+                                                  std::vector<int> *face_dirs,
+					          const bool ordered) const
 {
   
   MBEntityHandle cell;
@@ -1070,7 +1070,7 @@ void Mesh_MOAB::cell_get_faces_and_dirs (const Entity_ID cellid,
   cell = cell_id_to_handle[cellid];
 
   faceids->clear();
-  face_dirs->clear();
+  if (face_dirs) face_dirs->clear();
 
       
   result = mbcore->get_adjacencies(&cell, 1, facedim, true, cell_faces, 
@@ -1082,7 +1082,7 @@ void Mesh_MOAB::cell_get_faces_and_dirs (const Entity_ID cellid,
   nf = cell_faces.size();
 
   cell_faceids = new int[nf];			
-  cell_facedirs = new int[nf];
+  if (face_dirs) cell_facedirs = new int[nf];
 
 
   // Have to re-sort the faces according a specific template for hexes
@@ -1149,20 +1149,22 @@ void Mesh_MOAB::cell_get_faces_and_dirs (const Entity_ID cellid,
       assert(result == MB_SUCCESS);
     }
 
-    for (int i = 0; i < nf; i++) {
-      MBEntityHandle face = ordfaces[i];
-      int sidenum, offset;
-
-      result = mbcore->side_number(cell,face,sidenum,cell_facedirs[i],offset);
-      if (result != MB_SUCCESS) {
-        cerr << "Could not find face dir in cell" << std::endl;
-        assert(result == MB_SUCCESS);
+    if (face_dirs) {
+      for (int i = 0; i < nf; i++) {
+        MBEntityHandle face = ordfaces[i];
+        int sidenum, offset;
+        
+        result = mbcore->side_number(cell,face,sidenum,cell_facedirs[i],offset);
+        if (result != MB_SUCCESS) {
+          cerr << "Could not find face dir in cell" << std::endl;
+          assert(result == MB_SUCCESS);
+        }
+        
+        // If this is a ghost face and the master has the opposite direction
+        // we are supposed to flip it
+        
+        if (faceflip[cell_faceids[i]]) cell_facedirs[i] *= -1;
       }
-    
-      // If this is a ghost face and the master has the opposite direction
-      // we are supposed to flip it
-
-      if (faceflip[cell_faceids[i]]) cell_facedirs[i] *= -1;
     }
 
     delete [] ordfaces;
@@ -1175,30 +1177,33 @@ void Mesh_MOAB::cell_get_faces_and_dirs (const Entity_ID cellid,
       assert(result == MB_SUCCESS);
     }
 
-    for (int i = 0; i < nf; i++) {
-      MBEntityHandle face = cell_faces[i];
-      int sidenum, offset;
-
-      result = mbcore->side_number(cell,face,sidenum,cell_facedirs[i],offset);
-      if (result != MB_SUCCESS) {
-        cerr << "Could not find face dir in cell" << std::endl;
-        assert(result == MB_SUCCESS);
+    if (face_dirs) {
+      for (int i = 0; i < nf; i++) {
+        MBEntityHandle face = cell_faces[i];
+        int sidenum, offset;
+        
+        result = mbcore->side_number(cell,face,sidenum,cell_facedirs[i],offset);
+        if (result != MB_SUCCESS) {
+          cerr << "Could not find face dir in cell" << std::endl;
+          assert(result == MB_SUCCESS);
+        }
+        
+        // If this is a ghost face and the master has the opposite direction
+        // we are supposed to flip it
+        
+        if (faceflip[cell_faceids[i]]) cell_facedirs[i] *= -1;
       }
-    
-      // If this is a ghost face and the master has the opposite direction
-      // we are supposed to flip it
-
-      if (faceflip[cell_faceids[i]]) cell_facedirs[i] *= -1;
     }
   }
 
-  for (int i = 0; i < nf; i++) {
+  for (int i = 0; i < nf; i++)
     faceids->push_back(cell_faceids[i]);
-    face_dirs->push_back(cell_facedirs[i]);
-  }
+  if (face_dirs) 
+    for (int i = 0; i < nf; i++)
+      face_dirs->push_back(cell_facedirs[i]);
 
   delete [] cell_faceids;
-  delete [] cell_facedirs;
+  if (face_dirs) delete [] cell_facedirs;
 }
 
 
@@ -1738,9 +1743,9 @@ void Mesh_MOAB::node_get_cell_faces (const Entity_ID nodeid,
     
 // Cells connected to a face
 
-void Mesh_MOAB::face_get_cells (const Entity_ID faceid, 
-				const Parallel_type ptype,
-				Entity_ID_List *cellids) const
+void Mesh_MOAB::face_get_cells_internal (const Entity_ID faceid, 
+                                         const Parallel_type ptype,
+                                         Entity_ID_List *cellids) const
 {
   throw std::exception();
 }
@@ -2053,7 +2058,7 @@ Cell_type Mesh_MOAB::cell_get_type(const Entity_ID cellid) const
 
 int Mesh_MOAB::deform(const std::vector<double>& target_cell_volumes_in, 
                       const std::vector<double>& min_cell_volumes_in, 
-                      const std::vector<std::string>& fixed_set_names,
+                      const Entity_ID_List& fixed_nodes,
                       const bool move_vertical) 
 {
   Errors::Message mesg("Deformation not implemented for Mesh_MOAB");

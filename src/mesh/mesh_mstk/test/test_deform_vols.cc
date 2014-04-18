@@ -43,7 +43,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
     mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-1.5,0.0,1.5,1.0,5,5,comm.get(),gm));
 
   int nc = 
-    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
 
   // Request target volume of 50% for bottom two cells in center column
   // The others are unconstrained except for a barrier of minimum volume
@@ -66,10 +66,12 @@ TEST(MSTK_DEFORM_VOLS_2D)
         target_volumes[i] = 0.5*orig_volumes[i];
   }
 
-  std::vector<std::string> fixed_setnames;
-  fixed_setnames.push_back("Bottom Region");
+  Amanzi::AmanziMesh::Entity_ID_List fixed_nodes;
+  mesh->get_set_entities("Bottom Region", Amanzi::AmanziMesh::NODE,
+                         Amanzi::AmanziMesh::USED, &fixed_nodes);
+
   bool move_vertical = true;
-  int status = mesh->deform(target_volumes,min_volumes,fixed_setnames,
+  int status = mesh->deform(target_volumes,min_volumes,fixed_nodes,
                             move_vertical);
   CHECK(status);
 
@@ -145,10 +147,12 @@ TEST(MSTK_DEFORM_VOLS_3D)
         target_volumes[i] = 0.5*orig_volumes[i];
   }
 
-  std::vector<std::string> fixed_setnames;
-  fixed_setnames.push_back("Bottom Region");
+  Amanzi::AmanziMesh::Entity_ID_List fixed_nodes;
+  mesh->get_set_entities("Bottom Region", Amanzi::AmanziMesh::NODE,
+                         Amanzi::AmanziMesh::USED, &fixed_nodes);
+
   bool move_vertical = true;
-  int status = mesh->deform(target_volumes,min_volumes,fixed_setnames,
+  int status = mesh->deform(target_volumes,min_volumes,fixed_nodes,
                             move_vertical);
   CHECK(status);
 

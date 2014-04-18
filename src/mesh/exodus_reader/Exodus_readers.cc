@@ -366,7 +366,7 @@ AmanziMesh::Cell_type read_element_type (const char * name)
     if (id == "HEX")
         return AmanziMesh::HEX;
 
-    return AmanziMesh::UNKNOWN;
+    return AmanziMesh::CELLTYPE_UNKNOWN;
 
 }
 

@@ -33,11 +33,10 @@ void Transport_PK::LimiterTensorial(const int component,
 
   std::vector<AmanziGeometry::Point> normals;
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
 
   // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -152,7 +151,7 @@ void Transport_PK::LimiterTensorial(const int component,
 
   // Step 3: enforcing a priori time step estimate (division of dT by 2).
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     double a, b;
@@ -308,11 +307,10 @@ void Transport_PK::LimiterBarthJespersen(const int component,
 
   // Step 3: enforcing a priori time step estimate (division of dT by 2).
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     double a, b;
@@ -481,10 +479,9 @@ void Transport_PK::LimiterKuzmin(const int component,
   // Step 4: enforcing a priori time step estimate (division of dT by 2).
   // Experimental version is limited to 2D (lipnikov@lanl.gov).
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     double a, b;

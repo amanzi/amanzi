@@ -152,7 +152,7 @@ Mesh_STK::cell_get_type(const Entity_ID cellid) const
 
   // FIXME: Polyhedral, 2D not yet supported
 
-  Cell_type result(UNKNOWN);
+  Cell_type result(CELLTYPE_UNKNOWN);
   ASSERT(topo != NULL);
   switch (topo->node_count) {
     case (8):
@@ -242,6 +242,7 @@ Mesh_STK::LID(const Entity_ID& gid, const Entity_kind& kind) const
   return result;
 }
 
+
 // Get faces of a cell and directions in which the cell uses the face 
 
 // The Amanzi coding guidelines regarding function arguments is purposely
@@ -259,21 +260,25 @@ Mesh_STK::LID(const Entity_ID& gid, const Entity_kind& kind) const
 // direction as the cell polygon, and -1 otherwise
 
 void 
-Mesh_STK::cell_get_faces_and_dirs (const Entity_ID cellid,
-                                   Entity_ID_List *outfaceids,
-                                   std::vector<int> *face_dirs,
-				   const bool ordered) const
+Mesh_STK::cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+                                            Entity_ID_List *outfaceids,
+                                            std::vector<int> *face_dirs,
+				            const bool ordered) const
 {
   stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
   global_cell_id += 1;                  // need 1-based for stk::mesh
 
   STK::Entity_Ids stk_face_ids;
-  mesh_->element_to_faces_and_dirs(global_cell_id, stk_face_ids, *face_dirs);
+  if (face_dirs != NULL) {
+    face_dirs->clear();
+    mesh_->element_to_faces_and_dirs(global_cell_id, stk_face_ids, *face_dirs);
+  }
+  else
+    mesh_->element_to_faces(global_cell_id, stk_face_ids);
   // 0-based for Epetra_Map
   std::for_each(stk_face_ids.begin(), stk_face_ids.end(), bl::_1 -= 1);
 
   outfaceids->clear();
-  face_dirs->clear();
   for (STK::Entity_Ids::iterator f = stk_face_ids.begin(); 
        f != stk_face_ids.end(); f++) {
     stk::mesh::EntityId global_face_id(*f);
@@ -398,12 +403,11 @@ Mesh_STK::node_get_cell_faces(const Entity_ID nodeid,
   Entity_ID_List node_faces;
   Entity_ID_List cell_faces;
   Entity_ID_List outids;
-  std::vector<int> fdirs;
 
   outfaceids->clear();
   this->node_get_faces(nodeid, ptype, &node_faces);
   std::sort(node_faces.begin(), node_faces.end());
-  this->cell_get_faces_and_dirs(cellid, &cell_faces,&fdirs);
+  Mesh::cell_get_faces(cellid, &cell_faces);
   std::sort(cell_faces.begin(), cell_faces.end());
 
   std::set_intersection(node_faces.begin(), node_faces.end(),
@@ -417,9 +421,9 @@ Mesh_STK::node_get_cell_faces(const Entity_ID nodeid,
 // Mesh_STK::face_get_cells
 // -------------------------------------------------------------
 void
-Mesh_STK::face_get_cells(const Entity_ID faceid, 
-                         const Parallel_type ptype,
-                         Entity_ID_List *outcellids) const
+Mesh_STK::face_get_cells_internal(const Entity_ID faceid, 
+                                  const Parallel_type ptype,
+                                  Entity_ID_List *outcellids) const
 {
   stk::mesh::EntityId global_face_id = 
       this->face_map(true).GID(faceid);
@@ -451,9 +455,8 @@ Mesh_STK::cell_get_face_adj_cells(const Entity_ID cellid,
                                   Entity_ID_List *fadj_cellids) const
 {
   Entity_ID_List faces;
-  std::vector<int> fdirs;
 
-  cell_get_faces_and_dirs(cellid, &faces, &fdirs);
+  cell_get_faces(cellid, &faces);
 
   fadj_cellids->clear();
   for (Entity_ID_List::iterator f = faces.begin(); 
@@ -857,7 +860,7 @@ Mesh_STK::get_set_entities (const std::string setname,
 
 int Mesh_STK::deform(const std::vector<double>& target_cell_volumes_in, 
                      const std::vector<double>& min_cell_volumes_in, 
-                     const std::vector<std::string>& fixed_set_names,
+                     const Entity_ID_List& fixed_nodes,
                      const bool move_vertical) {
     Errors::Message mesg("deformation not implemented for STK mesh");
     amanzi_throw(mesg);
