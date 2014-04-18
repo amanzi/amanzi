@@ -1040,8 +1040,6 @@ but require special treatment. They are specified as follows:
    <ParameterList name="boundary conditions">
      <ParameterList name="geochemical conditions">
        <ParameterList name="east crib">   <!-- user defined name -->
-         <Parameter name="geochemical engine" type="string" value="pflotran"/>
-         <Parameter name="input file" type="string" value="tritium.bgd"/>
          <Parameter name="regions" type="Array(string)" value="{Crib1}"/>
        </ParameterList>
      </ParameterList>
@@ -1136,12 +1134,16 @@ PFloTran file `"1d-tritium-trim.in`".
     <Parameter name="Number of component concentrations" type="int" value="1"/>
   </ParameterList>
 
+The Alquimia chemistry process kernel only requires the `"Engine`" and `"Engine Input File`"
+entries, but will also accept and respect the value given for `"Max Time Step (s)`". 
+The rest are only used by the native chemistry kernel.
 
 Initial conditions
 ------------------
 
 This sublist completes initialization of state variable, see list `"State`" for 
-more detail.
+more detail. This section is only required for the native chemistry kernel--the
+Alquimia chemistry kernel reads initial conditions from the `"State`" list.
 
 .. code-block:: xml
 
@@ -1164,28 +1166,6 @@ more detail.
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
-    <ParameterList name="Initial Conditions">
-      <ParameterList name="initial">
-        <Parameter name="PFloTran Constraint" type="string" value="initial"/>
-        <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
-      </ParameterList>
-    </ParameterList>
-
-
-Boundary conditions
--------------------
-
-.. code-block:: xml
-
-    <ParameterList name="Boundary Conditions">
-      <ParameterList name="West BC">
-        <Parameter name="PFloTran Constraint" type="string" value="west"/>
-        <Parameter name="Assigned Regions" type="Array(string)" value="{West}"/>
-      </ParameterList>
-    </ParameterList>
-
-
 
 Functions
 =========
