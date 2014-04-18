@@ -1149,7 +1149,7 @@ namespace Amanzi {
                                 ParameterList&       rsublist)
     {
       const std::string V1_str = "VerticesV1";
-      const std::string V2_str = "VerticesV1";
+      const std::string V2_str = "VerticesV2";
       const std::string Extent_str = "Extent";
       const std::string Plane_str = "Plane";
       const std::string Reg_str = "Region: Polygon";
