@@ -5,7 +5,7 @@
     <Parameter name="Author" type="string" value="Marc Day"/>
   </ParameterList>
   <ParameterList name="Execution Control">
-    <Parameter name="Flow Model" type="string" value="Steady State Saturated"/>
+    <Parameter name="Flow Model" type="string" value="Off"/>
     <Parameter name="Transport Model" type="string" value="On"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
     <ParameterList name="Time Integration Mode">
@@ -30,7 +30,7 @@
         <ParameterList name="Tc-99 Gradient Ref">
           <Parameter name="Adjacent Difference Greater" type="double" value="0.1"/>
           <Parameter name="Field Name" type="string" value="Tc_99_Aqueous_Concentration"/>
-          <Parameter name="Regions" type="Array(string)" value="{ALL}"/>
+          <Parameter name="Regions" type="Array(string)" value="{All}"/>
           <Parameter name="Maximum Refinement Level" type="int" value="3"/>
         </ParameterList>
       </ParameterList>
@@ -134,42 +134,36 @@
                 <Parameter name="Value" type="double" value="1.e-20"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="U_234">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Th_230">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Ra_226">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Pb_210">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
             <ParameterList name="Tc_99">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
                 <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -190,37 +184,31 @@
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Values" type="Array(double)" value="{1.0}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="U_234">
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Values" type="Array(double)" value="{1.0e-20}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Th_230">
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Values" type="Array(double)" value="{1.0e-20}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Ra_226">
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Values" type="Array(double)" value="{1.0e-20}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Pb_210">
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Values" type="Array(double)" value="{1.0e-20}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Tc_99">
               <ParameterList name="BC: Uniform Concentration">
                 <Parameter name="Values" type="Array(double)" value="{1.0}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -237,32 +225,26 @@
             <ParameterList name="Pu_238">
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="U_234">
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Th_230">
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Ra_226">
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Pb_210">
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
             <ParameterList name="Tc_99">
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>

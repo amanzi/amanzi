@@ -290,9 +290,14 @@ void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* c
 
   RSdata& rs_data = rs->GetRSdata();
 
-  rs_data.calcInvPressure(SnewMFT,PnewMFT,cur_time,0,0,0);
-  rs_data.calcInvPressure(SoldMFT,PoldMFT,cur_time-dt,0,0,0);
-
+  if (rs->GetRSdata().IsSaturated()) {
+    SnewMFT.SetVal(rho);
+    SoldMFT.SetVal(rho);
+  } else {
+    rs_data.calcInvPressure(SnewMFT,PnewMFT,cur_time,0,0,0);
+    rs_data.calcInvPressure(SoldMFT,PoldMFT,cur_time-dt,0,0,0);
+  }
+  
   for (int lev=0; lev<nLevs; ++lev) {
     SnewMFT[lev].mult(1/rho,0,1);
     SoldMFT[lev].mult(1/rho,0,1);

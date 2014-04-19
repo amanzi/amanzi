@@ -23,7 +23,7 @@ public:
     std::string Type() const {return type;}
     std::string Label() const {return label;}
     virtual Array<Real> operator() (Real time=0) const {return vals;}
-    virtual Array<Real> time() const {return vals;}
+    virtual Array<Real> time() const {return Array<Real>(vals.size(),0);}
 
     virtual void apply(FArrayBox&  fab, 
                        const Real* dx, 
@@ -68,7 +68,6 @@ public:
 protected:
     Array<TabularFunction> funcs;
 };
-
 
 struct ArrayTransform
 {

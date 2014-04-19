@@ -24,15 +24,11 @@ EventCoord PMAmr::event_coord;
 std::map<std::string,EventCoord::Event*> PMAmr::defined_events;
 bool PMAmr::do_output_time_in_years;
 bool PMAmr::attempt_to_recover_failed_step;
-RegionManager* PMAmr::region_manager = 0;
-RockManager* PMAmr::rock_manager = 0;
 
 void
 PMAmr::CleanupStatics ()
 {
     pmamr_initialized = false;
-    region_manager = 0;
-    rock_manager = 0;
 }
 
 static bool initialized = false;
@@ -85,9 +81,6 @@ PMAmr::~PMAmr()
   for (std::map<std::string,EventCoord::Event*>::iterator it=defined_events.begin(); it!=defined_events.end(); ++it) {
     delete it->second;
   }
-
-  delete rock_manager; rock_manager = 0;
-  delete region_manager; region_manager = 0;
 }
 
 void 
@@ -234,7 +227,6 @@ void
 PMAmr::init (Real t_start,
              Real t_stop)
 {
-  SetUpRockManager();
   InitializeControlEvents();
 
   if (!restart_chkfile.empty() && restart_chkfile != "init") {
@@ -681,23 +673,6 @@ PMAmr::coarseTimeStep (Real _stop_time)
 }
 
 void
-PMAmr::SetUpRockManager()
-{
-  if (rock_manager == 0) {
-    if (ParallelDescriptor::IOProcessor()) {
-      std::cout << "Building Rock Manager..." << std::endl;
-    }
-
-    if (region_manager == 0) region_manager = new RegionManager();
-    rock_manager = new RockManager(region_manager,geom,refRatio(),3); // FIXME: 3 is HypGrow
-
-    if (ParallelDescriptor::IOProcessor() && verbose>0) {
-      std::cout << "....Rock Manager built" << std::endl;
-    }
-  }
-}
-
-void
 PMAmr::initialInit (Real              strt_time,
 		    Real              stop_time,
 		    const BoxArray*   lev0_grids,
@@ -885,6 +860,11 @@ void PMAmr::InitializeControlEvents()
     // Get parameters for each observation
     // observation type:0=production,1=mass_fraction,2=mole_fraction,3=saturation
     for (int i=0; i<n_obs; i++) {
+      RegionManager* region_manager = PorousMedia::GetRegionManager();
+      if (region_manager == 0) {
+        BoxLib::Abort("static Region manager must be set up prior to reading observations");
+      }
+
       const std::string prefix("observation." + obs_names[i]);
       ParmParse ppr(prefix.c_str());
 

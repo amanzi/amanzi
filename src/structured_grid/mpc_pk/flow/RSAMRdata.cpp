@@ -98,6 +98,7 @@ RSAMRdata::SetIsSaturated()
   int pm_model = PorousMedia::Model();
   is_saturated = (pm_model == PorousMedia::PM_STEADY_SATURATED)
     || (pm_model == PorousMedia::PM_SATURATED);
+  is_steady = (pm_model == PorousMedia::PM_STEADY_SATURATED);
 }
 
 void
@@ -133,7 +134,7 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
     }
     porosity.set(lev,pm[lev].Porosity());
 
-    if (is_saturated) {
+    if (is_saturated && !is_steady) {
       specific_storage.set(lev,pm[lev].SpecificStorage());
     }
 
@@ -159,7 +160,7 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
   }
   Porosity = new MFTower(layout,porosity,nLevs);
 
-  if (is_saturated) {
+  if (is_saturated && !is_steady) {
     SpecificStorage = new MFTower(layout,specific_storage,nLevs);
   }
   else {
@@ -189,7 +190,7 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
 
   // Setup property managers
   PropertyManagerCtx kappaCCdir_ctx;
-  kappaCCdir_ctx.rockMgr = pm_amr->GetRockManager();
+  kappaCCdir_ctx.rockMgr = PorousMedia::GetRockManager();
   kappaCCdir_ctx.property_name = "permeability";
   std::set<PropertyManager*> kappaCCdir_dep; // Empty
   managed_properties[RSdata_KappaCCdir] = new PropertyManager(KappaCCdir,kappaCCdir_dep,kappaCCdir_ctx);

@@ -12,8 +12,8 @@ set(PMAMR_REL_INCLUDE_DIRS problem_setup
                            region
                            mpc_pk/transport/diffusion
                            mpc_pk/flow
-                           mpc_pk/chemistry
-                           mpc_pk)
+                           mpc_pk
+                           mpc_pk/chemistry)
 set(PMAMR_INCLUDE_DIRS)
 foreach(d ${PMAMR_REL_INCLUDE_DIRS})
   list(APPEND PMAMR_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/${d})

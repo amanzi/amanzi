@@ -50,7 +50,7 @@
         <Parameter name="Maximum Time Step Grow" type="double" value="2"/>
         <Parameter name="Transient Maximum Time Step Size" type="double" value="1.e9"/>
         <Parameter name="Transient Initial Time Step" type="double" value="10"/>
-        <!-- <Parameter name="Maximum Cycle Number" type="int" value="0"/> -->
+        <Parameter name="Maximum Cycle Number" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Time Period Control">
@@ -160,7 +160,6 @@
   </ParameterList>
   
   <ParameterList name="Material Properties">
-    <Parameter name="Saturation Threshold For Kr" type="double" value="0.9995"/>
     
     <ParameterList name="Facies_1">
       <ParameterList name="Porosity: GSLib">
@@ -174,9 +173,10 @@
         <Parameter name="y" type="double" value="1.9976E-13"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="1.9467E-04"/>
-        <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.2294"/>
+        <Parameter name="alpha" type="double" value="1.9647E-4"/>
+        <Parameter name="ell" type="double" value="2.0"/>
+        <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Region between Plane Surface 1 and Plane Surface 2}"/>
@@ -216,6 +216,8 @@
         <Parameter name="Sr" type="double" value="0.0"/>
         <Parameter name="m" type="double" value="0.3006"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+        <Parameter name="WRM Plot File" type="string" value="run_data/kr_Facies_3.dat"/>
+        <Parameter name="WRM Plot File Number Of Points" type="int" value="1001"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Region between Plane Surface 2 and Plane Surface 3}"/>
     </ParameterList>

@@ -4,6 +4,8 @@
 #include <RegionManager.H>
 #include <MatFiller.H>
 #include <MonotCubicInterpolator.H>
+#include <ChemistryHelper_Structured.H>
+#include <RegionData.H>
 
 #include <PArray.H>
 #include <DataServices.H>
@@ -46,11 +48,18 @@
 class RockManager
 {
 public:
-  RockManager(const RegionManager*   _region_manager,
-              const Array<Geometry>& geomArray,
-              const Array<IntVect>&  refRatio,
-              int                    nGrow);
+  typedef std::map<std::string,Real> ICParmPair; // ic parameter and value
+  typedef std::map<std::string, ICParmPair > ICLabelParmPair; // ic parameter and value associated with a labeled entity
+  typedef std::map<std::string, ICLabelParmPair> ChemICMap; // 
+  typedef std::map<std::string, std::map<std::string,int> > LabelIdx;
+
+  RockManager(const RegionManager*      _region_manager,
+              const Array<std::string>* solute_names = 0);
   ~RockManager();
+
+  void FinalizeBuild(const Array<Geometry>& geomArray,
+                     const Array<IntVect>&  refRatio,
+                     int                    nGrow);
 
   bool CanDerive(const std::string& property_name) const;
 
@@ -68,6 +77,11 @@ public:
      returned is suitable to be passed as an identifier for evaluating
      state-dependent properties (such as relative permeability) */
   void GetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed = false) const;
+
+  void RockChemistryProperties(FArrayBox&  fab,
+                               const Real* dx);
+  void RockChemistryProperties(FArrayBox&         fab,
+                               const std::string& material_name);
 
   void Porosity(Real      time,
                 int       level,
@@ -126,9 +140,10 @@ public:
   const MatFiller* GetMatFiller() const {return materialFiller;}
   int ID() const {return rock_mgr_ID;}
   int NComp(const std::string& property_name) const;
-  int NGrow() const {return nGrow;}
   int FinestLevel() const {return materialFiller->NumLevels()-1;}
   const PArray<Material>& GetMaterials() const {return rock;}
+  const Material& FindMaterial(const std::string& name) const;
+  const Material& FindMaterialInRegions(const Array<std::string>& region_names) const;
 
   static void BuildGSLibFile(Real                   avg,
                              Real                   std,
@@ -145,9 +160,28 @@ public:
   bool Is_CP_model_XX(int model_id, const std::string& str) const;
   bool Is_Kr_model_XX(int model_id, const std::string& str) const;
 
+  int NumMinerals() const {return nminerals;}
+  const Array<std::string>& MineralNames() const {return minerals;}
+  int NumSorptionSites() const {return nsorption_sites;}
+  const Array<std::string>& SorptionSiteNames() const {return sorption_sites;}
+  int NumCationExchange() const {return ncation_exchange;}
+  int NumSorptionIsotherms() const {return nsorption_isotherms;}
+  const std::map<std::string,int> AuxChemVariablesMap() const {return aux_chem_variables;}
+  bool UsingSorption() const {return using_sorption;}
+
+  const ChemICMap& SorptionIsothermICs() const {return sorption_isotherm_ics;}  // isotherm[rockname][solute][property] = val
+  const ChemICMap& MineralogyICs() const {return mineralogy_ics;}           // mineralogy[rockname][mineralsname][property] = val
+  const ChemICMap& SurfaceComplexationICs() const {return surface_complexation_ics;} // sc[rockname][sorptionsitename][property]) = val
+  const ICLabelParmPair& CationExchangeCapacityICs() const {return cation_exchange_ics;} // ceics[rockname][property] = val
+
+  const LabelIdx& MineralogyLabelMap() const {return mineralogy_label_map;}
+  const LabelIdx& SorptionIsothermLabelMap() const {return sorption_isotherm_label_map;}
+  const LabelIdx& SurfaceComplexationLabelMap() const {return surface_complexation_label_map;}
+  const LabelIdx& SorptionChemistryLabelMap() const {return sorption_chem_label_map;} // sc[solute][parameter] = val
+  const std::map<std::string,int>& CationExchangeLabelMap() const {return cation_exchange_label_map;}
+
 protected:
-  void Initialize(const Array<Geometry>& geomArray,
-                  const Array<IntVect>&  refRatio);
+  void Initialize(const Array<std::string>* soluteNames);
 
   Array<Array<int> > SortPtsByMaterial(int* matID, int npts) const;
   void BuildInterpolators();
@@ -172,10 +206,30 @@ protected:
   bool interps_built;
 
   int rock_mgr_ID;
-  int nGrow;
 
-  DataServices *dataServices_phi;
-  std::map<std::string,AmrData*> amrData_phi; 
+  // Minerals/chemistry
+  int nminerals; 
+  Array<std::string> minerals;
+  int nsorption_sites; 
+  Array<std::string> sorption_sites;
+  int ncation_exchange; 
+  int nsorption_isotherms;
+  std::map<std::string,int> aux_chem_variables;
+  bool using_sorption;
+
+  ChemICMap sorption_isotherm_ics;    // isotherm[rockname][solute][property] = val
+  ChemICMap mineralogy_ics;           // mineralogy[rockname][mineralsname][property] = val
+  ChemICMap surface_complexation_ics; // sc[rockname][sorptionsitename][property]) = val
+  ICLabelParmPair cation_exchange_ics; // ceics[rockname][parameter] = val
+  Array<Real> tInflow;
+
+  LabelIdx mineralogy_label_map;
+  LabelIdx sorption_isotherm_label_map;
+  LabelIdx surface_complexation_label_map;
+  LabelIdx sorption_chem_label_map; // sc[solute][parameter] = val
+  std::map<std::string,int> cation_exchange_label_map;
+
+  Array<std::string> known_solutes;
 };
 
 #endif

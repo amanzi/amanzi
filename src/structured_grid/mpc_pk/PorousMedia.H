@@ -27,10 +27,12 @@
 
 #include <PMAmr.H>
 #include <RichardSolver.H>
+#include <RockManager.H>
 
 // Amanzi chemistry
 #ifdef ALQUIMIA_ENABLED
 #include <ChemistryEngine.hh>
+#include <ChemistryHelper_Structured.H>
 #else
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
@@ -236,7 +238,8 @@ public:
 
   void predictDT(MultiFab* u_mac, Real t_eval);
 
-  Real predictDT_diffusion_explicit (Real t_eval);
+  Real predictDT_diffusion_explicit (Real t_eval,
+                                     MultiFab* saturation = 0);
 
   Real initialTimeStep (MultiFab* u_mac);
 
@@ -319,11 +322,12 @@ public:
                       Real& dt_suggest,
 		      bool  attempt_to_recover_failed_step);
 
-  void advance_richards_transport_dt(Real t);
+  void advance_richards_transport_dt(Real      t,
+                                     MultiFab* saturation = 0);
 
   void advance_flow_nochange(Real time, Real dt);
 
-  void advance_saturated_transport_dt();
+  void advance_saturated_transport_dt(Real time);
 
   bool advance_richards_transport_chemistry(Real  t,
 					    Real  dt,
@@ -381,13 +385,13 @@ public:
 
   static const Array<std::string>& UserDerives() {return user_derive_list;}
 
-  static PArray<Material>& Materials() {return materials;}
   static const Array<Real>& Density() {return density;}
   static const Array<Real>& Viscosity() {return muval;}
   static int numComponents() {return ncomps;}
   static const Array<std::string>& componentNames() {return cNames;}
   static const Array<std::string>& phaseNames() {return pNames;}
   static const Array<std::string>& soluteNames() {return tNames;}
+  static bool DoSoluteChemistry() {return do_tracer_chemistry;}
 
   static PArray<RegionData>& BCs() {return bc_array;}
   static PArray<RegionData>& TBCs(int iTrac) {return tbc_array[iTrac];}
@@ -410,9 +414,6 @@ public:
   static void read_tracer (); 
   static void read_source (); 
   static void read_observation (); 
-  static void read_chem (); 
-
-  static const Material& find_material(const std::string& name);
 
   virtual void sum_integrated_quantities ();
 
@@ -743,7 +744,8 @@ public:
   //
   void calcDiffusivity (const Real time,
 			const int  src_comp = 0,
-			const int  num_comp = 1);  
+			const int  num_comp = 1,
+                        MultiFab*  saturation = 0);
   //
   // Calculate diffusive term due to capillary pressure
   //
@@ -987,7 +989,13 @@ public:
 
 #ifdef ALQUIMIA_ENABLED
   static Amanzi::AmanziChemistry::ChemistryEngine* GetChemistryEngine() {return chemistry_engine;}
+  static ChemistryHelper_Structured* GetChemistryHelper() {return chemistry_helper;}
 #endif
+  static const std::string& GetChemistryModel() {return chemistry_model_name;}
+  static const std::string& GetChemistryEngineName() {return chemistry_engine_name;}
+  static RockManager* GetRockManager() {return rock_manager;}
+  static RegionManager* GetRegionManager() {return region_manager;}
+
 
   MultiFab* UMac_Prev() {return u_mac_prev;}
   MultiFab* UMac_Curr() {return u_mac_curr;}
@@ -1066,6 +1074,10 @@ public:
                               MultiFab& mf,
                               int       dcomp);
 
+  void derive_CationExchangeCapacity(Real      time,
+                                     MultiFab& mf,
+                                     int       dcomp);
+
   void derive_Dispersivity(Real      time,
                            MultiFab& mf,
                            int       dcomp,
@@ -1090,10 +1102,7 @@ protected:
   bool            FillPatchedOldState_ok;
 
   static Real geometry_eps;
-  //static PArray<Region> regions;
   static std::string surf_file;
-
-  static PArray<Material> materials;
 
   // Rock
   static std::map<std::string, int> rock_to_int; // hack to support user output
@@ -1136,28 +1145,13 @@ protected:
   static Array<std::string> sorption_sites;
   static int ncation_exchange; 
   static int nsorption_isotherms;
-  //static Array<std::string> aux_chem_variables;
   static std::map<std::string,int> aux_chem_variables;
   static bool using_sorption;
 
-  typedef std::map<std::string,Real> ICParmPair; // ic parameter and value
-  typedef std::map<std::string, ICParmPair > ICLabelParmPair; // ic parameter and value associated with a labeled entity
-  typedef std::map<std::string, ICLabelParmPair> ChemICMap; // 
-  static ChemICMap sorption_isotherm_ics;    // isotherm[rockname][solute][property] = val
-  static ChemICMap mineralogy_ics;           // mineralogy[rockname][mineralsname][property] = val
-  static ChemICMap surface_complexation_ics; // sc[rockname][sorptionsitename][property]) = val
-  static ICParmPair cation_exchange_ics; // capacity[rockname] = val
-  static ChemICMap solute_chem_ics; // sc[rockname][solute][property] = val
-  static ICLabelParmPair sorption_chem_ics; // sc[solute][property] = val
   static Array<Real> tInflow;
 
-  typedef std::map<std::string, std::map<std::string,int> > LabelIdx;
-  static LabelIdx mineralogy_label_map;
-  static LabelIdx sorption_isotherm_label_map;
-  static LabelIdx surface_complexation_label_map;
-  static LabelIdx solute_chem_label_map;
-  static LabelIdx sorption_chem_label_map; // sc[solute][parameter] = val
-  static std::map<std::string,int> cation_exchange_label_map;
+  static RockManager::ChemICMap solute_chem_ics; // sc[rockname][solute][property] = val
+  static RockManager::ICLabelParmPair sorption_chem_ics; // sc[solute][property] = val
 
   // Pressure
   static Real wt_lo;
@@ -1189,13 +1183,12 @@ protected:
 
 #ifdef ALQUIMIA_ENABLED
   static Amanzi::AmanziChemistry::ChemistryEngine* chemistry_engine;
-#else
-  static PArray<Amanzi::AmanziChemistry::SimpleThermoDatabase> chemSolve;
+#endif
+  static std::string chemistry_model_name;
+  static std::string chemistry_engine_name;
+  static ChemistryHelper_Structured* chemistry_helper;
   static std::string amanzi_database_file;
   static std::string amanzi_activity_model; 
-  static Array<Amanzi::AmanziChemistry::Beaker::BeakerComponents> components;
-  static Array<Amanzi::AmanziChemistry::Beaker::BeakerParameters> parameters;
-#endif
 
 #endif
   static int  max_grid_size_chem;
@@ -1278,6 +1271,8 @@ protected:
   static BCRec       phys_bc;
   static BCRec       pres_bc;
   static MacProj*    mac_projector;
+  static RegionManager* region_manager;
+  static RockManager* rock_manager;
   //
   // Internal parameters for timestepping.
   //

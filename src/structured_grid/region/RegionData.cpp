@@ -102,7 +102,6 @@ ArrayRegionData::operator() (Real time) const
 Array<Real>
 ArrayRegionData::time() const
 {
-  
   Array<Real> newVals;
   if (funcs.size()>0)
       newVals = funcs[0].x_;

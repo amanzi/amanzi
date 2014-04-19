@@ -2,10 +2,11 @@
 #define _Property_H_
 
 #include <PArray.H>
+#include <Geometry.H>
+#include <DataServices.H>
+
 #include <Region.H>
 #include <TabularFunction.H>
-
-#include <AmrData.H>
 
 class Property
 {
@@ -67,29 +68,50 @@ class GSLibProperty
 {
 public:
   GSLibProperty(const std::string&    _name,
-                Real                  _value,
-                AmrData*              _amrd,
+                Real                  _avg,
+                Real                  _std,
+                const std::string&    _param_file,
+                const std::string&    _data_file,
+                const Array<Real>&    _shift,
                 Property::CoarsenRule _coarsen_rule = Property::Arithmetic,
                 Property::RefineRule  _refine_rule = Property::PiecewiseConstant)
-    : ConstantProperty(_name,_value,_coarsen_rule,_refine_rule) {amrData = _amrd;}
-
-  GSLibProperty(const std::string&    _name,
-                const Array<Real>&    _values,
-                AmrData*              _amrd,
-                Property::CoarsenRule _coarsen_rule = Property::Arithmetic,
-                Property::RefineRule  _refine_rule = Property::PiecewiseConstant)
-    : ConstantProperty(_name,_values,_coarsen_rule,_refine_rule) {amrData = _amrd;}
+    : ConstantProperty(_name,_avg,_coarsen_rule,_refine_rule), avg(_avg), std(_std),
+      param_file(_param_file), data_file(_data_file), dataServices(0) {}
 
   virtual bool isTimeDependent() const {return false;}
   virtual bool Evaluate(Real t, Array<Real>& result) const;
 
-  virtual ~GSLibProperty() {}
+  virtual ~GSLibProperty() {delete dataServices;}
   virtual Property* clone() const;
   virtual int nComp() const {return values.size();}
 
-  const AmrData* GetAmrData() const {return amrData;}
+  const AmrData* GetAmrData() const;
+  Real Avg() const {return avg;}
+  Real Std() const {return std;}
+  const DataServices* GetDataServices() const {return dataServices;}
+
+  void BuildDataFile(const Array<Geometry>& geom_array,
+                     const Array<IntVect>&  ref_ratio,
+                     int                    num_grow,
+                     int                    max_grid_size_fine_gen,
+                     Property::CoarsenRule  crule,
+                     const std::string&     varname);
+
 protected:
-  AmrData* amrData;
+  static void BuildGSLibFile(Real                   avg,
+                             Real                   std,
+                             const std::string&     gslib_param_file,
+                             const std::string&     gslib_data_file,
+                             const Array<Geometry>& geom_array,
+                             const Array<IntVect>&  ref_ratio,
+                             int                    num_grow,
+                             int                    max_grid_size_fine_gen,
+                             Property::CoarsenRule  crule,
+                             const std::string&     varname);
+
+  DataServices* dataServices;
+  Real avg, std;
+  std::string param_file, data_file;
 };
 
 
