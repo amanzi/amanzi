@@ -1722,20 +1722,20 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transient Implicit Time Integration") = tcPL;
             }
             else if (strcmp(nodeName,"nonlinear_solver")==0) {
-	            Teuchos::ParameterList nlPL;
-	            attrMap = tmpNode->getAttributes();
-                nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-                textContent = XMLString::transcode(nodeAttr->getNodeValue());
-	            if (strcmp(textContent,"nka")==0) {
-                  nlPL.set<std::string>("Nonlinear Solver Type","NKA");
-	            } else if (strcmp(textContent,"newton")==0) {
-                  nlPL.set<std::string>("Nonlinear Solver Type","Newton");
-	            } else if (strcmp(textContent,"inexact newton")==0) {
-                  nlPL.set<std::string>("Nonlinear Solver Type","inexact Newton");
-	            }
-                XMLString::release(&textContent);
-	            list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
-	        }
+	      Teuchos::ParameterList nlPL;
+	      attrMap = tmpNode->getAttributes();
+	      nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+	      textContent = XMLString::transcode(nodeAttr->getNodeValue());
+	      if (strcmp(textContent,"nka")==0) {
+		nlPL.set<std::string>("Nonlinear Solver Type","NKA");
+	      } else if (strcmp(textContent,"newton")==0) {
+		nlPL.set<std::string>("Nonlinear Solver Type","Newton");
+	      } else if (strcmp(textContent,"inexact newton")==0) {
+		nlPL.set<std::string>("Nonlinear Solver Type","inexact Newton");
+	      }
+	      XMLString::release(&textContent);
+	      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
+	    }
             else if (strcmp(nodeName,"linear_solver")==0) {
 	        Teuchos::ParameterList lsPL;
 	        Teuchos::ParameterList pcPL;

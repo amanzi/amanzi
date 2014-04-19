@@ -208,7 +208,7 @@ template<class Vector>
 void SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x)
 {
   unsigned int order = nvec_ - 1;
-  order = 0;
+  //order = 0;
   InterpolateSolution(t, x, order);
 }
 
