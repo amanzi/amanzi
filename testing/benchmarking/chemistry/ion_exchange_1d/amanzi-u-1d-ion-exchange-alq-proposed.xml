@@ -260,5 +260,108 @@
     <Parameter name="Engine" type="string" value="PFloTran"/>
     <Parameter name="Engine Input File" type="string" value="1d-ion-exchange-trim.in"/>
     <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
+
+<!-- start proposed spec for geochemical conditions support -->
+<!-- Sergi Molins 8 April 2014 -->
+    <ParameterList name="Geochemical Conditions">
+
+       <!-- example Alquimia structs to build from the spec below -->  
+
+       <!-- Struct: Alquimia Geochemical Condition 
+            name = "initial"
+            aqueous_constraints = 3
+            mineral_constraints = 1          
+       -->
+       
+       <!-- Struct: Alquimia Aqueous Constraint 1
+            primary_species    = "H+"
+            constraint_type    = "free" 
+            associated_species = ""
+            value              = 1.0e-8 
+       -->
+
+       <!-- Struct: Alquimia Aqueous Constraint 2
+            primary_species    = "HCO3-"
+            constraint_type    = "gas" 
+            associated_species = "CO2(g)"
+            value              = 1.0e-3 
+       -->
+
+       <!-- Struct: Alquimia Aqueous Constraint 3
+            primary_species    = "Ca++"
+            constraint_type    = "mineral" 
+            associated_species = "Calcite"
+            value              = 5.0e-4 
+       -->
+
+       <!-- Struct: Alquimia Mineral Constraint 1
+            primary_species       = "Calcite"
+            volume_fraction       = 1.0e-5
+            specific_surface_area = 100.0  [note: m2/m3]
+       -->
+
+       <ParameterList name="initial">
+         <ParameterList name="H+">
+            <Parameter name="free" value="1.0e-8" type="double"/>
+         </ParameterList>
+         <ParameterList name="HCO3-">          
+            <Parameter name="gas" value="1.0e-3" type="double"/>
+            <Parameter name="species" value="CO2(g)" type="string"/>
+	 </ParameterList>
+         <ParameterList name="Ca++">
+            <Parameter name="mineral"  value="5.0e-4" type="double"/>
+            <Parameter name="species"  value="Calcite" type="string"/>
+         </ParameterList>	  
+         <ParameterList name="Calcite">
+            <Parameter name="Volume Fraction" type="double" value="1.0e-5"/>
+            <Parameter name="Specific Surface Area" type="double" value="100.0"/>    
+            <!-- warning: unit inconsistency for specific surface area 
+                 between native chemistry (reads in cm2/cm3 in Material Properties above)
+                 and Alquimia (expects m2/m3) -->
+         </ParameterList>
+       </ParameterList> <!-- initial -->
+
+       <!-- Struct: Alquimia Geochemical Condition 
+            name = "west"
+            aqueous_constraints = 3
+            mineral_constraints = 0
+       -->
+       
+       <!-- Struct: Alquimia Aqueous Constraint 1
+            primary_species    = "H+"
+            constraint_type    = "pH" 
+            associated_species = ""
+            value              = 5.0
+       -->
+
+       <!-- Struct: Alquimia Aqueous Constraint 2
+            primary_species    = "HCO3-"
+            constraint_type    = "total_aqueous" 
+            associated_species = ""
+            value              = 1.0e-3
+       -->
+
+       <!-- Struct: Alquimia Aqueous Constraint 3
+            primary_species    = "Ca++"
+            constraint_type    = "charge" 
+            associated_species = ""
+            value              = 1.0e-6
+       -->
+
+       <ParameterList name="west">
+         <ParameterList name="H+">
+            <Parameter name="pH" value="5.0" type="double"/>
+         </ParameterList>
+         <ParameterList name="HCO3-">          
+            <Parameter name="total_aqueous" value="1.0e-3" type="double"/>
+	 </ParameterList>
+         <ParameterList name="Ca++">
+            <Parameter name="charge"  value="1.0e-6" type="double"/>
+         </ParameterList>	  
+       </ParameterList> <!-- west -->
+
+    </ParameterList>  <!-- Geochemical Conditions"-->
+<!-- end proposed spec for geochemical conditions support -->
+
   </ParameterList> <!-- Chemistry -->
 </ParameterList>

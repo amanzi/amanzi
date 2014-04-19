@@ -171,7 +171,7 @@ if __name__ == "__main__":
         # Amanzi-Alquimia
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["ascem-2012-1d-"+root+".in","ascem-2012-"+root+".dat"])
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["ascem-2012-1d-"+root+"-trim.in","ascem-2012-"+root+".dat"])
 
         # tot concentration
         u_amanzi_alquimia = [[[] for x in range(len(totcama))] for x in range(len(timesama))]
@@ -207,7 +207,7 @@ if __name__ == "__main__":
 
     colors= ['r','b','m','g'] # components
     colors2= ['c','k','g','y'] # components
-    styles = ['-','--','x'] # codes
+    styles = ['-','o','x'] # codes
     codes = ['Amanzi+Alquimia(PFloTran)','Amanzi Native Chemistry','PFloTran'] + [None,]*9
 
     # lines on axes
@@ -220,12 +220,12 @@ if __name__ == "__main__":
  
             if alq:
                    ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2)
-            ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label=comp)
+            ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=comp)
             ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
  
             if alq:
                    ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
-            ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label=codes[j*len(styles)+1]) #label=comp)
+            ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=codes[j*len(styles)+1]) #label=comp)
             ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
 
     # ax[2],b[2] ---> Mineral Volume Fractions
@@ -236,7 +236,7 @@ if __name__ == "__main__":
 
             if alq:
                    ax[2].plot(x_amanzi_alquimia, w_amanzi_alquimia[i][j],color=colors2[j],linestyle=styles[0],linewidth=2) #label=codes[j*len(styles)])
-            ax[2].plot(x_amanzi_native, w_amanzi_native[i][j],color=colors2[j],linestyle=styles[1],linewidth=2,label=vf) #label=codes[j*len(styles)+1])
+            ax[2].plot(x_amanzi_native, w_amanzi_native[i][j],color=colors2[j],marker=styles[1],linestyle='None',linewidth=2,label=vf) #label=codes[j*len(styles)+1])
             ax[2].plot(x_pflotran, w_pflotran[i][j],color=colors2[j],linestyle='None',marker=styles[2],linewidth=2) #label=codes[j*len(styles)+2])
 
     # axes

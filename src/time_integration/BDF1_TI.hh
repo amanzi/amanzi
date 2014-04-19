@@ -167,8 +167,8 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
       fn_->changed_solution();
 
       if (fn_->is_admissible(u)) {
-	bool changed = fn_->ModifyPredictor(dt, u0, u);
-	if (changed) fn_->changed_solution();
+    	bool changed = fn_->ModifyPredictor(dt, u0, u);
+    	if (changed) fn_->changed_solution();
       } else {
 	*u = *u0;
 	fn_->changed_solution();
@@ -179,6 +179,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   // Set up the solver fn
   solver_fn_->SetTimes(tlast, tnew);
   solver_fn_->SetPreviousTimeSolution(u0);
+
 
   // Solve the nonlinear BCE system.
   int itr;

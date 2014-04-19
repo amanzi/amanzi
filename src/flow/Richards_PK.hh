@@ -147,6 +147,8 @@ class Richards_PK : public Flow_PK {
   int functional_max_cell;
 
   Teuchos::RCP<CompositeVector> solution;
+  Teuchos::RCP<CompositeVector> darcy_flux;
+
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
 
@@ -156,6 +158,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Grav_term_faces;
 
   bool is_matrix_symmetric;
+  int update_upwind;
   double mass_bc, mass_amanzi;
 
  private:

@@ -585,9 +585,8 @@ int MFD3D_Diffusion::MassMatrixInverseOptimizedScaled(int cell, const Tensor& pe
 void MFD3D_Diffusion::RescaleMassMatrixInverse_(int cell, DenseMatrix& W)
 {
   Entity_ID_List faces;
-  std::vector<int> dirs;
 
-  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  mesh_->cell_get_faces(cell, &faces);
   int num_faces = faces.size();
 
   // calculate areas of possibly curved faces

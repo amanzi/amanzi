@@ -1345,6 +1345,7 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
 Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList flw_list;
 
+
   if ( plist->isSublist("Execution Control") ) {
     if ( plist->sublist("Execution Control").isParameter("Flow Model") ) {
       std::string flow_model = plist->sublist("Execution Control").get<std::string>("Flow Model");
@@ -1354,6 +1355,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
       // get the expert parameters
       std::string disc_method("optimized mfd scaled");
       std::string rel_perm("upwind with Darcy flux");
+      std::string update_upwind("every timestep");
       double atm_pres(ATMOSPHERIC_PRESSURE);
       std::string nonlinear_solver("NKA");
 
@@ -1381,7 +1383,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
       }
       // discretization method must be two point flux approximation for if newton is used
       if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
-        disc_method = std::string("two point flux approximation");
+        disc_method = std::string("finite volume");
+	update_upwind = std::string("every nonlinear iteration");	
       }
 
       if (flow_model == "Single Phase" || flow_model == "Richards") {
@@ -1396,6 +1399,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
         } else if (flow_model == "Richards") {
           Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
           richards_problem.set<std::string>("relative permeability", rel_perm);
+          richards_problem.set<std::string>("upwind update", update_upwind);
           // this one should come from the input file...
           richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
           richards_problem.set<double>("atmospheric pressure", atm_pres);
@@ -1508,15 +1512,31 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           sti_bdf1_std.set<double>("max time step", ST_MAX_TS);
           sti_bdf1_std.set<double>("min time step", ST_MIN_TS);
 
+	  Teuchos::ParameterList* sti_bdf1_solver;
+
           // solver type
-          sti_bdf1.set<std::string>("solver type", "nka");
-          Teuchos::ParameterList &sti_bdf1_nka = sti_bdf1.sublist("nka parameters");
-          sti_bdf1_nka.set<double>("nonlinear tolerance", STEADY_NONLINEAR_TOLERANCE);
-          sti_bdf1_nka.set<double>("diverged tolerance", ST_NKA_DIVGD_TOL);
-          sti_bdf1_nka.set<double>("max du growth factor", ST_DIVERG_FACT);
-          sti_bdf1_nka.set<int>("max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS);
-          sti_bdf1_nka.set<int>("max nka vectors", ST_NKA_NUMVEC);
-	  sti_bdf1_nka.set<int>("limit iterations", ST_LIMIT_ITER);
+	  if (nonlinear_solver == std::string("Newton")){
+	    sti_bdf1.set<std::string>("solver type", "Newton");
+	    Teuchos::ParameterList &test = sti_bdf1.sublist("Newton parameters");
+	    sti_bdf1_solver = &test;
+	    sti_bdf1_solver->set<double>("nonlinear tolerance", STEADY_NONLINEAR_TOLERANCE);
+	    sti_bdf1_solver->set<double>("diverged tolerance", ST_NKA_DIVGD_TOL);
+	    sti_bdf1_solver->set<double>("max du growth factor", ST_DIVERG_FACT);
+	    sti_bdf1_solver->set<int>("max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS);
+	    sti_bdf1_solver->set<int>("max nka vectors", ST_NKA_NUMVEC);
+	    sti_bdf1_solver->set<int>("limit iterations", ST_LIMIT_ITER);
+	  }
+	  else {
+	    sti_bdf1.set<std::string>("solver type", "nka");
+	    Teuchos::ParameterList &test = sti_bdf1.sublist("nka parameters");
+	    sti_bdf1_solver = &test;
+	    sti_bdf1_solver->set<double>("nonlinear tolerance", STEADY_NONLINEAR_TOLERANCE);
+	    sti_bdf1_solver->set<double>("diverged tolerance", ST_NKA_DIVGD_TOL);
+	    sti_bdf1_solver->set<double>("max du growth factor", ST_DIVERG_FACT);
+	    sti_bdf1_solver->set<int>("max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS);
+	    sti_bdf1_solver->set<int>("max nka vectors", ST_NKA_NUMVEC);
+	    sti_bdf1_solver->set<int>("limit iterations", ST_LIMIT_ITER);
+	  }
 
           // remaining BDF1 parameters
           sti_bdf1.set<int>("max preconditioner lag iterations", ST_MAX_PREC_LAG);
@@ -1537,8 +1557,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
                 Teuchos::ParameterList& num_list = ncpu_list.sublist("Steady-State Implicit Time Integration");
                 sti_bdf1_std.set<int>("max iterations", num_list.get<int>("steady max iterations", ST_MAX_ITER));
                 sti_bdf1_std.set<int>("min iterations", num_list.get<int>("steady min iterations", ST_MIN_ITER));
-                sti_bdf1_nka.set<int>("limit iterations", num_list.get<int>("steady limit iterations", ST_LIMIT_ITER));
-                sti_bdf1_nka.set<double>("nonlinear tolerance",
+                sti_bdf1_solver->set<int>("limit iterations", num_list.get<int>("steady limit iterations", ST_LIMIT_ITER));
+                sti_bdf1_solver->set<double>("nonlinear tolerance",
                                      num_list.get<double>("steady nonlinear tolerance", STEADY_NONLINEAR_TOLERANCE));
                 sti_bdf1_std.set<double>("time step reduction factor",
                                      num_list.get<double>("steady time step reduction factor", ST_TS_RED_FACTOR));
@@ -1549,7 +1569,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
                                   num_list.get<int>("steady max preconditioner lag iterations", ST_MAX_PREC_LAG));
                 // sti_bdf1.set<double>("error abs tol", num_list.get<double>("steady error abs tol", ST_ERROR_ABS_TOL));
                 // sti_bdf1.set<double>("error rel tol", num_list.get<double>("steady error rel tol", ST_ERROR_REL_TOL));
-                sti_bdf1_nka.set<int>("max divergent iterations",
+                sti_bdf1_solver->set<int>("max divergent iterations",
                                   num_list.get<int>("steady max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS));
                 sti_bdf1.set<double>("nonlinear iteration damping factor",
                                      num_list.get<double>("steady nonlinear iteration damping factor", ST_NONLIN_DAMP));
@@ -1559,7 +1579,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
                                      num_list.get<double>("steady restart tolerance relaxation factor", ST_NONLIN_INIT_TS_FACTOR));
                 sti_bdf1.set<double>("restart tolerance relaxation factor damping",
                                      num_list.get<double>("steady restart tolerance relaxation factor damping", ST_NONLIN_INIT_TS_FACTOR_DAMP));
-                sti_bdf1_nka.set<double>("max du growth factor",
+                sti_bdf1_solver->set<double>("max du growth factor",
                                      num_list.get<double>("steady nonlinear iteration divergence factor", ST_DIVERG_FACT));
 
                 steady_time_integrator.set<std::string>("preconditioner",
@@ -1615,15 +1635,31 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           tti_bdf1_std.set<double>("max time step", TR_MAX_TS);
           tti_bdf1_std.set<double>("min time step", TR_MIN_TS);
 
+	  Teuchos::ParameterList* tti_bdf1_nka;
+
           // solver type
-          tti_bdf1.set<std::string>("solver type", "nka");
-          Teuchos::ParameterList &tti_bdf1_nka = tti_bdf1.sublist("nka parameters");
-          tti_bdf1_nka.set<double>("nonlinear tolerance", TRANSIENT_NONLINEAR_TOLERANCE);
-          tti_bdf1_nka.set<double>("diverged tolerance", TR_NKA_DIVGD_TOL);
-          tti_bdf1_nka.set<double>("max du growth factor", TR_DIVERG_FACT);
-          tti_bdf1_nka.set<int>("max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS);
-          tti_bdf1_nka.set<int>("max nka vectors", TR_NKA_NUMVEC);
-	  tti_bdf1_nka.set<int>("limit iterations", TR_LIMIT_ITER);
+	  if (nonlinear_solver == std::string("Newton")) {
+	    tti_bdf1.set<std::string>("solver type", "Newton");
+	    Teuchos::ParameterList &test = tti_bdf1.sublist("Newton parameters");
+	    tti_bdf1_nka = &test;
+	    tti_bdf1_nka->set<double>("nonlinear tolerance", TRANSIENT_NONLINEAR_TOLERANCE);
+	    tti_bdf1_nka->set<double>("diverged tolerance", TR_NKA_DIVGD_TOL);
+	    tti_bdf1_nka->set<double>("max du growth factor", TR_DIVERG_FACT);
+	    tti_bdf1_nka->set<int>("max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS);
+	    tti_bdf1_nka->set<int>("max nka vectors", TR_NKA_NUMVEC);
+	    tti_bdf1_nka->set<int>("limit iterations", TR_LIMIT_ITER);
+	  }
+	  else {
+	    tti_bdf1.set<std::string>("solver type", "nka");
+	    Teuchos::ParameterList &test = tti_bdf1.sublist("nka parameters");
+	    tti_bdf1_nka = &test;
+	    tti_bdf1_nka->set<double>("nonlinear tolerance", TRANSIENT_NONLINEAR_TOLERANCE);
+	    tti_bdf1_nka->set<double>("diverged tolerance", TR_NKA_DIVGD_TOL);
+	    tti_bdf1_nka->set<double>("max du growth factor", TR_DIVERG_FACT);
+	    tti_bdf1_nka->set<int>("max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS);
+	    tti_bdf1_nka->set<int>("max nka vectors", TR_NKA_NUMVEC);
+	    tti_bdf1_nka->set<int>("limit iterations", TR_LIMIT_ITER);
+	  }
 
           // remaining parameters
           tti_bdf1.set<int>("max preconditioner lag iterations", TR_MAX_PREC_LAG);
@@ -1647,8 +1683,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 
                 tti_bdf1_std.set<int>("max iterations", num_list.get<int>("transient max iterations", TR_MAX_ITER));
                 tti_bdf1_std.set<int>("min iterations", num_list.get<int>("transient min iterations", TR_MIN_ITER));
-                tti_bdf1_nka.set<int>("limit iterations", num_list.get<int>("transient limit iterations", TR_LIMIT_ITER));
-                tti_bdf1_nka.set<double>("nonlinear tolerance",
+                tti_bdf1_nka->set<int>("limit iterations", num_list.get<int>("transient limit iterations", TR_LIMIT_ITER));
+                tti_bdf1_nka->set<double>("nonlinear tolerance",
                                      num_list.get<double>("transient nonlinear tolerance", TRANSIENT_NONLINEAR_TOLERANCE));
                 tti_bdf1_std.set<double>("time step reduction factor",
                                      num_list.get<double>("transient time step reduction factor", TR_TS_RED_FACTOR));
@@ -1659,7 +1695,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
                                   num_list.get<int>("transient max preconditioner lag iterations", TR_MAX_PREC_LAG));
                 // tti_bdf1.set<double>("error abs tol", num_list.get<double>("transient error abs tol", TR_ERROR_ABS_TOL));
                 // tti_bdf1.set<double>("error rel tol", num_list.get<double>("transient error rel tol", TR_ERROR_REL_TOL));
-                tti_bdf1_nka.set<int>("max divergent iterations",
+                tti_bdf1_nka->set<int>("max divergent iterations",
                                   num_list.get<int>("transient max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS));
                 tti_bdf1.set<double>("nonlinear iteration damping factor",
                                      num_list.get<double>("transient nonlinear iteration damping factor", TR_NONLIN_DAMP));
@@ -1669,7 +1705,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
                                      num_list.get<double>("transient restart tolerance relaxation factor", TR_NONLIN_INIT_TS_FACTOR));
                 tti_bdf1.set<double>("restart tolerance relaxation factor damping",
                                      num_list.get<double>("transient restart tolerance relaxation factor damping", TR_NONLIN_INIT_TS_FACTOR_DAMP));
-                tti_bdf1_nka.set<double>("max du growth factor",
+                tti_bdf1_nka->set<double>("max du growth factor",
                                      num_list.get<double>("transient nonlinear iteration divergence factor", TR_DIVERG_FACT));
 
                 transient_time_integrator.set<std::string>("preconditioner",
@@ -1994,13 +2030,13 @@ Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
 {
   Teuchos::ParameterList dpc_list;
 
-  dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
   dpc_list.set<std::string>("preconditioner type", "ml");
 
   double aggthr(ML_AGG_THR);
   std::string smthtyp(ML_SMOOTHER);
   int ncycles(ML_NCYC);
   int nsmooth(ML_NSMOOTH);
+  std::string nonlinear_solver("NKA");
 
   if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
     Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
@@ -2023,6 +2059,16 @@ Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
             nsmooth = ml_list.get<int>("ML smoother sweeps");
           }
         }
+      }
+      Teuchos::ParameterList& solver_list = ncpu_list.sublist("Nonlinear Solver");
+      if (solver_list.isParameter("Nonlinear Solver Type")) {
+	nonlinear_solver = solver_list.get<std::string>("Nonlinear Solver Type");
+      }
+      if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
+	dpc_list.set<std::string>("discretization method", "finite volume");
+      }
+      else{
+	dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
       }
     }
   }
@@ -2055,7 +2101,7 @@ Teuchos::ParameterList create_BILU_List(Teuchos::ParameterList* plist)
 {
   Teuchos::ParameterList bilu_list;
 
-  bilu_list.set<std::string>("discretization method", "optimized mfd scaled");
+
   bilu_list.set<std::string>("preconditioner type", "block ilu");
 
   double bilu_relax_value(ILU_RLXVAL);
@@ -2063,6 +2109,7 @@ Teuchos::ParameterList create_BILU_List(Teuchos::ParameterList* plist)
   double bilu_rel_thresh(ILU_RELTHR);
   int bilu_level_of_fill(ILU_LVLFILL);
   int bilu_overlap(ILU_OLV);
+  std::string nonlinear_solver("NKA");
 
   if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
     Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
@@ -2089,6 +2136,16 @@ Teuchos::ParameterList create_BILU_List(Teuchos::ParameterList* plist)
           }
         }
       }
+      Teuchos::ParameterList& solver_list = ncpu_list.sublist("Nonlinear Solver");
+      if (solver_list.isParameter("Nonlinear Solver Type")) {
+	nonlinear_solver = solver_list.get<std::string>("Nonlinear Solver Type");
+      }
+      if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
+	bilu_list.set<std::string>("discretization method", "finite volume");
+      }
+      else{
+	bilu_list.set<std::string>("discretization method", "optimized mfd scaled");
+      }
     }
   }
 
@@ -2112,13 +2169,14 @@ Teuchos::ParameterList create_HypreAMG_List(Teuchos::ParameterList* plist)
 {
   Teuchos::ParameterList dpc_list;
 
-  dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
+
   dpc_list.set<std::string>("preconditioner type", "boomer amg");
 
   double tol(AMG_TOL);
   int ncycles(AMG_NCYC);
   int nsmooth(AMG_NSMOOTH);
   double strong_threshold(AMG_STR_THR);
+  std::string nonlinear_solver("NKA");
 
   if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
     Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
@@ -2141,6 +2199,16 @@ Teuchos::ParameterList create_HypreAMG_List(Teuchos::ParameterList* plist)
             strong_threshold = hypre_list.get<double>("Hypre AMG strong threshold");
           }
         }
+      }
+      Teuchos::ParameterList& solver_list = ncpu_list.sublist("Nonlinear Solver");
+      if (solver_list.isParameter("Nonlinear Solver Type")) {
+	nonlinear_solver = solver_list.get<std::string>("Nonlinear Solver Type");
+      }
+      if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
+	dpc_list.set<std::string>("discretization method", "finite volume");
+      }
+      else{
+	dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
       }
     }
   }

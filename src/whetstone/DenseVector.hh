@@ -75,6 +75,16 @@ class DenseVector {
     for (int i = 0; i < m_; i++) data_[i] = val;
   }
 
+  int Dot(const DenseVector& B, double* result) {
+    if (m_ != B.m_) return -1;
+
+    const double *b = B.Values();
+    *result = 0.0;
+    for (int i = 0; i < m_; i++) *result += data_[i] * b[i];
+
+    return 0;
+  }
+
   // access
   int NumRows() const { return m_; }
   double* Values() { return data_; }

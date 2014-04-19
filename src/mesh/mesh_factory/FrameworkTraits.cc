@@ -127,7 +127,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 
   Amanzi::AmanziMesh::Cell_type 
   cell_get_type(const Amanzi::AmanziMesh::Entity_ID cellid) const
-  { return Amanzi::AmanziMesh::UNKNOWN; }
+  { return Amanzi::AmanziMesh::CELLTYPE_UNKNOWN; }
 
   unsigned int 
   num_entities (const Amanzi::AmanziMesh::Entity_kind kind,
@@ -139,7 +139,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
       const Amanzi::AmanziMesh::Entity_kind kind) const
   { return 0; }
 
-  void cell_get_faces_and_dirs (const Amanzi::AmanziMesh::Entity_ID cellid,
+  void cell_get_faces_and_dirs_internal (const Amanzi::AmanziMesh::Entity_ID cellid,
                                 Amanzi::AmanziMesh::Entity_ID_List *faceids,
                                 std::vector<int> *face_dirs,
                                 const bool ordered=false) const
@@ -170,9 +170,9 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
                             Amanzi::AmanziMesh::Entity_ID_List *faceids) const
   {}
     
-  void face_get_cells (const Amanzi::AmanziMesh::Entity_ID faceid, 
-                       const Amanzi::AmanziMesh::Parallel_type ptype,
-                       Amanzi::AmanziMesh::Entity_ID_List *cellids) const
+  void face_get_cells_internal (const Amanzi::AmanziMesh::Entity_ID faceid, 
+                                const Amanzi::AmanziMesh::Parallel_type ptype,
+                                Amanzi::AmanziMesh::Entity_ID_List *cellids) const
   {}
 
   void cell_get_face_adj_cells(const Amanzi::AmanziMesh::Entity_ID cellid,
@@ -256,7 +256,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 
   int deform (const std::vector<double>& target_cell_volumes_in, 
               const std::vector<double>& min_cell_volumes_in, 
-              const std::vector<std::string>& fixed_set_names,
+              const Amanzi::AmanziMesh::Entity_ID_List& fixed_nodes,
               const bool move_vertical)
   {}
 
@@ -530,14 +530,14 @@ struct FrameworkTraits {
     struct parallel : 
       mpl::eval_if<
       mpl::bool_< M == MSTK >
-      , mpl::bool_< DIM == 3 >
+      , mpl::bool_< DIM >= 2 >
       , mpl::false_
       >::type {};
   
     struct serial :
       mpl::eval_if<
       mpl::bool_< M == MSTK >
-      , mpl::bool_< DIM == 3 >
+      , mpl::bool_< DIM >= 2 >
       , mpl::false_
       >::type {};
   };

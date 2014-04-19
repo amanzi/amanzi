@@ -131,14 +131,13 @@ TEST(MSTK_HEX_2x2x1)
 
 
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
-  std::vector<int> c2fdirs(6);
   Epetra_Map cell_map(mesh->cell_map(true));
   Epetra_Map face_map(mesh->face_map(false));
 
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
       CHECK_EQUAL(cell_map.GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
-      mesh->cell_get_faces_and_dirs(c, &c2f, &c2fdirs);
+      mesh->cell_get_faces(c, &c2f);
       for (int j=0; j<6; j++)
   	{
   	  int f = face_map.LID(mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE));

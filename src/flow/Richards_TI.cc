@@ -68,7 +68,11 @@ void Richards_PK::Functional(double Told, double Tnew,
       }
     }
   }
-  
+
+  // Teuchos::OSTab tab = vo_->getOSTab();       
+  // for (int c=51; c<60; c++) {
+  //   *vo_->os() << "** Residual **** : c=" << c<<" r "<<f_cells[0][c]<<" sol "<<unew_cells[0][c]<<std::endl;
+  // } 
 
 }
 
@@ -204,6 +208,16 @@ bool Richards_PK::ModifyCorrection(
     double press_pert = atm_pressure_ - WRM[mb]->capillaryPressure(sat_pert);
     double du_pert_max = fabs(uc[0][c] - press_pert); 
 
+    // if ((c>50)&&(c<60)){
+      
+    //     Teuchos::OSTab tab = vo_->getOSTab();       
+    //     *vo_->os() << "** TEST ** c=" << c 
+    //                << " p=" << uc[0][c]<<" sat="<<sat <<" pc="<<pc
+    //                << " dp: " << duc[0][c] << " -> " << du_pert_max << std::endl;
+
+    // }
+
+
     if ((fabs(duc[0][c]) > du_pert_max) && (1 - sat > 1e-5)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
@@ -217,6 +231,8 @@ bool Richards_PK::ModifyCorrection(
       
       ncells_clipped++;
     }    
+
+      
   }
 
   for (int c = 0; c < ncells_owned; c++) {

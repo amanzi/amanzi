@@ -1040,8 +1040,6 @@ but require special treatment. They are specified as follows:
    <ParameterList name="boundary conditions">
      <ParameterList name="geochemical conditions">
        <ParameterList name="east crib">   <!-- user defined name -->
-         <Parameter name="geochemical engine" type="string" value="pflotran"/>
-         <Parameter name="input file" type="string" value="tritium.bgd"/>
          <Parameter name="regions" type="Array(string)" value="{Crib1}"/>
        </ParameterList>
      </ParameterList>
@@ -1107,6 +1105,67 @@ The `"Transport`" parameters useful for developers are:
 * `"internal tests tolerance`" [double] tolerance for internal tests such as the 
   divergence-free condition. The default value is 1e-6.
 
+
+Chemistry
+=========
+
+Geochemical engines
+-------------------
+
+This is work in progress... 
+This chemistry list specifies the default and the third-party geochemical engines. 
+In the case of the third-party engine most details are provided in the trimmed 
+PFloTran file `"1d-tritium-trim.in`".
+
+.. code-block:: xml
+
+  <ParameterList name="Chemistry">
+    <ParameterList name="Thermodynamic Database">
+      <Parameter name="Format" type="string" value="simple"/>
+      <Parameter name="File" type="string" value="tritium.bgd"/>
+    </ParameterList>
+    <Parameter name="Engine" type="string" value="PFloTran"/>
+    <Parameter name="Engine Input File" type="string" value="1d-tritium-trim.in"/>
+    <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
+    <Parameter name="Activity Model" type="string" value="unit"/>
+    <Parameter name="Tolerance" type="double" value="1.5e-12"/>
+    <Parameter name="Maximum Newton Iterations" type="int" value="25"/>
+    <Parameter name="Max Time Step (s)" type="double" value="1.5778463e+07"/>
+    <Parameter name="Number of component concentrations" type="int" value="1"/>
+  </ParameterList>
+
+The Alquimia chemistry process kernel only requires the `"Engine`" and `"Engine Input File`"
+entries, but will also accept and respect the value given for `"Max Time Step (s)`". 
+The rest are only used by the native chemistry kernel.
+
+Initial conditions
+------------------
+
+This sublist completes initialization of state variable, see list `"State`" for 
+more detail. This section is only required for the native chemistry kernel--the
+Alquimia chemistry kernel reads initial conditions from the `"State`" list.
+
+.. code-block:: xml
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="free_ion_species">
+        <ParameterList name="function">
+          <ParameterList name="Entire Domain">
+            <Parameter name="region" type="string" value="Entire Domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="Number of DoFs" type="int" value="1"/>
+              <Parameter name="Function type" type="string" value="composite function"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.0e-09"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
 
 Functions
 =========

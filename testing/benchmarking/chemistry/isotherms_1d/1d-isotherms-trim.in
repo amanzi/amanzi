@@ -1,0 +1,58 @@
+:Description: trimmed input for use with Alquimia interface to Amanzi
+:             for sorption isotherms
+
+:=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    A
+    B
+    C
+  /
+
+  SORPTION
+    ISOTHERM_REACTIONS
+      A
+        TYPE LINEAR
+        : Csorb = KD Caq
+        DISTRIBUTION_COEFFICIENT 10.0 ! kg water/m^3 bulk
+      /
+      B
+        TYPE LANGMUIR
+        : Csorb = K Caq b / ( 1 + K Caq )
+        DISTRIBUTION_COEFFICIENT 30.d0 
+        LANGMUIR_B 0.1
+      /
+      C
+        TYPE FREUNDLICH
+	: Csorb = KD Caq^(1/n)
+        DISTRIBUTION_COEFFICIENT 1.5
+        FREUNDLICH_N  0.8 : 1/n = 1.25
+      /
+    /
+  /
+
+  DATABASE ./isotherms.dat
+  LOG_FORMULATION
+  ACTIVITY_COEFFICIENTS OFF
+  OUTPUT
+    All
+    TOTAL_SORBED
+  /
+END
+
+:=========================== constraints ======================================
+CONSTRAINT initial
+  CONCENTRATIONS
+    A  1.0e-20    T
+    B  1.0e-20    T
+    C  1.0e-20    T
+  /
+END
+
+CONSTRAINT west
+  CONCENTRATIONS
+    A  1.d-3      T
+    B  1.d-3      T
+    C  1.d-3      T
+  /
+END

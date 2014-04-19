@@ -36,7 +36,6 @@ void Matrix_MFD_PLambda::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_
   Epetra_FECrsGraph graph(Copy, super_map, 2*avg_entries_row);
 
   AmanziMesh::Entity_ID_List faces, cells;
-  std::vector<int> dirs;
   int dof_GID[FLOW_MAX_FACES + 1];
 
   // diffusion part
@@ -44,7 +43,7 @@ void Matrix_MFD_PLambda::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_
   int ncells_global = cmap.NumGlobalElements();
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     int ndof = nfaces + 1;
 
@@ -97,13 +96,12 @@ void Matrix_MFD_PLambda::AssembleGlobalMatrices()
 
   // diffusion part
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_global = cmap.NumGlobalElements();
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     int ndof = nfaces + 1;
 
@@ -146,7 +144,7 @@ void Matrix_MFD_PLambda::AssembleGlobalMatrices()
   Epetra_Vector rhs_faces_wghost(fmap_wghost);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int mfaces = faces.size();
 
     (*rhs_cells_)[c] = Fc_cells_[c];

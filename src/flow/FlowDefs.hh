@@ -115,6 +115,9 @@ const int FLOW_INTERNAL_ERROR = 911;  // contact (lipnikov@lanl.gov)
 
 const int FLOW_AMANZI_VERSION = 2;  
 
+const int FLOW_UPWIND_UPDATE_TIMESTEP = 1;
+const int FLOW_UPWIND_UPDATE_ITERATION = 2;
+
 }  // namespace AmanziFlow
 }  // namespace Amanzi
 

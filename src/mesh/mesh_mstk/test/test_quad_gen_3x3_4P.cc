@@ -15,7 +15,6 @@ TEST(MSTK_QUAD_GEN_3x3_4P)
 
   int i, j, k, err, nc, nf, nv;
   std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), nodes(8);
-  std::vector<int> facedirs(4);
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
   Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -44,14 +43,13 @@ TEST(MSTK_QUAD_GEN_3x3_4P)
 
 
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(4);
-  std::vector<int> c2fdirs(4);
   Epetra_Map cell_map(mesh->cell_map(false));
   Epetra_Map face_map(mesh->face_map(true));
 
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
       CHECK_EQUAL(cell_map.GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
-      mesh->cell_get_faces_and_dirs(c, &c2f, &c2fdirs, true);
+      mesh->cell_get_faces(c, &c2f, true);
 
       for (int j=0; j<4; j++)
 	{

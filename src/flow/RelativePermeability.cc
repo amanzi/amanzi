@@ -62,6 +62,7 @@ void RelativePermeability::Init(double p0, Teuchos::RCP<State> S)
 * A wrapper for updating relative permeabilities.
 ****************************************************************** */
 void RelativePermeability::Compute(const CompositeVector& pressure,
+				   const CompositeVector& flux,
                                    const std::vector<int>& bc_model,
                                    const std::vector<bc_tuple>& bc_values)
 {
@@ -71,12 +72,12 @@ void RelativePermeability::Compute(const CompositeVector& pressure,
   if (method_ == FLOW_RELATIVE_PERM_UPWIND_GRAVITY ||
       method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
       method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
-    ComputeOnFaces(pressure, bc_model, bc_values);
+    ComputeOnFaces(pressure, flux, bc_model, bc_values);
     Krel_cells.PutScalar(1.0);
 
-    ComputeDerivativeOnFaces(pressure, bc_model, bc_values);
+    ComputeDerivativeOnFaces(pressure, flux, bc_model, bc_values);
   } else if (method_ == FLOW_RELATIVE_PERM_AMANZI) {
-    ComputeOnFaces(pressure, bc_model, bc_values);
+    ComputeOnFaces(pressure, flux, bc_model, bc_values);
   } else {
     ComputeInCells(pressure);
     Krel_faces.PutScalar(1.0);
@@ -111,7 +112,7 @@ void RelativePermeability::ComputeInCells(const CompositeVector& pressure)
 * Wrapper for various ways to define relative permeability of faces.
 ****************************************************************** */
 void RelativePermeability::ComputeOnFaces(
-    const CompositeVector& pressure,
+    const CompositeVector& pressure, const CompositeVector& flux,
     const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values)
 {
   ComputeInCells(pressure);  // populates cell-based permeabilities
@@ -121,10 +122,10 @@ void RelativePermeability::ComputeOnFaces(
     FaceUpwindGravity_(pressure, bc_model, bc_values);
 
   } else if (method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-    S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
-    const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
+    //S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
+    const Epetra_MultiVector& fl = *flux.ViewComponent("face", true);
     
-    FaceUpwindFlux_(pressure, flux, bc_model, bc_values);
+    FaceUpwindFlux_(pressure, fl, bc_model, bc_values);
 
   } else if (method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
     FaceArithmeticMean_(pressure);
@@ -192,7 +193,6 @@ void RelativePermeability::FaceUpwindGravityInSoil_(
     const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values)
 {
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   Epetra_MultiVector& Krel_cells = *Krel_->ViewComponent("cell", true);
   Epetra_MultiVector& Krel_faces = *Krel_->ViewComponent("face", true);
@@ -201,7 +201,7 @@ void RelativePermeability::FaceUpwindGravityInSoil_(
   const Epetra_MultiVector& map_c2mb = *map_c2mb_->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     std::vector<double> krel(nfaces);
@@ -279,6 +279,7 @@ void RelativePermeability::FaceUpwindFlux_(
         }
       }
     }
+
   }
 }
 
@@ -309,6 +310,7 @@ void RelativePermeability::FaceArithmeticMean_(const CompositeVector& pressure)
 ****************************************************************** */
 void RelativePermeability::ComputeDerivativeOnFaces(
     const CompositeVector& pressure,
+    const CompositeVector& flux,
     const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values)
 {
   const Epetra_MultiVector& p = *pressure.ViewComponent("cell");
@@ -321,8 +323,9 @@ void RelativePermeability::ComputeDerivativeOnFaces(
   if (method_ == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
     DerivativeFaceUpwindGravity_(pressure, bc_model, bc_values);
   } else if (method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-    const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
-    DerivativeFaceUpwindFlux_(pressure, flux, bc_model, bc_values);
+    //const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
+    const Epetra_MultiVector& fl = *flux.ViewComponent("face", true);
+    DerivativeFaceUpwindFlux_(pressure, fl, bc_model, bc_values);
   }
 }
 
@@ -636,12 +639,10 @@ void RelativePermeability::SetFullySaturated()
   dKdP_->ViewComponent("face", true)->PutScalar(0.0);
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   Krel_amanzi_.clear();
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
+    int nfaces = mesh_->cell_get_num_faces(c);
 
     std::vector<double> krel(nfaces, 1.0);
     Krel_amanzi_.push_back(krel);

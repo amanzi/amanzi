@@ -1722,20 +1722,20 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transient Implicit Time Integration") = tcPL;
             }
             else if (strcmp(nodeName,"nonlinear_solver")==0) {
-	            Teuchos::ParameterList nlPL;
-	            attrMap = tmpNode->getAttributes();
-                nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-                textContent = XMLString::transcode(nodeAttr->getNodeValue());
-	            if (strcmp(textContent,"nka")==0) {
-                  nlPL.set<std::string>("Nonlinear Solver Type","NKA");
-	            } else if (strcmp(textContent,"newton")==0) {
-                  nlPL.set<std::string>("Nonlinear Solver Type","Newton");
-	            } else if (strcmp(textContent,"inexact newton")==0) {
-                  nlPL.set<std::string>("Nonlinear Solver Type","inexact Newton");
-	            }
-                XMLString::release(&textContent);
-	            list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
-	        }
+	      Teuchos::ParameterList nlPL;
+	      attrMap = tmpNode->getAttributes();
+	      nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+	      textContent = XMLString::transcode(nodeAttr->getNodeValue());
+	      if (strcmp(textContent,"nka")==0) {
+		nlPL.set<std::string>("Nonlinear Solver Type","NKA");
+	      } else if (strcmp(textContent,"newton")==0) {
+		nlPL.set<std::string>("Nonlinear Solver Type","Newton");
+	      } else if (strcmp(textContent,"inexact newton")==0) {
+		nlPL.set<std::string>("Nonlinear Solver Type","inexact Newton");
+	      }
+	      XMLString::release(&textContent);
+	      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
+	    }
             else if (strcmp(nodeName,"linear_solver")==0) {
 	        Teuchos::ParameterList lsPL;
 	        Teuchos::ParameterList pcPL;
@@ -2410,6 +2410,52 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
 	        matlist.sublist("Intrinsic Permeability: Anisotropic Uniform") = perm;
 	      }
 	    }
+        else if  (strcmp("hydraulic_conductivity",tagName)==0){
+	      // loop over attributes to get x,y,z
+	      char *x,*y,*z;
+              attrMap = curkid->getAttributes();
+	      Teuchos::ParameterList hydcond;
+	      Teuchos::ParameterList hydcondTmp;
+	      for (int k=0; k<attrMap->getLength(); k++) {
+                DOMNode* attrNode = attrMap->item(k) ;
+                if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+                  char* attrName = XMLString::transcode(attrNode->getNodeName());
+	          if (strcmp("x",attrName)==0){
+                      x = XMLString::transcode(attrNode->getNodeValue());
+		      hydcondTmp.set<double>("x",get_double_constant(x,def_list));
+	              XMLString::release(&x);
+		  } else if (strcmp("y",attrName)==0){
+                      y = XMLString::transcode(attrNode->getNodeValue());
+		      hydcondTmp.set<double>("y",get_double_constant(y,def_list));
+	              XMLString::release(&y);
+		  } else if (strcmp("z",attrName)==0){
+                      z = XMLString::transcode(attrNode->getNodeValue());
+		      hydcondTmp.set<double>("z",get_double_constant(z,def_list));
+	              XMLString::release(&z);
+		  }
+		}
+	      }
+	      bool checkY = true , checkZ = true;
+	      if (hydcondTmp.isParameter("y")) {
+		if (hydcondTmp.get<double>("x") != hydcondTmp.get<double>("y")) checkY = false;
+	      } 
+	      if (hydcondTmp.isParameter("z")) {
+		if (hydcondTmp.get<double>("x") != hydcondTmp.get<double>("z")) checkZ = false;
+	      } 
+	      if (checkY && checkZ) {
+		hydcond.set<double>("Value",hydcondTmp.get<double>("x"));
+	        matlist.sublist("Hydraulic Conductivity: Uniform") = hydcond;
+	      } else {
+		hydcond.set<double>("x",hydcondTmp.get<double>("x"));
+	        if (hydcondTmp.isParameter("y")) {
+		    hydcondTmp.set<double>("y",hydcondTmp.get<double>("y")) ;
+		}
+	        if (hydcondTmp.isParameter("z")) {
+		    hydcond.set<double>("z",hydcondTmp.get<double>("z")) ;
+		}
+	        matlist.sublist("Hydraulic Conductivity: Anisotropic Uniform") = hydcond;
+	      }
+	}
         else if  (strcmp("cap_pressure",tagName)==0){
               attrMap = curkid->getAttributes();
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("model"));

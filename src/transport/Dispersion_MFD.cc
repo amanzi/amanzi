@@ -60,11 +60,10 @@ void Dispersion_MFD::SymbolicAssembleMatrix()
   Epetra_FECrsGraph graph(Copy, *super_map_, 2 * avg_entries_row);
 
   AmanziMesh::Entity_ID_List faces, cells;
-  std::vector<int> dirs;
   int dof_GID[TRANSPORT_MAX_FACES + 1];
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     int ndof = nfaces + 1;
 
@@ -97,14 +96,13 @@ void Dispersion_MFD::AssembleMatrix(const Epetra_MultiVector& p)
   int dof_GID[TRANSPORT_MAX_FACES + 1];
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   nprimary = nsecondary = 0;
   num_simplex_itrs = 0;
   App_->PutScalar(0.0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     int ndof = nfaces + 1;
 

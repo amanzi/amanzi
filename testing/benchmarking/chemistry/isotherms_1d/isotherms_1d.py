@@ -24,7 +24,6 @@ def GetXY_Amanzi(path,root,time,comp):
     # extract cell coordinates
     y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])/4,0])
     # y = np.array(amanzi_mesh['Mesh']["Nodes"][0:len(amanzi_mesh['Mesh']["Nodes"])/4,0]) # old style
-
     # center of cell
     x_amanzi_alquimia  = np.diff(y)/2+y[0:-1]
 
@@ -32,7 +31,7 @@ def GetXY_Amanzi(path,root,time,comp):
     c_amanzi_alquimia = np.array(amanzi_file[comp][time]).flatten()
     amanzi_file.close()
     amanzi_mesh.close()
-    
+
     return (x_amanzi_alquimia, c_amanzi_alquimia)
 
 # ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
@@ -76,8 +75,8 @@ if __name__ == "__main__":
     pflotran_sorb = [pflotran_sorb_templ.format(x) for x in components]
 
     # amanzi output
-    amanzi_totc_templ = "total_component_concentration.cell.Component {0} conc"
-    amanzi_totc = [amanzi_totc_templ.format(x) for x in range(len(components))]
+    amanzi_totc_templ = "total_component_concentration.cell.{} conc" #Component {0} conc"
+    amanzi_totc = [amanzi_totc_templ.format(x) for x in components] #range(len(components))]
 
     amanzi_sorb_templ = "total_sorbed.cell.{0}"
     amanzi_sorb = [amanzi_sorb_templ.format(x) for x in range(len(components))]
@@ -130,7 +129,7 @@ if __name__ == "__main__":
         # Amanzi-Alquimia
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+".in",root+".dat"])
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+"-trim.in",root+".dat"])
 
         u_amanzi_alquimia = [[[] for x in range(len(amanzi_totc))] for x in range(len(timesama))]
         for i, time in enumerate(timesama):
@@ -152,7 +151,7 @@ if __name__ == "__main__":
 
 
     colors= ['r','b','m','g'] # components
-    styles = ['-','--','x'] # codes
+    styles = ['-','o','x'] # codes
     codes = ['Amanzi+Alquimia(PFloTran)','Amanzi Native Chemistry','PFloTran'] + [None,]*9
 
     # lines on axes
@@ -164,14 +163,14 @@ if __name__ == "__main__":
     for j, comp in enumerate(components):
             if alq:
                    ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2)
-            ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label=comp)
+            ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],markeredgecolor=colors[j],marker=styles[1],linewidth=2,label=comp,mfc='None',markeredgewidth=2,linestyle='None')
             ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
 
     # for i, time in enumerate(times):
     for j, comp in enumerate(components):
             if alq:
                    ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
-            ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label=codes[j*len(styles)+1])
+            ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],markeredgecolor=colors[j],marker=styles[1],linewidth=2,label=codes[j*len(styles)+1],mfc='None',markeredgewidth=2,linestyle='None')
             ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
 
     # axes
@@ -190,7 +189,7 @@ if __name__ == "__main__":
     plt.tick_params(axis='both', which='major', labelsize=15)
 
     #pyplot.show()
-    #plt.savefig(root+"_1d.png",format="png")
+    plt.savefig(root+"_1d.png",format="png")
     #plt.close()
 
     #finally:

@@ -469,7 +469,7 @@ unsigned int Mesh_simple::num_entities (AmanziMesh::Entity_kind kind,
 }
 
 
-void Mesh_simple::cell_get_faces_and_dirs (const AmanziMesh::Entity_ID cellid,
+void Mesh_simple::cell_get_faces_and_dirs_internal (const AmanziMesh::Entity_ID cellid,
                                            AmanziMesh::Entity_ID_List *faceids,
                                            std::vector<int> *cfacedirs,
                                            const bool ordered) const
@@ -477,11 +477,12 @@ void Mesh_simple::cell_get_faces_and_dirs (const AmanziMesh::Entity_ID cellid,
   unsigned int offset = (unsigned int) 6*cellid;
 
   faceids->clear();
-  cfacedirs->clear();
+  if (cfacedirs) cfacedirs->clear();
 
   for (int i = 0; i < 6; i++) {
     faceids->push_back(*(cell_to_face_.begin()+offset));
-    cfacedirs->push_back(*(cell_to_face_dirs_.begin()+offset));
+    if (cfacedirs)
+      cfacedirs->push_back(*(cell_to_face_dirs_.begin()+offset));
     offset++;
   }
 }
@@ -666,9 +667,9 @@ void Mesh_simple::node_get_cell_faces (const AmanziMesh::Entity_ID nodeid,
     
 // Cells connected to a face
     
-void Mesh_simple::face_get_cells (const AmanziMesh::Entity_ID faceid, 
-                                  const AmanziMesh::Parallel_type ptype,
-                                  AmanziMesh::Entity_ID_List *cellids) const
+void Mesh_simple::face_get_cells_internal (const AmanziMesh::Entity_ID faceid, 
+                                         const AmanziMesh::Parallel_type ptype,
+                                         AmanziMesh::Entity_ID_List *cellids) const
 {
   unsigned int offset = (unsigned int) 2*faceid;
 
@@ -1225,7 +1226,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
 
 int Mesh_simple::deform(const std::vector<double>& target_cell_volumes_in, 
                         const std::vector<double>& min_cell_volumes_in, 
-                        const std::vector<std::string>& fixed_set_names,
+                        const Entity_ID_List& fixed_nodes,
                         const bool move_vertical) 
 {
   Errors::Message mesg("Deformation not implemented for Mesh_simple");

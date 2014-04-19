@@ -92,7 +92,7 @@ void Richards_PK::AssembleSteadyStatePreconditioner(FlowMatrix* preconditioner)
 ****************************************************************** */
 void Richards_PK::AssembleMatrixMFD(const CompositeVector& u, double Tp)
 {
-  rel_perm->Compute(u, bc_model, bc_values);
+  rel_perm->Compute(u, *darcy_flux, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, u);
   
   matrix_->CreateStiffnessMatricesRichards();
@@ -115,7 +115,13 @@ void Richards_PK::AssemblePreconditionerMFD(const CompositeVector& u, double Tp,
   // update all coefficients, boundary data, and source/sink terms
   const Epetra_MultiVector& u_cells = *u.ViewComponent("cell");
 
-  rel_perm->Compute(u, bc_model, bc_values);
+  if (update_upwind == FLOW_UPWIND_UPDATE_ITERATION){
+    matrix_->CreateStiffnessMatricesRichards();
+    matrix_->DeriveMassFlux(u, *darcy_flux, bc_model, bc_values);
+    darcy_flux->ScatterMasterToGhosted("face");
+  }
+
+  rel_perm->Compute(u, *darcy_flux, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, u);
 
   preconditioner_->CreateStiffnessMatricesRichards();

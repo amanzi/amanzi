@@ -307,7 +307,6 @@ TEST(DARCY_STIFFNESS_2D) {
 
     // verify exact integration property
     AmanziMesh::Entity_ID_List nodes;
-    std::vector<int> dirs;
     mesh->cell_get_nodes(cell, &nodes);
     
     int d = mesh->space_dimension();
@@ -383,7 +382,6 @@ TEST(DARCY_STIFFNESS_3D) {
 
   // verify exact integration property
   AmanziMesh::Entity_ID_List nodes;
-  std::vector<int> dirs;
   mesh->cell_get_nodes(cell, &nodes);
     
   int d = mesh->space_dimension();
@@ -438,10 +436,9 @@ TEST(RECOVER_GRADIENT_MIXED) {
 
   // create Darcy fluxes
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   int nfaces = 6, cell = 0;
-  mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  mesh->cell_get_faces(cell, &faces);
 
   Point flux(1.0, 2.0,3.0);
   std::vector<double> solution(nfaces);

@@ -125,7 +125,7 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
 
   // initialize the iteration counter
   num_itrs_ = 0;
-
+ 
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
   Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
@@ -224,7 +224,7 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
 
     // Next solution iterate and error estimate: u  = u - du
     u->Update(-1.0, *du, 1.0);
-
+    
     // If we monitor the update...
     if (monitor_ == SOLVER_MONITOR_UPDATE) {
       previous_error = error;

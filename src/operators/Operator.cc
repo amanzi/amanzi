@@ -26,7 +26,6 @@ Operator::Operator(Teuchos::RCP<const CompositeVectorSpace> cvs, int dummy)
   mesh_ = cvs_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_, true));
   diagonal_ = Teuchos::rcp(new CompositeVector(*cvs_, true));
-  diagonal_->PutScalar(0.0);
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -69,16 +68,47 @@ Operator::Operator(const Operator& op)
 
 
 /* ******************************************************************
+* Copy data structures from another operator.
+****************************************************************** */
+void Operator::Clone(const Operator& op) 
+{
+  data_validity_ = true; 
+  op.data_validity_ = false;
+  mesh_ = op.mesh_;
+  cvs_ = op.cvs_; 
+  blocks_ = op.blocks_;
+  blocks_schema_ = op.blocks_schema_;
+  diagonal_ = op.diagonal_;
+  rhs_ = op.rhs_;
+  A_ = op.A_;
+  preconditioner_ = op.preconditioner_;
+
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+
+  for (int i = 0; i < 3; i++) { 
+    offset_global_[i] = op.offset_global_[i];
+    offset_my_[i] = op.offset_my_[i];
+  }
+}
+
+
+/* ******************************************************************
 * Initialization of the operator.                                           
 ****************************************************************** */
 void Operator::Init()
 {
-  diagonal_->PutScalar(0.0);
-  rhs_->PutScalar(0.0);
+  diagonal_->PutScalarMasterAndGhosted(0.0);
+  rhs_->PutScalarMasterAndGhosted(0.0);
 
   int n = blocks_.size();
   for (int i = 0; i < n; i++) { 
-    std::vector<WhetStone::DenseMatrix> matrix = *blocks_[i];
+    std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[i];
     int m = matrix.size();
     for (int k = 0; k < m; k++) {
       matrix[k] = 0.0;
@@ -158,7 +188,6 @@ void Operator::SymbolicAssembleMatrix(int schema)
 
   // populate matrix graph using blocks that fit the schema
   AmanziMesh::Entity_ID_List cells, faces, nodes;
-  std::vector<int> dirs;
 
   int lid[OPERATOR_MAX_NODES];
   int gid[OPERATOR_MAX_NODES];
@@ -171,7 +200,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
       for (int c = 0; c < ncells_owned; c++) {
         int nd;
         if (subschema == OPERATOR_SCHEMA_DOFS_FACE) {
-          mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+          mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           for (int n = 0; n < nfaces; n++) {
@@ -180,7 +209,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
           }
           nd = nfaces;
         } else if (subschema == OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
-          mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+          mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           for (int n = 0; n < nfaces; n++) {
@@ -246,7 +275,6 @@ void Operator::AssembleMatrix(int schema)
   A_->PutScalar(0.0);
 
   AmanziMesh::Entity_ID_List cells, faces, nodes;
-  std::vector<int> dirs;
 
   int lid[OPERATOR_MAX_NODES + 1];
   int gid[OPERATOR_MAX_NODES + 1];
@@ -259,7 +287,7 @@ void Operator::AssembleMatrix(int schema)
     if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
       for (int c = 0; c < ncells_owned; c++) {
         if (subschema == OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
-          mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+          mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           for (int n = 0; n < nfaces; n++) {
@@ -272,7 +300,7 @@ void Operator::AssembleMatrix(int schema)
           A_->SumIntoGlobalValues(nfaces + 1, gid, matrix[c].Values());
 
         } else if (subschema == OPERATOR_SCHEMA_DOFS_FACE) {
-          mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+          mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           for (int n = 0; n < nfaces; n++) {
@@ -348,7 +376,6 @@ void Operator::AssembleMatrix(int schema)
 void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_values)
 {
   AmanziMesh::Entity_ID_List faces, nodes;
-  std::vector<int> dirs;
 
   int nblocks = blocks_.size();
   for (int nb = 0; nb < nblocks; nb++) {
@@ -357,12 +384,12 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
 
     if (schema & OPERATOR_SCHEMA_BASE_CELL) {
       if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
-        Epetra_MultiVector& rhs_face = *rhs_->ViewComponent("face");
+        Epetra_MultiVector& rhs_face = *rhs_->ViewComponent("face", true);
         Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
         Epetra_MultiVector& diag = *diagonal_->ViewComponent("face");
 
         for (int c = 0; c < ncells_owned; c++) {
-          mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+          mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           WhetStone::DenseMatrix& Acell = matrix[c];
@@ -386,8 +413,8 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
           }
         }
       } else if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
-        Epetra_MultiVector& rhs_node = *rhs_->ViewComponent("node");
-        Epetra_MultiVector& diag = *diagonal_->ViewComponent("node");
+        Epetra_MultiVector& rhs_node = *rhs_->ViewComponent("node", true);
+        Epetra_MultiVector& diag = *diagonal_->ViewComponent("node", true);
 
         for (int c = 0; c < ncells_owned; c++) {
           mesh_->cell_get_nodes(c, &nodes);
@@ -420,12 +447,15 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
 ******************************************************************* */
 int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
 {
+  // initialize ghost elements 
+  X.ScatterMasterToGhosted();
+  Y.PutScalarMasterAndGhosted(0.0);
+
   // Multiply by the diagonal block.
   Y.Multiply(1.0, *diagonal_, X, 0.0);
 
   // Multiply by the remaining matrix blocks.
   AmanziMesh::Entity_ID_List faces, cells, nodes;
-  std::vector<int> dirs;
 
   int nblocks = blocks_.size();
   for (int nb = 0; nb < nblocks; nb++) {
@@ -441,7 +471,7 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
         Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
         for (int c = 0; c < ncells_owned; c++) {
-          mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+          mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
 
           WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
@@ -459,8 +489,8 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
           Yc[0][c] += av(nfaces);
         } 
       } else if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
-        const Epetra_MultiVector& Xv = *X.ViewComponent("node");
-        Epetra_MultiVector& Yv = *Y.ViewComponent("node");
+        const Epetra_MultiVector& Xv = *X.ViewComponent("node", true);
+        Epetra_MultiVector& Yv = *Y.ViewComponent("node", true);
 
         for (int c = 0; c < ncells_owned; c++) {
           mesh_->cell_get_nodes(c, &nodes);

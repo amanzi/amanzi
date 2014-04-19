@@ -207,6 +207,12 @@ void Richards_PK::InitPK()
   std::string krel_method_name = rp_list_.get<string>("relative permeability");
   rel_perm->ProcessStringRelativePermeability(krel_method_name);
 
+  // parameter which defines when update direction of update
+  std::string upw_upd = rp_list_.get<string>("upwind update", "every timestep");
+  if (upw_upd == "every nonlinear iteration") update_upwind = FLOW_UPWIND_UPDATE_ITERATION;
+  //else  (upw_upd == "every timestep") update_upwind = FLOW_UPWIND_UPDATE_TIMESTEP;  
+  else  update_upwind = FLOW_UPWIND_UPDATE_TIMESTEP;  
+
   // Initialize times.
   double time = S_->time();
   if (time >= 0.0) T_physics = time;
@@ -263,6 +269,8 @@ void Richards_PK::InitPK()
   // Initialize boundary and source data. 
   CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
   UpdateSourceBoundaryData(time, pressure);
+
+  darcy_flux = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("darcy_flux", passwd_)));
 
   // Other quantatities: injected water mass
   mass_bc = 0.0;
@@ -504,7 +512,8 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   } else {
     CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
     UpdateSourceBoundaryData(Tp, *solution);
-    rel_perm->Compute(pressure, bc_model, bc_values);
+    *darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+    rel_perm->Compute(pressure, *darcy_flux, bc_model, bc_values);
   }
 
   // nonlinear solver control options
@@ -542,6 +551,7 @@ int Richards_PK::Advance(double dT_MPC)
   Teuchos::RCP<CompositeVector> cv = S_->GetFieldData("darcy_flux", passwd_);
   cv->ScatterMasterToGhosted("face");
   Epetra_MultiVector& flux = *cv->ViewComponent("face", true);
+
 
   dT = dT_MPC;
   double time = S_->time();

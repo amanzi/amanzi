@@ -117,9 +117,11 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRESRestart_(
 {
   int total_itrs = 0;
   int max_itrs_left = max_itrs;
+  double f_norm, x_norm;
 
   int ierr(LIN_SOLVER_MAX_ITERATIONS);
   while (ierr == LIN_SOLVER_MAX_ITERATIONS && max_itrs_left > 0) {
+
     ierr = GMRES_(f, x, tol, max_itrs_left, criteria);
     if (ierr == LIN_SOLVER_RESIDUAL_OVERFLOW) return ierr;
 

@@ -20,6 +20,136 @@ Entity_ID Mesh::entity_get_parent(const Entity_kind kind, const Entity_ID entid)
 }
 
 
+unsigned int Mesh::cell_get_num_faces(const Entity_ID cellid) const {
+  if (!cell_faceids_current) {
+
+    int ncells = num_entities(CELL,USED);
+    cell_face_ids.resize(ncells);
+    cell_face_dirs.resize(ncells);
+
+    for (int c = 0; c < ncells; c++) {
+      Entity_ID_List cfaceids;
+      std::vector<int> cfacedirs;
+
+      cell_get_faces_and_dirs_internal(c, &cfaceids, &cfacedirs, false);
+      
+      //      int nfaces = cfaceids.size();
+      //      cell_face_ids[c].resize(nfaces);
+      //      cell_face_dirs[c].resize(nfaces);
+
+      cell_face_ids[c] = cfaceids;    // these are copy operations
+      cell_face_dirs[c] = cfacedirs;
+    }
+
+    cell_faceids_current = true;
+  }
+
+  return cell_face_ids[cellid].size();
+}
+
+
+void Mesh::cell_get_faces_and_dirs(const Entity_ID cellid, 
+                                   Entity_ID_List *faceids,
+                                   std::vector<int> *face_dirs, 
+                                   const bool ordered) const {
+
+  if (!cell_faceids_current) {
+
+    int ncells = num_entities(CELL,USED);
+    cell_face_ids.resize(ncells);
+    cell_face_dirs.resize(ncells);
+
+    for (int c = 0; c < ncells; c++) {
+      Entity_ID_List cfaceids;
+      std::vector<int> cfacedirs;
+
+      cell_get_faces_and_dirs_internal(c, &cfaceids, &cfacedirs, false);
+      
+      //      int nfaces = cfaceids.size();
+      //      cell_face_ids[c].resize(nfaces);
+      //      cell_face_dirs[c].resize(nfaces);
+
+      cell_face_ids[c] = cfaceids;    // these are copy operations
+      cell_face_dirs[c] = cfacedirs;
+    }
+
+    cell_faceids_current = true;
+  }
+
+  if (ordered)
+    cell_get_faces_and_dirs_internal(cellid, faceids, face_dirs, ordered);
+  else {
+    Entity_ID_List &cfaceids = cell_face_ids[cellid];
+
+    //    int nfaces = cfaceids.size();
+    //    faceids->resize(nfaces);
+    *faceids = cfaceids; // copy operation
+
+    if (face_dirs) {
+      std::vector<int> &cfacedirs = cell_face_dirs[cellid];
+      //      face_dirs->resize(nfaces);
+      *face_dirs = cfacedirs; // copy operation
+    }
+  }
+}
+
+
+// Cells connected to a face - cache the results the first time it
+// is called and then return the cached results subsequently
+
+  void Mesh::face_get_cells (const Entity_ID faceid, const Parallel_type ptype,
+                             Entity_ID_List *cellids) const {
+
+  if (!face_cellids_current) {
+
+    int nfaces = num_entities(FACE,USED);
+    face_cell_ids.resize(nfaces);
+    face_cell_ptype.resize(nfaces);
+
+    std::vector<Entity_ID> fcells;
+
+    for (int f = 0; f < nfaces; f++) {      
+      face_get_cells_internal(f, USED, &fcells);
+
+      face_cell_ids[f].resize(2);
+      face_cell_ptype[f].resize(2);
+
+      for (int i = 0; i < fcells.size(); i++) {
+        int c = fcells[i];
+        face_cell_ids[f][i] = c;
+        face_cell_ptype[f][i] = entity_get_ptype(CELL,c);
+      }
+      for (int i = fcells.size(); i < 2; i++) {
+        face_cell_ids[f][i] = -1;
+        face_cell_ptype[f][i] = PTYPE_UNKNOWN;
+      }
+    }
+
+    face_cellids_current = true;
+  }
+
+  cellids->clear();
+
+  switch (ptype) {
+  case USED:
+    for (int i = 0; i < 2; i++)
+      if (face_cell_ptype[faceid][i] != PTYPE_UNKNOWN)
+        cellids->push_back(face_cell_ids[faceid][i]);
+    break;
+  case OWNED:
+    for (int i = 0; i < 2; i++)
+      if (face_cell_ptype[faceid][i] == OWNED) 
+        cellids->push_back(face_cell_ids[faceid][i]);
+    break;
+  case GHOST:
+    for (int i = 0; i < 2; i++)
+      if (face_cell_ptype[faceid][i] == GHOST)
+        cellids->push_back(face_cell_ids[faceid][i]);
+    break;
+  }
+}
+
+
 int Mesh::compute_geometric_quantities() const {
 
   // this might be called after mesh deformation,
@@ -846,7 +976,12 @@ int Mesh::build_columns() const {
 
     double dp = negzvec*normal;
 
-    if (fabs(dp-1.0) > 1.0e-06) continue;
+    // Face normals not necessarily -1, may be tilted, so this misses some faces
+    //    if (fabs(dp-1.0) > 1.0e-06) continue;
+
+    if (dp < 1.e-8) continue; // instead, all non-top/bottom faces have 
+                              // a zero z component, and all top faces are 
+                              // negative dot products
 
     // found a boundary face with a downward facing normal
 
@@ -862,7 +997,8 @@ int Mesh::build_columns() const {
 
     dp = negzvec*cfvec;
 
-    if (fabs(dp-1.0) > 1.0e-06) continue;
+    //    if (fabs(dp-1.0) > 1.0e-06) continue;
+    if (dp < 1.e-08) continue;
 
     // Now we are quite sure that this is a face at the bottom of the
     // mesh/domain
@@ -901,7 +1037,8 @@ int Mesh::build_columns() const {
       }
 
 
-      assert(top_face != bot_face);
+      ASSERT(top_face != bot_face);
+      ASSERT(top_face != -1);
 
 
       // record the cell above and cell below

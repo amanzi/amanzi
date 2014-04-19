@@ -43,6 +43,14 @@ add_amanzi_test(chemistry_pk chemistry_pk_tests
                       ${UnitTest_LIBRARIES} 
                       ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 
+add_amanzi_test(chemistry_1d_benchmarks chemistry_1d_benchmark_tests
+                KIND int
+                SOURCE test_1d_chemistry_benchmarks.cc
+                LINK_LIBS  chemistry_pk state data_structures
+                      mesh_functions mesh mesh_factory error_handling interface
+                      ${UnitTest_LIBRARIES} 
+                      ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES})
+
 if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
   execute_process(COMMAND ${CMAKE_COMMAND} -E
                   copy_directory ${CHEMPK_SOURCE_DIR}/tests_integration ${CHEMPK_BINARY_DIR}/tests_integration)

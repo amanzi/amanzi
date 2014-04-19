@@ -502,7 +502,7 @@ Within the Materials block an unbounded number of `"material`" elements can be d
 .. code-block:: xml
 
   <material>
-      Required Elements: mechanical_properties, permeability, assigned_regions
+      Required Elements: mechanical_properties, permeability, hydraulic_conductivity, assigned_regions
       Optional Elements: comments, cap_pressure (rel_perm - NOT YET IMPLEMENTED)
   </material>
 
@@ -530,6 +530,12 @@ Within the Materials block an unbounded number of `"material`" elements can be d
 .. code-block:: xml
 
   <permeability x="exponential" y="exponential" z="exponential" />
+
+* `"hydraulic_conductivity`" is the hydraulic conductivity and has the attributes `"x`", `"y`", and `"z`".
+
+.. code-block:: xml
+
+  hydraulic_conductivity x="exponential" y="exponential" z="exponential" />
 
 * `"cap_pressure`" is an optional element.  The available models are `"van_genuchten`", `"brooks_corey`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
 
