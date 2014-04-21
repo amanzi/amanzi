@@ -39,7 +39,6 @@ void MatrixMFD_TPFA_ScaledConstraint::CreateMFDstiffnessMatrices(
     int dim = mesh_->space_dimension();
     WhetStone::MFD3D_Diffusion mfd(mesh_);
     AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
 
     int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
@@ -57,7 +56,7 @@ void MatrixMFD_TPFA_ScaledConstraint::CreateMFDstiffnessMatrices(
     }     
 
     for (int c=0; c!=ncells; ++c) {
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
       WhetStone::DenseMatrix& Mff = Mff_cells_[c];

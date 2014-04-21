@@ -396,7 +396,7 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     { // place boundary_faces on faces
       Epetra_MultiVector& uw_cond_f = *uw_cond->ViewComponent("face",false);
       const Epetra_Import& vandelay = mesh_->exterior_face_importer();
-      const Epetra_Map& vandelay_map = mesh_->exterior_face_epetra_map();
+      const Epetra_Map& vandelay_map = mesh_->exterior_face_map();
       uw_cond_f.Export(cond_bf, vandelay, Insert);
 
       // Patch up zero-gradient case, which should not upwind.
@@ -538,8 +538,7 @@ void OverlandFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
 
     if (c < ncells_owned) {
       AmanziMesh::Entity_ID_List faces;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces(c, &faces);
 
       std::vector<double> dp(faces.size());
       for (unsigned int n=0; n!=faces.size(); ++n) {
@@ -595,8 +594,7 @@ void OverlandFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
 
     if (c < ncells_owned) {
       AmanziMesh::Entity_ID_List faces;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces(c, &faces);
 
       std::vector<double> dp(faces.size());
       for (unsigned int n=0; n!=faces.size(); ++n) {
