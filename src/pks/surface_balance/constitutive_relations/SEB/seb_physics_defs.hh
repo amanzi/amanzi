@@ -126,7 +126,7 @@ struct ModelParams {
       Le(2497848.),             // Latent heat of vaporization ------ [J/kg]
       Cp(1004.0),               // Specific heat of air ------------- [J/K kg]
       VKc(0.41),                // Von Karman Constant -------------- [-]
-      Zr(10.0),                  // Reference height of wind speed --- [m]
+      Zr(2.0),                  // Reference height of wind speed --- [m]
       stephB(0.00000005670373), // Stephan-Boltzmann constant ------- [W/m^2 K^4]
       Apa(101.325),             // atmospheric pressure ------------- [kPa]
       evap_transition_width(100.), // transition on evaporation from surface to evaporation from subsurface [m]

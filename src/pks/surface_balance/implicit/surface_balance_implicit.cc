@@ -418,6 +418,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       surf_water_flux[0][c] = seb.out.mb.MWg;
       surf_water_flux_temp[0][c] = seb.out.mb.MWg_temp;
 
+
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
 //      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
@@ -551,12 +552,11 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
           }
         } else {
           // snow portion is negative, take only from snow.  Note if both are negative, both temps are just the air temp, which is fine.
-          surf_water_flux_temp[0][c] = seb_bare.out.mb.MWg;
+          surf_water_flux_temp[0][c] = seb_bare.out.mb.MWg_temp;
         }
       } else {
         surf_water_flux_temp[0][c] = seb.out.mb.MWg_temp;
       }
-
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
 //      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
