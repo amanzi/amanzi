@@ -90,7 +90,7 @@ SurfaceBalanceEvaluatorVPL::EvaluateField_(const Teuchos::Ptr<State>& S,
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& stored_surface_pressure = *S->GetFieldData("stored_surface_pressure")
       ->ViewComponent("cell",false);
-  const Epetra_MultiVector& stored_Qe = *S->GetFieldData("stored_Qe")
+  const Epetra_MultiVector& stored_SWE = *S->GetFieldData("stored_SWE")
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& unfrozen_fraction = *S->GetFieldData("unfrozen_fraction")
       ->ViewComponent("cell",false);
@@ -317,7 +317,7 @@ void SurfaceBalanceEvaluatorVPL::EvaluateFieldPartialDerivative_(
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& stored_surface_pressure = *S->GetFieldData("stored_surface_pressure")
       ->ViewComponent("cell",false);
-  const Epetra_MultiVector& stored_Qe = *S->GetFieldData("stored_Qe")
+  const Epetra_MultiVector& stored_SWE = *S->GetFieldData("stored_SWE")
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& unfrozen_fraction = *S->GetFieldData("unfrozen_fraction")
       ->ViewComponent("cell",false);

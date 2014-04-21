@@ -45,7 +45,9 @@ void SurfaceEnergyBalance::UpdateIncomingRadiation(LocalData& seb) {
 }else{// roughness lenght for open field = 0.03 m
   seb.st_energy.Dhe = (std::pow(seb.st_energy.VKc,2) * seb.st_energy.Us
                        / std::pow(std::log(seb.st_energy.Zr / 0.03), 2));
+  seb.st_energy.Zo = 0.03;
 }
+std::cout<<"Windspeed, Zo: "<<seb.st_energy.Us<<"  "<<seb.st_energy.Zo<<std::endl;
 }
 
 void SurfaceEnergyBalance::UpdateIncomingRadiationDerivatives(LocalData& seb) {
@@ -404,7 +406,7 @@ void SurfaceEnergyBalance::UpdateSnow(EnergyBalance& eb) {
 
   // settle the pre-existing snow
   eb.age_snow += eb.dt / 86400.;
-  double ndensity = std::pow(eb.age_snow,0.3);
+  double ndensity = std::pow(eb.age_snow,0.3);                    
   if (ndensity < 1){// Formula only works from snow older the 1 day
      ndensity = 1;
    }
@@ -497,7 +499,6 @@ void SurfaceEnergyBalance::SnowEnergyBalance(LocalData& seb) {
 
   // Update snow pack, density
   UpdateSnow(seb.st_energy);
-
   // set water temp
 // Ensures that water moving through the snow will have a near freezing temperature 
   seb.st_energy.Trw = seb.st_energy.ht_snow > 0. ? 273.15 : seb.st_energy.temp_air;

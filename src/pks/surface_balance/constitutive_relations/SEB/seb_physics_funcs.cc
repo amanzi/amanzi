@@ -32,6 +32,7 @@ void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug) {
 
   if (debug) {
     std::cout << "Incoming Radiation Energy Terms:" << "\n"
+              << "  windspeed, Zo: " << seb.in.met.Us <<"  "<<seb.in.surf.Zo << "\n"
               << "  fQswIn   = " << eb.fQswIn << "\n"
               << "  fQlwIn   = " << eb.fQlwIn << std::endl;
   }
@@ -45,12 +46,13 @@ void UpdateEvapResistance(const SEB& seb, const ThermoProperties& vp_surf, Energ
    
 // Equation for reduced vapor diffusivity See Sakagucki and Zeng 2009 eqaution (9) and Moldrup et al., 2004. 
    double Clab_Horn_b = 1;
-   double Surface_Vap_Diffusion = std::pow((1-(0.0556/vp_surf.porosity)),(2+3*Clab_Horn_b));
-   Surface_Vap_Diffusion = 0.000022 * (std::pow(vp_surf.porosity,2)) * Surface_Vap_Diffusion;
+   double actual_porosity = 0.9;  // Hard coded for moss Fix this to pass in form ATS ~AA
+   double Surface_Vap_Diffusion = std::pow((1-(0.0556/actual_porosity)),(2+3*Clab_Horn_b));
+   Surface_Vap_Diffusion = 0.000022 * (std::pow(actual_porosity,2)) * Surface_Vap_Diffusion;
 // Sakagucki and Zeng 2009 eqaution (10)
    double cell_dimension = 0.01/2; // This is from cell center to the boundary.
-   double VWC = seb.in.surf.saturation_liquid * vp_surf.porosity;
-   double L_Rsoil = std::exp(std::pow((1-(VWC/vp_surf.porosity)),5));
+   double VWC = seb.in.surf.saturation_liquid * actual_porosity;
+   double L_Rsoil = std::exp(std::pow((1-(VWC/actual_porosity)),5));
    L_Rsoil = cell_dimension * (L_Rsoil -1) * (1/(2.718-1));
    double Rsoil = 0.0;
    
@@ -113,6 +115,7 @@ void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf, Energy
       * (vp_air.actual_vaporpressure - vp_surf.actual_vaporpressure) / seb.params.Apa;
   if (debug) {
     std::cout<<"Porosity: "<<vp_surf.porosity<<"  LatentHeatOf: "<<LatenHeatOf<<"  Sqig: "<<Sqig<<std::endl;
+    std::cout<<"Evap_Resistance: "<<eb.Evap_Resistance<<" Air vapor pres: "<<vp_air.actual_vaporpressure<<" Snow vapor pres: "<<vp_surf.actual_vaporpressure<<std::endl;
   }
 
   // Calculate heat conducted to ground, if snow
@@ -124,6 +127,7 @@ void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf, Energy
 
   if (debug) {
     std::cout << "Energy Balance Terms (ht_snow = " << seb.in.snow_old.ht << "):" << "\n"
+              << "  SnowSurfaceTemp  = " << vp_surf.temp << "\n"
               << "  fQlwOut  = " << eb.fQlwOut << "\n"
               << "  fQh      = " << eb.fQh << "\n"
               << "  fQe      = " << eb.fQe << "\n"
@@ -147,7 +151,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
   if (seb.in.snow_old.ht > 0.) {
     double swe_old = seb.in.snow_old.ht * seb.in.snow_old.density / seb.in.vp_ground.density_w;
     double swe_new = swe_old + (seb.in.met.Ps - mb.Mm + mb.Me)*seb.in.dt;
-
+    std::cout<<"OLD_SWE: "<<swe_old<<std::endl;    
     // First do a pass to ensure we are not melting or sublimation ALL
     // of the available snow.  If so, adjust dt
     if (swe_new < 0.) {
@@ -239,6 +243,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     snow_new.ht = std::max(ht_settled + ht_frost + ht_precip, 0.);
     snow_new.age = swe_total > 0. ? (swe_settled*age_settled + swe_frost*age_frost + swe_precip*age_precip) / swe_total : 0.;
     snow_new.density = snow_new.ht > 0. ? swe_new * seb.in.vp_ground.density_w / snow_new.ht : seb.params.density_freshsnow;
+    snow_new.SWE = snow_new.ht * snow_new.density / seb.in.vp_ground.density_w;
 
     // set the water properties
     // -- water source to ground is (corrected) melt and rainfall
@@ -253,6 +258,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
         * seb.in.vp_ground.density_w / seb.params.density_freshsnow;
     snow_new.age = seb.in.dt / 86400.;
     snow_new.density = seb.params.density_freshsnow;
+    snow_new.SWE = snow_new.ht * snow_new.density / seb.in.vp_ground.density_w;
 
     // set the water properties
     // -- water source to ground is rainfall + condensation
@@ -285,6 +291,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
               << "    new ht   = " << snow_new.ht << "\n"
               << "    new age  = " << snow_new.age << "\n"
               << "    new dens = " << snow_new.density << "\n"
+              << "    SWE      = " << snow_new.SWE << "\n"
               << "  Water Balance:\n"
               << "    surf src = " << mb.MWg << "\n"
               << "    sub src  = " << mb.MWg_subsurf << std::endl;
