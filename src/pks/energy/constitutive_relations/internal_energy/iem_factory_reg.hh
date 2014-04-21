@@ -9,15 +9,8 @@
 
 #include "iem_factory.hh"
 
-namespace Amanzi {
-namespace Energy {
-namespace EnergyRelations {
-
 // explicity instantitate the static data of Factory<IEM>
-//template<> Factory<IEM>::map_type* Factory<IEM>::map_;
-template<> Utils::Factory<IEM>::map_type* Utils::Factory<IEM>::map_;
-
-} // namespace
-} // namespace
-} // namespace
+template<> 
+Amanzi::Utils::Factory<Amanzi::Energy::EnergyRelations::IEM>::map_type* 
+Amanzi::Utils::Factory<Amanzi::Energy::EnergyRelations::IEM>::map_;
 

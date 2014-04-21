@@ -9,14 +9,8 @@
 
 #include "thermal_conductivity_twophase_factory.hh"
 
-namespace Amanzi {
-namespace Energy {
-namespace EnergyRelations {
-
 // explicity instantitate the static data of Factory<EOS>
-template<> Utils::Factory<ThermalConductivityTwoPhase>::map_type* Utils::Factory<ThermalConductivityTwoPhase>::map_;
-
-} // namespace
-} // namespace
-} // namespace
+template<> 
+Amanzi::Utils::Factory<Amanzi::Energy::EnergyRelations::ThermalConductivityTwoPhase>::map_type* 
+Amanzi::Utils::Factory<Amanzi::Energy::EnergyRelations::ThermalConductivityTwoPhase>::map_;
 

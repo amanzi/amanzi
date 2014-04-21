@@ -9,15 +9,8 @@
 
 #include "wrm_permafrost_factory.hh"
 
-namespace Amanzi {
-namespace Flow {
-namespace FlowRelations {
-
 // explicity instantitate the static data of Factory<WRM>
-//template<> Factory<WRM>::map_type* Factory<WRM>::map_;
-template<> Utils::Factory<WRMPermafrostModel>::map_type* Utils::Factory<WRMPermafrostModel>::map_;
-
-} // namespace
-} // namespace
-} // namespace
+template<> 
+Amanzi::Utils::Factory<Amanzi::Flow::FlowRelations::WRMPermafrostModel>::map_type* 
+Amanzi::Utils::Factory<Amanzi::Flow::FlowRelations::WRMPermafrostModel>::map_;
 

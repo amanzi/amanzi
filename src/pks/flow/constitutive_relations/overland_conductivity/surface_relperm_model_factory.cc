@@ -10,12 +10,14 @@
 #include <string>
 #include "surface_relperm_model_factory.hh"
 
+// explicity instantitate the static data of Factory<SurfaceRelPermModel>
+template<> 
+Amanzi::Utils::Factory<Amanzi::Flow::FlowRelations::SurfaceRelPermModel>::map_type* 
+Amanzi::Utils::Factory<Amanzi::Flow::FlowRelations::SurfaceRelPermModel>::map_;
+
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
-
-// explicity instantitate the static data of Factory<SurfaceRelPermModel>
-template<> Utils::Factory<SurfaceRelPermModel>::map_type* Utils::Factory<SurfaceRelPermModel>::map_;
 
 // method for instantiating SurfaceRelPermModel implementations
 Teuchos::RCP<SurfaceRelPermModel> SurfaceRelPermModelFactory::createModel(Teuchos::ParameterList& plist) {
