@@ -1435,10 +1435,15 @@ Due to its length, an XML example of the `"Phases`" parameter list appears in th
 Chemistry
 =========
 
-The chemistry list is needed if the Chemistry model is set to `"On`".  
+The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"Amanzi`". The parameters within this list vary according to which chemistry process kernel is being used.
 
+* [SU] `"Chemistry`" [list] (*`"Alquimia`" chemistry process kernel*)
 
-* [SU] `"Chemistry`" [list]
+  * [SU] `"Engine`" [string] The name of the backend chemistry engine (e.g. `"PFloTran`").
+  * [SU] `"Engine Input File`" [string] The file specifying the input for the backend chemistry engine.
+  * [SU] `"Max Time Step (s)`" [double] The maximum time step that chemistry will allow the MPC to take.
+
+* [SU] `"Chemistry`" [list] (*Native `"Amanzi`" chemistry process kernel*)
 
   * [SU] `"Thermodynamic Database`" [list]
    
