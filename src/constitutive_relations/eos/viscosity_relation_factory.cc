@@ -10,11 +10,13 @@
 #include <string>
 #include "viscosity_relation_factory.hh"
 
+// explicity instantitate the static data of Factory<Viscosity>
+template<> 
+Amanzi::Utils::Factory<Amanzi::Relations::ViscosityRelation>::map_type* 
+Amanzi::Utils::Factory<Amanzi::Relations::ViscosityRelation>::map_;
+
 namespace Amanzi {
 namespace Relations {
-
-// explicity instantitate the static data of Factory<Viscosity>
-template<> Utils::Factory<ViscosityRelation>::map_type* Utils::Factory<ViscosityRelation>::map_;
 
 // method for instantiating Viscosity implementations
 Teuchos::RCP<ViscosityRelation> ViscosityRelationFactory::createViscosity(Teuchos::ParameterList& plist) {
