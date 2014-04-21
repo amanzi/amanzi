@@ -120,8 +120,7 @@ NonlinearSourceFromSubsurfaceEvaluator::EvaluateField_(const Teuchos::Ptr<State>
 
     // calculate the flux out the surface
     AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
-    subsurface->cell_get_faces_and_dirs(ss_c, &faces, &dirs);
+    subsurface->cell_get_faces(ss_c, &faces);
 
     int ss_nfaces = faces.size();
     std::vector<double> dp(ss_nfaces);
