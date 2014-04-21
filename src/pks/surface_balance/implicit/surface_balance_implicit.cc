@@ -163,7 +163,9 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("snow_temperature", name_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  // information from ATS data
+  S->RequireField("stored_SWE", name_)->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   S->RequireFieldEvaluator("surface_temperature");
   S->RequireField("surface_temperature")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -202,6 +204,9 @@ SurfaceBalanceImplicit::initialize(const Teuchos::Ptr<State>& S) {
   // initialize days of no snow
   S->GetFieldData("snow_age",name_)->PutScalar(0.);
   S->GetField("snow_age", name_)->set_initialized();
+
+  S->GetFieldData("stored_SWE",name_)->PutScalar(0.);
+  S->GetField("stored_SWE", name_)->set_initialized();
 
   // initialize snow temp
   S->GetFieldData("snow_temperature",name_)->PutScalar(0.);
@@ -259,6 +264,8 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& snow_dens_old = *S_inter_->GetFieldData("snow_density")
       ->ViewComponent("cell",false);
+    const Epetra_MultiVector& stored_SWE_old = *S_inter_->GetFieldData("stored_SWE")
+      ->ViewComponent("cell",false);
 
   // pull current snow data
   const Epetra_MultiVector& snow_depth_new = *u_new->Data()->ViewComponent("cell",false);
@@ -267,6 +274,8 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
   Epetra_MultiVector& snow_age_new = *S_next_->GetFieldData("snow_age", name_)
       ->ViewComponent("cell",false);
   Epetra_MultiVector& snow_dens_new = *S_next_->GetFieldData("snow_density", name_)
+      ->ViewComponent("cell",false);
+    Epetra_MultiVector& stored_SWE_new = *S_next_->GetFieldData("stored_SWE", name_)
       ->ViewComponent("cell",false);
 
   // pull ATS data
@@ -361,10 +370,12 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       seb.in.snow_old.ht = snow_depth_old[0][c] < min_snow_trans_ ? 0. : snow_depth_old[0][c];
       seb.in.snow_old.density = snow_dens_old[0][c];
       seb.in.snow_old.age = snow_age_old[0][c];
+       seb.in.snow_old.SWE = stored_SWE_old[0][c];
 
       seb.out.snow_new.ht = snow_depth_new[0][c];
       seb.out.snow_new.density = snow_dens_new[0][c];
       seb.out.snow_new.age = snow_age_new[0][c];
+      seb.out.snow_new.SWE = stored_SWE_new[0][c];
 
       seb.in.vp_snow.temp = 270.15;
 
@@ -407,6 +418,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       surf_water_flux[0][c] = seb.out.mb.MWg;
       surf_water_flux_temp[0][c] = seb.out.mb.MWg_temp;
 
+
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
 //      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
@@ -423,6 +435,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       snow_age_new[0][c] = seb.out.snow_new.age;
       snow_dens_new[0][c] = seb.out.snow_new.density;
       snow_temp_new[0][c] = seb.in.vp_snow.temp;
+      stored_SWE_new[0][c] = seb.out.snow_new.SWE;
 
       if (eval_derivatives_) {
         // evaluate FD derivative of energy flux wrt surface temperature
@@ -458,10 +471,12 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
       seb.in.snow_old.ht = snow_ground_trans_;
       seb.in.snow_old.density = snow_dens_old[0][c];
       seb.in.snow_old.age = snow_age_old[0][c];
+      seb.in.snow_old.SWE = stored_SWE_old[0][c];
 
       seb.out.snow_new.ht = snow_depth_new[0][c];
       seb.out.snow_new.density = snow_dens_new[0][c];
       seb.out.snow_new.age = snow_age_new[0][c];
+      seb.out.snow_new.SWE = stored_SWE_new[0][c];
 
       seb.in.vp_snow.temp = 270.15;
 
@@ -537,12 +552,11 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
           }
         } else {
           // snow portion is negative, take only from snow.  Note if both are negative, both temps are just the air temp, which is fine.
-          surf_water_flux_temp[0][c] = seb_bare.out.mb.MWg;
+          surf_water_flux_temp[0][c] = seb_bare.out.mb.MWg_temp;
         }
       } else {
         surf_water_flux_temp[0][c] = seb.out.mb.MWg_temp;
       }
-
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
 //      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
@@ -563,9 +577,11 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
         snow_age_new[0][c] = (theta * seb.out.snow_new.ht * seb.out.snow_new.age
                               + (1-theta) * seb_bare.out.snow_new.ht * seb_bare.out.snow_new.age) / snow_depth_new_tmp;
         snow_dens_new[0][c] = total_swe * seb.in.vp_ground.density_w / snow_depth_new_tmp;
+        stored_SWE_new[0][c] = total_swe;
       } else {
         snow_age_new[0][c] = 0.;
         snow_dens_new[0][0] = seb.out.snow_new.density;
+        stored_SWE_new[0][c] = total_swe;
       }
       snow_temp_new[0][c] = seb.in.vp_snow.temp;
 
