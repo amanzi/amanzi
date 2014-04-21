@@ -246,7 +246,6 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
   Teuchos::SerialDenseMatrix<int, double> cell_inv(2, 2);
   Epetra_SerialDenseMatrix values(2, 2);
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   const int MFD_MAX_FACES = 14;
   int faces_LID[MFD_MAX_FACES];  // Contigious memory is required.
   int faces_GID[MFD_MAX_FACES];
@@ -261,7 +260,7 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
   // Assemble
   for (int c=0; c!=ncells; ++c){
     int cell_GID = cmap.GID(c);
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     int nentries = nfaces; // not sure if this is required, but may be passed by ref
 

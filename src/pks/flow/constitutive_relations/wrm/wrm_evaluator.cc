@@ -80,8 +80,8 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     // Need to get boundary face's inner cell to specify the WRM.
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->Mesh();
-    const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
-    const Epetra_Map& face_map = mesh->face_epetra_map(false);
+    const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+    const Epetra_Map& face_map = mesh->face_map(false);
     AmanziMesh::Entity_ID_List cells;
 
     // calculate boundary face values
@@ -143,8 +143,8 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
 
     // Need to get boundary face's inner cell to specify the WRM.
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->Mesh();
-    const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
-    const Epetra_Map& face_map = mesh->face_epetra_map(false);
+    const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+    const Epetra_Map& face_map = mesh->face_map(false);
     AmanziMesh::Entity_ID_List cells;
 
     // calculate boundary face values

@@ -411,8 +411,7 @@ bool VolumetricDeformation::advance(double dt) {
         int my_down_n = -1;
 
         AmanziMesh::Entity_ID_List faces;
-        std::vector<int> dirs;
-        mesh_->cell_get_faces_and_dirs(*c, &faces, &dirs);
+        mesh_->cell_get_faces(*c, &faces);
         double eps = 1.e-8;
         for (int n=0; n!=faces.size(); ++n) {
           if (mesh_->face_normal(faces[n],false,*c)[2] > eps) {
@@ -569,8 +568,7 @@ bool VolumetricDeformation::advance(double dt) {
         for (int c=0; c!=ncells_used; ++c) {
           // Get the face above the cell
           AmanziMesh::Entity_ID_List faces;
-          std::vector<int> dirs;
-          mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+          mesh_->cell_get_faces(c, &faces);
           AmanziMesh::Entity_ID f_up = -1;
           double eps = 1.e-8;
           for (AmanziMesh::Entity_ID_List::const_iterator f=faces.begin();

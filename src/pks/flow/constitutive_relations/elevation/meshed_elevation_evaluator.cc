@@ -101,8 +101,7 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
 
       // Now slope.
       AmanziMesh::Entity_ID_List faces;
-      std::vector<int> fdirs;
-      domain_mesh->cell_get_faces_and_dirs(domain_cell, &faces, &fdirs);
+      domain_mesh->cell_get_faces(domain_cell, &faces);
 
       // -- Get the normals of all faces of the surface cell.
       int count = faces.size();

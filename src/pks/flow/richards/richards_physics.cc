@@ -315,7 +315,7 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
     unsigned int ncells = rho->size("cell",false);
     for (unsigned int c=0; c!=ncells; ++c) {
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces(c, &faces);
       for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -331,7 +331,7 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
     unsigned int ncells = rho->size("cell",false);
     for (unsigned int c=0; c!=ncells; ++c) {
-      darcy_flux->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      darcy_flux->Mesh()->cell_get_faces(c, &faces);
       for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = darcy_flux->Mesh()->face_normal(f);
@@ -348,7 +348,7 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
     unsigned int ncells = rho->size("cell",false);
     for (unsigned int c=0; c!=ncells; ++c) {
-      darcy_flux->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      darcy_flux->Mesh()->cell_get_faces(c, &faces);
       for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = darcy_flux->Mesh()->face_normal(f);
@@ -366,7 +366,7 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
     unsigned int ncells = rho->size("cell",false);
     for (unsigned int c=0; c!=ncells; ++c) {
-      darcy_flux->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      darcy_flux->Mesh()->cell_get_faces(c, &faces);
       for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = darcy_flux->Mesh()->face_normal(f);
