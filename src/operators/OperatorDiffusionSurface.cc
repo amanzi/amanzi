@@ -152,7 +152,7 @@ void OperatorDiffusionSurface::CreateMassMatrices_(std::vector<WhetStone::Tensor
 void OperatorDiffusionSurface::AssembleMatrix(int schema)
 {
   if (schema != OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE) {
-    std::cout << "Schema " << schema << " is not supported" << endl;
+    std::cout << "Schema " << schema << " is not supported" << std::endl;
     ASSERT(0);
   }
 

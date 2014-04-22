@@ -218,7 +218,7 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
         chem_engine_->GetMineralNames(mineralNames);
         for (int i = 0; i < mineralNames.size(); ++i)
         {
-          std::string aux_name = *name + string("_") + mineralNames[i];
+          std::string aux_name = *name + std::string("_") + mineralNames[i];
           aux_names_.push_back(*name);
         }
       }
@@ -229,7 +229,7 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
         chem_engine_->GetPrimarySpeciesNames(primaryNames);
         for (int i = 0; i < primaryNames.size(); ++i)
         {
-          std::string aux_name = *name + string("_") + primaryNames[i];
+          std::string aux_name = *name + std::string("_") + primaryNames[i];
           aux_names_.push_back(*name);
         }
       }
@@ -240,7 +240,7 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
         {
           char num_str[16];
           snprintf(num_str, 15, "%d", i);
-          std::string aux_name = *name + string("_") + string(num_str);
+          std::string aux_name = *name + std::string("_") + std::string(num_str);
           aux_names_.push_back(*name);
         }
         aux_names_.push_back(*name);
@@ -435,7 +435,7 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
       {
         for (int j = 0; j < mineralNames.size(); ++j)
         {
-          std::string full_name = string("mineral_saturation_index_") + mineralNames[j];
+          std::string full_name = std::string("mineral_saturation_index_") + mineralNames[j];
           if (aux_names_.at(i) == full_name)
           {
             double* cell_aux_output = (*aux_output_)[i];
@@ -447,7 +447,7 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
       {
         for (int j = 0; j < mineralNames.size(); ++j)
         {
-          std::string full_name = string("mineral_reaction_rate_") + mineralNames[j];
+          std::string full_name = std::string("mineral_reaction_rate_") + mineralNames[j];
           if (aux_names_.at(i) == full_name)
           {
             double* cell_aux_output = (*aux_output_)[i];
@@ -459,7 +459,7 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
       {
         for (int j = 0; j < primaryNames.size(); ++j)
         {
-          std::string full_name = string("primary_free_ion_concentration_") + primaryNames[j];
+          std::string full_name = std::string("primary_free_ion_concentration_") + primaryNames[j];
           if (aux_names_.at(i) == full_name)
           {
             double* cell_aux_output = (*aux_output_)[i];
@@ -471,7 +471,7 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
       {
         for (int j = 0; j < primaryNames.size(); ++j)
         {
-          std::string full_name = string("primary_activity_coeff_") + primaryNames[j];
+          std::string full_name = std::string("primary_activity_coeff_") + primaryNames[j];
           if (aux_names_.at(i) == full_name)
           {
             double* cell_aux_output = (*aux_output_)[i];
@@ -485,7 +485,7 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
         {
           char num_str[16];
           snprintf(num_str, 15, "%d", j);
-          std::string full_name = string("secondary_free_ion_concentration_") + string(num_str);
+          std::string full_name = std::string("secondary_free_ion_concentration_") + std::string(num_str);
           if (aux_names_.at(i) == full_name)
           {
             double* cell_aux_output = (*aux_output_)[i];
@@ -499,7 +499,7 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
         {
           char num_str[16];
           snprintf(num_str, 15, "%d", j);
-          std::string full_name = string("secondary_activity_coeff_") + string(num_str);
+          std::string full_name = std::string("secondary_activity_coeff_") + std::string(num_str);
           if (aux_names_.at(i) == full_name)
           {
             double* cell_aux_output = (*aux_output_)[i];
