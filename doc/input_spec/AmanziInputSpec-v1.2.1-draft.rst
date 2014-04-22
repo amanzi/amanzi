@@ -1281,7 +1281,7 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
   * [SU] `"Solute IC`" can accept PHASE (labels of phases defined above)
 
-   * [SU] PHASE [list] can accept COMPONENT (labels of components defined above)
+   * [SU] PHASE [list] can accept COMPONENT (labels of components defined above), or keyword `"Alquimia`" to support geochemical conditions.
 
     * [SU] COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
@@ -1302,7 +1302,7 @@ Next, we specify boundary conditions.  Again, support is provided for specifying
 
    * [SU] PHASE [list] can accept COMPONENT (labels of components defined above)
 
-    * [SU] COMPONENT [list] can accept SOLUTE (label of solute defined above)
+    * [SU] COMPONENT [list] can accept SOLUTE (label of solute defined above), or keyword `"Alquimia`" to support geochemical conditions
 
      * [SU] BC function [list] Parameterized model to specify the contcentration profile, only `"BC: Uniform Concentration`" is supported (see below) in units of molarity (moles/volume).
 
@@ -1320,7 +1320,7 @@ Finally, we specify sources.  Support is provided for specifying sources on the 
 
    * PHASE [list] can accept COMPONENT (labels of components defined above)
 
-    * COMPONENT [list] can accept SOLUTE (label of solute defined above)
+    * COMPONENT [list] can accept SOLUTE (label of solute defined above), or keyword `"Alquimia`" to support geochemical conditions
 
      * Source function [list] Parameterized model to specify the concentration profile, `"Source: Uniform Concentration`" and `"Source: Flow Weighted Concentration`" are supported (see below) in units of molarity (moles/volume).
 
@@ -1336,10 +1336,11 @@ The following initial condition parameterizations are supported:
 
 * [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array double).
 
-* [SU] `"IC: Uniform Concentration`" [list] 
+* [SU] `"IC: Uniform Concentration`" [list] requires `"Value`" and `"Free Ion Guess`", or `"Constraint`"
 
-  * [SU] `"Value`" [double]  total component concentration in units of molarity (moles/volume)
-  * [SU] `"Free Ion Guess`" [double]  estimate of the free ion concentration for this solute; used to help convergence of the initial solution of the chemistry.
+  * `"Value`" [double]  total component concentration in units of molarity (moles/volume)
+  * `"Free Ion Guess`" [double]  estimate of the free ion concentration for this solute; used to help convergence of the initial solution of the chemistry.
+  * `"Geochemical Condition`" [String]:  Name of constraint in the input file of the geochemistry engine (listed in the `"Chemistry`" list).
 
 The following boundary condition parameterizations are supported:
 
@@ -1383,7 +1384,12 @@ The following boundary condition parameterizations are supported:
 
 * [S] `"BC: Zero Gradient`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double] or `"Constraints`"
+
+  * `"Times`" [Array double], list of times used by the time function.
+  * `"Time Functions`" [Array string], list of functions for the time intervals listed in `"Times`"
+  * `"Values`" [Array double], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
+  * `"Geochemical Condition`" [String]: Name of constraint in the input file of the geochemistry engine (listed in the `"Chemistry`" list).
 
 The following source parameterizations are supported.
 
@@ -1395,7 +1401,18 @@ The following source parameterizations are supported.
 
 * [U] `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
+  * `"Times`" [Array double], list of times used by the time function.
+  * `"Time Functions`" [Array string], list of functions for the time intervals listed in `"Times`"
+  * `"Values`" [Array double], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
+  * `"Geochemical Condition`" [String]: Name of constraint in the input file of the geochemistry engine (listed in the `"Chemistry`" list).
+
 * [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
+  * `"Times`" [Array double], list of times used by the time function.
+  * `"Time Functions`" [Array string], list of functions for the time intervals listed in `"Times`"
+  * `"Values`" [Array double], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
+  * `"Geochemical Condition`" [String]: Name of constraint in the input file of the geochemistry engine (listed in the `"Chemistry`" list).
+
 
 Time Functions
 ~~~~~~~~~~~~~~
