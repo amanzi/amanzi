@@ -265,22 +265,24 @@ void Matrix_MFD::CreateStiffnessMatricesRichards()
     } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
       std::vector<double>& krel = rel_perm_->Krel_amanzi()[c];
 
+      double tmp = Krel_cells[0][c];
       for (int n = 0; n < nfaces; n++)
-        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[0][c];
+        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * tmp;
 
       // add upwind correction
       mesh_->cell_get_faces(c,&faces);
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        // double t = std::max(0.0, Krel_faces[0][f] - Krel_cells[0][c]);
-        double t = fabs(Krel_faces[0][f] - Krel_cells[0][c]);
+        // double t = std::max(0.0, Krel_faces[0][f] - tmp);
+        double t = fabs(Krel_faces[0][f] - tmp);
         Bff(n, n) += Mff(n, n) * t; 
       }
     } else {
       mesh_->cell_get_faces(c,&faces);
       for (int m = 0; m < nfaces; m++) {
         AmanziMesh::Entity_ID f = faces[m];
-        for (int n = 0; n < nfaces; n++) Bff(m, n) = Mff(m, n) * Krel_faces[0][f];
+        double tmp = Krel_faces[0][f];
+        for (int n = 0; n < nfaces; n++) Bff(m, n) = Mff(m, n) * tmp;
       }
     }
 
@@ -556,7 +558,6 @@ void Matrix_MFD::SymbolicAssemble()
   Epetra_FECrsGraph ff_graph(Copy, fmap, 2*avg_entries_row);
 
   AmanziMesh::Entity_ID_List faces;
-  int faces_LID[FLOW_MAX_FACES];  // Contigious memory is required.
   int faces_GID[FLOW_MAX_FACES];
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -565,10 +566,9 @@ void Matrix_MFD::SymbolicAssemble()
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; n++) {
-      faces_LID[n] = faces[n];
-      faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
+      faces_GID[n] = fmap_wghost.GID(faces[n]);
     }
-    cf_graph.InsertMyIndices(c, nfaces, faces_LID);
+    cf_graph.InsertMyIndices(c, nfaces, &(faces[0]));
     ff_graph.InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
   }
   cf_graph.FillComplete(fmap, cmap);
@@ -606,7 +606,6 @@ void Matrix_MFD::Assemble()
 
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   AmanziMesh::Entity_ID_List faces;
-  int faces_LID[FLOW_MAX_FACES];
   int faces_GID[FLOW_MAX_FACES];
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -621,15 +620,14 @@ void Matrix_MFD::Assemble()
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; n++) {
-      faces_LID[n] = faces[n];
-      faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
+      faces_GID[n] = fmap_wghost.GID(faces[n]);
     }
     (*Acc_)[c] = Acc_cells_[c];
-    Acf_->ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), faces_LID);
+    Acf_->ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), &(faces[0]));
     Aff_->SumIntoGlobalValues(nfaces, faces_GID, Aff_cells_[c].values());
 
     if (!flag_symmetry_)
-      Afc_->ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
+      Afc_->ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), &(faces[0]));
 
     rhs_cells[0][c] = Fc_cells_[c];
     for (int n = 0; n < nfaces; n++) {
@@ -654,7 +652,6 @@ void Matrix_MFD::AssembleSchurComplement_(
 
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   AmanziMesh::Entity_ID_List faces;
-  int faces_LID[FLOW_MAX_FACES];
   int faces_GID[FLOW_MAX_FACES];
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -680,18 +677,17 @@ void Matrix_MFD::AssembleSchurComplement_(
     }
 
     for (int n = 0; n < nfaces; n++) {
-      faces_LID[n] = faces[n];
-      faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
+      faces_GID[n] = fmap_wghost.GID(faces[n]);
     }
     (*Sff_).SumIntoGlobalValues(nfaces, faces_GID, Schur.values());
 
     // check that the other matrices were not calculated already
     if (!(actions_ & AmanziFlow::FLOW_MATRIX_ACTION_MATRIX)) {
       (*Acc_)[c] = Acc_cells_[c];
-      Acf_->ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), faces_LID);
+      Acf_->ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), &(faces[0]));
 
       if (!flag_symmetry_)
-        Afc_->ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
+        Afc_->ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), &(faces[0]));
     }
   }
   (*Sff_).GlobalAssemble();
