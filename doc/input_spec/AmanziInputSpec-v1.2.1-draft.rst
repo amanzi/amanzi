@@ -1326,7 +1326,7 @@ Finally, we specify sources.  Support is provided for specifying sources on the 
 
 The following initial condition parameterizations are supported:
 
-* [SU] `"IC: Uniform Saturation`" requires `"Value`" [double]
+* [SU] `"IC: Uniform Saturation`" requires `"Value`" [double] OR `"Geochemical Condition`" [string] if Alquimia is providing initial conditions.
 
 * [U] `"IC: Linear Saturation`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double) 
 
@@ -1336,11 +1336,11 @@ The following initial condition parameterizations are supported:
 
 * [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array double).
 
-* [SU] `"IC: Uniform Concentration`" [list] requires `"Value`" and `"Free Ion Guess`", or `"Constraint`"
+* [SU] `"IC: Uniform Concentration`" [list] requires `"Value`" and `"Free Ion Guess`", OR `"Geochemical Condition`"
 
-  * `"Value`" [double]  total component concentration in units of molarity (moles/volume)
-  * `"Free Ion Guess`" [double]  estimate of the free ion concentration for this solute; used to help convergence of the initial solution of the chemistry.
-  * `"Geochemical Condition`" [String]:  Name of constraint in the input file of the geochemistry engine (listed in the `"Chemistry`" list).
+  * [SU] `"Value`" [double]  total component concentration in units of molarity (moles/volume)
+  * [SU] `"Free Ion Guess`" [double]  estimate of the free ion concentration for this solute; used to help convergence of the initial solution of the chemistry.
+  * [SU] `"Geochemical Condition`" [String]: name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
 
 The following boundary condition parameterizations are supported:
 
@@ -1384,12 +1384,12 @@ The following boundary condition parameterizations are supported:
 
 * [S] `"BC: Zero Gradient`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double] or `"Constraints`"
+* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string], and `"Values`" [Array double] OR `"Geochemical Condition`" if Alquimia provides boundary condition data.
 
   * `"Times`" [Array double], list of times used by the time function.
   * `"Time Functions`" [Array string], list of functions for the time intervals listed in `"Times`"
   * `"Values`" [Array double], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
-  * `"Geochemical Condition`" [String]: Name of constraint in the input file of the geochemistry engine (listed in the `"Chemistry`" list).
+  * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
 
 The following source parameterizations are supported.
 
@@ -1399,19 +1399,19 @@ The following source parameterizations are supported.
 
 * [U] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [U] `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [U] `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array double], `"Time Functions`" [Array string],  and `"Values`" [Array double] OR `"Geochemical Condition`"
 
   * `"Times`" [Array double], list of times used by the time function.
   * `"Time Functions`" [Array string], list of functions for the time intervals listed in `"Times`"
   * `"Values`" [Array double], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
-  * `"Geochemical Condition`" [String]: Name of constraint in the input file of the geochemistry engine (listed in the `"Chemistry`" list).
+  * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
 
-* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array double], `"Time Functions`" [Array string], and `"Values`" [Array double] OR `"Geochemical Condition`"
 
   * `"Times`" [Array double], list of times used by the time function.
   * `"Time Functions`" [Array string], list of functions for the time intervals listed in `"Times`"
   * `"Values`" [Array double], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
-  * `"Geochemical Condition`" [String]: Name of constraint in the input file of the geochemistry engine (listed in the `"Chemistry`" list).
+  * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
 
 
 Time Functions
@@ -1459,6 +1459,15 @@ The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"
   * [SU] `"Engine`" [string] The name of the backend chemistry engine (e.g. `"PFloTran`").
   * [SU] `"Engine Input File`" [string] The file specifying the input for the backend chemistry engine.
   * [SU] `"Max Time Step (s)`" [double] The maximum time step that chemistry will allow the MPC to take.
+
+  * [SU] `"Geochemical Conditions`" [list] (*optional*, allows definition of geochemical conditions within XML.)
+    * [SU] `"(condition name)`" [list] The geochemical condition, defined in terms of aqueous and mineral constraints.
+      * [SU] `"(aqueous constraint name)`" [list] Entry for an aqueous constraint involving a species and/or a mineral.
+        * [SU] `"(type)`" [double] The type of aqueous constraint (total_aqueous, total_sorb, free, mineral, gas, pH, charge) and its associated value.
+        * [SU] `"species`" [string] The name of any associated mineral species for a mineral constraint.
+      * [SU] `"(mineral species)`" [list] Entry for a mineral constraint mentioned in an aqueous constraint.
+        * [SU] `"Volume Fraction`" [double] Volume fraction for the mineral.
+        * [SU] `"Specific Surface Area`" [double] Specific surface area for the mineral.
 
 * [SU] `"Chemistry`" [list] (*Native `"Amanzi`" chemistry process kernel*)
 
