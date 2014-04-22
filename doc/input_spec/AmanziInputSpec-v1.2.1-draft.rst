@@ -1326,7 +1326,7 @@ Finally, we specify sources.  Support is provided for specifying sources on the 
 
 The following initial condition parameterizations are supported:
 
-* [SU] `"IC: Uniform Saturation`" requires `"Value`" [double]
+* [SU] `"IC: Uniform Saturation`" requires `"Value`" [double] OR `"Geochemical Condition`" [string] if Alquimia is providing initial conditions.
 
 * [U] `"IC: Linear Saturation`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double) 
 
@@ -1340,6 +1340,7 @@ The following initial condition parameterizations are supported:
 
   * [SU] `"Value`" [double]  total component concentration in units of molarity (moles/volume)
   * [SU] `"Free Ion Guess`" [double]  estimate of the free ion concentration for this solute; used to help convergence of the initial solution of the chemistry.
+  * [SU] `"Geochemical Condition`" [string]  name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
 
 The following boundary condition parameterizations are supported:
 
@@ -1383,7 +1384,7 @@ The following boundary condition parameterizations are supported:
 
 * [S] `"BC: Zero Gradient`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double] OR `"Geochemical Condition`" if Alquimia provides boundary condition data.
 
 The following source parameterizations are supported.
 
@@ -1442,6 +1443,15 @@ The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"
   * [SU] `"Engine`" [string] The name of the backend chemistry engine (e.g. `"PFloTran`").
   * [SU] `"Engine Input File`" [string] The file specifying the input for the backend chemistry engine.
   * [SU] `"Max Time Step (s)`" [double] The maximum time step that chemistry will allow the MPC to take.
+
+  * [SU] `"Geochemical Conditions`" [list] (*optional*, allows definition of geochemical conditions within XML.)
+    * [SU] `"(condition name)`" [list] The geochemical condition, defined in terms of aqueous and mineral constraints.
+      * [SU] `"(aqueous constraint name)`" [list] Entry for an aqueous constraint involving a species and/or a mineral.
+        * [SU] `"(type)`" [double] The type of aqueous constraint (total_aqueous, total_sorb, free, mineral, gas, pH, charge) and its associated value.
+        * [SU] `"species`" [string] The name of any associated mineral species for a mineral constraint.
+      * [SU] `"(mineral species)`" [list] Entry for a mineral constraint mentioned in an aqueous constraint.
+        * [SU] `"Volume Fraction`" [double] Volume fraction for the mineral.
+        * [SU] `"Specific Surface Area`" [double] Specific surface area for the mineral.
 
 * [SU] `"Chemistry`" [list] (*Native `"Amanzi`" chemistry process kernel*)
 
