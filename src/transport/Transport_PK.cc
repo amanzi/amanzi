@@ -20,7 +20,7 @@
 
 #include "Mesh.hh"
 #include "errors.hh"
-#include "tabular-function.hh"
+#include "TabularFunction.hh"
 #include "GMVMesh.hh"
 
 #include "Explicit_TI_RK.hh"

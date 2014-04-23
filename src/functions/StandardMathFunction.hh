@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-#include "function.hh"
+#include "Function.hh"
 
 namespace Amanzi {
 

@@ -1,11 +1,10 @@
-#include "color-function-factory.hh"
-
 #include <iostream>
 #include <sstream>
 #include <iomanip>
 
-#include "color-function.hh"
-#include "grid-color-function.hh"
+#include "ColorFunctionFactory.hh"
+#include "ColorFunction.hh"
+#include "GridColorFunction.hh"
 #include "errors.hh"
 
 namespace Amanzi {

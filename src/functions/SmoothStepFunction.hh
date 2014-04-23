@@ -1,7 +1,7 @@
 #ifndef AMANZI_SMOOTH_STEP_FUNCTION_HH_
 #define AMANZI_SMOOTH_STEP_FUNCTION_HH_
 
-#include "function.hh"
+#include "Function.hh"
 
 namespace Amanzi {
 

@@ -3,11 +3,11 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "function-factory.hh"
-#include "constant-function.hh"
-#include "smooth-step-function.hh"
-#include "tabular-function.hh"
-#include "polynomial-function.hh"
+#include "FunctionFactory.hh"
+#include "ConstantFunction.hh"
+#include "SmoothStepFunction.hh"
+#include "TabularFunction.hh"
+#include "PolynomialFunction.hh"
 #include "errors.hh"
 
 using namespace Amanzi;

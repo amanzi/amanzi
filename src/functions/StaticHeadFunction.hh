@@ -5,7 +5,7 @@ namespace Amanzi {
 
 #include <memory>
 
-#include "function.hh"
+#include "Function.hh"
 
 class StaticHeadFunction : public Function {
  public:

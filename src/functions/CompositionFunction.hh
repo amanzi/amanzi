@@ -8,7 +8,7 @@
 
 #include <memory>
 
-#include "function.hh"
+#include "Function.hh"
 
 namespace Amanzi {
 

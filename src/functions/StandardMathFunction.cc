@@ -1,5 +1,6 @@
 #include <math.h>
-#include "standard-math-function.hh"
+
+#include "StandardMathFunction.hh"
 #include "errors.hh"
 
 namespace Amanzi {

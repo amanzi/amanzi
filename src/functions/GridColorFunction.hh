@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "color-function.hh"
+#include "ColorFunction.hh"
 
 namespace Amanzi {
 

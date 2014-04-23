@@ -10,7 +10,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "MultiFunction.hh"
-#include "constant-function.hh"
+#include "ConstantFunction.hh"
 #include "composite_vector_function.hh"
 #include "errors.hh"
 

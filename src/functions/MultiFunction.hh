@@ -14,8 +14,8 @@ Function from R^d to R^n.
 
 #include <vector>
 #include "Teuchos_RCP.hpp"
-#include "function.hh"
-#include "function-factory.hh"
+#include "Function.hh"
+#include "FunctionFactory.hh"
 
 namespace Amanzi {
 

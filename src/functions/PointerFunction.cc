@@ -1,4 +1,4 @@
-#include "pointer-function.hh"
+#include "PointerFunction.hh"
 
 namespace Amanzi {
 

@@ -1,11 +1,11 @@
+#include <iostream>
+
 #include "UnitTest++.h"
 #include "TestReporterStdout.h"
 
-#include "constant-function.hh"
+#include "ConstantFunction.hh"
 #include "MultiFunction.hh"
 #include "errors.hh"
-
-#include <iostream>
 
 using namespace Amanzi;
 

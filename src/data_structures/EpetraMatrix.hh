@@ -21,13 +21,15 @@ used with solvers.
 namespace Amanzi {
 
 class EpetraMatrix {
-
  public:
   // Vector space of the Matrix's domain.
   virtual const Epetra_BlockMap& DomainMap() const = 0;
 
   // Vector space of the Matrix's range.
   virtual const Epetra_BlockMap& RangeMap() const = 0;
+
+  // Virtual copy constructor.
+  virtual Teuchos::RCP<EpetraMatrix> Clone() const = 0;
 
   // Apply matrix, b <-- Ax, returns ierr
   virtual int Apply(const Epetra_Vector& x,
@@ -36,9 +38,8 @@ class EpetraMatrix {
   // Apply the inverse, x <-- A^-1 b, returns ierr
   virtual int ApplyInverse(const Epetra_Vector& b,
                             Epetra_Vector& x) const = 0;
-
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

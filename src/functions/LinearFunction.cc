@@ -1,4 +1,4 @@
-#include "linear-function.hh"
+#include "LinearFunction.hh"
 #include "errors.hh"
 
 namespace Amanzi {

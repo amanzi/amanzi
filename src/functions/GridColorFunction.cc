@@ -1,6 +1,6 @@
-#include "grid-color-function.hh"
-
 #include <algorithm>
+
+#include "GridColorFunction.hh"
 
 namespace Amanzi {
 

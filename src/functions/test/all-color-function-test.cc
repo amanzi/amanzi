@@ -1,9 +1,9 @@
+#include <vector>
+
 #include "UnitTest++.h"
 #include "TestReporterStdout.h"
 
-#include <vector>
-
-#include "grid-color-function.hh"
+#include "GridColorFunction.hh"
 
 using namespace Amanzi;
 
