@@ -212,12 +212,8 @@ pnpoly(const Array<Real>& vertx,
 PolygonRegion::PolygonRegion (const std::string& r_name,
                               const std::string& r_purpose,
                               const Array<Real>& v1vector,
-                              const Array<Real>& v2vector
-#if BL_SPACEDIM == 3
-                              , const PLANE&     _plane,
-                              const Array<Real>& _extent
-#endif
-  ) : Region(r_name,r_purpose,"polygon")
+                              const Array<Real>& v2vector)
+  : Region(r_name,r_purpose,"polygon")
 {
   BL_ASSERT(v1vector.size()==v2vector.size());
   int N = v1vector.size();
@@ -227,13 +223,6 @@ PolygonRegion::PolygonRegion (const std::string& r_name,
     vector1[i] = v1vector[i];
     vector2[i] = v2vector[i];
   }
-#if BL_SPACEDIM == 3
-  plane = _plane;
-  extent.resize(2);
-  for (int i=0; i<2; ++i) {
-    extent[i] = _extent[i];
-  }
-#endif
 }
 
 
@@ -252,6 +241,44 @@ PolygonRegion::print(std::ostream& os) const
     os << "(" << vector1[i] << ", " << vector2[i] << ") ";
   }
   os << '\n';
+  return os;
+}
+
+CircleRegion::CircleRegion (const std::string& r_name,
+                            const std::string& r_purpose,
+                            const Array<Real>& r_center,
+                            Real               r_radius)
+  : Region(r_name,r_purpose,"circle")
+{
+  BL_ASSERT(r_center.size()==BL_SPACEDIM);
+  center.resize(BL_SPACEDIM);
+  for (int i=0; i<BL_SPACEDIM; ++i) {
+    center[i] = r_center[i];
+  }
+  rsqrd = r_radius * r_radius;
+}
+
+
+bool
+CircleRegion::inRegion (const Array<Real>& x) const
+{
+  Real this_rsqrd = 0;
+  for (int i=0; i<BL_SPACEDIM; ++i) {
+    Real d = x[i] - center[i];
+    this_rsqrd += d*d;
+  }
+  return this_rsqrd <= rsqrd;
+}
+
+std::ostream&
+CircleRegion::print(std::ostream& os) const
+{
+  Region::print(os);
+  os << "    circle radius, center: " << std::sqrt(rsqrd) << "(";
+  for (int i=0; i<center.size(); ++i) {
+    os << center[i] << " ";
+  }
+  os << ")\n";
   return os;
 }
 

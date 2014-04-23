@@ -186,6 +186,22 @@ public:
   Array<Real> vector2;
 };
 
+class CircleRegion : public Region
+{
+public: 
+  CircleRegion (const std::string&   r_name,
+                const std::string&   r_purpose,
+                const Array<Real>&   r_center,
+                Real                 radius);
+  virtual ~CircleRegion() {}
+
+  virtual bool inRegion (const Array<Real>& x) const;
+  virtual std::ostream& print (std::ostream& os) const;
+
+  Array<Real> center;
+  Real rsqrd;
+};
+
 #else
 
 class SweptPolygonRegion : public Region

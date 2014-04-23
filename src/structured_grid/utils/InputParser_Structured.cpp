@@ -1169,6 +1169,29 @@ namespace Amanzi {
       std::string purpose = underscore(PMAMR::RpurposeDEF[iPurpose]);
       rsublist.set("purpose",purpose);
     }
+    void convert_Region_Circle(const ParameterList& rslist,
+                               const std::string&   rlabel,
+                               ParameterList&       rsublist)
+    {
+      const std::string C_str = "Center";
+      const std::string R_str = "Radius";
+      const std::string Reg_str = "Region: Circle";
+
+      const ParameterList& rsslist = rslist.sublist(rlabel);
+      const Array<double>& c = rsslist.get<Array<double> >(C_str);
+      double r= rsslist.get<double>(R_str);
+      if (c.size() < BL_SPACEDIM) {
+        MyAbort("\""+C_str+"\" length must match problem dimensions "+
+                "for \""+Reg_str+"\" region \"" + rlabel);
+      }
+          
+      rsublist.set<Array<double> >("center",c);
+      rsublist.set<double>("radius",r);
+      rsublist.set("type", "circle");
+      int iPurpose = 6;
+      std::string purpose = underscore(PMAMR::RpurposeDEF[iPurpose]);
+      rsublist.set("purpose",purpose);
+    }
 #else
     void convert_Region_SweptPolygon(const ParameterList& rslist,
                                      const std::string&   rlabel,
@@ -1343,6 +1366,9 @@ namespace Amanzi {
 #if BL_SPACEDIM==2
             else if (rlabel=="Region: Polygon") {
               convert_Region_Polygon(rslist,rlabel,rsublist);
+            }
+            else if (rlabel=="Region: Circle") {
+              convert_Region_Circle(rslist,rlabel,rsublist);
             }
 #else
             else if (rlabel=="Region: Swept Polygon") {
