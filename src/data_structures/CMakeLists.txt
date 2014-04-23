@@ -81,6 +81,7 @@ if (BUILD_TESTS)
 		          test/Main.cc 
 			  test/test_composite_vector.cc
 			  test/test_tree_vector.cc
+			  test/test_vandelay.cc
 #			  test/test_thyra_wrappers.cc
 		    LINK_LIBS
 		             data_structures
