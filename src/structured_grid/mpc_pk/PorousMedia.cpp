@@ -1582,7 +1582,7 @@ PorousMedia::richard_init_to_steady()
           std::cout << "Recording solve details into: \"" << tmp_record_file << "\"" << std::endl;
         }
 
-        if (num_active_levels > 1) {
+        if (num_active_levels > 1 && grid_seq_init_fine != finest_level) {
           dt *= new_level_dt_factor[num_active_levels-2];
         }
 
