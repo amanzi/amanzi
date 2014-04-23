@@ -3,7 +3,10 @@ import base
 import parameter
 from amanzi_xml.utils import parser
 from amanzi_xml.utils.parser import ValidationLevel
-import amanzi_xml.utils.io as io
+from amanzi_xml.utils import io
+from amanzi_xml.utils import errors
+from amanzi_xml.utils import search
+
 
 class ParameterList(base.TeuchosBaseXML):
     """Base class for all Teuchos::ParameterList objects
@@ -128,7 +131,7 @@ class ParameterList(base.TeuchosBaseXML):
     def isElement(self, name):
         try:
             val = self.getElement(name)
-        except StopIteration:
+        except errors.MissingXMLError:
             return False
         else:
             return True
@@ -137,7 +140,7 @@ class ParameterList(base.TeuchosBaseXML):
         """Get a sublist of with the given name, creating if necessary."""
         try:
             val = self.getElement(name)
-        except StopIteration:
+        except errors.MissingXMLError:
             self.append(ParameterList(name))
             return self.getElement(name)
         else:
@@ -147,8 +150,8 @@ class ParameterList(base.TeuchosBaseXML):
     def setParameter(self, name, ptype, val):
         """Set parameter name of type ptype to value, creating a new Parameter if necessary."""
         try:
-            param = (el for el in self if el.get("name") == name).next()
-        except StopIteration:
+            param = self.getElement(name)
+        except errors.MissingXMLError:
             pass
         else:
             assert ptype == param.get('type')
@@ -159,8 +162,10 @@ class ParameterList(base.TeuchosBaseXML):
 
     def getElement(self, name):
         """Get Parameter/sublist from the ParameterList"""
-        return (el for el in self if el.get("name") == name).next()
+        return search.childByName(self, name)
 
+    def pop(self, name):
+        return self.getchildren().pop(self.getchildren().index(self.getElement(name)))
 
 # register
 parser.objects['ParameterList'] = ParameterList
