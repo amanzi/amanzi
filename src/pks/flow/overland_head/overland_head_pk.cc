@@ -113,7 +113,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
   S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
 
-  std::string method_name = plist_->get<string>("upwind conductivity method",
+  std::string method_name = plist_->get<std::string>("upwind conductivity method",
           "upwind with total flux");
   if (method_name == "cell centered") {
     upwind_method_ = Operators::UPWIND_METHOD_CENTERED;
@@ -899,7 +899,8 @@ void OverlandHeadFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
 };
 
 
-bool OverlandHeadFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+bool OverlandHeadFlow::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
+                                       Teuchos::RCP<TreeVector> u) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Modifying predictor:" << std::endl;
@@ -920,7 +921,7 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // update the rel perm according to the scheme of choice
-  changed_solution();
+  ChangedSolution();
   UpdatePermeabilityData_(S_next_.ptr());
 
   // update boundary conditions

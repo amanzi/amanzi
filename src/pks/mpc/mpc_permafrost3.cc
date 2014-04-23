@@ -212,15 +212,15 @@ MPCPermafrost3::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
 
 // -- computes the non-linear functional g = g(t,u,udot)
-//    By default this just calls each sub pk fun().
+//    By default this just calls each sub pk Functional().
 void
-MPCPermafrost3::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+MPCPermafrost3::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // propagate updated info into state
   solution_to_state(u_new, S_next_);
 
   // Evaluate the surface flow residual
-  surf_flow_pk_->fun(t_old, t_new, u_old->SubVector(2),
+  surf_flow_pk_->Functional(t_old, t_new, u_old->SubVector(2),
                      u_new->SubVector(2), g->SubVector(2));
 
   // The residual of the surface flow equation provides the mass flux from
@@ -230,7 +230,7 @@ MPCPermafrost3::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   source = *g->SubVector(2)->Data()->ViewComponent("cell",false);
 
   // Evaluate the subsurface residual, which uses this flux as a Neumann BC.
-  domain_flow_pk_->fun(t_old, t_new, u_old->SubVector(0),
+  domain_flow_pk_->Functional(t_old, t_new, u_old->SubVector(0),
                        u_new->SubVector(0), g->SubVector(0));
 
   // All surface to subsurface fluxes have been taken by the subsurface.
@@ -238,7 +238,7 @@ MPCPermafrost3::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   // Now that mass fluxes are done, do energy.
   // Evaluate the surface energy residual
-  surf_energy_pk_->fun(t_old, t_new, u_old->SubVector(3),
+  surf_energy_pk_->Functional(t_old, t_new, u_old->SubVector(3),
                      u_new->SubVector(3), g->SubVector(3));
 
   // The residual of the surface energy equation provides the diffusive energy
@@ -249,7 +249,7 @@ MPCPermafrost3::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   esource = *g->SubVector(3)->Data()->ViewComponent("cell",false);
   
   // Evaluate the subsurface energy residual.
-  domain_energy_pk_->fun(t_old, t_new, u_old->SubVector(1),
+  domain_energy_pk_->Functional(t_old, t_new, u_old->SubVector(1),
                      u_new->SubVector(1), g->SubVector(1));
 
   // All energy fluxes have been taken by the subsurface.
@@ -258,7 +258,7 @@ MPCPermafrost3::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
 // -- Apply preconditioner
 void
-MPCPermafrost3::precon(Teuchos::RCP<const TreeVector> r,
+MPCPermafrost3::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
                        Teuchos::RCP<TreeVector> Pr) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -324,7 +324,7 @@ MPCPermafrost3::precon(Teuchos::RCP<const TreeVector> r,
     *Pu_std = *domain_Pu_tv;
 
     // call EWC, which does Pu_p <-- Pu_p_std + dPu_p
-    sub_ewc_->precon(domain_u_tv, domain_Pu_tv);
+    sub_ewc_->ApplyPreconditioner(domain_u_tv, domain_Pu_tv);
 
     // calculate dPu_lambda from dPu_p
     Pu_std->Update(1.0, *domain_Pu_tv, -1.0);
@@ -368,18 +368,18 @@ MPCPermafrost3::precon(Teuchos::RCP<const TreeVector> r,
 
 // -- Update the preconditioner.
 void
-MPCPermafrost3::update_precon(double t,
+MPCPermafrost3::UpdatePreconditioner(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
   // Create the on-diagonal block PCs
-  //  StrongMPC<PKPhysicalBDFBase>::update_precon(t,up,h);
-  sub_pks_[2]->update_precon(t, up->SubVector(2), h);
-  sub_pks_[3]->update_precon(t, up->SubVector(3), h);
-  sub_pks_[0]->update_precon(t, up->SubVector(0), h);
-  sub_pks_[1]->update_precon(t, up->SubVector(1), h);
+  //  StrongMPC<PKPhysicalBDFBase>::UpdatePreconditioner(t,up,h);
+  sub_pks_[2]->UpdatePreconditioner(t, up->SubVector(2), h);
+  sub_pks_[3]->UpdatePreconditioner(t, up->SubVector(3), h);
+  sub_pks_[0]->UpdatePreconditioner(t, up->SubVector(0), h);
+  sub_pks_[1]->UpdatePreconditioner(t, up->SubVector(1), h);
 
   // Add the off-diagonal blocks.
   S_next_->GetFieldEvaluator("water_content")
@@ -430,13 +430,14 @@ MPCPermafrost3::update_precon(double t,
 
   // ewc precon
   if (precon_type_ == PRECON_EWC) {
-    sub_ewc_->update_precon(t, up, h);
+    sub_ewc_->UpdatePreconditioner(t, up, h);
   }
 }
 
 // -- Modify the predictor.
 bool
-MPCPermafrost3::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+MPCPermafrost3::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
+        Teuchos::RCP<TreeVector> u) {
   bool modified = false;
 
   // Make a new TreeVector that is just the subsurface values (by pointer).
@@ -445,11 +446,11 @@ MPCPermafrost3::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   sub_u->PushBack(u->SubVector(1));
 
   // Subsurface EWC, modifies cells
-  modified |= sub_ewc_->modify_predictor(h,sub_u);
+  modified |= sub_ewc_->ModifyPredictor(h,sub_u);
 
   // Calculate consistent faces
-  modified |= domain_flow_pk_->modify_predictor(h, u->SubVector(0));
-  modified |= domain_energy_pk_->modify_predictor(h, u->SubVector(1));
+  modified |= domain_flow_pk_->ModifyPredictor(h, u0->SubVector(0), u->SubVector(0));
+  modified |= domain_energy_pk_->ModifyPredictor(h, u0->SubVector(1), u->SubVector(1));
 
   // Copy consistent faces to surface
   if (modified) {
@@ -473,17 +474,17 @@ MPCPermafrost3::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
     //  }
 
   // Calculate consistent surface faces
-  sub_pks_[2]->changed_solution();
-  sub_pks_[3]->changed_solution();
-  modified |= surf_flow_pk_->modify_predictor(h, u->SubVector(2));
-  modified |= surf_energy_pk_->modify_predictor(h, u->SubVector(3));
+  sub_pks_[2]->ChangedSolution();
+  sub_pks_[3]->ChangedSolution();
+  modified |= surf_flow_pk_->ModifyPredictor(h, u0->SubVector(2), u->SubVector(2));
+  modified |= surf_energy_pk_->ModifyPredictor(h, u0->SubVector(3), u->SubVector(3));
 
   return modified;
 }
 
 // -- Modify the correction.
 bool
-MPCPermafrost3::modify_correction(double h, Teuchos::RCP<const TreeVector> r,
+MPCPermafrost3::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -590,7 +591,7 @@ MPCPermafrost3::UpdateConsistentFaceCorrectionWater_(const Teuchos::Ptr<const Tr
   Teuchos::RCP<const TreeVector> tv_p;
   Teuchos::RCP<const TreeVector> tv_T;
   if (u == Teuchos::null) {
-    // This method is called by the precon(), which does not have access to u.
+    // This method is called by the ApplyPreconditioner(), which does not have access to u.
     Teuchos::RCP<TreeVector> tv_p_tmp = Teuchos::rcp(new TreeVector());
     tv_p_tmp->SetData(cv_p);
     tv_p = tv_p_tmp;
@@ -599,25 +600,25 @@ MPCPermafrost3::UpdateConsistentFaceCorrectionWater_(const Teuchos::Ptr<const Tr
     tv_T_tmp->SetData(cv_T);
     tv_T = tv_T_tmp;
   } else {
-    // This method is called by modify_correction(), which does have access to u.
+    // This method is called by ModifyCorrection(), which does have access to u.
     tv_p = u->SubVector(2);
     tv_T = u->SubVector(3);
   }
 
   // Calculate/get old ponded depth, first ensuring PC didn't result in inadmissible solution
-  if (sub_pks_[2]->is_admissible(tv_p) &&
-      sub_pks_[3]->is_admissible(tv_T)) {
+  if (sub_pks_[2]->IsAdmissible(tv_p) &&
+      sub_pks_[3]->IsAdmissible(tv_T)) {
     S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
     *surf_dh->ViewComponent("cell",false) = *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell",false);
 
     // new ponded depth (again, checking admissibility)
     cv_p->ViewComponent("cell",false)->Update(-1., surf_dp_c, 1.);
     cv_T->ViewComponent("cell",false)->Update(-1., surf_dT_c, 1.);
-    sub_pks_[2]->changed_solution();
-    sub_pks_[3]->changed_solution();
+    sub_pks_[2]->ChangedSolution();
+    sub_pks_[3]->ChangedSolution();
 
-    if (sub_pks_[2]->is_admissible(tv_p) &&
-	sub_pks_[3]->is_admissible(tv_T)) {
+    if (sub_pks_[2]->IsAdmissible(tv_p) &&
+	sub_pks_[3]->IsAdmissible(tv_T)) {
       S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
 
       // put delta ponded depth into surf_dh_cell
@@ -646,10 +647,10 @@ MPCPermafrost3::UpdateConsistentFaceCorrectionWater_(const Teuchos::Ptr<const Tr
     // revert solution so we don't break things
     S_next_->GetFieldData("surface_pressure",sub_pks_[2]->name())
       ->ViewComponent("cell",false)->Update(1., surf_dp_c, 1.);
-    sub_pks_[2]->changed_solution();
+    sub_pks_[2]->ChangedSolution();
     S_next_->GetFieldData("surface_temperature",sub_pks_[3]->name())
       ->ViewComponent("cell",false)->Update(1., surf_dT_c, 1.);
-    sub_pks_[3]->changed_solution();
+    sub_pks_[3]->ChangedSolution();
   }
 }
 

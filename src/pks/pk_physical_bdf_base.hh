@@ -40,7 +40,7 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
 
   // Default implementations of BDFFnBase methods.
   // -- Compute a norm on u-du and return the result.
-  virtual double enorm(Teuchos::RCP<const TreeVector> u,
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
 
   // new virtual set_states() to also get the primary field evaulator.
@@ -51,7 +51,7 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   // -- Experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in
   //    state.
-  virtual void changed_solution();
+  virtual void ChangedSolution();
 
   // PC operator access
   Teuchos::RCP<Operators::MatrixMFD> preconditioner() { return mfd_preconditioner_; }

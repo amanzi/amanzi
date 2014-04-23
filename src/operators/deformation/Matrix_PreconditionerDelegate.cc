@@ -159,7 +159,7 @@ void Matrix_PreconditionerDelegate::InitializeFromPlist_() {
   // which preconditioner to use
   prec_method_ = PREC_METHOD_NULL;
 
-  std::string precmethodstring = plist_.get<string>("preconditioner");
+  std::string precmethodstring = plist_.get<std::string>("preconditioner");
 
   if (precmethodstring == "ML") {
     prec_method_ = TRILINOS_ML;

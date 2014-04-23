@@ -17,7 +17,7 @@ namespace Operators {
 
 Teuchos::RCP<Advection> AdvectionFactory::create(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const AmanziMesh::Mesh> mesh) {
-  std::string method = plist.get<string>("Advection method");
+  std::string method = plist.get<std::string>("Advection method");
 
   if (method == "donor upwind") {
     return Teuchos::rcp(new AdvectionDonorUpwind(plist, mesh));

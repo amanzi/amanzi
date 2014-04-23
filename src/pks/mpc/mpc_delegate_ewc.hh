@@ -35,9 +35,9 @@ class MPCDelegateEWC {
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
   virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
-  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
-  virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
-  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual bool ModifyPredictor(double h, Teuchos::RCP<TreeVector> up);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
+  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   void set_model(const Teuchos::RCP<EWCModel>& model) { model_ = model; }
 

@@ -89,7 +89,7 @@ int EWCModelBase::InverseEvaluate(double energy, double wc,
 
   while (!converged) {
     // calculate the update size
-    double detJ = jac.determinant();
+    double detJ = jac.Det();
     AmanziGeometry::Point correction;
 
     if (std::abs(detJ) < 1.e-20) {
@@ -102,7 +102,7 @@ int EWCModelBase::InverseEvaluate(double energy, double wc,
     }
 
 
-    jac.inverse();
+    jac.Inverse();
     correction = jac * res;
 
     // cap the correction

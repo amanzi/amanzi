@@ -85,7 +85,7 @@ void PKPhysicalBase::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
 
 // -----------------------------------------------------------------------------
 // Experimental approach -- we must pull out S_next_'s solution_evaluator_ to
-// stay current for changed_solution()
+// stay current for ChangedSolution()
 // -----------------------------------------------------------------------------
 void PKPhysicalBase::set_states(const Teuchos::RCP<const State>& S,
         const Teuchos::RCP<State>& S_inter,

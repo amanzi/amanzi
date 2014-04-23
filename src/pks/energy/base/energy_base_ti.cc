@@ -26,7 +26,7 @@ namespace Energy {
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -120,7 +120,7 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 // -----------------------------------------------------------------------------
 // Apply the preconditioner to u and return the result in Pu.
 // -----------------------------------------------------------------------------
-void EnergyBase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+void EnergyBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
 #if DEBUG_FLAG
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
@@ -140,7 +140,7 @@ void EnergyBase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVecto
 // -----------------------------------------------------------------------------
 // Update the preconditioner at time t and u = up
 // -----------------------------------------------------------------------------
-void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
@@ -218,7 +218,7 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
 };
 
 
-double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
+double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
