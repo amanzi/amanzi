@@ -44,6 +44,10 @@ def fixPorosity(xml):
         print "porosity is not compressible"
         return
 
+    if params.getchildren()[0].get("type") == "ParameterList":
+        print "porosity has already been fixed"
+        return
+
     comp_el = params.getchildren().pop()
     assert len(params.getchildren()) == 0
 
@@ -121,10 +125,10 @@ def _fixTIList(ti_list):
         migrate(nl_plist, old_pars, "max error growth factor")
         migrate(nl_plist, old_pars, "max divergent iterations")
         migrate(nl_plist, old_pars, "lag iterations")
-        nl_list.setParameter("modify correction", "bool", True)
+        nl_plist.setParameter("modify correction", "bool", True)
         migrate(nl_plist, old_pars, "monitor")
         migrate(nl_plist, old_pars, "monitor", "convergence monitor")
-        nl_list.setParameter("monitor", "string", "monitor residual")
+        nl_plist.setParameter("monitor", "string", "monitor residual")
 
 
     elif nl_solver == "NKA BT":
@@ -175,7 +179,7 @@ def _fixLinOp(itr):
         itr.setParameter("iterative method", "string", "nka")
         lo = itr.sublist("nka parameters")
         lo.setParameter("error tolerance", "double", 1.e-6)
-        lo.setParameter("maximum number of iterations", 20)
+        lo.setParameter("maximum number of iterations", "int", 20)
     else:
         itm = itr.getElement("iterative method").get("value")
         if itm == "nka":
@@ -207,6 +211,8 @@ def _fixDiffusion(diff, req_pc, req_face):
         try: diff.pop("preconditioner")
         except errors.MissingXMLError: pass
 
+    if diff.getElement("MFD method").get("value") == "two point flux":
+        diff.setParameter("MFD method", "string", "two point flux approximation")
 
 def fixSolvers(xml):
     for diff in search.generateElementByNamePath(xml, "Diffusion"):
