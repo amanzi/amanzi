@@ -15,7 +15,7 @@ namespace Energy {
 
 // AdvectionDiffusion is a BDFFnBase
 // computes the non-linear functional g = g(t,u,udot)
-void AdvectionDiffusion::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void AdvectionDiffusion::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                  Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   S_inter_->set_time(t_old);
   S_next_->set_time(t_new);
@@ -50,7 +50,7 @@ void AdvectionDiffusion::fun(double t_old, double t_new, Teuchos::RCP<TreeVector
 };
 
 // applies preconditioner to u and returns the result in Pu
-void AdvectionDiffusion::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+void AdvectionDiffusion::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   std::cout << "Precon application:" << std::endl;
   std::cout << "  u: " << (*u->Data())("cell",0) << " " << (*u->Data())("face",0) << std::endl;
   // preconditioner for accumulation only:
@@ -64,7 +64,7 @@ void AdvectionDiffusion::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<T
 
 
 // updates the preconditioner
-void AdvectionDiffusion::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
   S_next_->set_time(t);
   PKDefaultBase::solution_to_state(up, S_next_);
 

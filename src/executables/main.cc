@@ -10,7 +10,6 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
-#include "global_verbosity.hh"
 #include "VerboseObject_objs.hh"
 
 #include "dbc.hh"

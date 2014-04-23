@@ -20,10 +20,10 @@ OverlandHeadWaterContentEvaluator::OverlandHeadWaterContentEvaluator(Teuchos::Pa
 
   my_key_ = "surface_water_content";
   if (bar_) my_key_ += std::string("_bar");
-  my_key_ = plist_.get<string>("water content key", my_key_);
+  my_key_ = plist_.get<std::string>("water content key", my_key_);
 
   // my dependencies
-  pres_key_ = plist_.get<string>("pressure key", "surface_pressure");
+  pres_key_ = plist_.get<std::string>("pressure key", "surface_pressure");
   dependencies_.insert(pres_key_);
 
   //  dependencies_.insert(std::string("surface_cell_volume"));

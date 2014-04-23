@@ -28,21 +28,22 @@ class MPCCoupledWater : public StrongMPC<PKPhysicalBDFBase> {
                           const Teuchos::RCP<State>& S_next);
 
   // -- computes the non-linear functional g = g(t,u,udot)
-  //    By default this just calls each sub pk fun().
-  virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  //    By default this just calls each sub pk Functional().
+  virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // -- Apply preconditioner to u and returns the result in Pu.
-  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   // -- Update the preconditioner.
-  virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
 
   // -- Modify the predictor.
-  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
+  virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
+          Teuchos::RCP<TreeVector> u);
 
   // -- Modify the correction.
-  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> res,
+  virtual bool ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
           Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
  protected:

@@ -35,9 +35,9 @@ UnstructuredObservations::UnstructuredObservations(Teuchos::ParameterList observ
 
       observations.insert(std::pair
                           <std::string,Observable>(observations_plist_.name(i),
-                                  Observable(observable_plist.get<string>("state id"),
-                                          observable_plist.get<string>("region"),
-                                          observable_plist.get<string>("functional"),
+                                  Observable(observable_plist.get<std::string>("state id"),
+                                          observable_plist.get<std::string>("region"),
+                                          observable_plist.get<std::string>("functional"),
                                           times)));
     } else {
       Errors::Message m("Unstructured_observations: the Observation sublist contains an entry that is not a sublist!");

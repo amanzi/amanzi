@@ -138,7 +138,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   S->RequireField(uw_conductivity_key_, name_)->SetMesh(mesh_)->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField(uw_conductivity_key_,name_)->set_io_vis(false);
-  string method_name = plist_->get<string>("upwind conductivity method", "arithmetic mean");
+  std::string method_name = plist_->get<std::string>("upwind conductivity method", "arithmetic mean");
   if (method_name == "cell centered") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
             conductivity_key_, uw_conductivity_key_));
@@ -381,7 +381,7 @@ void EnergyBase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& t
 // -----------------------------------------------------------------------------
 // Check admissibility of the solution guess.
 // -----------------------------------------------------------------------------
-bool EnergyBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
+bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Checking admissibility..." << std::endl;
@@ -412,7 +412,9 @@ bool EnergyBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
 // -----------------------------------------------------------------------------
 // BDF takes a prediction step -- make sure it is physical and otherwise ok.
 // -----------------------------------------------------------------------------
-bool EnergyBase::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+bool EnergyBase::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
+        Teuchos::RCP<TreeVector> u) {
+
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Modifying predictor:" << std::endl;
@@ -425,7 +427,6 @@ bool EnergyBase::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   }
 
   return false;
-  //return PKPhysicalBDFBase::modify_predictor(h, u);
 }
 
 
@@ -441,7 +442,7 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
   UpdateBoundaryConditions_();
 
   // div K_e grad u
-  changed_solution();
+  ChangedSolution();
   bool update = UpdateConductivityData_(S_next_.ptr());
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(uw_conductivity_key_);

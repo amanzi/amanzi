@@ -48,7 +48,7 @@ void PKPhysicalBDFBase::initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 // Default enorm that uses an abs and rel tolerance to monitor convergence.
 // -----------------------------------------------------------------------------
-double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
+double PKPhysicalBDFBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -91,7 +91,7 @@ double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
 
 // -----------------------------------------------------------------------------
 // Experimental approach -- we must pull out S_next_'s solution_evaluator_ to
-// stay current for changed_solution()
+// stay current for ChangedSolution()
 // -----------------------------------------------------------------------------
 void PKPhysicalBDFBase::set_states(const Teuchos::RCP<const State>& S,
         const Teuchos::RCP<State>& S_inter,
@@ -108,7 +108,7 @@ void PKPhysicalBDFBase::set_states(const Teuchos::RCP<const State>& S,
 #else
   solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
 #endif
-  changed_solution();
+  ChangedSolution();
 };
 
 
@@ -117,7 +117,7 @@ void PKPhysicalBDFBase::set_states(const Teuchos::RCP<const State>& S,
 // integration scheme is changing the value of the solution in
 // state.
 // -----------------------------------------------------------------------------
-void PKPhysicalBDFBase::changed_solution() {
+void PKPhysicalBDFBase::ChangedSolution() {
   solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
 };
 

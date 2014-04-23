@@ -115,15 +115,15 @@ MPCCoupledWater::set_states(const Teuchos::RCP<const State>& S,
 
 
 // -- computes the non-linear functional g = g(t,u,udot)
-//    By default this just calls each sub pk fun().
+//    By default this just calls each sub pk Functional().
 void
-MPCCoupledWater::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+MPCCoupledWater::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // propagate updated info into state
   solution_to_state(u_new, S_next_);
 
   // Evaluate the surface flow residual
-  surf_flow_pk_->fun(t_old, t_new, u_old->SubVector(1),
+  surf_flow_pk_->Functional(t_old, t_new, u_old->SubVector(1),
                      u_new->SubVector(1), g->SubVector(1));
 
   // The residual of the surface flow equation provides the mass flux from
@@ -133,7 +133,7 @@ MPCCoupledWater::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   source = *g->SubVector(1)->Data()->ViewComponent("cell",false);
 
   // Evaluate the subsurface residual, which uses this flux as a Neumann BC.
-  domain_flow_pk_->fun(t_old, t_new, u_old->SubVector(0),
+  domain_flow_pk_->Functional(t_old, t_new, u_old->SubVector(0),
                        u_new->SubVector(0), g->SubVector(0));
 
   // All surface to subsurface fluxes have been taken by the subsurface.
@@ -142,7 +142,7 @@ MPCCoupledWater::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
 // -- Apply preconditioner to u and returns the result in Pu.
 void
-MPCCoupledWater::precon(Teuchos::RCP<const TreeVector> u,
+MPCCoupledWater::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> Pu) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -183,24 +183,25 @@ MPCCoupledWater::precon(Teuchos::RCP<const TreeVector> u,
 
 // -- Update the preconditioner.
 void
-MPCCoupledWater::update_precon(double t,
+MPCCoupledWater::UpdatePreconditioner(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
   // order important
-  surf_flow_pk_->update_precon(t, up->SubVector(1), h);
-  domain_flow_pk_->update_precon(t, up->SubVector(0), h);
+  surf_flow_pk_->UpdatePreconditioner(t, up->SubVector(1), h);
+  domain_flow_pk_->UpdatePreconditioner(t, up->SubVector(0), h);
 }
 
 // -- Modify the predictor.
 bool
-MPCCoupledWater::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+MPCCoupledWater::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
+        Teuchos::RCP<TreeVector> u) {
   bool modified = false;
 
   // Calculate consistent faces
-  modified = domain_flow_pk_->modify_predictor(h, u->SubVector(0));
+  modified = domain_flow_pk_->ModifyPredictor(h, u0->SubVector(0), u->SubVector(0));
 
   // Merge surface cells with subsurface faces
   if (modified) {
@@ -222,14 +223,14 @@ MPCCoupledWater::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   }
 
   // Calculate consistent surface faces
-  modified |= surf_flow_pk_->modify_predictor(h, u->SubVector(1));
+  modified |= surf_flow_pk_->ModifyPredictor(h, u0->SubVector(1), u->SubVector(1));
 
   return modified;
 }
 
 // -- Modify the correction.
 bool
-MPCCoupledWater::modify_correction(double h, Teuchos::RCP<const TreeVector> res,
+MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
   // dump to screen
@@ -334,9 +335,9 @@ MPCCoupledWater::UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const T
   cv_p->ViewComponent("cell",false)->Update(-1., surf_Pp_c, 1.);
   tv_p->SetData(cv_p);
 
-  sub_pks_[1]->changed_solution();
+  sub_pks_[1]->ChangedSolution();
 
-  if (sub_pks_[1]->is_admissible(tv_p)) {
+  if (sub_pks_[1]->IsAdmissible(tv_p)) {
     S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
 
     // put delta ponded depth into surf_Ph_cell
@@ -365,7 +366,7 @@ MPCCoupledWater::UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const T
   // revert solution so we don't break things
   S_next_->GetFieldData("surface_pressure",sub_pks_[1]->name())
       ->ViewComponent("cell",false)->Update(1., surf_Pp_c, 1.);
-  sub_pks_[1]->changed_solution();
+  sub_pks_[1]->ChangedSolution();
 }
 
 
