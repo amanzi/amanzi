@@ -149,6 +149,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     S->CheckAllFieldsInitialized();
 
     /* create Richards process kernel */
+// S->GetFieldData("pressure", "state")->PutScalar(0.0);
     RPK->InitPK();
     RPK->InitSteadyState(0.0, 0.001);
     RPK->AdvanceToSteadyState(0.0, 0.001);
