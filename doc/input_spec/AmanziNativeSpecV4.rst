@@ -1371,8 +1371,8 @@ preconditioner and Hypre BoomerAMG preconditioner. Here is an example:
      <ParameterList name="Preconditoners">
        <ParameterList name="Trilinos ML">
           <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
-          <Parameter name="type" type="string" value="trilinos ml"/>
-          <ParameterList name="ML Parameters">
+          <Parameter name="type" type="string" value="ml"/>
+          <ParameterList name="ml parameters">
             ... 
          </ParameterList>
        </ParameterList>
@@ -1380,7 +1380,7 @@ preconditioner and Hypre BoomerAMG preconditioner. Here is an example:
        <ParameterList name="Hypre AMG">
           <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
           <Parameter name="type" type="string" value="boomer amg"/>
-          <ParameterList name="BoomerAMG Parameters">
+          <ParameterList name="boomer amg parameters">
             ...
           </ParameterList>
        </ParameterList>
@@ -1388,14 +1388,20 @@ preconditioner and Hypre BoomerAMG preconditioner. Here is an example:
        <ParameterList name="Block ILU">
           <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
           <Parameter name="type" type="string" value="block ilu"/>
-          <ParameterList name="Block ILU Parameters">
+          <ParameterList name="block ilu parameters">
             ...
           </ParameterList>
        </ParameterList>
      </ParameterList>
 
-Names `"Trilinos ML`" and `"Hypre AMG`" are selected by the user.
+Names `"Trilinos ML`", `"Hypre AMG`", and `"Block ILU`" are choosen by the user.
 They can be used by a process kernel lists to define a preconditioner.
+
+* `"type`" [string] defines preconditioner name.
+
+* `"xxx parameters`" [sublist] provides parameters for the preconditioner specified 
+  by variable `"type`".
+ 
 
 Hypre AMG
 ---------
@@ -1404,7 +1410,7 @@ Internal parameters of Boomer AMG includes
 
 .. code-block:: xml
 
-   <ParameterList name="BoomerAMG Parameters">
+   <ParameterList name="boomer amg parameters">
      <Parameter name="tolerance" type="double" value="0.0"/>
      <Parameter name="smoother sweeps" type="int" value="3"/>
      <Parameter name="cycle applications" type="int" value="5"/>
@@ -1431,7 +1437,7 @@ Internal parameters of Trilinos ML includes
 
 .. code-block:: xml
 
-   <ParameterList name="ML Parameters">
+   <ParameterList name="ml parameters">
      <Parameter name="ML output" type="int" value="0"/>
      <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
      <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
@@ -1459,10 +1465,10 @@ The internal parameters of the block ILU are as follows:
 
 .. code-block:: xml
 
-   <ParameterList name="Block ILU Parameters">
-     <Parameter name="fact: relax value" type="double" value="1.00000000000000000e+00"/>
-     <Parameter name="fact: absolute threshold" type="double" value="0.00000000000000000e+00"/>
-     <Parameter name="fact: relative threshold" type="double" value="1.00000000000000000e+00"/>
+   <ParameterList name="block ilu parameters">
+     <Parameter name="fact: relax value" type="double" value="1.0"/>
+     <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
+     <Parameter name="fact: relative threshold" type="double" value="1.0"/>
      <Parameter name="fact: level-of-fill" type="int" value="0"/>
      <Parameter name="overlap" type="int" value="0"/>
      <Parameter name="schwarz: combine mode" type="string" value="Add"/>
