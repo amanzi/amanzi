@@ -5,10 +5,6 @@
 #    Functions
 #
 
-MACRO(WHOLE_ARCHIVE inlib)
-  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
-ENDMACRO(WHOLE_ARCHIVE inlib)
-
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
@@ -51,7 +47,6 @@ add_amanzi_library(functions
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)
-  WHOLE_ARCHIVE(functions)
 
   # Add UnitTest includes
   include_directories(${UnitTest_INCLUDE_DIRS})
@@ -64,7 +59,6 @@ if (BUILD_TESTS)
       execute_process(COMMAND ${CMAKE_COMMAND} -E 
         copy_directory ${FUNCS_SOURCE_DIR}/test ${FUNCS_BINARY_DIR}/test) 
   endif()
-
 
   add_amanzi_test(concrete-functions all-function-test
                   KIND unit
@@ -96,4 +90,3 @@ if (BUILD_TESTS)
 		  LINK_LIBS functions ${UnitTest_LIBRARIES})
 
 endif()
-
