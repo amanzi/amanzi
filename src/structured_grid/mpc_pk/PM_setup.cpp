@@ -1822,6 +1822,11 @@ void  PorousMedia::read_tracer()
   }
   rock_manager = new RockManager(region_manager,&tNames);
 
+  if (do_tracer_diffusion) {
+    BL_ASSERT(rock_manager->DoDiffusion());
+    tensor_tracer_diffusion = rock_manager->DoTensorDiffusion();
+  }
+
   ParmParse ppp("prob");
 
   // get Chemistry stuff

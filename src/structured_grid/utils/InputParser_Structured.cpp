@@ -21,6 +21,9 @@ namespace Amanzi {
     std::map<std::string,std::string>& AMR_to_Amanzi_label_map = AMRToAmanziLabelMap();
     //std::map<std::string,SolidChem::SorptionIsothermData> SolidChem::sorption_isotherms; // One for each material, indexed on solute name
 
+
+    static int require_static_velocity = -1; // <0 means it has not yet been set
+
     void MyAbort(const std::string& m) {
       if (Teuchos::MPISession::getRank() == 0) {
         std::cerr << m << std::endl;
@@ -240,7 +243,7 @@ namespace Amanzi {
         prob_out_list.set("cfl",-1);
       }
       else if (flow_mode == "Single Phase") {
-        model_name = "saturated";
+        model_name = "saturated"; // Note: May later be overwritten as steady-saturated, depending on time integration mode
         prob_out_list.set("have_capillary",0);
         prob_out_list.set("cfl",-1);
       }
@@ -255,7 +258,7 @@ namespace Amanzi {
       else {
         MyAbort("\"" + flow_str + "\" = \"" + flow_mode + "\" not supported");
       }
-      prob_out_list.set("model_name",model_name);
+      // prob_out_list.set("model_name",model_name); // NOTE: This now set AFTER discovering time integration mode
 
       //
       // Set transport model
@@ -342,15 +345,25 @@ namespace Amanzi {
       //
       std::string steady_str = "Steady";
       std::string transient_str = "Transient";
+      std::string transient_with_static_flow_str = "Transient with Static Flow";
       std::string init_to_steady_str = "Initialize To Steady";
       const ParameterList& t_list = ec_list.sublist(tim_str);
       if (model_name == "single_phase") {
         prob_out_list.set("do_simple",2);
       }
-            
-      if (t_list.isSublist(transient_str))
+
+      require_static_velocity = 0;
+      if (t_list.isSublist(transient_str) || t_list.isSublist(transient_with_static_flow_str))
       {
-        const ParameterList& tran_list = t_list.sublist(transient_str);
+        const std::string& sublist_name = (t_list.isSublist(transient_str) ? transient_str : transient_with_static_flow_str);
+        if (sublist_name == transient_with_static_flow_str) {
+          require_static_velocity = 1;
+          if (model_name != "saturated" && model_name != "steady-saturated") {
+            MyAbort("\"" + tim_str + "\" = \"" +  transient_with_static_flow_str + "\" only applicable to saturated flow" );
+          }
+          model_name = "steady-saturated";
+        }
+        const ParameterList& tran_list = t_list.sublist(sublist_name);
         reqP.clear(); reqL.clear();
         std::string Start_str = "Start"; reqP.push_back(Start_str);
         std::string End_str = "End"; reqP.push_back(End_str);
@@ -539,6 +552,10 @@ namespace Amanzi {
         std::cout << t_list << std::endl;
         MyAbort("No recognizable value for \"" + tim_str + "\"");
       }
+
+      // NOTE: Can now set this AFTER discovering time integration mode
+      prob_out_list.set("model_name",model_name);
+
 
       // Deal with optional settings
       const Array<std::string> optL = ECopt.OptLists();
@@ -2668,36 +2685,49 @@ namespace Amanzi {
         const ParameterList& fPLin= state_ic.FuncPList();
         //const std::string& units = state_ic.units();
         const std::string& Amanzi_type = state_ic.Amanzi_Type();
-        
-        if (Amanzi_type == "IC: Uniform Saturation"
-            || Amanzi_type == "IC: Linear Saturation")
-        {
-          convert_ICSaturation(fPLin,Amanzi_type,fPLout);
+
+        if (require_static_velocity < 0) {
+          std::cerr << "Initialization out of order internally, must determine "
+                    << "if fixed velocity required prior to reading phase/component BCs" << std::endl;
+          throw std::exception();
         }
-        else if (Amanzi_type == "IC: Uniform Pressure")
-        {
-          convert_IC_ConstPressure(fPLin,Amanzi_type,fPLout);
-        }
-        else if ( Amanzi_type == "IC: Linear Pressure" )
-        {
-          convert_IC_LinPressure(fPLin,Amanzi_type,fPLout);
-        }
-        else if ( Amanzi_type == "IC: Hydrostatic" )
-        {
-          convert_ICHydrostatic(fPLin,Amanzi_type,fPLout);
-        }
-        else if ( Amanzi_type == "IC: Flow" )
-        {
-          convert_ICFlow(fPLin,Amanzi_type,fPLout);
-        }
-        else if ( Amanzi_type == "IC: Uniform Velocity" )
-        {
+
+        if (require_static_velocity == 1) {
+          if ( Amanzi_type != "IC: Uniform Velocity" ) {
+            std::cerr << "For this time integration mode, a velocity field must be specified "
+                      << "rather than any other IC type" << std::endl;
+            throw std::exception();
+          }
+
           convert_ICVel(fPLin,Amanzi_type,fPLout);
         }
         else {
-          std::cerr << "Unsupported IC: " << Amanzi_type << std::endl;
-          throw std::exception();
-        }           
+          if (Amanzi_type == "IC: Uniform Saturation"
+              || Amanzi_type == "IC: Linear Saturation")
+          {
+            convert_ICSaturation(fPLin,Amanzi_type,fPLout);
+          }
+          else if (Amanzi_type == "IC: Uniform Pressure")
+          {
+            convert_IC_ConstPressure(fPLin,Amanzi_type,fPLout);
+          }
+          else if ( Amanzi_type == "IC: Linear Pressure" )
+          {
+            convert_IC_LinPressure(fPLin,Amanzi_type,fPLout);
+          }
+          else if ( Amanzi_type == "IC: Hydrostatic" )
+          {
+            convert_ICHydrostatic(fPLin,Amanzi_type,fPLout);
+          }
+          else if ( Amanzi_type == "IC: Flow" )
+          {
+            convert_ICFlow(fPLin,Amanzi_type,fPLout);
+          }
+          else {
+            std::cerr << "Unsupported IC: " << Amanzi_type << std::endl;
+            throw std::exception();
+          }
+        }
 
         icPLout_master.set(underscore(IClabel),fPLout);
 

@@ -2997,11 +2997,16 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
         getViscFluxReg(level+1).setVal(0);
       }
 
-      // Diffuse 
       if (diffuse_tracers) {
+	// Diffuse (Sources incorporated in diffusion advance)
 	MultiFab::Subtract(Fext,*aofs,first_tracer,0,ntracers,0);// S_diffusion = Fext - Div(AdvectionFlux), ng=0
 	bool reflux_on_this_call = true;
         tracer_diffusion (reflux_on_this_call,use_cached_sat,Fext);
+      }
+      else {
+	// Explicit source advance
+	Fext.mult(dt_subtr,0,ntracers);
+	MultiFab::Add(get_new_data(State_Type),Fext,0,ncomps,ntracers,0);
       }
 
       bool step_ok_chem = true;
@@ -5327,13 +5332,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
     {
       const int i = C_old_fpi.index();
       const Box& box = grids[i];
-
       const Box gbox = Box(box).grow(1);
-
-      BL_ASSERT(!use_conserv_diff);
-      divu.resize(gbox,1); divu.setVal(0);
-
-      godunov->Setup_tracer(grids[i], D_DECL(flux[0],flux[1],flux[2]), ntracers);
 
       FArrayBox* SrcPtr = 0;
       SRCidx = 0;
@@ -5345,6 +5344,11 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       else {
 	SrcPtr = &((*F)[C_old_fpi]);
       }
+
+      BL_ASSERT(!use_conserv_diff);
+      divu.resize(gbox,1); divu.setVal(0);
+
+      godunov->Setup_tracer(grids[i], D_DECL(flux[0],flux[1],flux[2]), ntracers);
 
       state_bc = getBCArray(State_Type,i,ncomps,ntracers);
       BL_ASSERT(aofs->size()>i);
@@ -5373,6 +5377,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
                                sat_old[i], sat_new[i], Sidx, ncomps,
                                (*aofs)[i], Aidx, *SrcPtr, SRCidx, (*rock_phi)[i],
                                grids[i], idx_total, dt); 
+
 
       // Copy new tracer concentrations into "new" state
       get_new_data(State_Type)[i].copy(C_new_fpi(),Cidx,first_tracer,ntracers);
@@ -5939,55 +5944,6 @@ PorousMedia::set_preferred_boundary_values (MultiFab& S,
               aux_boundary_data_old.copyTo(S, src_comp, dst_comp, num_comp);
           }
       }
-
-
-#if 0
-      // FIXME: Implement geochemical conditions
-      if (state_index==State_Type) {
-        int last_comp = src_comp + num_comp - 1;
-        int n_t = 0;
-        int s_t = -1;
-        
-        if (last_comp >= ncomps) {
-          s_t = std::max(ncomps, src_comp);
-          n_t = std::min(ncomps+ntracers-1,last_comp) - s_t + 1;
-        }
-        
-        if (n_t > 0) {
-
-          Real t_eval = AdjustBCevalTime(State_Type,time,false);
-
-          FArrayBox bndFab;
-          for (int n=0; n<nComp; ++n) 
-          {
-            int tracer_idx = sComp+n-ncomps;
-            if (tbc_descriptor_map[tracer_idx].size()) 
-            {
-              const Box domain = geom.Domain();
-              const Real* dx   = geom.CellSize();
-
-              for (std::map<Orientation,BCDesc>::const_iterator
-                     it=tbc_descriptor_map[tracer_idx].begin(); it!=tbc_descriptor_map[tracer_idx].end(); ++it) 
-              {
-                const Box bndBox = Box(it->second.first) & fab.box();
-                if (bndBox.ok()) {
-                  bndFab.resize(bndBox,1);
-                  bndFab.copy(fab,dComp+n,0,1);
-                  const Array<int>& face_bc_idxs = it->second.second;
-                  for (int i=0; i<face_bc_idxs.size(); ++i) {
-                    const RegionData& face_tbc = tbc_array[tracer_idx][face_bc_idxs[i]];
-                    face_tbc.apply(bndFab,dx,0,1,t_eval);
-                  }
-                  fab.copy(bndFab,0,dComp+n,1);
-                }
-              }
-            }    
-          }
-
-
-        }
-      }
-#endif
   }
 }
 

@@ -180,6 +180,9 @@ public:
   const LabelIdx& SorptionChemistryLabelMap() const {return sorption_chem_label_map;} // sc[solute][parameter] = val
   const std::map<std::string,int>& CationExchangeLabelMap() const {return cation_exchange_label_map;}
 
+  bool DoDiffusion() const {return do_diffusion;}
+  bool DoTensorDiffusion() const {return do_tensor_diffusion;}
+
 protected:
   void Initialize(const Array<std::string>* soluteNames);
 
@@ -196,8 +199,7 @@ protected:
   MatFiller* materialFiller;
   PArray<Material> rock;
   bool is_saturated;
-  bool is_diffusive;
-  bool tensor_diffusion;
+  bool do_diffusion, do_tensor_diffusion;
   std::map<std::string,int> CP_models;
   std::map<std::string,int> Kr_models;
   PArray<MonotCubicInterpolator> CP_s_interps;
