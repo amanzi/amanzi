@@ -56,7 +56,7 @@ set(state_inc_files
   primary_variable_field_evaluator.hh
   primary_variable_field_evaluator_reg.hh
   secondary_variable_field_evaluator.hh
-  secondary_variable_field_evaluator_reg.hh
+  secondary_variables_field_evaluator.hh
   independent_variable_field_evaluator.hh
   independent_variable_field_evaluator_reg.hh
   deforming_cell_volume_evaluator.hh
@@ -76,7 +76,8 @@ set(state_inc_files
   StateDefs.hh
   State.hh
   UnstructuredObservations.hh
-  visualization.hh)
+  visualization.hh
+  Debugger.hh)
 
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(state 
@@ -88,18 +89,19 @@ add_amanzi_library(state
                           chemistry_data.cc
                           cell_volume_evaluator.cc
                           Field.cc
-	                  Field_CompositeVector.cc
-	                  Field_ConstantVector.cc
-			  Field_Scalar.cc
-			  FieldEvaluator.cc
-	                  FieldEvaluator_Factory.cc
-	                  io_event.cc Debugger.cc
+	                      Field_CompositeVector.cc
+	                      Field_ConstantVector.cc
+			              Field_Scalar.cc
+			              FieldEvaluator.cc
+	                      FieldEvaluator_Factory.cc
+	                      io_event.cc
                           rank_evaluator.cc
                           primary_variable_field_evaluator.cc
                           secondary_variable_field_evaluator.cc
                           secondary_variables_field_evaluator.cc
                           independent_variable_field_evaluator.cc
                           deforming_cell_volume_evaluator.cc
+                          Debugger.cc
                    HEADERS ${state_inc_files}
                    LINK_LIBS atk functions output mesh ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
@@ -113,7 +115,7 @@ add_install_include_file(${state_inc_files})
 register_evaluator_with_factory(HEADERFILE cell_volume_evaluator_reg.hh   LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE rank_evaluator_reg.hh          LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE primary_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-register_evaluator_with_factory(HEADERFILE primary_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE deforming_cell_volume_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 
 generate_evaluators_registration_header(HEADERFILE state_evaluators_registration.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS  INSTALL True)
