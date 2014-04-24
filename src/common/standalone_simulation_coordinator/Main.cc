@@ -51,7 +51,7 @@
 
 
 #ifdef ENABLE_Unstructured
-#include "state_evaluators_reg.hh"
+#include "state_evaluators_registration.hh"
 #endif
 
 #include "tpl_versions.h"

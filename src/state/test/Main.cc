@@ -3,7 +3,7 @@
 #include <mpi.h>
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "state_evaluators_reg.hh"
+#include "state_evaluators_registration.hh"
 #include "VerboseObject_objs.hh"
 
 

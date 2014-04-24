@@ -5,8 +5,7 @@
 
 #include "VerboseObject_objs.hh"
 
-
-#include "state_evaluators_reg.hh"
+#include "state_evaluators_registration.hh"
 
 int main(int argc, char *argv[])
 {
