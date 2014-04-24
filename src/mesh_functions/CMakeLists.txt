@@ -40,6 +40,7 @@ add_amanzi_library(mesh_functions
 				          composite_vector_function_factory.cc
                           domain-function.cc
                           unique_mesh_function.cc
+                          boundary_function.cc
                           MeshPartition.cc
 				   HEADERS ${inc_files}
                    LINK_LIBS error_handling functions mesh ${Teuchos_LIBRARIES})

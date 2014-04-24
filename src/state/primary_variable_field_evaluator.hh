@@ -5,19 +5,19 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-A field evaluator for MPI ranks.
+A field evaluator with no dependencies solved for by a PK.
 
 ------------------------------------------------------------------------- */
 
-#ifndef AMANZI_COMM_RANK_FIELD_EVALUATOR_
-#define AMANZI_COMM_RANK_FIELD_EVALUATOR_
+#ifndef AMANZI_PRIMARY_VARIABLE_FIELD_EVALUATOR_
+#define AMANZI_PRIMARY_VARIABLE_FIELD_EVALUATOR_
 
 #include "FieldEvaluator.hh"
 #include "FieldEvaluator_Factory.hh"
 
 namespace Amanzi {
 
-class RankEvaluator : public FieldEvaluator {
+class PrimaryVariableFieldEvaluator : public FieldEvaluator {
 
  public:
 
@@ -25,13 +25,14 @@ class RankEvaluator : public FieldEvaluator {
   // Constructors
   // ---------------------------------------------------------------------------
   explicit
-  RankEvaluator(Teuchos::ParameterList& plist);
+  PrimaryVariableFieldEvaluator(Teuchos::ParameterList plist);
+  PrimaryVariableFieldEvaluator(const PrimaryVariableFieldEvaluator& other);
 
-  RankEvaluator(const RankEvaluator& other);
+  // virtual destructor
+  virtual ~PrimaryVariableFieldEvaluator() {}
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
-  virtual void operator=(const FieldEvaluator& other) {};
-
+  virtual void operator=(const FieldEvaluator& other);
 
   // ---------------------------------------------------------------------------
   // Answers the question, has this Field changed since it was last requested
@@ -50,27 +51,29 @@ class RankEvaluator : public FieldEvaluator {
   virtual bool IsDependency(const Teuchos::Ptr<State>& S, Key key) const;
   virtual bool ProvidesKey(Key key) const;
 
-  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
+
+  // ---------------------------------------------------------------------------
+  // How a PK informs this leaf of the tree that it has changed.
+  //
+  // Effectively this simply tosses the request history, so that the next
+  // requests will say this has changed.
+  // ---------------------------------------------------------------------------
+  virtual void SetFieldAsChanged(const Teuchos::Ptr<State>& S);
+
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) {}
 
   virtual std::string WriteToString() const;
 
  protected:
-  // ---------------------------------------------------------------------------
-  // Update the value in the state.
-  // ---------------------------------------------------------------------------
-  virtual void UpdateField_(const Teuchos::Ptr<State>& S);
-
- protected:
-  std::string my_key_;
-  std::string my_mesh_;
-  Teuchos::ParameterList plist_;
-  bool computed_once_;
+  Key my_key_;
+  KeySet requests_;
+  KeyPairSet deriv_requests_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,RankEvaluator> fac_;
+  static Utils::RegisteredFactory<FieldEvaluator,PrimaryVariableFieldEvaluator> fac_;
+
 };
 
 } // namespace
-
 
 #endif

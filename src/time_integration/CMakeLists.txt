@@ -21,6 +21,7 @@ project(TIME_INTEGRATION)
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
@@ -71,9 +72,6 @@ if (BUILD_TESTS)
     include_directories(${TIME_INTEGRATION_SOURCE_DIR}/test)
     include_directories(${SOLVERS_SOURCE_DIR})
     include_directories(${DATA_STRUCTURES_SOURCE_DIR})
-
-    # Hacking the templated vector machinery
-    add_definitions("-D VECTORisEPETRA_VECTOR")
 
     add_amanzi_test(time_integration test_time_integration
                     KIND unit

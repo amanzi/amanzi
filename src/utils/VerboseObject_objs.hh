@@ -1,10 +1,12 @@
+#include "GlobalVerbosity.hh"
 #include "VerboseObject.hh"
 
 // The default global verbosity level.
-Teuchos::EVerbosityLevel Amanzi::VerboseObject::global_default_level = Teuchos::VERB_MEDIUM;
+Teuchos::EVerbosityLevel Amanzi::VerboseObject::global_default_level =
+    Teuchos::VERB_MEDIUM;
 
 // Show or hide line prefixes
 bool Amanzi::VerboseObject::hide_line_prefix = false;
 
 // Size of the left column of names.
-unsigned int Amanzi::VerboseObject::line_prefix_size = 20;
+unsigned int Amanzi::VerboseObject::line_prefix_size = 16;

@@ -224,6 +224,7 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
 
     // Next solution iterate and error estimate: u  = u - du
     u->Update(-1.0, *du, 1.0);
+    fn_->ChangedSolution();
     
     // If we monitor the update...
     if (monitor_ == SOLVER_MONITOR_UPDATE) {

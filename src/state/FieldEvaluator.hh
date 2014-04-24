@@ -15,9 +15,9 @@ dependency tree.
 
 #include <string>
 #include <vector>
+#include <ostream>
 
-#include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "VerboseObject.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
@@ -25,7 +25,7 @@ dependency tree.
 
 namespace Amanzi {
 
-class FieldEvaluator : public Teuchos::VerboseObject<FieldEvaluator> {
+class FieldEvaluator {
 
  public:
   explicit
@@ -65,15 +65,20 @@ class FieldEvaluator : public Teuchos::VerboseObject<FieldEvaluator> {
 
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) = 0;
 
+  virtual std::string WriteToString() const = 0;
+
+  friend std::ostream& operator<<(std::ostream&, const FieldEvaluator&);
+
  protected:
   // parameter list for the object
   Teuchos::ParameterList plist_;
 
-  // storage for fancy os
-  Teuchos::RCP<Teuchos::FancyOStream> out_;
-  Teuchos::EVerbosityLevel verbosity_;
+  // VerboseObject for output
+  Teuchos::RCP<VerboseObject> vo_;
 
 }; // class FieldEvaluator
+
+
 
 } // namespace Amanzi
 

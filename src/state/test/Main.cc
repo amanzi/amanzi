@@ -4,6 +4,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "state_evaluators_reg.hh"
+#include "VerboseObject_objs.hh"
 
 
 int main(int argc, char *argv[])

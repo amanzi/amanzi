@@ -68,10 +68,10 @@ class Richards_PK : public Flow_PK {
   void UpdatePreconditioner(double T, Teuchos::RCP<const CompositeVector> u, double dT);
   double ErrorNorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du);
   void update_norm(double rtol, double atol) {};
-  bool is_admissible(Teuchos::RCP<const CompositeVector> up) { 
+  bool IsAdmissible(Teuchos::RCP<const CompositeVector> up) { 
    return true; 
   }
-  bool ModifyPredictor(double dT, Teuchos::RCP<CompositeVector> u0,
+  bool ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector> u0,
                        Teuchos::RCP<CompositeVector> u) {
     /*
     Teuchos::RCP<CompositeVector> du = Teuchos::rcp(new CompositeVector(*u));
@@ -86,7 +86,7 @@ class Richards_PK : public Flow_PK {
   }
   bool ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
                         Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du);
-  void changed_solution() {};
+  void ChangedSolution() {};
 
   // other main methods
   void AddTimeDerivative_MFD(Epetra_Vector& p, double dTp, Matrix_MFD* matrix_operator);

@@ -60,9 +60,11 @@ void UnstructuredObservations::MakeObservations(const State& S) {
       lcv->second->Update(S, data_triplet);
 
       // push back into observation_data
-      std::vector<Amanzi::ObservationData::DataTriple> &od =
+      if (observation_data_ != Teuchos::null) {
+        std::vector<Amanzi::ObservationData::DataTriple> &od =
           (*observation_data_)[lcv->first];
-      od.push_back(data_triplet);
+        od.push_back(data_triplet);
+      }
     }
   }
 }
@@ -75,6 +77,17 @@ void UnstructuredObservations::RegisterWithTimeStepManager(
        lcv != observations_.end(); ++lcv) {
     // register
     lcv->second->RegisterWithTimeStepManager(tsm);
+  }
+}
+
+
+// It's not clear to me that this is necessary -- it seems that ofstream's
+// destructor SHOULD flush (as in fclose), but maybe it doesn't?  Better safe
+// than sorry...
+void UnstructuredObservations::Flush() {
+  for (ObservableMap::const_iterator lcv = observations_.begin();
+       lcv != observations_.end(); ++lcv) {
+    lcv->second->Flush();
   }
 }
 

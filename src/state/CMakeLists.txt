@@ -25,6 +25,7 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
@@ -49,8 +50,17 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: state
 #
-set(state_inc_files cell_volume_evaluator.hh
+set(state_inc_files 
+  cell_volume_evaluator.hh
   cell_volume_evaluator_reg.hh
+  primary_variable_field_evaluator.hh
+  primary_variable_field_evaluator_reg.hh
+  secondary_variable_field_evaluator.hh
+  secondary_variable_field_evaluator_reg.hh
+  independent_variable_field_evaluator.hh
+  independent_variable_field_evaluator_reg.hh
+  deforming_cell_volume_evaluator.hh
+  deforming_cell_volume_evaluator_reg.hh
   checkpoint.hh
   chemistry_data.hh
   Field_CompositeVector.hh
@@ -78,13 +88,18 @@ add_amanzi_library(state
                           chemistry_data.cc
                           cell_volume_evaluator.cc
                           Field.cc
-			  Field_CompositeVector.cc
-			  Field_ConstantVector.cc
+	                  Field_CompositeVector.cc
+	                  Field_ConstantVector.cc
 			  Field_Scalar.cc
 			  FieldEvaluator.cc
-			  FieldEvaluator_Factory.cc
-			  io_event.cc
-			  rank_evaluator.cc
+	                  FieldEvaluator_Factory.cc
+	                  io_event.cc Debugger.cc
+                          rank_evaluator.cc
+                          primary_variable_field_evaluator.cc
+                          secondary_variable_field_evaluator.cc
+                          secondary_variables_field_evaluator.cc
+                          independent_variable_field_evaluator.cc
+                          deforming_cell_volume_evaluator.cc
                    HEADERS ${state_inc_files}
                    LINK_LIBS atk functions output mesh ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
@@ -97,14 +112,14 @@ add_install_include_file(${state_inc_files})
 
 register_evaluator_with_factory(HEADERFILE cell_volume_evaluator_reg.hh   LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE rank_evaluator_reg.hh          LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE primary_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE primary_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE deforming_cell_volume_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 
 generate_evaluators_registration_header(HEADERFILE state_evaluators_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS  INSTALL True)
 
 
 if (BUILD_TESTS)
-
-    #generate_evaluators_registration_header(HEADERFILE tests_state_evaluator_reg.hh LISTNAME FACTORY_REG_LIST)
-  
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
 
@@ -123,12 +138,19 @@ if (BUILD_TESTS)
     #set(amanzi_libs geometry mesh state)
     
     if ( ENABLE_STK_Mesh )
-      add_amanzi_test(state test_state
+      add_amanzi_test(state_restart state_restart
                       KIND int
                       SOURCE
 	  	          test/Main.cc
 	 		  test/test_restart.cc
 	 		  test/test_vis.cc
+                      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+
+      add_amanzi_test(state_copy state_copy
+                      KIND int
+                      SOURCE
+	  	          test/Main.cc
+	 		  test/test_copy.cc
                       LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
     endif()
 

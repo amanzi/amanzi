@@ -17,16 +17,18 @@ dependency tree.
 namespace Amanzi {
 
 FieldEvaluator::FieldEvaluator(Teuchos::ParameterList& plist) : plist_(plist) {
-  Teuchos::readVerboseObjectSublist(&plist_,this);
-  verbosity_ = getVerbLevel();
-  out_ = getOStream();
+  vo_ = Teuchos::rcp(new VerboseObject(plist.name(), plist));
 };
 
 
 
 FieldEvaluator::FieldEvaluator(const FieldEvaluator& other) :
     plist_(other.plist_),
-    verbosity_(other.verbosity_),
-    out_(other.out_) {}
+    vo_(other.vo_) {}
+
+std::ostream&
+operator<<(std::ostream& os, const FieldEvaluator& self) {
+  return os << self.WriteToString();
+}
 
 } // namespace

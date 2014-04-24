@@ -10,8 +10,8 @@ Authors: Rao Garimella
          Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef  AMANZI_GEOMETRY_POINT_HH_
-#define  AMANZI_GEOMETRY_POINT_HH_
+#ifndef   AMANZI_GEOMETRY_POINT_HH_
+#define   AMANZI_GEOMETRY_POINT_HH_
 
 #include <iostream>
 #include <vector>
@@ -21,10 +21,6 @@ Authors: Rao Garimella
 
 namespace Amanzi {
 namespace AmanziGeometry {
-
-// We can use this class in other 2D applications. This constant reminds 
-// that static memory allocation can be minimized for such applications.
-const int POINT_MAX_DIMENSION = 3;
 
 class Point {
  public:
@@ -166,7 +162,7 @@ class Point {
 
  private:
   int d;
-  double xyz[POINT_MAX_DIMENSION];
+  double xyz[3];
 };  // end class Point
 
 /* miscellaneous */

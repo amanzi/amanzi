@@ -89,21 +89,16 @@ void Field_CompositeVector::SetData(const CompositeVector& data) {
 };
 
 void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
-  // ------ protect against unset names -----
+  // Protect against unset names
   EnsureSubfieldNames_();
 
+  // First try all initialization method which set the entire data structure.
   // ------ Try to set values from a restart file -----
   if (plist.isParameter("restart file")) {
+    ASSERT(!initialized());
     std::string filename = plist.get<std::string>("restart file");
     ReadCheckpoint_(filename);
     set_initialized();
-    return;
-  }
-
-  // ------ Try to set cell values from a restart file -----
-  if (plist.isParameter("cells from file")) {
-    std::string filename = plist.get<std::string>("cells from file");
-    ReadCellsFromCheckpoint_(filename);
     return;
   }
 
@@ -119,12 +114,28 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
     return;
   }
 
+  // Next try all partial initialization methods -- typically cells.
+  // ------ Try to set cell values from a restart file -----
+  if (plist.isParameter("cells from file")) {
+    ASSERT(!initialized());
+    std::string filename = plist.get<std::string>("cells from file");
+    ReadCellsFromCheckpoint_(filename);
+  }
+
   // ------ Set values using a constant -----
   if (plist.isParameter("constant")) {
+    ASSERT(!initialized());
     double value = plist.get<double>("constant");
     data_->PutScalar(value);
     set_initialized();
-    return;
+  }
+
+  // ------ Set values from 1D solution -----
+  if (plist.isSublist("initialize from 1D column")) {
+    ASSERT(!initialized());
+    Teuchos::ParameterList& init_plist = plist.sublist("initialize from 1D column");
+    InitializeFromColumn_(init_plist);
+    set_initialized();
   }
 
   // ------ Set values using a function -----
@@ -181,9 +192,16 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
           Functions::CreateCompositeVectorFunction(func_plist, data_->Map()); 
       func->Compute(0.0, data_.ptr()); 
       set_initialized(); 
-      return; 
-    } 
+    }
   }
+
+  // ------ Set face values by interpolation -----
+  if (data_->HasComponent("face") && data_->HasComponent("cell") &&
+      plist.get<bool>("initialize faces from cells", false) && initialized()) {
+    DeriveFaceValuesFromCellValues_();
+  }
+
+  return;
 };
 
 
@@ -296,6 +314,133 @@ void Field_CompositeVector::ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file_in
 }
 
 
+void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist) {
+  // get filename, data names
+  if (!plist.isParameter("file")) {
+    Errors::Message message("Missing InitializeFromColumn parameter \"file\"");
+    Exceptions::amanzi_throw(message);
+  }
+  std::string filename = plist.get<std::string>("file");
+  std::string z_str = plist.get<std::string>("z header", "/z");
+  std::string f_str = std::string("/")+fieldname_;
+  f_str = plist.get<std::string>("f header", f_str);
+
+  // Create the function
+  Teuchos::ParameterList func_list;
+  Teuchos::ParameterList& func_sublist = func_list.sublist("function-tabular");
+  func_sublist.set("file", filename);
+  func_sublist.set("x header", z_str);
+  func_sublist.set("y header", f_str);
+  FunctionFactory fac;
+  Teuchos::RCP<Function> func = Teuchos::rcp(fac.Create(func_list));
+      
+  // orientation
+  std::string orientation = plist.get<std::string>("coordinate orientation", "standard");
+  if (orientation != "standard" && orientation != "depth") {
+    Errors::Message message("InitializeFromColumn parameter \"orientation\" must be either \"standard\" (bottom up) or \"depth\" (top down)");
+    Exceptions::amanzi_throw(message);
+  }
+
+  // starting surface
+  Teuchos::Array<std::string> sidesets;
+  if (plist.isParameter("surface sideset")) {
+    sidesets.push_back(plist.get<std::string>("surface sideset"));
+  } else if (plist.isParameter("surface sidesets")) {
+    sidesets = plist.get<Teuchos::Array<std::string> >("surface sidesets");
+  } else {
+    Errors::Message message("Missing InitializeFromColumn parameter \"surface sideset\" or \"surface sidesets\"");
+    Exceptions::amanzi_throw(message);
+  }
+
+  // evaluate
+  Epetra_MultiVector& vec = *data_->ViewComponent("cell",false);
+  if (orientation == "depth") {
+    double z0, z;
+
+    AmanziMesh::Entity_ID_List surf_faces;
+    for (Teuchos::Array<std::string>::const_iterator setname=sidesets.begin();
+         setname!=sidesets.end(); ++setname) {
+      data_->Mesh()->get_set_entities(*setname,AmanziMesh::FACE,
+              AmanziMesh::OWNED, &surf_faces);
+
+      for (AmanziMesh::Entity_ID_List::const_iterator f=surf_faces.begin();
+           f!=surf_faces.end(); ++f) {
+        // Collect the reference coordinate z0
+        AmanziGeometry::Point x0 = data_->Mesh()->face_centroid(*f);
+        z0 = x0[x0.dim()-1];
+
+        // Iterate down the column
+        AmanziMesh::Entity_ID_List cells;
+        data_->Mesh()->face_get_cells(*f, AmanziMesh::OWNED, &cells);
+        ASSERT(cells.size() == 1);
+        AmanziMesh::Entity_ID c = cells[0];
+
+        while (c >= 0) {
+          AmanziGeometry::Point x1 = data_->Mesh()->cell_centroid(c);
+          z = z0 - x1[x1.dim()-1];
+          vec[0][c] = (*func)(&z);
+          c = data_->Mesh()->cell_get_cell_below(c);
+        }
+      }
+    }
+
+  } else {
+    double z0, z;
+
+    AmanziMesh::Entity_ID_List surf_faces;
+    for (Teuchos::Array<std::string>::const_iterator setname=sidesets.begin();
+         setname!=sidesets.end(); ++setname) {
+      data_->Mesh()->get_set_entities(*setname,AmanziMesh::FACE,
+              AmanziMesh::OWNED, &surf_faces);
+
+      for (AmanziMesh::Entity_ID_List::const_iterator f=surf_faces.begin();
+           f!=surf_faces.end(); ++f) {
+        // Collect the reference coordinate z0
+        AmanziGeometry::Point x0 = data_->Mesh()->face_centroid(*f);
+        z0 = x0[x0.dim()-1];
+
+        // Iterate down the column
+        AmanziMesh::Entity_ID_List cells;
+        data_->Mesh()->face_get_cells(*f, AmanziMesh::OWNED, &cells);
+        ASSERT(cells.size() == 1);
+        AmanziMesh::Entity_ID c = cells[0];
+
+        while (c >= 0) {
+          AmanziGeometry::Point x1 = data_->Mesh()->cell_centroid(c);
+          z = x1[x1.dim()-1] - z0;
+          vec[0][c] = (*func)(&z);
+          c = data_->Mesh()->cell_get_cell_above(c);
+        }
+      }
+    }
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+// Interpolate pressure ICs on cells to ICs for lambda (faces).
+// -----------------------------------------------------------------------------
+void Field_CompositeVector::DeriveFaceValuesFromCellValues_() {
+  data_->ScatterMasterToGhosted("cell");
+  Teuchos::Ptr<const CompositeVector> cv_const(data_.ptr());
+  const Epetra_MultiVector& cv_c = *cv_const->ViewComponent("cell",true);
+  Epetra_MultiVector& cv_f = *data_->ViewComponent("face",false);
+
+  int f_owned = cv_f.MyLength();
+  for (int f=0; f!=f_owned; ++f) {
+    AmanziMesh::Entity_ID_List cells;
+    cv_const->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    double face_value = 0.0;
+    for (int n=0; n!=ncells; ++n) {
+      face_value += cv_c[0][cells[n]];
+    }
+    cv_f[0][f] = face_value / ncells;
+  }
+};
+
+
 void Field_CompositeVector::EnsureSubfieldNames_() {
   // set default values for subfield names, ensuring they are unique
   if (subfield_names_.size() == 0) {
@@ -382,5 +527,18 @@ void Field_CompositeVector::ReadFromExodusII_(Teuchos::ParameterList& file_list)
   ierr = ex_close(exoid); 
   printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), offset, ierr); 
 } 
+
+
+long int Field_CompositeVector::GetLocalElementCount() {
+  long int count(0);
+  for (CompositeVector::name_iterator compname=data_->begin();
+       compname!=data_->end(); ++compname) {
+    // get the MultiVector that should be dumped
+    Teuchos::RCP<Epetra_MultiVector> v = data_->ViewComponent(*compname, false);
+    count += v->NumVectors() * v->MyLength();
+  }
+  return count;
+}
+
 
 } // namespace Amanzi

@@ -13,6 +13,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "CompositeVector.hh"
+
 #include "TimestepController.hh"
 #include "TimeIntegrationDefs.hh"
 
@@ -119,6 +121,14 @@ double TimestepControllerAdaptive<Vector>::get_timestep_old(double dt, int itera
 template<class Vector>
 double TimestepControllerAdaptive<Vector>::get_timestep(double dt, int iterations)
 {
+  std::string msg = "TimestepControllerAdaptive is implemented for a limited set of vectors.";
+  Errors::Message m(msg);
+  Exceptions::amanzi_throw(m);
+}
+
+template<> inline
+double TimestepControllerAdaptive<Epetra_MultiVector>::get_timestep(double dt, int iterations)
+{
   if (iterations < 0 || iterations > max_its_) {
     return dt * reduction_factor_;
   }
@@ -127,14 +137,48 @@ double TimestepControllerAdaptive<Vector>::get_timestep(double dt, int iteration
   double tol, error, error_max = 0.0;
   double dTfactor(100.0), dTfactor_cell;
 
-#ifdef VECTORisEPETRA_VECTOR
   Epetra_MultiVector& u1 = *udot_;
   Epetra_MultiVector& u0 = *udot_prev_;
-#else
+  int ncells_owned = u1.MyLength();
+
+  for (int c = 0; c < ncells_owned; c++) {
+    error = fabs(u1[0][c] - u0[0][c]) * dt / 2;
+    tol = rtol * p + atol;
+
+    dTfactor_cell = sqrt(tol / std::max(error, DT_CONTROLLER_ADAPTIVE_ERROR_TOLERANCE));
+    dTfactor = std::min(dTfactor, dTfactor_cell);
+
+    error_max = std::max(error_max, error - tol);
+  }
+
+  dTfactor *= DT_CONTROLLER_ADAPTIVE_SAFETY_FACTOR;
+  dTfactor = std::min(dTfactor, DT_CONTROLLER_ADAPTIVE_INCREASE);
+  dTfactor = std::max(dTfactor, DT_CONTROLLER_ADAPTIVE_REDUCTION);
+
+#ifdef HAVE_MPI
+  double dT_tmp = dTfactor;
+  udot_->Comm().MinAll(&dT_tmp, &dTfactor, 1);  // find the global minimum
+ 
+  double error_tmp = error_max;
+  udot_->Comm().MaxAll(&error_tmp, &error_max, 1);  // find the global maximum
+#endif
+  return dt * dTfactor;
+}
+
+
+template<> inline
+double TimestepControllerAdaptive<CompositeVector>::get_timestep(double dt, int iterations)
+{
+  if (iterations < 0 || iterations > max_its_) {
+    return dt * reduction_factor_;
+  }
+    
+  double rtol(1.0), atol(1e-5), p(101325.0);
+  double tol, error, error_max = 0.0;
+  double dTfactor(100.0), dTfactor_cell;
+
   Epetra_MultiVector& u1 = *udot_->ViewComponent("cell");
   Epetra_MultiVector& u0 = *udot_prev_->ViewComponent("cell");
-#endif
-
   int ncells_owned = u1.MyLength();
 
   for (int c = 0; c < ncells_owned; c++) {

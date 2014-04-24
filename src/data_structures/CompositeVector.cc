@@ -96,6 +96,10 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 #include "errors.hh"
 #include "CompositeVector.hh"
 
+#ifndef MANAGED_COMMUNICATION
+#define MANAGED_COMMUNICATION 0
+#endif
+
 namespace Amanzi {
 
 // Constructor
@@ -346,8 +350,11 @@ CompositeVector::ScatterMasterToGhosted(std::string name, bool force) const {
   // NOTE: allowing const is a hack to allow non-owning PKs to nonetheless
   // update ghost cells, which may be necessary for their discretization
 #ifdef HAVE_MPI
-  //if (ghosted_ && ((!ghost_are_current_[Index_(name)]) || force)) {
+#if MANAGED_COMMUNICATION
+  if (ghosted_ && ((!ghost_are_current_[Index_(name)]) || force)) {
+#else
   if (ghosted_) {
+#endif
     // check for and create the importer if needed
     if (importers_[Index_(name)] == Teuchos::null) {
       Teuchos::RCP<const Epetra_Map> target_map = ghostvec_->ComponentMap(name);
@@ -363,8 +370,10 @@ CompositeVector::ScatterMasterToGhosted(std::string name, bool force) const {
       mastervec_->ViewComponent(name);
     g_comp->Import(*m_comp, *importers_[Index_(name)], Insert);
 
+#if MANAGED_COMMUNICATION
     // mark as communicated
-    //ghost_are_current_[Index_(name)] = true;
+    ghost_are_current_[Index_(name)] = true;
+#endif
   }
 #endif
 };

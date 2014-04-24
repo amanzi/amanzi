@@ -37,6 +37,7 @@ Parameters:
     <Parameter name="Verbosity Level" type="string" value="medium"/>
     <Parameter name="Name" type="string" value="my header"/>
     <Parameter name="Hide Line Prefix" type="bool" value="false"/>
+    <Parameter name="Write On Rank" type="int" value="0"/>
   </ParameterList>
 </ParameterList>
 
@@ -50,14 +51,17 @@ Parameters:
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Epetra_MpiComm.h"
 
 
 namespace Amanzi {
 
 class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
  public:
-  // Constructor
+  // Constructors
   VerboseObject(std::string name, Teuchos::ParameterList& plist);
+  VerboseObject(const Epetra_MpiComm* const comm, std::string name,
+                Teuchos::ParameterList& plist);
 
   // NOTE: Default destructor, copy construct should be ok.
 
@@ -70,10 +74,10 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
  public:
   // The default global verbosity level.
   static Teuchos::EVerbosityLevel global_default_level;
-  
+
   // Show or hide line prefixes
   static bool hide_line_prefix;
-  
+
   // Size of the left column of names.
   static unsigned int line_prefix_size;
 
@@ -83,6 +87,8 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
 
  protected:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
+  const Epetra_MpiComm* const comm_;
+
 };
 
 

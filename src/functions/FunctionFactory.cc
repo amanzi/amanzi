@@ -1,5 +1,7 @@
 #include "Teuchos_ParameterList.hpp"
 
+#include "HDF5Reader.hh"
+
 #include "FunctionFactory.hh"
 #include "ConstantFunction.hh"
 #include "TabularFunction.hh"
@@ -66,7 +68,7 @@ Function* FunctionFactory::Create(Teuchos::ParameterList &list) const
       Exceptions::amanzi_throw(m);
     }
   }
- 
+
   if (!f) { // no function sublist was found above
     Errors::Message m;
     m << "FunctionFactory: missing function sublist.";
@@ -93,9 +95,18 @@ Function* FunctionFactory::create_constant(Teuchos::ParameterList &params) const
 Function* FunctionFactory::create_tabular(Teuchos::ParameterList &params) const
 {
   Function *f;
-  try {
-    std::vector<double> x(params.get<Teuchos::Array<double> >("x values").toVector());
-    std::vector<double> y(params.get<Teuchos::Array<double> >("y values").toVector());
+
+  if (params.isParameter("file")) {
+    //    try {
+    std::string filename = params.get<std::string>("file");
+    HDF5Reader reader(filename);
+
+    std::string x = params.get<std::string>("x header", "/x");
+    std::string y = params.get<std::string>("y header", "/y");
+    std::vector<double> vec_x;
+    std::vector<double> vec_y;
+    reader.ReadData(x, vec_x);
+    reader.ReadData(y, vec_y);
     if (params.isParameter("forms")) {
       Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string> >("forms"));
       std::vector<TabularFunction::Form> form(form_strings.size());
@@ -110,20 +121,55 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList &params) const
           Exceptions::amanzi_throw(m);
         }
       }
-      f = new TabularFunction(x, y, form);
+      f = new TabularFunction(vec_x, vec_y, form);
     } else {
-      f = new TabularFunction(x, y);
+      f = new TabularFunction(vec_x, vec_y);
     }
-  }
-  catch (Teuchos::Exceptions::InvalidParameter &msg) {
-    Errors::Message m;
-    m << "FunctionFactory: function-tabular parameter error: " << msg.what();
-    Exceptions::amanzi_throw(m);
-  }
-  catch (Errors::Message &msg) {
-    Errors::Message m;
-    m << "FunctionFactory: function-tabular parameter error: " << msg.what();
-    Exceptions::amanzi_throw(m);
+
+    // }
+    // catch (Teuchos::Exceptions::InvalidParameter &msg) {
+    //   Errors::Message m;
+    //   m << "FunctionFactory: function-tabular parameter error: " << msg.what();
+    //   Exceptions::amanzi_throw(m);
+    // }
+    // catch (Errors::Message &msg) {
+    //   Errors::Message m;
+    //   m << "FunctionFactory: function-tabular parameter error: " << msg.what();
+    //   Exceptions::amanzi_throw(m);
+    // }
+  } else {
+    try {
+      std::vector<double> x(params.get<Teuchos::Array<double> >("x values").toVector());
+      std::vector<double> y(params.get<Teuchos::Array<double> >("y values").toVector());
+      if (params.isParameter("forms")) {
+        Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string> >("forms"));
+        std::vector<TabularFunction::Form> form(form_strings.size());
+        for (int i = 0; i < form_strings.size(); ++i) {
+          if (form_strings[i] == "linear")
+            form[i] = TabularFunction::LINEAR;
+          else if (form_strings[i] == "constant")
+            form[i] = TabularFunction::CONSTANT;
+          else {
+            Errors::Message m;
+            m << "unknown form \"" << form_strings[i].c_str() << "\"";
+            Exceptions::amanzi_throw(m);
+          }
+        }
+        f = new TabularFunction(x, y, form);
+      } else {
+        f = new TabularFunction(x, y);
+      }
+    }
+    catch (Teuchos::Exceptions::InvalidParameter &msg) {
+      Errors::Message m;
+      m << "FunctionFactory: function-tabular parameter error: " << msg.what();
+      Exceptions::amanzi_throw(m);
+    }
+    catch (Errors::Message &msg) {
+      Errors::Message m;
+      m << "FunctionFactory: function-tabular parameter error: " << msg.what();
+      Exceptions::amanzi_throw(m);
+    }
   }
   return f;
 }

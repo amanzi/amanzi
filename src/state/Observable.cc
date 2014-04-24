@@ -1,4 +1,4 @@
- /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 Amanzi
 
@@ -33,9 +33,13 @@ Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
   variable_ = plist.get<std::string>("Variable");
   region_ = plist.get<std::string>("Region");
   functional_ = plist.get<std::string>("Functional");
+  delimiter_ = plist.get<std::string>("Delimiter", ",");
 
   // entity of region
   location_ = plist.get<std::string>("Location Name", "cell");
+
+  // hack to orient flux to outward-normal along a boundary only
+  flux_normalize_ = plist.get<bool>("direction normalized flux", false);
 
   // write mode
   interval_ = plist.get<int>("Write Interval", 0);
@@ -66,13 +70,17 @@ void Observable::Update(const State& S,
 
   if (out_.get()) {
     if (data.is_valid) {
-      *out_ << data.time << ", " << data.value << std::endl;
+      *out_ << data.time << delimiter_ << " " << data.value << std::endl;
     } else {
-      *out_ << data.time << ", " << "NaN" << std::endl;
+      *out_ << data.time << delimiter_ << " " << "NaN" << std::endl;
     }
 
     if (count_ % interval_ == 0) out_->flush();
   }
+}
+
+void Observable::Flush() {
+  if (out_.get()) out_->flush();
 }
 
 void Observable::WriteHeader_() {
@@ -84,6 +92,8 @@ void Observable::WriteHeader_() {
     *out_ << "# ==========================================================="
           << std::endl;
     *out_ << "#" << std::endl;
+    out_->precision(16);
+    *out_ << std::scientific;
   }
 }
 
@@ -122,6 +132,19 @@ void Observable::Update_(const State& S,
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
            id!=ids.end(); ++id) {
         double vol = vec->Mesh()->face_area(*id);
+
+        // hack to orient flux to outward-normal along a boundary only
+        if (flux_normalize_) {
+          AmanziMesh::Entity_ID_List cells;
+          vec->Mesh()->face_get_cells(*id, AmanziMesh::USED, &cells);
+          ASSERT(cells.size() == 1);
+          AmanziMesh::Entity_ID_List faces;
+          std::vector<int> dirs;
+          vec->Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+          int i = std::find(faces.begin(), faces.end(), *id) - faces.begin();
+          vol *= dirs[i];
+        }
+
         value += subvec[0][*id] * vol;
         volume += vol;
       }
@@ -133,6 +156,13 @@ void Observable::Update_(const State& S,
         volume += vol;
       }
     }
+
+    // syncronize the result across processors
+    double tmp = value;
+    S.GetMesh()->get_comm()->SumAll(&tmp, &value, 1);
+      
+    tmp = volume;
+    S.GetMesh()->get_comm()->SumAll(&tmp, &volume, 1);
 
     if (volume > 0) {
       if (functional_ == "Observation Data: Point") {

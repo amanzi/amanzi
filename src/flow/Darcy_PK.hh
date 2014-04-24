@@ -60,17 +60,17 @@ class Darcy_PK : public Flow_PK {
   }
   void UpdatePreconditioner(double T, Teuchos::RCP<const CompositeVector> up, double h) {};
   void update_norm(double rtol, double atol) {};
-  bool is_admissible(Teuchos::RCP<const CompositeVector> up) { 
+  bool IsAdmissible(Teuchos::RCP<const CompositeVector> up) { 
    return false; 
   }
-  bool ModifyPredictor(double dT, Teuchos::RCP<CompositeVector> u0, Teuchos::RCP<CompositeVector> u) {
+  bool ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector> u0, Teuchos::RCP<CompositeVector> u) {
     return false;
   }
   bool ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
                         Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du) {
     return false;
   }
-  void changed_solution() {};
+  void ChangedSolution() {};
 
   // other main methods
   void AddTimeDerivativeSpecificStorage(Epetra_MultiVector& p, double dTp, Matrix_MFD* matrix_operator);

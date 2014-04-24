@@ -29,6 +29,7 @@ project(FUNCS)
 # in this directory. 
 
 # Amanzi include directories
+include_directories(${ATK_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 
 # External (TPL) include directories
@@ -46,7 +47,7 @@ file(GLOB inc_files "*.hh")
 add_amanzi_library(functions 
                    SOURCE ${src_files}
                    HEADERS ${inc_files}
-                   LINK_LIBS error_handling ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+                   LINK_LIBS error_handling ${HDF5_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)
@@ -67,22 +68,22 @@ if (BUILD_TESTS)
 
   add_amanzi_test(concrete-functions all-function-test
                   KIND unit
-  SOURCE test/all-function-test.cc
-  LINK_LIBS functions ${UnitTest_LIBRARIES})
+                  SOURCE test/AllFunctionTest.cc
+                  LINK_LIBS functions ${UnitTest_LIBRARIES})
 
   add_amanzi_test(function-factory function-factory-test
                   KIND unit
-                  SOURCE test/function-factory-test.cc
+                  SOURCE test/FunctionFactoryTest.cc
                   LINK_LIBS functions ${UnitTest_LIBRARIES})
  
   add_amanzi_test(concrete-color-function all-color-function-test
                   KIND unit
-                  SOURCE test/all-color-function-test.cc
+                  SOURCE test/AllColorFunctionTest.cc
                   LINK_LIBS functions ${UnitTest_LIBRARIES})
 
   add_amanzi_test(color-function-factory color-function-factory-test
                   KIND unit
-                  SOURCE test/color-function-factory-test.cc
+                  SOURCE test/ColorFunctionFactoryTest.cc
                   LINK_LIBS 
                          functions
                          ${UnitTest_LIBRARIES}
@@ -91,7 +92,7 @@ if (BUILD_TESTS)
 
   add_amanzi_test(composite-function composite-function-test
                   KIND unit
-                  SOURCE test/composite-function-test.cc
+                  SOURCE test/CompositeFunctionTest.cc
 		  LINK_LIBS functions ${UnitTest_LIBRARIES})
 
 endif()

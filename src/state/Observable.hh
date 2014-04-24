@@ -38,6 +38,8 @@ class Observable : public IOEvent {
   void Update(const State& S,
               Amanzi::ObservationData::DataTriple& data_triplet);
 
+  void Flush();
+
  protected:
   virtual void Update_(const State& S,
                        Amanzi::ObservationData::DataTriple& data_triplet);
@@ -52,12 +54,13 @@ class Observable : public IOEvent {
   std::string filenamebase_;
   Teuchos::RCP<std::ofstream> out_;
 
+  bool flux_normalize_;
   std::string name_;
   std::string variable_;
   std::string region_;
   std::string functional_;
   std::string location_;
-
+  std::string delimiter_;
 };
 
 

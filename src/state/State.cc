@@ -14,6 +14,7 @@ initialized (as independent variables are owned by state, not by any PK).
 ------------------------------------------------------------------------- */
 
 #include <iostream>
+#include <ostream>
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_Vector.h"
@@ -343,6 +344,16 @@ void State::SetFieldEvaluator(Key key, const Teuchos::RCP<FieldEvaluator>& evalu
 };
 
 
+void State::WriteDependencyGraph() const {
+  std::ofstream os("dependency_graph.txt", std::ios::out);
+  for (evaluator_iterator fe=field_evaluator_begin();
+       fe!=field_evaluator_end(); ++fe) {
+    os << *fe->second;
+  }
+  os.close();
+}
+
+
 // -----------------------------------------------------------------------------
 // State handles data management.
 // -----------------------------------------------------------------------------
@@ -621,20 +632,22 @@ void State::Setup() {
 };
 
 
-// void State::Initialize() {
-//   // Initialize any other fields from state plist.
-//   InitializeFields();
+void State::Initialize() {
+  // Initialize any other fields from state plist.
+  InitializeFields();
 
-//   // Ensure that non-evaluator-based fields are initialized.
-//   CheckNotEvaluatedFieldsInitialized();
+  // Ensure that non-evaluator-based fields are initialized.
+  CheckNotEvaluatedFieldsInitialized();
 
-//   // Initialize other field evaluators.
-//   InitializeEvaluators();
+  // Initialize other field evaluators.
+  InitializeEvaluators();
 
-//   // Ensure everything is owned and initialized.
-//   CheckAllFieldsInitialized();
-// };
+  // Ensure everything is owned and initialized.
+  CheckAllFieldsInitialized();
 
+  // Write dependency graph.
+  WriteDependencyGraph();
+};
 
 void State::InitializeEvaluators() {
   for (evaluator_iterator f_it = field_evaluator_begin();
@@ -667,12 +680,28 @@ bool State::CheckNotEvaluatedFieldsInitialized() {
   for (FieldMap::iterator f_it = fields_.begin();
        f_it != fields_.end(); ++f_it) {
     Teuchos::RCP<Field> field = f_it->second;
-    if (!HasFieldEvaluator(f_it->first) && !field->initialized()) {
-      std::stringstream messagestream;
-      messagestream << "Field " << field->fieldname() << " was not initialized.";
-      Errors::Message message(messagestream.str());
-      Exceptions::amanzi_throw(message);
-      return false;
+    if (!HasFieldEvaluator(f_it->first)) {
+      // first check and see if there is a FieldEvaluator, but we haven't yet used it.
+      Teuchos::RCP<FieldEvaluator> found_eval;
+      for (evaluator_iterator f_eval_it = field_evaluator_begin();
+         f_eval_it != field_evaluator_end(); ++f_eval_it) {
+        if (f_eval_it->second->ProvidesKey(f_it->first)) {
+          found_eval = f_eval_it->second;
+          break;
+        }
+      }
+
+      if (found_eval != Teuchos::null) {
+        // found an evaluator that provides this key, set it.
+        SetFieldEvaluator(f_it->first, found_eval);
+      } else if (!field->initialized()) {
+        // No evaluator, not intialized... FAIL.
+        std::stringstream messagestream;
+        messagestream << "Field " << field->fieldname() << " was not initialized.";
+        Errors::Message message(messagestream.str());
+        Exceptions::amanzi_throw(message);
+        return false;
+      }
     }
   }
   return true;
@@ -871,7 +900,5 @@ void DeformCheckpointMesh(const Teuchos::Ptr<State>& S) {
     write_access_mesh_->deform( nodeids, new_pos, true, &final_pos); // deforms the mesh
   }
 }
-
-   
 
 } // namespace amanzi

@@ -1,11 +1,13 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-  Amanzi
+ATS
 
-  License: see $AMANZI_DIR/COPYRIGHT
-  Author: Ethan Coon
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
 
-  Function applied to a mesh component with at most one function 
-  application per entity.
+Function applied to a mesh component with at most one function application per
+entity.
+
 ------------------------------------------------------------------------- */
 
 #ifndef AMANZI_UNIQUE_MESH_FUNCTION_HH_
@@ -26,7 +28,7 @@ class UniqueMeshFunction : public MeshFunction {
 public:
   // Constructor
   UniqueMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      MeshFunction(mesh) {}
+    MeshFunction(mesh) {}
 
   // Overload the AddSpec method to check uniqueness.
   virtual void AddSpec(const Teuchos::RCP<Spec>& spec);

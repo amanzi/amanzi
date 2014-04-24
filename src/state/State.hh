@@ -87,7 +87,7 @@ class State {
   bool CheckAllFieldsInitialized();
 
   // Used by ATS.
-  //  void Initialize();
+  void Initialize();
 
   // -----------------------------------------------------------------------------
   // State handles mesh management.
@@ -225,16 +225,19 @@ class State {
   evaluator_iterator field_evaluator_end() const { return field_evaluators_.end(); }
   FieldEvaluatorMap::size_type field_evaluator_count() { return field_evaluators_.size(); }
 
+  // Write evaluators to file for drawing dependency graph.
+  void WriteDependencyGraph() const;
 
   // -----------------------------------------------------------------------------
   // State handles model parameters.
   // -----------------------------------------------------------------------------
   // Some model parameters may be common to many PKs, Evaluators, boundary
   // conditions, etc.  Access to the parameters required to make these models
-  // is handled through state.
+  // is handled through state.  This is used infrequently currently, and
+  // should be used and tested more thoroughly.
   //
   // Get a parameter list.
-  Teuchos::ParameterList GetModelParameters(std::string modelname); 
+  Teuchos::ParameterList GetModelParameters(std::string modelname);
 
 
   // -----------------------------------------------------------------------------

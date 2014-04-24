@@ -164,14 +164,14 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   if (state_->extrapolate_guess) {
     if (state_->uhist->history_size() > 1) {
       state_->uhist->InterpolateSolution(tnew, *u);
-      fn_->changed_solution();
+      fn_->ChangedSolution();
 
-      if (fn_->is_admissible(u)) {
+      if (fn_->IsAdmissible(u)) {
     	bool changed = fn_->ModifyPredictor(dt, u0, u);
-    	if (changed) fn_->changed_solution();
+    	if (changed) fn_->ChangedSolution();
       } else {
 	*u = *u0;
-	fn_->changed_solution();
+	fn_->ChangedSolution();
       }
     }
   }

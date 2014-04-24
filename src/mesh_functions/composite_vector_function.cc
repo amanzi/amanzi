@@ -64,13 +64,15 @@ void CompositeVectorFunction::Compute(double time,
         if (kind == AmanziMesh::BOUNDARY_FACE) {
           unsigned int nfaces = mesh->num_entities(kind, AmanziMesh::OWNED);
           const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+          const Epetra_Map& face_map = mesh->face_map(AmanziMesh::OWNED);
 
           // loop over indices
           AmanziMesh::Entity_ID_List cells;
           for (AmanziMesh::Entity_ID id=0; id!=nfaces; ++id) {
             mesh->face_get_cells(id, AmanziMesh::USED, &cells);
             if (cells.size() == 1) {
-              AmanziMesh::Entity_ID bf = vandelay_map.LID(id);
+              AmanziMesh::Entity_ID bf = vandelay_map.LID(face_map.GID(id));
+              ASSERT(bf >= 0);
 
               // get the coordinate
               AmanziGeometry::Point xf = mesh->face_centroid(id);
@@ -114,6 +116,7 @@ void CompositeVectorFunction::Compute(double time,
             AmanziMesh::Entity_ID_List id_list;
             mesh->get_set_entities(*region, AmanziMesh::FACE, AmanziMesh::OWNED, &id_list);
 
+            const Epetra_Map& face_map = mesh->face_map(AmanziMesh::OWNED);
             const Epetra_Map& vandelay_map = mesh->exterior_face_map();
 
             // loop over indices
@@ -122,7 +125,9 @@ void CompositeVectorFunction::Compute(double time,
                  id!=id_list.end(); ++id) {
               mesh->face_get_cells(*id, AmanziMesh::USED, &cells);
               if (cells.size() == 1) {
-                AmanziMesh::Entity_ID bf = vandelay_map.LID(*id);
+                AmanziMesh::Entity_ID bf = vandelay_map.LID(face_map.GID(*id));
+                ASSERT(bf >= 0);
+
 
                 // get the coordinate
                 AmanziGeometry::Point xf = mesh->face_centroid(*id);

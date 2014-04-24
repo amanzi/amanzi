@@ -5,19 +5,20 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-A field evaluator for MPI ranks.
+A field evaluator with no dependencies specified by a function.
 
 ------------------------------------------------------------------------- */
 
-#ifndef AMANZI_COMM_RANK_FIELD_EVALUATOR_
-#define AMANZI_COMM_RANK_FIELD_EVALUATOR_
+#ifndef AMANZI_INDEPENDENT_FIELD_EVALUATOR_
+#define AMANZI_INDEPENDENT_FIELD_EVALUATOR_
 
+#include "composite_vector_function.hh"
 #include "FieldEvaluator.hh"
 #include "FieldEvaluator_Factory.hh"
 
 namespace Amanzi {
 
-class RankEvaluator : public FieldEvaluator {
+class IndependentVariableFieldEvaluator : public FieldEvaluator {
 
  public:
 
@@ -25,12 +26,14 @@ class RankEvaluator : public FieldEvaluator {
   // Constructors
   // ---------------------------------------------------------------------------
   explicit
-  RankEvaluator(Teuchos::ParameterList& plist);
+  IndependentVariableFieldEvaluator(Teuchos::ParameterList& plist);
+  IndependentVariableFieldEvaluator(const IndependentVariableFieldEvaluator& other);
 
-  RankEvaluator(const RankEvaluator& other);
+  // virtual destructor
+  virtual ~IndependentVariableFieldEvaluator() {}
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
-  virtual void operator=(const FieldEvaluator& other) {};
+  virtual void operator=(const FieldEvaluator& other);
 
 
   // ---------------------------------------------------------------------------
@@ -61,13 +64,17 @@ class RankEvaluator : public FieldEvaluator {
   virtual void UpdateField_(const Teuchos::Ptr<State>& S);
 
  protected:
-  std::string my_key_;
-  std::string my_mesh_;
-  Teuchos::ParameterList plist_;
+  Key my_key_;
+  Teuchos::RCP<Functions::CompositeVectorFunction> func_;
+
+  double time_;
+  bool temporally_variable_;
   bool computed_once_;
 
+  KeySet requests_;
+
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,RankEvaluator> fac_;
+  static Utils::RegisteredFactory<FieldEvaluator,IndependentVariableFieldEvaluator> fac_;
 };
 
 } // namespace

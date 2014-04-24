@@ -110,5 +110,13 @@ void RankEvaluator::UpdateField_(const Teuchos::Ptr<State>& S) {
   }
 }
 
+std::string
+RankEvaluator::WriteToString() const {
+  std::stringstream result;
+  result << my_key_ << std::endl
+         << "  Type: independent" << std::endl
+         << std::endl;
+  return result.str();
+}
 
 } // namespace

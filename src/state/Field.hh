@@ -133,6 +133,8 @@ public:
   // Compute from a function, if implemented by a subclass
   virtual void Compute(double time) {  }
 
+  virtual long int GetLocalElementCount() { return 0L; };
+
 protected:
   // constructors protected, should only be called by derived classes
   Field(std::string fieldname, std::string owner="state");

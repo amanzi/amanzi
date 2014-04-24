@@ -50,6 +50,8 @@ class CellVolumeEvaluator : public FieldEvaluator {
 
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
 
+  virtual std::string WriteToString() const;
+
  protected:
   // ---------------------------------------------------------------------------
   // Update the value in the state.

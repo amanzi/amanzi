@@ -34,6 +34,7 @@ class UnstructuredObservations {
   bool DumpRequested(int cycle, double time) const;
   void MakeObservations(const State& state);
   void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm);
+  void Flush();
 
  private:
 

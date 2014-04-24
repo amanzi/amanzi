@@ -26,7 +26,7 @@ class BDFFnBase {
 
   // check the admissibility of a solution
   // override with the actual admissibility check
-  virtual bool is_admissible(Teuchos::RCP<const Vector> up) = 0;
+  virtual bool IsAdmissible(Teuchos::RCP<const Vector> up) = 0;
 
   // possibly modifies the predictor that is going to be used as a
   // starting value for the nonlinear solve in the time integrator,
@@ -34,7 +34,7 @@ class BDFFnBase {
   // using extrapolation and the time step that is used to compute
   // this predictor this function returns true if the predictor was
   // modified, false if not
-  virtual bool ModifyPredictor(double h, Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> u) = 0;
+  virtual bool ModifyPredictor(double h, Teuchos::RCP<const Vector> u0, Teuchos::RCP<Vector> u) = 0;
 
   // possibly modifies the correction, after the nonlinear solver (NKA)
   // has computed it, will return true if it did change the correction,
@@ -46,7 +46,7 @@ class BDFFnBase {
   // experimental approach -- calling this indicates that the time
   // integration scheme is changing the value of the solution in
   // state.
-  virtual void changed_solution() = 0;
+  virtual void ChangedSolution() = 0;
 };
 
 }  // namespace Amanzi

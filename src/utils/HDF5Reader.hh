@@ -1,0 +1,67 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+Amanzi
+
+License: see COPYRIGHT
+Author: Ethan Coon
+
+Interface for grabbing vectors of data from HDF5 files for use with i/o.
+------------------------------------------------------------------------- */
+
+
+#ifndef HDF5_READER_HH_
+#define HDF5_READER_HH_
+
+#define H5Gcreate_vers 2
+#define H5Dcreate_vers 2
+#define H5Gopen_vers 2
+#define H5Dopen_vers 2
+#include "hdf5.h"
+
+#include "errors.hh"
+
+namespace Amanzi {
+
+struct HDF5Reader {
+
+public:
+  HDF5Reader(std::string filename) :
+      filename_(filename) {
+    htri_t ierr = H5Fis_hdf5(filename.c_str());
+    if (ierr > 0) {
+      file_ = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+    } else {
+      std::string header("HDF5Reader: error, invalid filename ");
+      Errors::Message message(header+filename);
+      Exceptions::amanzi_throw(message);
+    }
+  }
+
+  ~HDF5Reader() {
+    H5Fclose(file_);
+  }
+
+  void
+  ReadData(std::string varname, std::vector<double>& vec) {
+    //    char *h5path = new char[varname.size()+1];
+    //    strcpy(h5path,varname.c_str());
+
+    hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
+    hid_t dataspace = H5Dget_space(dataset);
+    hssize_t size = H5Sget_simple_extent_npoints(dataspace);
+    vec.resize(size);
+    herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
+                            H5P_DEFAULT, &vec[0]);
+  }
+
+ protected:
+  std::string filename_;
+  hid_t file_;
+
+
+};
+
+} // namespace
+
+
+#endif

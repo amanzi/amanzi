@@ -109,7 +109,7 @@ double BDF1_SolverFnBase<Vector>::ErrorNorm(const Teuchos::RCP<const Vector>& u,
 // F(u) to be defined).
 template<class Vector>
 bool BDF1_SolverFnBase<Vector>::IsAdmissible(const Teuchos::RCP<const Vector>& up) {
-  return bdf_fn_->is_admissible(up);
+  return bdf_fn_->IsAdmissible(up);
 }
 
 // Hack a correction for some reason.
@@ -123,7 +123,7 @@ bool BDF1_SolverFnBase<Vector>::ModifyCorrection(const Teuchos::RCP<const Vector
 // bookkeeping for state
 template<class Vector>
 void BDF1_SolverFnBase<Vector>::ChangedSolution() {
-  bdf_fn_->changed_solution();
+  bdf_fn_->ChangedSolution();
 }
 
 } // namespace Amanzi

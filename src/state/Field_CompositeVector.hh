@@ -56,16 +56,20 @@ public:
 
   // initialization
   virtual void Initialize(Teuchos::ParameterList& plist);
-  void ReadFromExodusII_(Teuchos::ParameterList& plist); 
 
   // visualization and checkpoint i/o
   void WriteVis(const Teuchos::Ptr<Visualization>& vis);
   void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& ckp);
   void ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file);
 
+  long int GetLocalElementCount();
+
 protected:
   void ReadCheckpoint_(std::string filename);
   void ReadCellsFromCheckpoint_(std::string filename); // for ICs
+  void ReadFromExodusII_(Teuchos::ParameterList& plist); 
+  void InitializeFromColumn_(Teuchos::ParameterList& plist);
+  void DeriveFaceValuesFromCellValues_();
 
   Teuchos::RCP<CompositeVector> data_;
   std::vector<std::vector<std::string> > subfield_names_;

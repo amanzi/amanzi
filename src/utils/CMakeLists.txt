@@ -28,9 +28,9 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 
 add_amanzi_library(atk
                    SOURCE Timer.cc TimerManager.cc TimeStepManager.cc XMLParameterListWriter.cc 
-                           VerboseObject.cc
-                   HEADERS Utils.hh Timer.hh TimerManager.hh TimeStepManager.hh XMLParameterListWriter.hh
-                           VerboseObject.hh VerboseObject_objs.hh
+                           VerboseObject.cc 
+                   HEADERS HDF5Reader.hh Utils.hh Timer.hh TimerManager.hh TimeStepManager.hh XMLParameterListWriter.hh
+                           VerboseObject.hh VerboseObject_objs.hh GlobalVerbosity.hh factory.hh factory_with_state.hh
                    )
 if (BUILD_TESTS)
   
