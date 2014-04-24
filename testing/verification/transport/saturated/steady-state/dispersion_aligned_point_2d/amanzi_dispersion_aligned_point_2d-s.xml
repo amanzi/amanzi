@@ -49,7 +49,7 @@
         </ParameterList>
 
 	<ParameterList name="Expert Settings">
-	  <Parameter name="v" type="int" value="3"/>
+	  <Parameter name="v" type="int" value="1"/>
 	</ParameterList>
 
       </ParameterList>

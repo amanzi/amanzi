@@ -237,7 +237,8 @@
   <ParameterList name="Flow">
     <ParameterList name="Preconditioners">
       <ParameterList name="Trilinos ML">
-        <ParameterList name="ML Parameters">
+        <Parameter name="type" type="string" value="ml"/>
+        <ParameterList name="ml parameters">
           <Parameter name="ML output" type="int" value="0"/>
           <Parameter name="max levels" type="int" value="40"/>
           <Parameter name="prec type" type="string" value="MGV"/>
@@ -257,7 +258,8 @@
       </ParameterList>
       <ParameterList name="Hypre AMG">
         <Parameter name="discretization method" type="string" value="optimized mfd"/>
-        <ParameterList name="BoomerAMG Parameters">
+        <Parameter name="type" type="string" value="boomer amg"/>
+        <ParameterList name="boomer amg parameters">
           <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
           <Parameter name="smoother sweeps" type="int" value="3"/>
           <Parameter name="cycle applications" type="int" value="5"/>
@@ -265,16 +267,18 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="Block ILU">
-        <ParameterList name="Block ILU Parameters">
-          <Parameter name="fact: relax value" type="double" value="1.00000000000000000e+00"/>
-          <Parameter name="fact: absolute threshold" type="double" value="0.00000000000000000e+00"/>
-          <Parameter name="fact: relative threshold" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="type" type="string" value="block ilu"/>
+        <ParameterList name="block ilu parameters">
+          <Parameter name="fact: relax value" type="double" value="1.0"/>
+          <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
+          <Parameter name="fact: relative threshold" type="double" value="1.0"/>
           <Parameter name="fact: level-of-fill" type="int" value="0"/>
           <Parameter name="overlap" type="int" value="0"/>
           <Parameter name="schwarz: combine mode" type="string" value="Add"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="Solvers">
       <ParameterList name="AztecOO">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>

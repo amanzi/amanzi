@@ -369,8 +369,6 @@ RockManager::Initialize(const Array<std::string>* solute_names)
   }
 
   is_saturated = false;
-  is_diffusive = false;
-  tensor_diffusion = false;
 
   static int CP_cnt = 0;
   CP_models[CP_model_None] = CP_cnt++;
@@ -415,10 +413,9 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     user_specified_specific_storage = true; // Will use default if not specified
   }
 
-  bool enable_diffusion = is_diffusive 
-    && ( user_specified_molecular_diffusion_coefficient || user_specified_dispersivity);
+  do_diffusion = ( user_specified_molecular_diffusion_coefficient || user_specified_dispersivity);
   
-  bool enable_tensor_diffusion = enable_diffusion && user_specified_dispersivity;
+  do_tensor_diffusion = do_diffusion && user_specified_dispersivity;
 
   // setup static database for smoothing interval
   Kr_smoothing_min_seff.resize(nrock,std::pair<bool,Real>(true,Kr_smoothing_min_seff_DEF));
