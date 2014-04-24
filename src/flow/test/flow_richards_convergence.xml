@@ -234,18 +234,7 @@
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
-                <Parameter name="value" type="double" value="0."/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="face"/>
+            <Parameter name="components" type="Array(string)" value="{cell,face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant"> <!-- time component -->
                 <Parameter name="value" type="double" value="0."/>
