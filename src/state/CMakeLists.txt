@@ -56,11 +56,11 @@ set(state_inc_files
   primary_variable_field_evaluator.hh
   primary_variable_field_evaluator_reg.hh
   secondary_variable_field_evaluator.hh
-  secondary_variable_field_evaluator_reg.hh
   independent_variable_field_evaluator.hh
   independent_variable_field_evaluator_reg.hh
   deforming_cell_volume_evaluator.hh
   deforming_cell_volume_evaluator_reg.hh
+  state_evaluators_registration.hh
   checkpoint.hh
   chemistry_data.hh
   Field_CompositeVector.hh
