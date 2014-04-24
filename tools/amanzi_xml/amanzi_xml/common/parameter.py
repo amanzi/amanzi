@@ -3,8 +3,6 @@ import amanzi_xml.utils.io as io
 
 _valid_parameter_types = ['double', 'int', 'string', 'bool']
 def _valid_parameter_from_string(ptype, value):
-    print "checkign for valid param of type", ptype, "and value", value
-
     # ensure types
     retval = None
 
@@ -43,8 +41,6 @@ def _valid_parameter_from_string(ptype, value):
 
 
 def _valid_parameter_from_type(ptype, value):
-    print "checkign for valid param of type", ptype, "and value", value
-
     # ensure types
     retval = None
 
@@ -93,7 +89,7 @@ class Parameter(base.TeuchosBaseXML):
     def __str__(self):
         return io.toString(self)
 
-    def indent(self, ntabs):
+    def indent(self, ntabs, doublespace=False, doublespace_two=False):
         self.text = ""
         self.tail = "\n" + " "*ntabs*base._tabsize
 

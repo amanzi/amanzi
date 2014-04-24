@@ -4,14 +4,14 @@ import errors
 # Searches based upon the "name" attribute as the unique identifier.
 def generateChildByName(elem, name):
     """Generator for children of a given name"""
-    print "generateChildByName(%s, %s)"%(elem.get("name"), name)
+    #print "generateChildByName(%s, %s)"%(elem.get("name"), name)
     for subel in elem:
         if (name == subel.get("name")):
             yield subel
 
 def generateChildByNamePath(elem, path):
     """Generator for (grand)children of a given path"""
-    print "generateChildByNamePath(%s, %s)"%(elem.get("name"), path)
+    #print "generateChildByNamePath(%s, %s)"%(elem.get("name"), path)
     enames = path.strip("/").split("/")
     assert len(enames) > 0
     if len(enames) == 1:
@@ -56,12 +56,12 @@ def getElementByNamePath(elem, path):
 
 def generateElementByNamePath(elem, path):
     """Searches for all (grand)children that match the relative namepath"""
-    print "generateElementByNamePath(%s, %s)"%(elem.get("name"), path)
+    #print "generateElementByNamePath(%s, %s)"%(elem.get("name"), path)
     enames = path.strip("/").split("/")
     assert len(enames) > 0
 
     def generateSingleElementByName(elem, name):
-        print "generateSingleElementByName(%s, %s)"%(elem.get("name"), name)
+        #print "generateSingleElementByName(%s, %s)"%(elem.get("name"), name)
         if elem.get("name") == name:
             yield elem
         else:

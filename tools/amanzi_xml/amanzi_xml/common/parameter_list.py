@@ -7,6 +7,14 @@ from amanzi_xml.utils import io
 from amanzi_xml.utils import errors
 from amanzi_xml.utils import search
 
+_doublespace = ["field evaluators", "PKs", "initial conditions"]
+_doublespace_two = ["PKs"]
+_postspace = ["Mesh", "Domain", "Regions", "coordinator", "checkpoint",
+              "time integrator", "Diffusion", "Diffusion PC", "Coupled PC",
+              "Coupled Solver", "boundary conditions", "initial conditions",
+              "visualization", "visualization_surface", "PKs"]
+_prespace = ["PKs", "field evaluators", "initial conditions"]
+
 
 class ParameterList(base.TeuchosBaseXML):
     """Base class for all Teuchos::ParameterList objects
@@ -115,18 +123,38 @@ class ParameterList(base.TeuchosBaseXML):
                                 warnings.warn(RuntimeWarning("Parameter %s in list %s is of type %s, not expected optional type %s"%(pname, self.get("name"), elem.get("type"), etype)))
 
 
-    def indent(self, ntabs):
+    def sort(self):
+        """Sorts mychildren() by params first, then lists."""
+        self.getchildren().sort(key=lambda x: x.tag)
+
+    def indent(self, ntabs, doublespace=False, doublespace_two=False):
         """Properly indent this list (and its Parameters/sublists) with [ntabs] tabs."""
+        self.sort()
+
+        doublespace_sublists = self.get("name") in _doublespace
+        doublespace_sublists_two_deep = self.get("name") in _doublespace_two
+        postspace = doublespace or self.get("name") in _postspace
+        prespace = self.get("name") in _prespace
+        
         if len(self) is 0:
             self.text = "\n" + " "*(ntabs)*base._tabsize
         else:
             self.text = "\n" + " "*(ntabs+1)*base._tabsize
 
             for el in self:
-                el.indent(ntabs+1)
+                el.indent(ntabs+1, doublespace_sublists or doublespace_two,
+                          doublespace_sublists_two_deep)
             self[-1].tail = "\n" + " "*(ntabs)*base._tabsize
+            if doublespace_sublists or doublespace_two:
+                self[-1].tail = "\n"+self[-1].tail
 
-        self.tail = "\n" + " "*(ntabs)*base._tabsize
+        if prespace:
+            self.text = "\n"+self.text
+    
+        if postspace:
+            self.tail = "\n\n" + " "*(ntabs)*base._tabsize
+        else:
+            self.tail = "\n" + " "*(ntabs)*base._tabsize
 
     def isElement(self, name):
         try:
