@@ -285,7 +285,9 @@ void Field_CompositeVector::ReadCellsFromCheckpoint_(std::string filename) {
 void Field_CompositeVector::ReadCheckpoint_(std::string filename) {
   Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
       Teuchos::rcp(new Amanzi::HDF5_MPI(data_->Comm(), filename));
+  file_input->open_h5file();
   ReadCheckpoint(file_input.ptr());
+  file_input->close_h5file();
 }
 
 
