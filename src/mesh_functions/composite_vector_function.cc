@@ -38,7 +38,7 @@ CompositeVectorFunction::CompositeVectorFunction(
 void CompositeVectorFunction::Compute(double time,
         const Teuchos::Ptr<CompositeVector>& cv) {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = func_->mesh();
-  cv->PutScalar(0.0);
+  // cv->PutScalar(0.0);
 
   // create the input tuple
   int dim = mesh->space_dimension();

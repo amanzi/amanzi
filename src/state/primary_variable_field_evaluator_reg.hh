@@ -5,15 +5,15 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-A field evaluator for an unchanging cell volume.
+A field evaluator with no dependencies solved for by a PK.
 
 ------------------------------------------------------------------------- */
 
-#include "cell_volume_evaluator.hh"
+#include "primary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 
-Utils::RegisteredFactory<FieldEvaluator,CellVolumeEvaluator>
-CellVolumeEvaluator::fac_("cell volume");
+// registry of method
+Utils::RegisteredFactory<FieldEvaluator,PrimaryVariableFieldEvaluator> PrimaryVariableFieldEvaluator::fac_("primary variable");
 
 } // namespace
