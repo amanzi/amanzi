@@ -1319,52 +1319,157 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
 Linear Solvers
 ==============
 
-This list contains sublists for various linear solvers such as PCG and GMRES.
+This list contains sublists for various linear solvers such as PCG, GMRES, and NKA.
 Here is and example:
 
 .. code-block:: xml
 
      <ParameterList name="Solvers">
        <ParameterList name="GMRES with HypreAMG">
-         <Parameter name="iterative method" type="string" value="gmres"/>
-         <Parameter name="error tolerance" type="double" value="1e-12"/>
-         <Parameter name="maximum number of iterations" type="int" value="400"/>
-         <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
          <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-         <Parameter name="size of Krylov space" type="int" value="10"/>
+         <Parameter name="iterative method" type="string" value="gmres"/>
 
-         <ParameterList name="VerboseObject">
-           <Parameter name="Verbosity Level" type="string" value="high"/>
+         <ParameterList name="gmres parameters">
+           ...
+         </ParameterList>
+       </ParameterList>
+
+       <ParameterList name="PCG with HypreAMG">
+         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+         <Parameter name="iterative method" type="string" value="pcg"/>
+         <ParameterList name="pcg parameters">
+           ...
          </ParameterList>
        </ParameterList>
      </ParameterList>
 
-The name `"GMRES with Hypre AMG`" is selected by the user.
-It can be used by a process kernel lists to define a solver.
-The verbose object is discussed below.
+The names `"GMRES with Hypre AMG`" iand similar are choosen by the user.
+They can be used by a process kernel lists to define a solver.
+
+* `"preconditioner`" [string] is name in the list of preconditioners. If it is missing, 
+  the identity preconditioner is employed.
 
 * `"iterative method`" [string] defines a type of Krylov-based method. The parameters
   include `"pcg'" and `"gmres`".
+
+* `"xxx parameters`" [sublist] provides parameters for the iterative method specified 
+  by variable `"iterative method`".
+ 
+
+GMRES
+-----
+
+Internal parameters for GMRES include
+
+.. code-block:: xml
+
+    <ParameterList name="gmres parameters">
+      <Parameter name="error tolerance" type="double" value="1e-12"/>
+      <Parameter name="maximum number of iterations" type="int" value="400"/>
+      <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
+      <Parameter name="size of Krylov space" type="int" value="10"/>
+      <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
 
 * `"error tolerance`" [double] is used in the convergence test. The default value is 1e-6.
 
 * `"maximum number of iterations`" [int] is used in the convergence test. The default is 100.
 
 * `"convergence criteria`" [Array(string)] specifies multiple convergence criteria. The list
-  may include `"relative residual`", `"relative rhs`" (default), and `"absolute residual`".
+  may include `"relative residual`", `"relative rhs`" (default), `"absolute residual`", and
+  `"make one iteration`". The latter enforces the solver to perform at least one iteration
+  which may be critical for extremely small time steps.
 
-* `"preconditioner`" [string] is name in the list of preconditioners. If missing, the identity
-  preconditioner will be employed. Support of the identity preconditioner is the work in progress.
+* `"size of Krylov space`" [int] defines the maximum size of the Krylov space. The default value is 10.
 
-* `"size of Krylov space`" [int] is used in GMRES iterative method. The default value is 10.
+* `"overflow tolerance`" [double] defines the maximum allowed jump in residual. The default
+  value is 3.0e+50.
+
+
+PCG
+---
+
+Internal parameters for PCG include
+
+.. code-block:: xml
+
+    <ParameterList name="pcg parameters">
+      <Parameter name="error tolerance" type="double" value="1e-12"/>
+      <Parameter name="maximum number of iterations" type="int" value="400"/>
+      <Parameter name="convergence criteria" type="Array(string)" value="{relative residual,make one iteration}"/>
+      <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+
+* `"error tolerance`" [double] is used in the convergence test. The default value is 1e-6.
+
+* `"maximum number of iterations`" [int] is used in the convergence test. The default is 100.
+
+* `"convergence criteria`" [Array(string)] specifies multiple convergence criteria. The list
+  may include `"relative residual`", `"relative rhs`" (default), `"absolute residual`", and
+  `"make one iteration`". The latter enforces the solver to perform at least one iteration
+  which may be critical for extremely small time steps.
+
+* `"overflow tolerance`" [double] defines the maximum allowed jump in residual. The default
+  value is 3.0e+50.
+
+
+NKA
+---
+
+This is avariation of GMRES. Internal parameters for NKA include
+
+.. code-block:: xml
+
+    <ParameterList name="nka parameters">
+      <Parameter name="error tolerance" type="double" value="1e-12"/>
+      <Parameter name="maximum number of iterations" type="int" value="400"/>
+      <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
+      <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+      <Parameter name="max nka vectors" type="int" value="10"/>
+      <Parameter name="nka vector tolerance" type="double" value="0.05"/>
+
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+
+* `"error tolerance`" [double] is used in the convergence test. The default value is 1e-6.
+
+* `"maximum number of iterations`" [int] is used in the convergence test. The default is 100.
+
+* `"convergence criteria`" [Array(string)] specifies multiple convergence criteria. The list
+  may include `"relative residual`", `"relative rhs`" (default), `"absolute residual`", and
+  `"make one iteration`". The latter enforces the solver to perform at least one iteration
+  which may be critical for extremely small time steps.
+
+* `"overflow tolerance`" [double] defines the maximum allowed jump in residual. The default
+  value is 3.0e+50.
+
+* `"max nka vectors`" [int] defines the maximum number of consequitive vectors used for 
+  a local space.  The default value is 10.
+
+* `"nka vector tolerance`" [int] defines the minimum allowed orthogonality between vectors in 
+  the local space. If a new vector does not satisfy this requirement, the space is modified. 
+  The default value is 0.05.
+
+
 
 
 Preconditioners
 ===============
 
 Version 2 of the native input spec introduces this list. It contains sublists for various
-preconditioners required by a simulation. At the moment, we support Trilinos multilevel 
-preconditioner and Hypre BoomerAMG preconditioner. Here is an example:
+preconditioners required by a simulation. At the moment, we support Trilinos multilevel
+preconditioner, Hypre BoomerAMG preconditioner, ILU preconditioner, and identity preconditioner. 
+Here is an example:
 
 .. code-block:: xml
 
@@ -1406,7 +1511,7 @@ They can be used by a process kernel lists to define a preconditioner.
 Hypre AMG
 ---------
 
-Internal parameters of Boomer AMG includes
+Internal parameters for Boomer AMG include
 
 .. code-block:: xml
 
@@ -1433,7 +1538,7 @@ Internal parameters of Boomer AMG includes
 Trilinos ML
 -----------
 
-Internal parameters of Trilinos ML includes
+Internal parameters for Trilinos ML include
 
 .. code-block:: xml
 
@@ -1461,7 +1566,7 @@ Internal parameters of Trilinos ML includes
 Block ILU
 ---------
 
-The internal parameters of the block ILU are as follows:
+The internal parameters for block ILU are as follows:
 
 .. code-block:: xml
 
