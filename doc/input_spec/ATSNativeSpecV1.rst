@@ -1146,42 +1146,4 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
     * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
 
-    * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
-
-    * `"times start period stop n`" [Array(double) if multiple start period stop parameters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" parameter.
-
-    * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
-
-
-The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
-
-* `"Observation Data: Point`" returns the value of the field quantity at a point
-
-* `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
-
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="Observation Data">
-    <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
-    <ParameterList name="some observation name">
-      <Parameter name="Region" type="string" value="some point region name"/>
-      <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-      <Parameter name="Variable" type="string" value="Volumetric water content"/>
-      <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
-
-      <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
-      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
-
-      <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
-      <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
-
-    </ParameterList>
-  </ParameterList>
-
-
-
-
+    * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*peri
