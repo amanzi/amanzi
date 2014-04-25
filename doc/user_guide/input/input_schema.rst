@@ -755,25 +755,26 @@ the necessary information.  Below is a table of the conditions
 available for the liquid phase and the attributes required to define
 them.
 
-======================   ===============  =============================
-Initial Condition Type   Attributes       Value Type
-======================   ===============  =============================
-uniform_pressure         name             string
-                         value            double/time_constant/constant
-----------------------   ---------------  -----------------------------
-linear_pressure          name             string
-                         value            double/time_constant/constant
-                         reference_coord  coordinate
-                         gradient         coordinate
-----------------------   ---------------  -----------------------------
-uniform_saturation       name             string
-                         value            double/time_constant/constant
-----------------------   ---------------  -----------------------------
-linear_saturation        name             string
-                         value            double/time_constant/constant
-                         reference_coord  coordinate 
-                         gradient         coordinate 
-======================   ===============  =============================
++-----------------------+------------------+---------------------------------+
+| Initial Condition Type| Attributes       | Value Type                      |
++=======================+==================+=================================+
+| uniform_pressure      | | name           | | string                        |
+|                       | | value          | | double/time_constant/constant |
++-----------------------+------------------+---------------------------------+
+| linear_pressure       | | name           | | string                        |
+|                       | | value          | | double/time_constant/constant |
+|                       | | reference_coord| | coordinate                    |
+|                       | | gradient       | | coordinate                    |
++-----------------------+------------------+---------------------------------+
+| uniform_saturation    | | name           | | string                        |
+|                       | | value          | | double/time_constant/constant |
++-----------------------+------------------+---------------------------------+
+| linear_saturation     | | name           | | string                        |
+|                       | | value          | | double/time_constant/constant |
+|                       | | reference_coord| | coordinate                    |
+|                       | | gradient       | | coordinate                    |
++-----------------------+------------------+---------------------------------+
+
 
 For the solute component the attributes available are *name*, *value*,
 *function*, *reference_coord*, and *gradient*.  The function options
@@ -818,27 +819,33 @@ element can only contain one type of boundary condition.  Both
 elements also accept a *name* attribute to indicate the phase
 associated with the boundary condition.
 
-=======================  ================  ============================
-Boundary Condition Type  Attributes        Value Type
-=======================  ================  ============================
-inward_mass_flux         name              string
-inward_volumetric_flux   start             double/time_constant/constant
-outward_mass_flux        value             double
-outward_volumetric_flux  function          'linear','uniform','constant'
------------------------  ----------------  ----------------------------
-uniform_pressure         name              string
-hydrostatic              start             double/time_constant/constant
-                         value             double
-                         function          'uniform','constant'
------------------------  ----------------  ----------------------------
-seepage_face             name              string
-                         inward_mass_flux  double/time_constant/constant
-                         function          'linear','uniform','constant'
------------------------  ----------------  ----------------------------
-no_flow                  name              string
-                         start             double/time_constant/constant
-                         function          'linear','uniform','constant'
-=======================  ================  ============================
++-------------------------+--------------------+------------------------------------+
+|Boundary Condition Type  | Attributes         | Value Type                         |
++=========================+====================+====================================+
+|inward_mass_flux         | | name             | | string                           |
+|inward_volumetric_flux   | | start            | | double/time_constant/constant    |
+|outward_mass_flux        | | value            | | double                           |
+|outward_volumetric_flux  | | function         | | 'linear','uniform','constant'    |
++-------------------------+--------------------+------------------------------------+
+|uniform_pressure         | | name             | | string                           |
+|                         | | start            | | double/time_constant/constant    |
+|                         | | value            | | double                           |
+|                         | | function         | | 'uniform','constant'             |
++-------------------------+--------------------+------------------------------------+
+|hydrostatic              | | name             | | string                           |
+|                         | | start            | | double/time_constant/constant    |
+|                         | | value            | | double                           |
+|                         | | function         | | 'uniform','constant'             |
+|                         | | coordinate_system| | 'absolute','relative to mesh top'|
++-------------------------+--------------------+------------------------------------+ 
+|seepage_face             | | name             | | string                           |
+|                         | | inward_mass_flux | | double/time_constant/constant    |
+|                         | | function         | | 'linear','uniform','constant'    |
++-------------------------+--------------------+------------------------------------+
+|no_flow                  | | name             | | string                           |
+|                         | | start            | | double/time_constant/constant    |
+|                         | | function         | | 'linear','uniform','constant'    |
++-------------------------+--------------------+------------------------------------+
 
 For the solute component, the boundary condition available is
 ``aqueous_conc`` which has the attributes *name*, *value*, *function*,
@@ -890,13 +897,13 @@ element can only contain one type of source.  Both elements also
 accept a *name* attribute to indicate the phase associated with the
 source.
 
-========================  ================  =============================
-Liquid Phase Source Type  Attributes        Value Type
-========================  ================  =============================
-volume_weighted           start             double/time_constant/constant
-perm_weighted             value             double
-                          function          'linear','uniform','constant'
-========================  ================  =============================
++-------------------------+--------------------+------------------------------------+
+|Liquid Phase Source Type | Attributes         | Value Type                         |
++=========================+====================+====================================+
+|volume_weighted          | | start            | | double/time_constant/constant    |
+|perm_weighted            | | value            | | double                           |
+|                         | | function         | | 'linear','uniform','constant'    |
++-------------------------+--------------------+------------------------------------+
 
 For the solute component, the source available is ``aqueous_conc``
 which has the attributes *name*, *value*, *function*, and *start*.

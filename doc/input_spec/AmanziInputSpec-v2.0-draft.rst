@@ -770,7 +770,7 @@ Here is more info on the `"liquid_phase`" elements:
 
 .. code-block:: xml
 
-     <hydrostatic name="some name" value="exponential" function="uniform | constant" start="time" />
+     <hydrostatic name="some name" value="exponential" function="uniform | constant" start="time" coordinate_system="absolute | relative to mesh top"/>
 
 .
     * `"solute_component`" is an element with the following subelement: 

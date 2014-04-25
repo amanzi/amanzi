@@ -2904,7 +2904,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                       textContent2 = XMLString::transcode(bcElem->getAttribute(
 		                       XMLString::transcode("coordinate_system")));
 		      hasCoordsys = true;
-		      if (strcmp(textContent2,"relative")==0){
+		      if (strcmp(textContent2,"relative to mesh top")==0){
 			coordsys = "Relative";
 		      }
 		    }
