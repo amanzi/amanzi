@@ -77,12 +77,14 @@
    <!-- SOLVERS -->
    <ParameterList name="Solvers">
      <ParameterList name="AztecOO CG">
-       <Parameter name="error tolerance" type="double" value="1e-16"/>
        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-       <Parameter name="maximum number of iterations" type="int" value="200"/>
        <Parameter name="iterative method" type="string" value="gmres"/>
-       <ParameterList name="VerboseObject">
-         <Parameter name="Verbosity Level" type="string" value="high"/>
+       <ParameterList name="gmres parameters">
+         <Parameter name="error tolerance" type="double" value="1e-16"/>
+         <Parameter name="maximum number of iterations" type="int" value="200"/>
+         <ParameterList name="VerboseObject">
+           <Parameter name="Verbosity Level" type="string" value="high"/>
+         </ParameterList>
        </ParameterList>
      </ParameterList>
    </ParameterList>

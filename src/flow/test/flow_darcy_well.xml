@@ -75,10 +75,12 @@
   <!-- SOLVERS -->
   <ParameterList name="Solvers">
     <ParameterList name="PCG">
-      <Parameter name="error tolerance" type="double" value="1e-10"/>
+      <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
-      <Parameter name="maximum number of iterations" type="int" value="400"/>
-       <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="maximum number of iterations" type="int" value="400"/>
+        <Parameter name="error tolerance" type="double" value="1e-10"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 

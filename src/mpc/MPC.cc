@@ -72,7 +72,7 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
 /* *******************************************************************/
 void MPC::mpc_init() {
   // set the line prefix for output
-  this->setLinePrefix("Amanzi::MPC         ");
+  this->setLinePrefix("Amanzi::MPC     ");
   // make sure that the line prefix is printed
   this->getOStream()->setShowLinePrefix(true);
 
