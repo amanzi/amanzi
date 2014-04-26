@@ -34,11 +34,14 @@ class PreconditionerML : public Preconditioner {
 
   int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv);
 
+  int returned_code() { return returned_code_; }
+
  private:
   Teuchos::ParameterList list_;
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ML_;
 
   bool initialized_;
+  int returned_code_;
 };
 
 }  // namespace AmanziPreconditioners
