@@ -33,11 +33,14 @@ class PreconditionerBlockILU : public Preconditioner {
 
   int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv);
 
+  int returned_code() { return returned_code_; }
+
  private:
   Teuchos::ParameterList list_;
   Teuchos::RCP<Ifpack_Preconditioner> IfpILU_;
 
   bool initialized_;
+  int returned_code_;
 };
 
 }  // namespace AmanziPreconditioners

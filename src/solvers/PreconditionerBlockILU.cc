@@ -18,11 +18,14 @@ namespace Amanzi {
 namespace AmanziPreconditioners {
 
 /* ******************************************************************
- * Apply the preconditioner.
- ****************************************************************** */
+* Apply the preconditioner.
+* According to IfPack documentation, the error code is set to 0 if 
+* the inversion was successful. 
+****************************************************************** */
 int PreconditionerBlockILU::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
 {
-  return IfpILU_->ApplyInverse(v, hv);
+  returned_code_ = IfpILU_->ApplyInverse(v, hv);
+  return (returned_code_ == 0) ? 0 : 1;
 }
 
 

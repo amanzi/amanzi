@@ -35,6 +35,8 @@ class PreconditionerIdentity : public Preconditioner {
     hv = v;
     return 0;
   }
+
+  int returned_code() { return 0; }
 };
 
 }  // namespace AmanziPreconditioners
