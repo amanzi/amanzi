@@ -152,7 +152,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   if (MyPID == 0) {
     std::cout << "pressure solver (" << solver->name() 
               << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << ierr << std::endl;
+              << " code=" << solver->returned_code() << std::endl;
   }
 
   // repeat the above without destroying the operators.

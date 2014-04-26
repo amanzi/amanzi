@@ -133,7 +133,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   if (MyPID == 0) {
     std::cout << "pressure solver (" << solver->name() 
               << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << ierr << std::endl;
+              << " code=" << solver->returned_code() << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");

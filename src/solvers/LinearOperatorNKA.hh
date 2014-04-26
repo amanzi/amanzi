@@ -51,7 +51,11 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
 
   void Init(Teuchos::ParameterList& plist);
 
-  int ApplyInverse(const Vector& v, Vector& hv) const;
+  int ApplyInverse(const Vector& v, Vector& hv) const {
+    int ierr = NKA_(v, hv, tol_, max_itrs_, criteria_);
+    returned_code_ = ierr;
+    return (ierr > 0) ? 0 : 1;  // Positive ierr code means success.
+  }
 
   virtual Teuchos::RCP<Matrix> Clone() const {
     return Teuchos::rcp(new LinearOperatorNKA(*this)); }
@@ -65,9 +69,13 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
   // accessors
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
+  int returned_code() { return returned_code_; }
 
  public:
   Teuchos::RCP<VerboseObject> vo_;
+
+ private:
+  int NKA_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
 
  private:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
@@ -76,7 +84,7 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
 
   int max_itrs_, nka_dim_, criteria_;
   double tol_, nka_tol_, overflow_tol_;
-  mutable int num_itrs_;
+  mutable int num_itrs_, returned_code_;
   mutable double residual_;
   mutable bool initialized_;
 
@@ -87,7 +95,8 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
 
 // Apply the inverse, x <-- A^-1 b
 template<class Matrix, class Vector, class VectorSpace>
-int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& f, Vector& x) const 
+int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
+    const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
   ASSERT(f.Map().SameAs(m_->RangeMap()));
   ASSERT(x.Map().SameAs(m_->DomainMap()));
@@ -104,7 +113,7 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& f
   f.Norm2(&fnorm);
   if (fnorm == 0.0) {
     x.PutScalar(0.0);
-    return criteria_;  // Zero solution satifies all criteria.
+    return criteria;  // Zero solution satifies all criteria.
   }
 
   x.Norm2(&xnorm);
@@ -122,8 +131,8 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& f
       *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
     }
   }
-  if (criteria_ == LIN_SOLVER_RELATIVE_RHS) {
-    if (rnorm0 < tol_ * fnorm) return LIN_SOLVER_RELATIVE_RHS;
+  if (criteria == LIN_SOLVER_RELATIVE_RHS) {
+    if (rnorm0 < tol * fnorm) return LIN_SOLVER_RELATIVE_RHS;
   }
 
   if (residual_ > overflow_tol_) {
@@ -157,21 +166,21 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& f
     if (rnorm > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;
 
     // Return the first criterion which is fulfilled.
-    if (criteria_ & LIN_SOLVER_RELATIVE_RHS) {
-      if (rnorm < tol_ * fnorm) return LIN_SOLVER_RELATIVE_RHS;
-    } else if (criteria_ & LIN_SOLVER_RELATIVE_RESIDUAL) {
-      if (rnorm < tol_ * rnorm0) return LIN_SOLVER_RELATIVE_RESIDUAL;
-    } else if (criteria_ & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
-      if (rnorm < tol_) return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+    if (criteria & LIN_SOLVER_RELATIVE_RHS) {
+      if (rnorm < tol * fnorm) return LIN_SOLVER_RELATIVE_RHS;
+    } else if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
+      if (rnorm < tol * rnorm0) return LIN_SOLVER_RELATIVE_RESIDUAL;
+    } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
+      if (rnorm < tol) return LIN_SOLVER_ABSOLUTE_RESIDUAL;
     }
 
-    done = num_itrs_ > max_itrs_;
+    done = num_itrs_ > max_itrs;
   }
 
   if (initialized_) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Failed (" << num_itrs_ << " itrs) residual = "
-                 << residual_ << " (tol=" << tol_ << ")" << std::endl;
+                 << residual_ << " (tol=" << tol << ")" << std::endl;
   }
 
   return LIN_SOLVER_MAX_ITERATIONS;

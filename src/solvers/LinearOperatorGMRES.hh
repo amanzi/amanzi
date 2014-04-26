@@ -55,8 +55,8 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
 
   int ApplyInverse(const Vector& v, Vector& hv) const {
     int ierr = GMRESRestart_(v, hv, tol_, max_itrs_, criteria_);
-    return ierr;
-    // return (ierr > 0) ? 0 : 1;
+    returned_code_ = ierr;
+    return (ierr > 0) ? 0 : 1;  // Positive ierr code means success.
   }
 
   // access members
@@ -67,12 +67,9 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   void set_krylov_dim(int n) { krylov_dim_ = n; }
   void set_overflow(double tol) { overflow_tol_ = tol; }
 
-  double residual() {
-    return residual_;
-  }
-  int num_itrs() {
-    return num_itrs_;
-  }
+  double residual() { return residual_; }
+  int num_itrs() { return num_itrs_; }
+  int returned_code() { return returned_code_; }
 
  public:
   Teuchos::RCP<VerboseObject> vo_;
@@ -92,7 +89,7 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
 
   int max_itrs_, criteria_, krylov_dim_;
   double tol_, overflow_tol_;
-  mutable int num_itrs_;
+  mutable int num_itrs_, returned_code_;
   mutable double residual_;
   mutable bool initialized_;
 };
