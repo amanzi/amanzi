@@ -466,7 +466,7 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
           if (cycle_macro_list.isParameter("Start_Period_Stop")) {
             std::stringstream ss;
             ss << "cycles start period stop " << j;
-            vis_list.set(ss.str(),cycle_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+            vis_list.set(ss.str(),cycle_macro_list.get<Teuchos::Array<int> >("Start_Period_Stop"));
             ++j;
           } else if (cycle_macro_list.isParameter("Values")) {
             Teuchos::Array<int> cycles;
