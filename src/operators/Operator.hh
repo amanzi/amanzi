@@ -62,6 +62,7 @@ class Operator {
   mutable bool data_validity_;
 
   std::vector<Teuchos::RCP<std::vector<WhetStone::DenseMatrix> > > blocks_;
+  std::vector<Teuchos::RCP<std::vector<WhetStone::DenseMatrix> > > blocks_shadow_;
   std::vector<int> blocks_schema_;
   Teuchos::RCP<CompositeVector> diagonal_;
 

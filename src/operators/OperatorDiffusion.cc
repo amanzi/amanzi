@@ -45,8 +45,11 @@ void OperatorDiffusion::UpdateMatricesStiffness(std::vector<WhetStone::Tensor>& 
     m = nblocks++;
     blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_NODE);
     blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
+    blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
   }
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
+  WhetStone::DenseMatrix null_matrix;
 
   // update matrix blocks
   int dim = mesh_->space_dimension();
@@ -69,6 +72,7 @@ void OperatorDiffusion::UpdateMatricesStiffness(std::vector<WhetStone::Tensor>& 
       matrix[c] += Acell;
     } else {
       matrix.push_back(Acell);
+      matrix_shadow.push_back(null_matrix);
     }
   }
 }

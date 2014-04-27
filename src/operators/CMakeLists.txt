@@ -77,10 +77,16 @@ if ( BUILD_TESTS )
                         KIND unit
                         SOURCE test/Main.cc test/operator_parabolic_surface.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_nonlinear_surface.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     else()
         add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
                         KIND unit
-                        SOURCE test/Main.cc test/operator_laplace_beltrami.cc test/operator_parabolic_surface.cc
+                        SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
+                                            test/operator_parabolic_surface.cc
+                                            test/operator_nonlinear_surface.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()
 

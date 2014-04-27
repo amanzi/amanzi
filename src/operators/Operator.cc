@@ -46,6 +46,7 @@ Operator::Operator(const Operator& op)
       cvs_(op.cvs_), 
       blocks_(op.blocks_), 
       blocks_schema_(op.blocks_schema_), 
+      blocks_shadow_(op.blocks_shadow_), 
       diagonal_(op.diagonal_),
       rhs_(op.rhs_),
       A_(op.A_),
@@ -78,6 +79,7 @@ void Operator::Clone(const Operator& op)
   cvs_ = op.cvs_; 
   blocks_ = op.blocks_;
   blocks_schema_ = op.blocks_schema_;
+  blocks_shadow_ = op.blocks_shadow_; 
   diagonal_ = op.diagonal_;
   rhs_ = op.rhs_;
   A_ = op.A_;
@@ -379,8 +381,9 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
 
   int nblocks = blocks_.size();
   for (int nb = 0; nb < nblocks; nb++) {
-    std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[nb];
     int schema = blocks_schema_[nb];
+    std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[nb];
+    std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[nb];
 
     if (schema & OPERATOR_SCHEMA_BASE_CELL) {
       if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
@@ -393,6 +396,7 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
           int nfaces = faces.size();
 
           WhetStone::DenseMatrix& Acell = matrix[c];
+          matrix_shadow[c] = Acell;
 
           for (int n = 0; n < nfaces; n++) {
             int f = faces[n];

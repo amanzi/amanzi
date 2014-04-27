@@ -112,7 +112,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
   op->Init();
   op->InitOperator(K, Teuchos::null, olist);
-  op->UpdateMatrices(solution);
+  op->UpdateMatrices(Teuchos::null);
   op->ApplyBCs(bc_model, bc_values);
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
   op->AssembleMatrix(schema);

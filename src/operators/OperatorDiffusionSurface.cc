@@ -50,14 +50,8 @@ void OperatorDiffusionSurface::InitOperator(
 /* ******************************************************************
 * Basic routine of each operator: creation of matrices.
 ****************************************************************** */
-void OperatorDiffusionSurface::UpdateMatrices(const CompositeVector& u)
+void OperatorDiffusionSurface::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux)
 {
-  // update nonlinear coefficient
-  if (k_ != Teuchos::null) {
-    k_->UpdateValues(u);
-    k_->UpdateDerivatives(u);
-  }
-
   // find location of matrix blocks
   int m(0), nblocks = blocks_.size();
   bool flag(false);
@@ -75,20 +69,24 @@ void OperatorDiffusionSurface::UpdateMatrices(const CompositeVector& u)
     m = nblocks++;
     blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL);
     blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
+    blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
   }
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
+  WhetStone::DenseMatrix null_matrix;
 
   // update matrix blocks
   AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces(c, &faces);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix& Wff = Wff_cells_[c];
     WhetStone::DenseMatrix Acell(nfaces + 1, nfaces + 1);
 
-    // update terms due to nonlinear coefficient
+    // Update terms due to nonlinear coefficient
     double kc(1.0); 
     if (k_ != Teuchos::null) {
       kc = (*k_->cvalues())[c];
@@ -109,10 +107,86 @@ void OperatorDiffusionSurface::UpdateMatrices(const CompositeVector& u)
     }
     Acell(nfaces, nfaces) = matsum;
 
+
+    // Update terms due to dependence of k on the solution.
+    if (flux !=  Teuchos::null && k_ != Teuchos::null) {
+      const Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        double dkf = (*k_->fderivatives())[f];
+        double  kf = (*k_->fvalues())[f];
+        double alpha = (dkf / kf) * flux_data[0][f] * dirs[n];
+        if (alpha > 0) {
+          Acell(n, n) += kc * alpha;
+        }
+      }
+    }
+
     if (flag) {
       matrix[c] += Acell;
     } else {
       matrix.push_back(Acell);
+      matrix_shadow.push_back(null_matrix);
+    }
+  }
+}
+
+
+/* ******************************************************************
+* WARNING: Since diffusive flux is not continuous, we derive it only
+* once (using flag) and in exactly the same manner as in routine
+* Flow_PK::addGravityFluxes_DarcyFlux.
+* **************************************************************** */
+void OperatorDiffusionSurface::UpdateFlux(const CompositeVector& u, CompositeVector& flux, double scalar)
+{
+  // find location of face-based matrices
+  int m(0), nblocks = blocks_.size();
+  for (int nb = 0; nb < nblocks; nb++) {
+    if (blocks_schema_[nb] == OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE) {
+      m = nb;
+      break;
+    }
+  }
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
+
+  // Initialize the flux in the case of additive operators.
+  if (scalar == 0.0) flux.PutScalar(0.0);
+
+  u.ScatterMasterToGhosted("face");
+
+  const Epetra_MultiVector& u_cells = *u.ViewComponent("cell");
+  const Epetra_MultiVector& u_faces = *u.ViewComponent("face", true);
+  Epetra_MultiVector& flux_data = *flux.ViewComponent("face", true);
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+  std::vector<int> flag(nfaces_wghost, 0);
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
+    for (int n = 0; n < nfaces; n++) {
+      v(n) = u_faces[0][faces[n]];
+    }
+    v(nfaces) = u_cells[0][c];
+
+    if (matrix[c].NumRows() != 0) { 
+      WhetStone::DenseMatrix& Acell = matrix[c];
+      Acell.Multiply(v, av, false);
+    } else {
+      WhetStone::DenseMatrix& Acell = matrix_shadow[c];
+      Acell.Multiply(v, av, false);
+    }
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      if (f < nfaces_owned && !flag[f]) {
+        flux_data[0][f] = av(n) * dirs[n];
+        flag[f] = 1;
+      }
     }
   }
 }

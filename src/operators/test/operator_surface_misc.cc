@@ -140,7 +140,7 @@ TEST(SURFACE_MISC) {
   Teuchos::ParameterList olist;
   Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2));
   op3->InitOperator(K, Teuchos::null, olist);
-  op3->UpdateMatrices(solution);
+  op3->UpdateMatrices(Teuchos::null);
   op3->ApplyBCs(bc_model, bc_values);
 
   // change preconditioner to default
