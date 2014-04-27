@@ -287,7 +287,7 @@
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="components" type="Array(string)" value="{cell,face}"/>
             <ParameterList name="function">
               <ParameterList name="function-linear"> <!-- time component -->
                 <Parameter name="gradient" type="Array(double)" value="{0.15, -0.3, -0.45}"/>
