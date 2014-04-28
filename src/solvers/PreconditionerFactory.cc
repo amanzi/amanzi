@@ -15,7 +15,8 @@
 #include "Preconditioner.hh"
 #include "PreconditionerFactory.hh"
 #include "PreconditionerIdentity.hh"
-#include "PreconditionerHypre.hh"
+#include "PreconditionerBoomerAMG.hh"
+#include "PreconditionerEuclid.hh"
 #include "PreconditionerML.hh"
 #include "PreconditionerBlockILU.hh"
 
@@ -49,7 +50,12 @@ PreconditionerFactory::Create(Teuchos::ParameterList& slist)
 
     if (type == "boomer amg") {
       Teuchos::ParameterList hypre_list = slist.sublist("boomer amg parameters");
-      Teuchos::RCP<PreconditionerHypre> prec = Teuchos::rcp(new PreconditionerHypre());
+      Teuchos::RCP<PreconditionerBoomerAMG> prec = Teuchos::rcp(new PreconditionerBoomerAMG());
+      prec->Init(type, hypre_list);
+      return prec;
+    } else if (type == "euclid") {
+      Teuchos::ParameterList hypre_list = slist.sublist("euclid parameters");
+      Teuchos::RCP<PreconditionerEuclid> prec = Teuchos::rcp(new PreconditionerEuclid());
       prec->Init(type, hypre_list);
       return prec;
     } else if (type == "ml") {
