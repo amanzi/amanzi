@@ -33,20 +33,20 @@ Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
   variable_ = plist.get<std::string>("variable");
   region_ = plist.get<std::string>("region");
   functional_ = plist.get<std::string>("functional");
-  delimiter_ = plist.get<std::string>("Delimiter", ",");
+  delimiter_ = plist.get<std::string>("delimiter", ",");
 
   // entity of region
-  location_ = plist.get<std::string>("Location Name", "cell");
+  location_ = plist.get<std::string>("location name", "cell");
 
   // hack to orient flux to outward-normal along a boundary only
   flux_normalize_ = plist.get<bool>("direction normalized flux", false);
 
   // write mode
-  interval_ = plist.get<int>("Write Interval", 0);
+  interval_ = plist.get<int>("write interval", 0);
   write_ = interval_ > 0;
 
   if (write_) {
-    filenamebase_ = plist.get<std::string>("Observation Output Filename");
+    filenamebase_ = plist.get<std::string>("observation output filename");
 
     // open file only on process 0
     if (!comm->MyPID()) {

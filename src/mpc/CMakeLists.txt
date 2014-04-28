@@ -67,7 +67,8 @@ set(mpc_inc_files
 )
 
 add_amanzi_library(mpc 
-                   SOURCE MPC.cc Unstructured_observations.cc HEADERS ${mpc_inc_files}
+                   SOURCE MPC.cc Unstructured_observations.cc 
+                   HEADERS ${mpc_inc_files}
                    LINK_LIBS time_integration solvers output state mesh dbg ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
