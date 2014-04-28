@@ -10,7 +10,7 @@
 */
 
 #include "Teuchos_RCP.hpp"
-#include "Ifpack.h"
+#include "Ifpack_Hypre.h"
 
 #include "exceptions.hh"
 #include "PreconditionerEuclid.hh"
@@ -36,20 +36,21 @@ void PreconditionerEuclid::Init(const std::string& name, const Teuchos::Paramete
   plist_ = list;
 #ifdef HAVE_HYPRE
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetStats,
-          plist_->get<int>("verbosity", 0))));
+          plist_.get<int>("verbosity", 0))));
 
-  if (plist_->isParameter("ILU(k) fill level"))
+  if (plist_.isParameter("ILU(k) fill level"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetLevel,
-            plist_->get<double>("ILU(k) fill level"))));
+            plist_.get<double>("ILU(k) fill level"))));
 
-  if (plist_->isParameter("rescale rows"))
-    bool rescale_rows = plist_->get<bool>("rescale rows");
+  if (plist_.isParameter("rescale rows")) {
+    bool rescale_rows = plist_.get<bool>("rescale rows");
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetRowScale,
             rescale_rows ? 1 : 0)));
+  }
 
-  if (plist_->isParameter("ILUT drop tolerance"))
+  if (plist_.isParameter("ILUT drop tolerance"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetILUT,
-            plist_->get<double>("ILUT drop tolerance"))));
+            plist_.get<double>("ILUT drop tolerance"))));
 #else
   Errors::Message msg("Hypre (Euclid) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);
@@ -67,7 +68,7 @@ void PreconditionerEuclid::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
 
   Teuchos::ParameterList hypre_list("Preconditioner List");
   hypre_list.set("Preconditioner", Euclid);
-  hypre_list.set("SolveOrPrecondition", Preconditioner);
+  hypre_list.set("SolveOrPrecondition", (Hypre_Chooser)1);
   hypre_list.set("SetPreconditioner", true);
   hypre_list.set("NumFunctions", funcs_.size());
   hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", &funcs_[0]);
