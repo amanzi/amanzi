@@ -9,7 +9,7 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include "WRM_BrooksCorey.hh"
+#include "wrm_brooks_corey.hh"
 
 namespace Amanzi {
 namespace Flow {
