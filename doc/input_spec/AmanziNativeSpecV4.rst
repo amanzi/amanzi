@@ -1921,6 +1921,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
     * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
 
+    * `"delimiter`" [string] the string used to delimit columns in the observation file output, default is `",`"
+
 
 The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
 
