@@ -1892,9 +1892,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
   * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
 
-  * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"times`", and TSPS (see below).
+  * OBSERVATION [list] user-defined label, can accept values for `"variables`", `"functional`", `"region`", `"times`", and TSPS (see below).
 
-    * `"Variables`" [Array(string)] a list of field quantities taken from the list of 
+    * `"variables`" [Array(string)] a list of field quantities taken from the list of 
       available field quantities:
 
       * Volumetric water content [volume water / bulk volume]
@@ -1905,9 +1905,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
       * MaterialID
 
-    * `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
+    * `"functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 
-    * `"Region`" [string] the label of a user-defined region
+    * `"region`" [string] the label of a user-defined region
 
     * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 

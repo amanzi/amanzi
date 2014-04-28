@@ -75,12 +75,12 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
       }
 
       // loop over all variables listed and create an observable for each
-      std::string var = observable_plist.get<std::string>("Variable");
+      std::string var = observable_plist.get<std::string>("variable");
       observations.insert(std::pair
                           <std::string, Observable>(observations_plist_.name(i),
                                                     Observable(var,
-                                                               observable_plist.get<std::string>("Region"),
-                                                               observable_plist.get<std::string>("Functional"),
+                                                               observable_plist.get<std::string>("region"),
+                                                               observable_plist.get<std::string>("functional"),
 							       observable_plist,
 							       comm)));
     }

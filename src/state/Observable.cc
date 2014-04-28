@@ -30,9 +30,9 @@ Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
     count_(0) {
   // process the spec
   name_ = plist.name();
-  variable_ = plist.get<std::string>("Variable");
-  region_ = plist.get<std::string>("Region");
-  functional_ = plist.get<std::string>("Functional");
+  variable_ = plist.get<std::string>("variable");
+  region_ = plist.get<std::string>("region");
+  functional_ = plist.get<std::string>("functional");
   delimiter_ = plist.get<std::string>("Delimiter", ",");
 
   // entity of region

@@ -620,6 +620,21 @@ Teuchos::ParameterList create_Observation_Data_List(Teuchos::ParameterList* plis
 
             obs_list.sublist(i->first).remove("Cycle Macro");
           }
+          if (obs_list.sublist(i->first).isParameter("Region")) {
+            std::string name = obs_list.sublist(i->first).get<std::string>("Region");
+            obs_list.sublist(i->first).set<std::string>("region", name);
+            obs_list.sublist(i->first).remove("Region");
+          }
+          if (obs_list.sublist(i->first).isParameter("Variable")) {
+            std::string name = obs_list.sublist(i->first).get<std::string>("Variable");
+            obs_list.sublist(i->first).set<std::string>("variable", name);
+            obs_list.sublist(i->first).remove("Variable");
+          }
+          if (obs_list.sublist(i->first).isParameter("Functional")) {
+            std::string name = obs_list.sublist(i->first).get<std::string>("Functional");
+            obs_list.sublist(i->first).set<std::string>("functional", name);
+            obs_list.sublist(i->first).remove("Functional");
+          }
         }
       }
     }
