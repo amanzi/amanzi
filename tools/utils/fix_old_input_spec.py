@@ -177,37 +177,19 @@ def _fixPC(pc, pctype, force=False):
 def _fixLinOp(itr):
     if not itr.isElement("iterative method"):
         itr.setParameter("iterative method", "string", "nka")
-        itr.setParameter("error tolerance", "double", 1.e-6)
-        itr.setParameter("maximum number of iterations", "int", 20)
     else:
         itm = itr.getElement("iterative method").get("value")
         if itm == "nka":
-            try:
-                lo = itr.pop("nka parameters")
-            except errors.MissingXMLError:
-                pass
+            lo = itr.sublist("nka parameters")
         elif itm == "gmres":
-            try:
-                lo = itr.pop("gmres parameters")
-            except errors.MissingXMLError:
-                pass
+            lo = itr.sublist("gmres parameters")
         else:
             raise RuntimeError("unknown lin op %s"%itm)
 
-        if not itr.isElement("error tolerance") and lo.isElement("error tolerance"):
-            itr.setParameter("error tolerance", "double", lo.getElement("error tolerance").get("value"))
-        else:
-            itr.setParameter("error tolerance", "double", 1.e-6)
-
-        if not itr.isElement("maximum number of iterations") and lo.isElement("maximum number of iterations"):
-            itr.setParameter("maximum number of iterations", "int", lo.getElement("maximum number of iterations").get("value"))
-        else:
-            itr.setParameter("maximum number of iterations", "int", 20)
-
-    try: itr.pop("tolerance")
-    except errors.MissingXMLError: pass
-    try: itr.pop("max iterations")
-    except errors.MissingXMLError: pass
+        if not lo.isElement("error tolerance"):
+            lo.setParameter("error tolerance", "double", 1.e-6)
+        if not lo.isElement("maximum number of iterations"):
+            lo.setParameter("maximum number of iterations", "int", 20)
 
 def _fixDiffusion(diff, req_pc, req_face):
     if req_face:
