@@ -231,9 +231,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
 
 
-  vapor_diffusion_ = false;
+  vapor_diffusion_ = plist_->get<bool>("include vapor diffusion", false);
   if (vapor_diffusion_){
-  // Create the vapor diffusion vectors
+    // Create the vapor diffusion vectors
     S->RequireField("vapor_diffusion_pressure", name_)->SetMesh(mesh_)->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetField("vapor_diffusion_pressure",name_)->set_io_vis(true);
 
@@ -241,10 +241,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     S->RequireField("vapor_diffusion_temperature", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetField("vapor_diffusion_temperature",name_)->set_io_vis(true);
-
   }
-
-
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
