@@ -50,8 +50,11 @@ void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
     m = nblocks++;
     blocks_schema_.push_back(new_schema);
     blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
+    blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
   }
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
+  WhetStone::DenseMatrix null_matrix;
 
   // apply preconditioner inversion
   AmanziMesh::Entity_ID_List cells;
@@ -81,6 +84,7 @@ void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
       matrix[f] += Aface;
     } else {
       matrix.push_back(Aface);
+      matrix_shadow.push_back(null_matrix);
     }
   }
 }

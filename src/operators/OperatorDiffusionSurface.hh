@@ -35,7 +35,8 @@ class OperatorDiffusionSurface : public Operator {
   void InitOperator(std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k,
                     const Teuchos::ParameterList& plist);
   void AssembleMatrix(int schema);
-  void UpdateMatrices(const CompositeVector& u);
+  void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux);
+  void UpdateFlux(const CompositeVector& u, CompositeVector& flux, double scalar);
 
   // local implementation of matrix inversion
   int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;

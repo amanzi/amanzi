@@ -140,7 +140,7 @@ TEST(SURFACE_MISC) {
   Teuchos::ParameterList olist;
   Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2));
   op3->InitOperator(K, Teuchos::null, olist);
-  op3->UpdateMatrices(solution);
+  op3->UpdateMatrices(Teuchos::null);
   op3->ApplyBCs(bc_model, bc_values);
 
   // change preconditioner to default
@@ -166,7 +166,7 @@ TEST(SURFACE_MISC) {
   if (MyPID == 0) {
     std::cout << "pressure solver (" << solver->name() 
               << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << ierr << std::endl;
+              << " code=" << solver->returned_code() << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");

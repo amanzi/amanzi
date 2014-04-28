@@ -36,7 +36,7 @@ void Transport_PK::ProcessParameterList()
   transport_list = parameter_list;
 
   // create verbosity object
-  vo_ = new VerboseObject("Amanzi::Transport", transport_list); 
+  vo_ = new VerboseObject("TransportPK", transport_list); 
 
   // global transport parameters
   cfl_ = transport_list.get<double>("CFL", 1.0);

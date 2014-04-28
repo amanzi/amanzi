@@ -99,21 +99,24 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
     std::string method_name = slist.get<std::string>("iterative method");
 
     if (method_name == "pcg") {
+      Teuchos::ParameterList pcg_list = slist.sublist("pcg parameters");
       Teuchos::RCP<LinearOperatorPCG<Matrix, Vector, VectorSpace> >
           lin_op = Teuchos::rcp(new LinearOperatorPCG<Matrix, Vector, VectorSpace>(m, h));
-      lin_op->Init(slist);
+      lin_op->Init(pcg_list);
       lin_op->set_name(method_name);
       return lin_op;
     } else if (method_name == "gmres") {
+      Teuchos::ParameterList gmres_list = slist.sublist("gmres parameters");
       Teuchos::RCP<LinearOperatorGMRES<Matrix, Vector, VectorSpace> >
           lin_op = Teuchos::rcp(new LinearOperatorGMRES<Matrix, Vector, VectorSpace>(m, h));
-      lin_op->Init(slist);
+      lin_op->Init(gmres_list);
       lin_op->set_name(method_name);
       return lin_op;
     } else if (method_name == "nka") {
+      Teuchos::ParameterList nka_list = slist.sublist("nka parameters");
       Teuchos::RCP<LinearOperatorNKA<Matrix, Vector, VectorSpace> >
           lin_op = Teuchos::rcp(new LinearOperatorNKA<Matrix, Vector, VectorSpace>(m, h));
-      lin_op->Init(slist);
+      lin_op->Init(nka_list);
       lin_op->set_name(method_name);
       return lin_op;
     } else {

@@ -14,6 +14,7 @@
 
 #include "tensor.hh"
 #include "Operator.hh"
+#include "NonlinearCoefficient.hh"
 
 
 namespace Amanzi {
@@ -27,8 +28,13 @@ class OperatorGravity : public Operator {
   ~OperatorGravity() {};
 
   // main members
-  void UpdateMatrices(const std::vector<WhetStone::Tensor>& K, 
-                      const AmanziGeometry::Point& rho_g);
+  void InitOperator(Teuchos::RCP<NonlinearCoefficient> k) { k_ = k; }
+  void UpdateMatrices(const std::vector<WhetStone::Tensor>& K, const AmanziGeometry::Point& rho_g);
+  void UpdateFlux(const std::vector<WhetStone::Tensor>& K, const AmanziGeometry::Point& rho_g, 
+                  CompositeVector& flux, double scalar);
+
+ private:
+  Teuchos::RCP<NonlinearCoefficient> k_;
 };
 
 }  // namespace Operators

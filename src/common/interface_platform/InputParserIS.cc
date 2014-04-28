@@ -466,7 +466,7 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
           if (cycle_macro_list.isParameter("Start_Period_Stop")) {
             std::stringstream ss;
             ss << "cycles start period stop " << j;
-            vis_list.set(ss.str(),cycle_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+            vis_list.set(ss.str(),cycle_macro_list.get<Teuchos::Array<int> >("Start_Period_Stop"));
             ++j;
           } else if (cycle_macro_list.isParameter("Values")) {
             Teuchos::Array<int> cycles;
@@ -1324,16 +1324,23 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
       }
     }
   }
-  aztecoo_list.set<double>("error tolerance", tol);
-  aztecoo_list.set<std::string>("iterative method", method);
-  aztecoo_list.set<int>("maximum number of iterations", maxiter);
   aztecoo_list.set<std::string>("preconditioner", prec);
+  aztecoo_list.set<std::string>("iterative method", method);
+  {
+    method.append(" parameters");
+    Teuchos::ParameterList& method_list = aztecoo_list.sublist(method);
+    method_list.set<double>("error tolerance", tol);
+    method_list.set<int>("maximum number of iterations", maxiter);
+  }
 
   // add default PCG solver
-  pcg_list.set<double>("error tolerance", tol);
-  pcg_list.set<std::string>("iterative method", "pcg");
-  pcg_list.set<int>("maximum number of iterations", maxiter);
   pcg_list.set<std::string>("preconditioner", prec);
+  pcg_list.set<std::string>("iterative method", "pcg");
+  {
+    Teuchos::ParameterList& method_list = pcg_list.sublist("pcg parameters");
+    method_list.set<double>("error tolerance", tol);
+    method_list.set<int>("maximum number of iterations", maxiter);
+  }
 
   return solver_list;
 }
@@ -2886,281 +2893,6 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
   return stt_list;
 }
 
-
-
-/* ******************************************************************
- * populates parameters in the State list.
- ****************************************************************** */
-Teuchos::ParameterList create_State_List_old(Teuchos::ParameterList* plist) {
-  Teuchos::ParameterList stt_list;
-
-  stt_list.set<double>("Gravity x", 0.0);
-  if (spatial_dimension_ == 2) {
-    stt_list.set<double>("Gravity y", - GRAVITY_MAGNITUDE);
-  } else {
-    stt_list.set<double>("Gravity y", 0.0);
-    stt_list.set<double>("Gravity z", - GRAVITY_MAGNITUDE);
-  }
-
-  stt_list.set<double>("atmospheric pressure",ATMOSPHERIC_PRESSURE);
-
-  // find the viscosity
-  Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
-
-  // make sure there is only one phase
-  //if ( (++ phase_list.begin()) == phase_list.end() ) {
-  // TODO: these simple checks for one transported phase will not work
-  // with the addition of the solid phase
-  if (true) {
-    // write the array of component solutes
-    if (comp_names.size() > 0) {
-      stt_list.set<Teuchos::Array<std::string> >("Component Solutes", comp_names);
-    }
-    stt_list.set<int>("Number of component concentrations", comp_names.size());
-
-    // write the array of mineral names. hopefully order is preserved...
-    if (mineral_names_.size()) {
-      stt_list.set<Teuchos::Array<std::string> >("Minerals", mineral_names_);
-    }
-    if (sorption_site_names_.size()) {
-      stt_list.set<Teuchos::Array<std::string> >("Sorption Sites", sorption_site_names_);
-    }
-
-    double viscosity = phase_list.sublist(phase_name).sublist("Phase Properties").sublist("Viscosity: Uniform").get<double>("Viscosity");
-    double density = phase_list.sublist(phase_name).sublist("Phase Properties").sublist("Density: Uniform").get<double>("Density");
-
-    stt_list.set<double>("Constant viscosity", viscosity);
-    stt_list.set<double>("Constant water density", density);
-
-    std::map<std::string,int> region_to_matid;
-    std::map<int,std::string> matid_to_material;
-
-    int matid_ctr = 0;
-    // loop over the material properties
-    Teuchos::ParameterList& matprop_list = plist->sublist("Material Properties");
-    for (Teuchos::ParameterList::ConstIterator i = matprop_list.begin(); i != matprop_list.end(); i++) {
-      // get the regions
-      Teuchos::Array<std::string> regions = matprop_list.sublist(matprop_list.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
-
-      // record the material ID for each region that this material occupies
-      matid_ctr++;
-      for (int ii=0; ii<regions.size(); ii++) {
-        if (region_to_matid.find(regions[ii]) == region_to_matid.end()) {
-          region_to_matid[regions[ii]] = matid_ctr;
-          matid_to_material[matid_ctr] = matprop_list.name(i);
-        } else {
-          std::stringstream ss;
-          ss << "There is more than one material assinged to region " << regions[ii] << ".";
-          Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
-        }
-      }
-
-      double specific_yield;
-      bool use_specific_yield(false);
-      if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Yield: Uniform")) {
-        specific_yield = matprop_list.sublist(matprop_list.name(i)).sublist("Specific Yield: Uniform").get<double>("Value");
-        use_specific_yield = true;
-      }
-
-      double specific_storage;
-      bool use_specific_storage(false);
-      if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Storage: Uniform")) {
-        specific_storage = matprop_list.sublist(matprop_list.name(i)).sublist("Specific Storage: Uniform").get<double>("Value");
-        use_specific_storage = true;
-      }
-
-      double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
-      double perm_vert, perm_horiz;
-
-      if (matprop_list.sublist(matprop_list.name(i)).isSublist("Intrinsic Permeability: Uniform")) {
-        perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Uniform").get<double>("Value");
-        perm_horiz = perm_vert;
-      } else if (matprop_list.sublist(matprop_list.name(i)).isSublist("Intrinsic Permeability: Anisotropic Uniform")) {
-        perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Vertical");
-        perm_horiz = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Horizontal");
-      } else {
-        Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as Intrinsic Permeability: Uniform, or Intrinsic Permeability: Anisotropic Uniform."));
-
-      }
-
-      // particle density, for now we make the default 1.0 since we do not want to require this input parameter in the input spec, yet
-      double particle_density = matprop_list.sublist(matprop_list.name(i)).sublist("Particle Density: Uniform").get<double>("Value",PARTICLE_DENSITY);
-
-      // extract the mineralogy for this material
-      Teuchos::ParameterList mineralogy;
-      if (matprop_list.sublist(matprop_list.name(i)).isSublist("Mineralogy")) {
-        mineralogy = matprop_list.sublist(matprop_list.name(i)).sublist("Mineralogy");
-      }
-      // extract the isotherms for this material
-      Teuchos::ParameterList isotherms;
-      if (matprop_list.sublist(matprop_list.name(i)).isSublist("Sorption Isotherms")) {
-        isotherms = matprop_list.sublist(matprop_list.name(i)).sublist("Sorption Isotherms");
-      }
-
-      // extract the surface complexation sites for this material
-      Teuchos::ParameterList surface_sites;
-      if (matprop_list.sublist(matprop_list.name(i)).isSublist("Surface Complexation Sites")) {
-        surface_sites = matprop_list.sublist(matprop_list.name(i)).sublist("Surface Complexation Sites");
-      }
-
-      // extract the ion exchange information, may be a list in the future.
-      // real cation exchange capacities are > 0, so we can use cec < 0 as a flag.
-      double cec = -1.0;
-      if (matprop_list.sublist(matprop_list.name(i)).isParameter("Cation Exchange Capacity")) {
-        cec = matprop_list.sublist(matprop_list.name(i)).get<double>("Cation Exchange Capacity");
-      }
-
-      for (Teuchos::Array<std::string>::const_iterator i=regions.begin(); i!=regions.end(); i++) {
-        std::stringstream sss;
-        sss << "Mesh block " << *i;
-
-        Teuchos::ParameterList& stt_mat = stt_list.sublist(sss.str());
-
-        stt_mat.set<double>("Constant porosity", porosity);
-        stt_mat.set<double>("Constant vertical permeability", perm_vert);
-        stt_mat.set<double>("Constant horizontal permeability", perm_horiz);
-        stt_mat.set<double>("Constant particle density", particle_density);
-        stt_mat.set<std::string>("Region", *i);
-
-        if (use_specific_storage) stt_mat.set<double>("Constant specific storage",specific_storage);
-        if (use_specific_yield)   stt_mat.set<double>("Constant specific yield",specific_yield);
-
-
-        if (  mineralogy.begin() != mineralogy.end() ) { // this is to avoid creating an empty Mineralogy list
-          Teuchos::ParameterList& region_mineralogy = stt_mat.sublist("Mineralogy");
-          region_mineralogy = mineralogy;
-        }
-
-        if ( isotherms.begin() != isotherms.end() ) { // this is to avoid creating an empty Sorption Isotherms list
-          Teuchos::ParameterList& region_isotherms = stt_mat.sublist("Sorption Isotherms");
-          region_isotherms = isotherms;
-        }
-
-        if ( surface_sites.begin() != surface_sites.end() ) { // this is to avoid creating an empty Surface Complexation Sites list
-          Teuchos::ParameterList& region_surface_sites = stt_mat.sublist("Surface Complexation Sites");
-          region_surface_sites = surface_sites;
-        }
-
-        if (cec > 0.0) {
-          stt_mat.set<double>("Cation Exchange Capacity", cec);
-        }
-        // find the initial conditions for the current region
-        Teuchos::ParameterList& ic_list = plist->sublist("Initial Conditions");
-        Teuchos::ParameterList* ic_for_region = NULL;
-        for (Teuchos::ParameterList::ConstIterator it = ic_list.begin(); it != ic_list.end(); it++) {
-          if (ic_list.isSublist(it->first)) {
-            Teuchos::Array<std::string> ass_regions = ic_list.sublist(it->first).get<Teuchos::Array<std::string> >("Assigned Regions");
-            if (ass_regions.size() == 1 && ass_regions[0] == "All") {
-              ic_for_region = &(ic_list.sublist(it->first));
-            } else {
-              // check if the current region is part of the current initial condition's assigned regions
-              for (int ii=0; ii<ass_regions.size(); ii++) {
-                if (ass_regions[ii] == *i) {
-                  ic_for_region = &(ic_list.sublist(it->first));
-                }
-              }
-            }
-          } else {
-            Exceptions::amanzi_throw(Errors::Message("The list Initial Conditions contains an entry that is not a ParamterList itself."));
-          }
-        }
-        // make sure that we actually have found an IC list that defines initial conditions for the current region
-        if (ic_for_region == NULL) {
-          std::stringstream ss;
-          ss << "There is no sublist of the Initial Conditions list for region " << *i << ".";
-          Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
-        }
-        // at this point ic_for_region is the list that defines the inital conditions for the current region
-
-        // write the initial conditions for pressure
-        if ( ic_for_region->isSublist("IC: Uniform Pressure")) {
-          Teuchos::ParameterList& sublist = stt_mat.sublist("uniform pressure");
-          sublist.set<double>("value",ic_for_region->sublist("IC: Uniform Pressure").get<double>("Value"));
-        } else if (ic_for_region->isSublist("IC: Linear Pressure")) {
-          Teuchos::ParameterList& sublist = stt_mat.sublist("linear pressure");
-          sublist.set<Teuchos::Array<double> >("gradient", ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Gradient Value"));
-          sublist.set<Teuchos::Array<double> >("reference coordinate", ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Reference Coordinate"));
-          sublist.set<double>("reference value", ic_for_region->sublist("IC: Linear Pressure").get<double>("Reference Value"));
-        } else if (ic_for_region->isSublist("IC: File Pressure")) {
-          Teuchos::ParameterList& sublist = stt_mat.sublist("file pressure");
-          sublist.set<std::string>("file name", ic_for_region->sublist("IC: File Pressure").get<std::string>("File"));
-          sublist.set<std::string>("label", ic_for_region->sublist("IC: File Pressure").get<std::string>("Label"));
-        } else {
-          Exceptions::amanzi_throw(Errors::Message("An initial condition for pressure must be specified. It must either be IC: Uniform Pressure, IC: Linear Pressure, or IC: File Pressure."));
-        }
-
-        // write the initial conditions for saturation, since this is not a primary variable, this is not required
-        // so we don't throw if these initial conditions are missing
-        if ( ic_for_region->isSublist("IC: Uniform Saturation") ) {
-          Teuchos::ParameterList& sublist = stt_mat.sublist("uniform saturation");
-          sublist.set<double>("value",ic_for_region->sublist("IC: Uniform Saturation").get<double>("Value"));
-        } else if (ic_for_region->isSublist("IC: Linear Saturation")) {
-          Teuchos::ParameterList& sublist = stt_mat.sublist("linear saturation");
-        }
-        // write the initial conditions for velocity
-        // we don't throw if these initial conditions are missing
-        if ( ic_for_region->isSublist("IC: Uniform Velocity") ) {
-          Teuchos::Array<double> vel = ic_for_region->sublist("IC: Uniform Velocity").get<Teuchos::Array<double> >("Velocity Vector");
-          stt_mat.set<double>("Constant velocity x",vel[0]);
-          if (spatial_dimension_>1) stt_mat.set<double>("Constant velocity y", vel[1]);
-          if (spatial_dimension_>2) stt_mat.set<double>("Constant velocity z", vel[2]);
-
-        }
-
-        if (plist->sublist("Execution Control").get<std::string>("Transport Model") != std::string("Off")  ||
-            plist->sublist("Execution Control").get<std::string>("Chemistry Model") != std::string("Off") ) {
-          // write the initial conditions for the solutes, note that we hardcode for there only being one phase, with one phase component
-          for (int ii=0; ii<comp_names.size(); ii++) {
-            if (! ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).isSublist(comp_names[ii])) {
-              std::stringstream ss;
-              ss << "Initial condition for solute " << comp_names[ii] << " in region " << *i << " is missing.";
-              Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
-            }
-
-            double conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Value");
-
-            std::stringstream ss;
-            ss << "Constant component concentration " << comp_names_map[ comp_names[ii] ];
-
-            stt_mat.set<double>(ss.str(), conc);
-
-            conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Free Ion Guess", 1.0e-9);
-            ss.clear();
-            ss.str("");
-            ss << "Free Ion Guess " << comp_names_map[ comp_names[ii] ];
-            stt_mat.set<double>(ss.str(), conc);
-            ss.clear();
-            ss.str("");
-          }
-        }
-      }
-    }
-    // write the mapping between region name and material id
-    // (here material ID is an atificial integer that is only used for visualization)
-    Teuchos::Array<int> matids(region_to_matid.size());
-    Teuchos::Array<std::string> regnames(region_to_matid.size());
-    Teuchos::Array<std::string> matnames(matid_to_material.size());
-
-    int ii=0;
-    for (std::map<std::string,int>::const_iterator it = region_to_matid.begin(); it != region_to_matid.end(); it++) {
-      matids[ii] = it->second;
-      regnames[ii] = it->first;
-      ii++;
-    }
-
-    for (int k=0; k<matnames.size(); k++) {
-      matnames[k] = matid_to_material[k+1];
-    }
-
-    stt_list.set<Teuchos::Array<int> >("Region Name to Material ID Map (Material IDs)",matids);
-    stt_list.set<Teuchos::Array<std::string> >("Region Name to Material ID Map (Region Names)",regnames);
-    stt_list.set<Teuchos::Array<std::string> >("Material Names",matnames);
-  } else {
-    Exceptions::amanzi_throw("There is more than one phase, however, amanzi-u only supports one phase");
-  }
-
-  return stt_list;
-}
 
 
 /* ******************************************************************

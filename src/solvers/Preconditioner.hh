@@ -41,6 +41,8 @@ class Preconditioner {
   // Apply the preconditioner.
   virtual int ApplyInverse(const Epetra_MultiVector& v,
 			   Epetra_MultiVector& hv) = 0;
+
+  virtual int returned_code() = 0;
 };
 
 }  // namespace AmanziPreconditioners

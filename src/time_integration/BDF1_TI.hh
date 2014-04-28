@@ -33,7 +33,7 @@ class BDF1_TI {
   // solution to the solution history
   void CommitSolution(const double h, const Teuchos::RCP<Vector>& u);
 
-  // computes a step
+  // Computes a step and returns true whan it fails.
   bool TimeStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& x);
 
   // Reset the memory of the time integrator
@@ -180,32 +180,36 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   solver_fn_->SetTimes(tlast, tnew);
   solver_fn_->SetPreviousTimeSolution(u0);
 
-
   // Solve the nonlinear BCE system.
-  int itr;
+  int ierr, code, itr;
   try {
-    itr = solver_->Solve(u);
+    ierr = solver_->Solve(u);
+    itr = solver_->num_itrs();
+    code = solver_->returned_code();
   } catch (const Errors::CutTimeStep& e) {
-    itr = -1;
+    ierr = 1;
+    itr = -1;  // This should not be summed up into the global counter.
+    code = AmanziSolvers::SOLVER_INTERNAL_EXCEPTION;
   }
 
-  if (itr >= 0) {
+  if (ierr == 0) {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "success: " << solver_->num_itrs() << " nonlinear itrs" 
+      *vo_->os() << "success: " << itr << " nonlinear itrs" 
                  << " error=" << solver_->residual() << std::endl;
     }
   } else {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << vo_->color("red") << "step failed with error code " << itr << vo_->reset() << std::endl;
+      *vo_->os() << vo_->color("red") << "step failed with error code " << code << vo_->reset() << std::endl;
     }
     *u = *u0;
   }
 
   // update the next timestep size
+  if (ierr != 0) itr = -1;
   dt_next = ts_control->get_timestep(dt, itr);
 
   // update the preconditioner lag
-  if (itr < 0) {
+  if (ierr != 0) {
     state_->pc_lag = 0;
   } else {
     if (dt_next > dt) {
@@ -219,7 +223,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   // update performance statistics
   state_->solve_itrs += solver_->num_itrs();
 
-  if (itr < 0) {
+  if (ierr != 0) {
     state_->failed_solve++;
   } else {
     state_->hmax = std::max(state_->hmax, dt);
@@ -234,7 +238,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
 
     ReportStatistics_();
   }
-  return (itr < 0);
+  return (ierr != 0);  // Returns true when it fails.
 }
 
 

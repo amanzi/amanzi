@@ -130,7 +130,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   Teuchos::ParameterList olist;
   int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
   op3->InitOperator(K, Teuchos::null, olist);
-  op3->UpdateMatrices(solution);
+  op3->UpdateMatrices(Teuchos::null);
   op3->ApplyBCs(bc_model, bc_values);
   op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
   op3->AssembleMatrix(schema);
@@ -152,7 +152,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   if (MyPID == 0) {
     std::cout << "pressure solver (" << solver->name() 
               << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << ierr << std::endl;
+              << " code=" << solver->returned_code() << std::endl;
   }
 
   // repeat the above without destroying the operators.
@@ -164,7 +164,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   op2->UpdateMatrices(solution, phi, dT);
 
   op3->InitOperator(K, Teuchos::null, olist);
-  op3->UpdateMatrices(solution);
+  op3->UpdateMatrices(Teuchos::null);
   op3->ApplyBCs(bc_model, bc_values);
   op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
   op3->AssembleMatrix(schema);

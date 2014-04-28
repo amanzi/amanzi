@@ -36,7 +36,10 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
   void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
        const VectorSpace& map);
 
-  virtual int Solve(const Teuchos::RCP<Vector>& u);
+  virtual int Solve(const Teuchos::RCP<Vector>& u) {
+    returned_code_ = Newton_(u);
+    return (returned_code_ >= 0) ? 0 : 1;
+  }
 
   // control
   void set_pc_lag(double pc_lag) {};  // Newton does not need it
@@ -45,9 +48,11 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
   int pc_calls() { return pc_calls_; }
+  int returned_code() { return returned_code_; }
 
  private:
   void Init_();
+  int Newton_(const Teuchos::RCP<Vector>& u);
   int Newton_ErrorControl_(double error, double previous_error, double l2_error);
 
  protected:
@@ -59,7 +64,7 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
  private:
   double tol_, overflow_tol_;
 
-  int max_itrs_, num_itrs_;
+  int max_itrs_, num_itrs_, returned_code_;
   int fun_calls_, pc_calls_;
   int max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_, stagnation_itr_check_;
@@ -117,10 +122,10 @@ void SolverNewton<Vector, VectorSpace>::Init_()
 
 
 /* ******************************************************************
-* Newton solver
+* Base Newton solver
 ****************************************************************** */
 template<class Vector, class VectorSpace>
-int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
+int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // initialize the iteration counter

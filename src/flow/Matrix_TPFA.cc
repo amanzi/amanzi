@@ -243,17 +243,15 @@ int Matrix_TPFA::ApplyPreconditioner(const CompositeVector& X, CompositeVector& 
   Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> > 
       solver = factory.Create("gmres", plist, matrix_tmp, matrix_tmp);
 
-  Y.PutScalar(0.);
-  int ok = solver->ApplyInverse(X, Y);
+  Y.PutScalar(0.0);
+  int ierr = solver->ApplyInverse(X, Y);
 
-  // if (ok != 1) {
+  // if (ierr != 1) {
   //   std::cout << "Newton solver (" << solver->name() 
   //        << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-  //        << " code=" << ok << std::endl;
+  //        << " code=" << solver->returned_code() << std::endl;
   //   exit(0);
   // }
-
-
 
   return 0;
 }

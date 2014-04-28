@@ -38,7 +38,10 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
             const VectorSpace& map);
 
-  int Solve(const Teuchos::RCP<Vector>& u);
+  int Solve(const Teuchos::RCP<Vector>& u) {
+    returned_code_ = NKA_(u);
+    return (returned_code_ >= 0) ? 0 : 1;
+  }
 
   // control
   void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
@@ -47,9 +50,11 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
   int pc_calls() { return pc_calls_; }
+  int returned_code() { return returned_code_; }
 
  private:
   void Init_();
+  int NKA_(const Teuchos::RCP<Vector>& u);
   int NKA_ErrorControl_(double error, double previous_error, double l2_error);
 
  protected:
@@ -65,7 +70,7 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
  private:
   double tol_, overflow_tol_;
 
-  int max_itrs_, num_itrs_;
+  int max_itrs_, num_itrs_, returned_code_;
   int fun_calls_, pc_calls_;
   int pc_lag_, update_pc_calls_;
   int nka_lag_space_, nka_lag_iterations_;
@@ -141,7 +146,7 @@ void SolverNKA<Vector, VectorSpace>::Init_()
 * The body of NKA solver
 ****************************************************************** */
 template<class Vector, class VectorSpace>
-int SolverNKA<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
+int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // restart the nonlinear solver (flush its history)

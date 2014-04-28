@@ -18,11 +18,12 @@ namespace Amanzi {
 namespace AmanziPreconditioners {
 
 /* ******************************************************************
- * Apply the preconditioner.
- ****************************************************************** */
+* Apply the preconditioner.
+****************************************************************** */
 int PreconditionerHypre::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
 {
-  return IfpHypre_->ApplyInverse(v, hv);
+  returned_code_ = IfpHypre_->ApplyInverse(v, hv);
+  return (returned_code_ == 0) ? 0 : 1;
 }
 
 

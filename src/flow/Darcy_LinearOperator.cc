@@ -63,13 +63,14 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->num_itrs();
     double residual = solver->residual();
+    int code = solver->returned_code();
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "pressure solver (" << solver->name() 
                << "): ||r||=" << residual << " itr=" << num_itrs
-               << " code=" << ierr << std::endl;
+               << " code=" << code << std::endl;
   }
-  if (ierr < 0) {
+  if (ierr != 0) {
     Errors::Message msg;
     msg << "\nLinear solver returned an unrecoverable error code.\n";
     Exceptions::amanzi_throw(msg);
@@ -94,12 +95,13 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, const CompositeVector& rhs,
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->num_itrs();
     double residual = solver->residual();
+    int code = solver->returned_code();
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "pressure solver: ||r||=" << residual << " itr=" << num_itrs 
-               << " code=" << ierr << std::endl;
+               << " code=" << code << std::endl;
   }
-  if (ierr < 0) {
+  if (ierr != 0) {
     Errors::Message msg;
     msg << "\nLinear solver returned an unrecoverable error code.\n";
     Exceptions::amanzi_throw(msg);

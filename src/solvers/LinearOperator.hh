@@ -50,6 +50,8 @@ class LinearOperator : public Matrix {
   virtual double residual() = 0;
   virtual int num_itrs() = 0;
   virtual void add_criteria(int criteria) = 0;
+  virtual int returned_code() = 0;
+
   std::string name() { return name_; }
   void set_name(std::string name) { name_ = name; }
 

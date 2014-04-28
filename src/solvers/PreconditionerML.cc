@@ -17,11 +17,13 @@ namespace Amanzi {
 namespace AmanziPreconditioners {
 
 /* ******************************************************************
- * Apply the preconditioner.
+ * Apply the preconditioner. 
+ * ML's return code is set to 0 if successful, see Trilinos webpages. 
  ****************************************************************** */
 int PreconditionerML::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
 {
-  return ML_->ApplyInverse(v, hv);
+  returned_code_ = ML_->ApplyInverse(v, hv);
+  return (returned_code_ == 0) ? 0 : 1;
 }
 
 

@@ -29,8 +29,8 @@ class NonlinearCoefficient {
   ~NonlinearCoefficient() {};
 
   // main methods
-  void UpdateValues(const CompositeVector& u) {};
-  void UpdateDerivatives(const CompositeVector& u) {};
+  virtual void UpdateValues(const CompositeVector& u) {};
+  virtual void UpdateDerivatives(const CompositeVector& u) {};
 
   // access
   const Teuchos::RCP<Epetra_Vector> cvalues() { return cvalues_; }
@@ -38,7 +38,7 @@ class NonlinearCoefficient {
 
   const Teuchos::RCP<Epetra_Vector> fderivatives() { return fderivatives_; }
 
- private:
+ public:
   Teuchos::RCP<Epetra_Vector> cvalues_;
   Teuchos::RCP<Epetra_Vector> fvalues_;
 

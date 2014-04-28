@@ -9,12 +9,8 @@
 cmake_minimum_required(VERSION 2.8.8)
 set(CMAKE_CTEST_COMMAND ${CMAKE_CTEST_COMMAND} -E examples)  
 
-if ("${CMAKE_PATCH_VERSION}" GREATER 3)
-  set(ADJUST_POLICY "True")
-endif()
-
-if (${ADJUST_POLICY})
-  cmake_policy(SET CMP0017 NEW)
+if ("${CMAKE_PATCH_VERSION}" GREATER 11)
+  cmake_policy(SET CMP0022 NEW)
 endif()
 
 # Enable testing, ctest needs this
