@@ -1461,11 +1461,16 @@ The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"
   * [SU] `"Max Time Step (s)`" [double] The maximum time step that chemistry will allow the MPC to take.
 
   * [SU] `"Geochemical Conditions`" [list] (*optional*, allows definition of geochemical conditions within XML.)
+
     * [SU] `"(condition name)`" [list] The geochemical condition, defined in terms of aqueous and mineral constraints.
+
       * [SU] `"(aqueous constraint name)`" [list] Entry for an aqueous constraint involving a species and/or a mineral.
+
         * [SU] `"(type)`" [double] The type of aqueous constraint (total_aqueous, total_sorb, free, mineral, gas, pH, charge) and its associated value.
         * [SU] `"species`" [string] The name of any associated mineral species for a mineral constraint.
+
       * [SU] `"(mineral species)`" [list] Entry for a mineral constraint mentioned in an aqueous constraint.
+
         * [SU] `"Volume Fraction`" [double] Volume fraction for the mineral.
         * [SU] `"Specific Surface Area`" [double] Specific surface area for the mineral.
 
