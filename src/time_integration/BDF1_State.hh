@@ -69,6 +69,8 @@ struct BDF1_State {
 template<class Vector>
 void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const Vector>& initvec) {
+  
+  //std::cout<<plist<<std::endl;
   // preconditioner lag control
   maxpclag = plist.get<int>("max preconditioner lag iterations", 0);
 
@@ -78,6 +80,7 @@ void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
   // solution history object
   double t0 = plist.get<double>("initial time", 0.0);
   uhist = Teuchos::rcp(new SolutionHistory<Vector>(uhist_size, t0, *initvec));
+
 }
 
 }  // namespace Amanzi
