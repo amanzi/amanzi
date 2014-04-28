@@ -35,6 +35,44 @@
 #include "OperatorAccumulation.hh"
 #include "OperatorSource.hh"
 
+#include "NonlinearCoefficient.hh"
+
+namespace Amanzi{
+
+class HeatConduction : public Operators::NonlinearCoefficient {
+ public:
+  HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) { 
+    cvalues_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
+    fvalues_ = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
+    fderivatives_ = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
+  }
+  ~HeatConduction() {};
+
+  // main members
+  void UpdateValues(const CompositeVector& u) { 
+    const Epetra_MultiVector& uc = *u.ViewComponent("cell", true); 
+    const Epetra_MultiVector& uf = *u.ViewComponent("face", true); 
+
+    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+    for (int c = 0; c < ncells; c++) {
+      (*cvalues_)[c] = 0.3 + uc[0][c];
+    }
+
+    int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    for (int f = 0; f < nfaces; f++) {
+      (*fvalues_)[f] = 0.3 + uf[0][f];
+    }
+  }
+  void UpdateDerivatives(const CompositeVector& u) {
+    fderivatives_->PutScalar(1.0);
+  }
+
+ private:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+};
+
+}  // namespace Amanzi
+
 
 /* *****************************************************************
 * This test replaves tensor and boundary conditions by continuous
@@ -91,13 +129,22 @@ TEST(NONLINEAR_OPERATOR) {
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
   std::vector<double> bc_values(nfaces_wghost);
 
-  // create diffusion operator 
+  // create solution map.
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(surfmesh);
   cvs->SetGhosted(true);
   cvs->SetComponent("cell", AmanziMesh::CELL, 1);
   cvs->SetOwned(false);
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
+
+  // create and initialize state variables.
+  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(*cvs));
+
+  CompositeVector solution(*cvs);
+  solution.PutScalar(0.0);  // solution at time T=0
+
+  CompositeVector phi(*cvs);
+  phi.PutScalar(0.2);
 
   // create source and add it to the operator
   CompositeVector source(*cvs);
@@ -108,58 +155,60 @@ TEST(NONLINEAR_OPERATOR) {
     if (MyPID == 0) src[0][c] = 1.0;
   }
 
-  Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(cvs, 0));
-  op1->Init();
-  op1->UpdateMatrices(source);
+  // Create nonlinear coefficient.
+  Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(surfmesh));
 
-  // create accumulation operator
-  Teuchos::RCP<OperatorAccumulation> op2 = Teuchos::rcp(new OperatorAccumulation(*op1));
+  // MAIN LOOP
+  double dT = 1.0;
+  for (int loop = 0; loop < 3; loop++) {
+    Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(cvs, 0));
+    op1->Init();
+    op1->UpdateMatrices(source);
 
-  CompositeVector solution(*cvs);
-  solution.PutScalar(0.0);  // solution at time T=0
+    // create accumulation operator
+    Teuchos::RCP<OperatorAccumulation> op2 = Teuchos::rcp(new OperatorAccumulation(*op1));
+    op2->UpdateMatrices(solution, phi, dT);
 
-  CompositeVector phi(*cvs);
-  phi.PutScalar(0.2);
+    // add diffusion operator
+    knc->UpdateValues(solution);
+    knc->UpdateDerivatives(solution);
+    Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2));
 
-  double dT = 10.0;
-  op2->UpdateMatrices(solution, phi, dT);
+    Teuchos::ParameterList olist;
+    int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
+    op3->InitOperator(K, knc, olist);
+    op3->UpdateMatrices(flux);
+    op3->ApplyBCs(bc_model, bc_values);
+    op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
+    op3->AssembleMatrix(schema);
 
-  // add the diffusion operator
-  Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2));
+    // create preconditoner
+    ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+    op3->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
 
-  Teuchos::ParameterList olist;
-  int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
-  op3->InitOperator(K, Teuchos::null, olist);
-  op3->UpdateMatrices(Teuchos::null);
-  op3->ApplyBCs(bc_model, bc_values);
-  op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-  op3->AssembleMatrix(schema);
+    // solve the problem
+    ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+    AmanziSolvers::LinearOperatorFactory<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> >
+       solver = factory.Create("AztecOO CG", lop_list, op3);
 
-  // create preconditoner
-  ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op3->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+    CompositeVector rhs = *op3->rhs();
+    int ierr = solver->ApplyInverse(rhs, solution);
 
-  // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
-  AmanziSolvers::LinearOperatorFactory<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, op3);
+    if (MyPID == 0) {
+      std::cout << "pressure solver (" << solver->name() 
+                << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+                << " code=" << solver->returned_code() << std::endl;
+    }
 
-  CompositeVector rhs = *op3->rhs();
-  solution.PutScalar(0.0);
-  int ierr = solver->ApplyInverse(rhs, solution);
+    // derive diffusion flux.
+    op3->UpdateFlux(solution, *flux, 0.0);
+    // const Epetra_MultiVector& flux_data = *flux->ViewComponent("face");
+    // std::cout << flux_data << std::endl;
 
-  if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    // turn off the source
+    source.PutScalar(0.0);
   }
-
-  // derive diffusion flux.
-  CompositeVector flux(solution);
-  op3->UpdateFlux(solution, flux, 0.0);
-  // const Epetra_MultiVector& flux_data = *flux.ViewComponent("face");
-  // std::cout << flux_data << std::endl;
 
   if (MyPID == 0) {
     // visualization

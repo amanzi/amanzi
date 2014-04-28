@@ -134,8 +134,7 @@ void OperatorDiffusionSurface::UpdateMatrices(Teuchos::RCP<const CompositeVector
 
 /* ******************************************************************
 * WARNING: Since diffusive flux is not continuous, we derive it only
-* once (using flag) and in exactly the same manner as in routine
-* Flow_PK::addGravityFluxes_DarcyFlux.
+* once (using flag) and in exactly the same manner as other routines.
 * **************************************************************** */
 void OperatorDiffusionSurface::UpdateFlux(const CompositeVector& u, CompositeVector& flux, double scalar)
 {
@@ -184,7 +183,7 @@ void OperatorDiffusionSurface::UpdateFlux(const CompositeVector& u, CompositeVec
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       if (f < nfaces_owned && !flag[f]) {
-        flux_data[0][f] = av(n) * dirs[n];
+        flux_data[0][f] += av(n) * dirs[n];
         flag[f] = 1;
       }
     }
