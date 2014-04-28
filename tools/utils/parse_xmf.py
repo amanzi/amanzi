@@ -3,6 +3,7 @@ try:
     import elementtree.ElementTree as etree
 except ImportError:
     import xml.etree.ElementTree as etree
+import numpy as np
 
 class ETreeParser(object):
     def __init__(self, directory='.', base='visdump_data.h5', suffix='xmf'):

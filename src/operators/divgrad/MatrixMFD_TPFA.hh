@@ -13,14 +13,12 @@
   from the DAE system and short vectors are used in the nonlinear solver.
 */
 
-#ifndef OPERATORS_MATRIX_MFD_TPFA_HH__
-#define OPERATORS_MATRIX_MFD_TPFA_HH__
+#ifndef OPERATORS_MATRIX_MFD_TPFA_HH_
+#define OPERATORS_MATRIX_MFD_TPFA_HH_
 
 #include <strings.h>
 
 #include "Teuchos_RCP.hpp"
-#include "Ifpack.h"
-
 #include "MatrixMFD.hh"
 #include "upwinding.hh"
 

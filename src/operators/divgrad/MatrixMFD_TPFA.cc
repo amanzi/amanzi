@@ -366,8 +366,9 @@ int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
   Epetra_MultiVector Tc(Xc);
 
   // Solve the pp system
-  ierr = S_pc_->ApplyInverse(Xc, Tc);
-  ASSERT(!ierr);
+  S_pc_->ApplyInverse(Xc, Tc);
+  //ierr = S_pc_->ApplyInverse(Xc, Tc);
+  //ASSERT(!ierr);
 
   *Y.ViewComponent("cell",false) = Tc;
 

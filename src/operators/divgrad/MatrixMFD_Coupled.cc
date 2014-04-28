@@ -155,8 +155,9 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
   }
 
   // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  ierr = S_pc_->ApplyInverse(Xf, Yf);
-  ASSERT(!ierr);
+  S_pc_->ApplyInverse(Xf, Yf);
+  //ierr = S_pc_->ApplyInverse(Xf, Yf);
+  //ASSERT(!ierr);
 
   // Backward Substitution, Yc = inv( A2c2c) [  (x_Ac,x_Bc)^T - A2c2f * Yf ]
   // Yc <-- A2c2f * Yf

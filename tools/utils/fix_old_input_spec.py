@@ -44,6 +44,10 @@ def fixPorosity(xml):
         print "porosity is not compressible"
         return
 
+    if params.getchildren()[0].get("type") == "ParameterList":
+        print "porosity has already been fixed"
+        return
+
     comp_el = params.getchildren().pop()
     assert len(params.getchildren()) == 0
 
@@ -121,10 +125,10 @@ def _fixTIList(ti_list):
         migrate(nl_plist, old_pars, "max error growth factor")
         migrate(nl_plist, old_pars, "max divergent iterations")
         migrate(nl_plist, old_pars, "lag iterations")
-        nl_list.setParameter("modify correction", "bool", True)
+        nl_plist.setParameter("modify correction", "bool", True)
         migrate(nl_plist, old_pars, "monitor")
         migrate(nl_plist, old_pars, "monitor", "convergence monitor")
-        nl_list.setParameter("monitor", "string", "monitor residual")
+        nl_plist.setParameter("monitor", "string", "monitor residual")
 
 
     elif nl_solver == "NKA BT":
@@ -173,22 +177,32 @@ def _fixPC(pc, pctype, force=False):
 def _fixLinOp(itr):
     if not itr.isElement("iterative method"):
         itr.setParameter("iterative method", "string", "nka")
-        lo = itr.sublist("nka parameters")
-        lo.setParameter("error tolerance", "double", 1.e-6)
-        lo.setParameter("maximum number of iterations", 20)
+        itr.setParameter("error tolerance", "double", 1.e-6)
+        itr.setParameter("maximum number of iterations", "int", 20)
     else:
         itm = itr.getElement("iterative method").get("value")
         if itm == "nka":
-            lo = itr.sublist("nka parameters")
+            try:
+                lo = itr.pop("nka parameters")
+            except errors.MissingXMLError:
+                pass
         elif itm == "gmres":
-            lo = itr.sublist("gmres parameters")
+            try:
+                lo = itr.pop("gmres parameters")
+            except errors.MissingXMLError:
+                pass
         else:
             raise RuntimeError("unknown lin op %s"%itm)
 
-        if not lo.isElement("error tolerance"):
-            lo.setParameter("error tolerance", "double", 1.e-6)
-        if not lo.isElement("maximum number of iterations"):
-            lo.setParameter("maximum number of iterations", "int", 20)
+        if not itr.isElement("error tolerance") and lo.isElement("error tolerance"):
+            itr.setParameter("error tolerance", "double", lo.getElement("error tolerance").get("value"))
+        else:
+            itr.setParameter("error tolerance", "double", 1.e-6)
+
+        if not itr.isElement("maximum number of iterations") and lo.isElement("maximum number of iterations"):
+            itr.setParameter("maximum number of iterations", "int", lo.getElement("maximum number of iterations").get("value"))
+        else:
+            itr.setParameter("maximum number of iterations", "int", 20)
 
     try: itr.pop("tolerance")
     except errors.MissingXMLError: pass
@@ -207,6 +221,8 @@ def _fixDiffusion(diff, req_pc, req_face):
         try: diff.pop("preconditioner")
         except errors.MissingXMLError: pass
 
+    if diff.getElement("MFD method").get("value") == "two point flux":
+        diff.setParameter("MFD method", "string", "two point flux approximation")
 
 def fixSolvers(xml):
     for diff in search.generateElementByNamePath(xml, "Diffusion"):
