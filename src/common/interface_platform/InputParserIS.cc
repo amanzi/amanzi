@@ -1539,6 +1539,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           // solver type
 	  if (nonlinear_solver == std::string("Newton")){
 	    sti_bdf1.set<std::string>("solver type", "Newton");
+	    
 	    Teuchos::ParameterList &test = sti_bdf1.sublist("Newton parameters");
 	    sti_bdf1_solver = &test;
 	    sti_bdf1_solver->set<double>("nonlinear tolerance", STEADY_NONLINEAR_TOLERANCE);
@@ -1621,6 +1622,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           }
           if (nonlinear_solver == std::string("Newton")) {
             sti_bdf1.set<int>("max preconditioner lag iterations", 0);
+	    sti_bdf1.set<bool>("extrapolate initial guess", false);	    
           }
         }
 
@@ -1753,6 +1755,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 
           if (nonlinear_solver == std::string("Newton")) {
             tti_bdf1.set<int>("max preconditioner lag iterations", 0);
+	    tti_bdf1.set<bool>("extrapolate initial guess", false);
           }
 
 
