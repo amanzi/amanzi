@@ -71,8 +71,7 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
   if (plist_.isParameter("relaxation type"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNumSweeps,
             plist_.get<int>("relaxation type"))));
-
-#else HAVE_HYPRE
+#else
   Errors::Message msg("Hypre (BoomerAMG) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);
 #endif
@@ -91,7 +90,7 @@ void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   hypre_list.set("Preconditioner", BoomerAMG);
   hypre_list.set("SolveOrPrecondition", (Hypre_Chooser)1);
   hypre_list.set("SetPreconditioner", true);
-  hypre_list.set("NumFunctions", funcs_.size());
+  hypre_list.set("NumFunctions", (int)funcs_.size());
   hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", &funcs_[0]);
 
   IfpHypre_->SetParameters(hypre_list);

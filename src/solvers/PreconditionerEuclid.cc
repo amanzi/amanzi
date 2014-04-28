@@ -70,7 +70,7 @@ void PreconditionerEuclid::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   hypre_list.set("Preconditioner", Euclid);
   hypre_list.set("SolveOrPrecondition", (Hypre_Chooser)1);
   hypre_list.set("SetPreconditioner", true);
-  hypre_list.set("NumFunctions", funcs_.size());
+  hypre_list.set("NumFunctions", (int)funcs_.size());
   hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", &funcs_[0]);
 
   IfpHypre_->SetParameters(hypre_list);
