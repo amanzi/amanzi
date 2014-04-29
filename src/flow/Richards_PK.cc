@@ -513,6 +513,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
     UpdateSourceBoundaryData(Tp, *solution);
     *darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+    darcy_flux->ScatterMasterToGhosted("face");
     rel_perm->Compute(pressure, *darcy_flux, bc_model, bc_values);
   }
 

@@ -143,6 +143,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     ComputeBCs(*solution);
 
     // update permeabilities
+    darcy_flux->ScatterMasterToGhosted("face");
     rel_perm->Compute(*solution, *darcy_flux, bc_model, bc_values);
 
     // create algebraic problem
