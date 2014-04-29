@@ -1,5 +1,5 @@
-#ifndef _UNSTRUCTURED_OBSERVATIONS_HPP_
-#define _UNSTRUCTURED_OBSERVATIONS_HPP_
+#ifndef _UNSTRUCTURED_OBSERVATIONS_HH_
+#define _UNSTRUCTURED_OBSERVATIONS_HH_
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
@@ -11,23 +11,20 @@
 #include "TimeStepManager.hh"
 #include "VerboseObject.hh"
 
+
 namespace Amanzi {
 
-
 class Unstructured_observations {
-
  public:
-
-  struct Observable : public IOEvent
-  {
-    Observable (std::string variable_,
-                std::string region_,
-                std::string functional_,
-                Teuchos::ParameterList &plist,
-		Epetra_MpiComm* comm):
+  struct Observable : public IOEvent {
+    Observable(std::string variable_,
+               std::string region_,
+               std::string functional_,
+               Teuchos::ParameterList& plist,
+               Epetra_MpiComm* comm):
         variable(variable_), region(region_),
         functional(functional_), plist_(plist),
-	IOEvent(plist, comm)
+        IOEvent(plist, comm)
     {
       ReadParameters_();
     }
@@ -35,19 +32,18 @@ class Unstructured_observations {
     std::string variable;
     std::string region;
     std::string functional;
-    const Teuchos::ParameterList & plist_;
+    const Teuchos::ParameterList& plist_;
   };
 
-
-  Unstructured_observations (Teuchos::ParameterList observations_plist_,
-                             Amanzi::ObservationData& observation_data_,
-			     Epetra_MpiComm* comm);
+  Unstructured_observations(Teuchos::ParameterList obs_list,
+                            Amanzi::ObservationData& observation_data,
+			    Epetra_MpiComm* comm);
   
-  void register_component_names(std::vector<std::string> comp_names) {
+  void RegisterComponentNames(std::vector<std::string> comp_names) {
     comp_names_ = comp_names;
   }
 
-  void make_observations(State& state);
+  void MakeObservations(State& state);
 
   bool DumpRequested(const int);
   bool DumpRequested(const double);
@@ -55,19 +51,19 @@ class Unstructured_observations {
      
   void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm);
 
+  void FlushObservations();
+
  protected:
   VerboseObject* vo_;
   
-
  private:
-
-  Amanzi::ObservationData& observation_data;
+  int rank_;
+  Teuchos::ParameterList obs_list_;
+  Amanzi::ObservationData& observation_data_;
   std::map<std::string, Observable> observations;
   std::vector<std::string> comp_names_;
-
 };
 
-}
-
+}  // namespace Amanzi
 
 #endif

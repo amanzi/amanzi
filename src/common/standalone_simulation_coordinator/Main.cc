@@ -368,67 +368,7 @@ int main(int argc, char *argv[]) {
       amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most likely due to an error in the mesh creation."));
     }
 
-    // print out observation file in ASCII format
-    Teuchos::ParameterList obs_list;
-
-    bool is_native_unstructured = false;
-    std::string nui_str = "Native Unstructured Input";
-    if (driver_parameter_list.isParameter(nui_str)) {
-      is_native_unstructured = driver_parameter_list.get<bool>(nui_str);
-    }
-
-    if (is_native_unstructured) {
-      obs_list = driver_parameter_list.sublist("Observation Data");
-    } else {
-      obs_list = driver_parameter_list.sublist("Output").sublist("Observation Data");
-    }
-
-
-    if (obs_list.isParameter("Observation Output Filename")) {
-      std::string obs_file = obs_list.get<std::string>("Observation Output Filename");
-      if (rank == 0) {
-        std::ofstream out;
-        out.open(obs_file.c_str(),std::ios::out);
-        if (!out.good()) {
-          std::cout << "OPEN PROBLEM" << std::endl;
-        }
-
-        out.precision(16);
-        out.setf(std::ios::scientific);
-
-        out << "Observation Name, Region, Functional, Variable, Time, Value\n";
-        out << "===========================================================\n";
-
-        for (Teuchos::ParameterList::ConstIterator i=obs_list.begin(); i!=obs_list.end(); ++i) {
-          std::string label  = obs_list.name(i);
-          const Teuchos::ParameterEntry& entry = obs_list.getEntry(label);
-          if (entry.isList()) {
-            const Teuchos::ParameterList& ind_obs_list = obs_list.sublist(label);
-            for (int j = 0; j < output_observations[label].size(); j++) {
-
-              if (output_observations[label][j].is_valid) {
-                if (!out.good()) {
-                  std::cout << "PROBLEM BEFORE" << std::endl;
-                }
-                out << label << ", "
-                    << ind_obs_list.get<std::string>("Region") << ", "
-                    << ind_obs_list.get<std::string>("Functional") << ", "
-                    << ind_obs_list.get<std::string>("Variable") << ", "
-                    << output_observations[label][j].time << ", "
-                    << output_observations[label][j].value << '\n';
-                if (!out.good()) {
-                  std::cout << "PROBLEM AFTER" << std::endl;
-                }
-              }
-            }
-          }
-        }
-        out.close();
-      }
-    }
-    
     Amanzi::timer_manager.stop( "Full Simulation" );
-
     Amanzi::timer_manager.parSync(mpi_comm);
 
     if (rank == 0) {

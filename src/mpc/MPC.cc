@@ -270,7 +270,7 @@ void MPC::mpc_init() {
     if (mpc_parameter_list.isParameter("component names")) {
       Teuchos::Array<std::string> comp_names;
       comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
-      observations->register_component_names(comp_names.toVector());
+      observations->RegisterComponentNames(comp_names.toVector());
     }
   } else {
     observations = NULL;
@@ -618,7 +618,7 @@ void MPC::cycle_driver() {
     if (observations) {
       if (observations->DumpRequested(S->cycle(), S->time())) {
         if (flow_enabled) FPK->UpdateAuxilliaryData();
-        observations->make_observations(*S);
+        observations->MakeObservations(*S);
       }
     }
     // we need to create an EpetraMulitVector that will store the
@@ -1013,7 +1013,7 @@ void MPC::cycle_driver() {
       if (observations) {
         if (observations->DumpRequested(S->cycle(), S->time())) {
           if (flow_enabled) FPK->UpdateAuxilliaryData();
-          observations->make_observations(*S);
+          observations->MakeObservations(*S);
         }
       }
 
