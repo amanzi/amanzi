@@ -11,23 +11,23 @@
 
 namespace Amanzi {
 
-Unstructured_observations::Unstructured_observations(Teuchos::ParameterList observations_plist_,
-                                                     Amanzi::ObservationData& observation_data_,
-						     Epetra_MpiComm* comm):
-    observation_data(observation_data_)
+Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obs_list,
+                                                    Amanzi::ObservationData& observation_data,
+                                                    Epetra_MpiComm* comm)
+    : observation_data_(observation_data), obs_list_(obs_list)
 {
+  rank_ = comm->MyPID();
 
-  
   Teuchos::ParameterList tmp_list;
   tmp_list.set<std::string>("Verbosity Level","high");
   vo_ = new VerboseObject("Amanzi::Unstructured_observations", tmp_list);
 
   // interpret paramerter list
   // loop over the sublists and create an observation for each
-  for (Teuchos::ParameterList::ConstIterator i = observations_plist_.begin(); i != observations_plist_.end(); i++) {
+  for (Teuchos::ParameterList::ConstIterator i = obs_list_.begin(); i != obs_list_.end(); i++) {
 
-    if (observations_plist_.isSublist(observations_plist_.name(i))) {
-      Teuchos::ParameterList observable_plist = observations_plist_.sublist(observations_plist_.name(i));
+    if (obs_list_.isSublist(obs_list_.name(i))) {
+      Teuchos::ParameterList observable_plist = obs_list_.sublist(obs_list_.name(i));
 
       std::vector<double> times;
       std::vector<std::vector<double> > time_sps;
@@ -75,20 +75,20 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
       }
 
       // loop over all variables listed and create an observable for each
-      std::string var = observable_plist.get<std::string>("Variable");
+      std::string var = observable_plist.get<std::string>("variable");
       observations.insert(std::pair
-                          <std::string, Observable>(observations_plist_.name(i),
+                          <std::string, Observable>(obs_list_.name(i),
                                                     Observable(var,
-                                                               observable_plist.get<std::string>("Region"),
-                                                               observable_plist.get<std::string>("Functional"),
-							       observable_plist,
-							       comm)));
+                                                               observable_plist.get<std::string>("region"),
+                                                               observable_plist.get<std::string>("functional"),
+                                                               observable_plist,
+                                                               comm)));
     }
   }
 }
 
 
-void Unstructured_observations::make_observations(State& state)
+void Unstructured_observations::MakeObservations(State& state)
 {
   // loop over all observables
   for (std::map<std::string, Observable>::iterator i = observations.begin(); i != observations.end(); i++) {
@@ -114,7 +114,7 @@ void Unstructured_observations::make_observations(State& state)
       std::stringstream ss;
       ss << label << ", " << var;
       
-      std::vector<Amanzi::ObservationData::DataTriple> &od = observation_data[label]; 
+      std::vector<Amanzi::ObservationData::DataTriple> &od = observation_data_[label]; 
       
       double value(0.0);
       double volume(0.0);
@@ -155,7 +155,8 @@ void Unstructured_observations::make_observations(State& state)
       if (global_mesh_block_size == 0) {
 	// warn that this region is empty and bail
 	Teuchos::OSTab tab = vo_->getOSTab();
-	*vo_->os() << "Cannot make an observation on an empty region: " << (i->second).region << ", skipping" << std::endl;
+	*vo_->os() << "Cannot make an observation on an empty region: " 
+                   << (i->second).region << ", skipping" << std::endl;
 	continue;
       }
 
@@ -167,7 +168,8 @@ void Unstructured_observations::make_observations(State& state)
 	}
       }
       
-      if (comp_names_.size() > 0 && comp_index != comp_names_.size() ) { // the user is asking to for an observation on tcc
+      // the user is asking to for an observation on tcc
+      if (comp_names_.size() > 0 && comp_index != comp_names_.size() ) { 
 	value = 0.0;
 	volume = 0.0;
 	
@@ -293,14 +295,12 @@ void Unstructured_observations::make_observations(State& state)
       }
       
       // syncronize the result across processors
-      
       double result;
       state.GetMesh()->get_comm()->SumAll(&value,&result,1);
       
       double vresult;
       state.GetMesh()->get_comm()->SumAll(&volume,&vresult,1);
-      
-      
+ 
       if ((i->second).functional == "Observation Data: Integral") {  
 	data_triplet.value = result;	
       } else if ((i->second).functional == "Observation Data: Point") {
@@ -313,6 +313,8 @@ void Unstructured_observations::make_observations(State& state)
       od.push_back(data_triplet);
     }
   }
+
+  FlushObservations();
 }
 
 
@@ -347,5 +349,49 @@ void Unstructured_observations::RegisterWithTimeStepManager(const Teuchos::Ptr<T
 }
 
 
+void Unstructured_observations::FlushObservations()
+{
+  // print out observation file in ASCII format
+  if (obs_list_.isParameter("Observation Output Filename")) {
+    std::string obs_file = obs_list_.get<std::string>("Observation Output Filename");
+
+    if (rank_ == 0) {
+      std::ofstream out;
+      out.open(obs_file.c_str(),std::ios::out);
+
+      out.precision(16);
+      out.setf(std::ios::scientific);
+
+      out << "Observation Name, Region, Functional, Variable, Time, Value\n";
+      out << "===========================================================\n";
+
+      for (Teuchos::ParameterList::ConstIterator i=obs_list_.begin(); i!=obs_list_.end(); ++i) {
+        std::string label = obs_list_.name(i);
+        const Teuchos::ParameterEntry& entry = obs_list_.getEntry(label);
+        if (entry.isList()) {
+          const Teuchos::ParameterList& ind_obs_list = obs_list_.sublist(label);
+
+          for (int j = 0; j < observation_data_[label].size(); j++) {
+            if (observation_data_[label][j].is_valid) {
+              if (!out.good()) {
+                std::cout << "PROBLEM BEFORE" << std::endl;
+              }
+              out << label << ", "
+                  << ind_obs_list.get<std::string>("region") << ", "
+                  << ind_obs_list.get<std::string>("functional") << ", "
+                  << ind_obs_list.get<std::string>("variable") << ", "
+                  << observation_data_[label][j].time << ", "
+                  << observation_data_[label][j].value << '\n';
+              if (!out.good()) {
+                std::cout << "PROBLEM AFTER" << std::endl;
+              }
+            }
+          }
+        }
+      }
+      out.close();
+    }
+  }
+}
 
 }  // namespace Amanzi

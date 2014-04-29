@@ -149,7 +149,7 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
 
   // maximum error is printed out only on one processor
   if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-    const Epetra_MultiVector& map_c2mb = *rel_perm->map_c2mb().ViewComponent("cell");
+    const Epetra_IntVector& map = rel_perm->map_c2mb();
 
     if (error == buf) {
       int c = functional_max_cell;
@@ -167,7 +167,7 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
       for (int i = 0; i < dim; i++) *vo_->os() << " " << yp[i];
       *vo_->os() << std::endl;
 
-      int mb = map_c2mb[0][c];
+      int mb = map[c];
       double s = (rel_perm->WRM())[mb]->saturation(atm_pressure_ - uc[0][c]);
       *vo_->os() << "saturation=" << s << " pressure=" << uc[0][c] << std::endl;
     }
@@ -195,10 +195,10 @@ bool Richards_PK::ModifyCorrection(
   int ncells_clipped(0);
 
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM(); 
-  const Epetra_MultiVector& map_c2mb = *rel_perm->map_c2mb().ViewComponent("cell");
+  const Epetra_IntVector& map = rel_perm->map_c2mb();
  
   for (int c = 0; c < ncells_owned; c++) {
-    int mb = map_c2mb[0][c];
+    int mb = map[c];
     double pc = atm_pressure_ - uc[0][c];
     double sat = WRM[mb]->saturation(pc);
     double sat_pert;

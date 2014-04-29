@@ -3,13 +3,14 @@
 
   License: BSD
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+           Ethan Coon (ecoon@lanl.gov)
 
-  HYPRE preconditioner.
+  HYPRE Euclid parallel ILU preconditioner.
   Usage:
 */
 
-#ifndef AMANZI_PRECONDITIONER_HYPRE_HH_
-#define AMANZI_PRECONDITIONER_HYPRE_HH_
+#ifndef AMANZI_PRECONDITIONER_EUCLID_HH_
+#define AMANZI_PRECONDITIONER_EUCLID_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -23,10 +24,10 @@
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
-class PreconditionerHypre : public Preconditioner {
+class PreconditionerEuclid : public Preconditioner {
  public:
-  PreconditionerHypre() {};
-  ~PreconditionerHypre() {};
+  PreconditionerEuclid() {};
+  ~PreconditionerEuclid() {};
 
   void Init(const std::string& name, const Teuchos::ParameterList& list);
   void Update(const Teuchos::RCP<Epetra_RowMatrix>& A);
@@ -37,12 +38,12 @@ class PreconditionerHypre : public Preconditioner {
   int returned_code() { return returned_code_; }
 
  private:
-  Teuchos::ParameterList list_;
+  Teuchos::ParameterList plist_;
+  std::vector<Teuchos::RCP<FunctionParameter> > funcs_;
 
-  Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
-  double tol_, strong_threshold_;
-  int nsmooth_, ncycles_, relaxation_type_, verbosity_;
   int returned_code_;
+  Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
+
 };
 
 }  // namespace AmanziPreconditioners

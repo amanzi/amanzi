@@ -39,7 +39,8 @@ set(data_structures_src_files BlockVector.cc
                               CompositeVectorSpace.cc
                               CompositeVector.cc
                               TreeVectorSpace.cc
-                              TreeVector.cc)
+                              TreeVector.cc
+                              ParallelCommunication.cc)
 
 file(GLOB data_structures_inc_files "*.hh")
 set(data_structures_tpl_list ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Thyra_LIBRARIES})

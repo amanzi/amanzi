@@ -78,13 +78,13 @@ The Amanzi input file is an ASCII text XML-formatted file that must be framed at
 
   </ParameterList>
 
-The value in the "name" can be anything ("Main" in this example).  A ParameterList consists of just two types of entries: Parameter and ParameterList.  ParameterLists are labeled with a `"name`" [string], while Parameters have a separate fields for `"name`" [string], `"type`" [string] and `"value`" [TYPE], where "TYPE" can be any of the following: double, float, short, int, bool, string, Array double, Array float, Array short, Array int, Array bool, Array string.  The value of the parameter is given in quotes (e.g. "2.7e3").  Array data is specified as a single comma-deliminated string bounded by {}'s (e.g. "{2.4, 2.1, 5.7}").
+The value in the "name" can be anything ("Main" in this example).  A ParameterList consists of just two types of entries: Parameter and ParameterList.  ParameterLists are labeled with a `"name`" [string], while Parameters have a separate fields for `"name`" [string], `"type`" [string] and `"value`" [TYPE], where "TYPE" can be any of the following: double, int, bool, string, Array(double), Array(int), Array(bool), Array(string).  The value of the parameter is given in quotes (e.g. "2.7e3").  Array data is specified as a single comma-deliminated string bounded by {}'s (e.g. "{2.4, 2.1, 5.7}").
 
 .. code-block:: xml
 
   <ParameterList name="Sub">
     <Parameter name="CFL" type="double" value="0.9"/>
-    <Parameter name="ratio" type="Array int" value="{2, 2, 4}"/>
+    <Parameter name="ratio" type="Array(int)" value="{2, 2, 4}"/>
   </ParameterList>
 
 In this example, the sublist "Sub" has a parameter named "CFL" that is a "double" and has the value of 0.9, and a Teuchos::Array<int>
@@ -263,12 +263,12 @@ Usage:
 
  * [SU] `"Time Period Control`" (Optional)
 
-  * [SU] `"Start Times`" [Array double]: List of times at which the current time-integrator will be reinitialized.
-  * [SU] `"Initial Time Step`"[Array double]: The initial time step for each time period. If unspecified, Amanzi 
+  * [SU] `"Start Times`" [Array(double)]: List of times at which the current time-integrator will be reinitialized.
+  * [SU] `"Initial Time Step`"[Array(double)]: The initial time step for each time period. If unspecified, Amanzi 
     will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
-  * [S] `"Initial Time Step Multiplier`" [Array double]: (Optional) If internally computed time step used, it will be 
+  * [S] `"Initial Time Step Multiplier`" [Array(double)]: (Optional) If internally computed time step used, it will be 
     scaled by this factor (default value: 1)
-  * [S] `"Maximum Time Step`"[Array double]: (Optional) The maximum time step for each time period. 
+  * [S] `"Maximum Time Step`"[Array(double)]: (Optional) The maximum time step for each time period. 
   * [U] `"Default Initial Time Step`" [double]: (Optional) set the default initial time step, this is used for time integrator restarts that are required by boundary conditions and sources, but are not specified in this list under Start Times, the default value is 1.0. 
 
  * [SU] `"Verbosity`" [string]: (default: `"Medium`") Choose one of `"None"`, `"Low"`, `"Medium"`, `"High`", or `"Extreme`".
@@ -388,7 +388,7 @@ Usage:
 
      * [U] `"pseudo time integrator linear solver`" [string] select the linear solver to be used in the pseudo time integration method. (default: `"AztecOO`")
 
-     * [U] `"pseudo time integrator error control options`" [Array string] (default: `"pressure`")
+     * [U] `"pseudo time integrator error control options`" [Array(string)] (default: `"pressure`")
 
      * [U] `"pseudo time integrator picard convergence tolerance`" [double] Picard convergence tolerance. (default: `"1.0e-8`", suggested range: 1.0e-10 ... 1.0e-4)
 
@@ -523,7 +523,7 @@ Usage:
 
      * [S] `"steady_do_grid_sequence`" [bool] If True and richard_init_to_steady, psuedo-evolve coarsest only level solution, then interpolate solution to next finer level and repeat.  (default: `"True`")
 
-     * [S] `"steady_grid_sequence_new_level_dt_factor`" [Array double] Factor by which to scale final psuedo time step from previous (coarser) steady solve in order to compute initial psuedo time step for next steady solve.  If more than one value given, each will be used in successive solves.
+     * [S] `"steady_grid_sequence_new_level_dt_factor`" [Array(double)] Factor by which to scale final psuedo time step from previous (coarser) steady solve in order to compute initial psuedo time step for next steady solve.  If more than one value given, each will be used in successive solves.
 
      * [S] `"max_n_subcycle_transport`" [int] Maximum number of level-0 subcycled transport time steps for each flow step.  Transport will be limited by an advective CFL stability constriant, so this will contribute to limiting the over step size taken. (default: `"10`", suggested values: 1 ... 20)
 
@@ -533,17 +533,17 @@ Usage:
 
    * [S] `"Number Of AMR Levels`" [int] Maximum number of adaptive levels, including the base grid (default=1)
 
-   * [S] `"Refinement Ratio`" [Array int] Grid spacing ratio between adjacent refinement levels.  One value required for each coarse level. Only values of 2 or 4 are supported.
+   * [S] `"Refinement Ratio`" [Array(int)] Grid spacing ratio between adjacent refinement levels.  One value required for each coarse level. Only values of 2 or 4 are supported.
 
    * [S] `"Do AMR Subcycling`" [bool] For integration of transport and chemistry, AMR subcycling time-steps each level with the same ratio of dx/dt, the levels are integrated and synchronized recursively.  If "`False"`, the time step is identical across levels.
 
-   * [S] `"Regrid Interval`" [Array int] Number of base (coarse) grid time steps between regrid operations (one value > 0 required for each coarse level) 
+   * [S] `"Regrid Interval`" [Array(int)] Number of base (coarse) grid time steps between regrid operations (one value > 0 required for each coarse level) 
 
-   * [S] `"Blocking Factor`" [Array int] Number by which each grid per level is evenly divisable in each dimension (typically used to guarantee multigrid hierachy depth).  A single value implies that the same is to be used for all levels, otherwise one value is required for each fine level.
+   * [S] `"Blocking Factor`" [Array(int)] Number by which each grid per level is evenly divisable in each dimension (typically used to guarantee multigrid hierachy depth).  A single value implies that the same is to be used for all levels, otherwise one value is required for each fine level.
 
-   * [S] `"Number Error Buffer Cells`" [Array int] Number of coarse cells automatically tagged to surround user-tagged cells prior to generation of fine grids.  Used to guarantee buffer between refinement levels.
+   * [S] `"Number Error Buffer Cells`" [Array(int)] Number of coarse cells automatically tagged to surround user-tagged cells prior to generation of fine grids.  Used to guarantee buffer between refinement levels.
 
-   * [S] `"Maximum Grid Size`" [Array int] Size of largest dimension of any mesh generated at each level.  A single value implies that the same value is to be used for all levels.
+   * [S] `"Maximum Grid Size`" [Array(int)] Size of largest dimension of any mesh generated at each level.  A single value implies that the same value is to be used for all levels.
 
    * [S] `"Refinement Indicators`" [list] A list of user-labeled refinement indicators, REFINE.  Criteria will be applied in the order listed.
 
@@ -595,8 +595,8 @@ Example:
     </ParameterList>
 
     <ParameterList name="Time Period Control">
-      <Parameter name="Period Start Times" type="Array double" value="{6.1726667E10, 6.1731787E10, 6.1737054E10, 9.4672798E10}"/>
-      <Parameter name="Initial Time Step" type="Array double" value="{60.0, 60.0, 60.0, 800.0}"/>
+      <Parameter name="Period Start Times" type="Array(double)" value="{6.1726667E10, 6.1731787E10, 6.1737054E10, 9.4672798E10}"/>
+      <Parameter name="Initial Time Step" type="Array(double)" value="{60.0, 60.0, 60.0, 800.0}"/>
     </ParameterList>
 
     <Parameter name="Verbosity" type="string" type="High"/>
@@ -604,21 +604,21 @@ Example:
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Adaptive Mesh Refinement Control">
         <Parameter name="Number Of AMR Levels" type="int" value="3"/>
-        <Parameter name="Refinement Ratio" type="Array int" value="{4, 4}"/>
-        <Parameter name="Regrid Interval" type="Array int" value="{2}"/>
-        <Parameter name="Blocking Factor" type="Array int" value="{8, 8, 8}"/>
-        <Parameter name="Maximum Grid Size" type="Array int" value="{16, 16, 16}"/>
-        <Parameter name="Numbers Error Buffer Cells" type="Array int" value="{2, 1}"/>
+        <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4}"/>
+        <Parameter name="Regrid Interval" type="Array(int)" value="{2}"/>
+        <Parameter name="Blocking Factor" type="Array(int)" value="{8, 8, 8}"/>
+        <Parameter name="Maximum Grid Size" type="Array(int)" value="{16, 16, 16}"/>
+        <Parameter name="Numbers Error Buffer Cells" type="Array(int)" value="{2, 1}"/>
 
-        <Parameter name="Refinement Indicators" type="Array string" value="{Pc ref, Region ref}"/>
+        <Parameter name="Refinement Indicators" type="Array(string)" value="{Pc ref, Region ref}"/>
         <ParameterList name="Pc ref">
           <Parameter name="Maximum Refinement Level" type="int" value="1"/>
           <Parameter name="Field Name" type="string" value="Capillary Pressure"/>
-          <Parameter name="Regions" type="Array string" value="{CCugr}"/>
+          <Parameter name="Regions" type="Array(string)" value="{CCugr}"/>
           <Parameter name="Value Greater" type="double" value="1.e6"/>
         </ParameterList>
         <ParameterList name="Region ref">
-          <Parameter name="Regions" type="Array string" value="{Hgr, CCugr}"/>
+          <Parameter name="Regions" type="Array(string)" value="{Hgr, CCugr}"/>
           <Parameter name="Inside Region" type="bool" value="TRUE"/>
         </ParameterList>
       </ParameterList>
@@ -666,11 +666,11 @@ Usage:
 
  * [S] `"Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
 
-  * [S] `"Domain Low Coordinate`" [Array double] Location of low corner of domain
+  * [S] `"Domain Low Coordinate`" [Array(double)] Location of low corner of domain
 
-  * [S] `"Domain High Coordinate`" [Array double] Location of high corner of domain
+  * [S] `"Domain High Coordinate`" [Array(double)] Location of high corner of domain
 
-  * [S] `"Number Of Cells`" [Array int] the number of uniform cells in each coordinate direction
+  * [S] `"Number Of Cells`" [Array(int)] the number of uniform cells in each coordinate direction
 
  * [U] `"Unstructured`" [list] accepts instructions to either (1) read or, (2) generate an unstructured mesh.
 
@@ -684,11 +684,11 @@ Usage:
 
    * [U] `"Uniform Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
 
-    * [U] `"Domain Low Coordinate`" [Array double] Location of low corner of domain
+    * [U] `"Domain Low Coordinate`" [Array(double)] Location of low corner of domain
 
-    * [U] `"Domain High Coordinate`" [Array double] Location of high corner of domain
+    * [U] `"Domain High Coordinate`" [Array(double)] Location of high corner of domain
 
-    * [U] `"Number Of Cells`" [Array int] the number of uniform cells in each coordinate direction
+    * [U] `"Number Of Cells`" [Array(int)] the number of uniform cells in each coordinate direction
 
    * [U] `"Expert`" [list] accepts parameters that control which particular mesh framework is to be used.
 
@@ -703,9 +703,9 @@ Example of `"Structured`" mesh:
 
    <ParameterList name="Mesh">
      <ParameterList name="Structured">
-       <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
-       <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
-       <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
+       <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 100}"/>
+       <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+       <Parameter name="Domain High Corner" type="Array(double)" value="{103.2, 1.0, 103.2}" />
      </ParameterList>   
    </ParameterList>
 
@@ -717,9 +717,9 @@ Example of `"Unstructured`" mesh generated internally:
      <ParameterList name="Unstructured">
        <ParameterList name="Generate Mesh">
          <ParameterList name="Uniform Structured">
-           <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
-           <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
-           <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
+           <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 100}"/>
+           <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+           <Parameter name="Domain High Corner" type="Array(double)" value="{103.2, 1.0, 103.2}" />
          </ParameterList>   
        </ParameterList>   
      </ParameterList>   
@@ -997,7 +997,7 @@ the following set of physical properties using the supported models described be
 
   Assigned regions are typically specified last:
 
-  * [SU] `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
+  * [SU] `"Assigned Regions`" (Array(string)) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
 
 The following models can be specified for porosity (only `"Porosity: Uniform`" is supported at the moment):
 
@@ -1154,7 +1154,7 @@ Example:
         <Parameter name="m" type="double" value=".601"/> 
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
-      <Parameter name="Assigned regions" type="Array string" value="{Top Region, Bottom Region}"/>
+      <Parameter name="Assigned regions" type="Array(string)" value="{Top Region, Bottom Region}"/>
     </ParameterList>
 
 In this example, the material `"Backfill`" (which fills `"Bottom Region`" and `"Top Region`") has a
@@ -1260,7 +1260,7 @@ In order to support the rather general specification requirements (involving com
 
    * [SU] COMP [list] can accept a list of solutes carried by the component.
 
-    * [SU] `"Component Solutes`" [Array string] List of primary or basis species for the aqueous solutes in the system. The order of this list must be the same as the order in the chemistry database file.
+    * [SU] `"Component Solutes`" [Array(string)] List of primary or basis species for the aqueous solutes in the system. The order of this list must be the same as the order in the chemistry database file.
 
  * [SU] `"Solid`" phase [list] can accept the following parameters: `"Minerals`", and `"Sorption Sites`"
 
@@ -1277,7 +1277,7 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
   * [SU] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: Uniform Velocity`" (see below)
 
-  * [SU] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned.  Note [S] when multiple regions specified overlap, this list implies a precedence, ordered right to left.
+  * [SU] `"Assigned Regions`" [Array(string)] list of regions to which this condition is assigned.  Note [S] when multiple regions specified overlap, this list implies a precedence, ordered right to left.
 
   * [SU] `"Solute IC`" can accept PHASE (labels of phases defined above)
 
@@ -1296,7 +1296,7 @@ Next, we specify boundary conditions.  Again, support is provided for specifying
 
   * [SU see below] Function [list] Parameterized model to specify boundary conditions.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Linear Pressure`", `"BC: Uniform Saturation`", `"BC: Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
 
-  * [SU] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
+  * [SU] `"Assigned Regions`" [Array(string)] list of regions to which this condition is assigned
 
   * [SU] `"Solute BC`" can accept PHASE (labels of phases defined above)
 
@@ -1314,7 +1314,7 @@ Finally, we specify sources.  Support is provided for specifying sources on the 
 
   * [U] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Uniform`", `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
   
-  * [U] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
+  * [U] `"Assigned Regions`" [Array(string)] list of regions to which this condition is assigned
 
   * `"Solute SOURCE`" can accept PHASE (labels of phases defined above)
 
@@ -1328,13 +1328,13 @@ The following initial condition parameterizations are supported:
 
 * [SU] `"IC: Uniform Saturation`" requires `"Value`" [double] OR `"Geochemical Condition`" [string] if Alquimia is providing initial conditions.
 
-* [U] `"IC: Linear Saturation`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double) 
+* [U] `"IC: Linear Saturation`" requires `"Reference Coordinate`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
 
 * [U] `"IC: Uniform Pressure`" requires `"Value`" [double]
 
-* [SU] `"IC: Linear Pressure`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double) 
+* [SU] `"IC: Linear Pressure`" requires `"Reference Coordinate`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
 
-* [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array double).
+* [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array(double)).
 
 * [SU] `"IC: Uniform Concentration`" [list] requires `"Value`" and `"Free Ion Guess`", OR `"Geochemical Condition`"
 
@@ -1344,16 +1344,16 @@ The following initial condition parameterizations are supported:
 
 The following boundary condition parameterizations are supported:
 
-* [SU] `"BC: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] 
+* [SU] `"BC: Flux`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] 
   (see the note below) and one of the following: 
 
-    * []  `"Inward Volumetric Flux`" [Array double], 
+    * []  `"Inward Volumetric Flux`" [Array(double)], 
 
-    * [SU] `"Inward Mass Flux`" [Array double], 
+    * [SU] `"Inward Mass Flux`" [Array(double)], 
 
-    * []  `"Outward Volumetric Flux`" [Array double], or
+    * []  `"Outward Volumetric Flux`" [Array(double)], or
 
-    * [SU] `"Outward Mass Flux`" [Array double]. 
+    * [SU] `"Outward Mass Flux`" [Array(double)]. 
 
   Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass
   flux is interpreted as kilogramms per meter squared per
@@ -1366,51 +1366,51 @@ The following boundary condition parameterizations are supported:
       to the gravity vector and the actual influx depends on boundary
       slope (default value is "false").
 
-* [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [SU] `"BC: Linear Pressure`" [list] requires `"Reference Value`" [double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
+* [SU] `"BC: Linear Pressure`" [list] requires `"Reference Value`" [double] `"Reference Coordinates`" [Array(double)] `"Gradient`" [Array(double)]
 
-* [S] `"BC: Uniform Saturation`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [S] `"BC: Uniform Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* `"BC: Linear Saturation`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Reference Values`" [Array double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
+* `"BC: Linear Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Reference Values`" [Array(double)] `"Reference Coordinates`" [Array(double)] `"Gradient`" [Array(double)]
 
-* [U] `"BC: Seepage`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and one of `"Inward Mass Flux`" [Array double] or `"Inward Volumetric Flux`" [Array double].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
+* [U] `"BC: Seepage`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and one of `"Inward Mass Flux`" [Array(double)] or `"Inward Volumetric Flux`" [Array(double)].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
 
-* [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array double] (see below)
+* [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array(double)] (see below)
 
 * `"BC: Impermeable`"  requires no parameters
 
-* [SU] `"BC: Zero Flow`"  [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [SU] `"BC: Zero Flow`"  [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [S] `"BC: Zero Gradient`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [S] `"BC: Zero Gradient`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string], and `"Values`" [Array double] OR `"Geochemical Condition`" if Alquimia provides boundary condition data.
+* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`" if Alquimia provides boundary condition data.
 
-  * `"Times`" [Array double], list of times used by the time function.
-  * `"Time Functions`" [Array string], list of functions for the time intervals listed in `"Times`"
-  * `"Values`" [Array double], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
+  * `"Times`" [Array(double)], list of times used by the time function.
+  * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
+  * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
   * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
 
 The following source parameterizations are supported.
 
-* [U] `"Source: Uniform`" [kg/s/m^3] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [U] `"Source: Uniform`" [kg/s/m^3] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [U] `"Source: Volume Weighted`" [kg/s] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [U] `"Source: Volume Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [U] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [U] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [U] `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array double], `"Time Functions`" [Array string],  and `"Values`" [Array double] OR `"Geochemical Condition`"
+* [U] `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
 
-  * `"Times`" [Array double], list of times used by the time function.
-  * `"Time Functions`" [Array string], list of functions for the time intervals listed in `"Times`"
-  * `"Values`" [Array double], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
+  * `"Times`" [Array(double)], list of times used by the time function.
+  * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
+  * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
   * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
 
-* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array double], `"Time Functions`" [Array string], and `"Values`" [Array double] OR `"Geochemical Condition`"
+* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`"
 
-  * `"Times`" [Array double], list of times used by the time function.
-  * `"Time Functions`" [Array string], list of functions for the time intervals listed in `"Times`"
-  * `"Values`" [Array double], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
+  * `"Times`" [Array(double)], list of times used by the time function.
+  * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
+  * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
   * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
 
 
@@ -1421,9 +1421,9 @@ Boundary condition functions utilize a parameterized model for time variations t
 
 .. code-block:: xml
 
-      <Parameter name="Times" type="Array double" value="{1, 2, 3}"/>
-      <Parameter name="Time Values" type="Array double" value="{10, 20, 30}"/>
-      <Parameter name="Time Functions" type="Array string" value="{Constant, Linear}"/>    
+      <Parameter name="Times" type="Array(double)" value="{1, 2, 3}"/>
+      <Parameter name="Time Values" type="Array(double)" value="{10, 20, 30}"/>
+      <Parameter name="Time Functions" type="Array(string)" value="{Constant, Linear}"/>    
 
 
 This defines two time intervals, [1,2) and [2,3), three <time,time value> pairs, <1,10>, <2,20>, and <3,30>, and
@@ -1461,11 +1461,16 @@ The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"
   * [SU] `"Max Time Step (s)`" [double] The maximum time step that chemistry will allow the MPC to take.
 
   * [SU] `"Geochemical Conditions`" [list] (*optional*, allows definition of geochemical conditions within XML.)
+
     * [SU] `"(condition name)`" [list] The geochemical condition, defined in terms of aqueous and mineral constraints.
+
       * [SU] `"(aqueous constraint name)`" [list] Entry for an aqueous constraint involving a species and/or a mineral.
+
         * [SU] `"(type)`" [double] The type of aqueous constraint (total_aqueous, total_sorb, free, mineral, gas, pH, charge) and its associated value.
         * [SU] `"species`" [string] The name of any associated mineral species for a mineral constraint.
+
       * [SU] `"(mineral species)`" [list] Entry for a mineral constraint mentioned in an aqueous constraint.
+
         * [SU] `"Volume Fraction`" [double] Volume fraction for the mineral.
         * [SU] `"Specific Surface Area`" [double] Specific surface area for the mineral.
 
@@ -1532,9 +1537,9 @@ Time macros specify a rule to generate a list of time values.  They are defined 
 
  * [SU] TMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
 
-  * [SU] `"Values`" [Array double] values of time, or 
+  * [SU] `"Values`" [Array(double)] values of time, or 
 
-  * [SU] `"Start_Period_Stop`" [Array double] values of start time (ts), period (dt) and (optionally) end time (te) to generate times, t=ts + dt*i, for any integer i. If stop time is less than start time, the time intervals have no ending.
+  * [SU] `"Start_Period_Stop`" [Array(double)] values of start time (ts), period (dt) and (optionally) end time (te) to generate times, t=ts + dt*i, for any integer i. If stop time is less than start time, the time intervals have no ending.
 
 
 Cycle macros specify a rule to generate or list cycle values.  They are defined in the parameter list `"Cycle Macros`":
@@ -1543,9 +1548,9 @@ Cycle macros specify a rule to generate or list cycle values.  They are defined 
 
  * [SU] CMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
 
-  * [SU] `"Values`" [Array int] values of cycle number, or 
+  * [SU] `"Values`" [Array(int)] values of cycle number, or 
 
-  * [SU] `"Start_Period_Stop`" [Array int] values of start cycle (cs), period (dc) and (optionally) end cycle (ce) to generate cycle numbers, c=cs + dc*i, for any integer i. If stop cycle < 0, the cycle intervals will not end.
+  * [SU] `"Start_Period_Stop`" [Array(int)] values of start cycle (cs), period (dc) and (optionally) end cycle (ce) to generate cycle numbers, c=cs + dc*i, for any integer i. If stop cycle < 0, the cycle intervals will not end.
 
 
 
@@ -1591,7 +1596,7 @@ Example:
 
   <ParameterList name="Time Macros">
     <ParameterList name="Annual">
-      <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3.1536e7,-1}"/>
+      <Parameter name="Start_Period_Stop" type="Array(double)" value="{0, 3.1536e7,-1}"/>
     </ParameterList>
   </ParameterList>
 
@@ -1636,7 +1641,7 @@ Example:
 
   <ParameterList name="Cycle Macros">
     <ParameterList name="Every-5">
-      <Parameter name="Start_Period_Stop" type="Array int" value="{0, 5, -1}"/>
+      <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 5, -1}"/>
     </ParameterList>
   </ParameterList>
 
@@ -1659,11 +1664,11 @@ at intervals corresponding to the numerical time step values; writes are control
 
   * [SU] `"File Name Base`" [string]
   
-  * [SU] `"Cycle Macros`" [Array string] can accept a list of of user-defined Cycle Macro (see above)
+  * [SU] `"Cycle Macros`" [Array(string)] can accept a list of of user-defined Cycle Macro (see above)
   
-  * [SU] `"Time Macros`" [Array string] can accept a list of the labeled time macros (see above)
+  * [SU] `"Time Macros`" [Array(string)] can accept a list of the labeled time macros (see above)
 
-  * [S] `"Variables`" [Array string] can accept a list of field quantities to include in the file.  At present the unstructured code dumps all of the dependent variables in the system state.
+  * [S] `"Variables`" [Array(string)] can accept a list of field quantities to include in the file.  At present the unstructured code dumps all of the dependent variables in the system state.
 
   * [U] `"Write Regions`" [Array(string)] (empty array) write an array into the visualization file that can be used to identify a region or regions. The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. The code ignores entries in the regions array that are not valid regions that contain cells.
 
@@ -1683,14 +1688,14 @@ Example:
 
   <ParameterList name="Cycle Macros">
     <ParameterList name="Every-10">
-      <Parameter name="Start_Period_Stop" type="Array int" value="{0, 10,-1}"/>
+      <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 10,-1}"/>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="Visualization Data">
     <Parameter name="File Name Base" type="string" value="chk"/>
     <Parameter name="File Name Digits" type="int" value="5"/>
-    <Parameter name="Cycle Macros" type="Array string" value="Every-10">
+    <Parameter name="Cycle Macros" type="Array(string)" value="Every-10">
   </ParameterList>
 
 In this example, the liquid pressure and moisture content are written when the cycle number is evenly divisble by 5.
@@ -1724,7 +1729,7 @@ Example:
 
   <ParameterList name="Cycle Macros">
     <ParameterList name="Every-5">
-      <Parameter name="Start_Period_Stop" type="Array int" value="{0, 5, -1}"/>
+      <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 5, -1}"/>
     </ParameterList>
   </ParameterList>
 
@@ -1971,9 +1976,9 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            <ParameterList name="Unstructured">
              <ParameterList name="Generate Mesh">
                <ParameterList name="Uniform Structured">
-                 <Parameter name="Number of Cells" type="Array int" value="{800, 1, 220}"/>
-                 <Parameter name="Domain Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}" />
-                 <Parameter name="Domain High Coordinate" type="Array double" value="{400., 1.0, 110.}" />
+                 <Parameter name="Number of Cells" type="Array(int)" value="{800, 1, 220}"/>
+                 <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+                 <Parameter name="Domain High Coordinate" type="Array(double)" value="{400., 1.0, 110.}" />
                </ParameterList>
              </ParameterList>
            </ParameterList>
@@ -1988,9 +1993,9 @@ required to specify a real simulation with Amanzi envisioned functional for the 
          -->
          <!-- Uncomment this block for structured
            <ParameterList name="Structured">
-             <Parameter name="Number of Cells" type="Array int" value="{800, 1, 220}"/>
-             <Parameter name="Domain Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}" />
-             <Parameter name="Domain High Coordinate" type="Array double" value="{400., 1.0, 110.}" />
+             <Parameter name="Number of Cells" type="Array(int)" value="{800, 1, 220}"/>
+             <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+             <Parameter name="Domain High Coordinate" type="Array(double)" value="{400., 1.0, 110.}" />
            </ParameterList>
          -->
          </ParameterList>
@@ -2014,22 +2019,22 @@ required to specify a real simulation with Amanzi envisioned functional for the 
        
            <ParameterList name="Material 1 Region">
              <ParameterList name="Region: Box">
-               <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
-               <Parameter name="High Coordinate" type="Array double" value="{400.0, 1.0, 30.0}"/>
+               <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+               <Parameter name="High Coordinate" type="Array(double)" value="{400.0, 1.0, 30.0}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="Material 2 Region">
              <ParameterList name="Region: Box">
-               <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 30.0}"/>
-               <Parameter name="High Coordinate" type="Array double" value="{400.0, 1.0, 60.0}"/>
+               <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0, 30.0}"/>
+               <Parameter name="High Coordinate" type="Array(double)" value="{400.0, 1.0, 60.0}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="Material 3 Region">
              <ParameterList name="Region: Box">
-               <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 60.0}"/>
-               <Parameter name="High Coordinate" type="Array double" value="{400.0, 1.0, 110.0}"/>
+               <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0, 60.0}"/>
+               <Parameter name="High Coordinate" type="Array(double)" value="{400.0, 1.0, 110.0}"/>
              </ParameterList>
            </ParameterList>
        
@@ -2043,100 +2048,100 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              <ParameterList name="Box">
                <!-- GEH: These are approximate as placeholders for how.  Vicky will provide more
                          accurate values soon. -->
-               <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 110.0}"/>
-               <Parameter name="High Coordinate" type="Array double" value="{170.0, 1.0, 110.0}"/>
+               <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0, 110.0}"/>
+               <Parameter name="High Coordinate" type="Array(double)" value="{170.0, 1.0, 110.0}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="Top Surface Outside Cribs Region B">
              <ParameterList name="Region: Box">
-               <Parameter name="Low Coordinate" type="Array double" value="{173.0, 0.0, 110.0}"/>
-               <Parameter name="High Coordinate" type="Array double" value="{190.0, 1.0, 110.0}"/>
+               <Parameter name="Low Coordinate" type="Array(double)" value="{173.0, 0.0, 110.0}"/>
+               <Parameter name="High Coordinate" type="Array(double)" value="{190.0, 1.0, 110.0}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="Top Surface Outside Cribs Region C">
              <ParameterList name="Region: Box">
-               <Parameter name="Low Coordinate" type="Array double" value="{193.0, 0.0, 110.0}"/>
-               <Parameter name="High Coordinate" type="Array double" value="{400.0, 1.0, 110.0}"/>
+               <Parameter name="Low Coordinate" type="Array(double)" value="{193.0, 0.0, 110.0}"/>
+               <Parameter name="High Coordinate" type="Array(double)" value="{400.0, 1.0, 110.0}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="90 Meter Plane Region">
              <!-- GEH: Note that we could use a 2D box for these regions too. -->
              <ParameterList name="Region: Plane">
-               <Parameter name="Coordinate"  type="Array double" value="{0., 0., 90.}"/>
+               <Parameter name="Coordinate"  type="Array(double)" value="{0., 0., 90.}"/>
                <!-- GEH: Note the downward unit vector -->
-               <Parameter name="Direction"  type="Array double" value="{0., 0., 1.}"/>
+               <Parameter name="Direction"  type="Array(double)" value="{0., 0., 1.}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="Bottom Surface Region">
              <!-- GEH: Note that we could use a 2D box for these regions too. -->
              <ParameterList name="Region: Plane">
-               <Parameter name="Coordinate"  type="Array double" value="{0., 0., 0.}"/>
+               <Parameter name="Coordinate"  type="Array(double)" value="{0., 0., 0.}"/>
                <!-- GEH: Note the downward unit vector -->
-               <Parameter name="Direction"  type="Array double" value="{0., 0., -1.}"/>
+               <Parameter name="Direction"  type="Array(double)" value="{0., 0., -1.}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="West Surface Region">
              <ParameterList name="Region: Plane">
-               <Parameter name="Coordinate"  type="Array double" value="{0., 0., 0.}"/>
-               <Parameter name="Direction"  type="Array double" value="{-1., 0., 0.}"/>
+               <Parameter name="Coordinate"  type="Array(double)" value="{0., 0., 0.}"/>
+               <Parameter name="Direction"  type="Array(double)" value="{-1., 0., 0.}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="East Surface Region">
              <ParameterList name="Region: Plane">
-               <Parameter name="Coordinate"  type="Array double" value="{400., 0., 0.}"/>
-               <Parameter name="Direction"  type="Array double" value="{1., 0., 0.}"/>
+               <Parameter name="Coordinate"  type="Array(double)" value="{400., 0., 0.}"/>
+               <Parameter name="Direction"  type="Array(double)" value="{1., 0., 0.}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="South Surface Region">
              <ParameterList name="Region: Plane">
-               <Parameter name="Coordinate"  type="Array double" value="{0., 0., 0.}"/>
-               <Parameter name="Direction"  type="Array double" value="{0., -1., 0.}"/>
+               <Parameter name="Coordinate"  type="Array(double)" value="{0., 0., 0.}"/>
+               <Parameter name="Direction"  type="Array(double)" value="{0., -1., 0.}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="North Surface Region">
              <ParameterList name="Region: Plane">
-               <Parameter name="Coordinate"  type="Array double" value="{0., 1., 0.}"/>
-               <Parameter name="Direction"  type="Array double" value="{0., 1., 0.}"/>
+               <Parameter name="Coordinate"  type="Array(double)" value="{0., 1., 0.}"/>
+               <Parameter name="Direction"  type="Array(double)" value="{0., 1., 0.}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="Crib 1 Region">
              <ParameterList name="Region: Box">
                <!-- GEH: Assuming unit cell width in Y -->
-               <Parameter name="Low Coordinate" type="Array double" value="{170.0, 0.0, 110.0}"/>
-               <Parameter name="High Coordinate" type="Array double" value="{173.0, 1.0, 110.0}"/>
+               <Parameter name="Low Coordinate" type="Array(double)" value="{170.0, 0.0, 110.0}"/>
+               <Parameter name="High Coordinate" type="Array(double)" value="{173.0, 1.0, 110.0}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="Crib 2 Region">
              <ParameterList name="Region: Box">
                <!-- GEH: Assuming unit cell width in Y -->
-               <Parameter name="Low Coordinate" type="Array double" value="{190.0, 0.0, 110.0}"/>
-               <Parameter name="High Coordinate" type="Array double" value="{193.0, 1.0, 110.0}"/>
+               <Parameter name="Low Coordinate" type="Array(double)" value="{190.0, 0.0, 110.0}"/>
+               <Parameter name="High Coordinate" type="Array(double)" value="{193.0, 1.0, 110.0}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="Sample Point 1 Region">
              <ParameterList name="Region: Point">
-               <Parameter name="Coordinate"  type="Array double" value="{171.5, 0.5, 50.0}"/>
+               <Parameter name="Coordinate"  type="Array(double)" value="{171.5, 0.5, 50.0}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="Sample Point 2 Region">
              <ParameterList name="Region: Point">
-               <Parameter name="Coordinate"  type="Array double" value="{191.5, 0.5, 50.0}"/>
+               <Parameter name="Coordinate"  type="Array(double)" value="{191.5, 0.5, 50.0}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="Sample Point 3 Region">
              <ParameterList name="Region: Point">
-               <Parameter name="Coordinate"  type="Array double" value="{181.5, 0.5, 50.0}"/>
+               <Parameter name="Coordinate"  type="Array(double)" value="{181.5, 0.5, 50.0}"/>
              </ParameterList>
            </ParameterList>
        
@@ -2163,7 +2168,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                <Parameter name="Relative Permeability" type="string" value="Mualem"/>
              </ParameterList>
        
-             <Parameter name="Assigned Regions" type="Array string" value="{Material 1 Region}"/>
+             <Parameter name="Assigned Regions" type="Array(string)" value="{Material 1 Region}"/>
 
            </ParameterList>
        
@@ -2185,7 +2190,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                <Parameter name="Relative Permeability" type="string" value="Mualem"/>
              </ParameterList>
        
-             <Parameter name="Assigned Regions" type="Array string" value="{Material 2 Region}"/>
+             <Parameter name="Assigned Regions" type="Array(string)" value="{Material 2 Region}"/>
 
            </ParameterList>
        
@@ -2207,7 +2212,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                <Parameter name="Relative Permeability" type="string" value="Mualem"/>
              </ParameterList>
        
-             <Parameter name="Assigned Regions" type="Array string" value="{Material 3 Region}"/>
+             <Parameter name="Assigned Regions" type="Array(string)" value="{Material 3 Region}"/>
 
            </ParameterList>
        
@@ -2227,7 +2232,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                <!-- GEH: Note sure if this is what we want.  Water component with solutes.  The input spec
                          reflects this, although it refers to "Aqueous Water" instead of "Water". -->
                <ParameterList name="Water">
-                 <Parameter name="Component Solutes" type="Array string" value="{Tc-99}"/>           
+                 <Parameter name="Component Solutes" type="Array(string)" value="{Tc-99}"/>           
                </ParameterList>
              </ParameterList>
            </ParameterList>
@@ -2236,13 +2241,13 @@ required to specify a real simulation with Amanzi envisioned functional for the 
 
          <ParameterList name="Initial Conditions">
            <ParameterList name="IC For Domain">
-             <Parameter name="Assigned Regions" type="Array string" value="{All}"/>
+             <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
              <ParameterList name="IC: Linear Pressure">
                <Parameter name="Phase" type="string" value="Aqueous"/>
                <Parameter name="Reference Value" type="double" value="101325."/>
-               <Parameter name="Reference Coordinate" type="Array double" value="{0., 0., 0.}"/>
+               <Parameter name="Reference Coordinate" type="Array(double)" value="{0., 0., 0.}"/>
                <!-- GEH: Units of gradient are Pa/m = rho*g = 998.32 kg/m^3 * 9.81 m/s^2-->
-               <Parameter name="Gradient Value" type="Array double" value="{0., 0., -9793.5192}"/>
+               <Parameter name="Gradient Value" type="Array(double)" value="{0., 0., -9793.5192}"/>
              </ParameterList>
              <ParameterList name="Solute IC">
                <ParameterList name="Aqueous">
@@ -2262,14 +2267,14 @@ required to specify a real simulation with Amanzi envisioned functional for the 
 
          <ParameterList name="Boundary Conditions">
            <ParameterList name="BC For Top Surface Outside Cribs Region">
-             <Parameter name="Assigned Regions" type="Array string" value="{Top Surface Outside Cribs Region A, Top Surface Outside Cribs Region B, Top Surface Outside Cribs Region C}"/>
+             <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface Outside Cribs Region A, Top Surface Outside Cribs Region B, Top Surface Outside Cribs Region C}"/>
              <ParameterList name="BC: Flux">
 	       <!-- GEH/VLF: These recharge intervals/rates will change. -->
                <!-- 1956, 1984 in seconds-->
-               <Parameter name="Times" type="Array double" value="{0., 883008000.}"/>
-               <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0., 883008000.}"/>
+               <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                <!-- Recharge = 77 mm/yr, 25mm/yr -->
-               <Parameter name="Extensive Flux" type="Array double" value="{2.44e-9, 7.93e-10}"/>
+               <Parameter name="Extensive Flux" type="Array(double)" value="{2.44e-9, 7.93e-10}"/>
              </ParameterList>
              <ParameterList name="Solute BC">
                <ParameterList name="Aqueous">
@@ -2277,9 +2282,9 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                    <ParameterList name="Tc-99">
                      <ParameterList name="BC: Inflow">
                          <!-- GEH: Throughout entire simulation, no solute enters through top surface -->
-                       <Parameter name="Times" type="Array double" value="{0.}"/>
-                       <Parameter name="Time functions" type="Array string" value="{Constant}"/>
-                       <Parameter name="Values" type="Array double" value="{0.}"/>
+                       <Parameter name="Times" type="Array(double)" value="{0.}"/>
+                       <Parameter name="Time functions" type="Array(string)" value="{Constant}"/>
+                       <Parameter name="Values" type="Array(double)" value="{0.}"/>
                      </ParameterList>
                    </ParameterList>
                  </ParameterList>
@@ -2288,14 +2293,14 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            </ParameterList>
 
            <ParameterList name="BC For Crib 1 Region">
-             <Parameter name="Assigned Regions" type="Array string" value="{Crib 1 Region}"/>
+             <Parameter name="Assigned Regions" type="Array(string)" value="{Crib 1 Region}"/>
              <ParameterList name="BC: Flux">
                  <!-- GEH/VLF: These recharge intervals/rates will change. -->
                  <!-- 1956, 1956.25 in seconds-->
-               <Parameter name="Times" type="Array double" value="{0., 7884000.}"/>
-               <Parameter name="Time functions" type="Array string" value="{Constant, Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0., 7884000.}"/>
+               <Parameter name="Time functions" type="Array(string)" value="{Constant, Constant}"/>
                  <!-- 11.25, 0. m/d-->
-               <Parameter name="Extensive Flux" type="Array double" value="{1.302e-4, 0.}"/>
+               <Parameter name="Extensive Flux" type="Array(double)" value="{1.302e-4, 0.}"/>
              </ParameterList>
              <ParameterList name="Solute BC">
                <ParameterList name="Aqueous">
@@ -2303,9 +2308,9 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                    <ParameterList name="Tc-99">
                      <ParameterList name="BC: Inflow">
                         <!-- 1956, 1956.25 in seconds-->
-                       <Parameter name="Times" type="Array double" value="{0., 7884000.}"/>
-                       <Parameter name="Time functions" type="Array string" value="{Constant, Constant}"/>
-                       <Parameter name="Values" type="Array double" value="{1000., 0.}"/>
+                       <Parameter name="Times" type="Array(double)" value="{0., 7884000.}"/>
+                       <Parameter name="Time functions" type="Array(string)" value="{Constant, Constant}"/>
+                       <Parameter name="Values" type="Array(double)" value="{1000., 0.}"/>
                      </ParameterList>
                    </ParameterList>
                  </ParameterList>
@@ -2314,14 +2319,14 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            </ParameterList>
 
            <ParameterList name="BC For Crib 2 Region">
-             <Parameter name="Assigned Regions" type="Array string" value="{Crib 2 Region}"/>
+             <Parameter name="Assigned Regions" type="Array(string)" value="{Crib 2 Region}"/>
              <ParameterList name="BC: Flux">
                  <!-- GEH/VLF: These recharge intervals/rates will change. -->
                  <!-- 1956, 1956.33, 1956.66 in seconds-->
-               <Parameter name="Times" type="Array double" value="{0., 10406880., 20813760.}"/>
-               <Parameter name="Time functions" type="Array string" value="{Constant, Constant, Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0., 10406880., 20813760.}"/>
+               <Parameter name="Time functions" type="Array(string)" value="{Constant, Constant, Constant}"/>
                    <!-- 0., 8.75, 0. m/d-->
-               <Parameter name="Extensive Flux" type="Array double" value="{0., 1.013e-4, 0.}"/>
+               <Parameter name="Extensive Flux" type="Array(double)" value="{0., 1.013e-4, 0.}"/>
              </ParameterList>
              <ParameterList name="Solute BC">
                <ParameterList name="Aqueous">
@@ -2329,9 +2334,9 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                    <ParameterList name="Tc-99">
                      <ParameterList name="BC: Inflow">
                        <!-- 1956, 1956.33, 1956.66 in seconds-->
-                       <Parameter name="Times" type="Array double" value="{0., 10406880., 20813760.}"/>
-                       <Parameter name="Time functions" type="Array string" value="{Constant, Constant, Constant}"/>
-                       <Parameter name="Values" type="Array double" value="{0., 900., 0.}"/>
+                       <Parameter name="Times" type="Array(double)" value="{0., 10406880., 20813760.}"/>
+                       <Parameter name="Time functions" type="Array(string)" value="{Constant, Constant, Constant}"/>
+                       <Parameter name="Values" type="Array(double)" value="{0., 900., 0.}"/>
                      </ParameterList>
                    </ParameterList>
                  </ParameterList>
@@ -2340,19 +2345,19 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            </ParameterList>
        
            <ParameterList name="BC For Bottom Surface Region">
-             <Parameter name="Assigned Regions" type="Array string" value="{Bottom Surface Region}"/>
+             <Parameter name="Assigned Regions" type="Array(string)" value="{Bottom Surface Region}"/>
              <ParameterList name="BC: Uniform Pressure">
-               <Parameter name="Times" type="Array double" value="{0.}"/>
-               <Parameter name="Time functions" type="Array string" value="{Constant}"/>
-               <Parameter name="Values" type="Array double" value="{101325.}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.}"/>
+               <Parameter name="Time functions" type="Array(string)" value="{Constant}"/>
+               <Parameter name="Values" type="Array(double)" value="{101325.}"/>
              </ParameterList>
              <ParameterList name="Solute BC">
                <ParameterList name="Aqueous">
                  <ParameterList name="Water">
                    <ParameterList name="Tc-99">
                      <ParameterList name="BC: Outflow">
-                       <Parameter name="Times" type="Array double" value="{0.}"/>
-                       <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+                       <Parameter name="Times" type="Array(double)" value="{0.}"/>
+                       <Parameter name="Time functions" type="Array(string)" value="{Constant}"/>
                      </ParameterList>
                    </ParameterList>
                  </ParameterList>
@@ -2361,18 +2366,18 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            </ParameterList>
        
            <ParameterList name="BC For West Surface Region">
-             <Parameter name="Assigned Regions" type="Array string" value="{West Surface Region}"/>
+             <Parameter name="Assigned Regions" type="Array(string)" value="{West Surface Region}"/>
              <ParameterList name="BC: No Flow">
-               <Parameter name="Times" type="Array double" value="{0.}"/>
-               <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.}"/>
+               <Parameter name="Time functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
              <ParameterList name="Solute BC">
                <ParameterList name="Aqueous">
                  <ParameterList name="Water">
                    <ParameterList name="Tc-99">
                      <ParameterList name="BC: Zero Flux">
-                       <Parameter name="Times" type="Array double" value="{0.}"/>
-                       <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+                       <Parameter name="Times" type="Array(double)" value="{0.}"/>
+                       <Parameter name="Time functions" type="Array(string)" value="{Constant}"/>
                      </ParameterList>
                    </ParameterList>
                  </ParameterList>
@@ -2381,18 +2386,18 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            </ParameterList>
 
            <ParameterList name="BC For East Surface Region">
-             <Parameter name="Assigned Regions" type="Array string" value="{East Surface Region}"/>
+             <Parameter name="Assigned Regions" type="Array(string)" value="{East Surface Region}"/>
              <ParameterList name="BC: No Flow">
-               <Parameter name="Times" type="Array double" value="{0.}"/>
-               <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Times" type="Array(double)" value="{0.}"/>
+               <Parameter name="Time functions" type="Array(string)" value="{Constant}"/>
              </ParameterList>
              <ParameterList name="Solute BC">
                <ParameterList name="Aqueous">
                  <ParameterList name="Water">
                    <ParameterList name="Tc-99">
                      <ParameterList name="BC: Zero Flux">
-                       <Parameter name="Times" type="Array double" value="{0.}"/>
-                       <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+                       <Parameter name="Times" type="Array(double)" value="{0.}"/>
+                       <Parameter name="Time functions" type="Array(string)" value="{Constant}"/>
                      </ParameterList>
                    </ParameterList>
                  </ParameterList>
@@ -2418,27 +2423,27 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            <!-- define some handy cycle macros -->
            <ParameterList name="Cycle Macros">
              <ParameterList name="Every-5-steps">
-               <Parameter name="Start_Period_Stop" type="Array int" value="{0, 5, -1}"/>
+               <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 5, -1}"/>
              </ParameterList>
            </ParameterList>
 
            <!-- define some handy time macros -->
            <ParameterList name="Time Macros">
              <ParameterList name="Annual">
-               <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3.1536e7, -1}"/>
+               <Parameter name="Start_Period_Stop" type="Array(double)" value="{0, 3.1536e7, -1}"/>
              </ParameterList>
 
              <ParameterList name="My_times">
                <!-- 1956, 1956.1, 1956.2, 1956.3, 1956.4, 1956.4, 1956.5, 1956.6, 1956.7, 1956.8, 1956.9, 1957, 1958, 1960, 1970, 1980, 1990, 2000, 2006 -->
-               <Parameter name="Values" type="Array double" value="{0., 3153600., 6307200., 9460800., 12614400., 1576800., 18921600., 22075200., 25228800., 28382400., 31536000., 63072000., 126144000., 441504000., 756864000., 1072224000., 1387584000., 1576800000. }"/>
+               <Parameter name="Values" type="Array(double)" value="{0., 3153600., 6307200., 9460800., 12614400., 1576800., 18921600., 22075200., 25228800., 28382400., 31536000., 63072000., 126144000., 441504000., 756864000., 1072224000., 1387584000., 1576800000. }"/>
              </ParameterList>
 
              <ParameterList name="Daily_1957-1967">
-               <Parameter name="Start_Period_Stop" type="Array double" value="{3.1536e7, 86400., 3.46896e8}"/>
+               <Parameter name="Start_Period_Stop" type="Array(double)" value="{3.1536e7, 86400., 3.46896e8}"/>
              </ParameterList>
 
              <ParameterList name="Daily_1957-2006">
-               <Parameter name="Start_Period_Stop" type="Array double" value="{3.1536e7, 86400., 1.5768e9}"/>
+               <Parameter name="Start_Period_Stop" type="Array(double)" value="{3.1536e7, 86400., 1.5768e9}"/>
              </ParameterList>
 
            </ParameterList>
@@ -2450,7 +2455,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              <ParameterList name="Integrated Mass">
                <Parameter name="Region" type="string" value="All"/>
                <Parameter name="Functional" type="string" value="Observation Data: Integral"/>
-               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Aqueous Concentration}"/>
+               <Parameter name="Variables" type="Array(string)" value="{Water Mass Density, Tc-99 Aqueous Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Annual"/>
              </ParameterList>
 
@@ -2458,21 +2463,21 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              <ParameterList name="Point Sample 1">
                <Parameter name="Region" type="string" value="Sample Point 1 Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Aqueous Concentration}"/>
+               <Parameter name="Variables" type="Array(string)" value="{Water Mass Density, Tc-99 Aqueous Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
              </ParameterList>
 
              <ParameterList name="Point Sample 2">
                <Parameter name="Region" type="string" value="Sample Point 2 Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Aqueous Concentration}"/>
+               <Parameter name="Variables" type="Array(string)" value="{Water Mass Density, Tc-99 Aqueous Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
              </ParameterList>
 
              <ParameterList name="Point Sample 3">
                <Parameter name="Region" type="string" value="Sample Point 3 Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Aqueous Concentration}"/>
+               <Parameter name="Variables" type="Array(string)" value="{Water Mass Density, Tc-99 Aqueous Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
              </ParameterList>
 
@@ -2480,28 +2485,28 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              <ParameterList name="Cummulative Tc-99 Flux Integral - Bottom">
                <Parameter name="Region" type="string" value="Bottom Surface Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
-               <Parameter name="Variables" type="Array string" value="{Tc-99 Aqueous Concentration}"/>
+               <Parameter name="Variables" type="Array(string)" value="{Tc-99 Aqueous Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
              </ParameterList>
 
              <ParameterList name="Cummulative Tc-99 Flux Integral - Crib 1">
                <Parameter name="Region" type="string" value="Crib 1 Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
-               <Parameter name="Variables" type="Array string" value="{Tc-99 Aqueous Concentration}"/>
+               <Parameter name="Variables" type="Array(string)" value="{Tc-99 Aqueous Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
              </ParameterList>
 
              <ParameterList name="Cummulative Tc-99 Flux Integral - Crib 2">
                <Parameter name="Region" type="string" value="Crib 2 Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
-               <Parameter name="Variables" type="Array string" value="{Tc-99 Aqueous Concentration}"/>
+               <Parameter name="Variables" type="Array(string)" value="{Tc-99 Aqueous Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
              </ParameterList>
 
              <ParameterList name="Cummulative Tc-99 Flux Integral - 90m">
                <Parameter name="Region" type="string" value="90 Meter Plane Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
-               <Parameter name="Variables" type="Array string" value="{Tc-99 Aqueous Concentration}"/>
+               <Parameter name="Variables" type="Array(string)" value="{Tc-99 Aqueous Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
              </ParameterList>
 
@@ -2511,7 +2516,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            <ParameterList name="Visualization Data">
              <Parameter name="File Name Base" type="string" value="viz-"/>
              <Parameter name="Cycle Macro" type="string" value="Every-10-steps"/>
-             <Parameter name="Variables" type="Array string" value="{Aqueous Pressure, Tc-99 Aqueous Concentration}"/>
+             <Parameter name="Variables" type="Array(string)" value="{Aqueous Pressure, Tc-99 Aqueous Concentration}"/>
            </ParameterList>
 
            <ParameterList name="Checkpoint Data">
