@@ -22,6 +22,7 @@
 
 #include "VerboseObject.hh"
 #include "Mesh.hh"
+#include "ParallelCommunication.hh"
 #include "tensor.hh"
 
 #include "State.hh"
@@ -72,7 +73,7 @@ class RelativePermeability {
   std::vector<AmanziGeometry::Point >& Kgravity_unit() {return Kgravity_unit_;}
 
   int method() { return method_; }
-  const CompositeVector& map_c2mb() { return *map_c2mb_; }
+  const Epetra_IntVector& map_c2mb() { return *map_c2mb_; }
 
  private:
   void FaceArithmeticMean_(const CompositeVector& pressure);
@@ -101,6 +102,7 @@ class RelativePermeability {
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList list_;
+  Teuchos::RCP<ParallelCommunication> pp_;
 
   std::vector<Teuchos::RCP<WaterRetentionModel> > WRM_;
   double atm_pressure;
@@ -120,7 +122,7 @@ class RelativePermeability {
   std::vector<AmanziGeometry::Point> Kgravity_unit_;  // normalized vector Kg
 
   // Miscallenous maps
-  Teuchos::RCP<CompositeVector> map_c2mb_;
+  Teuchos::RCP<Epetra_IntVector> map_c2mb_;
 
   // obsolete, must go away (lipnikov@lanl.gov)
   Teuchos::RCP<State> S_;

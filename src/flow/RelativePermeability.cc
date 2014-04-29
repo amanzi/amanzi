@@ -50,11 +50,8 @@ void RelativePermeability::Init(double p0, Teuchos::RCP<State> S)
   method_ = FLOW_RELATIVE_PERM_NONE;
   SetFullySaturated();
 
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh_);
-  cvs.SetGhosted(true);
-  cvs.SetComponent("cell", AmanziMesh::CELL, 1);
-  map_c2mb_ = Teuchos::rcp(new CompositeVector(cvs));
+  pp_ = Teuchos::rcp(new ParallelCommunication(mesh_));
+  map_c2mb_ = Teuchos::rcp(new Epetra_IntVector(mesh_->cell_map(true)));
 }
 
 
@@ -150,7 +147,7 @@ void RelativePermeability::FaceUpwindGravity_(
   Epetra_MultiVector& Krel_faces = *Krel_->ViewComponent("face", true);
   Krel_faces.PutScalar(2.0);
 
-  const Epetra_MultiVector& map_c2mb = *map_c2mb_->ViewComponent("cell", true);
+  const Epetra_IntVector& map = *map_c2mb_;
 
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -165,7 +162,7 @@ void RelativePermeability::FaceUpwindGravity_(
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
           double pc = atm_pressure - bc_values[f][0];
-          Krel_faces[0][f] = WRM_[map_c2mb[0][c]]->k_relative(pc);
+          Krel_faces[0][f] = WRM_[map[c]]->k_relative(pc);
         } else {
           Krel_faces[0][f] = Krel_cells[0][c];
         }
@@ -198,7 +195,7 @@ void RelativePermeability::FaceUpwindGravityInSoil_(
   Epetra_MultiVector& Krel_faces = *Krel_->ViewComponent("face", true);
   Krel_amanzi_.clear();
 
-  const Epetra_MultiVector& map_c2mb = *map_c2mb_->ViewComponent("cell", true);
+  const Epetra_IntVector& map = *map_c2mb_;
 
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -221,7 +218,7 @@ void RelativePermeability::FaceUpwindGravityInSoil_(
       } else if (flag == FLOW_PERMFLAG_UPWIND) {
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && c1 < 0) {
           double pc = atm_pressure - bc_values[f][0];
-          krel[n] = WRM_[map_c2mb[0][c]]->k_relative(pc);
+          krel[n] = WRM_[map[c]]->k_relative(pc);
         } else if (c1 >= 0) {
           krel[n] = Krel_cells[0][c1];
         } else {
@@ -249,7 +246,7 @@ void RelativePermeability::FaceUpwindFlux_(
   Epetra_MultiVector& Krel_faces = *Krel_->ViewComponent("face", true);
   Krel_faces.PutScalar(0.0);
 
-  const Epetra_MultiVector& map_c2mb = *map_c2mb_->ViewComponent("cell", true);
+  const Epetra_IntVector& map = *map_c2mb_;
 
   double max_flux, min_flux;
   flux.MaxValue(&max_flux);
@@ -267,7 +264,7 @@ void RelativePermeability::FaceUpwindFlux_(
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && flux[0][f] * dirs[n] < -tol) {
           double pc = atm_pressure - bc_values[f][0];
-          Krel_faces[0][f] = WRM_[map_c2mb[0][c]]->k_relative(pc);
+          Krel_faces[0][f] = WRM_[map[c]]->k_relative(pc);
         } else {
           Krel_faces[0][f] = Krel_cells[0][c];   
         }
@@ -344,7 +341,7 @@ void RelativePermeability::DerivativeFaceUpwindGravity_(
   Epetra_MultiVector& dKdP_faces = *dKdP_->ViewComponent("face", true);
   dKdP_faces.PutScalar(0.0);
 
-  const Epetra_MultiVector& map_c2mb = *map_c2mb_->ViewComponent("cell", true);
+  const Epetra_IntVector& map = *map_c2mb_;
 
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -357,7 +354,7 @@ void RelativePermeability::DerivativeFaceUpwindGravity_(
       
       if (bc_model[f] != FLOW_BC_FACE_NULL){
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
-          int mb = map_c2mb[0][c];
+          int mb = map[c];
           double pc = atm_pressure - bc_values[f][0];
           dKdP_faces[0][f] = WRM_[mb]->dKdPc(pc);
         } else {
@@ -389,7 +386,7 @@ void RelativePermeability::DerivativeFaceUpwindFlux_(
   Epetra_MultiVector& dKdP_faces = *dKdP_->ViewComponent("face", true);
   dKdP_faces.PutScalar(0.0);
 
-  const Epetra_MultiVector& map_c2mb = *map_c2mb_->ViewComponent("cell", true);
+  const Epetra_IntVector& map = *map_c2mb_;
 
   double max_flux;
   flux.MaxValue(&max_flux);
@@ -404,7 +401,7 @@ void RelativePermeability::DerivativeFaceUpwindFlux_(
 
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && flux[0][f] * dirs[n] < -tol) {
-          int mb = map_c2mb[0][c];
+          int mb = map[c];
           double pc = atm_pressure - bc_values[f][0];
           dKdP_faces[0][f] = WRM_[mb]->dKdPc(pc);
         } else {
@@ -466,7 +463,7 @@ void RelativePermeability::DerivedKdP(const Epetra_MultiVector& p, Epetra_MultiV
 ****************************************************************** */
 void RelativePermeability::FaceUpwindGravityInit_()
 {
-  const Epetra_MultiVector& map_c2mb = *map_c2mb_->ViewComponent("cell", true);
+  const Epetra_IntVector& map = *map_c2mb_;
 
   for (int f = 0; f < nfaces_wghost; f++) {
     (*upwind_cell)[f] = -1;
@@ -517,8 +514,8 @@ void RelativePermeability::FaceUpwindGravityInit_()
     int c2 = (*downwind_cell)[f];
 
     if (c1 >= 0 && c2 >= 0) {
-      int mb1 = map_c2mb[0][c1];
-      int mb2 = map_c2mb[0][c2];
+      int mb1 = map[c1];
+      int mb2 = map[c2];
       if (mb1 != mb2) (*face_flag)[f] = FLOW_PERMFLAG_INTERFACE;
     }
   }
@@ -601,8 +598,8 @@ void RelativePermeability::CalculateKVectorUnit(const std::vector<WhetStone::Ten
 ****************************************************************** */
 void RelativePermeability::PopulateMapC2MB()
 {
-  Epetra_MultiVector& map_c2mb = *map_c2mb_->ViewComponent("cell", true);
-  map_c2mb.PutScalar(-1);
+  Epetra_IntVector& map = *map_c2mb_;
+  map.PutValue(-1);
 
   for (int mb = 0; mb < WRM_.size(); mb++) {
     std::string region = WRM_[mb]->region();
@@ -610,15 +607,15 @@ void RelativePermeability::PopulateMapC2MB()
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
-    for (i = block.begin(); i != block.end(); i++) map_c2mb[0][*i] = mb;
+    for (i = block.begin(); i != block.end(); i++) map[*i] = mb;
   }
   
-  map_c2mb_->ScatterMasterToGhosted("cell");
+  pp_->CopyMasterCell2GhostCell(map);
 
   // internal check
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
-    if (map_c2mb[0][c] < 0) {
+    if (map[c] < 0) {
       Errors::Message msg;
       msg << "Flow PK: water retention models do not cover the whole domain.";
       Exceptions::amanzi_throw(msg);  
