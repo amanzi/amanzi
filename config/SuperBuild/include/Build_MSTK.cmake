@@ -25,6 +25,7 @@ build_whitespace_string(mstk_ldflags ${mstk_ldflags_list})
 # The CMake cache args
 set(MSTK_CMAKE_CACHE_ARGS
                     ${Amanzi_CMAKE_C_COMPILER_ARGS}
+		    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
                     -DCMAKE_C_FLAGS:STRING=${mstk_cflags}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${mstk_ldflags}
