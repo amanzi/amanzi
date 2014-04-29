@@ -154,6 +154,7 @@ else(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)
 
     endif()
 
+    # Create the target
     if ( _MOAB_LIBRARY )
       set(MOAB_LIBRARY MOAB)
       add_imported_library(${MOAB_LIBRARY}
@@ -164,35 +165,39 @@ else(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)
     endif()    
 
    
-    # Define prerequisite packages
+    # Update the INCLUDE_DIRS and LIBRARIES variables
     set(MOAB_INCLUDE_DIRS ${MOAB_INCLUDE_DIR})
     set(MOAB_LIBRARIES    ${MOAB_LIBRARY})
 
-    # NetCDF
-    find_package(NetCDF QUIET REQUIRED)
-    set(MOAB_LINK_LIBRARIES ${NetCDF_LIBRARIES})
-    list(APPEND MOAB_INCLUDE_DIRS ${NetCDF_INCLUDE_DIRS})
+    # Define the dependent libs
+    set(_MOAB_DEP_LIBS)
 
     # HDF5
     find_package(HDF5 QUIET REQUIRED)
     list(APPEND MOAB_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS})
-    list(APPEND MOAB_LINK_LIBRARIES "${HDF5_LIBRARIES}")
+    list(APPEND _MOAB_DEP_LIBS ${HDF5_LIBRARIES})
+
+    # NetCDF (This should come with the HDF5)
+    find_package(NetCDF QUIET REQUIRED)
+    list(APPEND MOAB_INCLUDE_DIRS ${NetCDF_INCLUDE_DIRS})
+    list(APPEND _MOAB_DEP_LIBS ${NetCDF_C_LIBRARIES})
 
     set_target_properties(${MOAB_LIBRARY} PROPERTIES
-                          IMPORTED_LINK_INTERFACE_LIBRARIES "${MOAB_LINK_LIBRARIES}")
+                          IMPORTED_LINK_INTERFACE_LIBRARIES "${_MOAB_DEP_LIBS}")
 
 endif(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS )    
 
 # Send useful message if everything is found
 find_package_handle_standard_args(MOAB DEFAULT_MSG
-                                  MOAB_INCLUDE_DIR
-                                  MOAB_LIBRARY)
+                                           MOAB_LIBRARIES
+                                           MOAB_INCLUDE_DIRS)
+
+# Define the version
 
 mark_as_advanced(
   MOAB_INCLUDE_DIR
   MOAB_INCLUDE_DIRS
   MOAB_LIBRARY
   MOAB_LIBRARIES
-  MOAB_LINK_LIBRARIES
   MOAB_LIBRARY_DIR
 )
