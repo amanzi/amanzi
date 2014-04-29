@@ -163,7 +163,8 @@ namespace AmanziMesh
   // Initialize some info about the global number of sets, global set
   // IDs and set types
 
-  init_set_info();
+  if (Mesh::geometric_model() != NULL)
+    init_set_info();
 
 }
 
@@ -253,10 +254,10 @@ void Mesh_MOAB::init_id_handle_maps() {
 
   // Assign local IDs to entities
 
-
-  result = mbcore->tag_create("LOCAL_ID",sizeof(unsigned int),
-			      MB_TAG_DENSE,MB_TYPE_INTEGER,lid_tag,
-			      0,true);
+  int tagval = 0;
+  result = mbcore->tag_get_handle("LOCAL_ID",1,
+                                  MB_TYPE_INTEGER,lid_tag,
+                                  MB_TAG_CREAT|MB_TAG_DENSE,&tagval);
   if (result != MB_SUCCESS) {
     std::cerr << "Problem getting tag handle for LOCAL_ID" << std::endl;
     assert(result == MB_SUCCESS);
@@ -377,9 +378,10 @@ void Mesh_MOAB::init_global_ids() {
   else {
     // Serial case - we assign global IDs ourselves
 
-    result = mbcore->tag_create("GLOBAL_ID",sizeof(unsigned int),
-				MB_TAG_DENSE,MB_TYPE_INTEGER,gid_tag,
-				0,true);
+    int tagval = 0;
+    result = mbcore->tag_get_handle("GLOBAL_ID",1,
+                                    MB_TYPE_INTEGER,gid_tag,
+                                    MB_TAG_CREAT|MB_TAG_DENSE,&tagval);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting tag handle for GLOBAL_ID" << std::endl;
       assert(result == MB_SUCCESS);
@@ -530,21 +532,17 @@ void Mesh_MOAB::init_pface_dirs() {
   /* In this code, we increment local values of global IDs by 1 so
      that we can distinguish between the lowest gid and no data */
 
-  //  result = mbcore->tag_create("TMP_FC_TAG",sizeof(MBEntityHandle),
-  //			      MB_TAG_DENSE, MB_TYPE_HANDLE, tmp_fc_tag,
-  //			      &zero,true);
-
   MBTag tmp_fc0_tag, tmp_fc1_tag;
-  result = mbcore->tag_create("TMP_FC0_TAG",sizeof(int),
-			      MB_TAG_DENSE, MB_TYPE_INTEGER, tmp_fc0_tag,
-			      &zero,true);
+  result = mbcore->tag_get_handle("TMP_FC0_TAG",1,
+                                  MB_TYPE_INTEGER, tmp_fc0_tag,
+                                  MB_TAG_CREAT|MB_TAG_DENSE,&zero);
   if (result != MB_SUCCESS) {
     std::cerr << "Problem getting new tag handle" << std::endl;
     assert(result == MB_SUCCESS);
   }
-  result = mbcore->tag_create("TMP_FC1_TAG",sizeof(int),
-			      MB_TAG_DENSE, MB_TYPE_INTEGER, tmp_fc1_tag,
-			      &zero,true);
+  result = mbcore->tag_get_handle("TMP_FC1_TAG",1,
+                                  MB_TYPE_INTEGER, tmp_fc1_tag,
+                                  MB_TAG_CREAT|MB_TAG_DENSE,&zero);
   if (result != MB_SUCCESS) {
     std::cerr << "Problem getting new tag handle" << std::endl;
     assert(result == MB_SUCCESS);
@@ -748,10 +746,10 @@ void Mesh_MOAB::init_pcell_lists() {
 
 void Mesh_MOAB::init_set_info() {
   int maxnsets, result;
+  char setname[256];
+  MBTag tag;
 
-
-
-  // Get material, sideset and nodeset tags
+  // Get element block, sideset and nodeset tags
 
   result = mbcore->tag_get_handle(MATERIAL_SET_TAG_NAME,mattag);
   if (result != MB_SUCCESS) {
@@ -770,198 +768,63 @@ void Mesh_MOAB::init_set_info() {
   }
 
 
-  std::vector<MBTag> tag_handles;
-  result = mbcore->tag_get_tags(tag_handles);
-  if (result != MB_SUCCESS) {
-    std::cerr << "Problem getting all tags" << std::endl;
-    assert(result == MB_SUCCESS);
-  }
+  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
 
-
-
-  nsets = 0;
-  for (int i = 0; i < tag_handles.size(); i++) {
-    MBTag tag = tag_handles[i];
-    int n;
-    
-    if (tag != mattag && tag != sstag && tag != nstag) continue;
-
-    result = mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&tag,0,1,n);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem getting tag sets" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-    
-    nsets +=  n;
+  if (gm == NULL) { 
+    Errors::Message mesg("Need region definitions to initialize sets");
+    amanzi_throw(mesg);
   }
     
 
+  unsigned int ngr = gm->Num_Regions();
 
-  if (serial_run) {
-    maxnsets = nsets;
-  }
-  else {
-    // Figure out the maximum number of sets on any processor,
+  for (int i = 0; i < ngr; i++) {
+    AmanziGeometry::RegionPtr rgn = gm->Region_i(i);
 
-    MPI_Allreduce(&nsets,&maxnsets,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
-  }
+    if (rgn->type() == AmanziGeometry::LABELEDSET) {
 
+      AmanziGeometry::LabeledSetRegionPtr lsrgn =
+        dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
 
-  // We'll pad maxnsets so that we can try and avoid (but not
-  // guarantee) reallocation
+      std::string internal_name;
+      std::string label = lsrgn->label();
+      std::string entity_type_str = lsrgn->entity_str();
 
-  maxnsets *= 2;
+      if (entity_type_str == "CELL")
+        internal_name = internal_name_of_set(rgn,CELL);
+      else if (entity_type_str == "FACE")
+        internal_name = internal_name_of_set(rgn,FACE);
+      else if (entity_type_str == "NODE")
+        internal_name = internal_name_of_set(rgn,NODE);
 
-  setids_ = new int[maxnsets];
-  setdims_ = new int[maxnsets];
+      result = mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,
+                                      tag,MB_TAG_CREAT|MB_TAG_SPARSE);
 
-  nsets = 0;
-  for (int i = 0; i < tag_handles.size(); i++) {
-    MBTag tag = tag_handles[i];
-    MBRange tagsets;
-    MBRange tagset;
-    int n;
-    
-    if (tag != mattag && tag != sstag && tag != nstag) continue;
-
-    result = mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&tag,0,1,tagsets);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem getting entities by type and tag" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-
-    for (MBRange::iterator it = tagsets.begin(); it != tagsets.end(); ++it) {
-      MBEntityHandle set = *it;
-      int val;
-      
-      result = mbcore->tag_get_data(tag,&set,1,&val);
-      setids_[nsets] = val;
-
-      MBRange setents;
-      result = mbcore->get_entities_by_handle(set,setents,false);
       if (result != MB_SUCCESS) {
-	std::cerr << "Problem getting entities by handle" << std::endl;
-	assert(result == MB_SUCCESS);
-      }
-      int dim = mbcore->dimension_from_handle(*(setents.begin()));
-
-      setdims_[nsets] = dim;
-
-      nsets++;
-    }
-
-  }
-
-  for (int i = nsets; i < maxnsets; i++) {
-    setids_[i] = 0;
-    setdims_[i] = -1;
-  }
-
-
-  if (serial_run) return;
-
-
-  // In a parallel run, we want the global number of sets and the
-  // global list of set ids 
-
-  int rank = mbcomm->rank();
-  int nprocs = mbcomm->size();
-
-
-  // Collate all the sets across processors
-
-  
-  int *allsetids = new int[nprocs*maxnsets];
-  int *allsetdims = new int[nprocs*maxnsets];
-  int *allnsets = new int[nprocs];
-  
-  
-  MPI_Allgather(setids_,maxnsets,MPI_INT,allsetids,maxnsets,MPI_INT,
-		MPI_COMM_WORLD);
-  MPI_Allgather(setdims_,maxnsets,MPI_INT,allsetdims,maxnsets,MPI_INT,
-		MPI_COMM_WORLD);
-  
-  
-  
-  // Make a list of all setids/entity dimensions across all processors
-
-  if (rank == 0) {
-
-    // Just add to the list of setids on processor 0. Since we doubled
-    // the computed maxnsets and allocated allsetids to be of length
-    // nprocs*maxnsets, we are guaranteed that we will not overwrite
-    // processor 1 entries if we add unique entries from processor 1
-    // to the end of processor 0's list of sets and so on
-
-    for (int k = celldim; k >= 0; k--) {
-      for (int ip = 1; ip < nprocs; ip++) {
-	for (int i = 0; i < maxnsets; i++) {
-	  if (allsetdims[ip*maxnsets+i] != k) continue;
-	
-	  int found = 0;
-	  for (int j = 0; j < nsets; j++) {
-	    if (allsetids[j] == allsetids[ip*maxnsets+i]) {
-	      found = 1;
-	      break;
-	    }
-	  }
-	  
-	  if (!found) {
-	    allsetids[nsets] = allsetids[ip*maxnsets+i];
-	    allsetdims[nsets] = allsetdims[ip*maxnsets+i];
-	    nsets++;
-	  }
-	}
+        std::cerr << "Problem getting labeled set " << std::endl;
+        assert(result == MB_SUCCESS);
       }
     }
+    else { /* General region - we have to account for all kinds of
+              entities being queried in a set defined by this 
+              region */
+      Entity_kind int_to_kind[3] = {NODE,FACE,CELL};
 
-    if (nsets > maxnsets) {
-      // We have to resize the setids and setdims array
+      for (int k = 0; k < 3; k++) {
+        Entity_kind kind = int_to_kind[k];
+        
+        std::string internal_name = internal_name_of_set(rgn,kind);
 
-      delete [] setids_;
-      delete [] setdims_;
-
-      maxnsets = nsets;
-      setids_ = new int[maxnsets];
-      setdims_ = new int[maxnsets];
+        result = mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,
+                                        tag,MB_TAG_CREAT|MB_TAG_SPARSE);
+        if (result != MB_SUCCESS) {
+          std::cerr << "Could not create tag with name " << rgn->name() << 
+            std::endl;
+          assert(result != MB_SUCCESS);
+        }
+      }
     }
-    
-    memcpy(setids_, allsetids, nsets*sizeof(allsetids[0]));
-    memcpy(setdims_, allsetdims, nsets*sizeof(allsetdims[0]));
-
-  } // if rank == 0
-
-
-  // Tell all the other processors about number of sets to expect
-
-  MPI_Bcast(&nsets,1,MPI_INT,0,MPI_COMM_WORLD);
-
-  
-  // Make sure the other processors have enough space allocated to receive
-  // the expanded list of sets
-
-  if (rank != 0) {					       
-    if (nsets > maxnsets) { 
-      delete [] setids_;
-      delete [] setdims_;
-
-      maxnsets = nsets;
-      setids_ = new int[maxnsets];
-      setdims_ = new int[maxnsets];
-    }    
   }
-
-
-  // Tell all the other processors about the complete list of sets
-  
-  MPI_Bcast(setids_,nsets,MPI_INT,0,MPI_COMM_WORLD);
-  MPI_Bcast(setdims_,nsets,MPI_INT,0,MPI_COMM_WORLD);
-  
-
-  delete [] allnsets;
-  delete [] allsetids;
-  delete [] allsetdims;
-  
 }
 
 
@@ -1437,16 +1300,503 @@ void Mesh_MOAB::face_get_coordinates (Entity_ID faceid, std::vector<AmanziGeomet
 }
   
 
-void Mesh_MOAB::get_set_entities (const Set_Name set_name, 
-                                  const Entity_kind kind, 
-                                  const Parallel_type ptype,
-                                  Entity_ID_List *setents) const {
+MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
+                           const Entity_kind kind) const {
+
+  int celldim = Mesh::cell_dimension();
+  int spacedim = Mesh::space_dimension();
+  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+  int one = 1;
+  MBTag tag;
+
+  // Modify region/set name by prefixing it with the type of entity requested
+
+  std::string internal_name = internal_name_of_set(region,kind);
+
+  // Create entity set based on the region defintion  
+
+  switch (kind) {      
+  case CELL:    // cellsets      
+
+    if (region->type() == AmanziGeometry::BOX ||
+        region->type() == AmanziGeometry::COLORFUNCTION) {
+
+      mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
+                             MB_TAG_CREAT|MB_TAG_SPARSE);
+      
+      int ncell = num_entities(CELL, USED);              
+
+      for (int icell = 0; icell < ncell; icell++)
+        if (region->inside(cell_centroid(icell)))
+          mbcore->tag_set_data(tag,&(cell_id_to_handle[icell]),1,&one);
+
+    }
+    else if (region->type() == AmanziGeometry::POINT) {
+      AmanziGeometry::Point vpnt(spacedim);
+      AmanziGeometry::Point rgnpnt(spacedim);
+
+      mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
+                           MB_TAG_CREAT|MB_TAG_SPARSE);
+      
+      rgnpnt = ((AmanziGeometry::PointRegionPtr)region)->point();
+        
+      int nnode = num_entities(NODE, USED);
+      double mindist2 = 1.e+16;
+      int minnode = -1;
+        
+      int inode;
+      for (inode = 0; inode < nnode; inode++) {
+                  
+        node_get_coordinates(inode, &vpnt);                  
+        double dist2 = (vpnt-rgnpnt)*(vpnt-rgnpnt);
+ 
+        if (dist2 < mindist2) {
+          mindist2 = dist2;
+          minnode = inode;
+          if (mindist2 <= 1.0e-32)
+            break;
+        }
+      }
+
+      Entity_ID_List cells, cells1;
+
+      node_get_cells(minnode,USED,&cells);
+      
+      int ncells = cells.size();
+      for (int ic = 0; ic < ncells; ic++) {
+        Entity_ID icell = cells[ic];
+        
+        // Check if point is contained in cell            
+        if (point_in_cell(rgnpnt,icell))
+          mbcore->tag_set_data(tag,&(cell_id_to_handle[icell]),1,&one);
+      }
+
+    }
+    else if (region->type() == AmanziGeometry::PLANE) {
+
+      mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
+                             MB_TAG_CREAT|MB_TAG_SPARSE);
+      
+      if (celldim == 2) {
+
+        int ncells = num_entities(CELL, USED);              
+        for (int ic = 0; ic < ncells; ic++) {
+
+          std::vector<AmanziGeometry::Point> ccoords(spacedim);
+
+          cell_get_coordinates(ic, &ccoords);
+
+          bool on_plane = true;
+          for (int j = 0; j < ccoords.size(); j++) {
+            if (!region->inside(ccoords[j])) {
+              on_plane = false;
+              break;
+            }
+          }
+                  
+          if (on_plane)
+            mbcore->tag_set_data(tag,&(cell_id_to_handle[ic]),1,&one);
+        }
+      }
+
+    }
+    else if (region->type() == AmanziGeometry::LOGICAL) {
+      // will process later in this subroutine
+    }
+    else if (region->type() == AmanziGeometry::LABELEDSET) {
+      // Nothing to do
+      tag = mattag;
+    }
+    else {
+      Errors::Message mesg("Region type not applicable/supported for cell sets");
+      amanzi_throw(mesg);
+    }
+      
+    break;
+      
+  case FACE:  // sidesets
+
+    if (region->type() == AmanziGeometry::BOX)  {
+
+      mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
+                             MB_TAG_CREAT|MB_TAG_SPARSE);
+
+      int nface = num_entities(FACE, USED);
+        
+      for (int iface = 0; iface < nface; iface++) {
+        if (region->inside(face_centroid(iface)))
+          mbcore->tag_set_data(tag,&(face_id_to_handle[iface]),1,&one);
+
+      }
+    }
+    else if (region->type() == AmanziGeometry::PLANE ||
+             region->type() == AmanziGeometry::POLYGON) {
+
+      mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
+                             MB_TAG_CREAT|MB_TAG_SPARSE);
+
+      int nface = num_entities(FACE, USED);
+              
+      for (int iface = 0; iface < nface; iface++) {
+        std::vector<AmanziGeometry::Point> fcoords(spacedim);
+            
+        face_get_coordinates(iface, &fcoords);
+            
+        bool on_plane = true;
+        for (int j = 0; j < fcoords.size(); j++) {
+          if (!region->inside(fcoords[j])) {
+            on_plane = false;
+            break;
+          }
+        }
+                  
+        if (on_plane)
+          mbcore->tag_set_data(tag,&(face_id_to_handle[iface]),1,&one);
+      }
+
+    }
+    else if (region->type() == AmanziGeometry::LABELEDSET) {
+      // Nothing to do
+
+      tag = sstag;
+    }
+    else if (region->type() == AmanziGeometry::LOGICAL) {
+      // Will handle it later in the routine
+    }
+    else {
+      Errors::Message mesg("Region type not applicable/supported for face sets");
+      amanzi_throw(mesg);
+    }
+    break;
+
+  case NODE: // Nodesets
+
+    if (region->type() == AmanziGeometry::BOX ||
+        region->type() == AmanziGeometry::PLANE ||
+        region->type() == AmanziGeometry::POLYGON ||
+        region->type() == AmanziGeometry::POINT) {
+
+      mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
+                             MB_TAG_CREAT|MB_TAG_SPARSE);
+
+      int nnode = num_entities(NODE, USED);
+
+      for (int inode = 0; inode < nnode; inode++) {
+
+        AmanziGeometry::Point vpnt(spacedim);
+        node_get_coordinates(inode, &vpnt);
+                  
+        if (region->inside(vpnt)) {
+          mbcore->tag_set_data(tag,&(vtx_id_to_handle[inode]),1,&one);
+
+          // Only one node per point region
+          if (region->type() == AmanziGeometry::POINT)
+            break;      
+        }
+      }
+    }
+    else if (region->type() == AmanziGeometry::LABELEDSET) {
+      // Just retrieve and return the set
+
+      tag = nstag;
+    }
+    else if (region->type() == AmanziGeometry::LOGICAL) {
+      // We will handle it later in the routine
+    }
+    else {
+      Errors::Message mesg("Region type not applicable/supported for node sets");
+      amanzi_throw(mesg);
+    }
+      
+    break;
+  }
+
+
+  if (region->type() == AmanziGeometry::LOGICAL) {
+    std::string new_internal_name;
+
+    AmanziGeometry::LogicalRegionPtr boolregion = (AmanziGeometry::LogicalRegionPtr) region;
+    std::vector<std::string> region_names = boolregion->component_regions();
+    int nreg = region_names.size();
+    
+    std::vector<MBTag> tags;
+    std::vector<AmanziGeometry::RegionPtr> regions;
+    MBTag tag1;
+    MBRange entset;
+    
+    for (int r = 0; r < nreg; r++) {
+      AmanziGeometry::RegionPtr rgn1 = gm->FindRegion(region_names[r]);
+      regions.push_back(rgn1);
+
+      // Did not find the region
+      if (rgn1 == NULL) {
+        std::stringstream mesg_stream;
+        mesg_stream << "Geometric model has no region named " << 
+          region_names[r];
+        Errors::Message mesg(mesg_stream.str());
+        amanzi_throw(mesg);
+      }
+        
+      internal_name = internal_name_of_set(rgn1,kind);
+      mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag1,
+                             MB_TAG_SPARSE);
+      if (!tag1)        
+        tag1 = build_set(rgn1,kind);  // Recursive call
+
+      tags.push_back(tag1);
+    }
+
+    // Check the entity types of the sets are consistent with the
+    // entity type of the requested set
+
+    if (boolregion->operation() == AmanziGeometry::COMPLEMENT) {
+
+      MBRange entset1, entset2;
+      for (int i = 0; i < tags.size(); i++) {
+        mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&(tags[i]),
+                                             (void **)&one,1,entset2);
+
+        entset1.merge(entset2);
+      }
+
+      switch (kind) {
+      case CELL:
+        entset = AllCells;
+        entset -= entset1;
+        break;
+      case FACE:
+        entset = AllFaces;
+        entset -= entset1;
+        break;
+      case NODE:
+        entset = AllVerts;
+        entset -= entset1;
+        break;
+      }
+
+      for (int r = 0; r < nreg; r++)
+        new_internal_name = new_internal_name + "+" + region_names[r];
+      new_internal_name = "NOT_" + new_internal_name;
+
+    }
+    else if (boolregion->operation() == AmanziGeometry::UNION) {
+
+      MBRange entset, entset1;
+      for (int i = 0; i < tags.size(); i++) {
+        mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&(tags[i]),
+                                             (void **)&one,1,entset1);
+
+        entset.merge(entset1);
+      }
+      
+      std::string new_internal_name;
+      for (int r = 0; r < nreg; r++)
+        new_internal_name = new_internal_name + "+" + region_names[r];
+    }
+    else if (boolregion->operation() == AmanziGeometry::SUBTRACT) {
+
+      MBRange entset1, entset2;
+
+      mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&(tags[0]),
+                                           (void **)&one,1,entset);
+      for (int i = 1; i < tags.size(); i++) {
+        mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&(tags[i]),
+                                             (void **)&one,1,entset1);
+
+        entset.merge(entset1);
+      }
+      
+      std::string new_internal_name = region_names[0];
+      for (int r = 0; r < nreg; r++)
+        new_internal_name = new_internal_name + "-" + region_names[r];
+    }
+    else if (boolregion->operation() == AmanziGeometry::INTERSECT) {
+      Errors::Message mesg("INTERSECT region not implemented in MOAB");
+      amanzi_throw(mesg);
+    }
+
+    mbcore->tag_get_handle(new_internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
+                           MB_TAG_CREAT | MB_TAG_SPARSE);
+
+    for (MBRange::iterator it = entset.begin(); it != entset.end(); ++it) {
+      MBEntityHandle ent = *it;
+      mbcore->tag_set_data(tag,&ent,1,&one);
+    }
+  }
+
+  return tag;
 }
 
-void Mesh_MOAB::get_set_entities (const char *set_name, 
+
+void Mesh_MOAB::get_set_entities (const Set_Name setname, 
                                   const Entity_kind kind, 
                                   const Parallel_type ptype,
                                   Entity_ID_List *setents) const {
+
+  int idx, i, lid, one=1;
+  bool found(false);
+  int celldim = Mesh::cell_dimension();
+  int spacedim = Mesh::space_dimension();
+  const Epetra_Comm *epcomm = get_comm();
+
+  assert(setents != NULL);
+  
+  setents->clear();
+
+  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+
+  // Is there an appropriate region by this name?
+
+  AmanziGeometry::RegionPtr rgn = gm->FindRegion(setname);
+
+  // Did not find the region
+  
+  if (rgn == NULL) {
+    std::stringstream mesg_stream;
+    mesg_stream << "Geometric model has no region named " << setname;
+    Errors::Message mesg(mesg_stream.str());
+    amanzi_throw(mesg);
+  }
+
+
+  std::string internal_name = internal_name_of_set(rgn,kind);
+
+  MBRange mset1;
+
+  // If region is of type labeled set and a mesh set should have been
+  // initialized from the input file
+  
+  if (rgn->type() == AmanziGeometry::LABELEDSET)
+    {
+      AmanziGeometry::LabeledSetRegionPtr lsrgn = dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+      std::string label = lsrgn->label();
+      std::stringstream labelstream(label);
+      int labelint;
+      labelstream >> labelint;
+      std::string entity_type = lsrgn->entity_str();
+
+      if ((kind == CELL && entity_type != "CELL") ||
+          (kind == FACE && entity_type != "FACE") ||
+          (kind == NODE && entity_type != "NODE"))
+        {
+          std::stringstream mesg_stream;
+          mesg_stream << "Found labeled set region named " << setname << " but it contains entities of type " << entity_type << ", not the requested type";
+          Errors::Message mesg(mesg_stream.str());
+          amanzi_throw(mesg);
+        } 
+
+      if (kind == CELL)
+        mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&mattag,
+                                             (void **)&labelint,1,mset1);
+      else if (kind == FACE)
+        mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&sstag,
+                                             (void **)&labelint,1,mset1);
+      else if (kind == NODE)
+        mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&nstag,
+                                             (void **)&labelint,1,mset1);
+
+    }
+  else
+    {
+      // Modify region/set name by prefixing it with the type of
+      // entity requested
+
+      MBTag tag;
+      bool created;
+
+      mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
+                             MB_TAG_SPARSE);
+
+      if (!tag)
+        tag = build_set(rgn,kind);
+
+      mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&tag,(void **)&one,1,mset1);
+    }
+
+  
+
+  /* Check if no processor got any mesh entities */
+
+  int nent_loc = mset1.size();
+
+#ifdef DEBUG
+  int nent_glob;
+
+  epcomm->SumAll(&nent_loc,&nent_glob,1);
+  if (nent_glob == 0) {
+    std::stringstream mesg_stream;
+    mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
+    Errors::Message mesg(mesg_stream.str());
+    Exceptions::amanzi_throw(mesg);
+  }
+#endif
+  
+  setents->resize(nent_loc);
+  if (nent_loc) {
+    unsigned char pstatus;
+    nent_loc = 0; // reset and count to get the real number
+
+    switch (ptype) {
+    case OWNED:
+      for (MBRange::iterator it = mset1.begin(); it != mset1.end(); ++it) {
+        MBEntityHandle ent = *it;
+
+        mbcomm->get_pstatus(ent,pstatus);
+        if (pstatus != PSTATUS_NOT_OWNED) {
+          mbcore->tag_get_data(lid_tag,&ent,1,&lid);
+          (*setents)[nent_loc++] = lid-1;
+        }
+      }
+      break;
+    case GHOST:
+      for (MBRange::iterator it = mset1.begin(); it != mset1.end(); ++it) {
+        MBEntityHandle ent = *it;
+
+        mbcomm->get_pstatus(ent,pstatus);
+        if (pstatus == PSTATUS_GHOST || pstatus == PSTATUS_NOT_OWNED) {
+          mbcore->tag_get_data(lid_tag,&ent,1,&lid);
+          (*setents)[nent_loc++] = lid-1;
+        }
+      }
+      break;
+    case USED:
+      for (MBRange::iterator it = mset1.begin(); it != mset1.end(); ++it) {
+        MBEntityHandle ent = *it;
+
+        mbcore->tag_get_data(lid_tag,&ent,1,&lid);
+        (*setents)[nent_loc++] = lid-1;
+      }
+      break;
+    }
+    
+    setents->resize(nent_loc);
+  }
+      
+    /* Check if there were no entities left on any processor after
+       extracting the appropriate category of entities */
+    
+#ifdef DEBUG
+  epcomm->SumAll(&nent_loc,&nent_glob,1);
+  
+  if (nent_glob == 0) {
+    std::stringstream mesg_stream;
+    mesg_stream << "Could not retrieve any mesh entities of type " << setkind << " for set " << setname << std::endl;
+    Errors::Message mesg(mesg_stream.str());
+    Exceptions::amanzi_throw(mesg);
+  }
+#endif
+
+
+}
+
+void Mesh_MOAB::get_set_entities (const char *setname, 
+                                  const Entity_kind kind, 
+                                  const Parallel_type ptype,
+                                  Entity_ID_List *setents) const {
+
+  std::string setname_str(setname);
+  get_set_entities(setname_str,kind,ptype,setents);
+
 }
 
 
@@ -1455,257 +1805,32 @@ void Mesh_MOAB::get_set_entities (const Set_ID set_id,
                                   const Parallel_type ptype,
                                   Entity_ID_List *setents) const {
 
-  int result;
-  const void *valarr[1] = {&set_id};
 
-  setents->clear();
-
-  switch (kind) {
-  case CELL: {
-    MBRange matsets, cellrange;
-
-    result = mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&mattag,valarr,1,matsets);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem getting entity sets" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-
-
-    if (matsets.size() == 0) return;
-
-    MBEntityHandle matset = *(matsets.begin());
-
-    result = mbcore->get_entities_by_dimension(matset,celldim,cellrange);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem getting entities from entity set" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-
-    if (cellrange.size()) {
-      if (ptype == OWNED)
-	cellrange -= GhostCells;
-      else if (ptype == GHOST)
-	cellrange -= OwnedCells;
-    }
-
-
-    for (MBRange::iterator jt = cellrange.begin(); jt != cellrange.end(); ++jt) {
-      MBEntityHandle ent = *jt;
-      int cellid;
-
-      result = mbcore->tag_get_data(lid_tag,&ent,1,&(cellid));
-      if (result != MB_SUCCESS) {
-	std::cerr << "Problem getting tag data" << std::endl;
-	assert(result == MB_SUCCESS);
-      }
-      
-      setents->push_back(cellid);
-    }
-
-    return;
-    break;
-  }
-  case FACE: {
-    MBRange sidesets, facerange;
-
-    result = mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&sstag,valarr,1,sidesets);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem getting entity sets" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-
-    if (sidesets.size() == 0) return;
-
-    MBEntityHandle sideset = *(sidesets.begin());
-
-    result = mbcore->get_entities_by_dimension(sideset,facedim,facerange); 
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem getting entities by dimension" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-    
-    if (facerange.size()) {
-      if (ptype == OWNED)
-	facerange -= NotOwnedFaces;
-      else if (ptype == GHOST)
-	facerange -= OwnedFaces;
-    }
-
-    for (MBRange::iterator jt = facerange.begin(); jt != facerange.end(); ++jt) {
-      MBEntityHandle ent = *jt;
-      int face;
-
-      result = mbcore->tag_get_data(lid_tag,&ent,1,&(face));
-      if (result != MB_SUCCESS) {
-	std::cerr << "Problem getting tag data" << std::endl;
-	assert(result == MB_SUCCESS);
-      }
-
-      setents->push_back(face);
-    }
-
-    return;
-    break;
-  }
-  case NODE: {
-    MBRange nodesets, noderange;
-
-    result = mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&nstag,valarr,1,nodesets);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem gettin entity set info" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-
-    if (nodesets.size() == 0) return;
-
-    MBEntityHandle nodeset = *(nodesets.begin());
-
-    result = mbcore->get_entities_by_dimension(nodeset,0,noderange);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem getting entities by dimension" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-
-    if (noderange.size()) {
-      if (ptype == OWNED)
-	noderange -= NotOwnedVerts;
-      else if (ptype == GHOST)
-	noderange -= OwnedVerts;
-    }
-
-    for (MBRange::iterator jt = noderange.begin(); jt != noderange.end(); ++jt) {
-      MBEntityHandle ent = *jt;
-      int node;
-
-      result = mbcore->tag_get_data(lid_tag,&ent,1,&(node));
-      if (result != MB_SUCCESS) {
-	std::cerr << "Problem getting tag data" << std::endl;
-	assert(result == MB_SUCCESS);
-      }
-
-      setents->push_back(node);
-    }
-
-    return;
-    break;
-  }
-  default:
-    return;
-  }
-    
+  Errors::Message mesg("get_set_entities by ID is deprecated");
+  amanzi_throw(mesg);    
 }
 
-unsigned int Mesh_MOAB::get_set_size(const Set_Name set_name, 
+unsigned int Mesh_MOAB::get_set_size(const Set_Name setname, 
                                      const Entity_kind kind, 
                                      const Parallel_type ptype) const {   
+  Entity_ID_List setents;
+  get_set_entities(setname,kind,ptype,&setents);
+  return setents.size();
 }
   
-unsigned int Mesh_MOAB::get_set_size(const char *set_name, 
+unsigned int Mesh_MOAB::get_set_size(const char *setname, 
                                      const Entity_kind kind, 
                                      const Parallel_type ptype) const {   
+  std::string setname_str(setname);
+  return get_set_size(setname_str,kind,ptype);
 }  
 
 unsigned int Mesh_MOAB::get_set_size(const Set_ID set_id, 
                                      const Entity_kind kind, 
                                      const Parallel_type ptype) const {   
   
-  const int loc_setid = set_id;
-  const void* valarr[1];
-  valarr[0] =  &loc_setid;
-  int result;
-
-  switch (kind) {
-  case CELL: {
-    MBRange matsets, cellrange;
-    int ncells;
-
-    result = mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&mattag,valarr,1,matsets);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem getting an entity set" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-
-    if (matsets.size() == 0) return 0;
-
-    MBEntityHandle matset = *(matsets.begin());
-
-    result = mbcore->get_entities_by_dimension(matset,celldim,cellrange);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem getting entities by dimension" << std::endl;
-      assert(result == MB_SUCCESS);
-	}
-
-    if (ptype == OWNED)
-      cellrange -= GhostCells;
-    else if (ptype == GHOST)
-      cellrange -= OwnedCells;
-
-    return cellrange.size();
-    break;
-  }
-
-  case FACE: {
-    MBRange sidesets, facerange;
-    int nfaces;
-
-    result = mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&sstag,valarr,1,sidesets);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem getting entity sets" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-
-    if (sidesets.size() == 0) return 0;
-
-    MBEntityHandle sideset = *(sidesets.begin());
-
-    result = mbcore->get_entities_by_dimension(sideset,facedim,facerange);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem getting entities by dimension" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-
-    if (ptype == OWNED)
-      facerange -= NotOwnedFaces;
-    else if (ptype == GHOST)
-      facerange -= OwnedFaces;
-
-    return facerange.size();
-    break;
-  }
-
-  case NODE: {
-    MBRange nodesets, noderange;
-    int nnodes;
-
-    result = mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&nstag,valarr,1,nodesets);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem getting entity sets" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-
-    if (nodesets.size() == 0) return 0;
-
-    MBEntityHandle nodeset = *(nodesets.begin());
-
-    result = mbcore->get_entities_by_dimension(nodeset,0,noderange);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem getting tag data" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-
-    if (ptype == OWNED)
-      noderange -= NotOwnedVerts;
-    else if (ptype == GHOST)
-      noderange -= OwnedVerts;
-
-    return noderange.size();
-    break;
-  }
-
-  default:
-    return 0;
-  }
-    
+  Errors::Message mesg("Get set size by ID is deprecated");
+  amanzi_throw(mesg);
 }
 
 
@@ -1747,7 +1872,49 @@ void Mesh_MOAB::face_get_cells_internal (const Entity_ID faceid,
                                          const Parallel_type ptype,
                                          Entity_ID_List *cellids) const
 {
-  throw std::exception();
+  int result;
+  MBEntityHandle face = face_id_to_handle[faceid];
+  MBRange fcells;
+  
+  result = mbcore->get_adjacencies(&face,1,celldim,true,fcells,MBCore::UNION);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get cells of face" << faceid << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+  
+  int nc = fcells.size();
+  int fcellids[2];
+
+  result = mbcore->tag_get_data(lid_tag,fcells,(void *)fcellids);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Problem getting id tag data" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+
+
+  unsigned char pstatus;
+  switch (ptype) {
+  case USED:
+    for (int i = 0; i < nc; i++)
+      cellids->push_back(fcellids[i]);
+    break;
+  case OWNED:
+    for (int i = 0; i < nc; i++) {
+      result = mbcomm->get_pstatus(fcells[i],pstatus);
+      if (!(pstatus & PSTATUS_NOT_OWNED))
+        cellids->push_back(fcellids[i]);
+    }
+    break;
+  case GHOST:
+    for (int i = 0; i < nc; i++) {
+      result = mbcomm->get_pstatus(fcells[i],pstatus);
+      if (pstatus & PSTATUS_NOT_OWNED)
+        cellids->push_back(fcellids[i]);
+    }
+    break;
+  }
+
+
 }
     
 
@@ -2050,6 +2217,39 @@ Cell_type Mesh_MOAB::cell_get_type(const Entity_ID cellid) const
     return HEX;
   }
     
+
+
+std::string 
+Mesh_MOAB::internal_name_of_set(const AmanziGeometry::RegionPtr r,
+                                const Entity_kind entity_kind) const {
+
+  std::string internal_name;
+  
+  if (r->type() == AmanziGeometry::LABELEDSET) {
+    
+    AmanziGeometry::LabeledSetRegionPtr lsrgn = 
+      dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (r);
+    std::string label = lsrgn->label();
+
+    if (entity_kind == CELL)
+      internal_name = "matset_" + label;
+    else if (entity_kind == FACE)
+      internal_name = "sideset_" + label;
+    else if (entity_kind == NODE)
+      internal_name = "nodeset_" + label;      
+  }
+  else {
+    if (entity_kind == CELL)
+      internal_name = "CELLSET_" + r->name();
+    else if (entity_kind == FACE)
+      internal_name = "FACESET_" + r->name();
+    else if (entity_kind == NODE)
+      internal_name = "NODESET_" + r->name();
+  }
+
+  return internal_name;
+}
+
 
 // Deform a mesh so that cell volumes conform as closely as possible
 // to target volumes without dropping below the minimum volumes.  If

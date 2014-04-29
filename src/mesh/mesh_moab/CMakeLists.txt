@@ -42,35 +42,38 @@ file(GLOB moab_mesh_files "*.cc")
 file(GLOB moab_inc_files "*.hh")
 add_amanzi_library(moab_mesh
                    SOURCE ${moab_mesh_files} HEADERS ${moab_inc_files}
-                   LINK_LIBS ${MOAB_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES}) 
+                   LINK_LIBS geometry mesh ${MOAB_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES}) 
 
 if (BUILD_TESTS)
     
     # Add UnitTest include
-#    include_directories(${UnitTest_INCLUDE_DIRS})
+    include_directories(${UnitTest_INCLUDE_DIRS})
 
     # Need to copy files for the tests 
-#    if (NOT (${MOAB_SOURCE_DIR} EQUAL ${MOAB_BINARY_DIR}))
-#        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-#          copy_directory ${MOAB_SOURCE_DIR}/test ${MOAB_BINARY_DIR}/test) 
-#    endif()
+    if (NOT (${MOAB_SOURCE_DIR} EQUAL ${MOAB_BINARY_DIR}))
+        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+          copy_directory ${MOAB_SOURCE_DIR}/test ${MOAB_BINARY_DIR}/test) 
+    endif()
 
 
     # Test: moab_Mesh
-#    add_executable(test_moab_mesh 
-#                   test/Main.cc 
-#                   test/test_hex_2x2x2.cc
-#                   test/test_hex_3x3x2.cc
-#                   test/test_hex_4x4x4.cc)
-#    target_link_libraries(test_moab_mesh moab_mesh ${UnitTest_LIBRARIES})
-#    add_amanzi_test(moab_mesh test_moab_mesh KIND unit)
+    add_amanzi_test(moab_mesh test_moab_mesh 
+      KIND unit
+      SOURCE
+                   test/Main.cc
+		   test/test_hex_1x1x1.cc
+                   test/test_hex_2x2x1.cc
+                   test/test_hex_3x3x3.cc
+      LINK_LIBS moab_mesh mesh_audit ${UnitTest_LIBRARIES})
 #
     # Test: moab_mesh_parallel
-#    add_executable(test_parallel_moab_mesh
-#        test/Main.cc
-#        test/test_hex_4x4x4_4P.cc)
-#    target_link_libraries(test_parallel_moab_mesh moab_mesh ${UnitTest_LIBRARIES})
-#    add_amanzi_test(moab_mesh_parallel test_parallel_moab_mesh NPROCS 4 KIND int)
+    add_amanzi_test(moab_mesh_parallel test_parallel_moab_mesh 
+      KIND unit
+      NPROCS 4 
+      SOURCE
+        test/Main.cc
+        test/test_hex_3x3x3_4P.cc
+      LINK_LIBS moab_mesh mesh_audit ${UnitTest_LIBRARIES})
 
 endif()
 
