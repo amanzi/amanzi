@@ -208,9 +208,10 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   (*Acf_).Multiply(false, *rhs_faces, Tc);
   for (int c=0; c!=ncells_owned; ++c) (*rhs_cells)[0][c] -= Tc[c];
 
-  // Zero the face RHS out, as the application of matrix results in zero in
-  // the face system.
-  rhs_faces->PutScalar(0.);
+  // unscale the rhs
+  for (int f=0; f!=nfaces_owned; ++f) {
+    (*rhs_faces)[0][f] *= Dff_f[0][f];
+  }
 
   // create a with-ghost copy of Acc
   CompositeVectorSpace space_c;
