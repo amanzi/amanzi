@@ -74,6 +74,7 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
   Epetra_MultiVector& u_faces = *u.ViewComponent("face");
 
   // calculate and assemble elemental stiffness matrix
+  darcy_flux->ScatterMasterToGhosted("face");
   rel_perm->Compute(u, *darcy_flux, bc_model, bc_values);
   AssembleSteadyStateMatrix(&*matrix_);
   Matrix_MFD* matrix_tmp = dynamic_cast<Matrix_MFD*>(&*matrix_);

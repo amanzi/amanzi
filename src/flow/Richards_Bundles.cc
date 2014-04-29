@@ -92,6 +92,7 @@ void Richards_PK::AssembleSteadyStatePreconditioner(FlowMatrix* preconditioner)
 ****************************************************************** */
 void Richards_PK::AssembleMatrixMFD(const CompositeVector& u, double Tp)
 {
+  darcy_flux->ScatterMasterToGhosted("face");
   rel_perm->Compute(u, *darcy_flux, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, u);
   
