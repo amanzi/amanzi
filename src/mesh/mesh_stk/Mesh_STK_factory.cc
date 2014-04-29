@@ -974,13 +974,13 @@ void Mesh_STK_factory::init_extra_parts_from_gm(const AmanziGeometry::GeometricM
         {
         case AmanziGeometry::BOX: { 
 
-          int ndeg=0;
-          if (((AmanziGeometry::BoxRegionPtr) greg)->is_degenerate(&ndeg) && ndeg == 1) {            
-            add_side_set_(greg->name(), greg->id());
-          }
-          else {
-            add_element_block_(greg->name(), greg->id());
-          }
+          // Assume that users can ask for faces or cells in a box
+
+          //          std::string faceset_name = internal_name_of_set(greg->name(),FACE);
+          add_side_set_("FACES_of_"+greg->name(), greg->id());
+
+          //          std::string cellset_name = internal_name_of_set(greg->name(),CELL);
+          add_element_block_("CELLS_of_"+greg->name(), greg->id());
 
           break;
         }
@@ -1052,92 +1052,89 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricM
         {
         case AmanziGeometry::BOX: { 
 
-          // Find the part with this name
+          // Find the part with this name and prepended with "FACES_of"
+          // Add faces in the region to this part
 
-	  part = meta_data_->get_part (greg->name());
+	  part = meta_data_->get_part ("FACES_of_"+greg->name());
           ASSERT (part);
 	  parts_to_add.push_back(part);
 
-          int ndeg = 0;
-          if (((AmanziGeometry::BoxRegionPtr) greg)->is_degenerate(&ndeg)) {
+          ASSERT (part->primary_entity_rank () == face_rank_);
 
-            ASSERT (part->primary_entity_rank () == face_rank_);
-
-            // Assumption is that user wants to extract cell sets
+          // Collect faces that lie in this region
           
-            stk::mesh::Selector owned(meta_data_->locally_owned_part());
-            stk::mesh::EntityVector faces;
-            stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->face_rank()), faces);
-
-            stk::mesh::EntityVector::iterator f;
-            for (f = faces.begin(); f != faces.end(); f++) {
-
-              stk::mesh::PairIterRelation nodes = (*f)->relations (node_rank_);
-
-              double cen[3]={0.0,0.0,0.0};
-	      int nfn = 0;
-              for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); 
-                   it != nodes.end (); ++it)
-                {
-                  double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
-                  for (int k = 0; k < space_dim; k++)
-                    cen[k] += xyz[k];
-		  nfn++;
-                }
-              for (int k = 0; k < space_dim; k++)
-                cen[k] /= nfn;
-
-              AmanziGeometry::Point pcen(space_dim);
-              pcen.set(cen);
-              
-              if (greg->inside(pcen))  // If face center is inside region
-                {
-                  bulk_data_->change_entity_parts(*(*f),parts_to_add);
-                }
-            }
-
+          stk::mesh::Selector owned(meta_data_->locally_owned_part());
+          stk::mesh::EntityVector faces;
+          stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->face_rank()), faces);
+          
+          stk::mesh::EntityVector::iterator f;
+          for (f = faces.begin(); f != faces.end(); f++) {
+            
+            stk::mesh::PairIterRelation nodes = (*f)->relations (node_rank_);
+            
+            double cen[3]={0.0,0.0,0.0};
+            int nfn = 0;
+            for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); 
+                 it != nodes.end (); ++it)
+              {
+                double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
+                for (int k = 0; k < space_dim; k++)
+                  cen[k] += xyz[k];
+                nfn++;
+              }
+            for (int k = 0; k < space_dim; k++)
+              cen[k] /= nfn;
+            
+            AmanziGeometry::Point pcen(space_dim);
+            pcen.set(cen);
+            
+            if (greg->inside(pcen))  // If face center is inside region
+              {
+                bulk_data_->change_entity_parts(*(*f),parts_to_add);
+              }
           }
 
-          else {
 
-            // Assumption is that user wants to extract cell sets
+          // Get the part with this name prepended with "CELLS_of_"
+          // Collect cells that lie in this region
 
-            ASSERT (part->primary_entity_rank () == element_rank_);
+	  part = meta_data_->get_part ("CELLS_of_"+greg->name());
+          ASSERT(part);
+          parts_to_add.clear();
+          parts_to_add.push_back(part);
 
+          ASSERT (part->primary_entity_rank () == element_rank_);
           
-            stk::mesh::Selector owned(meta_data_->locally_owned_part());
-            stk::mesh::EntityVector cells;
-            stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->volume_rank()), cells);
-
-            stk::mesh::EntityVector::iterator c;
-            for (c = cells.begin(); c != cells.end(); c++) {
-
-              stk::mesh::PairIterRelation nodes = (*c)->relations (node_rank_);
-
-              double cen[3]={0.0,0.0,0.0};
-	      int nen = 0;
-              for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); 
-                   it != nodes.end (); ++it)
-                {
-                  double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
-                  for (int k = 0; k < space_dim; k++)
-                    cen[k] += xyz[k];
-		  nen++;
-                }
-              for (int k = 0; k < space_dim; k++)
-                cen[k] /= nen;
-
-              AmanziGeometry::Point pcen(space_dim);
-              pcen.set(cen);
-              
-              if (greg->inside(pcen))  // If center is inside region
-                {
-                  bulk_data_->change_entity_parts(*(*c),parts_to_add);
-                }
-            }
-
+          stk::mesh::EntityVector cells;
+          stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->volume_rank()), cells);
+          
+          stk::mesh::EntityVector::iterator c;
+          for (c = cells.begin(); c != cells.end(); c++) {
+            
+            stk::mesh::PairIterRelation nodes = (*c)->relations (node_rank_);
+            
+            double cen[3]={0.0,0.0,0.0};
+            int nen = 0;
+            for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); 
+                 it != nodes.end (); ++it)
+              {
+                double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
+                for (int k = 0; k < space_dim; k++)
+                  cen[k] += xyz[k];
+                nen++;
+              }
+            for (int k = 0; k < space_dim; k++)
+              cen[k] /= nen;
+            
+            AmanziGeometry::Point pcen(space_dim);
+            pcen.set(cen);
+            
+            if (greg->inside(pcen))  // If center is inside region
+              {
+                bulk_data_->change_entity_parts(*(*c),parts_to_add);
+              }
           }
-
+          
           break;
         }
         case AmanziGeometry::PLANE: {
