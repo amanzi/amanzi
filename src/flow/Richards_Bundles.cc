@@ -119,8 +119,11 @@ void Richards_PK::AssemblePreconditionerMFD(const CompositeVector& u, double Tp,
   if (update_upwind == FLOW_UPWIND_UPDATE_ITERATION){
     matrix_->CreateStiffnessMatricesRichards();
     matrix_->DeriveMassFlux(u, *darcy_flux, bc_model, bc_values);
-    darcy_flux->ScatterMasterToGhosted("face");
   }
+  else{
+    *darcy_flux = *S_->GetFieldData("darcy_flux");
+  }
+  darcy_flux->ScatterMasterToGhosted("face");
 
   rel_perm->Compute(u, *darcy_flux, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, u);
