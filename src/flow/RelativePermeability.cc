@@ -120,6 +120,7 @@ void RelativePermeability::ComputeOnFaces(
 
   } else if (method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
     //S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
+    //const Epetra_MultiVector& fl = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
     const Epetra_MultiVector& fl = *flux.ViewComponent("face", true);
     
     FaceUpwindFlux_(pressure, fl, bc_model, bc_values);

@@ -261,8 +261,8 @@ int main(int argc, char *argv[]) {
       xercesc::DOMElement *root = doc->getDocumentElement();
       char* temp2 = xercesc::XMLString::transcode(root->getTagName());
       //DOMImplementation* impl =  DOMImplementationRegistry::getDOMImplementation(X("Core"));
-      if (strcmp(temp2,"amanzi_input")==0) {
 
+      if (strcmp(temp2, "amanzi_input") == 0) {
 	if (xmlSchema.size() == 0) {
 	  if (rank == 0) {
 	    std::cout << "ERROR: No xml schema file was specified. Use the command line option --xml_schema to specify one." << std::endl;
@@ -294,9 +294,12 @@ int main(int argc, char *argv[]) {
           xmlfile << XMLobj;
 	}
 
-      } else if(strcmp(temp2,"ParameterList")==0) {
-	Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
-        driver_parameter_list = xmlreader.getParameters();
+      } else if(strcmp(temp2, "ParameterList") == 0) {
+	// Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
+        // driver_parameter_list = xmlreader.getParameters();
+        // new initialization verifies the XML input
+        Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
+        driver_parameter_list = *plist;
       }
       else {
 	amanzi_throw(Errors::Message("Unexpected Error reading input file"));

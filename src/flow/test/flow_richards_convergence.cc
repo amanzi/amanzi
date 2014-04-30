@@ -19,6 +19,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Epetra_SerialComm.h"
 #include "Epetra_MpiComm.h"
@@ -117,14 +118,13 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
   if (MyPID == 0) std::cout <<"Richards: convergence Analysis" << std::endl;
 
   std::string xmlFileName = "test/flow_richards_convergence.xml";
-  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-  Teuchos::ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // convergence estimate
   std::vector<double> h, p_error, v_error;
 
   for (int n = 40; n < 161; n*=2) {
-    Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
     
     FrameworkPreference pref;
@@ -138,11 +138,11 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     /* create and populate flow state */
     Amanzi::VerboseObject::hide_line_prefix = false;
 
-    Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
+    Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("State");
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
-    Richards_PK* RPK = new Richards_PK(plist, S);
+    Richards_PK* RPK = new Richards_PK(*plist, S);
     S->Setup();
     S->InitializeFields();
     RPK->InitializeFields();
