@@ -187,6 +187,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MSTK);
 	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::STKMESH)) {
 	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::STKMESH);
+	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::MOAB)) {
+	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MOAB);
 	// } else if (framework == "") {
 	} else {
 	  std::string s(framework);

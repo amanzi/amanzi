@@ -66,6 +66,7 @@ class DarcyProblem {
     FrameworkPreference pref;
     pref.clear();
     pref.push_back(MSTK);
+//    pref.push_back(STKMESH);  // This works too
 
     MeshFactory meshfactory(comm);
     meshfactory.preference(pref);

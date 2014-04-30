@@ -86,10 +86,10 @@ if (BUILD_TESTS)
 #			  test/test_thyra_wrappers.cc
 		    LINK_LIBS
 		             data_structures
-			     mesh
 			     geometry
-			     mesh_factory
 			     mstk_mesh
+			     mesh_factory
+			     mesh
 			     ${UnitTest_LIBRARIES})
 
 #    add_amanzi_test(test_access test_access_times

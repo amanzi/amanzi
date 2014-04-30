@@ -17,8 +17,14 @@
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 
-#include "Mesh.hh"
-#include "GeometricModel.hh"
+#include <Mesh.hh>
+#include <GeometricModel.hh>
+#include <Point.hh>
+#include <GeometricModel.hh>
+#include <LabeledSetRegion.hh>
+#include <PointRegion.hh>
+#include <LogicalRegion.hh>
+#include <GenerationSpec.hh>
 
 #include <memory>
 #include <vector>
@@ -145,6 +151,11 @@ class Mesh_MOAB : public Mesh
     void init_node_map();
 
     void init_set_info();
+
+    MBTag build_set(AmanziGeometry::RegionPtr rgn, Entity_kind kind) const;
+
+    std::string internal_name_of_set(const AmanziGeometry::RegionPtr r,
+                                     const Entity_kind entity_kind) const;
 
   // Get faces of a cell and directions in which the cell uses the face 
 

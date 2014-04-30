@@ -824,6 +824,18 @@ Mesh_STK::get_set_entities (const std::string setname,
           throw std::exception();
         }
     }
+  else if (rgn->type() == AmanziGeometry::BOX) {
+    std::string internal_name;
+
+    // Can ask for faces or cells in a box
+
+    if (kind == FACE)
+      internal_name = "FACES_of_" + setname;
+    else if (kind == CELL)
+      internal_name = "CELLS_of_" + setname;
+
+    part = mesh_->get_set(internal_name, rank);
+  }
   else
     {
       part = mesh_->get_set(setname, rank);
