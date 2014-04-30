@@ -252,14 +252,19 @@ class Mesh
   // Upward adjacencies
   //-------------------
 
-  // Cells of type 'ptype' connected to a node
+  // Cells of type 'ptype' connected to a node - The order of cells is
+  // not guaranteed to be the same for corresponding nodes on
+  // different processors
 
   virtual
   void node_get_cells (const Entity_ID nodeid,
                        const Parallel_type ptype,
                        Entity_ID_List *cellids) const = 0;
 
-  // Faces of type 'ptype' connected to a node
+  // Faces of type 'ptype' connected to a node - The order of faces is
+  // not guarnateed to be the same for corresponding nodes on
+  // different processors
+
 
   virtual
   void node_get_faces (const Entity_ID nodeid,
@@ -267,7 +272,8 @@ class Mesh
                        Entity_ID_List *faceids) const = 0;
 
   // Get faces of ptype of a particular cell that are connected to the
-  // given node
+  // given node - The order of faces is not guarnateed to be the same
+  // for corresponding nodes on different processors
 
   virtual
   void node_get_cell_faces (const Entity_ID nodeid,
@@ -275,7 +281,8 @@ class Mesh
                             const Parallel_type ptype,
                             Entity_ID_List *faceids) const = 0;
 
-  // Cells connected to a face
+  // Cells connected to a face - The order of cells is not guaranteed to be 
+  // the same for corresponding faces on different processors 
   
   void face_get_cells (const Entity_ID faceid,
                        const Parallel_type ptype,
