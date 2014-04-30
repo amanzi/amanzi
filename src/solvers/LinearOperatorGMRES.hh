@@ -189,7 +189,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     m_->Apply(*(v[i]), p);
     h_->ApplyInverse(p, w);
 
-    double tmp;
+    double tmp(0.0);
     for (int k = 0; k <= i; k++) {  // Arnoldi algorithm
       w.Dot(*(v[k]), &tmp);
       w.Update(-tmp, *(v[k]), 1.0);

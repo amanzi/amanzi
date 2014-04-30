@@ -146,34 +146,5 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
-  <!--  STATE  -->
-  <ParameterList name="State">
-    <Parameter name="Component Solutes" type="Array(string)" value="{Tc-99}"/>
-    <Parameter name="Constant viscosity" type="double" value="0.3"/>
-    <Parameter name="Constant water density" type="double" value="2.0"/>
-    <Parameter name="Constant water saturation" type="double" value="1"/>
-    <Parameter name="Gravity x" type="double" value="0"/>
-    <Parameter name="Gravity y" type="double" value="0"/>
-    <Parameter name="Gravity z" type="double" value="-2.0"/>
-    <Parameter name="Number of component concentrations" type="int" value="1"/>
-    <Parameter name="Number of mesh blocks" type="int" value="1"/>
-    
-    <ParameterList name="Mesh block 1">
-      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant permeability" type="double" value="1.0"/>
-      <Parameter name="Constant porosity" type="double" value="0.2"/>
-      <Parameter name="Region" type="string" value="Computational domain"/>
-      <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0}"/>
-        <Parameter name="reference coordinate" type="Array(double)" value="{0.0, 0.0}"/>
-        <Parameter name="reference value" type="double" value="0.0"/>
-      </ParameterList>
-      <ParameterList name="uniform saturation">
-        <Parameter name="value" type="double" value="1.0"/>
-      </ParameterList>
-      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
-    </ParameterList>
-  </ParameterList>
 </ParameterList>
 

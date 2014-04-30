@@ -71,6 +71,8 @@ SUITE(SOLVERS) {
     CHECK_CLOSE( 0.5e+0, v[2], 1e-6);
     CHECK_CLOSE( 0.3333333333e+0, v[3], 1e-6);
     CHECK_CLOSE( 0.1666666666e+0, v[4], 1e-6);
+
+    delete comm;
   };
 
   TEST(GMRES_SOLVER) {
@@ -97,6 +99,8 @@ SUITE(SOLVERS) {
     CHECK_CLOSE( 0.5e+0, v[2], 1e-6);
     CHECK_CLOSE( 0.3333333333e+0, v[3], 1e-6);
     CHECK_CLOSE( 0.1666666666e+0, v[4], 1e-6);
+
+    delete comm;
   };
 
   TEST(NKA_SOLVER) {
@@ -125,6 +129,8 @@ SUITE(SOLVERS) {
     CHECK_CLOSE( 0.5e+0, v[2], 1e-6);
     CHECK_CLOSE( 0.3333333333e+0, v[3], 1e-6);
     CHECK_CLOSE( 0.1666666666e+0, v[4], 1e-6);
+
+    delete comm;
   };
 
   TEST(SOLVER_FACTORY) {
@@ -157,6 +163,8 @@ SUITE(SOLVERS) {
     CHECK_CLOSE( 0.5e+0, v[2], 1e-6);
     CHECK_CLOSE( 0.3333333333e+0, v[3], 1e-6);
     CHECK_CLOSE( 0.1666666666e+0, v[4], 1e-6);
+
+    delete comm;
   };
 
   TEST(VERBOSITY_OBJECT) {
@@ -191,6 +199,8 @@ SUITE(SOLVERS) {
     CHECK_CLOSE( 0.5e+0, v[2], 1e-6);
     CHECK_CLOSE( 0.3333333333e+0, v[3], 1e-6);
     CHECK_CLOSE( 0.1666666666e+0, v[4], 1e-6);
+
+    delete comm;
   };
 }
 
