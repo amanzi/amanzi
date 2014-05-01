@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdlib>
 #include <cmath>
+#include <iostream>
 #include <float.h>
 #include <TestReporterStdout.h>
 #include "hdf5.h"
