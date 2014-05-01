@@ -29,7 +29,6 @@ void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug) {
   // Calculate D_h, D_e, 
   eb.Dhe = std::pow(seb.params.VKc,2) * seb.in.met.Us
                        / std::pow(std::log(seb.params.Zr / seb.in.surf.Zo), 2);
-
   if (debug) {
     std::cout << "Incoming Radiation Energy Terms:" << "\n"
               << "  windspeed, Zo: " << seb.in.met.Us <<"  "<<seb.in.surf.Zo << "\n"

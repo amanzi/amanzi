@@ -665,8 +665,8 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   const Epetra_MultiVector& h_faces = *S->GetFieldData("ponded_depth")->ViewComponent("face");
   const Epetra_MultiVector& elevation_cells = *S->GetFieldData("elevation")->ViewComponent("cell");
 
-  for (Functions::BoundaryFunction::Iterator bc = bc_seepage_->begin(); 
-       bc != bc_seepage_->end(); ++bc) {
+  for (Functions::BoundaryFunction::Iterator bc = bc_seepage_->begin();
+    bc != bc_seepage_->end(); ++bc) {
     int f = bc->first;
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int c = cells[0];
@@ -674,7 +674,8 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
     double h0 = bc->second;
     double dz = elevation_cells[0][c] - elevation[0][f];
 
-    if (h_cells[0][c] + dz < h0) {
+
+    if (h_cells[0][c] + dz < h0) {    
       bc_markers_[f] = Operators::MATRIX_BC_NULL;
       bc_values_[f] = 0.0;
     } else {
