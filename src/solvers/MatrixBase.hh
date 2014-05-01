@@ -9,6 +9,14 @@
 
 class MatrixBase {
  public:
+  // NOTE that a default constructor MUST be allowed, even if it
+  // cannot work if actually used.  This is because LinearOperator,
+  // when given a Matrix, inherits from that Matrix's class so as to
+  // be able to replace that class.  Note that nothing is inherited
+  // from the base class, and so no functionality from the
+  // default-constructed MatrixBase is ever used.
+  MatrixBase();
+
   // Space for the domain of the operator.
   const VectorSpace& DomainMap() const;
 

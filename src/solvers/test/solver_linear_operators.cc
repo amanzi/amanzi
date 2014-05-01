@@ -56,6 +56,7 @@ SUITE(SOLVERS) {
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
     Teuchos::RCP<Matrix> h = m;
     AmanziSolvers::LinearOperatorPCG<Matrix, Epetra_Vector, Epetra_Map> pcg(m, h);
+    pcg.Init();
 
     // initial guess
     Epetra_Vector u(*map);
@@ -84,6 +85,7 @@ SUITE(SOLVERS) {
     // create the pcg operator
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
     AmanziSolvers::LinearOperatorGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
+    gmres.Init();
 
     // initial guess
     Epetra_Vector u(*map);
@@ -112,8 +114,7 @@ SUITE(SOLVERS) {
     // create the pcg operator
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
     AmanziSolvers::LinearOperatorNKA<Matrix, Epetra_Vector, Epetra_Map> nka(m, m);
-    Teuchos::ParameterList plist;
-    nka.Init(plist);
+    nka.Init();
 
     // initial guess
     Epetra_Vector u(*map);
@@ -148,6 +149,7 @@ SUITE(SOLVERS) {
     AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_Map> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_Map> > 
         solver = factory.Create("pcg", plist, m);
+    solver->Init();
 
     // initial guess
     Epetra_Vector u(*map);
@@ -184,6 +186,7 @@ SUITE(SOLVERS) {
     AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_Map> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_Map> > 
         solver = factory.Create("gmres", plist, m);
+    solver->Init();
 
     // initial guess
     Epetra_Vector u(*map);

@@ -16,8 +16,6 @@
 #include "SolverDefs.hh"
 
 #include "SolverFnBaseJF.hh"
-#include "LinearOperator.hh"
-#include "LinearOperatorFactory.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -40,7 +38,7 @@ class SolverJFNK : public SolverNewton<Vector,VectorSpace> {
             const VectorSpace& map);
 
  protected:
-  Teuchos::RCP<SolverFnBaseJF<Vector> > jf_fnbase_;
+  Teuchos::RCP<SolverFnBaseJF<Vector,VectorSpace> > jf_fnbase_;
   Teuchos::RCP<SolverFnBase<Vector> > wrapped_fnbase_;
 
 };
@@ -51,16 +49,19 @@ class SolverJFNK : public SolverNewton<Vector,VectorSpace> {
 ****************************************************************** */
 template<class Vector, class VectorSpace>
 void
-SolverNKA<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
+SolverJFNK<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
         const VectorSpace& map)
 {
   wrapped_fnbase_ = fn;
 
   // wrap the fn in a JF fn
-  jf_fnbase_ = Teuchos::rcp(new SolverFnBaseJF<Vector>(plist_,wrapped_fn_, map));
+  jf_fnbase_ = Teuchos::rcp(new SolverFnBaseJF<Vector,VectorSpace>(this->plist_,wrapped_fnbase_, map));
 
   // Init the Newton method with this wrapped SolverFnBase
-  SolverNewton<Vector,VectorSpace::Init(jf_fnbase_, map);
+  SolverNewton<Vector,VectorSpace>::Init(jf_fnbase_, map);
+  
+  // Change the verbose object header
+  this->vo_->set_name("Solver::JFNK");
 }
 
 } // namespace

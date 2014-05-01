@@ -140,7 +140,7 @@ TEST_FIXTURE(test_data, JFNK_SOLVER) {
   std::cout << std::endl << "JFNK nonlinear solver..." << std::endl;
 
   // create the function class
-  Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
+  Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, false));
 
   // create the SolverState
   Teuchos::ParameterList plist;
@@ -150,6 +150,9 @@ TEST_FIXTURE(test_data, JFNK_SOLVER) {
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
   plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("JF matrix parameters");
+  plist.sublist("linear operator").set("iterative method", "gmres");
+  plist.sublist("linear operator").sublist("VerboseObject").set("Verbosity Level", "extreme");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverJFNK<Epetra_Vector, Epetra_BlockMap> > jfnk =

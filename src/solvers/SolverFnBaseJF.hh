@@ -17,6 +17,9 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "MatrixJF.hh"
+#include "LinearOperator.hh"
+#include "LinearOperatorFactory.hh"
+
 #include "SolverFnBase.hh"
 
 namespace Amanzi {
@@ -46,9 +49,9 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
   virtual void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u0);
 
   // error norm
-  virtual double ENorm(const Teuchos::RCP<const Vector>& u,
-		       const Teuchos::RCP<const Vector>& du) {
-    return fn_->ENorm(u,du);
+  virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
+			   const Teuchos::RCP<const Vector>& du) {
+    return fn_->ErrorNorm(u,du);
   }
 
   // Check the admissibility of an inner iterate (ensures preconditions for
@@ -72,7 +75,7 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
  protected:
   Teuchos::ParameterList plist_;
   Teuchos::RCP<MatrixJF<Vector,VectorSpace> > jf_mat_;
-  Teuchos::RCP<LinearOperator<MatrixJF<Vector,VectorSpace>, Vector, VectorSpace> lin_op_;
+  Teuchos::RCP<LinearOperator<MatrixJF<Vector,VectorSpace>, Vector, VectorSpace> > lin_op_;
   Teuchos::RCP<SolverFnBase<Vector> > fn_;
 
   double typical_u_;
@@ -82,7 +85,7 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
 template<class Vector,class VectorSpace>
 SolverFnBaseJF<Vector,VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist,
 						   const Teuchos::RCP<SolverFnBase<Vector> > fn,
-						   const VectorSpace& map) {
+						   const VectorSpace& map) :
     plist_(plist), fn_(fn) {
   typical_u_ = plist.get<double>("typical solution value", 1.);
 

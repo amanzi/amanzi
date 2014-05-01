@@ -26,13 +26,14 @@ template<class Vector, class VectorSpace>
 class MatrixJF {
 
  public:
+  MatrixJF() {} // default constructor for LinOp usage
 
   MatrixJF(Teuchos::ParameterList& plist,
            const Teuchos::RCP<SolverFnBase<Vector> > fn,
            const VectorSpace& map) :
       plist_(plist),
-      fn_(fn),
-      map_(map) {
+      fn_(fn) {
+    map_ = Teuchos::rcp(new VectorSpace(map));
     r0_ = Teuchos::rcp(new Vector(*map_));
     u0_ = Teuchos::rcp(new Vector(*map_));
   }
@@ -52,7 +53,7 @@ class MatrixJF {
   void set_linearization_point(const Teuchos::RCP<const Vector>& u);
 
  protected:
-  double CalculateEpsilon_(const Vector& u, const Vector& x);
+  double CalculateEpsilon_(const Vector& u, const Vector& x) const;
 
  protected:
   Teuchos::RCP<const VectorSpace> map_;
@@ -60,12 +61,13 @@ class MatrixJF {
   Teuchos::ParameterList plist_;
   Teuchos::RCP<Vector> u0_;
   Teuchos::RCP<Vector> r0_;
+
 };
 
 
 template<class Vector, class VectorSpace>
 int
-MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) {
+MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) const {
   Teuchos::RCP<Vector> r1 = Teuchos::rcp(new Vector(*map_));
 
   double eps = CalculateEpsilon_(*u0_, x);
@@ -88,7 +90,7 @@ MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) {
 
 template<class Vector, class VectorSpace>
 int
-MatrixJF<Vector,VectorSpace>::ApplyInverse(const Vector& b, Vector& x) {
+MatrixJF<Vector,VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const {
   // ugliness in interfaces...
   Teuchos::RCP<const Vector> b_ptr = Teuchos::rcpFromRef(b);
   Teuchos::RCP<Vector> x_ptr = Teuchos::rcpFromRef(x);
@@ -103,13 +105,12 @@ void
 MatrixJF<Vector,VectorSpace>::set_linearization_point(const Teuchos::RCP<const Vector>& u) {
   *u0_ = *u;
   fn_->Residual(u0_, r0_);
-  return 0;
 }
 
 
 template<class Vector, class VectorSpace>
 double
-MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Vector& x) {
+MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Vector& x) const {
   // simple algorithm eqn 14 from Knoll and Keyes
   double uinf = 0;
   double xinf = 0;
