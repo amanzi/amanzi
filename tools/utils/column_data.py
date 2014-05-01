@@ -54,6 +54,9 @@ def fullname(varname):
 def sort(varnames, keys='all', directory=".", filename="visdump_data.h5", mesh_filename="visdump_mesh.h5"):
     """Returns data of shape ( len(varnames+1), len(keys), n_cells )"""
     z = meshZ(mesh_filename, directory)
+    if type(varnames) is str:
+        varnames = [varnames,]
+
     with h5py.File(os.path.join(directory,filename),'r') as dat:
         keys_avail = dat[fullname(varnames[0])].keys()
         keys_avail.sort(lambda a,b: int.__cmp__(int(a),int(b)))
