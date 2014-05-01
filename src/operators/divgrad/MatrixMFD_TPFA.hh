@@ -68,6 +68,10 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
   virtual void UpdateConsistentFaceCorrection(const CompositeVector& u,
           const Teuchos::Ptr<CompositeVector>& Pu);
 
+  Teuchos::RCP<const CompositeVector> Dff() const {
+    return Dff_;
+  }
+
  protected:
   Teuchos::RCP<CompositeVector> Dff_;
   Teuchos::RCP<Epetra_FECrsMatrix> Spp_;  // Explicit Schur complement
