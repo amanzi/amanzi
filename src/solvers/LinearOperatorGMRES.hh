@@ -14,7 +14,7 @@
 #include <cmath>
 
 #include "Teuchos_RCP.hpp"
-#include "exceptions.hh"
+#include "errors.hh"
 #include "VerboseObject.hh"
 
 #include "DenseMatrix.hh"
@@ -37,23 +37,15 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
       criteria_(LIN_SOLVER_RELATIVE_RHS),
       initialized_(false) {}
 
-  LinearOperatorGMRES(const LinearOperatorGMRES& other) :
-      LinearOperator<Matrix,Vector,VectorSpace>(other),
-      tol_(other.tol_),
-      krylov_dim_(other.krylov_dim_),
-      overflow_tol_(other.overflow_tol_),
-      max_itrs_(other.max_itrs_),
-      num_itrs_(other.num_itrs_),
-      residual_(other.residual_),
-      criteria_(other.criteria_),
-      initialized_(other.initialized_) {}
-
-  virtual Teuchos::RCP<Matrix> Clone() const {
-    return Teuchos::rcp(new LinearOperatorGMRES(*this)); }
-
   void Init(Teuchos::ParameterList& plist);
+  void Init() { LinearOperator<Matrix,Vector,VectorSpace>::Init(); }
 
   int ApplyInverse(const Vector& v, Vector& hv) const {
+    if (!initialized_) {
+      Errors::Message msg("LinearOperatorGMRES: has not been initialized.");
+      Exceptions::amanzi_throw(msg);
+    }
+
     int ierr = GMRESRestart_(v, hv, tol_, max_itrs_, criteria_);
     returned_code_ = ierr;
     return (ierr > 0) ? 0 : 1;  // Positive ierr code means success.
@@ -81,6 +73,9 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
                         std::vector<Teuchos::RCP<Vector> >& v) const;
   void InitGivensRotation_( double& dx, double& dy, double& cs, double& sn) const;
   void ApplyGivensRotation_(double& dx, double& dy, double& cs, double& sn) const;
+
+  LinearOperatorGMRES(const LinearOperatorGMRES& other); // not implemented
+
 
  private:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
@@ -126,6 +121,12 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRESRestart_(
     max_itrs_left -= num_itrs_;
   }
 
+  if (ierr == LIN_SOLVER_MAX_ITERATIONS) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      *vo_->os() << "Not converged (max iterations), ||r|| = " << residual_ << std::endl;
+  }
+
   num_itrs_ = total_itrs;
   return ierr;
 }
@@ -145,6 +146,8 @@ template<class Matrix, class Vector, class VectorSpace>
 int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
+  Teuchos::OSTab tab = vo_->getOSTab();
+
   Vector w(f), r(f), p(f);  // construct empty vectors
   std::vector<Teuchos::RCP<Vector> > v(krylov_dim_ + 1);
 
@@ -166,17 +169,31 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
 
   if (fnorm == 0.0) {
     x.PutScalar(0.0);
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      *vo_->os() << "Converged, itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
     return criteria;  // Zero solution satifies all criteria.
   }
 
   // Ignore all criteria if one iteration is enforced.
-  if (rnorm0 > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;
+  if (rnorm0 > overflow_tol_) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      *vo_->os() << "Diverged, ||r|| = " << rnorm0 << std::endl;
+    return LIN_SOLVER_RESIDUAL_OVERFLOW;
+  }
 
   if (! (criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
-      if (rnorm0 < tol * fnorm) return LIN_SOLVER_RELATIVE_RHS;
+      if (rnorm0 < tol * fnorm) {
+	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	  *vo_->os() << "Converged (relative RHS), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+	return LIN_SOLVER_RELATIVE_RHS;
+      }
     } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
-      if (rnorm0 < tol) return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+      if (rnorm0 < tol) {
+	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	  *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+	return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+      }
     }
   }
 
@@ -208,27 +225,31 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     ApplyGivensRotation_(s[i],    s[i + 1],    cs[i], sn[i]);
     residual_ = fabs(s[i + 1]);
 
-    if (initialized_) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << i << " ||r||=" << residual_ << std::endl;
-      }
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_->os() << i << " ||r||=" << residual_ << std::endl;
     }
+
     // Check all criteria one-by-one.
     num_itrs_ = i + 1;
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
       if (residual_ < tol * fnorm) {
         ComputeSolution_(x, i, T, s, v);  // vector s is overwritten
+	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	  *vo_->os() << "Converged (relative RHS), itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
         return LIN_SOLVER_RELATIVE_RHS;
       }
     } else if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
       if (residual_ < tol * rnorm0) {
         ComputeSolution_(x, i, T, s, v);  // vector s is overwritten
+	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	  *vo_->os() << "Converged (relative res), itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
         return LIN_SOLVER_RELATIVE_RESIDUAL;
       }
     } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
       if (residual_ < tol) {
         ComputeSolution_(x, i, T, s, v);  // vector s is overwritten
+	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	  *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
         return LIN_SOLVER_ABSOLUTE_RESIDUAL;
       }
     }

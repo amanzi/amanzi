@@ -34,22 +34,14 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
       criteria_(LIN_SOLVER_RELATIVE_RHS),
       initialized_(false) {}
 
-  LinearOperatorPCG(const LinearOperatorPCG& other) :
-      LinearOperator<Matrix,Vector,VectorSpace>(other),
-      tol_(other.tol_),
-      overflow_tol_(other.overflow_tol_),
-      max_itrs_(other.max_itrs_),
-      num_itrs_(other.num_itrs_),
-      residual_(other.residual_),
-      criteria_(other.criteria_),
-      initialized_(other.initialized_) {}
-
-  virtual Teuchos::RCP<Matrix> Clone() const {
-    return Teuchos::rcp(new LinearOperatorPCG(*this)); }
-
   void Init(Teuchos::ParameterList& plist);
+  void Init() { LinearOperator<Matrix,Vector,VectorSpace>::Init(); }
 
   int ApplyInverse(const Vector& v, Vector& hv) const {
+    if (!initialized_) {
+      Errors::Message msg("LinearOperatorPCG: has not been initialized.");
+      Exceptions::amanzi_throw(msg);
+    }
     int ierr = PCG_(v, hv, tol_, max_itrs_, criteria_);
     returned_code_ = ierr;
     return (ierr > 0) ? 0 : 1;  // Positive ierr code means success.
@@ -71,6 +63,8 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
 
  private:
   int PCG_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
+
+  LinearOperatorPCG(const LinearOperatorPCG& other); // not implemented
 
  private:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
@@ -102,6 +96,8 @@ template<class Matrix, class Vector, class VectorSpace>
 int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
+  Teuchos::OSTab tab = vo_->getOSTab();
+
   Vector r(f), p(f), v(f);  // construct empty vectors
   num_itrs_ = 0;
 
@@ -110,6 +106,8 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
   if (fnorm == 0.0) {
     x.PutScalar(0.0);
     residual_ = 0.0;
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      *vo_->os() << "Converged, itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
     return criteria;  // Convergence for all criteria
   }
 
@@ -122,16 +120,32 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
   h_->ApplyInverse(r, p);  // gamma = (H r,r)
   double gamma0;
   p.Dot(r, &gamma0);
-  if (gamma0 < 0) return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
+  if (gamma0 < 0) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      *vo_->os() << "Failed: non-SPD ApplyInverse" << std::endl;
+    return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
+  }
 
   // Ignore all criteria if one iteration is enforced.
-  if (rnorm0 > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;
+  if (rnorm0 > overflow_tol_) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      *vo_->os() << "Diverged, ||r|| = " << rnorm0 << std::endl;
+    return LIN_SOLVER_RESIDUAL_OVERFLOW;
+  }
 
   if (! (criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
-      if (rnorm0 < tol * fnorm) return LIN_SOLVER_RELATIVE_RHS;
+      if (rnorm0 < tol * fnorm) {
+	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	  *vo_->os() << "Converged (relative RHS), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+	return LIN_SOLVER_RELATIVE_RHS;
+      }
     } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
-      if (rnorm0 < tol) return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+      if (rnorm0 < tol) {
+	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	  *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+	return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+      }
     }
   }
 
@@ -140,7 +154,11 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     double alpha;
     v.Dot(p, &alpha);
 
-    if (alpha < 0.0) return LIN_SOLVER_NON_SPD_APPLY;
+    if (alpha < 0.0) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	*vo_->os() << "Failed: non-SPD Apply" << std::endl;
+      return LIN_SOLVER_NON_SPD_APPLY;
+    }
     alpha = gamma0 / alpha;
 
     x.Update( alpha, p, 1.0);
@@ -149,28 +167,46 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     h_->ApplyInverse(r, v);  // gamma1 = (H r, r)
     double gamma1;
     v.Dot(r, &gamma1);
-    if (gamma1 < 0.0) return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
+    if (gamma1 < 0.0) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	*vo_->os() << "Failed: non-SPD ApplyInverse" << std::endl;
+      return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
+    }
 
     double rnorm;
     r.Norm2(&rnorm);
     residual_ = rnorm;
 
-    if (initialized_) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << i << " ||r||=" << residual_ << std::endl;
-      }
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_->os() << i << " ||r||=" << residual_ << std::endl;
     }
-    if (rnorm > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;
+
+    if (rnorm > overflow_tol_) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	*vo_->os() << "Diverged, ||r|| = " << rnorm0 << std::endl;
+      return LIN_SOLVER_RESIDUAL_OVERFLOW;
+    }
 
     // Return the first criterion which is fulfilled.
     num_itrs_ = i + 1;
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
-      if (rnorm < tol * fnorm) return LIN_SOLVER_RELATIVE_RHS;
+      if (rnorm < tol * fnorm) {
+	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	  *vo_->os() << "Converged (relative RHS), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+	return LIN_SOLVER_RELATIVE_RHS;
+      }
     } else if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
-      if (rnorm < tol * rnorm0) return LIN_SOLVER_RELATIVE_RESIDUAL;
+      if (rnorm < tol * rnorm0) { 
+	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	  *vo_->os() << "Converged (relative res), itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
+	return LIN_SOLVER_RELATIVE_RESIDUAL;
+      }
     } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
-      if (rnorm < tol) return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+      if (rnorm < tol) {
+	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	  *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
+	return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+      }
     }
 
     double beta = gamma1 / gamma0;
@@ -179,6 +215,9 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     p.Update(1.0, v, beta);
   }
 
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+    *vo_->os() << "Failed (" << num_itrs_ << " itrs) ||r|| = "
+	       << residual_ << std::endl;
   return LIN_SOLVER_MAX_ITERATIONS;
 };
 

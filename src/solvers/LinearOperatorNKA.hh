@@ -40,25 +40,18 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
       criteria_(LIN_SOLVER_RELATIVE_RHS),
       initialized_(false) {};
 
-  LinearOperatorNKA(const LinearOperatorNKA& other) :
-      LinearOperator<Matrix,Vector,VectorSpace>(other),
-      tol_(other.tol_),
-      overflow_tol_(other.overflow_tol_),
-      max_itrs_(other.max_itrs_),
-      nka_dim_(other.nka_dim_),
-      criteria_(other.criteria_),
-      initialized_(other.initialized_) {};
-
   void Init(Teuchos::ParameterList& plist);
+  void Init() { LinearOperator<Matrix,Vector,VectorSpace>::Init(); }
 
   int ApplyInverse(const Vector& v, Vector& hv) const {
+    if (!initialized_) {
+      Errors::Message msg("LinearOperatorNKA: has not been initialized.");
+      Exceptions::amanzi_throw(msg);
+    }
     int ierr = NKA_(v, hv, tol_, max_itrs_, criteria_);
     returned_code_ = ierr;
     return (ierr > 0) ? 0 : 1;  // Positive ierr code means success.
   }
-
-  virtual Teuchos::RCP<Matrix> Clone() const {
-    return Teuchos::rcp(new LinearOperatorNKA(*this)); }
 
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
@@ -76,6 +69,8 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
 
  private:
   int NKA_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
+
+  LinearOperatorNKA(const LinearOperatorNKA& other); // not implemented
 
  private:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
@@ -98,6 +93,8 @@ template<class Matrix, class Vector, class VectorSpace>
 int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
+  Teuchos::OSTab tab = vo_->getOSTab();
+
   ASSERT(f.Map().SameAs(m_->RangeMap()));
   ASSERT(x.Map().SameAs(m_->DomainMap()));
   nka_->Restart();
@@ -113,6 +110,8 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
   f.Norm2(&fnorm);
   if (fnorm == 0.0) {
     x.PutScalar(0.0);
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      *vo_->os() << "Converged, itr = " << num_itrs_ << ", ||r|| = " << residual_ << std::endl;
     return criteria;  // Zero solution satifies all criteria.
   }
 
@@ -126,19 +125,21 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
   residual_ = rnorm0;
 
   if (initialized_) {
-    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-      Teuchos::OSTab tab = vo_->getOSTab();
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
     }
   }
   if (criteria == LIN_SOLVER_RELATIVE_RHS) {
-    if (rnorm0 < tol * fnorm) return LIN_SOLVER_RELATIVE_RHS;
+    if (rnorm0 < tol * fnorm) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	*vo_->os() << "Converged (relative RHS), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+      return LIN_SOLVER_RELATIVE_RHS;
+    }
   }
 
   if (residual_ > overflow_tol_) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Overflow: (" << num_itrs_ << " itrs) residual = "
-                 << rnorm0 << " (tol=" << overflow_tol_ << ")" << std::endl;
+      *vo_->os() << "Diverged, ||r|| = " << rnorm0 << std::endl;
     return LIN_SOLVER_RESIDUAL_OVERFLOW;
   }
 
@@ -157,32 +158,44 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
 
     num_itrs_++;
 
-    if (initialized_) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
-      }
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
     }
-    if (rnorm > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;
+
+    if (rnorm > overflow_tol_) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	*vo_->os() << "Diverged, ||r|| = " << rnorm0 << std::endl;
+      return LIN_SOLVER_RESIDUAL_OVERFLOW;
+    }
 
     // Return the first criterion which is fulfilled.
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
-      if (rnorm < tol * fnorm) return LIN_SOLVER_RELATIVE_RHS;
+      if (rnorm < tol * fnorm) {
+	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	  *vo_->os() << "Converged (relative RHS), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+	return LIN_SOLVER_RELATIVE_RHS;
+      }
     } else if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
-      if (rnorm < tol * rnorm0) return LIN_SOLVER_RELATIVE_RESIDUAL;
+      if (rnorm < tol * rnorm0) {
+	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	  *vo_->os() << "Converged (relative res), itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
+	return LIN_SOLVER_RELATIVE_RESIDUAL;
+      }
     } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
-      if (rnorm < tol) return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+      if (rnorm < tol) {
+	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+	  *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+	return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+      }
     }
 
     done = num_itrs_ > max_itrs;
   }
 
-  if (initialized_) {
-    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Failed (" << num_itrs_ << " itrs) residual = "
-                 << residual_ << " (tol=" << tol << ")" << std::endl;
-  }
-
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+    *vo_->os() << "Failed (" << num_itrs_ << " itrs) ||r|| = "
+	       << residual_ << std::endl;
   return LIN_SOLVER_MAX_ITERATIONS;
 }
 
@@ -230,6 +243,8 @@ void LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList
   // NKA
   nka_ = Teuchos::rcp(new NKA_Base<Vector,VectorSpace>(nka_dim_, nka_tol_, m_->DomainMap()));
   nka_->Init(plist);
+
+  initialized_ = true;
 }
 
 } // namespace
