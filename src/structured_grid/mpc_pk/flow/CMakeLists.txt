@@ -54,32 +54,20 @@ add_library(sflow OBJECT ${FPP_out_files}
 
 if (BUILD_TESTS)
 
-  link_directories(${CCSE_LIBRARY_DIR})
-  if ( ENABLE_Unstructured )
-    set(unstructured_grid_libs udriv mpc state transport flow whetstone matrix_audit)
-  else()
-    set(unstructured_grid_libs)
-  endif()
-
   # Note the following is rather icky...because of circular dependencies, these things have to be listed twice
   # This is similar to the main amanzi exec build, but worse.  Well....it works, for now.  Not sure what a better
   # long-term strategy is
-  if(ENABLE_Structured)
-    set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
-    if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
-      if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
-        list(APPEND structured_grid_libs gfortran)
-      endif()
+  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
+  if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
+    if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
+      list(APPEND structured_grid_libs gfortran)
     endif()
-  else()
-    set(structured_grid_libs)
   endif()
 
   get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
   set(my_common_libs error_handling ${GEOCHEM_LIBS} interface atk)
 
   set(my_libs ${structured_grid_libs}
-              ${unstructured_grid_libs}
               ${my_common_libs})
   set(my_tpl_libs ${amanzi_mesh_libs}
                   ${Teuchos_LIBRARIES}
@@ -89,10 +77,7 @@ if (BUILD_TESTS)
                   ${XERCES_ICU_LIBRARIES}
                   ${PETSC_LIBRARIES})
 
-  if (ENABLE_Structured)
-    list(APPEND my_tpl_libs ${CCSE_EXT_LIBRARIES})
-  endif()
-
+  list(APPEND my_tpl_libs ${CCSE_EXT_LIBRARIES})
 
   set(FLOWTEST "${SFLOW_SOURCE_DIR}/test")
   include_directories(${FLOWTEST})
