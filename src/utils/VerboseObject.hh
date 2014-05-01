@@ -85,6 +85,8 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   std::string color(std::string name);
   std::string reset();
 
+  void set_name(std::string name);
+
  protected:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   const Epetra_MpiComm* const comm_;
