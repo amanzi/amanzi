@@ -52,6 +52,8 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
 
  private:
   void Init_();
+
+ protected:
   int Newton_(const Teuchos::RCP<Vector>& u);
   int Newton_ErrorControl_(double error, double previous_error, double l2_error);
 
