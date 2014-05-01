@@ -212,7 +212,9 @@ def fixSolvers(xml):
 
     need_pc = True
     for pk in search.generateElementByNamePath(xml, "PK type"):
-        if pk.get("value") == "new permafrost model no SC":
+        if pk.get("value") == "new permafrost model no SC" or \
+           pk.get("value") == "subsurface permafrost" or \
+           pk.get("value") == "coupled water":
             need_pc = False
     for diff in search.generateElementByNamePath(xml, "Diffusion PC"):
         _fixDiffusion(diff, need_pc, True)

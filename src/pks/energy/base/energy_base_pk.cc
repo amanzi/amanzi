@@ -196,7 +196,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
   matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
-  matrix_->set_symmetric(true);
+  matrix_->set_symmetric(false);
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->CreateMFDmassMatrices(Teuchos::null);
   matrix_->InitPreconditioner(); // this is needed to calc consistent faces
