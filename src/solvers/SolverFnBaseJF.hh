@@ -6,7 +6,7 @@
   implementation of the inverse.
 
   Note this is a pass-through to the SolverFnBase in all but
-  ApplyPreconditioner() and UpdatePreconditioner() 
+  ApplyPreconditioner() and UpdatePreconditioner()
 */
 
 
@@ -65,13 +65,9 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
   }
 
   // bookkeeping for state
-  virtual void ChangedSolution() { 
-    fn_->ChangedSolution(); 
+  virtual void ChangedSolution() {
+    fn_->ChangedSolution();
   }
-
- protected:
-  double CalculateEpsilon_(const Teuchos::RCP<const Vec>& u0);
-
 
  protected:
   Teuchos::ParameterList plist_;
@@ -79,8 +75,6 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
   Teuchos::RCP<LinearOperator<MatrixJF<Vector,VectorSpace>, Vector, VectorSpace> lin_op_;
   Teuchos::RCP<SolverFnBase<Vector> > fn_;
 
-  double eps_;
-  double eps_base_;
   double typical_u_;
 };
 
@@ -90,7 +84,6 @@ SolverFnBaseJF<Vector,VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist
 						   const Teuchos::RCP<SolverFnBase<Vector> > fn,
 						   const VectorSpace& map) {
     plist_(plist), fn_(fn) {
-  eps_base_ = plist.get<double>("JF base epsilon", 1.e-6);
   typical_u_ = plist.get<double>("typical solution value", 1.);
 
   // create the JF matrix, a Matrix<Vector,VectorSpace> class that
@@ -102,13 +95,13 @@ SolverFnBaseJF<Vector,VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist
   // Create the linear solver for that linear operator
   Teuchos::ParameterList lin_plist = plist_.sublist("linear operator");
   LinearOperatorFactory<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace> fac;
-  lin_op_ = fac.Create(lin_plist, jf_mat);
+  lin_op_ = fac.Create(lin_plist, jf_mat_);
 
 }
 
 // preconditioner application
 template<class Vector,class VectorSpace>
-void 
+void
 SolverFnBaseJF<Vector,VectorSpace>::ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
 							const Teuchos::RCP<Vector>& Pr) {
   int ierr = lin_op_->ApplyInverse(*r, *Pr);
@@ -118,10 +111,10 @@ SolverFnBaseJF<Vector,VectorSpace>::ApplyPreconditioner(const Teuchos::RCP<const
 
 // preconditioner update
 template<class Vector,class VectorSpace>
-void 
+void
 SolverFnBaseJF<Vector,VectorSpace>::UpdatePreconditioner(const Teuchos::RCP<const Vector>& u0) {
   fn_->UpdatePreconditioner(u0);
-  eps_ = CalculateEpsilon_(u0);
+  jf_mat_->set_linearization_point(u0);
 }
 
 
