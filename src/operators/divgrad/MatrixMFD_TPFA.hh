@@ -13,14 +13,12 @@
   from the DAE system and short vectors are used in the nonlinear solver.
 */
 
-#ifndef OPERATORS_MATRIX_MFD_TPFA_HH__
-#define OPERATORS_MATRIX_MFD_TPFA_HH__
+#ifndef OPERATORS_MATRIX_MFD_TPFA_HH_
+#define OPERATORS_MATRIX_MFD_TPFA_HH_
 
 #include <strings.h>
 
 #include "Teuchos_RCP.hpp"
-#include "Ifpack.h"
-
 #include "MatrixMFD.hh"
 #include "upwinding.hh"
 
@@ -69,6 +67,10 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
   virtual void UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u);
   virtual void UpdateConsistentFaceCorrection(const CompositeVector& u,
           const Teuchos::Ptr<CompositeVector>& Pu);
+
+  Teuchos::RCP<const CompositeVector> Dff() const {
+    return Dff_;
+  }
 
  protected:
   Teuchos::RCP<CompositeVector> Dff_;

@@ -125,11 +125,6 @@ generate_evaluators_registration_header(
 # constitutive_relations/wrm/models/
 
 register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/wrm/models/WRM_BrooksCorey_reg.hh
-  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
-  )
-
-register_evaluator_with_factory(
   HEADERFILE constitutive_relations/wrm/models/wrm_factory_reg.hh
   LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
   )
@@ -161,6 +156,11 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE constitutive_relations/wrm/models/wrm_van_genuchten_reg.hh
+  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/wrm/models/wrm_brooks_corey_reg.hh
   LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
   )
 

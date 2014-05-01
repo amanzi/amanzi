@@ -137,9 +137,11 @@ void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
 void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
-  // Initialize the MeshPartition if needed to make sure all cells are covered.
-  if (!wrms_->first->initialized()) wrms_->first->Initialize(result->Mesh());
-
+  // Initialize the MeshPartition
+  if (!wrms_->first->initialized()) {
+    wrms_->first->Initialize(result->Mesh(), -1);
+    wrms_->first->Verify();
+  }
 
   // Evaluate k_rel.
   // -- Evaluate the model to calculate krel on cells.

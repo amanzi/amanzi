@@ -198,7 +198,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   S->GetField("numerical_rel_perm",name_)->set_io_vis(false);
 
   clobber_surf_kr_ = plist_->get<bool>("clobber surface rel perm", false);
-  string method_name = plist_->get<string>("relative permeability method", "upwind with gravity");
+  std::string method_name = plist_->get<std::string>("relative permeability method", "upwind with gravity");
   symmetric_ = false;
   if (method_name == "upwind with gravity") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindGravityFlux(name_,
@@ -231,9 +231,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
 
 
-  vapor_diffusion_ = false;
+  vapor_diffusion_ = plist_->get<bool>("include vapor diffusion", false);
   if (vapor_diffusion_){
-  // Create the vapor diffusion vectors
+    // Create the vapor diffusion vectors
     S->RequireField("vapor_diffusion_pressure", name_)->SetMesh(mesh_)->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetField("vapor_diffusion_pressure",name_)->set_io_vis(true);
 
@@ -241,10 +241,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     S->RequireField("vapor_diffusion_temperature", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetField("vapor_diffusion_temperature",name_)->set_io_vis(true);
-
   }
-
-
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
@@ -263,8 +260,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     matrix_vapor_ ->SymbolicAssembleGlobalMatrices();
     matrix_vapor_ ->InitPreconditioner();
   }
-
-
 
   // operator with no krel for flux direction, consistent faces
   face_matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
@@ -717,7 +712,9 @@ Richards::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres) {
 };
 
 
-bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+bool Richards::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
+        Teuchos::RCP<TreeVector> u) {
+  
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Modifying predictor:" << std::endl;
@@ -763,8 +760,8 @@ bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
   AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), matrix_.ptr());
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
-  flux_predictor_->modify_predictor(h, u);
-  changed_solution(); // mark the solution as changed, as modifying with
+  flux_predictor_->ModifyPredictor(h, u);
+  ChangedSolution(); // mark the solution as changed, as modifying with
                       // consistent faces will then get the updated boundary
                       // conditions
   return true;
@@ -809,7 +806,7 @@ void Richards::CalculateConsistentFacesForInfiltration_(
   AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), matrix_.ptr());
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
-  flux_predictor_->modify_predictor(u);
+  flux_predictor_->ModifyPredictor(u);
 }
 
 void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
@@ -817,7 +814,7 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // update the rel perm according to the scheme of choice
-  changed_solution();
+  ChangedSolution();
   UpdatePermeabilityData_(S_next_.ptr());
 
   // update boundary conditions
@@ -851,7 +848,7 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
 // -----------------------------------------------------------------------------
 // Check admissibility of the solution guess.
 // -----------------------------------------------------------------------------
-bool Richards::is_admissible(Teuchos::RCP<const TreeVector> up) {
+bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Checking admissibility..." << std::endl;

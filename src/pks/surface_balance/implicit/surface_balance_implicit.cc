@@ -234,7 +234,7 @@ SurfaceBalanceImplicit::initialize(const Teuchos::Ptr<State>& S) {
 
 // computes the non-linear functional g = g(t,u,udot)
 void
-SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
   double dt = t_new - t_old;
@@ -643,7 +643,7 @@ SurfaceBalanceImplicit::fun(double t_old, double t_new, Teuchos::RCP<TreeVector>
 
 // applies preconditioner to u and returns the result in Pu
 void
-SurfaceBalanceImplicit::precon(Teuchos::RCP<const TreeVector> u,
+SurfaceBalanceImplicit::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
   *Pu = *u;
 }
@@ -651,13 +651,13 @@ SurfaceBalanceImplicit::precon(Teuchos::RCP<const TreeVector> u,
 
 // updates the preconditioner
 void
-SurfaceBalanceImplicit::update_precon(double t,
+SurfaceBalanceImplicit::UpdatePreconditioner(double t,
         Teuchos::RCP<const TreeVector> up, double h) {}
 
 
 // error monitor
 double
-SurfaceBalanceImplicit::enorm(Teuchos::RCP<const TreeVector> u,
+SurfaceBalanceImplicit::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
   double err;
   du->NormInf(&err);
@@ -666,7 +666,8 @@ SurfaceBalanceImplicit::enorm(Teuchos::RCP<const TreeVector> u,
 
 
 bool
-SurfaceBalanceImplicit::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+SurfaceBalanceImplicit::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
+        Teuchos::RCP<TreeVector> u) {
   Epetra_MultiVector& u_vec = *u->Data()->ViewComponent("cell",false);
   unsigned int ncells = u_vec.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {

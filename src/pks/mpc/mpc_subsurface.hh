@@ -40,14 +40,15 @@ class MPCSubsurface : public MPCCoupledCells {
   virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
 
   // update the predictor to be physically consistent
-  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
+  virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up0,
+          Teuchos::RCP<TreeVector> up);
 
   // updates the preconditioner
-  virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
 
   // preconditioner application
-  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
-  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> res,
+  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual bool ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
           Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
  protected:

@@ -91,18 +91,19 @@ set(ATS_LIBS
 
 set(AMANZI_LIBS
                       amanzi_state
-	              amanzi_whetstone
+	                  amanzi_whetstone
                       amanzi_time_integration
-	              amanzi_solvers
+	                  amanzi_solvers
+                      amanzi_data_structures
                       amanzi_mesh
                       amanzi_mesh_audit
                       amanzi_mesh_functions
+                      amanzi_functions
                       amanzi_geometry
                       amanzi_mesh_factory
-                      amanzi_input
                       amanzi_interface
                       amanzi_output
-                      amanzi_stk_mesh
+                      amanzi_mstk_mesh
 )
 
 target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS})

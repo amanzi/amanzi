@@ -84,30 +84,31 @@ void MPCSubsurface::commit_state(double dt, const Teuchos::RCP<State>& S) {
 }
 
 // update the predictor to be physically consistent
-bool MPCSubsurface::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
+bool MPCSubsurface::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up0,
+        Teuchos::RCP<TreeVector> up) {
   bool modified(false);
   if (ewc_ != Teuchos::null) {
-    modified = ewc_->modify_predictor(h, up);
-    if (modified) changed_solution();
+    modified = ewc_->ModifyPredictor(h, up);
+    if (modified) ChangedSolution();
   }
 
   // potentially update faces
-  modified |= MPCCoupledCells::modify_predictor(h, up);
+  modified |= MPCCoupledCells::ModifyPredictor(h, up0, up);
   return modified;
 }
 
 
 // updates the preconditioner
-void MPCSubsurface::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
   if (precon_type_ == PRECON_NONE) {
     // nothing to do
   } else if (precon_type_ == PRECON_BLOCK_DIAGONAL) {
-    StrongMPC::update_precon(t,up,h);
+    StrongMPC::UpdatePreconditioner(t,up,h);
   } else if (precon_type_ == PRECON_PICARD) {
-    MPCCoupledCells::update_precon(t,up,h);
+    MPCCoupledCells::UpdatePreconditioner(t,up,h);
   } else if (precon_type_ == PRECON_EWC) {
-    MPCCoupledCells::update_precon(t,up,h);
-    ewc_->update_precon(t,up,h);
+    MPCCoupledCells::UpdatePreconditioner(t,up,h);
+    ewc_->UpdatePreconditioner(t,up,h);
   }
 }
 
@@ -115,7 +116,7 @@ void MPCSubsurface::update_precon(double t, Teuchos::RCP<const TreeVector> up, d
 // -----------------------------------------------------------------------------
 // Wrapper to call the requested preconditioner.
 // -----------------------------------------------------------------------------
-void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
+void MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -136,11 +137,11 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
   if (precon_type_ == PRECON_NONE) {
     *Pu = *u;
   } else if (precon_type_ == PRECON_BLOCK_DIAGONAL) {
-    StrongMPC::precon(u,Pu);
+    StrongMPC::ApplyPreconditioner(u,Pu);
   } else if (precon_type_ == PRECON_PICARD) {
-    MPCCoupledCells::precon(u,Pu);
+    MPCCoupledCells::ApplyPreconditioner(u,Pu);
   } else if (precon_type_ == PRECON_EWC) {
-    MPCCoupledCells::precon(u,Pu);
+    MPCCoupledCells::ApplyPreconditioner(u,Pu);
 
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "PC_std * residuals:" << std::endl;
@@ -159,7 +160,7 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
     *Pu_std = *Pu;
 
     // call EWC, which does Pu_p <-- Pu_p_std + dPu_p
-    ewc_->precon(u, Pu);
+    ewc_->ApplyPreconditioner(u, Pu);
 
     // calculate dPu_lambda from dPu_p
     Pu_std->Update(1.0, *Pu, -1.0);
@@ -185,7 +186,7 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
 }
 
 
-bool MPCSubsurface::modify_correction(double h,
+bool MPCSubsurface::ModifyCorrection(double h,
         Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> du) {

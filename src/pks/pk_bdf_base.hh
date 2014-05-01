@@ -48,14 +48,15 @@ class PKBDFBase : public virtual PKDefaultBase,
   virtual bool advance(double dt);
 
   // -- Check the admissibility of a solution.
-  virtual bool is_admissible(Teuchos::RCP<const TreeVector> up) { return true; }
+  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) { return true; }
  
   // -- Possibly modify the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator.
-  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up) { return false; }
+  virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up,
+          Teuchos::RCP<TreeVector> u) { return false; }
 
   // -- Possibly modify the correction before it is applied
-  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> res,
+  virtual bool ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
           Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
     return false; }
 
@@ -66,7 +67,7 @@ class PKBDFBase : public virtual PKDefaultBase,
 
   // timestep control
   double dt_;
-  Teuchos::RCP<BDF1_TI<TreeVector> > time_stepper_;
+  Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > time_stepper_;
 
   // timing
   Teuchos::RCP<Teuchos::Time> step_walltime_;

@@ -184,7 +184,7 @@ int ThermalRichardsModel::InverseEvaluate(double energy, double wc, double poro,
 
   while (!converged) {
     // calculate the update size
-    double detJ = jac.determinant();
+    double detJ = jac.Det();
     AmanziGeometry::Point correction;
 
     if (std::abs(detJ) < 1.e-12) {
@@ -196,7 +196,7 @@ int ThermalRichardsModel::InverseEvaluate(double energy, double wc, double poro,
       return 1;
 
     } else {
-      jac.inverse();
+      jac.Inverse();
       correction = jac * res;
     }
 

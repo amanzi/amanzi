@@ -63,20 +63,21 @@ public:
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)
-  void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // applies preconditioner to u and returns the result in Pu
-  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   // updates the preconditioner
-  virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
 
   // error monitor
-  virtual double enorm(Teuchos::RCP<const TreeVector> u,
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
 
-  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
+  virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
+          Teuchos::RCP<TreeVector> u);
 
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
@@ -109,7 +110,7 @@ protected:
   // -- source terms
   void AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g);
 
-  void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+  void test_ApplyPreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
 
  protected:
   friend class Amanzi::MPCSurfaceSubsurfaceDirichletCoupler;

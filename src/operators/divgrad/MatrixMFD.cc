@@ -49,26 +49,30 @@ MatrixMFD::MatrixMFD(const MatrixMFD& other) :
  * Initialization of method, solver, etc.
  ****************************************************************** */
 void MatrixMFD::InitializeFromPList_() {
-  std::string methodstring = plist_.get<string>("MFD method");
+  std::string methodstring = plist_.get<std::string>("MFD method");
   method_ = MFD3D_NULL;
 
   // standard MFD
-  if (methodstring == "polyhedra") {
-    method_ = MFD3D_POLYHEDRA;
-  } else if (methodstring == "polyhedra scaled") {
-    method_ = MFD3D_POLYHEDRA_SCALED;
-  } else if (methodstring == "optimized") {
-    method_ = MFD3D_OPTIMIZED;
-  } else if (methodstring == "optimized scaled") {
-    method_ = MFD3D_OPTIMIZED_SCALED;
-  } else if (methodstring == "hexahedra monotone") {
+  if (methodstring == "monotone mfd hex") {  // two monotone methods
     method_ = MFD3D_HEXAHEDRA_MONOTONE;
-  } else if (methodstring == "two point flux") {
-    method_ = MFD3D_TWO_POINT_FLUX;
+  } else if (methodstring == "monotone mfd") {
+    method_ = MFD3D_POLYHEDRA_MONOTONE;
   } else if (methodstring == "support operator") {
     method_ = MFD3D_SUPPORT_OPERATOR;
+  } else if (methodstring == "two point flux approximation") {
+    method_ = MFD3D_TPFA;
+  } else if (methodstring == "finite volume") {
+    method_ = FV_TPFA;
+  } else if (methodstring == "optimized mfd") {
+    method_ = MFD3D_OPTIMIZED;
+  } else if (methodstring == "optimized mfd scaled") {
+    method_ = MFD3D_OPTIMIZED_SCALED;
+  } else if (methodstring == "mfd") {  // first basic mfd
+    method_ = MFD3D_POLYHEDRA;
+  } else if (methodstring == "mfd scaled") {  // second basic mfd
+    method_ = MFD3D_POLYHEDRA_SCALED;
   } else {
-    Errors::Message msg("MatrixMFD: unexpected discretization methods");
+    Errors::Message msg("MatrixMFD: unexpected discretization method");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -135,6 +139,13 @@ void MatrixMFD::CreateMFDmassMatrices(
 
     if (method_ == MFD3D_POLYHEDRA_SCALED) {
       ok = mfd.MassMatrixInverseScaled(c, Kc, Mff);
+    } else if (method_ == MFD3D_POLYHEDRA_MONOTONE) {
+      ok = mfd.MassMatrixInverseMMatrix(c, Kc, Mff);
+      if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_WRONG) {
+        ok = mfd.MassMatrixInverseTPFA(c, Kc, Mff);
+        nokay_--;
+        npassed_++;
+      } 
     } else if (method_ == MFD3D_POLYHEDRA) {
       ok = mfd.MassMatrixInverse(c, Kc, Mff);
     } else if (method_ == MFD3D_OPTIMIZED_SCALED) {
@@ -143,15 +154,15 @@ void MatrixMFD::CreateMFDmassMatrices(
       ok = mfd.MassMatrixInverseOptimized(c, Kc, Mff);
     } else if (method_ == MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        ok = mfd.MassMatrixInverseHex(c, Kc, Mff);
+        ok = mfd.MassMatrixInverseMMatrixHex(c, Kc, Mff);
       else
         ok = mfd.MassMatrixInverse(c, Kc, Mff);
-    } else if (method_ == MFD3D_TWO_POINT_FLUX) {
-      ok = mfd.MassMatrixInverseDiagonal(c, Kc, Mff);
+    } else if (method_ == MFD3D_TPFA) {
+      ok = mfd.MassMatrixInverseTPFA(c, Kc, Mff);
     } else if (method_ == MFD3D_SUPPORT_OPERATOR) {
       ok = mfd.MassMatrixInverseSO(c, Kc, Mff);
     } else {
-      Errors::Message msg("Flow PK: unexpected discretization methods (contact lipnikov@lanl.gov).");
+      Errors::Message msg("MatrixMFD: unexpected discretization methods (contact lipnikov@lanl.gov).");
       Exceptions::amanzi_throw(msg);
     }
     
@@ -817,7 +828,7 @@ void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVect
   Aff_op_->Destroy();
   Aff_op_->Update(Aff_);
   int ierr = Aff_solver_->ApplyInverse(*(*update_f)(0), *(*u->ViewComponent("face",false))(0));
-  ASSERT(!ierr);
+  //ASSERT(!ierr); --fix me
 }
 
 

@@ -35,16 +35,15 @@ UnstructuredObservations::UnstructuredObservations(Teuchos::ParameterList observ
 
       observations.insert(std::pair
                           <std::string,Observable>(observations_plist_.name(i),
-                                  Observable(observable_plist.get<string>("state id"),
-                                          observable_plist.get<string>("region"),
-                                          observable_plist.get<string>("functional"),
+                                  Observable(observable_plist.get<std::string>("state id"),
+                                          observable_plist.get<std::string>("region"),
+                                          observable_plist.get<std::string>("functional"),
                                           times)));
     } else {
       Errors::Message m("Unstructured_observations: the Observation sublist contains an entry that is not a sublist!");
       Exceptions::amanzi_throw(m);
     }
   }
-
 }
 
 
@@ -53,43 +52,36 @@ void Unstructured_observations::MakeObservations(const State& state) {
   for (std::map<std::string, Observable>::iterator i = observations.begin();
        i != observations.end(); ++i) {
 
-    if ( (i->second).region != "all" ) {
+    if ((i->second).region != "all") {
       Errors::Message m("Unstructured_observations: can only handle region == all");
       Exceptions::amanzi_throw(m);
     }
 
-    if ( (i->second).state_id != "water" ) {
+    if ((i->second).state_id != "water") {
       Errors::Message m("Unstructured_observations: can only handle state id == water");
       Exceptions::amanzi_throw(m);
     }
 
-    if ( (i->second).functional != "integral" ) {
+    if ((i->second).functional != "integral") {
       Errors::Message m("Unstructured_observations: can only handle functional == integral");
       Exceptions::amanzi_throw(m);
     }
 
+    /* this code is not used...
+    std::string label = i->first;
 
-    // if ( (i->second).region == "all"          &&
-    //      (i->second).state_id == "water"      &&
-    //      (i->second).functional == "integral" )
-    //   {
-    //     std::string label = i->first;
+    std::vector<Amanzi::ObservationData::DataTriple>::iterator it;
+    std::vector<Amanzi::ObservationData::DataTriple>& od = observation_data[label];
 
-    //     std::vector<Amanzi::ObservationData::DataTriple>::iterator it;
-    //     std::vector<Amanzi::ObservationData::DataTriple> &od = observation_data[label];
-
-    //     for ( it = od.begin(); it != od.end(); it++)
-    //       {
-    //  if  ( state.get_time() >= it->time )
-    //            {
-    //      if ( ! it->is_valid )
-    //        {
-    //              it->value   = state.water_mass();
-    //      it->is_valid = true;
-    //        }
-    //            }
-    //       }
-    //   }
+    for (it = od.begin(); it != od.end(); it++) {
+      if (state.get_time() >= it->time) {
+        if (! it->is_valid) {
+          it->value   = state.water_mass();
+          it->is_valid = true;
+        }
+      }
+    }
+    */
   }
 }
 
