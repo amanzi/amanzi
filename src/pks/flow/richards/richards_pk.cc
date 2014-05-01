@@ -261,8 +261,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     matrix_vapor_ ->InitPreconditioner();
   }
 
-
-
   // operator with no krel for flux direction, consistent faces
   face_matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
   face_matrix_->set_symmetric(symmetric_);

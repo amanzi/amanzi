@@ -31,6 +31,7 @@
 #include "MatrixMFD_ScaledConstraint.hh"
 #include "MatrixMFD.hh"
 #include "MatrixMFD_Coupled_Surf.hh"
+#include "MatrixMFD_Coupled_TPFA.hh"
 #include "MatrixMFD_Coupled.hh"
 
 namespace Amanzi {
@@ -78,8 +79,17 @@ Teuchos::RCP<MatrixMFD_Coupled>
 CreateMatrixMFD_Coupled(Teuchos::ParameterList& plist,
                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
   bool surf = plist.get<bool>("coupled to surface", false);
+  bool tpfa = plist.get<bool>("TPFA", false);
+
+  if (surf && tpfa) {
+    Errors::Message msg("MatrixMFD_Coupled Factory: both Surf and TPFA cannot be specified.");
+    Exceptions::amanzi_throw(msg);
+  }
+
   if (surf) {
     return Teuchos::rcp(new MatrixMFD_Coupled_Surf(plist, mesh));
+  } else if (tpfa) {
+    return Teuchos::rcp(new MatrixMFD_Coupled_TPFA(plist, mesh));
   } else {
     return Teuchos::rcp(new MatrixMFD_Coupled(plist, mesh));
   }
