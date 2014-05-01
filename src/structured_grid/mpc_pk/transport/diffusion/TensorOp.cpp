@@ -96,11 +96,11 @@ TensorOp::clearToLevel (int level)
   undrrelxrt.resize(level+1);
   for (int i = level+1; i < numLevels(); ++i)
   {
-    delete acoefs[i];
+    delete acoefs[i]; acoefs[i] = 0;
     for (int j = 0; j < BL_SPACEDIM; ++j)
     {
-      delete bcoefs[i][j];
-      delete b1coefs[i][j];
+      delete bcoefs[i][j]; bcoefs[i][j] = 0;
+      delete b1coefs[i][j]; b1coefs[i][j] = 0;
     }
   }
 }
@@ -132,7 +132,10 @@ TensorOp::prepareForLevel (int level)
   {
     if (acoefs.size() < level+1)
     {
-      acoefs.resize(level+1);
+      acoefs.resize(level+1, 0);
+      if (acoefs[level] != 0) {
+        delete acoefs[level];
+      }
       acoefs[level] = new MultiFab;
     }
     else
@@ -147,20 +150,19 @@ TensorOp::prepareForLevel (int level)
     
   if (level >= b_valid.size() || b_valid[level] == false)
   {
-    if (bcoefs.size() < level+1)
-    {
-      bcoefs.resize(level+1);
-      for (int i = 0; i < BL_SPACEDIM; ++i)
-        bcoefs[level][i] = new MultiFab;
-    }
-    else
-    {
-      for (int i = 0; i < BL_SPACEDIM; ++i)
-      {
-        delete bcoefs[level][i];
-        bcoefs[level][i] = new MultiFab;
+    if (bcoefs.size() > level) {
+      for (int lev=level; lev<bcoefs.size(); ++lev) {
+        for (int i = 0; i < BL_SPACEDIM; ++i) {
+          delete bcoefs[lev][i];
+        }
       }
     }
+    bcoefs.resize(level+1);
+    
+    for (int i = 0; i < BL_SPACEDIM; ++i) {
+      bcoefs[level][i] = new MultiFab;
+    }
+
     for (int i = 0; i < BL_SPACEDIM; ++i)
       makeCoefficients(*bcoefs[level][i], *bcoefs[level-1][i], level);
 
@@ -170,20 +172,19 @@ TensorOp::prepareForLevel (int level)
 
   if (level >= b1_valid.size() || b1_valid[level] == false)
   {
-    if (b1coefs.size() < level+1)
-    {
-      b1coefs.resize(level+1);
-      for (int i = 0; i < BL_SPACEDIM; ++i)
-        b1coefs[level][i] = new MultiFab;
-    }
-    else
-    {
-      for (int i = 0; i < BL_SPACEDIM; ++i)
-      {
-        delete b1coefs[level][i];
-        b1coefs[level][i] = new MultiFab;
+    if (b1coefs.size() > level) {
+      for (int lev=level; lev<b1coefs.size(); ++lev) {
+        for (int i = 0; i < BL_SPACEDIM; ++i) {
+          delete b1coefs[lev][i];
+        }
       }
     }
+    b1coefs.resize(level+1);
+    
+    for (int i = 0; i < BL_SPACEDIM; ++i) {
+      b1coefs[level][i] = new MultiFab;
+    }
+
     for (int i = 0; i < BL_SPACEDIM; ++i)
       makeCoefficients(*b1coefs[level][i], *b1coefs[level-1][i], level);
 
@@ -198,27 +199,48 @@ TensorOp::initCoefficients (const BoxArray &_ba)
   const int nGrow = 0;
   const int level = 0;
 
-  acoefs.resize(1);
-  bcoefs.resize(1);
-  b1coefs.resize(1);
-
 #ifndef NDEBUG
   if (BL_SPACEDIM == 3)
     BL_ASSERT(geomarray[level].IsCartesian());
 #endif
 
+  if (acoefs.size() > 0) {
+    for (int lev=0; lev<acoefs.size(); ++lev) {
+      delete acoefs[lev];
+    }
+  }
+  acoefs.resize(1,0);
   acoefs[level] = new MultiFab(_ba, nComp(), nGrow);
   acoefs[level]->setVal(a_def);
   a_valid.resize(1);
   a_valid[level] = true;
+
+
+  if (bcoefs.size() > 0) {
+    for (int lev=0; lev<bcoefs.size(); ++lev) {
+      for (int i = 0; i < BL_SPACEDIM; ++i) {
+        delete bcoefs[lev][i];
+      }
+    }
+  }
+  if (b1coefs.size() > 0) {
+    for (int lev=0; lev<b1coefs.size(); ++lev) {
+      for (int i = 0; i < BL_SPACEDIM; ++i) {
+        delete b1coefs[lev][i];
+      }
+    }
+  }
+  bcoefs.resize(1);
+  b1coefs.resize(1);
 
   for (int i = 0; i < BL_SPACEDIM; ++i)
   {
     BoxArray edge_boxes(_ba);
     edge_boxes.surroundingNodes(i);
     bcoefs[level][i] = new MultiFab(edge_boxes, nComp(), nGrow);
-    b1coefs[level][i] = new MultiFab(edge_boxes, nComp(), nGrow);
     bcoefs[level][i]->setVal(b_def);
+
+    b1coefs[level][i] = new MultiFab(edge_boxes, nComp(), nGrow);
     b1coefs[level][i]->setVal(b1_def);
   }
   b_valid.resize(1);

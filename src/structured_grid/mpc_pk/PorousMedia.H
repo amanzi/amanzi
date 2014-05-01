@@ -1145,7 +1145,6 @@ protected:
   static Array<std::string> sorption_sites;
   static int ncation_exchange; 
   static int nsorption_isotherms;
-  static std::map<std::string,int> aux_chem_variables;
   static bool using_sorption;
 
   static Array<Real> tInflow;

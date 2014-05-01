@@ -111,17 +111,7 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
 
     if ( ENABLE_MSTK_Mesh )
- 
        set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone data_structures)
- 
-        # Test: miscaleneous Darcy flow routines
-        add_amanzi_test(flow_darcy_misc flow_darcy_misc 
-	                KIND int
-	                SOURCE test/Main.cc test/flow_darcy_misc.cc
-			LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-        add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
-        add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
 
         # Test: two steady-state Darcy flow tests
         add_amanzi_test(flow_darcy_source flow_darcy_source
@@ -193,16 +183,19 @@ if (BUILD_TESTS)
                         KIND unit
                         SOURCE test/Main.cc test/flow_richards_newton_TPFA.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-        # Test: New Newton capabilities
-#        add_amanzi_test(flow_richards_newton_new flow_richards_newton_new
-#                        KIND unit
-#                        SOURCE test/Main.cc test/flow_richards_newton_new.cc
-#                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
  
     set(amanzi_libs geometry mesh mesh_factory state flow whetstone data_structures)
  
+    # Test: miscaleneous Darcy flow routines
+    add_amanzi_test(flow_darcy_misc flow_darcy_misc 
+                    KIND int
+                    SOURCE test/Main.cc test/flow_darcy_misc.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
+    add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
+
     # Test: van Genuchten flow routines
     add_amanzi_test(flow_vanGenuchten flow_vanGenuchten
                     KIND int
