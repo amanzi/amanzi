@@ -67,11 +67,6 @@ add_amanzi_library(flow SOURCE ${flow_src_files}
                    LINK_LIBS functions mesh_functions ${flow_tpl_libs} time_integration data_structures state)
 
 #
-# Library: matrix audit
-#
-add_amanzi_library(matrix_audit SOURCE Matrix_Audit.cc LINK_LIBS ${flow_tpl_libs})
-
-#
 # Install Targets
 #
 #file(GLOB flow_inc_files "*.hh")
@@ -84,7 +79,6 @@ set(flow_inc_files
   Flow_PK.hh
   Flow_SourceFactory.hh
   FlowTypeDefs.hh
-  Matrix_Audit.hh
   Matrix_MFD.hh
   Matrix_TPFA.hh
   RelativePermeability.hh
