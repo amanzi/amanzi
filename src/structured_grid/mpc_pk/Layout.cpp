@@ -329,6 +329,10 @@ Layout::SetGridsFromParent()
 void 
 Layout::Build()
 {
+    if (initialized) {
+      Clear();
+    }
+
     nGrow = 1;
 
     if (parent!=0) {
@@ -339,10 +343,6 @@ Layout::Build()
     BuildMetrics();
 
     NodeFab fnodeFab;
-
-    if (initialized) {
-      Clear();
-    }
 
     nodes.resize(nLevs,PArrayManage);
     nodeIds.resize(nLevs,PArrayManage);

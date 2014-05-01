@@ -186,20 +186,20 @@ public:
   Array<Real> vector2;
 };
 
-class CircleRegion : public Region
+class EllipseRegion : public Region
 {
 public: 
-  CircleRegion (const std::string&   r_name,
-                const std::string&   r_purpose,
-                const Array<Real>&   r_center,
-                Real                 radius);
-  virtual ~CircleRegion() {}
+  EllipseRegion (const std::string&   r_name,
+                 const std::string&   r_purpose,
+                 const Array<Real>&   r_center,
+                 const Array<Real>&   r_radius);
+  virtual ~EllipseRegion() {}
 
   virtual bool inRegion (const Array<Real>& x) const;
   virtual std::ostream& print (std::ostream& os) const;
 
   Array<Real> center;
-  Real rsqrd;
+  Array<Real> radius;
 };
 
 #else

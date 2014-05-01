@@ -1,0 +1,102 @@
+    <ParameterList name="Wall Top">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 11.225,38.775,38.775,11.225 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 19.025,19.025,19.925,19.925 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Wall Bottom">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 11.225,38.775,38.775,11.225 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 10,10,10.9,10.9 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Wall Right">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 38.775,38.075,38.075,38.1,38.1,38.775 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 19.025,19.025,12.475,12.475,10.925,10.925 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Wall Left">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 11.225,11.9,11.9,11.925,11.925,11.225 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 10.925,10.925,12.475,12.475,19.025,19.025 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="FF Left">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 11.225,11.925,11.925,11.95,11.95,11.975,11.975,11.9,11.9,11.225 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 10.9,10.9,12.45,12.45,10.975,10.975,12.475,12.475,10.925,10.925 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="FF Right">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 38.775,38.1,38.1,38.025,38.025,38.05,38.05,38.075,38.075,38.775 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 10.925,10.925,12.475,12.475,10.975,10.975,12.45,12.45,10.9,10.9 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Primary Sand Pad">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 12.75,37.25,37.25,12.75 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 10.95,10.95,10.975,10.975 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Secondary Sand Pad">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 11.925,38.075,38.075,11.925 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 10.9,10.9,10.925,10.925 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Primary Liner Floor">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 12.75,37.25,37.25,12.75 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 10.975,10.975,11.0,11.0 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Primary Liner">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 12.725,12.75,12.75,37.25,37.25,37.275,37.275,12.725 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 11.025,11.025,19.0,19.0,11.025,11.025,19.025,19.025 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Secondary Liner">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 11.925,38.075,38.075,38.05,38.05,11.95,11.95,11.925 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 10.925,10.925,12.45,12.45,10.95,10.95,12.45,12.45 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Waste Floor">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 12.75,37.25,37.25,12.75 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 11.0,11.0,11.025,11.025 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Waste Left">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 11.95,12.75,12.75,11.95 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 10.95,10.95,10.975,10.975 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Waste Right">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 38.05,37.25,37.25,38.05 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 10.975,10.975,10.95,10.95 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="FF Left 1">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 12.725,12.75,12.75,12.725 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 10.975,10.975,11.025,11.025 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="FF Right 1">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 37.275,37.25,37.25,37.275 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 11.025,11.025,10.975,10.975 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Tank Block">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="VerticesV1" type="Array(double)" value="{ 11.225,38.775,38.775,11.225 }"/>
+        <Parameter name="VerticesV2" type="Array(double)" value="{ 10,10,19.925,19.925 }"/>
+      </ParameterList>
+    </ParameterList>
