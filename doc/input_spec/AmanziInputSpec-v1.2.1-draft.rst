@@ -751,7 +751,7 @@ entire simulation domain. Currently, the unstructured framework does
 not support the `"All`" region, but it is expected to do so in the
 near future.
 
-Under the `"Structured`" option, Amanzi also automatically defines regions for the coordinat-aligned planes that bound the domain,
+Under the `"Structured`" option, Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain,
 using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`"
 
 User-defined regions are constructed using the following syntax
@@ -760,29 +760,47 @@ User-defined regions are constructed using the following syntax
 
    * Shape [list] Geometric model primitive, choose exactly one of the
      following [see table below]: `"Region: Point`", `"Region: Box`",
-     `"Region: Plane`", `"Region: Layer`", `"Region: Polygon`", `"Region: Logical`"
+     `"Region: Plane`", `"Region: Layer`", `"Region: Polygon`", `"Region: Circle`", `"Region: Rotated Polygon`", `"Region: Swept Polygon`", `"Region: Logical`"
 
 Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex definitions based on triangulated surface files.  
 
-+---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-|  shape functional name          | parameters                              | type(s)                      | Comment                                                                |
-+=================================+=========================================+==============================+========================================================================+
-| `"Region: Point"`  [SU]         | `"Coordinate`"                          | Array(double)                | Location of point in space                                             |
-+---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Box"` [SU]            | `"Low Coordinate`", `"High Coordinate`" | Array(double), Array(double) | Location of boundary points of box                                     |
-+---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Plane"`  [SU]         | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
-+---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Polygon"`  [U]        | `"Number of points`", `"Points`"        | int, Array(double)           | Number of polygon points and point coordinates in linear array. This   |
-|                                 |                                         |                              | provides a set of faces with a normal for computing flux               |    
-+---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Logical"` [U]         | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
-+---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Labeled Set"` [U]     | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
-|                                 | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
-+---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Color Function"` [SU] | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
-+---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
++----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+|  shape functional name           | parameters                              | type(s)                      | Comment                                                                |
++==================================+=========================================+==============================+========================================================================+
+| `"Region: Point"`  [SU]          | `"Coordinate`"                          | Array(double)                | Location of point in space                                             |
++----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Box"` [SU]             | `"Low Coordinate`", `"High Coordinate`" | Array(double), Array(double) | Location of boundary points of box                                     |
++----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Plane"`  [SU]          | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
++----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Polygonal Surface"` [U]| `"Number of points`", `"Points`"        | int, Array(double)           | Number of polygon points and point coordinates in linear array. This   |
+|                                  |                                         |                              | provides a set of faces with a normal for computing flux               |    
++----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Polygon"`  [S]         |                                         | Array(double), Array(double) | V1=(x1,x2,...) and V2=(y1,y2,...) coordinates of an ordered sequence of|
+|       (2D-only)                  | `"VerticesV1`", `"VerticesV2`"          |                              | points (x1,y1), (x2,y2),... defining a polygon.                        |
+|                                  |                                         |                              | The first and last points are connected.                               |    
++----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Ellipse"`  [S]         | `"Center`", `"Radius`"                  | Array(double), Array(double) | Coordinate (x,y,z), of center, and radii (rx, ry) of an ellipse        |
+|       (2D-only)                  |                                         |                              | in the plane.                                                          |    
++----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Rotated Polygon"`  [S] |                                         | Array(double), Array(double),| V1=(x1,x2,...) and V2=(y1,y2,...) coordinates of an ordered sequence of|
+|  (3D-only)                       | `"VerticesV1`", `"VerticesV2`",         | string, string, Array(double)| points (x1,y1), (x2,y2),... defining a polygon in the specified plane  |
+|                                  | `"Plane`", `"Axis`", `"Reference Point`"|                              | (`"XY`", `"YZ`", `"XZ`"), rotated about the                            |
+|                                  |                                         |                              | given axis (`"X`", `"Y`", `"Z`") that is located at the given          |
+|                                  |                                         |                              | reference point, (x,y,z).                                              |
++----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Swept Polygon"`  [S]   | `"VerticesV1`", `"VerticesV2`",         | Array(double), Array(double),| V1=(x1,x2,...) and V2=(y1,y2,...) coordinates of an ordered sequence of|
+|  (3D-only)                       | `"Plane`", `"Extent`"                   | string, Array(double)        | points (x1,y1), (x2,y2),... defining a polygon in the specified plane  |
+|                                  |                                         |                              | (`"XY`", `"YZ`", `"XZ`"), and swept over the extent, (min, max) in the |
+|                                  |                                         |                              | direction normal to the plane                                          |
++----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Logical"` [U]          | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
++----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Labeled Set"` [U]      | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
+|                                  | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
++----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Color Function"` [SU]  | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
++----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 
 Notes
 
@@ -815,14 +833,14 @@ Notes
 
   Currently, Amanzi-U only supports mesh files in the Exodus II format.
 
-* `"Region: Polygon`" defines a polygonal region on which mesh faces and
-  nodes can be queried. NOTE that one cannot ask for cells in a polygonal
-  region. In 2D, the "polygonal" region is a line and is specified by 2 points
-  In 3D, the "polygonal" region is specified by an arbitrary number of points.
+* `"Region: Polygonal Surface`" defines a polygonal region on which mesh faces and
+  nodes can be queried. NOTE that one cannot ask for cells in a polygonal surface
+  region. In 2D, the "polygonal surface" region is a line and is specified by 2 points.
+  In 3D, the "polygonal surface" region is specified by an arbitrary number of points.
   In both cases the point coordinates are given as a linear array. The polygon
   can be non-convex.
 
-  The polygonal region can be queried for a normal. In 2D, the normal is
+  The polygonal surface region can be queried for a normal. In 2D, the normal is
   defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
   In 3D, the normal of the polygon is defined by the order in which points 
   are specified.
@@ -1467,11 +1485,13 @@ The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"
       * [SU] `"(aqueous constraint name)`" [list] Entry for an aqueous constraint involving a species and/or a mineral.
 
         * [SU] `"(type)`" [double] The type of aqueous constraint (total_aqueous, total_sorb, free, mineral, gas, pH, charge) and its associated value.
+
         * [SU] `"species`" [string] The name of any associated mineral species for a mineral constraint.
 
       * [SU] `"(mineral species)`" [list] Entry for a mineral constraint mentioned in an aqueous constraint.
 
         * [SU] `"Volume Fraction`" [double] Volume fraction for the mineral.
+
         * [SU] `"Specific Surface Area`" [double] Specific surface area for the mineral.
 
 * [SU] `"Chemistry`" [list] (*Native `"Amanzi`" chemistry process kernel*)

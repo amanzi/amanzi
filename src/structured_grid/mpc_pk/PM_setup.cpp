@@ -145,7 +145,6 @@ int                PorousMedia::nsorption_sites;
 Array<std::string> PorousMedia::sorption_sites;
 int                PorousMedia::ncation_exchange;
 int                PorousMedia::nsorption_isotherms;
-std::map<std::string, int> PorousMedia::aux_chem_variables;
 bool               PorousMedia::using_sorption;
 
 // Pressure.
@@ -544,7 +543,6 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::sorption_sites.clear();
   PorousMedia::ncation_exchange = 0;
   PorousMedia::nsorption_isotherms = 0;
-  PorousMedia::aux_chem_variables.clear();
   PorousMedia::using_sorption = false;
   
 #ifdef MG_USE_FBOXLIB
@@ -891,17 +889,15 @@ PorousMedia::variableSetUp ()
       is_diffusive[i] = false;
     }
 
-  int num_aux_chem_variables = aux_chem_variables.size();
-  if (num_aux_chem_variables > 0)
-  {
-      // NOTE: aux_chem_variables is setup by RockManager and read_chem as data is
-      // parsed in.  By the time we get here, we have figured out all the variables
-      // for which we need to make space.
-
+  if (chemistry_helper != 0) {
+    const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
+    int num_aux_chem_variables = aux_chem_variables_map.size();
+    if (num_aux_chem_variables > 0)
+    {
       Array<BCRec> cbcs(num_aux_chem_variables);
       Array<std::string> tmp_aux(num_aux_chem_variables);
-      for (std::map<std::string,int>::iterator it=aux_chem_variables.begin(); 
-	   it!=aux_chem_variables.end(); ++it)
+      for (std::map<std::string,int>::const_iterator it=aux_chem_variables_map.begin(); 
+	   it!=aux_chem_variables_map.end(); ++it)
       {
 	int i = it->second;
 	tmp_aux[i] = it->first;
@@ -916,7 +912,7 @@ PorousMedia::variableSetUp ()
                              &cell_cons_interp);
       desc_lst.setComponent(Aux_Chem_Type,0,tmp_aux,cbcs,
                             BndryFunc(FORT_ONE_A_FILL,FORT_ALL_A_FILL));
-
+    }
   }
 
   //
@@ -1840,17 +1836,17 @@ void  PorousMedia::read_tracer()
     do_full_strang = 0;
   }
 
+  chemistry_engine = 0;
+  chemistry_helper = 0;
+
   if (do_tracer_chemistry) {
     const std::string chemistry_str = "Chemistry";
 
     ParmParse ppc(chemistry_str.c_str());
     
-    if (chemistry_model_name == "Off") {
-      chemistry_engine = 0;
-      chemistry_helper = 0;
-    }
-    else {
-      if (chemistry_model_name=="Amanzi") {
+    if (chemistry_model_name != "Off") {
+
+      if (chemistry_model_name == "Amanzi") {
 
         Amanzi::AmanziChemistry::SetupDefaultChemistryOutput();
         ParmParse pb("prob.amanzi");
@@ -1876,14 +1872,14 @@ void  PorousMedia::read_tracer()
         int max_num_Newton_iters = 150; ppc.query("Maximum_Newton_Iterations",max_num_Newton_iters);
         std::string outfile=""; ppc.query("Output_File_Name",outfile);
         bool use_stdout = true; ppc.query("Use_Standard_Out",use_stdout);
-        int num_aux = ppc.countval("Auxiliary_Data");
-        if (num_aux>0) {
-          Array<std::string> tmpaux(num_aux);
-          aux_chem_variables.clear();
-          ppc.getarr("Auxiliary_Data",tmpaux,0,num_aux);
-          for (int i=0;i<num_aux;i++)
-            aux_chem_variables[tmpaux[i]] = i;
-        }
+        //int num_aux = ppc.countval("Auxiliary_Data");
+        // if (num_aux>0) {
+        //   Array<std::string> tmpaux(num_aux);
+        //   aux_chem_variables.clear();
+        //   ppc.getarr("Auxiliary_Data",tmpaux,0,num_aux);
+        //   for (int i=0;i<num_aux;i++)
+        //     aux_chem_variables[tmpaux[i]] = i;
+        // }
 
         nminerals = rock_manager->NumMinerals();
         minerals.resize(nminerals);
@@ -1896,8 +1892,7 @@ void  PorousMedia::read_tracer()
         for (int i=0; i<nsorption_sites; ++i) {
           sorption_sites[i] = rock_manager->SorptionSiteNames()[i];
         }
-        using_sorption |= rock_manager->UsingSorption();
-
+        using_sorption = rock_manager->UsingSorption();
         ncation_exchange = rock_manager->NumCationExchange();
         bool hasCationExchangeCapacity = ncation_exchange > 0;
 
@@ -1925,8 +1920,6 @@ void  PorousMedia::read_tracer()
         chemistry_helper = new AmanziChemHelper_Structured(tNames,sorbedPrimarySpecies,minerals,sorption_sites,hasCationExchangeCapacity,
                                                            isothermNames,tNames,amanzi_thermo_file,amanzi_thermo_fmt,activity_model,
                                                            verbose_chemistry);
-        aux_chem_variables = chemistry_helper->AuxChemVariablesMap();
-
 #if ALQUIMIA_ENABLED
       } else {
         BL_ASSERT(chemistry_model_name == "Alquimia");
@@ -1936,7 +1929,6 @@ void  PorousMedia::read_tracer()
         std::string chem_engine_input_filename; ppc.get(Chemistry_Engine_Input_stru.c_str(),chem_engine_input_filename);
         chemistry_engine = new Amanzi::AmanziChemistry::ChemistryEngine(chemistry_engine_name,chem_engine_input_filename);
         chemistry_helper = new AlquimiaHelper_Structured(chemistry_engine);
-        aux_chem_variables = chemistry_helper->AuxChemVariablesMap();
         
         //
         // FIXME: THIS WILL OVERWRITE THE LIST OF AMANZI TRACERS
@@ -2031,7 +2023,8 @@ void  PorousMedia::read_tracer()
             FArrayBox auxTMP(boxTMP,Naux);
 
             const std::string& material_name = rock_manager->FindMaterialInRegions(region_names).Name();
-            rock_manager->RockChemistryProperties(auxTMP,material_name);
+            const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
+            rock_manager->RockChemistryProperties(auxTMP,material_name,aux_chem_variables_map);
 
             bool initAux = true;
             chemistry_helper->EnforceCondition(primTMP,0,auxTMP,initAux,boxTMP,geocond, cur_time);
@@ -2091,20 +2084,30 @@ void  PorousMedia::read_tracer()
         Array<std::string> tbc_names;
         int n_tbc = ppr.countval("tbcs");
         ppr.getarr("tbcs",tbc_names,0,n_tbc);
-        tbc_array[i].resize(n_tbc+2*BL_SPACEDIM,PArrayManage);
+        //tbc_array[i].resize(n_tbc+2*BL_SPACEDIM,PArrayManage);
+        tbc_array[i].resize(n_tbc,PArrayManage);
 
         // Explicitly build default BCs
         int tbc_cnt = 0;
-        for (int n=0; n<BL_SPACEDIM; ++n) {
-          tbc_array[i].set(tbc_cnt++,
-                           new RegionData(RlabelDEF[n] + "_DEFAULT",
-                                          region_manager->RegionPtrArray(Array<std::string>(1,RlabelDEF[n])),
-                                          std::string("noflow"),0));
-          tbc_array[i].set(tbc_cnt++,
-                           new RegionData(RlabelDEF[n+3] + "_DEFAULT",
-                                          region_manager->RegionPtrArray(Array<std::string>(1,RlabelDEF[n+3])),
-                                          std::string("noflow"),0));
-        }
+
+        // FIXME:
+        // When these are used, we pick up a cross derivative term that can be seen when a front that is 
+        // perpendicular to the boundary moves tangential to that boundary, even when the normal velocity 
+        // across that boundary is identically zero.  This is an error and should be fixed since information
+        // should not propagate through a zero velocity wall.  For the time being, we have set it up so that 
+        // the default BC is instead FOEXTRAP, minimizing this effect.  However we should go more carefully
+        // through the advection code to find why the cross terms are not correctly dealt with.
+        //
+        // for (int n=0; n<BL_SPACEDIM; ++n) {
+        //   tbc_array[i].set(tbc_cnt++,
+        //                    new RegionData(RlabelDEF[n] + "_DEFAULT",
+        //                                   region_manager->RegionPtrArray(Array<std::string>(1,RlabelDEF[n])),
+        //                                   std::string("noflow"),0));
+        //   tbc_array[i].set(tbc_cnt++,
+        //                    new RegionData(RlabelDEF[n+3] + "_DEFAULT",
+        //                                   region_manager->RegionPtrArray(Array<std::string>(1,RlabelDEF[n+3])),
+        //                                   std::string("noflow"),0));
+        // }
 
         Array<int> orient_types(6,-1);
         for (int n = 0; n<n_tbc; n++)
@@ -2141,7 +2144,8 @@ void  PorousMedia::read_tracer()
               FArrayBox auxTMP(boxTMP,Naux);
 
               const std::string& material_name = rock_manager->FindMaterialInRegions(tbc_region_names).Name();
-              rock_manager->RockChemistryProperties(auxTMP,material_name);
+              const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
+              rock_manager->RockChemistryProperties(auxTMP,material_name,aux_chem_variables_map);
 
               bool initAux = true;
               chemistry_helper->EnforceCondition(primTMP,0,auxTMP,initAux,boxTMP,geocond, cur_time);

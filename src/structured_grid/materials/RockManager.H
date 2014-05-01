@@ -79,9 +79,12 @@ public:
   void GetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed = false) const;
 
   void RockChemistryProperties(FArrayBox&  fab,
-                               const Real* dx);
+                               const Real* dx,
+                               const std::map<std::string,int>& aux_chem_variables_map);
+
   void RockChemistryProperties(FArrayBox&         fab,
-                               const std::string& material_name);
+                               const std::string& material_name,
+                               const std::map<std::string,int>& aux_chem_variables_map);
 
   void Porosity(Real      time,
                 int       level,

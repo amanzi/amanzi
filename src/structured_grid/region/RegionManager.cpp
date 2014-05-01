@@ -110,12 +110,16 @@ RegionManager::RegionManager()
         PolygonRegion* cfr = new PolygonRegion(r_name[j],r_purpose,v1,v2);
 	regions[nregion_DEF+j] = cfr;
       }
-      else if (r_type == "circle") {
+      else if (r_type == "ellipse") {
         int nc = ppr.countval("center");
         BL_ASSERT(nc>=BL_SPACEDIM);
         Array<Real> c(nc); ppr.getarr("center",c,0,nc);
-        Real r; ppr.get("radius",r);
-        CircleRegion* cfr = new CircleRegion(r_name[j],r_purpose,c,r);
+
+        int nr = ppr.countval("radius");
+        BL_ASSERT(nr>=BL_SPACEDIM);
+        Array<Real> r(nr); ppr.getarr("radius",r,0,nr);
+
+        EllipseRegion* cfr = new EllipseRegion(r_name[j],r_purpose,c,r);
 	regions[nregion_DEF+j] = cfr;
       }
 #else

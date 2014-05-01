@@ -47,6 +47,10 @@ AlquimiaHelper_Structured::AlquimiaHelper_Structured(Amanzi::AmanziChemistry::Ch
     const std::string label = BoxLib::Concatenate("Ion_Exchange_Site_Density_",i,ndigIES);
     aux_chem_variables[label] = aux_chem_variables.size()-1;
   }
+  for (int i=0; i<num_ion_exchange; ++i) {
+    const std::string label = BoxLib::Concatenate("Ion_Exchange_Reference_Cation_Concentration_",i,ndigIES);
+    aux_chem_variables[label] = aux_chem_variables.size()-1;
+  }
   if (Nimmobile>0) {
     BL_ASSERT(Nmobile == Nimmobile);
     for (int i=0; i<primarySpeciesNames.size(); ++i) {

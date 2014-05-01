@@ -244,37 +244,43 @@ PolygonRegion::print(std::ostream& os) const
   return os;
 }
 
-CircleRegion::CircleRegion (const std::string& r_name,
-                            const std::string& r_purpose,
-                            const Array<Real>& r_center,
-                            Real               r_radius)
-  : Region(r_name,r_purpose,"circle")
+EllipseRegion::EllipseRegion (const std::string& r_name,
+                              const std::string& r_purpose,
+                              const Array<Real>& r_center,
+                              const Array<Real>& r_radius)
+  : Region(r_name,r_purpose,"ellipse")
 {
   BL_ASSERT(r_center.size()==BL_SPACEDIM);
+  BL_ASSERT(r_radius.size()==BL_SPACEDIM);
   center.resize(BL_SPACEDIM);
+  radius.resize(BL_SPACEDIM);
   for (int i=0; i<BL_SPACEDIM; ++i) {
     center[i] = r_center[i];
+    radius[i] = r_radius[i];
   }
-  rsqrd = r_radius * r_radius;
 }
 
 
 bool
-CircleRegion::inRegion (const Array<Real>& x) const
+EllipseRegion::inRegion (const Array<Real>& x) const
 {
   Real this_rsqrd = 0;
   for (int i=0; i<BL_SPACEDIM; ++i) {
-    Real d = x[i] - center[i];
+    Real d = (x[i] - center[i])/radius[i];
     this_rsqrd += d*d;
   }
-  return this_rsqrd <= rsqrd;
+  return this_rsqrd <= 1;
 }
 
 std::ostream&
-CircleRegion::print(std::ostream& os) const
+EllipseRegion::print(std::ostream& os) const
 {
   Region::print(os);
-  os << "    circle radius, center: " << std::sqrt(rsqrd) << "(";
+  os << "    ellipse radii: (";
+  for (int i=0; i<radius.size(); ++i) {
+    os << radius[i] << " ";
+  }
+  os << ") , center: (";
   for (int i=0; i<center.size(); ++i) {
     os << center[i] << " ";
   }
