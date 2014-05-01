@@ -21,7 +21,7 @@ void RichardsSteadyState::setup(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 // Update the preconditioner at time t and u = up
 // -----------------------------------------------------------------------------
-void RichardsSteadyState::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -77,12 +77,12 @@ void RichardsSteadyState::update_precon(double t, Teuchos::RCP<const TreeVector>
 
   //   std::cout << "CYCLE 0, ITER " << niter_ << "!!!!!!!!" << std::endl;
 
-  //   changed_solution();
+  //   ChangedSolution();
   //   Teuchos::RCP<TreeVector> up_nc = Teuchos::rcp_const_cast<TreeVector>(up);
   //   Teuchos::RCP<TreeVector> up2 = Teuchos::rcp(new TreeVector(*up));
   //   Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*up));
   //   Teuchos::RCP<TreeVector> f2 = Teuchos::rcp(new TreeVector(*up));
-  //   fun(S_->time(), S_next_->time(), Teuchos::null, up_nc, f1);
+  //   Functional(S_->time(), S_next_->time(), Teuchos::null, up_nc, f1);
 
   //   *up2 = *up;
   //   int f = 500;
@@ -91,8 +91,8 @@ void RichardsSteadyState::update_precon(double t, Teuchos::RCP<const TreeVector>
   //       (*up_nc->Data())("face",f) + 10;
   //   (*up_nc->Data())("cell",c) =
   //       (*up_nc->Data())("cell",c) + 20;
-  //   changed_solution();
-  //   fun(S_->time(), S_next_->time(), Teuchos::null, up_nc, f2);
+  //   ChangedSolution();
+  //   Functional(S_->time(), S_next_->time(), Teuchos::null, up_nc, f2);
 
   //   std::cout.precision(16);
   //   std::cout << "DFDP: " << std::endl;
@@ -114,7 +114,7 @@ void RichardsSteadyState::update_precon(double t, Teuchos::RCP<const TreeVector>
   //   // invert
   //   f2->Update(-1., *f1, 1.);
   //   //    f2->Print(std::cout);
-  //   precon(f2, f1);
+  //   ApplyPreconditioner(f2, f1);
   //   std::cout << "  dp = " << 10 << std::endl;
   //   std::cout << "  S^-1 * dfL = " << (*f1->Data())("face",f) << std::endl;
   //   std::cout << "  S^-1 * dfp = " << (*f1->Data())("cell",c) << std::endl;
@@ -138,7 +138,7 @@ void RichardsSteadyState::update_precon(double t, Teuchos::RCP<const TreeVector>
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void RichardsSteadyState::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();

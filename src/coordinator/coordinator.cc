@@ -17,7 +17,6 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include <sys/resource.h>
 #include "errors.hh"
 
-#include "global_verbosity.hh"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -45,13 +44,7 @@ Coordinator::Coordinator(Teuchos::ParameterList& parameter_list,
     restart_(false) {
   coordinator_init();
 
-  setLinePrefix(Amanzi::VerbosityLevel::verbosityHeader("Coordinator"));
-  setDefaultVerbLevel(Amanzi::VerbosityLevel::level_);
-  Teuchos::readVerboseObjectSublist(&*parameter_list_,this);
-  // get the fancy output ??
-  verbosity_ = getVerbLevel();
-  out_ = getOStream();
-
+  vo_ = Teuchos::rcp(new VerboseObject("Coordinator", *parameter_list_));
 };
 
 void Coordinator::coordinator_init() {
@@ -275,7 +268,7 @@ double rss_usage() { // return ru_maxrss in MBytes
 void Coordinator::report_memory() {
   // report the memory high water mark (using ru_maxrss)
   // this should be called at the very end of a simulation
-  if (out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_MEDIUM,true)) {
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     double global_ncells(0.0);
     double local_ncells(0.0);
     for (State::mesh_iterator mesh = S_->mesh_begin(); mesh != S_->mesh_end(); ++mesh) {
@@ -303,21 +296,20 @@ void Coordinator::report_memory() {
     comm_->MinAll(&mem,&min_mem,1);
     comm_->MaxAll(&mem,&max_mem,1);
 
-    Teuchos::OSTab tab = getOSTab();
-
-    *out_ << "======================================================================" << endl;
-    *out_ << "All meshes combined have " << global_ncells << " cells." << endl;
-    *out_ << "Memory usage (high water mark):" << endl;
-    *out_ << std::fixed << std::setprecision(1);
-    *out_ << "  Maximum per core:   " << std::setw(7) << max_mem 
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "======================================================================" << std::endl;
+    *vo_->os() << "All meshes combined have " << global_ncells << " cells." << std::endl;
+    *vo_->os() << "Memory usage (high water mark):" << std::endl;
+    *vo_->os() << std::fixed << std::setprecision(1);
+    *vo_->os() << "  Maximum per core:   " << std::setw(7) << max_mem 
           << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
-          << " Bytes" << endl;
-    *out_ << "  Minumum per core:   " << std::setw(7) << min_mem 
+          << " Bytes" << std::endl;
+    *vo_->os() << "  Minumum per core:   " << std::setw(7) << min_mem 
           << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
-         << " Bytes" << endl;
-    *out_ << "  Total:              " << std::setw(7) << total_mem 
+         << " Bytes" << std::endl;
+    *vo_->os() << "  Total:              " << std::setw(7) << total_mem 
           << " MBytes,  total per cell:   " << std::setw(7) << total_mem/global_ncells*1024*1024 
-          << " Bytes" << endl;
+          << " Bytes" << std::endl;
   }
 
   
@@ -332,11 +324,14 @@ void Coordinator::report_memory() {
   comm_->MinAll(&doubles_count,&min_doubles_count,1);
   comm_->MaxAll(&doubles_count,&max_doubles_count,1);
 
-  Teuchos::OSTab tab = getOSTab();
-  *out_ << "Doubles allocated in state fields " << endl;
-  *out_ << "  Maximum per core:   " << std::setw(7) << max_doubles_count*8/1024/1024 << " MBytes" << endl;
-  *out_ << "  Minimum per core:   " << std::setw(7) << min_doubles_count*8/1024/1024 << " MBytes" << endl; 
-  *out_ << "  Total:              " << std::setw(7) << global_doubles_count*8/1024/1024 << " MBytes" <<endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  *vo_->os() << "Doubles allocated in state fields " << std::endl;
+  *vo_->os() << "  Maximum per core:   " << std::setw(7)
+             << max_doubles_count*8/1024/1024 << " MBytes" << std::endl;
+  *vo_->os() << "  Minimum per core:   " << std::setw(7)
+             << min_doubles_count*8/1024/1024 << " MBytes" << std::endl; 
+  *vo_->os() << "  Total:              " << std::setw(7)
+             << global_doubles_count*8/1024/1024 << " MBytes" << std::endl;
 }
 
 
@@ -344,8 +339,8 @@ void Coordinator::report_memory() {
 void Coordinator::read_parameter_list() {
   t0_ = coordinator_list_->get<double>("start time");
   t1_ = coordinator_list_->get<double>("end time");
-  string t0_units = coordinator_list_->get<string>("start time units", "s");
-  string t1_units = coordinator_list_->get<string>("end time units", "s");
+  std::string t0_units = coordinator_list_->get<std::string>("start time units", "s");
+  std::string t1_units = coordinator_list_->get<std::string>("end time units", "s");
 
   if (t0_units == "s") {
     // internal units in s
@@ -493,14 +488,14 @@ void Coordinator::cycle_driver() {
 #endif
     bool fail = false;
     while ((S_->time() < t1_) && ((cycle1_ == -1) || (S_->cycle() <= cycle1_))) {
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
-        Teuchos::OSTab tab = getOSTab();
-        *out_ << "======================================================================"
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "======================================================================"
                   << std::endl << std::endl;
-        *out_ << "Cycle = " << S_->cycle();
-        *out_ << ",  Time [days] = "<< S_->time() / (60*60*24);
-        *out_ << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
-        *out_ << "----------------------------------------------------------------------"
+        *vo_->os() << "Cycle = " << S_->cycle();
+        *vo_->os() << ",  Time [days] = "<< S_->time() / (60*60*24);
+        *vo_->os() << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
+        *vo_->os() << "----------------------------------------------------------------------"
                   << std::endl;
       }
 

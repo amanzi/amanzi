@@ -46,7 +46,11 @@ CompressiblePorosityEvaluator::Clone() const {
 // Required methods from SecondaryVariableFieldEvaluator
 void CompressiblePorosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
-  if (!models_->first->initialized()) models_->first->Initialize(result->Mesh());
+  // Initialize the MeshPartition
+  if (!models_->first->initialized()) {
+    models_->first->Initialize(result->Mesh(), -1);
+    models_->first->Verify();
+  }
 
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
   Teuchos::RCP<const CompositeVector> poro = S->GetFieldData(poro_key_);
@@ -71,7 +75,11 @@ void CompressiblePorosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void CompressiblePorosityEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  if (!models_->first->initialized()) models_->first->Initialize(result->Mesh());
+  // Initialize the MeshPartition
+  if (!models_->first->initialized()) {
+    models_->first->Initialize(result->Mesh(), -1);
+    models_->first->Verify();
+  }
 
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
   Teuchos::RCP<const CompositeVector> poro = S->GetFieldData(poro_key_);

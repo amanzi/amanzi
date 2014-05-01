@@ -15,7 +15,7 @@ namespace Flow {
 
 #define DEBUG_FLAG 1
 
-bool PredictorDelegateBCFlux::modify_predictor(const Teuchos::Ptr<CompositeVector>& u) {
+bool PredictorDelegateBCFlux::ModifyPredictor(const Teuchos::Ptr<CompositeVector>& u) {
   Epetra_MultiVector& u_f = *u->ViewComponent("face",false);
 
   int nfaces = bc_values_->size();

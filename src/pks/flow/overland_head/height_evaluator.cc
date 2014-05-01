@@ -21,17 +21,17 @@ HeightEvaluator::HeightEvaluator(Teuchos::ParameterList& plist) :
 
   my_key_ = "ponded_depth";
   if (bar_) my_key_ += std::string("_bar");
-  my_key_ = plist_.get<string>("height key", my_key_);
+  my_key_ = plist_.get<std::string>("height key", my_key_);
 
   // my dependencies
-  dens_key_ = plist_.get<string>("mass density key", "surface_mass_density_liquid");
+  dens_key_ = plist_.get<std::string>("mass density key", "surface_mass_density_liquid");
   dependencies_.insert(dens_key_);
 
-  pres_key_ = plist_.get<string>("head key", "surface_pressure");
+  pres_key_ = plist_.get<std::string>("head key", "surface_pressure");
   dependencies_.insert(pres_key_);
 
-  gravity_key_ = plist_.get<string>("gravity key", "gravity");
-  patm_key_ = plist_.get<string>("atmospheric pressure key", "atmospheric_pressure");
+  gravity_key_ = plist_.get<std::string>("gravity key", "gravity");
+  patm_key_ = plist_.get<std::string>("atmospheric pressure key", "atmospheric_pressure");
 
   // model
   Teuchos::ParameterList model_plist = plist_.sublist("height model parameters");

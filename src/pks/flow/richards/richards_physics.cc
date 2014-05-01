@@ -67,30 +67,6 @@ void Richards::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
   Teuchos::RCP<const CompositeVector> wc0 = S_inter_->GetFieldData("water_content");
 
-  S_next_->GetFieldEvaluator("pressure")->HasFieldChanged(S_next_.ptr(), name_);
-  S_inter_->GetFieldEvaluator("pressure")->HasFieldChanged(S_inter_.ptr(), name_);
-
-  const Epetra_MultiVector& pres_next  = *S_next_->GetFieldData("pressure")->ViewComponent("face",false);
-  const Epetra_MultiVector& pres_inter = *S_inter_->GetFieldData("pressure")->ViewComponent("face",false);
-
-  S_next_->GetFieldEvaluator("temperature")->HasFieldChanged(S_next_.ptr(), name_);
-  S_inter_->GetFieldEvaluator("temperature")->HasFieldChanged(S_inter_.ptr(), name_);
-
-  const Epetra_MultiVector& temp_next  = *S_next_->GetFieldData("temperature")->ViewComponent("cell",false);
-  const Epetra_MultiVector& temp_inter = *S_inter_->GetFieldData("temperature")->ViewComponent("cell",false);
-
-  // cout.precision(10);
-  // for (int i=0;i<10;i++){
-  //   cout<<"pres: next "<<pres_next[0][i]<<" inter "<<pres_inter[0][i];
-  //   cout<<" "<<temp_next[0][i]<<" inter "<<temp_inter[0][i];
-  //   cout<<endl;
-  // }
-
-  // cout<<"WC1\n";
-  // cout<<*wc1->ViewComponent("cell",false);
-  // cout<<"WC0\n";
-  // cout<<*wc0->ViewComponent("cell",false);
-
   // Water content only has cells, while the residual has cells and faces.
   g->ViewComponent("cell",false)->Update(1.0/dt, *wc1->ViewComponent("cell",false),
           -1.0/dt, *wc0->ViewComponent("cell",false), 1.0);

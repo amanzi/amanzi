@@ -7,8 +7,8 @@
    Self-registering factory for WRM implementations.
    ------------------------------------------------------------------------- */
 
-#ifndef _PK_FLOW_WRM_FACTORY_HH_
-#define _PK_FLOW_WRM_FACTORY_HH_
+#ifndef PK_FLOW_WRM_FACTORY_HH_
+#define PK_FLOW_WRM_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

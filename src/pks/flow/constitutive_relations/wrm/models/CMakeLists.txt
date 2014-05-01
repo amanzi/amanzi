@@ -11,7 +11,7 @@ add_library(flow_relations_wrm_models
   wrm_factory.cc
   wrm_linear_system.cc
   wrm_van_genuchten.cc
-  WRM_BrooksCorey.cc
+  wrm_brooks_corey.cc
   wrm_zero_relperm.cc
   pc_ice_water.cc
   wrm_permafrost_factory.cc

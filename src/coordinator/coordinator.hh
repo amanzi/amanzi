@@ -17,8 +17,9 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_VerboseObject.hpp"
 #include "Epetra_MpiComm.h"
+
+#include "VerboseObject.hh"
 
 namespace Amanzi {
 
@@ -30,7 +31,7 @@ class TreeVector;
 class PK;
 class UnstructuredObservations;
 
-class Coordinator : public Teuchos::VerboseObject<Coordinator> {
+class Coordinator {
 
 public:
   Coordinator(Teuchos::ParameterList& parameter_list,
@@ -94,8 +95,7 @@ private:
   Teuchos::RCP<UnstructuredObservations> observations_;
 
   // fancy OS
-  Teuchos::RCP<Teuchos::FancyOStream> out_;
-  Teuchos::EVerbosityLevel verbosity_;
+  Teuchos::RCP<VerboseObject> vo_;
 };
 
 } // close namespace Amanzi

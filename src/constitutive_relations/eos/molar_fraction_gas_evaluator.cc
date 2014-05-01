@@ -24,7 +24,7 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
 
   // process the list for my provided field.
   if (my_key_ == "")
-    my_key_ = plist_.get<string>("molar fraction key");
+    my_key_ = plist_.get<std::string>("molar fraction key");
 
   // set up dependencies
   std::size_t end = my_key_.find_first_of("_");
