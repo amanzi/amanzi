@@ -43,6 +43,11 @@ include_directories(${MSTK_INCLUDE_DIRS})
 add_definitions("-DMSTK_HAVE_MPI")
 
 #
+# Library: operator audit
+#
+add_amanzi_library(operator_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_libs})
+
+#
 # Library: operators
 #
 file(GLOB operators_inc_files "*.hh")
