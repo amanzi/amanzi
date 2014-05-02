@@ -1678,7 +1678,7 @@ RockManager::RockChemistryProperties(FArrayBox&         fab,
   if (nminerals>0) {
     // Note: mineralogy_ics[rockname][mineralname][property] = val
     ChemICMap::const_iterator it=mineralogy_ics.find(material_name);
-    if (it != mineralogy_ics.find(material_name))
+    if (it != mineralogy_ics.end())
     {
       const ICLabelParmPair& mineral_to_pp = it->second; 
       for (ICLabelParmPair::const_iterator it1=mineral_to_pp.begin(); it1!=mineral_to_pp.end(); ++it1) {

@@ -1,14 +1,14 @@
 <ParameterList name="Main">
 
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.0.0"/>
-  <Parameter name="Dump ParmParse Table" type="string" value="run_data/ppfile"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+  <Parameter name="Dump ParmParse Table" type="string" value="run_data_THIN/ppfile"/>
   <Parameter name="Petsc Options File" type="string" value=".petsc"/>
 
   <ParameterList name="General Description">
-    <Parameter name="Simulation name" type="string" value="2D Tank Test"/>
+    <Parameter name="Simulation name" type="string" value="Phase 3 Tank Test"/>
     <Parameter name="Simulation units" type="string" value="[L]=m, [t]=s, [M]=g"/>
-    <Parameter name="Simulation type" type="string" value="Richards equation unsaturated flow"/>
-    <Parameter name="Simulation dimension" type="string" value="3D"/>
+    <Parameter name="Simulation type" type="string" value="Saturated lateral flow"/>
+    <Parameter name="Simulation dimension" type="string" value="2D"/>
   </ParameterList>
 
   <ParameterList name="Domain">
@@ -52,7 +52,6 @@
           <Parameter name="steady_max_psuedo_time" type="double" value="1.e30"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="false"/>
           <Parameter name="richard_dt_thresh_pure_steady" type="double" value="1.e18"/>
-          <Parameter name="gravity" type="double" value="0"/> 
         </ParameterList>
       </ParameterList>
       <ParameterList name="Iterative Linear Solver Control">
@@ -268,130 +267,60 @@
 
   <ParameterList name="Material Properties">
 
-    <ParameterList name="Soil">
+    <ParameterList name="Cement">
       <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.38"/>
+        <Parameter name="Value" type="double" value="0.2"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="5.13e-13"/>
-        <Parameter name="y" type="double" value="2.87e-13"/>
+        <Parameter name="x" type="double" value="1.03e-18"/>
+        <Parameter name="y" type="double" value="1.03e-18"/>
       </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="3.02e-4"/>
-        <Parameter name="Sr" type="double" value="0.354"/>
-        <Parameter name="m" type="double" value="0.291"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-        <Parameter name="krel smoothing interval" type="double" value=".00035"/>
+      <ParameterList name="Hydraulic Conductivity: Uniform">
+        <Parameter name="Value" type="double" value="1.e-11"/>
+      </ParameterList>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{Wall, Grout}"/>
+    </ParameterList>
+
+    <ParameterList name="Soil">
+      <ParameterList name="Porosity: Uniform">
+        <Parameter name="Value" type="double" value="0.35"/>
+      </ParameterList>
+      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+        <Parameter name="x" type="double" value="1.03e-13"/>
+        <Parameter name="y" type="double" value="1.03e-13"/>
+      </ParameterList>
+      <ParameterList name="Hydraulic Conductivity: Uniform">
+        <Parameter name="Value" type="double" value="1.e-6"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Soil}"/>
     </ParameterList>
 
-    <ParameterList name="Concrete">
+    <ParameterList name="Fast-Flow Path">
       <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.168"/>
-      </ParameterList>
-      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="3.49e-17"/>
-        <Parameter name="y" type="double" value="3.49e-17"/>
-      </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="2.130e-8"/>
-        <Parameter name="Sr" type="double" value="0.0"/>
-        <Parameter name="m" type="double" value="0.485"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-        <Parameter name="krel smoothing interval" type="double" value="13.35"/>
-      </ParameterList>
-      <Parameter name="Assigned Regions" type="Array(string)" value="{Wall}"/>
-    </ParameterList>
-
-    <ParameterList name="Gravel">
-      <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.168"/>
+        <Parameter name="Value" type="double" value="0.3"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
         <Parameter name="x" type="double" value="1.54e-10"/>
         <Parameter name="y" type="double" value="1.54e-10"/>
       </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="1.46e-3"/>
-        <Parameter name="Sr" type="double" value="0.052"/>
-        <Parameter name="m" type="double" value="0.314"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-        <Parameter name="krel smoothing interval" type="double" value=".000081"/>
+      <ParameterList name="Hydraulic Conductivity: Uniform">
+        <Parameter name="Value" type="double" value=".15e-2"/>
       </ParameterList>
-      <Parameter name="Assigned Regions" type="Array(string)" value="{FF}"/>
-    </ParameterList>
-
-    <ParameterList name="Sand">
-      <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.168"/>
-      </ParameterList>
-      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="1.54e-10"/>
-        <Parameter name="y" type="double" value="1.54e-10"/>
-      </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="1.46e-3"/>
-        <Parameter name="Sr" type="double" value="0.052"/>
-        <Parameter name="m" type="double" value="0.314"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-        <Parameter name="krel smoothing interval" type="double" value=".000081"/>
-      </ParameterList>
-      <Parameter name="Assigned Regions" type="Array(string)" value="{Sand}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{FF, Sand, Waste}"/>
     </ParameterList>
 
     <ParameterList name="Liner">
       <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.168"/>
+        <Parameter name="Value" type="double" value="0.2"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="3.49e-22"/>
-        <Parameter name="y" type="double" value="3.49e-22"/>
+        <Parameter name="x" type="double" value="1.03e-21"/>
+        <Parameter name="y" type="double" value="1.03e-21"/>
       </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="2.130e-8"/>
-        <Parameter name="Sr" type="double" value="0.0"/>
-        <Parameter name="m" type="double" value="0.485"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-        <Parameter name="krel smoothing interval" type="double" value="13.35"/>
+      <ParameterList name="Hydraulic Conductivity: Uniform">
+        <Parameter name="Value" type="double" value="1.e-12"/>
       </ParameterList>
       <Parameter name="Assigned Regions" type="Array(string)" value="{Liner}"/>
-    </ParameterList>
-
-    <ParameterList name="Waste">
-      <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.266"/>
-      </ParameterList>
-      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="3.70e-17"/>
-        <Parameter name="y" type="double" value="3.70e-17"/>
-      </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="2.130e-8"/>
-        <Parameter name="Sr" type="double" value="0.0"/>
-        <Parameter name="m" type="double" value="0.485"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-        <Parameter name="krel smoothing interval" type="double" value="13.35"/>
-      </ParameterList>
-      <Parameter name="Assigned Regions" type="Array(string)" value="{Waste}"/>
-    </ParameterList>
-
-    <ParameterList name="Grout">
-      <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.266"/>
-      </ParameterList>
-      <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="x" type="double" value="3.70e-17"/>
-        <Parameter name="y" type="double" value="3.70e-17"/>
-      </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="2.130e-8"/>
-        <Parameter name="Sr" type="double" value="0.0"/>
-        <Parameter name="m" type="double" value="0.485"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-        <Parameter name="krel smoothing interval" type="double" value="13.35"/>
-      </ParameterList>
-      <Parameter name="Assigned Regions" type="Array(string)" value="{Grout}"/>
     </ParameterList>
 
   </ParameterList>
@@ -437,8 +366,8 @@
   <ParameterList name="Boundary Conditions">
     <ParameterList name="West BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XLOBC}"/>
-      <ParameterList name="BC: Flux">
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{7.91317859e-6}"/>
+      <ParameterList name="BC: Uniform Pressure Head">
+        <Parameter name="Values" type="Array(double)" value="{30.5}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
@@ -454,8 +383,8 @@
     </ParameterList>
     <ParameterList name="East BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XHIBC}"/>
-      <ParameterList name="BC: Uniform Pressure">
-	<Parameter name="Values" type="Array(double)" value="{201325.0}"/>
+      <ParameterList name="BC: Uniform Pressure Head">
+        <Parameter name="Values" type="Array(double)" value="{30}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
@@ -489,11 +418,11 @@
     </ParameterList>
     <ParameterList name="Observation Data"/>
     <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="run_data/plt"/>
+      <Parameter name="File Name Base" type="string" value="run_data_THIN/plt"/>
       <Parameter name="Cycle Macros" type="Array(string)" value="{Every_1_steps}"/>
     </ParameterList>
     <ParameterList name="Checkpoint Data">
-      <Parameter name="File Name Base" type="string" value="run_data/chk"/>
+      <Parameter name="File Name Base" type="string" value="run_data_THIN/chk"/>
       <Parameter name="Cycle Macros" type="Array(string)" value="{Every_1_steps}"/>
     </ParameterList>
   </ParameterList>
