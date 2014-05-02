@@ -359,6 +359,15 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	</xs:restriction>
 </xs:simpleType>
 
+<xs:simpleType name="typedef_mesh_file_formats">
+	<xs:restriction base="xs:string">
+		<xs:enumeration value="exodus ii"/>
+		<xs:enumeration value="exodus II"/>
+		<xs:enumeration value="Exodus II"/>
+		<xs:enumeration value="Exodus ii"/>
+	</xs:restriction>
+</xs:simpleType>
+
 <!-- TODO: If we use a list here we can't make sure the regions exist -->
 <xs:simpleType name="typedef_assigned_regions"> 
 	<xs:restriction base="xs:string"/>
@@ -571,7 +580,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_steady-state_controls">
 	<xs:all minOccurs = "0" maxOccurs = "1">
-		<xs:element name="comments"/>
+		<xs:element name="comments" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="min_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="max_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
 		<!-- <xs:assertion test="@min_iterations <= @max_iterations"/> -->
@@ -621,7 +630,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_transient_controls">
 	<xs:all minOccurs = "0" maxOccurs = "1">
-		<xs:element name="comments"/>
+		<xs:element name="comments" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="bdf1_integration_method" type="typedef_bdf1_integration_method" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="preconditioner" minOccurs="0" maxOccurs="1">
 			<xs:alternative test="@name eq 'trilinos_ml'" type="typedef_trilinos_ml"/>
@@ -730,7 +739,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="comments" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="dimension" type="typedef_dimension" minOccurs="1" maxOccurs="1"/>
 		<xs:choice minOccurs="1" maxOccurs="1">
-			<xs:element name="file" type="xs:string"/>
+			<xs:element name="read" type="typedef_read"/>
 			<xs:element name="generate" type="typedef_generate"/>
 		</xs:choice>
 	</xs:sequence>
@@ -767,6 +776,14 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="box" type="typedef_box" minOccurs="1" maxOccurs="1"/>
 	</xs:sequence>	
 </xs:complexType>
+
+<xs:complexType name="typedef_read">
+	<xs:sequence>
+		<xs:element name="format" type="typedef_mesh_file_formats" minOccurs="1" maxOccurs="1"/>
+		<xs:element name="file" type="xs:string" minOccurs="1" maxOccurs="1"/>
+	</xs:sequence>	
+</xs:complexType>
+
 
 <!-- ============================================ Regions ============================================== -->
 
@@ -884,19 +901,21 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:all>
 		<xs:element name="comments" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="mechanical_properties" type="typedef_mechanical_properties" minOccurs="1" maxOccurs="1"/>
-		<xs:element name="permeability" type="typedef_permeability" minOccurs="1" maxOccurs="1"/>
+		<xs:element name="sorption_isotherms" type="typedef_sorption_isotherms" minOccurs="0" maxOccurs="1"/>
+		<!-- We need either permeability or hydraulic conductivity, need to add a check with a choice? -->
+		<xs:element name="permeability" type="typedef_permeability" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="hydraulic_conductivity" type="typedef_hydraulic_conductivity" minOccurs="0" maxOccurs="1"/>
 		<!-- cap_pressure and rel_perm are not needed if flow model = "saturated"; can we validate this? -->
 		<xs:element name="cap_pressure" minOccurs="0" maxOccurs="1">
 			<xs:alternative test="@model eq 'van_genuchten'" type="typedef_van_genuchten"/>
 	 		<xs:alternative test="@model eq 'brooks_corey'" type="typedef_brooks_corey"/>
-	 		<xs:alternative test="@model eq 'none'" type="xs:typedef_cap_pressure"/>
+	 		<xs:alternative test="@model eq 'none'" type="typedef_cap_pressure"/>
 	 		<xs:alternative type="xs:error"/>
 		</xs:element>
 		<xs:element name="rel_perm" minOccurs="0" maxOccurs="1">
 			<xs:alternative test="@model eq 'mualem'" type="typedef_mualem"/>
 			<xs:alternative test="@model eq 'burdine'" type="typedef_burdine"/>
-			<xs:alternative test="@model eq 'none'" type="xs:typedef_rel_perm"/>
+			<xs:alternative test="@model eq 'none'" type="typedef_rel_perm"/>
 			<xs:alternative type="xs:error"/>
 		</xs:element>
 		<xs:element name="assigned_regions" type="typedef_assigned_regions" minOccurs="1" maxOccurs="1"/>
@@ -936,6 +955,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		</xs:element>
 	</xs:all>
 </xs:complexType>
+
 
 <xs:complexType name="typedef_particle_density">
 	<xs:attribute name="value" use="required" type="restriction_ge0"/>
@@ -1054,6 +1074,24 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	</xs:complexContent>
 </xs:complexType>
 
+<xs:complexType name="typedef_sorption_isotherms">
+	<xs:all>
+		<xs:element name="solute" minOccurs="1" maxOccurs="unbounded">			
+			<xs:alternative type="typedef_solute_isotherms"/>
+		</xs:element>
+	</xs:all>
+</xs:complexType>
+
+<xs:complexType name="typedef_solute_isotherms">
+	<xs:attribute name="name" type="xs:string" use="required"/>
+	<xs:attribute name="model" type="xs:string" use="required"/>
+	<xs:attribute name="kd" type="typedef_exponential" use="required"/>
+	<xs:attribute name="b" type="typedef_exponential" />
+	<xs:attribute name="n" type="typedef_exponential" />
+	<xs:assert test="@model = ('linear','langmuir','freundlich')"/>
+</xs:complexType>
+
+
 <!-- ============================================ Process Kernels ============================================== -->
 
 <xs:complexType name="typedef_process_kernels">
@@ -1085,11 +1123,12 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_chemistry">
 	<xs:attribute name="state" type="xs:string"/>
+	<xs:attribute name="engine" type="xs:string"/>
 	<xs:attribute name="process_model" type="xs:string"/>
-	<xs:attribute name="model" type="xs:string"/>
 	<xs:assert  test="@state = ('on','off')"/>	
+	<xs:assert  test="@engine = ('amanzi','pflotran','none')"/>	
 	<xs:assert  test="@process_model = ('implicit operator split','none')"/>	
-	<xs:assert  test="(@process_model = 'none' and @state = 'off') or (@state = 'on' and not(@process_model = 'none'))"/>	
+	<xs:assert  test="(@engine = 'none' and @state = 'off') or (@state = 'on' and not(@engine = 'none'))"/>	
 </xs:complexType>
 
 <!-- ============================================ Phases ============================================== -->
