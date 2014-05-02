@@ -156,9 +156,6 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     pc_calls_++;
     fn_->UpdatePreconditioner(u);
 
-    // Increment iteration counter.
-    num_itrs_++;
-
     // Evaluate the nonlinear function.
     fun_calls_++;
     fn_->Residual(u, r);
@@ -186,6 +183,9 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       if (ierr == SOLVER_CONVERGED) return num_itrs_;
       if (ierr != SOLVER_CONTINUE) return ierr;
     }
+
+    // Increment iteration counter.
+    num_itrs_++;
 
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;

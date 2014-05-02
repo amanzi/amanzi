@@ -73,7 +73,7 @@ MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) const {
   double eps = CalculateEpsilon_(*u0_, x);
 
   // evaluate r1 = f(u0 + eps*x)
-  u0_->Update(eps, x, 1);
+  u0_->Update(eps, x, 1.0);
   fn_->ChangedSolution();
   fn_->Residual(u0_, r1);
 
@@ -103,8 +103,12 @@ MatrixJF<Vector,VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const {
 template<class Vector, class VectorSpace>
 void
 MatrixJF<Vector,VectorSpace>::set_linearization_point(const Teuchos::RCP<const Vector>& u) {
+  // std::cout << "setting lin point:" << std::endl;
+  // u->Print(std::cout);
   *u0_ = *u;
   fn_->Residual(u0_, r0_);
+  // std::cout << "res( lin point ):" << std::endl;
+  // r0_->Print(std::cout);
 }
 
 
@@ -117,7 +121,10 @@ MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Vector& x
   u.NormInf(&uinf);
   x.NormInf(&xinf);
 
-  return std::sqrt((1 + uinf)*1.e-12) / xinf;
+  double eps = 1.e-8;
+  if (xinf > 0.)
+    eps = std::sqrt((1 + uinf)*1.e-12) / xinf;
+  return eps;
 }
 
 } // namespace

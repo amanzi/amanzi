@@ -144,12 +144,14 @@ TEST_FIXTURE(test_data, JFNK_SOLVER) {
 
   // create the SolverState
   Teuchos::ParameterList plist;
-  plist.set("nonlinear tolerance", 1e-6);
-  plist.set("diverged tolerance", 1e10);
-  plist.set("limit iterations", 15);
-  plist.set("max du growth factor", 1e5);
-  plist.set("max divergent iterations", 3);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("nonlinear solver").set("solver type", "Newton");
+  plist.sublist("nonlinear solver").sublist("Newton parameters").sublist("VerboseObject")
+        .set("Verbosity Level", "extreme");
+  plist.sublist("nonlinear solver").sublist("Newton parameters").set("nonlinear tolerance", 1e-6);
+  plist.sublist("nonlinear solver").sublist("Newton parameters").set("diverged tolerance", 1e10);
+  plist.sublist("nonlinear solver").sublist("Newton parameters").set("limit iterations", 15);
+  plist.sublist("nonlinear solver").sublist("Newton parameters").set("max du growth factor", 1e5);
+  plist.sublist("nonlinear solver").sublist("Newton parameters").set("max divergent iterations", 3);
   plist.sublist("JF matrix parameters");
   plist.sublist("linear operator").set("iterative method", "gmres");
   plist.sublist("linear operator").sublist("VerboseObject").set("Verbosity Level", "extreme");

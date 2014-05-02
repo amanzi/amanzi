@@ -108,7 +108,6 @@ void
 SolverFnBaseJF<Vector,VectorSpace>::ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
 							const Teuchos::RCP<Vector>& Pr) {
   int ierr = lin_op_->ApplyInverse(*r, *Pr);
-  ASSERT(!ierr);
 }
 
 
