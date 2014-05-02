@@ -11,6 +11,7 @@ set(PMAMR_REL_INCLUDE_DIRS problem_setup
                            materials
                            region
                            mpc_pk/transport/diffusion
+                           mpc_pk/transport/advection
                            mpc_pk/flow
                            mpc_pk
                            mpc_pk/chemistry)
@@ -30,6 +31,7 @@ add_library(structured_amanzi $<TARGET_OBJECTS:samr>
                               $<TARGET_OBJECTS:smaterials>
                               $<TARGET_OBJECTS:sregion>
                               $<TARGET_OBJECTS:strans>
+                              $<TARGET_OBJECTS:sadv>
                               $<TARGET_OBJECTS:sflow>
                               $<TARGET_OBJECTS:schem>)
 

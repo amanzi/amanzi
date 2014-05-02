@@ -32,6 +32,7 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
                                                          const std::string&              _activity_model,
                                                          int                             _verbose)
   : using_sorption(false),
+    using_isotherms(false),
     NionExchangeSites(0),
     hasCationExchangeCapacity(_hasCationExchangeCapacity),
     thermo_database_file(_thermo_database_filename),
@@ -51,6 +52,17 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
   NfreeIonSpecies           = CopyStrArray(freeIonSpeciesNames,_freeIonSpeciesNames);
   NisothermSpecies          = CopyStrArray(isothermSpeciesNames,_isothermSpeciesNames);
   BL_ASSERT(NisothermSpecies == 0 || NisothermSpecies == NprimarySpecies);
+
+  if (NsorbedPrimarySpecies > 0) {
+    BL_ASSERT(NsorbedPrimarySpecies == NprimarySpecies);
+    using_sorption = true;
+  }
+
+  if (NisothermSpecies > 0) {
+    BL_ASSERT(NisothermSpecies == NprimarySpecies);
+    using_isotherms = true;
+    using_sorption = true;
+  }
 
   // Create the list of variables that will be managed by Amanzi
   aux_chem_variables.clear();
@@ -90,21 +102,39 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
   for (int i=0; i<NprimarySpecies; ++i) {
     aux_chem_variables[BuildPropertyParameterName(primarySpeciesNames[i] ,"Activity","Coefficient")] = aux_chem_variables.size()-1;
   }
-  Ssorbed = aux_chem_variables.size();
-  for (int i=0; i<NsorbedPrimarySpecies; ++i) {
-    aux_chem_variables[BuildPropertyParameterName(sorbedPrimarySpeciesNames[i],"Sorbed","Concentration")] = aux_chem_variables.size()-1;
+  if (using_sorption) {
+    Ssorbed = aux_chem_variables.size();
+    for (int i=0; i<NsorbedPrimarySpecies; ++i) {
+      aux_chem_variables[BuildPropertyParameterName(sorbedPrimarySpeciesNames[i],"Sorbed","Concentration")] = aux_chem_variables.size()-1;
+    }
   }
-  SisothermKd = aux_chem_variables.size();
-  for (int i=0; i<isothermSpeciesNames.size(); ++i) {
-    aux_chem_variables[BuildPropertyParameterName(isothermSpeciesNames[i],"Isotherm","Kd")] = aux_chem_variables.size()-1;
+  if (using_isotherms) {
+    SisothermKd = aux_chem_variables.size();
+    for (int i=0; i<isothermSpeciesNames.size(); ++i) {
+      aux_chem_variables[BuildPropertyParameterName(isothermSpeciesNames[i],"Isotherm","Kd")] = aux_chem_variables.size()-1;
+    }
+    SisothermFreundlichN = aux_chem_variables.size();
+    for (int i=0; i<isothermSpeciesNames.size(); ++i) {
+      aux_chem_variables[BuildPropertyParameterName(isothermSpeciesNames[i],"Isotherm","Freundlich_n")] = aux_chem_variables.size()-1;
+    }
+    SisothermLangmuirB = aux_chem_variables.size();
+    for (int i=0; i<isothermSpeciesNames.size(); ++i) {
+      aux_chem_variables[BuildPropertyParameterName(isothermSpeciesNames[i],"Isotherm","Langmuir_b")] = aux_chem_variables.size()-1;
+    }
   }
-  SisothermFreundlichN = aux_chem_variables.size();
-  for (int i=0; i<isothermSpeciesNames.size(); ++i) {
-    aux_chem_variables[BuildPropertyParameterName(isothermSpeciesNames[i],"Isotherm","Freundlich_n")] = aux_chem_variables.size()-1;
-  }
-  SisothermLangmuirB = aux_chem_variables.size();
-  for (int i=0; i<isothermSpeciesNames.size(); ++i) {
-    aux_chem_variables[BuildPropertyParameterName(isothermSpeciesNames[i],"Isotherm","Langmuir_b")] = aux_chem_variables.size()-1;
+
+  if (ParallelDescriptor::IOProcessor() && verbose>1) {
+    std::cout << "AmanziChemHelper_Structured: Iniitialized" << std::endl;
+    std::cout << "   Auxiliary data structure will contain the following components:" << std::endl;
+
+    Array<std::string> tmp(aux_chem_variables.size());
+    for (std::map<std::string,int>::const_iterator it = aux_chem_variables.begin(); it!=aux_chem_variables.end(); ++it) {
+      BL_ASSERT(it->second<tmp.size());
+      tmp[it->second] = it->first;
+    }
+    for (int i=0; i<aux_chem_variables.size(); ++i) {
+      std::cout << "      " << i << ": " << tmp[i] << std::endl; 
+    }
   }
 
   // Dummy parameters
@@ -120,6 +150,9 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
   Real ion_exchange_sites = 1.e-9;
   Real ion_exchange_ref_cation_conc = 1.e-9;
   Real primary_activity_coef = 1;
+  Real isotherm_Kd = 1.e8;
+  Real langmuir_b = 1.e-11;
+  Real freundlich_n = 5.e-12;
 
   int ntracers = primarySpeciesNames.size();
   int nminerals = mineralNames.size();
@@ -131,7 +164,7 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
 #ifdef _OPENMP
   tnum = omp_get_max_threads();
 #endif
-  chemSolve.resize(tnum);
+  chemSolve.resize(tnum, PArrayManage);
   components.resize(tnum);
   parameters.resize(tnum);
       
@@ -158,6 +191,11 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
       components[ithread].ion_exchange_sites.resize(NionExchangeSites, ion_exchange_sites);
       components[ithread].ion_exchange_ref_cation_conc.resize(NionExchangeSites, ion_exchange_ref_cation_conc);
     }
+    if (using_isotherms) {
+      components[ithread].isotherm_kd.resize(NisothermSpecies,isotherm_Kd);
+      components[ithread].isotherm_freundlich_n.resize(NisothermSpecies,freundlich_n);
+      components[ithread].isotherm_langmuir_b.resize(NisothermSpecies,langmuir_b);
+    }
 
     chemSolve[ithread].verbosity(Amanzi::AmanziChemistry::kTerse);	  
     chemSolve[ithread].Setup(components[ithread], parameters[ithread]);
@@ -168,20 +206,6 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
       chemSolve[ithread].DisplayComponents(components[ithread]);
     }
   }  // for(threads)
-
-  if (ParallelDescriptor::IOProcessor() && verbose>1) {
-    std::cout << "AmanziChemHelper_Structured: Iniitialized" << std::endl;
-    std::cout << "   Auxiliary data structure will contain the following components:" << std::endl;
-
-    Array<std::string> tmp(aux_chem_variables.size());
-    for (std::map<std::string,int>::const_iterator it = aux_chem_variables.begin(); it!=aux_chem_variables.end(); ++it) {
-      BL_ASSERT(it->second<tmp.size());
-      tmp[it->second] = it->first;
-    }
-    for (int i=0; i<aux_chem_variables.size(); ++i) {
-      std::cout << "      " << i << ": " << tmp[i] << std::endl; 
-    }
-  }
 }
 
 AmanziChemHelper_Structured::~AmanziChemHelper_Structured()
@@ -202,10 +226,17 @@ AmanziChemHelper_Structured::~AmanziChemHelper_Structured()
     }
     if (NionExchangeSites>0) {
       components[ithread].ion_exchange_sites.clear();
+      components[ithread].ion_exchange_sites.clear();
+    }
+    if (using_isotherms) {
+      components[ithread].isotherm_kd.clear();
+      components[ithread].isotherm_freundlich_n.clear();
+      components[ithread].isotherm_langmuir_b.clear();
     }
     chemSolve.clear(ithread);
   }  // for(threads)
 
+  chemSolve.clear();
   components.clear();
   parameters.clear();
 }
@@ -288,14 +319,18 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
         TheComponent.surface_complex_free_site_conc[i] = auxData(iv,SsurfaceComplexationFreeSiteConcentration+i);
       }
 
-      for (int i = 0; i < NsorbedPrimarySpecies; ++i) {
-        TheComponent.total_sorbed[i] = auxData(iv,Ssorbed+i);
+      if (using_sorption) {
+        for (int i = 0; i < NsorbedPrimarySpecies; ++i) {
+          TheComponent.total_sorbed[i] = auxData(iv,Ssorbed+i);
+        }
       }
 
-      for (int i = 0; i < NisothermSpecies; ++i) {
-        TheComponent.isotherm_kd[i] = auxData(iv,SisothermKd+i);
-        TheComponent.isotherm_freundlich_n[i] = auxData(iv,SisothermFreundlichN+i);
-        TheComponent.isotherm_langmuir_b[i] = auxData(iv,SisothermLangmuirB+i);
+      if (using_isotherms) {
+        for (int i = 0; i < NisothermSpecies; ++i) {
+          TheComponent.isotherm_kd[i] = auxData(iv,SisothermKd+i);
+          TheComponent.isotherm_freundlich_n[i] = auxData(iv,SisothermFreundlichN+i);
+          TheComponent.isotherm_langmuir_b[i] = auxData(iv,SisothermLangmuirB+i);
+        }
       }
 
       TheParameter.porosity   = porosity(iv,sPhi);
@@ -360,14 +395,18 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
           auxData(iv,SsurfaceComplexationSiteDensity+i) = TheComponent.surface_site_density[i];
         }
 
-        for (int i = 0; i < NsorbedPrimarySpecies; ++i) {
-          auxData(iv,Ssorbed+i) = TheComponent.total_sorbed[i];
+        if (using_sorption) {
+          for (int i = 0; i < NsorbedPrimarySpecies; ++i) {
+            auxData(iv,Ssorbed+i) = TheComponent.total_sorbed[i];
+          }
         }
 
-        for (int i = 0; i < NisothermSpecies; ++i) {
-          auxData(iv,SisothermKd+i) = TheComponent.isotherm_kd[i];
-          auxData(iv,SisothermFreundlichN+i) = TheComponent.isotherm_freundlich_n[i];
-          auxData(iv,SisothermLangmuirB+i) = TheComponent.isotherm_langmuir_b[i];
+        if (using_isotherms) {
+          for (int i = 0; i < NisothermSpecies; ++i) {
+            auxData(iv,SisothermKd+i) = TheComponent.isotherm_kd[i];
+            auxData(iv,SisothermFreundlichN+i) = TheComponent.isotherm_freundlich_n[i];
+            auxData(iv,SisothermLangmuirB+i) = TheComponent.isotherm_langmuir_b[i];
+          }
         }
       } // chem_ok
 

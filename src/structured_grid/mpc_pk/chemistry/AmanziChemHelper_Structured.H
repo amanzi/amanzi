@@ -57,7 +57,7 @@ protected:
   Array<std::string> primarySpeciesNames,sorbedPrimarySpeciesNames,mineralNames;
   Array<std::string> surfaceComplexationSiteNames,freeIonSpeciesNames,isothermSpeciesNames;
 
-  bool using_sorption, hasCationExchangeCapacity;
+  bool using_sorption, using_isotherms, hasCationExchangeCapacity;
   std::string thermo_database_file, thermo_database_format, activity_model;
   int NionExchangeSites,NprimarySpecies,NsorbedPrimarySpecies,Nminerals;
   int NsurfaceComplexationSites,NfreeIonSpecies,NisothermSpecies;
