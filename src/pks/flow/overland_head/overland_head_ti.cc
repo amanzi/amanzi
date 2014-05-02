@@ -83,7 +83,8 @@ void OverlandHeadFlow::Functional( double t_old,
   // update boundary conditions
   bc_head_->Compute(t_new);
   bc_flux_->Compute(t_new);
-  bc_seepage_->Compute(t_new);
+  bc_seepage_head_->Compute(t_new);
+  bc_seepage_pressure_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // diffusion term, treated implicitly
@@ -184,7 +185,6 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
 
   // 1.a: Pre-assembly updates.
   // -- update boundary condition markers, which set the BC type
-  //  UpdateBoundaryConditionsMarkers_(S_next_.ptr());
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // -- update the rel perm according to the boundary info and upwinding

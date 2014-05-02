@@ -103,7 +103,6 @@ protected:
 
   // boundary condition members
   virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
-  virtual void UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State>& S);
 
   virtual void FixBCsForOperator_(const Teuchos::Ptr<State>& S);
   virtual void FixBCsForPrecon_(const Teuchos::Ptr<State>& S);
@@ -166,7 +165,8 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
-  Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_head_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_pressure_;
 
   // needed physical models
   Teuchos::RCP<FlowRelations::OverlandConductivityModel> cond_model_;

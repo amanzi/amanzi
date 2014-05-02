@@ -67,7 +67,7 @@ void IcyHeightEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   const double& p_atm = *S->GetScalarData(patm_key_);
   const Epetra_Vector& gravity = *S->GetConstantVectorData(gravity_key_);
-  double gz = -gravity[2];  // check this
+  double gz = -gravity[2];
 
   int ncells = res_c.MyLength();
   if (bar_) {

@@ -40,8 +40,12 @@ public:
     return CreateWithoutFunction("zero gradient");
   }
 
-  Teuchos::RCP<Functions::BoundaryFunction> CreateSeepageFace() const {
+  Teuchos::RCP<Functions::BoundaryFunction> CreateSeepageFaceHead() const {
     return CreateWithFunction("seepage face", "boundary head");
+  }
+
+  Teuchos::RCP<Functions::BoundaryFunction> CreateSeepageFacePressure() const {
+    return CreateWithFunction("seepage face", "boundary pressure");
   }
 
 };
