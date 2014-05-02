@@ -98,6 +98,19 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
   if (slist.isParameter("iterative method")) {
     std::string method_name = slist.get<std::string>("iterative method");
 
+    // check for optional list of parameters
+    std::string tmp(method_name);
+    tmp.append(" parameters");
+    if (!slist.isSublist(tmp)) {
+      Teuchos::ParameterList vlist;
+      Teuchos::RCP<VerboseObject> vo = Teuchos::rcp(new VerboseObject("Solvers::Factory", vlist));
+      if (vo->getVerbLevel() >= Teuchos::VERB_LOW) {
+        Teuchos::OSTab tab = vo->getOSTab();
+        *vo->os() << vo->color("yellow") << "Parameter sublist \"" << tmp 
+                  << "\" is missing, use defaults." << vo->reset() << std::endl;
+      }
+    }
+
     if (method_name == "pcg") {
       Teuchos::ParameterList pcg_list = slist.sublist("pcg parameters");
       Teuchos::RCP<LinearOperatorPCG<Matrix, Vector, VectorSpace> >
