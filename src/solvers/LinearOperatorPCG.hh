@@ -129,7 +129,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
   // Ignore all criteria if one iteration is enforced.
   if (rnorm0 > overflow_tol_) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Diverged, ||r|| = " << rnorm0 << std::endl;
+      *vo_->os() << "Diverged, ||r||=" << rnorm0 << std::endl;
     return LIN_SOLVER_RESIDUAL_OVERFLOW;
   }
 
@@ -137,13 +137,14 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
       if (rnorm0 < tol * fnorm) {
 	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (relative RHS), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+	  *vo_->os() << "Converged (relative RHS), itr=" << num_itrs_ 
+                     << " ||r||=" << rnorm0 << " ||f||=" << fnorm << std::endl;
 	return LIN_SOLVER_RELATIVE_RHS;
       }
     } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
       if (rnorm0 < tol) {
 	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+	  *vo_->os() << "Converged (absolute res), itr=" << num_itrs_ << "||r||=" << rnorm0 << std::endl;
 	return LIN_SOLVER_ABSOLUTE_RESIDUAL;
       }
     }
@@ -183,7 +184,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
 
     if (rnorm > overflow_tol_) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	*vo_->os() << "Diverged, ||r|| = " << rnorm0 << std::endl;
+	*vo_->os() << "Diverged, ||r||=" << rnorm << std::endl;
       return LIN_SOLVER_RESIDUAL_OVERFLOW;
     }
 
@@ -192,19 +193,21 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
       if (rnorm < tol * fnorm) {
 	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (relative RHS), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+	  *vo_->os() << "Converged (relative RHS), itr=" << num_itrs_ 
+                     << " ||r||=" << rnorm << " ||f||=" << fnorm << std::endl;
 	return LIN_SOLVER_RELATIVE_RHS;
       }
     } else if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
       if (rnorm < tol * rnorm0) { 
 	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (relative res), itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
+	  *vo_->os() << "Converged (relative res), itr=" << num_itrs_ 
+                     << " ||r||=" << rnorm << " ||r0||=" << rnorm0 << std::endl;
 	return LIN_SOLVER_RELATIVE_RESIDUAL;
       }
     } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
       if (rnorm < tol) {
 	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
+	  *vo_->os() << "Converged (absolute res), itr=" << num_itrs_ << " ||r||=" << rnorm << std::endl;
 	return LIN_SOLVER_ABSOLUTE_RESIDUAL;
       }
     }
@@ -216,8 +219,8 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
   }
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-    *vo_->os() << "Failed (" << num_itrs_ << " itrs) ||r|| = "
-	       << residual_ << std::endl;
+    *vo_->os() << "Failed (" << num_itrs_ << " itrs) ||r||=" << residual_ << std::endl;
+
   return LIN_SOLVER_MAX_ITERATIONS;
 };
 

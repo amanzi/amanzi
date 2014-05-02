@@ -124,7 +124,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRESRestart_(
   if (ierr == LIN_SOLVER_MAX_ITERATIONS) {
     Teuchos::OSTab tab = vo_->getOSTab();
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Not converged (max iterations), ||r|| = " << residual_ << std::endl;
+      *vo_->os() << "Not converged (max iterations), ||r||=" << residual_ << std::endl;
   }
 
   num_itrs_ = total_itrs;
@@ -170,14 +170,14 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
   if (fnorm == 0.0) {
     x.PutScalar(0.0);
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Converged, itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+      *vo_->os() << "Converged, itr=" << num_itrs_ << " ||r||=" << rnorm0 << std::endl;
     return criteria;  // Zero solution satifies all criteria.
   }
 
   // Ignore all criteria if one iteration is enforced.
   if (rnorm0 > overflow_tol_) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Diverged, ||r|| = " << rnorm0 << std::endl;
+      *vo_->os() << "Diverged, ||r||=" << rnorm0 << std::endl;
     return LIN_SOLVER_RESIDUAL_OVERFLOW;
   }
 
@@ -185,13 +185,13 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
       if (rnorm0 < tol * fnorm) {
 	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (relative RHS), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+	  *vo_->os() << "Converged (relative RHS), itr=" << num_itrs_ << " ||r||=" << rnorm0 << std::endl;
 	return LIN_SOLVER_RELATIVE_RHS;
       }
     } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
       if (rnorm0 < tol) {
 	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+	  *vo_->os() << "Converged (absolute res), itr=" << num_itrs_ << " ||r||=" << rnorm0 << std::endl;
 	return LIN_SOLVER_ABSOLUTE_RESIDUAL;
       }
     }
@@ -235,21 +235,23 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
       if (residual_ < tol * fnorm) {
         ComputeSolution_(x, i, T, s, v);  // vector s is overwritten
 	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (relative RHS), itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
+	  *vo_->os() << "Converged (relative RHS), itr=" << num_itrs_ 
+                     << " ||r||=" << residual_ << " ||f||=" << fnorm << std::endl;
         return LIN_SOLVER_RELATIVE_RHS;
       }
     } else if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
       if (residual_ < tol * rnorm0) {
         ComputeSolution_(x, i, T, s, v);  // vector s is overwritten
 	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (relative res), itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
+	  *vo_->os() << "Converged (relative res), itr=" << num_itrs_ 
+                     << " ||r||=" << residual_ << " ||r0||=" << rnorm0 << std::endl;
         return LIN_SOLVER_RELATIVE_RESIDUAL;
       }
     } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
       if (residual_ < tol) {
         ComputeSolution_(x, i, T, s, v);  // vector s is overwritten
 	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
+	  *vo_->os() << "Converged (absolute res), itr=" << num_itrs_ << " ||r||=" << residual_ << std::endl;
         return LIN_SOLVER_ABSOLUTE_RESIDUAL;
       }
     }
