@@ -33,8 +33,8 @@ class OperatorDiffusionSurface : public Operator {
 
   // main members
   void InitOperator(std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k,
-                    const Teuchos::ParameterList& plist);
-  void AssembleMatrix(int schema);
+                    int schema_base, int schema_dofs, const Teuchos::ParameterList& plist);
+  void AssembleMatrix();
   void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux);
   void UpdateFlux(const CompositeVector& u, CompositeVector& flux, double scalar);
 
@@ -51,9 +51,10 @@ class OperatorDiffusionSurface : public Operator {
  private:
   Teuchos::ParameterList plist_;
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
-
-  int upwind_;
   Teuchos::RCP<NonlinearCoefficient> k_;
+
+  int schema_base_, schema_dofs_, schema_;
+  int upwind_;
 };
 
 }  // namespace Operators

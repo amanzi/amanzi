@@ -190,7 +190,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   // create boundary data
   Point xv(2);
-  std::vector<int> bc_model(nnodes_wghost);
+  std::vector<int> bc_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_values(nnodes_wghost);
 
   for (int v = 0; v < nnodes_wghost; v++) {

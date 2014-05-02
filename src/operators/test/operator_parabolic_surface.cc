@@ -128,12 +128,13 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2));
 
   Teuchos::ParameterList olist;
-  int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
-  op3->InitOperator(K, Teuchos::null, olist);
+  int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
+  int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
+  op3->InitOperator(K, Teuchos::null, schema_base, schema_dofs, olist);
   op3->UpdateMatrices(Teuchos::null);
   op3->ApplyBCs(bc_model, bc_values);
   op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-  op3->AssembleMatrix(schema);
+  op3->AssembleMatrix();
 
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
@@ -163,11 +164,11 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   solution.PutScalar(0.0); 
   op2->UpdateMatrices(solution, phi, dT);
 
-  op3->InitOperator(K, Teuchos::null, olist);
+  op3->InitOperator(K, Teuchos::null, schema_base, schema_dofs, olist);
   op3->UpdateMatrices(Teuchos::null);
   op3->ApplyBCs(bc_model, bc_values);
   op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-  op3->AssembleMatrix(schema);
+  op3->AssembleMatrix();
   op3->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
 
   rhs = *op3->rhs();

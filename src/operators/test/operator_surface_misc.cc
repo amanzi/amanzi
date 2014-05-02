@@ -137,19 +137,21 @@ TEST(SURFACE_MISC) {
   op2->UpdateMatrices(u);
 
   // add the diffusion operator. It is the last due to BCs.
+  int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
+  int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + 
+                    Operators::OPERATOR_SCHEMA_DOFS_CELL;
   Teuchos::ParameterList olist;
+
   Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2));
-  op3->InitOperator(K, Teuchos::null, olist);
+  op3->InitOperator(K, Teuchos::null, schema_base, schema_dofs, olist);
   op3->UpdateMatrices(Teuchos::null);
   op3->ApplyBCs(bc_model, bc_values);
 
   // change preconditioner to default
-  int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + 
-               Operators::OPERATOR_SCHEMA_DOFS_CELL;
   Teuchos::RCP<Operator> op4 = Teuchos::rcp(new Operator(*op3));
 
-  op4->SymbolicAssembleMatrix(schema);
-  op4->AssembleMatrix(schema);
+  op4->SymbolicAssembleMatrix(schema_dofs);
+  op4->AssembleMatrix(schema_dofs);
 
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   op4->InitPreconditioner("Hypre AMG", slist);

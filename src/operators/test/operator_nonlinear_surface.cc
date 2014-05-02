@@ -175,12 +175,13 @@ TEST(NONLINEAR_OPERATOR) {
     Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2));
 
     Teuchos::ParameterList olist;
-    int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
-    op3->InitOperator(K, knc, olist);
+    int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
+    int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
+    op3->InitOperator(K, knc, schema_base, schema_dofs, olist);
     op3->UpdateMatrices(flux);
     op3->ApplyBCs(bc_model, bc_values);
     op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-    op3->AssembleMatrix(schema);
+    op3->AssembleMatrix();
 
     // create preconditoner
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");

@@ -31,11 +31,17 @@ namespace Operators {
 ****************************************************************** */
 void OperatorDiffusionSurface::InitOperator(
     std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k,
-    const Teuchos::ParameterList& plist)
+    int schema_base, int schema_dofs, const Teuchos::ParameterList& plist)
 {
   plist_ = plist; 
   k_ = k;
-  CreateMassMatrices_(K);
+  schema_base_ = schema_base;
+  schema_dofs_ = schema_dofs;
+  schema_ = schema_base_ + schema_dofs_;
+
+  if (schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
+    CreateMassMatrices_(K);
+  }
 
   // if upwind is requested, we will need to update nonlinear coefficient 
   std::string str_upwind = plist_.get<std::string>("upwind method", "amanzi");
@@ -222,17 +228,17 @@ void OperatorDiffusionSurface::CreateMassMatrices_(std::vector<WhetStone::Tensor
 /* ******************************************************************
 * Special assemble of elemental face-based matrices. 
 ****************************************************************** */
-void OperatorDiffusionSurface::AssembleMatrix(int schema)
+void OperatorDiffusionSurface::AssembleMatrix()
 {
-  if (schema != OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE) {
-    std::cout << "Schema " << schema << " is not supported" << std::endl;
+  if (schema_dofs_ != OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE) {
+    std::cout << "Schema " << schema_dofs_ << " is not supported" << std::endl;
     ASSERT(0);
   }
 
   // find location of face-based matrices
   int m(0), nblocks = blocks_.size();
   for (int nb = 0; nb < nblocks; nb++) {
-    if (blocks_schema_[nb] == schema) {
+    if (blocks_schema_[nb] == schema_) {
       m = nb;
       break;
     }

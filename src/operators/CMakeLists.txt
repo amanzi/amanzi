@@ -105,6 +105,12 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/operator_surface_misc.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # convergence analysis
+    add_amanzi_test(operators_convergence operators_convergence
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_convergence.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
 
