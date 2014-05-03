@@ -178,7 +178,7 @@ void OperatorDiffusionSurface::UpdateFlux(const CompositeVector& u, CompositeVec
     }
     v(nfaces) = u_cells[0][c];
 
-    if (matrix[c].NumRows() != 0) { 
+    if (matrix_shadow[c].NumRows() == 0) { 
       WhetStone::DenseMatrix& Acell = matrix[c];
       Acell.Multiply(v, av, false);
     } else {
@@ -189,7 +189,7 @@ void OperatorDiffusionSurface::UpdateFlux(const CompositeVector& u, CompositeVec
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       if (f < nfaces_owned && !flag[f]) {
-        flux_data[0][f] += av(n) * dirs[n];
+        flux_data[0][f] -= av(n) * dirs[n];
         flag[f] = 1;
       }
     }

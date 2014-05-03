@@ -69,8 +69,9 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
             plist_.get<int>("smoother sweeps"))));
 
   if (plist_.isParameter("relaxation type"))
-    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNumSweeps,
+    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType,
             plist_.get<int>("relaxation type"))));
+
 #else
   Errors::Message msg("Hypre (BoomerAMG) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);

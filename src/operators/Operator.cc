@@ -396,13 +396,17 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
           int nfaces = faces.size();
 
           WhetStone::DenseMatrix& Acell = matrix[c];
-          matrix_shadow[c] = Acell;
 
+          bool flag(true);
           for (int n = 0; n < nfaces; n++) {
             int f = faces[n];
             double value = bc_values[f];
 
             if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
+              if (flag) {  // make a copy of elemntal matrix
+                matrix_shadow[c] = Acell;
+                flag = false;
+              }
               for (int m = 0; m < nfaces; m++) {
                 rhs_face[0][faces[m]] -= Acell(m, n) * value;
                 Acell(n, m) = Acell(m, n) = 0.0;
@@ -426,11 +430,16 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
 
           WhetStone::DenseMatrix& Acell = matrix[c];
 
+          bool flag(true);
           for (int n = 0; n < nnodes; n++) {
             int v = nodes[n];
             double value = bc_values[v];
 
             if (bc_model[v] == OPERATOR_BC_FACE_DIRICHLET) {
+              if (flag) {  // make a copy of elemntal matrix
+                matrix_shadow[c] = Acell;
+                flag = false;
+              }
               for (int m = 0; m < nnodes; m++) {
                 rhs_node[0][nodes[m]] -= Acell(m, n) * value;
                 Acell(n, m) = Acell(m, n) = 0.0;
@@ -568,7 +577,7 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
     for (int v = 0; v < nnodes_owned; v++) Xcopy[v + offset_my_[2]] = data[0][v];
   } 
 
-  preconditioner_->ApplyInverse(Xcopy, Ycopy);
+  int ierr = preconditioner_->ApplyInverse(Xcopy, Ycopy);
 
   if (Y.HasComponent("face")) {
     Epetra_MultiVector& data = *Y.ViewComponent("face");

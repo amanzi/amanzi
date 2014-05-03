@@ -52,7 +52,7 @@ set(flow_src_files Flow_PK.cc Flow_IO.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_SteadyState.cc Richards_LinearOperator.cc
                    Richards_Bundles.cc
-                   Matrix_MFD.cc Stiffness_MFD.cc Matrix_TPFA.cc 
+                   Matrix_MFD.cc Matrix_TPFA.cc 
                    RelativePermeability.cc RelativePermeability_IO.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
 		   )
@@ -83,7 +83,6 @@ set(flow_inc_files
   Matrix_TPFA.hh
   RelativePermeability.hh
   Richards_PK.hh
-  Stiffness_MFD.hh
   TI_Specs.hh
   WaterRetentionModel.hh
   WRM_BrooksCorey.hh
@@ -113,12 +112,6 @@ if (BUILD_TESTS)
     if ( ENABLE_MSTK_Mesh )
        set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone data_structures)
 
-        # Test: two steady-state Darcy flow tests
-        add_amanzi_test(flow_darcy_source flow_darcy_source
-	                KIND int
-                        SOURCE test/Main.cc test/flow_darcy_source.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
- 
         # Test: transient Darcy flow 
         add_amanzi_test(flow_darcy_2D flow_darcy_2D
 	                KIND int

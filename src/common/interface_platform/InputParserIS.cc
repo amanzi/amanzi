@@ -2243,6 +2243,10 @@ Teuchos::ParameterList create_HypreAMG_List(Teuchos::ParameterList* plist)
   amg_list.set<int>("smoother sweeps", nsmooth);
   amg_list.set<int>("cycle applications", ncycles);
   amg_list.set<double>("strong threshold", strong_threshold);
+  amg_list.set<int>("relaxation type", 6);
+  amg_list.set<int>("cycle type", 1);
+  amg_list.set<int>("coarsen type", 0);
+  amg_list.set<int>("verbosity", 0);
 
   return dpc_list;
 }

@@ -162,6 +162,8 @@ void OperatorDiffusion::UpdateMatricesStiffness(std::vector<WhetStone::Tensor>& 
   // update matrix blocks
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
+  mfd.ModifyStabilityScalingFactor(factor_);
+
   AmanziMesh::Entity_ID_List nodes;
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -187,11 +189,71 @@ void OperatorDiffusion::UpdateMatricesStiffness(std::vector<WhetStone::Tensor>& 
 
 
 /* ******************************************************************
+* WARNING: Since diffusive flux is not continuous, we derive it only
+* once (using flag) and in exactly the same manner as other routines.
+* **************************************************************** */
+void OperatorDiffusion::UpdateFlux(const CompositeVector& u, CompositeVector& flux, double scalar)
+{
+  // find location of face-based matrices
+  int m(0), nblocks = blocks_.size();
+  for (int nb = 0; nb < nblocks; nb++) {
+    if (blocks_schema_[nb] == OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE) {
+      m = nb;
+      break;
+    }
+  }
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
+
+  // Initialize the flux in the case of additive operators.
+  if (scalar == 0.0) flux.PutScalar(0.0);
+
+  u.ScatterMasterToGhosted("face");
+
+  const Epetra_MultiVector& u_cells = *u.ViewComponent("cell");
+  const Epetra_MultiVector& u_faces = *u.ViewComponent("face", true);
+  Epetra_MultiVector& flux_data = *flux.ViewComponent("face", true);
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+  std::vector<int> flag(nfaces_wghost, 0);
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
+    for (int n = 0; n < nfaces; n++) {
+      v(n) = u_faces[0][faces[n]];
+    }
+    v(nfaces) = u_cells[0][c];
+
+    if (matrix_shadow[c].NumRows() == 0) { 
+      WhetStone::DenseMatrix& Acell = matrix[c];
+      Acell.Multiply(v, av, false);
+    } else {
+      WhetStone::DenseMatrix& Acell = matrix_shadow[c];
+      Acell.Multiply(v, av, false);
+    }
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      if (f < nfaces_owned && !flag[f]) {
+        flux_data[0][f] -= av(n) * dirs[n];
+        flag[f] = 1;
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Calculate elemental inverse mass matrices.                                           
 ****************************************************************** */
 void OperatorDiffusion::CreateMassMatrices_(std::vector<WhetStone::Tensor>& K)
 {
   WhetStone::MFD3D_Diffusion mfd(mesh_);
+  mfd.ModifyStabilityScalingFactor(factor_);
 
   AmanziMesh::Entity_ID_List faces;
 

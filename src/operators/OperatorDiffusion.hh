@@ -26,7 +26,7 @@ namespace Operators {
 
 class OperatorDiffusion : public Operator {
  public:
-  OperatorDiffusion() {};
+  OperatorDiffusion() : factor_(1.0) {};
   OperatorDiffusion(Teuchos::RCP<const CompositeVectorSpace> cvs, int dummy) : Operator(cvs, dummy) {};
   OperatorDiffusion(const Operator& op) : Operator(op) {};
   ~OperatorDiffusion() {};
@@ -36,6 +36,10 @@ class OperatorDiffusion : public Operator {
                     int schema_base, int schema_dofs, const Teuchos::ParameterList& plist);
   void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux);
   void UpdateMatricesStiffness(std::vector<WhetStone::Tensor>& K);
+  void UpdateFlux(const CompositeVector& u, CompositeVector& flux, double scalar);
+
+  // access (for developers only)
+  void set_factor(double factor) { factor_ = factor; }
 
  private:
   void CreateMassMatrices_(std::vector<WhetStone::Tensor>& K);
@@ -46,6 +50,7 @@ class OperatorDiffusion : public Operator {
   Teuchos::RCP<NonlinearCoefficient> k_;
 
   int schema_base_, schema_dofs_, schema_;
+  double factor_;
 };
 
 }  // namespace Operators
