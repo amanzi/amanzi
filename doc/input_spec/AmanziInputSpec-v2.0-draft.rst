@@ -366,6 +366,12 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"transport_sub_cycling`"="string"
 
+* `"chemistry_controls`"  has the following elements
+
+    * `"chem_tolerance`"="exponential" 
+ 
+    * `"chem_max_newton_iterations`"="integer"
+
 
 
 Mesh
@@ -404,10 +410,15 @@ Currently Amanzi only read Exodus II mesh files.  An example `"mesh`" element wo
 .. code-block:: xml
 
   <mesh framework="mstk"> 
-   <comments> May be included in the Mesh element </comments>
-   <dimension>3</dimension>
-   <file>mesh.exo</file>
+    <comments> May be included in the Mesh element </comments>
+    <dimension>3</dimension>
+    <read>
+      <file>mesh.exo</file>
+      <format>exodus ii</format>
+    </read>
   </mesh>
+
+Note that the `"format`" content is case-sensitive and compared against a set of known and acceptable formats.  That set is ["exodus ii","exodus II","Exodus II","Exodus ii"].  The set of all such limited options can always be verified by checking the Amanzi schema file.
 
 Regions
 =======
@@ -557,6 +568,17 @@ Within the Materials block an unbounded number of `"material`" elements can be d
       Required Elements: parameters
   </rel_perm>
 
+* `"<sorption_isotherms>`" is an optional element for providing Kd models for individual solutes.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes.
+
+  * `"linear`" only accepts the parameter `"kd`". `"langmuir`" expects `"kd`" and `"b`".  `"freundlich`" expects `"kd`" and `"n`".
+
+.. code-block:: xml
+
+    <sorption_isotherms>
+	<solute name="string" model="linear | langmuir | langmuir" kd="exponential" b="exponential" n="exponential"/>
+        Required Elements: name, model, kd
+        Optional Elements: b, n (depending on model selected)
+    </sorption_isotherms>
 
 
 Process Kernels
@@ -589,13 +611,15 @@ Currently three scenerios are avaiable for calculated the flow field.  `"richard
 
 For `"transport`" a combination of `"state`" and `"algorithm`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the integration algorithm must be specified.  Whether sub-cycling is to be utilized within the transport algorithm is also specified here.
 
-* `"chemistry`" has two attributes, `"state`" and `"process_model`".
+* `"chemistry`" has three attributes, `"state`", `"engine`", and `"process_model`".
       
       * `"state`" = "on | off"
+      
+      * `"engine`" = "amanzi | pflotran | none"
 
-      *  `"process_model`" = " implicit operator split | none " 
+      * `"process_model`" = "implicit operator split | none" 
 
-For `"chemistry`" a combination of `"state`" and `"process_model`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the process model must be specified. 
+For `"chemistry`" a combination of `"state`", `"engine`", and `"process_model`" must be specified.  If `"state`" is `"off`" then `"engine`" and `"process_model`" are set to `"none`".  Otherwise the `"engine`" and `"process_model`" model must be specified. 
 
 Phases
 ======
