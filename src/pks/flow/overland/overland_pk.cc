@@ -84,7 +84,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
   S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
 
-  std::string method_name = plist_->get<string>("upwind conductivity method",
+  std::string method_name = plist_->get<std::string>("upwind conductivity method",
           "upwind with total flux");
   if (method_name == "cell centered") {
     upwind_method_ = Operators::UPWIND_METHOD_CENTERED;
@@ -396,7 +396,7 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     { // place boundary_faces on faces
       Epetra_MultiVector& uw_cond_f = *uw_cond->ViewComponent("face",false);
       const Epetra_Import& vandelay = mesh_->exterior_face_importer();
-      const Epetra_Map& vandelay_map = mesh_->exterior_face_epetra_map();
+      const Epetra_Map& vandelay_map = mesh_->exterior_face_map();
       uw_cond_f.Export(cond_bf, vandelay, Insert);
 
       // Patch up zero-gradient case, which should not upwind.
@@ -538,8 +538,7 @@ void OverlandFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
 
     if (c < ncells_owned) {
       AmanziMesh::Entity_ID_List faces;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces(c, &faces);
 
       std::vector<double> dp(faces.size());
       for (unsigned int n=0; n!=faces.size(); ++n) {
@@ -595,8 +594,7 @@ void OverlandFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
 
     if (c < ncells_owned) {
       AmanziMesh::Entity_ID_List faces;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces(c, &faces);
 
       std::vector<double> dp(faces.size());
       for (unsigned int n=0; n!=faces.size(); ++n) {
@@ -632,7 +630,8 @@ void OverlandFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
 };
 
 
-bool OverlandFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+bool OverlandFlow::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
+        Teuchos::RCP<TreeVector> u) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Modifying predictor:" << std::endl;

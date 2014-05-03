@@ -87,9 +87,9 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
 
 
 // updates the preconditioner
-void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
+void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
         double h) {
-  StrongMPC<PKPhysicalBDFBase>::update_precon(t,up,h);
+  StrongMPC<PKPhysicalBDFBase>::UpdatePreconditioner(t,up,h);
 
   // Update and get the off-diagonal terms.
   if (!decoupled_) {
@@ -119,8 +119,8 @@ void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
 
 
 // applies preconditioner to u and returns the result in Pu
-void MPCCoupledCells::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
-  if (decoupled_) return StrongMPC<PKPhysicalBDFBase>::precon(u,Pu);
+void MPCCoupledCells::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+  if (decoupled_) return StrongMPC<PKPhysicalBDFBase>::ApplyPreconditioner(u,Pu);
   linsolve_preconditioner_->ApplyInverse(*u, *Pu);
 }
 

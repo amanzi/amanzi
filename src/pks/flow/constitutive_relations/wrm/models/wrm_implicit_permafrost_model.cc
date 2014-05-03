@@ -290,7 +290,7 @@ bool WRMImplicitPermafrostModel::FitSpline_(double pc_ice, double cutoff,
   M(1,1) = 2 * cutoff;
   rhs[1] = dsi_cutoff - coefs[2];
 
-  M.inverse();
+  M.Inverse();
   coefs[0] = M(0,0) * rhs[0] + M(0,1) * rhs[1];
   coefs[1] = M(1,0) * rhs[0] + M(1,1) * rhs[1];
   return true;

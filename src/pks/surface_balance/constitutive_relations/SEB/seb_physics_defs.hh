@@ -56,11 +56,13 @@ struct SnowProperties {
   double ht;                    // snow depth [m] (NOT SWE!)
   double density;               // snow density [ kg / m^3 ]
   double age;                   // snow age [days]
+  double SWE;                   // SNOW WATER EQUIVALANCE [m]  
 
   SnowProperties() :
       ht(MY_LOCAL_NAN),
       density(MY_LOCAL_NAN),
-      age(MY_LOCAL_NAN) {}
+      age(MY_LOCAL_NAN),
+      SWE(MY_LOCAL_NAN) {}
 };
 
 

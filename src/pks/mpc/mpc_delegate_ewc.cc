@@ -8,7 +8,6 @@ Author: Ethan Coon
 Interface for EWC, a helper class that does projections and preconditioners in
 energy/water-content space instead of temperature/pressure space.
 ------------------------------------------------------------------------- */
-#include "global_verbosity.hh"
 #include "FieldEvaluator.hh"
 #include "ewc_model.hh"
 #include "mpc_delegate_ewc.hh"
@@ -151,7 +150,7 @@ void MPCDelegateEWC::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 // Modify the prediction from linearization of the time integration.
 // -----------------------------------------------------------------------------
-bool MPCDelegateEWC::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
+bool MPCDelegateEWC::ModifyPredictor(double h, Teuchos::RCP<TreeVector> up) {
   bool modified = false;
   double dt_prev = S_inter_->time() - time_prev2_;
 
@@ -172,7 +171,7 @@ bool MPCDelegateEWC::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
 // -----------------------------------------------------------------------------
 // Update of the preconditioner
 // -----------------------------------------------------------------------------
-void MPCDelegateEWC::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+void MPCDelegateEWC::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
   if (precon_type_ == PRECON_EWC || precon_type_ == PRECON_SMART_EWC) {
     update_precon_ewc_(t,up,h);
   }
@@ -182,7 +181,7 @@ void MPCDelegateEWC::update_precon(double t, Teuchos::RCP<const TreeVector> up, 
 // -----------------------------------------------------------------------------
 // Application of the preconditioner.
 // -----------------------------------------------------------------------------
-void MPCDelegateEWC::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+void MPCDelegateEWC::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   if ((precon_type_ == PRECON_EWC) || (precon_type_ == PRECON_SMART_EWC)) {
     precon_ewc_(u,Pu);
   }

@@ -137,9 +137,11 @@ void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
 void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
-  // Initialize the MeshPartition if needed to make sure all cells are covered.
-  if (!wrms_->first->initialized()) wrms_->first->Initialize(result->Mesh());
-
+  // Initialize the MeshPartition
+  if (!wrms_->first->initialized()) {
+    wrms_->first->Initialize(result->Mesh(), -1);
+    wrms_->first->Verify();
+  }
 
   // Evaluate k_rel.
   // -- Evaluate the model to calculate krel on cells.
@@ -161,8 +163,8 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     Epetra_MultiVector& res_bf = *result->ViewComponent("boundary_face",false);
 
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
-    const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
-    const Epetra_Map& face_map = mesh->face_epetra_map(false);
+    const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+    const Epetra_Map& face_map = mesh->face_map(false);
   
     // Evaluate the model to calculate krel.
     AmanziMesh::Entity_ID_List cells;
@@ -187,8 +189,8 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_mesh_key_);
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
-    const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
-    const Epetra_Map& face_map = mesh->face_epetra_map(false);
+    const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+    const Epetra_Map& face_map = mesh->face_map(false);
     
     unsigned int nsurf_cells = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     for (unsigned int sc=0; sc!=nsurf_cells; ++sc) {

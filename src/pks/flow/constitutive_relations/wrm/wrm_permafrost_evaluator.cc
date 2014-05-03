@@ -88,18 +88,18 @@ WRMPermafrostEvaluator::Clone() const {
  -------------------------------------------------------------------------------- */
 void WRMPermafrostEvaluator::InitializeFromPlist_() {
   // my keys are for saturation -- order matters... gas -> liq -> ice
-  my_keys_.push_back(plist_.get<string>("gas saturation key", "saturation_gas"));
-  s_l_key_ = plist_.get<string>("liquid saturation key", "saturation_liquid");
+  my_keys_.push_back(plist_.get<std::string>("gas saturation key", "saturation_gas"));
+  s_l_key_ = plist_.get<std::string>("liquid saturation key", "saturation_liquid");
   my_keys_.push_back(s_l_key_);
-  my_keys_.push_back(plist_.get<string>("ice saturation key", "saturation_ice"));
+  my_keys_.push_back(plist_.get<std::string>("ice saturation key", "saturation_ice"));
 
   // liquid-gas capillary pressure
-  pc_liq_key_ = plist_.get<string>("gas-liquid capillary pressure key",
+  pc_liq_key_ = plist_.get<std::string>("gas-liquid capillary pressure key",
           "capillary_pressure_gas_liq");
   dependencies_.insert(pc_liq_key_);
 
   // liquid-gas capillary pressure
-  pc_ice_key_ = plist_.get<string>("liquid-ice capillary pressure key",
+  pc_ice_key_ = plist_.get<std::string>("liquid-ice capillary pressure key",
           "capillary_pressure_liq_ice");
   dependencies_.insert(pc_ice_key_);
 }
@@ -109,8 +109,10 @@ void WRMPermafrostEvaluator::InitializeFromPlist_() {
 void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
   // Initialize the MeshPartition
-  if (!permafrost_models_->first->initialized())
-    permafrost_models_->first->Initialize(results[0]->Mesh());
+  if (!permafrost_models_->first->initialized()) {
+    permafrost_models_->first->Initialize(results[0]->Mesh(), -1);
+    permafrost_models_->first->Verify();
+  }
 
   // Cell values
   Epetra_MultiVector& satg_c = *results[0]->ViewComponent("cell",false);
@@ -144,8 +146,8 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     // Need to get boundary face's inner cell to specify the WRM.
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->Mesh();
-    const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
-    const Epetra_Map& face_map = mesh->face_epetra_map(false);
+    const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+    const Epetra_Map& face_map = mesh->face_map(false);
     AmanziMesh::Entity_ID_List cells;
 
     // calculate boundary face values
@@ -170,6 +172,11 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void
 WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {
+  // Initialize the MeshPartition
+  if (!permafrost_models_->first->initialized()) {
+    permafrost_models_->first->Initialize(results[0]->Mesh(), -1);
+    permafrost_models_->first->Verify();
+  }
 
   // Cell values
   Epetra_MultiVector& satg_c = *results[0]->ViewComponent("cell",false);
@@ -221,8 +228,8 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
 
     // Need to get boundary face's inner cell to specify the WRM.
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->Mesh();
-    const Epetra_Map& face_map = mesh->face_epetra_map(false);
-    const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
+    const Epetra_Map& face_map = mesh->face_map(false);
+    const Epetra_Map& vandelay_map = mesh->exterior_face_map();
     AmanziMesh::Entity_ID_List cells;
 
     if (wrt_key == pc_liq_key_) {

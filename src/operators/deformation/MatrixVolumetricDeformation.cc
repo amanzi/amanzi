@@ -111,9 +111,9 @@ void MatrixVolumetricDeformation::PreAssemble_() {
 
   // Domain and Range: matrix inverse solves the problem, given dV, what is
   // dnode_z that results in that dV.  Therefore, A * dnode_z = dV
-  const Epetra_Map& cell_map = mesh_->cell_epetra_map(false);
-  const Epetra_Map& node_map = mesh_->node_epetra_map(false);
-  const Epetra_Map& node_map_wghost = mesh_->node_epetra_map(true);
+  const Epetra_Map& cell_map = mesh_->cell_map(false);
+  const Epetra_Map& node_map = mesh_->node_map(false);
+  const Epetra_Map& node_map_wghost = mesh_->node_map(true);
 
   range_ = Teuchos::rcp(new CompositeVectorSpace());
   range_->SetMesh(mesh_)->SetComponent("cell",AmanziMesh::CELL,1);
@@ -139,8 +139,7 @@ void MatrixVolumetricDeformation::PreAssemble_() {
 
     // determine the upward/downward faces
     AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
 
     int my_up_n = -1;
     int my_down_n = -1;
@@ -308,8 +307,8 @@ void MatrixVolumetricDeformation::Assemble(
 
   // Domain and Range: matrix inverse solves the problem, given dV, what is
   // dnode_z that results in that dV.  Therefore, A * dnode_z = dV
-  const Epetra_Map& node_map = mesh_->node_epetra_map(false);
-  const Epetra_Map& node_map_wghost = mesh_->node_epetra_map(true);
+  const Epetra_Map& node_map = mesh_->node_map(false);
+  const Epetra_Map& node_map_wghost = mesh_->node_map(true);
   unsigned int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
   // reset to non-fixed operator.

@@ -18,10 +18,10 @@ EffectiveHeightEvaluator::EffectiveHeightEvaluator(Teuchos::ParameterList& plist
     SecondaryVariableFieldEvaluator(plist) {
   // my keys are for saturation and rel perm.
   if (my_key_ == "")
-    my_key_ = plist_.get<string>("effective height key", "effective_height");
+    my_key_ = plist_.get<std::string>("effective height key", "effective_height");
 
   // my dependencies
-  height_key_ = plist_.get<string>("height key", "ponded_depth");
+  height_key_ = plist_.get<std::string>("height key", "ponded_depth");
   dependencies_.insert(height_key_);
 
   // model

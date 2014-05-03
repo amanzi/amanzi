@@ -45,22 +45,26 @@ Teuchos::RCP<FieldEvaluator> WRMEvaluator::Clone() const {
 
 void WRMEvaluator::InitializeFromPlist_() {
   // my keys are for saturation
-  my_keys_.push_back(plist_.get<string>("saturation key", "saturation_liquid"));
+  my_keys_.push_back(plist_.get<std::string>("saturation key", "saturation_liquid"));
 
   calc_other_sat_ = plist_.get<bool>("calculate minor saturation", true);
   if (calc_other_sat_) {
-    my_keys_.push_back(plist_.get<string>("other saturation key", "saturation_gas"));
+    my_keys_.push_back(plist_.get<std::string>("other saturation key", "saturation_gas"));
   }
 
   // my dependencies are capillary pressure.
-  cap_pres_key_ = plist_.get<string>("capillary pressure key", "capillary_pressure_gas_liq");
+  cap_pres_key_ = plist_.get<std::string>("capillary pressure key", "capillary_pressure_gas_liq");
   dependencies_.insert(cap_pres_key_);
 }
 
 
 void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
-  if (!wrms_->first->initialized()) wrms_->first->Initialize(results[0]->Mesh());
+  // Initialize the MeshPartition
+  if (!wrms_->first->initialized()) {
+    wrms_->first->Initialize(results[0]->Mesh(), -1);
+    wrms_->first->Verify();
+  }
 
   Epetra_MultiVector& sat_c = *results[0]->ViewComponent("cell",false);
   const Epetra_MultiVector& pres_c = *S->GetFieldData(cap_pres_key_)
@@ -80,8 +84,8 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     // Need to get boundary face's inner cell to specify the WRM.
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->Mesh();
-    const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
-    const Epetra_Map& face_map = mesh->face_epetra_map(false);
+    const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+    const Epetra_Map& face_map = mesh->face_map(false);
     AmanziMesh::Entity_ID_List cells;
 
     // calculate boundary face values
@@ -121,7 +125,11 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {
-  if (!wrms_->first->initialized()) wrms_->first->Initialize(results[0]->Mesh());
+  // Initialize the MeshPartition
+  if (!wrms_->first->initialized()) {
+    wrms_->first->Initialize(results[0]->Mesh(), -1);
+    wrms_->first->Verify();
+  }
 
   ASSERT(wrt_key == cap_pres_key_);
 
@@ -143,8 +151,8 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
 
     // Need to get boundary face's inner cell to specify the WRM.
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->Mesh();
-    const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
-    const Epetra_Map& face_map = mesh->face_epetra_map(false);
+    const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+    const Epetra_Map& face_map = mesh->face_map(false);
     AmanziMesh::Entity_ID_List cells;
 
     // calculate boundary face values

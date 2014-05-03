@@ -16,6 +16,7 @@ add_library(divgrad MatrixMFD.cc
                     MatrixMFD_Surf.cc
                     MatrixMFD_Surf_ScaledConstraint.cc
                     MatrixMFD_Coupled.cc
+                    MatrixMFD_Coupled_TPFA.cc
                     MatrixMFD_Coupled_Surf.cc
                     MatrixMFD_Permafrost.cc
 		            MatrixMFD_Factory.cc

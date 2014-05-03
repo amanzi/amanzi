@@ -78,21 +78,21 @@ bool ConstantTemperature::advance(double dt) {
 
 // Methods for the BDF integrator
 // -- residual
-void ConstantTemperature::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void ConstantTemperature::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
         Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
   *f = *u_new;
   f->Data()->Update(-1.0, *temp0_, 1.0); // T - T0
 };
 
 // -- preconditioning (the identity matrix)
-void ConstantTemperature::precon(Teuchos::RCP<const TreeVector> u,
+void ConstantTemperature::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
   *Pu = *u;
 };
 
 
 // -- update the preconditioner (no need to do anything)
-void ConstantTemperature::update_precon(double t,
+void ConstantTemperature::UpdatePreconditioner(double t,
         Teuchos::RCP<const TreeVector> up, double h) {};
 
 } // namespace

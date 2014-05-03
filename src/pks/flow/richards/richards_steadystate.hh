@@ -35,11 +35,11 @@ protected:
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)
-  virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                    Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // updates the preconditioner
-  virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
 
  protected:
   int max_iters_;

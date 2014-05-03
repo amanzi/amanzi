@@ -29,6 +29,9 @@ Effectively stolen from Amanzi, with few modifications.
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+#include "GlobalVerbosity.hh"
+#include "VerboseObject.hh"
+
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
 #include "Domain.hh"
@@ -41,7 +44,6 @@ Effectively stolen from Amanzi, with few modifications.
 
 #include "amanzi_unstructured_grid_simulation_driver.hh"
 #include "InputParserIS.hh"
-#include "global_verbosity.hh"
 
 Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
         const MPI_Comm& mpi_comm, Teuchos::ParameterList& input_parameter_list) {
@@ -108,7 +110,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
 
   int ierr = 0;
   try {
-    std::string framework = mesh_plist.get<string>("Framework");
+    std::string framework = mesh_plist.get<std::string>("Framework");
     Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
     if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::Simple)) {
       prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Simple);
@@ -147,7 +149,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
     Teuchos::ParameterList read_params = mesh_plist.sublist("Read Mesh File");
 
     if (read_params.isParameter("File")) {
-      file = read_params.get<string>("File");
+      file = read_params.get<std::string>("File");
     } else {
       std::cerr << "Must specify File parameter for Read option under Mesh" << std::endl;
       throw std::exception();
@@ -155,7 +157,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
 
     if (read_params.isParameter("Format")) {
       // Is the format one that we can read?
-      format = read_params.get<string>("Format");
+      format = read_params.get<std::string>("Format");
       if (format != "Exodus II") {
         std::cerr << "Can only read files in Exodus II format" << std::endl;
         throw std::exception();

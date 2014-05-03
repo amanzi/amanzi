@@ -35,7 +35,7 @@ MatrixMFD_Coupled_Surf::SetSurfaceOperators(const Teuchos::RCP<MatrixMFD_TPFA>& 
   int nsurf_cells = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   std::vector<int> surf_gids(nsurf_cells, -1);
 
-  const Epetra_Map& face_map = blockA_->Mesh()->face_epetra_map(false);
+  const Epetra_Map& face_map = blockA_->Mesh()->face_map(false);
   for (unsigned int sc=0; sc!=nsurf_cells; ++sc) {
     surf_gids[sc] = face_map.GID(surface_mesh_->entity_get_parent(AmanziMesh::CELL, sc));
   }
@@ -251,8 +251,8 @@ MatrixMFD_Coupled_Surf::Apply(const TreeVector& X,
   //    vector that shares data with the old one but has a new map.
   // We try the latter as it removes the copy...
   //
-  Epetra_MultiVector surf_XA(surface_mesh_->cell_epetra_map(false),1);
-  Epetra_MultiVector surf_XB(surface_mesh_->cell_epetra_map(false),1);
+  Epetra_MultiVector surf_XA(surface_mesh_->cell_map(false),1);
+  Epetra_MultiVector surf_XB(surface_mesh_->cell_map(false),1);
 
   double **surf_XA_data, **surf_XB_data;
   ierr |= surf_XA.ExtractView(&surf_XA_data);
@@ -269,8 +269,8 @@ MatrixMFD_Coupled_Surf::Apply(const TreeVector& X,
   ASSERT(!ierr);
 
   // -- apply the surface-only operators, blockwise, repeating the "multiple views" trick
-  Epetra_MultiVector surf_YA(surface_mesh_->cell_epetra_map(false),1);
-  Epetra_MultiVector surf_YB(surface_mesh_->cell_epetra_map(false),1);
+  Epetra_MultiVector surf_YA(surface_mesh_->cell_map(false),1);
+  Epetra_MultiVector surf_YB(surface_mesh_->cell_map(false),1);
 
   double **surf_YA_data, **surf_YB_data;
   ierr |= surf_YA.ExtractView(&surf_YA_data);

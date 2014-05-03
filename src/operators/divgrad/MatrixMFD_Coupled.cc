@@ -155,8 +155,9 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
   }
 
   // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  ierr = S_pc_->ApplyInverse(Xf, Yf);
-  ASSERT(!ierr);
+  S_pc_->ApplyInverse(Xf, Yf);
+  //ierr = S_pc_->ApplyInverse(Xf, Yf);
+  //ASSERT(!ierr);
 
   // Backward Substitution, Yc = inv( A2c2c) [  (x_Ac,x_Bc)^T - A2c2f * Yf ]
   // Yc <-- A2c2f * Yf
@@ -246,7 +247,6 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
   Teuchos::SerialDenseMatrix<int, double> cell_inv(2, 2);
   Epetra_SerialDenseMatrix values(2, 2);
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   const int MFD_MAX_FACES = 14;
   int faces_LID[MFD_MAX_FACES];  // Contigious memory is required.
   int faces_GID[MFD_MAX_FACES];
@@ -261,7 +261,7 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
   // Assemble
   for (int c=0; c!=ncells; ++c){
     int cell_GID = cmap.GID(c);
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     int nentries = nfaces; // not sure if this is required, but may be passed by ref
 

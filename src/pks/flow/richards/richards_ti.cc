@@ -23,7 +23,7 @@ namespace Flow {
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void Richards::fun(double t_old,
+void Richards::Functional(double t_old,
                    double t_new,
                    Teuchos::RCP<TreeVector> u_old,
                    Teuchos::RCP<TreeVector> u_new,
@@ -127,7 +127,7 @@ void Richards::fun(double t_old,
 // -----------------------------------------------------------------------------
 // Apply the preconditioner to u and return the result in Pu.
 // -----------------------------------------------------------------------------
-void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+void Richards::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "Precon application:" << std::endl;
@@ -155,7 +155,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 // -----------------------------------------------------------------------------
 // Update the preconditioner at time t and u = up
 // -----------------------------------------------------------------------------
-void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
@@ -260,7 +260,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   }
 };
 
-double Richards::enorm(Teuchos::RCP<const TreeVector> u,
+double Richards::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
 

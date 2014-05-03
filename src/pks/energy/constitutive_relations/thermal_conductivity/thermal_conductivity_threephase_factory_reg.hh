@@ -9,14 +9,8 @@
 
 #include "thermal_conductivity_threephase_factory.hh"
 
-namespace Amanzi {
-namespace Energy {
-namespace EnergyRelations {
-
 // explicity instantitate the static data of Factory<EOS>
-template<> Utils::Factory<ThermalConductivityThreePhase>::map_type* Utils::Factory<ThermalConductivityThreePhase>::map_;
-
-} // namespace
-} // namespace
-} // namespace
+template<> 
+Amanzi::Utils::Factory<Amanzi::Energy::EnergyRelations::ThermalConductivityThreePhase>::map_type* 
+Amanzi::Utils::Factory<Amanzi::Energy::EnergyRelations::ThermalConductivityThreePhase>::map_;
 

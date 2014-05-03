@@ -49,7 +49,7 @@ public:
   static Teuchos::RCP<PK> CreatePK(const Teuchos::RCP<Teuchos::ParameterList>& plist,
           Teuchos::ParameterList& FElist,
           const Teuchos::RCP<TreeVector>& soln) {
-    std::string s = plist->get<string>("PK type");
+    std::string s = plist->get<std::string>("PK type");
     map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
       std::stringstream errmsg;

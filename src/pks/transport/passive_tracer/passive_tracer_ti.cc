@@ -5,7 +5,7 @@ namespace Transport {
 
 // Methods for the BDF integrator
 // -- residual
-void PassiveTracer::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void PassiveTracer::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
         Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   S_inter_->set_time(t_old);
   S_next_->set_time(t_new);
@@ -29,12 +29,12 @@ void PassiveTracer::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_o
 };
 
 // -- preconditioning (currently none)
-void PassiveTracer::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+void PassiveTracer::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   *Pu = *u;
 };
 
 // computes a norm on u-du and returns the result
-double PassiveTracer::enorm(Teuchos::RCP<const TreeVector> u,
+double PassiveTracer::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
   double enorm_val = 0.0;
   Teuchos::RCP<const Epetra_MultiVector> conc_vec = u->Data()->ViewComponent(false);

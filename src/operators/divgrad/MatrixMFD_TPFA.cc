@@ -46,7 +46,6 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   
@@ -64,7 +63,7 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
   }  
 
   for (int c=0; c!=ncells; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix& Mff = Mff_cells_[c];
@@ -176,14 +175,13 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   std::vector<int> ndofs(1,1);
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   // Dff
   Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",true);
   Dff_f.PutScalar(0.);
   for (int c=0; c!=ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
 
     int mfaces = faces.size();
     for (int n=0; n!=mfaces; ++n) {
@@ -210,9 +208,10 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   (*Acf_).Multiply(false, *rhs_faces, Tc);
   for (int c=0; c!=ncells_owned; ++c) (*rhs_cells)[0][c] -= Tc[c];
 
-  // Zero the face RHS out, as the application of matrix results in zero in
-  // the face system.
-  rhs_faces->PutScalar(0.);
+  // unscale the rhs
+  for (int f=0; f!=nfaces_owned; ++f) {
+    (*rhs_faces)[0][f] *= Dff_f[0][f];
+  }
 
   // create a with-ghost copy of Acc
   CompositeVectorSpace space_c;
@@ -245,7 +244,7 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   Afc_parallel_f.PutScalar(0.);
 
   for (int c=0; c!=ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
 
     int mfaces = faces.size();
     for (int i=0; i!=mfaces; ++i) {
@@ -270,7 +269,7 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
       int c = cells[n];
       cells_GID[n] = cmap_wghost.GID(c);
 
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces(c, &faces);
       Bpp(n, n) = Dcc_c[0][c] / faces.size();
       ASSERT(std::abs(Dcc_c[0][c] / faces.size()) < 1.e40);
 
@@ -368,8 +367,9 @@ int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
   Epetra_MultiVector Tc(Xc);
 
   // Solve the pp system
-  ierr = S_pc_->ApplyInverse(Xc, Tc);
-  ASSERT(!ierr);
+  S_pc_->ApplyInverse(Xc, Tc);
+  //ierr = S_pc_->ApplyInverse(Xc, Tc);
+  //ASSERT(!ierr);
 
   *Y.ViewComponent("cell",false) = Tc;
 
@@ -450,7 +450,6 @@ void MatrixMFD_TPFA::AnalyticJacobian(const Upwinding& upwinding,
 
   // maps and counts
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);

@@ -90,6 +90,7 @@ struct EnergyBalance {
   //double stored_fQe;
   double surface_porosity;
   double SurfaceVaporFlux;  // Second mass flux for cell center  
+  double SWE;
 
   double Mr;
   double MIr;
@@ -106,7 +107,7 @@ struct LocalData {
     st_energy.Le = 2497848.;            // Latent heat of vaporization ------ [J/kg]
     st_energy.SEs = 0.98;               // Surface Emissivity for snow  ----- [-] ** From P. ReVelle (Thesis)
     st_energy.SEtun = 0.92;             // Surface Emissivity for tundra --- [-] ** From P. ReVelle (Thesis); Ling & Zhang, 2004
-    st_energy.Zr = 2.0;                 // Referance ht of wind speed ------- [m]
+    st_energy.Zr = 10.0;                 // Referance ht of wind speed ------- [m]
  //   st_energy.Zo = 0.005;               // Roughness length  ---------------- [m] Mud flats, snow; no vegetation, no obstacles 
   //*Note on Roughness lenght* Should add Change from Snow 0.005 to bare ground 0.03 --> Open flat terrain; grass, few isolated obstacles.   
     st_energy.VKc = 0.41;               // Von Karman Constant -------------- [-]
@@ -117,6 +118,9 @@ struct LocalData {
     double density_air = 1.275;       // Density of Air ------------------- [kg/m^3]
     st_energy.density_frost = 200;      // Density of Frost (condensation) -- [kg/m^3]
     st_energy.density_freshsnow = 100;  // Density of Freshly fallebn snow -- [kg/m^3]
+
+//    st_energy.density_frost = 250;
+//    st_energy.density_freshsnow = 250;
 
     st_energy.gZr = 9.807*st_energy.Zr;
     st_energy.rowaCp = density_air*Cp;

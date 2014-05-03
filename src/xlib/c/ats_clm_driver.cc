@@ -157,7 +157,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
 
   int ierr = 0;
   try {
-    std::string framework = mesh_plist.get<string>("Framework");
+    std::string framework = mesh_plist.get<std::string>("Framework");
     AmanziMesh::FrameworkPreference prefs(factory.preference());
     if (framework == AmanziMesh::framework_name(AmanziMesh::MSTK)) {
       prefs.clear(); prefs.push_back(AmanziMesh::MSTK);
@@ -190,7 +190,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
     Teuchos::ParameterList read_params = mesh_plist.sublist("Read Mesh File");
 
     if (read_params.isParameter("File")) {
-      file = read_params.get<string>("File");
+      file = read_params.get<std::string>("File");
     } else {
       std::cerr << "Must specify File parameter for Read option under Mesh" << std::endl;
       throw std::exception();
@@ -198,7 +198,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
 
     if (read_params.isParameter("Format")) {
       // Is the format one that we can read?
-      format = read_params.get<string>("Format");
+      format = read_params.get<std::string>("Format");
       if (format != "Exodus II") {
         std::cerr << "Can only read files in Exodus II format" << std::endl;
         throw std::exception();

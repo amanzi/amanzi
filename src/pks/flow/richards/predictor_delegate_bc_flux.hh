@@ -37,11 +37,11 @@ class PredictorDelegateBCFlux {
       bc_values_(bc_values)
   {}
 
-  bool modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
-    return modify_predictor(u->Data().ptr());
+  bool ModifyPredictor(double h, Teuchos::RCP<TreeVector> u) {
+    return ModifyPredictor(u->Data().ptr());
   }
 
-  bool modify_predictor(const Teuchos::Ptr<CompositeVector>& u);
+  bool ModifyPredictor(const Teuchos::Ptr<CompositeVector>& u);
 
  protected:
 
