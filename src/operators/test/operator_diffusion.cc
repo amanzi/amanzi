@@ -29,7 +29,7 @@
 #include "mfd3d_diffusion.hh"
 
 #include "OperatorDefs.hh"
-#include "OperatorDiffusion.hh"
+#include "OperatorDiffusionFactory.hh"
 #include "OperatorSource.hh"
 
 
@@ -168,7 +168,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 30, 30, gm);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 30, 30, gm);
   // RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   /* modify diffusion coefficient */
@@ -203,23 +203,20 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   }
 
   // create diffusion operator 
-  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh);
-  cvs->SetGhosted(true);
-  cvs->SetComponent("node", AmanziMesh::NODE, 1);
-
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(cvs, 0));
-
+  ParameterList op_list = plist.get<Teuchos::ParameterList>("Diffusion operators");
+  OperatorDiffusionFactory opfactory;
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, op_list);
+  const CompositeVectorSpace& cvs = op->DomainMap();
+  
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_NODE;
-  op->Init();
   op->UpdateMatricesStiffness(K);
   op->ApplyBCs(bc_model, bc_values);
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_NODE);
   op->AssembleMatrix(schema);
 
   // create source and add it to the operator
-  CompositeVector source(*cvs);
+  CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("node", true);
   src.PutScalar(0.0);
 

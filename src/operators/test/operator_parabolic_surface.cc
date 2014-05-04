@@ -134,11 +134,11 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   op3->UpdateMatrices(Teuchos::null);
   op3->ApplyBCs(bc_model, bc_values);
   op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-  op3->AssembleMatrix();
+  op3->AssembleMatrixSpecial();
 
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op3->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+  op3->InitPreconditionerSpecial("Hypre AMG", slist, bc_model, bc_values);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
@@ -168,8 +168,8 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   op3->UpdateMatrices(Teuchos::null);
   op3->ApplyBCs(bc_model, bc_values);
   op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-  op3->AssembleMatrix();
-  op3->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+  op3->AssembleMatrixSpecial();
+  op3->InitPreconditionerSpecial("Hypre AMG", slist, bc_model, bc_values);
 
   rhs = *op3->rhs();
   ierr = solver->ApplyInverse(rhs, solution);

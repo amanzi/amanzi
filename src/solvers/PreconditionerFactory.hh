@@ -15,7 +15,6 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Preconditioner.hh"
-#include "PreconditionerFactory.hh"
 
 namespace Amanzi {
 namespace AmanziPreconditioners {

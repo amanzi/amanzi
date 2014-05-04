@@ -110,8 +110,15 @@
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
         <Parameter name="tolerance" type="double" value="0.0"/>
-        <Parameter name="verbosity" type="int" value="1"/>
+        <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!--  Operators  -->
+  <ParameterList name="Diffusion operators">
+    <Parameter name="operator type" type="string" value="mfd nodal domain"/>
+    <ParameterList name="mfd nodal domain parameters">
     </ParameterList>
   </ParameterList>
 </ParameterList>

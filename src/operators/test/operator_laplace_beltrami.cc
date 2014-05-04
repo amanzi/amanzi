@@ -116,11 +116,11 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   op->UpdateMatrices(Teuchos::null);
   op->ApplyBCs(bc_model, bc_values);
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-  op->AssembleMatrix();
+  op->AssembleMatrixSpecial();
 
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+  op->InitPreconditionerSpecial("Hypre AMG", slist, bc_model, bc_values);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");

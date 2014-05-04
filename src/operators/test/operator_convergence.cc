@@ -264,12 +264,6 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     CompositeVector& rhs = *op2->rhs();
     int ierr = solver->ApplyInverse(rhs, solution);
 
-    if (MyPID == 0) {
-      std::cout << "pressure solver (" << solver->name() 
-                << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-                << " code=" << solver->returned_code() << std::endl;
-    }
-
     // calculate pressure errors
     Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
 
@@ -302,7 +296,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     flux_error = pow(flux_error / flux_norm, 0.5);
     printf("scale = %10.6g  Err(p) = %10.6f  Err(flux) = %10.6g\n", factor, p_error, flux_error); 
     
-    // CHECK(p_error< 0.15 && flux_error < 0.15);
+    CHECK(p_error< 0.15 && flux_error < 0.15);
   }
 
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);

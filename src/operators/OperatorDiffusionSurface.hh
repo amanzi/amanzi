@@ -17,44 +17,25 @@
 #include "tensor.hh"
 #include "CompositeVector.hh"
 
-#include "Operator.hh"
+#include "OperatorDiffusion.hh"
 #include "OperatorTypeDefs.hh"
 #include "NonlinearCoefficient.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class OperatorDiffusionSurface : public Operator {
+class OperatorDiffusionSurface : public OperatorDiffusion {
  public:
-  OperatorDiffusionSurface() {};
-  OperatorDiffusionSurface(Teuchos::RCP<const CompositeVectorSpace> cvs, int dummy) : Operator(cvs, dummy) {};
-  OperatorDiffusionSurface(const Operator& op) : Operator(op) {};
-  ~OperatorDiffusionSurface() {};
+  OperatorDiffusionSurface() { InitDiffusionSurface_(); }
+  OperatorDiffusionSurface(Teuchos::RCP<const CompositeVectorSpace> cvs, int dummy) 
+      : OperatorDiffusion(cvs, dummy) { InitDiffusionSurface_(); }
+  OperatorDiffusionSurface(const Operator& op) : OperatorDiffusion(op) { InitDiffusionSurface_(); };
+  ~OperatorDiffusionSurface() {}; 
 
-  // main members
-  void InitOperator(std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k,
-                    int schema_base, int schema_dofs, const Teuchos::ParameterList& plist);
-  void AssembleMatrix();
-  void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux);
-  void UpdateFlux(const CompositeVector& u, CompositeVector& flux, double scalar);
-
-  // local implementation of matrix inversion
-  int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
-
-  // local preconditioner
-  void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist,
-                          std::vector<int>& bc_model, std::vector<double>& bc_values);
+  // re-implementation of basic operator virtual members
 
  private:
-  void CreateMassMatrices_(std::vector<WhetStone::Tensor>& K);
-
- private:
-  Teuchos::ParameterList plist_;
-  std::vector<WhetStone::DenseMatrix> Wff_cells_;
-  Teuchos::RCP<NonlinearCoefficient> k_;
-
-  int schema_base_, schema_dofs_, schema_;
-  int upwind_;
+  void InitDiffusionSurface_();
 };
 
 }  // namespace Operators

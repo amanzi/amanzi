@@ -181,11 +181,11 @@ TEST(NONLINEAR_OPERATOR) {
     op3->UpdateMatrices(flux);
     op3->ApplyBCs(bc_model, bc_values);
     op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-    op3->AssembleMatrix();
+    op3->AssembleMatrixSpecial();
 
     // create preconditoner
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-    op3->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+    op3->InitPreconditionerSpecial("Hypre AMG", slist, bc_model, bc_values);
 
     // solve the problem
     ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");

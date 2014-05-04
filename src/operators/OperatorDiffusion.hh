@@ -26,9 +26,9 @@ namespace Operators {
 
 class OperatorDiffusion : public Operator {
  public:
-  OperatorDiffusion() : factor_(1.0) {};
-  OperatorDiffusion(Teuchos::RCP<const CompositeVectorSpace> cvs, int dummy) : Operator(cvs, dummy) {};
-  OperatorDiffusion(const Operator& op) : Operator(op) {};
+  OperatorDiffusion() { InitDiffusion_(); };
+  OperatorDiffusion(Teuchos::RCP<const CompositeVectorSpace> cvs, int dummy) : Operator(cvs, dummy) { InitDiffusion_(); }
+  OperatorDiffusion(const Operator& op) : Operator(op) { InitDiffusion_(); }
   ~OperatorDiffusion() {};
 
   // main members
@@ -38,19 +38,36 @@ class OperatorDiffusion : public Operator {
   void UpdateMatricesStiffness(std::vector<WhetStone::Tensor>& K);
   void UpdateFlux(const CompositeVector& u, CompositeVector& flux, double scalar);
 
+  // re-implementation of basic operator virtual members
+  int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
+
+  // special assembling routines
+  void AssembleMatrixSpecial();
+  int ApplyInverseSpecial(const CompositeVector& X, CompositeVector& Y) const;
+  void InitPreconditionerSpecial(const std::string& prec_name, const Teuchos::ParameterList& plist,
+                                 std::vector<int>& bc_model, std::vector<double>& bc_values);
+
+  // internal memebers
+  void CreateMassMatrices_(std::vector<WhetStone::Tensor>& K);
+
   // access (for developers only)
   void set_factor(double factor) { factor_ = factor; }
 
  private:
-  void CreateMassMatrices_(std::vector<WhetStone::Tensor>& K);
+  void InitDiffusion_();
 
- private:
+ public:
   Teuchos::ParameterList plist_;
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
   Teuchos::RCP<NonlinearCoefficient> k_;
 
   int schema_base_, schema_dofs_, schema_;
+  int upwind_;
+
   double factor_;
+
+ private:
+  mutable bool special_assembling_;
 };
 
 }  // namespace Operators
