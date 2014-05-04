@@ -29,7 +29,7 @@ void Transport_PK::LimiterTensorial(const int component,
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
   AmanziGeometry::Point normal_new(dim), direction(dim), p(dim);
 
-  Teuchos::RCP<Epetra_MultiVector> grad = gradient->ViewComponent("cell", false);
+  Epetra_MultiVector& grad = *gradient->ViewComponent("cell", false);
 
   std::vector<AmanziGeometry::Point> normals;
   AmanziMesh::Entity_ID_List faces;
@@ -40,7 +40,7 @@ void Transport_PK::LimiterTensorial(const int component,
     int nfaces = faces.size();
 
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    for (int i = 0; i < dim; i++) gradient_c1[i] = (*grad)[i][c];
+    for (int i = 0; i < dim; i++) gradient_c1[i] = grad[i][c];
 
     normals.clear();  // normals to planes the define the feasiable set
     for (int loop = 0; loop < 2; loop++) {
@@ -84,7 +84,7 @@ void Transport_PK::LimiterTensorial(const int component,
     double grad_norm = norm(gradient_c1);
     if (grad_norm < TRANSPORT_LIMITER_TOLERANCE * bc_scaling) gradient_c1.set(0.0);
 
-    for (int i = 0; i < dim; i++) (*grad)[i][c] = gradient_c1[i];
+    for (int i = 0; i < dim; i++) grad[i][c] = gradient_c1[i];
   }
 
   // Local extrema are calculated here and updated in Step 2.
@@ -130,7 +130,7 @@ void Transport_PK::LimiterTensorial(const int component,
             const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
             const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
             u2f = lifting.getValue(c2, xcf);
-            for (int k = 0; k < dim; k++) gradient_c2[k] = (*grad)[k][c2];
+            for (int k = 0; k < dim; k++) gradient_c2[k] = grad[k][c2];
             direction = xcf - xc2;
 
             if (u2f < umin) {
@@ -142,7 +142,7 @@ void Transport_PK::LimiterTensorial(const int component,
               ApplyDirectionalLimiter(direction, p, direction, gradient_c2);
             }
 
-            for (int k = 0; k < dim; k++) (*grad)[k][c2] = gradient_c2[k];
+            for (int k = 0; k < dim; k++) grad[k][c2] = gradient_c2[k];
           }
         }
       }
@@ -175,7 +175,7 @@ void Transport_PK::LimiterTensorial(const int component,
           if (b) {
             outflux_weigted += flux * a / b;
           } else {
-            for (int k = 0; k < dim; k++) (*grad)[k][c] = 0.0;
+            for (int k = 0; k < dim; k++) grad[k][c] = 0.0;
             break;
           }
         }
@@ -184,7 +184,7 @@ void Transport_PK::LimiterTensorial(const int component,
 
     if (outflux_weigted > outflux) {
       double psi = outflux / outflux_weigted;
-      for (int i = 0; i < dim; i++) (*grad)[i][c] *= psi;
+      for (int i = 0; i < dim; i++) grad[i][c] *= psi;
     }
   }
 

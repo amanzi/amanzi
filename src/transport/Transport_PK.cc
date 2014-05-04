@@ -141,6 +141,9 @@ Transport_PK::~Transport_PK()
 ****************************************************************** */
 int Transport_PK::InitPK()
 {
+  // Check that stars are oriented favorably for transport PK.
+  Policy(S_);
+
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
 
