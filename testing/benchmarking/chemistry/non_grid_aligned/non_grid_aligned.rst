@@ -1,24 +1,24 @@
-Calcite precipitation with non-grid-aligned dispersion
-======================================================
+Non-grid-aligned flow and transport, with mixing zone marked by calcite precipitation
+=====================================================================================
 
 Overview and Capabilities tested
 --------------------------------
 
-This test example performs the simulation of calcite precipitation in a 2D flow domain, where different solutions are injected at different injection rates in the two halves at the inlet face. As a result of the different rates, dispersion is not aligned with the rectangluar grid. Calcite precipitates along the mixing zone.  This example tests the following capabilities: 
+This test example performs the simulation of calcite precipitation in a 2D flow domain, where different solutions are injected at different injection rates in the two halves at the inlet face. As a result of the different rates, flow and transport is not aligned with the rectangluar grid. The solutions in each half are also different, such that at the mixing zone precipitation of calcite takes place.  This example tests the following capabilities: 
 
-* 2D flow
-* 2D advective transport 
-* 2D dispersive transport
+* Non-grid-aligned, 2D flow
+* Non-grid-aligned, 2D advective transport 
+* Non-grid-aligned, 2D dispersive transport
 * Geochemical reactions
 
 	* Mineral precipitation
 
-For details on this test, see :ref:`about_non_grid_aligned_dispersion`.
+For details on this test, see :ref:`about_non_grid_aligned`.
 	
 Background
 ----------
 
-Mixing-induced precipitation is a problem that has received some attention in the literature, especially in pore scale studies . To accurately predict precipitation along the mixing interface, accurate prediction of diffusive-dispersive transport. This is especially true, when these transport processes are not aligned with the discretization grid. 
+Mixing-induced precipitation is a problem that has received some attention in the literature, especially in pore scale studies [Yoon2012]_, [Tartakovsky2008]_. To accurately predict precipitation along the mixing interface, accurate prediction of diffusive-dispersive transport. This is especially true, when these transport processes are not aligned with the discretization grid. 
 
 Model
 -----
@@ -122,7 +122,7 @@ Simulation results
 
 Simulation results are as expected with precipitated calcite as indicated by its volume fraction (see Figure). This indicates that the handling of dispersion in Amanzi is capable of capturing this process correctly when it is no aligned with the discretization grid.
 
-.. plot::
+.. plot:: prototype/chemistry/non_grid_aligned/plot_non_grid_aligned.py
 
 ..   :align: left
 
@@ -132,7 +132,7 @@ References
 .. [Yoon2012] Hongkyu Yoon, Albert J. Valocchi, Charles J. Werth, and Thomas Dewers (2012) Pore-scale simulation of mixing-induced calcium carbonate precipitation and dissolution in a microfluidic pore network, Water Resour. Res., 48, W02524, doi:10.1029/2011WR011192.
 .. [Tartakovsky2008] A. M. Tartakovsky, G. Redden, P. C. Lichtner, T. D. Scheibe, and P. Meakin (2008) Mixing-induced precipitation: Experimental study and multiscale numerical analysis, Water Resour. Res., 44, W06S04, doi:10.1029/2006WR005725.
 
-.. _about_non_grid_aligned_dispersion:
+.. _about_non_grid_aligned:
 
 About
 -----
