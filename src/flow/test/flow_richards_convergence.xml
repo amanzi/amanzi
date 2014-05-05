@@ -71,7 +71,7 @@
       <Parameter name="atmospheric pressure" type="double" value="1e-10"/>
 
       <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="medium"/>
+        <Parameter name="Verbosity Level" type="string" value="none"/>
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
@@ -97,7 +97,7 @@
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1e-3"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
             <Parameter name="diverged tolerance" type="double" value="10000.0"/>
             <Parameter name="max du growth factor" type="double" value="100.0"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
@@ -106,7 +106,7 @@
             <Parameter name="limit iterations" type="int" value="20"/>
             <Parameter name="modify correction" type="bool" value="false"/>
             <ParameterList name="VerboseObject">
-              <Parameter name="Verbosity Level" type="string" value="medium"/>
+              <Parameter name="Verbosity Level" type="string" value="low"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -178,6 +178,9 @@
       <ParameterList name="gmres parameters">
         <Parameter name="maximum number of iterations" type="int" value="400"/>
         <Parameter name="error tolerance" type="double" value="1e-12"/>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="low"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
