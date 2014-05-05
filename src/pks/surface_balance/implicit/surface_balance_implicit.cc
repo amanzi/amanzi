@@ -361,24 +361,24 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       // -- ground properties
       seb.in.vp_ground.temp = surf_temp[0][c];
       seb.in.vp_ground.pressure = surf_pres[0][c];
-    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-    AmanziMesh::Entity_ID_List cells;
-    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
-    ASSERT(cells.size() == 1);
+      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+      AmanziMesh::Entity_ID_List cells;
+      subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+      ASSERT(cells.size() == 1);
       seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
 
       // -- snow properties
       seb.in.snow_old.ht = snow_depth_old[0][c] < min_snow_trans_ ? 0. : snow_depth_old[0][c];
       seb.in.snow_old.density = snow_dens_old[0][c];
       seb.in.snow_old.age = snow_age_old[0][c];
-       seb.in.snow_old.SWE = stored_SWE_old[0][c];
+      seb.in.snow_old.SWE = stored_SWE_old[0][c];
 
       seb.out.snow_new.ht = snow_depth_new[0][c];
       seb.out.snow_new.density = snow_dens_new[0][c];
       seb.out.snow_new.age = snow_age_new[0][c];
       seb.out.snow_new.SWE = stored_SWE_new[0][c];
 
-      seb.in.vp_snow.temp = 270.15;
+      seb.in.vp_snow.temp = 273.15;
 
       // -- met data
       seb.params.Zr = wind_speed_ref_ht_;
@@ -479,7 +479,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       seb.out.snow_new.age = snow_age_new[0][c];
       seb.out.snow_new.SWE = stored_SWE_new[0][c];
 
-      seb.in.vp_snow.temp = 270.15;
+      seb.in.vp_snow.temp = 273.15;
 
       // -- met data
       seb.params.Zr = wind_speed_ref_ht_;

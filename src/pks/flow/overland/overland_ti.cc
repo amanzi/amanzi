@@ -76,6 +76,7 @@ void OverlandFlow::Functional( double t_old,
   // update boundary conditions
   bc_head_->Compute(t_new);
   bc_flux_->Compute(t_new);
+  bc_seepage_head_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // diffusion term, treated implicitly
@@ -136,7 +137,7 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   PKDefaultBase::solution_to_state(up, S_next_);
 
   // update boundary conditions
-  UpdateBoundaryConditionsMarkers_(S_next_.ptr());
+  UpdateBoundaryConditions_(S_next_.ptr());
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
