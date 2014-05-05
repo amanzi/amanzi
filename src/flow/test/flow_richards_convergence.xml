@@ -71,7 +71,7 @@
       <Parameter name="atmospheric pressure" type="double" value="1e-10"/>
 
       <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="none"/>
+        <Parameter name="Verbosity Level" type="string" value="medium"/>
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
@@ -106,7 +106,7 @@
             <Parameter name="limit iterations" type="int" value="20"/>
             <Parameter name="modify correction" type="bool" value="false"/>
             <ParameterList name="VerboseObject">
-              <Parameter name="Verbosity Level" type="string" value="none"/>
+              <Parameter name="Verbosity Level" type="string" value="medium"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -192,6 +192,10 @@
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
         <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="relaxation type" type="int" value="6"/>
+        <Parameter name="cycle type" type="int" value="1"/>
+        <Parameter name="coarsen type" type="int" value="0"/>
+        <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
 
