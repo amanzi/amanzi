@@ -325,9 +325,10 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   const Epetra_MultiVector& precip_rain =
       *S_next_->GetFieldData("precipitation_rain")->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator("precipitation_snow")->HasFieldChanged(S_next_.ptr(), name_);
+  // snow precip need not be updated each iteration
+  S_inter_->GetFieldEvaluator("precipitation_snow")->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& precip_snow =
-      *S_next_->GetFieldData("precipitation_snow")->ViewComponent("cell", false);
+      *S_inter_->GetFieldData("precipitation_snow")->ViewComponent("cell", false);
 
   // pull additional primary variable data
   Epetra_MultiVector& surf_energy_flux =
