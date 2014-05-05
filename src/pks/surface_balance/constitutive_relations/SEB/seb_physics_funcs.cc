@@ -151,7 +151,6 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
   if (seb.in.snow_old.ht > 0.) {
     double swe_old = seb.in.snow_old.ht * seb.in.snow_old.density / seb.in.vp_ground.density_w;
     double swe_new = swe_old + (seb.in.met.Ps - mb.Mm + mb.Me)*seb.in.dt;
-    std::cout<<"OLD_SWE: "<<swe_old<<std::endl;    
     // First do a pass to ensure we are not melting or sublimation ALL
     // of the available snow.  If so, adjust dt
     if (swe_new < 0.) {
