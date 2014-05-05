@@ -114,11 +114,13 @@ void Transport_PK::CreateDefaultState(
 ******************************************************************* */
 void Transport_PK::Policy(Teuchos::RCP<State> S)
 {
-  if (!S_->GetFieldData("total_component_concentration")->Ghosted()) {
-    Errors::Message msg;
-    msg << "Field \"total component concentration\" has no ghosted values."
-        << " Transport PK is giving up.\n";
-    Exceptions::amanzi_throw(msg);
+  if (mesh_->get_comm()->NumProc() > 1) {
+    if (!S_->GetFieldData("total_component_concentration")->Ghosted()) {
+      Errors::Message msg;
+      msg << "Field \"total component concentration\" has no ghosted values."
+          << " Transport PK is giving up.\n";
+      Exceptions::amanzi_throw(msg);
+    }
   }
 }
 
