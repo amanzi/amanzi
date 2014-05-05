@@ -63,6 +63,8 @@ void Matrix_TPFA::Init()
   const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
   transmissibility_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
   gravity_term_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
+  //  faces_dir_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
+  face_flag_.assign(nfaces_wghost, 0);
 
   ComputeTransmissibilities_();
 }
@@ -121,25 +123,40 @@ void Matrix_TPFA::AddGravityFluxesRichards(double rho, const AmanziGeometry::Poi
   Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell");
   Epetra_MultiVector& Krel_faces = *rel_perm_->Krel().ViewComponent("face", true);
 
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List cells, faces;
+  std::vector<int> dirs;
 
 
-  for (int f = 0; f < nfaces_wghost; f++) {
-    if (bc_model[f] == FLOW_BC_FACE_FLUX) continue;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
+  // for (int f = 0; f < nfaces_wghost; f++) {
+  //   if (bc_model[f] == FLOW_BC_FACE_FLUX) continue;
+  //   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  //   int ncells = cells.size();
 
-    int sign(1);
-    for (int i = 0; i < ncells; i++) {
-      int c = cells[i];
+  //   int sign(1);
+  //   for (int i = 0; i < ncells; i++) {
+  //     int c = cells[i];
 
-      if (c < ncells_owned){
-	rhs_cells[0][c] -= sign * (*gravity_term_)[f] * Krel_faces[0][f];  
-      }
-      sign = -sign;
+  //     if (c < ncells_owned){
+  // 	rhs_cells[0][c] -= sign * (*gravity_term_)[f] * Krel_faces[0][f];  
+  //     }
+  //     sign = -sign;
+  //   }
+  // }
+  AmanziGeometry::Point face_centr, cell_cntr;
+  int sign;
+  for (int c=0; c<ncells_owned; c++){
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+ 
+    int nfaces = faces.size();
+    for (int i=0; i<nfaces; i++){
+      int f = faces[i];
+      if (bc_model[f] == FLOW_BC_FACE_FLUX) continue;
+      if (dirs[i] > 0) sign = -1;
+      else sign = 1;
+      rhs_cells[0][c] += sign * (*gravity_term_)[f] * Krel_faces[0][f];  
     }
+   
   }
-
 
 }
 
@@ -155,6 +172,7 @@ void Matrix_TPFA::Assemble()
 
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   AmanziMesh::Entity_ID_List cells;
+  //AmanziGeometry::Point face_centr, cell_cntr;
 
   int cells_LID[2], cells_GID[2];
   Teuchos::SerialDenseMatrix<int, double> Spp_local(2, 2);
@@ -171,6 +189,7 @@ void Matrix_TPFA::Assemble()
     }
 
     double tij = (*transmissibility_)[f] * Krel_faces[0][f];
+
     for (int i=0; i < mcells; i++){
       for (int j=0; j < mcells; j++){
 	if (i==j) Spp_local(i,j) = tij;
@@ -184,13 +203,17 @@ void Matrix_TPFA::Assemble()
 
   int mcells = 1;
   for (int c = 0; c < ncells_owned; c++){
+
     cells_GID[0] = cmap_wghost.GID(c);
     Spp_local(0,0) = Acc_cells_[c];
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Spp_local.values());
     rhs_cells[0][c] += Fc_cells_[c];
+
   }
 
   Spp_->GlobalAssemble();
+
+  //cout<<*Spp_<<endl;
 }
 
 
@@ -230,9 +253,11 @@ int Matrix_TPFA::Apply(const CompositeVector& X, CompositeVector& Y) const
 int Matrix_TPFA::ApplyPreconditioner(const CompositeVector& X, CompositeVector& Y) const
 {
   Teuchos::ParameterList plist;
-  Teuchos::ParameterList& slist = plist.sublist("gmres");
-  slist.set<string>("iterative method", "gmres");
-  slist.set<double>("error tolerance", 1e-12);
+  Teuchos::ParameterList& pre_list = plist.sublist("gmres");
+  Teuchos::ParameterList& slist = pre_list.sublist("gmres parameters");
+
+  pre_list.set<string>("iterative method", "gmres");
+  slist.set<double>("error tolerance", 1e-16);
   slist.set<int>("maximum number of iterations", 200);
   Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
   vlist.set("Verbosity Level", "low");
@@ -245,6 +270,8 @@ int Matrix_TPFA::ApplyPreconditioner(const CompositeVector& X, CompositeVector& 
 
   Y.PutScalar(0.0);
   int ierr = solver->ApplyInverse(X, Y);
+
+
 
   // if (ierr != 1) {
   //   std::cout << "Newton solver (" << solver->name() 
@@ -365,10 +392,12 @@ double Matrix_TPFA::ComputeNegativeResidual(const CompositeVector& u, CompositeV
   
   Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell");
 
-  
+  AmanziGeometry::Point face_centr, cell_cntr;
+
 
   for (int c = 0; c < ncells_owned; c++) {    
-    rc[0][c] -= rhs_cells[0][c];
+    rc[0][c] -= rhs_cells[0][c];   
+    cell_cntr = mesh_->cell_centroid(c);
   }
     
   double norm_residual;
@@ -396,6 +425,7 @@ void Matrix_TPFA::DeriveMassFlux(
 
   AmanziMesh::Entity_ID_List cells;
   std::vector<int> flag(nfaces_wghost, 0);
+  // face_flag_.assign(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -406,7 +436,8 @@ void Matrix_TPFA::DeriveMassFlux(
 
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
 	double value = bc_values[f][0];
-	flux[0][f] = dirs[n] * Krel_faces[0][f] * ((*transmissibility_)[f] * (p[0][c] - value) + (*gravity_term_)[f]);
+	flux[0][f] = dirs[n] * (*transmissibility_)[f] * (p[0][c] - value) + (*gravity_term_)[f];
+	flux[0][f] *= Krel_faces[0][f];
       } else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
 	double value = bc_values[f][0];
 	double area = mesh_->face_area(f);
@@ -443,10 +474,9 @@ void Matrix_TPFA::AnalyticJacobian_(const CompositeVector& u,
   u.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
 
-  AmanziMesh::Entity_ID_List faces;
-
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List cells, faces;
+  std::vector<int> dirs;
 
   int cells_LID[2], cells_GID[2];
   double perm_abs_vert[2], perm_abs_horz[2];
@@ -461,28 +491,61 @@ void Matrix_TPFA::AnalyticJacobian_(const CompositeVector& u,
   Epetra_MultiVector& dKdP_faces = *rel_perm_->dKdP().ViewComponent("face", true);
   int method = rel_perm_->method();
 
-  for (int f = 0; f < nfaces_owned; f++){
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int mcells = cells.size();
-    Teuchos::SerialDenseMatrix<int, double> Jpp(mcells, mcells);
+  //flag_.assign(nfaces_wghost, 0);
+  std::vector<int> flag(nfaces_wghost, 0);
+  //  for (int f = 0; f < nfaces_owned; f++){
 
-    for (int n = 0; n < mcells; n++) {
-      cells_LID[n] = cells[n];
-      cells_GID[n] = cmap_wghost.GID(cells_LID[n]);
-      pres[n] = uc[0][cells_LID[n]];
-      dk_dp[n] = dKdP_cells[0][cells_LID[n]];
+  AmanziGeometry::Point face_centr;
+
+
+  for (int c = 0; c < ncells_owned; c++){
+
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+    for (int i=0; i<nfaces; i++){
+
+      int f = faces[i];
+      if (f < nfaces_owned && !flag[f]) {
+	mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+	int mcells = cells.size();
+	Teuchos::SerialDenseMatrix<int, double> Jpp(mcells, mcells);
+
+	
+
+	int face_dir;   	
+	// face_dir is equal to 1 if normal direction points from cells[0] ,
+	// otherwise face_dir is -1
+	if (cells[0] == c)  face_dir = dirs[i];
+	else face_dir = -dirs[i];
+
+	for (int n = 0; n < mcells; n++) {
+	  cells_LID[n] = cells[n];
+	  cells_GID[n] = cmap_wghost.GID(cells_LID[n]);
+	  pres[n] = uc[0][cells_LID[n]];
+	  dk_dp[n] = dKdP_cells[0][cells_LID[n]];
+	}
+
+	if (mcells == 1) {
+	  dk_dp[0] = dKdP_faces[0][f];
+	}
+
+	const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0]);
+	ComputeJacobianLocal_(mcells, f, face_dir, method, bc_models, bc_values, pres, dk_dp, Jpp);
+
+
+	(*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp.values());
+
+	flag[f] = 1;
+      }
+
     }
 
-    if (mcells == 1) {
-      dk_dp[0] = dKdP_faces[0][f];
-    }
 
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0]);
-    ComputeJacobianLocal_(mcells, f, method, bc_models, bc_values, pres, dk_dp, Jpp);
-    (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp.values());
   }
-
+    
   Spp_->GlobalAssemble();
+
+  //cout<<*Spp_<<endl;
 }
 
 
@@ -491,7 +554,7 @@ void Matrix_TPFA::AnalyticJacobian_(const CompositeVector& u,
 * Analytical Jacobian (nonlinear part) on a particular face.
 ****************************************************************** */
 void Matrix_TPFA::ComputeJacobianLocal_(
-    int mcells, int face_id, int Krel_method,
+    int mcells, int face_id, int face_dir, int Krel_method,
     std::vector<int>& bc_models, std::vector<bc_tuple>& bc_values,
     double *pres, double *dk_dp_cell,
     Teuchos::SerialDenseMatrix<int, double>& Jpp)
@@ -503,7 +566,7 @@ void Matrix_TPFA::ComputeJacobianLocal_(
   if (mcells == 2) {
     dpres = pres[0] - pres[1];  // + grn;
     if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
-      double cos_angle = (*gravity_term_)[face_id] / (rho_w * mesh_->face_area(face_id));
+      double cos_angle = face_dir * (*gravity_term_)[face_id] / (rho_w * mesh_->face_area(face_id));
       if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dk_dp_cell[0];
         dKrel_dp[1] = 0.0;
@@ -515,13 +578,15 @@ void Matrix_TPFA::ComputeJacobianLocal_(
         dKrel_dp[1] = 0.5*dk_dp_cell[1];
       }
     } else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-      if ((*transmissibility_)[face_id] * dpres + (*gravity_term_)[face_id] > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+      double flux0to1;
+      flux0to1 = (*transmissibility_)[face_id] * dpres + face_dir * (*gravity_term_)[face_id];
+      if (flux0to1  > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dk_dp_cell[0];
         dKrel_dp[1] = 0.0;
-      } else if ((*transmissibility_)[face_id] * dpres + (*gravity_term_)[face_id] < -FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+      } else if ( flux0to1 < -FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = 0.0;
         dKrel_dp[1] = dk_dp_cell[1];
-      } else if (fabs((*transmissibility_)[face_id] * dpres + (*gravity_term_)[face_id]) < FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+      } else if (fabs(flux0to1) < FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = 0.5*dk_dp_cell[0];
         dKrel_dp[1] = 0.5*dk_dp_cell[1];
       }
@@ -530,8 +595,8 @@ void Matrix_TPFA::ComputeJacobianLocal_(
       dKrel_dp[1] = 0.5*dk_dp_cell[1];
     }
 
-    Jpp(0, 0) = ((*transmissibility_)[face_id] * dpres + (*gravity_term_)[face_id]) * dKrel_dp[0];
-    Jpp(0, 1) = ((*transmissibility_)[face_id] * dpres + (*gravity_term_)[face_id]) * dKrel_dp[1];
+    Jpp(0, 0) = ((*transmissibility_)[face_id] * dpres + face_dir * (*gravity_term_)[face_id]) * dKrel_dp[0];
+    Jpp(0, 1) = ((*transmissibility_)[face_id] * dpres + face_dir * (*gravity_term_)[face_id]) * dKrel_dp[1];
     Jpp(1, 0) = -Jpp(0, 0);
     Jpp(1, 1) = -Jpp(0, 1);
 
@@ -540,7 +605,7 @@ void Matrix_TPFA::ComputeJacobianLocal_(
       pres[1] = bc_values[face_id][0];
 
       dpres = pres[0] - pres[1];  // + grn;
-      Jpp(0,0) = ((*transmissibility_)[face_id] * dpres + (*gravity_term_)[face_id]) * dk_dp_cell[0];
+      Jpp(0,0) = ((*transmissibility_)[face_id] * dpres + face_dir * (*gravity_term_)[face_id]) * dk_dp_cell[0];
     } else {
       Jpp(0,0) = 0.0;
     }
@@ -572,7 +637,8 @@ void Matrix_TPFA::ComputeTransmissibilities_()
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0]);
+    //const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0]);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false);
     const AmanziGeometry::Point& face_centr = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 
@@ -608,7 +674,7 @@ void Matrix_TPFA::ComputeTransmissibilities_()
       trans_f += h_test[i] / perm[i];
     }
 
-    trans_f = 1.0 / trans_f;
+    trans_f = fabs(1.0 / trans_f);
 
     (*transmissibility_)[f] = trans_f;
     (*gravity_term_)[f] = (*transmissibility_)[f] * grav;

@@ -154,8 +154,9 @@ class Richards_PK : public Flow_PK {
 
   Teuchos::RCP<RelativePermeability> rel_perm;
 
-  Teuchos::RCP<Epetra_Vector> Transmis_faces;
-  Teuchos::RCP<Epetra_Vector> Grav_term_faces;
+  // Teuchos::RCP<Epetra_Vector> Transmis_faces;
+  // Teuchos::RCP<Epetra_Vector> Grav_term_faces;
+  // Teuchos::RCP<Epetra_Vector> faces_dir;
 
   bool is_matrix_symmetric;
   int update_upwind;

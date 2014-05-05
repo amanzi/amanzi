@@ -58,6 +58,7 @@ void Richards_PK::AssembleSteadyStateMatrix(FlowMatrix* matrix)
   matrix->AddGravityFluxesRichards(rho_, gravity_, bc_model);
   matrix->ApplyBoundaryConditions(bc_model, bc_values);
   matrix->Assemble();
+
   /*
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 

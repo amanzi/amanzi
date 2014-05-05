@@ -69,10 +69,6 @@ void Richards_PK::Functional(double Told, double Tnew,
     }
   }
 
-  // Teuchos::OSTab tab = vo_->getOSTab();       
-  // for (int c=51; c<60; c++) {
-  //   *vo_->os() << "** Residual **** : c=" << c<<" r "<<f_cells[0][c]<<" sol "<<unew_cells[0][c]<<std::endl;
-  // } 
 
 }
 
@@ -187,7 +183,7 @@ bool Richards_PK::ModifyCorrection(
 {
   const Epetra_MultiVector& uc = *u->ViewComponent("cell");
   const Epetra_MultiVector& duc = *du->ViewComponent("cell");
-
+  AmanziGeometry::Point face_centr, cell_cntr;
   double max_sat_pert = 0.25;
   double damping_factor = 0.6;
   double reference_pressure = 101325.0;
@@ -207,16 +203,7 @@ bool Richards_PK::ModifyCorrection(
     
     double press_pert = atm_pressure_ - WRM[mb]->capillaryPressure(sat_pert);
     double du_pert_max = fabs(uc[0][c] - press_pert); 
-
-    // if ((c>50)&&(c<60)){
-      
-    //     Teuchos::OSTab tab = vo_->getOSTab();       
-    //     *vo_->os() << "** TEST ** c=" << c 
-    //                << " p=" << uc[0][c]<<" sat="<<sat <<" pc="<<pc
-    //                << " dp: " << duc[0][c] << " -> " << du_pert_max << std::endl;
-
-    // }
-
+    double tmp =  duc[0][c];
 
     if ((fabs(duc[0][c]) > du_pert_max) && (1 - sat > 1e-5)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
@@ -232,8 +219,10 @@ bool Richards_PK::ModifyCorrection(
       ncells_clipped++;
     }    
 
-      
+     
   }
+
+
 
   for (int c = 0; c < ncells_owned; c++) {
     double unew = uc[0][c] - duc[0][c];

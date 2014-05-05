@@ -87,10 +87,15 @@ class Matrix_TPFA : public Matrix<CompositeVector, CompositeVectorSpace> {
                          std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values);
 
   void ComputeJacobianLocal_(
-      int mcells, int face_id, int Krel_method,
+      int mcells, int face_id,  int face_dir, int Krel_method,
       std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values,
       double *pres, double *dk_dp_cell,
       Teuchos::SerialDenseMatrix<int, double>& Jpp);
+  // void ComputeJacobianLocal_(
+  //     int mcells, int face_id,  int Krel_method,
+  //     std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values,
+  //     double *pres, double *dk_dp_cell,
+  //     Teuchos::SerialDenseMatrix<int, double>& Jpp);
 
   void ComputeTransmissibilities_();
          
@@ -109,6 +114,7 @@ class Matrix_TPFA : public Matrix<CompositeVector, CompositeVectorSpace> {
 
   Teuchos::RCP<Epetra_Vector> transmissibility_;
   Teuchos::RCP<Epetra_Vector> gravity_term_;
+  std::vector<int> face_flag_;
 
   void operator=(const Matrix_TPFA& matrix);
 };

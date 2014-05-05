@@ -257,6 +257,7 @@ void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterLi
 {
   vo_ = Teuchos::rcp(new VerboseObject("Solvers::GMRES", plist));
 
+
   tol_ = plist.get<double>("error tolerance", 1e-6);
   max_itrs_ = plist.get<int>("maximum number of iterations", 100);
   krylov_dim_ = plist.get<int>("size of Krylov space", 10);
