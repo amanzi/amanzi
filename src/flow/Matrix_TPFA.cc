@@ -257,7 +257,7 @@ int Matrix_TPFA::ApplyPreconditioner(const CompositeVector& X, CompositeVector& 
   Teuchos::ParameterList& slist = pre_list.sublist("gmres parameters");
 
   pre_list.set<string>("iterative method", "gmres");
-  slist.set<double>("error tolerance", 1e-16);
+  slist.set<double>("error tolerance", 1e-8);
   slist.set<int>("maximum number of iterations", 200);
   Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
   vlist.set("Verbosity Level", "low");
