@@ -110,8 +110,24 @@ void Transport_PK::CreateDefaultState(
 
 
 /* *******************************************************************
- * Routine verifies that the velocity field is divergence free                 
- ****************************************************************** */
+* Routine verifies that the velocity field is divergence free                 
+******************************************************************* */
+void Transport_PK::Policy(Teuchos::RCP<State> S)
+{
+  if (mesh_->get_comm()->NumProc() > 1) {
+    if (!S_->GetFieldData("total_component_concentration")->Ghosted()) {
+      Errors::Message msg;
+      msg << "Field \"total component concentration\" has no ghosted values."
+          << " Transport PK is giving up.\n";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+}
+
+
+/* *******************************************************************
+* Routine verifies that the velocity field is divergence free                 
+******************************************************************* */
 void Transport_PK::CheckDivergenceProperty()
 {
   int i, c, f;

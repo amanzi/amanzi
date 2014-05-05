@@ -109,17 +109,18 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
 
   // populate the diffusion operator
   Teuchos::ParameterList olist;
-  int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
+  int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
+  int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
   op->Init();
-  op->InitOperator(K, Teuchos::null, olist);
+  op->InitOperator(K, Teuchos::null, schema_base, schema_dofs, olist);
   op->UpdateMatrices(Teuchos::null);
   op->ApplyBCs(bc_model, bc_values);
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-  op->AssembleMatrix(schema);
+  op->AssembleMatrixSpecial();
 
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+  op->InitPreconditionerSpecial("Hypre AMG", slist, bc_model, bc_values);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");

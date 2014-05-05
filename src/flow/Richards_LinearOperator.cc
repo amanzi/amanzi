@@ -10,7 +10,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include "Matrix_MFD.hh"
-#include "Matrix_Audit.hh"
 #include "LinearOperatorFactory.hh"
 #include "Richards_PK.hh"
 

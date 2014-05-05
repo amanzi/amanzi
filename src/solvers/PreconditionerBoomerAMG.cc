@@ -35,42 +35,29 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
   plist_ = list;
 #ifdef HAVE_HYPRE
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol,
-          plist_.get<double>("tolerance", 0.0))));
-
+						      plist_.get<double>("tolerance", 0.0))));
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,
-          plist_.get<int>("verbosity", 0))));
-
-  if (plist_.isParameter("cycle applications"))
-    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxIter,
-            plist_.get<int>("cycle applications"))));
+						      plist_.get<int>("verbosity", 0))));
+  funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxIter,
+						      plist_.get<int>("cycle applications", 5))));
+  funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCoarsenType,
+						      plist_.get<int>("coarsen type", 0))));
+  funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetStrongThreshold,
+						      plist_.get<double>("strong threshold", 0.5))));
+  funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleType,
+						      plist_.get<int>("cycle type", 1))));
+  funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNumSweeps,
+						      plist_.get<int>("smoother sweeps", 3))));
+  funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType,
+						      plist_.get<int>("relaxation type", 6))));
 
   if (plist_.isParameter("max multigrid levels"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxLevels,
-            plist_.get<int>("max multigrid levels"))));
-  
-  if (plist_.isParameter("coarsen type"))
-    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCoarsenType,
-            plist_.get<int>("coarsen type", 0))));
-
+							plist_.get<int>("max multigrid levels"))));
   if (plist_.isParameter("max coarse size"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxCoarseSize,
-            plist_.get<int>("max coarse size"))));
+							plist_.get<int>("max coarse size"))));
 
-  if (plist_.isParameter("strong threshold"))
-    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetStrongThreshold,
-            plist_.get<double>("strong threshold"))));
-
-  if (plist_.isParameter("cycle type"))
-    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleType,
-            plist_.get<int>("cycle type"))));
-
-  if (plist_.isParameter("smoother sweeps"))
-    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNumSweeps,
-            plist_.get<int>("smoother sweeps"))));
-
-  if (plist_.isParameter("relaxation type"))
-    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNumSweeps,
-            plist_.get<int>("relaxation type"))));
 #else
   Errors::Message msg("Hypre (BoomerAMG) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);

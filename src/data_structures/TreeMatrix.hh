@@ -29,9 +29,6 @@ class TreeMatrix {
   // Vector space of the Matrix's range.
   virtual const TreeVectorSpace& RangeMap() const = 0;
 
-  // Virtual copy constructor.
-  virtual Teuchos::RCP<TreeMatrix> Clone() const = 0;
-
   // Apply matrix, b <-- Ax, returns ierr
   virtual int Apply(const TreeVector& x,
                     TreeVector& b) const = 0;

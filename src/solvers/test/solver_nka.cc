@@ -12,6 +12,7 @@
 #include "SolverNKA_BT.hh"
 #include "SolverNKA_BT_ATS.hh"
 #include "SolverNewton.hh"
+#include "SolverJFNK.hh"
 
 using namespace Amanzi;
 
@@ -129,6 +130,44 @@ TEST_FIXTURE(test_data, NEWTON_SOLVER) {
 
   // solve
   newton->Solve(u);
+  CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
+  CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
+};
+
+
+/* ******************************************************************/
+TEST_FIXTURE(test_data, JFNK_SOLVER) {
+  std::cout << std::endl << "JFNK nonlinear solver..." << std::endl;
+
+  // create the function class
+  Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, false));
+
+  // create the SolverState
+  Teuchos::ParameterList plist;
+  plist.sublist("nonlinear solver").set("solver type", "Newton");
+  plist.sublist("nonlinear solver").sublist("Newton parameters").sublist("VerboseObject")
+        .set("Verbosity Level", "extreme");
+  plist.sublist("nonlinear solver").sublist("Newton parameters").set("nonlinear tolerance", 1e-6);
+  plist.sublist("nonlinear solver").sublist("Newton parameters").set("diverged tolerance", 1e10);
+  plist.sublist("nonlinear solver").sublist("Newton parameters").set("limit iterations", 15);
+  plist.sublist("nonlinear solver").sublist("Newton parameters").set("max du growth factor", 1e5);
+  plist.sublist("nonlinear solver").sublist("Newton parameters").set("max divergent iterations", 3);
+  plist.sublist("JF matrix parameters");
+  plist.sublist("linear operator").set("iterative method", "gmres");
+  plist.sublist("linear operator").sublist("VerboseObject").set("Verbosity Level", "extreme");
+
+  // create the Solver
+  Teuchos::RCP<AmanziSolvers::SolverJFNK<Epetra_Vector, Epetra_BlockMap> > jfnk =
+      Teuchos::rcp(new AmanziSolvers::SolverJFNK<Epetra_Vector, Epetra_BlockMap>(plist));
+  jfnk->Init(fn, *map);
+
+  // initial guess
+  Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  (*u)[0] = -0.9;
+  (*u)[1] =  0.9;
+
+  // solve
+  jfnk->Solve(u);
   CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
   CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
 };

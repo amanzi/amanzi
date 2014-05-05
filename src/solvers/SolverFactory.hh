@@ -18,6 +18,7 @@
 #include "SolverNKA_BT.hh"
 #include "SolverNKA_BT_ATS.hh"
 #include "SolverNewton.hh"
+#include "SolverJFNK.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -99,6 +100,15 @@ SolverFactory<Vector,VectorSpace>::Create(Teuchos::ParameterList& slist)
       Teuchos::ParameterList nka_list = slist.sublist("nka_bt_ats parameters");
       Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
           Teuchos::rcp(new SolverNKA_BT_ATS<Vector,VectorSpace>(nka_list));
+      return solver;
+    } else if (type == "JFNK") {
+      if (!slist.isSublist("JFNK parameters")) {
+        Errors::Message msg("SolverFactory: missing sublist \"JFNK parameters\"");
+        Exceptions::amanzi_throw(msg);
+      }
+      Teuchos::ParameterList nka_list = slist.sublist("JFNK parameters");
+      Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
+          Teuchos::rcp(new SolverJFNK<Vector,VectorSpace>(nka_list));
       return solver;
     } else {
       Errors::Message msg("SolverFactory: wrong value of parameter `\"solver type`\"");

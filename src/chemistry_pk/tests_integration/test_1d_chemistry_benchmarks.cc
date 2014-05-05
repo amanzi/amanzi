@@ -3,8 +3,10 @@
 #include <vector>
 #include <cstdlib>
 #include <cmath>
+#include <iostream>
 #include <float.h>
 #include <TestReporterStdout.h>
+#include <iostream>
 #include "hdf5.h"
 
 // This computes the L2 error norm for the given component in the output file by comparing 

@@ -380,9 +380,8 @@ read from an external file (unstructured only). If the mesh is to be
 generated internally, a ``generate`` element is specified with details
 about the number of cells in each direction and the low and high
 coordinates of the bounding box. If the mesh is to be read from a
-file, a ``file`` element is specified with the file name and file
-format. Currently only Exodus II files are supported with the
-extension of *.exo*.  Finally, as in other sections, a ``comments``
+file, a ``read`` element is specified with the file name and file
+format. Currently only Exodus II files are supported.  Finally, as in other sections, a ``comments``
 element is provide to include any comments or documentation the user
 wishes.
 
@@ -421,7 +420,11 @@ given below.
   <mesh framework="mstk"> 
     <comments>Read from Exodus II</comments>
     <dimension>3</dimension>
-    <file>dvz.exo</file>
+    <read>
+      <file>dvz.exo</file>
+      <format>exodus ii</format>
+    </read>
+
   </mesh>
 
 Regions
@@ -563,6 +566,12 @@ A ``material`` element can contain the following:
         <optional_krel_smoothing_interval value="Value"/>
         <exp value="Value"/> (burdine only)
     </rel_perm>
+    <sorption_isotherms>
+          <!-- Three models available, add b or n parameter for appropriate model -->
+	<solute name="Name of Solute" model="linear" kd="Value"/>
+	<solute name="Name of Solute" model="langmuir" kd="Value" b="Value"/>
+        <solute name="Name of Solute" model="freundlich" kd="Value" n="Value"/>
+    </sorption_isotherms>
     <assigned_regions>Comma seperated list of Regions</assigned_regions>
   </material>
 
@@ -607,14 +616,14 @@ those kernels.  The ``process_kernels`` element is as follows:
     <comments>Comment text here</comments>
     <flow state = "on | off" model = "richards | saturated | constant"/>
     <transport state = "on | off" algorithm = "explicit first-order | explicit second-order | implicit upwind | none" sub_cycling = "on | off"/>
-    <chemistry state = "on | off" process_model="implicit operator split | none"/>
+    <chemistry state = "on | off" engine = "amanzi | pflotran | none" process_model="implicit operator split | none"/>
   </process_kernels>
 
 Currently three scenerios are avaiable for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to the a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
 For `"transport`" a combination of `"state`" and `"algorithm`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the integration algorithm must be specified.  Whether sub-cycling is to be utilized within the transport algorithm is also specified here.
 
-For `"chemistry`" a combination of `"state`" and `"process_model`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the process model must be specified. 
+For `"chemistry`" a combination of `"state`", `"engine`", and `"process_model`" must be specified.  If `"state`" is `"off`" then `"engine`" and `"process_model`" are set to `"none`".  Otherwise the `"engine`" and `"process_model`" model must be specified. 
 
 An example ``process_kernels`` is as follows:
 
@@ -624,7 +633,7 @@ An example ``process_kernels`` is as follows:
     <comments>This is a proposed comment field for process_kernels</comments>
     <flow state = "on" model = "richards"/>
     <transport state = "on" algorithm = "explicit first-order" sub_cycling = "on"/>
-    <chemistry state = "off" process_model="none"/>
+    <chemistry state = "off" engine="none" process_model="none"/>
   </process_kernels>
 
 Phases
@@ -776,7 +785,7 @@ them.
 +-----------------------+------------------+---------------------------------+
 
 
-For the solute component the attributes available are *name*, *value*,
+For the solute_component the attributes available are *name*, *value*,
 *function*, *reference_coord*, and *gradient*.  The function options
 available are *uniform* and *linear*.  The attributes
 *reference_coord*, and *gradient* are only necessary for the *linear*

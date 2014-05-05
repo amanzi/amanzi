@@ -282,6 +282,7 @@ void Flow_PK::ProcessStringLinearSolver(const std::string& name, LinearSolver_Sp
     Exceptions::amanzi_throw(msg);
   }
 
+  ls_specs->solver_name = name;
   Teuchos::ParameterList& tmp_list = linear_operator_list_.sublist(name);
   ls_specs->max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
   ls_specs->convergence_tol = tmp_list.get<double>("error tolerance", 1e-14);

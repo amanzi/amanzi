@@ -29,14 +29,7 @@ VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist) :
   // -- Set up the VerboseObject header.
   std::string headername = plist.sublist("VerboseObject").get<std::string>("Name",name);
   plist.sublist("VerboseObject").remove("Name");
-
-  std::string header(headername);
-  if (header.size() > line_prefix_size) {
-    header.erase(line_prefix_size);
-  } else if (header.size() < line_prefix_size) {
-    header.append(line_prefix_size - header.size(), ' ');
-  }
-  setLinePrefix(header);
+  set_name(headername);
 
   // -- Show the line prefix
   bool no_pre = plist.sublist("VerboseObject").get<bool>("Hide Line Prefix", hide_line_prefix);
@@ -50,6 +43,17 @@ VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist) :
   out_->setShowLinePrefix(!no_pre);
 }
 
+
+void VerboseObject::set_name(std::string name)
+{
+  std::string header(name);
+  if (header.size() > line_prefix_size) {
+    header.erase(line_prefix_size);
+  } else if (header.size() < line_prefix_size) {
+    header.append(line_prefix_size - header.size(), ' ');
+  }
+  setLinePrefix(header);
+}
 
 std::string VerboseObject::color(std::string name) 
 { 
@@ -88,13 +92,7 @@ VerboseObject::VerboseObject(const Epetra_MpiComm* const comm, std::string name,
   std::string headername = plist.sublist("VerboseObject").get<std::string>("name",name);
   plist.sublist("VerboseObject").remove("name");
 
-  std::string header(headername);
-  if (header.size() > line_prefix_size) {
-    header.erase(line_prefix_size);
-  } else if (header.size() < line_prefix_size) {
-    header.append(line_prefix_size - header.size(), ' ');
-  }
-  setLinePrefix(header);
+  set_name(headername);
 
   // -- Show the line prefix
   bool no_pre = plist.sublist("VerboseObject").get<bool>("hide line prefix",

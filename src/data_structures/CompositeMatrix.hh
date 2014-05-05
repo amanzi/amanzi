@@ -29,9 +29,6 @@ class CompositeMatrix {
   // Vector space of the Matrix's range.
   virtual const CompositeVectorSpace& RangeMap() const = 0;
 
-  // Virtual copy constructor.
-  virtual Teuchos::RCP<CompositeMatrix> Clone() const = 0;
-
   // Apply matrix, b <-- Ax, returns ierr
   virtual int Apply(const CompositeVector& x,
                      CompositeVector& b) const = 0;

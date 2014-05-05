@@ -175,16 +175,17 @@ TEST(NONLINEAR_OPERATOR) {
     Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2));
 
     Teuchos::ParameterList olist;
-    int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
-    op3->InitOperator(K, knc, olist);
+    int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
+    int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
+    op3->InitOperator(K, knc, schema_base, schema_dofs, olist);
     op3->UpdateMatrices(flux);
     op3->ApplyBCs(bc_model, bc_values);
     op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-    op3->AssembleMatrix(schema);
+    op3->AssembleMatrixSpecial();
 
     // create preconditoner
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-    op3->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+    op3->InitPreconditionerSpecial("Hypre AMG", slist, bc_model, bc_values);
 
     // solve the problem
     ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");

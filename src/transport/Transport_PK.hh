@@ -93,6 +93,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   void init_dispersion_matrix(Teuchos::RCP<Dispersion> matrix) { dispersion_matrix_ = matrix; } 
 
   // control members
+  void Policy(Teuchos::RCP<State> S);
   void PrintStatistics() const;
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 

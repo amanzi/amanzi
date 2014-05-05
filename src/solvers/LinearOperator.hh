@@ -24,12 +24,19 @@ template<class Matrix, class Vector, class VectorSpace>
 class LinearOperator : public Matrix {
  public:
   LinearOperator(const Teuchos::RCP<const Matrix>& m,
-                 const Teuchos::RCP<const Matrix>& h) : 
-      m_(m), h_(h) {};
+                 const Teuchos::RCP<const Matrix>& h) :
+      Matrix(),
+      m_(m),
+      h_(h)
+  {};
 
   virtual ~LinearOperator() {};
 
-  virtual void Init(Teuchos::ParameterList& plist) = 0;  
+  virtual void Init(Teuchos::ParameterList& plist) = 0;
+  void Init() { 
+    Teuchos::ParameterList plist;
+    Init(plist);
+  }
 
   virtual int Apply(const Vector& v, Vector& mv) const { return m_->Apply(v, mv); }
   virtual int ApplyInverse(const Vector& v, Vector& hv) const = 0;
@@ -59,6 +66,11 @@ class LinearOperator : public Matrix {
   Teuchos::RCP<const Matrix> m_;
   Teuchos::RCP<const Matrix> h_;
   std::string name_;
+
+ private:
+  LinearOperator();
+  LinearOperator(const LinearOperator<Matrix,Vector,VectorSpace>& other); // specifically not implemented
+
 };
 
 }  // namespace AmanziSolvers

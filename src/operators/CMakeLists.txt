@@ -43,6 +43,11 @@ include_directories(${MSTK_INCLUDE_DIRS})
 add_definitions("-DMSTK_HAVE_MPI")
 
 #
+# Library: operator audit
+#
+add_amanzi_library(operator_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_libs})
+
+#
 # Library: operators
 #
 file(GLOB operators_inc_files "*.hh")
@@ -50,6 +55,7 @@ add_amanzi_library(operators
                    SOURCE Operator.cc OperatorDiffusion.cc OperatorDiffusionSurface.cc 
                    OperatorAccumulation.cc OperatorSource.cc 
                    OperatorAdvection.cc OperatorGravity.cc
+                   OperatorDiffusionFactory.cc
                    HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
 
@@ -99,6 +105,12 @@ if ( BUILD_TESTS )
     add_amanzi_test(operators_surface_misc operators_surface_misc
                     KIND unit
                     SOURCE test/Main.cc test/operator_surface_misc.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # convergence analysis
+    add_amanzi_test(operators_convergence operators_convergence
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

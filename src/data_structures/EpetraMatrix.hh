@@ -28,9 +28,6 @@ class EpetraMatrix {
   // Vector space of the Matrix's range.
   virtual const Epetra_BlockMap& RangeMap() const = 0;
 
-  // Virtual copy constructor.
-  virtual Teuchos::RCP<EpetraMatrix> Clone() const = 0;
-
   // Apply matrix, b <-- Ax, returns ierr
   virtual int Apply(const Epetra_Vector& x,
                      Epetra_Vector& b) const = 0;

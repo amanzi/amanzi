@@ -1468,7 +1468,8 @@ Preconditioners
 
 Version 2 of the native input spec introduces this list. It contains sublists for various
 preconditioners required by a simulation. At the moment, we support Trilinos multilevel
-preconditioner, Hypre BoomerAMG preconditioner, ILU preconditioner, and identity preconditioner. 
+preconditioner, Hypre BoomerAMG preconditioner, ILU preconditioner, Euclid ILU
+preconditioner, and identity preconditioner. 
 Here is an example:
 
 .. code-block:: xml
@@ -1531,8 +1532,41 @@ Internal parameters for Boomer AMG include
 * `"relaxation type`" [int] defines the smoother to be used. Default is 6 
   which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method.
 
-* `"verbosity`" [int] prints BoomerAMG statistics useful for analysis. 
-  Default is 0.
+* `"verbosity`" [int] prints a summary of runtime settings and timing 
+  information to stdout.  Default is 0.
+
+
+Euclid ILU
+----------
+
+The Euclid Parallel ILU algorithm was presented at SC99 and published in expanded 
+form in the SIAM Journal on Scientific Computing. 
+Scalability means that the factorization (setup) and application (triangular solve) timings remain
+nearly constant when the global problem size is scaled in proportion to the number of processors.
+As with all ILU preconditioning methods, the number of iterations is expected to increase with
+global problem size.
+Internal parameters for this preconditioner include
+
+.. code-block:: xml
+
+   <ParameterList name="euclid parameters">
+     <Parameter name="ILU(k) fill level" type="int" value="6"/>
+     <Parameter name="ILUT drop tolerance" type="double" value="0.01"/>
+     <Parameter name="rescale rows" type="bool" value="true"/>
+     <Parameter name="verbosity" type="int" value="0"/>
+   </ParameterList>
+
+* `"ILU(k) fill level`" [int] is the factorization level. Default is 1.
+
+* `"ILUT drop tolerance`" defines a drop tolerance relative to the largest 
+  absolute value of any entry in the row being factored.
+
+* `"rescale row`" [bool] if true, values are scaled prior to factorization 
+  so that largest value in any row is +1 or -1. Note that this can destroy 
+  matrix symmetry. 
+
+* `"verbosity`" [int] prints a summary of runtime settings and timing 
+  information to stdout.  Default is 0.
 
 
 Trilinos ML

@@ -91,6 +91,7 @@ if (BUILD_TESTS)
 			  test/test_ode_nka.cc
 		    LINK_LIBS
 			time_integration
+                        whetstone
 			error_handling
         		atk
 			  ${UnitTest_LIBRARIES}

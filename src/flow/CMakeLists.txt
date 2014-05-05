@@ -52,7 +52,7 @@ set(flow_src_files Flow_PK.cc Flow_IO.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_SteadyState.cc Richards_LinearOperator.cc
                    Richards_Bundles.cc
-                   Matrix_MFD.cc Stiffness_MFD.cc Matrix_TPFA.cc 
+                   Matrix_MFD.cc Matrix_TPFA.cc 
                    RelativePermeability.cc RelativePermeability_IO.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
 		   )
@@ -67,11 +67,6 @@ add_amanzi_library(flow SOURCE ${flow_src_files}
                    LINK_LIBS functions mesh_functions ${flow_tpl_libs} time_integration data_structures state)
 
 #
-# Library: matrix audit
-#
-add_amanzi_library(matrix_audit SOURCE Matrix_Audit.cc LINK_LIBS ${flow_tpl_libs})
-
-#
 # Install Targets
 #
 #file(GLOB flow_inc_files "*.hh")
@@ -84,12 +79,10 @@ set(flow_inc_files
   Flow_PK.hh
   Flow_SourceFactory.hh
   FlowTypeDefs.hh
-  Matrix_Audit.hh
   Matrix_MFD.hh
   Matrix_TPFA.hh
   RelativePermeability.hh
   Richards_PK.hh
-  Stiffness_MFD.hh
   TI_Specs.hh
   WaterRetentionModel.hh
   WRM_BrooksCorey.hh
@@ -117,24 +110,8 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
 
     if ( ENABLE_MSTK_Mesh )
- 
        set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone data_structures)
- 
-        # Test: miscaleneous Darcy flow routines
-        add_amanzi_test(flow_darcy_misc flow_darcy_misc 
-	                KIND int
-	                SOURCE test/Main.cc test/flow_darcy_misc.cc
-			LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
-        add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
-
-        # Test: two steady-state Darcy flow tests
-        add_amanzi_test(flow_darcy_source flow_darcy_source
-	                KIND int
-                        SOURCE test/Main.cc test/flow_darcy_source.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
- 
         # Test: transient Darcy flow 
         add_amanzi_test(flow_darcy_2D flow_darcy_2D
 	                KIND int
@@ -199,16 +176,19 @@ if (BUILD_TESTS)
                         KIND unit
                         SOURCE test/Main.cc test/flow_richards_newton_TPFA.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-        # Test: New Newton capabilities
-#        add_amanzi_test(flow_richards_newton_new flow_richards_newton_new
-#                        KIND unit
-#                        SOURCE test/Main.cc test/flow_richards_newton_new.cc
-#                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
  
     set(amanzi_libs geometry mesh mesh_factory state flow whetstone data_structures)
  
+    # Test: miscaleneous Darcy flow routines
+    add_amanzi_test(flow_darcy_misc flow_darcy_misc 
+                    KIND int
+                    SOURCE test/Main.cc test/flow_darcy_misc.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
+    add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
+
     # Test: van Genuchten flow routines
     add_amanzi_test(flow_vanGenuchten flow_vanGenuchten
                     KIND int

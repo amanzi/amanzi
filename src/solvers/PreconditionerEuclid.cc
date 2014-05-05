@@ -40,7 +40,7 @@ void PreconditionerEuclid::Init(const std::string& name, const Teuchos::Paramete
 
   if (plist_.isParameter("ILU(k) fill level"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetLevel,
-            plist_.get<double>("ILU(k) fill level"))));
+            plist_.get<int>("ILU(k) fill level"))));
 
   if (plist_.isParameter("rescale rows")) {
     bool rescale_rows = plist_.get<bool>("rescale rows");
