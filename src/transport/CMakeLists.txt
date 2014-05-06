@@ -100,9 +100,9 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/transport_mics.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(transport_advance_simple transport_advance_simple
+    add_amanzi_test(transport_advance transport_advance
                     KIND unit
-                    SOURCE test/Main.cc test/transport_advance_simple.cc
+                    SOURCE test/Main.cc test/transport_advance.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(transport_limiters transport_limiters
@@ -122,11 +122,6 @@ if ( BUILD_TESTS )
 
     if ( ENABLE_MSTK_Mesh )
         set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone output mesh_functions functions data_structures)
-
-        add_amanzi_test(transport_advance_mstk transport_advance_mstk
-	                KIND unit
-                        SOURCE test/Main.cc test/transport_advance_mstk.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         add_amanzi_test(transport_parallel_mstk transport_parallel_mstk
 		       KIND int
@@ -174,11 +169,6 @@ if ( BUILD_TESTS )
     if ( ENABLE_STK_Mesh )
         set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone mesh_functions data_structures)
 
-        add_amanzi_test(transport_advance_stk transport_advance_stk
-	                KIND unit
-                        SOURCE test/Main.cc test/transport_advance_stk.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-        
         add_amanzi_test(transport_parallel_stk transport_parallel_stk
 			KIND unit
 	                NPROCS 4

@@ -2,16 +2,16 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <ParameterList name="Mesh">
-    <Parameter name="Framework" type="string" value="stk::mesh"/>
-  </ParameterList>    
+  <!--ParameterList name="Mesh">
+    <Parameter name="Framework" type="string" value="mstk::mesh"/>
+  </ParameterList-->    
    
   <ParameterList name="Regions">
     <ParameterList name="Left side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="string" value="103"/>
         <Parameter name="File" type="string" value="hex_3x3x3_ss.exo"/>
-        <Parameter name="Format" type="string" value="Unknown"/>
+        <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParameterList>
@@ -30,6 +30,7 @@
     <ParameterList name="VerboseObject">
       <Parameter name="Verbosity Level" type="string" value="medium"/>
     </ParameterList>
+
 
     <ParameterList name="boundary conditions">
       <ParameterList name="concentration">
