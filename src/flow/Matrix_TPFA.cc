@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "Epetra_FECrsGraph.h"
-#include "AztecOO.h"
 #include "mfd3d_diffusion.hh"
 
 #include "FlowDefs.hh"
@@ -212,8 +211,6 @@ void Matrix_TPFA::Assemble()
   }
 
   Spp_->GlobalAssemble();
-
-  //cout<<*Spp_<<endl;
 }
 
 
@@ -270,8 +267,6 @@ int Matrix_TPFA::ApplyPreconditioner(const CompositeVector& X, CompositeVector& 
 
   Y.PutScalar(0.0);
   int ierr = solver->ApplyInverse(X, Y);
-
-
 
   // if (ierr != 1) {
   //   std::cout << "Newton solver (" << solver->name() 

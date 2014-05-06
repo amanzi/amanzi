@@ -36,8 +36,8 @@ namespace Amanzi {
 namespace AmanziTransport {
 
 /* ******************************************************************
-* We set up minimum default values and call Init() routine to 
-* complete initialization.
+* We set up minimum default values and call Construct_() to complete 
+* the initialization process.
 ****************************************************************** */
 Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
                            std::vector<std::string>& component_names)
@@ -45,6 +45,10 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
   Construct_(glist, S, component_names);
 }
 
+
+/* ******************************************************************
+* Constructor for Alquimia. 
+****************************************************************** */
 #ifdef ALQUIMIA_ENABLED
 Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
                            Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
@@ -52,12 +56,16 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
     : chem_state_(chem_state), chem_engine_(chem_engine)
 {
   // Retrieve the component names from the chemistry engine.
-  std::vector<std::string> comp_names;
-  chem_engine_->GetPrimarySpeciesNames(comp_names);
-  Construct_(glist, S, comp_names);
+  std::vector<std::string> component_names;
+  chem_engine_->GetPrimarySpeciesNames(component_names);
+  Construct_(glist, S, component_names);
 }
 #endif
 
+
+/* ******************************************************************
+* High-level initialization.
+****************************************************************** */
 void Transport_PK::Construct_(Teuchos::ParameterList& glist, 
                               Teuchos::RCP<State> S,
                               std::vector<std::string>& component_names)
@@ -121,6 +129,7 @@ void Transport_PK::Construct_(Teuchos::ParameterList& glist,
       ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 }
+
 
 /* ******************************************************************
 * Routine processes parameter list. It needs to be called only once

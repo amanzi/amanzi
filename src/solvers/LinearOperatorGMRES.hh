@@ -224,7 +224,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     residual_ = fabs(s[i + 1]);
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_->os() << i << " ||r||=" << residual_ << std::endl;
+      *vo_->os() << num_itrs_total_ << " ||r||=" << residual_ << std::endl;
     }
 
     // Check all criteria one-by-one.

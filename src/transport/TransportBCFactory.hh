@@ -31,22 +31,23 @@ namespace AmanziTransport {
 
 class TransportBCFactory {
  public:
+#ifdef ALQUIMIA_ENABLED
+  // Alquimia-enabled constructors.
   TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                      const Teuchos::RCP<Teuchos::ParameterList>& list)
-#ifdef ALQUIMIA_ENABLED
-     : mesh_(mesh), list_(list),
-       chem_state_(Teuchos::null), chem_engine_(Teuchos::null) {};
-#else
-     : mesh_(mesh), list_(list) {};
-#endif
+      : mesh_(mesh), list_(list),
+        chem_state_(Teuchos::null), chem_engine_(Teuchos::null) {};
 
-  // Alquimia-enabled constructor.
-#ifdef ALQUIMIA_ENABLED
   TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                      const Teuchos::RCP<Teuchos::ParameterList>& list,
                      const Teuchos::RCP<AmanziChemistry::Chemistry_State>& chem_state,
                      const Teuchos::RCP<AmanziChemistry::ChemistryEngine>& chem_engine)
-     : mesh_(mesh), list_(list), chem_state_(chem_state), chem_engine_(chem_engine) {};
+      : mesh_(mesh), list_(list), 
+        chem_state_(chem_state), chem_engine_(chem_engine) {};
+#else
+  TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                     const Teuchos::RCP<Teuchos::ParameterList>& list)
+      : mesh_(mesh), list_(list) {};
 #endif
 
   ~TransportBCFactory() {};
