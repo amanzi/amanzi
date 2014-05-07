@@ -384,7 +384,7 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
       aux_data(iv,aux_chem_variables[label]) = aux_output.primary_free_ion_concentration.data[i];
     }
   }
-
+#endif
   if (Nminerals > 0) {
     for (int i=0; i<Nminerals; ++i) {
       const std::string label=mineralNames[i] + "_Volume_Fraction"; 
@@ -395,7 +395,7 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
       aux_data(iv,aux_chem_variables[label]) = chem_state.mineral_specific_surface_area.data[i];
     }
   }
-
+#if 0
   if (NsorptionSites > 0) {
     for (int i=0; i<surfSiteNames.size(); ++i) {
       const std::string label=surfSiteNames[i] + "_Surface_Site_Density"; 

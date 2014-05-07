@@ -336,6 +336,7 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
             aux_data(iv,aux_chem_variables[label]) = TheComponent.free_ion[i];
           }
         }
+#endif
         if (Nminerals > 0) {
           for (int i=0; i<Nminerals; ++i) {
             const std::string label=mineralNames[i] + "_Volume_Fraction"; 
@@ -346,7 +347,7 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
             aux_data(iv,aux_chem_variables[label]) = TheComponent.mineral_specific_surface_area[i];
           }
         }
-
+#if 0
         if (NsorptionSites > 0) {
           for (int i=0; i<surfSiteNames.size(); ++i) {
             const std::string label=surfSiteNames[i] + "_Surface_Site_Density"; 
