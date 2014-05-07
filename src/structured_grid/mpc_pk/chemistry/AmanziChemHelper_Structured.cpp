@@ -7,17 +7,6 @@
 
 #include <chemistry_exception.hh>
 
-static
-int CopyStrArray(Array<std::string>& dest, const std::vector<std::string>& src) 
-{
-  int Nsize = src.size();
-  dest.resize(Nsize);
-  for (int i=0; i<Nsize; ++i) {
-    dest[i] = src[i];
-  }
-  return Nsize;
-}
-
 static bool abort_on_chem_fail = true;
 
 AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::string>& _primarySpeciesNames,
@@ -31,97 +20,43 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
                                                          const std::string&              _thermo_database_format,
                                                          const std::string&              _activity_model,
                                                          int                             _verbose)
-  : using_sorption(false),
-    using_isotherms(false),
-    NionExchangeSites(0),
-    hasCationExchangeCapacity(_hasCationExchangeCapacity),
-    thermo_database_file(_thermo_database_filename),
+  : thermo_database_file(_thermo_database_filename),
     thermo_database_format(_thermo_database_format),
     activity_model(_activity_model),
     verbose(_verbose)
 {
-  if (hasCationExchangeCapacity) {
-    using_sorption = true;
-    NionExchangeSites = 1;
-  }
-  
-  NprimarySpecies           = CopyStrArray(primarySpeciesNames, _primarySpeciesNames);
-  NsorbedPrimarySpecies     = CopyStrArray(sorbedPrimarySpeciesNames, _sorbedPrimarySpeciesNames);
-  Nminerals                 = CopyStrArray(mineralNames,_mineralNames);
-  NsurfaceComplexationSites = CopyStrArray(surfaceComplexationSiteNames,_surfaceComplexationSiteNames);
-  NfreeIonSpecies           = CopyStrArray(freeIonSpeciesNames,_freeIonSpeciesNames);
-  NisothermSpecies          = CopyStrArray(isothermSpeciesNames,_isothermSpeciesNames);
-  BL_ASSERT(NisothermSpecies == 0 || NisothermSpecies == NprimarySpecies);
+  using_sorption = false;
+  using_isotherms = false;
 
-  if (NsorbedPrimarySpecies > 0) {
-    BL_ASSERT(NsorbedPrimarySpecies == NprimarySpecies);
+  primarySpeciesNames = _primarySpeciesNames;
+  mineralNames = _mineralNames;
+  surfSiteNames = _surfaceComplexationSiteNames;
+  Nmobile = primarySpeciesNames.size();
+  Nimmobile = _sorbedPrimarySpeciesNames.size();
+  Nminerals = mineralNames.size();
+  Nisotherms = _isothermSpeciesNames.size();
+  NionExchange = (_hasCationExchangeCapacity ? 1 : 0);
+  NsorptionSites = _surfaceComplexationSiteNames.size();
+  NfreeIonSpecies = _freeIonSpeciesNames.size();
+
+  if (Nimmobile > 0) {
+    BL_ASSERT(Nimmobile == Nmobile);
     using_sorption = true;
   }
 
-  if (NisothermSpecies > 0) {
-    BL_ASSERT(NisothermSpecies == NprimarySpecies);
+  if (NionExchange > 0) {
+    BL_ASSERT(Nimmobile > 0);
+    using_sorption = true;
+  }
+
+  if (Nisotherms > 0) {
+    BL_ASSERT(Nimmobile > 0);
+    BL_ASSERT(Nisotherms == Nmobile);
     using_isotherms = true;
     using_sorption = true;
   }
 
-  // Create the list of variables that will be managed by Amanzi
-  aux_chem_variables.clear();
-  SmineralVolumeFraction = aux_chem_variables.size();
-  for (int i=0; i<Nminerals; ++i) {
-    aux_chem_variables[BuildPropertyParameterName(mineralNames[i],"Volume_Fraction")] = aux_chem_variables.size()-1;
-  }
-  SmineralSpecificSurfaceArea = aux_chem_variables.size();
-  for (int i=0; i<Nminerals; ++i) {
-    aux_chem_variables[BuildPropertyParameterName(mineralNames[i],"Specific_Surface_Area")] = aux_chem_variables.size()-1;
-  }
-  SsurfaceComplexationSiteDensity = aux_chem_variables.size();
-  for (int i=0; i<NsurfaceComplexationSites; ++i) {
-    aux_chem_variables[BuildPropertyParameterName(surfaceComplexationSiteNames[i],"Surface_Complexation","Site_Density")] = aux_chem_variables.size()-1;
-  }
-  SsurfaceComplexationFreeSiteConcentration = aux_chem_variables.size();
-  for (int i=0; i<NsurfaceComplexationSites; ++i) {
-    aux_chem_variables[BuildPropertyParameterName(surfaceComplexationSiteNames[i],"Surface_Complexation","Free_Site_Concentration")] = aux_chem_variables.size()-1;
-  }
-  ScationExchangeCapacity = aux_chem_variables.size();
-  NionExchangeSites = (hasCationExchangeCapacity ? 1 : 0);
-
-  int ndigIES = std::log(NionExchangeSites+1);
-  SionExchangeSiteDensity = aux_chem_variables.size();
-  for (int i=0; i<NionExchangeSites; ++i) {
-    aux_chem_variables[BoxLib::Concatenate("Ion_Exchange_Site_Density_",i,ndigIES)] = aux_chem_variables.size()-1;
-  }
-  SionExchangeReferenceCationConcentration = aux_chem_variables.size();
-  for (int i=0; i<NionExchangeSites; ++i) {
-    aux_chem_variables[BoxLib::Concatenate("Ion_Exchange_Reference_Cation_Concentration_",i,ndigIES)] = aux_chem_variables.size()-1;
-  }
-  SfreeIonConcentration = aux_chem_variables.size();
-  for (int i=0; i<NfreeIonSpecies; ++i) {
-    aux_chem_variables[BuildPropertyParameterName(freeIonSpeciesNames[i],"Free_Ion","Guess")] = aux_chem_variables.size()-1;
-  }
-  SactivityCoefficient = aux_chem_variables.size();
-  for (int i=0; i<NprimarySpecies; ++i) {
-    aux_chem_variables[BuildPropertyParameterName(primarySpeciesNames[i] ,"Activity","Coefficient")] = aux_chem_variables.size()-1;
-  }
-  if (using_sorption) {
-    Ssorbed = aux_chem_variables.size();
-    for (int i=0; i<NsorbedPrimarySpecies; ++i) {
-      aux_chem_variables[BuildPropertyParameterName(sorbedPrimarySpeciesNames[i],"Sorbed","Concentration")] = aux_chem_variables.size()-1;
-    }
-  }
-  if (using_isotherms) {
-    SisothermKd = aux_chem_variables.size();
-    for (int i=0; i<isothermSpeciesNames.size(); ++i) {
-      aux_chem_variables[BuildPropertyParameterName(isothermSpeciesNames[i],"Isotherm","Kd")] = aux_chem_variables.size()-1;
-    }
-    SisothermFreundlichN = aux_chem_variables.size();
-    for (int i=0; i<isothermSpeciesNames.size(); ++i) {
-      aux_chem_variables[BuildPropertyParameterName(isothermSpeciesNames[i],"Isotherm","Freundlich_n")] = aux_chem_variables.size()-1;
-    }
-    SisothermLangmuirB = aux_chem_variables.size();
-    for (int i=0; i<isothermSpeciesNames.size(); ++i) {
-      aux_chem_variables[BuildPropertyParameterName(isothermSpeciesNames[i],"Isotherm","Langmuir_b")] = aux_chem_variables.size()-1;
-    }
-  }
+  SetupAuxVariables();
 
   if (ParallelDescriptor::IOProcessor() && verbose>1) {
     std::cout << "AmanziChemHelper_Structured: Iniitialized" << std::endl;
@@ -138,21 +73,18 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
   }
 
   // Dummy parameters
-  Real water_density = 1000;
-  Real porosity = 1;
-  Real saturation = 1;
-  Real volume = 1;
-  Real total_conc = 0;
+  Real total_conc = 1.e-20;
   Real free_ion_conc = 1.e-9;
   Real mineral_vol_frac = 0;
   Real mineral_specific_surf_area = 0;
   Real total_sorbed = 0;
-  Real ion_exchange_sites = 1.e-9;
-  Real ion_exchange_ref_cation_conc = 1.e-9;
+  Real ion_exchange_sites = 1;
+  Real ion_exchange_ref_cation_conc = 1;
   Real primary_activity_coef = 1;
-  Real isotherm_Kd = 1.e8;
-  Real langmuir_b = 1.e-11;
-  Real freundlich_n = 5.e-12;
+  Real isotherm_Kd = -1;
+  Real langmuir_b = 1;
+  Real freundlich_n = 1;
+  Real surface_site_density = 1;
 
   int ntracers = primarySpeciesNames.size();
   int nminerals = mineralNames.size();
@@ -174,38 +106,31 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
     parameters[ithread] = chemSolve[ithread].GetDefaultParameters();
     parameters[ithread].thermo_database_file = thermo_database_file;
     parameters[ithread].activity_model_name  = activity_model;
-    parameters[ithread].porosity             = porosity; 
-    parameters[ithread].saturation           = saturation;
-    parameters[ithread].volume               = volume;
-    parameters[ithread].water_density        = water_density;
-	  
-    components[ithread].total.resize(NprimarySpecies,total_conc);
+ 
+    components[ithread].total.resize(Nmobile,total_conc);
     components[ithread].free_ion.resize(NfreeIonSpecies, free_ion_conc); 
-    components[ithread].primary_activity_coeff.resize(NprimarySpecies, primary_activity_coef); 
+    components[ithread].primary_activity_coeff.resize(Nmobile, primary_activity_coef); 
     components[ithread].mineral_volume_fraction.resize(Nminerals, mineral_vol_frac);
     components[ithread].mineral_specific_surface_area.resize(Nminerals, mineral_specific_surf_area);
     if (using_sorption) { 
-      components[ithread].total_sorbed.resize(NsorbedPrimarySpecies, total_sorbed);
+      components[ithread].total_sorbed.resize(Nimmobile, total_sorbed);
     }
-    if (NionExchangeSites>0) {
-      components[ithread].ion_exchange_sites.resize(NionExchangeSites, ion_exchange_sites);
-      components[ithread].ion_exchange_ref_cation_conc.resize(NionExchangeSites, ion_exchange_ref_cation_conc);
+    if (NionExchange>0) {
+      components[ithread].ion_exchange_sites.resize(NionExchange, ion_exchange_sites);
+      components[ithread].ion_exchange_ref_cation_conc.resize(NionExchange, ion_exchange_ref_cation_conc);
     }
     if (using_isotherms) {
-      components[ithread].isotherm_kd.resize(NisothermSpecies,isotherm_Kd);
-      components[ithread].isotherm_freundlich_n.resize(NisothermSpecies,freundlich_n);
-      components[ithread].isotherm_langmuir_b.resize(NisothermSpecies,langmuir_b);
+      components[ithread].isotherm_kd.resize(Nisotherms,isotherm_Kd);
+      components[ithread].isotherm_freundlich_n.resize(Nisotherms,freundlich_n);
+      components[ithread].isotherm_langmuir_b.resize(Nisotherms,langmuir_b);
     }
-
+    if (NsorptionSites > 0) {
+      components[ithread].surface_site_density.resize(NsorptionSites,surface_site_density);
+    }
+    
     chemSolve[ithread].verbosity(Amanzi::AmanziChemistry::kTerse);	  
     chemSolve[ithread].Setup(components[ithread], parameters[ithread]);
-    chemSolve[ithread].CopyBeakerToComponents(&(components[ithread]));
-
-    if (ParallelDescriptor::IOProcessor() && ithread == 0) {
-      chemSolve[ithread].Display();
-      chemSolve[ithread].DisplayComponents(components[ithread]);
-    }
-  }  // for(threads)
+  }
 }
 
 AmanziChemHelper_Structured::~AmanziChemHelper_Structured()
@@ -224,9 +149,9 @@ AmanziChemHelper_Structured::~AmanziChemHelper_Structured()
     if (using_sorption) { 
       components[ithread].total_sorbed.clear();
     }
-    if (NionExchangeSites>0) {
+    if (NionExchange>0) {
       components[ithread].ion_exchange_sites.clear();
-      components[ithread].ion_exchange_sites.clear();
+      components[ithread].ion_exchange_ref_cation_conc.clear();
     }
     if (using_isotherms) {
       components[ithread].isotherm_kd.clear();
@@ -243,8 +168,7 @@ AmanziChemHelper_Structured::~AmanziChemHelper_Structured()
 
 void
 AmanziChemHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
-                                              FArrayBox& auxiliary_data, bool initialize_auxiliary_data,
-                                              const Box& box, const std::string& condition_name, Real time)
+                                              FArrayBox& aux_data, const Box& box, const std::string& condition_name, Real time)
 {
   BoxLib::Abort("Geochemical conditions/constraints not currently support in Amanzi native chemistry engine");
 }
@@ -256,8 +180,8 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
                                      const FArrayBox& volume,                   int sVol,
                                      FArrayBox&       primary_species_mobile,   int sPrimMob,
                                      FArrayBox&       fcnCnt,                   int sFunc,
-                                     FArrayBox&       auxData, Real water_density, Real temperature,
-                                     const Box& box, Real dt, bool initialize)
+                                     FArrayBox&       aux_data, Real water_density, Real temperature,
+                                     const Box& box, Real dt)
 {
 #if (BL_SPACEDIM == 3) && defined(_OPENMP)
 #pragma omp parallel for schedule(dynamic,1) 
@@ -283,133 +207,397 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
       Amanzi::AmanziChemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
       Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
       
+      TheParameter.volume     = volume(iv,sVol);
+      TheParameter.saturation = std::min(1., std::max(0., aqueous_saturation(iv,sSat)));
+
+      TheParameter.water_density = water_density;
+      TheParameter.porosity   = porosity(iv,sPhi);
+
       bool is_neg = false;
-      for (int i = 0; i < NprimarySpecies; ++i) {
+      for (int i = 0; i < Nmobile; ++i) {
         TheComponent.total[i] = primary_species_mobile(iv,sPrimMob+i);
-        if (std::abs(TheComponent.total[i]) < 1.e-16) TheComponent.total[i] = 0;
         if (TheComponent.total[i] < 0) is_neg = true;
+        TheComponent.total[i] = std::max(0.,TheComponent.total[i]);
       }
       if (is_neg) {
         break;
       }
 
-      for (int i = 0; i < NfreeIonSpecies; ++i) {
-        TheComponent.free_ion[i] = auxData(iv,SfreeIonConcentration+i);
-      }
-
-      for (int i = 0; i < NprimarySpecies; ++i) {
-        TheComponent.primary_activity_coeff[i] = auxData(iv,SactivityCoefficient+i);
-      }
-
-      for (int i = 0; i < Nminerals; ++i) {
-        TheComponent.mineral_volume_fraction[i] = auxData(iv,SmineralVolumeFraction+i);
-        TheComponent.mineral_specific_surface_area[i] = auxData(iv,SmineralSpecificSurfaceArea+i);
-      }
-
-      for (int i = 0; i < NionExchangeSites; ++i) {
-        TheComponent.ion_exchange_sites[i] = auxData(iv,SionExchangeSiteDensity+i);
-        TheComponent.ion_exchange_ref_cation_conc[i] = auxData(iv,SionExchangeReferenceCationConcentration+i);
-      }
-
-      for (int i = 0; i < NsurfaceComplexationSites; ++i) {
-        TheComponent.surface_site_density[i] = auxData(iv,SsurfaceComplexationSiteDensity+i);
-      }
-
-      for (int i = 0; i < NsurfaceComplexationSites; ++i) {
-        TheComponent.surface_complex_free_site_conc[i] = auxData(iv,SsurfaceComplexationFreeSiteConcentration+i);
-      }
-
       if (using_sorption) {
-        for (int i = 0; i < NsorbedPrimarySpecies; ++i) {
-          TheComponent.total_sorbed[i] = auxData(iv,Ssorbed+i);
+        for (int i=0; i<primarySpeciesNames.size(); ++i) {
+          const std::string label=primarySpeciesNames[i] + "_Sorbed_Concentration"; 
+          TheComponent.total_sorbed[i] = aux_data(iv,aux_chem_variables[label]);
         }
       }
 
+      if (Nminerals > 0) {
+        for (int i=0; i<Nminerals; ++i) {
+          const std::string label=mineralNames[i] + "_Volume_Fraction"; 
+          TheComponent.mineral_volume_fraction[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+        for (int i=0; i<mineralNames.size(); ++i) {
+          const std::string label=mineralNames[i] + "_Specific_Surface_Area"; 
+          TheComponent.mineral_specific_surface_area[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+      }
+
+      if (NionExchange > 0) {
+        int ndigIES = std::log(NionExchange+1);
+        for (int i=0; i<NionExchange; ++i) {
+          const std::string label = BoxLib::Concatenate("Ion_Exchange_Site_Density_",i,ndigIES);
+          TheComponent.ion_exchange_sites[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+        
+        for (int i=0; i<NionExchange; ++i) {
+          const std::string label = BoxLib::Concatenate("Ion_Exchange_Reference_Cation_Concentration_",i,ndigIES);
+          TheComponent.ion_exchange_ref_cation_conc[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+      }
+      
+      if (NsorptionSites > 0) {
+        for (int i=0; i<surfSiteNames.size(); ++i) {
+          const std::string label=surfSiteNames[i] + "_Surface_Site_Density"; 
+          TheComponent.surface_site_density[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+      }
+
+      for (int i = 0; i < Nmobile; ++i) {
+        const std::string label=primarySpeciesNames[i] + "_Activity_Coefficient"; 
+        TheComponent.primary_activity_coeff[i] = aux_data(iv,aux_chem_variables[label]);
+      }
+
+      if (NfreeIonSpecies > 0) {
+        for (int i=0; i<primarySpeciesNames.size(); ++i) {
+          const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
+          TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+      }
+      
       if (using_isotherms) {
-        for (int i = 0; i < NisothermSpecies; ++i) {
-          TheComponent.isotherm_kd[i] = auxData(iv,SisothermKd+i);
-          TheComponent.isotherm_freundlich_n[i] = auxData(iv,SisothermFreundlichN+i);
-          TheComponent.isotherm_langmuir_b[i] = auxData(iv,SisothermLangmuirB+i);
+        for (int i=0; i<Nisotherms; ++i) {
+          const std::string label=primarySpeciesNames[i] + "_Isotherm_Kd"; 
+          TheComponent.isotherm_kd[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+        for (int i=0; i<Nisotherms; ++i) {
+          const std::string label=primarySpeciesNames[i] + "_Isotherm_Freundlich_n"; 
+          TheComponent.isotherm_freundlich_n[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+        for (int i=0; i<Nisotherms; ++i) {
+          const std::string label=primarySpeciesNames[i] + "_Isotherm_Langmuir_b"; 
+          TheComponent.isotherm_langmuir_b[i] = aux_data(iv,aux_chem_variables[label]);
         }
       }
 
-      TheParameter.porosity   = porosity(iv,sPhi);
-      TheParameter.saturation = std::min(1., std::max(0., aqueous_saturation(iv,sSat)));
-      TheParameter.volume     = volume(iv,sVol);
-      TheParameter.water_density = water_density;
-	
       chem_ok = true;
 
-      if (initialize)
-      {
-        TheChemSolve.Speciate(&TheComponent,TheParameter);
-      }
-      else {
-        Amanzi::AmanziChemistry::Beaker::SolverStatus stat;
-        try
-        {  
-          TheChemSolve.ReactionStep(&TheComponent,TheParameter,dt);
+      Amanzi::AmanziChemistry::Beaker::SolverStatus stat;
+      try
+      {  
+        TheChemSolve.ReactionStep(&TheComponent,TheParameter,dt);
 
-          stat = TheChemSolve.status();
-          fcnCnt(iv,sFunc) = stat.num_rhs_evaluations;        
-        }
-        catch (const Amanzi::AmanziChemistry::ChemistryException& geochem_error)
-        {
-          if (verbose>-1) {
-            std::cout << "CHEMISTRY FAILED on level at " << iv << " : ";
-            TheComponent.Display("components: ");
-            if (abort_on_chem_fail) {
-              BoxLib::Abort(geochem_error.what());
-            }
-          } else {
-            chem_ok = false;
+        stat = TheChemSolve.status();
+        fcnCnt(iv,sFunc) = stat.num_rhs_evaluations;        
+      }
+      catch (const Amanzi::AmanziChemistry::ChemistryException& geochem_error)
+      {
+        if (verbose>-1) {
+          std::cout << "CHEMISTRY FAILED on level at " << iv << " : ";
+          TheComponent.Display("components: ");
+          if (abort_on_chem_fail) {
+            BoxLib::Abort(geochem_error.what());
           }
+        } else {
+          chem_ok = false;
         }
       }
       
       // If successful update the state variables.
       if (chem_ok) {
 
-        for (int i = 0; i < NprimarySpecies; ++i) {
+        for (int i = 0; i < Nmobile; ++i) {
           primary_species_mobile(iv,sPrimMob+i) = TheComponent.total[i];
-        }
-        for (int i = 0; i < NfreeIonSpecies; ++i) {
-          auxData(iv,SfreeIonConcentration+i) = TheComponent.free_ion[i];
-        }
-
-        for (int i = 0; i < NprimarySpecies; ++i) {
-          auxData(iv,SactivityCoefficient+i) = TheComponent.primary_activity_coeff[i];
-        }
-
-        for (int i = 0; i < Nminerals; ++i) {
-          auxData(iv,SmineralVolumeFraction+i) = TheComponent.mineral_volume_fraction[i];
-          auxData(iv,SmineralSpecificSurfaceArea+i) = TheComponent.mineral_specific_surface_area[i];
-        }
-
-        for (int i = 0; i < NionExchangeSites; ++i) {
-          auxData(iv,SionExchangeSiteDensity+i) = TheComponent.ion_exchange_sites[i];
-          auxData(iv,SionExchangeReferenceCationConcentration+i) = TheComponent.ion_exchange_ref_cation_conc[i];
-        }
-        
-        for (int i = 0; i < NsurfaceComplexationSites; ++i) {
-          auxData(iv,SsurfaceComplexationSiteDensity+i) = TheComponent.surface_site_density[i];
         }
 
         if (using_sorption) {
-          for (int i = 0; i < NsorbedPrimarySpecies; ++i) {
-            auxData(iv,Ssorbed+i) = TheComponent.total_sorbed[i];
+          for (int i=0; i<Nimmobile; ++i) {
+            const std::string label=primarySpeciesNames[i] + "_Sorbed_Concentration"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.total_sorbed[i];
+          }
+        }
+#if 0
+        for (int i=0; i<Nmobile; ++i) {
+          const std::string label=primarySpeciesNames[i] + "_Activity_Coefficient"; 
+          aux_data(iv,aux_chem_variables[label]) = TheComponent.primary_activity_coeff[i];
+        }
+
+        if (NfreeIonSpecies > 0) {
+          for (int i=0; i<NfreeIonSpecies; ++i) {
+            const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.free_ion[i];
+          }
+        }
+        if (Nminerals > 0) {
+          for (int i=0; i<Nminerals; ++i) {
+            const std::string label=mineralNames[i] + "_Volume_Fraction"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.mineral_volume_fraction[i];
+          }
+          for (int i=0; i<mineralNames.size(); ++i) {
+            const std::string label=mineralNames[i] + "_Specific_Surface_Area"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.mineral_specific_surface_area[i];
+          }
+        }
+
+        if (NsorptionSites > 0) {
+          for (int i=0; i<surfSiteNames.size(); ++i) {
+            const std::string label=surfSiteNames[i] + "_Surface_Site_Density"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.surface_site_density[i];
+          }
+        }
+        
+        if (NionExchange > 0) {
+          int ndigIES = std::log(NionExchange+1);
+          for (int i=0; i<NionExchange; ++i) {
+            const std::string label = BoxLib::Concatenate("Ion_Exchange_Site_Density_",i,ndigIES);
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.ion_exchange_sites[i];
+          }
+          for (int i=0; i<NionExchange; ++i) {
+            const std::string label = BoxLib::Concatenate("Ion_Exchange_Reference_Cation_Concentration_",i,ndigIES);
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.ion_exchange_ref_cation_conc[i];
           }
         }
 
         if (using_isotherms) {
-          for (int i = 0; i < NisothermSpecies; ++i) {
-            auxData(iv,SisothermKd+i) = TheComponent.isotherm_kd[i];
-            auxData(iv,SisothermFreundlichN+i) = TheComponent.isotherm_freundlich_n[i];
-            auxData(iv,SisothermLangmuirB+i) = TheComponent.isotherm_langmuir_b[i];
+          for (int i=0; i<Nisotherms; ++i) {
+            const std::string label=primarySpeciesNames[i] + "_Isotherm_Kd"; 
+            aux_data(iv,aux_chem_variables[label]) TheComponent.isotherm_kd[i];
+          }
+          for (int i=0; i<Nisotherms; ++i) {
+            const std::string label=primarySpeciesNames[i] + "_Isotherm_Freundlich_n"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.isotherm_freundlich_n[i];
+          }
+          for (int i=0; i<Nisotherms; ++i) {
+            const std::string label=primarySpeciesNames[i] + "_Isotherm_Langmuir_b"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.isotherm_langmuir_b[i];
+          }
+        }
+#endif
+
+      } // chem_ok
+
+    }
+  }
+}
+
+void
+AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,       int sSat,
+                                        const FArrayBox& aqueous_pressure,         int sPress,
+                                        const FArrayBox& porosity,                 int sPhi,
+                                        const FArrayBox& volume,                   int sVol,
+                                        FArrayBox&       primary_species_mobile,   int sPrimMob,
+                                        FArrayBox&       fcnCnt,                   int sFunc,
+                                        FArrayBox&       aux_data, Real water_density, Real temperature,
+                                        const Box& box)
+{
+#if (BL_SPACEDIM == 3) && defined(_OPENMP)
+#pragma omp parallel for schedule(dynamic,1) 
+#endif
+
+  int thread_outer_lo = box.smallEnd()[BL_SPACEDIM-1];
+  int thread_outer_hi = box.bigEnd()[BL_SPACEDIM-1];
+
+  bool chem_ok = true;
+  for (int tli=thread_outer_lo; tli<=thread_outer_hi && chem_ok; tli++) {
+#if (BL_SPACEDIM == 3) && defined(_OPENMP)
+    int threadid = omp_get_thread_num();
+#else
+    int threadid = 0;
+#endif
+    
+    Box thread_box(box);
+    thread_box.setSmall(BL_SPACEDIM-1,tli);
+    thread_box.setBig(BL_SPACEDIM-1,tli);
+
+    for (IntVect iv=thread_box.smallEnd(), End=thread_box.bigEnd(); iv<=End && chem_ok; thread_box.next(iv)) {
+      Amanzi::AmanziChemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
+      Amanzi::AmanziChemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
+      Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
+      
+      TheParameter.volume     = volume(iv,sVol);
+      TheParameter.saturation = std::min(1., std::max(0., aqueous_saturation(iv,sSat)));
+
+      TheParameter.water_density = water_density;
+      TheParameter.porosity   = porosity(iv,sPhi);
+
+      bool is_neg = false;
+      for (int i = 0; i < Nmobile; ++i) {
+        TheComponent.total[i] = primary_species_mobile(iv,sPrimMob+i);
+        if (TheComponent.total[i] < 0) is_neg = true;
+        TheComponent.total[i] = std::max(0.,TheComponent.total[i]);
+      }
+      if (is_neg) {
+        break;
+      }
+
+      if (NfreeIonSpecies > 0) {
+        for (int i=0; i<primarySpeciesNames.size(); ++i) {
+          const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
+          TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+      }
+      
+      for (int i = 0; i < Nmobile; ++i) {
+        const std::string label=primarySpeciesNames[i] + "_Activity_Coefficient"; 
+        TheComponent.primary_activity_coeff[i] = aux_data(iv,aux_chem_variables[label]);
+      }
+
+      if (Nminerals > 0) {
+        for (int i=0; i<Nminerals; ++i) {
+          const std::string label=mineralNames[i] + "_Volume_Fraction"; 
+          TheComponent.mineral_volume_fraction[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+        for (int i=0; i<mineralNames.size(); ++i) {
+          const std::string label=mineralNames[i] + "_Specific_Surface_Area"; 
+          TheComponent.mineral_specific_surface_area[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+      }
+
+      if (using_sorption) {
+        for (int i=0; i<primarySpeciesNames.size(); ++i) {
+          const std::string label=primarySpeciesNames[i] + "_Sorbed_Concentration"; 
+          TheComponent.total_sorbed[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+      }
+
+      if (NionExchange > 0) {
+        int ndigIES = std::log(NionExchange+1);
+        for (int i=0; i<NionExchange; ++i) {
+          const std::string label = BoxLib::Concatenate("Ion_Exchange_Site_Density_",i,ndigIES);
+          TheComponent.ion_exchange_sites[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+        
+        for (int i=0; i<NionExchange; ++i) {
+          const std::string label = BoxLib::Concatenate("Ion_Exchange_Reference_Cation_Concentration_",i,ndigIES);
+          TheComponent.ion_exchange_ref_cation_conc[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+      }
+      
+      if (NsorptionSites > 0) {
+        for (int i=0; i<surfSiteNames.size(); ++i) {
+          const std::string label=surfSiteNames[i] + "_Surface_Site_Density"; 
+          TheComponent.surface_site_density[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+      }
+
+      if (using_isotherms) {
+        for (int i=0; i<Nisotherms; ++i) {
+          const std::string label=primarySpeciesNames[i] + "_Isotherm_Kd"; 
+          TheComponent.isotherm_kd[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+        for (int i=0; i<Nisotherms; ++i) {
+          const std::string label=primarySpeciesNames[i] + "_Isotherm_Freundlich_n"; 
+          TheComponent.isotherm_freundlich_n[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+        for (int i=0; i<Nisotherms; ++i) {
+          const std::string label=primarySpeciesNames[i] + "_Isotherm_Langmuir_b"; 
+          TheComponent.isotherm_langmuir_b[i] = aux_data(iv,aux_chem_variables[label]);
+        }
+      }
+
+      chem_ok = true;
+
+      Amanzi::AmanziChemistry::Beaker::SolverStatus stat;
+      try
+      {  
+        TheChemSolve.Speciate(&TheComponent,TheParameter);
+
+        stat = TheChemSolve.status();
+        fcnCnt(iv,sFunc) = stat.num_rhs_evaluations;        
+      }
+      catch (const Amanzi::AmanziChemistry::ChemistryException& geochem_error)
+      {
+        std::cout << "Hello" << iv << std::endl;;
+        if (verbose>-1) {
+          std::cout << "CHEMISTRY SPECIATION FAILED on level at " << iv << " : ";
+          TheComponent.Display("components: ");
+          if (abort_on_chem_fail) {
+            BoxLib::Abort(geochem_error.what());
+          }
+        } else {
+          chem_ok = false;
+        }
+      }
+
+      // If successful update the state variables.
+      if (chem_ok) {
+
+        for (int i = 0; i < Nmobile; ++i) {
+          primary_species_mobile(iv,sPrimMob+i) = TheComponent.total[i];
+        }
+
+        if (NfreeIonSpecies > 0) {
+          for (int i=0; i<NfreeIonSpecies; ++i) {
+            const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.free_ion[i];
+          }
+        }
+
+        for (int i=0; i<Nmobile; ++i) {
+          const std::string label=primarySpeciesNames[i] + "_Activity_Coefficient"; 
+          aux_data(iv,aux_chem_variables[label]) = TheComponent.primary_activity_coeff[i];
+        }
+
+        if (Nminerals > 0) {
+          for (int i=0; i<Nminerals; ++i) {
+            const std::string label=mineralNames[i] + "_Volume_Fraction"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.mineral_volume_fraction[i];
+          }
+          for (int i=0; i<mineralNames.size(); ++i) {
+            const std::string label=mineralNames[i] + "_Specific_Surface_Area"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.mineral_specific_surface_area[i];
+          }
+        }
+
+        if (using_sorption) {
+          for (int i=0; i<Nimmobile; ++i) {
+            const std::string label=primarySpeciesNames[i] + "_Sorbed_Concentration"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.total_sorbed[i];
+          }
+        }
+
+        if (NsorptionSites > 0) {
+          for (int i=0; i<surfSiteNames.size(); ++i) {
+            const std::string label=surfSiteNames[i] + "_Surface_Site_Density"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.surface_site_density[i];
+          }
+        }
+        
+        if (NionExchange > 0) {
+          int ndigIES = std::log(NionExchange+1);
+          for (int i=0; i<NionExchange; ++i) {
+            const std::string label = BoxLib::Concatenate("Ion_Exchange_Site_Density_",i,ndigIES);
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.ion_exchange_sites[i];
+          }
+          for (int i=0; i<NionExchange; ++i) {
+            const std::string label = BoxLib::Concatenate("Ion_Exchange_Reference_Cation_Concentration_",i,ndigIES);
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.ion_exchange_ref_cation_conc[i];
+          }
+        }
+
+        if (using_isotherms) {
+          for (int i=0; i<Nisotherms; ++i) {
+            const std::string label=primarySpeciesNames[i] + "_Isotherm_Kd"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.isotherm_kd[i];
+          }
+          for (int i=0; i<Nisotherms; ++i) {
+            const std::string label=primarySpeciesNames[i] + "_Isotherm_Freundlich_n"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.isotherm_freundlich_n[i];
+          }
+          for (int i=0; i<Nisotherms; ++i) {
+            const std::string label=primarySpeciesNames[i] + "_Isotherm_Langmuir_b"; 
+            aux_data(iv,aux_chem_variables[label]) = TheComponent.isotherm_langmuir_b[i];
           }
         }
       } // chem_ok
-
     }
   }
 }

@@ -1293,7 +1293,7 @@ protected:
   static bool abort_on_chem_fail; // do not recover from chemistry failure
   static int verbose_chemistry; // dump detailed chemistry output 
   static int show_selected_runtimes; // dump wall-clock times for selected sections
-
+  static Real max_chemistry_time_step;
   //
   // Internal parameters for options.
   //

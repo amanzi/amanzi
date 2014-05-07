@@ -33,11 +33,19 @@ public:
                        FArrayBox&       primary_species_mobile,   int sPrimMob,
                        FArrayBox&       fcnCnt,                   int sFunc,
                        FArrayBox&       aux_data, Real water_density, Real temperature,
-                       const Box& box, Real dt, bool initialize = false);
+                       const Box& box, Real dt);
 
   virtual void EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
-                                FArrayBox& auxiliary_data, bool initialize_auxiliary_data,
-                                const Box& box, const std::string& condition_name, Real time);
+                                FArrayBox& auxiliary_data, const Box& box, const std::string& condition_name, Real time);
+
+  void Initialize(const FArrayBox& aqueous_saturation,       int sSat,
+                  const FArrayBox& aqueous_pressure,         int sPress,
+                  const FArrayBox& porosity,                 int sPhi,
+                  const FArrayBox& volume,                   int sVol,
+                  FArrayBox&       primary_species_mobile,   int sPrimMob,
+                  FArrayBox&       fcnCnt,                   int sFunc,
+                  FArrayBox&       aux_data, Real water_density, Real temperature,
+                  const Box& box);
 
 protected:
   
@@ -47,26 +55,7 @@ protected:
   Array<Amanzi::AmanziChemistry::Beaker::BeakerParameters> parameters;
 
 
-  int ntracers, nminerals;
-  Array<int> guess_comp, activity_comp, sorbed_comp, kd_comp;
-  std::map<int,int> freundlich_n_comp;
-  std::map<int,int> langmuir_b_comp;
-  Array<int> volume_fraction_comp, specific_surface_area_comp;
-  int cation_exchange_capacity_comp;
-
-  Array<std::string> primarySpeciesNames,sorbedPrimarySpeciesNames,mineralNames;
-  Array<std::string> surfaceComplexationSiteNames,freeIonSpeciesNames,isothermSpeciesNames;
-
-  bool using_sorption, using_isotherms, hasCationExchangeCapacity;
   std::string thermo_database_file, thermo_database_format, activity_model;
-  int NionExchangeSites,NprimarySpecies,NsorbedPrimarySpecies,Nminerals;
-  int NsurfaceComplexationSites,NfreeIonSpecies,NisothermSpecies;
-  int SmineralVolumeFraction,SmineralSpecificSurfaceArea,SsurfaceComplexationSiteDensity;
-  int SsurfaceComplexationFreeSiteConcentration,ScationExchangeCapacity,SionExchangeSiteDensity;
-  int SionExchangeReferenceCationConcentration,SfreeIonConcentration;
-  int SactivityCoefficient,Ssorbed,SisothermKd,SisothermFreundlichN;
-  int SisothermLangmuirB;
-
   int verbose;
 };
 

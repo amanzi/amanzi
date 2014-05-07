@@ -1524,7 +1524,6 @@ RockManager::RockChemistryProperties(FArrayBox&  fab,
                                      const Real* dx,
                                      const std::map<std::string,int>& aux_chem_variables_map)
 {
-  fab.setVal(0);
   int nSolutes = known_solutes.size();
   if (nSolutes>0) {
 
@@ -1597,7 +1596,7 @@ RockManager::RockChemistryProperties(FArrayBox&  fab,
         const ICParmPair& parm_pairs = it1->second;
         for (ICParmPair::const_iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) {
           const std::string& parameter = it2->first;
-          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(sorption_site_name,"Surface_Complexation",parameter);
+          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(sorption_site_name,"Surface",parameter);
           std::map<std::string,int>::const_iterator it3 = aux_chem_variables_map.find(key);
           if (it3 == aux_chem_variables_map.end() && ParallelDescriptor::IOProcessor()) {
             std::cout << "RockManager::RockChemistryProperties  Unable to locate parameter in aux_data (material,sorption_site,parameter): "
@@ -1645,7 +1644,6 @@ RockManager::RockChemistryProperties(FArrayBox&         fab,
                                      const std::string& material_name,
                                      const std::map<std::string,int>& aux_chem_variables_map)
 {
-  fab.setVal(0);
   int nSolutes = known_solutes.size();
   if (nSolutes>0) {
 
@@ -1713,7 +1711,7 @@ RockManager::RockChemistryProperties(FArrayBox&         fab,
         const ICParmPair& parm_pairs = it1->second;
         for (ICParmPair::const_iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) {
           const std::string& parameter = it2->first;
-          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(sorption_site_name,"Surface_Complexation",parameter);
+          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(sorption_site_name,"Surface",parameter);
           std::map<std::string,int>::const_iterator it3 = aux_chem_variables_map.find(key);
           if (it3 == aux_chem_variables_map.end() && ParallelDescriptor::IOProcessor()) {
             std::cout << "RockManager::RockChemistryProperties  Unable to locate parameter in aux_data (material,sorption_site,parameter): "

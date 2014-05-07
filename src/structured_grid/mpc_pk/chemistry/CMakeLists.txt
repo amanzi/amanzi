@@ -17,9 +17,9 @@ include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${GEOCHEM_STATE_DIR}) 
 include_directories(${GEOCHEM_SOURCE_DIR}) 
 
-set(CXX_header_files ChemistryHelper_Structured.cpp AlquimiaHelper_Structured.H AmanziChemHelper_Structured.H)
+set(CXX_header_files AlquimiaHelper_Structured.H AmanziChemHelper_Structured.H)
 
-set(CXX_source_files AlquimiaHelper_Structured.cpp AmanziChemHelper_Structured.cpp)
+set(CXX_source_files ChemistryHelper_Structured.cpp AlquimiaHelper_Structured.cpp AmanziChemHelper_Structured.cpp)
 set(F90_source_files )
 set(F77_source_files )
 set(FPP_source_files )
