@@ -295,13 +295,14 @@ namespace Amanzi {
         const std::string Chemistry_Max_Step_str_tr = "Max Time Step";
 
         reqP.clear(); reqL.clear();
-        reqL.push_back(ThermoDB_str);
+        bool thermoDB_reqd = chem_mode == "Amanzi";
+        if (thermoDB_reqd) {
+          reqL.push_back(ThermoDB_str);
+        }
         reqP.push_back(Chemistry_Engine_str);
         if (chem_mode == "Alquimia") {
           reqP.push_back(Chemistry_Engine_Input_str);
         }
-        reqP.push_back(Chemistry_Verbosity_str);
-        reqP.push_back(Chemistry_Activity_Model_str);
         reqP.push_back(Chemistry_Tol_str);
         reqP.push_back(Chemistry_Newton_str);
         reqP.push_back(Chemistry_Max_Step_str);
@@ -309,29 +310,43 @@ namespace Amanzi {
         PLoptions CHopt(chem_list,reqL,reqP,true,false); 
         const Array<std::string>& CHoptP = CHopt.OptParms();
 
-        const Teuchos::ParameterList& thermoPL = chem_list.sublist(ThermoDB_str);
-        Array<std::string> treqL, treqP;
-        treqP.push_back(ThermoDB_Fmt_str);
-        treqP.push_back(ThermoDB_File_str);
-        PLoptions ThDBopt(thermoPL,treqL,treqP,true,true); 
-        chem_out_list.set<std::string>(underscore(ThermoDB_str)+"_"+underscore(ThermoDB_Fmt_str), underscore(thermoPL.get<std::string>(ThermoDB_Fmt_str)));
-        chem_out_list.set<std::string>(underscore(ThermoDB_str)+"_"+underscore(ThermoDB_File_str), thermoPL.get<std::string>(ThermoDB_File_str));
+        if (chem_list.isSublist(ThermoDB_str)) {
+          const Teuchos::ParameterList& thermoPL = chem_list.sublist(ThermoDB_str);
+          Array<std::string> treqL, treqP;
+          treqP.push_back(ThermoDB_Fmt_str);
+          treqP.push_back(ThermoDB_File_str);
+          PLoptions ThDBopt(thermoPL,treqL,treqP,true,true); 
+          chem_out_list.set<std::string>(underscore(ThermoDB_str)+"_"+underscore(ThermoDB_Fmt_str), underscore(thermoPL.get<std::string>(ThermoDB_Fmt_str)));
+          chem_out_list.set<std::string>(underscore(ThermoDB_str)+"_"+underscore(ThermoDB_File_str), thermoPL.get<std::string>(ThermoDB_File_str));
+        }
 
         chem_out_list.set<std::string>(underscore(Chemistry_Engine_str), underscore(chem_list.get<std::string>(Chemistry_Engine_str)));
         if (chem_mode=="Alquimia") {
           chem_out_list.set<std::string>(underscore(Chemistry_Engine_Input_str), underscore(chem_list.get<std::string>(Chemistry_Engine_Input_str)));
         }
-        chem_out_list.set<std::string>(underscore(Chemistry_Verbosity_str), underscore(chem_list.get<std::string>(Chemistry_Verbosity_str)));
-        chem_out_list.set<std::string>(underscore(Chemistry_Activity_Model_str), underscore(chem_list.get<std::string>(Chemistry_Activity_Model_str)));
-        chem_out_list.set<double>(underscore(Chemistry_Tol_str), chem_list.get<double>(Chemistry_Tol_str));
-        chem_out_list.set<int>(underscore(Chemistry_Newton_str), chem_list.get<int>(Chemistry_Newton_str));
-        chem_out_list.set<double>(underscore(Chemistry_Max_Step_str_tr), chem_list.get<double>(Chemistry_Max_Step_str));
-
         for (int i=0; i<CHoptP.size(); ++i) {
           const std::string& name = CHoptP[i];
           std::string _name = underscore(name);
           if (name==Chemistry_Aux_str) {
             chem_out_list.set(_name,underscore(chem_list.get<Array<std::string> >(name)));
+          }
+          else if (name==Chemistry_Verbosity_str) {
+            chem_out_list.set<std::string>(underscore(Chemistry_Verbosity_str), underscore(chem_list.get<std::string>(Chemistry_Verbosity_str)));
+          }
+          else if (name==Chemistry_Activity_Model_str) {
+            chem_out_list.set<std::string>(underscore(Chemistry_Activity_Model_str), underscore(chem_list.get<std::string>(Chemistry_Activity_Model_str)));
+          }
+          else if (name==Chemistry_Tol_str) {
+            chem_out_list.set<double>(underscore(Chemistry_Tol_str), chem_list.get<double>(Chemistry_Tol_str));
+          }
+          else if (name==Chemistry_Newton_str) {
+            chem_out_list.set<int>(underscore(Chemistry_Newton_str), chem_list.get<int>(Chemistry_Newton_str));
+          }
+          else if (name==Chemistry_Max_Step_str) {
+            chem_out_list.set<double>(underscore(Chemistry_Max_Step_str_tr), chem_list.get<double>(Chemistry_Max_Step_str));
+          }
+          else {
+            MyAbort("Uncrecognized option in \"Chemistry\" parameter list: \"" + name + "\"");
           }
         }
       }
@@ -3746,28 +3761,25 @@ namespace Amanzi {
           const Array<std::string>& solute_names = struc_list.sublist("tracer").get<Array<std::string> >("tracers");
           for (int i=0; i<solute_names.size(); ++i) {
             const std::string& name = solute_names[i];
-            /*
-            // Not currently handling "Total Sorbed"
+
             if (state.getSolid().UsingSorption()) {
-              user_derive_list.push_back(underscore("Total Sorbed "+name));
+              user_derive_list.push_back(underscore(name + " Sorbed Concentration"));
+            }
+
+            /*
+            if (state.getSolid().HasSorptionIsotherm(name)) {
+              user_derive_list.push_back(underscore(name + " Isotherm Kd"));
+              if (state.getSolid().SorptionIsotherm(name).IsFreundlich()) {
+                user_derive_list.push_back(underscore(name + "Isotherm Freundlich n "));
+              }
+              else if (state.getSolid().SorptionIsotherm(name).IsLangmuir()) 
+              {
+                user_derive_list.push_back(underscore(name + " Isotherm Langmuir b "));
+              }
             }
             */
-            // Not going to put optional Freundlich and Langmuir output in the derived-list for now.  
-            /*
-              if (SolidChem::HasSorptionIsotherm(name)) {
-              user_derive_list.push_back(underscore("Kd "+name));
-              if (SolidChem::SorptionIsotherm(name).IsFreundlich()) {
-              user_derive_list.push_back(underscore("Freundlich n "+name));
-              }
-              else if (SolidChem::SorptionIsotherm(name).IsLangmuir()) 
-              {
-              user_derive_list.push_back(underscore("Langmuir b "+name));
-              }
-              }
-            */
-            //user_derive_list.push_back(underscore(name+" Isotherm Kd"));
-            //user_derive_list.push_back(underscore(name+" Free Ion Guess"));
-            //user_derive_list.push_back(underscore(name+" Activity Coefficient"));
+            user_derive_list.push_back(underscore(name+" Free Ion Guess"));
+            user_derive_list.push_back(underscore(name+" Activity Coefficient"));
           }
         }
 
@@ -3785,7 +3797,7 @@ namespace Amanzi {
         const Array<std::string>& sorption_site_names = state.getSolid().sorption_site_names;
         for (int i=0; i<sorption_site_names.size(); ++i) {
           const std::string& name = sorption_site_names[i];
-          user_derive_list.push_back(underscore("Site Density "+name));
+          user_derive_list.push_back(underscore(name + " Surface Site Density"));
         }
       }
 

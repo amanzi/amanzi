@@ -1,5 +1,6 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+  <Parameter name="Dump ParmParse Table" type="string" value="run_data/ppfile"/>
   <Parameter name="Petsc Options File" type="string" value=".petsc"/>
 
   <ParameterList name="General Description">

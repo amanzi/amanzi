@@ -21,10 +21,10 @@ public:
                        FArrayBox&       primary_species_mobile,   int sPrimMob,
                        FArrayBox&       fcnCnt,                   int sFunc,
                        FArrayBox&       aux_data, Real water_density, Real temperature,
-                       const Box& box, Real dt, bool initialize = false);
+                       const Box& box, Real dt);
 
   virtual void EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
-                                FArrayBox& auxiliary_data, bool initialize_auxiliary_data,
+                                FArrayBox& auxiliary_data,
                                 const Box& box, const std::string& condition_name, Real time);
 
 protected:
@@ -34,7 +34,6 @@ protected:
                       const FArrayBox& volume,                   int sVol,
                       FArrayBox&       primary_species_mobile,   int sPrimMob,
                       FArrayBox&                   aux_data,
-                      bool                         auxiliary_data_initialized,
                       const IntVect&               iv,
                       Real                         water_density,
                       Real                         temperature,
@@ -45,7 +44,6 @@ protected:
 
   void Alquimia_to_BL(FArrayBox& primary_species_mobile,   int sPrimMob,
                       FArrayBox&                   aux_data,
-                      bool                         initialize_auxiliary_data,
                       const IntVect&               iv,
                       AlquimiaMaterialProperties&  mat_props,
                       AlquimiaState&               chem_state,
@@ -59,10 +57,8 @@ protected:
   std::vector<AlquimiaMaterialProperties> alquimia_material_properties;
   std::vector<AlquimiaAuxiliaryData> alquimia_aux_in;
   std::vector<AlquimiaAuxiliaryOutputData> alquimia_aux_out;
-  std::vector<std::string> primarySpeciesNames, mineralNames, surfSiteNames, ionExchangeNames, isothermSpeciesNames;
-  int Nmobile, Nimmobile, Nminerals;
   const AlquimiaSizes& alq_sizes;
-  int num_ion_exchange, num_aux_ints, ndigits_int, num_aux_doubles, ndigits_doubles, num_free_ion_species, ndigits_freeion;
+  int NauxInts, NauxDoubles;
 };
 
 #endif
