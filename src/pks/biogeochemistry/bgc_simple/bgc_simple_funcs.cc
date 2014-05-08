@@ -15,10 +15,6 @@ Licencse: BSD
 
 namespace Amanzi {
 namespace BGC {
-namespace BGCSimple {
-
-
-
 
 // t and dt [s]
 // gridarea [m^2]
@@ -651,8 +647,6 @@ void advance(double t, double dt, double gridarea,
   return;
 }
 
-
-} // namespace BGCSimple
 } // namespace BGC
 } // namespace Amanzi
 

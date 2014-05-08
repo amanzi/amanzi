@@ -13,7 +13,6 @@ Licencse: BSD
 
 namespace Amanzi {
 namespace BGC {
-namespace BGCSimple {
 
 // Functor for calculating QSat.
 class QSat {
@@ -42,9 +41,6 @@ void Photosynthesis(double PARi, double LUE, double LER, double pressure, double
                     double tair, double relh, double CO2a, double mp, double Vcmax25,
                     double* A, double* tleaf, double* Resp);
 
-
-
-} // namespace
 } // namespace
 } // namespace
 
