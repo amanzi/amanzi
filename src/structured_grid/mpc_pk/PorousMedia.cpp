@@ -12544,7 +12544,7 @@ PorousMedia::derive_Aqueous_Volumetric_Flux(Real      time,
        || (model == PM_SATURATED) ) {
     MultiFab tmf(grids,BL_SPACEDIM,0);
     // FIXME: Input parameter?
-    bool do_upwind = true;
+    bool do_upwind = false;
     umac_edge_to_cen(u_mac_curr,tmf,do_upwind); 
     MultiFab::Copy(mf,tmf,dir,dcomp,1,0);
   }
