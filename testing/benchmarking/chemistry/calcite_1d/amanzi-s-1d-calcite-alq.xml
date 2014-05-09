@@ -184,10 +184,6 @@
   </ParameterList>
 
   <ParameterList name="Chemistry">
-    <ParameterList name="Thermodynamic Database">
-      <Parameter name="Format" type="string" value="simple" />
-      <Parameter name="File" type="string" value="calcite.bgd" />
-    </ParameterList> <!-- Thermodynamic Database -->
     <Parameter name="Engine" type="string" value="PFloTran"/>
     <Parameter name="Engine Input File" type="string" value="1d-calcite.in"/>
     <Parameter name="Verbosity" type="string" value="verbose" />
