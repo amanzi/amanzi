@@ -188,6 +188,31 @@ RockManager::BuildInterpolators()
   int dComp=0;
   Real time = 0;
 
+#if 0
+  for (int n=0; n<rock.size(); ++n) {
+
+    Array<Real> s(NUM_INIT_INTERP_EVAL_PTS_DEF);
+    int Npts = s.size();
+    Array<Real> pc(Npts);
+    Array<int> mat(Npts,n);
+
+    pc[0] = pc_at_Sr;
+    InverseCapillaryPressure(pc.dataPtr(),&n,time,&(s[0]),1);
+
+    Real ds = 1 - s[0];
+    for (int i=1; i<s.size(); ++i) {
+      s[i] = s[0] + ds*Real(i)/(NUM_INIT_INTERP_EVAL_PTS_DEF - 1);
+    }
+    CapillaryPressure(s.dataPtr(),mat.dataPtr(),time,pc.dataPtr(),Npts);
+    CP_s_interps.set(n, new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(pc)));
+
+    Array<Real> kr(s.size());
+    RelativePermeability(s.dataPtr(),mat.dataPtr(),time,kr.dataPtr(),Npts);
+    Kr_s_interps.set(n, new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(kr)));
+  }
+#endif
+  interps_built = true;
+
   for (int n=0; n<rock.size(); ++n) {
     int Npts = WRM_plot_file[n].first;
     if (ParallelDescriptor::IOProcessor() && Npts > 0) {
@@ -220,30 +245,6 @@ RockManager::BuildInterpolators()
       osf.close();
     }
   }
-#if 0
-  for (int n=0; n<rock.size(); ++n) {
-
-    Array<Real> s(NUM_INIT_INTERP_EVAL_PTS_DEF);
-    int Npts = s.size();
-    Array<Real> pc(Npts);
-    Array<int> mat(Npts,n);
-
-    pc[0] = pc_at_Sr;
-    InverseCapillaryPressure(pc.dataPtr(),&n,time,&(s[0]),1);
-
-    Real ds = 1 - s[0];
-    for (int i=1; i<s.size(); ++i) {
-      s[i] = s[0] + ds*Real(i)/(NUM_INIT_INTERP_EVAL_PTS_DEF - 1);
-    }
-    CapillaryPressure(s.dataPtr(),mat.dataPtr(),time,pc.dataPtr(),Npts);
-    CP_s_interps.set(n, new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(pc)));
-
-    Array<Real> kr(s.size());
-    RelativePermeability(s.dataPtr(),mat.dataPtr(),time,kr.dataPtr(),Npts);
-    Kr_s_interps.set(n, new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(kr)));
-  }
-#endif
-  interps_built = true;
 }
 
 
