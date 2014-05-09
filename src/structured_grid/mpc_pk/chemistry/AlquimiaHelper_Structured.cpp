@@ -1,3 +1,4 @@
+#ifdef ALQUIMIA_ENABLED
 
 #include <AlquimiaHelper_Structured.H>
 
@@ -427,3 +428,5 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
     aux_data(iv,aux_chem_variables[label]) = aux_input.aux_doubles.data[i];
   }
 }
+
+#endif

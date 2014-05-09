@@ -690,7 +690,9 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_solver_control = 0;
   PorousMedia::richard_solver_data = 0;
 
+#if ALQUIMIA_ENABLED
   PorousMedia::chemistry_engine = 0;
+#endif
   PorousMedia::chemistry_engine_name = "";
   PorousMedia::chemistry_helper = 0;
 }
@@ -1835,7 +1837,9 @@ void  PorousMedia::read_tracer()
     do_full_strang = 0;
   }
 
+#if ALQUIMIA_ENABLED
   chemistry_engine = 0;
+#endif
   chemistry_helper = 0;
 
   if (do_tracer_chemistry) {
@@ -1968,6 +1972,7 @@ void  PorousMedia::read_tracer()
   {
     int Nimmobile = 0;
     int Nmobile = ntracers;
+#if ALQUIMIA_ENABLED
     if (chemistry_engine != 0) {
       // FIXME: Amanzi input MUST be consistent with chemistry class
       std::vector<std::string> primarySpeciesNames; chemistry_engine->GetPrimarySpeciesNames(primarySpeciesNames);
@@ -1977,6 +1982,7 @@ void  PorousMedia::read_tracer()
         BL_ASSERT(primarySpeciesNames[i] == tNames[i]);
       }
     }
+#endif
     if (do_tracer_chemistry>0  ||  do_tracer_advection  ||  do_tracer_diffusion) {
       setup_tracer_transport = true;
       for (int i = 0; i<Nmobile; i++) {

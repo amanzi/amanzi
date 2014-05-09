@@ -8,8 +8,7 @@
 # through these variables.
 project(SCHEM)
 
-include_directories(${SCHEM_SOURCE_DIR})
-
+include_directories(${PMAMR_INCLUDE_DIRS})
 include_directories(${CHEM_SOURCE_DIR}/includes)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -28,6 +27,7 @@ preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 
 add_library(schem OBJECT ${FPP_out_files}
                          ${CXX_source_files}
+                         ${CXX_header_files}
                          ${F90_source_files}
                          ${F77_source_files}
                          ${h_inc_files})

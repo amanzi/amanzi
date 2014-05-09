@@ -29,14 +29,10 @@
 #include <RichardSolver.H>
 #include <RockManager.H>
 
-// Amanzi chemistry
 #ifdef ALQUIMIA_ENABLED
 #include <ChemistryEngine.hh>
-#include <ChemistryHelper_Structured.H>
-#else
-#include "simple_thermo_database.hh"
-#include "beaker.hh"
 #endif
+#include <ChemistryHelper_Structured.H>
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -989,8 +985,8 @@ public:
 
 #ifdef ALQUIMIA_ENABLED
   static Amanzi::AmanziChemistry::ChemistryEngine* GetChemistryEngine() {return chemistry_engine;}
-  static ChemistryHelper_Structured* GetChemistryHelper() {return chemistry_helper;}
 #endif
+  static ChemistryHelper_Structured* GetChemistryHelper() {return chemistry_helper;}
   static const std::string& GetChemistryModel() {return chemistry_model_name;}
   static const std::string& GetChemistryEngineName() {return chemistry_engine_name;}
   static RockManager* GetRockManager() {return rock_manager;}

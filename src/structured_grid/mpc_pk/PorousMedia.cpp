@@ -234,15 +234,6 @@ PorousMedia::variableCleanUp ()
 
   source_array.clear();
 
-  if (do_tracer_chemistry>0) {
-#ifdef ALQUIMIA_ENABLED
-#else
-    chemSolve.clear();
-    components.clear();
-    parameters.clear();
-#endif
-  }
-
   delete region_manager;
   region_manager = 0;
 
