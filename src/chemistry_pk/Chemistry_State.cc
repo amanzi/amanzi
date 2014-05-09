@@ -342,7 +342,7 @@ void Chemistry_State::RequireData_() {
         conc_names_cv[0].push_back(*compname + std::string(" conc"));
       }
       S_->RequireField("total_component_concentration", name_, conc_names_cv)
-        ->SetMesh(mesh_)->SetGhosted(false)
+        ->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, number_of_aqueous_components_);
     }
 
@@ -688,7 +688,7 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
 
   // NOTE: For now, we do not copy material properties back from Alquimia 
   // NOTE: to Amanzi. -JNJ
-#if 0
+  //#if 0 NOTE: Reverting this back to copying properties SMR
   // minerals
   for (unsigned int m = 0; m < number_of_minerals(); m++) 
   {
@@ -717,7 +717,7 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
       cell_sorption_sites[cell_id] = state.surface_site_density.data[i];
     }
   }
-#endif
+  //#endif
 
   // Auxiliary data -- block copy.
   int num_aux_ints = aux_data.aux_ints.size;
@@ -747,7 +747,7 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
   // NOTE: volume and water saturation are read-only from the chemistry state, so they can't be 
   // NOTE: altered by Alquimia.
 
-#if 0
+  // #if 0 NOTE: reverting this to copying properties from Alquimia SMR
   // sorption isotherms
   if (using_sorption_isotherms()) 
   {
@@ -763,7 +763,7 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
       cell_data[cell_id] = mat_props.langmuir_b.data[i];
     }
   }
-#endif
+  //#endif
 }
 
 #endif
