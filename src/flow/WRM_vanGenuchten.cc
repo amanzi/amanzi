@@ -65,7 +65,8 @@ double WRM_vanGenuchten::k_relative(double pc)
   if (pc >= pc0_) {
     double se = pow(1.0 + pow(alpha_*pc, n_), -m_);
     if (function_ == FLOW_WRM_MUALEM) {
-      return pow(se, l_) * pow(1.0 - pow(1.0 - pow(se, 1.0/m_), m_), 2.0);
+      double tmp = 1.0 - pow(1.0 - pow(se, 1.0/m_), m_);
+      return pow(se, l_) * tmp * tmp;
     } else {
       return se * se * (1.0 - pow(1.0 - pow(se, 1.0/m_), m_));     
     }
