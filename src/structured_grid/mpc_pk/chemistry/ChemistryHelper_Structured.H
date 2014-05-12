@@ -20,21 +20,29 @@ public:
                        FArrayBox&       primary_species_mobile,   int sPrimMob,
                        FArrayBox&       fcnCnt,                   int sFunc,
                        FArrayBox&       aux_data, Real water_density, Real temperature,
-                       const Box& box, Real dt, bool initialize = false) = 0;
+                       const Box& box, Real dt) = 0;
 
   virtual void EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
-                                FArrayBox& auxiliary_data, bool initialize_auxiliary_data,
-                                const Box& box, const std::string& condition_name, Real time) = 0;
+                                FArrayBox& auxiliary_data, const Box& box, const std::string& condition_name, Real time) = 0;
 
   const std::map<std::string,int>& AuxChemVariablesMap() const {return aux_chem_variables;}
+  const std::map<std::string,Real>& AuxChemDefaultsMap() const {return aux_chem_defaults;}
+
   static std::string BuildPropertyParameterName(const std::string& entity,
                                                 const std::string& property,
                                                 const std::string& parameter);
   static std::string BuildPropertyParameterName(const std::string& entity,
                                                 const std::string& parameter);
 
+  void SetupAuxVariables();
+
 protected:
   std::map<std::string,int> aux_chem_variables;
+  std::map<std::string,Real> aux_chem_defaults;
+
+  bool using_sorption, using_isotherms;
+  std::vector<std::string> primarySpeciesNames, mineralNames, surfSiteNames, ionExchangeNames;
+  int Nimmobile, Nmobile, Nisotherms, NionExchange, Nminerals, NsorptionSites, NfreeIonSpecies;
 };
 
 inline std::string

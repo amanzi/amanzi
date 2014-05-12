@@ -246,7 +246,7 @@ namespace Amanzi {
               }
               return false;
           }
-          bool HasSorptionIsoTherm(const std::string& name) const {
+          bool HasSorptionIsotherm(const std::string& name) const {
               for (int i=0; i<sorption_isotherm_names.size(); ++i) {
                   if (name==sorption_isotherm_names[i]) return true;
               }

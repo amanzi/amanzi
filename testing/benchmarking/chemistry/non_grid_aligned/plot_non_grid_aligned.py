@@ -84,22 +84,21 @@ if __name__ == "__main__":
       
     extent = [0.0, 0.60, 0.0, 0.50]
     
-    fix, ax = plt.subplots(1,figsize=(10,8))
-    plt.imshow(z_native, vmin=z_native.min(), vmax=z_native.max(), origin='lower',extent=extent,cmap=cm.bwr)
-    cbar = plt.colorbar(shrink=.8)
-
     # plot adjustments
     plt.subplots_adjust(left=0.15,bottom=0.15,right=0.99,top=0.90)
     plt.suptitle("Amanzi 2D Non-grid Aligned\n"+"Flow and Transport",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
 
-    ax.set_xlabel("X (m)",fontsize=20)
-    ax.set_ylabel("Y (m)",fontsize=20)
+    plt.xlabel("X (m)",fontsize=20)
+    plt.ylabel("Y (m)",fontsize=20)
+
+    plt.imshow(z_native, vmin=z_native.min(), vmax=z_native.max(), origin='lower',extent=extent,cmap=cm.bwr)
+    cbar = plt.colorbar(shrink=.8)
 
     cbar.ax.tick_params(axis='both', which='both', labelsize=20)
     cbar.ax.set_ylabel('Calcite\n'+'volume\n'+'fraction [-]',fontsize=20,rotation=0)
-    cbar.ax.yaxis.set_label_coords(-1.0, 1.20)
+    cbar.ax.yaxis.set_label_coords(-1.0, 1.15)
 
-    plt.savefig(local_path+"non_grid_aligned_2d.png",format="png")
+    #plt.savefig(local_path+"non_grid_aligned_2d.png",format="png")
 
     

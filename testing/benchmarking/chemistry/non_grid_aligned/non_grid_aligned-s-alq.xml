@@ -4,7 +4,7 @@
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Off"/>
     <Parameter name="Transport Model" type="string" value="On"/>
-    <Parameter name="Chemistry Model" type="string" value="Amanzi"/>
+    <Parameter name="Chemistry Model" type="string" value="Alquimia"/>
 
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
@@ -95,7 +95,7 @@
   <!-- Materials -->
   <ParameterList name="Material Properties">
     <ParameterList name="Aquifers">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{All, Left bottom, Left top}"/>
       
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.38"/>
@@ -169,13 +169,13 @@
 
             <ParameterList name="CO3--">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1e-10"/>
+                <Parameter name="Geochemical Condition" type="string" value="initial"/>
               </ParameterList>
             </ParameterList>
             
             <ParameterList name="Ca++">
               <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1e-10"/>
+                <Parameter name="Geochemical Condition" type="string" value="initial"/>
               </ParameterList>
             </ParameterList>
             
@@ -200,13 +200,13 @@
             
             <ParameterList name="CO3--">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Values" type="Array(double)" value="{1e-10}"/>
+                <Parameter name="Geochemical Condition" type="string" value="top"/>
               </ParameterList>
             </ParameterList>
             
             <ParameterList name="Ca++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Values" type="Array(double)" value="{5e-2}"/>
+                <Parameter name="Geochemical Condition" type="string" value="top"/>
               </ParameterList>
             </ParameterList>
             
@@ -228,13 +228,13 @@
             
             <ParameterList name="CO3--">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Values" type="Array(double)" value="{5e-2}"/>
+                <Parameter name="Geochemical Condition" type="string" value="bottom"/>
               </ParameterList>              
             </ParameterList>
             
             <ParameterList name="Ca++">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Values" type="Array(double)" value="{1e-10}"/>
+                <Parameter name="Geochemical Condition" type="string" value="bottom"/>
               </ParameterList>              
             </ParameterList>
             
@@ -293,15 +293,8 @@
   </ParameterList>
   
   <ParameterList name="Chemistry">
-    <ParameterList name="Thermodynamic Database">
-      <Parameter name="Format" type="string" value="simple" />
-      <Parameter name="File" type="string" value="calcite_dbs.bgd" />
-    </ParameterList>
-    <Parameter name="Engine" type="string" value="Amanzi" />
-    <Parameter name="Verbosity" type="string" value="verbose" />
-    <Parameter name="Activity Model" type="string" value="debye-huckel" />
-    <Parameter name="Tolerance" type="double" value="1.5e-12"/>
-    <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
+    <Parameter name="Engine" type="string" value="PFloTran"/>
+    <Parameter name="Engine Input File" type="string" value="calcite_pflotran.in"/>
     <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
   </ParameterList> <!-- Chemistry -->
 

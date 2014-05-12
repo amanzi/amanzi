@@ -150,7 +150,7 @@ verification['transport']={'index_entry': 'transport/index.rst',
 benchmark={}
 benchmark['index']={'index_title' : 'Benchmark Testing',
                     'index_file' : 'doc/user_guide/benchmarking/index.rst',
-                    'index_list' : ['chemistry'],
+                    'index_list' : ['chemistry','transport'],
                 }
 
 benchmark['chemistry']={'index_entry' : 'chemistry/index.rst',
@@ -191,6 +191,18 @@ benchmark['chemistry']={'index_entry' : 'chemistry/index.rst',
                              },
                         }
 
+benchmark['transport']={'index_entry' : 'transport/index.rst',
+                        'index' : 
+                        {'index_title' : 'Transport',
+                         'index_file' : 'doc/user_guide/benchmarking/transport/index.rst',
+                         'index_list' : ['non_grid_aligned_2d']
+                         },
+                        'non_grid_aligned_2d' : 
+                            {'from_dir' : 'testing/benchmarking/chemistry/non_grid_aligned',
+                             'dest_dir' : 'doc/user_guide/benchmarking/transport/non_grid_aligned_2d',
+                             'index_entry' : 'non_grid_aligned_2d/non_grid_aligned.rst'
+                             },
+                        }
 
 #
 #  Benchmarks
