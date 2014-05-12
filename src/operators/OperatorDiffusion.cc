@@ -15,6 +15,7 @@
 #include "Epetra_FECrsGraph.h"
 
 #include "errors.hh"
+#include "WhetStoneDefs.hh"
 #include "mfd3d_diffusion.hh"
 
 #include "PreconditionerFactory.hh"
@@ -29,25 +30,28 @@ namespace Operators {
 * Initialization of the operator.                                           
 ****************************************************************** */
 void OperatorDiffusion::InitOperator(
-    std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k,
-    int schema_base, int schema_dofs, const Teuchos::ParameterList& plist)
+    std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k)
 {
-  plist_ = plist; 
+  K_ = &K;
   k_ = k;
-  schema_base_ = schema_base;
-  schema_dofs_ = schema_dofs;
-  schema_ = schema_base_ + schema_dofs_;
 
   if (schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
     CreateMassMatrices_(K);
   }
+}
 
-  // if upwind is requested, we will need to update nonlinear coefficient 
-  std::string str_upwind = plist_.get<std::string>("upwind method", "amanzi");
 
-  upwind_ = 0;
-  if (str_upwind == "amanzi") {
-    upwind_ = 1; 
+/* ******************************************************************
+* Calculate elemental matrices.
+****************************************************************** */
+void OperatorDiffusion::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux)
+{
+  if (schema_dofs_ == OPERATOR_SCHEMA_DOFS_NODE) {
+    UpdateMatricesNodal_();
+  } else if (schema_dofs_ == OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE) {
+    UpdateMatricesMixed_(flux);
+  } else if (schema_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
+    UpdateMatricesTPFA_();
   }
 }
 
@@ -55,7 +59,7 @@ void OperatorDiffusion::InitOperator(
 /* ******************************************************************
 * Basic routine of each operator: creation of matrices.
 ****************************************************************** */
-void OperatorDiffusion::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux)
+void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector> flux)
 {
   // find location of matrix blocks
   int schema_dofs = OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE;
@@ -64,7 +68,7 @@ void OperatorDiffusion::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux)
 
   for (int n = 0; n < nblocks; n++) {
     int schema = blocks_schema_[n];
-    if (schema & schema_dofs) {
+    if ((schema & schema_dofs) == schema_dofs) {
       m = n;
       flag = true;
       break;
@@ -140,7 +144,7 @@ void OperatorDiffusion::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux)
 /* ******************************************************************
 * Calculate elemental inverse mass matrices.                                           
 ****************************************************************** */
-void OperatorDiffusion::UpdateMatricesStiffness(std::vector<WhetStone::Tensor>& K)
+void OperatorDiffusion::UpdateMatricesNodal_()
 {
   // find location of matrix blocks
   int m(0), nblocks = blocks_.size();
@@ -177,7 +181,7 @@ void OperatorDiffusion::UpdateMatricesStiffness(std::vector<WhetStone::Tensor>& 
     int nnodes = nodes.size();
 
     WhetStone::DenseMatrix Acell(nnodes, nnodes);
-    int ok = mfd.StiffnessMatrix(c, K[c], Acell);
+    int ok = mfd.StiffnessMatrix(c, (*K_)[c], Acell);
 
     if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
       Errors::Message msg("Stiffness_MFD: unexpected failure of LAPACK in WhetStone.");
@@ -188,6 +192,88 @@ void OperatorDiffusion::UpdateMatricesStiffness(std::vector<WhetStone::Tensor>& 
       matrix[c] += Acell;
     } else {
       matrix.push_back(Acell);
+      matrix_shadow.push_back(null_matrix);
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Calculate and assemble fluxes using the TPFA scheme.
+****************************************************************** */
+void OperatorDiffusion::UpdateMatricesTPFA_()
+{
+  // find location of matrix blocks
+  int m(0), nblocks = blocks_.size();
+  bool flag(false);
+
+  for (int nb = 0; nb < nblocks; nb++) {
+    int schema = blocks_schema_[nb];
+    if (schema == OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
+      m = nb;
+      flag = true;
+      break;
+    }
+  }
+
+  if (flag == false) { 
+    m = nblocks++;
+    blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL);
+    blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
+    blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
+  }
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
+  WhetStone::DenseMatrix null_matrix;
+
+  // populate transmissibilities
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
+
+  CompositeVectorSpace cv_space;
+  cv_space.SetMesh(mesh_);
+  cv_space.SetGhosted(true);
+  cv_space.SetComponent("face", AmanziMesh::FACE, 1);
+
+  Teuchos::RCP<CompositeVector> T = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
+  Epetra_MultiVector& Ttmp = *T->ViewComponent("face", true);
+
+  AmanziMesh::Entity_ID_List cells, faces;
+  Ttmp.PutScalar(0.0);
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    WhetStone::DenseMatrix Mff(nfaces, nfaces);
+    mfd.MassMatrixInverseTPFA(c, (*K_)[c], Mff);
+   
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      Ttmp[0][f] += 1.0 / Mff(n, n);
+    }
+  }
+  T->GatherGhostedToMaster();
+ 
+  // populate the global matrix
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+    WhetStone::DenseMatrix Aface(ncells, ncells);
+
+    if (ncells == 2) {
+      double coef = 1.0 / Ttmp[0][f];
+      Aface(0, 0) =  coef;
+      Aface(1, 1) =  coef;
+      Aface(0, 1) = -coef;
+      Aface(1, 0) = -coef;
+    } else {
+      Aface(0, 0) = 0.0;
+    }
+
+    if (flag) {
+      matrix[f] += Aface;
+    } else {
+      matrix.push_back(Aface);
       matrix_shadow.push_back(null_matrix);
     }
   }
@@ -492,7 +578,29 @@ void OperatorDiffusion::CreateMassMatrices_(std::vector<WhetStone::Tensor>& K)
     if (surface_mesh) {
       ok = mfd.MassMatrixInverseSurface(c, K[c], Wff);
     } else {
-      ok = mfd.MassMatrixInverse(c, K[c], Wff);
+      int method = mfd_primary_;
+      ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+      // try primary and then secondary discretization methods.
+      if (method == WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE) {
+        ok = mfd.MassMatrixInverseMMatrixHex(c, K[c], Wff);
+        method = mfd_secondary_;
+      } else if (method == WhetStone::DIFFUSION_POLYHEDRA_MONOTONE) {
+        ok = mfd.MassMatrixInverseMMatrix(c, K[c], Wff);
+        method = mfd_secondary_;
+      }
+
+      if (ok != WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) {
+        if (method == WhetStone::DIFFUSION_OPTIMIZED_SCALED) {
+          ok = mfd.MassMatrixInverseOptimizedScaled(c, K[c], Wff);
+        } else if(method == WhetStone::DIFFUSION_TPFA) {
+          ok = mfd.MassMatrixInverseTPFA(c, K[c], Wff);
+        } else if(method == WhetStone::DIFFUSION_SUPPORT_OPERATOR) {
+          ok = mfd.MassMatrixInverseSO(c, K[c], Wff);
+        } else if(method == WhetStone::DIFFUSION_POLYHEDRA_SCALED) {
+          ok = mfd.MassMatrixInverseScaled(c, K[c], Wff);
+        }
+      }
     }
 
     Wff_cells_.push_back(Wff);
@@ -508,8 +616,68 @@ void OperatorDiffusion::CreateMassMatrices_(std::vector<WhetStone::Tensor>& K)
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void OperatorDiffusion::InitDiffusion_()
+void OperatorDiffusion::InitDiffusion_(const Teuchos::ParameterList& plist)
 {
+  // Define stencil for the MFD diffusion method.
+  std::vector<std::string> names;
+  names = plist.get<Teuchos::Array<std::string> > ("schema").toVector();
+
+  schema_dofs_ = 0;
+  for (int i = 0; i < names.size(); i++) {
+    if (names[i] == "cell") {
+      schema_dofs_ += OPERATOR_SCHEMA_DOFS_CELL;
+    } else if (names[i] == "node") {
+      schema_dofs_ += OPERATOR_SCHEMA_DOFS_NODE;
+    } else if (names[i] == "face") {
+      schema_dofs_ += OPERATOR_SCHEMA_DOFS_FACE;
+    }
+  }
+
+  // Define base for assembling.
+  std::string primary = plist.get<std::string>("discretization primary");
+  std::string secondary = plist.get<std::string>("discretization secondary");
+
+  schema_base_ = 0;
+  if (primary == "two point flux approximation") {
+    schema_base_ = OPERATOR_SCHEMA_BASE_FACE;
+  } else {
+    schema_base_ = OPERATOR_SCHEMA_BASE_CELL;
+  }
+
+  // Primary discretization methods
+  if (primary == "monotone mfd hex") {
+    mfd_primary_ = WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE;
+  } else if (primary == "monotone mfd") {
+    mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_MONOTONE;
+  } else if (primary == "two point flux approximation") {
+    mfd_primary_ = WhetStone::DIFFUSION_TPFA;
+  } else if (primary == "optimized mfd scaled") {
+    mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_SCALED;
+  } else if (primary == "support operator") {
+    mfd_primary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
+  } else if (primary == "mfd scaled") {
+    mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
+  } else {
+    Errors::Message msg("OperatorDiffusion: primary discretization method is not supported.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // Secondary discretization methods
+  if (secondary == "two point flux approximation") {
+    mfd_secondary_ = WhetStone::DIFFUSION_TPFA;
+  } else if (secondary == "optimized mfd scaled") {
+    mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_SCALED;
+  } else if (secondary == "support operator") {
+    mfd_secondary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
+  } else if (primary == "mfd scaled") {
+    mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
+  } else {
+    Errors::Message msg("OperatorDiffusion: secondary discretization method is not supported.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // Define other parameters.
+  schema_ = schema_base_ + schema_dofs_;
   factor_ = 1.0;
   special_assembling_ = false;
 }

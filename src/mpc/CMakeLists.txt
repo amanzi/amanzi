@@ -39,6 +39,7 @@ include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
+include_directories(${OPERATORS_SOURCE_DIR})
 
 
 # Chemistry includes directory
@@ -89,7 +90,8 @@ if (BUILD_TESTS)
           copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs mpc flow transport chemistry_pk state mesh_factory geometry whetstone mesh_functions functions)
+    set(amanzi_libs mpc flow transport chemistry_pk state operators mesh_factory 
+                    geometry whetstone mesh_functions functions)
     
     if ( ENABLE_MSTK_Mesh )
         # Test: mpc-mstk

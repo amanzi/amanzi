@@ -34,7 +34,7 @@
 
 #include "TransportDefs.hh"
 #include "TransportSourceFactory.hh"
-#include "Dispersion.hh"
+#include "DispersionModel.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Chemistry_State.hh"
@@ -81,16 +81,11 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   // access members  
   Teuchos::RCP<const State> state() { return S_; }
-  Teuchos::RCP<Dispersion> dispersion_matrix() { return dispersion_matrix_; }
   Teuchos::RCP<CompositeVector> total_component_concentration() { return tcc_tmp; }
 
   double TimeStep() { return dT; }
   void TimeStep(double dT_) { dT = dT_; }
   inline double cfl() { return cfl_; }
-
-  // for unit tests only
-  std::vector<Teuchos::RCP<DispersionModel> >& dispersion_models() { return dispersion_models_; }
-  void init_dispersion_matrix(Teuchos::RCP<Dispersion> matrix) { dispersion_matrix_ = matrix; } 
 
   // control members
   void Policy(Teuchos::RCP<State> S);
@@ -119,7 +114,6 @@ class Transport_PK : public Explicit_TI::fnBase {
                              Teuchos::RCP<Epetra_Vector> limiter);
 
  private:
-
   // Helper for constructors.
   void Construct_(Teuchos::ParameterList& glist, 
                   Teuchos::RCP<State> S,
@@ -161,6 +155,11 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   const Teuchos::RCP<Epetra_IntVector>& upwind_cell() { return upwind_cell_; }
   const Teuchos::RCP<Epetra_IntVector>& downwind_cell() { return downwind_cell_; }  
+
+  // dispersion
+  void CalculateDispersionTensor_(
+      const Epetra_MultiVector& darcy_flux, 
+      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
   // I/O methods
   void ProcessParameterList();
@@ -224,8 +223,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
-  Teuchos::RCP<Dispersion> dispersion_matrix_;  // data for dispersion
-  std::vector<Teuchos::RCP<DispersionModel> > dispersion_models_;
+  std::vector<Teuchos::RCP<DispersionModel> > dispersion_models_;  // data for dispersion
+  std::vector<WhetStone::Tensor> D;
   int dispersion_method;
   std::string dispersion_preconditioner;
   std::string dispersion_solver;

@@ -239,13 +239,14 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     op1->UpdateMatrices(source);
 
     // populate the diffusion operator
-    Teuchos::ParameterList olist;
+    Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
+                                        .get<Teuchos::ParameterList>("mixed diffusion");
     int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
     int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
 
-    Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1));
+    Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1, olist));
     op2->set_factor(factor);  // for developers only
-    op2->InitOperator(K, Teuchos::null, schema_base, schema_dofs, olist);
+    op2->InitOperator(K, Teuchos::null);
     op2->UpdateMatrices(Teuchos::null);
     op2->ApplyBCs(bc_model, bc_values);
     op2->SymbolicAssembleMatrix(schema_dofs);
@@ -403,14 +404,15 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     op1->UpdateMatrices(source);
 
     // populate the diffusion operator
-    Teuchos::ParameterList olist;
+    Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
+                                        .get<Teuchos::ParameterList>("nodal diffusion");
     int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
     int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_NODE;
 
-    Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1));
+    Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1, olist));
     op2->set_factor(factor);  // for developers only
-    op2->InitOperator(K, Teuchos::null, schema_base, schema_dofs, olist);
-    op2->UpdateMatricesStiffness(K);
+    op2->InitOperator(K, Teuchos::null);
+    op2->UpdateMatrices(Teuchos::null);
     op2->ApplyBCs(bc_model, bc_values);
     op2->SymbolicAssembleMatrix(schema_dofs);
     op2->AssembleMatrix(schema_dofs);

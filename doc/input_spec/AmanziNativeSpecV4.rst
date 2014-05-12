@@ -235,6 +235,15 @@ State
 State allows the user to initialize physical fields using a variety of 
 tools. 
 
+.. code-block:: xml
+
+  <ParameterList name="State">
+    <ParameterList name="initial conditions">
+       ... initialization of fields
+    </ParameterList>
+  </ParameterList>
+
+
 Initialization of constant scalars
 ----------------------------------
 
@@ -1167,13 +1176,54 @@ Alquimia chemistry kernel reads initial conditions from the `"State`" list.
       </ParameterList>
     </ParameterList>
 
+
+Operators
+=========
+
+Operators are discrete forms of linearized PDEs operators.
+They are located between physical process kernels and solvers
+and include diffusion, advection, gravity, source, and accumulation operators.
+At the moment, a PK desides which collection of operators to be used to build 
+a precondtioner.
+
+.. code-block:: xml
+
+  <ParameterList name="PK operator">
+    <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+
+    <ParameterList name="diffusion operator">
+      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
+      <Parameter name="discretization primary" type="string" value="mfd monotone"/>
+      <Parameter name="discretization secondary" type="string" value="mfd optimized scaled"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell,face}"/>
+    </ParameterList>
+
+    <ParameterList name="advection operator">
+      <Parameter name="discretization primary" type="string" value="upwind"/>
+      <Parameter name="reconstruction order" type="int" value="0"/>
+    </ParameterList>
+  </ParameterList>
+
+* `"discretization primary`" [string] identifies a primary discretization method.
+  Advanced discretization methods may have limitations due to mesh geometry and/or
+  problem coefficients. In such a case the second discretization method is needed.
+
+* `"discretization secondary`" [string] identifies a fallback discretization method.
+
+* `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
+  geometric objects.
+
+* `"preconditioner schema`" [Array(string)] defines the preconditioner stensil.
+  It is needed only when the default assembling procedure is not desirable.
+
+
 Functions
 =========
 
 To set up non-trivial boundary conditions and/or initial fields, `Amanzi`
 supports a few mathematical functions. 
 New function types can added easily.
-Each function is defined a list:
+Each function is defined by a list:
 
 .. code-block:: xml
 

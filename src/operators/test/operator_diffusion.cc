@@ -203,14 +203,15 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   }
 
   // create diffusion operator 
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("Diffusion operators");
+  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator");
   OperatorDiffusionFactory opfactory;
   Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, op_list);
   const CompositeVectorSpace& cvs = op->DomainMap();
   
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_NODE;
-  op->UpdateMatricesStiffness(K);
+  op->InitOperator(K, Teuchos::null);
+  op->UpdateMatrices(Teuchos::null);
   op->ApplyBCs(bc_model, bc_values);
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_NODE);
   op->AssembleMatrix(schema);
@@ -262,7 +263,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("node");
-    GMV::open_data_file(*mesh, (std::string)"operator.gmv");
+    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_node_data(p, 0, "solution");
     GMV::close_data_file();

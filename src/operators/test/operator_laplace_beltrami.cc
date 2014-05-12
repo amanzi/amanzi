@@ -105,14 +105,15 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   CompositeVector solution(*cvs);
   solution.PutScalarMasterAndGhosted(0.0);
 
-  Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, 0));
-
   // populate the diffusion operator
-  Teuchos::ParameterList olist;
   int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
   int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
+  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
+                                      .get<Teuchos::ParameterList>("diffusion operator");
+
+  Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist));
   op->Init();
-  op->InitOperator(K, Teuchos::null, schema_base, schema_dofs, olist);
+  op->InitOperator(K, Teuchos::null);
   op->UpdateMatrices(Teuchos::null);
   op->ApplyBCs(bc_model, bc_values);
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
@@ -138,7 +139,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-    GMV::open_data_file(*surfmesh, (std::string)"surface_flat.gmv");
+    GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
     GMV::close_data_file();
