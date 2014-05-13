@@ -137,10 +137,13 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_
     S_->RequireField("darcy_velocity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
 
+    /*
     Teuchos::ParameterList elist;
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S->SetFieldEvaluator("darcy_velocity", eval);
+    */
   }
+
 
   if (!S_->HasField("hydraulic_head")) {
     S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
