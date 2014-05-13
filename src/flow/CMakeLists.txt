@@ -55,7 +55,8 @@ set(flow_src_files Flow_PK.cc Flow_IO.cc
                    Matrix_MFD.cc Matrix_TPFA.cc 
                    RelativePermeability.cc RelativePermeability_IO.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
-		   )
+                   darcy_velocity_evaluator.cc
+                   )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES})
