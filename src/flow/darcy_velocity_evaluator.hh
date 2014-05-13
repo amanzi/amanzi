@@ -7,6 +7,7 @@
 #ifndef AMANZI_FLOW_DARCY_VELOCITY_EVALUATOR_
 #define AMANZI_FLOW_DARCY_VELOCITY_EVALUATOR_
 
+// #include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
@@ -18,6 +19,7 @@ class DarcyVelocityEvaluator : public SecondaryVariableFieldEvaluator {
   DarcyVelocityEvaluator(Teuchos::ParameterList& plist);
   DarcyVelocityEvaluator(const DarcyVelocityEvaluator& other);
 
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) {};
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
  protected:

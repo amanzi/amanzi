@@ -15,17 +15,24 @@ namespace AmanziFlow {
 DarcyVelocityEvaluator::DarcyVelocityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   // hard-coded keys
-  my_key_ = "darcy_velocity";
-  darcy_flux_key_ = "darcy_flux";
+  my_key_ = std::string("darcy_velocity");
+  darcy_flux_key_ = std::string("darcy_flux");
   dependencies_.insert(darcy_flux_key_);
 }
 
 
 /* ******************************************************************
+* A copy constructor.
+****************************************************************** */
+DarcyVelocityEvaluator::DarcyVelocityEvaluator(const DarcyVelocityEvaluator& other) :
+    SecondaryVariableFieldEvaluator(other),
+    darcy_flux_key_(other.darcy_flux_key_) {}
+
+
+/* ******************************************************************
 * Clone with unclear yet purpose.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator>
-DarcyVelocityEvaluator::Clone() const {
+Teuchos::RCP<FieldEvaluator> DarcyVelocityEvaluator::Clone() const {
   return Teuchos::rcp(new DarcyVelocityEvaluator(*this));
 }
 
@@ -34,8 +41,8 @@ DarcyVelocityEvaluator::Clone() const {
 * Required member function: basic algorithm.
 ****************************************************************** */
 void DarcyVelocityEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result) {
-
+    const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result) 
+{
   const CompositeVector& flux = *S->GetFieldData(darcy_flux_key_);
   Epetra_MultiVector& result_c = *(result->ViewComponent("cell", false));
 }
