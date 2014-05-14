@@ -798,7 +798,8 @@ The parameters used here are
        <ParameterList name="nka parameters">
          <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
          <Parameter name="limit iterations" type="int" value="30"/>
-         <Parameter name="diverged tolerance" type="double" value="1+10"/>
+         <Parameter name="diverged tolerance" type="double" value="1e+10"/>
+         <Parameter name="diverged l2 tolerance" type="double" value="1e+5"/>
          <Parameter name="max du growth factor" type="double" value="1e+5"/>
          <Parameter name="max divergent iterations" type="int" value="3"/>
          <Parameter name="max nka vectors" type="int" value="10"/>
@@ -820,6 +821,9 @@ The parameters used here are
   The available options `"nka`" and `"Newton`".
 
 * `"diverged tolerance`" [double] is the maximum allowed error norm.
+
+* `"diverged l2 tolerance`" [double] is the maximum allowed relative L2 error norm.
+  At the moment it is to prevent overflow only in the first NKA increment.
 
 * `"max du growth factor`" [double] limits the maximum change of the norm of
   the increment `du` during one nonlinear iteration step. 

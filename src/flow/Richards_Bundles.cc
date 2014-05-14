@@ -93,8 +93,8 @@ void Richards_PK::AssembleSteadyStatePreconditioner(FlowMatrix* preconditioner)
 ****************************************************************** */
 void Richards_PK::AssembleMatrixMFD(const CompositeVector& u, double Tp)
 {
-  darcy_flux->ScatterMasterToGhosted("face");
-  rel_perm->Compute(u, *darcy_flux, bc_model, bc_values);
+  darcy_flux_copy->ScatterMasterToGhosted("face");
+  rel_perm->Compute(u, *darcy_flux_copy, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, u);
   
   matrix_->CreateStiffnessMatricesRichards();
@@ -119,16 +119,11 @@ void Richards_PK::AssemblePreconditionerMFD(const CompositeVector& u, double Tp,
 
   if (update_upwind == FLOW_UPWIND_UPDATE_ITERATION){
     matrix_->CreateStiffnessMatricesRichards();
-    matrix_->DeriveMassFlux(u, *darcy_flux, bc_model, bc_values);
-    //Epetra_MultiVector& flux = *darcy_flux->ViewComponent("face", true);
-    //AddGravityFluxes_DarcyFlux(flux, *rel_perm);
+    matrix_->DeriveMassFlux(u, *darcy_flux_copy, bc_model, bc_values);
+    darcy_flux_copy->ScatterMasterToGhosted("face");
   }
-  else{
-    *darcy_flux = *S_->GetFieldData("darcy_flux");
-  }
-  darcy_flux->ScatterMasterToGhosted("face");
 
-  rel_perm->Compute(u, *darcy_flux, bc_model, bc_values);
+  rel_perm->Compute(u, *darcy_flux_copy, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, u);
 
   preconditioner_->CreateStiffnessMatricesRichards();

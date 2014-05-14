@@ -24,7 +24,7 @@ namespace AmanziFlow {
 int Richards_PK::AdvanceToSteadyState(double T0, double dT0)
 {
   // update the axiliary flow state
-  S_->GetFieldData("darcy_flux", passwd_)->ScatterMasterToGhosted("face");
+  darcy_flux_copy->ScatterMasterToGhosted("face");
 
   // override internal parameters
   T_physics = ti_specs_sss_.T0 = T0;
@@ -143,8 +143,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     ComputeBCs(*solution);
 
     // update permeabilities
-    darcy_flux->ScatterMasterToGhosted("face");
-    rel_perm->Compute(*solution, *darcy_flux, bc_model, bc_values);
+    darcy_flux_copy->ScatterMasterToGhosted("face");
+    rel_perm->Compute(*solution, *darcy_flux_copy, bc_model, bc_values);
 
     // create algebraic problem
     matrix_->CreateStiffnessMatricesRichards();

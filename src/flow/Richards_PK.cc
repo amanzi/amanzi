@@ -283,7 +283,7 @@ void Richards_PK::InitPK()
   CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
   UpdateSourceBoundaryData(time, pressure);
 
-  darcy_flux = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("darcy_flux", passwd_)));
+  darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("darcy_flux", passwd_)));
 
   // Other quantatities: injected water mass
   mass_bc = 0.0;
@@ -513,36 +513,39 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     }
   }
 
-
   // initialize saturation
   Epetra_MultiVector& ws = *S_->GetFieldData("water_saturation", passwd_)->ViewComponent("cell");
   DeriveSaturationFromPressure(pstate, ws);
  
+  // derive mass flux (state may not have it at time 0)
+  matrix_->CreateStiffnessMatricesRichards();
+  matrix_->DeriveMassFlux(*solution, *darcy_flux_copy, bc_model, bc_values);
+  darcy_flux_copy->ScatterMasterToGhosted("face");
+
   // re-initialize lambda (experimental)
   double Tp = T0 + dT0;
- if (flag_face && ti_specs.pressure_lambda_constraints) {
+  if (flag_face && ti_specs.pressure_lambda_constraints) {
     EnforceConstraints(Tp, *solution);
+    // update mass flux
+    matrix_->CreateStiffnessMatricesRichards();
+    matrix_->DeriveMassFlux(*solution, *darcy_flux_copy, bc_model, bc_values);
   } else {
     CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
     UpdateSourceBoundaryData(Tp, *solution);
-    *darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
-    darcy_flux->ScatterMasterToGhosted("face");
-    rel_perm->Compute(pressure, *darcy_flux, bc_model, bc_values);
+    rel_perm->Compute(pressure, *darcy_flux_copy, bc_model, bc_values);
   }
+
+  // normalize to obtain Darcy flux
+  Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
+  for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
 
   // nonlinear solver control options
   ti_specs.num_itrs = 0;
   block_picard = 0;
 
-  CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
-  matrix_->CreateStiffnessMatricesRichards();
-  matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
-
-  Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
-  //AddGravityFluxes_DarcyFlux(flux, *rel_perm);
-
-
-  for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    VV_PrintHeadExtrema(*solution);
+  }
 }
 
 
@@ -563,11 +566,6 @@ double Richards_PK::CalculateFlowDt()
 ******************************************************************* */
 int Richards_PK::Advance(double dT_MPC)
 {
-  Teuchos::RCP<CompositeVector> cv = S_->GetFieldData("darcy_flux", passwd_);
-  cv->ScatterMasterToGhosted("face");
-  Epetra_MultiVector& flux = *cv->ViewComponent("face", true);
-
-
   dT = dT_MPC;
   double time = S_->time();
   if (time >= 0.0) T_physics = time;
@@ -639,9 +637,6 @@ void Richards_PK::CommitState(Teuchos::RCP<State> S)
   matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
-
-  //AddGravityFluxes_DarcyFlux(flux, *rel_perm);
-
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
   
   // update time derivative
@@ -696,7 +691,7 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epet
 {
   // create a disctributed flux and water_saturation vectors
   S_->GetFieldData("darcy_flux", passwd_)->ScatterMasterToGhosted("face");
-  S_->GetFieldData("wateri_saturation", passwd_)->ScatterMasterToGhosted("face");
+  S_->GetFieldData("water_saturation", passwd_)->ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell", false);

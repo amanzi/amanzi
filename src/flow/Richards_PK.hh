@@ -146,7 +146,7 @@ class Richards_PK : public Flow_PK {
   int functional_max_cell;
 
   Teuchos::RCP<CompositeVector> solution;
-  Teuchos::RCP<CompositeVector> darcy_flux;
+  Teuchos::RCP<CompositeVector> darcy_flux_copy;
 
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;

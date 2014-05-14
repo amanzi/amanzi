@@ -547,12 +547,11 @@ void Darcy_PK::CommitState(Teuchos::RCP<State> S)
 
   // calculate darcy mass flux
   CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
-  Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
 
   matrix_->CreateStiffnessMatricesDarcy(mfd3d_method_);
   matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
-  //AddGravityFluxes_DarcyFlux(flux);
 
+  Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
   for (int c = 0; c < nfaces_owned; c++) flux[0][c] /= rho_;
 
   // update time derivative
