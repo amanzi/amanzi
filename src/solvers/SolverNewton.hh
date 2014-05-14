@@ -55,7 +55,7 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
 
  protected:
   int Newton_(const Teuchos::RCP<Vector>& u);
-  int Newton_ErrorControl_(double error, double previous_error, double l2_error);
+  int Newton_ErrorControl_(double error, double previous_error, double l2_error, double previous_du_norm, double du_norm);
 
  protected:
   Teuchos::ParameterList plist_;
@@ -96,6 +96,7 @@ SolverNewton<Vector, VectorSpace>::Init(
 template<class Vector, class VectorSpace>
 void SolverNewton<Vector, VectorSpace>::Init_()
 {
+
   tol_ = plist_.get<double>("nonlinear tolerance", 1.0e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
   max_itrs_ = plist_.get<int>("limit iterations", 50);
@@ -132,6 +133,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
 
   // initialize the iteration counter
   num_itrs_ = 0;
+
  
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
@@ -140,7 +142,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0), l2_error(0.0);
   double l2_error_initial(0.0);
-  double du_norm(0.0), previous_du_norm(0.0);
+  double du_norm(1.0), previous_du_norm(1.0);
   int divergence_count(0);
 
   do {
@@ -179,7 +181,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
         }
       }
 
-      int ierr = Newton_ErrorControl_(error, previous_error, l2_error);
+      int ierr = Newton_ErrorControl_(error, previous_error, l2_error, previous_du_norm, du_norm);
       if (ierr == SOLVER_CONVERGED) return num_itrs_;
       if (ierr != SOLVER_CONTINUE) return ierr;
     }
@@ -240,7 +242,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       residual_ = error;
       du->Norm2(&l2_error);
 
-      int ierr = Newton_ErrorControl_(error, previous_error, l2_error);
+      int ierr = Newton_ErrorControl_(error, previous_error, l2_error, previous_du_norm, du_norm);
       if (ierr == SOLVER_CONVERGED) return num_itrs_;
       if (ierr != SOLVER_CONTINUE) return ierr;
     }
@@ -252,11 +254,14 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
 * Internal error control
 ****************************************************************** */
 template<class Vector, class VectorSpace>
-int SolverNewton<Vector, VectorSpace>::Newton_ErrorControl_(
-   double error, double previous_error, double l2_error)
+int SolverNewton<Vector, VectorSpace>::Newton_ErrorControl_( double error, 
+                                                             double previous_error, 
+							     double l2_error, 
+							     double previous_du_norm, 
+							     double du_norm)
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
-    *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error << std::endl;
+    *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error << " contr. factor=" <<du_norm/previous_du_norm<<std::endl;
 
   if (error < tol_) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 

@@ -64,7 +64,7 @@ void Matrix_TPFA::Init()
   transmissibility_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
   gravity_term_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
   //  faces_dir_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
-  face_flag_.assign(nfaces_wghost, 0);
+  //face_flag_.assign(nfaces_wghost, 0);
 
   ComputeTransmissibilities_();
 }
@@ -425,7 +425,7 @@ void Matrix_TPFA::DeriveMassFlux(
 
   AmanziMesh::Entity_ID_List cells;
   std::vector<int> flag(nfaces_wghost, 0);
-  // face_flag_.assign(nfaces_wghost, 0);
+  //face_flag_.assign(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -435,13 +435,17 @@ void Matrix_TPFA::DeriveMassFlux(
       int f = faces[n];
 
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
+
 	double value = bc_values[f][0];
 	flux[0][f] = dirs[n] * (*transmissibility_)[f] * (p[0][c] - value) + (*gravity_term_)[f];
 	flux[0][f] *= Krel_faces[0][f];
+
       } else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
+
 	double value = bc_values[f][0];
 	double area = mesh_->face_area(f);
 	flux[0][f] = value*area;
+
       } else {
 	if (f < nfaces_owned && !flag[f]) {
 	  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -491,7 +495,7 @@ void Matrix_TPFA::AnalyticJacobian_(const CompositeVector& u,
   Epetra_MultiVector& dKdP_faces = *rel_perm_->dKdP().ViewComponent("face", true);
   int method = rel_perm_->method();
 
-  //flag_.assign(nfaces_wghost, 0);
+  //face_flag_.assign(nfaces_wghost, 0);
   std::vector<int> flag(nfaces_wghost, 0);
   //  for (int f = 0; f < nfaces_owned; f++){
 
@@ -630,8 +634,8 @@ void Matrix_TPFA::ComputeTransmissibilities_()
 
   AmanziMesh::Entity_ID_List faces;
   AmanziMesh::Entity_ID_List cells;
-  AmanziGeometry::Point a_dist;
-  double h[2], perm[2], perm_test[2], h_test[2];
+  AmanziGeometry::Point a_dist, a[2];
+  double h[2], perm[2], perm_test[2], h_test[2], beta[2];
   double trans_f;
 
   for (int f = 0; f < nfaces_owned; f++) {
@@ -651,30 +655,35 @@ void Matrix_TPFA::ComputeTransmissibilities_()
     a_dist *= 1./norm(a_dist);
 
     for (int i=0; i<ncells; i++) {
-      h[i] = norm(face_centr - mesh_->cell_centroid(cells[i]));
-      perm[i] = (rho_/mu_) * (((*K_)[cells[i]] * normal) * normal) / area;
+      a[i] = face_centr - mesh_->cell_centroid(cells[i]);
+      h[i] = norm(a[i]);
+      double s = area / h[i];
+      perm[i] = (rho_/mu_) * (((*K_)[cells[i]] * a[i]) * normal) * s;
 
       perm_test[i] = (rho_/mu_) * (((*K_)[cells[i]] * normal) * a_dist);
-      h_test[i] = pow(-1.0, i)*((face_centr - mesh_->cell_centroid(cells[i]))*normal) / area;
+      //h_test[i] = pow(-1.0, i)*((face_centr - mesh_->cell_centroid(cells[i]))*normal) / area;  
+      double dxn = a[i]*normal;
+     
+      beta[i] = fabs(perm[i] / dxn);
     }
 
-    double factor, grav;
+
+    double  grav;
     grav = (gravity * normal) / area;
 
+    trans_f = 0.0;
+
     if (ncells == 2){
-      factor = (perm[0]*perm[1]) / (h[0]*perm[1] + h[1]*perm[0]);
+      //factor = (perm[0]*perm[1]) / (h[0]*perm[1] + h[1]*perm[0]);
       grav *= (h[0] + h[1]);
+      trans_f = (beta[0]*beta[1]) / (beta[0] + beta[1]);
     } else if (ncells == 1) {    
-      factor = perm[0] / h[0];
+      //factor = perm[0] / h[0];
       grav *= h[0];
+      trans_f = beta[0];
     } 
 
-    trans_f = 0.0;
-    for (int i = 0; i < ncells; i++) {
-      trans_f += h_test[i] / perm[i];
-    }
 
-    trans_f = fabs(1.0 / trans_f);
 
     (*transmissibility_)[f] = trans_f;
     (*gravity_term_)[f] = (*transmissibility_)[f] * grav;

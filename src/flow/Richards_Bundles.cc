@@ -120,6 +120,8 @@ void Richards_PK::AssemblePreconditionerMFD(const CompositeVector& u, double Tp,
   if (update_upwind == FLOW_UPWIND_UPDATE_ITERATION){
     matrix_->CreateStiffnessMatricesRichards();
     matrix_->DeriveMassFlux(u, *darcy_flux, bc_model, bc_values);
+    //Epetra_MultiVector& flux = *darcy_flux->ViewComponent("face", true);
+    //AddGravityFluxes_DarcyFlux(flux, *rel_perm);
   }
   else{
     *darcy_flux = *S_->GetFieldData("darcy_flux");

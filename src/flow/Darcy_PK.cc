@@ -535,7 +535,7 @@ void Darcy_PK::CommitState(Teuchos::RCP<State> S)
 
   matrix_->CreateStiffnessMatricesDarcy(mfd3d_method_);
   matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
-  AddGravityFluxes_DarcyFlux(flux);
+  //AddGravityFluxes_DarcyFlux(flux);
 
   for (int c = 0; c < nfaces_owned; c++) flux[0][c] /= rho_;
 

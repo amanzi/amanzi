@@ -526,7 +526,8 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
-  AddGravityFluxes_DarcyFlux(flux, *rel_perm);
+  //AddGravityFluxes_DarcyFlux(flux, *rel_perm);
+
 
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
 }
@@ -625,10 +626,11 @@ void Richards_PK::CommitState(Teuchos::RCP<State> S)
   matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
-  AddGravityFluxes_DarcyFlux(flux, *rel_perm);
+
+  //AddGravityFluxes_DarcyFlux(flux, *rel_perm);
 
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
-
+  
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
 
