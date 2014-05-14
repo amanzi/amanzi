@@ -55,20 +55,19 @@ void DarcyVelocityEvaluator::EvaluateField_(
 
   AmanziGeometry::Point gradient(dim);
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     std::vector<double> solution(nfaces);
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      solution[n] = flux[0][f] * dirs[n];
+      solution[n] = flux[0][f];
     }
   
     mfd.RecoverGradient_MassMatrix(c, solution, gradient);
-    for (int i = 0; i < dim; i++) result_c[i][c] = gradient[i];
+    for (int i = 0; i < dim; i++) result_c[i][c] = -gradient[i];
   }
 }
 
