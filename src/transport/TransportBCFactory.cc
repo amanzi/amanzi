@@ -123,7 +123,7 @@ void TransportBCFactory::ProcessTracerSpec(
 
 /* ******************************************************************
 * Process Dirichet BC (concentration), step 1.
-* **************************************************************** */
+****************************************************************** */
 void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBoundaryFunction*>& bcs) const
 {
 #ifdef ALQUIMIA_ENABLED
@@ -158,8 +158,10 @@ void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBo
 }
 
 
+/* ******************************************************************
+* Process a geochemical condition.
+****************************************************************** */
 #ifdef ALQUIMIA_ENABLED
-// Process a geochemical condition.
 void TransportBCFactory::ProcessGeochemicalConditionSpec(
     Teuchos::ParameterList& spec, TransportBoundaryFunction_Alquimia* bc) const
 {

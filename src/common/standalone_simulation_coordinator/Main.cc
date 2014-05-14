@@ -319,6 +319,7 @@ int main(int argc, char *argv[]) {
         std::cout << e.what() << std::endl;
         std::cout << "Amanzi::XERCES-INPUT_FAILED\n";
       }
+      amanzi_throw(Errors::Message("Amanzi::Input - reading and translation of input file failed. ABORTING!"));
     }
     /***************************************/
     // EIB - this is the old stuff I'm replacing

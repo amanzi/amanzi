@@ -26,16 +26,19 @@ namespace Operators {
 
 class OperatorDiffusionSurface : public OperatorDiffusion {
  public:
-  OperatorDiffusionSurface() { InitDiffusionSurface_(); }
-  OperatorDiffusionSurface(Teuchos::RCP<const CompositeVectorSpace> cvs, int dummy) 
-      : OperatorDiffusion(cvs, dummy) { InitDiffusionSurface_(); }
-  OperatorDiffusionSurface(const Operator& op) : OperatorDiffusion(op) { InitDiffusionSurface_(); };
+  OperatorDiffusionSurface() {};
+  OperatorDiffusionSurface(Teuchos::RCP<const CompositeVectorSpace> cvs, 
+                           const Teuchos::ParameterList& plist) 
+      : OperatorDiffusion(cvs, plist) { InitDiffusionSurface_(plist); }
+  OperatorDiffusionSurface(const Operator& op, 
+                           const Teuchos::ParameterList& plist)
+      : OperatorDiffusion(op, plist) { InitDiffusionSurface_(plist); };
   ~OperatorDiffusionSurface() {}; 
 
   // re-implementation of basic operator virtual members
 
  private:
-  void InitDiffusionSurface_();
+  void InitDiffusionSurface_(const Teuchos::ParameterList& plist);
 };
 
 }  // namespace Operators

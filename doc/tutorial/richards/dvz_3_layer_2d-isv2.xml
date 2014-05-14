@@ -150,7 +150,7 @@
 		<linear_solver>
 			<comments>Proposed comment section.</comments>
 			<method>gmres</method>
-			<max_iterations>20</max_iterations>
+			<max_iterations>50</max_iterations>
 			<tolerance>1.0e-18</tolerance>
 	                <preconditioner name = "hypre_amg">
 	                     	<hypre_cycle_applications>10</hypre_cycle_applications>

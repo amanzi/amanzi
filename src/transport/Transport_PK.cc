@@ -25,19 +25,22 @@
 
 #include "Explicit_TI_RK.hh"
 
+#include "OperatorDefs.hh"
+#include "OperatorDiffusionFactory.hh"
+#include "OperatorDiffusion.hh"
+#include "OperatorAccumulation.hh"
+#include "LinearOperatorFactory.hh"
+
 #include "Transport_PK.hh"
 #include "Reconstruction.hh"
-#include "Dispersion.hh"
-#include "DispersionMatrixFactory.hh"
-#include "LinearOperatorFactory.hh"
 
 
 namespace Amanzi {
 namespace AmanziTransport {
 
 /* ******************************************************************
-* We set up minimum default values and call Init() routine to 
-* complete initialization.
+* We set up minimum default values and call Construct_() to complete 
+* the initialization process.
 ****************************************************************** */
 Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
                            std::vector<std::string>& component_names)
@@ -45,6 +48,10 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
   Construct_(glist, S, component_names);
 }
 
+
+/* ******************************************************************
+* Constructor for Alquimia. 
+****************************************************************** */
 #ifdef ALQUIMIA_ENABLED
 Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
                            Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
@@ -52,12 +59,16 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
     : chem_state_(chem_state), chem_engine_(chem_engine)
 {
   // Retrieve the component names from the chemistry engine.
-  std::vector<std::string> comp_names;
-  chem_engine_->GetPrimarySpeciesNames(comp_names);
-  Construct_(glist, S, comp_names);
+  std::vector<std::string> component_names;
+  chem_engine_->GetPrimarySpeciesNames(component_names);
+  Construct_(glist, S, component_names);
 }
 #endif
 
+
+/* ******************************************************************
+* High-level initialization.
+****************************************************************** */
 void Transport_PK::Construct_(Teuchos::ParameterList& glist, 
                               Teuchos::RCP<State> S,
                               std::vector<std::string>& component_names)
@@ -121,6 +132,7 @@ void Transport_PK::Construct_(Teuchos::ParameterList& glist,
       ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 }
+
 
 /* ******************************************************************
 * Routine processes parameter list. It needs to be called only once
@@ -429,39 +441,68 @@ int Transport_PK::Advance(double dT_MPC)
   }
 
   if (dispersion_models_.size() != 0) {
-    std::string scheme("tpfa");
-    if (mesh_->mesh_type() == AmanziMesh::RECTANGULAR) scheme = "mfd";
-    // scheme = "mfd";
+    Teuchos::ParameterList op_list;
+    Teuchos::ParameterList& tmp_list = op_list.sublist("diffusion operator");
+    tmp_list.set<std::string>("discretization secondary", "two point flux approximation");
 
-    DispersionMatrixFactory mfactory;
-    dispersion_matrix_ = mfactory.Create(scheme, &dispersion_models_, mesh_, S_);
+    if (mesh_->mesh_type() == AmanziMesh::RECTANGULAR) {
+      tmp_list.set<std::string>("discretization primary", "monotone mfd hex");
+      Teuchos::Array<std::string> stensil(2);
+      stensil[0] = "cell";
+      stensil[1] = "face";
+      tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
+    } else {
+      tmp_list.set<std::string>("discretization primary", "two point flux approximation");
+      Teuchos::Array<std::string> stensil(1);
+      stensil[0] = "cell";
+      tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
+    }
 
-    dispersion_matrix_->CalculateDispersionTensor(*darcy_flux, *phi, *ws);
-    dispersion_matrix_->SymbolicAssembleMatrix();
-    dispersion_matrix_->ModifySymbolicAssemble();
-    dispersion_matrix_->AssembleMatrix(*phi);
-    dispersion_matrix_->AddTimeDerivative(dT_MPC, *phi, *ws);
+    Operators::OperatorDiffusionFactory opfactory;
+    Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, op_list);
+    int schema_dofs = op1->schema_dofs();
 
-    dispersion_matrix_->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
-    dispersion_matrix_->UpdatePreconditioner();
+    const CompositeVectorSpace& cvs = op1->DomainMap();
+    CompositeVector rhs(cvs), sol(cvs), factor(cvs);
+    rhs.PutScalar(0.0);
+  
+    // populate the diffusion operator
+    CalculateDispersionTensor_(*darcy_flux, *phi, *ws);
+    op1->InitOperator(D, Teuchos::null);
+    op1->UpdateMatrices(Teuchos::null);
 
-    AmanziSolvers::LinearOperatorFactory<Dispersion, Epetra_Vector, Epetra_BlockMap> sfactory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Dispersion, Epetra_Vector, Epetra_BlockMap> >
-       solver = sfactory.Create(dispersion_solver, solvers_list, dispersion_matrix_);
+    // add accumulation
+    Epetra_MultiVector& fac = *factor.ViewComponent("cell");
+    for (int c = 0; c < ncells_owned; c++) {
+      fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
+    }
+
+    Teuchos::RCP<Operators::OperatorAccumulation> op2 = Teuchos::rcp(new Operators::OperatorAccumulation(*op1));
+    op2->UpdateMatrices(rhs, factor, dT_MPC);
+    op2->SymbolicAssembleMatrix(schema_dofs);
+    op2->AssembleMatrix(schema_dofs);
+    op2->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
+  
+    AmanziSolvers::LinearOperatorFactory<Operators::OperatorAccumulation, CompositeVector, CompositeVectorSpace> sfactory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorAccumulation, CompositeVector, CompositeVectorSpace> >
+       solver = sfactory.Create(dispersion_solver, solvers_list, op2);
 
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
-    const Epetra_Map& map = dispersion_matrix_->RangeMap();
-    Epetra_Vector rhs(map), sol(map);
-
     double residual = 0.0;
     int num_itrs = 0;
+
+    Epetra_MultiVector& rhs_cells = *rhs.ViewComponent("cell");
+    Epetra_MultiVector& sol_cells = *sol.ViewComponent("cell");
+    if (sol.HasComponent("face")) {
+      sol.ViewComponent("face")->PutScalar(0.0);
+    }
     
     for (int i = 0; i < number_components; i++) {
       for (int c = 0; c < ncells_owned; c++) {
         double factor = mesh_->cell_volume(c) * (*ws)[0][c] * (*phi)[0][c] / dT_MPC;
-        rhs[c] = tcc_next[i][c] * factor;
-        sol[c] = tcc_next[i][c];
+        rhs_cells[0][c] = tcc_next[i][c] * factor;
+        sol_cells[0][c] = tcc_next[i][c];
       }
 
       solver->ApplyInverse(rhs, sol);
@@ -470,7 +511,7 @@ int Transport_PK::Advance(double dT_MPC)
       num_itrs += solver->num_itrs();
 
       for (int c = 0; c < ncells_owned; c++) {
-        tcc_next[i][c] = sol[c];
+        tcc_next[i][c] = sol_cells[0][c];
       }
     }
 
@@ -479,14 +520,6 @@ int Transport_PK::Advance(double dT_MPC)
       *vo_->os() << "dispersion solver (" << solver->name() 
                  << ") ||r||=" << residual / number_components
                  << " itrs=" << num_itrs / number_components << std::endl;
-    }
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      int i = dispersion_matrix_->nprimary;
-      int j = dispersion_matrix_->nsecondary;
-      int k = dispersion_matrix_->num_simplex_itrs;
-      if (i > 0) *vo_->os() << "secondary matrices: " << double(100 * j) / ncells_owned << "%" 
-          << ",  average itrs: " << k / (i + 1) << std::endl;
     }
   }
   return 0;

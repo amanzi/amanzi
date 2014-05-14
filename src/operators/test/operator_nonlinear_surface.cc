@@ -170,14 +170,15 @@ TEST(NONLINEAR_OPERATOR) {
     op2->UpdateMatrices(solution, phi, dT);
 
     // add diffusion operator
-    knc->UpdateValues(solution);
-    knc->UpdateDerivatives(solution);
-    Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2));
-
-    Teuchos::ParameterList olist;
     int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
     int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
-    op3->InitOperator(K, knc, schema_base, schema_dofs, olist);
+    Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
+                                        .get<Teuchos::ParameterList>("diffusion operator");
+    knc->UpdateValues(solution);
+    knc->UpdateDerivatives(solution);
+    Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2, olist));
+
+    op3->InitOperator(K, knc);
     op3->UpdateMatrices(flux);
     op3->ApplyBCs(bc_model, bc_values);
     op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
@@ -214,7 +215,7 @@ TEST(NONLINEAR_OPERATOR) {
   if (MyPID == 0) {
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-    GMV::open_data_file(*surfmesh, (std::string)"surface_closed.gmv");
+    GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
     GMV::close_data_file();

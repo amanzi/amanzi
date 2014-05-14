@@ -21,7 +21,7 @@ namespace Operators {
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void OperatorDiffusionSurface::InitDiffusionSurface_()
+void OperatorDiffusionSurface::InitDiffusionSurface_(const Teuchos::ParameterList& plist)
 {
   // factor_ = 1.0;
 }

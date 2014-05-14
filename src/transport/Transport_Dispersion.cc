@@ -21,53 +21,25 @@
 #include "PreconditionerFactory.hh"
 
 #include "TransportDefs.hh"
-#include "Dispersion.hh"
+#include "Transport_PK.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
-
-/* *******************************************************************
-* Initialization of a class.
-******************************************************************* */
-void Dispersion::Init()
-{
-  ncells_owned  = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-
-  nfaces_owned  = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-
-  dim = mesh_->space_dimension();
-
-  D.resize(ncells_owned);
-  for (int c = 0; c < ncells_owned; c++) D[c].init(dim, 2);
-
-  nprimary = nsecondary = 0;
-  num_simplex_itrs = 0;
-}
-
-
-/* *******************************************************************
-* Initialization of a preconditioner
-******************************************************************* */
-void Dispersion::InitPreconditioner(
-    const std::string& prec_name, const Teuchos::ParameterList& prec_list)
-{
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(prec_name, prec_list);
-}
 
 
 /* *******************************************************************
  * Calculate a dispersive tensor the from Darcy fluxes. The flux is
  * assumed to be scaled by face area.
  ****************************************************************** */
-void Dispersion::CalculateDispersionTensor(
+void Transport_PK::CalculateDispersionTensor_(
     const Epetra_MultiVector& darcy_flux, 
     const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
 {
-  for (int mb = 0; mb < specs_->size(); mb++) {
-    Teuchos::RCP<DispersionModel> spec = (*specs_)[mb]; 
+  D.resize(ncells_owned);
+  for (int c = 0; c < ncells_owned; c++) D[c].init(dim, 2);
+
+  for (int mb = 0; mb < dispersion_models_.size(); mb++) {
+    Teuchos::RCP<DispersionModel> spec = dispersion_models_[mb]; 
 
     std::vector<AmanziMesh::Entity_ID> block;
     for (int r = 0; r < (spec->regions).size(); r++) {
@@ -119,6 +91,7 @@ void Dispersion::CalculateDispersionTensor(
 /* ******************************************************************
 * Adds time derivative to the cell-based part of MFD algebraic system.
 ****************************************************************** */
+/*
 void Dispersion::AddTimeDerivative(
     double dT, const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
 {
@@ -132,6 +105,7 @@ void Dispersion::AddTimeDerivative(
     App_->SumIntoGlobalValues(1, &c_GID, &factor);
   }
 }
+*/
 
 
 }  // namespace AmanziTransport

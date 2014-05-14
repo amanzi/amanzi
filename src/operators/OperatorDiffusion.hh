@@ -26,16 +26,16 @@ namespace Operators {
 
 class OperatorDiffusion : public Operator {
  public:
-  OperatorDiffusion() { InitDiffusion_(); };
-  OperatorDiffusion(Teuchos::RCP<const CompositeVectorSpace> cvs, int dummy) : Operator(cvs, dummy) { InitDiffusion_(); }
-  OperatorDiffusion(const Operator& op) : Operator(op) { InitDiffusion_(); }
+  OperatorDiffusion() {};
+  OperatorDiffusion(Teuchos::RCP<const CompositeVectorSpace> cvs, const Teuchos::ParameterList& plist) 
+      : Operator(cvs, 0) { InitDiffusion_(plist); }
+  OperatorDiffusion(const Operator& op, const Teuchos::ParameterList& plist)
+      : Operator(op) { InitDiffusion_(plist); }
   ~OperatorDiffusion() {};
 
   // main members
-  void InitOperator(std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k,
-                    int schema_base, int schema_dofs, const Teuchos::ParameterList& plist);
+  void InitOperator(std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k);
   void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux);
-  void UpdateMatricesStiffness(std::vector<WhetStone::Tensor>& K);
   void UpdateFlux(const CompositeVector& u, CompositeVector& flux, double scalar);
 
   // re-implementation of basic operator virtual members
@@ -52,12 +52,16 @@ class OperatorDiffusion : public Operator {
 
   // access (for developers only)
   void set_factor(double factor) { factor_ = factor; }
+  int schema_dofs() { return schema_dofs_; }
 
  private:
-  void InitDiffusion_();
+  void InitDiffusion_(const Teuchos::ParameterList& plist);
+  void UpdateMatricesNodal_();
+  void UpdateMatricesTPFA_();
+  void UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector> flux);
 
  public:
-  Teuchos::ParameterList plist_;
+  std::vector<WhetStone::Tensor>* K_;
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
   Teuchos::RCP<NonlinearCoefficient> k_;
 
@@ -68,6 +72,7 @@ class OperatorDiffusion : public Operator {
 
  private:
   mutable bool special_assembling_;
+  int mfd_primary_, mfd_secondary_;
 };
 
 }  // namespace Operators

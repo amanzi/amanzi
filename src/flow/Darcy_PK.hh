@@ -14,9 +14,7 @@
 #define AMANZI_DARCY_PK_HH_
 
 #include "Teuchos_RCP.hpp"
-
 #include "Epetra_Vector.h"
-#include "AztecOO.h"
 
 #include "Mesh.hh"
 #include "Point.hh"

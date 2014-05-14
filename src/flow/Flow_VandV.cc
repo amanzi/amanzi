@@ -95,10 +95,10 @@ void Flow_PK::InitializeFields()
     S_->GetField("darcy_flux", passwd_)->set_initialized();
   }
 
-  if (!S_->GetField("darcy_velocity", passwd_)->initialized()) {
-    S_->GetFieldData("darcy_velocity", passwd_)->PutScalar(0.0);
-    S_->GetField("darcy_velocity", passwd_)->set_initialized();
-  }
+  // if (!S_->GetField("darcy_velocity", passwd_)->initialized()) {
+  //   S_->GetFieldData("darcy_velocity", passwd_)->PutScalar(0.0);
+  //   S_->GetField("darcy_velocity", passwd_)->set_initialized();
+  // }
 }
 
 

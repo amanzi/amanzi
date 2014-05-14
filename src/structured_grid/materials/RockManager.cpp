@@ -188,6 +188,31 @@ RockManager::BuildInterpolators()
   int dComp=0;
   Real time = 0;
 
+#if 0
+  for (int n=0; n<rock.size(); ++n) {
+
+    Array<Real> s(NUM_INIT_INTERP_EVAL_PTS_DEF);
+    int Npts = s.size();
+    Array<Real> pc(Npts);
+    Array<int> mat(Npts,n);
+
+    pc[0] = pc_at_Sr;
+    InverseCapillaryPressure(pc.dataPtr(),&n,time,&(s[0]),1);
+
+    Real ds = 1 - s[0];
+    for (int i=1; i<s.size(); ++i) {
+      s[i] = s[0] + ds*Real(i)/(NUM_INIT_INTERP_EVAL_PTS_DEF - 1);
+    }
+    CapillaryPressure(s.dataPtr(),mat.dataPtr(),time,pc.dataPtr(),Npts);
+    CP_s_interps.set(n, new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(pc)));
+
+    Array<Real> kr(s.size());
+    RelativePermeability(s.dataPtr(),mat.dataPtr(),time,kr.dataPtr(),Npts);
+    Kr_s_interps.set(n, new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(kr)));
+  }
+#endif
+  interps_built = true;
+
   for (int n=0; n<rock.size(); ++n) {
     int Npts = WRM_plot_file[n].first;
     if (ParallelDescriptor::IOProcessor() && Npts > 0) {
@@ -220,30 +245,6 @@ RockManager::BuildInterpolators()
       osf.close();
     }
   }
-#if 0
-  for (int n=0; n<rock.size(); ++n) {
-
-    Array<Real> s(NUM_INIT_INTERP_EVAL_PTS_DEF);
-    int Npts = s.size();
-    Array<Real> pc(Npts);
-    Array<int> mat(Npts,n);
-
-    pc[0] = pc_at_Sr;
-    InverseCapillaryPressure(pc.dataPtr(),&n,time,&(s[0]),1);
-
-    Real ds = 1 - s[0];
-    for (int i=1; i<s.size(); ++i) {
-      s[i] = s[0] + ds*Real(i)/(NUM_INIT_INTERP_EVAL_PTS_DEF - 1);
-    }
-    CapillaryPressure(s.dataPtr(),mat.dataPtr(),time,pc.dataPtr(),Npts);
-    CP_s_interps.set(n, new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(pc)));
-
-    Array<Real> kr(s.size());
-    RelativePermeability(s.dataPtr(),mat.dataPtr(),time,kr.dataPtr(),Npts);
-    Kr_s_interps.set(n, new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(kr)));
-  }
-#endif
-  interps_built = true;
 }
 
 
@@ -1524,7 +1525,6 @@ RockManager::RockChemistryProperties(FArrayBox&  fab,
                                      const Real* dx,
                                      const std::map<std::string,int>& aux_chem_variables_map)
 {
-  fab.setVal(0);
   int nSolutes = known_solutes.size();
   if (nSolutes>0) {
 
@@ -1597,7 +1597,7 @@ RockManager::RockChemistryProperties(FArrayBox&  fab,
         const ICParmPair& parm_pairs = it1->second;
         for (ICParmPair::const_iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) {
           const std::string& parameter = it2->first;
-          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(sorption_site_name,"Surface_Complexation",parameter);
+          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(sorption_site_name,"Surface",parameter);
           std::map<std::string,int>::const_iterator it3 = aux_chem_variables_map.find(key);
           if (it3 == aux_chem_variables_map.end() && ParallelDescriptor::IOProcessor()) {
             std::cout << "RockManager::RockChemistryProperties  Unable to locate parameter in aux_data (material,sorption_site,parameter): "
@@ -1645,7 +1645,6 @@ RockManager::RockChemistryProperties(FArrayBox&         fab,
                                      const std::string& material_name,
                                      const std::map<std::string,int>& aux_chem_variables_map)
 {
-  fab.setVal(0);
   int nSolutes = known_solutes.size();
   if (nSolutes>0) {
 
@@ -1678,7 +1677,7 @@ RockManager::RockChemistryProperties(FArrayBox&         fab,
   if (nminerals>0) {
     // Note: mineralogy_ics[rockname][mineralname][property] = val
     ChemICMap::const_iterator it=mineralogy_ics.find(material_name);
-    if (it != mineralogy_ics.find(material_name))
+    if (it != mineralogy_ics.end())
     {
       const ICLabelParmPair& mineral_to_pp = it->second; 
       for (ICLabelParmPair::const_iterator it1=mineral_to_pp.begin(); it1!=mineral_to_pp.end(); ++it1) {
@@ -1713,7 +1712,7 @@ RockManager::RockChemistryProperties(FArrayBox&         fab,
         const ICParmPair& parm_pairs = it1->second;
         for (ICParmPair::const_iterator it2=parm_pairs.begin(); it2!=parm_pairs.end(); ++it2) {
           const std::string& parameter = it2->first;
-          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(sorption_site_name,"Surface_Complexation",parameter);
+          std::string key = ChemistryHelper_Structured::BuildPropertyParameterName(sorption_site_name,"Surface",parameter);
           std::map<std::string,int>::const_iterator it3 = aux_chem_variables_map.find(key);
           if (it3 == aux_chem_variables_map.end() && ParallelDescriptor::IOProcessor()) {
             std::cout << "RockManager::RockChemistryProperties  Unable to locate parameter in aux_data (material,sorption_site,parameter): "

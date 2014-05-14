@@ -26,6 +26,9 @@
 #include "FlowDefs.hh"
 #include "Flow_SourceFactory.hh"
 
+#include "darcy_velocity_evaluator.hh"
+#include "primary_variable_field_evaluator.hh"
+
 #include "Matrix.hh"
 #include "MatrixFactory.hh"
 
@@ -99,10 +102,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_
     S_->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
   }
-  if (!S_->HasField("hydraulic_head")) {
-    S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
 
   if (!S_->HasField("permeability")) {
     S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -133,10 +132,27 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_
   if (!S_->HasField("darcy_flux")) {
     S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", "darcy_flux");
+    darcy_flux_eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S_->SetFieldEvaluator("darcy_flux", darcy_flux_eval);
   }
+
+  // secondary fields and evaluators
   if (!S_->HasField("darcy_velocity")) {
-    S_->RequireField("darcy_velocity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    S_->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
+
+    Teuchos::ParameterList elist;
+    Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
+    S_->SetFieldEvaluator("darcy_velocity", eval);
+  }
+
+
+  if (!S_->HasField("hydraulic_head")) {
+    S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 }
 

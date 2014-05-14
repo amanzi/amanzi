@@ -23,8 +23,7 @@ class OperatorAccumulation : public Operator {
   ~OperatorAccumulation() {};
 
   // main members
-  void UpdateMatrices(
-    const CompositeVector& u0, const CompositeVector& ss, double dT);
+  void UpdateMatrices(const CompositeVector& u0, const CompositeVector& ss, double dT);
 };
 
 }  // namespace Operators

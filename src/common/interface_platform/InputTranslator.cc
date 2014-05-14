@@ -64,13 +64,13 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
   XercesDOMParser *parser = new XercesDOMParser();
   parser->setExitOnFirstFatalError(true);
   parser->setValidationConstraintFatal(true);
-  parser->setValidationScheme(XercesDOMParser::Val_Always);
+  parser->setValidationScheme(XercesDOMParser::Val_Never);
   parser->setDoNamespaces(true);
   parser->setDoSchema(true);
   AmanziErrorHandler* errorHandler = new AmanziErrorHandler();
-  //parser->setErrorHandler(errorHandler); //EIB - commented out until Xerces update to handle XSD 1.1
+  parser->setErrorHandler(errorHandler); //EIB - commented out until Xerces update to handle XSD 1.1
   //parser->setExternalNoNamespaceSchemaLocation(schemaFile);
-  parser->loadGrammar(XMLString::transcode(schemaFile), Grammar::SchemaGrammarType, true);
+  //parser->loadGrammar(XMLString::transcode(schemaFile), Grammar::SchemaGrammarType, true);
   parser->useCachedGrammarInParse(true);
  
   bool errorsOccured = false;
@@ -86,16 +86,7 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
       errorsOccured = true;
       Exceptions::amanzi_throw(Errors::Message("Ran out of memory while parsing the input file. Aborting."));
   }
-  catch (const DOMException& e) {
-      std::cerr << "Amanzi::InputTranslator:  An error occurred during parsing - DOM" << std::endl;
-      std::cerr << "                          " << e.code<< std::endl;
-      std::cerr << "                          " << XMLString::transcode(e.msg)<< std::endl;
-      errorsOccured = true;
-      Exceptions::amanzi_throw(Errors::Message("Errors occured while parsing the input file. Aborting."));
-  }
   catch (...) {
-      std::cerr << "Amanzi::InputTranslator:  An error occurred during parsing" << std::endl;
-      std::cerr << "                          Don't know the exception type" << std::endl;
       errorsOccured = true;
       Exceptions::amanzi_throw(Errors::Message("Errors occured while parsing the input file. Aborting."));
   }
@@ -106,6 +97,9 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
 
   // grab the version number attribute
   new_list.set<std::string>("Amanzi Input Format Version", get_amanzi_version(doc,def_list));
+
+  // store the filename in the def_list for later use
+  def_list.set<std::string>("xmlfilename",xmlfilename);
 
   // grab the simulation type structured vs. unstructured
   get_sim_type(doc, &def_list);
@@ -175,7 +169,7 @@ Teuchos::ParameterList get_verbosity(DOMDocument* xmlDoc) {
                           simPL.set<std::string>("verbosity",textContent);
 			} else {
 			  Errors::Message msg;
-			  msg << "Amanzi::InputTranslator:  An error occurred during parsing verbosity - " ;
+			  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing verbosity - " ;
 			  msg << "level was missing or ill-formed. \n" ;
 			  msg << "  Please correct and try again \n" ;
 			  Exceptions::amanzi_throw(msg);
@@ -237,7 +231,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 		if (namedNode) {
 	            name = XMLString::transcode(namedNode->getNodeValue());
 		} else {
-		  msg << "Amanzi::InputTranslator:  An error occurred during parsing definitions - " ;
+		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "constant name was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
 		}
@@ -245,7 +239,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 		if (namedNode) {
 	          type = XMLString::transcode(namedNode->getNodeValue());
 		} else {
-		  msg << "Amanzi::InputTranslator:  An error occurred during parsing definitions - " ;
+		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "constant type for " << name << " was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
 		}
@@ -253,7 +247,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 		if (namedNode) {
 	          value = XMLString::transcode(namedNode->getNodeValue());
 		} else {
-		  msg << "Amanzi::InputTranslator:  An error occurred during parsing definitions - " ;
+		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "constant value for " << name << " was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
 		}
@@ -284,7 +278,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 		if (namedNode) {
 	          name = XMLString::transcode(namedNode->getNodeValue());
 		} else {
-		  msg << "Amanzi::InputTranslator:  An error occurred during parsing definitions - " ;
+		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "time_constant name was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
 		}
@@ -292,7 +286,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 		if (namedNode) {
 	          value = XMLString::transcode(namedNode->getNodeValue());
 		} else {
-		  msg << "Amanzi::InputTranslator:  An error occurred during parsing definitions - " ;
+		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "time_constant value for " << name << " was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
 		}
@@ -317,7 +311,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 		if (namedNode) {
 	          name = XMLString::transcode(namedNode->getNodeValue());
 		} else {
-		  msg << "Amanzi::InputTranslator:  An error occurred during parsing definitions - " ;
+		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "numerical_constant name was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
 		}
@@ -325,7 +319,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 		if (namedNode) {
 	          value = XMLString::transcode(namedNode->getNodeValue());
 		} else {
-		  msg << "Amanzi::InputTranslator:  An error occurred during parsing definitions - " ;
+		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "numerical_constant value for " << name << " was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
 		}
@@ -341,7 +335,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 		if (namedNode) {
 	          name = XMLString::transcode(namedNode->getNodeValue());
 		} else {
-		  msg << "Amanzi::InputTranslator:  An error occurred during parsing definitions - " ;
+		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "area_mass_flux_constant name was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
 		}
@@ -349,7 +343,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 		if (namedNode) {
 	          value = XMLString::transcode(namedNode->getNodeValue());
 		} else {
-		  msg << "Amanzi::InputTranslator:  An error occurred during parsing definitions - " ;
+		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "area_mass_flux_constant value for " << name << " was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
 		}
@@ -468,14 +462,14 @@ void get_sim_type(DOMDocument* xmlDoc, Teuchos::ParameterList* def_list) {
 	  isUnstr_ = true;
       }
     } else {
-      msg << "Amanzi::InputTranslator:  An error occurred during parsing amanzi_input - " ;
+      msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing amanzi_input - " ;
       msg << "type was missing or ill-formed. \n  Please correct and try again \n" ;
       Exceptions::amanzi_throw(msg);
     }
     
   } else {
     // amanzi inpurt description did not exist, error
-    msg << "Amanzi::InputTranslator:  An error occurred during parsing amanzi_input - " ;
+    msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing amanzi_input - " ;
     msg << "type was missing or ill-formed. \n  Please correct and try again \n" ;
     Exceptions::amanzi_throw(msg);
   }
@@ -572,7 +566,7 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
       if(elementMesh->hasAttribute(XMLString::transcode("framework"))) {
         framework = XMLString::transcode(elementMesh->getAttribute(XMLString::transcode("framework")));
       } else { 
-        msg << "Amanzi::InputTranslator:  An error occurred during parsing mesh - " ;
+        msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing mesh - " ;
         msg << "framework was missing or ill-formed. \n  Use default framework='mstk' if unsure.  Please correct and try again \n" ;
         Exceptions::amanzi_throw(msg);
       }
@@ -596,7 +590,7 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
       }
     }
     if (!all_good) {
-        msg << "Amanzi::InputTranslator:  An error occurred during parsing mesh - " ;
+        msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing mesh - " ;
         msg << "dimension was missing or ill-formed. \n  Please correct and try again \n" ;
         Exceptions::amanzi_throw(msg);
     }
@@ -730,7 +724,7 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
       }
     }
     if (!all_good) {
-        msg << "Amanzi::InputTranslator:  An error occurred during parsing mesh - " ;
+        msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing mesh - " ;
         msg << "generate/read was missing or ill-formed. \n  Please correct and try again \n" ;
 	msg << helper.str();
         Exceptions::amanzi_throw(msg);
@@ -748,7 +742,7 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
           list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","stk::mesh");
         } else {
           //list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","MSTK");
-          msg << "Amanzi::InputTranslator:  An error occurred during parsing mesh - " ;
+          msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing mesh - " ;
           msg << "unknown framework=" << framework << ". See the schema for acceptable types. \n  Please correct and try again \n" ;
           Exceptions::amanzi_throw(msg);
 	}
@@ -770,14 +764,14 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
     }
     else {
       // bad mesh, again if validated shouldn't need this
-      msg << "Amanzi::InputTranslator:  An error occurred during parsing mesh - " ;
+      msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing mesh - " ;
       msg << "\n  Please correct and try again \n" ;
       Exceptions::amanzi_throw(msg);
     }
   }
   else {
     // no mesh sub-elements
-    msg << "Amanzi::InputTranslator:  An error occurred during parsing mesh - " ;
+    msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing mesh - " ;
     msg << "framework was missing or ill-formed. \n  Please correct and try again \n" ;
     Exceptions::amanzi_throw(msg);
   }
@@ -855,19 +849,19 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 		  // EIB - also need to set integration mode = transient with static flow
                   list.set<std::string>("Flow Model","Single Phase");
               } else { 
-                  msg << "Amanzi::InputTranslator:  An error occurred during parsing process_kernels->flow - " ;
+                  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing process_kernels->flow - " ;
                   msg << "model was missing or ill-formed. \n  Please correct and try again \n" ;
                   Exceptions::amanzi_throw(msg);
               }
               XMLString::release(&textContent2);
           } else { 
-            msg << "Amanzi::InputTranslator:  An error occurred during parsing process_kernels->flow - " ;
+            msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing process_kernels->flow - " ;
             msg << "state was missing or ill-formed. \n  Please correct and try again \n" ;
             Exceptions::amanzi_throw(msg);
           }
           XMLString::release(&textContent);
         } else { 
-          msg << "Amanzi::InputTranslator:  An error occurred during parsing process_kernels->flow - " ;
+          msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing process_kernels->flow - " ;
           msg << "state was missing or ill-formed. \n  Please correct and try again \n" ;
           Exceptions::amanzi_throw(msg);
         }
@@ -893,7 +887,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
           XMLString::release(&textContent);
         }
       } else { 
-        msg << "Amanzi::InputTranslator:  An error occurred during parsing process_kernels - " ;
+        msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing process_kernels - " ;
         msg << "flow was missing or ill-formed. \n  Please correct and try again \n" ;
         Exceptions::amanzi_throw(msg);
       }
@@ -977,6 +971,13 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
       XMLString::release(&attrName);
     }
   }
+ 
+  if (def_list->sublist("simulation").isParameter("verbosity")) {
+    std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
+    if (verbosity == "extreme") {
+	    std::cout << "Amanzi::InputTranslator: Getting Execution Controls."<< std::endl;
+    }
+  }
 
   // get execution contorls node
   nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("execution_controls"));
@@ -1029,20 +1030,21 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 	      numControlPeriods++;
               attrMap = currentNode->getAttributes();
 	      char* name;
+	      bool saveName=true;
               for (int k=0; k<attrMap->getLength(); k++) {
 		nodeAttr = attrMap->item(k);
 		attrName =XMLString::transcode(nodeAttr->getNodeName());
 		textContent = XMLString::transcode(nodeAttr->getNodeValue());
 		ecPL.set<std::string>(attrName,textContent);
 		if (strcmp(attrName,"start")==0) {
-		  name=textContent;
+		  if (saveName) name=textContent;
 		  double time = get_time_value(textContent, *def_list);
 		  if (start_times.length() == 0) {  // if first time through
 		    start_times.append(time); 
 		    sim_start = time;
 		  } else {
 		    if (time < sim_start) sim_start = time;           // check for simulation start time
-		    if (time > start_times[start_times.length()-1]) { // if already sorted
+		    if (time >= start_times[start_times.length()-1]) { // if already sorted
 		      start_times.append(time);
 		    } else {                                          // else, sort
 		      int idx = start_times.length()-1;
@@ -1070,6 +1072,8 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 		if (strcmp(attrName,"mode")==0) {
 		  if (strcmp(textContent,"steady")==0) {
 		    hasSteady = true;
+		    saveName = false;
+		    name = textContent;
 		  } else {
 		    hasTrans = true;
 		  }
@@ -1421,7 +1425,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         }
         list.sublist("Time Integration Mode").sublist("Steady") = steadyPL;
       } else {
-        // proceed, user really meant Initialize toSteady case
+        // proceed, user really meant Initialize to Steady case
         if (def_list->sublist("simulation").isParameter("verbosity")) {
           std::string verbosity = def_list->sublist("simulation").get<std::string>("verbosity") ;
           if (verbosity == "extreme") {
@@ -2132,11 +2136,22 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
           }
           else if (strcmp(nodeName,"chemistry_controls")==0) {
 	    Teuchos::ParameterList chemistryPL;
-	    // go ahead and add bdg file to PL, hard coded bgd file name for KD problem, for now
-	    // TODO:: EIB - remove hardcoded bgd filename
+	    // go ahead and add bdg file to PL
+	    // build bgd filename
+	    std::string bgdfilename;
+	    if (def_list->isParameter("xmlfilename") ) {
+                bgdfilename = def_list->get<std::string>("xmlfilename") ;
+                std::string new_extension(".bgd");
+                size_t pos = bgdfilename.find(".xml");
+                bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
+	    } else {
+		// defaulting to hardcoded name
+	        bgdfilename = "isotherms.bgd" ;
+	    }
+	    // add bgd file and parameters to list
 	    Teuchos::ParameterList bgdPL;
 	    bgdPL.set<std::string>("Format","simple");
-	    bgdPL.set<std::string>("File","isotherms.bgd");
+	    bgdPL.set<std::string>("File",bgdfilename);
 	    chemistryPL.sublist("Thermodynamic Database") = bgdPL;
 	    chemistryPL.set<std::string>("Activity Model","unit");
 	    Teuchos::Array<std::string> verb;
@@ -2174,7 +2189,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                      chemistryPL.set<double>("Tolerance",get_double_constant(textContent,*def_list));
                      XMLString::release(&textContent);
 		   } else {
-		     msg << "Amanzi::InputTranslator:  An error occurred during parsing numerical_controls->chemistry_controls - " ;
+		     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing numerical_controls->chemistry_controls - " ;
 		     msg << "chem_tolerance was missing or ill-formed. \n  Please correct and try again \n" ;
 		     Exceptions::amanzi_throw(msg);
 		   }
@@ -2184,7 +2199,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                      chemistryPL.set<int>("Maximum Newton Iterations",get_int_constant(textContent,*def_list));
                      XMLString::release(&textContent);
 		   } else {
-		     msg << "Amanzi::InputTranslator:  An error occurred during parsing numerical_controls->chemistry_controls - " ;
+		     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing numerical_controls->chemistry_controls - " ;
 		     msg << "chem_max_newton_iterations was missing or ill-formed. \n  Please correct and try again \n" ;
 		     Exceptions::amanzi_throw(msg);
 		   }
@@ -2195,13 +2210,13 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                      chemistryPL.set<double>("Max Time Step (s)",get_double_constant(textContent,*def_list));
                      XMLString::release(&textContent);
 		   } else {
-		     msg << "Amanzi::InputTranslator:  An error occurred during parsing numerical_controls->chemistry_controls - " ;
+		     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing numerical_controls->chemistry_controls - " ;
 		     msg << "chem_max_time_step was missing or ill-formed. \n  Please correct and try again \n" ;
 		     Exceptions::amanzi_throw(msg);
 		   }
 		} else {
 		     // TODO:: EIB - should I error or just ignore???
-		     msg << "Amanzi::InputTranslator:  An error occurred during parsing numerical_controls->chemistry_controls - " ;
+		     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing numerical_controls->chemistry_controls - " ;
 		     msg << tagname << " was unrecognized option. \n  Please correct and try again \n" ;
 		     Exceptions::amanzi_throw(msg);
 		}
@@ -2897,7 +2912,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
 	    }
 	    matlist.sublist("Sorption Isotherms") = sorptionPL;
 	    // write BGD file
-            write_BDG_file(sorptionPL);
+            write_BDG_file(sorptionPL, def_list);
 	    // Chemistry list is also necessary - this is created under numerical controls section 
 	  }
  	  XMLString::release(&tagName);
@@ -3363,19 +3378,19 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		  double time;
                     DOMElement* bcElem = static_cast<DOMElement*>(cur);
 		  if (strcmp(XMLString::transcode(bcElem->getTagName()),"aqueous_conc") != 0) {
-		     msg << "Amanzi::InputTranslator:  An error occurred during parsing boundary_conditions->solute_component - " ;
+		     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing boundary_conditions->solute_component - " ;
 		     msg << "aqueous_conc was missing or ill-formed. \n  Please correct and try again \n" ;
 		     Exceptions::amanzi_throw(msg);
 		  }
                     solName = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("name")));
 		  if (solName[0] == '\0'){
-		     msg << "Amanzi::InputTranslator:  An error occurred during parsing boundary_conditions->solute_component - " ;
+		     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing boundary_conditions->solute_component - " ;
 		     msg << "aqueous_conc name was missing or ill-formed. \n  Please correct and try again \n" ;
 		     Exceptions::amanzi_throw(msg);
 		  }
                     textContent2 = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("function")));
 		  if (textContent2[0] == '\0'){
-		     msg << "Amanzi::InputTranslator:  An error occurred during parsing boundary_conditions->solute_component - " ;
+		     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing boundary_conditions->solute_component - " ;
 		     msg << "aqueous_conc function was missing or ill-formed. \n  Please correct and try again \n" ;
 		     Exceptions::amanzi_throw(msg);
 		  }
@@ -3387,14 +3402,14 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		  } 
                     textContent2 = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("value")));
 		  if (textContent2[0] == '\0'){
-		     msg << "Amanzi::InputTranslator:  An error occurred during parsing boundary_conditions->solute_component - " ;
+		     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing boundary_conditions->solute_component - " ;
 		     msg << "aqueous_conc value was missing or ill-formed. \n  Please correct and try again \n" ;
 		     Exceptions::amanzi_throw(msg);
 		  }
                     value = get_time_value(textContent2, def_list);
                     textContent2 = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("start")));
 		  if (textContent2[0] == '\0'){
-		     msg << "Amanzi::InputTranslator:  An error occurred during parsing boundary_conditions->solute_component - " ;
+		     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing boundary_conditions->solute_component - " ;
 		     msg << "aqueous_conc start was missing or ill-formed. \n  Please correct and try again \n" ;
 		     Exceptions::amanzi_throw(msg);
 		  }
@@ -4206,10 +4221,22 @@ Teuchos::Array<double> make_coordinates(char* char_array, Teuchos::ParameterList
 Teuchos::ParameterList make_chemistry(Teuchos::ParameterList def_list)
 {
     Teuchos::ParameterList chemistryPL;
-
     Teuchos::ParameterList bgdPL;
+
+    // build bgd filename
+    std::string bgdfilename;
+    if (def_list.isParameter("xmlfilename") ) {
+        bgdfilename = def_list.get<std::string>("xmlfilename") ;
+        std::string new_extension(".bgd");
+        size_t pos = bgdfilename.find(".xml");
+        bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
+    } else {
+        // defaulting to hardcoded name
+        bgdfilename = "isotherms.bgd" ;
+    }
+
     bgdPL.set<std::string>("Format","simple");
-    bgdPL.set<std::string>("File","isotherms.bgd");
+    bgdPL.set<std::string>("File",bgdfilename);
     chemistryPL.sublist("Thermodynamic Database") = bgdPL;
     chemistryPL.set<std::string>("Activity Model","unit");
     Teuchos::Array<std::string> verb;
@@ -4251,7 +4278,7 @@ Teuchos::ParameterList make_chemistry(Teuchos::ParameterList def_list)
  ******************************************************************
  */
 
-void write_BDG_file(Teuchos::ParameterList sorption_list)
+void write_BDG_file(Teuchos::ParameterList sorption_list, Teuchos::ParameterList def_list)
 {
 
   std::ofstream bgd_file;
@@ -4271,8 +4298,20 @@ void write_BDG_file(Teuchos::ParameterList sorption_list)
       }
   }
   
+  // build bgd filename
+  std::string bgdfilename;
+  if (def_list.isParameter("xmlfilename") ) {
+      bgdfilename = def_list.get<std::string>("xmlfilename") ;
+      std::string new_extension(".bgd");
+      size_t pos = bgdfilename.find(".xml");
+      bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
+  } else {
+      // defaulting to hardcoded name
+      bgdfilename = "isotherms.bgd" ;
+  }
+
   // open output bgd file
-  bgd_file.open ("isotherms.bgd");
+  bgd_file.open(bgdfilename.c_str());
 
   // <Primary Species
   bgd_file << "<Primary Species\n";

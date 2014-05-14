@@ -240,6 +240,7 @@ int  PorousMedia::max_grid_size_chem;
 bool PorousMedia::no_initial_values;
 bool PorousMedia::use_funccount;
 bool PorousMedia::do_richard_sat_solve;
+Real PorousMedia::max_chemistry_time_step;
 //
 // Lists.
 //
@@ -599,6 +600,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::max_grid_size_chem = 16;
   PorousMedia::no_initial_values  = true;
   PorousMedia::use_funccount      = false;
+  PorousMedia::max_chemistry_time_step = -1;
 
   PorousMedia::do_simple           = 0;
   PorousMedia::do_multilevel_full  = 1;
@@ -688,13 +690,12 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_solver_control = 0;
   PorousMedia::richard_solver_data = 0;
 
+#if ALQUIMIA_ENABLED
   PorousMedia::chemistry_engine = 0;
+#endif
   PorousMedia::chemistry_engine_name = "";
   PorousMedia::chemistry_helper = 0;
 }
-
-static Real Free_Ion_Guess_DEF = 1.e-20;
-static Real Activity_Coefficient_DEF = 1.e-20;
 
 std::pair<std::string,std::string>
 SplitDirAndName(const std::string& orig)
@@ -1836,7 +1837,9 @@ void  PorousMedia::read_tracer()
     do_full_strang = 0;
   }
 
+#if ALQUIMIA_ENABLED
   chemistry_engine = 0;
+#endif
   chemistry_helper = 0;
 
   if (do_tracer_chemistry) {
@@ -1845,6 +1848,12 @@ void  PorousMedia::read_tracer()
     ParmParse ppc(chemistry_str.c_str());
     
     if (chemistry_model_name != "Off") {
+
+      const std::string Chemistry_Max_Time_Step_str = "Max_Time_Step";
+      max_chemistry_time_step = -1;
+      if (int nmts = ppc.countval(Chemistry_Max_Time_Step_str.c_str())) {
+        ppc.get(Chemistry_Max_Time_Step_str.c_str(),max_chemistry_time_step);
+      }
 
       if (chemistry_model_name == "Amanzi") {
 
@@ -1963,6 +1972,7 @@ void  PorousMedia::read_tracer()
   {
     int Nimmobile = 0;
     int Nmobile = ntracers;
+#if ALQUIMIA_ENABLED
     if (chemistry_engine != 0) {
       // FIXME: Amanzi input MUST be consistent with chemistry class
       std::vector<std::string> primarySpeciesNames; chemistry_engine->GetPrimarySpeciesNames(primarySpeciesNames);
@@ -1972,6 +1982,7 @@ void  PorousMedia::read_tracer()
         BL_ASSERT(primarySpeciesNames[i] == tNames[i]);
       }
     }
+#endif
     if (do_tracer_chemistry>0  ||  do_tracer_advection  ||  do_tracer_diffusion) {
       setup_tracer_transport = true;
       for (int i = 0; i<Nmobile; i++) {
@@ -2025,9 +2036,7 @@ void  PorousMedia::read_tracer()
             const std::string& material_name = rock_manager->FindMaterialInRegions(region_names).Name();
             const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
             rock_manager->RockChemistryProperties(auxTMP,material_name,aux_chem_variables_map);
-
-            bool initAux = true;
-            chemistry_helper->EnforceCondition(primTMP,0,auxTMP,initAux,boxTMP,geocond, cur_time);
+            chemistry_helper->EnforceCondition(primTMP,0,auxTMP,boxTMP,geocond,cur_time);
 
             Array<Real> vals(auxTMP.dataPtr(),Naux);
             vals.resize(Naux+1); vals[Naux] = primTMP.dataPtr()[i];
@@ -2047,30 +2056,34 @@ void  PorousMedia::read_tracer()
           // Check for "Free_Ion_Guess", load structure used to set aux_chem components
           const std::string FIG_str = "Free_Ion_Guess";
           int nfig = ppri.countval(FIG_str.c_str());
-          Real val = Free_Ion_Guess_DEF;
-          if (nfig == 1) {
-            ppri.get(FIG_str.c_str(), val);
-          }
-          else if (nfig > 1) {
+          if (nfig > 0) {
+            Real val;
+            if (nfig == 1) {
+              ppri.get(FIG_str.c_str(), val);
+            }
+            else if (nfig > 1) {
               std::string m = "Solute IC: \"" + tic_names[n] 
                 + "\": Free Ion Guess parameter for \"" + tNames[i] + "\" requires a single value";
               BoxLib::Abort(m.c_str());
+            }
+            solute_chem_ics[tic_names[n]][tNames[i]][FIG_str] = val; // sc[rockname][solute][property] = val
           }
-          solute_chem_ics[tic_names[n]][tNames[i]][FIG_str] = val; // sc[rockname][solute][property] = val
 
-          // Check for "Free_Ion_Guess", load structure used to set aux_chem components
+          // Check for "Activity_Coefficient", load structure used to set aux_chem components
           const std::string AC_str = "Activity_Coefficient";
           int nac = ppri.countval(AC_str.c_str());
-          Real valac = Activity_Coefficient_DEF;
-          if (nac == 1) {
-            ppri.get(AC_str.c_str(), valac);
-          }
-          else if (nac > 1) {
+          if (nac > 0) {
+            Real valac;
+            if (nac == 1) {
+              ppri.get(AC_str.c_str(), valac);
+            }
+            else if (nac > 1) {
               std::string m = "Solute IC: \"" + tic_names[n] 
                 + "\": Activity Coefficient parameter for \"" + tNames[i] + "\" requires a single value";
               BoxLib::Abort(m.c_str());
+            }
+            solute_chem_ics[tic_names[n]][tNames[i]][AC_str] = valac; // sc[rockname][solute][property] = val
           }
-          solute_chem_ics[tic_names[n]][tNames[i]][AC_str] = valac; // sc[rockname][solute][property] = val
         }
         else {
           std::string m = "Solute IC: \"" + tic_names[n] 
@@ -2146,9 +2159,7 @@ void  PorousMedia::read_tracer()
               const std::string& material_name = rock_manager->FindMaterialInRegions(tbc_region_names).Name();
               const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
               rock_manager->RockChemistryProperties(auxTMP,material_name,aux_chem_variables_map);
-
-              bool initAux = true;
-              chemistry_helper->EnforceCondition(primTMP,0,auxTMP,initAux,boxTMP,geocond, cur_time);
+              chemistry_helper->EnforceCondition(primTMP,0,auxTMP,boxTMP,geocond,cur_time);
               times.resize(1,0);
               vals.resize(1,primTMP.dataPtr()[i]);
             }

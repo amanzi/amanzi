@@ -15,7 +15,8 @@
         <Parameter name="End" type="double" value="1.5778463e9"/>
         <Parameter name="Switch" type="double" value="0.0"/>
     	<Parameter name="Steady Initial Time Step" type="double" value="1.e30"/>
-        <Parameter name="Transient Initial Time Step" type="double" value="3.1536e7"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="1.5768e+5"/>
+        <Parameter name="Maximum Cycle Number" type="int" value="100"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="Verbosity" type="string" value="Low"/>
@@ -30,6 +31,7 @@
           <Parameter name="richard_dt_thresh_pure_steady" type="double" value="1.e18"/>
           <Parameter name="gravity_dir" type="int" value="2"/> 
           <Parameter name="z_location" type="double" value="0"/> 
+          <Parameter name="dt_grow_max" type="double" value="1.25"/> 
         </ParameterList>
       </ParameterList>
       <ParameterList name="Iterative Linear Solver Control">
@@ -118,19 +120,19 @@
             <ParameterList name="A">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.e-9"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="B">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.e-9"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="C">
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="1.e-20"/>
-                <Parameter name="Free Ion Guess" type="double" value="1.e-20"/>
+                <Parameter name="Free Ion Guess" type="double" value="1.e-9"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -142,33 +144,24 @@
     <ParameterList name="West BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XLOBC}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{7.91317859e-6, 7.91317859e-6}"/>
-        <!--        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{7.927447996e-9,7.927447996e-9}"/>	 		-->
+        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{7.927447996e-9}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="A">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.e-3, 1.e-3}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.e-3}"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="B">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.e-3, 1.e-3}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.e-3}"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="C">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.e-3, 1.e-3}"/>
+                <Parameter name="Values" type="Array(double)" value="{1.e-3}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -178,9 +171,7 @@
     <ParameterList name="East BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XHIBC}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-	<Parameter name="Values" type="Array(double)" value="{201325.0, 201325.0}"/>	 		
+	<Parameter name="Values" type="Array(double)" value="{201325.0}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
@@ -208,20 +199,25 @@
       <ParameterList name="Every_100_steps">
 	<Parameter name="Start_Period_Stop" type="Array(int)" value="{0., 100, -1}"/>
       </ParameterList>
+      <ParameterList name="Every_step">
+	<Parameter name="Start_Period_Stop" type="Array(int)" value="{0., 1, -1}"/>
+      </ParameterList>
     </ParameterList>
     <ParameterList name="Time Macros">
       <ParameterList name="Every_0.05_year">
 	<Parameter name="Start_Period_Stop" type="Array(double)" value="{0., 1.5768e6, -1}"/>
       </ParameterList>
       <ParameterList name="Every_year">
-	<Parameter name="Start_Period_Stop" type="Array(double)" value="{0.0, 31556926.0, -1}"/>
+	<Parameter name="Start_Period_Stop" type="Array(double)" value="{0.0, 31557600.0, -1}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="run_data/isotherms"/>
-      <Parameter name="Time Macros" type="Array(string)" value="{Every_year}"/>
+      <Parameter name="File Name Base" type="string" value="run_data/plt"/>
       <Parameter name="Cycle Macros" type="Array(string)" value="{Every_100_steps}"/>
-      <Parameter name="Time Macros" type="Array(string)" value="{Every_0.05_year}"/>
+    </ParameterList>
+    <ParameterList name="Checkpoint Data">
+      <Parameter name="File Name Base" type="string" value="run_data/chk"/>
+      <Parameter name="Cycle Macros" type="Array(string)" value="{Every_100_steps}"/>
     </ParameterList>
   </ParameterList>
 

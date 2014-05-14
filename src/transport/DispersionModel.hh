@@ -10,34 +10,37 @@
   Usage: 
 */
 
-#ifndef AMANZI_DISPERSION_TPFA_HH_
-#define AMANZI_DISPERSION_TPFA_HH_
+#ifndef AMANZI_DISPERSION_MODEL_HH_
+#define AMANZI_DISPERSION_MODEL_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_Vector.h"
 
+#include "tensor.hh"
+#include "State.hh"
 #include "Preconditioner.hh"
-#include "Dispersion.hh"
+#include "TransportDefs.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
 
-class Dispersion_TPFA : public Dispersion {
+class DispersionModel {
  public:
-  Dispersion_TPFA() {};
-  Dispersion_TPFA(std::vector<Teuchos::RCP<DispersionModel> >* specs,
-                  Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State> S)
-      : Dispersion(specs, mesh, S) {};
-  ~Dispersion_TPFA() {};
+  DispersionModel() {
+    model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
+    alphaL = 0.0;
+    alphaT = 0.0;
+    D = 0.0;
+    tau = 0.0;
+  }
+  ~DispersionModel() {};
 
-  // primary members
-  int Apply(const Epetra_Vector& v,  Epetra_Vector& av) const;
-  int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
-
-  void SymbolicAssembleMatrix();
-  void AssembleMatrix(const Epetra_MultiVector& p);
+ public:
+  int model;
+  double alphaL, alphaT, D, tau;
+  std::vector<std::string> regions;
 };
 
 }  // namespace AmanziTransport

@@ -140,10 +140,11 @@ TEST(SURFACE_MISC) {
   int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
   int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + 
                     Operators::OPERATOR_SCHEMA_DOFS_CELL;
-  Teuchos::ParameterList olist;
+  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
+                                      .get<Teuchos::ParameterList>("diffusion operator");
 
-  Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2));
-  op3->InitOperator(K, Teuchos::null, schema_base, schema_dofs, olist);
+  Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2, olist));
+  op3->InitOperator(K, Teuchos::null);
   op3->UpdateMatrices(Teuchos::null);
   op3->ApplyBCs(bc_model, bc_values);
 
@@ -172,7 +173,7 @@ TEST(SURFACE_MISC) {
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-    GMV::open_data_file(*surfmesh, (std::string)"surface.gmv");
+    GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
     GMV::close_data_file();

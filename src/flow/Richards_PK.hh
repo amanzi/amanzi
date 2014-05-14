@@ -16,7 +16,6 @@ Authors: Neil Carlson (version 1)
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_Import.h"
-#include "AztecOO.h"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

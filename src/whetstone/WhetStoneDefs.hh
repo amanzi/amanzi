@@ -42,6 +42,13 @@ const int WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE = 2;
 #undef WHETSTONE_SIMPLEX_PIVOT_BRANDT  // select pivot rule
 #define WHETSTONE_SIMPLEX_PIVOT_MFD3D
 
+const int DIFFUSION_OPTIMIZED_SCALED = 9;  // recommended MFD methods
+const int DIFFUSION_POLYHEDRA_SCALED = 2; 
+const int DIFFUSION_POLYHEDRA_MONOTONE = 3;  
+const int DIFFUSION_HEXAHEDRA_MONOTONE = 4;
+const int DIFFUSION_SUPPORT_OPERATOR = 7;
+const int DIFFUSION_TPFA = 5; 
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

@@ -56,7 +56,7 @@ if (BUILD_TESTS)
 
   link_directories(${CCSE_LIBRARY_DIR})
   if ( ENABLE_Unstructured )
-    set(unstructured_grid_libs udriv mpc state transport flow whetstone matrix_audit)
+    set(unstructured_grid_libs udriv mpc state transport flow whetstone)
   else()
     set(unstructured_grid_libs)
   endif()

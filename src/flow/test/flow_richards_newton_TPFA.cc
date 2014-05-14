@@ -72,6 +72,7 @@ TEST(NEWTON_RICHARD_STEADY) {
   Richards_PK* RPK = new Richards_PK(plist, S);
   S->Setup();
   S->InitializeFields();
+  S->InitializeEvaluators();
   RPK->InitializeFields();
   S->CheckAllFieldsInitialized();
 

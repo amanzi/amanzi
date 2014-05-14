@@ -1,5 +1,9 @@
 #include <stdio.h>
- 
+
+#include "errors.hh"
+#include "exceptions.hh"
+#include "dbc.hh"
+
 #include <xercesc/util/XMLString.hpp>
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/framework/LocalFileInputSource.hpp>
@@ -35,6 +39,7 @@ class AmanziErrorHandler : public xercesc::ErrorHandler
             fprintf(stderr, "ERROR at line %lu column %lu, %s\n",
                     ex.getLineNumber(), ex.getColumnNumber(), msg);
             xercesc::XMLString::release(&msg);
+	    Exceptions::amanzi_throw(Errors::Message("Errors occured while parsing the input file. Aborting."));
         }
  
         void fatalError(const xercesc::SAXParseException& ex)
@@ -44,6 +49,7 @@ class AmanziErrorHandler : public xercesc::ErrorHandler
             fprintf(stderr, "FATAL ERROR at line %lu column %lu, %s\n",
                     ex.getLineNumber(), ex.getColumnNumber(), msg);
             xercesc::XMLString::release(&msg);
+	    Exceptions::amanzi_throw(Errors::Message("Errors occured while parsing the input file. Aborting."));
         }
  
         void resetErrors()

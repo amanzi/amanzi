@@ -70,6 +70,7 @@ TEST(FLOW_3D_RICHARDS) {
   Richards_PK* RPK = new Richards_PK(plist, S);
   S->Setup();
   S->InitializeFields();
+  S->InitializeEvaluators();
   RPK->InitializeFields();
   S->CheckAllFieldsInitialized();
 

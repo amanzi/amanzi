@@ -157,7 +157,7 @@ void write_node_data(const Epetra_Vector &x, std::string varname)
 {
   double *node_data;
   int err = x.ExtractView(&node_data);
-  gmvwrite_variable_name_data(AmanziMesh::NODE, (char*) varname.c_str(), node_data);
+  gmvwrite_variable_name_data(1, (char*) varname.c_str(), node_data);
 }
 
 
@@ -167,7 +167,7 @@ void write_node_data(const Epetra_MultiVector &x, const unsigned int component, 
   int err = x.ExtractView(&node_data);
 
   double *component_data = node_data[component];
-  gmvwrite_variable_name_data(AmanziMesh::NODE, (char*) varname.c_str(), component_data);
+  gmvwrite_variable_name_data(1, (char*) varname.c_str(), component_data);
 }
 
 
@@ -193,7 +193,7 @@ void write_face_data(const Epetra_Vector &x, std::string varname)
 {
   double *face_data;
   int err = x.ExtractView(&face_data);
-  gmvwrite_variable_name_data(AmanziMesh::FACE, (char*) varname.c_str(), face_data);
+  gmvwrite_variable_name_data(2, (char*) varname.c_str(), face_data);
 }
 
     

@@ -40,6 +40,7 @@ include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
+include_directories(${OPERATORS_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
@@ -50,8 +51,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 # Library: transport
 #
 set(transport_inc_files
-  Dispersion.hh
-  Dispersion_TPFA.hh
+  DispersionModel.hh
   Reconstruction.hh
   TransportBCFactory.hh
   TransportBoundaryFunction.hh
@@ -64,9 +64,8 @@ set(transport_inc_files
 
 set(transport_src_files Transport_PK.cc Transport_TI.cc 
                         Transport_Limiters.cc Transport_VandV.cc Transport_IO.cc 
+                        Transport_Dispersion.cc 
                         Reconstruction.cc 
-                        DispersionMatrixFactory.cc Dispersion.cc 
-                        Dispersion_TPFA.cc Dispersion_MFD.cc Dispersion_NLFV.cc
                         TransportBCFactory.cc TransportSourceFactory.cc
                         TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
                         TransportDomainFunction.cc)
@@ -92,7 +91,8 @@ if ( BUILD_TESTS )
     include_directories(${TRANSPORT_SOURCE_DIR})
     include_directories(${Boost_INCLUDE_DIRS})
 
-    set(amanzi_libs transport state mesh_functions data_structures functions whetstone mesh_factory mesh_audit mesh geometry)
+    set(amanzi_libs transport state operators mesh_functions data_structures functions 
+                    whetstone mesh_factory mesh_audit mesh geometry)
 
     # Test: miscaleneous transport routines
     add_amanzi_test(transport_mics transport_mics
@@ -100,9 +100,9 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/transport_mics.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(transport_advance_simple transport_advance_simple
+    add_amanzi_test(transport_advance transport_advance
                     KIND unit
-                    SOURCE test/Main.cc test/transport_advance_simple.cc
+                    SOURCE test/Main.cc test/transport_advance.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(transport_limiters transport_limiters
@@ -121,12 +121,8 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     if ( ENABLE_MSTK_Mesh )
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone output mesh_functions functions data_structures)
-
-        add_amanzi_test(transport_advance_mstk transport_advance_mstk
-	                KIND unit
-                        SOURCE test/Main.cc test/transport_advance_mstk.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport operators 
+                        whetstone output mesh_functions functions data_structures)
 
         add_amanzi_test(transport_parallel_mstk transport_parallel_mstk
 		       KIND int
@@ -165,20 +161,12 @@ if ( BUILD_TESTS )
                         SOURCE test/Main.cc test/transport_subcycling.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        add_amanzi_test(transport_matrix transport_matrix
-	                KIND unit
-                        SOURCE test/Main.cc test/transport_matrix.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
 
     if ( ENABLE_STK_Mesh )
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone mesh_functions data_structures)
+        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport operators 
+                        whetstone mesh_functions data_structures)
 
-        add_amanzi_test(transport_advance_stk transport_advance_stk
-	                KIND unit
-                        SOURCE test/Main.cc test/transport_advance_stk.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-        
         add_amanzi_test(transport_parallel_stk transport_parallel_stk
 			KIND unit
 	                NPROCS 4

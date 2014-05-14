@@ -59,6 +59,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_default_level = Teuchos::VERB_EXTREME;
 
   ParameterList state_list;
   RCP<State> S = rcp(new State(state_list));
@@ -67,6 +68,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Darcy_PK* DPK = new Darcy_PK(plist, S);
   S->Setup();
   S->InitializeFields();
+  S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
@@ -117,6 +119,9 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
       GMV::close_data_file();
     }
   }
+
+  // Testing secondary fields
+  DPK->UpdateAuxilliaryData();
 
   // Testing recovery
   std::vector<AmanziGeometry::Point> xyz;
