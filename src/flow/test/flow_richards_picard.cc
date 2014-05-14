@@ -72,6 +72,7 @@ TEST(FLOW_RICHARDS_PICARD) {
   Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, S));
   S->Setup();
   S->InitializeFields();
+  S->InitializeEvaluators();
   RPK->InitializeFields();
   S->CheckAllFieldsInitialized();
 

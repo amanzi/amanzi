@@ -69,6 +69,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   Richards_PK* RPK = new Richards_PK(plist, S);
   S->Setup();
   S->InitializeFields();
+  S->InitializeEvaluators();
   RPK->InitializeFields();
   S->CheckAllFieldsInitialized();
 

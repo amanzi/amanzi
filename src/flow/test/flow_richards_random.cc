@@ -150,6 +150,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     Richards_PK* RPK = new Richards_PK(plist, S);
     S->Setup();
     S->InitializeFields();
+    S->InitializeEvaluators();
     RPK->InitializeFields();
     S->CheckAllFieldsInitialized();
 

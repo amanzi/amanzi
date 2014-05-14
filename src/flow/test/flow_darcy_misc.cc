@@ -94,6 +94,7 @@ class DarcyProblem {
     DPK = new Darcy_PK(plist, S);
     S->Setup();
     S->InitializeFields();
+    S->InitializeEvaluators();
     DPK->InitializeFields();
     S->CheckAllFieldsInitialized();
 

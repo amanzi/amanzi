@@ -68,7 +68,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Darcy_PK* DPK = new Darcy_PK(plist, S);
   S->Setup();
   S->InitializeFields();
-  // S->InitializeEvaluators();
+  S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
