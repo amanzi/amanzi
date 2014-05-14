@@ -94,17 +94,17 @@ def createFromXML(filename):
     for (coord) in coords.itervalues():
         params["r"].append(coord[0]) 
     
-    for i in search.getElementByPath(xml, "/Main/Output/Time Macros/Observation Times/Values").value:
+    for i in search.getElementByTagPath(xml, "/Main/Output/Time Macros/Observation Times/Values").value:
         params["times"].append(i)
 
     params.setdefault("g",9.80665)
     params.setdefault("pi",math.pi)
-    params["z"] = search.getElementByPath(xml, "/Main/Regions/Well/Region: Box/High Coordinate").value[2]
-    params["K"] = search.getElementByPath(xml, "/Main/Material Properties/Soil/Intrinsic Permeability: Uniform/Value").value
-    params["mu"] = search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
-    params["rho"] = search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
-    params["Q"] = search.getElementByPath(xml, "/Main/Sources/Pumping Well/Source: Volume Weighted/Values").value[0]
-    params["S_s"] = search.getElementByPath(xml, "/Main/Material Properties/Soil/Specific Storage: Uniform/Value").value
+    params["z"] = search.getElementByTagPath(xml, "/Main/Regions/Well/Region: Box/High Coordinate").value[2]
+    params["K"] = search.getElementByTagPath(xml, "/Main/Material Properties/Soil/Intrinsic Permeability: Uniform/Value").value
+    params["mu"] = search.getElementByTagPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
+    params["rho"] = search.getElementByTagPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
+    params["Q"] = search.getElementByTagPath(xml, "/Main/Sources/Pumping Well/Source: Volume Weighted/Values").value[0]
+    params["S_s"] = search.getElementByTagPath(xml, "/Main/Material Properties/Soil/Specific Storage: Uniform/Value").value
     
     return TransientTheis(params)
 
