@@ -951,7 +951,6 @@ void Matrix_MFD::AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux,
           darcy_mass_flux[0][f] += rho * (Kg * normal) * krel[n];
         } else {
           darcy_mass_flux[0][f] += rho * (Kg * normal) * Krel_faces[0][f];
-	  if (f == 1) std::cout<<"TEST Krel "<<Krel_faces[0][f]<<std::endl;
         }
         flag[f] = 1;
       }
