@@ -79,9 +79,7 @@ class Darcy_PK : public Flow_PK {
 
   // linear solvers
   void SolveFullySaturatedProblem(double T, CompositeVector& u);
-  void SolveFullySaturatedProblem(double T, const CompositeVector& rhs, CompositeVector& u);
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; return 1; }
-  void AssembleMatrixMFD();
 
   // control methods (for unit tests)
   void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list_ = dp_list_new; }

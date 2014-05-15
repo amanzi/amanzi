@@ -333,10 +333,6 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   InitNextTI(T0, dT0, ti_specs_trs_);
 
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4
-
-  // DEBUG
-  // SolveFullySaturatedProblem(0.0, *solution);
-  // CommitState(S_); WriteGMVfile(S_); exit(0);
 }
 
 
@@ -556,9 +552,6 @@ void Darcy_PK::CommitState(Teuchos::RCP<State> S)
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
-
-  // DEBUG
-  // WriteGMVfile(S);
 }
 
 
