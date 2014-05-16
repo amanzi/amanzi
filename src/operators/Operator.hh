@@ -70,7 +70,7 @@ class Operator {
   void SymbolicAssembleMatrix(int schema);
   void AssembleMatrix(int schema);
 
-  void ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_values);
+  virtual void ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_values);
 
   const CompositeVectorSpace& DomainMap() const { return *cvs_; }
   const CompositeVectorSpace& RangeMap() const { return *cvs_; }

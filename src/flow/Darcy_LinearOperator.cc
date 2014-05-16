@@ -14,6 +14,11 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "Darcy_PK.hh"
 #include "LinearOperatorFactory.hh"
 
+#include "OperatorDefs.hh"
+#include "OperatorDiffusionFactory.hh"
+#include "OperatorDiffusion.hh"
+#include "OperatorGravity.hh"
+
 namespace Amanzi {
 namespace AmanziFlow {
 
@@ -25,6 +30,50 @@ namespace AmanziFlow {
 void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
 {
   // calculate and assemble elemental stifness matrices
+#if 0
+  Teuchos::ParameterList op_list;
+  Teuchos::ParameterList& tmp_list = op_list.sublist("diffusion operator");
+  tmp_list.set<std::string>("discretization primary", "optimized mfd scaled");
+  tmp_list.set<std::string>("discretization secondary", "optimized mfd scaled");
+  Teuchos::Array<std::string> stensil(2);
+  stensil[0] = "cell";
+  stensil[1] = "face";
+  tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
+
+  // add diffusion operator
+  Operators::OperatorDiffusionFactory opfactory;
+  Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, op_list);
+  int schema_dofs = op1->schema_dofs();
+
+  op1->InitOperator(K, Teuchos::null);
+  op1->UpdateMatrices(Teuchos::null);
+
+  // add gravity operator
+  AmanziGeometry::Point rho_g(gravity_);
+  rho_g *= rho_;
+
+  int n = bc_model.size();
+  std::vector<double> bc_values_copy(n);
+  for (int i = 0; i < n ; i++) bc_values_copy[i] = bc_values[i][0];
+
+  Teuchos::RCP<Operators::OperatorGravity> op2 = Teuchos::rcp(new Operators::OperatorGravity(*op1));
+  op2->UpdateMatrices(K, rho_g);
+  op2->SymbolicAssembleMatrix(schema_dofs);
+  op2->AssembleMatrix(schema_dofs);
+  op2->ApplyBCs(bc_model, bc_values_copy);
+  op2->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_);
+
+  AmanziSolvers::LinearOperatorFactory<Operators::OperatorGravity, CompositeVector, CompositeVectorSpace> sfactory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorGravity, CompositeVector, CompositeVectorSpace> >
+     solver = sfactory.Create(ti_specs->ls_specs.solver_name, linear_operator_list_, op2);
+
+  solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
+
+  CompositeVector& rhs = *op2->rhs();
+  int ierr = solver->ApplyInverse(rhs, *solution);
+#endif
+
+#if 1
   matrix_->CreateStiffnessMatricesDarcy(mfd3d_method_);
   matrix_->CreateRHSVectors();
   matrix_->AddGravityFluxesDarcy(rho_, gravity_);
@@ -42,6 +91,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
 
   CompositeVector& rhs = *matrix_->rhs();
   int ierr = solver->ApplyInverse(rhs, *solution);
+#endif
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->num_itrs();
