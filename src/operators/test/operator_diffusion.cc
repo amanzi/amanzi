@@ -187,6 +187,8 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
     K.push_back(Kc);
   }
+  double rho(1.0), mu(1.0);
+  AmanziGeometry::Point g(0.0, 0.0, -1.0);
 
   // create boundary data
   Point xv(2);
@@ -205,14 +207,16 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, op_list);
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, op_list, g);
   const CompositeVectorSpace& cvs = op->DomainMap();
   
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_NODE;
-  op->InitOperator(K, Teuchos::null);
+  op->InitOperator(K, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null);
+{double a; op->rhs()->Norm2(&a); std::cout << a << std::endl; }
   op->ApplyBCs(bc_model, bc_values);
+{double a; op->rhs()->Norm2(&a); std::cout << a << std::endl; }
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_NODE);
   op->AssembleMatrix(schema);
 
@@ -242,7 +246,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   // create preconditoner using the base operator class
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   Teuchos::RCP<Operator> op2 = Teuchos::rcp(new Operator(*op1));
-  op2->InitPreconditioner("Hypre AMG", slist);
+  op2->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");

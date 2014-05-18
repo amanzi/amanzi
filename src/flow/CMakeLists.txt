@@ -188,8 +188,8 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/flow_darcy_misc.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
-    add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
+    add_amanzi_test(flow_darcy_misc_2pe flow_darcy_misc NPROCS 2 KIND unit)
+    add_amanzi_test(flow_darcy_misc_4pe flow_darcy_misc NPROCS 4 KIND unit)
 
     # Test: van Genuchten flow routines
     add_amanzi_test(flow_vanGenuchten flow_vanGenuchten

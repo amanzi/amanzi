@@ -190,10 +190,11 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
     K.push_back(Kc);
   }
+  double rho(1.0), mu(1.0);
 
   // create boundary data
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   Point xv(2);
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_values(nfaces_wghost);
@@ -241,19 +242,22 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     // populate the diffusion operator
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("mixed diffusion");
-    int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
-    int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
-
     Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1, olist));
+
+    int schema_dofs = op2->schema_dofs();
+    int schema_prec_dofs = op2->schema_prec_dofs();
+    CHECK(schema_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL);
+    CHECK(schema_prec_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE);
+
     op2->set_factor(factor);  // for developers only
-    op2->InitOperator(K, Teuchos::null);
+    op2->InitOperator(K, Teuchos::null, rho, mu);
     op2->UpdateMatrices(Teuchos::null);
     op2->ApplyBCs(bc_model, bc_values);
-    op2->SymbolicAssembleMatrix(schema_dofs);
-    op2->AssembleMatrix(schema_dofs);
+    op2->SymbolicAssembleMatrix(schema_prec_dofs);
+    op2->AssembleMatrix(schema_prec_dofs);
     
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-    op2->InitPreconditioner("Hypre AMG", slist);
+    op2->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
 
     // solve the problem
     ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
@@ -277,10 +281,19 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
       p_error += std::pow(tmp - p[0][c], 2.0) * volume;
       p_norm += std::pow(tmp, 2.0) * volume;
     }
+#ifdef HAVE_MPI
+    double tmp(p_error);
+    mesh->get_comm()->SumAll(&tmp, &p_error, 1);
+    tmp = p_norm;
+    mesh->get_comm()->SumAll(&tmp, &p_norm, 1);
+#endif
 
-    // calcualte flux errors
+    // calculate flux errors
     Epetra_MultiVector& flx = *flux.ViewComponent("face", true);
-    op2->UpdateFlux(solution, flux, 0.0);
+    op2->UpdateFlux(solution, flux);
+#ifdef HAVE_MPI
+    flux.ScatterMasterToGhosted();
+#endif
 
     double flux_norm(0.0), flux_error(0.0);
     for (int f = 0; f < nfaces; f++) {
@@ -292,12 +305,20 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
       flux_error += std::pow(tmp - flx[0][f], 2.0);
       flux_norm += std::pow(tmp, 2.0);
     }  
+#ifdef HAVE_MPI
+    tmp = flux_error;
+    mesh->get_comm()->SumAll(&tmp, &flux_error, 1);
+    tmp = flux_norm;
+    mesh->get_comm()->SumAll(&tmp, &flux_norm, 1);
+#endif
 
-    p_error = pow(p_error / p_norm, 0.5);
-    flux_error = pow(flux_error / flux_norm, 0.5);
-    printf("scale = %10.6g  Err(p) = %10.6f  Err(flux) = %10.6g\n", factor, p_error, flux_error); 
+    if (MyPID == 0) {
+      p_error = pow(p_error / p_norm, 0.5);
+      flux_error = pow(flux_error / flux_norm, 0.5);
+      printf("scale = %10.6g  Err(p) = %10.6f  Err(flux) = %10.6g\n", factor, p_error, flux_error); 
     
-    CHECK(p_error< 0.15 && flux_error < 0.15);
+      CHECK(p_error< 0.15 && flux_error < 0.15);
+    }
   }
 
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
@@ -359,6 +380,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
 
     K.push_back(Kc);
   }
+  double rho(1.0), mu(1.0);
 
   // create boundary data
   Point xv(2);
@@ -406,19 +428,19 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     // populate the diffusion operator
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("nodal diffusion");
-    int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
-    int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_NODE;
-
     Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1, olist));
+    int schema_dofs = op2->schema_dofs();
+    CHECK(schema_dofs == Operators::OPERATOR_SCHEMA_DOFS_NODE);
+
     op2->set_factor(factor);  // for developers only
-    op2->InitOperator(K, Teuchos::null);
+    op2->InitOperator(K, Teuchos::null, rho, mu);
     op2->UpdateMatrices(Teuchos::null);
     op2->ApplyBCs(bc_model, bc_values);
     op2->SymbolicAssembleMatrix(schema_dofs);
     op2->AssembleMatrix(schema_dofs);
 
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-    op2->InitPreconditioner("Hypre AMG", slist);
+    op2->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
 
     // solve the problem
     ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
@@ -432,6 +454,10 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     int ierr = solver->ApplyInverse(rhs, solution);
 
     // calculate errors
+#ifdef HAVE_MPI
+    solution.ScatterMasterToGhosted();
+#endif
+
     Epetra_MultiVector& sol = *solution.ViewComponent("node", true);
     WhetStone::MFD3D_Diffusion mfd(mesh);
     AmanziGeometry::Point grad(2);
@@ -465,12 +491,25 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
       grad_error += L22(grad - grad_exact) * volume;
       grad_norm += L22(grad_exact) * volume;
     }
+#ifdef HAVE_MPI
+    double tmp(p_error);
+    mesh->get_comm()->SumAll(&tmp, &p_error, 1);
+    tmp = p_norm;
+    mesh->get_comm()->SumAll(&tmp, &p_norm, 1);
 
-    p_error = pow(p_error / p_norm, 0.5);
-    grad_error = pow(grad_error / grad_norm, 0.5);
-    printf("scale = %10.6g  Err(p) = %10.6f  Err(grad) = %10.6g\n", factor, p_error, grad_error); 
+    tmp = grad_error;
+    mesh->get_comm()->SumAll(&tmp, &grad_error, 1);
+    tmp = grad_norm;
+    mesh->get_comm()->SumAll(&tmp, &grad_norm, 1);
+#endif
 
-    CHECK(p_error < 0.1 && grad_error < 0.15);
+    if (MyPID == 0) {
+      p_error = pow(p_error / p_norm, 0.5);
+      grad_error = pow(grad_error / grad_norm, 0.5);
+      printf("scale = %10.6g  Err(p) = %10.6f  Err(grad) = %10.6g\n", factor, p_error, grad_error); 
+
+      CHECK(p_error < 0.1 && grad_error < 0.15);
+    }
   }
 }
 

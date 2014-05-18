@@ -21,7 +21,7 @@
 #include "tensor.hh"
 
 #include "Flow_PK.hh"
-#include "Matrix_MFD.hh"
+#include "OperatorDiffusion.hh"
 #include "TI_Specs.hh"
 
 
@@ -48,6 +48,9 @@ class Darcy_PK : public Flow_PK {
 
   void CommitState(Teuchos::RCP<State> S);
 
+  void UpdateSpecificYield();
+  double ErrorEstimate(double* dTfactor);
+
   // methods required for time integration
   void Functional(const double Told, double Tnew, 
                   Teuchos::RCP<CompositeVector> u, Teuchos::RCP<CompositeVector> udot, 
@@ -70,28 +73,17 @@ class Darcy_PK : public Flow_PK {
   }
   void ChangedSolution() {};
 
-  // other main methods
-  void AddTimeDerivativeSpecificStorage(Epetra_MultiVector& p, double dTp, Matrix_MFD* matrix_operator);
-  void AddTimeDerivativeSpecificYield(Epetra_MultiVector& p, double dTp, Matrix_MFD* matrix_operator);
-  void UpdateSpecificYield();
-
-  double ErrorEstimate(double* dTfactor);
-
   // linear solvers
   void SolveFullySaturatedProblem(double T, CompositeVector& u);
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; return 1; }
 
-  // control methods (for unit tests)
+  // methods for unit tests
   void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list_ = dp_list_new; }
-
-  // access
-  Teuchos::RCP<FlowMatrix> matrix() { return matrix_; }
   Teuchos::RCP<CompositeVector> get_solution() { return solution; }
 
  private:
   Teuchos::ParameterList dp_list_;
-
-  Teuchos::RCP<FlowMatrix> matrix_;
+  Teuchos::RCP<Operators::OperatorDiffusion> op;
 
   int error_control_;
   double dT_desirable_;
@@ -99,8 +91,6 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<CompositeVector> solution;  // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
- 
-  Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 };
 
 }  // namespace AmanziFlow

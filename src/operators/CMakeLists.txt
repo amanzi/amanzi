@@ -52,10 +52,11 @@ add_amanzi_library(operator_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_l
 #
 file(GLOB operators_inc_files "*.hh")
 add_amanzi_library(operators
-                   SOURCE Operator.cc OperatorDiffusion.cc OperatorDiffusionSurface.cc 
-                   OperatorAccumulation.cc OperatorSource.cc 
-                   OperatorAdvection.cc OperatorGravity.cc
-                   OperatorDiffusionFactory.cc
+                   SOURCE Operator.cc 
+                   OperatorDiffusion.cc OperatorDiffusionSurface.cc 
+                   OperatorDiffusionWithGravity.cc OperatorDiffusionFactory.cc
+                   OperatorSource.cc 
+                   OperatorAdvection.cc 
                    HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
 
@@ -112,6 +113,8 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/operator_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(operators_convergence_2pe operators_convergence NPROCS 2 KIND unit)
 endif()
 
 

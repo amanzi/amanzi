@@ -192,7 +192,7 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
   mesh_->get_comm()->MaxAll(&tmp, &hmax, 1);
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  *vo_->os() << "boundary head: min=" << hmin << " max=" << hmax << " [m]" << std::endl;
+  *vo_->os() << "boundary head (BCs): min=" << hmin << " max=" << hmax << " [m]" << std::endl;
 
   // process cell-based quantaties
   const Epetra_MultiVector& pcells = *pressure.ViewComponent("cell");

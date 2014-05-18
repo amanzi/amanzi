@@ -31,7 +31,6 @@
 #include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionSurface.hh"
-#include "OperatorAccumulation.hh"
 #include "OperatorAdvection.hh"
 
 
@@ -85,6 +84,7 @@ TEST(SURFACE_MISC) {
     Kc(0, 0) = 1.0;
     K.push_back(Kc);
   }
+  double rho(1.0), mu(1.0);
 
   // create boundary data
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
@@ -107,23 +107,10 @@ TEST(SURFACE_MISC) {
   cvs->SetOwned(false);
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
-  // create accumulation operator
-  Teuchos::RCP<OperatorAccumulation> op = Teuchos::rcp(new OperatorAccumulation(cvs, 0));
-  op->Init();
+  // create advection operator
+  Teuchos::RCP<OperatorAdvection> op1 = Teuchos::rcp(new OperatorAdvection(cvs, 0));
+  op1->Init();
 
-  CompositeVector solution(*cvs);
-  solution.PutScalar(0.0);  // solution at time T=0
-
-  CompositeVector phi(*cvs);
-  phi.PutScalar(0.2);
-
-  double dT = 0.02;
-  op->UpdateMatrices(solution, phi, dT);
-
-  // add advection operator
-  Teuchos::RCP<OperatorAdvection> op2 = Teuchos::rcp(new OperatorAdvection(*op));
-
-  // initialize velocity
   CompositeVector u(*cvs);
   Epetra_MultiVector& uf = *u.ViewComponent("face");
   int nfaces = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -132,10 +119,20 @@ TEST(SURFACE_MISC) {
     uf[0][f] = vel * surfmesh->face_normal(f);
   }
 
-  // add advective matrices
-  op2->InitOperator(u);
-  op2->UpdateMatrices(u);
+  op1->InitOperator(u);
+  op1->UpdateMatrices(u);
 
+  // add accumulation terms
+  CompositeVector solution(*cvs);
+  solution.PutScalar(0.0);  // solution at time T=0
+
+  CompositeVector phi(*cvs);
+  phi.PutScalar(0.2);
+
+  double dT = 0.02;
+  op1->AddAccumulationTerm(solution, phi, dT);
+
+  // initialize velocity
   // add the diffusion operator. It is the last due to BCs.
   int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
   int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + 
@@ -143,27 +140,27 @@ TEST(SURFACE_MISC) {
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator");
 
-  Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2, olist));
-  op3->InitOperator(K, Teuchos::null);
-  op3->UpdateMatrices(Teuchos::null);
-  op3->ApplyBCs(bc_model, bc_values);
+  Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist));
+  op2->InitOperator(K, Teuchos::null, rho, mu);
+  op2->UpdateMatrices(Teuchos::null);
+  op2->ApplyBCs(bc_model, bc_values);
 
   // change preconditioner to default
-  Teuchos::RCP<Operator> op4 = Teuchos::rcp(new Operator(*op3));
+  Teuchos::RCP<Operator> op3 = Teuchos::rcp(new Operator(*op2));
 
-  op4->SymbolicAssembleMatrix(schema_dofs);
-  op4->AssembleMatrix(schema_dofs);
+  op3->SymbolicAssembleMatrix(schema_dofs);
+  op3->AssembleMatrix(schema_dofs);
 
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op4->InitPreconditioner("Hypre AMG", slist);
+  op3->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, op4);
+     solver = factory.Create("AztecOO CG", lop_list, op3);
 
-  CompositeVector& rhs = *op4->rhs();
+  CompositeVector& rhs = *op3->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {

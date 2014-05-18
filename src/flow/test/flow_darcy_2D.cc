@@ -94,6 +94,8 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
   gravity[1] = -1.0;
 
+  S->GetFieldData("specific_storage", passwd)->PutScalar(2.0);
+
   /* create the initial pressure function */
   Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
 

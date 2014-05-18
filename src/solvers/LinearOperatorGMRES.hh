@@ -151,9 +151,10 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
   WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
   num_itrs_ = 0;
 
-  h_->ApplyInverse(f, r);
   double fnorm;
-  r.Norm2(&fnorm);
+  // h_->ApplyInverse(f, r);
+  // r.Dot(fnorm, f);  This is the preconditioned norm of the residual.
+  f.Norm2(&fnorm);
 
   m_->Apply(x, p);  // p = f - M * x
   p.Update(1.0, f, -1.0);
