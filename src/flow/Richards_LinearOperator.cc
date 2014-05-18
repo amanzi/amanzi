@@ -40,27 +40,8 @@ void Richards_PK::SolveFullySaturatedProblem(
   Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_, preconditioner_);
 
-  // Teuchos::ParameterList plist;
-  // Teuchos::ParameterList& slist = plist.sublist("gmres");
-  // slist.set<std::string>("iterative method", "gmres");
-  // slist.set<double>("error tolerance", 1e-12 );
-  // slist.set<int>("maximum number of iterations", 200);
-  // Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
-  // vlist.set("Verbosity Level", "extreme");
-
-  // AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
-  // Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
-  //   solver = factory.Create("gmres", plist, matrix_, preconditioner_);
-
-
   const CompositeVector& rhs = *matrix_->rhs();
-
-  //std::cout << *rhs.ViewComponent("cell") << std::endl;
-
   int ierr = solver->ApplyInverse(rhs, u);
-
-  //std::cout << *u.ViewComponent("cell") << std::endl;
-  //exit(0);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->num_itrs();
@@ -77,7 +58,6 @@ void Richards_PK::SolveFullySaturatedProblem(
     msg << "\nLinear solver returned an unrecoverable error code.\n";
     Exceptions::amanzi_throw(msg);
   }
-
 }
 
 
