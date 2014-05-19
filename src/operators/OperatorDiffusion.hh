@@ -56,6 +56,9 @@ class OperatorDiffusion : public Operator {
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist,
                           std::vector<int>& bc_model, std::vector<double>& bc_values);
 
+  // special members
+  void ModifyMatrix(const CompositeVector& u);
+
  protected:
   void CreateMassMatrices_();
 
@@ -63,7 +66,6 @@ class OperatorDiffusion : public Operator {
   void UpdateMatricesNodal_();
   void UpdateMatricesTPFA_();
   void UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector> flux);
-  void AssembleMatrixSpecial_();
   int ApplyInverseSpecial_(const CompositeVector& X, CompositeVector& Y) const;
   void InitPreconditionerSpecial_(const std::string& prec_name, const Teuchos::ParameterList& plist,
                                   std::vector<int>& bc_model, std::vector<double>& bc_values);

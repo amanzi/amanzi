@@ -719,6 +719,10 @@ void Operator::CreateCheckPoint()
 
 void Operator::RestoreCheckPoint()
 {
+  // The routine should be called after checkpoint is created.
+  ASSERT(diagonal_checkpoint_ != Teuchos::null);
+  ASSERT(rhs_checkpoint_ != Teuchos::null);
+
   // restore accumulation and source terms
   *diagonal_ = *diagonal_checkpoint_;
   *rhs_ = *rhs_checkpoint_;

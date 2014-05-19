@@ -322,10 +322,8 @@ void OperatorDiffusion::AssembleMatrix(int schema)
 /* ******************************************************************
 * Special assemble of elemental face-based matrices. 
 ****************************************************************** */
-void OperatorDiffusion::AssembleMatrixSpecial_()
+void OperatorDiffusion::ModifyMatrix(const CompositeVector& u)
 {
-  special_assembling_ = true;
-
   if (schema_dofs_ != OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE) {
     std::cout << "Schema " << schema_dofs_ << " is not supported" << std::endl;
     ASSERT(0);
@@ -342,33 +340,27 @@ void OperatorDiffusion::AssembleMatrixSpecial_()
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
 
   // populate the matrix
-  A_->PutScalar(0.0);
-
-  const Epetra_Map& map = mesh_->face_map(false);
-  const Epetra_Map& map_wghost = mesh_->face_map(true);
-
   AmanziMesh::Entity_ID_List faces;
-  int faces_GID[OPERATOR_MAX_FACES];
+  const Epetra_MultiVector& u_c = *u.ViewComponent("cell");
+  Epetra_MultiVector& rhs_f = *rhs_->ViewComponent("face", true);
+
+  for (int f = nfaces_owned; f < nfaces_wghost; f++) {
+    rhs_f[0][f] = 0.0;
+  }
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
+    WhetStone::DenseMatrix& Acell = matrix[c];
+
     for (int n = 0; n < nfaces; n++) {
-      faces_GID[n] = map_wghost.GID(faces[n]);
+      int f = faces[n];
+      rhs_f[0][f] -= Acell(n, nfaces) * u_c[0][c];
+      Acell(n, nfaces) = 0.0;
+      Acell(nfaces, n) = 0.0;
     }
-    A_->SumIntoGlobalValues(nfaces, faces_GID, matrix[c].Values());
   }
-  A_->GlobalAssemble();
-
-  // Add diagonal
-  diagonal_->GatherGhostedToMaster("face", Add);
-  Epetra_MultiVector& diag = *diagonal_->ViewComponent("face");
-
-  Epetra_Vector tmp(A_->RowMap());
-  A_->ExtractDiagonalCopy(tmp);
-  tmp.Update(1.0, diag, 1.0);
-  A_->ReplaceDiagonalValues(tmp);
 
   // Assemble all right-hand sides
   rhs_->GatherGhostedToMaster("face", Add);
