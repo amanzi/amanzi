@@ -964,7 +964,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("process_model"));
         textContent = XMLString::transcode(nodeAttr->getNodeValue());
 	if (strcmp(textContent,"implicit operator split")==0) {
-	    cpkPL.set<double>("max chemistry to transport timestep ratio",get_double_constant(textContent,*def_list));
+	    //cpkPL.set<double>("max chemistry to transport timestep ratio",get_double_constant(textContent,*def_list));
 	}
         XMLString::release(&textContent);
       }
@@ -1009,7 +1009,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               simPL.set<std::string>("verbosity",textContent);
               XMLString::release(&textContent);
 
-	      } else if (strcmp(tagname,"execution_control_defaults")==0) {
+	  } else if (strcmp(tagname,"execution_control_defaults")==0) {
               attrMap = currentNode->getAttributes();
               for (int k=0; k<attrMap->getLength(); k++) {
 		nodeAttr = attrMap->item(k);
@@ -1497,9 +1497,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         }
         initPL.set<double>("Transient Initial Time Step",init_steps[0]);
         list.sublist("Time Integration Mode").sublist("Initialize To Steady") = initPL;
-        timesPL.set<Teuchos::Array<double> >("Start Times",start_times);
-        timesPL.set<Teuchos::Array<double> >("Initial Time Step",init_steps);
-        list.sublist("Time Period Control") = timesPL;
+	if (start_times.length() > 1) {
+          timesPL.set<Teuchos::Array<double> >("Start Times",start_times);
+          timesPL.set<Teuchos::Array<double> >("Initial Time Step",init_steps);
+          list.sublist("Time Period Control") = timesPL;
+	}
       }
     }
   }
@@ -1665,6 +1667,10 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     ssPL.set<int>("steady max iterations",get_int_constant(textContent,*def_list));
                     XMLString::release(&textContent);
+                } else if (strcmp(tagname,"limit_iterations")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    ssPL.set<int>("steady limit iterations",get_int_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
                 } else if (strcmp(tagname,"max_preconditioner_lag_iterations")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     ssPL.set<int>("steady max preconditioner lag iterations",get_int_constant(textContent,*def_list));
@@ -1754,6 +1760,13 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                 }
               }
 	    }
+	    // get items from steadyPL, from execution_controls
+	    if (ecsPL.isSublist("steady")) {
+	      if (ecsPL.sublist("steady").isParameter("max_dt")) {
+		ssPL.set<double>("steady max time step",get_time_value(ecsPL.sublist("steady").get<std::string>("max_dt"),*def_list));
+	      }
+	    }
+
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration") = ssPL;
 	  }
           else if (strcmp(nodeName,"transient_controls")==0) {
@@ -1863,7 +1876,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             tmpList = tcElement->getElementsByTagName(XMLString::transcode("preconditioner"));
 	    if (tmpList->getLength() > 0) {
 	      DOMNode* preconNode = tmpList->item(0);
-	      textContent = XMLString::transcode(preconNode->getNodeName());
+	      textContent = XMLString::transcode(preconNode->getAttributes()->getNamedItem(XMLString::transcode("name"))->getNodeValue());
 	      if (strcmp(textContent,"trilinos_ml")==0) {
                 tcPL.set<std::string>("transient preconditioner","Trilinos ML");
                 DOMNodeList* children = preconNode->getChildNodes();
@@ -1962,8 +1975,24 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 	        }
               XMLString::release(&textContent);
 	    
-	        }
-            list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transient Implicit Time Integration") = tcPL;
+	      }
+	      if ( defPL.isParameter("mode") ) {
+	        if (defPL.get<std::string>("mode") == "transient") {
+		  if (defPL.isParameter("increase_factor")) {
+	            tcPL.set<double>("transient time step increase factor",
+				      get_double_constant(defPL.get<std::string>("increase_factor"),*def_list));
+		  }
+		  if (defPL.isParameter("reduction_factor")) {
+	            tcPL.set<double>("transient time step reduction factor",
+				      get_double_constant(defPL.get<std::string>("reduction_factor"),*def_list));
+		  }
+		  if (defPL.isParameter("max_dt")) {
+	            tcPL.set<double>("transient max time step",
+				      get_double_constant(defPL.get<std::string>("max_dt"),*def_list));
+		  }
+		}
+	      }
+              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transient Implicit Time Integration") = tcPL;
             }
             else if (strcmp(nodeName,"nonlinear_solver")==0) {
 	      Teuchos::ParameterList nlPL;
@@ -2007,12 +2036,15 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         tpkPL.set<double>("CFL",get_double_constant(textContent,*def_list));
                         XMLString::release(&textContent);
                 } else if (strcmp(tagname,"preconditioner")==0) {
-		            // which precondition is stored in attribute, options are: trilinos_ml, hypre_amg, block_ilu
-	                attrMap = currentNode->getAttributes();
+		    // which precondition is stored in attribute, options are: trilinos_ml, hypre_amg, block_ilu
+	            attrMap = currentNode->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
                     textContent = XMLString::transcode(nodeAttr->getNodeValue());
-		            usePCPL = true;
-		            if (strcmp(textContent,"hypre_amg")==0) {
+		    usePCPL = true;
+		    if (strcmp(textContent,"hypre_amg")==0) {
+			// TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag 
+			//              so this doesn't get overwritten later when the list actually gets created.
+		        list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Hypre AMG");
                         // loop through children and deal with them
                         DOMNodeList* preconChildren= currentNode->getChildNodes();
                         for (int l=0; l<preconChildren->getLength();l++) {
@@ -2040,6 +2072,9 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 			}
 		    }
                     else if (strcmp(textContent,"trilinos_ml")==0) {
+			// TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag 
+			//              so this doesn't get overwritten later when the list actually gets created.
+		        list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Trilinos ML");
                         // loop through children and deal with them
                         DOMNodeList* preconChildren= currentNode->getChildNodes();
                         for (int l=0; l<preconChildren->getLength();l++) {
@@ -2073,6 +2108,9 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 			}
 		    }
                     else if (strcmp(textContent,"block_ilu")==0) {
+			// TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag 
+			//              so this doesn't get overwritten later when the list actually gets created.
+		        list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Block ILU");
                         // loop through children and deal with them
                         DOMNodeList* preconChildren= currentNode->getChildNodes();
                         for (int l=0; l<preconChildren->getLength();l++) {
@@ -2108,14 +2146,14 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               }
             }
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Linear Solver") = lsPL;
-	        if (usePCPL)
+	    if (usePCPL)
               list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners") = pcPL;
-	        if (flowON)
-	          list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Flow Process Kernel") = fpkPL;
-	        if (transportON)
-	          list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transport Process Kernel") = tpkPL;
-	        if (chemistryON)
-	          list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Chemistry Process Kernel") = cpkPL;
+	    if (flowON)
+	      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Flow Process Kernel") = fpkPL;
+	    if (transportON)
+	      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transport Process Kernel") = tpkPL;
+	    if (chemistryON)
+	      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Chemistry Process Kernel") = cpkPL;
           }
             else if (strcmp(nodeName,"nonlinear_solver")==0) {
             // EIB: creating sub for section that doesn't actually exist yet in the New Schema, but does in the Input Spec
@@ -3014,6 +3052,7 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
                 DOMNode* pressure = childList->item(l) ;
                 char* pressName  = XMLString::transcode(pressure->getNodeName());
 	        Teuchos::ParameterList pressureList;
+	        pressureList.set<std::string>("Phase","Aqueous");
                 if (strcmp(pressName,"uniform_pressure")==0 || strcmp(pressName,"uniform_saturation")==0) {
 	          // loop over attributes to get info
 	          attrMap = pressure->getAttributes();
@@ -3345,7 +3384,12 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		//    times.append(times[0]+1.);
 		//  }
 		//}
-		times.append(times[0]+1.);
+		//times.append(times[0]+1.);
+		if (def_list.sublist("simulation").isParameter("simulation_end")) {
+	  	    times.append(def_list.sublist("simulation").get<double>("simulation_end"));
+		} else { 
+	  	    times.append(times[0]+1.);
+		}
 		vals.append(vals[0]);
 	      }
 	      //EIB - this is iffy!!! Talked with Ellen, this is consistent with her assumptions in Akuna, for now
@@ -3496,7 +3540,12 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		  }
                    // if len array == 1: add dummy vals to create and interval
                    if (sort_times.length()==1){
-                       sort_times.append(sort_times[0]+1.);
+                       //sort_times.append(sort_times[0]+1.);
+		       if (def_list.sublist("simulation").isParameter("simulation_end")) {
+	  	         sort_times.append(def_list.sublist("simulation").get<double>("simulation_end"));
+		       } else { 
+	  	         sort_times.append(times[0]+1.);
+		       }
                        sort_vals.append(sort_vals[0]);
 	          }
                    //EIB - this is iffy!!! Talked with Ellen, this is consistent with her assumptions in Akuna, for now
@@ -3644,7 +3693,12 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 		  }
 		}
 	        if (times.length()==1 ){
-	  	  times.append(times[0]+1.);
+	  	  //times.append(times[0]+1.);
+		  if (def_list.sublist("simulation").isParameter("simulation_end")) {
+	  	    times.append(def_list.sublist("simulation").get<double>("simulation_end"));
+		  } else { 
+	  	    times.append(times[0]+1.);
+		  }
 		  vals.append(vals[0]);
 	        }
 	        //EIB - this is iffy!!! Talked with Ellen, this is consistent with her assumptions in Akuna, for now
@@ -3701,7 +3755,11 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 		  }
 		}
 	        if (times.length()==1 ){
-	  	  times.append(times[0]+1.);
+		  if (def_list.sublist("simulation").isParameter("simulation_end")) {
+	  	    times.append(def_list.sublist("simulation").get<double>("simulation_end"));
+		  } else { 
+	  	    times.append(times[0]+1.);
+		  }
 		  vals.append(vals[0]);
 	        }
 	        //EIB - this is iffy!!! Talked with Ellen, this is consistent with her assumptions in Akuna, for now
