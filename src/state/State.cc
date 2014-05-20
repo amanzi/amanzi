@@ -58,6 +58,7 @@ State::State(const State& other, StateConstructMode mode) :
          fm_it!=other.field_evaluators_.end(); ++fm_it) {
       field_evaluators_[fm_it->first] = fm_it->second->Clone();
     }
+
   } else {
     for (FieldMap::const_iterator f_it=other.fields_.begin();
          f_it!=other.fields_.end(); ++f_it) {
@@ -68,6 +69,12 @@ State::State(const State& other, StateConstructMode mode) :
          fm_it!=other.field_evaluators_.end(); ++fm_it) {
       field_evaluators_[fm_it->first] = fm_it->second;
     }
+  }
+
+  // pointer copy MeshPartitions -- const after initing.
+  for (MeshPartitionMap::const_iterator mp_it=other.mesh_partitions_.begin();
+       mp_it!=other.mesh_partitions_.end(); ++mp_it) {
+    mesh_partitions_[mp_it->first] = mp_it->second;
   }
 
 };
@@ -341,6 +348,43 @@ Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator_(Key key) {
 void State::SetFieldEvaluator(Key key, const Teuchos::RCP<FieldEvaluator>& evaluator) {
   ASSERT(field_evaluators_[key] == Teuchos::null);
   field_evaluators_[key] = evaluator;
+};
+
+
+Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition(Key key) {
+  Teuchos::RCP<Functions::MeshPartition> evaluator = GetMeshPartition_(key);
+  if (evaluator == Teuchos::null) {
+    std::stringstream messagestream;
+    messagestream << "Mesh partition " << key << " does not exist in the state.";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+  return evaluator;
+};
+
+
+Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key) {
+  MeshPartitionMap::iterator lb = mesh_partitions_.lower_bound(key);
+  if (lb != mesh_partitions_.end() && !(mesh_partitions_.key_comp()(key, lb->first))) {
+    return lb->second;
+  } else {
+    if (state_plist_.isParameter("mesh partitions")) {
+      Teuchos::ParameterList& part_superlist = state_plist_.sublist("mesh partitions");
+      if (part_superlist.isParameter(key)) {
+        Teuchos::ParameterList& part_list = part_superlist.sublist(key);
+        std::string mesh_name = part_list.get<std::string>("mesh name", "domain");
+        Teuchos::Array<std::string> region_list =
+            part_list.get<Teuchos::Array<std::string> >("region list");
+        Teuchos::RCP<Functions::MeshPartition> mp = Teuchos::rcp(new Functions::MeshPartition(AmanziMesh::CELL,
+                region_list.toString()));
+        mp->Initialize(Mesh(mesh_name), -1);
+        mp->Verify();
+        mesh_partitions_[key] = mp;
+        return mp;
+      }
+    }
+    return Teuchos::null;
+  }
 };
 
 

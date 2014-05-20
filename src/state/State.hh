@@ -25,6 +25,7 @@
 #include "Epetra_MultiVector.h"
 
 #include "Mesh.hh"
+#include "MeshPartition.hh"
 
 #include "CompositeVector.hh"
 #include "CompositeVectorSpace.hh"
@@ -57,6 +58,7 @@ class State {
   typedef std::map<Key, Teuchos::RCP<CompositeVectorSpace> > FieldFactoryMap;
   typedef std::map<Key, Teuchos::RCP<Field> > FieldMap;
   typedef std::map<Key, Teuchos::RCP<FieldEvaluator> > FieldEvaluatorMap;
+  typedef std::map<Key, Teuchos::RCP<Functions::MeshPartition> > MeshPartitionMap;
 
  public:
 
@@ -239,6 +241,14 @@ class State {
   // Get a parameter list.
   Teuchos::ParameterList GetModelParameters(std::string modelname);
 
+  // -----------------------------------------------------------------------------
+  // State handles MeshPartitions
+  // -----------------------------------------------------------------------------
+  // Some models, typically only defined on cells, are defined by the region.
+  // MeshPartitions are a non-overlapping set of cell regions whose union
+  // covers the mesh.
+  //
+  Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition(Key);
 
   // -----------------------------------------------------------------------------
   // State is representative of an instant in time and a single cycle within
@@ -271,6 +281,7 @@ private:
   Teuchos::RCP<const Field> GetField_(Key fieldname) const;
   Teuchos::RCP<Field> GetField_(Key fieldname);
   Teuchos::RCP<FieldEvaluator> GetFieldEvaluator_(Key key);
+  Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition_(Key);
 
   // Consistency checking of fieldnames and types.
   Teuchos::RCP<Field> CheckConsistent_or_die_(Key fieldname,
@@ -281,6 +292,7 @@ private:
   FieldMap fields_;
   FieldFactoryMap field_factories_;
   FieldEvaluatorMap field_evaluators_;
+  MeshPartitionMap mesh_partitions_;
 
   // meta-data
   double time_;

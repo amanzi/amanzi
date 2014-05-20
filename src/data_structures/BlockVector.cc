@@ -13,7 +13,7 @@
    ------------------------------------------------------------------------- */
 
 #include "Epetra_MpiComm.h"
-#include "Epetra_Map.h"
+#include "Epetra_BlockMap.h"
 #include "Epetra_Vector.h"
 
 #include "dbc.hh"
@@ -26,7 +26,7 @@ namespace Amanzi {
 // Constructor
 BlockVector::BlockVector(const Epetra_MpiComm& comm,
         std::vector<std::string>& names,
-        std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
+        std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
         std::vector<int> num_dofs) :
     names_(names),
     maps_(maps),
