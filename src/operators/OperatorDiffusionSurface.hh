@@ -19,7 +19,6 @@
 
 #include "OperatorDiffusion.hh"
 #include "OperatorTypeDefs.hh"
-#include "NonlinearCoefficient.hh"
 
 namespace Amanzi {
 namespace Operators {
