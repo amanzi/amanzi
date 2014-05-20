@@ -250,7 +250,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     CHECK(schema_prec_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE);
 
     op2->set_factor(factor);  // for developers only
-    op2->InitOperator(K, Teuchos::null, rho, mu);
+    op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
     op2->UpdateMatrices(Teuchos::null);
     op2->ApplyBCs(bc_model, bc_values);
     op2->SymbolicAssembleMatrix(schema_prec_dofs);
@@ -433,7 +433,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     CHECK(schema_dofs == Operators::OPERATOR_SCHEMA_DOFS_NODE);
 
     op2->set_factor(factor);  // for developers only
-    op2->InitOperator(K, Teuchos::null, rho, mu);
+    op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
     op2->UpdateMatrices(Teuchos::null);
     op2->ApplyBCs(bc_model, bc_values);
     op2->SymbolicAssembleMatrix(schema_dofs);

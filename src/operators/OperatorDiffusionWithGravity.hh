@@ -15,7 +15,6 @@
 #include "tensor.hh"
 #include "Operator.hh"
 #include "OperatorDiffusion.hh"
-#include "NonlinearCoefficient.hh"
 
 
 namespace Amanzi {

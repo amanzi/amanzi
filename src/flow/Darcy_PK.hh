@@ -16,10 +16,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Vector.h"
 
-#include "Mesh.hh"
-#include "Point.hh"
-#include "tensor.hh"
-
 #include "Flow_PK.hh"
 #include "OperatorDiffusion.hh"
 #include "TI_Specs.hh"

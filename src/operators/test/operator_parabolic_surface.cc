@@ -129,7 +129,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   int schema_dofs = op2->schema_dofs();
   int schema_prec_dofs = op2->schema_prec_dofs();
 
-  op2->InitOperator(K, Teuchos::null, rho, mu);
+  op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
   op2->UpdateMatrices(Teuchos::null);
   op2->ApplyBCs(bc_model, bc_values);
   op2->SymbolicAssembleMatrix(schema_prec_dofs);
@@ -163,7 +163,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   solution.PutScalar(0.0); 
   op1->AddAccumulationTerm(solution, phi, dT);
 
-  op2->InitOperator(K, Teuchos::null, rho, mu);
+  op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
   op2->UpdateMatrices(Teuchos::null);
   op2->ApplyBCs(bc_model, bc_values);
   op2->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);

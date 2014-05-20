@@ -4,8 +4,9 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_VerboseObject.hpp"
 #include "Epetra_MpiComm.h"
+
+#include "VerboseObject.hh"
 #include "State.hh"
 #include "Chemistry_State.hh"
 #include "chemistry_pk_base.hh"
@@ -25,7 +26,7 @@ namespace Amanzi {
 
   enum time_integration_mode { STEADY, TRANSIENT, INIT_TO_STEADY, TRANSIENT_STATIC_FLOW };
 
-class MPC : public Teuchos::VerboseObject<MPC> {
+class MPC {
  public:
   MPC(Teuchos::ParameterList parameter_list_,
       Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_,
@@ -109,6 +110,9 @@ class MPC : public Teuchos::VerboseObject<MPC> {
 
   // stor for chemistry data to allow repeat of chemistry step
   Teuchos::RCP<chemistry_data> chem_data_;
+
+ public:
+  Teuchos::RCP<VerboseObject> vo_;
 };
     
 } // namespace Amanzi

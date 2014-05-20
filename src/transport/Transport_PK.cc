@@ -472,7 +472,7 @@ int Transport_PK::Advance(double dT_MPC)
   
     // populate the diffusion operator
     CalculateDispersionTensor_(*darcy_flux, *phi, *ws);
-    op1->InitOperator(D, Teuchos::null, 1.0, 1.0);
+    op1->InitOperator(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
     op1->UpdateMatrices(Teuchos::null);
 
     // add accumulation

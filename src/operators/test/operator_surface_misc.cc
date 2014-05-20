@@ -141,7 +141,7 @@ TEST(SURFACE_MISC) {
                                       .get<Teuchos::ParameterList>("diffusion operator");
 
   Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist));
-  op2->InitOperator(K, Teuchos::null, rho, mu);
+  op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
   op2->UpdateMatrices(Teuchos::null);
   op2->ApplyBCs(bc_model, bc_values);
 

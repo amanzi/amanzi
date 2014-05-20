@@ -151,6 +151,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int dim;
 
   Teuchos::RCP<State> S_;
+  Teuchos::RCP<State> Snext_;
   std::string passwd_;
 
   // Stationary physical quantatities
@@ -192,9 +193,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
  protected:
   VerboseObject* vo_;
 };
-
-
-
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

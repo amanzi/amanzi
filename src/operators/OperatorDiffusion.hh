@@ -20,7 +20,6 @@
 
 #include "Operator.hh"
 #include "OperatorTypeDefs.hh"
-#include "NonlinearCoefficient.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -35,9 +34,11 @@ class OperatorDiffusion : public Operator {
   ~OperatorDiffusion() {};
 
   // main members
-  void InitOperator(std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k,
+  void InitOperator(std::vector<WhetStone::Tensor>& K,
+                    Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
                     double rho, double mu);
-  void InitOperator(std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k,
+  void InitOperator(std::vector<WhetStone::Tensor>& K,
+                    Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
                     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu);
   virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
@@ -73,7 +74,7 @@ class OperatorDiffusion : public Operator {
  public:
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
   std::vector<WhetStone::Tensor>* K_;
-  Teuchos::RCP<NonlinearCoefficient> k_;
+  Teuchos::RCP<const CompositeVector> k_, dkdp_;
   double rho_, mu_;
   Teuchos::RCP<const CompositeVector> rho_cv_, mu_cv_;
 

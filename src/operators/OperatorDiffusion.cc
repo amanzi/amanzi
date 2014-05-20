@@ -30,11 +30,13 @@ namespace Operators {
 * Initialization of the operator.                                           
 ****************************************************************** */
 void OperatorDiffusion::InitOperator(
-    std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k,
+    std::vector<WhetStone::Tensor>& K, 
+    Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
     double rho, double mu)
 {
   K_ = &K;
   k_ = k;
+  dkdp_ = dkdp;
 
   rho_ = rho;
   mu_ = mu;
@@ -50,11 +52,13 @@ void OperatorDiffusion::InitOperator(
 * Initialization of the operator.                                           
 ****************************************************************** */
 void OperatorDiffusion::InitOperator(
-    std::vector<WhetStone::Tensor>& K, Teuchos::RCP<NonlinearCoefficient> k,
+    std::vector<WhetStone::Tensor>& K,
+    Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu)
 {
   K_ = &K;
   k_ = k;
+  dkdp_ = dkdp;
 
   rho_cv_ = rho;
   mu_cv_ = mu;
@@ -124,7 +128,8 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
     // Update terms due to nonlinear coefficient
     double kc(1.0); 
     if (k_ != Teuchos::null) {
-      kc = (*k_->cvalues())[c];
+      const Epetra_MultiVector& k_cell = *k_->ViewComponent("cell");
+      kc = k_cell[0][c];
     }
 
     double matsum = 0.0;  // elimination of mass matrix
@@ -144,11 +149,14 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
 
     // Update terms due to dependence of k on the solution.
     if (flux !=  Teuchos::null && k_ != Teuchos::null) {
+      const Epetra_MultiVector& k_face = *k_->ViewComponent("face");
+      const Epetra_MultiVector& dkdp_face = *dkdp_->ViewComponent("face");
+
       const Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        double dkf = (*k_->fderivatives())[f];
-        double  kf = (*k_->fvalues())[f];
+        double dkf = dkdp_face[0][f];
+        double  kf = k_face[0][f];
         double alpha = (dkf / kf) * flux_data[0][f] * dirs[n];
         if (alpha > 0) {
           Acell(n, n) += kc * alpha;

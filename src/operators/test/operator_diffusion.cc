@@ -212,11 +212,9 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_NODE;
-  op->InitOperator(K, Teuchos::null, rho, mu);
+  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null);
-{double a; op->rhs()->Norm2(&a); std::cout << a << std::endl; }
   op->ApplyBCs(bc_model, bc_values);
-{double a; op->rhs()->Norm2(&a); std::cout << a << std::endl; }
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_NODE);
   op->AssembleMatrix(schema);
 

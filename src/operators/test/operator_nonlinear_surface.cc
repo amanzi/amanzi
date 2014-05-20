@@ -34,40 +34,50 @@
 #include "OperatorDiffusionSurface.hh"
 #include "OperatorSource.hh"
 
-#include "NonlinearCoefficient.hh"
-
 namespace Amanzi{
 
-class HeatConduction : public Operators::NonlinearCoefficient {
+class HeatConduction {
  public:
   HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) { 
-    cvalues_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-    fvalues_ = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
-    fderivatives_ = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
+    CompositeVectorSpace cvs;
+    cvs.SetMesh(mesh_);
+    cvs.SetGhosted(true);
+    cvs.SetComponent("cell", AmanziMesh::CELL, 1);
+    cvs.SetOwned(false);
+    cvs.AddComponent("face", AmanziMesh::FACE, 1);
+
+    values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
+    derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
   }
   ~HeatConduction() {};
 
   // main members
   void UpdateValues(const CompositeVector& u) { 
     const Epetra_MultiVector& uc = *u.ViewComponent("cell", true); 
-    const Epetra_MultiVector& uf = *u.ViewComponent("face", true); 
+    const Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true); 
 
     int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
     for (int c = 0; c < ncells; c++) {
-      (*cvalues_)[c] = 0.3 + uc[0][c];
+      values_c[0][c] = 0.3 + uc[0][c];
     }
 
+    const Epetra_MultiVector& uf = *u.ViewComponent("face", true); 
+    const Epetra_MultiVector& values_f = *values_->ViewComponent("face", true); 
     int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
     for (int f = 0; f < nfaces; f++) {
-      (*fvalues_)[f] = 0.3 + uf[0][f];
+      values_f[0][f] = 0.3 + uf[0][f];
     }
+
+    derivatives_->PutScalar(1.0);
   }
-  void UpdateDerivatives(const CompositeVector& u) {
-    fderivatives_->PutScalar(1.0);
-  }
+
+  Teuchos::RCP<CompositeVector> values() { return values_; }
+  Teuchos::RCP<CompositeVector> derivatives() { return derivatives_; }
+   
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<CompositeVector> values_, derivatives_;
 };
 
 }  // namespace Amanzi
@@ -171,7 +181,6 @@ TEST(NONLINEAR_OPERATOR) {
     // add diffusion operator
     solution.ScatterMasterToGhosted();
     knc->UpdateValues(solution);
-    knc->UpdateDerivatives(solution);
 
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                         .get<Teuchos::ParameterList>("diffusion operator");
@@ -182,7 +191,7 @@ TEST(NONLINEAR_OPERATOR) {
     int schema_prec_dofs = op2->schema_prec_dofs();
     CHECK(schema_prec_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE);
 
-    op2->InitOperator(K, knc, rho, mu);
+    op2->InitOperator(K, knc->values(), knc->derivatives(), rho, mu);
     op2->UpdateMatrices(flux);
     op2->ApplyBCs(bc_model, bc_values);
     op2->SymbolicAssembleMatrix(schema_prec_dofs);

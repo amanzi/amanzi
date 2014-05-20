@@ -1346,6 +1346,7 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
     Teuchos::ParameterList& method_list = aztecoo_list.sublist(method);
     method_list.set<double>("error tolerance", tol);
     method_list.set<int>("maximum number of iterations", maxiter);
+    method_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
   }
 
   // add default PCG solver
@@ -1355,6 +1356,7 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
     Teuchos::ParameterList& method_list = pcg_list.sublist("pcg parameters");
     method_list.set<double>("error tolerance", tol);
     method_list.set<int>("maximum number of iterations", maxiter);
+    method_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
   }
 
   return solver_list;

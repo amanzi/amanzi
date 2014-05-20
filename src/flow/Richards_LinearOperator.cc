@@ -44,7 +44,7 @@ void Richards_PK::SolveFullySaturatedProblem(
 
   Operators::OperatorDiffusionFactory opfactory;
   Teuchos::RCP<Operators::OperatorDiffusion> op = opfactory.Create(mesh_, op_list, gravity_);
-  op->InitOperator(K, Teuchos::null, rho_, mu_);
+  op->InitOperator(K, Teuchos::null, Teuchos::null, rho_, mu_);
   op->UpdateMatrices(Teuchos::null);
 
   int schema_prec_dofs = op->schema_prec_dofs();
