@@ -59,6 +59,9 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
   min_wind_speed_ = plist_->get<double>("minimum wind speed [m/s]?", 1.0);
   wind_speed_ref_ht_ = plist_->get<double>("wind speed reference height [m]", 2.0);
 
+  // implicit/explicit snow precip
+  implicit_snow_ = plist_->get<bool>("implicit snow precipitation", true);
+
   // transition snow depth
   snow_ground_trans_ = plist_->get<double>("snow-ground transitional depth", 0.02);
   min_snow_trans_ = plist_->get<double>("minimum snow transitional depth", 1.e-8);
@@ -326,9 +329,14 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       *S_next_->GetFieldData("precipitation_rain")->ViewComponent("cell", false);
 
   // snow precip need not be updated each iteration
-  S_inter_->GetFieldEvaluator("precipitation_snow")->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& precip_snow =
-      *S_inter_->GetFieldData("precipitation_snow")->ViewComponent("cell", false);
+  if (implicit_snow_) {
+    S_next_->GetFieldEvaluator("precipitation_snow")->HasFieldChanged(S_next_.ptr(), name_);
+  } else {
+    S_inter_->GetFieldEvaluator("precipitation_snow")->HasFieldChanged(S_inter_.ptr(), name_);
+  }
+  const Epetra_MultiVector& precip_snow = implicit_snow_ ?
+    *S_next_->GetFieldData("precipitation_snow")->ViewComponent("cell", false) :
+    *S_inter_->GetFieldData("precipitation_snow")->ViewComponent("cell", false);
 
   // pull additional primary variable data
   Epetra_MultiVector& surf_energy_flux =

@@ -148,9 +148,11 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     // initialize and begin timestep loop
     result->PutScalar(Qe * ktmax_ * kSWE_conv_);
     for (int istep=0; istep!=nsteps; ++istep) {
-      if (vo_->os_OK(Teuchos::VERB_HIGH))
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "Snow distribution inner timestep " << istep << " with size " << dt << std::endl
-                   << "   Qe*t_total =" << std::endl;
+                   << "   Qe*t_total = " << std::endl;
+        result->Print(*vo_->os());
+      }
 
       *result_prev = *result;
       double norm0 = 0.;
