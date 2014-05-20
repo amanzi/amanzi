@@ -189,8 +189,11 @@ else(XERCES_LIBRARY_DIR AND XERCES_INCLUDE_DIR)
     # For now we don't recurse on *.la files
     set(XERCES_ICU_LIBRARIES "")
     foreach(ln ${XERCES_LIBRARY_DEPS})
-      STRING(REGEX MATCH "\\.la" OUTSTRING ${ln})
-      if ( NOT OUTSTRING ) 
+      STRING(REGEX MATCH "\\.la" OUT_libtool ${ln})
+      # Drop system libraries (-L/usr/*) because they should be in the system linker already
+      # -- would be more robust to get ld search path, and then drop overlapping.
+      STRING(REGEX MATCH "[-][L]/usr" OUT_lib_system ${ln})
+      if ( NOT OUT_libtool AND NOT OUT_lib_system) 
          list(APPEND XERCES_ICU_LIBRARIES ${ln})
       endif()
     endforeach()
