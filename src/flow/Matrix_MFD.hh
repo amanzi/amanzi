@@ -69,6 +69,11 @@ class Matrix_MFD : public Matrix<CompositeVector, CompositeVectorSpace> {
   void AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity,
                                 std::vector<int>& bc_model);
 
+  void AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux,
+					  RelativePermeability& rel_permeabilty);
+  void AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux);
+
+
   void AddTimeDerivative(
       const Epetra_MultiVector& p, const Epetra_MultiVector& phi, double rho, double dT);
   void AddTimeDerivativeSpecificStorage(

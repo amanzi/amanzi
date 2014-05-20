@@ -17,10 +17,10 @@ class ObservationXML(object):
         self.names= []
 
     def getObservationList(self):
-        return search.getElementByPath(self.xml, "/Main/Output/Observation Data")
+        return search.getElementByTagPath(self.xml, "/Main/Output/Observation Data")
 
     def getRegionList(self):
-        return search.getElementByPath(self.xml, "/Main/Regions")
+        return search.getElementByTagPath(self.xml, "/Main/Regions")
 
     def getAllNames(self):
         self.names = []
@@ -32,23 +32,23 @@ class ObservationXML(object):
         self.coordinates = {}
         for item in self.obs_lists:
             well_name = item.getElement("Region").value
-            region = search.getElementByPath(self.xml, "/Main/Regions/"+ well_name)
+            region = search.getElementByTagPath(self.xml, "/Main/Regions/"+ well_name)
             local = region.sublist("Region: Point")
-            location = search.getElementByPath(local, "/Region: Point/Coordinate")
+            location = search.getElementByTagPath(local, "/Region: Point/Coordinate")
             coordinate = location.value
             self.coordinates[well_name] = coordinate
         return self.coordinates
 
     def getCoordinateFromList(self, one_list):
         well_name = one_list.getElement("Region").value
-        region = search.getElementByPath(self.xml, "/Main/Regions/"+ well_name)
+        region = search.getElementByTagPath(self.xml, "/Main/Regions/"+ well_name)
         local = region.sublist("Region: Point")
-        location = search.getElementByPath(local, "/Region: Point/Coordinate")
+        location = search.getElementByTagPath(local, "/Region: Point/Coordinate")
         coordinate = location.value
         return coordinate
 
     def getObservationFilename(self):
-        obs = search.getElementByPath(self.xml, "/Main/Output/Observation Data/Observation Output Filename")
+        obs = search.getElementByTagPath(self.xml, "/Main/Output/Observation Data/Observation Output Filename")
         obs_file = obs.value.strip()
         return  obs_file
 

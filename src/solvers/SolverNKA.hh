@@ -68,7 +68,7 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   int nka_dim_;
 
  private:
-  double tol_, overflow_tol_;
+  double tol_, overflow_tol_, overflow_l2_tol_;
 
   int max_itrs_, num_itrs_, returned_code_;
   int fun_calls_, pc_calls_;
@@ -109,6 +109,7 @@ void SolverNKA<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
+  overflow_l2_tol_ = plist_.get<double>("diverged l2 tolerance", 1.0e5);
   max_itrs_ = plist_.get<int>("limit iterations", 20);
   max_du_growth_factor_ = plist_.get<double>("max du growth factor", 1.0e5);
   max_error_growth_factor_ = plist_.get<double>("max error growth factor", 1.0e5);
@@ -245,6 +246,18 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     // Make sure that we do not diverge and cause numerical overflow.
     previous_du_norm = du_norm;
     du->NormInf(&du_norm);
+
+    if (num_itrs_ == 1) {
+      double u_norm2, du_norm2;
+      u->Norm2(&u_norm2);
+      du->Norm2(&du_norm2);
+      if (du_norm2 > overflow_l2_tol_ * u_norm2) {
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
+           *vo_->os() << "terminating due to L2-norm overflow ||du||=" << du_norm2
+                      << ", ||du||=" << u_norm2 << std::endl;
+        return SOLVER_OVERFLOW;
+      }
+    }
 
     if ((num_itrs_ > 1) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 

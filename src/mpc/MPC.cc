@@ -5,9 +5,9 @@
 #include "errors.hh"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"
+
 #include "chemistry_pk.hh"
 #ifdef ALQUIMIA_ENABLED
 #include "alquimia_chemistry_pk.hh"
@@ -71,20 +71,10 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
 
 /* *******************************************************************/
 void MPC::mpc_init() {
-  // set the line prefix for output
-  this->setLinePrefix("Amanzi::MPC     ");
-  // make sure that the line prefix is printed
-  this->getOStream()->setShowLinePrefix(true);
+  mpc_parameter_list = parameter_list.sublist("MPC");
 
-  // Read the sublist for verbosity settings.
-  Teuchos::readVerboseObjectSublist(&parameter_list,this);
-
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-
-  mpc_parameter_list =  parameter_list.sublist("MPC");
+  vo_ = Teuchos::rcp(new VerboseObject("MPC", mpc_parameter_list));
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   read_parameter_list();
 
@@ -101,12 +91,12 @@ void MPC::mpc_init() {
   flow_enabled =
       (mpc_parameter_list.get<std::string>("disable Flow_PK","no") == "no");
 
-  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-    *out << "The following process kernels are enabled: ";
-    if (flow_enabled) *out << "Flow ";
-    if (transport_enabled) *out << "Transport ";
-    if (chemistry_enabled) *out << "Chemistry ";
-    *out << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_LOW)) {
+    *vo_->os() << "The following process kernels are enabled: ";
+    if (flow_enabled) *vo_->os() << "Flow ";
+    if (transport_enabled) *vo_->os() << "Transport ";
+    if (chemistry_enabled) *vo_->os() << "Chemistry ";
+    *vo_->os() << std::endl;
   }
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
@@ -187,7 +177,9 @@ void MPC::mpc_init() {
   }
 
   if (flow_model == "Steady State Richards") {
-    *out << "Flow will be off during the transient phase" << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_LOW)) {
+      *vo_->os() << "Flow will be off during the transient phase" << std::endl;
+    }
   }
 
   if (transport_enabled) {
@@ -320,13 +312,13 @@ void MPC::mpc_init() {
     restart_from_filename = restart_parameter_list.get<std::string>("Checkpoint Data File Name");
 
     if (restart_requested) {
-      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-        *out << "Restarting from checkpoint file: " << restart_from_filename << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_LOW)) {
+        *vo_->os() << "Restarting from checkpoint file: " << restart_from_filename << std::endl;
       }
     } else {
-      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-        *out << "Initializing data from checkpoint file: " << restart_from_filename << std::endl;
-        *out << "    (Ignoring all initial conditions.)" << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_LOW)) {
+        *vo_->os() << "Initializing data from checkpoint file: " << restart_from_filename << std::endl
+                   << "    (Ignoring all initial conditions.)" << std::endl;
       }
     }
 
@@ -421,12 +413,12 @@ void MPC::read_parameter_list()  {
 
 /* *******************************************************************/
 void MPC::cycle_driver() {
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   // Amanzi::timer_manager.add("AnalyticJacobian", Amanzi::Timer::ACCUMULATE);
   // Amanzi::timer_manager.add("Function", Amanzi::Timer::ACCUMULATE);
   // Amanzi::timer_manager.add("Update precon", Amanzi::Timer::ACCUMULATE);
   // Amanzi::timer_manager.add("Apply precon", Amanzi::Timer::ACCUMULATE);
-
 
   // start timers
   Amanzi::timer_manager.add("Chemistry PK", Amanzi::Timer::ACCUMULATE);
@@ -451,11 +443,6 @@ void MPC::cycle_driver() {
 
   enum time_step_limiter_type {FLOW_LIMITS, TRANSPORT_LIMITS, CHEMISTRY_LIMITS, MPC_LIMITS};
   time_step_limiter_type tslimiter;
-
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     S->set_time(T0);  // start at time T=T0;
@@ -574,8 +561,8 @@ void MPC::cycle_driver() {
   }
 
   if (!restart_requested) {
-    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-      *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
     }
     if (chemistry_enabled) {
       // get the auxillary data from chemistry
@@ -589,8 +576,8 @@ void MPC::cycle_driver() {
 
     // write a restart dump if requested (determined in dump_state)
     if (restart->DumpRequested(S->cycle(),S->time())) {
-      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-        *out << "Cycle " << S->cycle() << ": writing checkpoint" << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << "Cycle " << S->cycle() << ": writing checkpoint" << std::endl;
       }
       if (ti_mode == STEADY || ti_mode == INIT_TO_STEADY) {
         WriteCheckpoint(restart,S.ptr(),dTsteady);
@@ -602,8 +589,8 @@ void MPC::cycle_driver() {
     // write walkabout data if requested
     if (flow_enabled) {
       if (walkabout->DumpRequested(S->cycle(), S->time())) {
-        if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-          *out << "Cycle " << S->cycle() << ": writing walkabout data" << std::endl;
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+          *vo_->os() << "Cycle " << S->cycle() << ": writing walkabout data" << std::endl;
         }
         FPK->WriteWalkabout(walkabout.ptr());
       }
@@ -631,11 +618,11 @@ void MPC::cycle_driver() {
     while ((S->time() < T1) && ((end_cycle == -1) || (iter <= end_cycle))) {
 
       // log that we are starting a time step
-      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-        *out << std::setprecision(5) << std::endl;
-        *out << "Cycle " << iter;
-        *out << ": starting time step at time(y) = "<< std::scientific << S->time() / (365.25*60*60*24);
-        *out << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_LOW)) {
+        *vo_->os() << std::setprecision(5) << std::endl
+                   << "Cycle " << iter
+                   << ": starting time step at time(y) = "<< std::scientific << S->time() / (365.25*60*60*24)
+                   << std::endl;
       }
 
       // determine the time step we are now going to take
@@ -656,9 +643,10 @@ void MPC::cycle_driver() {
       if (flow_enabled) {
         //if (ti_mode == INIT_TO_STEADY && S->last_time() < Tswitch && S->time() >= Tswitch) {
         if (ti_mode == INIT_TO_STEADY && fabs(S->time() - Tswitch) < 1e-7) {
-          if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-            *out << "Steady state computation complete... now running in transient mode." << std::endl;
-            *out << "Tswitch = " << Tswitch << " S->time() = " << S->time() << " S->last_time() = " << S->last_time() << std::endl;
+          if (vo_->os_OK(Teuchos::VERB_LOW)) {
+            *vo_->os() << "Steady state computation complete... now running in transient mode." << std::endl
+                       << "Tswitch = " << Tswitch 
+                       << " S->time() = " << S->time() << " S->last_time() = " << S->last_time() << std::endl;
           }
           // only init the transient problem if we need to
           if (flow_model != "Steady State Richards") { //  && flow_model != "Steady State Saturated" )  {
@@ -730,8 +718,10 @@ void MPC::cycle_driver() {
         if (!reset_info_.empty()) {
           // this is probably iffy...
           if (S->time() == reset_info_.front().first) {
-            *out << std::setprecision(5) << "Resetting the time integrator at time(y) = "
-                 << std::fixed << S->time()/(365.25*24*60*60) << std::endl;
+            if (vo_->os_OK(Teuchos::VERB_LOW)) {
+              *vo_->os() << std::setprecision(5) << "Resetting the time integrator at time(y) = "
+                         << std::fixed << S->time()/(365.25*24*60*60) << std::endl;
+            }
             mpc_dT = reset_info_.front().second;
             mpc_dT = TSM->TimeStep(S->time(), mpc_dT);
             tslimiter = MPC_LIMITS;
@@ -748,11 +738,11 @@ void MPC::cycle_driver() {
         restart_requested = false;
       }
 
-      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-        *out << std::setprecision(5);
-        *out << "Cycle " << iter;
-        *out << ": proposed time step before flow step dT(y) = " << std::scientific << mpc_dT / (365.25*60*60*24);
-        *out << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << std::setprecision(5)
+                   << "Cycle " << iter
+                   << ": proposed time step before flow step dT(y) = " 
+                   << std::scientific << mpc_dT / (365.25*60*60*24) << std::endl;
       }
 
 
@@ -774,10 +764,12 @@ void MPC::cycle_driver() {
               FPK->Advance(mpc_dT);
             }
             catch (int itr) {
-              mpc_dT =  ti_rescue_factor_*mpc_dT;
+              mpc_dT = ti_rescue_factor_ * mpc_dT;
               redo = true;
               tslimiter = FLOW_LIMITS;
-              *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
+              if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+                *vo_->os() << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
+              }
             }
           } while (redo);
           FPK->CommitState(S);
@@ -830,12 +822,12 @@ void MPC::cycle_driver() {
             tc_dT = mpc_dT/static_cast<double>(ntc);
           }
 
-          if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-            *out << "Subcycling info: MPC is taking " << ntc << " chemistry subcycling timesteps" << std::endl;
+          if (vo_->os_OK(Teuchos::VERB_LOW)) {
+            *vo_->os() << "Subcycling info: MPC is taking " << ntc << " chemistry subcycling timesteps" << std::endl;
             if (transport_enabled) {
-              *out << "  (chemistry sub cycling time step) / (transport time step) = " << tc_dT/t_dT << std::endl;
+              *vo_->os() << "  (chemistry sub cycling time step) / (transport time step) = " << tc_dT/t_dT << std::endl;
             }
-            *out << "  chemistry subcycling timestep = " << tc_dT << std::endl;
+            *vo_->os() << "  chemistry subcycling timestep = " << tc_dT << std::endl;
           }
           Amanzi::timer_manager.stop("Chemistry PK");
         }
@@ -893,9 +885,8 @@ void MPC::cycle_driver() {
               // second we do a chemistry step, or if chemistry is off, we simply update
               // total_component_concentration in state
               if (chemistry_enabled) {
-
-                if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-                  *out << "Chemistry PK: advancing, current subcycling time step = " << tc_dT << std::endl;
+                if (vo_->os_OK(Teuchos::VERB_LOW)) {
+                  *vo_->os() << "Chemistry PK: advancing, current subcycling time step = " << tc_dT << std::endl;
                 }
 
                 Amanzi::timer_manager.start("Chemistry PK");
@@ -942,10 +933,10 @@ void MPC::cycle_driver() {
             }
 
             // the the user know that we're backing up due to a chemistry failure
-            if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-              *out << chem_error.what() << std::endl;
-              *out << "Chemistry step failed, reducing chemistry subcycling time step." << std::endl;
-              *out << "  new chemistry subcycling time step = " << tc_dT << std::endl;
+            if (vo_->os_OK(Teuchos::VERB_LOW)) {
+              *vo_->os() << chem_error.what() << std::endl
+                         << "Chemistry step failed, reducing chemistry subcycling time step." << std::endl
+                         << "  new chemistry subcycling time step = " << tc_dT << std::endl;
             }
 
             // restore chemistry data to the beginning of the subcycling
@@ -996,12 +987,11 @@ void MPC::cycle_driver() {
         Amanzi::timer_manager.stop("Chemistry PK");
       }
 
-      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-        *out << std::setprecision(5);
-        *out << "Cycle " << iter;
-        *out << ": complete, new time = " << S->time() / (365.25*60*60*24);
-        *out << " " << limitstring;
-        *out << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_LOW)) {
+        *vo_->os() << std::setprecision(5)
+                   << "Cycle " << iter
+                   << ": complete, new time = " << S->time() / (365.25*60*60*24)
+                   << " " << limitstring << std::endl;
       }
 
       // advance the iteration count
@@ -1051,8 +1041,8 @@ void MPC::cycle_driver() {
         Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
         if (force || visualization->DumpRequested(S->cycle(), S->time())) {
 	  if (!visualization->is_disabled()) {
-	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-	      *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+            if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+              *vo_->os() << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
 	    }
 	    WriteVis(visualization,S.ptr());
 	  }
@@ -1060,8 +1050,8 @@ void MPC::cycle_driver() {
       } else {
         if (force || visualization->DumpRequested(S->cycle(), S->time())) {
 	  if (!visualization->is_disabled()) {
-	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-	      *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+            if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+              *vo_->os() << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
 	    }
 	    WriteVis(visualization,S.ptr());
 	  }
@@ -1071,8 +1061,8 @@ void MPC::cycle_driver() {
       // write restart dump if requested
       if (force || force_checkpoint || restart->DumpRequested(S->cycle(), S->time())) {
 	if (!restart->is_disabled()) {
-	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-	    *out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
+          if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+            *vo_->os() << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
 	  }
 	  WriteCheckpoint(restart,S.ptr(),mpc_dT);
 	}
@@ -1082,8 +1072,8 @@ void MPC::cycle_driver() {
       if (flow_enabled) {
         if (force || force_checkpoint || walkabout->DumpRequested(S->cycle(), S->time())) {
 	  if (!walkabout->is_disabled()) {
-	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-	      *out << "Cycle " << S->cycle() << ": writing walkabout data" << std::endl;
+            if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+              *vo_->os() << "Cycle " << S->cycle() << ": writing walkabout data" << std::endl;
 	    }
 	    FPK->WriteWalkabout(walkabout.ptr());
 	  }
@@ -1102,24 +1092,24 @@ void MPC::cycle_driver() {
     S->set_cycle(iter);
     Amanzi::timer_manager.start("I/O");
     if (!visualization->is_disabled()) {
-      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-	*out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
       }
       if (flow_enabled) FPK->UpdateAuxilliaryData();
       WriteVis(visualization,S.ptr());
     }
       
     if (!restart->is_disabled()) {
-      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-	*out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
       }
       WriteCheckpoint(restart,S.ptr(),0.0);
     }
 
     if (flow_enabled) {
       if (!walkabout->is_disabled()) {
-	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-	  *out << "Cycle " << S->cycle() << ": writing walkabout file" << std::endl;
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+          *vo_->os() << "Cycle " << S->cycle() << ": writing walkabout file" << std::endl;
 	}
 	FPK->WriteWalkabout(walkabout.ptr());
       }
@@ -1130,14 +1120,12 @@ void MPC::cycle_driver() {
 
 
   // some final output
-  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
-  {
-    *out << "Simulation complete at cycle " << iter;
-    *out << " and Time(y) = "<< S->time()/ (365.25*60*60*24);
-    *out << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_LOW)) {
+    *vo_->os() << "Simulation complete at cycle " << iter
+               << " and Time(y) = "<< S->time() / (365.25*60*60*24) << std::endl;
   }
   
-  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Epetra_Map cell_map = mesh_maps->cell_map(false);
     double mem = rss_usage();
     
@@ -1158,18 +1146,18 @@ void MPC::cycle_driver() {
     comm->MinAll(&mem,&min_mem,1);
     comm->MaxAll(&mem,&max_mem,1);
     
-    *out << std::endl;
-    *out << "Memory usage (high water mark):" << std::endl;
-    *out << std::fixed << std::setprecision(1);
-    *out << "  Maximum per core:   " << std::setw(7) << max_mem 
-         << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
-         << " Bytes" << std::endl;
-    *out << "  Minumum per core:   " << std::setw(7) << min_mem 
-         << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
-         << " Bytes" << std::endl;
-    *out << "  Total:              " << std::setw(7) << total_mem 
-         << " MBytes,  total per cell:   " << std::setw(7) << total_mem/cell_map.NumGlobalElements()*1024*1024 
-         << " Bytes" << std::endl;
+    *vo_->os() << std::endl
+               << "Memory usage (high water mark):" << std::endl
+               << std::fixed << std::setprecision(1);
+    *vo_->os() << "  Maximum per core:   " << std::setw(7) << max_mem 
+               << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
+               << " Bytes" << std::endl;
+    *vo_->os() << "  Minumum per core:   " << std::setw(7) << min_mem 
+               << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
+               << " Bytes" << std::endl;
+    *vo_->os() << "  Total:              " << std::setw(7) << total_mem 
+               << " MBytes,  total per cell:   " << std::setw(7) << total_mem/cell_map.NumGlobalElements()*1024*1024 
+               << " Bytes" << std::endl;
   }   
 }
 

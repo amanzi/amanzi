@@ -68,7 +68,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Darcy_PK* DPK = new Darcy_PK(plist, S);
   S->Setup();
   S->InitializeFields();
-  // S->InitializeEvaluators();
+  S->InitializeEvaluators();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
@@ -93,6 +93,8 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
   gravity[1] = -1.0;
+
+  S->GetFieldData("specific_storage", passwd)->PutScalar(2.0);
 
   /* create the initial pressure function */
   Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
@@ -122,15 +124,18 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   // Testing secondary fields
   DPK->UpdateAuxilliaryData();
+  const Epetra_MultiVector& darcy_velocity = *S->GetFieldData("darcy_velocity")->ViewComponent("cell");
+  Point p5(darcy_velocity[0][5], darcy_velocity[1][5]);
 
   // Testing recovery
   std::vector<AmanziGeometry::Point> xyz;
   std::vector<AmanziGeometry::Point> velocity;
   DPK->CalculateDarcyVelocity(xyz, velocity);
 
-  int nvel = velocity.size();
-  for (int n = 0; n < nvel; n++) { 
-    // std::cout << xyz[n] << " " << velocity[n] << std::endl;
+  CHECK(L22(p5 - velocity[5]) < 1e-10);
+  
+  for (int n = 0; n < 10; n++) { 
+    // std::cout << n << " xyz=" << xyz[n] << " vel=" << velocity[n] << std::endl;
   } 
 
   delete DPK;

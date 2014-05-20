@@ -25,10 +25,13 @@
 #include "Darcy_PK.hh"
 #include "FlowDefs.hh"
 #include "Flow_SourceFactory.hh"
+
 #include "darcy_velocity_evaluator.hh"
+#include "primary_variable_field_evaluator.hh"
 
 #include "Matrix.hh"
 #include "MatrixFactory.hh"
+#include "OperatorDiffusionFactory.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -130,17 +133,23 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_
   if (!S_->HasField("darcy_flux")) {
     S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", "darcy_flux");
+    darcy_flux_eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S_->SetFieldEvaluator("darcy_flux", darcy_flux_eval);
   }
 
   // secondary fields and evaluators
   if (!S_->HasField("darcy_velocity")) {
-    S_->RequireField("darcy_velocity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    S_->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
 
     Teuchos::ParameterList elist;
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
-    S->SetFieldEvaluator("darcy_velocity", eval);
+    S_->SetFieldEvaluator("darcy_velocity", eval);
   }
+
 
   if (!S_->HasField("hydraulic_head")) {
     S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -181,7 +190,6 @@ void Darcy_PK::InitPK()
   src_sink = NULL;
 
   ti_specs = NULL;
-  mfd3d_method_ = FLOW_MFD3D_OPTIMIZED;
   src_sink = NULL;
   src_sink_distribution = 0;
 
@@ -206,16 +214,6 @@ void Darcy_PK::InitPK()
   // Process Native XML.
   ProcessParameterList(dp_list_);
 
-  // Select a proper matrix class. No optionos at the moment.
-  Teuchos::ParameterList mlist;
-  mlist.set<std::string>("matrix", "mfd");
-
-  MatrixFactory factory;
-  matrix_ = factory.Create(S_, &K, Teuchos::null, mlist);
-
-  matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
-  matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
-
   // Create solution and auxiliary data for time history.
   solution = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("pressure"))));
   solution->PutScalar(0.0);
@@ -228,7 +226,7 @@ void Darcy_PK::InitPK()
   double time = S_->time();
   if (time >= 0.0) T_physics = time;
 
-  // Initialize actions on boundary condtions. 
+  // Initialize boundary condtions. 
   ProcessShiftWaterTableList(dp_list_);
 
   time = T_physics;
@@ -244,12 +242,9 @@ void Darcy_PK::InitPK()
   const CompositeVector& pressure = *S_->GetFieldData("pressure");
   ComputeBCs(pressure);
 
-  // Process other fundamental structures
+  // Allocate memory for other fundamental structures
   K.resize(ncells_owned);
-  matrix_->SetSymmetryProperty(true);
-  matrix_->SymbolicAssemble();
 
-  // Allocate memory for wells
   if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
@@ -325,10 +320,6 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   InitNextTI(T0, dT0, ti_specs_trs_);
 
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4
-
-  // DEBUG
-  // SolveFullySaturatedProblem(0.0, *solution);
-  // CommitState(S_); WriteGMVfile(S_); exit(0);
 }
 
 
@@ -357,10 +348,6 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     }
   }
 
-  // set up new preconditioner
-  // matrix_->DestroyPreconditionerNew();
-  matrix_->InitPreconditioner(ti_specs.preconditioner_name, preconditioner_list_);
-
   // set up initial guess for solution
   Epetra_MultiVector& pressure = *S_->GetFieldData("pressure", passwd_)->ViewComponent("cell");
   Epetra_MultiVector& p = *solution->ViewComponent("cell");
@@ -371,22 +358,29 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   dT_desirable_ = dT0;  // The minimum desirable time step from now on.
   ti_specs.num_itrs = 0;
 
-  // initialize mass matrices
-  double rho = *S_->GetScalarData("fluid_density");
-  double mu = *S_->GetScalarData("fluid_viscosity");
-
+  // initialize diffusion operator
   SetAbsolutePermeabilityTensor();
-  for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
 
-  matrix_->CreateMassMatrices(mfd3d_method_);
+  Teuchos::ParameterList op_list;
+  Teuchos::ParameterList& tmp_list = op_list.sublist("diffusion operator");
+  tmp_list.set<std::string>("discretization primary", "optimized mfd scaled");
+  tmp_list.set<std::string>("discretization secondary", "optimized mfd scaled");
+  Teuchos::Array<std::string> stensil(2);
+  stensil[0] = "face";
+  stensil[1] = "cell";
+  tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
+  stensil.remove(1);
+  tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
+  tmp_list.set<bool>("gravity", true);
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    int nokay = matrix_->nokay();
-    int npassed = matrix_->npassed();
+  Operators::OperatorDiffusionFactory opfactory;
+  op = opfactory.Create(mesh_, op_list, gravity_);
+  op->InitOperator(K, Teuchos::null, Teuchos::null, rho_, mu_);
+  op->UpdateMatrices(Teuchos::null);
 
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "  good and repaired matrices: " << nokay << " " << npassed << std::endl;
-  }
+  int schema_prec_dofs = op->schema_prec_dofs();
+  op->SymbolicAssembleMatrix(schema_prec_dofs);
+  op->CreateCheckPoint();
 
   // Well modeling (one-time call)
   if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
@@ -462,29 +456,38 @@ int Darcy_PK::Advance(double dT_MPC)
   ComputeBCs(*solution);
 
   // calculate and assemble elemental stifness matrices
-  Epetra_MultiVector& p = *solution->ViewComponent("cell");
-  const Epetra_MultiVector& ss = *S_->GetFieldData("specific_storage")->ViewComponent("cell");
-  const Epetra_MultiVector& sy = *S_->GetFieldData("specific_yield")->ViewComponent("cell");
+  double factor = 1.0 / g_;
+  const CompositeVector& ss = *S_->GetFieldData("specific_storage");
+  CompositeVector ss_g(ss); 
+  ss_g.Update(0.0, ss, factor);
 
-  matrix_->CreateStiffnessMatricesDarcy(mfd3d_method_);
-  matrix_->CreateRHSVectors();
-  matrix_->AddGravityFluxesDarcy(rho_, gravity_);
-  matrix_->AddTimeDerivativeSpecificStorage(p, ss, g_, dT);
-  matrix_->AddTimeDerivativeSpecificYield(p, sy, g_, dT);
-  matrix_->ApplyBoundaryConditions(bc_model, bc_values);
-  matrix_->Assemble();
-  matrix_->AssembleDerivatives(*solution, bc_model, bc_values);
-  matrix_->UpdatePreconditioner();
+  factor = 1.0 / (g_ * dT);
+  const CompositeVector& sy = *S_->GetFieldData("specific_yield");
+  CompositeVector sy_g(sy); 
+  sy_g.Update(0.0, sy, factor);
 
-  CompositeVector& rhs = *matrix_->rhs();
+  int n = bc_model.size();
+  std::vector<double> bc_values_copy(n);
+  for (int i = 0; i < n; i++) bc_values_copy[i] = bc_values[i][0];
+
+  op->RestoreCheckPoint();
+  op->AddAccumulationTerm(*solution, ss_g, dT);
+  op->AddAccumulationTerm(*solution, sy_g);
+  op->ApplyBCs(bc_model, bc_values_copy);
+
+  int schema_prec_dofs = op->schema_prec_dofs();
+  op->AssembleMatrix(schema_prec_dofs);
+  op->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_, bc_model, bc_values_copy);
+
+  CompositeVector& rhs = *op->rhs();
   if (src_sink != NULL) AddSourceTerms(rhs);
 
   // create linear solver
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
+  AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
+     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, op);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
   solver->ApplyInverse(rhs, *solution);
@@ -492,12 +495,13 @@ int Darcy_PK::Advance(double dT_MPC)
   ti_specs->num_itrs++;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    int num_itrs = solver->num_itrs();
-    double residual = solver->residual();
+    double pnorm;
+    solution->Norm2(&pnorm);
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "pressure solver (" << solver->name()
-               << "): ||r||=" << residual << " itr=" << num_itrs << std::endl;
+               << "): ||p,lambda||=" << pnorm << std::endl;
+    VV_PrintHeadExtrema(*solution);
   }
 
   // calculate time derivative and 2nd-order solution approximation
@@ -539,19 +543,13 @@ void Darcy_PK::CommitState(Teuchos::RCP<State> S)
 
   // calculate darcy mass flux
   CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+  op->UpdateFlux(*solution, darcy_flux);
+
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
-
-  matrix_->CreateStiffnessMatricesDarcy(mfd3d_method_);
-  matrix_->DeriveMassFlux(*solution, darcy_flux, bc_model, bc_values);
-  AddGravityFluxes_DarcyFlux(flux);
-
-  for (int c = 0; c < nfaces_owned; c++) flux[0][c] /= rho_;
+  for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
-
-  // DEBUG
-  // WriteGMVfile(S);
 }
 
 

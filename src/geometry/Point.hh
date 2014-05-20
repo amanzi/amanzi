@@ -30,7 +30,7 @@ class Point {
   }
   Point(const Point& p) {
     d = p.d;
-    std::copy(p.xyz,p.xyz+d,xyz);
+    std::copy(p.xyz, p.xyz+d, xyz);
   }
   explicit Point(const int N) {
     d = N;
@@ -61,11 +61,11 @@ class Point {
   }
   void set(const Point& p) {
     ASSERT(d == p.d);
-    std::copy(p.xyz,p.xyz+d,xyz);
+    std::copy(p.xyz, p.xyz+d, xyz);
   }
   void set(const double *val) {
     ASSERT(val);
-    std::copy(val,val+d,xyz);
+    std::copy(val, val+d, xyz);
   }
   void set(const int N, const double *val) {
     ASSERT(val);
@@ -99,7 +99,7 @@ class Point {
   // operators
   Point& operator=(const Point& p) {
     d = p.d;
-    std::copy(p.xyz,p.xyz+d,xyz);
+    std::copy(p.xyz, p.xyz+d, xyz);
     return *this;
   }
 

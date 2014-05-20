@@ -29,6 +29,7 @@
 #include "Matrix_MFD.hh"
 
 #include "checkpoint.hh"
+#include "primary_variable_field_evaluator.hh"
 
 /* This is a base virtual class */
 
@@ -150,6 +151,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int dim;
 
   Teuchos::RCP<State> S_;
+  Teuchos::RCP<State> Snext_;
   std::string passwd_;
 
   // Stationary physical quantatities
@@ -185,12 +187,12 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   TI_Specs ti_specs_trs_;
   TI_Specs* ti_specs;
 
+  // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval;
+
  protected:
   VerboseObject* vo_;
 };
-
-
-
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

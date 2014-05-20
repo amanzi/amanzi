@@ -88,7 +88,7 @@ def generateChildByTag(elem, tag):
 def getElementByTagPath(elem, path):
     """Get element by tag, which is the amanzi_xml-aware ParameterList used for creating specs"""
     if elem.tag == "ParameterList":
-        return getElementByName(elem, path)
+        return getElementByNamePath(elem, path)
 
     etagnames = path.strip("/").split("/")
     mytagname = etagnames[0].strip().strip("}").strip("{").split(",")
@@ -105,10 +105,10 @@ def getElementByTagPath(elem, path):
         childtagname = etagnames[0].strip().strip("}").strip("{").split(",")
         for child in generateChildByTag(elem, childtagname[0]):
             if len(childtagname) == 1:
-                return getElementByPath(child, "/".join(etagnames))
+                return getElementByNamePath(child, "/".join(etagnames))
             else:
                 if child.get("name") == childtagname[1]:
-                    return getElementByPath(child, "/".join(etagnames))
+                    return getElementByNamePath(child, "/".join(etagnames))
 
 
 # def searchAndRemoveByName(pl, abspath):

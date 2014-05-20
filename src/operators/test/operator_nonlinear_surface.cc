@@ -32,43 +32,52 @@
 #include "OperatorDefs.hh"
 #include "Operator.hh"
 #include "OperatorDiffusionSurface.hh"
-#include "OperatorAccumulation.hh"
 #include "OperatorSource.hh"
-
-#include "NonlinearCoefficient.hh"
 
 namespace Amanzi{
 
-class HeatConduction : public Operators::NonlinearCoefficient {
+class HeatConduction {
  public:
   HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) { 
-    cvalues_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-    fvalues_ = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
-    fderivatives_ = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
+    CompositeVectorSpace cvs;
+    cvs.SetMesh(mesh_);
+    cvs.SetGhosted(true);
+    cvs.SetComponent("cell", AmanziMesh::CELL, 1);
+    cvs.SetOwned(false);
+    cvs.AddComponent("face", AmanziMesh::FACE, 1);
+
+    values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
+    derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
   }
   ~HeatConduction() {};
 
   // main members
   void UpdateValues(const CompositeVector& u) { 
     const Epetra_MultiVector& uc = *u.ViewComponent("cell", true); 
-    const Epetra_MultiVector& uf = *u.ViewComponent("face", true); 
+    const Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true); 
 
     int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
     for (int c = 0; c < ncells; c++) {
-      (*cvalues_)[c] = 0.3 + uc[0][c];
+      values_c[0][c] = 0.3 + uc[0][c];
     }
 
+    const Epetra_MultiVector& uf = *u.ViewComponent("face", true); 
+    const Epetra_MultiVector& values_f = *values_->ViewComponent("face", true); 
     int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
     for (int f = 0; f < nfaces; f++) {
-      (*fvalues_)[f] = 0.3 + uf[0][f];
+      values_f[0][f] = 0.3 + uf[0][f];
     }
+
+    derivatives_->PutScalar(1.0);
   }
-  void UpdateDerivatives(const CompositeVector& u) {
-    fderivatives_->PutScalar(1.0);
-  }
+
+  Teuchos::RCP<CompositeVector> values() { return values_; }
+  Teuchos::RCP<CompositeVector> derivatives() { return derivatives_; }
+   
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<CompositeVector> values_, derivatives_;
 };
 
 }  // namespace Amanzi
@@ -124,6 +133,7 @@ TEST(NONLINEAR_OPERATOR) {
     Kc(0, 0) = 1.0;
     K.push_back(Kc);
   }
+  double rho(1.0), mu(1.0);
 
   // create boundary data
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
@@ -165,36 +175,39 @@ TEST(NONLINEAR_OPERATOR) {
     op1->Init();
     op1->UpdateMatrices(source);
 
-    // create accumulation operator
-    Teuchos::RCP<OperatorAccumulation> op2 = Teuchos::rcp(new OperatorAccumulation(*op1));
-    op2->UpdateMatrices(solution, phi, dT);
+    // add accumulation terms
+    op1->AddAccumulationTerm(solution, phi, dT);
 
     // add diffusion operator
-    int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
-    int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
+    solution.ScatterMasterToGhosted();
+    knc->UpdateValues(solution);
+
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                         .get<Teuchos::ParameterList>("diffusion operator");
-    knc->UpdateValues(solution);
-    knc->UpdateDerivatives(solution);
-    Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2, olist));
+    Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist));
 
-    op3->InitOperator(K, knc);
-    op3->UpdateMatrices(flux);
-    op3->ApplyBCs(bc_model, bc_values);
-    op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-    op3->AssembleMatrixSpecial();
+    int schema_dofs = op2->schema_dofs();
+    CHECK(schema_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL);
+    int schema_prec_dofs = op2->schema_prec_dofs();
+    CHECK(schema_prec_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE);
+
+    op2->InitOperator(K, knc->values(), knc->derivatives(), rho, mu);
+    op2->UpdateMatrices(flux);
+    op2->ApplyBCs(bc_model, bc_values);
+    op2->SymbolicAssembleMatrix(schema_prec_dofs);
+    op2->AssembleMatrix(schema_prec_dofs);
 
     // create preconditoner
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-    op3->InitPreconditionerSpecial("Hypre AMG", slist, bc_model, bc_values);
+    op2->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
 
     // solve the problem
     ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
     AmanziSolvers::LinearOperatorFactory<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("AztecOO CG", lop_list, op3);
+       solver = factory.Create("Amanzi GMRES", lop_list, op2);
 
-    CompositeVector rhs = *op3->rhs();
+    CompositeVector rhs = *op2->rhs();
     int ierr = solver->ApplyInverse(rhs, solution);
 
     if (MyPID == 0) {
@@ -204,7 +217,7 @@ TEST(NONLINEAR_OPERATOR) {
     }
 
     // derive diffusion flux.
-    op3->UpdateFlux(solution, *flux, 0.0);
+    op2->UpdateFlux(solution, *flux);
     // const Epetra_MultiVector& flux_data = *flux->ViewComponent("face");
     // std::cout << flux_data << std::endl;
 

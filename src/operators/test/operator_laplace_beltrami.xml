@@ -43,7 +43,7 @@
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="discretization primary" type="string" value="mfd scaled"/>
       <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
-      <Parameter name="preconditioner schema" type="Array(string)" value="{cell,face}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
     </ParameterList>
   </ParameterList>
 
@@ -53,6 +53,17 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
+        <Parameter name="error tolerance" type="double" value="1e-16"/>
+        <Parameter name="maximum number of iterations" type="int" value="200"/>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Amanzi GMRES">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
         <ParameterList name="VerboseObject">

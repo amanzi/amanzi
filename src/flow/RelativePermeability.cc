@@ -119,10 +119,7 @@ void RelativePermeability::ComputeOnFaces(
     FaceUpwindGravity_(pressure, bc_model, bc_values);
 
   } else if (method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-    //S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
-    //const Epetra_MultiVector& fl = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
     const Epetra_MultiVector& fl = *flux.ViewComponent("face", true);
-    
     FaceUpwindFlux_(pressure, fl, bc_model, bc_values);
 
   } else if (method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
@@ -277,7 +274,6 @@ void RelativePermeability::FaceUpwindFlux_(
         }
       }
     }
-
   }
 }
 
@@ -321,7 +317,6 @@ void RelativePermeability::ComputeDerivativeOnFaces(
   if (method_ == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
     DerivativeFaceUpwindGravity_(pressure, bc_model, bc_values);
   } else if (method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-    //const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
     const Epetra_MultiVector& fl = *flux.ViewComponent("face", true);
     DerivativeFaceUpwindFlux_(pressure, fl, bc_model, bc_values);
   }

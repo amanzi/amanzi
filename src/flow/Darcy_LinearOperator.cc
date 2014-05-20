@@ -14,25 +14,11 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "Darcy_PK.hh"
 #include "LinearOperatorFactory.hh"
 
+#include "OperatorDefs.hh"
+#include "OperatorDiffusion.hh"
+
 namespace Amanzi {
 namespace AmanziFlow {
-
-/* ******************************************************************
-* Gathers together routines to compute steady-state MFD matrices.                            
-****************************************************************** */
-void Darcy_PK::AssembleMatrixMFD()
-{
-  CompositeVector& u = *matrix_->rhs();  // TODO (u is dummy)
-
-  matrix_->CreateStiffnessMatricesDarcy(mfd3d_method_);
-  matrix_->CreateRHSVectors();
-  matrix_->AddGravityFluxesDarcy(rho_, gravity_);
-  matrix_->ApplyBoundaryConditions(bc_model, bc_values);
-  matrix_->Assemble();
-  matrix_->AssembleDerivatives(u, bc_model, bc_values);
-  matrix_->UpdatePreconditioner();
-}
-
 
 /* ******************************************************************
 * Calculates steady-state solution assuming that absolute permeability 
@@ -42,22 +28,26 @@ void Darcy_PK::AssembleMatrixMFD()
 void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
 {
   // calculate and assemble elemental stifness matrices
-  matrix_->CreateStiffnessMatricesDarcy(mfd3d_method_);
-  matrix_->CreateRHSVectors();
-  matrix_->AddGravityFluxesDarcy(rho_, gravity_);
-  matrix_->ApplyBoundaryConditions(bc_model, bc_values);
-  matrix_->Assemble();
-  matrix_->AssembleDerivatives(u, bc_model, bc_values);
-  matrix_->UpdatePreconditioner();
+  int n = bc_model.size();
+  std::vector<double> bc_values_copy(n);
+  for (int i = 0; i < n; i++) bc_values_copy[i] = bc_values[i][0];
 
-  // create linear solver
-  LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
+  // add diffusion operator
+  int schema_dofs = op->schema_dofs();
+  int schema_prec_dofs = op->schema_prec_dofs();
 
-  AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
+  op->RestoreCheckPoint();
+  op->ApplyBCs(bc_model, bc_values_copy);
+  op->AssembleMatrix(schema_prec_dofs);
+  op->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_, bc_model, bc_values_copy);
 
-  CompositeVector& rhs = *matrix_->rhs();
+  AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> sfactory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
+     solver = sfactory.Create(ti_specs->ls_specs.solver_name, linear_operator_list_, op);
+
+  solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
+
+  CompositeVector& rhs = *op->rhs();
   int ierr = solver->ApplyInverse(rhs, *solution);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -68,37 +58,6 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "pressure solver (" << solver->name() 
                << "): ||r||=" << residual << " itr=" << num_itrs
-               << " code=" << code << std::endl;
-  }
-  if (ierr != 0) {
-    Errors::Message msg;
-    msg << "\nLinear solver returned an unrecoverable error code.\n";
-    Exceptions::amanzi_throw(msg);
-  }
-}
-
-
-/* ******************************************************************
-* Calculates steady-state solution using a user-given rhs vector. 
-* The matrix has to be assembled before this call.
-****************************************************************** */
-void Darcy_PK::SolveFullySaturatedProblem(double Tp, const CompositeVector& rhs, CompositeVector& u)
-{
-  LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
-
-  AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_);
-
-  int ierr = solver->ApplyInverse(rhs, u);
-
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    int num_itrs = solver->num_itrs();
-    double residual = solver->residual();
-    int code = solver->returned_code();
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "pressure solver: ||r||=" << residual << " itr=" << num_itrs 
                << " code=" << code << std::endl;
   }
   if (ierr != 0) {

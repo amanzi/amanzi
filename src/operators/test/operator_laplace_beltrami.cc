@@ -80,6 +80,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
     Kc(0, 0) = 1.0;
     K.push_back(Kc);
   }
+  double rho(1.0), mu(1.0);
 
   // create boundary data
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
@@ -108,20 +109,21 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   // populate the diffusion operator
   int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
   int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
+  int schema_prec_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE;
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator");
 
   Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist));
   op->Init();
-  op->InitOperator(K, Teuchos::null);
+  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
   op->UpdateMatrices(Teuchos::null);
   op->ApplyBCs(bc_model, bc_values);
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-  op->AssembleMatrixSpecial();
+  op->AssembleMatrix(schema_prec_dofs);
 
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op->InitPreconditionerSpecial("Hypre AMG", slist, bc_model, bc_values);
+  op->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");

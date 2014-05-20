@@ -12,33 +12,44 @@
 #include <vector>
 
 #include "OperatorDefs.hh"
-#include "OperatorGravity.hh"
+#include "OperatorDiffusionWithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Add a gravity term to the operator
+* Add a gravity term to the diffusion operator.
 ****************************************************************** */
-void OperatorGravity::UpdateMatrices(
-    const std::vector<WhetStone::Tensor>& K, const AmanziGeometry::Point& rho_g)
+void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux)
 {
+  // add the diffusion matrices
+  OperatorDiffusion::UpdateMatrices(flux);
+
+  // add the gravity terms
+  AmanziGeometry::Point rho_g(g_);
+  rho_g *= rho_ * rho_ / mu_;
+
   if (rhs_->HasComponent("face")) {
     Epetra_MultiVector& rhs = *rhs_->ViewComponent("face", true);
 
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
 
+    for (int f = nfaces_owned; f < nfaces_wghost; f++) rhs[0][f] = 0.0;
+
     for (int c = 0; c < ncells_owned; c++) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
 
+      WhetStone::Tensor& Kc = (*K_)[c]; 
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-        rhs[0][f] += ((K[c] * rho_g) * normal) * dirs[n]; 
+        rhs[0][f] += ((Kc * rho_g) * normal) * dirs[n]; 
       }
     }
+
+    rhs_->GatherGhostedToMaster("face", Epetra_CombineMode(Add));
   }
 }
 
@@ -47,13 +58,16 @@ void OperatorGravity::UpdateMatrices(
 * WARNING: Since gavity flux is not continuous, we derive it only once
 * (using flag) and in exactly the same manner as in other routines.
 * **************************************************************** */
-void OperatorGravity::UpdateFlux(
-    const std::vector<WhetStone::Tensor>& K, const AmanziGeometry::Point& rho_g, 
-    CompositeVector& flux, double scalar)
+void OperatorDiffusionWithGravity::UpdateFlux(
+    const CompositeVector& u, CompositeVector& flux)
 {
-  // Initialize the flux in the case of additive operators.
-  if (scalar == 0.0) flux.PutScalar(0.0);
+  // Calculate diffusive part of the flux.
+  OperatorDiffusion::UpdateFlux(u, flux);
+
+  // Add gravity part to the flux.
   Epetra_MultiVector& flux_data = *flux.ViewComponent("face", true);
+  AmanziGeometry::Point rho_g(g_);
+  rho_g *= rho_ * rho_ / mu_;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -63,11 +77,13 @@ void OperatorGravity::UpdateFlux(
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
+    WhetStone::Tensor& Kc = (*K_)[c];
+    AmanziGeometry::Point Kg(Kc * rho_g);
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       if (f < nfaces_owned && !flag[f]) {
         const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-        flux_data[0][f] += ((K[c] * rho_g) * normal) * dirs[n]; 
+        flux_data[0][f] += (Kg * normal);
         flag[f] = 1;
       }
     }

@@ -32,7 +32,6 @@
 #include "OperatorDefs.hh"
 #include "Operator.hh"
 #include "OperatorDiffusionSurface.hh"
-#include "OperatorAccumulation.hh"
 #include "OperatorSource.hh"
 
 
@@ -86,6 +85,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
     Kc(0, 0) = 1.0;
     K.push_back(Kc);
   }
+  double rho(1.0), mu(1.0);
 
   // create boundary data
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
@@ -112,9 +112,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   op1->Init();
   op1->UpdateMatrices(source);
 
-  // create accumulation operator
-  Teuchos::RCP<OperatorAccumulation> op2 = Teuchos::rcp(new OperatorAccumulation(*op1));
-
+  // add accumulation terms
   CompositeVector solution(*cvs);
   solution.PutScalar(0.0);  // solution at time T=0
 
@@ -122,32 +120,32 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   phi.PutScalar(0.2);
 
   double dT = 10.0;
-  op2->UpdateMatrices(solution, phi, dT);
+  op1->AddAccumulationTerm(solution, phi, dT);
 
   // add the diffusion operator
-  int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
-  int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator");
-  Teuchos::RCP<OperatorDiffusionSurface> op3 = Teuchos::rcp(new OperatorDiffusionSurface(*op2, olist));
+  Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist));
+  int schema_dofs = op2->schema_dofs();
+  int schema_prec_dofs = op2->schema_prec_dofs();
 
-  op3->InitOperator(K, Teuchos::null);
-  op3->UpdateMatrices(Teuchos::null);
-  op3->ApplyBCs(bc_model, bc_values);
-  op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-  op3->AssembleMatrixSpecial();
+  op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op2->UpdateMatrices(Teuchos::null);
+  op2->ApplyBCs(bc_model, bc_values);
+  op2->SymbolicAssembleMatrix(schema_prec_dofs);
+  op2->AssembleMatrix(schema_prec_dofs);
 
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op3->InitPreconditionerSpecial("Hypre AMG", slist, bc_model, bc_values);
+  op2->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
   AmanziSolvers::LinearOperatorFactory<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, op3);
+     solver = factory.Create("AztecOO CG", lop_list, op2);
 
-  CompositeVector rhs = *op3->rhs();
+  CompositeVector rhs = *op2->rhs();
   solution.PutScalar(0.0);
   int ierr = solver->ApplyInverse(rhs, solution);
 
@@ -158,21 +156,21 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   }
 
   // repeat the above without destroying the operators.
-  op1->Clone(*op3);
+  op1->Clone(*op2);
   op1->Init();
   op1->UpdateMatrices(source);
 
   solution.PutScalar(0.0); 
-  op2->UpdateMatrices(solution, phi, dT);
+  op1->AddAccumulationTerm(solution, phi, dT);
 
-  op3->InitOperator(K, Teuchos::null);
-  op3->UpdateMatrices(Teuchos::null);
-  op3->ApplyBCs(bc_model, bc_values);
-  op3->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
-  op3->AssembleMatrixSpecial();
-  op3->InitPreconditionerSpecial("Hypre AMG", slist, bc_model, bc_values);
+  op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op2->UpdateMatrices(Teuchos::null);
+  op2->ApplyBCs(bc_model, bc_values);
+  op2->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
+  op2->AssembleMatrix(schema_prec_dofs);
+  op2->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
 
-  rhs = *op3->rhs();
+  rhs = *op2->rhs();
   ierr = solver->ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {

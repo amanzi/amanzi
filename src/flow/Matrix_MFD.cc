@@ -836,6 +836,7 @@ void Matrix_MFD::DeriveMassFlux(
   std::vector<int> dirs;
   std::vector<int> flag(nfaces_wghost, 0);
 
+
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -848,15 +849,117 @@ void Matrix_MFD::DeriveMassFlux(
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+  
       if (f < nfaces_owned && !flag[f]) {
         double s(0.0);
+// if (f==11){
+//   std::cout<<"number "<< n<<"\n";
+//   for (int m = 0; m < nfaces; m++){	    
+//     std::cout<<Aff_cells_[c](n, m) <<" "<< dp[m]<<" cell "<<solution_cells[0][c]<<" face "<<solution_faces[0][faces[m]]<<std::endl;
+//   }
+// }
         for (int m = 0; m < nfaces; m++) s += Aff_cells_[c](n, m) * dp[m];
-        flux[0][f] = s * dirs[n];
+        flux[0][f] = s * dirs[n];  
+//if (f==11) std::cout<<"FFFF "<<flux[0][f]<<std::endl;
+        flag[f] = 1;
+      }
+    }
+  }
+
+  if (&*rel_perm_){
+    AddGravityFluxes_DarcyFlux(flux, *rel_perm_);
+  }
+  else {
+    AddGravityFluxes_DarcyFlux(flux);
+  }
+
+}
+
+
+/* ******************************************************************
+* Updates global Darcy vector calculated by a discretization method.
+* simplified implementation for a single phase flow.                                            
+****************************************************************** */
+void Matrix_MFD::AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux)
+{
+  double rho = *(S_->GetScalarData("fluid_density"));
+  const Epetra_Vector& gravity_ = *S_->GetConstantVectorData("gravity");
+  int dim = mesh_->space_dimension();
+
+  AmanziGeometry::Point gravity(dim);
+  for (int k = 0; k < dim; k++) gravity[k] = gravity_[k];
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> flag(nfaces_wghost, 0);
+
+  for (int c = 0; c < ncells_owned; c++) {
+    AmanziGeometry::Point Kg = (*K_)[c] * gravity;
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
+      if (f < nfaces_owned && !flag[f]) {
+        darcy_mass_flux[0][f] += rho * (Kg * normal);
         flag[f] = 1;
       }
     }
   }
 }
+
+
+/* ******************************************************************
+* Updates global Darcy vector calculated by a discretization method.                                             
+****************************************************************** */
+void Matrix_MFD::AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux,
+                                         RelativePermeability& rel_perm) 
+{
+  double rho = *(S_->GetScalarData("fluid_density"));
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> flag(nfaces_wghost, 0);
+
+  Epetra_MultiVector& Krel_cells = *rel_perm.Krel().ViewComponent("cell");
+  Epetra_MultiVector& Krel_faces = *rel_perm.Krel().ViewComponent("face", true);
+  int method = rel_perm.method();
+
+  const Epetra_Vector& gravity_ = *S_->GetConstantVectorData("gravity");
+  int dim = mesh_->space_dimension();
+
+  AmanziGeometry::Point gravity(dim);
+  for (int k = 0; k < dim; k++) gravity[k] = gravity_[k];
+
+  for (int c = 0; c < ncells_owned; c++) {
+    AmanziGeometry::Point Kg = (*K_)[c] * gravity;
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      std::vector<double>& krel = rel_perm.Krel_amanzi()[c];
+
+      if (f < nfaces_owned && !flag[f]) {
+        if (method == FLOW_RELATIVE_PERM_NONE) {
+          darcy_mass_flux[0][f] += rho * (Kg * normal);
+        } else if (method == FLOW_RELATIVE_PERM_CENTERED) {
+          darcy_mass_flux[0][f] += rho * (Kg * normal) * Krel_cells[0][c];
+        } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
+          darcy_mass_flux[0][f] += rho * (Kg * normal) * krel[n];
+        } else {
+          darcy_mass_flux[0][f] += rho * (Kg * normal) * Krel_faces[0][f];
+        }
+        flag[f] = 1;
+      }
+    }
+  }
+}
+
+
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

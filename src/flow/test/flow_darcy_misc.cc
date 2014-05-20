@@ -94,6 +94,7 @@ class DarcyProblem {
     DPK = new Darcy_PK(plist, S);
     S->Setup();
     S->InitializeFields();
+    S->InitializeEvaluators();
     DPK->InitializeFields();
     S->CheckAllFieldsInitialized();
 
@@ -158,8 +159,8 @@ class DarcyProblem {
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      // std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << std::endl;
       error_L2 += std::pow(flux[0][f] - velocity_exact * normal, 2.0);
+      // if(MyPID == 0) std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << std::endl;
     }
     return sqrt(error_L2);
   }

@@ -33,6 +33,7 @@ include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
+include_directories(${OPERATORS_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -111,7 +112,7 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
 
     if ( ENABLE_MSTK_Mesh )
-       set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone data_structures)
+       set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow operators whetstone data_structures)
 
         # Test: transient Darcy flow 
         add_amanzi_test(flow_darcy_2D flow_darcy_2D
@@ -179,7 +180,7 @@ if (BUILD_TESTS)
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
  
-    set(amanzi_libs geometry mesh mesh_factory state flow whetstone data_structures)
+    set(amanzi_libs geometry mesh mesh_factory state flow operators whetstone data_structures)
  
     # Test: miscaleneous Darcy flow routines
     add_amanzi_test(flow_darcy_misc flow_darcy_misc 
@@ -187,8 +188,8 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/flow_darcy_misc.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
-    add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
+    add_amanzi_test(flow_darcy_misc_2pe flow_darcy_misc NPROCS 2 KIND unit)
+    add_amanzi_test(flow_darcy_misc_4pe flow_darcy_misc NPROCS 4 KIND unit)
 
     # Test: van Genuchten flow routines
     add_amanzi_test(flow_vanGenuchten flow_vanGenuchten
@@ -203,7 +204,7 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
     # Test: 3D Richards
-    set(amanzi_libs geometry mesh mesh_factory flow state whetstone solvers output data_structures)
+    set(amanzi_libs geometry mesh mesh_factory flow operators state whetstone solvers output data_structures)
     
     add_amanzi_test(flow_richards_tensor flow_richards_tensor
                     KIND unit

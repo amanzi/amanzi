@@ -28,7 +28,6 @@
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
-#include "OperatorAccumulation.hh"
 #include "LinearOperatorFactory.hh"
 
 #include "Transport_PK.hh"
@@ -458,8 +457,13 @@ int Transport_PK::Advance(double dT_MPC)
       tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
     }
 
+    // default parameters
+    std::vector<int> bc_model;
+    std::vector<double> bc_values;
+    AmanziGeometry::Point g;
+
     Operators::OperatorDiffusionFactory opfactory;
-    Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, op_list);
+    Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, op_list, g);
     int schema_dofs = op1->schema_dofs();
 
     const CompositeVectorSpace& cvs = op1->DomainMap();
@@ -468,7 +472,7 @@ int Transport_PK::Advance(double dT_MPC)
   
     // populate the diffusion operator
     CalculateDispersionTensor_(*darcy_flux, *phi, *ws);
-    op1->InitOperator(D, Teuchos::null);
+    op1->InitOperator(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
     op1->UpdateMatrices(Teuchos::null);
 
     // add accumulation
@@ -477,15 +481,14 @@ int Transport_PK::Advance(double dT_MPC)
       fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
     }
 
-    Teuchos::RCP<Operators::OperatorAccumulation> op2 = Teuchos::rcp(new Operators::OperatorAccumulation(*op1));
-    op2->UpdateMatrices(rhs, factor, dT_MPC);
-    op2->SymbolicAssembleMatrix(schema_dofs);
-    op2->AssembleMatrix(schema_dofs);
-    op2->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
+    op1->AddAccumulationTerm(rhs, factor, dT_MPC);
+    op1->SymbolicAssembleMatrix(schema_dofs);
+    op1->AssembleMatrix(schema_dofs);
+    op1->InitPreconditioner(dispersion_preconditioner, preconditioners_list, bc_model, bc_values);
   
-    AmanziSolvers::LinearOperatorFactory<Operators::OperatorAccumulation, CompositeVector, CompositeVectorSpace> sfactory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorAccumulation, CompositeVector, CompositeVectorSpace> >
-       solver = sfactory.Create(dispersion_solver, solvers_list, op2);
+    AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> sfactory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
+       solver = sfactory.Create(dispersion_solver, solvers_list, op1);
 
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 

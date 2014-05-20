@@ -41,8 +41,6 @@ void Richards_PK::Functional(double Told, double Tnew,
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
   Epetra_MultiVector& f_cells = *f->ViewComponent("cell");
 
-
-
   functional_max_norm = 0.0;
   functional_max_cell = 0;
 
@@ -68,8 +66,6 @@ void Richards_PK::Functional(double Told, double Tnew,
       }
     }
   }
-
-
 }
 
 
@@ -218,11 +214,7 @@ bool Richards_PK::ModifyCorrection(
       
       ncells_clipped++;
     }    
-
-     
   }
-
-
 
   for (int c = 0; c < ncells_owned; c++) {
     double unew = uc[0][c] - duc[0][c];

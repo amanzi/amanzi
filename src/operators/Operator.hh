@@ -68,15 +68,22 @@ class Operator {
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
   void SymbolicAssembleMatrix(int schema);
-  void AssembleMatrix(int schema);
+  virtual void AssembleMatrix(int schema);
 
-  void ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_values);
+  virtual void ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_values);
 
   const CompositeVectorSpace& DomainMap() const { return *cvs_; }
   const CompositeVectorSpace& RangeMap() const { return *cvs_; }
 
+  void CreateCheckPoint();
+  void RestoreCheckPoint();
+
+  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss, double dT);
+  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss);
+
   // preconditioners
-  void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
+  virtual void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist,
+                                  std::vector<int>& bc_model, std::vector<double>& bc_values);
 
   // access
   Teuchos::RCP<CompositeVector>& rhs() { return rhs_; }
@@ -90,9 +97,8 @@ class Operator {
   std::vector<Teuchos::RCP<std::vector<WhetStone::DenseMatrix> > > blocks_;
   std::vector<Teuchos::RCP<std::vector<WhetStone::DenseMatrix> > > blocks_shadow_;
   std::vector<int> blocks_schema_;
-  Teuchos::RCP<CompositeVector> diagonal_;
-
-  Teuchos::RCP<CompositeVector> rhs_;
+  Teuchos::RCP<CompositeVector> diagonal_, diagonal_checkpoint_;
+  Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
 
  public:
   int ncells_owned, nfaces_owned, nnodes_owned;

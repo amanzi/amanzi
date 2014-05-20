@@ -56,6 +56,12 @@ class Matrix {
   virtual void AddGravityFluxesRichards(double rho, const AmanziGeometry::Point& gravity,
                                         std::vector<int>& bc_model) {};
 
+  virtual void AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux,
+					  RelativePermeability& rel_permeabilty) {};
+  virtual void AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux) {};
+
+
+
   virtual void AddTimeDerivative(
       const Epetra_MultiVector& p, const Epetra_MultiVector& phi, double rho, double dT) {};
   virtual void AddTimeDerivativeSpecificStorage(
