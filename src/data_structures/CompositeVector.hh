@@ -181,7 +181,7 @@ public:
     return ghosted ? ghostvec_->size(name) : mastervec_->size(name); }
 
   // Access the VectorSpace for each component.
-  Teuchos::RCP<const Epetra_BlockMap> ComponentMap(std::string name,
+  Teuchos::RCP<const Epetra_Map> ComponentMap(std::string name,
           bool ghosted=false) const {
     return ghosted ? ghostvec_->ComponentMap(name) : mastervec_->ComponentMap(name);
   }

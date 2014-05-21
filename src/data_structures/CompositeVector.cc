@@ -157,15 +157,10 @@ CompositeVector::CompositeVector(const CompositeVector& other, bool ghosted,
 
 void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
   // generate the master's maps
-  std::vector<Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
+  std::vector<Teuchos::RCP<const Epetra_Map> > mastermaps;
   for (CompositeVectorSpace::name_iterator name=space.begin(); name!=space.end(); ++name) {
     if (space.Location(*name) == AmanziMesh::CELL) {
-      int nelems = space.NumVectors(*name);
-      const Epetra_Map& cell_map = Mesh()->cell_map(false);
-      Teuchos::RCP<Epetra_BlockMap> map = Teuchos::rcp(new Epetra_BlockMap(cell_map.NumGlobalPoints(),
-              cell_map.NumMyPoints(), cell_map.MyGlobalElements(), nelems,
-              cell_map.IndexBase(), cell_map.Comm()));
-      mastermaps.push_back(map);
+      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->cell_map(false)));
     } else if (space.Location(*name) == AmanziMesh::FACE) {
       mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->face_map(false)));
     } else if (space.Location(*name) == AmanziMesh::NODE) {
@@ -176,14 +171,13 @@ void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
    }
 
   // create the master BlockVector
-  std::vector<int> ones(space.num_dofs_.size(),1);
   mastervec_ = Teuchos::rcp(new BlockVector(Comm(), names_,
-          mastermaps, ones));
+          mastermaps, space.num_dofs_));
 
   // do the same for the ghosted Vector, if necessary
   if (space.Ghosted()) {
     // generate the ghost's maps
-    std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
+    std::vector<Teuchos::RCP<const Epetra_Map> > ghostmaps;
     for (CompositeVectorSpace::name_iterator name=space.begin(); name!=space.end(); ++name) {
       if (space.Location(*name) == AmanziMesh::CELL) {
         ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->cell_map(true)));
@@ -363,8 +357,8 @@ CompositeVector::ScatterMasterToGhosted(std::string name, bool force) const {
 #endif
     // check for and create the importer if needed
     if (importers_[Index_(name)] == Teuchos::null) {
-      Teuchos::RCP<const Epetra_BlockMap> target_map = ghostvec_->ComponentMap(name);
-      Teuchos::RCP<const Epetra_BlockMap> source_map = mastervec_->ComponentMap(name);
+      Teuchos::RCP<const Epetra_Map> target_map = ghostvec_->ComponentMap(name);
+      Teuchos::RCP<const Epetra_Map> source_map = mastervec_->ComponentMap(name);
       importers_[Index_(name)] =
         Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
     }
@@ -421,8 +415,8 @@ CompositeVector::ScatterMasterToGhosted(std::string name,
   if (ghosted_) {
     // check for and create the importer if needed
     if (importers_[Index_(name)] == Teuchos::null) {
-      Teuchos::RCP<const Epetra_BlockMap> target_map = ghostvec_->ComponentMap(name);
-      Teuchos::RCP<const Epetra_BlockMap> source_map = mastervec_->ComponentMap(name);
+      Teuchos::RCP<const Epetra_Map> target_map = ghostvec_->ComponentMap(name);
+      Teuchos::RCP<const Epetra_Map> source_map = mastervec_->ComponentMap(name);
       importers_[Index_(name)] =
         Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
     }
@@ -460,8 +454,8 @@ void CompositeVector::GatherGhostedToMaster(std::string name,
   if (ghosted_) {
     // check for and create the importer if needed
     if (importers_[Index_(name)] == Teuchos::null) {
-      Teuchos::RCP<const Epetra_BlockMap> target_map = ghostvec_->ComponentMap(name);
-      Teuchos::RCP<const Epetra_BlockMap> source_map = mastervec_->ComponentMap(name);
+      Teuchos::RCP<const Epetra_Map> target_map = ghostvec_->ComponentMap(name);
+      Teuchos::RCP<const Epetra_Map> source_map = mastervec_->ComponentMap(name);
       importers_[Index_(name)] =
         Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
     }

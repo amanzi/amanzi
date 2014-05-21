@@ -29,7 +29,7 @@ public:
   // Constructor
   BlockVector(const Epetra_MpiComm& comm,
               std::vector<std::string>& names,
-              std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
+              std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
               std::vector<int> num_dofs);
 
   // copy constructor
@@ -53,7 +53,7 @@ public:
   int NumComponents() const { return num_components_; }
   int NumVectors(std::string name) const { return num_dofs_[Index_(name)]; }
   unsigned int size(std::string name) const { return sizes_[Index_(name)]; }
-  Teuchos::RCP<const Epetra_BlockMap> ComponentMap(std::string name) const {
+  Teuchos::RCP<const Epetra_Map> ComponentMap(std::string name) const {
     return maps_[Index_(name)]; }
 
   // Accessors to data.
@@ -154,7 +154,7 @@ private:
 
   std::vector<std::string> names_;
   std::vector<int> num_dofs_;
-  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps_;
+  std::vector<Teuchos::RCP<const Epetra_Map> > maps_;
   std::vector<unsigned int> sizes_;
   std::vector<Teuchos::RCP<Epetra_MultiVector> > data_;
 };
