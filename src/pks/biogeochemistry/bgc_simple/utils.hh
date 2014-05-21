@@ -15,7 +15,6 @@ Licencse: BSD
 
 namespace Amanzi {
 namespace BGC {
-namespace BGCSimple {
 
 
 struct MetData {
@@ -42,7 +41,6 @@ double PermafrostDepth(const Epetra_SerialDenseVector& SoilTArr,
 double TEffectsQ10(double Q10, double T, double refT);
 
 
-} // namespace
 } // namespace
 } // namespace
 

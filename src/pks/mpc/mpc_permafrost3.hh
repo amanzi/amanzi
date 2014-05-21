@@ -46,7 +46,7 @@ class MPCPermafrost3 : public StrongMPC<PKPhysicalBDFBase> {
           Teuchos::RCP<TreeVector> u);
 
   // -- Modify the correction.
-  virtual bool ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
+  virtual ModifyCorrectionResult ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
           Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
  protected:

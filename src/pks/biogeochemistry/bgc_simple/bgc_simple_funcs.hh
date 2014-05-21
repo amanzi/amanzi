@@ -22,7 +22,6 @@ License: BSD
 
 namespace Amanzi {
 namespace BGC {
-namespace BGCSimple {
 
 void advance(double t, double dt, double gridarea,
              const MetData& met,
@@ -34,7 +33,6 @@ void advance(double t, double dt, double gridarea,
              std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
              Epetra_SerialDenseVector& SoilCO2Arr);
 
-} // namespace
 } // namespace
 } // namespace
 
