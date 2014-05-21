@@ -396,7 +396,7 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
       aux_data(iv,aux_chem_variables[label]) = chem_state.mineral_specific_surface_area.data[i];
     }
   }
-#if 0
+
   if (NsorptionSites > 0) {
     for (int i=0; i<surfSiteNames.size(); ++i) {
       const std::string label=surfSiteNames[i] + "_Surface_Site_Density"; 
@@ -415,7 +415,6 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
       //aux_data(iv,aux_chem_variables[label]) = chem_state.ion_exchange_ref_cation_conc.data[i];
     }
   }
-#endif
 
   for (int i=0; i<NauxInts; ++i) {
     int ndigits_ints = std::log(NauxInts + 1) + 1;
