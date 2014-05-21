@@ -22,6 +22,23 @@ build_whitespace_string(mstk_cflags ${mstk_cflags_list})
 set(mstk_ldflags_list -L${TPL_INSTALL_PREFIX}/lib ${MPI_C_LIBRARIES})
 build_whitespace_string(mstk_ldflags ${mstk_ldflags_list})
 
+# --- Set the name of the patch
+set(MSTK_patch_file mstk-2.12-prefer-static-libs.patch)
+# --- Configure the bash patch script
+set(MSTK_sh_patch ${MSTK_prefix_dir}/mstk-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.sh.in
+               ${MSTK_sh_patch}
+               @ONLY)
+# --- Configure the CMake patch step
+set(MSTK_cmake_patch ${MSTK_prefix_dir}/mstk-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.cmake.in
+               ${MSTK_cmake_patch}
+               @ONLY)
+# --- Set the patch command
+set(MSTK_PATCH_COMMAND ${CMAKE_COMMAND} -P ${MSTK_cmake_patch})     
+
+message(STATUS "JDM ----> PREFER_STATIC_LIBRARIES = ${PREFER_STATIC_LIBRARIES}")
+
 # The CMake cache args
 set(MSTK_CMAKE_CACHE_ARGS
                     ${Amanzi_CMAKE_C_COMPILER_ARGS}
@@ -29,6 +46,7 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
                     -DCMAKE_C_FLAGS:STRING=${mstk_cflags}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${mstk_ldflags}
+		    -DPREFER_STATIC_LIBRARIES:BOOL=${PREFER_STATIC_LIBRARIES}
                     -DENABLE_PARALLEL:BOOL=TRUE
                     -DENABLE_ExodusII:BOOL=TRUE
                     -DENABLE_ZOLTAN:BOOL=TRUE
@@ -61,6 +79,8 @@ ExternalProject_Add(${MSTK_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
                     URL          ${MSTK_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${MSTK_MD5_SUM}                  # md5sum of the archive file
+                    # -- Patch 
+                    PATCH_COMMAND ${MSTK_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${MSTK_source_dir}           # Source directory
                     CMAKE_ARGS       -Wno-dev
