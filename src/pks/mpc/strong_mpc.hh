@@ -74,7 +74,7 @@ public:
           Teuchos::RCP<TreeVector> u);
 
   // -- Modify the correction.
-  virtual bool ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+  virtual ModifyCorrectionResult ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
           Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
 protected:
@@ -341,7 +341,8 @@ bool StrongMPC<PK_t>::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u
 // Modify correction from each sub pk.
 // -----------------------------------------------------------------------------
 template<class PK_t>
-bool StrongMPC<PK_t>::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+ModifyCorrectionResult StrongMPC<PK_t>::ModifyCorrection(double h,
+        Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   // loop over sub-PKs
   bool modified = false;
@@ -358,7 +359,8 @@ bool StrongMPC<PK_t>::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
 
     modified |= sub_pks_[i]->ModifyCorrection(h, pk_res, pk_u, pk_du);
   }
-  return modified;
+  return modified ? AmanziSolvers::CORRECTION_MODIFIED :
+      AmanziSolvers::CORRECTION_NOT_MODIFIED;
 };
 
 
