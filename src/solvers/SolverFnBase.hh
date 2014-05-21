@@ -13,6 +13,8 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "FnBase_defs.hh"
+
 namespace Amanzi {
 namespace AmanziSolvers {
 
@@ -33,10 +35,10 @@ class SolverFnBase {
                            const Teuchos::RCP<const Vector>& du) = 0;
 
   // allow PK to modify a correction
-  virtual bool ModifyCorrection(const Teuchos::RCP<const Vector>& r,
-                                const Teuchos::RCP<const Vector>& u,
-                                const Teuchos::RCP<Vector>& du) {
-    return false;
+  virtual ModifyCorrectionResult ModifyCorrection(const Teuchos::RCP<const Vector>& r,
+          const Teuchos::RCP<const Vector>& u,
+          const Teuchos::RCP<Vector>& du) {
+    return CORRECTION_NOT_MODIFIED;
   }
 
   // Check the admissibility of an inner iterate (ensures preconditions for
@@ -47,6 +49,7 @@ class SolverFnBase {
 
   // bookkeeping for state
   virtual void ChangedSolution() {};
+
 };
 
 }  // namespace AmanziSolvers

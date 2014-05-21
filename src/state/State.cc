@@ -352,14 +352,14 @@ void State::SetFieldEvaluator(Key key, const Teuchos::RCP<FieldEvaluator>& evalu
 
 
 Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition(Key key) {
-  Teuchos::RCP<Functions::MeshPartition> evaluator = GetMeshPartition_(key);
-  if (evaluator == Teuchos::null) {
+  Teuchos::RCP<const Functions::MeshPartition> mp = GetMeshPartition_(key);
+  if (mp == Teuchos::null) {
     std::stringstream messagestream;
     messagestream << "Mesh partition " << key << " does not exist in the state.";
     Errors::Message message(messagestream.str());
     Exceptions::amanzi_throw(message);
   }
-  return evaluator;
+  return mp;
 };
 
 
@@ -376,8 +376,8 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key) {
         Teuchos::Array<std::string> region_list =
             part_list.get<Teuchos::Array<std::string> >("region list");
         Teuchos::RCP<Functions::MeshPartition> mp = Teuchos::rcp(new Functions::MeshPartition(AmanziMesh::CELL,
-                region_list.toString()));
-        mp->Initialize(Mesh(mesh_name), -1);
+                region_list.toVector()));
+        mp->Initialize(GetMesh(mesh_name), -1);
         mp->Verify();
         mesh_partitions_[key] = mp;
         return mp;

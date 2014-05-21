@@ -1,7 +1,13 @@
 #ifndef AMANZI_BDFFNBASE_HH_
 #define AMANZI_BDFFNBASE_HH_
 
+#include "FnBase_defs.hh"
+
 namespace Amanzi {
+
+// import ModifyCorrectionResult, the enum returned by ModifyCorrection().
+// Defined in FnBase_defs.hh
+using AmanziSolvers::ModifyCorrectionResult;
 
 // This is the interface definition for the BDF class.
 // The nonlinear functional, preconditioner, and error
@@ -40,13 +46,14 @@ class BDFFnBase {
   // has computed it, will return true if it did change the correction,
   // so that the nonlinear iteration can store the modified correction
   // and pass it to NKA so that the NKA space can be updated
-  virtual bool ModifyCorrection(double h, Teuchos::RCP<const Vector> res,
-                                Teuchos::RCP<const Vector> u, Teuchos::RCP<Vector> du) = 0;
+  virtual ModifyCorrectionResult ModifyCorrection(double h, Teuchos::RCP<const Vector> res,
+          Teuchos::RCP<const Vector> u, Teuchos::RCP<Vector> du) = 0;
 
   // experimental approach -- calling this indicates that the time
   // integration scheme is changing the value of the solution in
   // state.
   virtual void ChangedSolution() = 0;
+
 };
 
 }  // namespace Amanzi

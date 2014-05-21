@@ -83,7 +83,7 @@ class Richards_PK : public Flow_PK {
     */
     return false;
   }
-  bool ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
+  ModifyCorrectionResult ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
                         Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du);
   void ChangedSolution() {};
 

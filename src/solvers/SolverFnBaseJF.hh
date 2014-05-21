@@ -61,7 +61,7 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
   }
 
   // Hack a correction for some reason.
-  virtual bool ModifyCorrection(const Teuchos::RCP<const Vector>& res,
+  virtual ModifyCorrectionResult ModifyCorrection(const Teuchos::RCP<const Vector>& res,
           const Teuchos::RCP<const Vector>& u,
           const Teuchos::RCP<Vector>& du) {
     return fn_->ModifyCorrection(res, u, du);

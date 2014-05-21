@@ -63,9 +63,9 @@ class Darcy_PK : public Flow_PK {
   bool ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector> u0, Teuchos::RCP<CompositeVector> u) {
     return false;
   }
-  bool ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
+  ModifyCorrectionResult ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
                         Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du) {
-    return false;
+    return AmanziSolvers::CORRECTION_NOT_MODIFIED;
   }
   void ChangedSolution() {};
 

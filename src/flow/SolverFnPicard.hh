@@ -44,9 +44,9 @@ class SolverFnPicard : public AmanziSolvers::SolverFnBase<Vector> {
                    const Teuchos::RCP<const Vector>& du);
 
   // allow PK to modify a correction
-  bool ModifyCorrection(const Teuchos::RCP<const Vector>& r, 
-                        const Teuchos::RCP<const Vector>& u, 
-                        const Teuchos::RCP<Vector>& du);
+  ModifyCorrectionResult ModifyCorrection(const Teuchos::RCP<const Vector>& r, 
+          const Teuchos::RCP<const Vector>& u, 
+          const Teuchos::RCP<Vector>& du);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -99,7 +99,7 @@ double SolverFnPicard<Vector>::ErrorNorm(
 * Calculate relaxation factor.                                                       
 ****************************************************************** */
 template<class Vector>
-bool SolverFnPicard<Vector>::ModifyCorrection(
+ModifyCorrectionResult SolverFnPicard<Vector>::ModifyCorrection(
     const Teuchos::RCP<const Vector>& r, 
     const Teuchos::RCP<const Vector>& u, 
     const Teuchos::RCP<Vector>& du)
@@ -108,8 +108,8 @@ bool SolverFnPicard<Vector>::ModifyCorrection(
   double relaxation = 0.01;
 
   du->Scale(relaxation);
-
-  return relaxation;
+  return relaxation > 0. ? AmanziSolvers::CORRECTION_MODIFIED :
+      AmanziSolvers::CORRECTION_NOT_MODIFIED;
 }
 
 }  // namespace AmanziFlow

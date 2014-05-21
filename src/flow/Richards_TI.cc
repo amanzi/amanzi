@@ -173,7 +173,7 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
 * Modifies nonlinear update du based on the maximum allowed change
 * of saturation.
 ****************************************************************** */
-bool Richards_PK::ModifyCorrection(
+ModifyCorrectionResult Richards_PK::ModifyCorrection(
     double dT, Teuchos::RCP<const CompositeVector> f,
     Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du)
 {
@@ -241,7 +241,8 @@ bool Richards_PK::ModifyCorrection(
     }
   }
 
-  return (ncells_clipped > 0);
+  return ncells_clipped > 0 ? AmanziSolvers::CORRECTION_MODIFIED :
+      AmanziSolvers::CORRECTION_NOT_MODIFIED;
 }
 
 }  // namespace AmanziFlow
