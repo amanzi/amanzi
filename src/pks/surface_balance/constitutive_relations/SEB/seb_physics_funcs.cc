@@ -239,10 +239,11 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
 
     // set the snow properties
     double swe_total = std::max(swe_settled + swe_frost + swe_precip, 0.);
+    ASSERT(std::abs(swe_total - swe_new) < SWE_EPS);
     snow_new.ht = std::max(ht_settled + ht_frost + ht_precip, 0.);
-    snow_new.age = swe_total > 0. ? (swe_settled*age_settled + swe_frost*age_frost + swe_precip*age_precip) / swe_total : 0.;
+    snow_new.age = swe_new > 0. ? (swe_settled*age_settled + swe_frost*age_frost + swe_precip*age_precip) / swe_new : 0.;
     snow_new.density = snow_new.ht > 0. ? swe_new * seb.in.vp_ground.density_w / snow_new.ht : seb.params.density_freshsnow;
-    snow_new.SWE = snow_new.ht * snow_new.density / seb.in.vp_ground.density_w;
+    snow_new.SWE = swe_new;
 
     // set the water properties
     // -- water source to ground is (corrected) melt and rainfall
