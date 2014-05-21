@@ -234,8 +234,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       // Is the format one that we can read?
       format = read_params.get<std::string>("Format");
 
-      if (format != "Exodus II") {	    
-	std::cerr << "Can only read files in Exodus II format" << std::endl;
+      if (format != "Exodus II" && format != "H5M") {	    
+	std::cerr << "Can only read files in Exodus II or H5M format" << std::endl;
 	throw std::exception();
       }
     } else {
