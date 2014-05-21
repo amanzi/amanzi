@@ -7,7 +7,7 @@ namespace Amanzi {
 
 // import ModifyCorrectionResult, the enum returned by ModifyCorrection().
 // Defined in FnBase_defs.hh
-using AmanziSolvers::ModifyCorrectionResult;
+using namespace AmanziSolvers::FnBaseDefs;
 
 // This is the interface definition for the BDF class.
 // The nonlinear functional, preconditioner, and error

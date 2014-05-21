@@ -18,6 +18,9 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
+using namespace FnBaseDefs;
+
+
 template<class Vector>
 class SolverFnBase {
  public:
