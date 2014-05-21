@@ -186,7 +186,7 @@ void MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
 }
 
 
-bool MPCSubsurface::ModifyCorrection(double h,
+ModifyCorrectionResult MPCSubsurface::ModifyCorrection(double h,
         Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> du) {
@@ -201,7 +201,7 @@ bool MPCSubsurface::ModifyCorrection(double h,
     db_->WriteVectors(vnames, vecs, true);
   }
 
-  return false;
+  return AmanziSolvers::CORRECTION_NOT_MODIFIED;
 }
 
 } // namespace
