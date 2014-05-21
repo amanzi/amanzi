@@ -112,7 +112,8 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   /* transient solution */
   double dT = 0.1;
   for (int n = 0; n < 5; n++) {
-    DPK->Advance(dT);
+    double dT_actual(dT);
+    DPK->Advance(dT, dT_actual);
     DPK->CommitState(S);
 
     if (MyPID == 0) {

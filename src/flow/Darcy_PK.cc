@@ -429,7 +429,7 @@ int Darcy_PK::AdvanceToSteadyState(double T0, double dT0)
 * Performs one time step of size dT. The boundary conditions are 
 * calculated only once, during the initialization step.  
 ******************************************************************* */
-int Darcy_PK::Advance(double dT_MPC) 
+int Darcy_PK::Advance(double dT_MPC, double& dT_actual) 
 {
   dT = dT_MPC;
   double time = S_->time();
@@ -524,6 +524,9 @@ int Darcy_PK::Advance(double dT_MPC)
   } else {
     dT_desirable_ = std::min(dT_desirable_ * ti_specs->dTfactor, ti_specs->dTmax);
   }
+
+  // Darcy_PK always takes suggested time step
+  dT_actual = dT_MPC;
 
   dt_tuple times(time, dT_MPC);
   ti_specs->dT_history.push_back(times);
