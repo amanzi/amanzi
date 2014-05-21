@@ -3386,7 +3386,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		//}
 		//times.append(times[0]+1.);
 		if (def_list.sublist("simulation").isParameter("simulation_end")) {
-	  	    times.append(def_list.sublist("simulation").get<double>("simulation_end"));
+	  	    times.append(def_list.sublist("simulation").get<double>("simulation_end")+1.);
 		} else { 
 	  	    times.append(times[0]+1.);
 		}
@@ -3542,7 +3542,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                    if (sort_times.length()==1){
                        //sort_times.append(sort_times[0]+1.);
 		       if (def_list.sublist("simulation").isParameter("simulation_end")) {
-	  	         sort_times.append(def_list.sublist("simulation").get<double>("simulation_end"));
+	  	         sort_times.append(def_list.sublist("simulation").get<double>("simulation_end")+1.);
 		       } else { 
 	  	         sort_times.append(times[0]+1.);
 		       }
@@ -3695,7 +3695,7 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 	        if (times.length()==1 ){
 	  	  //times.append(times[0]+1.);
 		  if (def_list.sublist("simulation").isParameter("simulation_end")) {
-	  	    times.append(def_list.sublist("simulation").get<double>("simulation_end"));
+	  	    times.append(def_list.sublist("simulation").get<double>("simulation_end")+1.);
 		  } else { 
 	  	    times.append(times[0]+1.);
 		  }
@@ -3756,7 +3756,7 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 		}
 	        if (times.length()==1 ){
 		  if (def_list.sublist("simulation").isParameter("simulation_end")) {
-	  	    times.append(def_list.sublist("simulation").get<double>("simulation_end"));
+	  	    times.append(def_list.sublist("simulation").get<double>("simulation_end")+1.);
 		  } else { 
 	  	    times.append(times[0]+1.);
 		  }
