@@ -766,22 +766,15 @@ void MPC::cycle_driver() {
              ( (flow_model == std::string("Steady State Richards") && S->time() >= Tswitch) ||
                (flow_model == std::string("Steady State Saturated") && S->time() >= Tswitch) ||
                (flow_model == std::string("Richards")))) ) {
-          bool redo(false);
-          do {
-            redo = false;
-            try {
-              FPK->Advance(mpc_dT);
-            }
-            catch (int itr) {
-              mpc_dT = ti_rescue_factor_ * mpc_dT;
-              redo = true;
-              tslimiter = FLOW_LIMITS;
-              if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-                *vo_->os() << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
-              }
-            }
-          } while (redo);
-          FPK->CommitState(S);
+	  double actual_dT(mpc_dT);
+	  FPK->Advance(mpc_dT, actual_dT);
+	  // adjust the mpc timestep to the one that the flow
+	  // pk actually took
+	  if (actual_dT != mpc_dT) {
+	    mpc_dT = actual_dT;
+	    tslimiter = FLOW_LIMITS;
+	  }
+	  FPK->CommitState(S);
         }
       }
       S->set_final_time(S->initial_time() + mpc_dT);

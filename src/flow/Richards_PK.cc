@@ -564,7 +564,7 @@ double Richards_PK::CalculateFlowDt()
 * transient calculations.
 * Warning: BDF2 and BDF1 will merge eventually.
 ******************************************************************* */
-int Richards_PK::Advance(double dT_MPC)
+int Richards_PK::Advance(double dT_MPC, double& dT_actual)
 {
   dT = dT_MPC;
   double time = S_->time();
@@ -596,8 +596,10 @@ int Richards_PK::Advance(double dT_MPC)
     bdf1_dae->CommitSolution(dT, solution);
     T_physics = bdf1_dae->time();
   }
-
-  dt_tuple times(time, dT_MPC);
+  // tell the caller what time step we actually took
+  dT_actual = dT;
+  
+  dt_tuple times(time, dT);
   ti_specs->dT_history.push_back(times);
 
   ti_specs->num_itrs++;
