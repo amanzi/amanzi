@@ -692,6 +692,10 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
 	      mesh_list.set<std::string>("Format","Exodus II");
 	      goodtype = true;
 	  }
+          else if (strcmp(format,"h5m") == 0 || strcmp(format,"H5M") == 0) {
+            mesh_list.set<std::string>("Format","H5M");
+            goodtype = true;
+          }
 	  char* filename = XMLString::transcode(elementRead->getElementsByTagName(
 				  XMLString::transcode("file"))->item(0)->getTextContent());
 	  if (strlen(filename) > 0) {
@@ -758,7 +762,6 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
     }
     else if (read) {
       if (isUnstr_) {
-	mesh_list.set<std::string>("Format","Exodus II");
 	list.sublist("Unstructured").sublist("Read Mesh File") = mesh_list;
       }
     }

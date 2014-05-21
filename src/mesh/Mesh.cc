@@ -6,6 +6,8 @@
 
 #include "Mesh.hh"
 
+#define CACHE_VARS 1
+
 using namespace std;
 
 namespace Amanzi
@@ -21,6 +23,12 @@ Entity_ID Mesh::entity_get_parent(const Entity_kind kind, const Entity_ID entid)
 
 
 unsigned int Mesh::cell_get_num_faces(const Entity_ID cellid) const {
+
+#if CACHE_VARS != 0
+
+  //
+  // Cached version - turn off for profiling
+  //
   if (!cell_faceids_current) {
 
     int ncells = num_entities(CELL,USED);
@@ -33,10 +41,6 @@ unsigned int Mesh::cell_get_num_faces(const Entity_ID cellid) const {
 
       cell_get_faces_and_dirs_internal(c, &cfaceids, &cfacedirs, false);
       
-      //      int nfaces = cfaceids.size();
-      //      cell_face_ids[c].resize(nfaces);
-      //      cell_face_dirs[c].resize(nfaces);
-
       cell_face_ids[c] = cfaceids;    // these are copy operations
       cell_face_dirs[c] = cfacedirs;
     }
@@ -45,6 +49,20 @@ unsigned int Mesh::cell_get_num_faces(const Entity_ID cellid) const {
   }
 
   return cell_face_ids[cellid].size();
+
+#else
+
+  // Non-cached version
+
+  Entity_ID_List cfaceids;
+  std::vector<int> cfacedirs;
+
+  cell_get_faces_and_dirs_internal(cellid, &cfaceids, &cfacedirs, false);
+
+  return cfaceids.size();
+
+#endif
+
 }
 
 
@@ -52,6 +70,12 @@ void Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
                                    Entity_ID_List *faceids,
                                    std::vector<int> *face_dirs, 
                                    const bool ordered) const {
+
+#if CACHE_VARS != 0
+
+  //
+  // Cached version - turn off for profiling
+  //
 
   if (!cell_faceids_current) {
 
@@ -65,10 +89,6 @@ void Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
 
       cell_get_faces_and_dirs_internal(c, &cfaceids, &cfacedirs, false);
       
-      //      int nfaces = cfaceids.size();
-      //      cell_face_ids[c].resize(nfaces);
-      //      cell_face_dirs[c].resize(nfaces);
-
       cell_face_ids[c] = cfaceids;    // these are copy operations
       cell_face_dirs[c] = cfacedirs;
     }
@@ -81,72 +101,119 @@ void Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
   else {
     Entity_ID_List &cfaceids = cell_face_ids[cellid];
 
-    //    int nfaces = cfaceids.size();
-    //    faceids->resize(nfaces);
     *faceids = cfaceids; // copy operation
 
     if (face_dirs) {
       std::vector<int> &cfacedirs = cell_face_dirs[cellid];
-      //      face_dirs->resize(nfaces);
       *face_dirs = cfacedirs; // copy operation
     }
   }
+
+#else
+
+  // 
+  // Non-cached version
+  //
+
+  cell_get_faces_and_dirs_internal(cellid, faceids, face_dirs, ordered);
+
+#endif
+
 }
 
 
-// Cells connected to a face - cache the results the first time it
-// is called and then return the cached results subsequently
+// // Cells connected to a face - cache the results the first time it
+// // is called and then return the cached results subsequently
 
   void Mesh::face_get_cells (const Entity_ID faceid, const Parallel_type ptype,
-                             Entity_ID_List *cellids) const {
+                              Entity_ID_List *cellids) const {
 
-  if (!face_cellids_current) {
+#if CACHE_VARS != 0
 
-    int nfaces = num_entities(FACE,USED);
-    face_cell_ids.resize(nfaces);
-    face_cell_ptype.resize(nfaces);
+    // 
+    // Cached version - turn off for profiling
+    //
 
-    std::vector<Entity_ID> fcells;
-
-    for (int f = 0; f < nfaces; f++) {      
-      face_get_cells_internal(f, USED, &fcells);
-
-      face_cell_ids[f].resize(2);
-      face_cell_ptype[f].resize(2);
-
-      for (int i = 0; i < fcells.size(); i++) {
-        int c = fcells[i];
-        face_cell_ids[f][i] = c;
-        face_cell_ptype[f][i] = entity_get_ptype(CELL,c);
+    if (!face_cellids_current) {
+      
+      int nfaces = num_entities(FACE,USED);
+      face_cell_ids.resize(nfaces);
+      face_cell_ptype.resize(nfaces);
+      
+      std::vector<Entity_ID> fcells;
+      
+      for (int f = 0; f < nfaces; f++) {      
+        face_get_cells_internal(f, USED, &fcells);
+        
+        face_cell_ids[f].resize(2);
+        face_cell_ptype[f].resize(2);
+        
+        for (int i = 0; i < fcells.size(); i++) {
+          int c = fcells[i];
+          face_cell_ids[f][i] = c;
+          face_cell_ptype[f][i] = entity_get_ptype(CELL,c);
+        }
+        for (int i = fcells.size(); i < 2; i++) {
+          face_cell_ids[f][i] = -1;
+          face_cell_ptype[f][i] = PTYPE_UNKNOWN;
+        }
       }
-      for (int i = fcells.size(); i < 2; i++) {
-        face_cell_ids[f][i] = -1;
-        face_cell_ptype[f][i] = PTYPE_UNKNOWN;
-      }
+      
+      face_cellids_current = true;
+    }
+    
+    cellids->clear();
+    
+    switch (ptype) {
+    case USED:
+      for (int i = 0; i < 2; i++)
+        if (face_cell_ptype[faceid][i] != PTYPE_UNKNOWN)
+          cellids->push_back(face_cell_ids[faceid][i]);
+      break;
+    case OWNED:
+      for (int i = 0; i < 2; i++)
+        if (face_cell_ptype[faceid][i] == OWNED) 
+          cellids->push_back(face_cell_ids[faceid][i]);
+      break;
+    case GHOST:
+      for (int i = 0; i < 2; i++)
+        if (face_cell_ptype[faceid][i] == GHOST)
+          cellids->push_back(face_cell_ids[faceid][i]);
+      break;
     }
 
-    face_cellids_current = true;
-  }
+#else
 
-  cellids->clear();
+    // 
+    // Non-cached version
+    //
 
-  switch (ptype) {
-  case USED:
-    for (int i = 0; i < 2; i++)
-      if (face_cell_ptype[faceid][i] != PTYPE_UNKNOWN)
-        cellids->push_back(face_cell_ids[faceid][i]);
-    break;
-  case OWNED:
-    for (int i = 0; i < 2; i++)
-      if (face_cell_ptype[faceid][i] == OWNED) 
-        cellids->push_back(face_cell_ids[faceid][i]);
-    break;
-  case GHOST:
-    for (int i = 0; i < 2; i++)
-      if (face_cell_ptype[faceid][i] == GHOST)
-        cellids->push_back(face_cell_ids[faceid][i]);
-    break;
-  }
+    Entity_ID_List fcells;
+
+    face_get_cells_internal(faceid, USED, &fcells);
+ 
+    cellids->clear();
+
+    switch (ptype) {
+    case USED:
+      for (int i = 0; i < fcells.size(); i++)
+        if (entity_get_ptype(CELL,fcells[i]) != PTYPE_UNKNOWN)
+          cellids->push_back(fcells[i]);
+      break;
+    case OWNED:
+      for (int i = 0; i < fcells.size(); i++)
+        if (entity_get_ptype(CELL,fcells[i]) == OWNED) 
+          cellids->push_back(fcells[i]);
+      break;
+    case GHOST:
+      for (int i = 0; i < fcells.size(); i++)
+        if (entity_get_ptype(CELL,fcells[i]) == GHOST)
+          cellids->push_back(fcells[i]);
+      break;
+    }
+  
+#endif
+
 }
 
 
