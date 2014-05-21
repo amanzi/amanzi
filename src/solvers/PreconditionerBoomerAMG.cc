@@ -57,6 +57,66 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
   if (plist_.isParameter("max coarse size"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxCoarseSize,
 							plist_.get<int>("max coarse size"))));
+  if (plist_.isParameter("number of functions")) {
+    // num_funcs > 1 tells BoomerAMG to use the "systems of PDEs" code.  Note
+    // that, to use this approach, unknowns must be ordered with DoF fastest
+    // varying (i.e. not the native Epetra_MultiVector order).  By default, it
+    // uses the "unknown" approach in which each equation is coarsened and
+    // interpolated independently.  Comments below are taken from Allison
+    // Baker's email to the PETSc mailing list, 25 Apr 2007, as these features
+    // of BoomerAMG are not documented very well.  Here we ignore her option
+    // 2, as she warns it is inefficient and likely not useful.
+    // http://lists.mcs.anl.gov/pipermail/petsc-users/2007-April/001487.html
+    int num_funcs = plist_.get<int>("number of functions");
+    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+            &HYPRE_BoomerAMGSetNumFunctions, num_funcs)));
+
+    // additional options
+    if (num_funcs > 1) {
+      // HYPRE_BOOMERAMGSetNodal(solver, int nodal ) tells AMG to coarsen such
+      // that each variable has the same coarse grid - sometimes this is more
+      // "physical" for a particular problem. The value chosen here for nodal
+      // determines how strength of connection is determined between the
+      // coupled system.  I suggest setting nodal = 1, which uses a Frobenius
+      // norm.  This does NOT tell AMG to use nodal relaxation.
+      if (plist_.isParameter("nodal strength of connection norm")) {
+        int nodal = plist_.get<int>("nodal strength of connection norm", 0);
+        funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+                &HYPRE_BoomerAMGSetNodal, nodal)));
+
+        if (nodal > 0) {
+          // If you call HYPRE_BOOMERAMGSetNodal, then you can additionally do
+          // nodal relaxation via the schwarz smoother option in hypre.  I did
+          // not implement this in the Petsc interface, but it could be done
+          // easy enough. The following four functions need to be called:
+          //   HYPRE_BoomerAMGSetSmoothType(solver, 6);
+          //   HYPRE_BoomerAMGSetDomainType(solver, 1);
+          //   HYPRE_BoomerAMGSetOverlap(solver, 0);
+          //   HYPRE_BoomerAMGSetSmoothNumLevels(solver, num_levels);
+          // Set num_levels to number of levels on which you want nodal
+          // smoothing, i.e. 1=just the fine grid, 2= fine grid and the grid
+          // below, etc.  I find that doing nodal relaxation on just the finest
+          // level is generally sufficient.)  Note that the interpolation scheme
+          // used will be the same as in the unknown approach - so this is what
+          // we call a hybrid systems method.
+          if (plist_.isParameter("nodal relaxation levels")) {
+            int num_levels = plist_.get<int>("nodal relaxation levels");
+
+            // I believe this works, but needs testing -- we do not pop previous
+            // settings, and instead just call the function twice. --ETC
+            funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+                    &HYPRE_BoomerAMGSetSmoothType, 6)));
+            funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+                    &HYPRE_BoomerAMGSetDomainType, 1)));
+            funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+                    &HYPRE_BoomerAMGSetOverlap, 0)));
+            funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+                    &HYPRE_BoomerAMGSetSmoothNumLevels, num_levels)));
+          }
+        }
+      }
+    }
+  }
 
 #else
   Errors::Message msg("Hypre (BoomerAMG) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
