@@ -142,10 +142,13 @@ Mesh_STK_Impl::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) c
   ASSERT(topo != NULL);
 
   stk::mesh::PairIterRelation faces = entity->relations( face_rank );
+  ids.resize(faces.size());
+  Entity_Ids::iterator itf = ids.begin();
   for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
   {
     stk::mesh::EntityId gid(it->entity ()->identifier ());
-    ids.push_back (gid);
+    *itf = gid;
+    ++itf;
   }
 
   ASSERT (ids.size () == topo->side_count);
@@ -164,6 +167,8 @@ Mesh_STK_Impl::element_to_face_dirs(stk::mesh::EntityId element,
   ASSERT (entity->identifier () == element);
 
   stk::mesh::PairIterRelation faces = entity->relations( face_rank );
+  dirs.resize(faces.size());
+  std::vector<int>::iterator itdir = dirs.begin();
   for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
   {
     stk::mesh::FieldTraits<Id_field_type>::data_type *owner = 
@@ -172,7 +177,8 @@ Mesh_STK_Impl::element_to_face_dirs(stk::mesh::EntityId element,
     if (*owner != element) {
       dir = -1;
     }
-    dirs.push_back (dir);
+    *itdir = dir;
+    ++itdir;
   }
 }
 
@@ -193,10 +199,15 @@ Mesh_STK_Impl::element_to_faces_and_dirs(stk::mesh::EntityId element,
   ASSERT(topo != NULL);
 
   stk::mesh::PairIterRelation faces = entity->relations( face_rank );
+  ids.resize(faces.size());
+  dirs.resize(faces.size());
+  Entity_Ids::iterator itf = ids.begin();
+  std::vector<int>::iterator itdir = dirs.begin();
   for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
   {
     stk::mesh::EntityId gid(it->entity ()->identifier ());
-    ids.push_back (gid);
+    *itf = gid;
+    ++itf;
 
     stk::mesh::FieldTraits<Id_field_type>::data_type *owner = 
         stk::mesh::field_data<Id_field_type>(*face_owner_, *(it->entity()));
@@ -204,7 +215,8 @@ Mesh_STK_Impl::element_to_faces_and_dirs(stk::mesh::EntityId element,
     if (*owner != element) {
       dir = -1;
     }
-    dirs.push_back (dir);    
+    *itdir = dir;
+    ++itdir;
   }
 
   ASSERT (ids.size () == topo->side_count);
@@ -226,10 +238,12 @@ Mesh_STK_Impl::element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) c
   stk::mesh::Entity *entity = id_to_entity(cell_rank, element);
 
   stk::mesh::PairIterRelation nodes = entity->relations (node_rank);
-
+  ids.resize(nodes.size());
+  Entity_Ids::iterator itn = ids.begin();
   for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); it != nodes.end (); ++it)
   {
-    ids.push_back (it->entity ()->identifier ());
+    *itn = it->entity ()->identifier ();
+    ++itn;
   }
 }
 
@@ -240,10 +254,12 @@ void Mesh_STK_Impl::face_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids)
   stk::mesh::Entity *entity = id_to_entity(from_rank, element);
     
   stk::mesh::PairIterRelation nodes = entity->relations (to_rank);
-    
+  ids.resize(nodes.size());
+  Entity_Ids::iterator itn = ids.begin();
   for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); it != nodes.end (); ++it)
   {
-    ids.push_back (it->entity ()->identifier ());
+    *itn = it->entity ()->identifier ();
+    ++itn;
   }
 }
 
@@ -262,10 +278,13 @@ Mesh_STK_Impl::face_to_elements(stk::mesh::EntityId face, Entity_Ids& ids) const
   stk::mesh::PairIterRelation cells = entity->relations( cell_rank );
   ASSERT(!cells.empty());
 
+  ids.resize(cells.size());
+  Entity_Ids::iterator itc = ids.begin();
   for (stk::mesh::PairIterRelation::iterator it = cells.begin (); it != cells.end (); ++it)
   {
     stk::mesh::EntityId gid(it->entity ()->identifier ());
-    ids.push_back (gid);
+    *itc = gid;
+    ++itc;
   }
 
   ASSERT(ids.size() <= 2);
@@ -281,11 +300,14 @@ Mesh_STK_Impl::node_to_faces(stk::mesh::EntityId element, Entity_Ids& ids) const
   const int to_rank = entity_map_->kind_to_rank (FACE);
   stk::mesh::Entity *entity = id_to_entity(from_rank, element);
     
-  stk::mesh::PairIterRelation nodes = entity->relations (to_rank);
+  stk::mesh::PairIterRelation faces = entity->relations (to_rank);
     
-  for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); it != nodes.end (); ++it)
+  ids.resize(faces.size());
+  Entity_Ids::iterator itn = ids.begin();
+  for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
   {
-    ids.push_back (it->entity ()->identifier ());
+    *itn = it->entity ()->identifier ();
+    ++itn;
   }
 }
 
@@ -299,11 +321,13 @@ Mesh_STK_Impl::node_to_elements(stk::mesh::EntityId element, Entity_Ids& ids) co
   const int to_rank = entity_map_->kind_to_rank (CELL);
   stk::mesh::Entity *entity = id_to_entity(from_rank, element);
     
-  stk::mesh::PairIterRelation nodes = entity->relations (to_rank);
-    
-  for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); it != nodes.end (); ++it)
+  stk::mesh::PairIterRelation elements = entity->relations (to_rank);
+  ids.resize(elements.size());
+  Entity_Ids::iterator itn = ids.begin();
+  for (stk::mesh::PairIterRelation::iterator it = elements.begin (); it != elements.end (); ++it)
   {
-    ids.push_back (it->entity ()->identifier ());
+    *itn = it->entity ()->identifier ();
+    ++itn;
   }
 }
 

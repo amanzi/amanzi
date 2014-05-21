@@ -278,14 +278,17 @@ Mesh_STK::cell_get_faces_and_dirs_internal (const Entity_ID cellid,
   // 0-based for Epetra_Map
   std::for_each(stk_face_ids.begin(), stk_face_ids.end(), bl::_1 -= 1);
 
-  outfaceids->clear();
+  int nf = stk_face_ids.size();
+  outfaceids->resize(nf);
+  Entity_ID_List::iterator outf = outfaceids->begin();
   for (STK::Entity_Ids::iterator f = stk_face_ids.begin(); 
        f != stk_face_ids.end(); f++) {
     stk::mesh::EntityId global_face_id(*f);
     ASSERT(this->face_map(true).MyGID((long long int) global_face_id));
     stk::mesh::EntityId local_face_id = 
       this->face_map(true).LID((long long int) global_face_id);
-    outfaceids->push_back(local_face_id);
+    *outf = local_face_id;
+    ++outf;
   }
 }
 
@@ -304,13 +307,16 @@ Mesh_STK::cell_get_nodes (const Entity_ID cellid,
   mesh_->element_to_nodes(global_cell_id, node_ids);
   std::for_each(node_ids.begin(), node_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
 
-  outnodeids->clear();
+  int nn = node_ids.size();
+  outnodeids->resize(nn);
+  Entity_ID_List::iterator outn = outnodeids->begin();
   for (STK::Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
     stk::mesh::EntityId global_node_id(*n);
     ASSERT(this->node_map(true).MyGID((long long int) global_node_id));
     stk::mesh::EntityId local_node_id = 
       this->node_map(true).LID((long long int) global_node_id);
-    outnodeids->push_back(local_node_id);
+    *outn = local_node_id;
+    ++outn;
   }
 }
 
@@ -328,13 +334,16 @@ Mesh_STK::face_get_nodes (const Entity_ID faceid,
   mesh_->face_to_nodes(global_face_id, node_ids);
   std::for_each(node_ids.begin(), node_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
 
-  outnodeids->clear();
+  int nn = node_ids.size();
+  outnodeids->resize(nn);
+  Entity_ID_List::iterator outn = outnodeids->begin();
   for (STK::Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
     stk::mesh::EntityId global_node_id(*n);
     ASSERT(this->node_map(true).MyGID((long long int) global_node_id));
     stk::mesh::EntityId local_node_id = 
       this->node_map(true).LID((long long int) global_node_id);
-    outnodeids->push_back(local_node_id);
+    *outn = local_node_id;
+    ++outn;
   }
   ASSERT(!outnodeids->empty());
 }
@@ -353,16 +362,23 @@ Mesh_STK::node_get_cells(const Entity_ID nodeid,
   mesh_->node_to_elements(global_node_id, cell_ids);
   std::for_each(cell_ids.begin(), cell_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
 
-  outcellids->clear();
+  int nc = cell_ids.size(), nc2=0;
+  outcellids->resize(nc);  // resize to maximum size
+  Entity_ID_List::iterator outc = outcellids->begin();
   for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
     Entity_ID local_cell_id(this->cell_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(CELL, local_cell_id));
     if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
-      outcellids->push_back(local_cell_id);
+      *outc = local_cell_id;
+      ++outc;
+      ++nc2;
     } else if (theptype == GHOST && (ptype == GHOST || ptype == USED)) {
-      outcellids->push_back(local_cell_id);
+      *outc = local_cell_id;
+      ++outc;
+      ++nc2;
     }
   }
+  outcellids->resize(nc2); // resize to the real size
 }
 
 // -------------------------------------------------------------
@@ -378,16 +394,24 @@ Mesh_STK::node_get_faces(const Entity_ID nodeid,
   STK::Entity_Ids face_ids;
   mesh_->node_to_faces(global_node_id, face_ids);
   std::for_each(face_ids.begin(), face_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
-  outfaceids->clear();
+
+  int nf = face_ids.size(), nf2=0;
+  outfaceids->resize(nf);  // resize to maximum size
+  Entity_ID_List::iterator outf = outfaceids->begin();
   for (STK::Entity_Ids::iterator i = face_ids.begin(); i != face_ids.end(); i++) {
     Entity_ID local_face_id(this->face_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_face_id));
     if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
-      outfaceids->push_back(local_face_id);
+      *outf = local_face_id;
+      ++outf;
+      ++nf2;
     } else if (theptype == GHOST && (ptype == GHOST || ptype == USED)) {
-      outfaceids->push_back(local_face_id);
+      *outf = local_face_id;
+      ++outf;
+      ++nf2;
     }
   }
+  outfaceids->resize(nf2); // resize to the real size
 }
 
 // -------------------------------------------------------------
@@ -433,16 +457,23 @@ Mesh_STK::face_get_cells_internal(const Entity_ID faceid,
   mesh_->face_to_elements(global_face_id, cell_ids);
   std::for_each(cell_ids.begin(), cell_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
 
-  outcellids->clear();
+  int nc = cell_ids.size(), nc2=0;
+  outcellids->resize(nc);  // resize to maximum size
+  Entity_ID_List::iterator outc = outcellids->begin();
   for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
     Entity_ID local_cell_id(this->cell_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_cell_id));
     if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
-      outcellids->push_back(local_cell_id);
+      *outc = local_cell_id;
+      ++outc;
+      ++nc2;
     } else if (theptype == GHOST && (ptype == GHOST || ptype == USED)) {
-      outcellids->push_back(local_cell_id);
+      *outc = local_cell_id;
+      ++outc;
+      ++nc2;
     }
   }
+  outcellids->resize(nc2);  // resize to real size
 }
 
 // -------------------------------------------------------------
@@ -535,7 +566,8 @@ Mesh_STK::face_get_coordinates (const Entity_ID faceid,
   
   STK::Entity_Ids nodes;
   mesh_->face_to_nodes(gid, nodes);
-  fcoords->clear();
+  fcoords->resize(nodes.size());
+  std::vector<AmanziGeometry::Point>::iterator it = fcoords->begin();
   for (STK::Entity_Ids::iterator n = nodes.begin(); n != nodes.end(); n++) {
     const double *c(mesh_->coordinates(*n));
     AmanziGeometry::Point p;
@@ -551,7 +583,8 @@ Mesh_STK::face_get_coordinates (const Entity_ID faceid,
       default:
         Exceptions::amanzi_throw( STK::Error ("Unknown dimension") );      
     }
-    fcoords->push_back(p);
+    *it = p;
+    ++it;
   }
 }
 
@@ -567,7 +600,8 @@ Mesh_STK::cell_get_coordinates (const Entity_ID cellid,
   
   STK::Entity_Ids nodes;
   mesh_->element_to_nodes(gid, nodes);
-  ccoords->clear();
+  ccoords->resize(nodes.size());
+  std::vector<AmanziGeometry::Point>::iterator it = ccoords->begin();
   for (STK::Entity_Ids::iterator n = nodes.begin(); n != nodes.end(); n++) {
     const double *c(mesh_->coordinates(*n));
     AmanziGeometry::Point p;
@@ -583,7 +617,8 @@ Mesh_STK::cell_get_coordinates (const Entity_ID cellid,
       default:
         Exceptions::amanzi_throw( STK::Error ("Unknown dimension") );      
     }
-    ccoords->push_back(p);
+    *it = p;
+    ++it;
   }
 }
     
@@ -851,13 +886,15 @@ Mesh_STK::get_set_entities (const std::string setname,
   STK::Entity_vector entities;
   mesh_->get_entities(*part, ptype, entities);
 
-  entids->clear();
+  entids->resize(entities.size());
+  Entity_ID_List::iterator it = entids->begin();
   for (STK::Entity_vector::iterator e = entities.begin(); 
        e != entities.end(); e++) {
     Entity_ID gid((*e)->identifier());
     gid--;                              // 0-based for Epetra_Map
     Entity_ID lid(this->LID(gid, kind));
-    entids->push_back(lid);
+    *it = lid;
+    ++it;
   }
 }
     
