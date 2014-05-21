@@ -725,10 +725,19 @@ void MPC::cycle_driver() {
             mpc_dT = reset_info_.front().second;
             mpc_dT = TSM->TimeStep(S->time(), mpc_dT);
             tslimiter = MPC_LIMITS;
-            // now reset the flow time integrator..
-            Amanzi::timer_manager.start("Flow PK");
-            if (flow_enabled) FPK->InitTransient(S->time(), mpc_dT);
-            Amanzi::timer_manager.stop("Flow PK");
+	    // now reset the flow time integrator..
+	    if (S->time() >= Tswitch) {
+	      // we are now in transient mode
+	      Amanzi::timer_manager.start("Flow PK");
+	      if (flow_enabled) FPK->InitTransient(S->time(), mpc_dT);
+	      Amanzi::timer_manager.stop("Flow PK");
+	    } else {
+	      // we are still in steady state mode
+	      // and cannot handle this case, currently
+	      // so we throw an exception
+	      Errors::Message message("MPC: Restarting the time integrator before switch time is not supported.");
+	      Exceptions::amanzi_throw(message);	      
+	    }
           }
         }
       }
