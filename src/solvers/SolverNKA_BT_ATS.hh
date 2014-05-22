@@ -19,7 +19,6 @@
 #include "SolverDefs.hh"
 #include "NKA_Base.hh"
 
-
 namespace Amanzi {
 namespace AmanziSolvers {
 
@@ -239,6 +238,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
       nka_restarted = false;
     }
 
+    ModifyCorrectionResult hacked = CORRECTION_NOT_MODIFIED;
     if (num_itrs_ > nka_lag_iterations_) {
       // Calculate the accelerated correction.
       nka_->Correction(*du_pic, *du_nka);
@@ -246,7 +246,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
       nka_itr++;
 
       // Hack the correction
-      bool hacked = fn_->ModifyCorrection(res, u, du_nka);
+      hacked = fn_->ModifyCorrection(res, u, du_nka);
       if (hacked) {
         // if we had to hack things, it is likely that the Jacobian
         // information we have is, for the next iteration, not very accurate.
@@ -262,12 +262,13 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
       // Do not calculate the accelarated correction.
       nka_applied = false;
       // Hack the Picard update
-      fn_->ModifyCorrection(res, u, du_pic);
+      hacked = fn_->ModifyCorrection(res, u, du_pic);
     }
       
     // potentially backtrack
     bool admitted_iterate = false;
-    if (num_itrs_ > backtrack_lag_ && num_itrs_ < last_backtrack_iter_) {
+    if (num_itrs_ > backtrack_lag_ && num_itrs_ < last_backtrack_iter_ &&
+	hacked != CORRECTION_MODIFIED_LAG_BACKTRACKING) {
       bool good_step = false;
       *u_precorr = *u;
       previous_error = error;
@@ -325,7 +326,32 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
           if (nka_itr == 1) {
             *du_pic = *du_nka;
           } else {
-            fn_->ModifyCorrection(res, u, du_pic);
+            hacked = fn_->ModifyCorrection(res, u, du_pic);
+	    if (hacked == CORRECTION_MODIFIED_LAG_BACKTRACKING) {
+	      // no backtracking, just use this correction, checking admissibility
+	      u->Update(-1., *du_pic, 1.);
+	      fn_->ChangedSolution();
+	      admitted_iterate = false;
+	      if (fn_->IsAdmissible(u)) {
+		admitted_iterate = true;
+
+		// Evaluate the nonlinear function.
+		fun_calls_++;
+		fn_->Residual(u, res);
+
+		// Evalute error
+		error = fn_->ErrorNorm(u, res);
+		residual_ = error;
+		res->Norm2(&l2_error);
+		if (vo_->os_OK(Teuchos::VERB_LOW)) {
+		  *vo_->os() << num_itrs_ << ": PIC "
+			     << ": error(res) = " << error << std::endl
+			     << num_itrs_ << ": PIC "
+			     << ": L2 error(res) = " << l2_error << std::endl;
+		}
+	      }
+	      good_step = true;
+	    }
           }
         }
       }
