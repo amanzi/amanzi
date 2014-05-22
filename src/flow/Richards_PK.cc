@@ -520,7 +520,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   // derive mass flux (state may not have it at time 0)
   matrix_->CreateStiffnessMatricesRichards();
   matrix_->DeriveMassFlux(*solution, *darcy_flux_copy, bc_model, bc_values);
-  darcy_flux_copy->ScatterMasterToGhosted("face");
 
   // re-initialize lambda (experimental)
   double Tp = T0 + dT0;
@@ -640,6 +639,7 @@ void Richards_PK::CommitState(Teuchos::RCP<State> S)
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
+  *darcy_flux_copy->ViewComponent("face", true) = flux;
   
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
