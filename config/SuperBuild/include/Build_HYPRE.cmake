@@ -45,7 +45,6 @@ build_whitespace_string(hypre_cppflags ${cpp_flags_list})
 #else()
  set(hypre_openmp_opt --without-openmp)
 #endif()
-print_variable(hypre_openmp_opt)
 
 # Locate LAPACK and BLAS
 
@@ -64,8 +63,8 @@ endif()
 set(hypre_fortran_opt --disable-fortran)
 
 set(hyper_superlu_opt)
-if ( ENABLE_PETSC )
-  set(hyper_superlu_opt --without-superlu)
+if (ENABLE_PETSC)
+  set(hypre_superlu_opt --without-superlu)
 endif()
 
 # Build the configure script
