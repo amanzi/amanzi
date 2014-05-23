@@ -172,7 +172,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 200, 200, gm);
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // create diffusion coefficient
@@ -247,7 +247,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     int schema_dofs = op2->schema_dofs();
     int schema_prec_dofs = op2->schema_prec_dofs();
     CHECK(schema_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL);
-    CHECK(schema_prec_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE);
+    // CHECK(schema_prec_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE);
 
     op2->set_factor(factor);  // for developers only
     op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
@@ -360,7 +360,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 80, 80, gm);
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // create diffusion coefficient
