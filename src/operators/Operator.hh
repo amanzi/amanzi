@@ -55,6 +55,7 @@ defining operators.
 namespace Amanzi {
 namespace Operators {
 
+// This is the old way to assemble matrices. (lipnikov@lanl.gov)
 #define OPERATORS_MATRIX_FE_CRS
 
 class Operator {

@@ -395,6 +395,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
 
           for (int n = 0; n < nfaces; n++) {
             lid[n] = faces[n];
+            if (faces[n] >= nfaces_owned) lid[n] += ndof - nfaces_owned; 
             gid[n] = fmap_wghost.GID(faces[n]);
           }
           lid[nfaces] = offset_my_[1] + c;
@@ -435,7 +436,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
         }
 
         for (int n = 0; n < nd; n++) {
-          if (gid[n] < ndof) {
+          if (lid[n] < ndof) {
             ff_graph.InsertGlobalIndices(gid[n], nd, gid);
           } else {
             ff_graph_off.InsertMyIndices(lid[n] - ndof, nd, lid);
@@ -598,6 +599,7 @@ void Operator::AssembleMatrix(int schema)
 
           for (int n = 0; n < nfaces; n++) {
             lid[n] = faces[n];
+            if (faces[n] >= nfaces_owned) lid[n] += ndof - nfaces_owned; 
             gid[n] = fmap_wghost.GID(faces[n]);
           }
           lid[nfaces] = offset_my_[1] + c;

@@ -578,10 +578,12 @@ void OperatorDiffusion::InitPreconditionerSpecialCRS_(
 
   // create a face-based stiffness matrix from A.
   A_->PutScalar(0.0);
+  int ndof = A_->NumMyRows();
 
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   AmanziMesh::Entity_ID_List faces;
 
+  int lid[OPERATOR_MAX_FACES];
   int gid[OPERATOR_MAX_FACES];
   double values[OPERATOR_MAX_FACES];
 
@@ -610,15 +612,24 @@ void OperatorDiffusion::InitPreconditionerSpecialCRS_(
     }
 
     for (int n = 0; n < nfaces; n++) {
+      lid[n] = faces[n];
       gid[n] = fmap_wghost.GID(faces[n]);
     }
     for (int n = 0; n < nfaces; n++) {
       for (int m = 0; m < nfaces; m++) values[m] = Scell(n, m);
-      A_->SumIntoMyValues(gid[n], nfaces, values, gid);
+      if (lid[n] < ndof) {
+        A_->SumIntoMyValues(lid[n], nfaces, values, lid);
+      } else {
+        A_off_->SumIntoMyValues(lid[n] - ndof, nfaces, values, lid);
+      }
     }
-
   }
-  A_->FillComplete();
+
+  // Scatter off proc to their locations
+  A_->Export(*A_off_, *exporter_, Add);
+      
+  const Epetra_Map& map = A_->RowMap();
+  A_->FillComplete(map, map);
 
   // redefine (if necessary) preconditioner since only 
   // one preconditioner is allowed.
