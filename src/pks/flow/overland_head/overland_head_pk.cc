@@ -303,6 +303,14 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("ponded_depth_bar");
 
+  // -- effective accumulation ponded depth (smoothing of derivatives as h --> 0)
+  smoothed_ponded_accumulation_ = plist_->get<bool>("smooth ponded accumulation",false);
+  if (smoothed_ponded_accumulation_) {
+    S->RequireField("smoothed_ponded_depth")->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator("smoothed_ponded_depth");
+  }
+
   // -- conductivity evaluator
   S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names_bf, locations_bf, num_dofs2);
