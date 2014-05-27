@@ -3,9 +3,6 @@
 
   License: BSD
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Conjugate gradient method.
-  Usage:
 */
 
 #ifndef AMANZI_PRECONDITIONER_IDENTITY_HH_

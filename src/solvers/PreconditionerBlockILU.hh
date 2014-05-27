@@ -11,6 +11,8 @@
 #ifndef AMANZI_PRECONDITIONER_BLOCK_ILU_HH_
 #define AMANZI_PRECONDITIONER_BLOCK_ILU_HH_
 
+#include "Ifpack.h"
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MultiVector.h"
