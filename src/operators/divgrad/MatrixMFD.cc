@@ -740,7 +740,6 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
   for (int f=0; f!=nfaces_owned; ++f) {
     ASSERT(done[f]);
   }
-
 }
 
 
@@ -756,38 +755,25 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
   const Epetra_MultiVector& flux_f = *flux.ViewComponent("face",true);
   Epetra_MultiVector& velocity_c = *velocity->ViewComponent("cell",false);
 
-  Teuchos::LAPACK<int, double> lapack;
   int dim = mesh_->space_dimension();
-  Teuchos::SerialDenseMatrix<int, double> matrix(dim, dim);
-  double rhs_cell[dim];
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
+  AmanziGeometry::Point gradient(dim);
   AmanziMesh::Entity_ID_List faces;
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
+    std::vector<double> solution(nfaces);
 
-    for (int i=0; i!=dim; ++i) rhs_cell[i] = 0.0;
-    matrix.putScalar(0.0);
-
-    for (int n=0; n!=nfaces; ++n) {  // populate least-square matrix
+    for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      //      double area = mesh_->face_area(f);
-
-      for (int i=0; i!=dim; ++i) {
-        rhs_cell[i] += normal[i] * flux_f[0][f];
-        matrix(i,i) += normal[i] * normal[i];
-        for (int j=i+1; j!=dim; ++j) {
-          matrix(j,i) = matrix(i,j) += normal[i] * normal[j];
-        }
-      }
+      solution[n] = flux_f[0][f];
     }
-
-    int info;
-    lapack.POSV('U', dim, 1, matrix.values(), dim, rhs_cell, dim, &info);
-
-    for (int i=0; i!=dim; ++i) velocity_c[i][c] = rhs_cell[i];
+  
+    mfd.RecoverGradient_MassMatrix(c, solution, gradient);
+    for (int i = 0; i < dim; i++) velocity_c[i][c] = -gradient[i];
   }
 }
 

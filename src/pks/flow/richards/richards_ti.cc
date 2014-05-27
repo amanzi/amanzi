@@ -186,6 +186,32 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   Teuchos::RCP<const Epetra_Vector> gvec =
       S_next_->GetConstantVectorData("gravity");
 
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    const Epetra_MultiVector& kr = *rel_perm->ViewComponent("face",false);
+    double min_kr = 1.e6;
+    int min_kr_lid = -1;
+    for (int f=0; f!=kr.MyLength(); ++f) {
+      if (kr[0][f] < min_kr) {
+        min_kr = kr[0][f];
+        min_kr_lid = f;
+      }
+    }
+
+#ifdef HAVE_MPI
+    ENorm_t min_kr_struct, global_min_kr;
+    min_kr_struct.value = min_kr;
+    min_kr_struct.gid = kr.Map().GID(min_kr_lid);
+
+    MPI_Allreduce(&min_kr, &global_min_kr, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
+#else
+    ENorm_t global_min_kr;
+    global_min_kr.value = min_kr;
+    global_min_kr.gid = min_kr_lid;
+#endif
+
+    *vo_->os() << "Min Kr[face=" << global_min_kr.gid << "] = " << global_min_kr.value << std::endl;
+  }
+
   Teuchos::RCP<CompositeVector> rel_perm_modified =
       Teuchos::rcp(new CompositeVector(*rel_perm));
   *rel_perm_modified = *rel_perm;
