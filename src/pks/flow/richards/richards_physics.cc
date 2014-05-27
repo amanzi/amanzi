@@ -189,10 +189,24 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
 
       for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
-        const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+        AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
+        if (tpfa_) {
+          // normal must be vector connecting centroids, not true normal
+          AmanziMesh::Entity_ID_List cells;
+          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
+          AmanziGeometry::Point dc(mesh_->space_dimension());
+          if (cells.size() == 1) {
+            dc = mesh_->face_centroid(f) - cell_centroid;
+          } else if (cells[0] == c) {
+            dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
+          } else {
+            dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
+          }
+          normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
+        }
 
-        double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
-            * rho_v[0][c];
+        double outward_flux = ( ((*K_)[c] * gravity) * normal) * rho_v[0][c];
         Ff[n] += outward_flux;
         Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
       }
@@ -203,17 +217,31 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
     unsigned int ncells = rho->size("cell",false);
     for (unsigned int c=0; c!=ncells; ++c) {
-      rho->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
       double& Fc = matrix->Fc_cells()[c];
 
       for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
-        const AmanziGeometry::Point& normal = rho->Mesh()->face_normal(f);
+        AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
+        if (tpfa_) {
+          // normal must be vector connecting centroids, not true normal
+          AmanziMesh::Entity_ID_List cells;
+          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
+          AmanziGeometry::Point dc(mesh_->space_dimension());
+          if (cells.size() == 1) {
+            dc = mesh_->face_centroid(f) - cell_centroid;
+          } else if (cells[0] == c) {
+            dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
+          } else {
+            dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
+          }
+          normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
+        }
 
-        double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
-            * krel_cells[0][c] * rho_v[0][c];
+        double outward_flux = ( ((*K_)[c] * gravity) * normal) * krel_cells[0][c] * rho_v[0][c];
         Ff[n] += outward_flux;
         Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
       }
@@ -226,17 +254,31 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
     unsigned int ncells = rho->size("cell",false);
     for (unsigned int c=0; c!=ncells; ++c) {
-      rho->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
       double& Fc = matrix->Fc_cells()[c];
 
       for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
-        const AmanziGeometry::Point& normal = rho->Mesh()->face_normal(f);
+        AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
+        if (tpfa_) {
+          // normal must be vector connecting centroids, not true normal
+          AmanziMesh::Entity_ID_List cells;
+          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
+          AmanziGeometry::Point dc(mesh_->space_dimension());
+          if (cells.size() == 1) {
+            dc = mesh_->face_centroid(f) - cell_centroid;
+          } else if (cells[0] == c) {
+            dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
+          } else {
+            dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
+          }
+          normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
+        }
 
-        double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
-            * rho_v[0][c];
+        double outward_flux = ( ((*K_)[c] * gravity) * normal) * rho_v[0][c];
         Ff[n] += outward_flux * (scaled_constraint_ ? 1. : krel_faces[0][f]);
         Fc -= outward_flux * krel_faces[0][f] ;  // Nonzero-sum contribution when not upwinding
       }
@@ -250,17 +292,31 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
     unsigned int ncells = rho->size("cell",false);
     for (unsigned int c=0; c!=ncells; ++c) {
-      rho->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
       double& Fc = matrix->Fc_cells()[c];
 
       for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
-        const AmanziGeometry::Point& normal = rho->Mesh()->face_normal(f);
+        AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
+        if (tpfa_) {
+          // normal must be vector connecting centroids, not true normal
+          AmanziMesh::Entity_ID_List cells;
+          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
+          AmanziGeometry::Point dc(mesh_->space_dimension());
+          if (cells.size() == 1) {
+            dc = mesh_->face_centroid(f) - cell_centroid;
+          } else if (cells[0] == c) {
+            dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
+          } else {
+            dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
+          }
+          normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
+        }
 
-        double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
-            * krel_cells[0][c] * rho_v[0][c];
+        double outward_flux = ( ((*K_)[c] * gravity) * normal) * krel_cells[0][c] * rho_v[0][c];
         Ff[n] += outward_flux * (scaled_constraint_ ? 1. : krel_faces[0][f]);
         Fc -= outward_flux * krel_faces[0][f];  // Nonzero-sum contribution when not upwinding
       }
@@ -291,12 +347,28 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
     unsigned int ncells = rho->size("cell",false);
     for (unsigned int c=0; c!=ncells; ++c) {
-      mesh_->cell_get_faces(c, &faces);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
-        const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+        AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
+        if (tpfa_) {
+          // normal must be vector connecting centroids, not true normal
+          AmanziMesh::Entity_ID_List cells;
+          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
+          AmanziGeometry::Point dc(mesh_->space_dimension());
+          if (cells.size() == 1) {
+            dc = mesh_->face_centroid(f) - cell_centroid;
+          } else if (cells[0] == c) {
+            dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
+          } else {
+            dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
+          }
+          normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
+        }
+
         if (f<f_owned && !done[f]) {
-          darcy_flux_v[0][f] += (((*K_)[c] * gravity) * normal) * rho_v[0][c];
+          darcy_flux_v[0][f] += (((*K_)[c] * gravity) * normal) * dirs[n] * rho_v[0][c];
           done[f] = true;
         }
       }
@@ -307,12 +379,28 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
     unsigned int ncells = rho->size("cell",false);
     for (unsigned int c=0; c!=ncells; ++c) {
-      darcy_flux->Mesh()->cell_get_faces(c, &faces);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
-        const AmanziGeometry::Point& normal = darcy_flux->Mesh()->face_normal(f);
+        AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
+        if (tpfa_) {
+          // normal must be vector connecting centroids, not true normal
+          AmanziMesh::Entity_ID_List cells;
+          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
+          AmanziGeometry::Point dc(mesh_->space_dimension());
+          if (cells.size() == 1) {
+            dc = mesh_->face_centroid(f) - cell_centroid;
+          } else if (cells[0] == c) {
+            dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
+          } else {
+            dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
+          }
+          normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
+        }
+
         if (f<f_owned && !done[f]) {
-          darcy_flux_v[0][f] += (((*K_)[c] * gravity) * normal)
+          darcy_flux_v[0][f] += (((*K_)[c] * gravity) * normal) * dirs[n]
               * krel_cells[0][c] * rho_v[0][c];
           done[f] = true;
         }
@@ -324,12 +412,28 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
     unsigned int ncells = rho->size("cell",false);
     for (unsigned int c=0; c!=ncells; ++c) {
-      darcy_flux->Mesh()->cell_get_faces(c, &faces);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
-        const AmanziGeometry::Point& normal = darcy_flux->Mesh()->face_normal(f);
+        AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
+        if (tpfa_) {
+          // normal must be vector connecting centroids, not true normal
+          AmanziMesh::Entity_ID_List cells;
+          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
+          AmanziGeometry::Point dc(mesh_->space_dimension());
+          if (cells.size() == 1) {
+            dc = mesh_->face_centroid(f) - cell_centroid;
+          } else if (cells[0] == c) {
+            dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
+          } else {
+            dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
+          }
+          normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
+        }
+
         if (f<f_owned && !done[f]) {
-          darcy_flux_v[0][f] += (((*K_)[c] * gravity) * normal)
+          darcy_flux_v[0][f] += (((*K_)[c] * gravity) * normal) * dirs[n]
               * krel_faces[0][f] * rho_v[0][c];
           done[f] = true;
         }
@@ -342,12 +446,28 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
     unsigned int ncells = rho->size("cell",false);
     for (unsigned int c=0; c!=ncells; ++c) {
-      darcy_flux->Mesh()->cell_get_faces(c, &faces);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
-        const AmanziGeometry::Point& normal = darcy_flux->Mesh()->face_normal(f);
+        AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[n];
+        if (tpfa_) {
+          // normal must be vector connecting centroids, not true normal
+          AmanziMesh::Entity_ID_List cells;
+          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          const AmanziGeometry::Point& cell_centroid = mesh_->cell_centroid(c);
+          AmanziGeometry::Point dc(mesh_->space_dimension());
+          if (cells.size() == 1) {
+            dc = mesh_->face_centroid(f) - cell_centroid;
+          } else if (cells[0] == c) {
+            dc = mesh_->cell_centroid(cells[1]) - cell_centroid;
+          } else {
+            dc = mesh_->cell_centroid(cells[0]) - cell_centroid;
+          }
+          normal = AmanziGeometry::norm(normal) / AmanziGeometry::norm(dc) * dc;
+        }
+
         if (f<f_owned && !done[f]) {
-          darcy_flux_v[0][f] += (((*K_)[c] * gravity) * normal)
+          darcy_flux_v[0][f] += (((*K_)[c] * gravity) * normal) * dirs[n]
               * krel_cells[0][c] * krel_faces[0][f] * rho_v[0][c];
           done[f] = true;
         }
