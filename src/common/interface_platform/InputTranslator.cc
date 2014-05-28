@@ -2631,6 +2631,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
   char* attrName;
   char* attrValue;
   bool hasPerm = false;
+  bool hasHC = false;
 
   if (def_list.sublist("simulation").isParameter("verbosity")) {
     std::string verbosity = def_list.sublist("simulation").get<std::string>("verbosity") ;
@@ -2789,6 +2790,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
           else if  (strcmp("hydraulic_conductivity",tagName)==0){
 	      // loop over attributes to get x,y,z
 	      char *x,*y,*z;
+              hasHC = true;
               attrMap = curkid->getAttributes();
 	      Teuchos::ParameterList hydcond;
 	      Teuchos::ParameterList hydcondTmp;
@@ -2965,7 +2967,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
     }
 
   }
-  if (!hasPerm){
+  if (!hasPerm and !hasHC){
     Teuchos::ParameterList perm;
     perm.set<double>("Value",0.0);
     list.sublist(textContent).sublist("Intrinsic Permeability: Uniform") = perm;
