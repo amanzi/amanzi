@@ -132,14 +132,14 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
   if (criteria == LIN_SOLVER_RELATIVE_RHS) {
     if (rnorm0 < tol * fnorm) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	*vo_->os() << "Converged (relative RHS), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
+        *vo_->os() << "Converged (relative ||RHS|| = " << fnorm << "), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
       return LIN_SOLVER_RELATIVE_RHS;
     }
   }
 
   if (residual_ > overflow_tol_) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Diverged, ||r|| = " << rnorm0 << std::endl;
+      *vo_->os() << "Diverged, ||r|| = " << residual_ << std::endl;
     return LIN_SOLVER_RESIDUAL_OVERFLOW;
   }
 
@@ -165,28 +165,28 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
 
     if (rnorm > overflow_tol_) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	*vo_->os() << "Diverged, ||r|| = " << rnorm0 << std::endl;
+        *vo_->os() << "Diverged, ||r|| = " << rnorm << std::endl;
       return LIN_SOLVER_RESIDUAL_OVERFLOW;
     }
 
     // Return the first criterion which is fulfilled.
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
       if (rnorm < tol * fnorm) {
-	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (relative RHS), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
-	return LIN_SOLVER_RELATIVE_RHS;
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+          *vo_->os() << "Converged (relative ||RHS|| = " << fnorm << "), itr = " << num_itrs_ << " ||r|| = " << rnorm << std::endl;
+        return LIN_SOLVER_RELATIVE_RHS;
       }
     } else if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
       if (rnorm < tol * rnorm0) {
-	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (relative res), itr = " << num_itrs_ << " ||r|| = " << residual_ << std::endl;
-	return LIN_SOLVER_RELATIVE_RESIDUAL;
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+          *vo_->os() << "Converged (relative ||res|| = " << rnorm0 << "), itr = " << num_itrs_ << " ||r|| = " << rnorm << std::endl;
+        return LIN_SOLVER_RELATIVE_RESIDUAL;
       }
     } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
       if (rnorm < tol) {
-	if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-	  *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
-	return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+          *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << rnorm << std::endl;
+        return LIN_SOLVER_ABSOLUTE_RESIDUAL;
       }
     }
 
