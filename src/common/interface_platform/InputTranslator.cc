@@ -133,7 +133,7 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
   
   delete errorHandler;
   XMLPlatformUtils::Terminate();
-  def_list.print(std::cout,true,false);
+  //def_list.print(std::cout,true,false);
 
   // return the completely translated input file as a parameter list
   return new_list;
@@ -1111,10 +1111,6 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 	if (defPL.get<std::string>("mode") == "transient") hasTrans = true;
     }
   }
-  std::cout << "EIB>> defPL: " << std::endl;
-  defPL.print(std::cout,true,false);
-  std::cout << "EIB>> ecsPL: " << std::endl;
-  ecsPL.print(std::cout,true,false);
 
   // Now, go back and sort things out
   bool haveSSF = false; // have steady-steady incr/red factors for later
@@ -1886,7 +1882,6 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 	      DOMNode* preconNode = tmpList->item(0);
 	      textContent = XMLString::transcode(preconNode->getAttributes()->getNamedItem(XMLString::transcode("name"))->getNodeValue());
 	      if (strcmp(textContent,"trilinos_ml")==0) {
-		std::cout << "EIB>> setting  transient preconditioner  Trilinos ML" << std::endl;
                 tcPL.set<std::string>("transient preconditioner","Trilinos ML");
                 DOMNodeList* children = preconNode->getChildNodes();
 	        Teuchos::ParameterList preconPL;
@@ -2829,7 +2824,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
 	      } else {
 		hydcond.set<double>("x",hydcondTmp.get<double>("x"));
 	        if (hydcondTmp.isParameter("y")) {
-		    hydcondTmp.set<double>("y",hydcondTmp.get<double>("y")) ;
+		    hydcond.set<double>("y",hydcondTmp.get<double>("y")) ;
 		}
 	        if (hydcondTmp.isParameter("z")) {
 		    hydcond.set<double>("z",hydcondTmp.get<double>("z")) ;
