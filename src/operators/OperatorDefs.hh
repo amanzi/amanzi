@@ -39,6 +39,12 @@ const int OPERATOR_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
 const int OPERATOR_MAX_NODES = 47;  // These polyhedron parameters must
 const int OPERATOR_MAX_EDGES = 60;  // be calculated in Init().
 
+// upwind options
+const int OPERATOR_UPWIND_WITH_CONSTANT_VECTOR = 3;
+const int OPERATOR_UPWIND_WITH_FLUX = 4;
+const int OPERATOR_ARITHMETIC_MEAN = 5;
+const double OPERATOR_UPWIND_RELATIVE_TOLERANCE = 1e-12;
+
 }  // namespace Operators
 }  // namespace Amanzi
 

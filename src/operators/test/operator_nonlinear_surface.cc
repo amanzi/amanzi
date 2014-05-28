@@ -85,9 +85,9 @@ class HeatConduction {
 
 /* *****************************************************************
 * This test replaves tensor and boundary conditions by continuous
-* functions. This is a prototype for future solvers.
+* functions. This is a prototype forheat conduction solvers.
 * **************************************************************** */
-TEST(NONLINEAR_OPERATOR) {
+TEST(NONLINEAR_HEAT_CONDUCTION) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
