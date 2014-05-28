@@ -97,4 +97,18 @@ if (BUILD_TESTS)
 			  ${UnitTest_LIBRARIES}
 			  ${time_int_new_tpl_libs})
 
+    add_amanzi_test(time_integration_rk test_rk_time_integration
+                    KIND unit
+		    SOURCE
+		          test/Main.cc
+			      test/test_Explicit_RK.cc
+		    LINK_LIBS
+              atk
+		      time_integration
+			  error_handling
+			  ${UnitTest_LIBRARIES}
+			  ${Teuchos_LIBRARIES}
+			  ${Epetra_LIBRARIES}
+			  ${time_integration_tpl_libs})
+
 endif()
