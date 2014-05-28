@@ -133,6 +133,7 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
   
   delete errorHandler;
   XMLPlatformUtils::Terminate();
+  def_list.print(std::cout,true,false);
 
   // return the completely translated input file as a parameter list
   return new_list;
@@ -1110,6 +1111,10 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 	if (defPL.get<std::string>("mode") == "transient") hasTrans = true;
     }
   }
+  std::cout << "EIB>> defPL: " << std::endl;
+  defPL.print(std::cout,true,false);
+  std::cout << "EIB>> ecsPL: " << std::endl;
+  ecsPL.print(std::cout,true,false);
 
   // Now, go back and sort things out
   bool haveSSF = false; // have steady-steady incr/red factors for later
@@ -1881,6 +1886,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 	      DOMNode* preconNode = tmpList->item(0);
 	      textContent = XMLString::transcode(preconNode->getAttributes()->getNamedItem(XMLString::transcode("name"))->getNodeValue());
 	      if (strcmp(textContent,"trilinos_ml")==0) {
+		std::cout << "EIB>> setting  transient preconditioner  Trilinos ML" << std::endl;
                 tcPL.set<std::string>("transient preconditioner","Trilinos ML");
                 DOMNodeList* children = preconNode->getChildNodes();
 	        Teuchos::ParameterList preconPL;
@@ -3999,6 +4005,32 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
             XMLString::release(&textContent);
           }
           list.sublist("Checkpoint Data") = chkPL;
+	} else if (strcmp(outName,"walkabout")==0) {
+          // get list of walkabout - this node MAY exist ONCE
+          Teuchos::ParameterList chkPL;
+          DOMNodeList* childList = curoutNode->getChildNodes();
+          for (int j=0; j<childList->getLength(); j++) {
+            DOMNode* curKid = childList->item(j) ;
+            textContent  = XMLString::transcode(curKid->getNodeName());
+            if (strcmp(textContent,"base_filename")==0) {
+	      textContent2 = XMLString::transcode(curKid->getTextContent());
+              chkPL.set<std::string>("File Name Base",textContent2);
+              XMLString::release(&textContent2);
+	    } else if (strcmp(textContent,"num_digits")==0) {
+	      textContent2 = XMLString::transcode(curKid->getTextContent());
+              chkPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
+              XMLString::release(&textContent2);
+	    } else if (strcmp(textContent,"cycle_macro")==0) {
+	      textContent2 = XMLString::transcode(curKid->getTextContent());
+	      Teuchos::Array<std::string> macro;
+              macro.append(textContent2);
+              //chkPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
+              chkPL.set<std::string >("Cycle Macro",textContent2);
+              XMLString::release(&textContent2);
+	    }
+            XMLString::release(&textContent);
+          }
+          list.sublist("Walkabout Data") = chkPL;
 	} else if (strcmp(outName,"observations")==0) {
 
           Teuchos::ParameterList obsPL;
