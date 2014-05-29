@@ -212,7 +212,7 @@ if __name__ == "__main__":
     # plot adjustments
     plt.subplots_adjust(left=0.15,bottom=0.15,right=0.90,top=0.90)
     ax[0].legend(loc='center right',fontsize=15)
-    ax[1].legend(loc='upper right',fontsize=15)
+    ax[1].legend(loc='upper right',fontsize=10)
     ax[0].set_xlim(left=30,right=70)
     ax[1].set_xlim(left=30,right=70)
     #bx[2].legend(loc='center',fontsize=15)
