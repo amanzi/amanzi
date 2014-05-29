@@ -28,6 +28,8 @@ class Matrix {
   void Init(std::string& name, const Epetra_Map& map) {
     if (name == "diagonal") {
       preconditioner_ = Teuchos::rcp(new PreconditionerDiagonal());
+    } else if (name == "identity") {
+      preconditioner_ = Teuchos::rcp(new PreconditionerIdentity());
     }
     A_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, map, map, 3));
     for (int i = 0; i < N; i++) {
@@ -57,29 +59,39 @@ class Matrix {
 };
 
 TEST(DIAGONAL_PRECONDITONER) {
-  std::cout << "Checking PCG solver..." << std::endl;
+  std::cout << "Identity vs Diagonal preconditiner..." << std::endl;
 
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(N, 0, *comm));
 
   // create the pcg operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  std::string prec_name("diagonal");
-  m->Init(prec_name, *map);
-
   AmanziSolvers::LinearOperatorPCG<Matrix, Epetra_Vector, Epetra_Map> pcg(m, m);
   pcg.Init();
+  pcg.set_tolerance(1e-12);
 
-  // initial guess
-  Epetra_Vector u(*map);
-  u[0] = 1.0;
+  Epetra_Vector u(*map), v(*map);
+  for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
 
-  // solve
-  Epetra_Vector v(*map);
+  // solving with identity preconditioner
+  std::string prec_name("identity");
+  m->Init(prec_name, *map);
+
+  v.PutScalar(0.0);
   pcg.ApplyInverse(u, v);
 
-  CHECK_CLOSE(3.81595818e+0, v[0], 1e-6);
-  CHECK_CLOSE(2.81595818e+0, v[1], 1e-6);
+  CHECK_CLOSE(5.229210393e+0, v[0], 1e-6);
+  CHECK_CLOSE(4.729210393e+0, v[1], 1e-6);
+
+  // solving with diagonal preconditioner
+  prec_name = "diagonal";
+  m->Init(prec_name, *map);
+
+  v.PutScalar(0.0);
+  pcg.ApplyInverse(u, v);
+
+  CHECK_CLOSE(5.229210393e+0, v[0], 1e-6);
+  CHECK_CLOSE(4.729210393e+0, v[1], 1e-6);
 
   delete comm;
 };
