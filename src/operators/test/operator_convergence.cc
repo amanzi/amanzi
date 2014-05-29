@@ -363,8 +363,8 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
-  // RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
-  RCP<const Mesh> mesh = meshfactory("test/median255x256.exo", gm);
+  RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  // RCP<const Mesh> mesh = meshfactory("test/median255x256.exo", gm);
 
   // create diffusion coefficient
   std::vector<WhetStone::Tensor> K;
