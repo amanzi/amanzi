@@ -36,9 +36,15 @@ if __name__ == "__main__":
     fname = sys.argv[-1]
     with open(fname,'r') as fid:
         data = parse_file(fid)
+    plt.subplot(121)
     plt.semilogy(data[0][:,1], data[0][:,2], 'b-x')
     plt.semilogy(data[1][:,1], data[1][:,2], 'bx')
     plt.xlabel("time [days]")
+    plt.ylabel("dt [days]")
+    plt.subplot(122)
+    plt.semilogy(data[0][:,0], data[0][:,2], 'b-x')
+    plt.semilogy(data[1][:,0], data[1][:,2], 'bx')
+    plt.xlabel("cycles [-]")
     plt.ylabel("dt [days]")
     plt.show()
 

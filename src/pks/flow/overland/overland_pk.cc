@@ -78,6 +78,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_head_ = bc_factory.CreateHead();
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
+  bc_seepage_head_ = bc_factory.CreateSeepageFaceHead();
 
   // Create the upwinding method.
   S->RequireField("upwind_overland_conductivity", name_)->SetMesh(mesh_)
@@ -260,6 +261,7 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
   bc_head_->Compute(S->time());
   bc_zero_gradient_->Compute(S->time());
   bc_flux_->Compute(S->time());
+  bc_seepage_head_->Compute(S->time());
   //  UpdateBoundaryConditions_(S);
 
   // Set extra fields as initialized -- these don't currently have evaluators.
@@ -289,6 +291,7 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
   // update boundary conditions
   bc_head_->Compute(S->time());
   bc_flux_->Compute(S->time());
+  bc_seepage_head_->Compute(S->time());
   UpdateBoundaryConditions_(S.ptr());
 
   // Update flux if rel perm or h + Z has changed.
@@ -455,56 +458,34 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   }
 
   // zero gradient: grad h = 0 implies that q = -k grad z
-  for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
-       bc!=bc_zero_gradient_->end(); ++bc) {
-    int f = bc->first;
-    //    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
-    //    bc_values_[f] = 0.;
-    //    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+  // -- cannot be done yet as rel perm update is done after this and is needed.
+  // -- Instead zero gradient BCs are done in FixBCs methods.
 
-    // mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    // ASSERT( cells.size()==1 ) ;
-    // bc_values_[f] = height[0][cells[0]] + elevation[0][f];
-  }
-}
+  // Seepage face head boundary condition
+  if (bc_seepage_head_->size() > 0) {
+    S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
 
+    const Epetra_MultiVector& h_cells = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
+    const Epetra_MultiVector& h_faces = *S->GetFieldData("ponded_depth")->ViewComponent("face");
+    const Epetra_MultiVector& elevation_cells = *S->GetFieldData("elevation")->ViewComponent("cell");
 
-// -----------------------------------------------------------------------------
-// Evaluate boundary conditions at the current time without elevation.
-// -----------------------------------------------------------------------------
-void OverlandFlow::UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "  Updating BCs Markers only." << std::endl;
+    for (Functions::BoundaryFunction::Iterator bc = bc_seepage_head_->begin(); 
+         bc != bc_seepage_head_->end(); ++bc) {
+      int f = bc->first;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
 
-  AmanziMesh::Entity_ID_List cells;
-  // initialize all as null
-  for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::MATRIX_BC_NULL;
-    bc_values_[n] = 0.;
-  }
+      double h0 = bc->second;
+      double dz = elevation_cells[0][c] - elevation[0][f];
 
-  // Head BCs are standard Dirichlet, no elevation
-  for (Functions::BoundaryFunction::Iterator bc=bc_head_->begin();
-       bc!=bc_head_->end(); ++bc) {
-    int f = bc->first;
-    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
-  }
-
-
-  // Standard Neumann data for flux
-  for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
-       bc!=bc_flux_->end(); ++bc) {
-    int f = bc->first;
-    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
-  }
-
-  // zero gradient: grad h = 0 implies that q = -k grad z
-  for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
-       bc!=bc_zero_gradient_->end(); ++bc) {
-    //    int f = bc->first;
-    //    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
-    //    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+      if (h_cells[0][c] + dz < h0) {
+        bc_markers_[f] = Operators::MATRIX_BC_NULL;
+        bc_values_[f] = 0.0;
+      } else {
+        bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+        bc_values_[f] = h0 + elevation[0][f];
+      }
+    }
   }
 }
 
@@ -654,6 +635,7 @@ void OverlandFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>&
   // update boundary conditions
   bc_head_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
+  bc_seepage_head_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // update the rel perm according to the scheme of choice

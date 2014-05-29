@@ -37,7 +37,6 @@ void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
 void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
   // set up the timestepping algorithm
   if (!plist_->get<bool>("strongly coupled PK", false)) {
-    std::cout << "INSTANTIATING TIME INTEGRATOR!" << std::endl;
     // -- instantiate time stepper
     Teuchos::ParameterList& bdf_plist = plist_->sublist("time integrator");
     bdf_plist.set("initial time", S->time());
