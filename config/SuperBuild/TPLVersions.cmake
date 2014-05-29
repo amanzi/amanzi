@@ -43,6 +43,7 @@
 #
 #   0.92.0       - Merge lib updates through 0.91.15
 #   0.92.1       - update MSTK to version 2.12 (fixes debug version linking)
+#   0.92.2       - update CCSE to version 1.2.7 (adds f90 utility for plotting)
 #
 
 include(CMakeParseArguments)
@@ -93,7 +94,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 1)
+set (AMANZI_TPLS_VERSION_PATCH 2)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -157,12 +158,12 @@ set(METIS_MD5_SUM        5465e67079419a69e0116de24fce58fe)
 #
 set(CCSE_VERSION_MAJOR 1)
 set(CCSE_VERSION_MINOR 2)
-set(CCSE_VERSION_PATCH 6)
+set(CCSE_VERSION_PATCH 7)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-set(CCSE_MD5_SUM        9b4085b44861e864c8f23e181716f624)
+set(CCSE_MD5_SUM        0118a98acc10743bd1998f4fdae2447c)
 #
 # TPL: UnitTest
 #

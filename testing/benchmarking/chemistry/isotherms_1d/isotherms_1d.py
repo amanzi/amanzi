@@ -1,6 +1,8 @@
 # plots cation concentration along x at last time step 
 # benchmark: compares to pflotran simulation results
 # author: S.Molins - Nov. 2013
+# modified: E.I.Barker - May 2014
+#           - added native chemistry using v2 input spec
 
 import os
 import sys
@@ -66,6 +68,7 @@ if __name__ == "__main__":
     # times
     timespfl = ['Time:  0.00000E+00 y', 'Time:  5.00000E+01 y',]
     timesama  = ['0','71']
+    timesama2 = ['0','71']
 
     # pflotran output
     pflotran_totc_templ = "Total_{0} [M]"
@@ -149,10 +152,34 @@ if __name__ == "__main__":
 
         alq = False
 
+    try:  
+        # Amanzi-ISV2
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-isv2.xml")
+        path_to_amanzi = "amanzi-native-isv2-output"
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,isV2=True)
+
+        u_amanzi_native_isv2 = [[[] for x in range(len(amanzi_totc))] for x in range(len(timesama2))]
+        for i, time in enumerate(timesama2):
+           for j, comp in enumerate(amanzi_totc):
+              x_amanzi_native_isv2, c_amanzi_native_isv2 = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              u_amanzi_native_isv2[i][j] = c_amanzi_native_isv2
+              
+        v_amanzi_native_isv2 = [[[] for x in range(len(amanzi_sorb))] for x in range(len(timesama2))]
+        for i, time in enumerate(timesama2):
+           for j, comp in enumerate(amanzi_sorb):
+              x_amanzi_native_isv2, c_amanzi_native_isv2 = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              v_amanzi_native_isv2[i][j] = c_amanzi_native_isv2
+
+        isv2 = True
+
+    except:
+
+        isv2 = False
+
 
     colors= ['r','b','m','g'] # components
-    styles = ['-','o','x'] # codes
-    codes = ['Amanzi+Alquimia(PFloTran)','Amanzi Native Chemistry','PFloTran'] + [None,]*9
+    styles = ['-','v','o','x'] # codes
+    codes = ['Amanzi+Alquimia(PFloTran)','Amanzi Native Chemistry (v2)','Amanzi Native Chemistry (v1.2)','PFloTran'] + [None,]*9
 
     # lines on axes
     # ax[0] ---> Aqueous concentrations
@@ -163,15 +190,19 @@ if __name__ == "__main__":
     for j, comp in enumerate(components):
             if alq:
                    ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2)
-            ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],markeredgecolor=colors[j],marker=styles[1],linewidth=2,label=comp,mfc='None',markeredgewidth=2,linestyle='None')
-            ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
+            if isv2:
+                   ax[0].plot(x_amanzi_native_isv2, u_amanzi_native_isv2[i][j],color=colors[j],marker=styles[1],markeredgecolor=colors[j],linestyle='None')
+            ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],markeredgecolor=colors[j],marker=styles[2],linewidth=2,label=comp,mfc='None',markeredgewidth=2,linestyle='None')
+            ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[3],linewidth=2)
 
     # for i, time in enumerate(times):
     for j, comp in enumerate(components):
             if alq:
                    ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
-            ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],markeredgecolor=colors[j],marker=styles[1],linewidth=2,label=codes[j*len(styles)+1],mfc='None',markeredgewidth=2,linestyle='None')
-            ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
+            if isv2:
+                   ax[1].plot(x_amanzi_native_isv2, v_amanzi_native_isv2[i][j],color=colors[j],linestyle='None',marker=styles[1],markeredgecolor=colors[j],label=codes[j*len(styles)+1])
+            ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],markeredgecolor=colors[j],marker=styles[2],linewidth=2,label=codes[j*len(styles)+2],mfc='None',markeredgewidth=2,linestyle='None')
+            ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[3],linewidth=2,label=codes[j*len(styles)+3])
 
     # axes
     ax[1].set_xlabel("Distance (m)",fontsize=15)
@@ -181,7 +212,7 @@ if __name__ == "__main__":
     # plot adjustments
     plt.subplots_adjust(left=0.15,bottom=0.15,right=0.90,top=0.90)
     ax[0].legend(loc='center right',fontsize=15)
-    ax[1].legend(loc='upper right',fontsize=15)
+    ax[1].legend(loc='upper right',fontsize=10)
     ax[0].set_xlim(left=30,right=70)
     ax[1].set_xlim(left=30,right=70)
     #bx[2].legend(loc='center',fontsize=15)

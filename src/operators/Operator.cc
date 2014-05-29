@@ -448,9 +448,11 @@ void Operator::SymbolicAssembleMatrix(int schema)
     }
   }
 
-  // Optimizing the graphs
+  // Completing and optimizing the graphs
   ff_graph_off.FillComplete(*map, *map);
 
+  // Exporter is used in matrix assembly. However, the graph  should 
+  // be already complete for our applications. 
   exporter_ = Teuchos::rcp(new Epetra_Export(*map_off, *map));
   ff_graph.Export(ff_graph_off, *exporter_, Insert);
   
