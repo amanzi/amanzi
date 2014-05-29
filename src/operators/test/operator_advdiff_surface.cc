@@ -35,10 +35,10 @@
 
 
 /* *****************************************************************
-* This test replaves tensor and boundary conditions by continuous
+* This test replaces tensor and boundary conditions by continuous
 * functions. This is a prototype for future solvers.
 * **************************************************************** */
-TEST(SURFACE_MISC) {
+TEST(ADVECTION_DIFFUSION_SURFACE) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -51,7 +51,7 @@ TEST(SURFACE_MISC) {
   if (MyPID == 0) std::cout << "\nTest: Advection-duffusion on a surface" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/operator_surface_misc.xml";
+  std::string xmlFileName = "test/operator_advdiff_surface.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 

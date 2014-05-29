@@ -133,6 +133,7 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
   
   delete errorHandler;
   XMLPlatformUtils::Terminate();
+  //def_list.print(std::cout,true,false);
 
   // return the completely translated input file as a parameter list
   return new_list;
@@ -2630,6 +2631,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
   char* attrName;
   char* attrValue;
   bool hasPerm = false;
+  bool hasHC = false;
 
   if (def_list.sublist("simulation").isParameter("verbosity")) {
     std::string verbosity = def_list.sublist("simulation").get<std::string>("verbosity") ;
@@ -2788,6 +2790,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
           else if  (strcmp("hydraulic_conductivity",tagName)==0){
 	      // loop over attributes to get x,y,z
 	      char *x,*y,*z;
+              hasHC = true;
               attrMap = curkid->getAttributes();
 	      Teuchos::ParameterList hydcond;
 	      Teuchos::ParameterList hydcondTmp;
@@ -2823,7 +2826,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
 	      } else {
 		hydcond.set<double>("x",hydcondTmp.get<double>("x"));
 	        if (hydcondTmp.isParameter("y")) {
-		    hydcondTmp.set<double>("y",hydcondTmp.get<double>("y")) ;
+		    hydcond.set<double>("y",hydcondTmp.get<double>("y")) ;
 		}
 	        if (hydcondTmp.isParameter("z")) {
 		    hydcond.set<double>("z",hydcondTmp.get<double>("z")) ;
@@ -2964,7 +2967,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
     }
 
   }
-  if (!hasPerm){
+  if (!hasPerm and !hasHC){
     Teuchos::ParameterList perm;
     perm.set<double>("Value",0.0);
     list.sublist(textContent).sublist("Intrinsic Permeability: Uniform") = perm;
@@ -3999,6 +4002,32 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
             XMLString::release(&textContent);
           }
           list.sublist("Checkpoint Data") = chkPL;
+	} else if (strcmp(outName,"walkabout")==0) {
+          // get list of walkabout - this node MAY exist ONCE
+          Teuchos::ParameterList chkPL;
+          DOMNodeList* childList = curoutNode->getChildNodes();
+          for (int j=0; j<childList->getLength(); j++) {
+            DOMNode* curKid = childList->item(j) ;
+            textContent  = XMLString::transcode(curKid->getNodeName());
+            if (strcmp(textContent,"base_filename")==0) {
+	      textContent2 = XMLString::transcode(curKid->getTextContent());
+              chkPL.set<std::string>("File Name Base",textContent2);
+              XMLString::release(&textContent2);
+	    } else if (strcmp(textContent,"num_digits")==0) {
+	      textContent2 = XMLString::transcode(curKid->getTextContent());
+              chkPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
+              XMLString::release(&textContent2);
+	    } else if (strcmp(textContent,"cycle_macro")==0) {
+	      textContent2 = XMLString::transcode(curKid->getTextContent());
+	      Teuchos::Array<std::string> macro;
+              macro.append(textContent2);
+              //chkPL.set<Teuchos::Array<std::string> >("Cycle Macros",macro);
+              chkPL.set<std::string >("Cycle Macro",textContent2);
+              XMLString::release(&textContent2);
+	    }
+            XMLString::release(&textContent);
+          }
+          list.sublist("Walkabout Data") = chkPL;
 	} else if (strcmp(outName,"observations")==0) {
 
           Teuchos::ParameterList obsPL;

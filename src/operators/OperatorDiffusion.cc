@@ -476,19 +476,24 @@ void OperatorDiffusion::InitPreconditioner(
     const std::string& prec_name, const Teuchos::ParameterList& plist,
     std::vector<int>& bc_model, std::vector<double>& bc_values)
 {
-  if (special_assembling_) {
-    InitPreconditionerSpecial_(prec_name, plist, bc_model, bc_values);
+  if (special_assembling_) { 
+#ifdef OPERATORS_MATRIX_FE_CRS
+    InitPreconditionerSpecialFE_(prec_name, plist, bc_model, bc_values);
+#else
+    InitPreconditionerSpecialCRS_(prec_name, plist, bc_model, bc_values);
+#endif
   } else {
     Operator::InitPreconditioner(prec_name, plist, bc_model, bc_values);
   }
 }
 
 
+#ifdef OPERATORS_MATRIX_FE_CRS
 /* ******************************************************************
 * Routine assembles the Schur complement for face-based degrees 
 * of freedom.
 ****************************************************************** */
-void OperatorDiffusion::InitPreconditionerSpecial_(
+void OperatorDiffusion::InitPreconditionerSpecialFE_(
     const std::string& prec_name, const Teuchos::ParameterList& plist,
     std::vector<int>& bc_model, std::vector<double>& bc_values)
 {
@@ -548,6 +553,91 @@ void OperatorDiffusion::InitPreconditionerSpecial_(
   preconditioner_ = factory.Create(prec_name, plist);
   preconditioner_->Update(A_);
 }
+
+
+#else
+/* ******************************************************************
+* Routine assembles the Schur complement for face-based degrees 
+* of freedom.
+****************************************************************** */
+void OperatorDiffusion::InitPreconditionerSpecialCRS_(
+    const std::string& prec_name, const Teuchos::ParameterList& plist,
+    std::vector<int>& bc_model, std::vector<double>& bc_values)
+{
+  // find the block of matrices
+  int schema_dofs = OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL;
+  int m(0), nblocks = blocks_schema_.size();
+  for (int nb = 0; nb < nblocks; nb++) {
+    int schema = blocks_schema_[nb];
+    if (schema & schema_dofs) {
+      m = nb;
+      break;
+    }
+  }
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+
+  // create a face-based stiffness matrix from A.
+  A_->PutScalar(0.0);
+  int ndof = A_->NumMyRows();
+
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+  AmanziMesh::Entity_ID_List faces;
+
+  int lid[OPERATOR_MAX_FACES];
+  int gid[OPERATOR_MAX_FACES];
+  double values[OPERATOR_MAX_FACES];
+
+  Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    WhetStone::DenseMatrix Scell(nfaces, nfaces);
+    WhetStone::DenseMatrix& Acell = matrix[c];
+
+    double tmp = Acell(nfaces, nfaces) + diag[0][c];
+    for (int n = 0; n < nfaces; n++) {
+      for (int m = 0; m < nfaces; m++) {
+        Scell(n, m) = Acell(n, m) - Acell(n, nfaces) * Acell(nfaces, m) / tmp;
+      }
+    }
+
+    for (int n = 0; n < nfaces; n++) {  // Symbolic boundary conditions
+      int f = faces[n];
+      if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
+        for (int m = 0; m < nfaces; m++) Scell(n, m) = Scell(m, n) = 0.0;
+        Scell(n, n) = 1.0;
+      }
+    }
+
+    for (int n = 0; n < nfaces; n++) {
+      lid[n] = faces[n];
+      gid[n] = fmap_wghost.GID(faces[n]);
+    }
+    for (int n = 0; n < nfaces; n++) {
+      for (int m = 0; m < nfaces; m++) values[m] = Scell(n, m);
+      if (lid[n] < ndof) {
+        A_->SumIntoMyValues(lid[n], nfaces, values, lid);
+      } else {
+        A_off_->SumIntoMyValues(lid[n] - ndof, nfaces, values, lid);
+      }
+    }
+  }
+
+  // Scatter off proc to their locations
+  A_->Export(*A_off_, *exporter_, Add);
+      
+  const Epetra_Map& map = A_->RowMap();
+  A_->FillComplete(map, map);
+
+  // redefine (if necessary) preconditioner since only 
+  // one preconditioner is allowed.
+  AmanziPreconditioners::PreconditionerFactory factory;
+  preconditioner_ = factory.Create(prec_name, plist);
+  preconditioner_->Update(A_);
+}
+#endif
 
 
 /* ******************************************************************

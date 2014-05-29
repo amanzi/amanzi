@@ -50,7 +50,18 @@ add_amanzi_library(operator_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_l
 #
 # Library: operators
 #
-file(GLOB operators_inc_files "*.hh")
+set(operators_inc_files 
+    Operator.hh
+    OperatorDefs.hh
+    OperatorTypeDefs.hh
+    OperatorAdvection.hh
+    OperatorDiffusionFactory.hh
+    OperatorDiffusion.hh
+    OperatorDiffusionSurface.hh
+    OperatorDiffusionWithGravity.hh
+    OperatorSource.hh
+    Upwind.hh)
+
 add_amanzi_library(operators
                    SOURCE Operator.cc 
                    OperatorDiffusion.cc OperatorDiffusionSurface.cc 
@@ -103,9 +114,15 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for surface
-    add_amanzi_test(operators_surface_misc operators_surface_misc
+    add_amanzi_test(operators_advdiff_surface operators_advdiff_surface
                     KIND unit
-                    SOURCE test/Main.cc test/operator_surface_misc.cc
+                    SOURCE test/Main.cc test/operator_advdiff_surface.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: utils
+    add_amanzi_test(operators_upwind operators_upwind
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_upwind.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # convergence analysis

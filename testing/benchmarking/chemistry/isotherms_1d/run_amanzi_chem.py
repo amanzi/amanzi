@@ -2,7 +2,7 @@
 #### Takes in chemistry database for native Amanzi chemistry
 import os, sys, subprocess, shutil
 
-def run_amanzi_chem(xml_input_file, run_path=None, chemfiles=None, directory=None):
+def run_amanzi_chem(xml_input_file, run_path=None, chemfiles=None, directory=None, isV2=False):
 
     # get current directory
     if directory is None:
@@ -30,6 +30,7 @@ def run_amanzi_chem(xml_input_file, run_path=None, chemfiles=None, directory=Non
            new_chemfile="{0}/{1}".format(run_directory, chemfile)
            shutil.copyfile(chemfile, new_chemfile)
 
+    
     # change into run directory
     os.chdir(run_directory)
     
@@ -45,7 +46,12 @@ def run_amanzi_chem(xml_input_file, run_path=None, chemfiles=None, directory=Non
 
     try:
         stdout_file = open("stdout.out", "w")
-        ierr = subprocess.call([executable, "--xml_file="+xml_input_file], stdout=stdout_file, stderr= subprocess.STDOUT)
+	if isV2:
+            path = os.path.join(os.environ['AMANZI_INSTALL_DIR'],'bin')
+            schema = os.path.join(path, "amanzi.xsd")
+            ierr = subprocess.call([executable, "--xml_schema="+schema, "--xml_file="+xml_input_file], stdout=stdout_file, stderr= subprocess.STDOUT)
+	else:
+            ierr = subprocess.call([executable, "--xml_file="+xml_input_file], stdout=stdout_file, stderr= subprocess.STDOUT)
 
     finally:
         os.chdir(CWD)

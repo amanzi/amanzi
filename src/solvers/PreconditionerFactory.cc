@@ -13,12 +13,13 @@
 #include "errors.hh"
 
 #include "Preconditioner.hh"
-#include "PreconditionerFactory.hh"
-#include "PreconditionerIdentity.hh"
+#include "PreconditionerBlockILU.hh"
 #include "PreconditionerBoomerAMG.hh"
 #include "PreconditionerEuclid.hh"
+#include "PreconditionerDiagonal.hh"
+#include "PreconditionerFactory.hh"
+#include "PreconditionerIdentity.hh"
 #include "PreconditionerML.hh"
-#include "PreconditionerBlockILU.hh"
 
 namespace Amanzi {
 namespace AmanziPreconditioners {
@@ -67,6 +68,10 @@ PreconditionerFactory::Create(Teuchos::ParameterList& slist)
       Teuchos::ParameterList ilu_list = slist.sublist("block ilu parameters");
       Teuchos::RCP<PreconditionerBlockILU> prec = Teuchos::rcp(new PreconditionerBlockILU());
       prec->Init(type, ilu_list);
+      return prec;
+    } else if (type == "diagonal") {
+      Teuchos::RCP<PreconditionerDiagonal> prec = Teuchos::rcp(new PreconditionerDiagonal());
+      prec->Init(type, slist);
       return prec;
     } else if (type == "identity") {  // Identity preconditioner is default.
       Teuchos::RCP<PreconditionerIdentity> prec = Teuchos::rcp(new PreconditionerIdentity());
