@@ -147,7 +147,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   bc_pressure_ = bc_factory.CreatePressure();
   bc_flux_ = bc_factory.CreateMassFlux();
   infiltrate_only_if_unfrozen_ = bc_plist.get<bool>("infiltrate only if unfrozen",false);
-  bc_seepage_ = bc_factory.CreateSeepageFace();
+  bc_seepage_ = bc_factory.CreateSeepageFacePressure();
   bc_seepage_->Compute(0.); // compute at t=0 to set up
 
   // how often to update the fluxes?

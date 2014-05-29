@@ -483,7 +483,7 @@ MPCPermafrost3::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 }
 
 // -- Modify the correction.
-bool
+ModifyCorrectionResult
 MPCPermafrost3::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -565,7 +565,8 @@ MPCPermafrost3::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
     domain_db_->WriteVectors(vnames, vecs, true);
   }
 
-  return modified;
+  return modified ? AmanziSolvers::CORRECTION_MODIFIED :
+      AmanziSolvers::CORRECTION_NOT_MODIFIED;
 }
 
 void

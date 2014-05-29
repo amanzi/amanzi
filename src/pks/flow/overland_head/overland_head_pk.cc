@@ -156,7 +156,9 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_head_ = bc_factory.CreateHead();
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
-  bc_seepage_ = bc_factory.CreateSeepageFace();
+  bc_seepage_head_ = bc_factory.CreateWithFunction("seepage face head", "boundary head");
+  bc_seepage_pressure_ = bc_factory.CreateWithFunction("seepage face pressure", "boundary pressure");
+  ASSERT(!bc_plist.isParameter("seepage face")); // old style!
 
   // operator for the diffusion terms: must use ScaledConstraint version
   Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
@@ -301,6 +303,14 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("ponded_depth_bar");
 
+  // -- effective accumulation ponded depth (smoothing of derivatives as h --> 0)
+  smoothed_ponded_accumulation_ = plist_->get<bool>("smooth ponded accumulation",false);
+  if (smoothed_ponded_accumulation_) {
+    S->RequireField("smoothed_ponded_depth")->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator("smoothed_ponded_depth");
+  }
+
   // -- conductivity evaluator
   S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names_bf, locations_bf, num_dofs2);
@@ -393,7 +403,8 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
   bc_head_->Compute(S->time());
   bc_zero_gradient_->Compute(S->time());
   bc_flux_->Compute(S->time());
-  bc_seepage_->Compute(S->time());
+  bc_seepage_head_->Compute(S->time());
+  bc_seepage_pressure_->Compute(S->time());
 
   // Set extra fields as initialized -- these don't currently have evaluators.
   S->GetFieldData("upwind_overland_conductivity",name_)->PutScalar(1.0);
@@ -424,7 +435,8 @@ void OverlandHeadFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
   // update boundary conditions
   bc_head_->Compute(S->time());
   bc_flux_->Compute(S->time());
-  bc_seepage_->Compute(S->time());
+  bc_seepage_head_->Compute(S->time());
+  bc_seepage_pressure_->Compute(S->time());
   UpdateBoundaryConditions_(S.ptr());
 
   // Update flux if rel perm or h + Z has changed.
@@ -646,103 +658,93 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   }
 
   // zero gradient: grad h = 0 implies that q = -k grad z
-  for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
-       bc!=bc_zero_gradient_->end(); ++bc) {
-    int f = bc->first;
-    //    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
-    //    bc_values_[f] = 0.;
-    //    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+  // -- cannot be done yet as rel perm update is done after this and is needed.
+  // -- Instead zero gradient BCs are done in FixBCs methods.
 
-    // mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    // ASSERT( cells.size()==1 ) ;
-    // bc_values_[f] = height[0][cells[0]] + elevation[0][f];
-  }
+  // Seepage face head boundary condition
+  if (bc_seepage_head_->size() > 0) {
+    S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
 
-  // Seepage face boundary condition
-  S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
+    const Epetra_MultiVector& h_cells = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
+    const Epetra_MultiVector& h_faces = *S->GetFieldData("ponded_depth")->ViewComponent("face");
+    const Epetra_MultiVector& elevation_cells = *S->GetFieldData("elevation")->ViewComponent("cell");
 
-  const Epetra_MultiVector& h_cells = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
-  const Epetra_MultiVector& h_faces = *S->GetFieldData("ponded_depth")->ViewComponent("face");
-  const Epetra_MultiVector& elevation_cells = *S->GetFieldData("elevation")->ViewComponent("cell");
+    for (Functions::BoundaryFunction::Iterator bc = bc_seepage_head_->begin(); 
+         bc != bc_seepage_head_->end(); ++bc) {
+      int f = bc->first;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
 
-  for (Functions::BoundaryFunction::Iterator bc = bc_seepage_->begin();
-    bc != bc_seepage_->end(); ++bc) {
-    int f = bc->first;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int c = cells[0];
+      double h0 = bc->second;
+      double dz = elevation_cells[0][c] - elevation[0][f];
 
-    double h0 = bc->second;
-    double dz = elevation_cells[0][c] - elevation[0][f];
-
-
-    if (h_cells[0][c] + dz < h0) {    
-      bc_markers_[f] = Operators::MATRIX_BC_NULL;
-      bc_values_[f] = 0.0;
-    } else {
-      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
-      bc_values_[f] = h0 + elevation[0][f];
+      if (h_cells[0][c] + dz < h0) {
+        bc_markers_[f] = Operators::MATRIX_BC_NULL;
+        bc_values_[f] = 0.0;
+      } else {
+        bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+        bc_values_[f] = h0 + elevation[0][f];
+      }
     }
   }
-}
 
+  // Seepage face pressure boundary condition
+  if (bc_seepage_head_->size() > 0) {
+    S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
 
-// -----------------------------------------------------------------------------
-// Evaluate boundary conditions at the current time without elevation.
-// -----------------------------------------------------------------------------
-void OverlandHeadFlow::UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "  Updating BCs Markers only." << std::endl;
+    const Epetra_MultiVector& h_cells = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
+    const Epetra_MultiVector& elevation_cells = *S->GetFieldData("elevation")->ViewComponent("cell");
+    const Epetra_MultiVector& rho_l = *S->GetFieldData("surface_mass_density_liquid")->ViewComponent("cell");
+    double gz = -(*S->GetConstantVectorData("gravity"))[2];
+    const double& p_atm = *S->GetScalarData("atmospheric_pressure");
 
-  AmanziMesh::Entity_ID_List cells;
-  // initialize all as null
-  for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::MATRIX_BC_NULL;
-    bc_values_[n] = 0.;
-  }
+    if (S->HasFieldEvaluator("surface_mass_density_ice")) {
+      // thermal model of height
+      const Epetra_MultiVector& eta = *S->GetFieldData("unfrozen_fraction")->ViewComponent("cell");
+      const Epetra_MultiVector& rho_i = *S->GetFieldData("surface_mass_density_ice")->ViewComponent("cell");
 
-  // Head BCs are standard Dirichlet, no elevation
-  for (Functions::BoundaryFunction::Iterator bc=bc_head_->begin();
-       bc!=bc_head_->end(); ++bc) {
-    int f = bc->first;
-    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
-  }
+      for (Functions::BoundaryFunction::Iterator bc = bc_seepage_pressure_->begin(); 
+           bc != bc_seepage_pressure_->end(); ++bc) {
+        int f = bc->first;
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        int c = cells[0];
 
-  // Standard Neumann data for flux
-  for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
-       bc!=bc_flux_->end(); ++bc) {
-    int f = bc->first;
-    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
-  }
+        double p0 = bc->second > p_atm ? p0 : p_atm;
+        double h0 = (p0 - p_atm) / ((eta[0][c]*rho_l[0][c] + (1.-eta[0][c])*rho_i[0][c]) * gz);
+        double dz = elevation_cells[0][c] - elevation[0][f];
 
-  // zero gradient: grad h = 0 implies that q = -k grad z
-  for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
-       bc!=bc_zero_gradient_->end(); ++bc) {
-    //    int f = bc->first;
-    //    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
-    //    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
-  }
+        if (h_cells[0][c] + dz < h0) {
+          bc_markers_[f] = Operators::MATRIX_BC_NULL;
+          bc_values_[f] = 0.0;
+        } else {
+          bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+          bc_values_[f] = h0 + elevation[0][f];
+        }
+      }
 
-  // Seepage face boundary condition
-  const Epetra_MultiVector& h_cells = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
-  const Epetra_MultiVector& elevation_faces = *S->GetFieldData("elevation")->ViewComponent("face");
-  const Epetra_MultiVector& elevation_cells = *S->GetFieldData("elevation")->ViewComponent("cell");
-
-  for (Functions::BoundaryFunction::Iterator bc = bc_seepage_->begin(); 
-       bc != bc_seepage_->end(); ++bc) {
-    int f = bc->first;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int c = cells[0];
-
-    double h0 = bc->second;
-    double dz = elevation_cells[0][c] - elevation_faces[0][f];
-
-    if (h_cells[0][c] + dz < h0) {
-      bc_markers_[f] = Operators::MATRIX_BC_NULL;
     } else {
-      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+      // non-thermal model
+      for (Functions::BoundaryFunction::Iterator bc = bc_seepage_pressure_->begin(); 
+           bc != bc_seepage_pressure_->end(); ++bc) {
+        int f = bc->first;
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        int c = cells[0];
+
+        double p0 = bc->second > p_atm ? p0 : p_atm;
+        double h0 = (p0 - p_atm) / (rho_l[0][c] * gz);
+        double dz = elevation_cells[0][c] - elevation[0][f];
+
+        if (h_cells[0][c] + dz < h0) {
+          bc_markers_[f] = Operators::MATRIX_BC_NULL;
+          bc_values_[f] = 0.0;
+        } else {
+          bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+          bc_values_[f] = h0 + elevation[0][f];
+        }
+      }
     }
   }
+
 }
 
 
@@ -928,7 +930,8 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
   // update boundary conditions
   bc_head_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
-  bc_seepage_->Compute(S_next_->time());
+  bc_seepage_head_->Compute(S_next_->time());
+  bc_seepage_pressure_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // update the stiffness matrix

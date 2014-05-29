@@ -83,7 +83,8 @@ void OverlandHeadFlow::Functional( double t_old,
   // update boundary conditions
   bc_head_->Compute(t_new);
   bc_flux_->Compute(t_new);
-  bc_seepage_->Compute(t_new);
+  bc_seepage_head_->Compute(t_new);
+  bc_seepage_pressure_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // diffusion term, treated implicitly
@@ -184,7 +185,6 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
 
   // 1.a: Pre-assembly updates.
   // -- update boundary condition markers, which set the BC type
-  //  UpdateBoundaryConditionsMarkers_(S_next_.ptr());
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // -- update the rel perm according to the boundary info and upwinding
@@ -279,15 +279,16 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
     Teuchos::RCP<Epetra_FECrsMatrix> Spp = tpfa_preconditioner_->TPFA();
 
     // Scale Spp by dh/dp (h, NOT h_bar), clobbering rows with p < p_atm
-    S_next_->GetFieldEvaluator("ponded_depth")
+    std::string pd_key = smoothed_ponded_accumulation_ ? "smoothed_ponded_depth" : "ponded_depth";
+    std::string pd_deriv_key = "d"+pd_key+"_d"+key_;
+    S_next_->GetFieldEvaluator(pd_key)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-    const Epetra_MultiVector& dh0_dp =
-        *S_next_->GetFieldData("dponded_depth_d"+key_)
+    const Epetra_MultiVector& dh0_dp = *S_next_->GetFieldData(pd_deriv_key)
         ->ViewComponent("cell",false);
     int ierr = Spp->RightScale(*dh0_dp(0));
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "  Right scaling TPFA" << std::endl;
-    db_->WriteVector("    dh_dp", S_next_->GetFieldData("dponded_depth_dsurface_pressure").ptr());
+    db_->WriteVector("    dh_dp", S_next_->GetFieldData(pd_deriv_key).ptr());
     ASSERT(!ierr);
   }
 

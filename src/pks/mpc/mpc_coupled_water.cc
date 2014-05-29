@@ -229,7 +229,7 @@ MPCCoupledWater::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 }
 
 // -- Modify the correction.
-bool
+ModifyCorrectionResult
 MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -305,10 +305,11 @@ MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
     vecs[1] = du->SubVector(1)->Data().ptr();
 
     *vo_->os() << " Surface precon:" << std::endl;
-    surf_db_->WriteVectors(vnames, vecs, true);    
+    surf_db_->WriteVectors(vnames, vecs, true);
   }
-  
-  return modified;
+
+  return modified ? AmanziSolvers::CORRECTION_MODIFIED :
+      AmanziSolvers::CORRECTION_NOT_MODIFIED;
 }
 
 void

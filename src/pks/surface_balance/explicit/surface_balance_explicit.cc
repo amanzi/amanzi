@@ -336,7 +336,7 @@ SurfaceBalanceExplicit::advance(double dt) {
       seb.out.snow_new.density = snow_dens_new[0][c];
       seb.out.snow_new.age = snow_age_new[0][c];
 
-      seb.in.vp_snow.temp = 270.15;
+      seb.in.vp_snow.temp = 273.15;
 
       // -- met data
       seb.in.met.Us = std::max(wind_speed[0][c], min_wind_speed_);
@@ -421,7 +421,7 @@ SurfaceBalanceExplicit::advance(double dt) {
       seb.out.snow_new.density = snow_dens_new[0][c];
       seb.out.snow_new.age = snow_age_new[0][c];
 
-      seb.in.vp_snow.temp = 270.15;
+      seb.in.vp_snow.temp = 273.15;
 
       // -- met data
       seb.in.met.Us = std::max(wind_speed[0][c], min_wind_speed_);
