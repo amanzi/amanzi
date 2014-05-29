@@ -25,6 +25,7 @@ class FunctionFactory {
   Function* create_composition(Teuchos::ParameterList&) const;
   Function* create_static_head(Teuchos::ParameterList&) const;
   Function* create_standard_math(Teuchos::ParameterList&) const;
+  Function* create_bilinear(Teuchos::ParameterList&) const;
 };
 
 } // namespace Amanzi
