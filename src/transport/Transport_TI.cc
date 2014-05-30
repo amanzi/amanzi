@@ -20,7 +20,7 @@ namespace AmanziTransport {
  * Routine takes a parallel overlapping vector C and returns a parallel
  * overlapping vector F(C).
  ****************************************************************** */
-void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
+void Transport_PK::Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
 {
   // transport routines need an RCP pointer
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
