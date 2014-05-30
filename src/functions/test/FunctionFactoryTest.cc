@@ -95,6 +95,24 @@ SUITE(tabular_factory) {
    double t = 0.5;
    CHECK_EQUAL((*f)(&t), 2.5);
  }
+ TEST(create_with_row_coordinate)
+ {
+   Teuchos::ParameterList list;
+   Teuchos::ParameterList &sublist = list.sublist("function-tabular");
+   Teuchos::Array<double> x(2);
+   Teuchos::Array<double> y(2);
+   x[0] = 0.0;
+   x[1] = 1.0;
+   y[0] = 2.0;
+   y[1] = 3.0;
+   sublist.set("x values", x);
+   sublist.set("x coordinate", "t");
+   sublist.set("y values", y);
+   FunctionFactory fact;
+   Function *f = fact.Create(list);
+   double t = 0.5;
+   CHECK_EQUAL((*f)(&t), 2.5);
+ }
  TEST(create_with_form)
  {
    Teuchos::ParameterList list;

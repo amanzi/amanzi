@@ -65,7 +65,8 @@ TEST(tabular_test)
   double y[5] = {1.0, 3.0, 2.0, 0.0, 0.0};
   std::vector<double> xvec(x, x+4);
   std::vector<double> yvec(y, y+4);
-  Function *f = new TabularFunction(xvec, yvec);
+  int xi = 0;
+  Function *f = new TabularFunction(xvec, yvec, xi);
   double z;
   z = -1.0;
   CHECK_EQUAL((*f)(&z), 1.0);
@@ -94,7 +95,7 @@ TEST(tabular_test)
   TabularFunction::Form form[3] = {TabularFunction::CONSTANT,
       TabularFunction::LINEAR, TabularFunction::CONSTANT};
   std::vector<TabularFunction::Form> formvec(form, form+3);
-  f = new TabularFunction(xvec, yvec, formvec);
+  f = new TabularFunction(xvec, yvec, xi, formvec);
   z = -1.0;
   CHECK_EQUAL((*f)(&z), 1.0);
   z = 0.0;
@@ -122,21 +123,21 @@ TEST(tabular_test)
   xvec.assign(x, x+1);
   yvec.assign(y, y+1);
   //f = new TabularFunction(xvec, yvec);
-  CHECK_THROW(f = new TabularFunction(xvec, yvec), Errors::Message);
+  CHECK_THROW(f = new TabularFunction(xvec, yvec, xi), Errors::Message);
   // Verify the constructor fails when the x values are not strictly increasing.
   xvec.assign(x, x+5);
   yvec.assign(y, y+5);
-  //f = new TabularFunction(xvec, yvec);
-  CHECK_THROW(f = new TabularFunction(xvec, yvec), Errors::Message);
+  //f = new TabularFunction(xvec, yvec, xi);
+  CHECK_THROW(f = new TabularFunction(xvec, yvec, xi), Errors::Message);
   // Verify the constructor fails with different number of x and y values.
   xvec.pop_back();
-  //f = new TabularFunction(xvec, yvec);
-  CHECK_THROW(f = new TabularFunction(xvec, yvec), Errors::Message);
+  //f = new TabularFunction(xvec, yvec, xi);
+  CHECK_THROW(f = new TabularFunction(xvec, yvec, xi), Errors::Message);
   // Verify the constructor fails with the wrong number of form values.
   yvec.pop_back(); // same number of x and y values now
   formvec.pop_back();
-  //f = new TabularFunction(xvec, yvec, formvec);
-  CHECK_THROW(f = new TabularFunction(xvec, yvec, formvec), Errors::Message);
+  //f = new TabularFunction(xvec, yvec, xi, formvec);
+  CHECK_THROW(f = new TabularFunction(xvec, yvec, xi, formvec), Errors::Message);
 }
 
 SUITE(polynomial_test) {
