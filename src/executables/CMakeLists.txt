@@ -44,6 +44,7 @@ include_evaluators_directories(LISTNAME ENERGY_SURFACE_ICE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_TWO_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_THREE_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME SURFACE_BALANCE_SEB_REG_INCLUDES)
+include_evaluators_directories(LISTNAME BGC_REG_INCLUDES)
 include_evaluators_directories(LISTNAME TEST_PKS_REG_INCLUDES)
 include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 #include_evaluators_directories(LISTNAME TRANSPORT_PASSIVE_TRACER_REG_INCLUDES)
@@ -69,6 +70,7 @@ set(ATS_LIBS
 #                      pk_prescribed_volumetric_deformation
                       pk_volumetric_deformation
                       pk_surface_balance_SEB
+                      pk_BGC
                       pk_bases
                       deform_relations_porosity
                       energy_relations_thermal_conductivity
