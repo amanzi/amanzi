@@ -11,7 +11,9 @@
 #include "SeparableFunction.hh"
 #include "PointerFunction.hh"
 #include "StaticHeadFunction.hh"
+#include "BilinearFunction.hh"
 #include "errors.hh"
+#include "HDF5Reader.hh"
 
 using namespace Amanzi;
 
@@ -364,6 +366,62 @@ TEST(static_head_test)
 //    delete fxyz;
 //  }
 //}
+
+TEST(bilinear_test)
+{
+  std::string filename = "test/bilinear.h5";
+  HDF5Reader reader(filename);
+  std::string row_name = "times";
+  std::vector<double> vec_x;
+  int xi = 0;
+  reader.ReadData(row_name, vec_x);
+  std::string col_name = "x";
+  std::vector<double> vec_y;
+  int yi = 1;
+  reader.ReadData(col_name, vec_y);
+  std::string v_name = "values";
+  Epetra_SerialDenseMatrix mat_v;
+  reader.ReadMatData(v_name, mat_v);
+  Function *f = new BilinearFunction(vec_x, vec_y, mat_v, xi, yi);
+  // Corners
+  double z[2]={0,0};
+  CHECK_EQUAL((*f)(&z[0]), 0.0);
+  z[0]=10.; z[1]=0.;
+  CHECK_EQUAL((*f)(&z[0]), 60.0);
+  z[0]=10.; z[1]=5.;
+  CHECK_EQUAL((*f)(&z[0]), 65.0);
+  z[0]=0.; z[1]=5.;
+  CHECK_EQUAL((*f)(&z[0]), 5.0);
+  // Both coordinates out of bounds
+  z[0]=-1.; z[1]=-1.;
+  CHECK_EQUAL((*f)(&z[0]), 0.0);
+  z[0]=11.; z[1]=-1.;
+  CHECK_EQUAL((*f)(&z[0]), 60.0);
+  z[0]=11.; z[1]=6.;
+  CHECK_EQUAL((*f)(&z[0]), 65.0);
+  z[0]=-1.; z[1]=6.;
+  CHECK_EQUAL((*f)(&z[0]), 5.0);
+  // One coordinate out of bounds
+  z[0]=5.5; z[1]=-1.;
+  CHECK_EQUAL((*f)(&z[0]), 33.0);
+  z[0]=5.5; z[1]=6.;
+  CHECK_EQUAL((*f)(&z[0]), 38.0);
+  z[0]=-1.; z[1]=2.5;
+  CHECK_EQUAL((*f)(&z[0]), 2.5);
+  z[0]=11; z[1]=2.5;
+  CHECK_EQUAL((*f)(&z[0]), 62.5);
+  // Interior points
+  z[0]=5.5; z[1]=2.5;
+  CHECK_EQUAL((*f)(&z[0]), 35.5);
+  z[0]=2.5; z[1]=2.5;
+  CHECK_EQUAL((*f)(&z[0]), 17.5);
+  z[0]=7.5; z[1]=2.5;
+  CHECK_EQUAL((*f)(&z[0]), 47.5);
+  z[0]=5.5; z[1]=1.5;
+  CHECK_EQUAL((*f)(&z[0]), 34.5);
+  z[0]=5.5; z[1]=3.5;
+  CHECK_EQUAL((*f)(&z[0]), 36.5);
+}
 
 double f_using_no_params (const double *x, const double *p)
 {

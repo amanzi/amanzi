@@ -1,4 +1,5 @@
 #include "Teuchos_ParameterList.hpp"
+#include "Epetra_SerialDenseMatrix.h"
 
 #include "HDF5Reader.hh"
 
@@ -14,6 +15,7 @@
 #include "CompositionFunction.hh"
 #include "StaticHeadFunction.hh"
 #include "StandardMathFunction.hh"
+#include "BilinearFunction.hh"
 #include "errors.hh"
 
 namespace Amanzi {
@@ -55,6 +57,8 @@ Function* FunctionFactory::Create(Teuchos::ParameterList &list) const
         f = create_static_head(function_params);
       else if (function_type == "function-standard-math")
         f = create_standard_math(function_params);
+      else if (function_type == "function-bilinear")
+        f = create_bilinear(function_params);
       else {  // I don't recognize this function type
         if (f) delete f;
         Errors::Message m;
@@ -412,5 +416,54 @@ Function* FunctionFactory::create_standard_math(Teuchos::ParameterList &params) 
   }
   return f;
 }
+
+Function* FunctionFactory::create_bilinear(Teuchos::ParameterList &params) const
+{
+  Function *f;
+
+  if (params.isParameter("file")) {
+    try {
+		std::string filename = params.get<std::string>("file");
+		HDF5Reader reader(filename);
+
+		int xi, yi; // input indices
+		std::string x = params.get<std::string>("row header", "/x");
+		std::string xdim = params.get<std::string>("row coordinate");
+		if (xdim.compare(0,1,"t") == 0) xi = 0;  
+		else if (xdim.compare(0,1,"x") == 0) xi = 1;  
+		else if (xdim.compare(0,1,"y") == 0) xi = 2;  
+		else if (xdim.compare(0,1,"z") == 0) xi = 3;  
+		std::string y = params.get<std::string>("column header", "/y");
+		std::string ydim = params.get<std::string>("column coordinate");
+		if (ydim.compare(0,1,"t") == 0) yi = 0;  
+		else if (ydim.compare(0,1,"x") == 0) yi = 1;  
+		else if (ydim.compare(0,1,"y") == 0) yi = 2;  
+		else if (ydim.compare(0,1,"z") == 0) yi = 3;  
+
+		std::vector<double> vec_x;
+		std::vector<double> vec_y;
+		std::string v = params.get<std::string>("value header", "/v");
+		Epetra_SerialDenseMatrix mat_v; 
+		reader.ReadData(x, vec_x);
+		reader.ReadData(y, vec_y);
+		reader.ReadMatData(v, mat_v);
+		f = new BilinearFunction(vec_x, vec_y, mat_v, xi, yi);
+	} catch (Teuchos::Exceptions::InvalidParameter &msg) {
+		Errors::Message m;
+		m << "FunctionFactory: function-bilinear parameter error: " << msg.what();
+		Exceptions::amanzi_throw(m);
+  	} catch (Errors::Message &msg) {
+		Errors::Message m;
+		m << "FunctionFactory: function-bilinear parameter error: " << msg.what();
+		Exceptions::amanzi_throw(m);
+	}
+  } else {
+      Errors::Message m;
+      m << "missing parameter \"file\"";
+      Exceptions::amanzi_throw(m);
+  }   
+  return f;
+}
+
 
 } // namespace Amanzi

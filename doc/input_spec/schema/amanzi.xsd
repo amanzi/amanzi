@@ -591,13 +591,14 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="nonlinear_iteration_damping_factor" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="nonlinear_iteration_divergence_factor" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="max_divergent_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
+		<xs:element name="initialize_with_darcy" type="xs:boolean" minOccurs = "0" maxOccurs = "1"/>
 	</xs:all>
 </xs:complexType>
 
 <xs:complexType name="typedef_pseudo_time_integrator">
 	<!-- TODO: Need to make types for some of these and validate options -->
 	<xs:all minOccurs = "0" maxOccurs = "1">
-		<xs:element name="initialize_with_darcy" type="xs:string" minOccurs = "0" maxOccurs = "1"/>
+		<xs:element name="initialize_with_darcy" type="xs:boolean" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="clipping_saturation" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="method" type="typedef_pseudo_time_method" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="preconditioner" type="typedef_pseudo_time_preconditioner" minOccurs = "0" maxOccurs = "1"/>
@@ -652,6 +653,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="nonlinear_iteration_divergence_factor" type="typedef_exponential"/>
 	<xs:attribute name="restart_tolerance_factor" type="typedef_exponential"/>
 	<xs:attribute name="restart_tolerance_relaxation_factor" type="typedef_exponential"/>
+	<xs:attribute name="initialize_with_darcy" type="xs:boolean" />
 </xs:complexType>
 
 <xs:complexType name="typedef_nonlinear_solver">
@@ -1554,6 +1556,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:all>
 		<xs:element name="vis" type="typedef_vis" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="checkpoint" type="typedef_checkpoint" minOccurs="0" maxOccurs="1"/>
+		<xs:element name="walkabout" type="typedef_walkabout" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="observations" type="typedef_observations" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 </xs:complexType>
@@ -1569,6 +1572,14 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 
 <xs:complexType name="typedef_checkpoint">
+	<xs:all>
+		<xs:element name="base_filename" type="xs:string" minOccurs="1" maxOccurs="1"/>
+		<xs:element name="num_digits" type="xs:integer" minOccurs="1" maxOccurs="1"/>
+		<xs:element name="cycle_macro" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+	</xs:all>
+</xs:complexType>
+
+<xs:complexType name="typedef_walkabout">
 	<xs:all>
 		<xs:element name="base_filename" type="xs:string" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="num_digits" type="xs:integer" minOccurs="1" maxOccurs="1"/>
