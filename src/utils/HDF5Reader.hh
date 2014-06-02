@@ -59,7 +59,7 @@ public:
   ReadMatData(std::string varname, Epetra_SerialDenseMatrix &mat) {
     //    char *h5path = new char[varname.size()+1];
     //    strcpy(h5path,varname.c_str());
-    hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
+    hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT );
     hid_t dataspace = H5Dget_space(dataset);
 	hsize_t dims[2];
     int rank = H5Sget_simple_extent_dims(dataspace, dims, NULL);

@@ -106,13 +106,13 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList &params) const
     HDF5Reader reader(filename);
 
 	int xi = 0;
-    std::string x = params.get<std::string>("x header", "/x");
+    std::string x = params.get<std::string>("x header");
     std::string xc = params.get<std::string>("x coordinate", "t");
 	if (xc.compare(0,1,"t") == 0) xi = 0;  
 	else if (xc.compare(0,1,"x") == 0) xi = 1;  
 	else if (xc.compare(0,1,"y") == 0) xi = 2;  
 	else if (xc.compare(0,1,"z") == 0) xi = 3;  
-    std::string y = params.get<std::string>("y header", "/y");
+    std::string y = params.get<std::string>("y header");
 
     std::vector<double> vec_x;
     std::vector<double> vec_y;
@@ -440,13 +440,13 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList &params) const
 		HDF5Reader reader(filename);
 
 		int xi, yi; // input indices
-		std::string x = params.get<std::string>("row header", "/x");
+		std::string x = params.get<std::string>("row header");
 		std::string xdim = params.get<std::string>("row coordinate");
 		if (xdim.compare(0,1,"t") == 0) xi = 0;  
 		else if (xdim.compare(0,1,"x") == 0) xi = 1;  
 		else if (xdim.compare(0,1,"y") == 0) xi = 2;  
 		else if (xdim.compare(0,1,"z") == 0) xi = 3;  
-		std::string y = params.get<std::string>("column header", "/y");
+		std::string y = params.get<std::string>("column header");
 		std::string ydim = params.get<std::string>("column coordinate");
 		if (ydim.compare(0,1,"t") == 0) yi = 0;  
 		else if (ydim.compare(0,1,"x") == 0) yi = 1;  
@@ -455,7 +455,7 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList &params) const
 
 		std::vector<double> vec_x;
 		std::vector<double> vec_y;
-		std::string v = params.get<std::string>("value header", "/v");
+		std::string v = params.get<std::string>("value header");
 		Epetra_SerialDenseMatrix mat_v; 
 		reader.ReadData(x, vec_x);
 		reader.ReadData(y, vec_y);

@@ -2,6 +2,7 @@
 #include "TestReporterStdout.h"
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "FunctionFactory.hh"
 #include "ConstantFunction.hh"
@@ -215,6 +216,86 @@ SUITE(tabular_factory) {
     //Function *f = fact.Create(list);
     CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
   }
+}
+
+SUITE(bilinear_factory) {
+ TEST(create)
+ {
+   Teuchos::ParameterList list;
+   Teuchos::ParameterList &sublist = list.sublist("function-bilinear");
+   sublist.set("file", "test/bilinear.h5");
+   sublist.set("row header", "/times");
+   sublist.set("row coordinate", "time");
+   sublist.set("column header", "/x");
+   sublist.set("column coordinate", "x");
+   sublist.set("value header", "/values");
+   FunctionFactory fact;
+   Function *f = fact.Create(list);
+   double t[2];
+   t[0] = 2.;
+   t[1] = 2.;
+   CHECK_EQUAL((*f)(&t[0]), 14.);
+ }
+ TEST(missing_rows)
+ {
+   Teuchos::ParameterList list;
+   Teuchos::ParameterList &sublist = list.sublist("function-bilinear");
+   sublist.set("file", "test/bilinear.h5");
+   sublist.set("column header", "/x");
+   sublist.set("column coordinate", "x");
+   sublist.set("value header", "/values");
+   FunctionFactory fact;
+   CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
+ }
+ TEST(missing_columns)
+ {
+   Teuchos::ParameterList list;
+   Teuchos::ParameterList &sublist = list.sublist("function-bilinear");
+   sublist.set("file", "test/bilinear.h5");
+   sublist.set("row header", "/times");
+   sublist.set("row coordinate", "time");
+   sublist.set("value header", "/values");
+   FunctionFactory fact;
+   CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
+ }
+ TEST(missing_values)
+ {
+   Teuchos::ParameterList list;
+   Teuchos::ParameterList &sublist = list.sublist("function-bilinear");
+   sublist.set("file", "test/bilinear.h5");
+   sublist.set("row header", "/times");
+   sublist.set("row coordinate", "time");
+   sublist.set("column header", "/x");
+   sublist.set("column coordinate", "x");
+   FunctionFactory fact;
+   CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
+ }
+ TEST(not_enough_points)
+ {
+   Teuchos::ParameterList list;
+   Teuchos::ParameterList &sublist = list.sublist("function-bilinear");
+   sublist.set("file", "test/bilinear_missing.h5");
+   sublist.set("row header", "/times");
+   sublist.set("row coordinate", "time");
+   sublist.set("column header", "/x");
+   sublist.set("column coordinate", "x");
+   sublist.set("value header", "/values");
+   FunctionFactory fact;
+   CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
+ }
+ TEST(not_ordered)
+ {
+   Teuchos::ParameterList list;
+   Teuchos::ParameterList &sublist = list.sublist("function-bilinear");
+   sublist.set("file", "test/bilinear_unsort.h5");
+   sublist.set("row header", "/times");
+   sublist.set("row coordinate", "time");
+   sublist.set("column header", "/x");
+   sublist.set("column coordinate", "x");
+   sublist.set("value header", "/values");
+   FunctionFactory fact;
+   CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
+ }
 }
 
 SUITE(smooth_step_factory) {
