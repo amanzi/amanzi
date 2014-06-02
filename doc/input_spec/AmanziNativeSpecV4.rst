@@ -1278,13 +1278,46 @@ interval, or `"constant`" to use the left endpoint value for that interval.
 The example defines function that is zero on interval :math:`(-\infty,\,0]`,
 linear on interval :math:`(0,\,1]`, constant (`f(x)=1`) on interval :math:`(1,\,2]`,
 and constant (`f(x)=2`) on interval :math:`(2,\,\infty]`.
+The parameter `"x coordinate`" defines whether the `"x values`" refers to time `"t`",
+x-coordinate `"x`", y-coordinate `"y`", or z-coordinate `"z`".
+The default value for `"x coordinate`" is `"t`".
 
 .. code-block:: xml
 
   <ParameterList name="function-tabular">
     <Parameter name="x values" type="Array(double)" value="{0.0, 1.0, 2.0}"/>
+    <Parameter name="x coordinate" type="string" value="t"/>
     <Parameter name="y values" type="Array(double)" value="{0.0, 1.0, 2.0}"/>
     <Parameter name="forms" type="Array(string)" value="{linear, constant}"/>
+  </ParameterList>
+  
+
+Bilinear function
+-----------------
+The bilinear function provides an extension of the linear form of the tabular function 
+to a function with 2 variables `f(x,y)`.
+A 2x2 matrix of values for `f(x,y)` and arrays of associated values for `x`
+and `y` are read in from datasets in an HDF5 file. The dataset headers are indicated
+by parameters `"row header`", `"column header`", and `"value header`" for `x`, `y`, 
+and `f(x,y)`, respectively. The `x` and `y` arrays in the HDF5 file are expected to be
+strictly increasing.
+The parameters `"row coordinate`" and `"column coordinate`" define the model 
+coordinate for `x` and `y` in the function, respectively, where
+`"t`" refers to time, `"x`" to the x-coordinate, `"y`" to the y-coordinate, 
+and `"z`" to the z-coordinate. 
+
+The following code block defines a bilinear interpolation function for pressures
+that vary in time and the x dimension.
+
+.. code-block:: xml
+
+  <ParameterList name="function-bilinear">
+    <Parameter name="file" type="string" value="pressure_face.h5" />
+    <Parameter name="row header" type="string" value="/time" />
+    <Parameter name="row coordinate" type="string" value="time" />
+    <Parameter name="column header" type="string" value="/x" />
+    <Parameter name="column coordinate" type="string" value="x" />
+    <Parameter name="value header" type="string" value="/pressures" />
   </ParameterList>
   
 

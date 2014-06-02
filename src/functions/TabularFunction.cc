@@ -3,15 +3,16 @@
 
 namespace Amanzi {
 
-TabularFunction::TabularFunction(const std::vector<double> &x, const std::vector<double> &y)
-    : x_(x), y_(y)
+TabularFunction::TabularFunction(const std::vector<double> &x, const std::vector<double> &y,
+		const int xi)
+    : x_(x), y_(y), xi_(xi)
 {
   form_.assign(x.size()-1,LINEAR);
   check_args(x, y, form_);
 }
 
 TabularFunction::TabularFunction(const std::vector<double> &x, const std::vector<double> &y,
-    const std::vector<Form> &form) : x_(x), y_(y), form_(form)
+    const int xi, const std::vector<Form> &form) : x_(x), y_(y), xi_(xi), form_(form)
 {
   check_args(x, y, form);
 }
@@ -46,29 +47,30 @@ void TabularFunction::check_args(const std::vector<double> &x, const std::vector
 double TabularFunction::operator() (const double *x) const
 {
   double y;
+  double xv = x[xi_];
   int n = x_.size();
-  if (*x <= x_[0]) {
+  if (xv <= x_[0]) {
     y = y_[0];
-  } else if (*x > x_[n-1]) {
+  } else if (xv > x_[n-1]) {
     y = y_[n-1];
   } else {
-    // binary search to find interval containing *x
+    // binary search to find interval containing xv
     int j1 = 0, j2 = n-1;
     while (j2 - j1 > 1) {
       int j = (j1 + j2) / 2;
-      // if (*x >= x_[j]) { // right continuous
-      if (*x > x_[j]) { // left continuous
+      // if (xv >= x_[j]) { // right continuous
+      if (xv > x_[j]) { // left continuous
         j1 = j;
       } else {
         j2 = j;
       }
     }
-    // Now have x_[j1] <= *x < x_[j2], if right continuous
-    // or x_[j1] < *x <= x_[j2], if left continuous
+    // Now have x_[j1] <= xv < x_[j2], if right continuous
+    // or x_[j1] < xv <= x_[j2], if left continuous
     switch (form_[j1]) {
     case LINEAR:
       // Linear interpolation between x[j1] and x[j2]
-      y = y_[j1] + ((y_[j2]-y_[j1])/(x_[j2]-x_[j1])) * (*x - x_[j1]);
+      y = y_[j1] + ((y_[j2]-y_[j1])/(x_[j2]-x_[j1])) * (xv - x_[j1]);
       break;
     case CONSTANT:
       y = y_[j1];

@@ -8,18 +8,18 @@ BilinearFunction::BilinearFunction(const std::vector<double> &x, const std::vect
 	const Epetra_SerialDenseMatrix &v, const int xi, const int yi) : 
 	x_(x), y_(y), v_(v), xi_(xi), yi_(yi)
 {
-  //check_args(x, y, v);
+  check_args(x, y, v);
 }
 
 void BilinearFunction::check_args(const std::vector<double> &x, const std::vector<double> &y,
 		const Epetra_SerialDenseMatrix &v) const
 {
-  if (x.size() != v.M()) {
+  if (x.size() != v.N()) {
     Errors::Message m;
     m << "the number of x values and row in v differ";
     Exceptions::amanzi_throw(m);
   }
-  if (y.size() != v.N()) {
+  if (y.size() != v.M()) {
     Errors::Message m;
     m << "the number of y values and columns in v differ";
     Exceptions::amanzi_throw(m);

@@ -661,7 +661,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
 
     double T = T_physics;
     Epetra_Vector*& component = tcc_prev(i);
-    fun(T, *component, f_component);
+    Functional(T, *component, f_component);
 
     double ws_ratio;
     for (int c = 0; c < ncells_owned; c++) {
@@ -707,7 +707,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
 
     double T = T_physics;
     Epetra_Vector*& component = tcc_prev(i);
-    fun(T, *component, f_component);
+    Functional(T, *component, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
       tcc_next[i][c] = (tcc_prev[i][c] + dT * f_component[c]) * ws_ratio[c];
@@ -722,7 +722,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
 
     double T = T_physics;
     Epetra_Vector*& component = tcc_next(i);
-    fun(T, *component, f_component);
+    Functional(T, *component, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
       double value = (tcc_prev[i][c] + dT * f_component[c]) * ws_ratio[c];
