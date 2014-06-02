@@ -45,13 +45,23 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
   }
 
   // control
-  void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
+  void set_pc_lag(double pc_lag) {
+    pc_lag_ = pc_lag;
+  }
 
   // access
-  double residual() { return residual_; }
-  int num_itrs() { return num_itrs_; }
-  int pc_calls() { return pc_calls_; }
-  int returned_code() { return returned_code_; }
+  double residual() {
+    return residual_;
+  }
+  int num_itrs() {
+    return num_itrs_;
+  }
+  int pc_calls() {
+    return pc_calls_;
+  }
+  int returned_code() {
+    return returned_code_;
+  }
 
  private:
   void Init_();
@@ -88,8 +98,8 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
 
 
 /* ******************************************************************
-* Public Init method.
-****************************************************************** */
+ * Public Init method.
+ ****************************************************************** */
 template<class Vector, class VectorSpace>
 void
 SolverNKA_BT_ATS<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
@@ -105,8 +115,8 @@ SolverNKA_BT_ATS<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vecto
 
 
 /* ******************************************************************
-* Initialization of the NKA solver.
-****************************************************************** */
+ * Initialization of the NKA solver.
+ ****************************************************************** */
 template<class Vector, class VectorSpace>
 void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_()
 {
@@ -146,7 +156,7 @@ void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_()
     Errors::Message m(mstream.str());
     Exceptions::amanzi_throw(m);
   }
-  
+
   residual_ = -1.0;
 
   // update the verbose options
@@ -155,8 +165,8 @@ void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_()
 
 
 /* ******************************************************************
-* The body of NKA solver
-****************************************************************** */
+ * The body of NKA solver
+ ****************************************************************** */
 template<class Vector, class VectorSpace>
 int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector>& u) {
   solve_calls_++;
@@ -264,11 +274,11 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
       // Hack the Picard update
       hacked = fn_->ModifyCorrection(res, u, du_pic);
     }
-      
+
     // potentially backtrack
     bool admitted_iterate = false;
     if (num_itrs_ > backtrack_lag_ && num_itrs_ < last_backtrack_iter_ &&
-	hacked != CORRECTION_MODIFIED_LAG_BACKTRACKING) {
+        hacked != CORRECTION_MODIFIED_LAG_BACKTRACKING) {
       bool good_step = false;
       *u_precorr = *u;
       previous_error = error;
@@ -313,8 +323,8 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
         // if NKA did not improve the error, toss Jacobian info
         if (!good_step) {
           if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-            *vo_->os() << "Restarting NKA, NKA step does not improve error or resulted in inadmissible solution, on NKA itr = " 
-		       << nka_itr << std::endl;
+            *vo_->os() << "Restarting NKA, NKA step does not improve error or resulted in inadmissible solution, on NKA itr = "
+                       << nka_itr << std::endl;
           }
           nka_->Restart();
           nka_restarted = true;
@@ -327,31 +337,31 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
             *du_pic = *du_nka;
           } else {
             hacked = fn_->ModifyCorrection(res, u, du_pic);
-	    if (hacked == CORRECTION_MODIFIED_LAG_BACKTRACKING) {
-	      // no backtracking, just use this correction, checking admissibility
-	      u->Update(-1., *du_pic, 1.);
-	      fn_->ChangedSolution();
-	      admitted_iterate = false;
-	      if (fn_->IsAdmissible(u)) {
-		admitted_iterate = true;
+            if (hacked == CORRECTION_MODIFIED_LAG_BACKTRACKING) {
+              // no backtracking, just use this correction, checking admissibility
+              u->Update(-1., *du_pic, 1.);
+              fn_->ChangedSolution();
+              admitted_iterate = false;
+              if (fn_->IsAdmissible(u)) {
+                admitted_iterate = true;
 
-		// Evaluate the nonlinear function.
-		fun_calls_++;
-		fn_->Residual(u, res);
+                // Evaluate the nonlinear function.
+                fun_calls_++;
+                fn_->Residual(u, res);
 
-		// Evalute error
-		error = fn_->ErrorNorm(u, res);
-		residual_ = error;
-		res->Norm2(&l2_error);
-		if (vo_->os_OK(Teuchos::VERB_LOW)) {
-		  *vo_->os() << num_itrs_ << ": PIC "
-			     << ": error(res) = " << error << std::endl
-			     << num_itrs_ << ": PIC "
-			     << ": L2 error(res) = " << l2_error << std::endl;
-		}
-	      }
-	      good_step = true;
-	    }
+                // Evalute error
+                error = fn_->ErrorNorm(u, res);
+                residual_ = error;
+                res->Norm2(&l2_error);
+                if (vo_->os_OK(Teuchos::VERB_LOW)) {
+                  *vo_->os() << num_itrs_ << ": PIC "
+                             << ": error(res) = " << error << std::endl
+                             << num_itrs_ << ": PIC "
+                             << ": L2 error(res) = " << l2_error << std::endl;
+                }
+              }
+              good_step = true;
+            }
           }
         }
       }
@@ -369,7 +379,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
           backtrack_alpha *= backtrack_factor_;
           done_backtracking = n_backtrack > max_backtrack_;
         }
-        
+
         while (!done_backtracking) {
           total_backtrack++;
 
@@ -416,6 +426,13 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
           }
 
           // Check for done
+          if (n_backtrack > max_backtrack_) {
+            // fail, bad search direction
+            if (vo_->os_OK(Teuchos::VERB_LOW)) {
+              *vo_->os() << "Solution iterate search direction not downhill, FAIL." << std::endl;
+            }
+            return SOLVER_BAD_SEARCH_DIRECTION;
+          }
           done_backtracking = good_step || n_backtrack > max_backtrack_;
         } // backtrack loop
       } // backtracking
