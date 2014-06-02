@@ -58,7 +58,7 @@ namespace AmanziTransport {
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
-class Transport_PK : public Explicit_TI::fnBase {
+class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
  public:
   Transport_PK();
 #ifdef ALQUIMIA_ENABLED
@@ -126,7 +126,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   void AdvanceSecondOrderUpwindRK2(double dT);
 
   // time integration members
-  void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+  void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
   // limiters 
   void LimiterTensorial(const int component,

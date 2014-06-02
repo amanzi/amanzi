@@ -70,6 +70,7 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
     int num_funcs = plist_.get<int>("number of functions");
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
             &HYPRE_BoomerAMGSetNumFunctions, num_funcs)));
+    std::cout << "setting number of functions in Boomer AMG = " << num_funcs << std::endl;
 
     // additional options
     if (num_funcs > 1) {
@@ -83,37 +84,43 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
         int nodal = plist_.get<int>("nodal strength of connection norm", 0);
         funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
                 &HYPRE_BoomerAMGSetNodal, nodal)));
+      }
 
-        if (nodal > 0) {
-          // If you call HYPRE_BOOMERAMGSetNodal, then you can additionally do
-          // nodal relaxation via the schwarz smoother option in hypre.  I did
-          // not implement this in the Petsc interface, but it could be done
-          // easy enough. The following four functions need to be called:
-          //   HYPRE_BoomerAMGSetSmoothType(solver, 6);
-          //   HYPRE_BoomerAMGSetDomainType(solver, 1);
-          //   HYPRE_BoomerAMGSetOverlap(solver, 0);
-          //   HYPRE_BoomerAMGSetSmoothNumLevels(solver, num_levels);
-          // Set num_levels to number of levels on which you want nodal
-          // smoothing, i.e. 1=just the fine grid, 2= fine grid and the grid
-          // below, etc.  I find that doing nodal relaxation on just the finest
-          // level is generally sufficient.)  Note that the interpolation scheme
-          // used will be the same as in the unknown approach - so this is what
-          // we call a hybrid systems method.
-          if (plist_.isParameter("nodal relaxation levels")) {
-            int num_levels = plist_.get<int>("nodal relaxation levels");
+      // You can additionally do nodal relaxation via the schwarz
+      // smoother option in hypre.
+      //   HYPRE_BoomerAMGSetSmoothType(solver, 6);
+      //   HYPRE_BoomerAMGSetDomainType(solver, 1);
+      //   HYPRE_BoomerAMGSetOverlap(solver, 0);
+      //   HYPRE_BoomerAMGSetSmoothNumLevels(solver, num_levels);
+      // Set num_levels to number of levels on which you want nodal
+      // smoothing, i.e. 1=just the fine grid, 2= fine grid and the grid
+      // below, etc.  I find that doing nodal relaxation on just the finest
+      // level is generally sufficient.)  Note that the interpolation scheme
+      // used will be the same as in the unknown approach - so this is what
+      // we call a hybrid systems method.
+      // 
+      if (plist_.isParameter("nodal relaxation levels")) {
+	int num_levels = plist_.get<int>("nodal relaxation levels");
 
-            // I believe this works, but needs testing -- we do not pop previous
-            // settings, and instead just call the function twice. --ETC
-            funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
-                    &HYPRE_BoomerAMGSetSmoothType, 6)));
-            funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
-                    &HYPRE_BoomerAMGSetDomainType, 1)));
-            funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
-                    &HYPRE_BoomerAMGSetOverlap, 0)));
-            funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
-                    &HYPRE_BoomerAMGSetSmoothNumLevels, num_levels)));
-          }
-        }
+	// I believe this works, but needs testing -- we do not pop previous
+	// settings, and instead just call the function twice. --ETC
+	funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+			 &HYPRE_BoomerAMGSetSmoothType, 6)));
+	funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+                         &HYPRE_BoomerAMGSetDomainType, 1)));
+	funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+                         &HYPRE_BoomerAMGSetOverlap, 0)));
+	funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+                         &HYPRE_BoomerAMGSetSmoothNumLevels, num_levels)));
+	funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+		         &HYPRE_BoomerAMGSetSchwarzUseNonSymm, 1))); // should provide an option for non-sym
+
+	// Note that if num_levels > 1, you MUST also do nodal coarsening (to maintain the nodes on coarser grids).
+	if (num_levels > 1) {
+	  int nodal = plist_.get<int>("nodal strength of connection norm", 1);
+	  funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+                           &HYPRE_BoomerAMGSetNodal, nodal)));
+	}
       }
     }
   }
