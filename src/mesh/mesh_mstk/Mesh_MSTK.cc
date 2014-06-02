@@ -1698,8 +1698,8 @@ void Mesh_MSTK::node_get_cells (const Entity_ID nodeid,
 	  ++n;
         }
       }
-      cellids->resize(n); // resize to the actual number of cells being returned
     }
+    cellids->resize(n); // resize to the actual number of cells being returned
 
     List_Delete(cell_list);
 
