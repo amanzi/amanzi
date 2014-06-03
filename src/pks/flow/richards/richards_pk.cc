@@ -58,7 +58,8 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     dynamic_mesh_(false),
     clobber_surf_kr_(false),
     vapor_diffusion_(false),
-    perm_scale_(1.)
+    perm_scale_(1.),
+    tpfa_(false)
 {
   // set a few parameters before setup
   plist_->set("primary variable key", "pressure");
@@ -269,6 +270,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
+  tpfa_ = mfd_pc_plist.get<bool>("TPFA", false) ||
+      (mfd_pc_plist.get<std::string>("MFD method") == "two point flux approximation");
   if (scaled_constraint_ && !mfd_pc_plist.isParameter("scaled constraint equation"))
     mfd_pc_plist.set("scaled constraint equation", scaled_constraint_);
   mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
@@ -524,7 +527,6 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
         vel_c[n][c] /= nliq_c[0][c];
       }
     }
-
   }
 };
 
