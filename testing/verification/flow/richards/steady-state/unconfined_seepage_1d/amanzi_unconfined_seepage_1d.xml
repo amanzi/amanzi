@@ -197,7 +197,7 @@
     <ParameterList name="LeftBC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Left side}"/>
       <ParameterList name="BC: Hydrostatic">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 9.46728e+10}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
         <Parameter name="Water Table Height" type="Array(double)" value="{24.384, 24.384}"/>
       </ParameterList>
@@ -205,7 +205,7 @@
     <ParameterList name="RightBC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Right side}"/>
       <ParameterList name="BC: Hydrostatic">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 9.46728e+10}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
         <Parameter name="Water Table Height" type="Array(double)" value="{15.24, 15.24}"/>
       </ParameterList>
@@ -213,7 +213,7 @@
     <ParameterList name="TopBC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Top side}"/>
       <ParameterList name="BC: Seepage">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 9.46728e+10}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
         <Parameter name="Inward Mass Flux" type="Array(double)" value="{9.6411e-06, 9.6411e-06}"/>
       </ParameterList>
