@@ -55,7 +55,9 @@ MatrixMFD_Coupled::MatrixMFD_Coupled(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
     plist_(plist),
     mesh_(mesh),
-    is_matrix_constructed_(false) {
+    is_schur_constructed_(false),
+    is_matrix_constructed_(false),
+    assemble_matrix_(false) {
   InitializeFromPList_();
 }
 
@@ -63,7 +65,9 @@ MatrixMFD_Coupled::MatrixMFD_Coupled(Teuchos::ParameterList& plist,
 MatrixMFD_Coupled::MatrixMFD_Coupled(const MatrixMFD_Coupled& other) :
     plist_(other.plist_),
     mesh_(other.mesh_),
-    is_matrix_constructed_(false) {
+    is_schur_constructed_(false),
+    is_matrix_constructed_(false),
+    assemble_matrix_(false) {
   InitializeFromPList_();
 }
 
@@ -81,6 +85,9 @@ void MatrixMFD_Coupled::InitializeFromPList_() {
 
   // dump
   dump_schur_ = plist_.get<bool>("dump Schur complement", false);
+
+  // assemble Aff
+  assemble_matrix_ = plist_.get<bool>("assemble block Aff", false);
 }
 
 
@@ -221,6 +228,80 @@ int MatrixMFD_Coupled::Apply(const TreeVector& X,
 }
 
 
+void MatrixMFD_Coupled::AssembleGlobalMatrices() {
+  if (!assemble_matrix_) return;
+  
+  int ierr(0);
+
+  const Epetra_BlockMap& cmap = mesh_->cell_map(false);
+  const Epetra_BlockMap& fmap = mesh_->face_map(false);
+  const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
+
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  // Get the assorted sub-blocks
+  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff = blockA_->Aff_cells();
+  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Bff = blockB_->Aff_cells();
+
+  // workspace
+  Epetra_SerialDenseMatrix values(2, 2);
+  AmanziMesh::Entity_ID_List faces;
+  const int MFD_MAX_FACES = 14;
+  int faces_LID[MFD_MAX_FACES];  // Contigious memory is required.
+  int faces_GID[MFD_MAX_FACES];
+
+  if (is_matrix_constructed_) A2f2f_->PutScalar(0.0);
+
+  // Assemble
+  for (int c=0; c!=ncells; ++c){
+    int cell_GID = cmap.GID(c);
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+    int nentries = nfaces; // not sure if this is required, but may be passed by ref
+
+    Epetra_SerialDenseMatrix S2f2f(2*nfaces, 2*nfaces);
+
+    // get IDs of faces
+    for (int i=0; i!=nfaces; ++i) {
+      faces_LID[i] = faces[i];
+      faces_GID[i] = fmap_wghost.GID(faces_LID[i]);
+    }
+
+    for (int i=0; i!=nfaces; ++i) {
+      for (int j=0; j!=nfaces; ++j) {
+        S2f2f(i, j) = Aff[c](i, j);
+        S2f2f(nfaces + i, nfaces + j) = Bff[c](i, j);
+      }
+    }
+
+    // -- Assemble Schur complement
+    for (int i=0; i!=nfaces; ++i) {
+      ierr = A2f2f_->BeginSumIntoGlobalValues(faces_GID[i], nentries, faces_GID);
+      ASSERT(!ierr);
+
+      for (int j=0; j!=nfaces; ++j){
+        values(0,0) = S2f2f(i,j);
+        values(0,1) = S2f2f(i,j + nfaces);
+        values(1,0) = S2f2f(i + nfaces,j);
+        values(1,1) = S2f2f(i+ nfaces,j+ nfaces);
+
+        //ierr = A2f2f_->SubmitBlockEntry(values);  // Bug in Trilinos 10.10 FeVbrMatrix
+        ierr = A2f2f_->SubmitBlockEntry(values.A(), values.LDA(),
+                values.M(), values.N());
+        ASSERT(!ierr);
+      }
+
+      ierr = A2f2f_->EndSubmitEntries();
+      ASSERT(!ierr);
+    }
+  }
+
+  // Finish assembly
+  ierr = A2f2f_->GlobalAssemble();
+  is_matrix_constructed_ = true;
+  ASSERT(!ierr);
+}
+
 void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
   int ierr(0);
 
@@ -256,7 +337,7 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
     A2c2c_cells_Inv_.resize(static_cast<size_t>(ncells));
   }
 
-  if (is_matrix_constructed_) P2f2f_->PutScalar(0.0);
+  if (is_schur_constructed_) P2f2f_->PutScalar(0.0);
 
   // Assemble
   for (int c=0; c!=ncells; ++c){
@@ -442,7 +523,7 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
   ASSERT(!ierr);
   ierr = P2f2f_->GlobalAssemble();
   ASSERT(!ierr);
-  is_matrix_constructed_ = true;
+  is_schur_constructed_ = true;
 
   // DEBUG dump
   if (dump || dump_schur_) {
@@ -501,6 +582,10 @@ void MatrixMFD_Coupled::SymbolicAssembleGlobalMatrices() {
   A2c2f_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, *cf_graph));
   P2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, *ff_graph, false));
   ierr = P2f2f_->GlobalAssemble();
+  if (assemble_matrix_) {
+    A2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, *ff_graph, false));
+    ierr = A2f2f_->GlobalAssemble();
+  }
   ASSERT(!ierr);
 }
 

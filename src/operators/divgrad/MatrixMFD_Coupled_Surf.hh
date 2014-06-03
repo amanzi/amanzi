@@ -13,6 +13,8 @@
 
 #include "MatrixMFD_TPFA.hh"
 #include "MatrixMFD_Coupled.hh"
+#include "EpetraMatrix.hh"
+#include "EpetraMatrixDefault.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -30,6 +32,7 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
   }
 
   virtual void SymbolicAssembleGlobalMatrices();
+  virtual void AssembleGlobalMatrices();
   virtual void ComputeSchurComplement();
 
   virtual void SetOffDiagonals(const Teuchos::RCP<const Epetra_MultiVector>& Ccc,
@@ -86,7 +89,8 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
   Teuchos::RCP<const Epetra_Import> surf_importer_;
   Teuchos::RCP<const Epetra_Map> surf_map_in_subsurf_;
   
-  bool dump_schur_;
+  Teuchos::RCP<EpetraMatrixDefault<Epetra_FEVbrMatrix> > Aff_op_;
+  Teuchos::RCP<EpetraMatrix> Aff_solver_;
 };
 
 
