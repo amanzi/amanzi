@@ -1,6 +1,8 @@
 #ifndef _UNSTRUCTURED_OBSERVATIONS_HH_
 #define _UNSTRUCTURED_OBSERVATIONS_HH_
 
+#include <map>
+
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
@@ -62,6 +64,7 @@ class Unstructured_observations {
   Amanzi::ObservationData& observation_data_;
   std::map<std::string, Observable> observations;
   std::vector<std::string> comp_names_;
+  std::map<std::string, double> drawdown_;
 };
 
 }  // namespace Amanzi

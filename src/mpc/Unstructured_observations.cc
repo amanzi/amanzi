@@ -19,8 +19,8 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obs_
   rank_ = comm->MyPID();
 
   Teuchos::ParameterList tmp_list;
-  tmp_list.set<std::string>("Verbosity Level","high");
-  vo_ = new VerboseObject("Amanzi::Unstructured_observations", tmp_list);
+  tmp_list.set<std::string>("Verbosity Level", "high");
+  vo_ = new VerboseObject("Observations", tmp_list);
 
   // interpret paramerter list
   // loop over the sublists and create an observation for each
@@ -131,7 +131,7 @@ void Unstructured_observations::MakeObservations(State& state)
       
       unsigned int mesh_block_size(0);
       Amanzi::AmanziMesh::Entity_ID_List entity_ids;
-      if ( (var == "Aqueous mass flow rate") || (var == "Aqueous volumetric flow rate") ) { // for flux we need faces
+      if ((var == "Aqueous mass flow rate") || (var == "Aqueous volumetric flow rate")) { // for flux we need faces
 	mesh_block_size = state.GetMesh()->get_set_size((i->second).region,
 							Amanzi::AmanziMesh::FACE,
 							Amanzi::AmanziMesh::OWNED);
@@ -150,7 +150,7 @@ void Unstructured_observations::MakeObservations(State& state)
       // find global meshblocksize
       int dummy = mesh_block_size; 
       int global_mesh_block_size(0);
-      state.GetMesh()->get_comm()->SumAll(&dummy,&global_mesh_block_size,1);
+      state.GetMesh()->get_comm()->SumAll(&dummy, &global_mesh_block_size, 1);
       
       if (global_mesh_block_size == 0) {
 	// warn that this region is empty and bail
@@ -250,6 +250,27 @@ void Unstructured_observations::MakeObservations(State& state)
 	  value += (*hydraulic_head)[ic] * state.GetMesh()->cell_volume(ic);
 	  volume += state.GetMesh()->cell_volume(ic);
 	}
+      } else if (var == "Drawdown") {
+	value = 0.0;
+	volume = 0.0;
+	
+	Teuchos::RCP<const Epetra_Vector> hydraulic_head = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("hydraulic_head")->ViewComponent("cell", false))(0));
+	
+	for (int i=0; i<mesh_block_size; ++i) {
+	  int ic = entity_ids[i];
+	  Amanzi::AmanziGeometry::Point p = state.GetMesh()->cell_centroid(ic);
+	  value += (*hydraulic_head)[ic] * state.GetMesh()->cell_volume(ic);
+	  volume += state.GetMesh()->cell_volume(ic);
+	}
+
+        std::map<std::string, double>::iterator it = drawdown_.find(label);
+        if (it == drawdown_.end()) { 
+          drawdown_[label] = value;
+          value = 0.0;
+        } else {
+          value -= it->second;
+        }
       } else if ( (var == "Aqueous mass flow rate") || (var == "Aqueous volumetric flow rate")) {
 	value = 0.0;
 	volume = 0.0;
