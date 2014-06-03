@@ -3992,6 +3992,8 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	              std::stringstream name;
 	              name<< soluteName << " Aqueous concentration";
 	              obPL.set<std::string>("Variable",name.str());
+                    } else if (strcmp(obsType,"drawdown")==0) {
+	              obPL.set<std::string>("Variable","Drawdown");
 	            }
 	            DOMNodeList* kidList = curObs->getChildNodes();
                     for (int k=0; k<kidList->getLength(); k++) {
