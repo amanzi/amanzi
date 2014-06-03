@@ -27,7 +27,9 @@ class PFT {
   PFT(std::string pft_type, int ncells);
   PFT(std::string pft_type, int ncells, double* brootsoil_);
 
-  virtual Teuchos::RCP<PFT> Clone() const = 0;
+  virtual Teuchos::RCP<PFT> Clone() const {
+    return Teuchos::rcp(new PFT(*this));
+  }
   virtual ~PFT() {}
 
   // Default copy constructor does the right thing.
@@ -101,7 +103,7 @@ class PFT {
   double annCBalance[10];//annual carbon balance for each leave layers
 
   Epetra_SerialDenseVector BRootSoil; //root distribution at different soil depths
-  const std::string pft_type;
+  std::string pft_type;
 
 };
 

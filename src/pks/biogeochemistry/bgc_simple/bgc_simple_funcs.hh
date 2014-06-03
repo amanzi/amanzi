@@ -23,7 +23,7 @@ License: BSD
 namespace Amanzi {
 namespace BGC {
 
-void advance(double t, double dt, double gridarea,
+void BGCAdvance(double t, double dt, double gridarea,
              const MetData& met,
              const Epetra_SerialDenseVector& SoilTArr,
              const Epetra_SerialDenseVector& SoilArr,
