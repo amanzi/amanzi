@@ -1545,6 +1545,7 @@ The user must specify when the various types of output are desired.  For Observa
  * MaterialID
  * Gravimetric water content [volumetric water content * water density / bulk density, in kg/m^3]
  * Hydraulic Head [ (aqueous pressure - atmospheric pressure)/(rho * gravity) + z ]
+ * Drawdown [m] (difference of hydraulic heads at different time moments) 
  * Aqueous mass flow rate [ kg/s ] (must use integral functional in the observation)
  * Aqueous volumetric flow rate [ m^3/s ] (must use integral functional in the observation)
 
