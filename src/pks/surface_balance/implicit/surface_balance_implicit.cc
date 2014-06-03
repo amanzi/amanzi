@@ -60,7 +60,7 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
   wind_speed_ref_ht_ = plist_->get<double>("wind speed reference height [m]", 2.0);
 
   // implicit/explicit snow precip
-  implicit_snow_ = plist_->get<bool>("implicit snow precipitation", true);
+  implicit_snow_ = plist_->get<bool>("implicit snow precipitation", false);
 
   // transition snow depth
   snow_ground_trans_ = plist_->get<double>("snow-ground transitional depth", 0.02);

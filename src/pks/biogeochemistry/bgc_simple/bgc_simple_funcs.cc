@@ -19,7 +19,7 @@ namespace BGC {
 // t and dt [s]
 // gridarea [m^2]
 // qSWin [W/m^2]
-// tair [C]
+// tair [K]
 // met.windv [m/s]
 // met.relhum [-]
 // met.CO2a [ppm]
@@ -27,7 +27,7 @@ namespace BGC {
 // SoilWPArr [Pa] (water pressure)
 // SoilDArr [m] (depth)
 // SoilThicknessArr [m] (dz)
-void advance(double t, double dt, double gridarea,
+void BGCAdvance(double t, double dt, double gridarea,
              const MetData& met,
              const Epetra_SerialDenseVector& SoilTArr,
              const Epetra_SerialDenseVector& SoilWPArr,
@@ -42,7 +42,8 @@ void advance(double t, double dt, double gridarea,
   double Cv = 1.2e-8;
   double dt_days = dt / 86400.;
   double t_days = t / 86400.;
-  double max_wp = -1.e-6;
+  double wp_max = -1.e-6; //MPa wp = p - p_atm
+  double wp_min = -10.; //MPa
   int max_leaf_layers = 10;
 
   // calculate fractional day length
@@ -66,8 +67,8 @@ void advance(double t, double dt, double gridarea,
         //---------------------------------------------------------------------------------
         //calculate plant phenology
         if (pft.leafstatus == 1) {
-          if (met.tair > pft.GDDbase) {
-            pft.GDD += (met.tair - pft.GDDbase) * dt_days;
+          if (met.tair - 273.15 > pft.GDDbase) {
+            pft.GDD += (met.tair - 273.15 - pft.GDDbase) * dt_days;
           }
 
           if (pft.GDD >= pft.GDDleafon){
@@ -183,7 +184,7 @@ void advance(double t, double dt, double gridarea,
 
       for (int leaf_layer=0; leaf_layer!=max_leaf_layers; ++leaf_layer){
         Photosynthesis(PARi, pft.LUE, pft.LER, p_atm,
-                       met.windv, met.tair, met.relhum, met.CO2a, pft.mp, Vcmax25,
+                       met.windv, met.tair - 273.15, met.relhum, met.CO2a, pft.mp, Vcmax25,
                        &psn, &tleaf, &leafresp);
 
         if (thawD <= 0.0) psn = 0.0;
@@ -222,7 +223,7 @@ void advance(double t, double dt, double gridarea,
       } else {
         PARi = PARi*std::exp(-pft.LER * max_leaf_layers);
         Photosynthesis(PARi, pft.LUE, pft.LER, p_atm,
-                       met.windv, met.tair, met.relhum, met.CO2a, pft.mp, Vcmax25,
+                       met.windv, met.tair - 273.15, met.relhum, met.CO2a, pft.mp, Vcmax25,
                        &psn, &tleaf, &leafresp);
 
         leafresptotal = 24.0 * 3600.0 * Cv*leafresp*gridarea;
@@ -261,7 +262,7 @@ void advance(double t, double dt, double gridarea,
       double frac = leafstorageccon / pft.tar_leafstorageccon;
       double csink_factor = 1.0 - frac > 0. ? std::exp(-std::pow(frac, 3.0)) : 1.0;
 
-      double Emax = met.tair > 0. ? TEffectsQ10(2.0, met.tair, 25.0) * pft.Emax25 : 0.;
+      double Emax = met.tair - 273.15 > 0. ? TEffectsQ10(2.0, met.tair - 273.15, 25.0) * pft.Emax25 : 0.;
 
       // calculate the carbon sink limitation for photosynthesis
       pft.CSinkLimit = 0.0;
@@ -369,7 +370,7 @@ void advance(double t, double dt, double gridarea,
           for (int k=0; k!=soilcarr.size(); ++k) {
             double TFactor = SoilTArr[k] < 273.15 ? 0. :
                 TEffectsQ10(2.0, SoilTArr[k] - 273.15, 25.0) * HighTLim(SoilTArr[k]-273.15);
-            double soil_wp = std::min(SoilWPArr[k] - p_atm, max_wp);
+            double soil_wp = std::max(std::min( (SoilWPArr[k] - p_atm) / 1.e6, wp_max), wp_min);
             double WFactor = std::max((soil_wp - pft.minLeafWP) / (-0.05 - pft.minLeafWP),0.);
             weightArr[k] = pft.BRootSoil[k] * TFactor*WFactor;
             totalweights += weightArr[k];
@@ -515,14 +516,14 @@ void advance(double t, double dt, double gridarea,
         // AFFECTED BY DT! --etc
         double turnoverLeaf = pft.evergreen == 0 ? 0. : dt_days / (pft.leaflongevity * 365.25);
         double carbondrawnLeaf = turnoverLeaf*pft.Bleaf;
-        ASSERT(turnoverLeaf > 0.9);
+        ASSERT(turnoverLeaf <= 0.9);
 
         double turnoverStem = dt_days / (pft.stemlongevity * 365.25);
         double carbondrawnStem = turnoverStem*pft.Bstem;
-        ASSERT(turnoverStem > 0.9);
+        ASSERT(turnoverStem <= 0.9);
 
         double turnoverRoot = dt_days / (pft.rootlongevity * 365.25);
-        ASSERT(turnoverRoot > 0.9);
+        ASSERT(turnoverRoot <= 0.9);
 
         double storagecdrawn = carbondrawnLeaf*leafstoragecratio*(1.0-pft.storagecRspFrc);
         soilcarr[0]->SOM[0] += storagecdrawn;
@@ -603,12 +604,13 @@ void advance(double t, double dt, double gridarea,
   for (int k=0; k!=soilcarr.size(); ++k) {
     double TFactor = TEffectsQ10(2.0, SoilTArr[k] - 273.15, 25.0);
     SoilCO2Arr[k] = 0.0;
-    double SWPMin = -10.;
     double WFactor;
-    if (SoilWPArr[k] - p_atm < SWPMin){
+
+    double soil_wp = std::max(std::min( (SoilWPArr[k] - p_atm) / 1.e6, wp_max), wp_min);
+    if (soil_wp == wp_min) {
       WFactor = 0.0;
     } else {
-      WFactor = std::log(SWPMin / std::min(SoilWPArr[k] - p_atm, max_wp)) / std::log(SWPMin / max_wp);
+      WFactor = std::log(wp_min / soil_wp) / std::log(wp_min / wp_max);
     }
 
     double DFactor = std::exp(-SoilDArr[k] / 0.5);
@@ -618,7 +620,7 @@ void advance(double t, double dt, double gridarea,
     for (int l=0; l!=nPools; ++l){
       // AFFECTED BY DT --etc
       double turnover = dt_days * WFactor*TFactor*DFactor / (soilcarr[k]->params->TurnoverRates[l] * 365.25);
-      ASSERT(turnover > 0.9);
+      ASSERT(turnover <= 0.9);
 
       double SOMDecomp = soilcarr[k]->SOM[l] * turnover;
       soilcarr[k]->SOM[l] *= 1.0 - turnover;
