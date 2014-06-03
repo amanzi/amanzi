@@ -269,7 +269,7 @@ void Unstructured_observations::MakeObservations(State& state)
           drawdown_[label] = value;
           value = 0.0;
         } else {
-          value -= it->second;
+          value = it->second - value;
         }
       } else if ( (var == "Aqueous mass flow rate") || (var == "Aqueous volumetric flow rate")) {
 	value = 0.0;
