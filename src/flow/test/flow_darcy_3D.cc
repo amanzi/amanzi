@@ -96,6 +96,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   gravity[2] = -1.0;
 
   S->GetFieldData("specific_storage", passwd)->PutScalar(1.0);
+  S->GetFieldData("specific_yield", passwd)->PutScalar(0.0);
 
   /* create the initial pressure function */
   Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
@@ -107,7 +108,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
 
   /* initialize the Darcy process kernel */
   DPK->InitPK();
-  DPK->InitSteadyState(0.0, 1e-8);
+  DPK->InitTransient(0.0, 1e-8);
 
   /* transient solution */
   double dT = 0.1;

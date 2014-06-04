@@ -447,8 +447,8 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   ss_g.Update(0.0, ss, factor);
 
   factor = 1.0 / (g_ * dT);
-  CompositeVector sy_g(specific_yield_copy_); 
-  sy_g.Update(0.0, sy, factor);
+  CompositeVector sy_g(*specific_yield_copy_); 
+  sy_g.Scale(factor);
 
   op_->RestoreCheckPoint();
   op_->AddAccumulationTerm(*solution, ss_g, dT);
@@ -541,11 +541,16 @@ void Darcy_PK::CommitState(Teuchos::RCP<State> S)
 ****************************************************************** */
 void Darcy_PK::UpdateSpecificYield_()
 {
-  specific_yield_copy_ = Teuchos::RCP(new CompositeVector(S_->GetFieldData("specific_yield"), true));
+  specific_yield_copy_ = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("specific_yield"), true));
+
+  // do we have non-zero specific yield? 
+  double tmp;
+  specific_yield_copy_->Norm2(&tmp);
+  if (tmp == 0.0) return;
 
   // populate ghost cells
   specific_yield_copy_->ScatterMasterToGhosted();
-  const Epetra_MultiVector& specific_yield = specific_yield_copy_->ViewComponent("cell", true);
+  const Epetra_MultiVector& specific_yield = *specific_yield_copy_->ViewComponent("cell", true);
 
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
   AmanziMesh::Entity_ID_List faces;

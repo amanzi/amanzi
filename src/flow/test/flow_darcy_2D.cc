@@ -108,7 +108,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   /* initialize the Darcy process kernel */
   DPK->InitPK();
-  DPK->InitSteadyState(0.0, 1e-8);
+  DPK->InitTransient(0.0, 1e-8);
 
   /* transient solution */
   double dT = 0.1;
