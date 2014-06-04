@@ -45,6 +45,7 @@ class PFT {
   bool AssertRootBalance_or_die() {
     double totalRootW = BRootSoil.Norm1();
     ASSERT(std::abs(totalRootW - Broot) < 1.e-6);
+    return std::abs(totalRootW - Broot) < 1.e-6;
   }
 
 
