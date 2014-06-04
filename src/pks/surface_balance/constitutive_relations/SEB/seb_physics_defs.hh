@@ -84,7 +84,8 @@ struct SurfaceProperties {
 // struct of input MetData.
 struct MetData {
   double Us;                    // wind speed, [m/s]
-  double QswIn;                 // incoming short-wave radiation, [J/ ??]
+  double QswIn;                 // incoming short-wave radiation, [W/m^2]
+  double QlwIn;                // incoming longwave radiaton, [W/m^2]
   double Ps;                    // precip snow, [m (SWE)/s]
   double Pr;                    // precip rain, [m/s]
   ThermoProperties vp_air;
@@ -92,6 +93,7 @@ struct MetData {
   MetData() :
       Us(MY_LOCAL_NAN),
       QswIn(MY_LOCAL_NAN),
+      QlwIn(MY_LOCAL_NAN),
       Ps(MY_LOCAL_NAN),
       Pr(MY_LOCAL_NAN),
       vp_air() {}
