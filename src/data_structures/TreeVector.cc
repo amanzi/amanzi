@@ -20,10 +20,12 @@ namespace Amanzi {
 
 // Basic constructors
 TreeVector::TreeVector() :
-    map_(Teuchos::rcp(new TreeVectorSpace()))
+    map_(Teuchos::rcp(new TreeVectorSpace())),
+    comm_null_(MPI_COMM_NULL)
 {}
 
-TreeVector::TreeVector(const TreeVectorSpace& space, InitMode mode)
+TreeVector::TreeVector(const TreeVectorSpace& space, InitMode mode) :
+    comm_null_(MPI_COMM_NULL)
 {
   map_ = Teuchos::rcp(new TreeVectorSpace(space));
   InitMap_();
@@ -32,7 +34,8 @@ TreeVector::TreeVector(const TreeVectorSpace& space, InitMode mode)
   }
 }
 
-TreeVector::TreeVector(const TreeVector& other, InitMode mode)
+TreeVector::TreeVector(const TreeVector& other, InitMode mode) :
+    comm_null_(MPI_COMM_NULL)
 {
   map_ = Teuchos::rcp(new TreeVectorSpace(*other.map_));
   InitMap_();

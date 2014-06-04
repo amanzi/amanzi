@@ -57,6 +57,7 @@ class TreeVector {
   const Epetra_MpiComm& Comm() {
     if (data_ != Teuchos::null) return data_->Comm();
     if (subvecs_.size() > 0) return subvecs_[0]->Comm();
+    return comm_null_;
   }
 
   // Access to the space.
@@ -132,6 +133,7 @@ class TreeVector {
 
   Teuchos::RCP<CompositeVector> data_;
   std::vector< Teuchos::RCP<TreeVector> > subvecs_;
+  Epetra_MpiComm comm_null_;
 };
 
 } // namespace

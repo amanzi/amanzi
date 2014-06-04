@@ -30,9 +30,11 @@ SUITE(SOLVERS) {
       for (int i = 0; i < 5; i++) mv[i] = 2 * v[i];
       for (int i = 1; i < 5; i++) mv[i] -= v[i - 1];
       for (int i = 0; i < 4; i++) mv[i] -= v[i + 1];
+      return 0;
     }
     virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
       for (int i = 0; i < 5; i++) hv[i] = v[i];
+      return 0;
     }
 
     virtual const Epetra_Map& DomainMap() const {

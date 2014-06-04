@@ -141,7 +141,7 @@ void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A));
 
   Teuchos::ParameterList hypre_list("Preconditioner List");
-  hypre_list.set("Preconditioner", BoomerAMG);
+  hypre_list.set<int>("Preconditioner", BoomerAMG);
   hypre_list.set("SolveOrPrecondition", (Hypre_Chooser)1);
   hypre_list.set("SetPreconditioner", true);
   hypre_list.set("NumFunctions", (int)funcs_.size());

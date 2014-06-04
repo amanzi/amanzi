@@ -71,6 +71,7 @@ LabeledSetRegion::inside(const Point& p) const
 {
   Errors::Message mesg("In/out check not implemented for labeled sets");
   Exceptions::amanzi_throw(mesg);
+  return false;
 }
 
 } // namespace AmanziGeometry

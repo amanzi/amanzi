@@ -3784,7 +3784,7 @@ void Mesh_MSTK::init_set_info() {
           switch (entdim) {
           case MREGION:
             MRegion_ptr region;
-            while (region = List_Next_Entry(deleted_regions,&idx))
+            while ((region = List_Next_Entry(deleted_regions,&idx)))
               MSet_Rem(mset,region);
             break;
           case MFACE:
@@ -3825,22 +3825,22 @@ void Mesh_MSTK::init_set_info() {
             switch (entdim) {
             case MREGION:
               MRegion_ptr region;
-              while (region = List_Next_Entry(deleted_regions,&idx))
+              while ((region = List_Next_Entry(deleted_regions,&idx)))
                 MSet_Rem(mset,region);
               break;
             case MFACE:
               MFace_ptr face;
-              while (face = List_Next_Entry(deleted_faces,&idx))
+              while ((face = List_Next_Entry(deleted_faces,&idx)))
                 MSet_Rem(mset,face);
               break;
             case MEDGE:
               MEdge_ptr edge;
-              while (edge = List_Next_Entry(deleted_edges,&idx))
+              while ((edge = List_Next_Entry(deleted_edges,&idx)))
                 MSet_Rem(mset,edge);
               break;
             case MVERTEX:
               MVertex_ptr vertex;
-              while (vertex = List_Next_Entry(deleted_vertices,&idx))
+              while ((vertex = List_Next_Entry(deleted_vertices,&idx)))
                 MSet_Rem(mset,vertex);
               break;
             }

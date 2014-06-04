@@ -185,6 +185,7 @@ Teuchos::RCP<AmanziMesh::Mesh> State::GetDeformableMesh(Key key) {
     Errors::Message message(messagestream.str());
     Exceptions::amanzi_throw(message);
   }
+  return Teuchos::null;
 };
 
 
@@ -198,6 +199,7 @@ bool State::IsDeformableMesh(Key key) const {
     Errors::Message message(messagestream.str());
     Exceptions::amanzi_throw(message);
   }
+  return false;
 };
 
 
