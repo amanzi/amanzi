@@ -71,6 +71,7 @@ public:
 
   bool eval_derivatives_;
   bool implicit_snow_;
+  bool modify_predictor_advance_;
 
   double min_wind_speed_;
   double wind_speed_ref_ht_;
