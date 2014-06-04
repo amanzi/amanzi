@@ -64,6 +64,7 @@
     </mesh>
 
     <regions>
+        <box high_coordinates="(1.0, 1.0, 2.0)" low_coordinates="(0.0, 0.0, 0.0)" name="All"/>
         <box high_coordinates="(1.0, 1.0, 2.0)" low_coordinates="(0.0, 0.0, 2.0)" name="Top Surface"/>
         <box high_coordinates="(1.0, 1.0, 0.0)" low_coordinates="(0.0, 0.0, 0.0)" name="Bottom Surface"/>
         <box high_coordinates="(1.0, 1.0, 2.0)" low_coordinates="(0.0, 0.0, 1.5)" name="Top Region"/>

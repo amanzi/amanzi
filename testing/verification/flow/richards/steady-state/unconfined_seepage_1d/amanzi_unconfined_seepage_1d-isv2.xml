@@ -36,9 +36,9 @@
 	</phases>
 
 	<execution_controls>
-		<verbosity level="high"/>
+		<verbosity level="extreme"/>
 		<execution_control_defaults mode="steady" method="bdf1" />
-		<execution_control  start="0.0" end="9.46728e+10" init_dt="100" mode = "steady" method="bdf1" />
+		<execution_control  start="0.0" end="9.46728e+10" init_dt="1" mode = "steady" method="bdf1" />
 	</execution_controls>
 
 	<numerical_controls>
@@ -130,6 +130,7 @@
 				<parameters alpha="1.0212e-04" sr="0.25" m="0.09090"/>
 			</cap_pressure>
 			<rel_perm model="mualem">
+				<optional_krel_smoothing_interval>100</optional_krel_smoothing_interval>
 			</rel_perm>
  	 	      	<assigned_regions>Aquifer</assigned_regions>
  	   	</material>
@@ -188,61 +189,61 @@
 		        <filename>observation-isv2.out</filename>
 			<liquid_phase name="water">
 
-			        <aqueous_pressure>
+			        <hydraulic_head>
 				        <assigned_regions>Point25</assigned_regions>
 				        <functional>point</functional>
 				        <time_macro>EndTime</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
+				</hydraulic_head>
+			        <hydraulic_head>
 				        <assigned_regions>Point125</assigned_regions>
 				        <functional>point</functional>
 				        <time_macro>EndTime</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
+				</hydraulic_head>
+			        <hydraulic_head>
 				        <assigned_regions>Point225</assigned_regions>
 				        <functional>point</functional>
 				        <time_macro>EndTime</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
+				</hydraulic_head>
+			        <hydraulic_head>
 				        <assigned_regions>Point325</assigned_regions>
 				        <functional>point</functional>
 				        <time_macro>EndTime</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
+				</hydraulic_head>
+			        <hydraulic_head>
 				        <assigned_regions>Point425</assigned_regions>
 				        <functional>point</functional>
 				        <time_macro>EndTime</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
+				</hydraulic_head>
+			        <hydraulic_head>
 				        <assigned_regions>Point525</assigned_regions>
 				        <functional>point</functional>
 				        <time_macro>EndTime</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
+				</hydraulic_head>
+			        <hydraulic_head>
 				        <assigned_regions>Point625</assigned_regions>
 				        <functional>point</functional>
 				        <time_macro>EndTime</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
+				</hydraulic_head>
+			        <hydraulic_head>
 				        <assigned_regions>Point725</assigned_regions>
 				        <functional>point</functional>
 				        <time_macro>EndTime</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
+				</hydraulic_head>
+			        <hydraulic_head>
 				        <assigned_regions>Point825</assigned_regions>
 				        <functional>point</functional>
 				        <time_macro>EndTime</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
+				</hydraulic_head>
+			        <hydraulic_head>
 				        <assigned_regions>Point925</assigned_regions>
 				        <functional>point</functional>
 				        <time_macro>EndTime</time_macro>
-				</aqueous_pressure>
-			        <aqueous_pressure>
+				</hydraulic_head>
+			        <hydraulic_head>
 				        <assigned_regions>Point975ft</assigned_regions>
 				        <functional>point</functional>
 				        <time_macro>EndTime</time_macro>
-				</aqueous_pressure>
+				</hydraulic_head>
 
 			</liquid_phase>
 	        </observations>
@@ -250,9 +251,8 @@
 		<vis>
 			<base_filename>plot-isv2</base_filename>
 		  	<num_digits>5</num_digits>
-		  	<time_macro>EndTime</time_macro>
+		  	<time_macros>EndTime</time_macros>
 		</vis>
--->
 	</output>
 
 </amanzi_input>

@@ -1052,6 +1052,7 @@ Available Observations:
 - aqueous_mass_flow_rate
 - aqueous_volumetric_flow_rate
 - aqueous_conc
+- drawdown
 
 An example ``observations`` element looks like the following.
 
