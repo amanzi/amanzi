@@ -106,7 +106,7 @@ void MatrixMFD_Coupled_Surf::SymbolicAssembleGlobalMatrices() {
 
 void MatrixMFD_Coupled_Surf::AssembleGlobalMatrices() {
   // Assemble Aff, without Surf
-  ASSERT(assemble_matrix_);
+  if (!assemble_matrix_) return;
   MatrixMFD_Coupled::AssembleGlobalMatrices();
 
   // Add in surf terms
