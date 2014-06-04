@@ -25,31 +25,31 @@ namespace AmanziFlow {
 /* ******************************************************************
 * List to WRM models has to be provided.
 ****************************************************************** */
-void RelativePermeability::ProcessParameterList()
+void RelativePermeability::ProcessParameterList_(Teuchos::ParameterList& plist)
 {
   Errors::Message msg;
 
   // create verbosity object
-  Teuchos::ParameterList plist;
-  vo_ = new VerboseObject("Flow::RelativePerm", plist); 
+  Teuchos::ParameterList vlist;
+  vo_ = new VerboseObject("Flow::RelativePerm", vlist); 
 
   int nblocks = 0;  // Find out how many WRM entries there are.
-  for (Teuchos::ParameterList::ConstIterator i = list_.begin(); i != list_.end(); i++) {
-    if (list_.isSublist(list_.name(i))) nblocks++;
+  for (Teuchos::ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++) {
+    if (plist.isSublist(plist.name(i))) nblocks++;
   }
 
   WRM_.resize(nblocks);
 
   int iblock = 0;
-  for (Teuchos::ParameterList::ConstIterator i = list_.begin(); i != list_.end(); i++) {
-    if (list_.isSublist(list_.name(i))) {
-      Teuchos::ParameterList& wrm_list = list_.sublist(list_.name(i));
+  for (Teuchos::ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++) {
+    if (plist.isSublist(plist.name(i))) {
+      Teuchos::ParameterList& wrm_list = plist.sublist(plist.name(i));
 
       std::string region;
       if (wrm_list.isParameter("region")) {
         region = wrm_list.get<std::string>("region");  // associated mesh block
       } else {
-        msg << "Flow PK: WMR sublist \"" << list_.name(i).c_str() << "\" has no parameter \"region\".\n";
+        msg << "Flow PK: WMR sublist \"" << plist.name(i).c_str() << "\" has no parameter \"region\".\n";
         Exceptions::amanzi_throw(msg);
       }
 
@@ -153,12 +153,14 @@ void RelativePermeability::ProcessStringRelativePermeability(const std::string n
 **************************************************************** */
 void RelativePermeability::PlotWRMcurves()
 {
+  Teuchos::ParameterList plist;
+
   int MyPID = mesh_->cell_map(false).Comm().MyPID();
   if (MyPID == 0) {
     int mb(0); 
-    for (Teuchos::ParameterList::ConstIterator i = list_.begin(); i != list_.end(); i++) {
-      if (list_.isSublist(list_.name(i))) {
-        Teuchos::ParameterList& wrm_list = list_.sublist(list_.name(i));
+    for (Teuchos::ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++) {
+      if (plist.isSublist(plist.name(i))) {
+        Teuchos::ParameterList& wrm_list = plist.sublist(plist.name(i));
 
         if (wrm_list.isSublist("Output")) {
           Teuchos::ParameterList& out_list = wrm_list.sublist("Output");

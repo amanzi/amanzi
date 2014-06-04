@@ -1,20 +1,25 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
+/*
+  This is the flow component of the Amanzi code.
+ 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see $AMANZI_DIR/COPYRIGHT
-Author (v1): Neil Carlson
-       (v2): Ethan Coon
+  Authors: Neil Carlson (version 1)
+           Ethan Coon (version 2)
+           Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
-Function applied to a mesh component with at most one function application 
-per entity.
+  Function applied to a mesh component with at most one function 
+  application per entity.
+*/
 
-------------------------------------------------------------------------- */
 #ifndef AMANZI_FLOW_BOUNDARY_FUNCTION_HH_
 #define AMANZI_FLOW_BOUNDARY_FUNCTION_HH_
 
-#include <vector>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "Teuchos_RCP.hpp"
 
@@ -69,8 +74,7 @@ class FlowBoundaryFunction : public UniqueMeshFunction {
   double reference_pressure_;
 };
 
-} // namespace
-} // namespace
-
+}  // namespace Functions
+}  // namespace Amanzi
 
 #endif

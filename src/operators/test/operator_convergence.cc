@@ -28,6 +28,7 @@
 #include "tensor.hh"
 #include "mfd3d_diffusion.hh"
 
+#include "BCs.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorSource.hh"
@@ -198,16 +199,17 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   Point xv(2);
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_values(nfaces_wghost);
+  std::vector<double> bc_value(nfaces_wghost);
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-      bc_values[f] = pressure_exact(xf, 0.0);
+      bc_value[f] = pressure_exact(xf, 0.0);
       bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
     }
   }
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -243,7 +245,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     // populate the diffusion operator
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("mixed diffusion");
-    Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1, olist));
+    Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1, olist, bc));
 
     int schema_dofs = op2->schema_dofs();
     int schema_prec_dofs = op2->schema_prec_dofs();
@@ -252,13 +254,13 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
     op2->set_factor(factor);  // for developers only
     op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
-    op2->UpdateMatrices(Teuchos::null);
-    op2->ApplyBCs(bc_model, bc_values);
+    op2->UpdateMatrices(Teuchos::null, Teuchos::null);
+    op2->ApplyBCs();
     op2->SymbolicAssembleMatrix(schema_prec_dofs);
     op2->AssembleMatrix(schema_prec_dofs);
     
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-    op2->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+    op2->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
     ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
@@ -388,16 +390,17 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   // create boundary data
   Point xv(2);
   std::vector<int> bc_model(nnodes_wghost);
-  std::vector<double> bc_values(nnodes_wghost);
+  std::vector<double> bc_value(nnodes_wghost);
 
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
     if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
         fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
-      bc_values[v] = pressure_exact(xv, 0.0);
+      bc_value[v] = pressure_exact(xv, 0.0);
       bc_model[v] = Operators::OPERATOR_BC_FACE_DIRICHLET;
     }
   }
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -431,19 +434,19 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     // populate the diffusion operator
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("nodal diffusion");
-    Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1, olist));
+    Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusion(*op1, olist, bc));
     int schema_dofs = op2->schema_dofs();
     CHECK(schema_dofs == Operators::OPERATOR_SCHEMA_DOFS_NODE);
 
     op2->set_factor(factor);  // for developers only
     op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
-    op2->UpdateMatrices(Teuchos::null);
-    op2->ApplyBCs(bc_model, bc_values);
+    op2->UpdateMatrices(Teuchos::null, Teuchos::null);
+    op2->ApplyBCs();
     op2->SymbolicAssembleMatrix(schema_dofs);
     op2->AssembleMatrix(schema_dofs);
 
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-    op2->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+    op2->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
     ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");

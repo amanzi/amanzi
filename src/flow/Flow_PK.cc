@@ -1,7 +1,7 @@
 /*
   This is the flow component of the Amanzi code. 
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -16,12 +16,11 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "GMVMesh.hh"
-#include "mfd3d.hh"
-
 #include "Mesh.hh"
+#include "mfd3d.hh"
 #include "State.hh"
-#include "Flow_PK.hh"
 
+#include "Flow_PK.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -97,34 +96,34 @@ void Flow_PK::ProcessBCs()
 ****************************************************************** */
 void Flow_PK::ComputeBCs(const CompositeVector& u)
 {
-  const Epetra_MultiVector& u_cells = *u.ViewComponent("cell");
+  const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
   
   int flag_essential_bc = 0;
-  bc_tuple zero = {0.0, 0.0};
   for (int n = 0; n < bc_model.size(); n++) {
     bc_model[n] = FLOW_BC_FACE_NULL;
-    bc_values[n] = zero;
+    bc_value[n] = 0.0;
+    bc_coef[n] = 0.0;
   }
 
   Functions::FlowBoundaryFunction::Iterator bc;
   for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) {
     int f = bc->first;
     bc_model[f] = FLOW_BC_FACE_PRESSURE;
-    bc_values[f][0] = bc->second;
+    bc_value[f] = bc->second;
     flag_essential_bc = 1;
   }
 
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
     int f = bc->first;
     bc_model[f] = FLOW_BC_FACE_PRESSURE;
-    bc_values[f][0] = bc->second;
+    bc_value[f] = bc->second;
     flag_essential_bc = 1;
   }
 
   for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
     int f = bc->first;
     bc_model[f] = FLOW_BC_FACE_FLUX;
-    bc_values[f][0] = bc->second * rainfall_factor[f];
+    bc_value[f] = bc->second * rainfall_factor[f];
   }
 
   // Seepage face BC is implemented for p-lambda discretization only.
@@ -132,24 +131,26 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
   double area_seepage = 0.0;
 
   if (u.HasComponent("face")) {
-    const Epetra_MultiVector& u_faces = *u.ViewComponent("face");
+    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
     double ref_pressure = bc_seepage->reference_pressure();
+    double tol = ref_pressure * 1e-14;
 
     for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
       int f = bc->first;
 
-      if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {  // Model I.
-        if (u_faces[0][f] < ref_pressure) {
+      // Model I. Due to round-off errors, we have to use tolerances.
+      if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {
+        if (u_face[0][f] < ref_pressure - tol) {
           bc_model[f] = FLOW_BC_FACE_FLUX;
-          bc_values[f][0] = bc->second * rainfall_factor[f];
+          bc_value[f] = bc->second * rainfall_factor[f];
         } else {
           int c = BoundaryFaceGetCell(f);
-          if (u_cells[0][c] < u_faces[0][f]) {
+          if (u_cell[0][c] < u_face[0][f]) {
             bc_model[f] = FLOW_BC_FACE_FLUX;
-            bc_values[f][0] = bc->second * rainfall_factor[f];
+            bc_value[f] = bc->second * rainfall_factor[f];
           } else {
             bc_model[f] = FLOW_BC_FACE_PRESSURE;
-            bc_values[f][0] = ref_pressure;
+            bc_value[f] = ref_pressure;
             flag_essential_bc = 1;
             nseepage++;
             area_seepage += mesh_->face_area(f);
@@ -163,14 +164,14 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
         double pcmin = 3 * pcreg / 2;
         double pcmax = pcreg / 2;
 
-        double pc = u_faces[0][f] - ref_pressure;
+        double pc = u_face[0][f] - ref_pressure;
         if (pc < pcmin) {
           bc_model[f] = FLOW_BC_FACE_FLUX;
-          bc_values[f][0] = influx;
+          bc_value[f] = influx;
         } else if (pc >= pcmax) {
           bc_model[f] = FLOW_BC_FACE_MIXED;
-          bc_values[f][0] = I * ref_pressure;
-          bc_values[f][1] = -I;  // Impedance I should be positive.
+          bc_value[f] = I * ref_pressure;
+          bc_coef[f] = -I;  // Impedance I should be positive.
           flag_essential_bc = 1;
           nseepage++;
           area_seepage += mesh_->face_area(f);
@@ -178,25 +179,25 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
           bc_model[f] = FLOW_BC_FACE_FLUX;
           double f = 2 * (pcreg - pc) / pcreg;
           double q = (7 - 2 * f - f * f) / 8;
-          bc_values[f][0] = q * influx; 
+          bc_value[f] = q * influx; 
         }
 
       } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_AMANZI) {  // Model III.
         double influx = bc->second * rainfall_factor[f];
         double pcreg = -FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
 
-        double pc = u_faces[0][f] - ref_pressure;
+        double pc = u_face[0][f] - ref_pressure;
         if (pc < pcreg) {
           bc_model[f] = FLOW_BC_FACE_FLUX;
-          bc_values[f][0] = influx;
+          bc_value[f] = influx;
         } else if (pc >= 0.0) {
           int c = BoundaryFaceGetCell(f);
-          if (u_cells[c] < u_faces[f]) {
+          if (u_cell[c] < u_face[f]) {
             bc_model[f] = FLOW_BC_FACE_FLUX;
-            bc_values[f][0] = influx;
+            bc_value[f] = influx;
           } else {
             bc_model[f] = FLOW_BC_FACE_PRESSURE;
-            bc_values[f][0] = ref_pressure;
+            bc_value[f] = ref_pressure;
             flag_essential_bc = 1;
             nseepage++;
             area_seepage += mesh_->face_area(f);
@@ -205,7 +206,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
           bc_model[f] = FLOW_BC_FACE_FLUX;
           double f = pc / pcreg;
           double q = f * f * (3 - 2 * f);
-          bc_values[f][0] = q * influx;
+          bc_value[f] = q * influx;
         }
       }
     }
@@ -222,7 +223,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
 
       if (ncells == 1) {
         bc_model[f] = FLOW_BC_FACE_FLUX;
-        bc_values[f][0] = 0.0;
+        bc_value[f] = 0.0;
         missed_bc_faces_++;
       }
     }
@@ -309,145 +310,12 @@ void Flow_PK::CalculatePermeabilityFactorInWell()
 ****************************************************************** */
 void Flow_PK::AddSourceTerms(CompositeVector& rhs)
 {
-  Epetra_MultiVector& rhs_cells = *rhs.ViewComponent("cell");
+  Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
   Functions::FlowDomainFunction::Iterator src;
 
   for (src = src_sink->begin(); src != src_sink->end(); ++src) {
     int c = src->first;
-    rhs_cells[0][c] += mesh_->cell_volume(c) * src->second;
-  }
-}
-
-
-/* ******************************************************************
-*                                             
-****************************************************************** */
-/*
-void Flow_PK::AddNewtonFluxes_MFD(
-    RelativePermeability& rel_perm,
-    const Epetra_Vector& pressure_cells, const Epetra_Vector& flux,
-    Epetra_Vector& rhs, Matrix_MFD_PLambda* matrix_operator)
-{
-  double rho = FS->ref_fluid_density();
-  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Acc_faces = matrix_operator->Acc_faces();
-  Acc_faces.clear();
-
-  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  Epetra_Vector rhs_wghost(cmap_wghost);
-  for (int c = 0; c < ncells_owned; c++) rhs_wghost[c] = rhs[c];
-
-  AmanziMesh::Entity_ID_List cells, faces;
-  std::vector<int> dirs;
-
-  const Epetra_Vector& Krel_faces = rel_perm.Krel_faces();
-  const Epetra_Vector& dKdP_faces = rel_perm.dKdP_faces();
-
-  for (int f = 0; f < nfaces_owned; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
-
-    Teuchos::SerialDenseMatrix<int, double> Bcc(ncells, ncells);
-    double factor = rho * flux[f] * dKdP_faces[f] / Krel_faces[f];
-
-    int c1 = cells[0];
-    mesh_->cell_get_faces_and_dirs(c1, &faces, &dirs);
-
-    int k = FindPosition(f, faces);
-    factor *= dirs[k];
-
-    if (ncells == 1) {
-      if (factor > 0.0) { 
-        Bcc(0, 0) = factor;
-        rhs_wghost[c1] += factor * pressure_cells[c1];
-      }
-    } else {
-      int i = (factor > 0.0) ? 0 : 1;
-      factor = fabs(factor);
-      Bcc(i, i) = factor;
-      Bcc(1 - i, i) = -factor;
-
-      c1 = cells[i];
-      int c2 = cells[1 - i];
-      rhs_wghost[c1] += factor * pressure_cells[c1];
-      rhs_wghost[c2] -= factor * pressure_cells[c1];
-    }
-
-    Acc_faces.push_back(Bcc);
-  }
-
-  FS->CombineGhostCell2MasterCell(rhs_wghost, Add);
-  for (int c = 0; c < ncells_owned; c++) rhs[c] = rhs_wghost[c];
-}
-*/
-
-
-/* ******************************************************************
-* Updates global Darcy vector calculated by a discretization method.
-* simplified implementation for a single phase flow.                                            
-****************************************************************** */
-void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux)
-{
-  double rho = *(S_->GetScalarData("fluid_density"));
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> flag(nfaces_wghost, 0);
-
-  for (int c = 0; c < ncells_owned; c++) {
-    AmanziGeometry::Point Kg = K[c] * gravity_;
-    mesh_->cell_get_faces(c, &faces);
-    int nfaces = faces.size();
-
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-
-      if (f < nfaces_owned && !flag[f]) {
-        darcy_mass_flux[0][f] += rho * (Kg * normal);
-        flag[f] = 1;
-      }
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Updates global Darcy vector calculated by a discretization method.                                             
-****************************************************************** */
-void Flow_PK::AddGravityFluxes_DarcyFlux(Epetra_MultiVector& darcy_mass_flux,
-                                         RelativePermeability& rel_perm) 
-{
-  double rho = *(S_->GetScalarData("fluid_density"));
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> flag(nfaces_wghost, 0);
-
-  Epetra_MultiVector& Krel_cells = *rel_perm.Krel().ViewComponent("cell");
-  Epetra_MultiVector& Krel_faces = *rel_perm.Krel().ViewComponent("face", true);
-  int method = rel_perm.method();
-
-  for (int c = 0; c < ncells_owned; c++) {
-    AmanziGeometry::Point Kg = K[c] * gravity_;
-    mesh_->cell_get_faces(c, &faces);
-    int nfaces = faces.size();
-
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      std::vector<double>& krel = rel_perm.Krel_amanzi()[c];
-
-      if (f < nfaces_owned && !flag[f]) {
-        if (method == FLOW_RELATIVE_PERM_NONE) {
-          darcy_mass_flux[0][f] += rho * (Kg * normal);
-        } else if (method == FLOW_RELATIVE_PERM_CENTERED) {
-          darcy_mass_flux[0][f] += rho * (Kg * normal) * Krel_cells[0][c];
-        } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
-          darcy_mass_flux[0][f] += rho * (Kg * normal) * krel[n];
-        } else {
-          darcy_mass_flux[0][f] += rho * (Kg * normal) * Krel_faces[0][f];
-        }
-        flag[f] = 1;
-      }
-    }
+    rhs_cell[0][c] += mesh_->cell_volume(c) * src->second;
   }
 }
 

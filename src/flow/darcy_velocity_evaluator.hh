@@ -1,7 +1,15 @@
 /*
-  Evaluator for determining darcy_velocity(darcy_flux).
+ This is the flow component of the Amanzi code. 
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+ Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+ Amanzi is released under the three-clause BSD License. 
+ The terms of use and "as is" disclaimer for this license are 
+ provided in the top-level COPYRIGHT file.
+
+ Authors: Ethan Coon (ecoon@lanl.gov) 
+          Konstantin Lipnikov (lipnikov@lanl.gov)
+
+ Evaluator for determining darcy_velocity(darcy_flux).
 */
 
 #ifndef AMANZI_FLOW_DARCY_VELOCITY_EVALUATOR_

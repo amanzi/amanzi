@@ -19,9 +19,11 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "VerboseObject.hh"
 #include "CompositeVector.hh"
 #include "Mesh.hh"
+#include "VerboseObject.hh"
+
+#include "OperatorDefs.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -38,7 +40,7 @@ class Upwind {
   void Init(Teuchos::ParameterList& plist);
 
   void Compute(const CompositeVector& flux,
-               const std::vector<int>& bc_model, const std::vector<double>& bc_values,
+               const std::vector<int>& bc_model, const std::vector<double>& bc_value,
                const CompositeVector& field, CompositeVector& field_upwind);
 
  protected:
@@ -79,13 +81,16 @@ void Upwind<Model>::Init(Teuchos::ParameterList& plist)
 template<class Model>
 void Upwind<Model>::Compute(
     const CompositeVector& flux,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_values,
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value,
     const CompositeVector& field, CompositeVector& field_upwind)
 {
   ASSERT(field.HasComponent("cell"));
   ASSERT(field_upwind.HasComponent("face"));
 
   Teuchos::OSTab tab = vo_->getOSTab();
+
+  field.ScatterMasterToGhosted("cell");
+  flux.ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& u = *flux.ViewComponent("face", true);
   const Epetra_MultiVector& fcells = *field.ViewComponent("cell", true);
@@ -114,9 +119,10 @@ void Upwind<Model>::Compute(
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
         upw[0][f] += fcells[0][c] / 2;  // Almost vertical face.
       } else if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET && flag) {
-        upw[0][f] = model_->value(c, bc_values[f]);
+        upw[0][f] = model_->Value(c, bc_value[f]);
       } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN && flag) {
-        upw[0][f] = model_->value(c, ffaces[0][f]);
+      //  upw[0][f] = model_->Value(c, ffaces[0][f]);
+        upw[0][f] = fcells[0][c];
       } else if (!flag) {
         upw[0][f] = fcells[0][c];
       }

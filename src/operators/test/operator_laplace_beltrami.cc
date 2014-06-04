@@ -84,16 +84,17 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
 
   // create boundary data
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_values(nfaces_wghost);
+  std::vector<double> bc_value(nfaces_wghost);
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = surfmesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = OPERATOR_BC_FACE_DIRICHLET;
-      bc_values[f] = xf[1] * xf[1];
+      bc_value[f] = xf[1] * xf[1];
     }
   }
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -113,17 +114,17 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator");
 
-  Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist));
+  Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist, bc));
   op->Init();
   op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
-  op->UpdateMatrices(Teuchos::null);
-  op->ApplyBCs(bc_model, bc_values);
+  op->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op->ApplyBCs();
   op->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
   op->AssembleMatrix(schema_prec_dofs);
 
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+  op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");

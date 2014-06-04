@@ -23,6 +23,7 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_MpiComm.h"
 
+#include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Richards_PK.hh"
@@ -102,6 +103,7 @@ double calculateDarcyDivergenceError(Teuchos::RCP<const Mesh> mesh, const Epetra
       div += flux[0][f] * dirs[i];
     }
     error_L2 += div*div / mesh->cell_volume(c);
+    // std::cout << c << " div=" << div << " err=" << error_L2 << std::endl;
   }
   return sqrt(error_L2);
 }
@@ -174,7 +176,12 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     printf("mesh=%d bdf1_steps=%d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n",
         n, num_bdf1_steps, pressure_err, flux_err, div_err);
 
-    CHECK(pressure_err < 1e-1 && flux_err < 2e-1 && div_err < 1e-7);
+    CHECK(pressure_err < 2e-1 && flux_err < 2e-1 && div_err < 1e-7);
+
+    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(p, 0, "pressure");
+    GMV::close_data_file();
 
     delete RPK;
   }

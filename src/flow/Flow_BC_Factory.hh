@@ -1,20 +1,20 @@
 /*
-This is the flow component of the Amanzi code.
-
+  This is the flow component of the Amanzi code.
  
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Neil Carlson (version 1) 
-         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Authors: Neil Carlson (version 1) 
+           Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_FLOW_BC_FACTORY_HH_
 #define AMANZI_FLOW_BC_FACTORY_HH_
 
-/* transient-flow-bc-list(NAME) is:
+/* ******************************************************************
+transient-flow-bc-list(NAME) is:
   <ParameterList name=NAME>
     transient-flow-condition-list
     ...
@@ -90,19 +90,18 @@ The function-factory-list should define a function h whose argument
 is the vector (t, x, y); the water table at time t is taken to be
 the surface (x, y, h(t,x,y)).
 The gravitational acceleration is assumed to be directed in the negative z-direction.
-*/
+* *******************************************************************/
 
 #include <vector>
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "VerboseObject.hh"
-#include "Point.hh"
 #include "Mesh.hh"
+#include "Point.hh"
+#include "VerboseObject.hh"
 
 #include "FlowBoundaryFunction.hh"
-
 
 namespace Amanzi {
 namespace AmanziFlow {

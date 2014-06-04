@@ -1,14 +1,19 @@
 /*
-This is the flow component of the Amanzi code. 
-License: BSD
-Authors: Konstantin Lipnikov (version 2)  (lipnikov@lanl.gov)
+  This is the flow component of the Amanzi code.
+ 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <string>
 #include <vector>
 
-#include "MultiFunction.hh"
 #include "errors.hh"
+#include "MultiFunction.hh"
 
 #include "Flow_SourceFactory.hh"
 

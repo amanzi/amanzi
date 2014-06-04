@@ -1,20 +1,19 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include "LinearOperatorFactory.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorDiffusionFactory.hh"
-#include "LinearOperatorFactory.hh"
 
-#include "Matrix_MFD.hh"
 #include "Richards_PK.hh"
 
 namespace Amanzi {
@@ -29,44 +28,29 @@ void Richards_PK::SolveFullySaturatedProblem(
     double Tp, CompositeVector& u, LinearSolver_Specs& ls_specs)
 {
   UpdateSourceBoundaryData(Tp, u);
-
-  Teuchos::ParameterList op_list;
-  Teuchos::ParameterList& tmp_list = op_list.sublist("diffusion operator");
-  tmp_list.set<std::string>("discretization primary", "optimized mfd scaled");
-  tmp_list.set<std::string>("discretization secondary", "optimized mfd scaled");
-  Teuchos::Array<std::string> stensil(2);
-  stensil[0] = "face";
-  stensil[1] = "cell";
-  tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
-  stensil.remove(1);
-  tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
-  tmp_list.set<bool>("gravity", true);
-
-  Operators::OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<Operators::OperatorDiffusion> op = opfactory.Create(mesh_, op_list, gravity_);
-  op->InitOperator(K, Teuchos::null, Teuchos::null, rho_, mu_);
-  op->UpdateMatrices(Teuchos::null);
-
-  int schema_prec_dofs = op->schema_prec_dofs();
-  op->SymbolicAssembleMatrix(schema_prec_dofs);
-
-  // calculate and assemble elemental stifness matrices
-  int n = bc_model.size();
-  std::vector<double> bc_values_copy(n);
-  for (int i = 0; i < n; i++) bc_values_copy[i] = bc_values[i][0];
+  rel_perm_->Krel()->PutScalar(1.0);
+  rel_perm_->dKdP()->PutScalar(0.0);
 
   // add diffusion operator
-  op->ApplyBCs(bc_model, bc_values_copy);
-  op->AssembleMatrix(schema_prec_dofs);
-  op->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_, bc_model, bc_values_copy);
+  op_matrix_->Init();
+  op_matrix_->UpdateMatrices(Teuchos::null, solution);
+  op_matrix_->ApplyBCs();
+
+  // create preconditioner
+  op_preconditioner_->Init();
+  op_preconditioner_->UpdateMatrices(Teuchos::null, solution);
+  op_preconditioner_->ApplyBCs();
+  int schema_prec_dofs = op_preconditioner_->schema_prec_dofs();
+  op_preconditioner_->AssembleMatrix(schema_prec_dofs);
+  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_);
 
   AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> sfactory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-     solver = sfactory.Create(ls_specs.solver_name, linear_operator_list_, op);
+     solver = sfactory.Create(ls_specs.solver_name, linear_operator_list_, op_matrix_, op_preconditioner_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
-  CompositeVector& rhs = *op->rhs();
+  CompositeVector& rhs = *op_matrix_->rhs();
   int ierr = solver->ApplyInverse(rhs, u);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -97,32 +81,35 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
   UpdateSourceBoundaryData(Tp, u);
 
   CompositeVector utmp(u);
-  Epetra_MultiVector& utmp_faces = *utmp.ViewComponent("face");
-  Epetra_MultiVector& u_faces = *u.ViewComponent("face");
+  Epetra_MultiVector& utmp_face = *utmp.ViewComponent("face");
+  Epetra_MultiVector& u_face = *u.ViewComponent("face");
 
-  // calculate and assemble elemental stiffness matrix
+  // update coefficients
   darcy_flux_copy->ScatterMasterToGhosted("face");
-  rel_perm->Compute(u, *darcy_flux_copy, bc_model, bc_values);
-  AssembleSteadyStateMatrix(&*matrix_);
-  Matrix_MFD* matrix_tmp = dynamic_cast<Matrix_MFD*>(&*matrix_);
-  matrix_tmp->ReduceGlobalSystem2LambdaSystem(u);
+  rel_perm_->Compute(u);
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel());
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP());
 
-  // copy stiffness matrix to preconditioner (raw-data)
-  Matrix_MFD* preconditioner_tmp = dynamic_cast<Matrix_MFD*>(&*preconditioner_);
-  preconditioner_tmp->PopulatePreconditioner(*matrix_tmp);
-  preconditioner_tmp->UpdatePreconditioner();
+  // calculate preconditioner
+  op_preconditioner_->Init();
+  op_preconditioner_->UpdateMatrices(Teuchos::null, solution);
+  op_preconditioner_->ApplyBCs();
+  op_preconditioner_->ModifyMatrices(u);
+  int schema_prec_dofs = op_preconditioner_->schema_prec_dofs();
+  op_preconditioner_->AssembleMatrix(schema_prec_dofs);
+  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_);
 
   // solve non-symmetric problem
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs_constraints;
 
-  AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_, preconditioner_);
+  AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
+     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, op_preconditioner_);
 
-  CompositeVector& rhs = *matrix_->rhs();
+  CompositeVector& rhs = *op_preconditioner_->rhs();
   int ierr = solver->ApplyInverse(rhs, utmp);
 
-  u_faces = utmp_faces;
+  u_face = utmp_face;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->num_itrs();

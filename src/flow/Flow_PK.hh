@@ -1,8 +1,15 @@
 /*
-  This is the Flow component of the Amanzi code. 
-  License: BSD
+  This is the flow component of the Amanzi code. 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Neil Carlson (version 1) 
            Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+
+  This is a base virtual class.
 */
 
 #ifndef AMANZI_FLOW_PK_HH_
@@ -13,25 +20,21 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Teuchos_RCP.hpp"
 
-#include "FlowBoundaryFunction.hh"
-#include "FlowDomainFunction.hh"
 #include "BDFFnBase.hh"
 #include "CompositeVectorSpace.hh"
-#include "VerboseObject.hh"
-
 #include "TI_Specs.hh"
-#include "FlowDefs.hh"
-#include "FlowTypeDefs.hh"
-#include "Flow_BC_Factory.hh"
-#include "Flow_SourceFactory.hh"
-
-#include "RelativePermeability.hh"
-#include "Matrix_MFD.hh"
+#include "VerboseObject.hh"
 
 #include "checkpoint.hh"
 #include "primary_variable_field_evaluator.hh"
+#include "tensor.hh"
 
-/* This is a base virtual class */
+#include "FlowDefs.hh"
+#include "FlowTypeDefs.hh"
+#include "FlowBoundaryFunction.hh"
+#include "FlowDomainFunction.hh"
+#include "Flow_BC_Factory.hh"
+#include "Flow_SourceFactory.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -73,14 +76,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
 
   void ProcessShiftWaterTableList(const Teuchos::ParameterList& list);
   void CalculateShiftWaterTable(const std::string region);
-
-  // gravity members
-  void AddGravityFluxes_TPFA(const Epetra_Vector& Krel_faces, 
-                             const Epetra_Vector& Grav_term, 
-			     Matrix_MFD* matrix_operator);
-
-  void AddGravityFluxes_DarcyFlux(Epetra_MultiVector& mass_flux);
-  void AddGravityFluxes_DarcyFlux(Epetra_MultiVector& mass_flux, RelativePermeability& rel_perm);
 
   // miscallenous members
   void ResetPKtimes(double T0, double dT0) { T_physics = T0; dT = dT0; }
@@ -124,12 +119,10 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
                         const std::vector<AmanziMesh::Entity_ID>& v2, 
                         std::vector<AmanziMesh::Entity_ID>* vv);
 
-  // access
+  // support of unit tests
   double rho() { return rho_; }
   double mu() { return mu_; }
   const AmanziGeometry::Point& gravity() { return gravity_; }
-  std::vector<WhetStone::Tensor>& get_K() { return K; }
-  std::vector<bc_tuple>& get_bc_values() { return bc_values; }
   const TI_Specs& ti_specs_sss() { return ti_specs_sss_; }
 
  public:
@@ -151,7 +144,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int dim;
 
   Teuchos::RCP<State> S_;
-  Teuchos::RCP<State> Snext_;
   std::string passwd_;
 
   // Stationary physical quantatities
@@ -169,7 +161,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int nseepage_prev;
 
   std::vector<int> bc_model, bc_submodel; 
-  std::vector<bc_tuple> bc_values;
+  std::vector<double> bc_value, bc_coef;
 
   std::vector<double> rainfall_factor;
   Teuchos::RCP<Epetra_Vector> shift_water_table_;

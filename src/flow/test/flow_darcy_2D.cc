@@ -69,6 +69,8 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
+  DPK->InitializeFields();
+  S->CheckAllFieldsInitialized();
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
@@ -112,10 +114,10 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   double dT = 0.1;
   for (int n = 0; n < 10; n++) {
     double dT_actual(dT);
-    DPK->Advance(dT,dT_actual);
+    DPK->Advance(dT, dT_actual);
     DPK->CommitState(S);
 
-    if (MyPID == 0) {
+    if (MyPID == 0 && n > 5) {
       GMV::open_data_file(*mesh, (std::string)"flow.gmv");
       GMV::start_data();
       GMV::write_cell_data(p, 0, "pressure");

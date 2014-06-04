@@ -66,6 +66,8 @@ TEST(CONSTRUCTOR) {
 
   RCP<State> S = rcp(new State());
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+  S->set_time(0.0);
+  S->set_intermediate_time(0.0);
 
   Transport_PK TPK(plist, S, component_names);
   TPK.CreateDefaultState(mesh, 2);

@@ -36,6 +36,9 @@ Operator::Operator(Teuchos::RCP<const CompositeVectorSpace> cvs, int dummy)
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+
+  Teuchos::ParameterList plist;
+  vo_ = Teuchos::rcp(new VerboseObject("Operators", plist));
 }
 
 
@@ -67,6 +70,9 @@ Operator::Operator(const Operator& op)
     offset_global_[i] = op.offset_global_[i];
     offset_my_[i] = op.offset_my_[i];
   }
+
+  Teuchos::ParameterList plist;
+  vo_ = Teuchos::rcp(new VerboseObject("Operators", plist));
 }
 
 
@@ -199,6 +205,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
   for (int nb = 0; nb < nblocks; nb++) {
     int subschema = blocks_schema_[nb] & schema;
 
+    // Typical representatives of cell-based methods  are MFD and FEM.
     if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
       for (int c = 0; c < ncells_owned; c++) {
         int nd;
@@ -232,6 +239,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
 
         ff_graph.InsertGlobalIndices(nd, gid, nd, gid);
       }
+    // Typical representative of face-based methods is FV. 
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_FACE) {
       for (int f = 0; f < nfaces_owned; f++) {
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -247,6 +255,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
 
         ff_graph.InsertGlobalIndices(nd, gid, nd, gid);
       }
+    // Typical representative of node-based methods is MPFA. 
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_NODE) {
       // not implemented yet
     }
@@ -377,6 +386,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
   for (int nb = 0; nb < nblocks; nb++) {
     int subschema = blocks_schema_[nb] & schema;
 
+    // Typical representatives of cell-based methods are MFD and FEM.
     if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
       for (int c = 0; c < ncells_owned; c++) {
         int nd;
@@ -421,6 +431,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
           }
         }
       }
+    // Typical representative of face-based methods is FV.
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_FACE) {
       for (int f = 0; f < nfaces_owned; f++) {
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -443,6 +454,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
           }
         }
       }
+    // Typical representative of node-based methods is MPFA.
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_NODE) {
       // not implemented yet
     }
@@ -664,13 +676,18 @@ void Operator::AssembleMatrix(int schema)
           int ncells = cells.size();
 
           for (int n = 0; n < ncells; n++) {
+            lid[n] = offset_my_[1] + cells[n];
             gid[n] = offset_global_[1] + cmap_wghost.GID(cells[n]);
           }
 
           WhetStone::DenseMatrix& Acell = matrix[f];
           for (int n = 0; n < ncells; n++) {
             for (int m = 0; m < ncells; m++) values[m] = Acell(n, m);
-            A_->SumIntoMyValues(gid[n], ncells, values, gid);
+            if (lid[n] < ndof) {
+              A_->SumIntoMyValues(lid[n], ncells, values, lid);
+            } else {
+              A_off_->SumIntoMyValues(lid[n] - ndof, ncells, values, lid);
+            }
           }
         }
       }
@@ -711,8 +728,11 @@ void Operator::AssembleMatrix(int schema)
 * Applies boundary conditions to matrix_blocks and update the
 * right-hand side and the diagonal block.                                           
 ****************************************************************** */
-void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_values)
+void Operator::ApplyBCs()
 {
+  const std::vector<int>& bc_model = bc_->bc_model();
+  const std::vector<double>& bc_value = bc_->bc_value();
+
   // clean ghosted values
   for (CompositeVector::name_iterator name = rhs_->begin(); name != rhs_->end(); ++name) {
     Epetra_MultiVector& rhs_g = *rhs_->ViewComponent(*name, true);
@@ -747,7 +767,7 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
           bool flag(true);
           for (int n = 0; n < nfaces; n++) {
             int f = faces[n];
-            double value = bc_values[f];
+            double value = bc_value[f];
 
             if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
               if (flag) {  // make a copy of elemntal matrix
@@ -782,7 +802,7 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
           bool flag(true);
           for (int n = 0; n < nnodes; n++) {
             int v = nodes[n];
-            double value = bc_values[v];
+            double value = bc_value[v];
 
             if (bc_model[v] == OPERATOR_BC_FACE_DIRICHLET) {
               if (flag) {  // make a copy of cell-based matrix
@@ -907,6 +927,26 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
 
 
 /* ******************************************************************
+* Linear algebra operations with matrices: r = f - A * u
+****************************************************************** */
+void Operator::ComputeResidual(const CompositeVector& u, CompositeVector& r)
+{
+  Apply(u, r);
+  r.Update(1.0, *rhs_, -1.0);
+}
+
+
+/* ******************************************************************
+* Linear algebra operations with matrices: r = A * u - f                                                 
+****************************************************************** */
+void Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r)
+{
+  Apply(u, r);
+  r.Update(-1.0, *rhs_, 1.0);
+}
+
+
+/* ******************************************************************
 * Parallel matvec product A * X.                                              
 ******************************************************************* */
 int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
@@ -953,8 +993,7 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 * Initialization of the preconditioner. Note that boundary conditions
 * may be used in re-implementation of this virtual function.
 ****************************************************************** */
-void Operator::InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist,
-                                  std::vector<int>& bc_model, std::vector<double>& bc_values)
+void Operator::InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist)
 {
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(prec_name, plist);

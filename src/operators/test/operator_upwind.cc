@@ -34,7 +34,7 @@ class Model {
   ~Model() {};
 
   // main members
-  double value(int c, double pc) const { 
+  double Value(int c, double pc) const { 
     return analytic(pc); 
   }
 
@@ -91,7 +91,7 @@ TEST(UPWIND) {
 
     // create boundary data
     std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-    std::vector<double> bc_values(nfaces_wghost);
+    std::vector<double> bc_value(nfaces_wghost);
     for (int f = 0; f < nfaces_wghost; f++) {
       const Point& xf = mesh->face_centroid(f);
       if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
@@ -99,7 +99,7 @@ TEST(UPWIND) {
           fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) 
 
       bc_model[f] = OPERATOR_BC_FACE_DIRICHLET;
-      bc_values[f] = model->analytic(xf[0]);
+      bc_value[f] = model->analytic(xf[0]);
     }
 
     // create and initialize cell-based field 
@@ -116,11 +116,11 @@ TEST(UPWIND) {
 
     for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      fcells[0][c] = model->value(c, xc[0]); 
+      fcells[0][c] = model->Value(c, xc[0]); 
     }
     for (int f = 0; f < nfaces_wghost; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-      ffaces[0][f] = model->value(0, xf[0]); 
+      ffaces[0][f] = model->Value(0, xf[0]); 
     }
 
     // create and initialize face-based flux field
@@ -143,7 +143,7 @@ TEST(UPWIND) {
 
     ParameterList& ulist = plist.sublist("upwind");
     upwind.Init(ulist);
-    upwind.Compute(flux, bc_model, bc_values, field, upw_field);
+    upwind.Compute(flux, bc_model, bc_value, field, upw_field);
 
     // calculate error
     Epetra_MultiVector& upw = *upw_field.ViewComponent("face");

@@ -1,7 +1,7 @@
 /*
   This is the flow component of the Amanzi code.
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -17,10 +17,10 @@
 
 #include "errors.hh"
 #include "exceptions.hh"
-
-#include "mfd3d_diffusion.hh"
-#include "tensor.hh"
 #include "LinearOperatorFactory.hh"
+#include "mfd3d_diffusion.hh"
+#include "OperatorDiffusionFactory.hh"
+#include "tensor.hh"
 
 #include "Darcy_PK.hh"
 #include "FlowDefs.hh"
@@ -28,10 +28,6 @@
 
 #include "darcy_velocity_evaluator.hh"
 #include "primary_variable_field_evaluator.hh"
-
-#include "Matrix.hh"
-#include "MatrixFactory.hh"
-#include "OperatorDiffusionFactory.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -201,10 +197,11 @@ void Darcy_PK::InitPK()
   dT_desirable_ = dT;
 
   // Allocate memory for boundary data. 
-  bc_tuple zero = {0.0, 0.0};
-  bc_values.resize(nfaces_wghost, zero);
   bc_model.resize(nfaces_wghost, 0);
   bc_submodel.resize(nfaces_wghost, 0);
+  bc_value.resize(nfaces_wghost, 0.0);
+  bc_coef.resize(nfaces_wghost, 0.0);
+  op_bc_ = Teuchos::rcp(new Operators::BCs(bc_model, bc_value));
 
   rainfall_factor.resize(nfaces_wghost, 1.0);
 
@@ -274,9 +271,6 @@ void Darcy_PK::InitializeAuxiliaryData()
     S_->GetFieldData("prev_water_saturation", passwd_)->PutScalar(1.0);
     S_->GetField("prev_water_saturation", passwd_)->set_initialized();
   }
-
-  // miscalleneous
-  UpdateSpecificYield();
 }
 
 
@@ -314,6 +308,8 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 ****************************************************************** */
 void Darcy_PK::InitTransient(double T0, double dT0)
 {
+  UpdateSpecificYield_();
+
   if (ti_specs != NULL) OutputTimeHistory(dp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_trs_;
 
@@ -361,26 +357,15 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   // initialize diffusion operator
   SetAbsolutePermeabilityTensor();
 
-  Teuchos::ParameterList op_list;
-  Teuchos::ParameterList& tmp_list = op_list.sublist("diffusion operator");
-  tmp_list.set<std::string>("discretization primary", "optimized mfd scaled");
-  tmp_list.set<std::string>("discretization secondary", "optimized mfd scaled");
-  Teuchos::Array<std::string> stensil(2);
-  stensil[0] = "face";
-  stensil[1] = "cell";
-  tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
-  stensil.remove(1);
-  tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
-  tmp_list.set<bool>("gravity", true);
-
+  Teuchos::ParameterList& oplist = dp_list_.sublist("operators");
   Operators::OperatorDiffusionFactory opfactory;
-  op = opfactory.Create(mesh_, op_list, gravity_);
-  op->InitOperator(K, Teuchos::null, Teuchos::null, rho_, mu_);
-  op->UpdateMatrices(Teuchos::null);
+  op_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_);
+  op_->InitOperator(K, Teuchos::null, Teuchos::null, rho_, mu_);
+  op_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  int schema_prec_dofs = op->schema_prec_dofs();
-  op->SymbolicAssembleMatrix(schema_prec_dofs);
-  op->CreateCheckPoint();
+  int schema_prec_dofs = op_->schema_prec_dofs();
+  op_->SymbolicAssembleMatrix(schema_prec_dofs);
+  op_->CreateCheckPoint();
 
   // Well modeling (one-time call)
   if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
@@ -462,24 +447,19 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   ss_g.Update(0.0, ss, factor);
 
   factor = 1.0 / (g_ * dT);
-  const CompositeVector& sy = *S_->GetFieldData("specific_yield");
-  CompositeVector sy_g(sy); 
+  CompositeVector sy_g(specific_yield_copy_); 
   sy_g.Update(0.0, sy, factor);
 
-  int n = bc_model.size();
-  std::vector<double> bc_values_copy(n);
-  for (int i = 0; i < n; i++) bc_values_copy[i] = bc_values[i][0];
+  op_->RestoreCheckPoint();
+  op_->AddAccumulationTerm(*solution, ss_g, dT);
+  op_->AddAccumulationTerm(*solution, sy_g);
+  op_->ApplyBCs();
 
-  op->RestoreCheckPoint();
-  op->AddAccumulationTerm(*solution, ss_g, dT);
-  op->AddAccumulationTerm(*solution, sy_g);
-  op->ApplyBCs(bc_model, bc_values_copy);
+  int schema_prec_dofs = op_->schema_prec_dofs();
+  op_->AssembleMatrix(schema_prec_dofs);
+  op_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_);
 
-  int schema_prec_dofs = op->schema_prec_dofs();
-  op->AssembleMatrix(schema_prec_dofs);
-  op->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_, bc_model, bc_values_copy);
-
-  CompositeVector& rhs = *op->rhs();
+  CompositeVector& rhs = *op_->rhs();
   if (src_sink != NULL) AddSourceTerms(rhs);
 
   // create linear solver
@@ -487,7 +467,7 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
 
   AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, op);
+     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, op_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
   solver->ApplyInverse(rhs, *solution);
@@ -507,18 +487,18 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   // calculate time derivative and 2nd-order solution approximation
   if (ti_specs->dT_method == FLOW_DT_ADAPTIVE) {
     const Epetra_MultiVector& p = *S_->GetFieldData("pressure")->ViewComponent("cell");  // pressure at t^n
-    Epetra_MultiVector& p_cells = *solution->ViewComponent("cell");  // pressure at t^{n+1}
+    Epetra_MultiVector& p_cell = *solution->ViewComponent("cell");  // pressure at t^{n+1}
 
     for (int c = 0; c < ncells_owned; c++) {
-      (*pdot_cells)[c] = (p_cells[0][c] - p[0][c]) / dT; 
-      p_cells[0][c] = p[0][c] + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
+      (*pdot_cells)[c] = (p_cell[0][c] - p[0][c]) / dT; 
+      p_cell[0][c] = p[0][c] + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
     }
   }
 
   // estimate time multiplier
   if (ti_specs->dT_method == FLOW_DT_ADAPTIVE) {
     double err, dTfactor;
-    err = ErrorEstimate(&dTfactor);
+    err = ErrorEstimate_(&dTfactor);
     if (err > 0.0) throw 1000;  // fix (lipnikov@lan.gov)
     dT_desirable_ = std::min(dT_MPC * dTfactor, ti_specs->dTmax);
   } else {
@@ -546,7 +526,7 @@ void Darcy_PK::CommitState(Teuchos::RCP<State> S)
 
   // calculate darcy mass flux
   CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
-  op->UpdateFlux(*solution, darcy_flux);
+  op_->UpdateFlux(*solution, darcy_flux);
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
@@ -559,12 +539,13 @@ void Darcy_PK::CommitState(Teuchos::RCP<State> S)
 /* ******************************************************************
 * Add area/length factor to specific yield. 
 ****************************************************************** */
-void Darcy_PK::UpdateSpecificYield()
+void Darcy_PK::UpdateSpecificYield_()
 {
+  specific_yield_copy_ = Teuchos::RCP(new CompositeVector(S_->GetFieldData("specific_yield"), true));
+
   // populate ghost cells
-  S_->GetFieldData("specific_yield", passwd_)->ScatterMasterToGhosted();
-  const Epetra_MultiVector& 
-      specific_yield = *S_->GetFieldData("specific_yield", passwd_)->ViewComponent("cell", true);
+  specific_yield_copy_->ScatterMasterToGhosted();
+  const Epetra_MultiVector& specific_yield = specific_yield_copy_->ViewComponent("cell", true);
 
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
   AmanziMesh::Entity_ID_List faces;

@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author:  Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <algorithm>
@@ -109,8 +109,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   CompositeVector& solution_new = *solution;
   CompositeVector  residual(*solution);
 
-  Epetra_MultiVector& pold_cells = *solution_old.ViewComponent("cell");
-  Epetra_MultiVector& pnew_cells = *solution_new.ViewComponent("cell");
+  Epetra_MultiVector& pold_cell = *solution_old.ViewComponent("cell");
+  Epetra_MultiVector& pnew_cell = *solution_new.ViewComponent("cell");
 
   // update steady state boundary conditions
   double time = T_physics;
@@ -144,35 +144,33 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
     // update permeabilities
     darcy_flux_copy->ScatterMasterToGhosted("face");
-    rel_perm->Compute(*solution, *darcy_flux_copy, bc_model, bc_values);
+    rel_perm_->Compute(*solution);
+    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel());
+    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP());
 
-    // create algebraic problem
-    matrix_->CreateStiffnessMatricesRichards();
-    matrix_->CreateRHSVectors();
-    matrix_->AddGravityFluxesRichards(rho_, gravity_, bc_model);
-    matrix_->ApplyBoundaryConditions(bc_model, bc_values);
-    matrix_->Assemble();
+    // create algebraic problem (matrix = preconditioner)
+    op_preconditioner_->Init();
+    op_preconditioner_->UpdateMatrices(darcy_flux_copy, Teuchos::null);
+    op_preconditioner_->ApplyBCs();
 
-    Teuchos::RCP<CompositeVector> rhs = matrix_->rhs();  // export RHS from the matrix class
+    Teuchos::RCP<CompositeVector> rhs = op_preconditioner_->rhs();  // export RHS from the matrix class
     if (src_sink != NULL) AddSourceTerms(*rhs);
 
     // create preconditioner
-    preconditioner_->CreateStiffnessMatricesRichards();
-    preconditioner_->CreateRHSVectors();
-    preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
-    preconditioner_->AssembleDerivatives(*solution, bc_model, bc_values);
-    preconditioner_->UpdatePreconditioner();
+    int schema_prec_dofs = op_preconditioner_->schema_prec_dofs(); 
+    op_preconditioner_->AssembleMatrix(schema_prec_dofs);
+    op_preconditioner_->InitPreconditioner(ti_specs.preconditioner_name, preconditioner_list_);
 
     // check convergence of non-linear residual
-    L2error = matrix_->ComputeResidual(solution_new, residual);
+    op_preconditioner_->ComputeResidual(solution_new, residual);
     residual.Norm2(&L2error);
     rhs->Norm2(&L2norm);
     L2error /= L2norm;
 
     // solve linear problem
-    AmanziSolvers::LinearOperatorFactory<FlowMatrix, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<FlowMatrix, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create(ls_specs.solver_name, linear_operator_list_, matrix_, preconditioner_);
+    AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
+       solver = factory.Create(ls_specs.solver_name, linear_operator_list_, op_preconditioner_);
 
     solver->ApplyInverse(*rhs, *solution);
 
@@ -181,7 +179,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
     // update relaxation
     double relaxation;
-    relaxation = CalculateRelaxationFactor(pold_cells, pnew_cells);
+    relaxation = CalculateRelaxationFactor(pold_cell, pnew_cell);
 
     if (vo->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo->getOSTab();
@@ -213,7 +211,7 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
     Epetra_MultiVector dSdP(uold);
-    rel_perm->DerivedSdP(uold, dSdP);
+    rel_perm_->DerivedSdP(uold, dSdP);
 
     for (int c = 0; c < ncells_owned; c++) {
       double diff = dSdP[0][c] * fabs(unew[0][c] - uold[0][c]);

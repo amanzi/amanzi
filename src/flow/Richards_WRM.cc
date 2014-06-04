@@ -1,20 +1,19 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Neil Carlson (nnc@lanl.gov), 
-         Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Neil Carlson (nnc@lanl.gov), 
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <string>
 #include <vector>
 
 #include "Richards_PK.hh"
-
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -24,7 +23,7 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Richards_PK::DeriveSaturationFromPressure(const Epetra_MultiVector& p, Epetra_MultiVector& s)
 {
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();  
 
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
@@ -45,7 +44,7 @@ void Richards_PK::DeriveSaturationFromPressure(const Epetra_MultiVector& p, Epet
 ****************************************************************** */
 void Richards_PK::DerivePressureFromSaturation(const Epetra_MultiVector& s, Epetra_MultiVector& p)
 {
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();  
 
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
@@ -75,7 +74,7 @@ void Richards_PK::ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p)
 ****************************************************************** */
 void Richards_PK::ClipHydrostaticPressure(double pmin, double s0, Epetra_MultiVector& p)
 {
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();  
 
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();

@@ -74,6 +74,16 @@
         <Parameter name="Verbosity Level" type="string" value="none"/>
       </ParameterList>
 
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <Parameter name="discretization primary" type="string" value="optimized mfd scaled"/>
+          <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+          <Parameter name="gravity" type="bool" value="true"/>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="steady state time integrator">
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>

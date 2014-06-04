@@ -1,20 +1,20 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Neil Carlson (version 1)  (nnc@lanl.gov)
-         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Authors: Neil Carlson (version 1)  (nnc@lanl.gov)
+           Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#include <vector>
 #include <string>
+#include <vector>
 
-#include "MultiFunction.hh"
 #include "errors.hh"
+#include "MultiFunction.hh"
 
 #include "Flow_BC_Factory.hh"
 #include "FlowDefs.hh"

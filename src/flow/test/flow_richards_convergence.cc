@@ -77,8 +77,8 @@ double calculateDarcyFluxError(Teuchos::RCP<const Mesh> mesh,
   double error_l2 = 0.0;
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    // std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << std::endl;
     error_l2 += std::pow(flux[0][f] - velocity_exact * normal, 2.0);
+    // std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << std::endl;
   }
   return sqrt(error_l2 / nfaces_owned);
 }
@@ -107,6 +107,7 @@ double calculateDarcyDivergenceError(Teuchos::RCP<const Mesh> mesh,
       div += flux[0][f] * dirs[i];
     }
     error_L2 += div*div / mesh->cell_volume(c);
+    // std::cout << c << " div=" << div << " exact=0.0" << std::endl;
   }
   return sqrt(error_L2);
 }

@@ -1430,7 +1430,6 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           richards_problem.set<std::string>("discretization method", disc_method);
 
           // see if we need to generate a Picard list
-
           flow_list = &richards_problem; // we use this below to insert sublists that are shared by Richards and Darcy
 
           // insert the water retention models sublist (these are only relevant for Richards)
@@ -1438,12 +1437,15 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           water_retention_models = create_WRM_List(plist);
         }
 
+        // insert operator sublist
+        Teuchos::ParameterList op_list;
+        op_list = CreateFlowOperatorList();
+        flow_list->sublist("operators") = op_list;
+
         // insert the flow BC sublist
         Teuchos::ParameterList flow_bc; // = flow_list->sublist("boundary conditions");
         flow_bc = create_SS_FlowBC_List(plist);
-        //if ( flow_bc.begin() != flow_bc.end() ) {
-          flow_list->sublist("boundary conditions") = flow_bc;
-	//}
+        flow_list->sublist("boundary conditions") = flow_bc;
 
         // insert sources, if they exist
         Teuchos::ParameterList flow_src; // = flow_list->sublist("source terms");
@@ -2939,8 +2941,8 @@ Teuchos::ParameterList create_Verbosity_List(const std::string& vlevel) {
 
 
 /* ******************************************************************
- * Empty
- ****************************************************************** */
+* Chemisty sublist
+****************************************************************** */
 Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList chem_list;
   if ( plist->isSublist("Chemistry") ) {
@@ -3039,8 +3041,6 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
           }
         }
       }
-
-
 
 
       if ( matprop_list.sublist(matprop_list.name(i)).isParameter("Cation Exchange Capacity")) {
@@ -3181,8 +3181,6 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 
       if (sorption_site_names_.size() > 0) {
 
-
-
         Teuchos::ParameterList & sorption_sites_ic = chem_ic.sublist("sorption_sites");
 
         Teuchos::ParameterList & sorption_sites_list = matprop_list.sublist(matprop_list.name(i)).sublist("Surface Complexation Sites");
@@ -3259,6 +3257,32 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 }  // end CreateChemistryList()
 
 
+/* ******************************************************************
+* Flow operators sublist
+****************************************************************** */
+Teuchos::ParameterList CreateFlowOperatorList() {
+  Teuchos::ParameterList op_list;
+  Teuchos::ParameterList& tmp_list = op_list.sublist("diffusion operator");
+
+  tmp_list.set<std::string>("discretization primary", "optimized mfd scaled");
+  tmp_list.set<std::string>("discretization secondary", "optimized mfd scaled");
+
+  Teuchos::Array<std::string> stensil(2);
+  stensil[0] = "face";
+  stensil[1] = "cell";
+  tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
+
+  stensil.remove(1);
+  tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
+  tmp_list.set<bool>("gravity", true);
+
+  return op_list;
+}
+
+
+/* ******************************************************************
+* BCs
+****************************************************************** */
 void output_boundary_conditions( Teuchos::ParameterList* plist ) {
 
   Teuchos::ParameterList flow_list;

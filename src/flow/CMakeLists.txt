@@ -52,8 +52,6 @@ set(flow_src_files Flow_PK.cc Flow_IO.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_SteadyState.cc Richards_LinearOperator.cc
-                   Richards_Bundles.cc
-                   Matrix_MFD.cc Matrix_TPFA.cc 
                    RelativePermeability.cc RelativePermeability_IO.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    darcy_velocity_evaluator.cc
@@ -78,11 +76,11 @@ set(flow_inc_files
   FlowDefs.hh
   FlowBoundaryFunction.hh
   FlowDomainFunction.hh
+  Flow_IO.hh
   Flow_PK.hh
   Flow_SourceFactory.hh
   FlowTypeDefs.hh
-  Matrix_MFD.hh
-  Matrix_TPFA.hh
+  RelativePermeability_IO.hh
   RelativePermeability.hh
   Richards_PK.hh
   TI_Specs.hh
@@ -165,12 +163,6 @@ if (BUILD_TESTS)
         add_amanzi_test(flow_richards_bc_cribs flow_richards_bc_cribs
 	                KIND unit
                         SOURCE test/Main.cc test/flow_richards_bc_cribs.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-        # Test: Picard
-        add_amanzi_test(flow_richards_picard flow_richards_picard
-	                KIND unit
-                        SOURCE test/Main.cc test/flow_richards_picard.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         # Test: Newton

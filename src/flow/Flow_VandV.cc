@@ -1,7 +1,7 @@
 /*
   This is the flow component of the Amanzi code. 
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -13,7 +13,6 @@
 
 #include "errors.hh"
 #include "Flow_PK.hh"
-
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -181,7 +180,7 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
       double z = mesh_->face_centroid(f)[dim - 1]; 
-      double h = z + (bc_values[f][0] - atm_pressure_) / rho_g;
+      double h = z + (bc_value[f] - atm_pressure_) / rho_g;
       hmax = std::max(hmax, h);
       hmin = std::min(hmin, h);
     }

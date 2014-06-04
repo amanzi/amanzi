@@ -61,6 +61,16 @@
         <Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
 
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <Parameter name="discretization primary" type="string" value="finite volume"/>
+          <Parameter name="discretization secondary" type="string" value="finite volume"/>
+          <Parameter name="schema" type="Array(string)" value="{cell}"/>
+          <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+          <Parameter name="gravity" type="bool" value="true"/>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="Water retention models">
         <ParameterList name="WRM for Region between Plane Surface 0 and Plane Surface 1">
           <Parameter name="region" type="string" value="Region between Plane Surface 0 and Plane Surface 1"/>

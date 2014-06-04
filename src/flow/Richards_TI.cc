@@ -1,7 +1,7 @@
 /*
   This is the flow component of the Amanzi code. 
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -16,9 +16,8 @@
 #include <string>
 #include <vector>
 
-#include "Matrix_TPFA.hh"
-#include "Richards_PK.hh"
 #include "LinearOperatorFactory.hh"
+#include "Richards_PK.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -32,19 +31,34 @@ void Richards_PK::Functional(double Told, double Tnew,
 { 
   double Tp(Tnew), dTp(Tnew - Told);
 
-  const Epetra_MultiVector& uold_cells = *u_old->ViewComponent("cell");
-  const Epetra_MultiVector& unew_cells = *u_new->ViewComponent("cell");
+  const Epetra_MultiVector& uold_cell = *u_old->ViewComponent("cell");
+  const Epetra_MultiVector& unew_cell = *u_new->ViewComponent("cell");
 
-  AssembleMatrixMFD(*u_new, Tp);
-  matrix_->ComputeNegativeResidual(*u_new, *f);
+  // update coefficients
+  darcy_flux_copy->ScatterMasterToGhosted("face");
+  rel_perm_->Compute(*u_new);
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel());
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP());
+  UpdateSourceBoundaryData(Tp, *u_new);
+  
+  // assemble residual for diffusion operator
+  op_matrix_->Init();
+  op_matrix_->UpdateMatrices(Teuchos::null, solution);
+  op_matrix_->ApplyBCs();
 
+  Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
+  if (src_sink != NULL) AddSourceTerms(*rhs);
+
+  op_matrix_->ComputeNegativeResidual(*u_new, *f);
+
+  // add accumulation term 
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
-  Epetra_MultiVector& f_cells = *f->ViewComponent("cell");
+  Epetra_MultiVector& f_cell = *f->ViewComponent("cell");
 
   functional_max_norm = 0.0;
   functional_max_cell = 0;
 
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();  
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     AmanziMesh::Entity_ID_List block;
@@ -53,13 +67,13 @@ void Richards_PK::Functional(double Told, double Tnew,
     double s1, s2, volume;
     for (int i = 0; i < block.size(); i++) {
       int c = block[i];
-      s1 = WRM[mb]->saturation(atm_pressure_ - unew_cells[0][c]);
-      s2 = WRM[mb]->saturation(atm_pressure_ - uold_cells[0][c]);
+      s1 = WRM[mb]->saturation(atm_pressure_ - unew_cell[0][c]);
+      s2 = WRM[mb]->saturation(atm_pressure_ - uold_cell[0][c]);
 
       double factor = rho_ * phi[0][c] * mesh_->cell_volume(c) / dTp;
-      f_cells[0][c] += (s1 - s2) * factor;
+      f_cell[0][c] += (s1 - s2) * factor;
 
-      double tmp = fabs(f_cells[0][c]) / factor;  // calculate errors
+      double tmp = fabs(f_cell[0][c]) / factor;  // calculate errors
       if (tmp > functional_max_norm) {
         functional_max_norm = tmp;
         functional_max_cell = c;        
@@ -75,7 +89,7 @@ void Richards_PK::Functional(double Told, double Tnew,
 void Richards_PK::ApplyPreconditioner(Teuchos::RCP<const CompositeVector> X, 
                                       Teuchos::RCP<CompositeVector> Y)
 {
-  preconditioner_->ApplyPreconditioner(*X, *Y);
+  op_preconditioner_->ApplyInverse(*X, *Y);
 }
 
 
@@ -84,7 +98,38 @@ void Richards_PK::ApplyPreconditioner(Teuchos::RCP<const CompositeVector> X,
 ****************************************************************** */
 void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVector> u, double dTp)
 {
-  AssemblePreconditionerMFD(*u, Tp, dTp);
+  // update coefficients
+  darcy_flux_copy->ScatterMasterToGhosted("face");
+  rel_perm_->Compute(*u);
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel());
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP());
+  UpdateSourceBoundaryData(Tp, *u);
+
+  // create diffusion operators
+  op_preconditioner_->Init();
+  op_preconditioner_->UpdateMatrices(Teuchos::null, solution);
+  op_preconditioner_->ApplyBCs();
+
+  // add time derivative
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh_);
+  cvs.SetGhosted(false);
+  cvs.SetComponent("cell", AmanziMesh::CELL, 1);
+
+  CompositeVector dSdP(cvs);
+  rel_perm_->DerivedSdP(*u->ViewComponent("cell"), *dSdP.ViewComponent("cell"));
+
+  const CompositeVector& phi = *S_->GetFieldData("porosity");
+  dSdP.Multiply(rho_, phi, dSdP, 0.0);
+
+  if (dTp > 0.0) {
+    op_preconditioner_->AddAccumulationTerm(*u, dSdP, dTp);
+  }
+
+  // finalize preconditioner
+  int schema_prec_dofs = op_preconditioner_->schema_prec_dofs();
+  op_preconditioner_->AssembleMatrix(schema_prec_dofs);
+  op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_); 
 }
 
 
@@ -141,7 +186,7 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
 
   // maximum error is printed out only on one processor
   if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-    const Epetra_IntVector& map = rel_perm->map_c2mb();
+    const Epetra_IntVector& map = rel_perm_->map_c2mb();
 
     if (error == buf) {
       int c = functional_max_cell;
@@ -160,7 +205,7 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
       *vo_->os() << std::endl;
 
       int mb = map[c];
-      double s = (rel_perm->WRM())[mb]->saturation(atm_pressure_ - uc[0][c]);
+      double s = (rel_perm_->WRM())[mb]->saturation(atm_pressure_ - uc[0][c]);
       *vo_->os() << "saturation=" << s << " pressure=" << uc[0][c] << std::endl;
     }
   }
@@ -186,8 +231,8 @@ ModifyCorrectionResult Richards_PK::ModifyCorrection(
 
   int ncells_clipped(0);
 
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM(); 
-  const Epetra_IntVector& map = rel_perm->map_c2mb();
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM(); 
+  const Epetra_IntVector& map = rel_perm_->map_c2mb();
  
   for (int c = 0; c < ncells_owned; c++) {
     int mb = map[c];

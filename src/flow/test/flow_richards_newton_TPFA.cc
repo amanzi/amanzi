@@ -88,11 +88,13 @@ TEST(NEWTON_RICHARD_STEADY) {
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
   const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell");
 
-  GMV::open_data_file(*mesh, (std::string)"flow.gmv");
-  GMV::start_data();
-  GMV::write_cell_data(p, 0, "pressure");
-  GMV::write_cell_data(ws, 0, "saturation");
-  GMV::close_data_file();
+  if (MyPID == 0) {
+    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(p, 0, "pressure");
+    GMV::write_cell_data(ws, 0, "saturation");
+    GMV::close_data_file();
+  }
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {

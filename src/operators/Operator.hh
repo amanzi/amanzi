@@ -19,11 +19,14 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_CrsMatrix.h"
 
-#include "Mesh.hh"
 #include "DenseMatrix.hh"
 #include "CompositeVector.hh"
 #include "CompositeVectorSpace.hh"
+#include "Mesh.hh"
 #include "Preconditioner.hh"
+#include "VerboseObject.hh"
+
+#include "BCs.hh"
 #include "OperatorTypeDefs.hh"
 
 /* ******************************************************************
@@ -56,7 +59,7 @@ namespace Amanzi {
 namespace Operators {
 
 // This is the old way to assemble matrices. (lipnikov@lanl.gov)
-#define OPERATORS_MATRIX_FE_CRS
+// #define OPERATORS_MATRIX_FE_CRS
 
 class Operator {
  public:
@@ -68,13 +71,16 @@ class Operator {
   // main members
   void Init();
   void Clone(const Operator& op);
-  int Apply(const CompositeVector& X, CompositeVector& Y) const;
+
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
-  void SymbolicAssembleMatrix(int schema);
+  virtual void SymbolicAssembleMatrix(int schema);
   virtual void AssembleMatrix(int schema);
 
-  virtual void ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_values);
+  virtual void ApplyBCs(); 
+  virtual void ComputeResidual(const CompositeVector& u, CompositeVector& r);
+  virtual void ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r);
 
   const CompositeVectorSpace& DomainMap() const { return *cvs_; }
   const CompositeVectorSpace& RangeMap() const { return *cvs_; }
@@ -86,8 +92,7 @@ class Operator {
   void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss);
 
   // preconditioners
-  virtual void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist,
-                                  std::vector<int>& bc_model, std::vector<double>& bc_values);
+  virtual void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
 
   // access
   Teuchos::RCP<CompositeVector>& rhs() { return rhs_; }
@@ -104,6 +109,8 @@ class Operator {
   Teuchos::RCP<CompositeVector> diagonal_, diagonal_checkpoint_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
 
+  Teuchos::RCP<BCs> bc_;
+
  public:
   int ncells_owned, nfaces_owned, nnodes_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost;
@@ -117,6 +124,8 @@ class Operator {
 #endif
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
   int offset_global_[3], offset_my_[3];
+
+  Teuchos::RCP<VerboseObject> vo_;
 };
 
 }  // namespace Operators

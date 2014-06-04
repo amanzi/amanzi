@@ -1,7 +1,7 @@
 /*
   This is the flow component of the Amanzi code. 
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -13,13 +13,14 @@
 #ifndef AMANZI_DARCY_PK_HH_
 #define AMANZI_DARCY_PK_HH_
 
-#include "Teuchos_RCP.hpp"
 #include "Epetra_Vector.h"
+#include "Teuchos_RCP.hpp"
+
+#include "BCs.hh"
+#include "OperatorDiffusion.hh"
 
 #include "Flow_PK.hh"
-#include "OperatorDiffusion.hh"
 #include "TI_Specs.hh"
-
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -43,9 +44,6 @@ class Darcy_PK : public Flow_PK {
   void InitializeSteadySaturated();
 
   void CommitState(Teuchos::RCP<State> S);
-
-  void UpdateSpecificYield();
-  double ErrorEstimate(double* dTfactor);
 
   // methods required for time integration
   void Functional(const double Told, double Tnew, 
@@ -78,8 +76,13 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<CompositeVector> get_solution() { return solution; }
 
  private:
+  void UpdateSpecificYield_();
+  double ErrorEstimate_(double* dTfactor);
+
+ private:
   Teuchos::ParameterList dp_list_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op;
+  Teuchos::RCP<Operators::OperatorDiffusion> op_;
+  Teuchos::RCP<Operators::BCs> op_bc_;
 
   int error_control_;
   double dT_desirable_;
@@ -87,6 +90,8 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<CompositeVector> solution;  // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
+
+  Teuchos::RCP<CompositeVector> specific_yield_copy_;
 };
 
 }  // namespace AmanziFlow

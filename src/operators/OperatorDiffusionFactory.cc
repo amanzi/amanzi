@@ -5,17 +5,17 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Base factory for diffusion operators.
-  Usage:
 */
 
 #include "errors.hh"
 
+#include "BCs.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorDiffusionSurface.hh"
+#include "OperatorDiffusionTPFA.hh"
 #include "OperatorDiffusionWithGravity.hh"
-
 
 namespace Amanzi {
 namespace Operators {
@@ -25,11 +25,12 @@ namespace Operators {
  ****************************************************************** */
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     Teuchos::RCP<const AmanziMesh::Mesh> mesh, 
-    const Teuchos::ParameterList& op_list,
+    Teuchos::RCP<BCs> bc, 
+    const Teuchos::ParameterList& oplist,
     const AmanziGeometry::Point& g)
 {
-  if (op_list.isSublist("diffusion operator")) {
-    Teuchos::ParameterList dlist = op_list.sublist("diffusion operator");
+  if (oplist.isSublist("diffusion operator")) {
+    Teuchos::ParameterList dlist = oplist.sublist("diffusion operator");
 
     std::vector<std::string> names;
     names = dlist.get<Teuchos::Array<std::string> > ("schema").toVector();
@@ -55,14 +56,23 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     cvs->SetComponents(names, locations, num_dofs);
     cvs->SetOwned(false);
 
-    // Do we have gravity?
+    // Let us try to identify a FV scheme.
+    std::string name = dlist.get<std::string>("discretization primary");
+    if (name == "finite volume") {
+      Teuchos::RCP<OperatorDiffusionTPFA> op = Teuchos::rcp(new OperatorDiffusionTPFA(cvs, dlist, bc));
+      op->Init();
+      op->SetGravity(g);
+      return op;
+    }
+
+    // Let us see if we have gravity.
     bool flag = dlist.get<bool>("gravity", false);
     if (! flag) {
-      Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(cvs, dlist));
+      Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(cvs, dlist, bc));
       op->Init();
       return op;
     } else {
-      Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::rcp(new OperatorDiffusionWithGravity(cvs, dlist));
+      Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::rcp(new OperatorDiffusionWithGravity(cvs, dlist, bc));
       op->Init();
       op->SetGravity(g);
       return op;

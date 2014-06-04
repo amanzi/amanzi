@@ -68,12 +68,22 @@
   <!--  FLOW  -->
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
-      <Parameter name="relative permeability" type="string" value="upwind amanzi"/>
+      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="1e-10"/>
       <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
 
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="none"/>
+      </ParameterList>
+
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <Parameter name="discretization primary" type="string" value="optimized mfd scaled"/>
+          <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+          <Parameter name="gravity" type="bool" value="true"/>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="steady state time integrator">

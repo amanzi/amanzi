@@ -1,13 +1,13 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Neil Carlson (version 1) 
-         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Authors: Neil Carlson (version 1) 
+           Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_RICHARDS_PK_HH_
@@ -17,14 +17,15 @@ Authors: Neil Carlson (version 1)
 #include "Epetra_IntVector.h"
 #include "Epetra_Import.h"
 
-#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCP.hpp"
 
+#include "BCs.hh"
 #include "BDF1_TI.hh"
+#include "OperatorDiffusion.hh"
+#include "Upwind.hh"
 
 #include "Flow_PK.hh"
-#include "Matrix.hh"
-#include "WaterRetentionModel.hh"
 #include "RelativePermeability.hh"
 #include "TI_Specs.hh"
 
@@ -88,18 +89,10 @@ class Richards_PK : public Flow_PK {
   void ChangedSolution() {};
 
   // other main methods
-  void AddTimeDerivative_MFD(Epetra_Vector& p, double dTp, Matrix_MFD* matrix_operator);
-  void AddTimeDerivative_MFDfake(Epetra_Vector& p, double dTp, Matrix_MFD* matrix_operator);
-
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void AssembleMatrixMFD(const CompositeVector &u, double Tp);
-  void AssemblePreconditionerMFD(const CompositeVector &u, double Tp, double dTp);
-
   void UpdateSourceBoundaryData(double Tp, const CompositeVector& pressure);
 
   // linear problems and solvers
-  void AssembleSteadyStateMatrix(FlowMatrix* matrix);
-  void AssembleSteadyStatePreconditioner(FlowMatrix* preconditioner);
   void SolveFullySaturatedProblem(double T, CompositeVector& u, LinearSolver_Specs& ls_specs);
   void EnforceConstraints(double Tp, CompositeVector& u);
 
@@ -118,23 +111,20 @@ class Richards_PK : public Flow_PK {
   void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
   
   // access methods
-  Teuchos::RCP<FlowMatrix> matrix() { return matrix_; }
-  Teuchos::RCP<FlowMatrix> preconditioner() { return preconditioner_; }
+  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix() { return op_matrix_; }
   const Teuchos::RCP<CompositeVector> get_solution() { return solution; }
 
   // developement members
-  bool SetSymmetryProperty();
   void ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epetra_Vector& ws);
   
-  // auxilliary data management
-  void UpdateAuxilliaryData();
-
  public:
   Teuchos::ParameterList rp_list_;
 
  private:
-  Teuchos::RCP<FlowMatrix> matrix_;
-  Teuchos::RCP<FlowMatrix> preconditioner_;
+  Teuchos::RCP<RelativePermeability> rel_perm_;
+  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_, op_preconditioner_;
+  Teuchos::RCP<Operators::Upwind<RelativePermeability> > upwind_;
+  Teuchos::RCP<Operators::BCs> op_bc_;
 
   Teuchos::RCP<BDF1_TI<CompositeVector, CompositeVectorSpace> > bdf1_dae;  // Time integrators
   int block_picard;
@@ -145,20 +135,15 @@ class Richards_PK : public Flow_PK {
   double functional_max_norm;
   int functional_max_cell;
 
-  Teuchos::RCP<CompositeVector> solution;
+  Teuchos::RCP<CompositeVector> solution;  // copies of state variables
   Teuchos::RCP<CompositeVector> darcy_flux_copy;
 
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
 
-  Teuchos::RCP<RelativePermeability> rel_perm;
-
-  // Teuchos::RCP<Epetra_Vector> Transmis_faces;
-  // Teuchos::RCP<Epetra_Vector> Grav_term_faces;
-  // Teuchos::RCP<Epetra_Vector> faces_dir;
-
-  bool is_matrix_symmetric;
   int update_upwind;
+  Teuchos::RCP<CompositeVector> darcy_flux_upwind;  // used in  
+
   double mass_bc, mass_amanzi;
 
  private:

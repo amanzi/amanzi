@@ -46,8 +46,8 @@ void TransportBoundaryFunction_Tracer::Compute(double time) {
 
   // create the input tuple
   int dim = mesh_->space_dimension();
-  double *args = new double[1+dim];
-  double *xargs = args+1;
+  double *args = new double[dim + 1];
+  double *xargs = args + 1;
   args[0] = time;
 
   // Loop over side set specs and evaluate the function at all faces 

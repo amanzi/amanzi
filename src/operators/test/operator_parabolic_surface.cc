@@ -89,7 +89,8 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
 
   // create boundary data
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_values(nfaces_wghost);
+  std::vector<double> bc_value(nfaces_wghost);
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -125,19 +126,19 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator");
-  Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist));
+  Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist, bc));
   int schema_dofs = op2->schema_dofs();
   int schema_prec_dofs = op2->schema_prec_dofs();
 
   op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
-  op2->UpdateMatrices(Teuchos::null);
-  op2->ApplyBCs(bc_model, bc_values);
+  op2->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op2->ApplyBCs();
   op2->SymbolicAssembleMatrix(schema_prec_dofs);
   op2->AssembleMatrix(schema_prec_dofs);
 
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-  op2->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+  op2->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
@@ -164,11 +165,11 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   op1->AddAccumulationTerm(solution, phi, dT);
 
   op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
-  op2->UpdateMatrices(Teuchos::null);
-  op2->ApplyBCs(bc_model, bc_values);
+  op2->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op2->ApplyBCs();
   op2->SymbolicAssembleMatrix(Operators::OPERATOR_SCHEMA_DOFS_FACE);
   op2->AssembleMatrix(schema_prec_dofs);
-  op2->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+  op2->InitPreconditioner("Hypre AMG", slist);
 
   rhs = *op2->rhs();
   ierr = solver->ApplyInverse(rhs, solution);

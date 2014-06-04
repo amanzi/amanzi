@@ -20,20 +20,22 @@
 namespace Amanzi {
 namespace Operators {
 
+class BCs;
+
 class OperatorDiffusionWithGravity : public OperatorDiffusion {
  public:
   OperatorDiffusionWithGravity() {};
   OperatorDiffusionWithGravity(Teuchos::RCP<const CompositeVectorSpace> cvs, 
-                               const Teuchos::ParameterList& plist) 
-      : OperatorDiffusion(cvs, plist) {};
+                               Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
+      : OperatorDiffusion(cvs, plist, bc) {};
   OperatorDiffusionWithGravity(const Operator& op, 
-                               const Teuchos::ParameterList& plist) 
-      : OperatorDiffusion(op, plist) {};
+                               Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
+      : OperatorDiffusion(op, plist, bc) {};
 
   ~OperatorDiffusionWithGravity() {};
 
   // main members
-  void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux);
+  void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
   void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
   void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }

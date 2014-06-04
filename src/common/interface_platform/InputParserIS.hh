@@ -9,7 +9,6 @@ namespace AmanziInput {
 #define AMANZI_OLD_INPUT_VERSION_MICRO 1
 
 
-
 Teuchos::ParameterList translate (Teuchos::ParameterList* plist, int numproc);
 
 Teuchos::ParameterList get_Time_Macro (const std::string& macro_name, Teuchos::ParameterList* plist );
@@ -41,7 +40,9 @@ Teuchos::ParameterList create_BILU_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_HypreAMG_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Solvers_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Nonlinear_Solvers_List ( Teuchos::ParameterList* plist );
-  Teuchos::ParameterList create_TimePeriodControl_List(Teuchos::ParameterList* plist);
+Teuchos::ParameterList create_TimePeriodControl_List(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreateFlowOperatorList();
+
 void output_boundary_conditions( Teuchos::ParameterList* plist );
 void check_AmanziInputVersion(Teuchos::ParameterList* plist);
 

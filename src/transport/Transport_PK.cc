@@ -25,6 +25,7 @@
 
 #include "Explicit_TI_RK.hh"
 
+#include "BCs.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
@@ -447,9 +448,11 @@ int Transport_PK::Advance(double dT_MPC)
     if (mesh_->mesh_type() == AmanziMesh::RECTANGULAR) {
       tmp_list.set<std::string>("discretization primary", "monotone mfd hex");
       Teuchos::Array<std::string> stensil(2);
-      stensil[0] = "cell";
-      stensil[1] = "face";
+      stensil[0] = "face";
+      stensil[1] = "cell";
       tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
+      stensil.remove(1);
+      tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
     } else {
       tmp_list.set<std::string>("discretization primary", "two point flux approximation");
       Teuchos::Array<std::string> stensil(1);
@@ -458,13 +461,14 @@ int Transport_PK::Advance(double dT_MPC)
     }
 
     // default parameters
-    std::vector<int> bc_model;
-    std::vector<double> bc_values;
+    std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+    std::vector<double> bc_value(nfaces_wghost, 0.0);
+    Teuchos::RCP<Operators::BCs> bc_dummy = Teuchos::rcp(new Operators::BCs(bc_model, bc_value));
     AmanziGeometry::Point g;
 
     Operators::OperatorDiffusionFactory opfactory;
-    Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, op_list, g);
-    int schema_dofs = op1->schema_dofs();
+    Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list, g);
+    op1->Init();
 
     const CompositeVectorSpace& cvs = op1->DomainMap();
     CompositeVector rhs(cvs), sol(cvs), factor(cvs);
@@ -473,7 +477,7 @@ int Transport_PK::Advance(double dT_MPC)
     // populate the diffusion operator
     CalculateDispersionTensor_(*darcy_flux, *phi, *ws);
     op1->InitOperator(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
-    op1->UpdateMatrices(Teuchos::null);
+    op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     // add accumulation
     Epetra_MultiVector& fac = *factor.ViewComponent("cell");
@@ -482,9 +486,10 @@ int Transport_PK::Advance(double dT_MPC)
     }
 
     op1->AddAccumulationTerm(rhs, factor, dT_MPC);
-    op1->SymbolicAssembleMatrix(schema_dofs);
-    op1->AssembleMatrix(schema_dofs);
-    op1->InitPreconditioner(dispersion_preconditioner, preconditioners_list, bc_model, bc_values);
+    int schema_prec_dofs = op1->schema_prec_dofs();
+    op1->SymbolicAssembleMatrix(schema_prec_dofs);
+    op1->AssembleMatrix(schema_prec_dofs);
+    op1->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
   
     AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> sfactory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
@@ -495,17 +500,17 @@ int Transport_PK::Advance(double dT_MPC)
     double residual = 0.0;
     int num_itrs = 0;
 
-    Epetra_MultiVector& rhs_cells = *rhs.ViewComponent("cell");
-    Epetra_MultiVector& sol_cells = *sol.ViewComponent("cell");
+    Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
+    Epetra_MultiVector& sol_cell = *sol.ViewComponent("cell");
     if (sol.HasComponent("face")) {
       sol.ViewComponent("face")->PutScalar(0.0);
     }
     
     for (int i = 0; i < number_components; i++) {
       for (int c = 0; c < ncells_owned; c++) {
-        double factor = mesh_->cell_volume(c) * (*ws)[0][c] * (*phi)[0][c] / dT_MPC;
-        rhs_cells[0][c] = tcc_next[i][c] * factor;
-        sol_cells[0][c] = tcc_next[i][c];
+        double tmp = mesh_->cell_volume(c) * (*ws)[0][c] * (*phi)[0][c] / dT_MPC;
+        rhs_cell[0][c] = tcc_next[i][c] * tmp;
+        sol_cell[0][c] = tcc_next[i][c];
       }
 
       solver->ApplyInverse(rhs, sol);
@@ -514,7 +519,7 @@ int Transport_PK::Advance(double dT_MPC)
       num_itrs += solver->num_itrs();
 
       for (int c = 0; c < ncells_owned; c++) {
-        tcc_next[i][c] = sol_cells[0][c];
+        tcc_next[i][c] = sol_cell[0][c];
       }
     }
 
@@ -630,7 +635,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   mass_tracer_exact += mass_tracer_source * dT;
 
   if (internal_tests) {
-    CheckGEDproperty(tcc_next);
+    CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 }
 
@@ -674,7 +679,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
   mass_tracer_exact += mass_tracer_source * dT;
 
   if (internal_tests) {
-    CheckGEDproperty(tcc_next);
+    CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 }
 
@@ -734,7 +739,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
   mass_tracer_exact += mass_tracer_source * dT / 2;
 
   if (internal_tests) {
-    CheckGEDproperty(tcc_next);
+    CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 }
 
