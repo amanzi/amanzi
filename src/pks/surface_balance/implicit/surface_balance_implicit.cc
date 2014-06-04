@@ -26,7 +26,9 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
            Teuchos::ParameterList& FElist,
            const Teuchos::RCP<TreeVector>& solution) :
     PKPhysicalBDFBase(plist, FElist, solution),
-    PKDefaultBase(plist, FElist, solution) {
+    PKDefaultBase(plist, FElist, solution),
+    modify_predictor_advance_(false)
+{
   // set up additional primary variables -- this is very hacky...
   // -- surface energy source
   Teuchos::ParameterList& esource_sublist =
@@ -69,6 +71,10 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
     Errors::Message message("Invalid parameters: snow-ground transitional depth or minimum snow transitional depth.");
     Exceptions::amanzi_throw(message);
   }
+
+  // modify predictor by calling advance -- this is cheap and sets up BCs
+  // correctly for subsurface's call to ModifyPredictorConsistentFaces()
+  modify_predictor_advance_ = plist_->get<bool>("modify predictor by advancing", false);
 }
 
 // main methods
@@ -200,15 +206,23 @@ void
 SurfaceBalanceImplicit::initialize(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::initialize(S);
 
-  // initialize snow density
-  S->GetFieldData("snow_density",name_)->PutScalar(100.);
+  SEBPhysics::SEB seb;
+
+  // initialize snow density to fresh powder
+  S->GetFieldData("snow_density",name_)->PutScalar(seb.params.density_freshsnow);
   S->GetField("snow_density", name_)->set_initialized();
 
-  // initialize days of no snow
+  // initialize snow age to 0.
   S->GetFieldData("snow_age",name_)->PutScalar(0.);
   S->GetField("snow_age", name_)->set_initialized();
 
-  S->GetFieldData("stored_SWE",name_)->PutScalar(0.);
+  // initialize swe consistently with snow height and density
+  Epetra_MultiVector& swe = *S->GetFieldData("stored_SWE",name_)->ViewComponent("cell",false);
+  const Epetra_MultiVector& snow_ht = *S->GetFieldData(key_)->ViewComponent("cell",false);
+  const Epetra_MultiVector& snow_dens = *S->GetFieldData("snow_density")->ViewComponent("cell",false);
+  for (int c=0; c!=swe.MyLength(); ++c) {
+    swe[0][c] = snow_ht[0][c] * snow_dens[0][c] / seb.in.vp_ground.density_w;
+  }
   S->GetField("stored_SWE", name_)->set_initialized();
 
   // initialize snow temp
@@ -677,6 +691,13 @@ SurfaceBalanceImplicit::ModifyPredictor(double h, Teuchos::RCP<const TreeVector>
   for (unsigned int c=0; c!=ncells; ++c) {
     u_vec[0][c] = std::max(0., u_vec[0][c]);
   }
+
+  if (modify_predictor_advance_) {
+    Teuchos::RCP<TreeVector> res = Teuchos::rcp(new TreeVector(*u));
+    Teuchos::RCP<TreeVector> u0_nc = Teuchos::rcp_const_cast<TreeVector>(u0);
+    Functional(S_next_->time()-h, S_next_->time(), u0_nc, u, res);
+  }
+
   return true;
 }
 
