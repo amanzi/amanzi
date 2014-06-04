@@ -23,6 +23,8 @@ namespace EnergyRelations {
 class IEM {
 
 public:
+  virtual ~IEM() {}
+
   // IEM(Teuchos::ParameterList& plist);
   virtual bool IsMolarBasis() = 0;
   virtual double InternalEnergy(double temp) = 0;

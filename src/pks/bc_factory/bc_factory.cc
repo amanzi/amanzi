@@ -131,8 +131,8 @@ void BCFactory::ProcessSpecWithFunction_(const Teuchos::ParameterList& list,
     f = Teuchos::rcp(f_fact.Create(f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist " << function_name << ": " << msg.what();
-    Errors::Message msg(m.str());
-    Exceptions::amanzi_throw(msg);
+    Errors::Message lmsg(m.str());
+    Exceptions::amanzi_throw(lmsg);
   }
 
   // A bit hacky -- this entire code needs to be revisited in light of the new
@@ -160,8 +160,8 @@ void BCFactory::ProcessListWithoutFunction_(const Teuchos::ParameterList& list,
       } catch (Errors::Message& msg) {
         std::stringstream m;
         m << "in sublist " << spec.name().c_str() << ": " << msg.what();
-        Errors::Message msg(m.str());
-        Exceptions::amanzi_throw(msg);
+        Errors::Message lmsg(m.str());
+        Exceptions::amanzi_throw(lmsg);
       }
     } else { // ERROR -- parameter is not a sublist
       std::stringstream m;

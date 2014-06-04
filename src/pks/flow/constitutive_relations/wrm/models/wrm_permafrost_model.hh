@@ -21,6 +21,8 @@ public:
   WRMPermafrostModel(Teuchos::ParameterList& plist) :
       plist_(plist) {}
 
+  virtual ~WRMPermafrostModel() {}
+
   void set_WRM(const Teuchos::RCP<WRM>& wrm) { wrm_ = wrm; }
 
   virtual bool freezing(double T, double pc_liq, double pc_ice) = 0;
