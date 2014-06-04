@@ -18,6 +18,7 @@ namespace FlowRelations {
 
 class SurfaceRelPermModel {
  public:
+  virtual ~SurfaceRelPermModel() {}
   virtual bool TemperatureDependent() = 0;
   virtual double SurfaceRelPerm(double uf, double h) = 0;
   virtual double DSurfaceRelPermDUnfrozenFraction(double uf, double h) = 0;
