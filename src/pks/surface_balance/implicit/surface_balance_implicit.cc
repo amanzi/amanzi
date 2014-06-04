@@ -62,6 +62,9 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
   // implicit/explicit snow precip
   implicit_snow_ = plist_->get<bool>("implicit snow precipitation", false);
 
+  // Reading in Longwave Radation
+  LongwaveInput_ = plist_->get<bool>("Longwave Input", false);
+
   // transition snow depth
   snow_ground_trans_ = plist_->get<double>("snow-ground transitional depth", 0.02);
   min_snow_trans_ = plist_->get<double>("minimum snow transitional depth", 1.e-8);
@@ -134,6 +137,10 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
   // requirements: independent variables (data from MET)
   S->RequireFieldEvaluator("incoming_shortwave_radiation");
   S->RequireField("incoming_shortwave_radiation")->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    S->RequireFieldEvaluator("incoming_longwave_radiation");
+  S->RequireField("incoming_longwave_radiation")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator("air_temperature");
@@ -316,6 +323,10 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   const Epetra_MultiVector& incoming_shortwave =
       *S_next_->GetFieldData("incoming_shortwave_radiation")->ViewComponent("cell", false);
 
+  S_next_->GetFieldEvaluator("incoming_longwave_radiation")->HasFieldChanged(S_next_.ptr(), name_);
+  const Epetra_MultiVector& incoming_longwave =
+      *S_next_->GetFieldData("incoming_longwave_radiation")->ViewComponent("cell", false);
+
   S_next_->GetFieldEvaluator("relative_humidity")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& relative_humidity =
       *S_next_->GetFieldData("relative_humidity")->ViewComponent("cell", false);
@@ -405,6 +416,15 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       seb.in.met.Pr = precip_rain[0][c];
       seb.in.met.vp_air.temp = air_temp[0][c];
       seb.in.met.vp_air.relative_humidity = relative_humidity[0][c];
+     
+     if (LongwaveInput_) {
+          seb.in.met.QlwIn = incoming_longwave[0][c];
+      }else{     
+          seb.in.met.vp_air.UpdateVaporPressure();
+          double e_air = std::pow(10*seb.in.met.vp_air.actual_vaporpressure, seb.in.met.vp_air.temp / 2016.);
+          e_air = 1.08 * (1 - std::exp(-e_air));
+          seb.in.met.QlwIn = e_air * seb.params.stephB * std::pow(seb.in.met.vp_air.temp,4); // Add if statement here ~ AA
+      }
 
       // -- smoothed/interpolated surface properties
       SEBPhysics::SurfaceParams surf_pars;
@@ -496,6 +516,15 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       seb.in.met.Pr = precip_rain[0][c];
       seb.in.met.vp_air.temp = air_temp[0][c];
       seb.in.met.vp_air.relative_humidity = relative_humidity[0][c];
+
+     if (LongwaveInput_) {
+          seb.in.met.QlwIn = incoming_longwave[0][c];
+      }else{
+          seb.in.met.vp_air.UpdateVaporPressure();
+          double e_air = std::pow(10*seb.in.met.vp_air.actual_vaporpressure, seb.in.met.vp_air.temp / 2016.);
+          e_air = 1.08 * (1 - std::exp(-e_air));
+          seb.in.met.QlwIn = e_air * seb.params.stephB * std::pow(seb.in.met.vp_air.temp,4); // Add if statement here ~ AA
+      }
 
       // -- smoothed/interpolated surface properties
       SEBPhysics::SurfaceParams surf_pars;
