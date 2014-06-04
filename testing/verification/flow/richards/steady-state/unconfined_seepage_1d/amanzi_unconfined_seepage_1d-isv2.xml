@@ -240,7 +240,7 @@
 				        <time_macro>EndTime</time_macro>
 				</hydraulic_head>
 			        <hydraulic_head>
-				        <assigned_regions>Point975ft</assigned_regions>
+				        <assigned_regions>Point975</assigned_regions>
 				        <functional>point</functional>
 				        <time_macro>EndTime</time_macro>
 				</hydraulic_head>
