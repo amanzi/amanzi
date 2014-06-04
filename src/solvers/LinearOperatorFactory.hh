@@ -81,6 +81,7 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
     Errors::Message msg(msgstream.str());
     Exceptions::amanzi_throw(msg);
   }
+  return Teuchos::null;
 }
 
 
@@ -140,6 +141,7 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
     Errors::Message msg("LinearOperatorFactory: parameter `\"iterative method`\" is missing");
     Exceptions::amanzi_throw(msg);
   }
+  return Teuchos::null;
 }
 
 }  // namespace AmanziSolvers

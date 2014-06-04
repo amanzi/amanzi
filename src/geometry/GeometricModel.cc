@@ -205,6 +205,7 @@ RegionPtr GeometricModel::FindRegion(const int id) const
       if (r->id() == id)
         return r;
     }
+  return NULL;
 }
 
 
@@ -227,6 +228,7 @@ RegionPtr GeometricModel::FindRegion(const std::string name) const
       if (r->name() == name)
         return r;
     }
+  return NULL;
 }
 
 

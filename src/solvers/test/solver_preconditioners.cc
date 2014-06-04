@@ -43,10 +43,10 @@ class Matrix {
   };    
 
   virtual int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const { 
-    A_->Apply(v, mv);
+    return A_->Apply(v, mv);
   }
   virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
-    preconditioner_->ApplyInverse(v, hv);
+    return preconditioner_->ApplyInverse(v, hv);
   }
 
   virtual const Epetra_Map& DomainMap() const { return *map_; }

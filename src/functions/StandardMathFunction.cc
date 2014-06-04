@@ -75,6 +75,7 @@ double StandardMathFunction::operator() (const double *x) const
     Errors::Message message(m.str());
     Exceptions::amanzi_throw(message);
   }
+  return 0.;
 }
 
 void StandardMathFunction::InvalidDomainError_(double x) const {
