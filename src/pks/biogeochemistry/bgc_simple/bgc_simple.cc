@@ -315,6 +315,7 @@ bool BGCSimple::advance(double dt) {
 
   } // end loop over columns
 
+  return false;
 }
 
 
