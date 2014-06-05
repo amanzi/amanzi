@@ -16,7 +16,7 @@
 #include "WRM_vanGenuchten.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 const int FLOW_WRM_MUALEM = 1;
 const int FLOW_WRM_BURDINE = 2;
@@ -151,6 +151,6 @@ double WRM_vanGenuchten::dKdPc(double pc)
 }
 
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 

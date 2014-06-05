@@ -24,7 +24,7 @@
 #include "Transport_PK.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 
 /* *******************************************************************
@@ -108,7 +108,7 @@ void Dispersion::AddTimeDerivative(
 */
 
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 

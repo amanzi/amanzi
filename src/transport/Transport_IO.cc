@@ -24,7 +24,7 @@
 #include "TransportBCFactory.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 /* ******************************************************************
 * Routine processes parameter list. It needs to be called only once
@@ -245,6 +245,6 @@ void Transport_PK::WriteGMVfile(Teuchos::RCP<State> S) const
   GMV::close_data_file();
 }
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 

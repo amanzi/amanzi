@@ -20,7 +20,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "FlowDefs.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * List to WRM models has to be provided.
@@ -132,15 +132,15 @@ void RelativePermeability::ProcessStringRelativePermeability(const std::string n
 {
   Errors::Message msg;
   if (name == "upwind with gravity") {
-    method_ = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
+    method_ = Flow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
   } else if (name == "cell centered") {
-    method_ = AmanziFlow::FLOW_RELATIVE_PERM_CENTERED;
+    method_ = Flow::FLOW_RELATIVE_PERM_CENTERED;
   } else if (name == "upwind with Darcy flux") {
-    method_ = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
+    method_ = Flow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
   } else if (name == "arithmetic mean") {
-    method_ = AmanziFlow::FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
+    method_ = Flow::FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
   } else if (name == "upwind amanzi") {
-    method_ = AmanziFlow::FLOW_RELATIVE_PERM_AMANZI;
+    method_ = Flow::FLOW_RELATIVE_PERM_AMANZI;
   } else {
     msg << "Flow PK: unknown relative permeability method has been specified.";
     Exceptions::amanzi_throw(msg);
@@ -192,6 +192,6 @@ void RelativePermeability::PlotWRMcurves()
   }
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 

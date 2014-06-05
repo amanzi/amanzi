@@ -15,7 +15,7 @@
 #include "WRM_BrooksCorey.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Setup fundamental parameters for this model.
@@ -118,6 +118,6 @@ double WRM_BrooksCorey::dKdPc(double pc)
   }
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 

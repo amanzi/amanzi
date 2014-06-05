@@ -21,7 +21,7 @@
 #include "Transport_PK.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 /* ****************************************************************
 * Routine completes initialization of objects in the state.
@@ -392,6 +392,6 @@ double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
 }
 
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 

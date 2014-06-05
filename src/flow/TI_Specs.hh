@@ -15,7 +15,7 @@
 #include "FlowDefs.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 class LinearSolver_Specs {
  public:
@@ -85,7 +85,7 @@ class TI_Specs {
   std::vector<std::pair<double, double> > dT_history;  // statistics (relocate to debug?)
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

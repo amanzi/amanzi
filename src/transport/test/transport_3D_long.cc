@@ -28,7 +28,7 @@ TEST(ADVANCE_WITH_3D_MESH) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
 std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;

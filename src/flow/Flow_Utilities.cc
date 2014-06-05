@@ -22,7 +22,7 @@
 #include "Flow_PK.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Calculating an extended vector of Darcy velocities. The velocity
@@ -292,6 +292,6 @@ void Flow_PK::WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk)
 
 
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 

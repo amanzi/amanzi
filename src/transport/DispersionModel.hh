@@ -24,7 +24,7 @@
 #include "TransportDefs.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 class DispersionModel {
  public:
@@ -43,7 +43,7 @@ class DispersionModel {
   std::vector<std::string> regions;
 };
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 #endif

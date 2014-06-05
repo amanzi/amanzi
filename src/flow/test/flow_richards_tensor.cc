@@ -34,7 +34,7 @@ TEST(FLOW_RICHARDS_ACCURACY) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::AmanziFlow;
+  using namespace Amanzi::Flow;
 
 std::cout << "Test: Tensor Richards, a cube model" << std::endl;
 #ifdef HAVE_MPI

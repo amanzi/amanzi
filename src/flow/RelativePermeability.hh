@@ -30,7 +30,7 @@
 #include "FlowTypeDefs.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 class RelativePermeability {
  public:
@@ -84,7 +84,7 @@ class RelativePermeability {
   VerboseObject* vo_;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

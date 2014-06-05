@@ -17,7 +17,7 @@
 #include "Richards_PK.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Calculate saturated pressure solution using boundary conditions 
@@ -128,6 +128,6 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
   }
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 

@@ -27,7 +27,7 @@ Authors: Neil Carlson, version 1 (nnc@lanl.gov),
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
-using namespace Amanzi::AmanziFlow;
+using namespace Amanzi::Flow;
 
 struct bits_and_pieces
 {

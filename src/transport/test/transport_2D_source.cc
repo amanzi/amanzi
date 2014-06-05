@@ -28,7 +28,7 @@ TEST(TRANSPORT_SOURCE_2D_MESH) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
 std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
@@ -111,7 +111,7 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
     }
   }
 
-  TPK.CheckTracerBounds(*tcc, 0, 0.0, 1.0, AmanziTransport::TRANSPORT_LIMITER_TOLERANCE);
+  TPK.CheckTracerBounds(*tcc, 0, 0.0, 1.0, Transport::TRANSPORT_LIMITER_TOLERANCE);
  
   delete comm;
 }

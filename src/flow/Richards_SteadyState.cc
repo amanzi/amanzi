@@ -16,7 +16,7 @@
 #include "Richards_PK.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 *  Wrapper for advance to steady-state routines.                                                    
@@ -235,6 +235,6 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,
   return relaxation;
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 

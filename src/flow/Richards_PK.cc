@@ -35,7 +35,7 @@
 #include "Richards_PK.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Simplest possible constructor: extracts lists and requires fields.
@@ -737,6 +737,6 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epet
 }
 
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 

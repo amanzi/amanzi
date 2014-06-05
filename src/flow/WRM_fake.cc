@@ -15,7 +15,7 @@
 #include "WRM_fake.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Setup fundamental parameters for this model.                                            
@@ -73,6 +73,6 @@ double WRM_fake::capillaryPressure(double sl)
   return 0.0;
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 

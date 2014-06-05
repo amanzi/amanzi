@@ -32,7 +32,7 @@
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
-using namespace Amanzi::AmanziFlow;
+using namespace Amanzi::Flow;
 
 
 /* ******************************************************************
@@ -177,8 +177,8 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
   }
 
   /* convergence rates */
-  double p_rate = Amanzi::AmanziFlow::bestLSfit(h, p_error);
-  double v_rate = Amanzi::AmanziFlow::bestLSfit(h, v_error);
+  double p_rate = Amanzi::Flow::bestLSfit(h, p_error);
+  double v_rate = Amanzi::Flow::bestLSfit(h, v_error);
   printf("convergence rates: %23.2f %22.2f\n", p_rate, v_rate);
 
   CHECK_CLOSE(p_rate, 2.0, 0.2);

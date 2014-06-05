@@ -24,7 +24,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Reconstruction.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 /* We set up most popular parameters here. */
 void Reconstruction::Init()
@@ -243,6 +243,6 @@ void Reconstruction::PrintLeastSquareSystem(Teuchos::SerialDenseMatrix<int, doub
 }
 
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 

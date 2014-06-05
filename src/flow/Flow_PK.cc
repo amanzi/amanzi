@@ -23,7 +23,7 @@
 #include "Flow_PK.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * default constructor that initializes all pointers to NULL
@@ -408,6 +408,6 @@ void Flow_PK::WriteGMVfile(Teuchos::RCP<State> FS) const
   GMV::close_data_file();
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 

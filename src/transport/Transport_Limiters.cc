@@ -15,7 +15,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Transport_PK.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 /* *******************************************************************
  * Tensorial limiter limits the gradient directly, to avoid 
@@ -578,6 +578,6 @@ void Transport_PK::ApplyDirectionalLimiter(AmanziGeometry::Point& normal,
   gradient += a * direction;
 }
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 

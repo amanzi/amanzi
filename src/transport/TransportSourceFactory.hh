@@ -20,7 +20,7 @@
 #include "TransportDomainFunction.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 class TransportSourceFactory {
  public:
@@ -42,7 +42,7 @@ class TransportSourceFactory {
   const Teuchos::RCP<Teuchos::ParameterList> plist_;
 };
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 #endif // TRANSPORT_SOURCE_FACTORY_HH_

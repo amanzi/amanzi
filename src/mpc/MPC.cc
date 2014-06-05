@@ -163,13 +163,13 @@ void MPC::mpc_init() {
   if (flow_enabled) {
     flow_model = mpc_parameter_list.get<std::string>("Flow model", "Darcy");
     if (flow_model == "Darcy") {
-      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, S));
+      FPK = Teuchos::rcp(new Flow::Darcy_PK(parameter_list, S));
     } else if (flow_model == "Steady State Saturated") {
-      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, S));
+      FPK = Teuchos::rcp(new Flow::Darcy_PK(parameter_list, S));
     } else if (flow_model == "Richards") {
-      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, S));
+      FPK = Teuchos::rcp(new Flow::Richards_PK(parameter_list, S));
     } else if (flow_model == "Steady State Richards") {
-      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(parameter_list, S));
+      FPK = Teuchos::rcp(new Flow::Richards_PK(parameter_list, S));
     } else {
       std::cout << "MPC: unknown flow model: " << flow_model << std::endl;
       throw std::exception();
@@ -188,11 +188,11 @@ void MPC::mpc_init() {
       // When Alquimia is used, the Transport PK must interact with the 
       // chemistry engine to obtain boundary values for the components.
       // The component names are fetched from the chemistry engine.
-      TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, CS, chem_engine));
+      TPK = Teuchos::rcp(new Transport::Transport_PK(parameter_list, S, CS, chem_engine));
     }
     else {
 #endif
-      TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, component_names));
+      TPK = Teuchos::rcp(new Transport::Transport_PK(parameter_list, S, component_names));
 #ifdef ALQUIMIA_ENABLED
     }
 #endif

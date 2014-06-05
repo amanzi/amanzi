@@ -26,6 +26,6 @@ void OperatorDiffusionSurface::InitDiffusionSurface_(Teuchos::ParameterList& pli
   // factor_ = 1.0;
 }
 
-}  // namespace AmanziFlow
+}  // namespace Operators
 }  // namespace Amanzi
 

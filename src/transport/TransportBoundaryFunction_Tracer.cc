@@ -10,7 +10,7 @@
 #include "TransportBoundaryFunction_Tracer.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 /* ******************************************************************
 * Internal subroutine that defines a boundary function.
@@ -96,6 +96,6 @@ void TransportBoundaryFunction_Tracer::Finalize_()
   }
 }
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 

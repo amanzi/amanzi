@@ -53,7 +53,7 @@ the smart pointers to the original variables.
 */
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
@@ -247,7 +247,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   Transport_PK& operator=(const Transport_PK&);
 };
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 #endif

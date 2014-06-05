@@ -11,7 +11,7 @@
 #ifdef ALQUIMIA_ENABLED
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(const std::string& cond_name,
                                                                        const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
@@ -99,7 +99,7 @@ void TransportBoundaryFunction_Alquimia::Compute(double time)
   }
 }
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 #endif

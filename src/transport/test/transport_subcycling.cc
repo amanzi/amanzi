@@ -27,7 +27,7 @@ TEST(ADVANCE_WITH_SUBCYCLING) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
 std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;

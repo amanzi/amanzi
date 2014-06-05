@@ -27,7 +27,7 @@
 #endif
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 class TransportBCFactory {
  public:
@@ -75,7 +75,7 @@ class TransportBCFactory {
 #endif
 };
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 #endif

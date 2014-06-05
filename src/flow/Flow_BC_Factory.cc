@@ -20,7 +20,7 @@
 #include "FlowDefs.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Constructor
@@ -472,5 +472,5 @@ void FlowBCFactory::PopulateSubmodelFlag(
   }
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi

@@ -22,7 +22,7 @@
 #include "Dispersion.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 struct FaceStencil {
  public:
@@ -72,7 +72,7 @@ class Dispersion_NLFV : public Dispersion {
   std::vector<FaceStencil> stencil_;
 };
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 #endif

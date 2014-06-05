@@ -19,7 +19,7 @@
 #include "WaterRetentionModel.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 class WRM_fake : public WaterRetentionModel {
  public:
@@ -37,7 +37,7 @@ class WRM_fake : public WaterRetentionModel {
   double m, n, alpha;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
  
 #endif

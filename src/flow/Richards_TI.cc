@@ -20,7 +20,7 @@
 #include "Richards_PK.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
@@ -290,7 +290,7 @@ ModifyCorrectionResult Richards_PK::ModifyCorrection(
       AmanziSolvers::CORRECTION_NOT_MODIFIED;
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 

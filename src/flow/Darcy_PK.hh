@@ -23,7 +23,7 @@
 #include "TI_Specs.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 class Darcy_PK : public Flow_PK {
  public:
@@ -94,7 +94,7 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<CompositeVector> specific_yield_copy_;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

@@ -62,8 +62,8 @@ class MPC {
     
   // process kernels
   Teuchos::RCP<AmanziChemistry::Chemistry_PK_Base> CPK;
-  Teuchos::RCP<AmanziTransport::Transport_PK> TPK;
-  Teuchos::RCP<AmanziFlow::Flow_PK> FPK; 
+  Teuchos::RCP<Transport::Transport_PK> TPK;
+  Teuchos::RCP<Flow::Flow_PK> FPK; 
     
   Teuchos::ParameterList mpc_parameter_list;
     

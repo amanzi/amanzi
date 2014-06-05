@@ -32,7 +32,7 @@
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
-using namespace Amanzi::AmanziFlow;
+using namespace Amanzi::Flow;
 
 
 /* ******************************************************************

@@ -27,7 +27,7 @@ application per entity.
 #include "ChemistryEngine.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
  public:
@@ -65,7 +65,7 @@ class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
 
 };
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 #endif

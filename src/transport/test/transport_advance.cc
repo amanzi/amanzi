@@ -25,7 +25,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
   std::vector<std::string> framework_name;

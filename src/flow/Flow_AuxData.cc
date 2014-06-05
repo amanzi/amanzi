@@ -13,7 +13,7 @@
 #include "Flow_PK.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ****************************************************************
 * Calculates hydraulic head using h = z + (p - p0) / (rho * g)
@@ -61,5 +61,5 @@ void Flow_PK::UpdateAuxilliaryData()
   S_->GetFieldEvaluator("darcy_velocity")->HasFieldChanged(S_.ptr(), "darcy_velocity");
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi

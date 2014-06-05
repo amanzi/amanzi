@@ -30,7 +30,7 @@
 #include "TI_Specs.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 class Richards_PK : public Flow_PK {
  public:
@@ -150,7 +150,7 @@ class Richards_PK : public Flow_PK {
   void operator=(const Richards_PK& RPK);
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

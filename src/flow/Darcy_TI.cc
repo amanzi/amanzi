@@ -12,7 +12,7 @@
 #include "Darcy_PK.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Estimate dT increase factor by comparing the 1st and 2nd order
@@ -51,7 +51,7 @@ double Darcy_PK::ErrorEstimate_(double* dTfactor)
   return error_max;
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 

@@ -24,7 +24,7 @@
 #include "Dispersion_NLFV.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 /* ******************************************************************
 * Initialize Trilinos matrices. It must be called only once. 
@@ -282,7 +282,7 @@ int Dispersion_NLFV::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) con
 }
 
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 

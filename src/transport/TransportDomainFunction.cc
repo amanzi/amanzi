@@ -14,7 +14,7 @@ Author (v1): Neil Carlson
 #include "TransportDomainFunction.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 /* ******************************************************************
 * Calculate pairs <list of cells, function>
@@ -338,5 +338,5 @@ int TransportDomainFunction::CollectActionsList()
 }
 
 
-}  // namespace Functions
+}  // namespace Transport
 }  // namespace Amanzi

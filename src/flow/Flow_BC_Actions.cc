@@ -19,7 +19,7 @@
 #include "Flow_PK.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Process parameter for special treatment of static head b.c.                                           
@@ -246,7 +246,7 @@ void Flow_PK::set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1,
   }
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 

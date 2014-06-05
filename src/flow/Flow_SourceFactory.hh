@@ -21,7 +21,7 @@
 #include "FlowDomainFunction.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 class FlowSourceFactory {
  public:
@@ -41,7 +41,7 @@ class FlowSourceFactory {
   const Teuchos::RCP<Teuchos::ParameterList> params_;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

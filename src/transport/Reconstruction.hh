@@ -24,7 +24,7 @@
 
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 const int RECONSTRUCTION_NULL = 0;
 const int RECONSTRUCTION_INIT = 1;
@@ -78,7 +78,7 @@ class Reconstruction {
   int dim;
 };
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 #endif

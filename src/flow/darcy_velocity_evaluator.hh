@@ -19,7 +19,7 @@
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 class DarcyVelocityEvaluator : public SecondaryVariableFieldEvaluator {
  public:
@@ -41,7 +41,7 @@ class DarcyVelocityEvaluator : public SecondaryVariableFieldEvaluator {
   Key darcy_flux_key_;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

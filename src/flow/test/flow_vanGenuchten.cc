@@ -8,7 +8,7 @@
 
 
 TEST(vanGenuchten) {
-  using namespace Amanzi::AmanziFlow;
+  using namespace Amanzi::Flow;
 
   double m = 0.5;
   double l = 0.5;

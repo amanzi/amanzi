@@ -29,7 +29,7 @@ TEST(CONSTRUCTOR) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "Test: read transport XML file" << std::endl;

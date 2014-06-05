@@ -20,7 +20,7 @@
 #include "Flow_PK.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Routine processes parameter list. It needs to be called only once
@@ -155,9 +155,9 @@ void Flow_PK::ProcessSublistTimeIntegration(
       ti_specs.dTfactor = olist.get<double>("time step increase factor", 1.0);
 
       ti_specs.T0 = olist.get<double>("start time", 0.0);
-      ti_specs.T1 = olist.get<double>("end time", 100 * AmanziFlow::FLOW_YEAR);
-      ti_specs.dT0 = olist.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
-      ti_specs.dTmax = olist.get<double>("max time step", AmanziFlow::FLOW_MAXIMUM_DT);
+      ti_specs.T1 = olist.get<double>("end time", 100 * Flow::FLOW_YEAR);
+      ti_specs.dT0 = olist.get<double>("initial time step", Flow::FLOW_INITIAL_DT);
+      ti_specs.dTmax = olist.get<double>("max time step", Flow::FLOW_MAXIMUM_DT);
 
       ti_specs.residual_tol = olist.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
       ti_specs.max_itrs = olist.get<int>("maximum number of iterations", FLOW_TI_MAX_ITERATIONS);
@@ -212,13 +212,13 @@ void Flow_PK::ProcessStringTimeIntegration(const std::string name, int* method)
 {
   Errors::Message msg;
   if (name == "Picard") {
-    *method = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
+    *method = Flow::FLOW_TIME_INTEGRATION_PICARD;
   } else if (name == "backward Euler") {
-    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
+    *method = Flow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
   } else if (name == "BDF1") {
-    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
+    *method = Flow::FLOW_TIME_INTEGRATION_BDF1;
   } else if (name == "BDF2") {
-    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
+    *method = Flow::FLOW_TIME_INTEGRATION_BDF2;
   } else {
     msg << "Flow PK: time integration method \"" << name.c_str() << "\" is not known.";
     Exceptions::amanzi_throw(msg);
@@ -409,6 +409,6 @@ void Flow_PK::OutputTimeHistory(
 }
 
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 

@@ -30,7 +30,7 @@
 #include "primary_variable_field_evaluator.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Simplest possible constructor: extracts lists and requires fields.
@@ -294,6 +294,8 @@ void Darcy_PK::InitializeSteadySaturated()
 ****************************************************************** */
 void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
+  specific_yield_copy_ = Teuchos::null;
+
   if (ti_specs != NULL) OutputTimeHistory(dp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_sss_;
 
@@ -588,6 +590,6 @@ void Darcy_PK::UpdateSpecificYield_()
   }
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 

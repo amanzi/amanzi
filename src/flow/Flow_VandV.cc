@@ -15,7 +15,7 @@
 #include "Flow_PK.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ****************************************************************
 * Construct default state for unit tests. It completes
@@ -248,6 +248,6 @@ double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
 }
 
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 

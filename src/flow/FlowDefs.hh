@@ -13,7 +13,7 @@
 #define AMANZI_FLOW_CONSTANTS_HH_
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 const int FLOW_STATUS_NULL = 0;  // used for internal debuging
 const int FLOW_STATUS_INIT = 2;
@@ -117,7 +117,7 @@ const int FLOW_AMANZI_VERSION = 2;
 const int FLOW_UPWIND_UPDATE_TIMESTEP = 1;
 const int FLOW_UPWIND_UPDATE_ITERATION = 2;
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

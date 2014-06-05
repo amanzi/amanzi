@@ -16,7 +16,7 @@
 #include "Richards_PK.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Convertion p -> s.                                               
@@ -91,7 +91,7 @@ void Richards_PK::ClipHydrostaticPressure(double pmin, double s0, Epetra_MultiVe
   }
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 

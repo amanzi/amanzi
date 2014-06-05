@@ -23,7 +23,7 @@ application per entity.
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 typedef std::pair<std::string, int> Action;
 
@@ -49,7 +49,7 @@ class TransportBoundaryFunction : public Functions::UniqueMeshFunction {
   std::vector<std::vector<double> > values_;  // component values on boundary faces
 };
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 

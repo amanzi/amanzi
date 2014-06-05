@@ -18,7 +18,7 @@
 #include "Flow_SourceFactory.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Process source, step 1.
@@ -114,5 +114,5 @@ void FlowSourceFactory::ProcessStringActions(const std::string& name, int* metho
   }
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi

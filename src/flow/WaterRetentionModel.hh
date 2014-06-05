@@ -16,7 +16,7 @@
 #include <string>
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 class WaterRetentionModel {
  public:
@@ -34,7 +34,7 @@ class WaterRetentionModel {
   std::string region_;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
   
 #endif

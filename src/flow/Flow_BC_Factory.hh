@@ -104,7 +104,7 @@ The gravitational acceleration is assumed to be directed in the negative z-direc
 #include "FlowBoundaryFunction.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 class FlowBCFactory {
  public:
@@ -152,7 +152,7 @@ class FlowBCFactory {
   VerboseObject* vo_;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

@@ -36,7 +36,7 @@
 
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 /* ******************************************************************
 * We set up minimum default values and call Construct_() to complete 
@@ -861,6 +861,6 @@ void Transport_PK::InterpolateCellVector(
   v_int.Update(b, v0, a, v1, 0.);
 }
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 

@@ -16,7 +16,7 @@
 #include "darcy_velocity_evaluator.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * A simple constructor: create dependencies.
@@ -79,5 +79,5 @@ void DarcyVelocityEvaluator::EvaluateField_(
   }
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi

@@ -35,7 +35,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "TEST: convergence analysis of the donor scheme" << std::endl;
@@ -130,8 +130,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     delete gm;
   }
 
-  double L1rate = Amanzi::AmanziTransport::bestLSfit(h, L1error);
-  double L2rate = Amanzi::AmanziTransport::bestLSfit(h, L2error);
+  double L1rate = Amanzi::Transport::bestLSfit(h, L1error);
+  double L2rate = Amanzi::Transport::bestLSfit(h, L2error);
   printf("convergence rates: %5.2f %17.2f\n", L1rate, L2rate);
 
   CHECK_CLOSE(L1rate, 1.0, 0.1);
@@ -146,7 +146,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "Test: Convergence analysis, 2nd order scheme" << std::endl;
@@ -246,8 +246,8 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     L2error.push_back(L2);
   }
 
-  double L1rate = Amanzi::AmanziTransport::bestLSfit(h, L1error);
-  double L2rate = Amanzi::AmanziTransport::bestLSfit(h, L2error);
+  double L1rate = Amanzi::Transport::bestLSfit(h, L1error);
+  double L2rate = Amanzi::Transport::bestLSfit(h, L2error);
   printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
 
   CHECK_CLOSE(2.0, L1rate, 0.3);

@@ -37,7 +37,7 @@ TEST(NEWTON_RICHARD_STEADY) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::AmanziFlow;
+  using namespace Amanzi::Flow;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();

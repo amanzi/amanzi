@@ -19,7 +19,7 @@
 #include "WRM_fake.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Initialize internal data.
@@ -173,6 +173,6 @@ void RelativePermeability::PopulateMapC2MB_()
   }
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 

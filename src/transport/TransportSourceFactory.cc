@@ -17,7 +17,7 @@
 #include "TransportSourceFactory.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 /* ******************************************************************
 * Process source, step 1.
@@ -131,5 +131,5 @@ void TransportSourceFactory::ProcessStringActions(const std::string& name, int* 
   }
 }
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi

@@ -25,7 +25,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL_READ) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "Test: advance using parallel MSTK mesh with parallel file read" << std::endl;

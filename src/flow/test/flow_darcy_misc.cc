@@ -30,14 +30,14 @@
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
-using namespace Amanzi::AmanziFlow;
+using namespace Amanzi::Flow;
 
 class DarcyProblem {
  public:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 
   Teuchos::RCP<State> S;
-  AmanziFlow::Darcy_PK* DPK;
+  Flow::Darcy_PK* DPK;
   Teuchos::ParameterList dp_list;
   std::string passwd;
 

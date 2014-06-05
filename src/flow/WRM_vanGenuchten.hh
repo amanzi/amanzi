@@ -16,7 +16,7 @@
 #include "WaterRetentionModel.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 class WRM_vanGenuchten : public WaterRetentionModel {
  public:
@@ -42,7 +42,7 @@ class WRM_vanGenuchten : public WaterRetentionModel {
   double a_, b_, factor_dSdPc_;  // frequently used constant
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
  
 #endif

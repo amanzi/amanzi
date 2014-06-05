@@ -14,7 +14,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Transport_PK.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 /* ******************************************************************* 
  * Routine takes a parallel overlapping vector C and returns a parallel
@@ -125,7 +125,7 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
   }
 }
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 

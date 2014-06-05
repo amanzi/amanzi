@@ -24,7 +24,7 @@ application per entity.
 #include "TransportBoundaryFunction.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 class TransportBoundaryFunction_Tracer : public TransportBoundaryFunction {
  public:
@@ -43,7 +43,7 @@ class TransportBoundaryFunction_Tracer : public TransportBoundaryFunction {
   void Finalize_();
 };
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 

@@ -15,7 +15,7 @@
 #include "WaterRetentionModel.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 class WRM_BrooksCorey : public WaterRetentionModel {
  public:
@@ -40,7 +40,7 @@ class WRM_BrooksCorey : public WaterRetentionModel {
   double a_, b_, factor_, pc_bubble_;  // frequently used constant
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
  
 #endif

@@ -17,7 +17,7 @@ Authors:  Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "TransportDefs.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 /* ******************************************************************
 * Process Dirichet BCs.
@@ -183,5 +183,5 @@ void TransportBCFactory::ProcessGeochemicalConditionSpec(
 }
 #endif
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi

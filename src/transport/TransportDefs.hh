@@ -14,7 +14,7 @@
 
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 const int TRANSPORT_NULL = 0;
 const int TRANSPORT_FLOW_AVAILABLE = 1;
@@ -63,7 +63,7 @@ const double TRANSPORT_LIMITER_TOLERANCE = 1e-14;
 
 const int TRANSPORT_AMANZI_VERSION = 3;  
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 #endif

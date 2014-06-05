@@ -21,7 +21,7 @@
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 namespace TransportActions {
 const int DOMAIN_FUNCTION_ACTION_NONE = 0;
@@ -72,7 +72,7 @@ class TransportDomainFunction : public Functions::UniqueMeshFunction {
 };
 
 
-}  // namespace AmanziTransport
+}  // namespace Transport
 }  // namespace Amanzi
 
 #endif  // AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH_

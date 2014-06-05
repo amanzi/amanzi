@@ -37,7 +37,7 @@
 #include "Flow_SourceFactory.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 
@@ -186,7 +186,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   VerboseObject* vo_;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

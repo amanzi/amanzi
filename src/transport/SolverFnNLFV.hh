@@ -19,7 +19,7 @@
 #include "Transport_PK.hh"
 
 namespace Amanzi {
-namespace AmanziTransport {
+namespace Transport {
 
 template<class Vector>
 class SolverFnNLFV : public AmanziSolvers::SolverFnBase<Vector> {
@@ -128,7 +128,7 @@ bool SolverFnNLFV<Vector>::ModifyCorrection(
   return false;
 }
 
-}  // namespace AmanziFlow
+}  // namespace Transport
 }  // namespace Amanzi
 
 #endif

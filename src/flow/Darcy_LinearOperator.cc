@@ -18,7 +18,7 @@
 #include "LinearOperatorFactory.hh"
 
 namespace Amanzi {
-namespace AmanziFlow {
+namespace Flow {
 
 /* ******************************************************************
 * Calculates steady-state solution assuming that absolute permeability 
@@ -62,7 +62,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
   }
 }
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 
