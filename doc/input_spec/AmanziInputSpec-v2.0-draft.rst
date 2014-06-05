@@ -216,8 +216,10 @@ Some explaination of each element goes here.
 
 .. code-block:: xml
   
-  <verbosity level="low | medium | high" />
-  
+  <verbosity level="none | low | medium | high | extreme" />
+ 
+Note, for debugging purposes use level="extreme". 
+
 .. code-block:: xml
 
   <execution_control_defaults init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="stead | transient" method=" bdf1 | picard" />
@@ -236,7 +238,7 @@ Some explaination of each element goes here.
 
 .. code-block:: xml
 
-  <execution_control start="string" end="labeled_time" init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="stead | transient" method=" bdf1 | picard" />
+  <execution_control start="string" end="labeled_time" init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="stead | transient" method=" bdf1 | picard" restart="string"/>
 
 NOTE: start is REQUIRED
   
@@ -256,7 +258,9 @@ NOTE: start is REQUIRED
       
     * method=" bdf1 | picard" 
 
-SKIPPED ATTRIBUTES: max_dt, reduction_factor, increase_factor
+    * restart="string"
+
+Note, the value of the attribute ``restart`` is the name of the Amanzi checkpoint file previously created and to be used to initialize the current simulation.
 
 Numerical Controls
 ==================

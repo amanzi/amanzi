@@ -219,7 +219,9 @@ The ``execution_control`` element has the following attributes.
 
 Each ``execution_control`` is required to define a ``start`` time.  The final control period must define and ``end`` time.  It is assumed that the start time of the next control period is the end time of the previous period.  Therefore, it is not required that each ``execution_control`` element have an ``end`` time defined.
 
-The ``execution_control`` section also provides the elements ``comments`` and ``verbosity``.  Users may provide any text within the ``comment`` element to annotate this section.  ``verbosity`` takes the attribute level=`` high | medium | low``.  This triggers increasing levels of reporting from inside Amanzi
+The ``execution_control`` section also provides the elements ``comments`` and ``verbosity``.  Users may provide any text within the ``comment`` element to annotate this section.  ``verbosity`` takes the attribute level=`` extreme | high | medium | low | none``.  This triggers increasing levels of reporting from inside Amanzi.  For debugging purposes use the level extreme.
+
+Restarting a simulation is available using the ``restart`` attribute.  The value given for the ``restart`` attribute is the name of the Amanzi checkpoint file to be read in and initialized from.
 
 Here is an overall example for the ``execution_control`` element.
 
