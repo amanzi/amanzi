@@ -70,7 +70,6 @@
     <ParameterList name="Richards Problem">
       <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="1e-10"/>
-      <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
 
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="none"/>

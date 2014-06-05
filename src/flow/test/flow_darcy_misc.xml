@@ -65,7 +65,6 @@
   <ParameterList name="Flow">
     <ParameterList name="Darcy Problem">
       <Parameter name="atmospheric pressure" type="double" value="1"/>
-      <Parameter name="discretization method" type="string" value="generic mfd"/>
 
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="medium"/>

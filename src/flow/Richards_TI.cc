@@ -43,7 +43,7 @@ void Richards_PK::Functional(double Told, double Tnew,
   
   // assemble residual for diffusion operator
   op_matrix_->Init();
-  op_matrix_->UpdateMatrices(Teuchos::null, solution);
+  op_matrix_->UpdateMatrices(darcy_flux_copy, solution);
   op_matrix_->ApplyBCs();
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
@@ -107,7 +107,7 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
 
   // create diffusion operators
   op_preconditioner_->Init();
-  op_preconditioner_->UpdateMatrices(Teuchos::null, solution);
+  op_preconditioner_->UpdateMatrices(darcy_flux_copy, solution);
   op_preconditioner_->ApplyBCs();
 
   // add time derivative

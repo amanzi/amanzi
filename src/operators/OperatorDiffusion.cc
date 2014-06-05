@@ -126,7 +126,9 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
-  if (upwind_ == OPERATOR_UPWIND_WITH_FLUX) k_face = k_->ViewComponent("face", true);
+  if (upwind_ == OPERATOR_UPWIND_WITH_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) {
+    k_face = k_->ViewComponent("face", true);
+  }
 
   // update matrix blocks
   AmanziMesh::Entity_ID_List faces;
@@ -142,7 +144,10 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
     // Update terms due to nonlinear coefficient
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0); 
-    if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
+    if (upwind_ == OPERATOR_UPWIND_AMANZI) {
+      double kc = (*k_cell)[0][c];
+      for (int n = 0; n < nfaces; n++) kf[n] = kc;
+    } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
       double kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
     } else if(upwind_ == OPERATOR_UPWIND_WITH_FLUX) {
@@ -171,7 +176,7 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
 
     // Amanzi's upwind
     if (upwind_ == OPERATOR_UPWIND_AMANZI && flux != Teuchos::null) {
-      const Epetra_MultiVector& dkdp_face = *dkdp_->ViewComponent("face");
+      const Epetra_MultiVector& dkdp_face = *dkdp_->ViewComponent("face", true);
       const Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
 
       for (int n = 0; n < nfaces; n++) {
@@ -180,7 +185,10 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
         double vkf = (*k_face)[0][f];
         double alpha = (dkf / vkf) * flux_data[0][f] * dirs[n];
         if (alpha > 0) {
-          Acell(n, n) += kc * alpha;
+          Acell(n, n) += alpha;
+          Acell(n, nfaces) -= alpha;
+          Acell(nfaces, n) -= alpha;
+          Acell(nfaces, nfaces) += alpha;
         }
       }
     }

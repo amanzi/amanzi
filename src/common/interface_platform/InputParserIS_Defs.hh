@@ -1,5 +1,5 @@
-#ifndef INPUTPARSERISDEFAULTS__ 
-#define INPUTPARSERISDEFAULTS__
+#ifndef INPUT_PARSERIS_DEFS_HH__ 
+#define INPUT_PARSERIS_DEFS_HH__
 
 // define defaults that are used in the input parser here
 

@@ -255,6 +255,8 @@ void Richards_PK::InitPK()
   std::string name = rp_list_.get<std::string>("relative permeability");
   if (name == "upwind with Darcy flux" || name == "upwind with gravity") {
     oplist.sublist("diffusion operator").set<std::string>("upwind", "with flux");
+  } else if (name == "upwind amanzi") {
+    oplist.sublist("diffusion operator").set<std::string>("upwind", "amanzi");
   }
 
   Operators::OperatorDiffusionFactory opfactory;

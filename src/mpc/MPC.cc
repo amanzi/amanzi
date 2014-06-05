@@ -25,7 +25,7 @@
 
 // make sure that we use default parameters
 // that are consistent with the input translator
-#include "InputParserIS-defaults.hh"
+#include "InputParserIS_Defs.hh"
 
 #include "TimerManager.hh"
 

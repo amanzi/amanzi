@@ -35,7 +35,9 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
     Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
     Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
     if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
-    if (upwind_ == OPERATOR_UPWIND_WITH_FLUX) k_face = k_->ViewComponent("face", true);
+    if (upwind_ == OPERATOR_UPWIND_WITH_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) {
+      k_face = k_->ViewComponent("face", true);
+    }
 
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
@@ -51,7 +53,9 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
       // Update terms due to nonlinear coefficient
       double kc(1.0);
       std::vector<double> kf(nfaces, 1.0);
-      if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
+      if (upwind_ == OPERATOR_UPWIND_AMANZI) {
+        for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+      } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
         double kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = kc;
       } else if(upwind_ == OPERATOR_UPWIND_WITH_FLUX) {
@@ -87,7 +91,9 @@ void OperatorDiffusionWithGravity::UpdateFlux(
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
-  if (upwind_ == OPERATOR_UPWIND_WITH_FLUX) k_face = k_->ViewComponent("face", true);
+  if (upwind_ == OPERATOR_UPWIND_WITH_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) {
+    k_face = k_->ViewComponent("face", true);
+  }
 
   // Add gravity part to the flux.
   Epetra_MultiVector& flux_data = *flux.ViewComponent("face", true);
@@ -105,7 +111,9 @@ void OperatorDiffusionWithGravity::UpdateFlux(
     // Update terms due to nonlinear coefficient
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0);
-    if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
+    if (upwind_ == OPERATOR_UPWIND_AMANZI) {
+      for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+    } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
       double kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
     } else if(upwind_ == OPERATOR_UPWIND_WITH_FLUX) {

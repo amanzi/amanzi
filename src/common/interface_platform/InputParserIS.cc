@@ -1,5 +1,5 @@
 #include "InputParserIS.hh"
-#include "InputParserIS-defaults.hh"
+#include "InputParserIS_Defs.hh"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <sstream>
@@ -67,19 +67,19 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
                             plist->get<std::string>("input file name", "unit_test.xml"));
 
   // checkpoint list is optional
-  tmp_list = create_Checkpoint_Data_List(plist);
+  tmp_list = CreateCheckpoint_Data_List(plist);
   if (tmp_list.begin() != tmp_list.end()) {
     new_list.sublist("Checkpoint Data") = tmp_list;
   }
 
   // walkabout list is optional
-  tmp_list = create_Walkabout_Data_List(plist);
+  tmp_list = CreateWalkabout_Data_List(plist);
   if (tmp_list.begin() != tmp_list.end()) {
     new_list.sublist("Walkabout Data") = tmp_list;
   }
 
   // visualization list is optional
-  tmp_list = create_Visualization_Data_List(plist);
+  tmp_list = CreateVisualization_Data_List(plist);
   if (tmp_list.begin() != tmp_list.end()) {
     new_list.sublist("Visualization Data") = tmp_list;
   }
@@ -87,19 +87,19 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   if (plist->sublist("Output").isSublist("Observation Data")) {
     Teuchos::ParameterList& od_list = plist->sublist("Output").sublist("Observation Data");
     if (od_list.begin() != od_list.end()) {
-      new_list.sublist("Observation Data") = create_Observation_Data_List(plist);
+      new_list.sublist("Observation Data") = CreateObservation_Data_List(plist);
     }
   }
 
   new_list.sublist("Regions") = get_Regions_List(plist);
   new_list.sublist("Mesh") = translate_Mesh_List(plist);
   new_list.sublist("Domain") = get_Domain_List(plist);
-  new_list.sublist("MPC") = create_MPC_List(plist);
-  new_list.sublist("Transport") = create_Transport_List(plist);
-  new_list.sublist("State") = create_State_List(plist);
-  new_list.sublist("Flow") = create_Flow_List(plist);
-  new_list.sublist("Preconditioners") = create_Preconditioners_List(plist);
-  new_list.sublist("Solvers") = create_Solvers_List(plist);
+  new_list.sublist("MPC") = CreateMPC_List(plist);
+  new_list.sublist("Transport") = CreateTransport_List(plist);
+  new_list.sublist("State") = CreateState_List(plist);
+  new_list.sublist("Flow") = CreateFlow_List(plist);
+  new_list.sublist("Preconditioners") = CreatePreconditioners_List(plist);
+  new_list.sublist("Solvers") = CreateSolvers_List(plist);
 
   if (new_list.sublist("MPC").get<std::string>("Chemistry Model") != "Off") {
     new_list.sublist("Chemistry") = CreateChemistryList(plist);
@@ -375,7 +375,7 @@ void init_global_info(Teuchos::ParameterList* plist) {
 /* ******************************************************************
  * Empty
  ****************************************************************** */
-Teuchos::ParameterList create_Checkpoint_Data_List(Teuchos::ParameterList* plist) {
+Teuchos::ParameterList CreateCheckpoint_Data_List(Teuchos::ParameterList* plist) {
 
   Teuchos::ParameterList restart_list;
 
@@ -404,7 +404,7 @@ Teuchos::ParameterList create_Checkpoint_Data_List(Teuchos::ParameterList* plist
 /* ******************************************************************
  * Empty
  ****************************************************************** */
-Teuchos::ParameterList create_Walkabout_Data_List(Teuchos::ParameterList* plist) {
+Teuchos::ParameterList CreateWalkabout_Data_List(Teuchos::ParameterList* plist) {
 
   Teuchos::ParameterList walkabout_list;
 
@@ -434,7 +434,7 @@ Teuchos::ParameterList create_Walkabout_Data_List(Teuchos::ParameterList* plist)
 /* ******************************************************************
  * Populate visualization list.
  ****************************************************************** */
-Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* plist) {
+Teuchos::ParameterList CreateVisualization_Data_List(Teuchos::ParameterList* plist) {
 
   Teuchos::ParameterList  vis_list;
   Teuchos::Array<double>  visualizationPoints;
@@ -553,7 +553,7 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
 /* ******************************************************************
  * Empty
  ****************************************************************** */
-Teuchos::ParameterList create_Observation_Data_List(Teuchos::ParameterList* plist) {
+Teuchos::ParameterList CreateObservation_Data_List(Teuchos::ParameterList* plist) {
   using namespace boost;
   using boost::bind;
 
@@ -797,7 +797,7 @@ Teuchos::ParameterList get_Domain_List(Teuchos::ParameterList* plist) {
 /* ******************************************************************
  * Empty
  ****************************************************************** */
-Teuchos::ParameterList create_TimePeriodControl_List(Teuchos::ParameterList* plist) {
+Teuchos::ParameterList CreateTimePeriodControl_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList tpc_list;
 
   Teuchos::Array<double> start_times;
@@ -954,7 +954,7 @@ Teuchos::ParameterList create_TimePeriodControl_List(Teuchos::ParameterList* pli
 /* ******************************************************************
  * Empty
  ****************************************************************** */
-Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
+Teuchos::ParameterList CreateMPC_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList mpc_list;
 
   bool transport_on(false), chemistry_on(false), flow_on(false);
@@ -965,7 +965,7 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
     mpc_list.sublist("Time Integration Mode") = exe_sublist.sublist("Time Integration Mode");
 
     //if (exe_sublist.isSublist("Time Period Control")) {
-    mpc_list.sublist("Time Period Control") = create_TimePeriodControl_List(plist);
+    mpc_list.sublist("Time Period Control") = CreateTimePeriodControl_List(plist);
     //}
 
     // now interpret the modes
@@ -1093,7 +1093,7 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
     }
   }
 
-  mpc_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+  mpc_list.sublist("VerboseObject") = CreateVerbosity_List(verbosity_level);
 
   return mpc_list;
 }
@@ -1102,7 +1102,7 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
 /* ******************************************************************
  * Populate Transport parameters.
  ****************************************************************** */
-Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
+Teuchos::ParameterList CreateTransport_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList trp_list;
 
   if ( plist->isSublist("Execution Control") ) {
@@ -1125,7 +1125,7 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
         // transport is on, set some defaults
         trp_list.set<int>("spatial discretization order", 1);
         trp_list.set<int>("temporal discretization order", 1);
-        trp_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+        trp_list.sublist("VerboseObject") = CreateVerbosity_List(verbosity_level);
         trp_list.set<std::string>("enable internal tests", "no");
         trp_list.set<double>("CFL", CFL);
         trp_list.set<std::string>("flow mode", "transient");
@@ -1188,7 +1188,7 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
         }
 
         // now generate the source lists
-        Teuchos::ParameterList src_list = create_TransportSrc_List(plist);
+        Teuchos::ParameterList src_list = CreateTransportSrc_List(plist);
         if (src_list.begin() != src_list.end()) { // the source lists are not empty
           trp_list.sublist("source terms") = src_list;
         }
@@ -1298,11 +1298,11 @@ Teuchos::Array<std::string> translate_forms(Teuchos::Array<std::string> & forms)
 /* ******************************************************************
  * Collects default preconditioners
  ****************************************************************** */
-Teuchos::ParameterList create_Preconditioners_List(Teuchos::ParameterList* plist) {
+Teuchos::ParameterList CreatePreconditioners_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList prec_list;
-  prec_list.sublist("Trilinos ML") = create_DPC_List(plist);
-  prec_list.sublist("Hypre AMG") = create_HypreAMG_List(plist);
-  prec_list.sublist("Block ILU") = create_BILU_List(plist);
+  prec_list.sublist("Trilinos ML") = CreateDPC_List(plist);
+  prec_list.sublist("Hypre AMG") = CreateHypreAMG_List(plist);
+  prec_list.sublist("Block ILU") = CreateBILU_List(plist);
   return prec_list;
 }
 
@@ -1310,7 +1310,7 @@ Teuchos::ParameterList create_Preconditioners_List(Teuchos::ParameterList* plist
 /* ******************************************************************
  * Collects linear solvers
  ****************************************************************** */
-Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
+Teuchos::ParameterList CreateSolvers_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList solver_list;
   Teuchos::ParameterList& aztecoo_list = solver_list.sublist("AztecOO");
   Teuchos::ParameterList& pcg_list = solver_list.sublist("PCG with Hypre AMG");
@@ -1346,7 +1346,7 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
     Teuchos::ParameterList& method_list = aztecoo_list.sublist(method);
     method_list.set<double>("error tolerance", tol);
     method_list.set<int>("maximum number of iterations", maxiter);
-    method_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+    method_list.sublist("VerboseObject") = CreateVerbosity_List(verbosity_level);
   }
 
   // add default PCG solver
@@ -1356,7 +1356,7 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
     Teuchos::ParameterList& method_list = pcg_list.sublist("pcg parameters");
     method_list.set<double>("error tolerance", tol);
     method_list.set<int>("maximum number of iterations", maxiter);
-    method_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+    method_list.sublist("VerboseObject") = CreateVerbosity_List(verbosity_level);
   }
 
   return solver_list;
@@ -1366,7 +1366,7 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
 /* ******************************************************************
  * Empty
  ****************************************************************** */
-Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
+Teuchos::ParameterList CreateFlow_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList flw_list;
 
 
@@ -1415,9 +1415,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 
         if (flow_model == "Single Phase") {
           Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem");
-          darcy_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+          darcy_problem.sublist("VerboseObject") = CreateVerbosity_List(verbosity_level);
           darcy_problem.set<double>("atmospheric pressure", atm_pres);
-          darcy_problem.set<std::string>("discretization method", disc_method);
 
           flow_list = &darcy_problem; // we use this below to insert sublists that are shared by Richards and Darcy
         } else if (flow_model == "Richards") {
@@ -1425,31 +1424,30 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           richards_problem.set<std::string>("relative permeability", rel_perm);
           richards_problem.set<std::string>("upwind update", update_upwind);
           // this one should come from the input file...
-          richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+          richards_problem.sublist("VerboseObject") = CreateVerbosity_List(verbosity_level);
           richards_problem.set<double>("atmospheric pressure", atm_pres);
-          richards_problem.set<std::string>("discretization method", disc_method);
 
           // see if we need to generate a Picard list
           flow_list = &richards_problem; // we use this below to insert sublists that are shared by Richards and Darcy
 
           // insert the water retention models sublist (these are only relevant for Richards)
           Teuchos::ParameterList &water_retention_models = richards_problem.sublist("Water retention models");
-          water_retention_models = create_WRM_List(plist);
+          water_retention_models = CreateWRM_List(plist);
         }
 
         // insert operator sublist
         Teuchos::ParameterList op_list;
-        op_list = CreateFlowOperatorList();
+        op_list = CreateFlowOperatorList(disc_method);
         flow_list->sublist("operators") = op_list;
 
         // insert the flow BC sublist
         Teuchos::ParameterList flow_bc; // = flow_list->sublist("boundary conditions");
-        flow_bc = create_SS_FlowBC_List(plist);
+        flow_bc = CreateSS_FlowBC_List(plist);
         flow_list->sublist("boundary conditions") = flow_bc;
 
         // insert sources, if they exist
         Teuchos::ParameterList flow_src; // = flow_list->sublist("source terms");
-        flow_src = create_FlowSrc_List(plist);
+        flow_src = CreateFlowSrc_List(plist);
         if (flow_src.begin() != flow_src.end()) {
           flow_list->sublist("source terms") = flow_src;
         }
@@ -1763,7 +1761,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
           }
 
 
-          transient_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+          transient_time_integrator.sublist("VerboseObject") = CreateVerbosity_List(verbosity_level);
         }
       }
     }
@@ -1773,7 +1771,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 }
 
 
-Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
+Teuchos::ParameterList CreateFlowSrc_List(Teuchos::ParameterList* plist)
 {
   Teuchos::ParameterList src_list;
 
@@ -1848,7 +1846,7 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
 
 
 
-Teuchos::ParameterList create_TransportSrc_List(Teuchos::ParameterList* plist)
+Teuchos::ParameterList CreateTransportSrc_List(Teuchos::ParameterList* plist)
 {
   Teuchos::ParameterList src_list;
 
@@ -1943,7 +1941,7 @@ Teuchos::ParameterList create_TransportSrc_List(Teuchos::ParameterList* plist)
 /* ******************************************************************
  * WRM sublist
  ****************************************************************** */
-Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
+Teuchos::ParameterList CreateWRM_List(Teuchos::ParameterList* plist)
 {
   Teuchos::ParameterList wrm_list;
 
@@ -2055,7 +2053,7 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
 /* ******************************************************************
  * ML preconditioner sublist
  ****************************************************************** */
-Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
+Teuchos::ParameterList CreateDPC_List(Teuchos::ParameterList* plist)
 {
   Teuchos::ParameterList dpc_list;
 
@@ -2126,7 +2124,7 @@ Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
 /* ******************************************************************
  * Block ILU preconditioner sublist
  ****************************************************************** */
-Teuchos::ParameterList create_BILU_List(Teuchos::ParameterList* plist)
+Teuchos::ParameterList CreateBILU_List(Teuchos::ParameterList* plist)
 {
   Teuchos::ParameterList bilu_list;
 
@@ -2194,7 +2192,7 @@ Teuchos::ParameterList create_BILU_List(Teuchos::ParameterList* plist)
 /* ******************************************************************
  * HypreBoomerAMG preconditioner sublist
  ****************************************************************** */
-Teuchos::ParameterList create_HypreAMG_List(Teuchos::ParameterList* plist)
+Teuchos::ParameterList CreateHypreAMG_List(Teuchos::ParameterList* plist)
 {
   Teuchos::ParameterList dpc_list;
 
@@ -2259,7 +2257,7 @@ Teuchos::ParameterList create_HypreAMG_List(Teuchos::ParameterList* plist)
 /* ******************************************************************
  * DPC sublist
  ****************************************************************** */
-Teuchos::ParameterList create_SS_FlowBC_List(Teuchos::ParameterList* plist) {
+Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList ssf_list;
 
   Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
@@ -2489,7 +2487,7 @@ Teuchos::ParameterList create_SS_FlowBC_List(Teuchos::ParameterList* plist) {
 
 
 
-Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
+Teuchos::ParameterList CreateState_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList stt_list;
 
   // first we write initial conditions for scalars and vectors, not region-specific
@@ -2921,7 +2919,7 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 /* ******************************************************************
  * Empty
  ****************************************************************** */
-Teuchos::ParameterList create_Verbosity_List(const std::string& vlevel) {
+Teuchos::ParameterList CreateVerbosity_List(const std::string& vlevel) {
   Teuchos::ParameterList vlist;
 
   if (vlevel == "low") {
@@ -3260,11 +3258,11 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 /* ******************************************************************
 * Flow operators sublist
 ****************************************************************** */
-Teuchos::ParameterList CreateFlowOperatorList() {
+Teuchos::ParameterList CreateFlowOperatorList(const std::string& disc_method) {
   Teuchos::ParameterList op_list;
   Teuchos::ParameterList& tmp_list = op_list.sublist("diffusion operator");
 
-  tmp_list.set<std::string>("discretization primary", "optimized mfd scaled");
+  tmp_list.set<std::string>("discretization primary", disc_method);
   tmp_list.set<std::string>("discretization secondary", "optimized mfd scaled");
 
   Teuchos::Array<std::string> stensil(2);

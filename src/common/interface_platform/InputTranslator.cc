@@ -1,6 +1,6 @@
 #include "InputTranslator.hh"
 #include "InputParserIS.hh"
-#include "InputParserIS-defaults.hh"
+#include "InputParserIS_Defs.hh"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <sstream>

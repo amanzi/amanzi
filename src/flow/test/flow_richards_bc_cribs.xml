@@ -19,7 +19,6 @@
     <ParameterList name="Richards Problem">
       <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="101325"/>
-      <Parameter name="discretization method" type="string" value="two point flux approximation"/>
       <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
       <ParameterList name="VerboseObject">
