@@ -852,6 +852,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               } else if (strcmp(textContent2,"constant")==0) {
 		  // EIB - also need to set integration mode = transient with static flow
                   list.set<std::string>("Flow Model","Single Phase");
+		  staticflowON = true;
               } else { 
                   msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing process_kernels->flow - " ;
                   msg << "model was missing or ill-formed. \n  Please correct and try again \n" ;
@@ -3002,6 +3003,43 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
 		    } else {
 		      iclist.sublist("IC: Linear Saturation") = pressureList;
 		    }
+		}
+		else if (strcmp(pressName,"velocity")==0 ) {
+		    Teuchos::Array<double> vel_vector;
+	            attrMap = pressure->getAttributes();
+		    // get velocity vector
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("x"));
+		    if (nodeAttr) {
+                      attrValue = XMLString::transcode(nodeAttr->getNodeValue());
+		      vel_vector.append(get_double_constant(attrValue, def_list));
+	              XMLString::release(&attrValue);
+		    }
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("y"));
+		    if (nodeAttr) {
+                      attrValue = XMLString::transcode(nodeAttr->getNodeValue());
+		      vel_vector.append(get_double_constant(attrValue, def_list));
+	              XMLString::release(&attrValue);
+		    }
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("z"));
+		    if (nodeAttr) {
+                      attrValue = XMLString::transcode(nodeAttr->getNodeValue());
+		      vel_vector.append(get_double_constant(attrValue, def_list));
+	              XMLString::release(&attrValue);
+		    }
+		    // check that vector dimension == problem dimension
+		    if (vel_vector.length() != dimension_) {
+		      Errors::Message msg;
+		      msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing initial_conditions - " ;
+		      msg << "velocity vectory size does not match the spatial dimension of the problem. \n" ;
+		      msg << "  Please correct and try again \n" ;
+		      Exceptions::amanzi_throw(msg);
+		    }
+		    // set up new element
+		    // TODO:: EIB - does function="uniform | linear" translate to IC: Uniform Velocity and IC: Linear Velocity???
+		    //              Linear Velocity does not exist => need error message as such
+		    pressureList.set<Teuchos::Array<double> >("Velocity Vector",vel_vector);
+		    iclist.sublist("IC: Uniform Velocity") = pressureList;
+
 		}
 	      }
 			      
