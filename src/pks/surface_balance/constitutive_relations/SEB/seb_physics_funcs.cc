@@ -20,21 +20,21 @@ void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug) {
   // Calculate incoming short-wave radiation
   eb.fQswIn = (1 - seb.in.surf.albedo) * seb.in.met.QswIn;
 
-  // Calculate incoming long-wave radiation
-  const ThermoProperties& vp_air = seb.in.met.vp_air;
-  double e_air = std::pow(10*vp_air.actual_vaporpressure, vp_air.temp / 2016.);
-  e_air = 1.08 * (1 - std::exp(-e_air));
-  eb.fQlwIn = e_air * seb.params.stephB * std::pow(vp_air.temp,4);
+//  // Calculate incoming long-wave radiation
+//  const ThermoProperties& vp_air = seb.in.met.vp_air;
+//  double e_air = std::pow(10*vp_air.actual_vaporpressure, vp_air.temp / 2016.);
+//  e_air = 1.08 * (1 - std::exp(-e_air));
+  eb.fQlwIn = seb.in.met.QlwIn;
 
   // Calculate D_h, D_e, 
   eb.Dhe = std::pow(seb.params.VKc,2) * seb.in.met.Us
                        / std::pow(std::log(seb.params.Zr / seb.in.surf.Zo), 2);
-
   if (debug) {
     std::cout << "Incoming Radiation Energy Terms:" << "\n"
               << "  windspeed, Zo: " << seb.in.met.Us <<"  "<<seb.in.surf.Zo << "\n"
               << "  fQswIn   = " << eb.fQswIn << "\n"
-              << "  fQlwIn   = " << eb.fQlwIn << std::endl;
+              << "  fQlwIn   = " << eb.fQlwIn << "\n"
+              << "  wind Ref Ht [m] = " << seb.params.Zr << std::endl;
   }
 
 }
