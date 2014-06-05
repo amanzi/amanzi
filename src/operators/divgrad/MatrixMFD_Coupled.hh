@@ -109,6 +109,8 @@ class MatrixMFD_Coupled : public TreeMatrix {
     ApplyInverse(X, *Y); }
 
   virtual void ComputeSchurComplement(bool dump=false);
+  virtual void AssembleGlobalMatrices(); // NOTE that Apply() and UpdateConsistentFaceCorrection() can be done without assembly of Aff!
+
   virtual void SymbolicAssembleGlobalMatrices();
   virtual void InitPreconditioner();
   virtual void UpdatePreconditioner();
@@ -139,6 +141,7 @@ class MatrixMFD_Coupled : public TreeMatrix {
   Teuchos::RCP<Epetra_VbrMatrix> A2f2c_;
   Teuchos::RCP<Epetra_VbrMatrix> A2c2f_;
   Teuchos::RCP<Epetra_FEVbrMatrix> P2f2f_;
+  Teuchos::RCP<Epetra_FEVbrMatrix> A2f2f_;
 
   // maps
   Teuchos::RCP<const Epetra_BlockMap> double_fmap_;
@@ -146,7 +149,9 @@ class MatrixMFD_Coupled : public TreeMatrix {
   Teuchos::RCP<const Epetra_BlockMap> double_fmap_wghost_;
 
   // flags
+  bool is_schur_constructed_;
   bool is_matrix_constructed_;
+  bool assemble_matrix_;
   bool decoupled_;
   bool dump_schur_;
 

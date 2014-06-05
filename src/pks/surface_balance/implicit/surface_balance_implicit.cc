@@ -26,7 +26,9 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
            Teuchos::ParameterList& FElist,
            const Teuchos::RCP<TreeVector>& solution) :
     PKPhysicalBDFBase(plist, FElist, solution),
-    PKDefaultBase(plist, FElist, solution) {
+    PKDefaultBase(plist, FElist, solution),
+    modify_predictor_advance_(false)
+{
   // set up additional primary variables -- this is very hacky...
   // -- surface energy source
   Teuchos::ParameterList& esource_sublist =
@@ -63,7 +65,7 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
   implicit_snow_ = plist_->get<bool>("implicit snow precipitation", false);
 
   // Reading in Longwave Radation
-  LongwaveInput_ = plist_->get<bool>("Longwave Input", false);
+  longwave_input_ = plist_->get<bool>("Longwave Input", false);
 
   // transition snow depth
   snow_ground_trans_ = plist_->get<double>("snow-ground transitional depth", 0.02);
@@ -72,6 +74,10 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
     Errors::Message message("Invalid parameters: snow-ground transitional depth or minimum snow transitional depth.");
     Exceptions::amanzi_throw(message);
   }
+
+  // modify predictor by calling advance -- this is cheap and sets up BCs
+  // correctly for subsurface's call to ModifyPredictorConsistentFaces()
+  modify_predictor_advance_ = plist_->get<bool>("modify predictor by advancing", false);
 }
 
 // main methods
@@ -139,7 +145,7 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("incoming_shortwave_radiation")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  if (LongwaveInput_) {
+  if (longwave_input_) {
      S->RequireFieldEvaluator("incoming_longwave_radiation");
      S->RequireField("incoming_longwave_radiation")->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -209,15 +215,23 @@ void
 SurfaceBalanceImplicit::initialize(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::initialize(S);
 
-  // initialize snow density
-  S->GetFieldData("snow_density",name_)->PutScalar(100.);
+  SEBPhysics::SEB seb;
+
+  // initialize snow density to fresh powder
+  S->GetFieldData("snow_density",name_)->PutScalar(seb.params.density_freshsnow);
   S->GetField("snow_density", name_)->set_initialized();
 
-  // initialize days of no snow
+  // initialize snow age to 0.
   S->GetFieldData("snow_age",name_)->PutScalar(0.);
   S->GetField("snow_age", name_)->set_initialized();
 
-  S->GetFieldData("stored_SWE",name_)->PutScalar(0.);
+  // initialize swe consistently with snow height and density
+  Epetra_MultiVector& swe = *S->GetFieldData("stored_SWE",name_)->ViewComponent("cell",false);
+  const Epetra_MultiVector& snow_ht = *S->GetFieldData(key_)->ViewComponent("cell",false);
+  const Epetra_MultiVector& snow_dens = *S->GetFieldData("snow_density")->ViewComponent("cell",false);
+  for (int c=0; c!=swe.MyLength(); ++c) {
+    swe[0][c] = snow_ht[0][c] * snow_dens[0][c] / seb.in.vp_ground.density_w;
+  }
   S->GetField("stored_SWE", name_)->set_initialized();
 
   // initialize snow temp
@@ -326,7 +340,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       *S_next_->GetFieldData("incoming_shortwave_radiation")->ViewComponent("cell", false);
 
  Teuchos::RCP<const Epetra_MultiVector> incoming_longwave = Teuchos::null;
-  if (LongwaveInput_) {
+  if (longwave_input_) {
   S_next_->GetFieldEvaluator("incoming_longwave_radiation")->HasFieldChanged(S_next_.ptr(), name_);
        incoming_longwave =
       S_next_->GetFieldData("incoming_longwave_radiation")->ViewComponent("cell", false);
@@ -422,7 +436,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       seb.in.met.vp_air.temp = air_temp[0][c];
       seb.in.met.vp_air.relative_humidity = relative_humidity[0][c];
      
-     if (LongwaveInput_) {
+     if (longwave_input_) {
           seb.in.met.QlwIn = (*incoming_longwave)[0][c];
       }else{     
           seb.in.met.vp_air.UpdateVaporPressure();
@@ -522,7 +536,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       seb.in.met.vp_air.temp = air_temp[0][c];
       seb.in.met.vp_air.relative_humidity = relative_humidity[0][c];
 
-     if (LongwaveInput_) {
+     if (longwave_input_) {
           seb.in.met.QlwIn = (*incoming_longwave)[0][c];
       }else{
           seb.in.met.vp_air.UpdateVaporPressure();
@@ -711,6 +725,13 @@ SurfaceBalanceImplicit::ModifyPredictor(double h, Teuchos::RCP<const TreeVector>
   for (unsigned int c=0; c!=ncells; ++c) {
     u_vec[0][c] = std::max(0., u_vec[0][c]);
   }
+
+  if (modify_predictor_advance_) {
+    Teuchos::RCP<TreeVector> res = Teuchos::rcp(new TreeVector(*u));
+    Teuchos::RCP<TreeVector> u0_nc = Teuchos::rcp_const_cast<TreeVector>(u0);
+    Functional(S_next_->time()-h, S_next_->time(), u0_nc, u, res);
+  }
+
   return true;
 }
 

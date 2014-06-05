@@ -10,10 +10,7 @@ namespace Operators {
 MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     MatrixMFD_Coupled(plist,mesh)
-{
-  // dump
-  dump_schur_ = plist_.get<bool>("dump Schur complement", false);
-}
+{}
 
 MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(const MatrixMFD_Coupled_Surf& other) :
     MatrixMFD_Coupled(other),
@@ -95,9 +92,132 @@ void MatrixMFD_Coupled_Surf::SymbolicAssembleGlobalMatrices() {
   A2f2c_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, *cf_graph)); // stored in transpose
   A2c2f_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, *cf_graph));
   P2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, *ff_graph, false));
+
+  P2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, *ff_graph, false));
   ierr = P2f2f_->GlobalAssemble();
+
+  if (assemble_matrix_) {
+    A2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, *ff_graph, false));
+    ierr = A2f2f_->GlobalAssemble();
+  }
   ASSERT(!ierr);
 }
+
+
+void MatrixMFD_Coupled_Surf::AssembleGlobalMatrices() {
+  // Assemble Aff, without Surf
+  if (!assemble_matrix_) return;
+  MatrixMFD_Coupled::AssembleGlobalMatrices();
+
+  // Add in surf terms
+  // Add the TPFA on the surface parts from surface_A.
+  const Epetra_Map& surf_cmap_wghost = surface_mesh_->cell_map(true);
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+
+  // Grab the surface operators' TPFA cell-cell matrices
+  const Epetra_FECrsMatrix& App = *surface_A_->TPFA();
+  const Epetra_FECrsMatrix& Bpp = *surface_B_->TPFA();
+
+  int entriesA = 0;
+  int entriesB = 0;
+
+  double *valuesA, *valuesB;
+  valuesA = new double[9];
+  valuesB = new double[9];
+
+  int *indicesA, *indicesB;
+  indicesA = new int[9];
+  indicesB = new int[9];
+
+  int subsurf_entries = 0;
+  int *gsubsurfindices;
+  gsubsurfindices = new int[9];
+  double *gsubsurfvalues;
+  gsubsurfvalues = new double[9];  
+
+  Epetra_SerialDenseMatrix block(2,2);
+
+  int ierr(0);
+
+  // Now, add in the contributions from App
+  // Loop over surface cells (subsurface faces)
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
+    // Access the row from the surfaces
+    AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
+
+    ierr = App.ExtractGlobalRowCopy(sc_global, 9, entriesA, valuesA, indicesA);
+    ASSERT(!ierr);
+    ierr = Bpp.ExtractGlobalRowCopy(sc_global, 9, entriesB, valuesB, indicesB);
+    ASSERT(!ierr);
+
+    // ensure consistency of the sparsity structure, this can likely be
+    // removed eventually.
+    ASSERT(entriesA == entriesB);
+    for (int m=0; m!=entriesA; ++m) {
+      ASSERT(indicesA[m] == indicesB[m]);
+    }
+
+    // Convert local cell numbers to domain's local face numbers
+    AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
+    AmanziMesh::Entity_ID frow_global = fmap_wghost.GID(frow);
+    int diag = -1;
+    for (int m=0; m!=entriesA; ++m) {
+      indicesA[m] = surf_cmap_wghost.LID(indicesA[m]);
+      if (sc == indicesA[m]) diag = m; // save the diagonal index
+      indicesA[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,indicesA[m]);
+      indicesA[m] = fmap_wghost.GID(indicesA[m]);
+    }
+
+    /*
+    if (sc == 65) {
+      std::cout << "MatrixMFD_Coupled_Surf sc(65), surf terms:\n"
+		<< "     scaling=" << scaling_ << "\n"
+		<< "  App_surf[65,65] = " << valuesA[diag] << "\n"
+		<< "  Bpp_surf[65,65] = " << valuesB[diag] << "\n"
+		<< "  Ccc_surf[65,65] = " << (*Ccc_surf_)[0][sc]*scaling_ << "\n"
+		<< "  Dcc_surf[65,65] = " << (*Dcc_surf_)[0][sc]*scaling_ << std::endl;
+    }
+    */
+
+    // Add the entries
+    ierr = A2f2f_->BeginSumIntoGlobalValues(frow_global, entriesA, indicesA);
+    ASSERT(!ierr);
+
+
+    for (int m=0; m!=entriesA; ++m) {
+      block(0,0) = valuesA[m];
+      //      block(0,0) = std::max(valuesA[m], 1.e-10);
+      block(1,1) = valuesB[m];
+
+      if (frow_global == indicesA[m]) {
+        block(0,1) = (*Ccc_surf_)[0][sc] * scaling_;
+        block(1,0) = (*Dcc_surf_)[0][sc] * scaling_;
+      } else {
+        block(0,1) = 0.;
+        block(1,0) = 0.;
+      }
+
+      ierr = A2f2f_->SubmitBlockEntry(block.A(), block.LDA(), block.M(), block.N());
+      ASSERT(!ierr);
+    }
+
+    ierr = A2f2f_->EndSubmitEntries();
+    ASSERT(!ierr);
+  }
+
+  ierr = A2f2f_->GlobalAssemble();
+  ASSERT(!ierr);
+
+  delete[] indicesA;
+  delete[] indicesB;
+  delete[] valuesA;
+  delete[] valuesB;
+  delete[] gsubsurfindices;
+  delete[] gsubsurfvalues;
+  
+}
+
 
 void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
   // Base ComputeSchurComplement() gets the standard face parts
@@ -304,8 +424,76 @@ MatrixMFD_Coupled_Surf::Apply(const TreeVector& X,
 
 void MatrixMFD_Coupled_Surf::UpdateConsistentFaceCorrection(const TreeVector& u,
         const Teuchos::Ptr<TreeVector>& Pu) {
-  std::cout << "WARNING: This is not correctly implemented for MatrixMFD_Coupled_Surf!" << std::endl;
-  MatrixMFD_Coupled::UpdateConsistentFaceCorrection(u,Pu);
+  ASSERT(assemble_matrix_);
+
+  // Aff solutions
+  if (Aff_solver_ == Teuchos::null) {
+    if (plist_.isSublist("consistent face solver")) {
+      Teuchos::ParameterList Aff_plist = plist_.sublist("consistent face solver");
+      Aff_op_ = Teuchos::rcp(new EpetraMatrixDefault<Epetra_FEVbrMatrix>(Aff_plist));
+      Aff_op_->Update(A2f2f_);
+
+      if (Aff_plist.isParameter("iterative method")) {
+        AmanziSolvers::LinearOperatorFactory<EpetraMatrix,Epetra_Vector,Epetra_BlockMap> op_fac;
+        Aff_solver_ = op_fac.Create(Aff_plist, Aff_op_);
+      } else {
+        Aff_solver_ = Aff_op_;
+      }
+    } else {
+      Errors::Message msg("MatrixMFD::UpdateConsistentFaceConstraints was called, but no consistent face solver sublist was provided.");
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+
+
+  // pull cell data
+  Teuchos::RCP<CompositeVector> PuA = Pu->SubVector(0)->Data();
+  Teuchos::RCP<CompositeVector> PuB = Pu->SubVector(1)->Data();
+  const Epetra_MultiVector& PuA_c = *PuA->ViewComponent("cell", false);
+  const Epetra_MultiVector& PuB_c = *PuB->ViewComponent("cell", false);
+  Epetra_MultiVector& PuA_f = *PuA->ViewComponent("face", false);
+  Epetra_MultiVector& PuB_f = *PuB->ViewComponent("face", false);
+
+  Teuchos::RCP<const CompositeVector> uA = Pu->SubVector(0)->Data();
+  Teuchos::RCP<const CompositeVector> uB = Pu->SubVector(1)->Data();
+  const Epetra_MultiVector& uA_f = *uA->ViewComponent("face", false);
+  const Epetra_MultiVector& uB_f = *uB->ViewComponent("face", false);
+
+  // Temporary cell and face vectors.
+  Epetra_MultiVector Pu_c(*double_cmap_, 1);
+  Epetra_MultiVector update_f(*double_fmap_, 1);
+  Epetra_MultiVector Pu_f(*double_fmap_, 1);
+
+  int ierr(0);
+
+  int ncells = PuA_c.MyLength();
+  int nfaces = PuA_f.MyLength();
+  double val = 0.;
+
+  // update_f <-- -A2f2c * Pu_c
+  for (int c=0; c!=ncells; ++c){
+    Pu_c[0][2*c] = -PuA_c[0][c];
+    Pu_c[0][2*c+1] = -PuB_c[0][c];
+  }
+  ierr = A2f2c_->Multiply(true, Pu_c, update_f);
+
+  // update_f <-- u_f - A2f2c * Pu_c
+  for (int f=0; f!=nfaces; ++f){
+    update_f[0][2*f] += uA_f[0][f];
+    update_f[0][2*f+1] += uB_f[0][f];
+  }
+
+  // u_f <-- A2f2f ^ -1 * update_f
+  Aff_op_->Destroy();
+  Aff_op_->Update(A2f2f_);
+  ierr = Aff_solver_->ApplyInverse(*update_f(0), *Pu_f(0));
+  ASSERT(!ierr);
+
+  // put back into tree vectors
+  for (int f=0; f!=nfaces; ++f){
+    PuA_f[0][f] = Pu_f[0][2*f];
+    PuB_f[0][f] = Pu_f[0][2*f+1];
+  }
 }
 
 

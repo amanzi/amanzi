@@ -433,6 +433,7 @@ MPCPermafrost3::UpdatePreconditioner(double t,
                            1./h);
 
   // Assemble the precon, form Schur complement
+  precon_->AssembleGlobalMatrices();
   precon_->ComputeSchurComplement();
   precon_->UpdatePreconditioner();
 
