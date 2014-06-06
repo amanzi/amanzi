@@ -76,11 +76,9 @@ set(flow_inc_files
   FlowDefs.hh
   FlowBoundaryFunction.hh
   FlowDomainFunction.hh
-  Flow_IO.hh
   Flow_PK.hh
   Flow_SourceFactory.hh
   FlowTypeDefs.hh
-  RelativePermeability_IO.hh
   RelativePermeability.hh
   Richards_PK.hh
   TI_Specs.hh
