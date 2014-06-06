@@ -179,9 +179,6 @@ void Richards_PK::InitPK()
   block_picard = 1;
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
 
-  mfd3d_method_ = FLOW_MFD3D_OPTIMIZED;
-  mfd3d_method_preconditioner_ = FLOW_MFD3D_OPTIMIZED;
-
   src_sink = NULL;
   src_sink_distribution = 0;
 

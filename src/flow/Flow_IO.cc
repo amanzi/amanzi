@@ -33,9 +33,6 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
   // Process main one-line options (not sublists)
   atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
  
-  std::string mfd3d_method_name = plist.get<std::string>("discretization method", "optimized mfd");
-  ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_); 
-
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList>
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));
@@ -236,35 +233,6 @@ void Flow_PK::ProcessStringSourceDistribution(const std::string name, int* metho
     msg << "\nFlow_PK: \"source and sink distribution method\" is obsolete.\n"
         << "         see desription of sublist \"source terms\" in the native spec.\n";
     Exceptions::amanzi_throw(msg);
-  }
-}
-
-
-/* ****************************************************************
-* Process string for the discretization method.
-**************************************************************** */
-void Flow_PK::ProcessStringMFD3D(const std::string name, int* method)
-{
-  if (name == "monotone mfd hex") {  // two monotone methods
-    *method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
-  } else if (name == "monotone mfd") {
-    *method = FLOW_MFD3D_POLYHEDRA_MONOTONE;
-  } else if (name == "support operator") {
-    *method = FLOW_MFD3D_SUPPORT_OPERATOR;
-  } else if (name == "two point flux approximation") {
-    *method = FLOW_MFD3D_TPFA;
-  } else if (name == "finite volume") {
-    *method = FLOW_FV_TPFA;
-  } else if (name == "optimized mfd") {
-    *method = FLOW_MFD3D_OPTIMIZED;
-  } else if (name == "optimized mfd scaled") {
-    *method = FLOW_MFD3D_OPTIMIZED_SCALED;
-  } else if (name == "mfd") {  // first basic mfd
-    *method = FLOW_MFD3D_POLYHEDRA;
-  } else if (name == "mfd scaled") {  // second basic mfd
-    *method = FLOW_MFD3D_POLYHEDRA_SCALED;
-  } else {
-    *method = FLOW_MFD3D_POLYHEDRA;
   }
 }
 
