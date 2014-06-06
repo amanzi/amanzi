@@ -25,7 +25,7 @@ namespace Flow {
 * WARNING: data in vectors Krel and rhs are destroyed.
 ****************************************************************** */
 void Richards_PK::SolveFullySaturatedProblem(
-    double Tp, CompositeVector& u, LinearSolver_Specs& ls_specs)
+    double Tp, CompositeVector& u, const std::string& solver_name)
 {
   UpdateSourceBoundaryData(Tp, u);
   rel_perm_->Krel()->PutScalar(1.0);
@@ -46,7 +46,7 @@ void Richards_PK::SolveFullySaturatedProblem(
 
   AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> sfactory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-     solver = sfactory.Create(ls_specs.solver_name, linear_operator_list_, op_matrix_, op_preconditioner_);
+     solver = sfactory.Create(solver_name, linear_operator_list_, op_matrix_, op_preconditioner_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
@@ -100,11 +100,9 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
   op_preconditioner_->InitPreconditioner(ti_specs->preconditioner_name, preconditioner_list_);
 
   // solve non-symmetric problem
-  LinearSolver_Specs& ls_specs = ti_specs->ls_specs_constraints;
-
   AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, op_preconditioner_);
+     solver = factory.Create(ti_specs->solver_name_constraint, linear_operator_list_, op_preconditioner_);
 
   CompositeVector& rhs = *op_preconditioner_->rhs();
   int ierr = solver->ApplyInverse(rhs, utmp);

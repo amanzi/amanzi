@@ -67,9 +67,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
     ti_specs_igs_.ti_method_name = "initial guess pseudo time integrator";
 
     ti_specs_igs_.preconditioner_name = FindStringPreconditioner(igs_list);
-
-    std::string linear_solver_name = FindStringLinearSolver(igs_list);
-    ProcessStringLinearSolver(linear_solver_name, &ti_specs_igs_.ls_specs);
+    ti_specs_igs_.solver_name = FindStringLinearSolver(igs_list);
 
     ProcessStringErrorOptions(igs_list, &ti_specs_igs_.error_control_options);
   }
@@ -84,9 +82,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
     ti_specs_sss_.ti_method_name = "steady state time integrator";
 
     ti_specs_sss_.preconditioner_name = FindStringPreconditioner(sss_list);
-
-    ti_specs_sss_.ls_specs.solver_name = FindStringLinearSolver(sss_list);
-    ProcessStringLinearSolver(ti_specs_sss_.ls_specs.solver_name, &ti_specs_sss_.ls_specs);
+    ti_specs_sss_.solver_name = FindStringLinearSolver(sss_list);
 
     ProcessStringErrorOptions(sss_list, &ti_specs_sss_.error_control_options);
 
@@ -106,9 +102,7 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
     ti_specs_trs_.ti_method_name = "transient time integrator";
 
     ti_specs_trs_.preconditioner_name = FindStringPreconditioner(trs_list);
-
-    std::string linear_solver_name = FindStringLinearSolver(trs_list);
-    ProcessStringLinearSolver(linear_solver_name, &ti_specs_trs_.ls_specs);
+    ti_specs_trs_.solver_name = FindStringLinearSolver(trs_list);
 
     ProcessStringErrorOptions(trs_list, &ti_specs_trs_.error_control_options);
 
@@ -177,16 +171,14 @@ void Flow_PK::ProcessSublistTimeIntegration(
       ti_specs.clip_saturation = ini_list.get<double>("clipping saturation value", -1.0);
       ti_specs.clip_pressure = ini_list.get<double>("clipping pressure value", -1e+10);
 
-      std::string linear_solver_name = FindStringLinearSolver(ini_list);
-      ProcessStringLinearSolver(linear_solver_name, &ti_specs.ls_specs_ini);
+      ti_specs.solver_name_ini = FindStringLinearSolver(ini_list);
     }
 
     if (list.isSublist("pressure-lambda constraints")) {
       Teuchos::ParameterList& pl_list = list.sublist("pressure-lambda constraints");
       ti_specs.pressure_lambda_constraints = true;
 
-      std::string linear_solver_name = FindStringLinearSolver(pl_list);
-      ProcessStringLinearSolver(linear_solver_name, &ti_specs.ls_specs_constraints);
+      ti_specs.solver_name_constraint = FindStringLinearSolver(pl_list);
     }
 
   } else if (name != "none") {
@@ -228,27 +220,6 @@ void Flow_PK::ProcessStringSourceDistribution(const std::string name, int* metho
         << "         see desription of sublist \"source terms\" in the native spec.\n";
     Exceptions::amanzi_throw(msg);
   }
-}
-
-
-/* ****************************************************************
-* Process string for the linear solver.
-**************************************************************** */
-void Flow_PK::ProcessStringLinearSolver(const std::string& name, LinearSolver_Specs* ls_specs)
-{
-  Errors::Message msg;
-
-  if (! linear_operator_list_.isSublist(name)) {
-    msg << "Flow PK: linear solver does not exist for a time integrator.";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  ls_specs->solver_name = name;
-  Teuchos::ParameterList& tmp_list = linear_operator_list_.sublist(name);
-  ls_specs->max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
-  ls_specs->convergence_tol = tmp_list.get<double>("error tolerance", 1e-14);
-
-  ls_specs->preconditioner_name = FindStringPreconditioner(tmp_list);
 }
 
 

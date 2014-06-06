@@ -324,7 +324,7 @@ void Richards_PK::InitializeSteadySaturated()
     *vo_->os() << "initializing with a saturated steady state..." << std::endl;
   }
   double T = S_->time();
-  SolveFullySaturatedProblem(T, *solution, ti_specs->ls_specs_ini);
+  SolveFullySaturatedProblem(T, *solution, ti_specs->solver_name_ini);
 }
 
 
@@ -405,7 +405,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   ResetPKtimes(T0, dT0);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    LinearSolver_Specs& ls = ti_specs.ls_specs;
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl 
         << "****************************************" << std::endl
@@ -417,8 +416,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
         << " sources distribution id=" << src_sink_distribution << std::endl;
 
     if (ti_specs.initialize_with_darcy) {
-      LinearSolver_Specs& ls_ini = ti_specs.ls_specs_ini;
-      *vo_->os() << " initial pressure solver: " << ls_ini.solver_name << std::endl;
+      *vo_->os() << " initial pressure solver: " << ti_specs.solver_name_ini << std::endl;
       if (ti_specs.clip_saturation > 0.0) {
         *vo_->os() << "  clipping saturation at " << ti_specs.clip_saturation << " [-]" << std::endl;
       } else if (ti_specs.clip_pressure > -5 * FLOW_PRESSURE_ATMOSPHERIC) {
@@ -483,7 +481,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   // Call this initialization procedure only once due to possible
   // multiple restarts of a transient time integrator.
   if (ti_specs.initialize_with_darcy) {
-    SolveFullySaturatedProblem(T0, *solution, ti_specs.ls_specs_ini);
+    SolveFullySaturatedProblem(T0, *solution, ti_specs.solver_name_ini);
     ti_specs.initialize_with_darcy = false;
 
     bool clip(false);

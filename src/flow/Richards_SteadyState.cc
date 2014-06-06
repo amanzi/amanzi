@@ -132,7 +132,6 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
   int max_itrs_nonlinear = ti_specs.max_itrs;
   double residual_tol_nonlinear = ti_specs.residual_tol;
-  LinearSolver_Specs& ls_specs = ti_specs.ls_specs;
 
   int itrs = 0;
   double L2norm, L2error = 1.0;
@@ -170,7 +169,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     // solve linear problem
     AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create(ls_specs.solver_name, linear_operator_list_, op_preconditioner_);
+       solver = factory.Create(ti_specs.solver_name, linear_operator_list_, op_preconditioner_);
 
     solver->ApplyInverse(*rhs, *solution);
 

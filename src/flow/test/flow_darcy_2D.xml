@@ -72,7 +72,7 @@
       <ParameterList name="transient time integrator">
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
-        <Parameter name="linear solver" type="string" value="AztecOO CG"/>
+        <Parameter name="linear solver" type="string" value="GMRES with ML"/>
 
         <ParameterList name="BDF1">
           <Parameter name="timestep controller type" type="string" value="standard"/>
@@ -126,7 +126,7 @@
 
    <!-- SOLVERS -->
    <ParameterList name="Solvers">
-     <ParameterList name="AztecOO CG">
+     <ParameterList name="GMRES with ML">
        <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
        <Parameter name="iterative method" type="string" value="gmres"/>
        <ParameterList name="gmres parameters">

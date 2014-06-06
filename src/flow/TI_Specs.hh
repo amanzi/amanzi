@@ -17,24 +17,6 @@
 namespace Amanzi {
 namespace Flow {
 
-class LinearSolver_Specs {
- public:
-  LinearSolver_Specs() {
-    num_itrs = 0;
-    max_itrs = 911;
-    convergence_tol = 1.911e-16;
-    preconditioner_name = "undefined";
-  }
-  ~LinearSolver_Specs() {};
-
- public:
-  int num_itrs, max_itrs;
-  std::string solver_name;
-  std::string preconditioner_name;
-  int preconditioner_method;
-  double convergence_tol; 
-};
-
 class TI_Specs {
  public:
   TI_Specs() { 
@@ -53,10 +35,6 @@ class TI_Specs {
     clip_saturation = -1.0;
     clip_pressure = -1e+10;
     pressure_lambda_constraints = true;
-
-    ls_specs.solver_name = "AztecOO";
-    ls_specs_ini.solver_name = "PCG with Hypre AMG";
-    ls_specs_constraints.solver_name = "AztecOO";
   }
   ~TI_Specs() {};
 
@@ -64,21 +42,22 @@ class TI_Specs {
   int ti_method;
   std::string ti_method_name;
 
-  LinearSolver_Specs ls_specs;
   std::string preconditioner_name;
-  int preconditioner_method;
+  std::string solver_name;
   int num_itrs, max_itrs;
 
   int dT_method, error_control_options;
   double T0, T1, dT0, dTmax, dTfactor;
   double atol, rtol, residual_tol; 
 
-  LinearSolver_Specs ls_specs_ini;  // initialization options
-  bool initialize_with_darcy;
+  bool initialize_with_darcy;  // initialization options
   double clip_saturation, clip_pressure;
+  std::string solver_name_ini;
+  std::string preconditioner_name_ini;
 
-  bool pressure_lambda_constraints;
-  LinearSolver_Specs ls_specs_constraints;
+  bool pressure_lambda_constraints; 
+  std::string solver_name_constraint;
+  std::string preconditioner_name_constraint;
 
   std::vector<std::pair<double, double> > dT_history;  // statistics (relocate to debug?)
 };

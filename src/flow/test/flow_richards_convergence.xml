@@ -93,6 +93,11 @@
           <Parameter name="linear solver" type="string" value="AztecOO"/>
         </ParameterList>
 
+        <ParameterList name="pressure-lambda constraints">
+          <Parameter name="method" type="string" value="projection"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+        </ParameterList>
+
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
           <Parameter name="timestep controller type" type="string" value="standard"/>
@@ -235,8 +240,6 @@
     </ParameterList>
   </ParameterList>
 
-  <!--  STATE: this super input desk will be used to cut-off smaller 
-  input deks for other flow tests -->
   <ParameterList name="State">
     <ParameterList name="initial conditions">
       <ParameterList name="fluid_density">

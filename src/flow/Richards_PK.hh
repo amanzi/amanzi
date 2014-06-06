@@ -93,7 +93,7 @@ class Richards_PK : public Flow_PK {
   void UpdateSourceBoundaryData(double Tp, const CompositeVector& pressure);
 
   // linear problems and solvers
-  void SolveFullySaturatedProblem(double T, CompositeVector& u, LinearSolver_Specs& ls_specs);
+  void SolveFullySaturatedProblem(double T, CompositeVector& u, const std::string& solver_name);
   void EnforceConstraints(double Tp, CompositeVector& u);
 
   // water retention models

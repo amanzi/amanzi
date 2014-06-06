@@ -38,7 +38,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, CompositeVector& u)
 
   AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> sfactory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-     solver = sfactory.Create(ti_specs->ls_specs.solver_name, linear_operator_list_, op_);
+     solver = sfactory.Create(ti_specs->solver_name, linear_operator_list_, op_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 

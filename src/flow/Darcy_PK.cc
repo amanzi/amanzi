@@ -327,8 +327,6 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    LinearSolver_Specs& ls_specs = ti_specs.ls_specs;
-
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl
         << "****************************************" << std::endl
@@ -337,7 +335,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
         << "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << std::endl
         << "  time stepping id=" << ti_specs.dT_method << std::endl
         << "  sources distribution id=" << src_sink_distribution << std::endl
-        << "  linear solver: ||r||<" << ls_specs.convergence_tol << " #itr<" << ls_specs.max_itrs << std::endl
+        << "  linear solver name: " << ti_specs.solver_name.c_str() << std::endl
         << "  preconditioner: " << ti_specs.preconditioner_name.c_str() << std::endl;
     if (ti_specs.initialize_with_darcy) {
       *vo_->os() << "  initial pressure guess: \"saturated solution\"" << std::endl;
@@ -465,11 +463,9 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   if (src_sink != NULL) AddSourceTerms(rhs);
 
   // create linear solver
-  LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
-
   AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create(ls_specs.solver_name, linear_operator_list_, op_);
+     solver = factory.Create(ti_specs->solver_name, linear_operator_list_, op_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
   solver->ApplyInverse(rhs, *solution);
