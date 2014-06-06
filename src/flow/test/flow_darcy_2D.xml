@@ -85,10 +85,6 @@
             <Parameter name="min time step" type="double" value="0.0"/>
           </ParameterList>
         </ParameterList>
-
-        <ParameterList name="obsolete parameters">
-          <Parameter name="maximum time step" type="double" value="1.0"/>
-        </ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">

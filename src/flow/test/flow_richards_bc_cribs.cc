@@ -76,6 +76,10 @@ TEST(FLOW_3D_RICHARDS) {
 
   /* initialize the Richards process kernel */
   RPK->InitPK();
+  RPK->ti_specs_sss().T1 = 1e+10;
+  RPK->ti_specs_sss().max_itrs = 600;
+  RPK->ti_specs_sss().residual_tol = 1e-12;
+
   RPK->InitializeAuxiliaryData();
   RPK->InitSteadyState(0.0, 1e-7);
 

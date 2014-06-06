@@ -78,6 +78,8 @@ TEST(NEWTON_RICHARD_STEADY) {
 
   /* create Richards process kernel */
   RPK->InitPK();
+  RPK->ti_specs_sss().T1 = 3e+9;
+  RPK->ti_specs_sss().max_itrs = 400;
   RPK->InitSteadyState(0.0, 1.0);
 
   /* solve the problem */

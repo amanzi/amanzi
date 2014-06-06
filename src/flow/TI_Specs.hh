@@ -26,7 +26,8 @@ class TI_Specs {
     num_itrs = max_itrs = 0;
     error_control_options = 0;
     dT_method = 0;
-    T0 = T1 = dT0 = dTmax = 0.0;
+    T0 = dT0 = dTmax = 0.0;
+    T1 = 100.0;  // used in unit tests
     dTfactor = 1.0;
     atol = 1.0; 
     rtol = 1e-5;

@@ -1565,14 +1565,6 @@ Teuchos::ParameterList CreateFlow_List(Teuchos::ParameterList* plist) {
 
           // remaining BDF1 parameters
           sti_bdf1.set<int>("max preconditioner lag iterations", ST_MAX_PREC_LAG);
-          Teuchos::ParameterList &olist = steady_time_integrator.sublist("obsolete parameters");
-          // olist.set<double>("nonlinear iteration damping factor", ST_NONLIN_DAMP);
-          // olist.set<int>("nonlinear iteration initial guess extrapolation order",ST_NONLIN_INIT_GUESS_EXTR_ORD);
-          // olist.set<double>("restart tolerance relaxation factor", ST_NONLIN_INIT_TS_FACTOR);
-          // olist.set<double>("restart tolerance relaxation factor damping", ST_NONLIN_INIT_TS_FACTOR_DAMP);
-          // olist.set<double>("error abs tol", ST_ERROR_ABS_TOL);
-          // olist.set<double>("error rel tol", ST_ERROR_REL_TOL);
-          // olist.set<std::string>("time stepping strategy", ST_TS_STRATEGY);
 
           if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
             Teuchos::ParameterList& ncp_list =  plist->sublist("Execution Control").sublist("Numerical Control Parameters");
@@ -1689,15 +1681,6 @@ Teuchos::ParameterList CreateFlow_List(Teuchos::ParameterList* plist) {
 
           // remaining parameters
           tti_bdf1.set<int>("max preconditioner lag iterations", TR_MAX_PREC_LAG);
-          Teuchos::ParameterList &olist = transient_time_integrator.sublist("obsolete parameters");
-          // olist.set<int>("maximum number of iterations", TR_LIMIT_ITER); // this is not limit iters
-          // olist.set<double>("nonlinear iteration damping factor", TR_NONLIN_DAMP);
-          // olist.set<int>("nonlinear iteration initial guess extrapolation order", TR_NONLIN_INIT_GUESS_EXTR_ORD);
-          // olist.set<double>("restart tolerance relaxation factor", TR_NONLIN_INIT_TS_FACTOR);
-          // olist.set<double>("restart tolerance relaxation factor damping", TR_NONLIN_INIT_TS_FACTOR_DAMP);
-          // olist.set<double>("error abs tol", TR_ERROR_ABS_TOL);
-          // olist.set<double>("error rel tol", TR_ERROR_REL_TOL);
-          // olist.set<std::string>("time stepping strategy", TR_TS_STRATEGY);
 
           if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
             Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");

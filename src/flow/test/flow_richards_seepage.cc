@@ -99,6 +99,11 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
 
   /* create Richards process kernel */
   RPK->InitPK();
+  RPK->ti_specs_sss().T1 = 1e+10;
+  RPK->ti_specs_sss().dTmax = 1e+8;
+  RPK->ti_specs_sss().residual_tol = 1e-9;
+  RPK->ti_specs_sss().max_itrs = 30;
+
   RPK->InitSteadyState(0.0, 0.01);
 
   /* solve the steady-state problem */

@@ -124,44 +124,24 @@ void Flow_PK::ProcessSublistTimeIntegration(
 
   if (list.isSublist(name)) {
     Teuchos::ParameterList bdf1_list = list.sublist(name);
-    // obsolete way to define parameters
-    if (list.isSublist("obsolete parameters")) {
-      Teuchos::ParameterList olist = list.sublist("obsolete parameters");
-      ti_specs.initialize_with_darcy = olist.get<bool>("initialize with darcy", false);
-      ti_specs.clip_saturation = olist.get<double>("clipping saturation value", -1.0);
-      ti_specs.clip_pressure = olist.get<double>("clipping pressure value", -1e+10);
-
-      ti_specs.pressure_lambda_constraints = olist.get<bool>("enforce pressure-lambda constraints", true);
-
-      ti_specs.dT_method = 0;
-      std::string dT_name = olist.get<std::string>("time stepping strategy", "standard");
-      if (dT_name == "adaptive") ti_specs.dT_method = FLOW_DT_ADAPTIVE;
-
-      ti_specs.dTfactor = olist.get<double>("time step increase factor", 1.0);
-
-      ti_specs.T0 = olist.get<double>("start time", 0.0);
-      ti_specs.T1 = olist.get<double>("end time", 100 * Flow::FLOW_YEAR);
-      ti_specs.dT0 = olist.get<double>("initial time step", Flow::FLOW_INITIAL_DT);
-      ti_specs.dTmax = olist.get<double>("max time step", Flow::FLOW_MAXIMUM_DT);
-
-      ti_specs.residual_tol = olist.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
-      ti_specs.max_itrs = olist.get<int>("maximum number of iterations", FLOW_TI_MAX_ITERATIONS);
-    }
 
     // new way to define parameters overrides the above values.
     if (bdf1_list.isParameter("timestep controller type")) {
       std::string dT_method_name = bdf1_list.get<std::string>("timestep controller type");
 
       ti_specs.dT_method = 0;
+      Teuchos::ParameterList dtlist;
       if (dT_method_name == "standard") {
-        Teuchos::ParameterList dtlist = bdf1_list.sublist("timestep controller standard parameters");
+        dtlist = bdf1_list.sublist("timestep controller standard parameters");
         ti_specs.dTfactor = dtlist.get<double>("time step increase factor");
       } else if (dT_method_name == "fixed") {
-        Teuchos::ParameterList dtlist = bdf1_list.sublist("timestep controller fixed parameters");
+        dtlist = bdf1_list.sublist("timestep controller fixed parameters");
         ti_specs.dTfactor = dtlist.get<double>("time step increase factor");
       } else if (dT_method_name == "adaptive") {
+        dtlist = bdf1_list.sublist("timestep controller adaptive parameters");
         ti_specs.dT_method = FLOW_DT_ADAPTIVE;
       }
+      ti_specs.dTmax = dtlist.get<double>("max time step", Flow::FLOW_MAXIMUM_DT);
     }
 
     if (list.isSublist("initialization")) {

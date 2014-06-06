@@ -53,12 +53,6 @@
         <Parameter name="time integration method" type="string" value="Picard"/>
         <ParameterList name="Picard">
         </ParameterList>
-
-        <ParameterList name="obsolete parameters">
-          <Parameter name="convergence tolerance" type="double" value="1e-12"/>
-          <Parameter name="maximum number of iterations" type="int" value="600"/>
-          <Parameter name="end time" type="double" value="1e+10"/>
-        </ParameterList>
       </ParameterList>
 
       <ParameterList name="Water retention models">

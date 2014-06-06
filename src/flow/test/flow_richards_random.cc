@@ -158,6 +158,9 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
     /* create Richards process kernel */
     RPK->InitPK();
+    RPK->ti_specs_sss().T1 = 1e+4;
+    RPK->ti_specs_sss().max_itrs = 400;
+
     RPK->InitializeAuxiliaryData();
     RPK->InitSteadyState(0.0, 1.0);
     RPK->AdvanceToSteadyState(0.0, 1.0);

@@ -152,11 +152,6 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-
-        <ParameterList name="obsolete parameters">
-          <Parameter name="enforce pressure-lambda constraints" type="bool" value="false"/>
-          <Parameter name="end time" type="double" value="3.0e+09"/>
-        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>

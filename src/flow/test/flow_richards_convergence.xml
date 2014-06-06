@@ -125,11 +125,6 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-
-        <ParameterList name="obsolete parameters">
-          <Parameter name="maximum number of iterations" type="int" value="1000"/>
-          <Parameter name="end time" type="double" value="1.0e+4"/>
-        </ParameterList>
       </ParameterList>
 
       <ParameterList name="Water retention models">

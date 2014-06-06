@@ -106,6 +106,9 @@ TEST(FLOW_2D_RICHARDS) {
 
   /* initialize the Richards process kernel */
   RPK->InitPK();
+  RPK->ti_specs_sss().T1 = 100.0;
+  RPK->ti_specs_sss().max_itrs = 400;
+
   RPK->InitializeAuxiliaryData();
   RPK->InitSteadyState(0.0, 1e-8);
 

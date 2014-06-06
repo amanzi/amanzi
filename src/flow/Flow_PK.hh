@@ -120,7 +120,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   double rho() { return rho_; }
   double mu() { return mu_; }
   const AmanziGeometry::Point& gravity() { return gravity_; }
-  const TI_Specs& ti_specs_sss() { return ti_specs_sss_; }
+  TI_Specs& ti_specs_sss() { return ti_specs_sss_; }
 
  public:
   int ncells_owned, ncells_wghost;

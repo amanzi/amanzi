@@ -75,6 +75,9 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
 
   /* create Richards problem */
   RPK->InitPK();
+  RPK->ti_specs_sss().T1 = 100.0;
+  RPK->ti_specs_sss().max_itrs = 400;
+
   RPK->InitSteadyState(0.0, 1.0);
 
   /* calculate the constant Darcy mass velocity */

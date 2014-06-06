@@ -85,12 +85,6 @@
             <Parameter name="max time step" type="double" value="1.0"/>
           </ParameterList>
         </ParameterList>
-
-        <ParameterList name="obsolete parameters">
-          <Parameter name="time step increase factor" type="double" value="1.2"/>
-          <Parameter name="maximal number of iterations" type="int" value="200"/>
-          <Parameter name="maximum time step" type="double" value="1.0"/>
-        </ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">

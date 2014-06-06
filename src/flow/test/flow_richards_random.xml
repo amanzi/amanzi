@@ -127,10 +127,6 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-
-        <ParameterList name="obsolete parameters">
-          <Parameter name="end time" type="double" value="1.0e+4"/>
-        </ParameterList>
       </ParameterList>
 
       <ParameterList name="Water retention models">
