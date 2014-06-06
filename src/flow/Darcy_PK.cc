@@ -139,7 +139,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_
   // secondary fields and evaluators
   if (!S_->HasField("darcy_velocity")) {
     S_->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
+      ->SetComponent("cell", AmanziMesh::CELL, dim);
 
     Teuchos::ParameterList elist;
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));

@@ -88,7 +88,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   void ProcessStringSourceDistribution(const std::string name, int* method);
   void ProcessStringTimeIntegration(const std::string name, int* method);
   void ProcessStringLinearSolver(const std::string& name, LinearSolver_Specs* ls_specs);
-  void ProcessStringPreconditioner(const std::string& name, int* preconditioner);
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
 
   std::string FindStringLinearSolver(const Teuchos::ParameterList& plist);

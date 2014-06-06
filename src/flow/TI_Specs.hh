@@ -24,7 +24,6 @@ class LinearSolver_Specs {
     max_itrs = 911;
     convergence_tol = 1.911e-16;
     preconditioner_name = "undefined";
-    preconditioner_method = FLOW_PRECONDITIONER_HYPRE_AMG;  // Must be equal to ST_PRECOND
   }
   ~LinearSolver_Specs() {};
 
@@ -42,7 +41,6 @@ class TI_Specs {
     ti_method = FLOW_TIME_INTEGRATION_BDF1;
     ti_method_name = "none";
     preconditioner_name = "undefined";
-    preconditioner_method = FLOW_PRECONDITIONER_HYPRE_AMG;  // Must equal to ST_PRECOND
     num_itrs = max_itrs = 0;
     error_control_options = 0;
     dT_method = 0;

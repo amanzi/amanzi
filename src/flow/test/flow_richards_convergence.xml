@@ -198,7 +198,6 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="Preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>

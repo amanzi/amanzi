@@ -195,7 +195,6 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="Preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>
@@ -207,7 +206,6 @@
 
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
-      <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
       <ParameterList name="ml parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="aggregation: damping factor" type="double" value="1.33"/>

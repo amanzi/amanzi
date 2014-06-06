@@ -189,8 +189,6 @@
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
-      <Parameter name="discretization method" type="string" value="monotone mfd hex"/>
-
       <ParameterList name="ml parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="aggregation: damping factor" type="double" value="1.33"/>

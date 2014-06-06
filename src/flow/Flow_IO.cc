@@ -67,12 +67,10 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
     ti_specs_igs_.ti_method_name = "initial guess pseudo time integrator";
 
     ti_specs_igs_.preconditioner_name = FindStringPreconditioner(igs_list);
-    ProcessStringPreconditioner(ti_specs_igs_.preconditioner_name, &ti_specs_igs_.preconditioner_method);
 
     std::string linear_solver_name = FindStringLinearSolver(igs_list);
     ProcessStringLinearSolver(linear_solver_name, &ti_specs_igs_.ls_specs);
 
-    ProcessStringPreconditioner(ti_specs_igs_.preconditioner_name, &ti_specs_igs_.preconditioner_method);
     ProcessStringErrorOptions(igs_list, &ti_specs_igs_.error_control_options);
   }
 
@@ -86,12 +84,10 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
     ti_specs_sss_.ti_method_name = "steady state time integrator";
 
     ti_specs_sss_.preconditioner_name = FindStringPreconditioner(sss_list);
-    ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
 
     ti_specs_sss_.ls_specs.solver_name = FindStringLinearSolver(sss_list);
     ProcessStringLinearSolver(ti_specs_sss_.ls_specs.solver_name, &ti_specs_sss_.ls_specs);
 
-    ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
     ProcessStringErrorOptions(sss_list, &ti_specs_sss_.error_control_options);
 
   } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
@@ -110,12 +106,10 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
     ti_specs_trs_.ti_method_name = "transient time integrator";
 
     ti_specs_trs_.preconditioner_name = FindStringPreconditioner(trs_list);
-    ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
 
     std::string linear_solver_name = FindStringLinearSolver(trs_list);
     ProcessStringLinearSolver(linear_solver_name, &ti_specs_trs_.ls_specs);
 
-    ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
     ProcessStringErrorOptions(trs_list, &ti_specs_trs_.error_control_options);
 
   } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
@@ -255,7 +249,6 @@ void Flow_PK::ProcessStringLinearSolver(const std::string& name, LinearSolver_Sp
   ls_specs->convergence_tol = tmp_list.get<double>("error tolerance", 1e-14);
 
   ls_specs->preconditioner_name = FindStringPreconditioner(tmp_list);
-  ProcessStringPreconditioner(ls_specs->preconditioner_name, &ls_specs->preconditioner_method);
 }
 
 
@@ -279,26 +272,6 @@ std::string Flow_PK::FindStringPreconditioner(const Teuchos::ParameterList& list
     Exceptions::amanzi_throw(msg);
   }
   return name;
-}
-
-
-/* ****************************************************************
-* Process string for the preconitioner.
-**************************************************************** */
-void Flow_PK::ProcessStringPreconditioner(const std::string& name, int* preconditioner)
-{
-  Errors::Message msg;
-
-  if (name == "Trilinos ML") {
-    *preconditioner = FLOW_PRECONDITIONER_TRILINOS_ML;
-  } else if (name == "Hypre AMG") {
-    *preconditioner = FLOW_PRECONDITIONER_HYPRE_AMG;
-  } else if (name == "Block ILU") {
-    *preconditioner = FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU;
-  } else {
-    msg << "\nFlow PK: specified preconditioner does not exist.";
-    Exceptions::amanzi_throw(msg);
-  }
 }
 
 

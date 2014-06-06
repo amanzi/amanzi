@@ -1563,7 +1563,6 @@ Here is an example:
 
      <ParameterList name="Preconditoners">
        <ParameterList name="Trilinos ML">
-          <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
           <Parameter name="type" type="string" value="ml"/>
           <ParameterList name="ml parameters">
             ... 
@@ -1571,7 +1570,6 @@ Here is an example:
        </ParameterList>
 
        <ParameterList name="Hypre AMG">
-          <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
           <Parameter name="type" type="string" value="boomer amg"/>
           <ParameterList name="boomer amg parameters">
             ...
@@ -1579,7 +1577,6 @@ Here is an example:
        </ParameterList>
 
        <ParameterList name="Block ILU">
-          <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
           <Parameter name="type" type="string" value="block ilu"/>
           <ParameterList name="block ilu parameters">
             ...
