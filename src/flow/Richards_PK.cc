@@ -98,7 +98,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) :
   if (!S_->HasField("fluid_density")) {
     S_->RequireScalar("fluid_density", passwd_);
   }
-  if (!S_->HasField("fluid_voscosity")) {
+  if (!S_->HasField("fluid_viscosity")) {
     S_->RequireScalar("fluid_viscosity", passwd_);
   }
   if (!S_->HasField("gravity")) {
