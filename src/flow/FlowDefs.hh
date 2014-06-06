@@ -15,15 +15,6 @@
 namespace Amanzi {
 namespace Flow {
 
-const int FLOW_STATUS_NULL = 0;  // used for internal debuging
-const int FLOW_STATUS_INIT = 2;
-const int FLOW_STATUS_INITIAL_GUESS = 4;
-const int FLOW_STATUS_STEADY_STATE = 4;
-const int FLOW_STATUS_TRANSIENT_STATE = 8;
-
-const int FLOW_STATE_VIEW = 1;  // copy Teuchos::RCP pointers
-const int FLOW_STATE_COPY = 2;  // add ghost data to some arrays
-
 const int FLOW_BC_FACE_NULL = 0; 
 const int FLOW_BC_FACE_PRESSURE = 1; 
 const int FLOW_BC_FACE_FLUX = 2;
@@ -85,9 +76,6 @@ const double FLOW_TI_RELATIVE_TOLERANCE = 0.0;
 const double FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE = 1e-6;
 const int FLOW_TI_MAX_ITERATIONS = 400;
 
-const int FLOW_MATRIX_ACTION_MATRIX = 1;
-const int FLOW_MATRIX_ACTION_PRECONDITIONER = 2;
-
 const int FLOW_DT_ADAPTIVE = 1;
 const double FLOW_DT_ADAPTIVE_INCREASE = 4.0;
 const double FLOW_DT_ADAPTIVE_REDUCTION = 0.1;
@@ -107,8 +95,6 @@ const int FLOW_MAX_NODES = 47;  // These polyhedron parameters must
 const int FLOW_MAX_EDGES = 60;  // be calculated in Init().
 
 const int FLOW_INTERNAL_ERROR = 911;  // contact (lipnikov@lanl.gov)
-
-const int FLOW_AMANZI_VERSION = 2;  
 
 const int FLOW_UPWIND_UPDATE_TIMESTEP = 1;
 const int FLOW_UPWIND_UPDATE_ITERATION = 2;

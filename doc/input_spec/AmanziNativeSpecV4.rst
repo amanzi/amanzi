@@ -5,6 +5,12 @@ Amanzi Native XML Input Specification V4
 .. contents:: **Table of Contents**
 
 
+Overview
+========
+This is a continuously evolving specification format used by
+the code developers. It is used for the development of new
+capabilities.
+
 
 ParameterList XML
 =================
@@ -489,6 +495,42 @@ if the list `"Output`" is provided. This list has two mandatory parameters:
   Each file will contain a table with three columns: saturation, relative permeability, and
   capillary pressure. The data points are equidistributed between the residual saturation
   and 1.
+
+
+Operators
+---------
+
+Operators sublist describes the PDE structure of the flow, specifies a discretization
+scheme, and selects assembling schemas for matrices and preconditioners.
+
+.. code-block:: xml
+
+    <ParameterList name="operators">
+      <ParameterList name="diffusion operator">
+        <Parameter name="discretization primary" type="string" value="monotone mfd"/>
+        <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+        <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+        <Parameter name="gravity" type="bool" value="true"/>
+      </ParameterList>
+    </ParameterList>
+
+* `"discretization primary`" [string] specifies typically an advanced discretization that
+  has useful properties under some a priori conditions on the mesh and/or permeability tensor.
+
+* `"discretization secondary`" [string] specifies the most robust discretization method
+  that is used when the primary selection fails to satisfy the a priori conditions.
+
+* `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
+  geometric objects. The example indicates a p-lambda system, i.e., the pressure is
+  discretized in mesh cells and on mesh faces.
+
+* `"preconditioner schema`" [Array(string)] defines the preconditioner stensil.
+  It is needed only when the default assembling procedure is not desirable. If skipped,
+  the `"schema`" is used instead. The example indicates that a faster assembling
+  procedure involing only face-based pressure unknowns is used.
+
+* `"gravity`" [bool] specifies if flow is driven also by gravity.
 
 
 Boundary conditions
