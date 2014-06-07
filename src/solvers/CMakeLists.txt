@@ -66,7 +66,7 @@ if (BUILD_TESTS)
     add_amanzi_test(solver_preconditioners solver_preconditioners
                     KIND unit
                     SOURCE test/Main.cc test/solver_preconditioners.cc
-                    LINK_LIBS error_handling whetstone atk ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+                    LINK_LIBS error_handling solvers whetstone atk ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
     add_amanzi_test(solver_linear_jfnk solver_linear_jfnk
                     KIND unit

@@ -40,6 +40,7 @@ Teuchos::RCP<Preconditioner> PreconditionerFactory::Create(
   }
 }
 
+
 /* ******************************************************************
  * Initialization of the preconditioner
  ****************************************************************** */
