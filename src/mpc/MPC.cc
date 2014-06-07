@@ -198,11 +198,10 @@ void MPC::mpc_init() {
 #endif
   }
 
- 
-
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
+  S->GetMeshPartition("materials");
 
   if (chemistry_enabled) {
     CS->Initialize();

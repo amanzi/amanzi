@@ -15,34 +15,37 @@ Teuchos::ParameterList get_Cycle_Macro(const std::string& macro_name, Teuchos::P
 Teuchos::Array<std::string> get_Variable_Macro(const std::string& macro_name, Teuchos::ParameterList* plist);
 void init_global_info( Teuchos::ParameterList* plist);
 
-Teuchos::ParameterList CreateCheckpoint_Data_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList CreateWalkabout_Data_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList CreateVisualization_Data_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList CreateObservation_Data_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList get_Regions_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList get_Mesh_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList translate_Mesh_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList get_Domain_List(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreateCheckpointDataList(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreateWalkaboutDataList(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreateVisualizationDataList(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreateObservationDataList(Teuchos::ParameterList* plist);
 Teuchos::ParameterList CreateMPC_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList CreateTransport_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList CreateTransportSrc_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList CreateFlow_List(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreateTransportList(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreateTransportSrcList(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist);
 Teuchos::ParameterList CreateWRM_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList CreateFlowSrc_List(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreateFlowSrcList(Teuchos::ParameterList* plist);
 Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList CreateState_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList CreateVerbosity_List(const std::string& vlevel);
+Teuchos::ParameterList CreateStateList(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreateVerbosityList(const std::string& vlevel);
 Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist);
-Teuchos::ParameterList CreatePreconditioners_List(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreatePreconditionersList(Teuchos::ParameterList* plist);
 Teuchos::ParameterList CreateDPC_List(Teuchos::ParameterList* plist);
 Teuchos::ParameterList CreateBILU_List(Teuchos::ParameterList* plist);
 Teuchos::ParameterList CreateHypreAMG_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList CreateSolvers_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList CreateNonlinear_Solvers_List(Teuchos::ParameterList* plist);
-Teuchos::ParameterList CreateTimePeriodControl_List(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreateSolversList(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreateNonlinearSolversList(Teuchos::ParameterList* plist);
+Teuchos::ParameterList CreateTimePeriodControlList(Teuchos::ParameterList* plist);
 Teuchos::ParameterList CreateFlowOperatorList(const std::string& disc_method);
+Teuchos::ParameterList CreatePartitionList(Teuchos::ParameterList* plist);
 
-void output_boundary_conditions( Teuchos::ParameterList* plist);
+Teuchos::ParameterList TranslateMeshList(Teuchos::ParameterList* plist);
+
+Teuchos::ParameterList get_Domain_List(Teuchos::ParameterList* plist);
+Teuchos::ParameterList get_Mesh_List(Teuchos::ParameterList* plist);
+Teuchos::ParameterList get_Regions_List(Teuchos::ParameterList* plist);
+
+void output_boundary_conditions(Teuchos::ParameterList* plist);
 void check_AmanziInputVersion(Teuchos::ParameterList* plist);
 
 Teuchos::Array<std::string> translate_forms (Teuchos::Array<std::string> & forms);
