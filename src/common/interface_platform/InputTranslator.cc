@@ -1568,7 +1568,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
       }
       if (defPL.isParameter("max_dt")) {
         tcPL.set<double>("transient max time step",
-                         get_double_constant(defPL.get<std::string>("max_dt"),*def_list));
+                         get_time_value(defPL.get<std::string>("max_dt"),*def_list));
       }
     }
     if (defPL.get<std::string>("mode") == "steady") {
@@ -1582,7 +1582,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
       }
       if (defPL.isParameter("max_dt")) {
         ssPL.set<double>("steady max time step",
-                         get_double_constant(defPL.get<std::string>("max_dt"),*def_list));
+                         get_time_value(defPL.get<std::string>("max_dt"),*def_list));
       }
     }
   }
@@ -1600,7 +1600,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         }
         if (ecsPL.sublist(it->first).isParameter("max_dt")) {
           tcPL.set<double>("transient max time step",
-                           get_double_constant(ecsPL.sublist(it->first).get<std::string>("max_dt"),*def_list));
+                           get_time_value(ecsPL.sublist(it->first).get<std::string>("max_dt"),*def_list));
         }
       }
       if (ecsPL.sublist(it->first).get<std::string>("mode") == "steady") {
@@ -1614,7 +1614,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         }
         if (ecsPL.sublist(it->first).isParameter("max_dt")) {
           ssPL.set<double>("steady max time step",
-                           get_double_constant(ecsPL.sublist(it->first).get<std::string>("max_dt"),*def_list));
+                           get_time_value(ecsPL.sublist(it->first).get<std::string>("max_dt"),*def_list));
         }
       }
     }
