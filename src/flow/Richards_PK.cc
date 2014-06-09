@@ -273,7 +273,8 @@ void Richards_PK::InitPK()
   darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("darcy_flux", passwd_)));
 
   // Create RCP pointer to upwind flux.
-  if (rel_perm_->method() == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
+  if (rel_perm_->method() == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
+      rel_perm_->method() == FLOW_RELATIVE_PERM_AMANZI) {
     darcy_flux_upwind = darcy_flux_copy;
   } else if (rel_perm_->method() == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
     darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));

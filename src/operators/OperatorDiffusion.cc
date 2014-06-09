@@ -42,11 +42,8 @@ void OperatorDiffusion::InitOperator(
   scalar_rho_mu_ = true;
 
   // compatibility
-  if (upwind_ == OPERATOR_UPWIND_WITH_FLUX) { 
+  if (upwind_ == OPERATOR_UPWIND_WITH_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) { 
     ASSERT(k->HasComponent("face"));
-  }
-  if (upwind_ == OPERATOR_UPWIND_AMANZI) { 
-    ASSERT(k->HasComponent("face") && dkdp->HasComponent("face"));
   }
 
   if (schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
@@ -145,12 +142,12 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0); 
     if (upwind_ == OPERATOR_UPWIND_AMANZI) {
-      double kc = (*k_cell)[0][c];
+      kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
     } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
-      double kc = (*k_cell)[0][c];
+      kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
-    } else if(upwind_ == OPERATOR_UPWIND_WITH_FLUX) {
+    } else if (upwind_ == OPERATOR_UPWIND_WITH_FLUX) {
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     }
 
@@ -175,16 +172,12 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
     }
 
     // Amanzi's upwind
-    if (upwind_ == OPERATOR_UPWIND_AMANZI && flux != Teuchos::null) {
-      const Epetra_MultiVector& dkdp_face = *dkdp_->ViewComponent("face", true);
-      const Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
-
+    if (upwind_ == OPERATOR_UPWIND_AMANZI) {
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        double dkf = dkdp_face[0][f];
-        double vkf = (*k_face)[0][f];
-        double alpha = (dkf / vkf) * flux_data[0][f] * dirs[n];
+        double alpha = (*k_face)[0][f] - kc;
         if (alpha > 0) {
+          alpha *= Wff(n, n);
           Acell(n, n) += alpha;
           Acell(n, nfaces) -= alpha;
           Acell(nfaces, n) -= alpha;
@@ -238,12 +231,28 @@ void OperatorDiffusion::UpdateMatricesNodal_()
 
   AmanziMesh::Entity_ID_List nodes;
 
+  nfailed_primary_ = 0;
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
     WhetStone::DenseMatrix Acell(nnodes, nnodes);
-    int ok = mfd.StiffnessMatrix(c, (*K_)[c], Acell);
+
+    int method = mfd_primary_;
+    int ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+    if (method == WhetStone::DIFFUSION_POLYHEDRA_MONOTONE) {
+      ok = mfd.StiffnessMatrixMMatrix(c, (*K_)[c], Acell);
+      method = mfd_secondary_;
+    } else {
+      ok = mfd.StiffnessMatrix(c, (*K_)[c], Acell);
+      method = mfd_secondary_;
+    }
+
+    if (ok != WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) {
+      nfailed_primary_++;
+      ok = mfd.StiffnessMatrix(c, (*K_)[c], Acell);
+    }
 
     if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
       Errors::Message msg("Stiffness_MFD: unexpected failure of LAPACK in WhetStone.");

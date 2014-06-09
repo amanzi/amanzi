@@ -121,8 +121,8 @@ void Upwind<Model>::Compute(
       } else if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET && flag) {
         upw[0][f] = model_->Value(c, bc_value[f]);
       } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN && flag) {
-      //  upw[0][f] = model_->Value(c, ffaces[0][f]);
-        upw[0][f] = fcells[0][c];
+        upw[0][f] = model_->Value(c, ffaces[0][f]);
+        // upw[0][f] = fcells[0][c];
       } else if (!flag) {
         upw[0][f] = fcells[0][c];
       }

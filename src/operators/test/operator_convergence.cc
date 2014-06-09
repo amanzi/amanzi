@@ -512,8 +512,9 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     if (MyPID == 0) {
       p_error = pow(p_error / p_norm, 0.5);
       grad_error = pow(grad_error / grad_norm, 0.5);
-      printf("scale = %7.4g  Err(p) = %9.6f  Err(grad) = %9.6g  itr=%3d\n", 
-          factor, p_error, grad_error, solver->num_itrs()); 
+      double tmp = op2->nfailed_primary() * 100.0 / ncells_owned; 
+      printf("scale = %7.4g  Err(p) = %9.6f  Err(grad) = %9.6g  itr=%3d  nfailed=%4.1f%\n", 
+          factor, p_error, grad_error, solver->num_itrs(), tmp); 
 
       CHECK(p_error < 0.1 && grad_error < 0.15);
     }

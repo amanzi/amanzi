@@ -56,7 +56,7 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
       if (upwind_ == OPERATOR_UPWIND_AMANZI) {
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
       } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
-        double kc = (*k_cell)[0][c];
+        kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = kc;
       } else if(upwind_ == OPERATOR_UPWIND_WITH_FLUX) {
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
@@ -114,7 +114,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
     if (upwind_ == OPERATOR_UPWIND_AMANZI) {
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
-      double kc = (*k_cell)[0][c];
+      kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
     } else if(upwind_ == OPERATOR_UPWIND_WITH_FLUX) {
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];

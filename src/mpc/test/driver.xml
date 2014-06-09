@@ -135,8 +135,13 @@
   </ParameterList> <!-- End Preconditioners -->
   
   <ParameterList name="State">
-    <ParameterList name="initial conditions">
+    <ParameterList name="mesh partitions">
+      <ParameterList name="materials">
+        <Parameter name="region list" type="Array(string)" value="{All}"/>
+      </ParameterList>
+    </ParameterList>
 
+    <ParameterList name="initial conditions">
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="1000."/>
       </ParameterList>

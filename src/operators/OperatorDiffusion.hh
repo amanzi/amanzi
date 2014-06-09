@@ -59,6 +59,9 @@ class OperatorDiffusion : public Operator {
   // special members
   void ModifyMatrices(const CompositeVector& u);
 
+  // access
+  int nfailed_primary() { return nfailed_primary_; }
+
  protected:
   void CreateMassMatrices_();
 
@@ -86,6 +89,7 @@ class OperatorDiffusion : public Operator {
   double factor_;
 
   int mfd_primary_, mfd_secondary_;
+  int nfailed_primary_;
   bool scalar_rho_mu_;
 };
 
