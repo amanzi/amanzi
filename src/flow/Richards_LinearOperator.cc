@@ -20,9 +20,11 @@ namespace Amanzi {
 namespace Flow {
 
 /* ******************************************************************
-* Calculate saturated pressure solution using boundary conditions 
-* at time Tp.
-* WARNING: data in vectors Krel and rhs are destroyed.
+* Solve single phase problem using boundary conditions at time Tp.
+* We populate both matrix and preconditoner here but use only the
+* preconditioner. Matrix may be used in external flux calculation. 
+* Moving flux calculation here impose restrictions on multiple 
+* possible scenarios of data flow.
 ****************************************************************** */
 void Richards_PK::SolveFullySaturatedProblem(
     double Tp, CompositeVector& u, const std::string& solver_name)
@@ -46,11 +48,11 @@ void Richards_PK::SolveFullySaturatedProblem(
 
   AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> sfactory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
-     solver = sfactory.Create(solver_name, linear_operator_list_, op_matrix_, op_preconditioner_);
+     solver = sfactory.Create(solver_name, linear_operator_list_, op_preconditioner_, op_preconditioner_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
-  CompositeVector& rhs = *op_matrix_->rhs();
+  CompositeVector& rhs = *op_preconditioner_->rhs();
   int ierr = solver->ApplyInverse(rhs, u);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
