@@ -415,7 +415,7 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
                                                       const AlquimiaAuxiliaryOutputData& aux_output,
                                                       Teuchos::RCP<const Epetra_MultiVector> aqueous_components)
 {
-  chemistry_state_->CopyFromAlquimia(cell_id, mat_props, state, aux_data, aqueous_components);
+  chemistry_state_->CopyFromAlquimia(cell_id, mat_props, state, aux_data, aux_output, aqueous_components);
 
   // Auxiliary output.
   if (aux_output_ != Teuchos::null) 

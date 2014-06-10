@@ -353,12 +353,19 @@ void Chemistry_State::RequireData_() {
 
 
     // CreateStoragePrimarySpecies()
-    S_->RequireField("free_ion_species", name_)
+    {
+      std::vector<std::vector<std::string> > species_names_cv(1);
+      for (std::vector<std::string>::const_iterator compname = compnames_.begin();
+           compname != compnames_.end(); ++compname) {
+        species_names_cv[0].push_back(*compname);
+      }
+      S_->RequireField("free_ion_species", name_, species_names_cv)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, number_of_aqueous_components_);
+    }
     S_->RequireField("primary_activity_coeff", name_)
-        ->SetMesh(mesh_)->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, number_of_aqueous_components_);
+      ->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, number_of_aqueous_components_);
 
     // CreateStorageTotalSorbed()
     if (using_sorption_) {
@@ -661,6 +668,7 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
                                        const AlquimiaMaterialProperties& mat_props,
                                        const AlquimiaState& state,
                                        const AlquimiaAuxiliaryData& aux_data,
+                                       const AlquimiaAuxiliaryOutputData& aux_output,
                                        Teuchos::RCP<const Epetra_MultiVector> aqueous_components)
 {
   // If the chemistry has modified the porosity and/or density, it needs to 
@@ -684,6 +692,12 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
       double* cell_total_sorbed = (*this->total_sorbed())[c];
       cell_total_sorbed[cell_id] = immobile;
     }
+  }
+
+  // Free ion species.
+  for (unsigned int c = 0; c < number_of_aqueous_components(); c++) {
+    double* cell_free_ion = (*this->free_ion_species())[c];
+    cell_free_ion[cell_id] = aux_output.primary_free_ion_concentration.data[c];
   }
 
   // NOTE: For now, we do not copy material properties back from Alquimia 

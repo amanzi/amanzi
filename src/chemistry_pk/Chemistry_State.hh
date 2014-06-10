@@ -259,6 +259,7 @@ class Chemistry_State {
                         const AlquimiaMaterialProperties& mat_props,
                         const AlquimiaState& state,
                         const AlquimiaAuxiliaryData& aux_data,
+                        const AlquimiaAuxiliaryOutputData& aux_output,
                         Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
 
 #endif
