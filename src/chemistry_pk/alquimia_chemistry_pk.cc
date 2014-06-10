@@ -580,18 +580,17 @@ void Alquimia_Chemistry_PK::advance(
   Teuchos::RCP<const Epetra_MultiVector> tcc_star =
       total_component_concentration_star;
 
-
-  // TODO(bandre): use size of the porosity vector as indicator of size for
-  // now... should get data from the mesh...?
-  int num_cells = chemistry_state_->porosity()->MyLength();
-
+  // Get the number of owned (non-ghost) cells for the mesh.
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
+  unsigned int num_cells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  
   int max_iterations = 0;
   int imax = -999;
   int ave_iterations = 0;
   int imin = -999;
   int min_iterations = 10000000;
 
-  // Now loop through all the regions and advance the chemistry.
+  // Now loop through all the cells and advance the chemistry.
   int ierr = 0;
   for (int cell = 0; cell < num_cells; ++cell)
   {
