@@ -60,7 +60,7 @@ build_whitespace_string(curl_cflags -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COM
 
 # --- Cannot build a static version of Curl on Macs.
 if (NOT APPLE)
-  set(LIBRARY_BUILD_OPTS "--enable-static --disable-shared")
+  set(LIBRARY_BUILD_OPTS --enable-static --disable-shared)
 endif()
 
 # --- Add external project build and tie to the CURL build target
