@@ -112,7 +112,7 @@ void BlockVector::CreateData() {
 
   // create the data
   for (int i = 0; i != num_components_; ++i) {
-    data_[i] = Teuchos::rcp(new Epetra_MultiVector(*maps_[i], num_dofs_[i], false));
+    data_[i] = Teuchos::rcp(new Epetra_MultiVector(*maps_[i], num_dofs_[i], true));
   }
 };
 
