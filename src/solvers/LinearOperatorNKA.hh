@@ -117,7 +117,8 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
 
   x.Norm2(&xnorm);
 
-  m_->Apply(x, *r);  // r = f - A * x
+  int ierr = m_->Apply(x, *r);  // r = f - A * x
+  ASSERT(!ierr);
   r->Update(1.0, f, -1.0);
 
   double rnorm0;
@@ -145,11 +146,14 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
 
   bool done = false;
   while (!done) {
-    h_->ApplyInverse(*r, *dxp);
+    ierr = h_->ApplyInverse(*r, *dxp);
+    ASSERT(!ierr);
+
     nka_->Correction(*dxp, *dx);
     x.Update(1.0, *dx, 1.0);
 
-    m_->Apply(x, *r);  // r = f - A * x
+    ierr = m_->Apply(x, *r);  // r = f - A * x
+    ASSERT(!ierr);
     r->Update(1.0, f, -1.0);
 
     double rnorm;
