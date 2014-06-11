@@ -22,17 +22,11 @@ class MatrixMFD_Surf : virtual public MatrixMFD {
   MatrixMFD_Surf(Teuchos::ParameterList& plist,
                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
-  virtual void AssembleGlobalMatrices();
-
   virtual void ApplyBoundaryConditions(const std::vector<MatrixBC>& subsurface_markers,
-          const std::vector<double>& subsurface_values);
+				       const std::vector<double>& subsurface_values, 
+				       bool ADD_BC_FLUX=true);
 
-  virtual void ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
-          const std::vector<double>& bc_values);
-
-  virtual void SetSurfaceOperator(const Teuchos::RCP<MatrixMFD_TPFA>& surface_A) {
-    surface_mesh_ = surface_A->Mesh();
-    surface_A_ = surface_A; }
+  virtual void SetSurfaceOperator(const Teuchos::RCP<MatrixMFD_TPFA>& surface_A);
   virtual Teuchos::RCP<MatrixMFD_TPFA> GetSurfaceOperator() {
     return surface_A_; }
 
@@ -43,14 +37,26 @@ class MatrixMFD_Surf : virtual public MatrixMFD {
     }
   }
 
+  virtual int Apply(const CompositeVector& X,
+                     CompositeVector& Y) const;
+
  protected:
   virtual void FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,
           const Teuchos::Ptr<Epetra_FECrsGraph> ff_graph);
 
+  virtual void AssembleAff_() const;
+  virtual void AssembleSchur_() const;
+  virtual void AssembleRHS_() const;
+
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh_;
   Teuchos::RCP<MatrixMFD_TPFA> surface_A_;
+  bool dump_schur_;
 
+  // TRILINOS FAIL
+  //  Teuchos::RCP<const Epetra_Import> surf_importer_;
+  Teuchos::RCP<const Epetra_Map> surf_map_in_subsurf_;
+  
   friend class MatrixMFD_Coupled_Surf;
 };
 

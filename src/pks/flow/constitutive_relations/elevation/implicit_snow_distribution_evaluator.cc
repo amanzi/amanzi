@@ -206,7 +206,6 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
         matrix_->CreateMFDstiffnessMatrices(Krel_uw.ptr());
         matrix_->CreateMFDrhsVectors();
         matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
-        matrix_->AssembleGlobalMatrices();
 
         // Apply the operator to get div flux
         matrix_->ComputeNegativeResidual(*hz, residual.ptr());
@@ -257,9 +256,6 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
             Acc_cells[c] += cv[0][c] / dt;
           }
         }
-        matrix_->AssembleGlobalMatrices();
-        matrix_->ComputeSchurComplement(bc_markers, bc_values);
-        matrix_->UpdatePreconditioner();
 
         dresult->PutScalar(0.);
         matrix_linsolve_->ApplyInverse(*residual, *dresult);

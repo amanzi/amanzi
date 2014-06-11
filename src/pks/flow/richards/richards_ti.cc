@@ -268,22 +268,8 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   // -- update preconditioner with source term derivatives if needed
   AddSourcesToPrecon_(S_next_.ptr(), h);
   
-  // Assemble and precompute the Schur complement for inversion.
+  // -- apply BCs
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-
-  if (assemble_preconditioner_) {
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "  assembling forward PC operator..." << std::endl;
-    // -- assemble
-    mfd_preconditioner_->AssembleGlobalMatrices();
-    if (precon_used_) {
-      // -- form and prep the Schur complement for inversion
-      if (vo_->os_OK(Teuchos::VERB_EXTREME))
-        *vo_->os() << "  assembling Schur complement..." << std::endl;
-      mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-      mfd_preconditioner_->UpdatePreconditioner();
-    }
-  }
 };
 
 double Richards::ErrorNorm(Teuchos::RCP<const TreeVector> u,

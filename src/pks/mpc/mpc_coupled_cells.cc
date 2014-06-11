@@ -110,10 +110,6 @@ void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
     // scale by 1/h
     mfd_preconditioner_->SetOffDiagonals(dA_dy2->ViewComponent("cell",false),
             dB_dy1->ViewComponent("cell",false), 1./h);
-
-    // Assemble the precon, form Schur complement
-    mfd_preconditioner_->ComputeSchurComplement();
-    mfd_preconditioner_->UpdatePreconditioner();
   }
 }
 

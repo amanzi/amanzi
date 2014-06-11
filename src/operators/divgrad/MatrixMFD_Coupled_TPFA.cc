@@ -84,9 +84,8 @@ int MatrixMFD_Coupled_TPFA::ApplyInverse(const TreeVector& X,
     const Epetra_MultiVector& XA_f = *XA->ViewComponent("face", false);
     Epetra_MultiVector& YA_f = *YA->ViewComponent("face", false);
     const Epetra_MultiVector& DffA_f = *blockA_TPFA_->Dff()->ViewComponent("face",false);
-    const Epetra_CrsMatrix& AfcA = *blockA_TPFA_->Afc();
 
-    AfcA.Multiply(true, YA_c, YA_f);  // Afc is kept in the transpose form.
+    blockA_TPFA_->ApplyAfc(*YA, *YA,0.);
     YA_f.Update(1., XA_f, -1.);
 
     int nfaces = YA_f.MyLength();
@@ -99,8 +98,8 @@ int MatrixMFD_Coupled_TPFA::ApplyInverse(const TreeVector& X,
     const Epetra_MultiVector& XB_f = *XB->ViewComponent("face", false);
     Epetra_MultiVector& YB_f = *YB->ViewComponent("face", false);
     const Epetra_MultiVector& DffB_f = *blockB_TPFA_->Dff()->ViewComponent("face",false);
-    const Epetra_CrsMatrix& AfcB = *blockB_TPFA_->Afc();
-    AfcB.Multiply(true, YB_c, YB_f);  // Afc is kept in the transpose form.
+
+    blockB_TPFA_->ApplyAfc(*YB, *YB,0.);
     YB_f.Update(1., XB_f, -1.);
 
     int nfaces = YB_f.MyLength();
@@ -115,9 +114,6 @@ int MatrixMFD_Coupled_TPFA::ApplyInverse(const TreeVector& X,
 
 void MatrixMFD_Coupled_TPFA::ComputeSchurComplement(bool dump) {
   int ierr(0);
-
-  blockA_TPFA_->AssembleGlobalMatrices();
-  blockB_TPFA_->AssembleGlobalMatrices();
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
   const Epetra_BlockMap& fmap = mesh_->face_map(false);

@@ -173,14 +173,6 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   // Note boundary conditions are in height variables.
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
-  if (assemble_preconditioner_) {
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "  assembling..." << std::endl;
-    mfd_preconditioner_->AssembleGlobalMatrices();
-    mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    mfd_preconditioner_->UpdatePreconditioner();
-  }
-
   /*
   // dump the schur complement
   Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();

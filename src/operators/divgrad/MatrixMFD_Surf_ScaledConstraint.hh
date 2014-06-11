@@ -24,13 +24,14 @@ class MatrixMFD_Surf_ScaledConstraint : public MatrixMFD_Surf,
   MatrixMFD_Surf_ScaledConstraint(Teuchos::ParameterList& plist,
 				  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
-  virtual void AssembleGlobalMatrices();
-
   virtual void ApplyBoundaryConditions(const std::vector<MatrixBC>& subsurface_markers,
-          const std::vector<double>& subsurface_values);
+				       const std::vector<double>& subsurface_values,
+				       bool APPLY_BC_FLUX=true);
 
-  virtual void ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
-          const std::vector<double>& bc_values);
+ protected:
+  virtual void AssembleAff_() const;
+  virtual void AssembleSchur_() const;
+  virtual void AssembleRHS_() const;
 
 };
 
