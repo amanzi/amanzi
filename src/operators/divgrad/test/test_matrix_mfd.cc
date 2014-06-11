@@ -50,9 +50,9 @@ struct mfd {
     plist.set("MFD method", method);
     plist.sublist("preconditioner").set("preconditioner type", "boomer amg");
     plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("number of cycles", 100);
+      .set("cycle applications", 100);
     plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("tolerance", 1.e-10);
+      .set("tolerance", 1.e-14);
     plist.sublist("preconditioner").sublist("boomer amg parameters")
       .set("verbosity", 0);
     plist.sublist("consistent face solver")
@@ -82,17 +82,50 @@ struct mfd {
     return x[0] + x[1] + x[2];
   }
 
-  void setDirichletLinear() {
-    for (int f=0; f!=bc_markers.size(); ++f) {
-      AmanziMesh::Entity_ID_List cells;
-      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-      if (cells.size() == 1) {
-	bc_markers[f] = Operators::MATRIX_BC_DIRICHLET;
-	bc_values[f] = value(mesh->face_centroid(f));
-      }	
+  void communicateBCs() {
+    CompositeVectorSpace space;
+    space.SetMesh(mesh)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 2);
+    CompositeVector bcs(space);
+
+    {
+      Epetra_MultiVector& bcs_f = *bcs.ViewComponent("face",false);
+      for (int f=0; f!=bcs_f.MyLength(); ++f) {
+        if (bc_markers[f] == Operators::MATRIX_BC_DIRICHLET) {
+          bcs_f[0][f] = 1.0;
+          bcs_f[1][f] = bc_values[f];
+        }	
+      }
+    }
+    bcs.ScatterMasterToGhosted("face");
+
+    const Epetra_MultiVector& bcs_f = *bcs.ViewComponent("face",true);
+    for (int f=0; f!=bcs_f.MyLength(); ++f) {
+      if (bcs_f[0][f] > 0) {
+        bc_markers[f] = Operators::MATRIX_BC_DIRICHLET;
+        bc_values[f] = bcs_f[1][f];
+      }
     }
   }
 
+  void setDirichletLinear() {
+    int nfaces = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
+    for (int f=0; f!=nfaces; ++f) {
+      AmanziMesh::Entity_ID_List cells;
+      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+      if (cells.size() == 1) {
+        bc_markers[f] = Operators::MATRIX_BC_DIRICHLET;
+        bc_values[f] = value(mesh->face_centroid(f));
+      }	
+    }
+    communicateBCs();
+  }
+
+  void setDirichletOne() {
+    if (mesh->get_comm()->MyPID() == 0)
+      bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+    communicateBCs();
+  }
+  
   void setSolution(const Teuchos::Ptr<CompositeVector>& x) {
     if (x->HasComponent("cell")) {
       Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
@@ -219,7 +252,7 @@ TEST_FIXTURE(mfd, ApplyRandomTwoPointKr) {
     Teuchos::rcp(new CompositeVector(kr_sp));
   kr->PutScalar(0.5);
 
-  bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+  setDirichletOne();
   createMFD("two point flux approximation", kr.ptr());
 
   Epetra_MultiVector& b_c = *b->ViewComponent("cell",false);
@@ -234,23 +267,11 @@ TEST_FIXTURE(mfd, ApplyRandomTwoPointKr) {
   CompositeVector r(*b);
   r = *b;
 
-  // need a true solver, not just PC
-  Teuchos::ParameterList solver_list;
-  solver_list.set("error tolerance", 1.e-10);
-  
-  AmanziSolvers::LinearOperatorGMRES<CompositeMatrix,
-		      CompositeVector,CompositeVectorSpace> solver(A,A);
-  solver.Init(solver_list);
-
   // test A * A^1 * r - r == 0
   x->PutScalar(0.);
 
-  int ierr = solver.ApplyInverse(*b, *x);
+  int ierr = A->ApplyInverse(*b,*x);
   CHECK(!ierr);
-  CHECK(solver.num_itrs() <= 3);
-
-  //int ierr = A->ApplyInverse(*b,*x);
-  //CHECK(!ierr);
 
   b->PutScalar(0.);
   A->Apply(*x, *b);
@@ -271,7 +292,7 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKr) {
     Teuchos::rcp(new CompositeVector(kr_sp));
   kr->PutScalar(0.5);
 
-  bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+  setDirichletOne();
   createMFD("two point flux approximation", kr.ptr());
 
   Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
@@ -287,25 +308,13 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKr) {
   CompositeVector r(*x);
   r = *x;
 
-  // need a true solver, not just PC
-  Teuchos::ParameterList solver_list;
-  solver_list.set("error tolerance", 1.e-10);
-  
-  AmanziSolvers::LinearOperatorGMRES<CompositeMatrix,
-		      CompositeVector,CompositeVectorSpace> solver(A,A);
-  solver.Init(solver_list);
-
   // test A * A^-1 * r - r == 0
   b->PutScalar(0.);
   A->Apply(*x, *b);
   x->PutScalar(0.);
 
-  int ierr = solver.ApplyInverse(*b, *x);
+  int ierr = A->ApplyInverse(*b,*x);
   CHECK(!ierr);
-  CHECK(solver.num_itrs() <= 3);
-
-  //int ierr = A->ApplyInverse(*b,*x);
-  //CHECK(!ierr);
 
   x->Update(-1., r, 1.);
 
@@ -327,7 +336,7 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKrRandom) {
   }
 
 
-  bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+  setDirichletOne();
   createMFD("two point flux approximation", kr.ptr());
 
   Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
@@ -343,25 +352,13 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKrRandom) {
   CompositeVector r(*x);
   r = *x;
 
-  // need a true solver, not just PC
-  Teuchos::ParameterList solver_list;
-  solver_list.set("error tolerance", 1.e-10);
-  
-  AmanziSolvers::LinearOperatorGMRES<CompositeMatrix,
-		      CompositeVector,CompositeVectorSpace> solver(A,A);
-  solver.Init(solver_list);
-
   // test A * A^-1 * r - r == 0
   b->PutScalar(0.);
   A->Apply(*x, *b);
   x->PutScalar(0.);
 
-  int ierr = solver.ApplyInverse(*b, *x);
+  int ierr = A->ApplyInverse(*b, *x);
   CHECK(!ierr);
-  CHECK(solver.num_itrs() <= 3);
-
-  //int ierr = A->ApplyInverse(*b,*x);
-  //CHECK(!ierr);
 
   x->Update(-1., r, 1.);
 

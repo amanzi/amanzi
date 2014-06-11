@@ -34,17 +34,6 @@ MatrixMFD_Coupled_Surf::SetSurfaceOperators(const Teuchos::RCP<MatrixMFD_TPFA>& 
   ASSERT(surface_A_->Mesh() == surface_B_->Mesh());
   surface_mesh_ = surface_A_->Mesh();
 
-  // Create the surface->subsurface importer and map
-  int nsurf_cells = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  std::vector<int> surf_gids(nsurf_cells, -1);
-
-  const Epetra_Map& face_map = mesh_->face_map(false);
-  for (unsigned int sc=0; sc!=nsurf_cells; ++sc) {
-    surf_gids[sc] = face_map.GID(surface_mesh_->entity_get_parent(AmanziMesh::CELL, sc));
-  }
-
-  surf_map_in_subsurf_ = Teuchos::rcp(new Epetra_Map(-1, nsurf_cells, &surf_gids[0], 0, *blockA_->Mesh()->get_comm()));
-
   MarkLocalMatricesAsChanged_();
 }
 
@@ -257,8 +246,9 @@ MatrixMFD_Coupled_Surf::Apply(const TreeVector& X,
   Epetra_MultiVector surf_XB(surface_mesh_->cell_map(false),1);
 
   for (int sc=0; sc!=surf_XA.MyLength(); ++sc) {
-    surf_XA[0][sc] = XA_f[0][surf_map_in_subsurf_->GID(sc)];
-    surf_XB[0][sc] = XB_f[0][surf_map_in_subsurf_->GID(sc)]; 
+    AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL, sc);
+    surf_XA[0][sc] = XA_f[0][f];
+    surf_XB[0][sc] = XB_f[0][f]; 
  }
 
   // Apply the surface-only operators, blockwise
@@ -282,8 +272,9 @@ MatrixMFD_Coupled_Surf::Apply(const TreeVector& X,
   Epetra_MultiVector& YA_f = *YA->ViewComponent("face",false);
   Epetra_MultiVector& YB_f = *YB->ViewComponent("face",false);
   for (int sc=0; sc!=surf_YA.MyLength(); ++sc) {
-    YA_f[0][surf_map_in_subsurf_->GID(sc)] += surf_YA[0][sc];
-    YB_f[0][surf_map_in_subsurf_->GID(sc)] += surf_YB[0][sc];
+    AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL, sc);
+    YA_f[0][f] += surf_YA[0][sc];
+    YB_f[0][f] += surf_YB[0][sc];
   }
   return ierr;
 }

@@ -52,7 +52,7 @@ struct mfd {
     plist.set("MFD method", method);
     plist.sublist("preconditioner").set("preconditioner type", "boomer amg");
     plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("number of cycles", 100);
+      .set("cycle applications", 100);
     plist.sublist("preconditioner").sublist("boomer amg parameters")
       .set("tolerance", 1.e-10);
     plist.sublist("preconditioner").sublist("boomer amg parameters")
@@ -60,7 +60,7 @@ struct mfd {
     plist.sublist("consistent face solver")
       .set("iterative method", "gmres");
     plist.sublist("consistent face solver").sublist("gmres parameters")
-      .set("error tolerance", 1.e-10);
+      .set("error tolerance", 1.e-14);
     plist.sublist("consistent face solver").sublist("gmres parameters")
       .set("maximum number of iterations", 100);
     plist.sublist("consistent face solver").sublist("preconditioner")
@@ -87,9 +87,9 @@ struct mfd {
     plist.set("MFD method", method);
     plist.sublist("preconditioner").set("preconditioner type", "boomer amg");
     plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("number of cycles", 100);
+      .set("cycle applications", 100);
     plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("tolerance", 1.e-10);
+      .set("tolerance", 1.e-14);
     plist.sublist("preconditioner").sublist("boomer amg parameters")
       .set("verbosity", 0);
     plist.sublist("consistent face solver")
@@ -117,41 +117,68 @@ struct mfd {
     return x[0] + x[1] + x[2];
   }
 
-  void setDirichletLinear() {
-    for (int f=0; f!=bc_markers.size(); ++f) {
-      AmanziMesh::Entity_ID_List cells;
-      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-      if (cells.size() == 1) {
-	bc_markers[f] = Operators::MATRIX_BC_DIRICHLET;
-	bc_values[f] = value(mesh->face_centroid(f));
-      }	
+  void communicateBCs() {
+    CompositeVectorSpace space;
+    space.SetMesh(mesh)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 2);
+    CompositeVector bcs(space);
+
+    {
+      Epetra_MultiVector& bcs_f = *bcs.ViewComponent("face",false);
+      for (int f=0; f!=bcs_f.MyLength(); ++f) {
+        if (bc_markers[f] == Operators::MATRIX_BC_DIRICHLET) {
+          bcs_f[0][f] = 1.0;
+          bcs_f[1][f] = bc_values[f];
+        }	
+      }
+    }
+    bcs.ScatterMasterToGhosted("face");
+
+    const Epetra_MultiVector& bcs_f = *bcs.ViewComponent("face",true);
+    for (int f=0; f!=bcs_f.MyLength(); ++f) {
+      if (bcs_f[0][f] > 0) {
+        bc_markers[f] = Operators::MATRIX_BC_DIRICHLET;
+        bc_values[f] = bcs_f[1][f];
+      }
     }
   }
 
+  void setDirichletLinear() {
+    int nfaces = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
+    for (int f=0; f!=nfaces; ++f) {
+      AmanziMesh::Entity_ID_List cells;
+      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+      if (cells.size() == 1) {
+        bc_markers[f] = Operators::MATRIX_BC_DIRICHLET;
+        bc_values[f] = value(mesh->face_centroid(f));
+      }	
+    }
+    communicateBCs();
+  }
+      
+    
   void setSolution(const Teuchos::Ptr<CompositeVector>& x) {
     if (x->HasComponent("cell")) {
       Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
       for (int c=0; c!=x_c.MyLength(); ++c) {
-	x_c[0][c] = value(mesh->cell_centroid(c));
+        x_c[0][c] = value(mesh->cell_centroid(c));
       }
     }
 
     if (x->HasComponent("face")) {
       Epetra_MultiVector& x_f = *x->ViewComponent("face",false);
       for (int f=0; f!=x_f.MyLength(); ++f) {
-	x_f[0][f] = value(mesh->face_centroid(f));
+        x_f[0][f] = value(mesh->face_centroid(f));
       }
     }
   }
 };
 
 TEST_FIXTURE(mfd, ApplyConstantScaledConstraint) {
-  Teuchos::RCP<CompositeVector> kr = Teuchos::null;
-  createMFD("two point flux approximation", kr.ptr(), true);
+  createMFD("two point flux approximation", Teuchos::null, true);
 
   x->PutScalar(1.);
   A->Apply(*x, *b);
-
+  
   double norm;
   b->Norm2(&norm);
   std::cout << "norm = " <<  norm << std::endl;
@@ -254,7 +281,9 @@ TEST_FIXTURE(mfd, ApplyRandomScaledConstraintKr) {
     Teuchos::rcp(new CompositeVector(kr_sp));
   kr->PutScalar(0.5);
 
-  bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+  if (mesh->get_comm()->MyPID() == 0)
+    bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+  communicateBCs();
   createMFD("two point flux approximation", kr.ptr(), true);
 
   Epetra_MultiVector& b_c = *b->ViewComponent("cell",false);
@@ -269,23 +298,12 @@ TEST_FIXTURE(mfd, ApplyRandomScaledConstraintKr) {
   CompositeVector r(*b);
   r = *b;
 
-  // need a true solver, not just PC
-  Teuchos::ParameterList solver_list;
-  solver_list.set("error tolerance", 1.e-10);
-  
-  AmanziSolvers::LinearOperatorGMRES<CompositeMatrix,
-		      CompositeVector,CompositeVectorSpace> solver(A,A);
-  solver.Init(solver_list);
 
   // test A * A^1 * r - r == 0
   x->PutScalar(0.);
 
-  int ierr = solver.ApplyInverse(*b, *x);
+  int ierr = A->ApplyInverse(*b,*x);
   CHECK(!ierr);
-  CHECK(solver.num_itrs() <= 3);
-
-  //int ierr = A->ApplyInverse(*b,*x);
-  //CHECK(!ierr);
 
   b->PutScalar(0.);
   A->Apply(*x, *b);
@@ -306,7 +324,9 @@ TEST_FIXTURE(mfd, ApplyInverseRandomScaledConstraintKr) {
     Teuchos::rcp(new CompositeVector(kr_sp));
   kr->PutScalar(0.5);
 
-  bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+  if (mesh->get_comm()->MyPID() == 0)
+    bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+  communicateBCs();
   createMFD("two point flux approximation", kr.ptr(), true);
 
   Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
@@ -322,25 +342,13 @@ TEST_FIXTURE(mfd, ApplyInverseRandomScaledConstraintKr) {
   CompositeVector r(*x);
   r = *x;
 
-  // need a true solver, not just PC
-  Teuchos::ParameterList solver_list;
-  solver_list.set("error tolerance", 1.e-10);
-  
-  AmanziSolvers::LinearOperatorGMRES<CompositeMatrix,
-		      CompositeVector,CompositeVectorSpace> solver(A,A);
-  solver.Init(solver_list);
-
   // test A * A^-1 * r - r == 0
   b->PutScalar(0.);
   A->Apply(*x, *b);
   x->PutScalar(0.);
 
-  int ierr = solver.ApplyInverse(*b, *x);
+  int ierr = A->ApplyInverse(*b,*x);
   CHECK(!ierr);
-  CHECK(solver.num_itrs() <= 3);
-
-  //int ierr = A->ApplyInverse(*b,*x);
-  //CHECK(!ierr);
 
   x->Update(-1., r, 1.);
 
@@ -360,18 +368,25 @@ TEST_FIXTURE(mfd, ScaledConstraintCompareMFD) {
     Teuchos::rcp(new CompositeVector(kr_sp));
   kr->PutScalar(0.5);
 
-  bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+  if (mesh->get_comm()->MyPID() == 0)
+    bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+  communicateBCs();
+
   createMFD("two point flux approximation", kr.ptr(), true);
   createMFDRef("two point flux approximation", kr.ptr(), true);
+  //  createMFD("two point flux approximation", Teuchos::null, true);
+  //  createMFDRef("two point flux approximation", Teuchos::null, true);
 
-  Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
-  std::srand(0);
-  for (int c=0; c!=x_c.MyLength(); ++c) {
-    x_c[0][c] = (std::rand() % 1000) / 1000.0;
-  }
-  Epetra_MultiVector& x_f = *x->ViewComponent("face",false);
-  for (int f=0; f!=x_f.MyLength(); ++f) {
-    x_f[0][f] = (std::rand() % 1000) / 1000.0;
+  {
+    Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
+    std::srand(0);
+    for (int c=0; c!=x_c.MyLength(); ++c) {
+      x_c[0][c] = (std::rand() % 1000) / 1000.0;
+    }
+    Epetra_MultiVector& x_f = *x->ViewComponent("face",false);
+    for (int f=0; f!=x_f.MyLength(); ++f) {
+      x_f[0][f] = (std::rand() % 1000) / 1000.0;
+    }
   }
   
   Teuchos::RCP<CompositeVector> bref = Teuchos::rcp(new CompositeVector(*b));
@@ -382,47 +397,41 @@ TEST_FIXTURE(mfd, ScaledConstraintCompareMFD) {
   A->Apply(*x, *b);
   Aref->Apply(*x, *bref);
 
-  Epetra_MultiVector& b_f = *b->ViewComponent("face",false);
-  for (int f=0; f!=bc_markers.size(); ++f) {
-    if (bc_markers[f] != Operators::MATRIX_BC_DIRICHLET) {
-      b_f[0][f] *= 0.5;
+  {
+    Epetra_MultiVector& b_f = *b->ViewComponent("face",false);
+    for (int f=0; f!=b_f.MyLength(); ++f) {
+      if (bc_markers[f] != Operators::MATRIX_BC_DIRICHLET) {
+        b_f[0][f] *= 0.5;
+      }
     }
   }
+
   bref->Update(1.,*b, -1);
   double norm = 0.;
   bref->Norm2(&norm);
-  std::cout << "norm = " <<  norm << std::endl;
+
+  std::cout << "Apply norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
-
-  // test A^1*x == Aref^1*x
-  // need a true solver, not just PC
-  Teuchos::ParameterList solver_list;
-  solver_list.set("error tolerance", 1.e-10);
-  
-  AmanziSolvers::LinearOperatorGMRES<CompositeMatrix,
-		      CompositeVector,CompositeVectorSpace> solver(A,A);
-  solver.Init(solver_list);
-  AmanziSolvers::LinearOperatorGMRES<CompositeMatrix,
-		      CompositeVector,CompositeVectorSpace> solver_ref(Aref,Aref);
-  solver_ref.Init(solver_list);
-
 
   b->PutScalar(0.);
   bref->PutScalar(0.);
-  solver_ref.ApplyInverse(*x, *bref);
-
+  Aref->ApplyInverse(*x, *bref);
+  
   // rescale the non-dirichlet rhs to accomodate for kr
-  for (int f=0; f!=bc_markers.size(); ++f) {
-    if (bc_markers[f] != Operators::MATRIX_BC_DIRICHLET) {
-      x_f[0][f] *= 1./0.5;
+  {
+    Epetra_MultiVector& x_f = *x->ViewComponent("face",false);
+    for (int f=0; f!=x_f.MyLength(); ++f) {
+      if (bc_markers[f] != Operators::MATRIX_BC_DIRICHLET) {
+        x_f[0][f] *= 1./0.5;
+      }
     }
   }
 
-  solver.ApplyInverse(*x, *b);
+  A->ApplyInverse(*x, *b);
   bref->Update(1.,*b, -1);
   norm = 0.;
   bref->Norm2(&norm);
-  std::cout << "norm = " <<  norm << std::endl;
+  std::cout << "ApplyInverse norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 
   // test flux
@@ -432,6 +441,7 @@ TEST_FIXTURE(mfd, ScaledConstraintCompareMFD) {
   createMFDRef("two point flux approximation", kr.ptr(), false);
   A->DeriveFlux(*x, b.ptr());
   Aref->DeriveFlux(*x, bref.ptr());
+
   bref->Update(1.,*b, -1);
   norm = 0.;
   bref->Norm2(&norm);

@@ -28,20 +28,6 @@ void
 MatrixMFD_Surf::SetSurfaceOperator(const Teuchos::RCP<MatrixMFD_TPFA>& surface_A) {
   surface_A_ = surface_A;
   surface_mesh_ = surface_A_->Mesh();
-
-  // Create the surface->subsurface importer and map
-  int nsurf_cells = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  std::vector<int> surf_gids(nsurf_cells, -1);
-
-  const Epetra_Map& face_map = Mesh()->face_map(false);
-  for (unsigned int sc=0; sc!=nsurf_cells; ++sc) {
-    surf_gids[sc] = face_map.GID(surface_mesh_->entity_get_parent(AmanziMesh::CELL, sc));
-  }
-
-  surf_map_in_subsurf_ = Teuchos::rcp(new Epetra_Map(-1, nsurf_cells, &surf_gids[0], 0, *surface_A_->Mesh()->get_comm()));
-
-  // TRILINOS FAIL
-  //  surf_importer_ = Teuchos::rcp(new Epetra_Import(*surf_map_in_subsurf_,face_map));
 }
 
 
@@ -56,7 +42,7 @@ int MatrixMFD_Surf::Apply(const CompositeVector& X,
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", false);
   Epetra_MultiVector surf_X(surface_mesh_->cell_map(false),1);
   for (int sc=0; sc!=surf_X.MyLength(); ++sc) {
-    surf_X[0][sc] = Xf[0][surf_map_in_subsurf_->GID(sc)];
+    surf_X[0][sc] = Xf[0][surface_mesh_->entity_get_parent(AmanziMesh::CELL, sc)];
   }
   
   // Apply the surface-only operators, blockwise
@@ -67,7 +53,7 @@ int MatrixMFD_Surf::Apply(const CompositeVector& X,
   // Add back into Y
   Epetra_MultiVector& Yf = *Y.ViewComponent("face",false);
   for (int sc=0; sc!=surf_X.MyLength(); ++sc) {
-    Yf[0][surf_map_in_subsurf_->GID(sc)] += surf_Y[0][sc];
+    Yf[0][surface_mesh_->entity_get_parent(AmanziMesh::CELL, sc)] += surf_Y[0][sc];
   }
   return ierr;
 }
