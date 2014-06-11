@@ -63,7 +63,7 @@ struct mfd {
     plist.sublist("preconditioner").sublist("boomer amg parameters")
       .set("tolerance", 1.e-14);
     plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("verbosity", 3);
+      .set("verbosity", 0);
     plist.sublist("preconditioner").sublist("boomer amg parameters")
       .set("number of functions", 2);
     plist.sublist("consistent face solver")
@@ -274,20 +274,8 @@ TEST_FIXTURE(mfd, ApplyRandomTwoPointKr) {
   TreeVector r(*b);
   r = *b;
 
-  // need a true solver, not just PC
-  Teuchos::ParameterList solver_list;
-  solver_list.set("error tolerance", 1.e-10);
-  
-  AmanziSolvers::LinearOperatorGMRES<TreeMatrix,
-		      TreeVector,TreeVectorSpace> solver(C,C);
-  solver.Init(solver_list);
-
   // test A * A^1 * r - r == 0
   x->PutScalar(0.);
-
-  // int ierr = solver.ApplyInverse(*b, *x);
-  // CHECK(!ierr);
-  // CHECK(solver.num_itrs() <= 3);
 
   int ierr = C->ApplyInverse(*b,*x);
   CHECK(!ierr);
@@ -295,8 +283,6 @@ TEST_FIXTURE(mfd, ApplyRandomTwoPointKr) {
   b->PutScalar(0.);
   C->Apply(*x, *b);
   b->Update(-1., r, 1.);
-  std::cout << "A(Inv(b))-b = " << std::endl;
-  b->Print(std::cout);
 
   double norm = 0.;
   b->Norm2(&norm);
@@ -338,29 +324,15 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKr) {
   TreeVector r(*x);
   r = *x;
 
-  // need a true solver, not just PC
-  Teuchos::ParameterList solver_list;
-  solver_list.set("error tolerance", 1.e-10);
-  
-  AmanziSolvers::LinearOperatorGMRES<TreeMatrix,
-		      TreeVector,TreeVectorSpace> solver(C,C);
-  solver.Init(solver_list);
-
   // test A * A^-1 * r - r == 0
   b->PutScalar(0.);
   C->Apply(*x, *b);
   x->PutScalar(0.);
 
-  // int ierr = solver.ApplyInverse(*b, *x);
-  // CHECK(!ierr);
-  // CHECK(solver.num_itrs() <= 3);
-
   int ierr = C->ApplyInverse(*b,*x);
   CHECK(!ierr);
 
   x->Update(-1., r, 1.);
-  std::cout << "Inv(A(x))-x = " << std::endl;
-  x->Print(std::cout);
 
   double norm = 0.;
   x->Norm2(&norm);

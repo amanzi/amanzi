@@ -54,6 +54,7 @@ struct mfd {
     mesh = factory.create(plist->sublist("Mesh").sublist("Generate Mesh"), &gm);
     std::vector<std::string> surface_sets(1,"3D surface domain");
     surf_mesh = factory.create(&*mesh, surface_sets, AmanziMesh::FACE, true, false);
+    std::cout << "On proc: " << surf_mesh->get_comm()->MyPID() << " there are " << surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED) << " owned cells." << std::endl;
 
     // Boundary conditions
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -74,9 +75,9 @@ struct mfd {
     plist.sublist("preconditioner").sublist("boomer amg parameters")
       .set("cycle applications", 100);
     plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("tolerance", 1.e-10);
+      .set("tolerance", 1.e-14);
     plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("verbosity", 3);
+      .set("verbosity", 0);
     plist.sublist("preconditioner").sublist("boomer amg parameters")
       .set("number of functions", 2);
     plist.sublist("consistent face solver")
@@ -153,17 +154,63 @@ struct mfd {
     return x[0] + x[1] + x[2];
   }
 
-  void setDirichletLinear() {
-    for (int f=0; f!=bc_markers.size(); ++f) {
-      AmanziMesh::Entity_ID_List cells;
-      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-      if (cells.size() == 1) {
-	bc_markers[f] = Operators::MATRIX_BC_DIRICHLET;
-	bc_values[f] = value(mesh->face_centroid(f));
-      }	
+
+  void communicateBCs() {
+    CompositeVectorSpace space;
+    space.SetMesh(mesh)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 2);
+    CompositeVector bcs(space);
+
+    {
+      Epetra_MultiVector& bcs_f = *bcs.ViewComponent("face",false);
+      for (int f=0; f!=bcs_f.MyLength(); ++f) {
+        if (bc_markers[f] == Operators::MATRIX_BC_DIRICHLET) {
+          bcs_f[0][f] = 1.0;
+          bcs_f[1][f] = bc_values[f];
+        }	
+      }
+    }
+    bcs.ScatterMasterToGhosted("face");
+
+    const Epetra_MultiVector& bcs_f = *bcs.ViewComponent("face",true);
+    for (int f=0; f!=bcs_f.MyLength(); ++f) {
+      if (bcs_f[0][f] > 0) {
+        bc_markers[f] = Operators::MATRIX_BC_DIRICHLET;
+        bc_values[f] = bcs_f[1][f];
+      }
     }
   }
 
+  void communicateBCsSurf() {
+    CompositeVectorSpace space;
+    space.SetMesh(surf_mesh)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 2);
+    CompositeVector bcs(space);
+
+    {
+      Epetra_MultiVector& bcs_f = *bcs.ViewComponent("face",false);
+      for (int f=0; f!=bcs_f.MyLength(); ++f) {
+        if (surf_bc_markers[f] == Operators::MATRIX_BC_DIRICHLET) {
+          bcs_f[0][f] = 1.0;
+          bcs_f[1][f] = surf_bc_values[f];
+        }	
+      }
+    }
+    bcs.ScatterMasterToGhosted("face");
+
+    const Epetra_MultiVector& bcs_f = *bcs.ViewComponent("face",true);
+    for (int f=0; f!=bcs_f.MyLength(); ++f) {
+      if (bcs_f[0][f] > 0) {
+        surf_bc_markers[f] = Operators::MATRIX_BC_DIRICHLET;
+        surf_bc_values[f] = bcs_f[1][f];
+      }
+    }
+  }
+
+  void setDirichletOne() {
+    if (mesh->get_comm()->MyPID() == 0)
+      bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+    communicateBCs();
+  }
+  
   void setSolution(const Teuchos::Ptr<TreeVector>& x) {
     setSolution(x->SubVector(0)->Data().ptr());
     setSolution(x->SubVector(1)->Data().ptr());
@@ -187,8 +234,7 @@ struct mfd {
 };
 
 TEST_FIXTURE(mfd, ApplyConstantTwoPoint) {
-  Teuchos::RCP<CompositeVector> kr = Teuchos::null;
-  createMFD("two point flux approximation", "boomer amg", kr.ptr());
+  createMFD("two point flux approximation", "boomer amg", Teuchos::null);
 
   x->PutScalar(1.);
   C->Apply(*x, *b);
@@ -218,7 +264,7 @@ TEST_FIXTURE(mfd, ApplyConstantTwoPointKr) {
 }
 
 TEST_FIXTURE(mfd, SymmetricRandomTwoPointKr) {
-  bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+  setDirichletOne();
   createMFD("two point flux approximation", "boomer amg", Teuchos::null);
 
   Epetra_MultiVector& bA_c = *bA->ViewComponent("cell",false);
@@ -260,7 +306,7 @@ TEST_FIXTURE(mfd, SymmetricRandomTwoPointKr) {
   plist.sublist("preconditioner").sublist("boomer amg parameters")
     .set("tolerance", 1.e-10);
   plist.sublist("preconditioner").sublist("boomer amg parameters")
-    .set("verbosity", 3);
+    .set("verbosity", 0);
   plist.sublist("consistent face solver")
     .set("iterative method", "nka");
   plist.sublist("consistent face solver").sublist("nka parameters")
@@ -340,7 +386,7 @@ TEST_FIXTURE(mfd, ApplyRandomTwoPointKr) {
     Teuchos::rcp(new CompositeVector(kr_sp));
   kr->PutScalar(0.5);
 
-  bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+  setDirichletOne();
   createMFD("two point flux approximation", "boomer amg", kr.ptr());
 
   Epetra_MultiVector& bA_c = *bA->ViewComponent("cell",false);
@@ -372,8 +418,6 @@ TEST_FIXTURE(mfd, ApplyRandomTwoPointKr) {
   b->PutScalar(0.);
   C->Apply(*x, *b);
   b->Update(-1., r, 1.);
-  std::cout << "A(Inv(b))-b = " << std::endl;
-  b->Print(std::cout);
 
   double norm = 0.;
   b->Norm2(&norm);
@@ -390,7 +434,7 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKr) {
     Teuchos::rcp(new CompositeVector(kr_sp));
   kr->PutScalar(0.5);
 
-  bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+  setDirichletOne();
   //  createMFD("two point flux approximation", "boomer amg", kr.ptr());
   createMFD("two point flux approximation", "boomer amg", Teuchos::null);
 
@@ -423,8 +467,6 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKr) {
   C->ApplyInverse(*b, *x);
 
   x->Update(-1., r, 1.);
-  std::cout << "Inv(A(x))-x = " << std::endl;
-  x->Print(std::cout);
 
   double norm = 0.;
   x->Norm2(&norm);
