@@ -320,14 +320,14 @@ TEST_FIXTURE(mfd, SymmetricRandomTwoPointKr) {
   norm = 0.;
   r.SubVector(0)->Norm2(&norm);
   std::cout << "Symm norm on inverse = " << norm << std::endl;
-  CHECK_CLOSE(0., norm, 1.e-8);
+  CHECK_CLOSE(0., norm, 1.e-7);
 
   r.PutScalar(0.);
   ierr = D->ApplyInverse(*b->SubVector(0)->Data(), *r.SubVector(0)->Data());
   r.SubVector(0)->Update(1., *x->SubVector(0), -1.);
   r.SubVector(0)->Norm2(&norm);
   std::cout << "Surf norm on inverse = " << norm << std::endl;
-  CHECK_CLOSE(0., norm, 1.e-8);
+  CHECK_CLOSE(0., norm, 1.e-7);
 
 }
 
@@ -378,7 +378,7 @@ TEST_FIXTURE(mfd, ApplyRandomTwoPointKr) {
   double norm = 0.;
   b->Norm2(&norm);
   std::cout << "norm = " <<  norm << std::endl;
-  CHECK_CLOSE(0., norm, 1.e-8);
+  CHECK_CLOSE(0., norm, 1.e-7);
 }
 
 
@@ -429,6 +429,6 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKr) {
   double norm = 0.;
   x->Norm2(&norm);
   std::cout << "norm = " <<  norm << std::endl;
-  CHECK_CLOSE(0., norm, 1.e-8);
+  CHECK_CLOSE(0., norm, 1.e-7);
 }
 

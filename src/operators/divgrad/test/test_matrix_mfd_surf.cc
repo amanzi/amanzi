@@ -64,15 +64,15 @@ struct mfd {
     plist.set("dump Schur complement", true);
     plist.sublist("preconditioner").set("preconditioner type", "boomer amg");
     plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("number of cycles", 100);
+      .set("cycle applications", 100);
     plist.sublist("preconditioner").sublist("boomer amg parameters")
       .set("tolerance", 1.e-10);
     plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("verbosity", 0);
+      .set("verbosity", 3);
     plist.sublist("consistent face solver")
       .set("iterative method", "nka");
     plist.sublist("consistent face solver").sublist("nka parameters")
-      .set("error tolerance", 1.e-10);
+      .set("error tolerance", 1.e-14);
     plist.sublist("consistent face solver").sublist("nka parameters")
       .set("maximum number of iterations", 100);
     plist.sublist("consistent face solver").sublist("preconditioner")
@@ -441,7 +441,7 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKrRandom) {
   double norm = 0.;
   x->Norm2(&norm);
   std::cout << "norm = " <<  norm << std::endl;
-  CHECK_CLOSE(0., norm, 1.e-8);
+  CHECK_CLOSE(0., norm, 1.e-7);
 }
 
 
