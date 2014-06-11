@@ -431,16 +431,6 @@ MPCPermafrost3::UpdatePreconditioner(double t,
                            Teuchos::null, // dWC_dT = 0
                            dEdp_surf->ViewComponent("cell",false),
                            1./h);
-
-  // Assemble the precon, form Schur complement
-  precon_->AssembleGlobalMatrices();
-  precon_->ComputeSchurComplement();
-  precon_->UpdatePreconditioner();
-
-  // ewc precon
-  if (precon_type_ == PRECON_EWC) {
-    sub_ewc_->UpdatePreconditioner(t, up, h);
-  }
 }
 
 // -- Modify the predictor.

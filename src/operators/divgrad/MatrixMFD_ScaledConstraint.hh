@@ -44,7 +44,8 @@ class MatrixMFD_ScaledConstraint : virtual public MatrixMFD {
       const Teuchos::Ptr<const CompositeVector>& Krel);
 
   virtual void ApplyBoundaryConditions(const std::vector<MatrixBC>& bc_markers,
-          const std::vector<double>& bc_values);
+				       const std::vector<double>& bc_values, 
+				       bool ADD_BC_FLUX=true);
 
   // First derivative quantities.
   virtual void DeriveFlux(const CompositeVector& solution,

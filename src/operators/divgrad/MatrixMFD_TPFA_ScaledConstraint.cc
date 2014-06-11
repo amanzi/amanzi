@@ -29,8 +29,7 @@ void MatrixMFD_TPFA_ScaledConstraint::CreateMFDstiffnessMatrices(
 
   } else {
     // tag global matrices as invalid
-    assembled_schur_ = false;
-    assembled_operator_ = false;
+    MarkLocalMatricesAsChanged_();
 
     // store a copy of Krel on faces
     Krel->ScatterMasterToGhosted("face");
@@ -53,6 +52,7 @@ void MatrixMFD_TPFA_ScaledConstraint::CreateMFDstiffnessMatrices(
     }
     if (Acc_cells_.size() != ncells) {
       Acc_cells_.resize(static_cast<size_t>(ncells));
+      Acc_ = Teuchos::rcp(new Epetra_Vector(View,mesh_->cell_map(false),&Acc_cells_[0]));
     }     
 
     for (int c=0; c!=ncells; ++c) {

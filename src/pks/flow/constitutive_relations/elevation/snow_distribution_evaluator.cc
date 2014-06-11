@@ -137,7 +137,6 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       matrix_->CreateMFDstiffnessMatrices(Krel_uw.ptr());
       matrix_->CreateMFDrhsVectors();
       matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
-      matrix_->AssembleGlobalMatrices();
 
       // Apply the operator to get a residual
       matrix_->ComputeNegativeResidual(*hz, residual.ptr());
@@ -170,9 +169,6 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         Acc_cells[c] += cv[0][c];
       }
       matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
-      matrix_->AssembleGlobalMatrices();
-      matrix_->ComputeSchurComplement(bc_markers, bc_values);
-      matrix_->UpdatePreconditioner();
       matrix_->ApplyInverse(*residual, *du);
 
       // apply correction

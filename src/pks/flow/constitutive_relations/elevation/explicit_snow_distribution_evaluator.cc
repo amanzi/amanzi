@@ -180,7 +180,6 @@ void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
       matrix_->CreateMFDstiffnessMatrices(Krel_uw.ptr());
       matrix_->CreateMFDrhsVectors();
       matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
-      matrix_->AssembleGlobalMatrices();
 
       // Apply the operator to get div flux
       matrix_->ComputeResidual(*hz, divq.ptr());

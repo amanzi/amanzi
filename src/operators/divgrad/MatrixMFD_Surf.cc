@@ -19,7 +19,58 @@ namespace Operators {
 
 MatrixMFD_Surf::MatrixMFD_Surf(Teuchos::ParameterList& plist,
 			       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-    MatrixMFD(plist,mesh) {}
+    MatrixMFD(plist,mesh) {
+  // dump
+  dump_schur_ = plist_.get<bool>("dump Schur complement", false);
+}
+
+void
+MatrixMFD_Surf::SetSurfaceOperator(const Teuchos::RCP<MatrixMFD_TPFA>& surface_A) {
+  surface_A_ = surface_A;
+  surface_mesh_ = surface_A_->Mesh();
+
+  // Create the surface->subsurface importer and map
+  int nsurf_cells = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  std::vector<int> surf_gids(nsurf_cells, -1);
+
+  const Epetra_Map& face_map = Mesh()->face_map(false);
+  for (unsigned int sc=0; sc!=nsurf_cells; ++sc) {
+    surf_gids[sc] = face_map.GID(surface_mesh_->entity_get_parent(AmanziMesh::CELL, sc));
+  }
+
+  surf_map_in_subsurf_ = Teuchos::rcp(new Epetra_Map(-1, nsurf_cells, &surf_gids[0], 0, *surface_A_->Mesh()->get_comm()));
+
+  // TRILINOS FAIL
+  //  surf_importer_ = Teuchos::rcp(new Epetra_Import(*surf_map_in_subsurf_,face_map));
+}
+
+
+
+int MatrixMFD_Surf::Apply(const CompositeVector& X,
+			  CompositeVector& Y) const {
+  // Apply the base, subsurface matrix
+  int ierr = MatrixMFD::Apply(X,Y);
+  ASSERT(!ierr);
+
+  // Manually copy data -- TRILINOS FAIL
+  const Epetra_MultiVector& Xf = *X.ViewComponent("face", false);
+  Epetra_MultiVector surf_X(surface_mesh_->cell_map(false),1);
+  for (int sc=0; sc!=surf_X.MyLength(); ++sc) {
+    surf_X[0][sc] = Xf[0][surf_map_in_subsurf_->GID(sc)];
+  }
+  
+  // Apply the surface-only operators, blockwise
+  Epetra_MultiVector surf_Y(surface_mesh_->cell_map(false),1);
+  ierr |= surface_A_->Apply(surf_X, surf_Y);
+  ASSERT(!ierr);
+
+  // Add back into Y
+  Epetra_MultiVector& Yf = *Y.ViewComponent("face",false);
+  for (int sc=0; sc!=surf_X.MyLength(); ++sc) {
+    Yf[0][surf_map_in_subsurf_->GID(sc)] += surf_Y[0][sc];
+  }
+  return ierr;
+}
 
 
 void MatrixMFD_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,
@@ -59,11 +110,11 @@ void MatrixMFD_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_gr
 
 
 // Assumes the Surface A was already assembled.
-void MatrixMFD_Surf::AssembleGlobalMatrices() {
+void MatrixMFD_Surf::AssembleAff_() const {
   int ierr(0);
 
   // Get the standard MFD pieces.
-  MatrixMFD::AssembleGlobalMatrices();
+  MatrixMFD::AssembleAff_();
 
   // Add the TPFA on the surface parts from surface_A.
   const Epetra_Map& surf_cmap_wghost = surface_mesh_->cell_map(true);
@@ -118,13 +169,20 @@ void MatrixMFD_Surf::AssembleGlobalMatrices() {
   delete[] indices_global;
   delete[] gvalues;
   delete[] values;
+}
 
 
-  // Deal with RHS
+void MatrixMFD_Surf::AssembleRHS_() const {
+  // MFD portion
+  MatrixMFD::AssembleRHS_();
+
+  // Add in surf portion
   const Epetra_MultiVector& rhs_surf_cells =
       *surface_A_->rhs()->ViewComponent("cell",false);
   const Epetra_MultiVector& rhs_faces =
       *rhs_->ViewComponent("face",false);
+
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     rhs_faces[0][f] += rhs_surf_cells[0][sc];
@@ -134,7 +192,8 @@ void MatrixMFD_Surf::AssembleGlobalMatrices() {
 
 void MatrixMFD_Surf::ApplyBoundaryConditions(
     const std::vector<MatrixBC>& bc_markers,
-    const std::vector<double>& bc_values) {
+    const std::vector<double>& bc_values,
+    bool ADD_BC_FLUX) {
   // Ensure that none of the surface faces have a BC in them.
   std::vector<MatrixBC> new_markers(bc_markers);
 
@@ -144,29 +203,16 @@ void MatrixMFD_Surf::ApplyBoundaryConditions(
     new_markers[f] = MATRIX_BC_NULL;
   }
 
-  MatrixMFD::ApplyBoundaryConditions(new_markers, bc_values);
+  MatrixMFD::ApplyBoundaryConditions(new_markers, bc_values, ADD_BC_FLUX);
 }
 
 
 
-void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
-        const std::vector<double>& bc_values) {
-  std::vector<MatrixBC> new_markers(bc_markers);
-
+void MatrixMFD_Surf::AssembleSchur_() const {
   int ierr(0);
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
-    AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
-    new_markers[f] = MATRIX_BC_NULL;
-  }
 
   // Call base Schur
-  MatrixMFD::ComputeSchurComplement(new_markers, bc_values);
-
-  // dump the schur complement
-  // std::stringstream filename_s;
-  // filename_s << "schur_pre_surf_" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *Sff_);
+  MatrixMFD::AssembleSchur_();
 
   // Add the TPFA on the surface parts from surface_A.
   const Epetra_Map& surf_cmap_wghost = surface_mesh_->cell_map(true);
@@ -184,6 +230,7 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<MatrixBC>& bc_mark
   indices_global = new int[9];
 
   // Loop over surface cells (subsurface faces)
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     // Access the row in Spp
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
@@ -213,9 +260,11 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<MatrixBC>& bc_mark
   delete[] values;
 
   // dump the schur complement
-  // std::stringstream filename_s2;
-  // filename_s2 << "schur_post_surf_" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Sff_);
+  if (dump_schur_) {
+    std::stringstream filename_s2;
+    filename_s2 << "schur_MatrixMFD_Surf_" << 0 << ".txt";
+    EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Sff_);
+  }
 }
 
 

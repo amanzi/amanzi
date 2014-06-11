@@ -105,7 +105,6 @@ void AdvectionDiffusion::ApplyDiffusion_(const Teuchos::RCP<State> S,
   matrix_->CreateMFDstiffnessMatrices(thermal_conductivity.ptr());
   matrix_->CreateMFDrhsVectors();
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  matrix_->AssembleGlobalMatrices();
   matrix_->ComputeNegativeResidual(*temp, g.ptr());
 };
 

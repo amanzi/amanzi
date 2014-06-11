@@ -43,8 +43,7 @@ void MatrixMFD_ScaledConstraint::CreateMFDstiffnessMatrices(
 
   } else {
     // tag global matrices as invalid
-    assembled_schur_ = false;
-    assembled_operator_ = false;
+    MarkLocalMatricesAsChanged_();
 
     // store a copy of Krel on faces
     Krel->ScatterMasterToGhosted("face");
@@ -67,6 +66,7 @@ void MatrixMFD_ScaledConstraint::CreateMFDstiffnessMatrices(
     }
     if (Acc_cells_.size() != ncells) {
       Acc_cells_.resize(static_cast<size_t>(ncells));
+      Acc_ = Teuchos::rcp(new Epetra_Vector(View,mesh_->cell_map(false),&Acc_cells_[0]));
     }
 
     for (int c=0; c!=ncells; ++c) {
@@ -128,11 +128,12 @@ void MatrixMFD_ScaledConstraint::CreateMFDstiffnessMatrices(
  ****************************************************************** */
 void MatrixMFD_ScaledConstraint::ApplyBoundaryConditions(
     const std::vector<MatrixBC>& bc_markers,
-    const std::vector<double>& bc_values) {
+    const std::vector<double>& bc_values,
+    bool ADD_BC_FLUX) {
+  bc_markers_ = bc_markers;
 
   // tag global matrices as invalid
-  assembled_schur_ = false;
-  assembled_operator_ = false;
+  MarkLocalMatricesAsChanged_();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -162,7 +163,7 @@ void MatrixMFD_ScaledConstraint::ApplyBoundaryConditions(
 
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f];
-      } else if (bc_markers[f] == MATRIX_BC_FLUX) {
+      } else if (bc_markers[f] == MATRIX_BC_FLUX && ADD_BC_FLUX) {
         if (std::abs(bc_values[f]) > 0.) {
           if ((*Krel_)[f] > 1.e-30) {
             Ff[n] -= bc_values[f] * mesh_->face_area(f) / (*Krel_)[f];

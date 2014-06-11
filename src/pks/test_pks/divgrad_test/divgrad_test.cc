@@ -96,7 +96,6 @@ void DivGradTest::initialize(const Teuchos::Ptr<State>& S) {
   matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
   matrix_->CreateMFDrhsVectors();
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  matrix_->AssembleGlobalMatrices();
 
   // derive consistent faces
   Teuchos::RCP<CompositeVector> soln = S->GetFieldData(key_, name_);
