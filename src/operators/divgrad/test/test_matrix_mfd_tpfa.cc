@@ -152,7 +152,7 @@ TEST_FIXTURE(mfd, ApplyConstantTPFA) {
   A->Apply(*x, *b);
 
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -170,7 +170,7 @@ TEST_FIXTURE(mfd, ApplyConstantTPFAKr) {
   A->Apply(*x, *b);
 
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -190,7 +190,7 @@ TEST_FIXTURE(mfd, ApplyLinearTPFAKr) {
   // test Ax - b == 0
   A->ComputeResidual(*x, b.ptr());
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -214,7 +214,7 @@ TEST_FIXTURE(mfd, ApplyInverseLinearTPFAKr) {
   b->Update(-1., *x, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -239,7 +239,7 @@ TEST_FIXTURE(mfd, ConsistentFaceLinearTPFAKr) {
   b->Update(-1., *x, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -280,7 +280,7 @@ TEST_FIXTURE(mfd, ApplyRandomTPFAKr) {
   b->Update(-1., r, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -321,7 +321,7 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTPFAKr) {
   x->Update(-1., r, 1.);
 
   double norm = 0.;
-  x->Norm2(&norm);
+  x->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -362,7 +362,7 @@ TEST_FIXTURE(mfd, TPFACompareMFD) {
   Aref->DeriveFlux(*x, bref.ptr());
   bref->Update(1.,*b, -1);
   double norm = 0.;
-  bref->Norm2(&norm);
+  bref->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }

@@ -180,7 +180,7 @@ TEST_FIXTURE(mfd, ApplyConstantScaledConstraint) {
   A->Apply(*x, *b);
   
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -198,7 +198,7 @@ TEST_FIXTURE(mfd, ApplyConstantScaledConstraintKr) {
   A->Apply(*x, *b);
 
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -218,7 +218,7 @@ TEST_FIXTURE(mfd, ApplyLinearScaledConstraintKr) {
   // test Ax - b == 0
   A->ComputeResidual(*x, b.ptr());
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -242,7 +242,7 @@ TEST_FIXTURE(mfd, ApplyInverseLinearScaledConstraintKr) {
   b->Update(-1., *x, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -267,7 +267,7 @@ TEST_FIXTURE(mfd, ConsistentFaceLinearScaledConstraintKr) {
   b->Update(-1., *x, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -310,7 +310,7 @@ TEST_FIXTURE(mfd, ApplyRandomScaledConstraintKr) {
   b->Update(-1., r, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -353,7 +353,7 @@ TEST_FIXTURE(mfd, ApplyInverseRandomScaledConstraintKr) {
   x->Update(-1., r, 1.);
 
   double norm = 0.;
-  x->Norm2(&norm);
+  x->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -408,7 +408,7 @@ TEST_FIXTURE(mfd, ScaledConstraintCompareMFD) {
 
   bref->Update(1.,*b, -1);
   double norm = 0.;
-  bref->Norm2(&norm);
+  bref->NormInf(&norm);
 
   std::cout << "Apply norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
@@ -430,7 +430,7 @@ TEST_FIXTURE(mfd, ScaledConstraintCompareMFD) {
   A->ApplyInverse(*x, *b);
   bref->Update(1.,*b, -1);
   norm = 0.;
-  bref->Norm2(&norm);
+  bref->NormInf(&norm);
   std::cout << "ApplyInverse norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 
@@ -444,7 +444,7 @@ TEST_FIXTURE(mfd, ScaledConstraintCompareMFD) {
 
   bref->Update(1.,*b, -1);
   norm = 0.;
-  bref->Norm2(&norm);
+  bref->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
