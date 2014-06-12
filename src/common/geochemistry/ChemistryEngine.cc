@@ -364,6 +364,7 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
 
 #ifdef AMANZI_USE_FENV
   // Re-enable pre-existing floating point exceptions.
+  feclearexcept(fpe_mask);
   fpe_mask = feenableexcept(fpe_mask);
 #endif 
 
@@ -407,6 +408,7 @@ void ChemistryEngine::Advance(const double delta_time,
 
 #ifdef AMANZI_USE_FENV
   // Re-enable pre-existing floating point exceptions.
+  feclearexcept(fpe_mask);
   fpe_mask = feenableexcept(fpe_mask);
 #endif 
 
