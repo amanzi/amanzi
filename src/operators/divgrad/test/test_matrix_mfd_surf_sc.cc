@@ -169,7 +169,7 @@ TEST_FIXTURE(mfd, ApplyConstantTwoPoint) {
   A->Apply(*x, *b);
 
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -187,7 +187,7 @@ TEST_FIXTURE(mfd, ApplyConstantTwoPointKr) {
   A->Apply(*x, *b);
 
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -209,14 +209,14 @@ TEST_FIXTURE(mfd, ApplyLinearTwoPointKr) {
   // test As * x - b == 0
   As->ComputeResidual(*xs, bs.ptr());
   double norm_surf;
-  bs->Norm2(&norm_surf);
+  bs->NormInf(&norm_surf);
   std::cout << "norm surf = " << norm_surf << std::endl;
   CHECK_CLOSE(0., norm_surf, 1.e-8);
 
   // test Ax - b == 0
   A->ComputeResidual(*x, b.ptr());
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -241,7 +241,7 @@ TEST_FIXTURE(mfd, ApplyInverseLinearTwoPointKr) {
   b->Update(-1., *x, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -267,7 +267,7 @@ TEST_FIXTURE(mfd, ConsistentFaceLinearTwoPointKr) {
   b->Update(-1., *x, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -321,7 +321,7 @@ TEST_FIXTURE(mfd, ApplyRandomTwoPointKr) {
   b->Update(-1., r, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -376,7 +376,7 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKr) {
   x->Update(-1., r, 1.);
 
   double norm = 0.;
-  x->Norm2(&norm);
+  x->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -391,7 +391,7 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKrRandom) {
   rand.SetSeed(2);
   Epetra_MultiVector& kr_f = *kr->ViewComponent("face",false);
   for (int f=0; f!=kr_f.MyLength(); ++f) {
-    kr_f[0][f] = std::abs(rand.RandomDouble());
+    kr_f[0][f] = std::max(std::abs(rand.RandomDouble()), 0.01);
   }
 
 
@@ -435,7 +435,7 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKrRandom) {
   x->Update(-1., r, 1.);
 
   double norm = 0.;
-  x->Norm2(&norm);
+  x->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }

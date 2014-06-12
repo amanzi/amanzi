@@ -240,7 +240,7 @@ TEST_FIXTURE(mfd, ApplyConstantTwoPoint) {
   C->Apply(*x, *b);
 
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -258,7 +258,7 @@ TEST_FIXTURE(mfd, ApplyConstantTwoPointKr) {
   C->Apply(*x, *b);
 
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -292,7 +292,7 @@ TEST_FIXTURE(mfd, SymmetricRandomTwoPointKr) {
   r = *b;
   r.SubVector(0)->Update(1., *r.SubVector(1), -1.);
   double norm = 0.;
-  r.SubVector(0)->Norm2(&norm);
+  r.SubVector(0)->NormInf(&norm);
   std::cout << "norm on IC = " << norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 
@@ -346,14 +346,14 @@ TEST_FIXTURE(mfd, SymmetricRandomTwoPointKr) {
   r = *x;
   r.SubVector(0)->Update(1., *r.SubVector(1), -1.);
   norm = 0.;
-  r.SubVector(0)->Norm2(&norm);
+  r.SubVector(0)->NormInf(&norm);
   std::cout << "Symm norm on forward op = " << norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 
   r.PutScalar(0.);
   ierr = D->Apply(*b->SubVector(0)->Data(), *r.SubVector(0)->Data());
   r.SubVector(0)->Update(1., *x->SubVector(0), -1.);
-  r.SubVector(0)->Norm2(&norm);
+  r.SubVector(0)->NormInf(&norm);
   std::cout << "Surf norm on forward op = " << norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 
@@ -364,14 +364,14 @@ TEST_FIXTURE(mfd, SymmetricRandomTwoPointKr) {
   r = *x;
   r.SubVector(0)->Update(1., *r.SubVector(1), -1.);
   norm = 0.;
-  r.SubVector(0)->Norm2(&norm);
+  r.SubVector(0)->NormInf(&norm);
   std::cout << "Symm norm on inverse = " << norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-7);
 
   r.PutScalar(0.);
   ierr = D->ApplyInverse(*b->SubVector(0)->Data(), *r.SubVector(0)->Data());
   r.SubVector(0)->Update(1., *x->SubVector(0), -1.);
-  r.SubVector(0)->Norm2(&norm);
+  r.SubVector(0)->NormInf(&norm);
   std::cout << "Surf norm on inverse = " << norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-7);
 
@@ -420,7 +420,7 @@ TEST_FIXTURE(mfd, ApplyRandomTwoPointKr) {
   b->Update(-1., r, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-7);
 }
@@ -469,7 +469,7 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKr) {
   x->Update(-1., r, 1.);
 
   double norm = 0.;
-  x->Norm2(&norm);
+  x->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-7);
 }

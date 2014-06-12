@@ -118,7 +118,7 @@ TEST_FIXTURE(mfd, ApplyConstantTPFA_ScaledConstraint) {
   A->Apply(*x, *b);
 
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -136,7 +136,7 @@ TEST_FIXTURE(mfd, ApplyConstantTPFA_ScaledConstraintKr) {
   A->Apply(*x, *b);
 
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -156,7 +156,7 @@ TEST_FIXTURE(mfd, ApplyLinearTPFA_ScaledConstraintKr) {
   // test Ax - b == 0
   A->ComputeResidual(*x, b.ptr());
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -180,7 +180,7 @@ TEST_FIXTURE(mfd, ApplyInverseLinearTPFA_ScaledConstraintKr) {
   b->Update(-1., *x, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -205,7 +205,7 @@ TEST_FIXTURE(mfd, ConsistentFaceLinearTPFA_ScaledConstraintKr) {
   b->Update(-1., *x, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -245,7 +245,7 @@ TEST_FIXTURE(mfd, ApplyRandomTPFA_ScaledConstraintKr) {
   b->Update(-1., r, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -286,7 +286,7 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTPFA_ScaledConstraintKr) {
   x->Update(-1., r, 1.);
 
   double norm = 0.;
-  x->Norm2(&norm);
+  x->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }

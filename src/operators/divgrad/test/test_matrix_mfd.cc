@@ -16,6 +16,7 @@ using namespace Amanzi;
 
 struct mfd {
   Epetra_MpiComm *comm;
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
   Teuchos::RCP<Teuchos::ParameterList> plist;
   Teuchos::RCP<Operators::MatrixMFD> A;
@@ -36,8 +37,9 @@ struct mfd {
     factory.preference(prefs);
 
     // create the meshes
-    AmanziGeometry::GeometricModel gm(3, plist->sublist("Regions"), comm);
-    mesh = factory.create(plist->sublist("Mesh").sublist("Generate Mesh"), &gm);
+    Teuchos::ParameterList& regionlist = plist->sublist("Regions");
+    gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regionlist, comm));
+    mesh = factory.create(plist->sublist("Mesh").sublist("Generate Mesh"), &*gm);
 
     // Boundary conditions
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -121,9 +123,11 @@ struct mfd {
   }
 
   void setDirichletOne() {
-    if (mesh->get_comm()->MyPID() == 0)
-      bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
-    communicateBCs();
+    AmanziMesh::Entity_ID_List bottom;
+    mesh->get_set_entities("bottom side", AmanziMesh::FACE, AmanziMesh::USED, &bottom);
+    for (int f=0; f!=bottom.size(); ++f) {
+      bc_markers[f] = Operators::MATRIX_BC_DIRICHLET;
+    }
   }
   
   void setSolution(const Teuchos::Ptr<CompositeVector>& x) {
@@ -151,7 +155,7 @@ TEST_FIXTURE(mfd, ApplyConstantTwoPoint) {
   A->Apply(*x, *b);
 
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -169,7 +173,7 @@ TEST_FIXTURE(mfd, ApplyConstantTwoPointKr) {
   A->Apply(*x, *b);
 
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -189,7 +193,7 @@ TEST_FIXTURE(mfd, ApplyLinearTwoPointKr) {
   // test Ax - b == 0
   A->ComputeResidual(*x, b.ptr());
   double norm;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -213,7 +217,7 @@ TEST_FIXTURE(mfd, ApplyInverseLinearTwoPointKr) {
   b->Update(-1., *x, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -238,7 +242,7 @@ TEST_FIXTURE(mfd, ConsistentFaceLinearTwoPointKr) {
   b->Update(-1., *x, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -278,7 +282,7 @@ TEST_FIXTURE(mfd, ApplyRandomTwoPointKr) {
   b->Update(-1., r, 1.);
 
   double norm = 0.;
-  b->Norm2(&norm);
+  b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -319,7 +323,7 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKr) {
   x->Update(-1., r, 1.);
 
   double norm = 0.;
-  x->Norm2(&norm);
+  x->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -330,9 +334,10 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKrRandom) {
 
   Teuchos::RCP<CompositeVector> kr = 
     Teuchos::rcp(new CompositeVector(kr_sp));
+  std::srand(3);
   Epetra_MultiVector& kr_f = *kr->ViewComponent("face",false);
   for (int f=0; f!=kr_f.MyLength(); ++f) {
-    kr_f[0][f] = (std::rand() % 1000) / 1000.0;
+    kr_f[0][f] = std::max((std::rand() % 1000) / 1000.0, 0.01);
   }
 
 
@@ -363,7 +368,7 @@ TEST_FIXTURE(mfd, ApplyInverseRandomTwoPointKrRandom) {
   x->Update(-1., r, 1.);
 
   double norm = 0.;
-  x->Norm2(&norm);
+  x->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
