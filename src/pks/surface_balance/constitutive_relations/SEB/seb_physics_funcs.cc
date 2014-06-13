@@ -46,11 +46,11 @@ void UpdateEvapResistance(const SEB& seb, const ThermoProperties& vp_surf, Energ
    
 // Equation for reduced vapor diffusivity See Sakagucki and Zeng 2009 eqaution (9) and Moldrup et al., 2004. 
    double Clab_Horn_b = 1;
-   double actual_porosity = 0.9;  // Hard coded for moss Fix this to pass in form ATS ~AA
+   double actual_porosity = 0.9;  // Hard coded for moss Fix this to pass in form ATS ~AA  *******************
    double Surface_Vap_Diffusion = std::pow((1-(0.0556/actual_porosity)),(2+3*Clab_Horn_b));
    Surface_Vap_Diffusion = 0.000022 * (std::pow(actual_porosity,2)) * Surface_Vap_Diffusion;
 // Sakagucki and Zeng 2009 eqaution (10)
-   double cell_dimension = 0.01/2; // This is from cell center to the boundary.
+   double cell_dimension = 0.01/2; // This is from cell center to the boundary **** HARD CODED FOR CURENT MOSS CELLS ********.
    double VWC = seb.in.surf.saturation_liquid * actual_porosity;
    double L_Rsoil = std::exp(std::pow((1-(VWC/actual_porosity)),5));
    L_Rsoil = cell_dimension * (L_Rsoil -1) * (1/(2.718-1));
