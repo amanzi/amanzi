@@ -3209,14 +3209,24 @@ Teuchos::ParameterList CreateFlowOperatorList(const std::string& disc_method) {
   tmp_list.set<std::string>("discretization primary", disc_method);
   tmp_list.set<std::string>("discretization secondary", "optimized mfd scaled");
 
-  Teuchos::Array<std::string> stensil(2);
-  stensil[0] = "face";
-  stensil[1] = "cell";
-  tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
+  if (disc_method != "finite volume"){
+    Teuchos::Array<std::string> stensil(2);
+    stensil[0] = "face";
+    stensil[1] = "cell";
+    tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
 
-  stensil.remove(1);
-  tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
-  tmp_list.set<bool>("gravity", true);
+    stensil.remove(1);
+    tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
+    tmp_list.set<bool>("gravity", true);
+ }
+  else{
+    Teuchos::Array<std::string> stensil(1);
+    stensil[0] = "cell";
+    tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
+
+    tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
+    tmp_list.set<bool>("gravity", true);
+  }
 
   return op_list;
 }

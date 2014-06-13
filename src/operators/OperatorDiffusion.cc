@@ -917,4 +917,3 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
 
 }  // namespace Operators
 }  // namespace Amanzi
-
