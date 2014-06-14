@@ -26,6 +26,7 @@ const int OPERATOR_SCHEMA_BASE_NODE = 32;
 const int OPERATOR_BC_NONE = 0;
 const int OPERATOR_BC_FACE_DIRICHLET = 1;
 const int OPERATOR_BC_FACE_NEUMANN = 2;
+const int OPERATOR_BC_FACE_MIXED = 4;
 
 const int OPERATOR_HEX_FACES = 6;  // Hexahedron is the common element
 const int OPERATOR_HEX_NODES = 8;

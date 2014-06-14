@@ -18,6 +18,7 @@
 #include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "mfd3d.hh"
+#include "OperatorDefs.hh"
 #include "State.hh"
 
 #include "Flow_PK.hh"
@@ -100,7 +101,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
   
   int flag_essential_bc = 0;
   for (int n = 0; n < bc_model.size(); n++) {
-    bc_model[n] = FLOW_BC_FACE_NULL;
+    bc_model[n] = Operators::OPERATOR_BC_NONE;
     bc_value[n] = 0.0;
     bc_coef[n] = 0.0;
   }
@@ -108,21 +109,21 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
   Functions::FlowBoundaryFunction::Iterator bc;
   for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) {
     int f = bc->first;
-    bc_model[f] = FLOW_BC_FACE_PRESSURE;
+    bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
     bc_value[f] = bc->second;
     flag_essential_bc = 1;
   }
 
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
     int f = bc->first;
-    bc_model[f] = FLOW_BC_FACE_PRESSURE;
+    bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
     bc_value[f] = bc->second;
     flag_essential_bc = 1;
   }
 
   for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
     int f = bc->first;
-    bc_model[f] = FLOW_BC_FACE_FLUX;
+    bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
     bc_value[f] = bc->second * rainfall_factor[f];
   }
 
@@ -141,15 +142,15 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
       // Model I. Due to round-off errors, we have to use tolerances.
       if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {
         if (u_face[0][f] < ref_pressure - tol) {
-          bc_model[f] = FLOW_BC_FACE_FLUX;
+          bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
           bc_value[f] = bc->second * rainfall_factor[f];
         } else {
           int c = BoundaryFaceGetCell(f);
           if (u_cell[0][c] < u_face[0][f]) {
-            bc_model[f] = FLOW_BC_FACE_FLUX;
+            bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
             bc_value[f] = bc->second * rainfall_factor[f];
           } else {
-            bc_model[f] = FLOW_BC_FACE_PRESSURE;
+            bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
             bc_value[f] = ref_pressure;
             flag_essential_bc = 1;
             nseepage++;
@@ -166,17 +167,17 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
 
         double pc = u_face[0][f] - ref_pressure;
         if (pc < pcmin) {
-          bc_model[f] = FLOW_BC_FACE_FLUX;
+          bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
           bc_value[f] = influx;
         } else if (pc >= pcmax) {
-          bc_model[f] = FLOW_BC_FACE_MIXED;
+          bc_model[f] = Operators::OPERATOR_BC_FACE_MIXED;
           bc_value[f] = I * ref_pressure;
           bc_coef[f] = -I;  // Impedance I should be positive.
           flag_essential_bc = 1;
           nseepage++;
           area_seepage += mesh_->face_area(f);
         } else {
-          bc_model[f] = FLOW_BC_FACE_FLUX;
+          bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
           double f = 2 * (pcreg - pc) / pcreg;
           double q = (7 - 2 * f - f * f) / 8;
           bc_value[f] = q * influx; 
@@ -188,22 +189,22 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
 
         double pc = u_face[0][f] - ref_pressure;
         if (pc < pcreg) {
-          bc_model[f] = FLOW_BC_FACE_FLUX;
+          bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
           bc_value[f] = influx;
         } else if (pc >= 0.0) {
           int c = BoundaryFaceGetCell(f);
           if (u_cell[c] < u_face[f]) {
-            bc_model[f] = FLOW_BC_FACE_FLUX;
+            bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
             bc_value[f] = influx;
           } else {
-            bc_model[f] = FLOW_BC_FACE_PRESSURE;
+            bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
             bc_value[f] = ref_pressure;
             flag_essential_bc = 1;
             nseepage++;
             area_seepage += mesh_->face_area(f);
           }
         } else {
-          bc_model[f] = FLOW_BC_FACE_FLUX;
+          bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
           double f = pc / pcreg;
           double q = f * f * (3 - 2 * f);
           bc_value[f] = q * influx;
@@ -216,13 +217,13 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
   AmanziMesh::Entity_ID_List cells;
   missed_bc_faces_ = 0;
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_model[f] == FLOW_BC_FACE_NULL) {
+    if (bc_model[f] == Operators::OPERATOR_BC_NONE) {
       cells.clear();
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
-        bc_model[f] = FLOW_BC_FACE_FLUX;
+        bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
         bc_value[f] = 0.0;
         missed_bc_faces_++;
       }
@@ -360,7 +361,7 @@ double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_model,
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
-      if (bc_model[f] != FLOW_BC_FACE_NULL && f < nfaces_owned) {
+      if (bc_model[f] != Operators::OPERATOR_BC_NONE && f < nfaces_owned) {
         if (fdirs[i] >= 0) {
           volume -= darcy_flux[0][f];
         } else {
