@@ -1293,9 +1293,9 @@ Teuchos::Array<std::string> translate_forms(Teuchos::Array<std::string>& forms) 
 ****************************************************************** */
 Teuchos::ParameterList CreatePreconditionersList(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList prec_list;
-  prec_list.sublist("Trilinos ML") = create_DPC_List(plist);
-  prec_list.sublist("Hypre AMG") = create_HypreAMG_List(plist);
-  prec_list.sublist("Block ILU") = create_BILU_List(plist);
+  prec_list.sublist("Trilinos ML") = CreateDPC_List(plist);
+  prec_list.sublist("Hypre AMG") = CreateHypreAMG_List(plist);
+  prec_list.sublist("Block ILU") = CreateBILU_List(plist);
   return prec_list;
 }
 
@@ -1427,12 +1427,12 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
 
           // insert the water retention models sublist (these are only relevant for Richards)
           Teuchos::ParameterList &water_retention_models = richards_problem.sublist("Water retention models");
-          water_retention_models = create_WRM_List(plist);
+          water_retention_models = CreateWRM_List(plist);
         }
 
         // insert the flow BC sublist
         Teuchos::ParameterList flow_bc; // = flow_list->sublist("boundary conditions");
-        flow_bc = create_SS_FlowBC_List(plist);
+        flow_bc = CreateSS_FlowBC_List(plist);
         //if ( flow_bc.begin() != flow_bc.end() ) {
           flow_list->sublist("boundary conditions") = flow_bc;
 	//}
