@@ -33,18 +33,21 @@
 
 extern "C" {
   void BDS_SET_NGROWHYP(int* nGrowHyp);
+
   void BDS_SET_NGROWFORCE(int* nGrowForce);
+
   void BDS_SET_NWORK(int* nWork);
+
   void BDS_EDGE_STATES(const Real* s, const int* ng_s, const Real* ci, const int* ng_ci,
-                       Real* sedgex, Real* sedgey, const int* ng_se,
-                       const Real* umac, const Real* vmac, const int* ng_u, const Real* force, const int* ng_f,
+                       D_DECL(Real* sedgex, Real* sedgey, Real* sedgez), const int* ng_se,
+                       D_DECL(const Real* umac, const Real* vmac, const Real* wmac), const int* ng_u, const Real* force, const int* ng_f,
                        Real* slope, const int* ng_c, const int* nw, const Real* dx, const Real* dt,
                        const int* num_comp, const int* is_cons,
                        const int* lo, const int* hi, const int* bc);
 
-  void ADV_FDIV(Real* aofs, const int* ng_a, Real* edgex, Real* edgey, const int* ng_se,
-                const Real* u_dat, const Real* v_dat, const int* ng_u,
-                const Real* ax_dat, const Real* ay_dat, const Real* vol_dat,
+  void ADV_FDIV(Real* aofs, const int* ng_a, D_DECL(Real* edgex, Real* edgey, Real* edgez), const int* ng_se,
+                D_DECL(const Real* u_dat, const Real* v_dat, const Real* w_dat), const int* ng_u,
+                D_DECL(const Real* ax_dat, const Real* ay_dat, const Real* az_dat), const Real* vol_dat,
                 const int* num_comp, const int* lo, const int* hi);
 
   void ADV_UPDATE(const Real* sold, Real* snew, const int* ng_s,
@@ -52,7 +55,7 @@ extern "C" {
                   const Real* aofs, const int* ng_a, const Real* phi, const int* ng_phi,
                   const Real* dt, const int* num_comp, const int* lo, const int* hi);
 
-  void BDS_EST_EIGEN(const Real* s, const int* ng_s, const Real* umac, const Real* vmac, const int* ng_u,
+  void BDS_EST_EIGEN(const Real* s, const int* ng_s, D_DECL(const Real* umac, const Real* vmac, const Real* wmac), const int* ng_u,
                      const Real* phi, const int * ng_phi, const int* lo, const int* hi, Real* eigenval);
 
 }
