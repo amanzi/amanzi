@@ -700,10 +700,7 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
     cell_free_ion[cell_id] = aux_output.primary_free_ion_concentration.data[c];
   }
 
-  // NOTE: For now, we do not copy material properties back from Alquimia 
-  // NOTE: to Amanzi. -JNJ
-  //#if 0 NOTE: Reverting this back to copying properties SMR
-  // minerals
+  // Mineral properties.
   for (unsigned int m = 0; m < number_of_minerals(); m++) 
   {
     double* cell_minerals = (*this->mineral_volume_fractions())[m];
@@ -731,7 +728,6 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
       cell_sorption_sites[cell_id] = state.surface_site_density.data[i];
     }
   }
-  //#endif
 
   // Auxiliary data -- block copy.
   int num_aux_ints = aux_data.aux_ints.size;
@@ -758,11 +754,6 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
     cell_aux_doubles[cell_id] = aux_data.aux_doubles.data[i];
   }
 
-  // NOTE: volume and water saturation are read-only from the chemistry state, so they can't be 
-  // NOTE: altered by Alquimia.
-
-  // #if 0 NOTE: reverting this to copying properties from Alquimia SMR
-  // sorption isotherms
   if (using_sorption_isotherms()) 
   {
     for (unsigned int i = 0; i < number_of_aqueous_components(); ++i) 
@@ -777,7 +768,6 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
       cell_data[cell_id] = mat_props.langmuir_b.data[i];
     }
   }
-  //#endif
 }
 
 #endif
