@@ -412,6 +412,14 @@ void ChemistryEngine::Advance(const double delta_time,
   fpe_mask = feenableexcept(fpe_mask);
 #endif 
 
+  // Retrieve auxiliary output.
+  chem_.GetAuxiliaryOutput(&engine_state_,
+                           &(const_cast<AlquimiaMaterialProperties&>(mat_props)),
+                           &chem_state,
+                           &aux_data,
+                           &aux_output,
+                           &chem_status_);
+
 // FIXME: Figure out a neutral parallel-friendly way to report errors.
   assert(chem_status_.error == 0);
 

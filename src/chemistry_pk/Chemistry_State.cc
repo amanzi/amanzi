@@ -362,10 +362,10 @@ void Chemistry_State::RequireData_() {
       S_->RequireField("free_ion_species", name_, species_names_cv)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, number_of_aqueous_components_);
+      S_->RequireField("primary_activity_coeff", name_, species_names_cv)
+        ->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, number_of_aqueous_components_);
     }
-    S_->RequireField("primary_activity_coeff", name_)
-      ->SetMesh(mesh_)->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, number_of_aqueous_components_);
 
     // CreateStorageTotalSorbed()
     if (using_sorption_) {
