@@ -28,8 +28,15 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 
-// Forward declaration of GeochemicalConditionContext.
-class GeochemicalConditionContext;
+struct GeochemicalConditionData
+{
+  bool processed;
+  AlquimiaGeochemicalCondition condition;
+  AlquimiaState chem_state;
+  AlquimiaAuxiliaryData aux_data;
+};
+
+typedef std::map<std::string, GeochemicalConditionData*> GeochemicalConditionMap;
 
 class ChemistryEngine {
 
@@ -79,7 +86,8 @@ class ChemistryEngine {
                  AlquimiaAuxiliaryData& aux_data,
                  AlquimiaAuxiliaryOutputData& aux_output);
 
-  // Creates a geochemical condition with the given name within the chemistry engine.
+  // Creates a geochemical condition with the given name within the chemistry engine, using the 
+  // data in the given containers.
   void CreateCondition(const std::string& condition_name);
 
   // Adds a mineral constraint to the geochemical condition with the given name. If another 
@@ -134,8 +142,9 @@ class ChemistryEngine {
   AlquimiaEngineStatus chem_status_;
   AlquimiaProblemMetaData chem_metadata_;
 
-  // Mapping of geochemical condition names to geochemical conditions. 
-  std::map<std::string, AlquimiaGeochemicalCondition*> chem_conditions_;
+  // Mapping of geochemical condition names to geochemical conditions (and flags indicating 
+  // whether they have been processed).
+  GeochemicalConditionMap chem_conditions_;
 
   // Back-end engine name and input file.
   std::string chem_engine_name_;

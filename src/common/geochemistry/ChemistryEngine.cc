@@ -25,6 +25,30 @@ This implements the Alquimia chemistry engine.
 namespace Amanzi {
 namespace AmanziChemistry {
 
+namespace {
+
+// These functions are going into the next release of Alquimia.
+void CopyAlquimiaState(AlquimiaState* dest, AlquimiaState* src)
+{
+  dest->water_density = src->water_density;
+  dest->porosity = src->porosity;
+  dest->temperature = src->temperature;
+  dest->aqueous_pressure = src->aqueous_pressure;
+  memcpy(dest->total_mobile.data, src->total_mobile.data, sizeof(double) * src->total_mobile.size);
+  memcpy(dest->total_immobile.data, src->total_immobile.data, sizeof(double) * src->total_immobile.size);
+  memcpy(dest->mineral_volume_fraction.data, src->mineral_volume_fraction.data, sizeof(double) * src->mineral_volume_fraction.size);
+  memcpy(dest->mineral_specific_surface_area.data, src->mineral_specific_surface_area.data, sizeof(double) * src->mineral_specific_surface_area.size);
+  memcpy(dest->surface_site_density.data, src->surface_site_density.data, sizeof(double) * src->surface_site_density.size);
+  memcpy(dest->cation_exchange_capacity.data, src->cation_exchange_capacity.data, sizeof(double) * src->cation_exchange_capacity.size);
+}
+
+void CopyAlquimiaAuxiliaryData(AlquimiaAuxiliaryData* dest, AlquimiaAuxiliaryData* src)
+{
+  memcpy(dest->aux_ints.data, src->aux_ints.data, sizeof(int) * src->aux_ints.size);
+  memcpy(dest->aux_doubles.data, src->aux_doubles.data, sizeof(double) * src->aux_doubles.size);
+}
+
+}
 
 ChemistryEngine::ChemistryEngine(const std::string& engineName, 
                                  const std::string& inputFile):
@@ -86,10 +110,12 @@ ChemistryEngine::~ChemistryEngine()
   FreeAlquimiaProblemMetaData(&chem_metadata_);
 
   // Delete the various geochemical conditions.
-  for (std::map<std::string, AlquimiaGeochemicalCondition*>::iterator 
+  for (GeochemicalConditionMap::iterator 
        iter = chem_conditions_.begin(); iter != chem_conditions_.end(); ++iter)
   {
-    FreeAlquimiaGeochemicalCondition(iter->second);
+    FreeAlquimiaGeochemicalCondition(&iter->second->condition);
+    FreeAlquimiaState(&iter->second->chem_state);
+    FreeAlquimiaAuxiliaryData(&iter->second->aux_data);
     delete iter->second;
   }
 
@@ -203,10 +229,13 @@ void ChemistryEngine::CreateCondition(const std::string& condition_name)
 {
   // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 
   // NOTE: the backend engine's input file. 
-  AlquimiaGeochemicalCondition* condition = new AlquimiaGeochemicalCondition();
+  GeochemicalConditionData* condition = new GeochemicalConditionData();
+  condition->processed = false;
   int num_aq = 0, num_min = 0;
-  AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, num_aq, num_min, condition);
-  std::strcpy(condition->name, condition_name.c_str());
+  AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, num_aq, num_min, &condition->condition);
+  AllocateAlquimiaState(&sizes_, &condition->chem_state);
+  AllocateAlquimiaAuxiliaryData(&sizes_, &condition->aux_data);
+  std::strcpy(condition->condition.name, condition_name.c_str());
 
   // Add this to the conditions map.
   chem_conditions_[condition_name] = condition;
@@ -221,10 +250,10 @@ void ChemistryEngine::AddMineralConstraint(const std::string& condition_name,
   assert(volume_fraction >= 0.0);
   assert(specific_surface_area >= 0.0);
 
-  std::map<std::string, AlquimiaGeochemicalCondition*>::iterator iter = chem_conditions_.find(condition_name);
+  GeochemicalConditionMap::iterator iter = chem_conditions_.find(condition_name);
   if (iter != chem_conditions_.end())
   {
-    AlquimiaGeochemicalCondition* condition = iter->second;
+    AlquimiaGeochemicalCondition* condition = &iter->second->condition;
 
     // Do we have an existing constraint?
     int index = -1;
@@ -269,10 +298,10 @@ void ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
          (constraint_type == "free") || (constraint_type == "mineral") ||
          (constraint_type == "gas") || (constraint_type == "pH"));
 
-  std::map<std::string, AlquimiaGeochemicalCondition*>::iterator iter = chem_conditions_.find(condition_name);
+  GeochemicalConditionMap::iterator iter = chem_conditions_.find(condition_name);
   if (iter != chem_conditions_.end())
   {
-    AlquimiaGeochemicalCondition* condition = iter->second;
+    AlquimiaGeochemicalCondition* condition = &iter->second->condition;
 
     // Is there a mineral constraint for the associated species?
     if (!associated_species.empty())
@@ -339,7 +368,7 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
   Errors::Message msg;
 
   // Retrieve the chemical condition for the given name.
-  std::map<std::string, AlquimiaGeochemicalCondition*>::iterator iter = chem_conditions_.find(condition_name);
+  GeochemicalConditionMap::iterator iter = chem_conditions_.find(condition_name);
   if (iter == chem_conditions_.end())
   {
     CreateCondition(condition_name);
@@ -351,16 +380,24 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
   int fpe_mask = fedisableexcept(FE_DIVBYZERO);
 #endif 
 
-  // Process the condition on the given array at the given time.
-  // FIXME: Time is ignored for the moment.
-  int ierr = 0;
-  AlquimiaGeochemicalCondition* condition = iter->second;
-  chem_.ProcessCondition(&engine_state_,
-                         condition,
-                         &(const_cast<AlquimiaMaterialProperties&>(mat_props)),
-                         &chem_state,
-                         &aux_data,
-                         &chem_status_);
+  AlquimiaGeochemicalCondition* condition = &iter->second->condition;
+  if (!iter->second->processed)
+  {
+    // Copy the given state data into place for this condition.
+    CopyAlquimiaState(&iter->second->chem_state, &chem_state);
+    CopyAlquimiaAuxiliaryData(&iter->second->aux_data, &aux_data);
+
+    // Process the condition on the given array at the given time.
+    // FIXME: Time is ignored for the moment.
+    int ierr = 0;
+    chem_.ProcessCondition(&engine_state_, condition, &(const_cast<AlquimiaMaterialProperties&>(mat_props)),
+                           &iter->second->chem_state, &iter->second->aux_data, &chem_status_);
+    iter->second->processed = true;
+  }
+
+  // Copy the constraint's data into place.
+  CopyAlquimiaState(&chem_state, &iter->second->chem_state);
+  CopyAlquimiaAuxiliaryData(&aux_data, &iter->second->aux_data);
 
 #ifdef AMANZI_USE_FENV
   // Re-enable pre-existing floating point exceptions.
