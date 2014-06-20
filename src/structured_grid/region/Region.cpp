@@ -96,6 +96,16 @@ Region::setVal(BaseFab<int>& fab,
     setVal(fab,Array<int>(1,val),dx,ng,idx,1);
 }
 
+BoxArray
+PointRegion::approximate_bounds(const Array<Real>& plo, const Array<Real>& dx) const
+{
+  IntVect iv;
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    iv[d] = (int)((coor[d]-plo[d])/dx[d]);
+  }
+  return BoxArray(Box(iv,iv));
+}
+
 bool 
 PointRegion::inRegion (const Array<Real>& x) const
 {
@@ -177,7 +187,16 @@ PointRegion::setVal(BaseFab<int>& fab,
   setVal(fab,Array<int>(1,val),dx,ng,idx,1);
 }
 
-
+BoxArray
+BoxRegion::approximate_bounds(const Array<Real>& plo, const Array<Real>& dx) const
+{
+  IntVect ivlo, ivhi;
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    ivlo[d] = (int)((lo[d]-plo[d]-geometry_eps)/dx[d]);
+    ivhi[d] = (int)((hi[d]-plo[d]+geometry_eps)/dx[d]);
+  }
+  return BoxArray(Box(ivlo,ivhi));
+}
 
 bool 
 BoxRegion::inRegion(const Array<Real>& x) const
@@ -232,6 +251,26 @@ PolygonRegion::inRegion (const Array<Real>& x) const
   return pnpoly(vector1,vector2,x);
 }
 
+BoxArray
+PolygonRegion::approximate_bounds(const Array<Real>& plo, const Array<Real>& dx) const
+{
+  IntVect ivlo, ivhi;
+  int N = vector1.size();
+  ivlo[0] = (int)((vector1[0]-geometry_eps-plo[0])/dx[0]);
+  ivlo[1] = (int)((vector2[0]-geometry_eps-plo[1])/dx[1]);
+  ivhi[0] = (int)((vector1[0]+geometry_eps-plo[0])/dx[0]);
+  ivhi[1] = (int)((vector2[0]+geometry_eps-plo[1])/dx[1]);
+
+  for (int i=1; i<N; ++i) {
+    ivlo[0] = std::min(ivlo[0], (int)((vector1[i]-geometry_eps-plo[0])/dx[0]) );
+    ivlo[1] = std::min(ivlo[1], (int)((vector2[i]-geometry_eps-plo[1])/dx[1]) );
+
+    ivhi[0] = std::max(ivhi[0], (int)((vector1[i]+geometry_eps-plo[0])/dx[0]) );
+    ivhi[1] = std::max(ivhi[1], (int)((vector2[i]+geometry_eps-plo[1])/dx[1]) );
+  }
+  return BoxArray(Box(ivlo,ivhi));
+}
+
 std::ostream&
 PolygonRegion::print(std::ostream& os) const
 {
@@ -270,6 +309,17 @@ EllipseRegion::inRegion (const Array<Real>& x) const
     this_rsqrd += d*d;
   }
   return this_rsqrd <= 1;
+}
+
+BoxArray
+EllipseRegion::approximate_bounds(const Array<Real>& plo, const Array<Real>& dx) const
+{
+  IntVect ivlo, ivhi;
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    ivlo[d] = (int)((center[d]-radius[d]-geometry_eps-plo[d])/dx[d]);
+    ivhi[d] = (int)((center[d]+radius[d]+geometry_eps-plo[d])/dx[d]);
+  }
+  return BoxArray(Box(ivlo,ivhi));
 }
 
 std::ostream&
@@ -338,6 +388,13 @@ SweptPolygonRegion::inRegion (const Array<Real>& x) const
     return ret;
   }
   return pnpoly(vector1,vector2,xproj);
+}
+
+BoxArray
+SweptPolygonRegion::approximate_bounds(const Array<Real>& plo,
+                                       const Array<Real>& dx) const
+{
+  return BoxArray(0);
 }
 
 std::ostream&
@@ -410,6 +467,13 @@ RotatedPolygonRegion::inRegion (const Array<Real>& x) const
   xproj[1] = d3;
 
   return pnpoly(vector1,vector2,xproj);
+}
+
+BoxArray
+RotatedPolygonRegion::approximate_bounds(const Array<Real>& plo,
+                                         const Array<Real>& dx) const
+{
+  return BoxArray(0);
 }
 
 std::ostream&
@@ -581,6 +645,12 @@ ColorFunctionRegion::inRegion (const Array<Real>& x) const
     return (*m_color_map)(idx,0) == m_color_val;
 }
 
+BoxArray
+ColorFunctionRegion::approximate_bounds(const Array<Real>& plo, const Array<Real>& dx) const
+{
+  return BoxRegion::approximate_bounds(plo,dx);
+}
+
 std::ostream& operator<< (std::ostream& os, const Region& rhs)
 {
   return rhs.print(os);
@@ -644,6 +714,13 @@ bool
 AllRegion::inRegion(const Array<Real>& x) const
 {
   return true;
+}
+
+BoxArray
+AllRegion::approximate_bounds(const Array<Real>& plo,
+                              const Array<Real>& dx) const
+{
+  return BoxArray(0);
 }
 
 static
@@ -724,6 +801,15 @@ ComplementRegion::inRegion (const Array<Real>& x) const
   return (exclude_region==0 ? true : !exclude_region->inRegion(x));
 }
 
+BoxArray
+ComplementRegion::approximate_bounds(const Array<Real>& plo,
+                                     const Array<Real>& dx) const
+{
+  return BoxArray(0); // Have not yet optimized this
+}
+
+
+
 std::ostream&
 ComplementRegion::print (std::ostream& os) const
 {
@@ -735,14 +821,14 @@ ComplementRegion::print (std::ostream& os) const
 
 UnionRegion::UnionRegion (const std::string&    r_name,
                           const std::string&    r_purpose,
-                          const Array<Region*>& _regions)
+                          const Array<const Region*>& _regions)
   : Region(r_name,r_purpose,"union")
 {
   SetUnionRegions(_regions);
 }
 
 void
-UnionRegion::SetUnionRegions(const Array<Region*>& _regions)
+UnionRegion::SetUnionRegions(const Array<const Region*>& _regions)
 {
   regions.resize(_regions.size());
   for (int i=0; i<_regions.size(); ++i) {
@@ -764,6 +850,25 @@ UnionRegion::inRegion (const Array<Real>& x) const
   return ret;
 }
 
+BoxArray
+UnionRegion::approximate_bounds(const Array<Real>& plo,
+                                const Array<Real>& dx) const
+{
+  BoxArray ba = regions[0]->approximate_bounds(plo,dx);
+  if (ba.ok()) {
+    BoxList bl(ba);
+    for(int i=1; i<regions.size(); ++i) {
+      ba = regions[i]->approximate_bounds(plo,dx);
+      if (ba.ok()) {
+        bl.join(BoxList(ba));
+      }
+    }
+    ba = BoxArray(bl);
+    ba.removeOverlap();
+  }
+  return ba;
+}
+
 std::ostream&
 UnionRegion::print (std::ostream& os) const
 {
@@ -777,15 +882,15 @@ UnionRegion::print (std::ostream& os) const
 
 
 SubtractionRegion::SubtractionRegion (const std::string&    r_name,
-                          const std::string&    r_purpose,
-                          const Array<Region*>& _regions)
+                                      const std::string&    r_purpose,
+                                      const Array<const Region*>& _regions)
   : Region(r_name,r_purpose,"union")
 {
   SetRegions(_regions);
 }
 
 void
-SubtractionRegion::SetRegions(const Array<Region*>& _regions)
+SubtractionRegion::SetRegions(const Array<const Region*>& _regions)
 {
   regions.resize(_regions.size());
   for (int i=0; i<_regions.size(); ++i) {
@@ -807,6 +912,14 @@ SubtractionRegion::inRegion (const Array<Real>& x) const
   return true;
 }
 
+BoxArray
+SubtractionRegion::approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const
+{
+  if (regions.size() == 0) return BoxArray(0); // Default master region to All, remove no other regions
+  return regions[0]->approximate_bounds(plo,dx); // HAve not yet optimized to remove subtracted pieces
+}
+
 std::ostream&
 SubtractionRegion::print (std::ostream& os) const
 {
@@ -824,85 +937,3 @@ SubtractionRegion::print (std::ostream& os) const
 }
 
 
-
-CompoundRegion::CompoundRegion (const std::string& r_name,
-                                const std::string& r_purpose,
-                                Region&            src_region)
-  : Region(r_name,r_purpose,"compound")
-{
-  regions.resize(1);
-  regions[0] = std::make_pair(INIT,&(src_region));
-};
-
-CompoundRegion&
-CompoundRegion::Union(Region& src_region)
-{
-  int rs = regions.size();
-  regions.resize(rs+1);
-  regions[rs] = std::make_pair(UNION,&(src_region));
-  return *this;
-}
-
-CompoundRegion&
-CompoundRegion::Intersect(Region& src_region)
-{
-  int rs = regions.size();
-  regions.resize(rs+1);
-  regions[rs] = std::make_pair(INTERSECT,&(src_region));
-  return *this;
-}
-
-CompoundRegion&
-CompoundRegion::Subtract(Region& src_region)
-{
-  int rs = regions.size();
-  regions.resize(rs+1);
-  regions[rs] = std::make_pair(SUBTRACT,&(src_region));
-  return *this;
-}
-
-bool
-CompoundRegion::inRegion (const Array<Real>& x) const
-{
-  bool inflag = true;
-  for (int i=0; i<regions.size(); ++i) {
-    const Op& op = regions[i].first;
-    const Region& r = *(regions[i].second);
-    if (i==0) {
-      inflag &= r.inRegion(x);
-    } else {
-      if (op == SUBTRACT) {
-        inflag &= !(r.inRegion(x));
-      }
-      else if (op == UNION) {
-        inflag |= r.inRegion(x);
-      }
-      else if (op == INTERSECT) {
-        inflag &= r.inRegion(x);
-      }
-    }
-  }
-  return inflag;
-}
-
-std::ostream&
-CompoundRegion::print (std::ostream& os) const {
-  Region::print(os);
-  os << "Compound region" << '\n';
-  for (int i=0; i<regions.size(); ++i) {
-    CompoundRegion::Op op = regions[i].first;
-    std::string opStr;
-    if (op == INIT) {
-      opStr = "INIT";
-    } else if (op == UNION) {
-      opStr = "UNION";
-    } else if (op == INTERSECT) {
-      opStr = "INTERSECT";
-    } else if (op == SUBTRACT) {
-      opStr = "SUBTRACT";
-    } else {
-      BoxLib::Abort("Unknown region operator");
-    }
-    os << "  " << opStr << " " << regions[i].second->name << std::endl;
-  }
-}

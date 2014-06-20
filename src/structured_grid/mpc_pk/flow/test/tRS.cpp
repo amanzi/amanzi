@@ -56,7 +56,7 @@ GradFill (MFTower&               mft,
     BL_ASSERT(mft[lev].nGrow()>=nGrow);
     for (MFIter mfi(mft[lev]); mfi.isValid(); ++mfi) {
       FArrayBox& fab = mft[lev][mfi];
-      const Box& box = Box(mfi.validbox()).grow(nGrow);
+      const Box box = Box(mfi.validbox()).grow(nGrow);
       for (IntVect iv=box.smallEnd(), End=box.bigEnd(); iv<=End; box.next(iv)) {
         Real val = 0;
         for (int d=0; d<BL_SPACEDIM; ++d) {

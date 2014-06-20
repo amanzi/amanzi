@@ -33,6 +33,12 @@ RegionManager::RegionManager()
 #endif
   }
 
+  int region_ctr = 0;
+  for (int i=0; i<regions.size(); ++i) {
+    const std::string name = regions[i]->name;
+    name_to_region_idx[name] = region_ctr++;
+  }
+
   // Get parameters for each user defined region 
   int nregion = nregion_DEF;
 
@@ -87,13 +93,13 @@ RegionManager::RegionManager()
         else if (operation=="union") {
           int nr = ppr.countval("regions");
           ppr.getarr("regions",union_regions[r_name[j]],0,nr);
-          UnionRegion* cfr = new UnionRegion(r_name[j],r_purpose,Array<Region*>()); // Delay setting regions until finished
+          UnionRegion* cfr = new UnionRegion(r_name[j],r_purpose,Array<const Region*>()); // Delay setting regions until finished
           regions[nregion_DEF+j] = cfr;
         }
         else if (operation=="subtraction") {
           int nr = ppr.countval("regions");
           ppr.getarr("regions",subtraction_regions[r_name[j]],0,nr);
-          SubtractionRegion* cfr = new SubtractionRegion(r_name[j],r_purpose,Array<Region*>()); // Delay setting regions until finished
+          SubtractionRegion* cfr = new SubtractionRegion(r_name[j],r_purpose,Array<const Region*>()); // Delay setting regions until finished
           regions[nregion_DEF+j] = cfr;
         }
         else {
@@ -165,19 +171,24 @@ RegionManager::RegionManager()
 	std::string m = "region type not supported \"" + r_type + "\"";
 	BoxLib::Abort(m.c_str());
       }
+      name_to_region_idx[r_name[j]] = region_ctr++;
     }
-  }
-
-  for (int i=0; i<regions.size(); ++i) {
-    name_to_region_idx[regions[i]->name] = i;
   }
 
   for (std::map<std::string,std::string>::const_iterator it = complement_exclude_regions.begin();
        it != complement_exclude_regions.end(); ++it) {
     const std::string& region_name = it->first;
     const std::string& excl_region_name = it->second;
+    if (name_to_region_idx.count(region_name)==0) {
+      const std::string msg = "Attempted to buid complement region with undefined component region "+region_name;
+      BoxLib::Abort(msg.c_str());
+    }
     ComplementRegion* region = dynamic_cast<ComplementRegion*>(regions[name_to_region_idx[region_name]]);
     BL_ASSERT(region != 0);
+    if (name_to_region_idx.count(excl_region_name)==0) {
+      const std::string msg = "Attempted to buid complement region with undefined component region "+excl_region_name;
+      BoxLib::Abort(msg.c_str());
+    }
     region->SetExcludeRegion(regions[name_to_region_idx[excl_region_name]]);
   }
   
@@ -185,10 +196,18 @@ RegionManager::RegionManager()
        it != union_regions.end(); ++it) {
     const std::string& region_name = it->first;
     const Array<std::string>& union_region_names = it->second;
+    if (name_to_region_idx.count(region_name)==0) {
+      const std::string msg = "Attempted to build union region with undefined component region "+region_name;
+      BoxLib::Abort(msg.c_str());
+    }
     UnionRegion* region = dynamic_cast<UnionRegion*>(regions[name_to_region_idx[region_name]]);
     BL_ASSERT(region != 0);
-    Array<Region*> rp(union_region_names.size());
+    Array<const Region*> rp(union_region_names.size());
     for (int i=0; i<rp.size(); ++i) {
+      if (name_to_region_idx.count(union_region_names[i])==0) {
+        const std::string msg = "Attempted to buid union region with undefined component region "+union_region_names[i];
+        BoxLib::Abort(msg.c_str());
+      }
       rp[i] = regions[name_to_region_idx[union_region_names[i]]];
     }
     region->SetUnionRegions(rp);
@@ -198,10 +217,18 @@ RegionManager::RegionManager()
        it != subtraction_regions.end(); ++it) {
     const std::string& region_name = it->first;
     const Array<std::string>& subtraction_region_names = it->second;
+    if (name_to_region_idx.count(region_name)==0) {
+      const std::string msg = "Attempted to buid subtraction region with undefined component region "+region_name;
+      BoxLib::Abort(msg.c_str());
+    }
     SubtractionRegion* region = dynamic_cast<SubtractionRegion*>(regions[name_to_region_idx[region_name]]);
     BL_ASSERT(region != 0);
-    Array<Region*> rp(subtraction_region_names.size());
+    Array<const Region*> rp(subtraction_region_names.size());
     for (int i=0; i<rp.size(); ++i) {
+      if (name_to_region_idx.count(subtraction_region_names[i])==0) {
+        const std::string msg = "Attempted to buid complement region with undefined component region "+subtraction_region_names[i];
+        BoxLib::Abort(msg.c_str());
+      }
       rp[i] = regions[name_to_region_idx[subtraction_region_names[i]]];
     }
     region->SetRegions(rp);
@@ -257,8 +284,9 @@ RegionManager::RegionPtrArray(const Array<std::string>& region_names) const
 std::ostream& operator<<(std::ostream& os, const RegionManager& rm)
 {
   os << "RegionManager: " << '\n';
-  Array<const Region*> regPtrs = rm.RegionPtrArray();
-  for (int i=0; i<regPtrs.size(); ++i) {
-    os << *(regPtrs[i]) << '\n';
+  const Array<const Region*> regions = rm.RegionPtrArray();
+  for (int i=0; i<regions.size(); ++i) {
+    os << *regions[i] << '\n';
   }
+  return os;
 }

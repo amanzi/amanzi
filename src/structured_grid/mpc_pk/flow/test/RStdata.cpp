@@ -40,6 +40,11 @@ RStdata::RStdata(int slev, int nlevs, Layout& layout, NLScontrol& nlsc, RStstruc
 
 RStdata::~RStdata()
 {
+  delete RhoSatOld;
+  delete RhoSatNew;
+  delete Pnew;
+  delete Pold;
+
   delete Porosity;
   delete KappaCCavg;
   delete Lambda;

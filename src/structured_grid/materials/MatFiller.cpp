@@ -6,8 +6,7 @@
 
 static Real grid_eff = 1;
 static int tags_buffer = 1;
-static int max_grid_size = 16;
-
+static int max_grid_size = 32;
 
 MatFiller::MatFiller(const Array<Geometry>&  _geomArray,
                      const Array<IntVect>&   _refRatio,
@@ -184,7 +183,8 @@ MatFiller::Initialize()
   int finestLevel = ba_mixed.size();
   materialID.resize(finestLevel+1,PArrayManage);
   int nGrow = 0;
-  materialID.set(0,new iMultiFab(BoxArray(geomArray[0].Domain()), 1, nGrow));  
+  BoxArray cba = BoxArray(geomArray[0].Domain());
+  materialID.set(0,new iMultiFab(cba, 1, nGrow));  
   for (int lev=0; lev<ba_mixed.size(); ++lev) {
     BoxList fbl(ba_mixed[lev]); fbl.refine(RefRatio(lev));
     fbl.simplify(); fbl.maxSize(max_grid_size);
@@ -207,14 +207,6 @@ Array<BoxArray>
 MatFiller::FindMixedCells()
 {
   Array<BoxArray> ba_array(nLevs-1);
-  PArray<TagBox> tbar;
-  if (nLevs>1) {
-    tbar.resize(nLevs-1, PArrayManage);
-    for (int lev=nLevs-2; lev>=0; --lev) {
-      Box gbox = BoxLib::grow(geomArray[lev].Domain(),tags_buffer);
-      tbar.set(lev, new TagBox(gbox)); // Workaround for bug in buffer code
-    }
-  }
 
   Array<IntVect> cr(nLevs);
   cr[nLevs-1] = IntVect(D_DECL(1,1,1));
@@ -222,55 +214,136 @@ MatFiller::FindMixedCells()
     cr[lev] = cr[lev+1] * RefRatio(lev);
   }
 
-  Box cbox;
+  int nMat = materials.size();
+  Array<BoxArray> material_bounds(nMat);
+  for (int j=0; j<nMat; ++j) {
+    UnionRegion union_region("test","all",materials[j].Regions());
+    material_bounds[j] = union_region.approximate_bounds(Array<Real>(geomArray[nLevs-1].ProbLo(),BL_SPACEDIM),
+                                                         Array<Real>(geomArray[nLevs-1].CellSize(),BL_SPACEDIM));
+  }
+
+  BoxArray cba(geomArray[0].Domain());
+  //int init_mat_granularity = std::max(1.,(Real)geomArray[0].Domain().numPts()/(10*ParallelDescriptor::NProcs()));
+  int init_mat_granularity = 1;
+  cba.maxSize(init_mat_granularity);
+  int cba_size = cba.size();
+  MultiFab junk(cba,1,0,Fab_noallocate);
+  const DistributionMapping& dm = junk.DistributionMap();
+  int my_proc = ParallelDescriptor::MyProc();
+  bool is_ioproc = ParallelDescriptor::IOProcessor();
+  Array<int> my_grids;
+  for (int i=0; i<cba_size ; ++i) {
+    if (dm[i] == my_proc) {
+      my_grids.push_back(i);
+    }
+  }
+
+  // Find all boxes in cba that possibly contain more than 1 material
+  // If only 1 material, store material idx 
+  std::vector< std::pair<int,Box> > isects;
+  bool first_only = true;
+  Array<int> grid_to_mat(cba_size,-1); // A convenient way to share results over procs later
+
+  for (int i=0; i<ParallelDescriptor::NProcs(); ++i) {
+    if (my_proc==i) {
+      for (int j=0; j<my_grids.size(); ++j) {
+        const Box& cbox = cba[my_grids[j]];
+        Box fbox = Box(cbox).refine(cr[0]);
+
+        Array<int> hits;
+        for (int k=0; k<nMat; ++k) {
+          bool bounds_provided = material_bounds[k].size() > 0;
+          if (bounds_provided) {
+            material_bounds[k].intersections(fbox,isects,first_only);
+          }
+          if (!bounds_provided || isects.size()>0) {
+            hits.push_back(k);
+          }
+        }
+        int nhits = hits.size();
+        if (nhits == 0) {
+          BoxLib::Abort("Material not defined for part of domain");
+        }
+        grid_to_mat[my_grids[j]] = (int)( hits.size() > 1  ?  -1  :  hits[0]);
+      }
+    }
+  }
+  ParallelDescriptor::ReduceIntSum(grid_to_mat.dataPtr(),cba_size); // Share results
+
+  // Build reduced cba, containing only the interesting boxes
+  BoxList cbl_red;
+  for (int i=0; i<grid_to_mat.size(); ++i) {
+    if (grid_to_mat[i] < 0) {
+      cbl_red.push_back(cba[i]);
+    }
+  }
+  BoxArray cba_red(cbl_red);
+  MultiFab junk_red(cba_red,1,0,Fab_noallocate);
+  const DistributionMapping& dm_red = junk_red.DistributionMap();
+  int num_red = cba_red.size();
+
+  PArray<TagBoxArray> tbar;
+  if (nLevs>1) {
+    tbar.resize(nLevs-1, PArrayManage);
+    for (int lev=nLevs-2; lev>=0; --lev) {
+      BoxArray gba = BoxArray(cba_red).refine(cr[0]).coarsen(cr[lev]);
+      tbar.set(lev, new TagBoxArray(gba,tags_buffer)); 
+    }
+  }
+
   IArrayBox finestFab, coarseFab;
   const Real* dxFinest = geomArray[nLevs-1].CellSize();
-  const Box& box = geomArray[0].Domain();
-  for (IntVect civ=box.smallEnd(), CEnd=box.bigEnd(); civ<=CEnd; box.next(civ)) {
-    Box coarsestBox(civ,civ);
-    Box finestBox = Box(coarsestBox).refine(cr[0]);
-    finestFab.resize(finestBox,1); finestFab.setVal(-1);
-    for (int j=0; j<materials.size(); ++j) {
-      int matID = matIdx[materials[j].Name()];
-      materials[j].setVal(finestFab,matID,0,dxFinest);
-    }
-
-    for (int lev=nLevs-2; lev>=0; --lev) {
-      Box thisBox = Box(finestBox).coarsen(cr[lev]);
-      IntVect rm1 = cr[lev] - IntVect::TheUnitVector();
-      TagBox& tb = tbar[lev];
-
-      for (IntVect thisIv=thisBox.smallEnd(), TEnd=thisBox.bigEnd(); thisIv<=TEnd; thisBox.next(thisIv)) {      
-        IntVect thisFineIv = thisIv * cr[lev];
-        Box thisFineBox(thisFineIv,thisFineIv+rm1);      
-        if (finestFab.min(thisFineBox,0) != finestFab.max(thisFineBox,0)) {
-          tb.setVal(TagBox::SET,Box(thisIv,thisIv),0,1);
+  for (int i=0; i<num_red; ++i) {
+    if (dm_red[i] == my_proc) {
+      const Box& box = cba_red[i];
+      for (IntVect civ=box.smallEnd(), CEnd=box.bigEnd(); civ<=CEnd; box.next(civ)) {
+        Box coarsestBox(civ,civ);
+        Box finestBox = Box(coarsestBox).refine(cr[0]);
+        finestFab.resize(finestBox,1); finestFab.setVal(-1);
+        for (int j=0; j<materials.size(); ++j) {
+          int matID = matIdx[materials[j].Name()];
+          materials[j].setVal(finestFab,matID,0,dxFinest);
+        }
+        
+        for (int lev=nLevs-2; lev>=0; --lev) {
+          Box thisBox = Box(finestBox).coarsen(cr[lev]);
+          IntVect rm1 = cr[lev] - IntVect::TheUnitVector();
+          TagBox& tb = tbar[lev][i];
+          
+          for (IntVect thisIv=thisBox.smallEnd(), TEnd=thisBox.bigEnd(); thisIv<=TEnd; thisBox.next(thisIv)) {      
+            IntVect thisFineIv = thisIv * cr[lev];
+            Box thisFineBox(thisFineIv,thisFineIv+rm1);      
+            if (finestFab.min(thisFineBox,0) != finestFab.max(thisFineBox,0)) {
+              tb.setVal(TagBox::SET,Box(thisIv,thisIv),0,1);
+            }
+          }
         }
       }
     }
   }
 
-
   for (int lev=nLevs-2; lev>=0; --lev) {
     if (lev < nLevs-2) {
-      TagBox* fromFine = tbar[lev+1].coarsen(RefRatio(lev));
-      fromFine->buffer(tags_buffer,tags_buffer);
-      tbar[lev].merge(*fromFine);
-      delete fromFine;
+      tbar[lev+1].coarsen(RefRatio(lev));
+      for (int i=0; i<num_red; ++i) {
+	if (dm_red[i] == my_proc) {
+	  tbar[lev][i].merge(tbar[lev+1][i]);
+	}
+      }
     }
+    tbar[lev].buffer(tags_buffer);
 
-    int num_tags = tbar[lev].numTags();
+    long int num_tags;
+    IntVect* tags = tbar[lev].collate(num_tags);
     if (num_tags>0) {
-      Array<IntVect> tags(num_tags);
-      long len = tbar[lev].collate(tags.dataPtr(), 0);
-      ClusterList clist(tags.dataPtr(), len);
+      ClusterList clist(tags, num_tags);
       clist.chop(grid_eff);
       BoxList bl = clist.boxList(); bl.simplify();
+      delete tags;
       ba_array[lev] = BoxLib::intersect(BoxArray(bl),geomArray[lev].Domain());
       ba_array[lev].maxSize(max_grid_size);
     }
   }
-
   return ba_array;
 }
 
