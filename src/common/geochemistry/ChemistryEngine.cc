@@ -27,7 +27,6 @@ namespace AmanziChemistry {
 
 namespace {
 
-// These functions are going into the next release of Alquimia.
 void CopyAlquimiaState(AlquimiaState* dest, AlquimiaState* src)
 {
   dest->water_density = src->water_density;
@@ -40,6 +39,16 @@ void CopyAlquimiaState(AlquimiaState* dest, AlquimiaState* src)
   memcpy(dest->mineral_specific_surface_area.data, src->mineral_specific_surface_area.data, sizeof(double) * src->mineral_specific_surface_area.size);
   memcpy(dest->surface_site_density.data, src->surface_site_density.data, sizeof(double) * src->surface_site_density.size);
   memcpy(dest->cation_exchange_capacity.data, src->cation_exchange_capacity.data, sizeof(double) * src->cation_exchange_capacity.size);
+}
+
+// These functions are going into the next release of Alquimia.
+void CopyAlquimiaMaterialProperties(AlquimiaMaterialProperties* dest, AlquimiaMaterialProperties* src)
+{
+  dest->volume = src->saturation;
+  dest->saturation = src->saturation;
+  memcpy(dest->isotherm_kd.data, src->isotherm_kd.data, sizeof(double) * src->isotherm_kd.size);
+  memcpy(dest->freundlich_n.data, src->freundlich_n.data, sizeof(double) * src->freundlich_n.size);
+  memcpy(dest->langmuir_b.data, src->langmuir_b.data, sizeof(double) * src->langmuir_b.size);
 }
 
 void CopyAlquimiaAuxiliaryData(AlquimiaAuxiliaryData* dest, AlquimiaAuxiliaryData* src)
@@ -115,6 +124,7 @@ ChemistryEngine::~ChemistryEngine()
   {
     FreeAlquimiaGeochemicalCondition(&iter->second->condition);
     FreeAlquimiaState(&iter->second->chem_state);
+    FreeAlquimiaMaterialProperties(&iter->second->mat_props);
     FreeAlquimiaAuxiliaryData(&iter->second->aux_data);
     delete iter->second;
   }
@@ -232,6 +242,7 @@ void ChemistryEngine::CreateCondition(const std::string& condition_name)
   GeochemicalConditionData* condition = new GeochemicalConditionData();
   condition->processed = false;
   int num_aq = 0, num_min = 0;
+  AllocateAlquimiaMaterialProperties(&sizes_, &condition->mat_props);
   AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, num_aq, num_min, &condition->condition);
   AllocateAlquimiaState(&sizes_, &condition->chem_state);
   AllocateAlquimiaAuxiliaryData(&sizes_, &condition->aux_data);
@@ -381,21 +392,24 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
 #endif 
 
   AlquimiaGeochemicalCondition* condition = &iter->second->condition;
+  AlquimiaMaterialProperties& nc_mat_props = const_cast<AlquimiaMaterialProperties&>(mat_props);
   if (!iter->second->processed)
   {
     // Copy the given state data into place for this condition.
+    CopyAlquimiaMaterialProperties(&iter->second->mat_props, &nc_mat_props);
     CopyAlquimiaState(&iter->second->chem_state, &chem_state);
     CopyAlquimiaAuxiliaryData(&iter->second->aux_data, &aux_data);
 
     // Process the condition on the given array at the given time.
     // FIXME: Time is ignored for the moment.
     int ierr = 0;
-    chem_.ProcessCondition(&engine_state_, condition, &(const_cast<AlquimiaMaterialProperties&>(mat_props)),
+    chem_.ProcessCondition(&engine_state_, condition, &iter->second->mat_props,
                            &iter->second->chem_state, &iter->second->aux_data, &chem_status_);
     iter->second->processed = true;
   }
 
   // Copy the constraint's data into place.
+  CopyAlquimiaMaterialProperties(&nc_mat_props, &iter->second->mat_props);
   CopyAlquimiaState(&chem_state, &iter->second->chem_state);
   CopyAlquimiaAuxiliaryData(&aux_data, &iter->second->aux_data);
 

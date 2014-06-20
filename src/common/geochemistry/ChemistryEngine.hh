@@ -31,6 +31,7 @@ namespace AmanziChemistry {
 struct GeochemicalConditionData
 {
   bool processed;
+  AlquimiaMaterialProperties mat_props;
   AlquimiaGeochemicalCondition condition;
   AlquimiaState chem_state;
   AlquimiaAuxiliaryData aux_data;
