@@ -339,7 +339,6 @@ MatFiller::FindMixedCells()
       ClusterList clist(tags, num_tags);
       clist.chop(grid_eff);
       BoxList bl = clist.boxList(); bl.simplify();
-      delete tags;
       ba_array[lev] = BoxLib::intersect(BoxArray(bl),geomArray[lev].Domain());
       ba_array[lev].maxSize(max_grid_size);
     }
@@ -637,7 +636,6 @@ MatFiller::CoarsenData(const FArrayBox&   fineFab,
   Box cwbox = crseBox;      cwbox.shift(cshift);
   const int* rvect = ref.getVect();
   BL_ASSERT(fbox.contains(Box(cbox).refine(ref)));
-
   if (rule==Property::Arithmetic) {
     FORT_CRSNARITH(fineFab.dataPtr(sComp),ARLIM(fbox.loVect()),ARLIM(fbox.hiVect()),
                    crseFab.dataPtr(dComp),ARLIM(cbox.loVect()),ARLIM(cbox.hiVect()),

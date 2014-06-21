@@ -3735,10 +3735,20 @@ namespace Amanzi {
       user_derive_list.push_back(underscore("Aqueous Volumetric Flux Z"));
 #endif
 
-      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient"));
+      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient X"));
+      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient Y"));
+#if BL_SPACEDIM==3
+      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient Z"));
+#endif
+
+      user_derive_list.push_back(underscore("Tortuosity X"));
+      user_derive_list.push_back(underscore("Tortuosity Y"));
+#if BL_SPACEDIM==3
+      user_derive_list.push_back(underscore("Tortuosity Z"));
+#endif
+
       user_derive_list.push_back(underscore("Dispersivity L"));
       user_derive_list.push_back(underscore("Dispersivity T"));
-      user_derive_list.push_back(underscore("Tortuosity"));
       user_derive_list.push_back(underscore("Specific Storage"));
 
       user_derive_list.push_back(underscore("Intrinsic Permeability X"));
