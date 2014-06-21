@@ -113,6 +113,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
     std::vector<double> kf(nfaces, 1.0);
     if (upwind_ == OPERATOR_UPWIND_AMANZI) {
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+      // for (int n = 0; n < nfaces; n++) kf[n] = std::max((*k_cell)[0][c], (*k_face)[0][faces[n]]);
     } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;

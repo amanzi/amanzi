@@ -90,7 +90,7 @@ class MPC {
     
   // observations
   Amanzi::ObservationData&  output_observations;
-  Amanzi::Unstructured_observations* observations;
+  Teuchos::RCP<Amanzi::Unstructured_observations> observations;
     
   // visualization
   Teuchos::Ptr<Amanzi::Visualization> visualization;

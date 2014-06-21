@@ -143,20 +143,20 @@ void MPC::mpc_init() {
       }
       std::string chemEngineName = chemistry_parameter_list.get<std::string>("Engine");
       std::string chemEngineInputFile = chemistry_parameter_list.get<std::string>("Engine Input File");
-      chem_engine = Teuchos::rcp( new AmanziChemistry::ChemistryEngine(chemEngineName, chemEngineInputFile) );
+      chem_engine = Teuchos::rcp(new AmanziChemistry::ChemistryEngine(chemEngineName, chemEngineInputFile));
 
       // Overwrite the component names with the primary species names from the engine.
       chem_engine->GetPrimarySpeciesNames(component_names);
     }
 #endif
     // Initialize the chemistry state.
-    CS = Teuchos::rcp( new AmanziChemistry::Chemistry_State( chemistry_parameter_list, component_names, S ) );
+    CS = Teuchos::rcp(new AmanziChemistry::Chemistry_State(chemistry_parameter_list, component_names, S));
   }
 
   // transport and chemistry...
   chem_trans_dt_ratio = CHEM_TRANS_DT_RATIO;
   if (transport_enabled && chemistry_enabled) {
-    chem_trans_dt_ratio = parameter_list.sublist("MPC").get<double>("max chemistry to transport timestep ratio",CHEM_TRANS_DT_RATIO);
+    chem_trans_dt_ratio = parameter_list.sublist("MPC").get<double>("max chemistry to transport timestep ratio", CHEM_TRANS_DT_RATIO);
   }
 
   // flow...
@@ -229,14 +229,14 @@ void MPC::mpc_init() {
     try {
       if (chemistry_model == "Alquimia") {
 #ifdef ALQUIMIA_ENABLED
-        CPK = Teuchos::rcp( new AmanziChemistry::Alquimia_Chemistry_PK(parameter_list, CS, chem_engine) );
+        CPK = Teuchos::rcp(new AmanziChemistry::Alquimia_Chemistry_PK(parameter_list, CS, chem_engine));
 #else
         std::cout << "MPC: Alquimia chemistry model is not enabled for this build.\n";
         throw std::exception();
 #endif
       } else if (chemistry_model == "Amanzi") {
         Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
-        CPK = Teuchos::rcp( new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS) );
+        CPK = Teuchos::rcp(new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS));
       } else {
         std::cout << "MPC: unknown chemistry model: " << chemistry_model << std::endl;
         throw std::exception();
@@ -256,7 +256,7 @@ void MPC::mpc_init() {
   // create the observations
   if (parameter_list.isSublist("Observation Data")) {
     Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation Data");
-    observations = new Amanzi::Unstructured_observations(observation_plist, output_observations, comm);
+    observations = Teuchos::rcp(new Amanzi::Unstructured_observations(observation_plist, output_observations, comm));
 
     if (mpc_parameter_list.isParameter("component names")) {
       Teuchos::Array<std::string> comp_names;
@@ -264,7 +264,7 @@ void MPC::mpc_init() {
       observations->RegisterComponentNames(comp_names.toVector());
     }
   } else {
-    observations = NULL;
+    observations = Teuchos::null;
   }
 
   // create the visualization object
@@ -431,7 +431,7 @@ void MPC::cycle_driver() {
   visualization->RegisterWithTimeStepManager(TSM);
   restart->RegisterWithTimeStepManager(TSM);
   // register observation times with the time step manager
-  if (observations) observations->RegisterWithTimeStepManager(TSM);
+  if (observations != Teuchos::null) observations->RegisterWithTimeStepManager(TSM);
   // register reset_times
   for(std::vector<std::pair<double,double> >::const_iterator it = reset_info_.begin();
       it != reset_info_.end(); ++it) TSM->RegisterTimeEvent(it->first);
@@ -601,7 +601,7 @@ void MPC::cycle_driver() {
 
 
   if (flow_enabled || transport_enabled || chemistry_enabled) {
-    if (observations) {
+    if (observations != Teuchos::null) {
       if (observations->DumpRequested(S->cycle(), S->time())) {
         if (flow_enabled) FPK->UpdateAuxilliaryData();
         observations->MakeObservations(*S);
@@ -1001,7 +1001,7 @@ void MPC::cycle_driver() {
 
 
       // make observations
-      if (observations) {
+      if (observations != Teuchos::null) {
         if (observations->DumpRequested(S->cycle(), S->time())) {
           if (flow_enabled) FPK->UpdateAuxilliaryData();
           observations->MakeObservations(*S);
