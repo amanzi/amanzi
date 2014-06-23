@@ -35,7 +35,7 @@ namespace Flow {
 class RelativePermeability {
  public:
   RelativePermeability(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh) {};
-  ~RelativePermeability() {};
+  ~RelativePermeability() { delete vo_; }
 
   // main methods
   void Init(double p0, Teuchos::ParameterList& plist);

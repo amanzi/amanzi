@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
       // if ParameterList - do old and pass thru
       // if amanzi_input  - validate, convert to old
 
-      xercesc::XMLString::release( &temp2) ;
+      xercesc::XMLString::release(&temp2) ;
       doc->release();
       xercesc::XMLPlatformUtils::Terminate();
     }

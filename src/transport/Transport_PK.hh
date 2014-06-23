@@ -110,8 +110,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   // limiters 
   void LimiterBarthJespersen(const int component,
                              Teuchos::RCP<const Epetra_Vector> scalar_field, 
-                             Teuchos::RCP<CompositeVector> gradient, 
-                             Teuchos::RCP<Epetra_Vector> limiter);
+                             Teuchos::RCP<CompositeVector>& gradient, 
+                             Teuchos::RCP<Epetra_Vector>& limiter);
 
  private:
   // Helper for constructors.
@@ -131,11 +131,11 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   // limiters 
   void LimiterTensorial(const int component,
                         Teuchos::RCP<const Epetra_Vector> scalar_field, 
-                        Teuchos::RCP<CompositeVector> gradient);
+                        Teuchos::RCP<CompositeVector>& gradient);
 
   void LimiterKuzmin(const int component,
-                     Teuchos::RCP<const Epetra_Vector> scalar_field, 
-                     Teuchos::RCP<CompositeVector> gradient);
+                     Teuchos::RCP<const Epetra_Vector>& scalar_field, 
+                     Teuchos::RCP<CompositeVector>& gradient);
 
   void CalculateDescentDirection(std::vector<AmanziGeometry::Point>& normals,
                                  AmanziGeometry::Point& normal_new,

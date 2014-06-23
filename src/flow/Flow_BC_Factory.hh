@@ -110,7 +110,7 @@ class FlowBCFactory {
  public:
   FlowBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                 const Teuchos::RCP<Teuchos::ParameterList>& plist);
-  ~FlowBCFactory() {};
+  ~FlowBCFactory() { delete vo_; }
   
   Functions::FlowBoundaryFunction* CreatePressure(std::vector<int>& submodel) const;
   Functions::FlowBoundaryFunction* CreateMassFlux(std::vector<int>& submodel) const;

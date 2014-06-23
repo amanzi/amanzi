@@ -631,7 +631,7 @@ void MPC::cycle_driver() {
       // Update our reset times (delete the next one if we just did it)
       if (!restart_requested) {
         if (!reset_info_.empty()) {
-          if (S->last_time()>=reset_info_.front().first) {
+          if (S->last_time() >= reset_info_.front().first) {
             reset_info_.erase(reset_info_.begin());
           }
         }

@@ -23,7 +23,7 @@ namespace Transport {
  ****************************************************************** */
 void Transport_PK::LimiterTensorial(const int component,
                                     Teuchos::RCP<const Epetra_Vector> scalar_field,
-                                    Teuchos::RCP<CompositeVector> gradient)
+                                    Teuchos::RCP<CompositeVector>& gradient)
 {
   double u1, u2, u1f, u2f, umin, umax, L22normal_new;
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
@@ -201,8 +201,8 @@ void Transport_PK::LimiterTensorial(const int component,
  ****************************************************************** */
 void Transport_PK::LimiterBarthJespersen(const int component, 
                                          Teuchos::RCP<const Epetra_Vector> scalar_field,
-                                         Teuchos::RCP<CompositeVector> gradient,
-                                         Teuchos::RCP<Epetra_Vector> limiter)
+                                         Teuchos::RCP<CompositeVector>& gradient,
+                                         Teuchos::RCP<Epetra_Vector>& limiter)
 {
   limiter->PutScalar(1.0);
   Teuchos::RCP<Epetra_MultiVector> grad = gradient->ViewComponent("cell", false);
@@ -356,8 +356,8 @@ void Transport_PK::LimiterBarthJespersen(const int component,
  * Kuzmin's limiter use all neighbors of a computational cell.  
  ****************************************************************** */
 void Transport_PK::LimiterKuzmin(const int component,
-                                 Teuchos::RCP<const Epetra_Vector> scalar_field,
-                                 Teuchos::RCP<CompositeVector> gradient)
+                                 Teuchos::RCP<const Epetra_Vector>& scalar_field,
+                                 Teuchos::RCP<CompositeVector>& gradient)
 {
   Teuchos::RCP<Epetra_MultiVector> grad = gradient->ViewComponent("cell", false);
 
