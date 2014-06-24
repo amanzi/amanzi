@@ -45,6 +45,7 @@
 #   0.92.1       - update MSTK to version 2.12 (fixes debug version linking)
 #   0.92.2       - update CCSE to version 1.2.7 (adds f90 utility for plotting)
 #   0.92.3       - update CURL to version 7.37.0 (builds correctly on Mac OS X 10.9)
+#   0.92.4       - update NetCDF to version 4.3.2 (builds correctly on Mac OS X 10.9)
 #
 
 include(CMakeParseArguments)
@@ -213,12 +214,12 @@ set(HDF5_MD5_SUM        1196e668f5592bfb50d1de162eb16cff)
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 2)
-set(NetCDF_VERSION_PATCH 1.1)
+set(NetCDF_VERSION_MINOR 3)
+set(NetCDF_VERSION_PATCH 2)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        5eebcf19e6ac78a61c73464713cbfafc)
+set(NetCDF_MD5_SUM        2fd2365e1fe9685368cd6ab0ada532a0)
 
 #
 # TPL: NetCDF Fortran
