@@ -3551,11 +3551,10 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
   if (!pm_amr) 
     BoxLib::Abort("Bad cast in PorousMedia::advance_multilevel_richards_flow");
 
-  int num_active_levels = finest_level + 1;
-  Layout layout_sub(parent,num_active_levels);
   if (steady_use_PETSc_snes) {
 
     // Prepare the state data structures
+    BL_ASSERT(richard_solver != 0);
     for (int lev=0; lev<=finest_level; ++lev) {
       PorousMedia& pm = getLevel(lev);        
       for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); 
@@ -3573,8 +3572,10 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     
   int nc = 0; // Component of water in state
 
-  // Save initial state, used in the native solver to build res_fix
   if (steady_use_PETSc_snes) {
+
+    // Save initial state, used in the native solver to build res_fix
+    BL_ASSERT(richard_solver != 0);
     for (int lev=0;lev<nlevs;lev++)
     {
       PorousMedia&    fine_lev   = getLevel(lev);
@@ -8567,22 +8568,37 @@ PorousMedia::PMParent() const
 //
 void PorousMedia::post_restart()
 {
-  if (level==0)
-  {
-      PMParent()->GetLayout().Build();
-  }
-
   init_rock_properties();
 
-  if (level == 0)
-    {
-      Observation::setPMAmrPtr(PMParent());
-      Real prev_time = state[State_Type].prevTime();
-      Real curr_time = state[State_Type].curTime();
-      PArray<Observation>& observations = PMParent()->TheObservations();
-      for (int i=0; i<observations.size(); ++i)
-          observations[i].process(prev_time, curr_time, parent->levelSteps(0));
+  if (level == 0) {
+
+    PMParent()->GetLayout().Build();
+
+    Observation::setPMAmrPtr(PMParent());
+    Real prev_time = state[State_Type].prevTime();
+    Real curr_time = state[State_Type].curTime();
+    PArray<Observation>& observations = PMParent()->TheObservations();
+    for (int i=0; i<observations.size(); ++i) {
+      observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
+
+    if (steady_use_PETSc_snes) {
+
+      Layout& layout = PMParent()->GetLayout();
+      PMAmr* pm_parent = PMParent();
+      int new_nLevs = parent->finestLevel() + 1;
+
+      BL_ASSERT(richard_solver_control == 0);
+      richard_solver_control = new NLScontrol();
+
+      BL_ASSERT(richard_solver_data == 0);
+      richard_solver_data = new RSAMRdata(0,new_nLevs,layout,pm_parent,*richard_solver_control,rock_manager);
+      BuildNLScontrolData(*richard_solver_control,*richard_solver_data,"Flow_PK");
+
+      BL_ASSERT(richard_solver == 0);
+      richard_solver = new RichardSolver(*richard_solver_data,*richard_solver_control);
+    }
+  }
 }
 
 //
@@ -8846,11 +8862,14 @@ PorousMedia::post_init_state ()
     }
 
     // Build a RS for the Flow_PK
+    BL_ASSERT(richard_solver_control == 0);
     richard_solver_control = new NLScontrol();
     Layout& layout = PMParent()->GetLayout();
     PMAmr* pm_parent = PMParent();
+    BL_ASSERT(richard_solver_data == 0);
     richard_solver_data = new RSAMRdata(0,layout.NumLevels(),layout,pm_parent,*richard_solver_control,rock_manager);
     BuildNLScontrolData(*richard_solver_control,*richard_solver_data,"Flow_PK");
+    BL_ASSERT(richard_solver == 0);
     richard_solver = new RichardSolver(*richard_solver_data,*richard_solver_control);
   }
 
