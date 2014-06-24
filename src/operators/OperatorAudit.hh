@@ -22,7 +22,7 @@ class OperatorAudit : public Operator {
  public:
   OperatorAudit() {};
   OperatorAudit(const Operator& op) : Operator(op) {};
-  ~OperatorAudit();
+  ~OperatorAudit() {};
 
   // main members
   int CheckSpectralBounds(int schema);

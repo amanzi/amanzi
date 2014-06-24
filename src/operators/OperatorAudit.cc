@@ -38,7 +38,7 @@ int OperatorAudit::CheckSpectralBounds(int schema)
   double cndmin = 1e+99, cndmax = 1.0, cndavg = 0.0;
 
   for (int i = 0; i < matrix.size(); i++) {
-    WhetStone::DenseMatrix& Acell = matrix[i];
+    WhetStone::DenseMatrix Acell(matrix[i]);
     int n = Acell.NumRows();
 
     int info, ldv(1), lwork = 4 * n;
@@ -59,7 +59,7 @@ int OperatorAudit::CheckSpectralBounds(int schema)
     emin = std::min(emin, a);
     emax = std::max(emax, b);
 
-    double cnd = b / a;
+    double cnd = fabs(b) / (fabs(a) + 1e-16);
     cndmin = std::min(cndmin, cnd);
     cndmax = std::max(cndmax, cnd);
     cndavg += cnd;
