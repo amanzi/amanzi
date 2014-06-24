@@ -44,6 +44,7 @@
 #   0.92.0       - Merge lib updates through 0.91.15
 #   0.92.1       - update MSTK to version 2.12 (fixes debug version linking)
 #   0.92.2       - update CCSE to version 1.2.7 (adds f90 utility for plotting)
+#   0.92.3       - update CURL to version 7.37.0 (builds correctly on Mac OS X 10.9)
 #
 
 include(CMakeParseArguments)
@@ -94,7 +95,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 2)
+set (AMANZI_TPLS_VERSION_PATCH 3)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
