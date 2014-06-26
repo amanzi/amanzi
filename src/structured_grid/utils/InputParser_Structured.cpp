@@ -4181,12 +4181,17 @@ namespace Amanzi {
               const ParameterList& lregion = 
                 parameter_list.sublist("Regions").sublist(region_name);
 
-              if (!lregion.isSublist("Region: Point"))
-              {
+              if (!lregion.isSublist("Region: Point")) {
                 std::cerr << label << " is a point observation and "
                           << region_name << " is not a point region.\n";
                 throw std::exception();
               }
+            }
+            else if (functional == "Observation Data: Peak Value") {
+              sublist.set("obs_type","peak_value");
+            }
+            else {
+              MyAbort("Unsupported functional for observation \""+label+"\": functional = \""+functional+"\"");
             }
             sublist.set("region",_region_name);
 
