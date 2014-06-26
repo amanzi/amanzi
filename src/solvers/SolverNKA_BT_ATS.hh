@@ -44,12 +44,14 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
     return (returned_code_ >= 0) ? 0 : 1;
   }
 
-  // control
-  void set_pc_lag(double pc_lag) {
-    pc_lag_ = pc_lag;
-  }
+  // mutators
+  void set_tolerance(double tol) { tol_ = tol; }
+  void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
 
   // access
+  double tolerance() {
+    return tol_;
+  }
   double residual() {
     return residual_;
   }

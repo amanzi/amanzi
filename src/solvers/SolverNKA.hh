@@ -43,10 +43,12 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
     return (returned_code_ >= 0) ? 0 : 1;
   }
 
-  // control
+  // mutators
+  void set_tolerance(double tol) { tol_ = tol; }
   void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
 
   // access
+  double tolerance() { return tol_; }
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
   int pc_calls() { return pc_calls_; }
