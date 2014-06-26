@@ -222,7 +222,7 @@ Note, for debugging purposes use level="extreme".
 
 .. code-block:: xml
 
-  <execution_control_defaults init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="stead | transient" method=" bdf1 | picard" />
+  <execution_control_defaults init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="steady | transient" method=" bdf1 | picard" />
 
     * init_dt="labeled_time" 
       
@@ -238,7 +238,7 @@ Note, for debugging purposes use level="extreme".
 
 .. code-block:: xml
 
-  <execution_control start="string" end="labeled_time" init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="stead | transient" method=" bdf1 | picard" restart="string"/>
+  <execution_control start="string" end="labeled_time" init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="steady | transient" method=" bdf1 | picard" restart="string"/>
 
 NOTE: start is REQUIRED
   
@@ -254,7 +254,7 @@ NOTE: start is REQUIRED
       
     * increase_factor="exponential" 
       
-    * mode="stead | transient" 
+    * mode="steady | transient" 
       
     * method=" bdf1 | picard" 
 
