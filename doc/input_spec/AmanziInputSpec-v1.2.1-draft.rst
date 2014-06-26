@@ -995,23 +995,23 @@ the following set of physical properties using the supported models described be
     * [SU] `"Mineral Name`" [list] Name of a mineral from the phase definitions "Minerals" list.
 
       * [SU] `"Volume Fraction`" (double) [-] Uniform over the assigned region, constant in time (default: 0.0).
-      * [SU] `"Specific Surface Area`" (double) [units?] Uniform over the assigned region, constant in time (default: 0.0).
+      * [SU] `"Specific Surface Area`" (double) [m^2 / m^3 bulk] Uniform over the assigned region, constant in time (default: 0.0).
 
   * [SU] `"Surface Complexation Sites`" [list]
 
     * [SU] `"Site Name`" [list] Name of a site from the phase definitions "Sorption Sites" list.
 
-      * [SU] `"Site Density`" (double) [units?] Uniform over the assigned region, constant in time (default: 0.0)
+      * [SU] `"Site Density`" (double) [mol / m^3 bulk] Uniform over the assigned region, constant in time (default: 0.0)
 
-  * [SU] `"Cation Exchange Capacity`" (double) Uniform over the assigned region, constant in time (default: 0.0)
+  * [SU] `"Cation Exchange Capacity`" (double) [equivalent / m^3 bulk] Uniform over the assigned region, constant in time (default: 0.0)
 
   * [SU] `"Sorption Isotherms`" [list]
 
     * [SU] `"Solute Name`" [list] The name of one of the solutes from the phase definitions "Component Solutes" list.
  
-      * [SU] `"Kd`" (double) distribution coefficient for this solute on this material (default: 0.0)
-      * [SU] `"Langmuir b`" (double) Langmuir isotherm "b" coefficient, optional parameter (default: 0.0)
-      * [SU] `"Freundlich n`" (double) Freundlich isotherm "n" coefficient, optional parameter (default to 1.0).
+      * [SU] `"Kd`" (double) [Kg H2O / m^3 bulk] molality-based distribution coefficient for this solute on this material (default: 0.0). If Kd is available in the more conventional units of mL/g or L/Kg, one needs to multiply that value by the water density [Kg water/L] and bulk density [Kg/m3 bulk]. Note: `"Kd`" is also used to enter the distribution coefficient in the Langmuir and Freundlich models. In the empirical Freundlich model, units will depend on the choice of n, i.e. [ mol^n / (m^3 bulk * Kg H2O)^n) ] . In the Langmuir model, units will be in [L H2O / mol]
+      * [SU] `"Langmuir b`" (double) [mol/m^3 bulk] Langmuir isotherm "b" coefficient, optional parameter (default: 0.0)
+      * [SU] `"Freundlich n`" (double) [-] Freundlich isotherm "n" coefficient, optional parameter (default to 1.0).
 
   Assigned regions are typically specified last:
 
