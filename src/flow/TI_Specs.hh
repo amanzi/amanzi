@@ -36,6 +36,7 @@ class TI_Specs {
     clip_saturation = -1.0;
     clip_pressure = -1e+10;
     pressure_lambda_constraints = true;
+    inflow_krel_correction = false;
   }
   ~TI_Specs() {};
 
@@ -56,7 +57,7 @@ class TI_Specs {
   std::string solver_name_ini;
   std::string preconditioner_name_ini;
 
-  bool pressure_lambda_constraints; 
+  bool pressure_lambda_constraints, inflow_krel_correction;
   std::string solver_name_constraint;
   std::string preconditioner_name_constraint;
 

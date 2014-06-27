@@ -705,6 +705,7 @@ nonlinear solvers during calculation of the initial guess time integration. Here
 
      <ParameterList name="pressure-lambda constraints">
        <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="inflow krel correction" type="bool" value="false"/>
        <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
      </ParameterList>
 
@@ -742,6 +743,7 @@ The first part controls preliminary steps in the time integrator.
 
      <ParameterList name="pressure-lambda constraints">
        <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="inflow krel correction" type="bool" value="false"/>
        <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
      </ParameterList>
    </ParameterList>
@@ -786,6 +788,9 @@ The parameters used here are
 
   * `"linear solver`" [string] refers to a solver sublist of the list `"Solvers`".
 
+  * `"inflow krel correction`" [bool] estimates relative permeability on inflow 
+    mesh faces. This estimate is more reliable than the upwinded relative premeability
+    value, especially in steady-state calculations.
 
 A specific time intergation method is invoked by parameter `"time integration method`".
 The available options are `"BDF1`" and `"Picard`".

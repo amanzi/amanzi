@@ -86,11 +86,28 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
   Epetra_MultiVector& utmp_face = *utmp.ViewComponent("face");
   Epetra_MultiVector& u_face = *u.ViewComponent("face");
 
-  // update coefficients
+  // update relative permeability coefficients
   darcy_flux_copy->ScatterMasterToGhosted("face");
   rel_perm_->Compute(u);
   upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel());
   upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP());
+
+  // modify relative permeability coefficient for influx faces
+  if (ti_specs->inflow_krel_correction) {
+    Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face", true);
+    AmanziMesh::Entity_ID_List cells;
+
+    for (int f = 0; f < nfaces_wghost; f++) {
+      if (bc_model[f] == Operators::OPERATOR_BC_FACE_NEUMANN && bc_value[f] < 0.0) {
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+        double area = mesh_->face_area(f);
+        double Knn = ((K[cells[0]] * normal) * normal) / (area * area);
+        k_face[0][f] = std::min(1.0, -bc_value[f]  * mu_ / (Knn * rho_ * rho_ * g_));
+      } 
+    }
+  }
 
   // calculate preconditioner
   op_preconditioner_->Init();

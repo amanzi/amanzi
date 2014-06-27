@@ -157,6 +157,7 @@ void Flow_PK::ProcessSublistTimeIntegration(
     if (list.isSublist("pressure-lambda constraints")) {
       Teuchos::ParameterList& pl_list = list.sublist("pressure-lambda constraints");
       ti_specs.pressure_lambda_constraints = true;
+      ti_specs.inflow_krel_correction = pl_list.get<bool>("inflow krel correction", "false");
 
       ti_specs.solver_name_constraint = FindStringLinearSolver(pl_list);
     }

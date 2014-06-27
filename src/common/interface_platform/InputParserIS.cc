@@ -1511,7 +1511,8 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
 
           // pressure-lambda constraints
           Teuchos::ParameterList &sti_plamb = steady_time_integrator.sublist("pressure-lambda constraints");
-          sti_plamb.set<std::string>("method","projection");
+          sti_plamb.set<std::string>("method", "projection");
+          sti_plamb.set<bool>("inflow krel correction", true);
           sti_plamb.set<std::string>("linear solver", ST_PLAMB_SOLVER);
 
           // time integration method
@@ -1628,7 +1629,8 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
 
           // pressure-lambda constraints
           Teuchos::ParameterList &tti_plamb = transient_time_integrator.sublist("pressure-lambda constraints");
-          tti_plamb.set<std::string>("method","projection");
+          tti_plamb.set<std::string>("method", "projection");
+          tti_plamb.set<bool>("inflow krel correction", true);
           tti_plamb.set<std::string>("linear solver", TR_PLAMB_SOLVER);
 
           // time integration method
@@ -1719,11 +1721,7 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
 		// create an initialization sublist
 		if (num_list.get<bool>("transient initialize with darcy", TR_INIT_DARCY_BOOL)) {
 		  Teuchos::ParameterList &tti_init = transient_time_integrator.sublist("initialization");
-		  tti_init.set<std::string>("method","saturated solver");
-		  tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
-		} else {
-		  Teuchos::ParameterList &tti_init = transient_time_integrator.sublist("initialization");
-		  tti_init.set<std::string>("method","projection");
+		  tti_init.set<std::string>("method", "saturated solver");
 		  tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
 		}
 	      }
