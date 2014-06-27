@@ -186,10 +186,11 @@ void MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
 }
 
 
-ModifyCorrectionResult MPCSubsurface::ModifyCorrection(double h,
-        Teuchos::RCP<const TreeVector> res,
-        Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<TreeVector> du) {
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+    MPCSubsurface::ModifyCorrection(double h,
+                                    Teuchos::RCP<const TreeVector> res,
+                                    Teuchos::RCP<const TreeVector> u,
+                                    Teuchos::RCP<TreeVector> du) {
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "NKA * PC * residuals:" << std::endl;
@@ -201,7 +202,7 @@ ModifyCorrectionResult MPCSubsurface::ModifyCorrection(double h,
     db_->WriteVectors(vnames, vecs, true);
   }
 
-  return AmanziSolvers::CORRECTION_NOT_MODIFIED;
+  return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
 
 } // namespace

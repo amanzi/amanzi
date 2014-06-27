@@ -43,8 +43,9 @@ class MPCCoupledWater : public StrongMPC<PKPhysicalBDFBase> {
           Teuchos::RCP<TreeVector> u);
 
   // -- Modify the correction.
-  virtual ModifyCorrectionResult ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                       Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
  protected:
   void

@@ -56,10 +56,12 @@ class PKBDFBase : public virtual PKDefaultBase,
           Teuchos::RCP<TreeVector> u) { return false; }
 
   // -- Possibly modify the correction before it is applied
-  virtual ModifyCorrectionResult ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
-    return AmanziSolvers::CORRECTION_NOT_MODIFIED; }
-
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                       Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<TreeVector> du) {
+    return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+  }
 
  protected: // data
   // preconditioner assembly control
