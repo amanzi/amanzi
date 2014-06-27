@@ -20,6 +20,7 @@
 #include "LinearOperator.hh"
 #include "LinearOperatorFactory.hh"
 
+#include "FnBaseDefs.hh"
 #include "SolverFnBase.hh"
 
 namespace Amanzi {
@@ -61,9 +62,10 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
   }
 
   // Hack a correction for some reason.
-  virtual ModifyCorrectionResult ModifyCorrection(const Teuchos::RCP<const Vector>& res,
-          const Teuchos::RCP<const Vector>& u,
-          const Teuchos::RCP<Vector>& du) {
+  virtual FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(const Teuchos::RCP<const Vector>& res,
+                       const Teuchos::RCP<const Vector>& u,
+                       const Teuchos::RCP<Vector>& du) {
     return fn_->ModifyCorrection(res, u, du);
   }
 

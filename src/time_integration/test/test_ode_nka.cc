@@ -10,14 +10,15 @@
 
 #include "BDFFnBase.hh"
 #include "BDF1_TI.hh"
-
 #include "dbc.hh"
-#include "errors.hh"
 #include "exceptions.hh"
+#include "errors.hh"
+#include "FnBaseDefs.hh"
 
 #include "ode_fnbase.hh"
 
 using namespace Amanzi;
+using namespace Amanzi::AmanziSolvers;
 
 
 SUITE(ODEIntegrationTests) {

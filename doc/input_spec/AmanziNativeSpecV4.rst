@@ -906,14 +906,7 @@ those needed for unit tests, and future code development:
      <ParameterList name="obsolete parameters">
        <Parameter name="start time" type="double" value="0.0"/>
        <Parameter name="end time" type="double" value="100.0"/>
-
        <Parameter name="maximum number of iterations" type="int" value="400"/>
-       <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
-       <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-       <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
-       <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-
-       <Parameter name="time stepping strategy" type="string" value='standard"/>
        <Parameter name="error abs tol" type="double" value="1"/>
        <Parameter name="error rel tol" type="double" value="0"/>
      </ParameterList>

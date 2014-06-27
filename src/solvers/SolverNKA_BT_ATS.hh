@@ -14,6 +14,7 @@
 #include "VerboseObject.hh"
 
 #include "errors.hh"
+#include "FnBaseDefs.hh"
 #include "Solver.hh"
 #include "SolverFnBase.hh"
 #include "SolverDefs.hh"
@@ -250,7 +251,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
       nka_restarted = false;
     }
 
-    ModifyCorrectionResult hacked = CORRECTION_NOT_MODIFIED;
+    FnBaseDefs::ModifyCorrectionResult hacked = FnBaseDefs::CORRECTION_NOT_MODIFIED;
     if (num_itrs_ > nka_lag_iterations_) {
       // Calculate the accelerated correction.
       nka_->Correction(*du_pic, *du_nka);
@@ -280,7 +281,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
     // potentially backtrack
     bool admitted_iterate = false;
     if (num_itrs_ > backtrack_lag_ && num_itrs_ < last_backtrack_iter_ &&
-        hacked != CORRECTION_MODIFIED_LAG_BACKTRACKING) {
+        hacked != FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING) {
       bool good_step = false;
       *u_precorr = *u;
       previous_error = error;
@@ -339,7 +340,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
             *du_pic = *du_nka;
           } else {
             hacked = fn_->ModifyCorrection(res, u, du_pic);
-            if (hacked == CORRECTION_MODIFIED_LAG_BACKTRACKING) {
+            if (hacked == FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING) {
               // no backtracking, just use this correction, checking admissibility
               u->Update(-1., *du_pic, 1.);
               fn_->ChangedSolution();

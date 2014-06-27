@@ -26,13 +26,13 @@ template<class Vector, class VectorSpace>
 class SolverNKA : public Solver<Vector,VectorSpace> {
  public:
   SolverNKA(Teuchos::ParameterList& plist) :
-      plist_(plist) {}
+      plist_(plist) {};
 
   SolverNKA(Teuchos::ParameterList& plist,
             const Teuchos::RCP<SolverFnBase<Vector> >& fn,
             const VectorSpace& map) :
       plist_(plist) {
-    Init(fn,map);
+    Init(fn, map);
   }
 
   void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,

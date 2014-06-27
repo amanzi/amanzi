@@ -11,6 +11,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "VerboseObject.hh"
+#include "FnBaseDefs.hh"
 #include "SolverFnBase.hh"
 #include "SolverDefs.hh"
 #include "Solver.hh"
