@@ -1,11 +1,9 @@
-<!-- Standardize on lower case.  Can't just convert to lower case in the case of file names -->
-<!-- Would like to be able to include files with times, macros etc for reuse -->
-<amanzi_input version="2.0.0" type="unstructured">
-
+<?xml version="1.0"?>
+<amanzi_input type="unstructured" version="2.0.0">
 	<model_description name="BC Cribs">
 		<comments>Added section on units definition</comments>
-		<model_id>What should be in this field; originally TBD</model_id>
 		<author>d3k870</author>
+		<model_id>What should be in this field; originally TBD</model_id>
 		<units>
 			<length_unit>m</length_unit>
 			<time_unit>s</time_unit>
@@ -13,613 +11,1132 @@
 			<conc_unit>molar</conc_unit>
 		</units>
 	</model_description>
-
-   <definitions>
-
-	<constants>
-		<constant name ="start"                   type="time" value="1956.0;y"/>
-		<constant name ="B-14_B-17_release_begin" type="time" value="1956.0;y"/>
-		<constant name ="B-17_release_end"        type="time" value ="1956.0822;y"/>
-		<constant name ="B-19_release_begin"      type="time" value ="1956.0849;y"/>
-		<constant name ="B-14_release_end"        type="time" value ="1956.1616;y"/>
-		<constant name ="B-18_release_begin"      type="time" value ="1956.1644;y"/>
-		<constant name ="B-15_B-16_release_begin" type="time" value ="1956.2493;y"/>
-		<constant name ="B-18_release_end"        type="time" value ="1956.3288;y"/>
-		<constant name ="B-16_release_end"        type="time" value ="1956.6630;y"/>
-		<constant name ="B-19_release_end"        type="time" value ="1956.8247;y"/>
-		<constant name ="B-15_release_end"        type="time" value ="1956.9973;y"/>
-		<constant name="pre_1956_recharge" type="area_mass_flux" value="1.5815524627981847E-7"/>
-		<constant name="post_1956_recharge" type="area_mass_flux" value="1.9927561031257127E-6"/>
-		<constant name="future_recharge" type="area_mass_flux" value="1.7587764354333456E-6"/>
-
-		<time_constant name="start_time" value="1956.0;y"/>
-		<numerical_constant name="zero" value="0.000"/>
-		<area_mass_flux_constant name="future_recharge" value="1.7587764354333456E-6"/>
-	</constants>
-
-	<macros>
-		<!-- The preferred format is a single attribute with comma-separated list of times
-		If it is too difficult to validate then we will just use list of time elements -->
-		<!-- PREFERRED:
-		<time_macro name ="Macro 1", times="
-			6.17266656E10,
-			6.17266656E10,
-			6.17266656E10"
-			/>
-		-->
-			<!--  ALTERNATE as list of time elements - Schema as written now validates this-->
-		<time_macro name="vis_macro">
-			<time>6.17266656E10</time>
-			<time>6.172982136E10</time>
-			<time>6.173297712E10</time>
-			<time>6.173613288E10</time>
-			<time>6.173928864E10</time>
-			<time>6.17424444E10</time>
-			<time>6.174560016E10</time>
-			<time>6.174875592E10</time>
-			<time>6.175191168E10</time>
-			<time>6.175506744E10</time>
-			<time>6.17582232E10</time>
-			<time>6.176453472E10</time>
-			<time>6.177084624E10</time>
-			<time>6.177715776E10</time>
-			<time>6.178346928E10</time>
-			<time>6.17897808E10</time>
-			<time>6.18213384E10</time>
-			<time>6.1852896E10</time>
-			<time>6.2010684E10</time>
-			<time>6.2168472E10</time>
-			<time>6.232626E10</time>
-			<time>6.2484048E10</time>
-			<time>6.2641836E10</time>
-			<time>6.2799624E10</time>
-			<time>6.2957412E10</time>
-			<time>6.31152E10</time>
-			<time>6.3272988E10</time>
-			<time>6.3372710016E10</time>
-			<time>6.33834396E10</time>
-		</time_macro>
-	  	<time_macro name = "obs_bhA">
-			<time>6.33834396E10</time>
-		</time_macro>
-
-	  	<time_macro name = "obs_bhC">
-			<time>6.337271002E10</time>
-		</time_macro>
-
-	  	<cycle_macro name = "Every_100_timesteps">
-			<start>0</start>
-			<timestep_interval>100</timestep_interval>
-			<stop>-1 </stop>
-		</cycle_macro>
-
-<!--  Could use this with include to import variable lists from other XML files
-
-	  	<variable_macro name = "xxx">
-	  		<variable>Aqueous Pressure</variable>
-	  	</variable_macro>
-
--->
-
-	</macros>
-   </definitions>
-
-
-   <!--  if flow,transport,chemistry are missing, this implies that state == off -->
+	<definitions>
+		<macros>
+			<time_macro name="vis_macro">
+				<time>6.17266656E10 s</time>
+				<time>6.172982136E10 s</time>
+				<time>6.173297712E10 s</time>
+				<time>6.173613288E10 s</time>
+				<time>6.173928864E10 s</time>
+				<time>6.17424444E10 s</time>
+				<time>6.174560016E10 s</time>
+				<time>6.174875592E10 s</time>
+				<time>6.175191168E10 s</time>
+				<time>6.175506744E10 s</time>
+				<time>6.17582232E10 s</time>
+				<time>6.176453472E10 s</time>
+				<time>6.177084624E10 s</time>
+				<time>6.177715776E10 s</time>
+				<time>6.178346928E10 s</time>
+				<time>6.17897808E10 s</time>
+				<time>6.18213384E10 s</time>
+				<time>6.1852896E10 s</time>
+				<time>6.2010684E10 s</time>
+				<time>6.2168472E10 s</time>
+				<time>6.232626E10 s</time>
+				<time>6.2484048E10 s</time>
+				<time>6.2641836E10 s</time>
+				<time>6.2799624E10 s</time>
+				<time>6.2957412E10 s</time>
+				<time>6.31152E10 s</time>
+				<time>6.3272988E10 s</time>
+				<time>6.3372710016E10 s</time>
+				<time>6.33834396E10 s</time>
+			</time_macro>
+			<cycle_macro name="Every_100_timesteps">
+				<start>0</start>
+				<timestep_interval>100</timestep_interval>
+			</cycle_macro>
+			<time_macro name="obs_bhA">
+				<time>6.33834396E10 s</time>
+			</time_macro>
+			<time_macro name="obs_bhC">
+				<time>6.337271002E10 s</time>
+			</time_macro>
+			<time_macro name="Well_A_01: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_01: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_02: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_02: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_03: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_03: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_04: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_04: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_05: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_05: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_06: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_06: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_07: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_07: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_08: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_08: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_09: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_09: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_10: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_10: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_11: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_11: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_12: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_12: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_13: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_13: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_14: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_14: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_15: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_15: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_16: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_16: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_17: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_17: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_18: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_18: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_19: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_19: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_20: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_20: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_21: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_21: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_22: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_22: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_23: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_23: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_24: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_24: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_25: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_25: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_26: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_26: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_27: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_27: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_28: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_28: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_29: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_29: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_30: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_30: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_31: Aqueous concentration: Tc-99">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_A_31: Gravimetric water content">
+				<time>6.338343960000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_01: Aqueous concentration: Tc-99">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_01: Gravimetric water content">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_02: Aqueous concentration: Tc-99">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_02: Gravimetric water content">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_03: Aqueous concentration: Tc-99">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_03: Gravimetric water content">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_04: Aqueous concentration: Tc-99">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_04: Gravimetric water content">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_05: Aqueous concentration: Tc-99">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_05: Gravimetric water content">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_06: Aqueous concentration: Tc-99">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_06: Gravimetric water content">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_07: Aqueous concentration: Tc-99">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_07: Gravimetric water content">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_08: Aqueous concentration: Tc-99">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_08: Gravimetric water content">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_09: Aqueous concentration: Tc-99">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_09: Gravimetric water content">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_10: Aqueous concentration: Tc-99">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_10: Gravimetric water content">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_11: Aqueous concentration: Tc-99">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+			<time_macro name="Well_C_11: Gravimetric water content">
+				<time>6.337271002000e+10</time>
+			</time_macro>
+		</macros>
+	</definitions>
 	<process_kernels>
 		<comments>This is a proposed comment field for process_kernels</comments>
-      		<flow state = "on" model = "richards"/>
-      		<transport state = "on" algorithm = "explicit first-order" sub_cycling = "on"/>
-      		<chemistry state = "off" process_model="none"/>
+		<flow model="richards" state="on" />
+		<transport algorithm="explicit first-order" state="on" />
+		<chemistry engine="none" process_model="none" state="off" />
 	</process_kernels>
-
-   <!-- Higher level description of coupling, sub-cycling. TBD
-        <multi_process_coordinator>
-	</multi_process_coordinator>
-   -->
-
 	<phases>
 		<comments>Eliminated term "Uniform" from viscosity and density input. Designed for additional phases to be included.</comments>
-		<liquid_phase name = "water">
-			<eos>false</eos>  <!-- default is false; and can be left out -->
-			<viscosity>1.002E-03</viscosity>
+		<liquid_phase name="water">
+			<eos>false</eos>
+			<viscosity>0.001002</viscosity>
 			<density>998.2</density>
-			<dissolved_components> 
+			<dissolved_components>
 				<solutes>
-					<solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
-				</solutes> 
+					<solute coefficient_of_diffusion="1.0E-9">Tc-99</solute>
+				</solutes>
 			</dissolved_components>
 		</liquid_phase>
 	</phases>
-
-
 	<execution_controls>
-		<verbosity level="high"/>
-	         <comments>Note this section eliminates Initialize to Steady/Transient/Switch since multiple execution periods
-		           can be used instead. Execution control defaults can be overridden as shown on 0.0 time line.
-			   Use named time period as defined above, or actual times.</comments>
-		 <execution_control_defaults init_dt= "3.168E-08"   max_dt="0.01"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
-			   <execution_control  start="0.0;y"   end="1956.0"    init_dt= "0.01"        max_dt="500.0" reduction_factor="0.8"  mode = "steady"   />
-			   <execution_control  start="B-14_B-17_release_begin" />
-			   <execution_control  start="B-17_release_end" />
-			   <execution_control  start="B-19_release_begin" />
-			   <execution_control  start="B-14_release_end" />
-			   <execution_control  start="B-18_release_begin" />
-			   <execution_control  start="B-15_B-16_release_begin" />
-			   <execution_control  start="B-18_release_end" />
-			   <execution_control  start="B-16_release_end" />
-			   <execution_control  start="B-19_release_end" />
-			   <execution_control  start="B-15_release_end" />
-			   <!-- OR specify times -->
-			   <execution_control  start="0.0;y"   end="1956.0"    init_dt= "0.01"        max_dt="500.0" reduction_factor="0.8"  mode = "steady"   />
-			   <execution_control  start="1956.0;y"  />
-			   <execution_control  start="1956.0822;y" />
-			   <execution_control  start="1956.0849;y" />
-			   <execution_control  start="1956.1616;y" />
-			   <execution_control  start="1956.1644;y" />
-			   <execution_control  start="1956.2493;y" />
-			   <execution_control  start="1956.3288;y" />
-			   <execution_control  start="1956.6630;y" />
-			   <execution_control  start="1956.8247;y" />
-			   <execution_control  start="1956.9973;y" />
-			   <execution_control  start="1957.000;y"  end="3000.0;y"/>
+		<verbosity level="extreme" />
+		<execution_control_defaults increase_factor="1.25" init_dt="3.168E-08 s" max_dt="0.01 s" method="bdf1" mode="transient" reduction_factor="0.8" />
+		<execution_control end="1956.0 s" increase_factor="1.2" init_dt="0.01 s" max_dt="500.0 s" mode="steady" reduction_factor="0.8" start="0.0 y" />
+		<execution_control increase_factor="1.2" reduction_factor="0.8" start="1956.0 y" />
+		<execution_control increase_factor="1.2" reduction_factor="0.8" start="1956.0822 y" />
+		<execution_control start="1956.0849 y" />
+		<execution_control start="1956.1616 y" />
+		<execution_control start="1956.1644 y" />
+		<execution_control start="1956.2493 y" />
+		<execution_control start="1956.3288 y" />
+		<execution_control start="1956.6630 y" />
+		<execution_control start="1956.8247 y" />
+		<execution_control increase_factor="1.2" reduction_factor="0.8" start="1956.9973 y" />
+		<execution_control end="3000.0 y" increase_factor="1.2" reduction_factor="0.8" start="1957.000 y" />
 	</execution_controls>
-
-        <!-- There are few different ways to iterate to steady-state -
-        most use pseudo-time. But what may complicate this is that two different PKs may have different needs here or in transient.-->
-
 	<numerical_controls>
-		<comments>Numerical controls comments here</comments>
 		<steady-state_controls>
-		        <comments>Note that this section contained data on timesteps, which was moved into the execution control section.</comments>
-          		<min_iterations>10</min_iterations>
-		      	<max_iterations>20</max_iterations>
-          		<max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
-          		<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-          		<pseudo_time_integrator>
-               			<method>picard</method>
-          				<preconditioner>hypre_amg</preconditioner>
-          				<linear_solver>aztec00</linear_solver>
-          				<control_options>pressure</control_options>
-          				<max_iterations>100</max_iterations>
-          				<clipping_saturation>0.95</clipping_saturation>
-          				<convergence_tolerance>0.95</convergence_tolerance>
-          				<initialize_with_darcy>true</initialize_with_darcy>
-          		</pseudo_time_integrator>
+			<min_iterations>10</min_iterations>
+			<max_iterations>20</max_iterations>
+			<max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
+			<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+			<limit_iterations>20</limit_iterations>
+			<nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+			<nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+			<max_divergent_iterations>3</max_divergent_iterations>
+			<pseudo_time_integrator>
+				<initialize_with_darcy>true</initialize_with_darcy>
+				<clipping_saturation>0.95</clipping_saturation>
+				<method>picard</method>
+				<preconditioner>hypre_amg</preconditioner>
+				<linear_solver>aztec00</linear_solver>
+				<control_options>pressure</control_options>
+				<convergence_tolerance>0.95</convergence_tolerance>
+				<max_iterations>100</max_iterations>
+			</pseudo_time_integrator>
 		</steady-state_controls>
 		<transient_controls>
-			<comments>Proposed comments section.</comments>
-			<bdf1_integration_method min_iterations="12" max_iterations="20" limit_iterations = "20" nonlinear_tolerance="1.0e-05" nonlinear_iteration_damping_factor="1.0" max_preconditioner_lag_iterations="5" max_divergent_iterations="3" nonlinear_iteration_divergence_factor="1.0" restart_tolerance_factor="1.0" restart_tolerance_relaxation_factor="1.0" />
-	                <preconditioner name = "hypre_amg">
-	                     	<hypre_cycle_applications>10</hypre_cycle_applications>
-	                	<hypre_smoother_sweeps>3</hypre_smoother_sweeps>
-	                       	<hypre_tolerance>0.1</hypre_tolerance>
-	                       	<hypre_strong_threshold>0.4</hypre_strong_threshold>
-	                 </preconditioner>
+			<bdf1_integration_method limit_iterations="20" max_divergent_iterations="3" max_iterations="20" max_preconditioner_lag_iterations="5" min_iterations="12" nonlinear_iteration_damping_factor="1.0" nonlinear_iteration_divergence_factor="1.0" nonlinear_tolerance="1.0e-05" restart_tolerance_factor="1.0" restart_tolerance_relaxation_factor="1.0" />
+			<preconditioner name="hypre_amg">
+				<hypre_cycle_applications>10</hypre_cycle_applications>
+				<hypre_smoother_sweeps>3</hypre_smoother_sweeps>
+				<hypre_tolerance>0.1</hypre_tolerance>
+				<hypre_strong_threshold>0.4</hypre_strong_threshold>
+			</preconditioner>
 		</transient_controls>
-		<nonlinear_solver name= "nka"/>
 		<linear_solver>
-			<comments>Proposed comment section.</comments>
 			<method>gmres</method>
-			<max_iterations>20</max_iterations>
+			<max_iterations>50</max_iterations>
 			<tolerance>1.0e-18</tolerance>
-	                <preconditioner name = "hypre_amg">
-	                     	<hypre_cycle_applications>10</hypre_cycle_applications>
-	                	<hypre_smoother_sweeps>3</hypre_smoother_sweeps>
-	                       	<hypre_tolerance>0.1</hypre_tolerance>
-	                       	<hypre_strong_threshold>0.4</hypre_strong_threshold>
-	                 </preconditioner>
+			<cfl>1</cfl>
+			<preconditioner name="hypre_amg">
+				<hypre_cycle_applications>10</hypre_cycle_applications>
+				<hypre_smoother_sweeps>3</hypre_smoother_sweeps>
+				<hypre_tolerance>0.1</hypre_tolerance>
+				<hypre_strong_threshold>0.4</hypre_strong_threshold>
+			</preconditioner>
 		</linear_solver>
+		<nonlinear_solver name="nka" />
 	</numerical_controls>
-	
-	        <regions>
-	                <!-- Allow either verbose or compact formats -->
-	                <!-- see proposed spec for limited logical operations on regions(union,intersection,subtraction) -->
-	
-	                <region name ="facies1">
-	                        <comments>The term 'color function' was eliminated</comments>
-	                        <region_file name = "model.tf3"  type="color" label="1"/>
-	                </region>
-	
-	                <region name ="facies2">
-	                        <comments>The term 'color function' was eliminated</comments>
-	                        <region_file name = "model.tf3"  type="color" label="2"/>
-	                </region>
-	
-	                <region name ="facies3">
-	                        <comments>The term 'color function' was eliminated</comments>
-	                        <region_file name = "model.tf3"  type="color" label="3"/>
-	                </region>
-	
-	                <region name ="Top Surface 1">
-	                        <comments>Proposed comments field</comments>
-	                        <box low_coordinates= "0.0,0.0,106.0"     high_coordinates="110.0,280.0,107.0"/>
-	                </region>
-
-			<!-- vlf:  Additional regions defined -->
-	                <region name ="Water Table">
-	                        <comments>Proposed comments field</comments>
-	                        <plane location = "0.0,0.0,0.0"     normal="0.0,0.0,-1.0"/>
-	                </region>
-	
-             	<!-- Allow either verbose or compact formats -->
-      		<!-- see proposed spec for limited logical operations on regions(union,intersection,subtraction) -->
-
-		<region name ="all">
-			<box  low_coordinates = "0.0,0.0,0.0" high_coordinates = "320.0,280.0,107.0"/>
-		</region>
-
-			<box name="Top Surface 1"    low_coordinates= "(0.0,0.0,106.0)"     high_coordinates="(110.0,280.0,107.0)"/>
-			<box name="Top Surface 2"    low_coordinates= "(205.0,0.0,106.0)"    high_coordinates="(320.0,280.0,107.0)"/>
-			<box name="Top Surface 3"    low_coordinates= "(110.0,165.0,106.0)" high_coordinates="(205.0,280.0,107.0)"/>
-			<box name="Top Surface 4"    low_coordinates= "(110.0,0.0,106.0)"   high_coordinates="(205.0,115.0,107.0)"/>
-			<box name="Top Surface 5"    low_coordinates= "(110.0,120.0,106.0)" high_coordinates="(205.0,160.0,107.0)"/>
-			<box name="Top Surface 6"    low_coordinates= "(115.0,160.0,106.0)" high_coordinates="(155.0,165.0,107.0)"/>
-			<box name="Top Surface 7"    low_coordinates= "(115.0,160.0,106.0)" high_coordinates="(155.0,165.0,107.0)"/>
-			<box name="Top Surface 8"    low_coordinates= "(160.0,160.0,106.0)" high_coordinates="(200.0,165.0,107.0)"/>
-			<box name="Top Surface 9"    low_coordinates= "(115.0,115.0,106.0)"  high_coordinates="(155.0,120.0,107.0)"/>
-			<box name="Top Surface 10"   low_coordinates= "(160.0,115.0,106.0)" high_coordinates="(200.0,120.0,107.0)"/>
-			<box name="Crib 216-B-14"    low_coordinates= "(200.0,115.0,106.0)" high_coordinates="(205.0,120.0,107.0)"/>
-			<box name="Crib 216-B-15"    low_coordinates= "(200.0,160.0,106.0)" high_coordinates="(205.0,165.0,107.0)"/>
-			<box name="Crib 216-B-16"    low_coordinates= "(155.0,115.0,106.0)" high_coordinates="(160.0,120.0,107.0)"/>
-			<box name="Crib 216-B-17"    low_coordinates= "(155.0,160.0,106.0)" high_coordinates="(160.0,165.0,107.0)"/>
-			<box name="Crib 216-B-18"    low_coordinates= "(110.0,115.0,106.0)" high_coordinates="(115.0,120.0,107.0)"/>
-			<box name="Crib 216-B-19"    low_coordinates= "(110.0,160.0,106.0)" high_coordinates="(115.0,165.0,107.0)"/>
-			<box name="Water Table"      low_coordinates= "(0.0,0.0,0.0)"       high_coordinates="(320.0,280.0,1.0)"/>
-
-      			<point name="Well A_01" coordinate="(137.5,147.5,105.0)"/>
-      			<point name="Well A_02" coordinate="(137.5,147.5,103.0)"/>
-      			<point name="Well A_03" coordinate="(137.5,147.5,102.0)"/>
-      			<point name="Well A_04" coordinate="(137.5,147.5,101.0)"/>
-      			<point name="Well A_05" coordinate="(137.5,147.5,100.0)"/>
-      			<point name="Well A_06" coordinate="(137.5,147.5,99.0)"/>
-      			<point name="Well A_07" coordinate="(137.5,147.5,98.0)"/>
-      			<point name="Well A_08" coordinate="(137.5,147.5,97.0)"/>
-      			<point name="Well A_09" coordinate="(137.5,147.5,96.0)"/>
-      			<point name="Well A_10" coordinate="(137.5,147.5,95.0)"/>
-      			<point name="Well A_11" coordinate="137.5,147.5,93.0)"/>
-      			<point name="Well A_12" coordinate="(137.5,147.5,92.0)"/>
-      			<point name="Well A_13" coordinate="(137.5,147.5,91.0)"/>
-      			<point name="Well A_14" coordinate="(137.5,147.5,89.0)"/>
-      			<point name="Well A_15" coordinate="(137.5,147.5,85.0)"/>
-      			<point name="Well A_16" coordinate="(137.5,147.5,82.0)"/>
-      			<point name="Well A_17" coordinate="(137.5,147.5,77.0)"/>
-      			<point name="Well A_18" coordinate="(137.5,147.5,74.0)"/>
-      			<point name="Well A_19" coordinate="(137.5,147.5,70.0)"/>
-      			<point name="Well A_20" coordinate="(137.5,147.5,66.0)"/>
-      			<point name="Well A_21" coordinate="(137.5,147.5,63.0)"/>
-      			<point name="Well A_22" coordinate="(137.5,147.5,57.0)"/>
-      			<point name="Well A_23" coordinate="(137.5,147.5,52.0)"/>
-      			<point name="Well A_24" coordinate="(137.5,147.5,47.0)"/>
-      			<point name="Well A_25" coordinate="(137.5,147.5,43.0)"/>
-      			<point name="Well A_26" coordinate="(137.5,147.5,37.0)"/>
-      			<point name="Well A_27" coordinate="(137.5,147.5,28.0)"/>
-      			<point name="Well A_28" coordinate="(137.5,147.5,22.0)"/>
-      			<point name="Well A_29" coordinate="(137.5,147.5,18.0)"/>
-      			<point name="Well A_30" coordinate="(137.5,147.5,12.0)"/>
-      			<point name="Well A_31" coordinate="(137.5,147.5,3.0)"/>
-      			<point name="Well C_01" coordinate="(82.5,217.5,101.0)"/>
-      			<point name="Well C_02" coordinate="(82.5,217.5,98.0)"/>
-      			<point name="Well C_03" coordinate="(82.5,217.5,95.0)"/>
-      			<point name="Well C_04" coordinate="(82.5,217.5,92.0)"/>
-      			<point name="Well C_05" coordinate="(82.5,217.5,83.0)"/>
-      			<point name="Well C_06" coordinate="(82.5,217.5,76.0)"/>
-      			<point name="Well C_07" coordinate="(82.5,217.5,73.0)"/>
-      			<point name="Well C_08" coordinate="(82.5,217.5,67.0)"/>
-      			<point name="Well C_09" coordinate="(82.5,217.5,66.0)"/>
-      			<point name="Well C_10" coordinate="(82.5,217.5,63.0)"/>
-      			<point name="Well C_11" coordinate="(82.5,217.5,60.0)"/>
-      			<point name="Well C_12" coordinate="(82.5,217.5,55.0)"/>
-      			<point name="Well C_13" coordinate="(82.5,217.5,48.0)"/>
-      			<point name="Well C_14" coordinate="(82.5,217.5,45.0)"/>
-	</regions>
-
-	<mesh framework="mstk"> <!-- default is MSTK for unstructured -->
+	<mesh framework="mstk">
 		<comments>This same information is also defined in the .tf3 file - is the redundancy necessary?</comments>
 		<dimension>3</dimension>
 		<generate>
-			<number_of_cells nx = "64"  ny = "56"  nz = "107"/>
-			<box  low_coordinates = "0.0,0.0,0.0" high_coordinates = "320.0,280.0,107.0"/>
+			<number_of_cells nx="64" ny="56" nz="107" />
+			<box high_coordinates="(320.0, 280.0, 107.0)" low_coordinates="(0.0, 0.0, 0.0)" />
 		</generate>
 	</mesh>
-
+	<regions>
+		<region name="facies1">
+			<comments>The term 'color function' was eliminated</comments>
+			<region_file label="1" name=".model.tf3" type="color" />
+		</region>
+		<region name="facies2">
+			<comments>The term 'color function' was eliminated</comments>
+			<region_file label="2" name=".model.tf3" type="color" />
+		</region>
+		<region name="facies3">
+			<comments>The term 'color function' was eliminated</comments>
+			<region_file label="3" name=".model.tf3" type="color" />
+		</region>
+		<region name="Top_Surface_1">
+			<comments>Proposed comments field</comments>
+			<box high_coordinates="(110.0, 280.0, 107.0)" low_coordinates="(0.0, 0.0, 107.0)" />
+		</region>
+		<box high_coordinates="(320.0, 280.0, 107.0)" low_coordinates="(0.0, 0.0, 0.0)" name="all" />
+		<box high_coordinates="(320.0, 280.0, 107.0)" low_coordinates="(205.0, 0.0, 107.0)" name="Top_Surface_2" />
+		<box high_coordinates="(205.0, 280.0, 107.0)" low_coordinates="(110.0, 165.0, 107.0)" name="Top_Surface_3" />
+		<box high_coordinates="(205.0, 115.0, 107.0)" low_coordinates="(110.0, 0.0, 107.0)" name="Top_Surface_4" />
+		<box high_coordinates="(205.0, 160.0, 107.0)" low_coordinates="(110.0, 120.0, 107.0)" name="Top_Surface_5" />
+		<box high_coordinates="(155.0, 165.0, 107.0)" low_coordinates="(115.0, 160.0, 107.0)" name="Top_Surface_6" />
+		<box high_coordinates="(155.0, 165.0, 107.0)" low_coordinates="(115.0, 160.0, 107.0)" name="Top_Surface_7" />
+		<box high_coordinates="(200.0, 165.0, 107.0)" low_coordinates="(160.0, 160.0, 107.0)" name="Top_Surface_8" />
+		<box high_coordinates="(155.0, 120.0, 107.0)" low_coordinates="(115.0, 115.0, 107.0)" name="Top_Surface_9" />
+		<box high_coordinates="(200.0, 120.0, 107.0)" low_coordinates="(160.0, 115.0, 107.0)" name="Top_Surface_10" />
+		<box high_coordinates="(205.0, 120.0, 107.0)" low_coordinates="(200.0, 115.0, 107.0)" name="Crib_216-B-14" />
+		<box high_coordinates="(205.0, 165.0, 107.0)" low_coordinates="(200.0, 160.0, 107.0)" name="Crib_216-B-15" />
+		<box high_coordinates="(160.0, 120.0, 107.0)" low_coordinates="(155.0, 115.0, 107.0)" name="Crib_216-B-16" />
+		<box high_coordinates="(160.0, 165.0, 107.0)" low_coordinates="(155.0, 160.0, 107.0)" name="Crib_216-B-17" />
+		<box high_coordinates="(115.0, 120.0, 107.0)" low_coordinates="(110.0, 115.0, 107.0)" name="Crib_216-B-18" />
+		<box high_coordinates="(115.0, 165.0, 107.0)" low_coordinates="(110.0, 160.0, 107.0)" name="Crib_216-B-19" />
+		<box high_coordinates="(320.0, 280.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)" name="Water_Table" />
+		<point coordinate="(137.5, 147.5, 105.0)" name="Well_A_01" />
+		<point coordinate="(137.5, 147.5, 103.0)" name="Well_A_02" />
+		<point coordinate="(137.5, 147.5, 102.0)" name="Well_A_03" />
+		<point coordinate="(137.5, 147.5, 101.0)" name="Well_A_04" />
+		<point coordinate="(137.5, 147.5, 100.0)" name="Well_A_05" />
+		<point coordinate="(137.5, 147.5, 99.0)" name="Well_A_06" />
+		<point coordinate="(137.5, 147.5, 98.0)" name="Well_A_07" />
+		<point coordinate="(137.5, 147.5, 97.0)" name="Well_A_08" />
+		<point coordinate="(137.5, 147.5, 96.0)" name="Well_A_09" />
+		<point coordinate="(137.5, 147.5, 95.0)" name="Well_A_10" />
+		<point coordinate="(137.5, 147.5, 93.0)" name="Well_A_11" />
+		<point coordinate="(137.5, 147.5, 92.0)" name="Well_A_12" />
+		<point coordinate="(137.5, 147.5, 91.0)" name="Well_A_13" />
+		<point coordinate="(137.5, 147.5, 89.0)" name="Well_A_14" />
+		<point coordinate="(137.5, 147.5, 85.0)" name="Well_A_15" />
+		<point coordinate="(137.5, 147.5, 82.0)" name="Well_A_16" />
+		<point coordinate="(137.5, 147.5, 77.0)" name="Well_A_17" />
+		<point coordinate="(137.5, 147.5, 74.0)" name="Well_A_18" />
+		<point coordinate="(137.5, 147.5, 70.0)" name="Well_A_19" />
+		<point coordinate="(137.5, 147.5, 66.0)" name="Well_A_20" />
+		<point coordinate="(137.5, 147.5, 63.0)" name="Well_A_21" />
+		<point coordinate="(137.5, 147.5, 57.0)" name="Well_A_22" />
+		<point coordinate="(137.5, 147.5, 52.0)" name="Well_A_23" />
+		<point coordinate="(137.5, 147.5, 47.0)" name="Well_A_24" />
+		<point coordinate="(137.5, 147.5, 43.0)" name="Well_A_25" />
+		<point coordinate="(137.5, 147.5, 37.0)" name="Well_A_26" />
+		<point coordinate="(137.5, 147.5, 28.0)" name="Well_A_27" />
+		<point coordinate="(137.5, 147.5, 22.0)" name="Well_A_28" />
+		<point coordinate="(137.5, 147.5, 18.0)" name="Well_A_29" />
+		<point coordinate="(137.5, 147.5, 12.0)" name="Well_A_30" />
+		<point coordinate="(137.5, 147.5, 3.0)" name="Well_A_31" />
+		<point coordinate="(82.5, 217.5, 101.0)" name="Well_C_01" />
+		<point coordinate="(82.5, 217.5, 98.0)" name="Well_C_02" />
+		<point coordinate="(82.5, 217.5, 95.0)" name="Well_C_03" />
+		<point coordinate="(82.5, 217.5, 92.0)" name="Well_C_04" />
+		<point coordinate="(82.5, 217.5, 83.0)" name="Well_C_05" />
+		<point coordinate="(82.5, 217.5, 76.0)" name="Well_C_06" />
+		<point coordinate="(82.5, 217.5, 73.0)" name="Well_C_07" />
+		<point coordinate="(82.5, 217.5, 67.0)" name="Well_C_08" />
+		<point coordinate="(82.5, 217.5, 66.0)" name="Well_C_09" />
+		<point coordinate="(82.5, 217.5, 63.0)" name="Well_C_10" />
+		<point coordinate="(82.5, 217.5, 60.0)" name="Well_C_11" />
+		<point coordinate="(82.5, 217.5, 55.0)" name="Well_C_12" />
+		<point coordinate="(82.5, 217.5, 48.0)" name="Well_C_13" />
+		<point coordinate="(82.5, 217.5, 45.0)" name="Well_C_14" />
+	</regions>
 	<materials>
 		<material name="material1">
-		       	<comments>Material corresponds to region facies1</comments>
-               		<mechanical_properties>
-                         	<porosity value="0.2206"/>
-                         	<particle_density value="2720.0"/>
- 	 	      	 </mechanical_properties>
- 	 	           <permeability x="1.9976E-12" y="1.9976E-12" z="1.9976E-13"/>
- 	 	      	 <cap_pressure model="brooks_corey">
- 	 	       	 	<parameters lambda="0.2832" alpha="2.470612E-04" sr="2.0"/>
- 	 	       	 </cap_pressure>
-  	  	      	 <rel_perm model="burdine">
- 	 	       	 	<exp>2.0</exp>
- 	 	       	 	<optional_krel_smoothing_interval>0.0</optional_krel_smoothing_interval>
-  	  	      	 </rel_perm>
- 	 	      	 <assigned_regions>facies1</assigned_regions>
- 	   	</material>
-
-		<material name ="material2">
-			<comments>Material corresponds to region facies2</comments>
-            		<mechanical_properties>
-       		 		<porosity value="0.2206" />
-                		<particle_density value="2720.0"/>
-      			</mechanical_properties>
- 	 	        	<permeability x="6.9365E-11" y="6.9365E-11" z="6.9365E-12"/>
+			<comments>Material corresponds to region facies1</comments>
+			<mechanical_properties>
+				<porosity value="0.2206" />
+				<particle_density value="2720.0" />
+			</mechanical_properties>
+			<sorption_isotherms>
+				<solute kd="0" model="linear" name="Tc-99" />
+			</sorption_isotherms>
+			<permeability x="1.9976E-12" y="1.9976E-12" z="1.9976E-13" />
 			<cap_pressure model="brooks_corey">
-				<parameters lambda="0.261" alpha="2.573475E-03" sr="2.0"/>
+				<parameters alpha="2.470612E-4" lambda="0.2832" sr="0.0" />
 			</cap_pressure>
- 		   	 <rel_perm model="burdine">
- 	 	       	 	<exp>2.0</exp>
- 	 	       	 	<optional_krel_smoothing_interval>0.0</optional_krel_smoothing_interval>
- 		   	 </rel_perm>
+			<rel_perm model="burdine">
+				<exp>2.0</exp>
+				<optional_krel_smoothing_interval>0.0</optional_krel_smoothing_interval>
+			</rel_perm>
+			<assigned_regions>facies1</assigned_regions>
+		</material>
+		<material name="material2">
+			<comments>Material corresponds to region facies2</comments>
+			<mechanical_properties>
+				<porosity value="0.2206" />
+				<particle_density value="2720.0" />
+			</mechanical_properties>
+			<sorption_isotherms>
+				<solute kd="0" model="linear" name="Tc-99" />
+			</sorption_isotherms>
+			<permeability x="6.9365E-11" y="6.9365E-11" z="6.9365E-12" />
+			<cap_pressure model="brooks_corey">
+				<parameters alpha="0.002573475" lambda="0.261" sr="0.0" />
+			</cap_pressure>
+			<rel_perm model="burdine">
+				<exp>2.0</exp>
+				<optional_krel_smoothing_interval>0.0</optional_krel_smoothing_interval>
+			</rel_perm>
 			<assigned_regions>facies2</assigned_regions>
 		</material>
-
-		<material name ="material3">
+		<material name="material3">
 			<comments>aterial corresponds to region facies3</comments>
-           		 <mechanical_properties>
-       		 		<porosity value="0.234" />
-                		<particle_density value="2720.0"/>
-       			</mechanical_properties>
- 	 	        	<permeability x="2.0706E-09" y="2.0706E-09" z="2.0706E-09"/>
+			<mechanical_properties>
+				<porosity value="0.234" />
+				<particle_density value="2720.0" />
+			</mechanical_properties>
+			<sorption_isotherms>
+				<solute kd="0" model="linear" name="Tc-99" />
+			</sorption_isotherms>
+			<permeability x="2.0706E-9" y="2.0706E-9" z="2.0706E-9" />
 			<cap_pressure model="brooks_corey">
-				<parameters lambda="0.387" alpha="2.756137E-03" sr="0.0"/>
+				<parameters alpha="0.002756137" lambda="0.387" sr="0.0" />
 			</cap_pressure>
- 		   	 <rel_perm model="burdine">
- 	 	       	 	<exp>2.0</exp>
- 	 	       	 	<optional_krel_smoothing_interval>0.0</optional_krel_smoothing_interval>
- 		    	</rel_perm>
+			<rel_perm model="burdine">
+				<exp>2.0</exp>
+				<optional_krel_smoothing_interval>0.0</optional_krel_smoothing_interval>
+			</rel_perm>
 			<assigned_regions>facies3</assigned_regions>
 		</material>
-
 	</materials>
-
 	<initial_conditions>
 		<initial_condition name="Pressure and concentration for entire domain">
 			<comments>Initial Conditions Comments</comments>
 			<assigned_regions>all</assigned_regions>
-			<liquid_phase name = "water">
-				<liquid_component name = "water">
-					<linear_pressure value = "101325" reference_coord ="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)"/>
+			<liquid_phase name="water">
+				<liquid_component name="water">
+					<linear_pressure gradient="(0.0, 0.0, -9793.5192)" reference_coord="(0.0, 0.0, 0.5)" value="101325" />
 				</liquid_component>
-				   <!-- For solutes, either provide value/function or filename; value can be a user-defined constant -->
-				   <!-- TODO: This capability does not currently exist -->
-				<solute_component name = "Tc-99" value = "0" function="uniform"/>
+				<solute_component function="uniform" name="Tc-99" value="0" />
 			</liquid_phase>
-         	</initial_condition>
+		</initial_condition>
 	</initial_conditions>
-
 	<boundary_conditions>
-		<comments>Format was changed because it is more readable for long time series</comments>
-		<boundary_condition name = "Recharge at top of the domain">
+		<boundary_condition name="Recharge at top of the domain">
 			<comments>Would be nice to have comments section for each boundary_condition but its not clear how it maps to UI</comments>
-			<assigned_regions> Top Surface 1, Top Surface 2, Top Surface 3, Top Surface 4, Top Surface 5, Top Surface 6, Top Surface 7, Top Surface 8, Top Surface 9, Top Surface 10</assigned_regions>
-			<liquid_phase name = "water">
-				<liquid_component name = "water">
-					<inward_mass_flux start="start"    function= "constant"  value="pre_1956_recharge"/>
-					<inward_mass_flux start="1956.0,y" function= "constant"  value="post_1956_recharge"/>
-					<inward_mass_flux start="2012.0,y" function= "constant"  value="future_recharge"/>
-					<inward_mass_flux start="3000.0,y" function= "constant"  value="future_recharge"/>
+			<assigned_regions>Top_Surface_8,Top_Surface_4,Top_Surface_5,Top_Surface_9,Top_Surface_3,Top_Surface_10,Top_Surface_7,Top_Surface_1,Top_Surface_2</assigned_regions>
+			<liquid_phase name="water">
+				<liquid_component name="water">
+					<inward_mass_flux function="constant" start="0.0 s" value="1.5815524627981847E-7" />
+					<inward_mass_flux function="constant" start="1956.0 y" value="1.9927561031257127E-6" />
+					<inward_mass_flux function="constant" start="2012.0 y" value="1.7587764354333456E-6" />
+					<inward_mass_flux function="constant" start="3000.0 y" value="1.7587764354333456E-6" />
 				</liquid_component>
-				<solute_component name = "solute">
-					<aqueous_conc name = "Tc-99" start="start"     function= "constant"  value="zero"/>
-					<aqueous_conc name = "Tc-99" start="1956.0,y"  function= "constant"  value="zero"/>
-					<aqueous_conc name = "Tc-99" start="2012.0,y"  function= "constant"  value="zero"/>
-					<aqueous_conc name = "Tc-99" start="3000.0,y"  function= "constant"  value="zero"/>
+				<solute_component name="solute">
+					<aqueous_conc function="constant" name="Tc-99" start="0.0 s" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.0 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="2012.0 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="3000.0 y" value="0.0" />
 				</solute_component>
 			</liquid_phase>
 		</boundary_condition>
-
-		<boundary_condition name = "B-14">
-			<assigned_regions>Crib 216-B-14</assigned_regions>
-			<liquid_phase name = "water">
-				<liquid_component name = "water">
-					<inward_mass_flux start="0.0"              function= "constant"    value="pre_1956_recharge"/>
-					<inward_mass_flux start="1956.0,y"         function= "constant"    value="0.06581788729180926"/>
-					<inward_mass_flux start="B-14_release_end" function= "constant"    value="post_1956_recharge"/>
-					<inward_mass_flux start="2012.0,y"         function= "constant"    value="future_recharge"/>
-					<inward_mass_flux start="3000.0,y"         function= "constant"    value="future_recharge"/>
+		<boundary_condition name="B-14">
+			<assigned_regions>Crib_216-B-14</assigned_regions>
+			<liquid_phase name="water">
+				<liquid_component name="water">
+					<inward_mass_flux function="constant" start="0.0 s" value="1.5815524627981847E-7" />
+					<inward_mass_flux function="constant" start="1956.0 y" value="0.06581788729180926" />
+					<inward_mass_flux function="constant" start="1956.1616 y" value="1.9927561031257127E-6" />
+					<inward_mass_flux function="constant" start="2012.0 y" value="1.7587764354333456E-6" />
+					<inward_mass_flux function="constant" start="3000.0 y" value="1.7587764354333456E-6" />
 				</liquid_component>
-				<solute_component name = "solute">
-					<aqueous_conc name = "Tc-99" start="0.0"              function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="1956.0,y"         function= "constant"    value="3.8E-06"/>
-					<aqueous_conc name = "Tc-99" start="B-14_release_end" function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="2012.0,y"         function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="3000.0,y"         function= "constant"    value="0.0"/>
+				<solute_component name="solute">
+					<aqueous_conc function="constant" name="Tc-99" start="0.0 s" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.0 y" value="3.8E-06" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.1616 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="2012.0 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="3000.0 y" value="0.0" />
 				</solute_component>
 			</liquid_phase>
 		</boundary_condition>
-
-		<boundary_condition name = "B-15">
+		<boundary_condition name="B-15">
 			<comments>Can have comments in each BC, but they are optional</comments>
-			<assigned_regions>Crib 216-B-15</assigned_regions>
-			<liquid_phase name = "water">
-				<liquid_component name = "water">
-					<inward_mass_flux start="0.0"                     function= "constant"    value="pre_1956_recharge"/>
-					<inward_mass_flux start="1956.0,y"                function= "constant"    value="post_1956_recharge"/>
-					<inward_mass_flux start="B-15_B-16_release_begin" function= "constant"    value="0.004569421375516516"/>
-					<inward_mass_flux start="B-15_release_end"        function= "constant"    value="post_1956_recharge"/>
-					<inward_mass_flux start="2012.0,y"                function= "constant"    value="future_recharge"/>
-					<inward_mass_flux start="3000.0,y"                function= "constant"    value="future_recharge"/>
+			<assigned_regions>Crib_216-B-15</assigned_regions>
+			<liquid_phase name="water">
+				<liquid_component name="water">
+					<inward_mass_flux function="constant" start="0.0 s" value="1.5815524627981847E-7" />
+					<inward_mass_flux function="constant" start="1956.0 y" value="1.9927561031257127E-6" />
+					<inward_mass_flux function="constant" start="1956.2493 y" value="0.004569421375516516" />
+					<inward_mass_flux function="constant" start="1956.9973 y" value="1.9927561031257127E-6" />
+					<inward_mass_flux function="constant" start="2012.0 y" value="1.7587764354333456E-6" />
+					<inward_mass_flux function="constant" start="3000.0 y" value="1.7587764354333456E-6" />
 				</liquid_component>
-				<solute_component name = "solute">
-					<aqueous_conc name = "Tc-99" start="0.0"                     function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="1956.0,y"                function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="B-15_B-16_release_begin" function= "constant"    value="3.8e-06"/>
-					<aqueous_conc name = "Tc-99" start="B-15_release_end"        function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="2012.0,y"                function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="3000.0,y"                function= "constant"    value="0.0"/>
+				<solute_component name="solute">
+					<aqueous_conc function="constant" name="Tc-99" start="0.0 s" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.0 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.2493 y" value="3.8e-06" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.9973 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="2012.0 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="3000.0 y" value="0.0" />
 				</solute_component>
 			</liquid_phase>
 		</boundary_condition>
-
-		<boundary_condition name = "B-16">
-			<assigned_regions>Crib 216-B-16</assigned_regions>
-			<liquid_phase name = "water">
-				<liquid_component name = "water">
-					<inward_mass_flux start="0.0"                     function= "constant"    value="pre_1956_recharge"/>
-					<inward_mass_flux start="1956.0,y"                function= "constant"    value="post_1956_recharge"/>
-					<inward_mass_flux start="B-15_B-16_release_begin" function= "constant"    value="0.017004852080006082"/>
-					<inward_mass_flux start="B-16_release_end"        function= "constant"    value="post_1956_recharge"/>
-					<inward_mass_flux start="2012.0,y"                function= "constant"    value="future_recharge"/>
-					<inward_mass_flux start="3000.0,y"                function= "constant"    value="future_recharge"/>
+		<boundary_condition name="B-16">
+			<assigned_regions>Crib_216-B-16</assigned_regions>
+			<liquid_phase name="water">
+				<liquid_component name="water">
+					<inward_mass_flux function="constant" start="0.0 s" value="1.5815524627981847E-7" />
+					<inward_mass_flux function="constant" start="1956.0 y" value="1.9927561031257127E-6" />
+					<inward_mass_flux function="constant" start="1956.2493 y" value="0.017004852080006082" />
+					<inward_mass_flux function="constant" start="1956.6630 y" value="1.9927561031257127E-6" />
+					<inward_mass_flux function="constant" start="2012.0 y" value="1.7587764354333456E-6" />
+					<inward_mass_flux function="constant" start="3000.0 y" value="1.7587764354333456E-6" />
 				</liquid_component>
-				<solute_component name = "solute">
-					<aqueous_conc name = "Tc-99" start="0.0"                     function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="1956.0,y"                function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="B-15_B-16_release_begin" function= "constant"    value="3.524e-06"/>
-					<aqueous_conc name = "Tc-99" start="B-16_release_end"        function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="2012.0,y"                function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="3000.0,y"                function= "constant"    value="0.0"/>
+				<solute_component name="solute">
+					<aqueous_conc function="constant" name="Tc-99" start="0.0 s" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.0 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.2493 y" value="3.524e-06" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.6630 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="2012.0 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="3000.0 y" value="0.0" />
 				</solute_component>
 			</liquid_phase>
 		</boundary_condition>
-
-		<boundary_condition name = "B-17">
-			<assigned_regions>Crib 216-B-17</assigned_regions>
-			<liquid_phase name = "water">
-				<liquid_component name = "water">
-					<inward_mass_flux start="0.0"                     function= "constant"    value="pre_1956_recharge"/>
-					<inward_mass_flux start="B-14_B-17_release_begin" function= "constant"    value="0.05177370142216137"/>
-					<inward_mass_flux start="B-17_release_end"        function= "constant"    value="post_1956_recharge"/>
-					<inward_mass_flux start="2012.0,y"                function= "constant"    value="future_recharge"/>
-					<inward_mass_flux start="3000.0,y"                function= "constant"    value="future_recharge"/>
+		<boundary_condition name="B-17">
+			<assigned_regions>Crib_216-B-17</assigned_regions>
+			<liquid_phase name="water">
+				<liquid_component name="water">
+					<inward_mass_flux function="constant" start="0.0 s" value="1.5815524627981847E-7" />
+					<inward_mass_flux function="constant" start="1956.0 y" value="0.05177370142216137" />
+					<inward_mass_flux function="constant" start="1956.0822 y" value="1.9927561031257127E-6" />
+					<inward_mass_flux function="constant" start="2012.0 y" value="1.7587764354333456E-6" />
+					<inward_mass_flux function="constant" start="3000.0 y" value="1.7587764354333456E-6" />
 				</liquid_component>
-				<solute_component name = "solute">
-					<aqueous_conc name = "Tc-99" start="0.0"                     function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="B-14_B-17_release_begin" function= "constant"    value="2.886E-6"/>
-					<aqueous_conc name = "Tc-99" start="B-17_release_end"        function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="2012.0,y"                function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="3000.0,y"                function= "constant"    value="0.0"/>
+				<solute_component name="solute">
+					<aqueous_conc function="constant" name="Tc-99" start="0.0 s" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.0 y" value="2.886E-6" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.0822 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="2012.0 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="3000.0 y" value="0.0" />
 				</solute_component>
 			</liquid_phase>
 		</boundary_condition>
-
-		<boundary_condition name = "B-18">
-			<assigned_regions>Crib 216-B-18</assigned_regions>
-			<liquid_phase name = "water">
-				<liquid_component name = "water">
-					<inward_mass_flux start="0.0"                function= "constant"    value="pre_1956_recharge"/>
-					<inward_mass_flux start="1956.0,y"           function= "constant"    value="post_1956_recharge"/>
-					<inward_mass_flux start="B-18_release_begin" function= "constant"    value="0.06467916951859456"/>
-					<inward_mass_flux start="B-18_release_end"   function= "constant"    value="post_1956_recharge"/>
-					<inward_mass_flux start="2012.0,y"           function= "constant"    value="future_recharge"/>
-					<inward_mass_flux start="3000.0,y"           function= "constant"    value="future_recharge"/>
+		<boundary_condition name="B-18">
+			<assigned_regions>Crib_216-B-18</assigned_regions>
+			<liquid_phase name="water">
+				<liquid_component name="water">
+					<inward_mass_flux function="constant" start="0.0 s" value="1.5815524627981847E-7" />
+					<inward_mass_flux function="constant" start="1956.0 y" value="1.9927561031257127E-6" />
+					<inward_mass_flux function="constant" start="1956.1644 y" value="0.06467916951859456" />
+					<inward_mass_flux function="constant" start="1956.3288 y" value="1.9927561031257127E-6" />
+					<inward_mass_flux function="constant" start="2012.0 y" value="1.7587764354333456E-6" />
+					<inward_mass_flux function="constant" start="3000.0 y" value="1.7587764354333456E-6" />
 				</liquid_component>
-				<solute_component name = "solute">
-					<aqueous_conc name = "Tc-99" start="0.0"                function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="1956.0,y"           function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="B-18_release_begin" function= "constant"    value="3.798E-06"/>
-					<aqueous_conc name = "Tc-99" start="B-18_release_end"   function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="2012.0,y"           function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="3000.0,y"           function= "constant"    value="0.0"/>
+				<solute_component name="solute">
+					<aqueous_conc function="constant" name="Tc-99" start="0.0 s" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.0 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.1644 y" value="3.798E-06" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.3288 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="2012.0 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="3000.0 y" value="0.0" />
 				</solute_component>
 			</liquid_phase>
 		</boundary_condition>
-
-		<boundary_condition name = "B-19">
-			<assigned_regions>Crib 216-B-19</assigned_regions>
-			<liquid_phase name = "water">
-				<liquid_component name = "water">
-					<inward_mass_flux start="0.0"                function= "constant"    value="pre_1956_recharge"/>
-					<inward_mass_flux start="1956.0,y"           function= "constant"    value="post_1956_recharge"/>
-					<inward_mass_flux start="B-19_release_begin" function= "constant"    value="0.06467916951859456"/>
-					<inward_mass_flux start="B-19_release_end"   function= "constant"    value="future_recharge"/>
-					<inward_mass_flux start="2012.0,y"           function= "constant"    value="future_recharge"/>
-					<inward_mass_flux start="3000.0,y"           function= "constant"    value="future_recharge"/>
+		<boundary_condition name="B-19">
+			<assigned_regions>Crib_216-B-19</assigned_regions>
+			<liquid_phase name="water">
+				<liquid_component name="water">
+					<inward_mass_flux function="constant" start="0.0 s" value="1.5815524627981847E-7" />
+					<inward_mass_flux function="constant" start="1956.0 y" value="1.9927561031257127E-6" />
+					<inward_mass_flux function="constant" start="1956.0849 y" value="0.06467916951859456" />
+					<inward_mass_flux function="constant" start="1956.8247 y" value="1.7587764354333456E-6" />
+					<inward_mass_flux function="constant" start="2012.0 y" value="1.7587764354333456E-6" />
+					<inward_mass_flux function="constant" start="3000.0 y" value="1.7587764354333456E-6" />
 				</liquid_component>
-				<solute_component name = "solute">
-					<aqueous_conc name = "Tc-99" start="0.0"                function= "constant"  value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="1956.0,y"           function= "constant"  value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="B-19_release_begin" function= "constant"  value="3.164E-06"/>
-					<aqueous_conc name = "Tc-99" start="B-19_release_end"   function= "constant"  value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="2012.0,y"           function= "constant"  value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="3000.0,y"           function= "constant"  value="0.0"/>
+				<solute_component name="solute">
+					<aqueous_conc function="constant" name="Tc-99" start="0.0 s" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.0 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.0849 y" value="3.164E-06" />
+					<aqueous_conc function="constant" name="Tc-99" start="1956.8247 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="2012.0 y" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="3000.0 y" value="0.0" />
 				</solute_component>
 			</liquid_phase>
 		</boundary_condition>
-
-		<boundary_condition name = "Bottom of Domain">
-			<assigned_regions>Water Table</assigned_regions>
-			<liquid_phase name = "water">
-				<liquid_component name = "water">
-					<!--TDS Deleted type="Uniform Pressure" as that is redundant information -->
-					<!--TODO THIS needs to be reworked uniform vs. constant, time-function vs. spatial -->
-					<uniform_pressure name = "1" start="0.0"        function= "constant" value="106221.7596"/>
-					<uniform_pressure name = "2" start="3000.0,y"  function= "constant" value="106221.7596"/>
+		<boundary_condition name="Bottom of Domain">
+			<assigned_regions>Water_Table</assigned_regions>
+			<liquid_phase name="water">
+				<liquid_component name="water">
+					<uniform_pressure function="constant" start="0.0 s" value="106221.7596" />
+					<uniform_pressure function="constant" start="3000.0 y" value="106221.7596" />
 				</liquid_component>
-				<solute_component name = "solute">
-					<aqueous_conc name = "Tc-99" start="0.0"        function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="3000.0,y"  function= "constant"    value="0.0"/>
+				<solute_component name="solute">
+					<aqueous_conc function="constant" name="Tc-99" start="0.0 s" value="0.0" />
+					<aqueous_conc function="constant" name="Tc-99" start="3000.0 y" value="0.0" />
 				</solute_component>
 			</liquid_phase>
 		</boundary_condition>
 	</boundary_conditions>
-
 	<output>
 		<vis>
-			<base_filename>plot</base_filename>
-		  	<num_digits>5</num_digits>
-		  	<time_macro>vis_macro</time_macro>
+			<base_filename>amanzi_0/plot</base_filename>
+			<num_digits>5</num_digits>
+			<time_macros>vis_macro</time_macros>
 		</vis>
-
 		<checkpoint>
-			<base_filename>chk</base_filename>
-		  	<num_digits>5</num_digits>
-		  	<cycle_macro>Every_100_timesteps</cycle_macro>
+			<base_filename>amanzi_0/checkpoint</base_filename>
+			<num_digits>5</num_digits>
+			<cycle_macro>Every_100_timesteps</cycle_macro>
 		</checkpoint>
-
 		<observations>
-       			<filename>observations.out</filename>
+			<filename>amanzi_0/amanzi.out</filename>
 			<liquid_phase name="water">
-			        <!-- for now all observation is output to same file
-          			<integrated_mass>
-              				<filename>imass.out</filename>  
-             				<assigned_regions>all</assigned_regions>
-            				<functional>integral</functional>
-              				<time_macro>Macro 1</time_macro>
-          			</integrated_mass>
-				-->
-
-           			<aqueous_conc solute ="Tc-99">
-					<filename>obs.out</filename>  
-					<assigned_regions>Well A_01,Well A_02,Well A_03,Well A_04,Well A_05,Well A_06,Well A_07,Well A_08,Well A_09,Well A_10,Well A_11,Well A_12,Well A_13,Well A_14,Well A_15,Well A_16,Well A_17,Well A_18,Well A_19,Well A_20,Well A_21,Well A_22,Well A_23,Well A_24,Well A_25,Well A_26,Well A_27,Well A_28,Well A_29,Well A_30,Well A_31</assigned_regions>
+				<aqueous_conc solute="Tc-99">
 					<functional>point</functional>
-					<time_macro>obs_bhA</time_macro>
+					<assigned_regions>Well_A_01</assigned_regions>
+					<time_macro>Well_A_01: Aqueous concentration: Tc-99</time_macro>
 				</aqueous_conc>
-
-           			<gravimetric_water_content>
-					<filename>obs.out</filename>  
-					<assigned_regions>Well A_01,Well A_02,Well A_03,Well A_04,Well A_05,Well A_06,Well A_07,Well A_08,Well A_09,Well A_10,Well A_11,Well A_12,Well A_13,Well A_14,Well A_15,Well A_16,Well A_17,Well A_18,Well A_19,Well A_20,Well A_21,Well A_22,Well A_23,Well A_24,Well A_25,Well A_26,Well A_27,Well A_28,Well A_29,Well A_30,Well A_31</assigned_regions>
+				<gravimetric_water_content>
 					<functional>point</functional>
-					<time_macro>obs_bhA</time_macro>
-           			</gravimetric_water_content>
-
-           			<aqueous_conc solute ="Tc-99">
-					<filename>obs.out</filename>  
-					<assigned_regions>Well C_01,Well C_02,Well C_03,Well C_04,Well C_05,Well C_06,Well C_07,Well C_08,Well C_09,Well C_10,Well C_11,</assigned_regions>
-					<functional>point</functional>
-					<time_macro>obs_bhC</time_macro>
-				</aqueous_conc>
-
-           			<gravimetric_water_content>
-					<filename>obs.out</filename>  
-					<assigned_regions>Well C_01,Well C_02,Well C_03,Well C_04,Well C_05,Well C_06,Well C_07,Well C_08,Well C_09,Well C_10,Well C_11,</assigned_regions>
-					<functional>point</functional>
-					<time_macro>obs_bhC</time_macro>
+					<assigned_regions>Well_A_01</assigned_regions>
+					<time_macro>Well_A_01: Gravimetric water content</time_macro>
 				</gravimetric_water_content>
-
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_02</assigned_regions>
+					<time_macro>Well_A_02: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_02</assigned_regions>
+					<time_macro>Well_A_02: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_03</assigned_regions>
+					<time_macro>Well_A_03: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_03</assigned_regions>
+					<time_macro>Well_A_03: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_04</assigned_regions>
+					<time_macro>Well_A_04: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_04</assigned_regions>
+					<time_macro>Well_A_04: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_05</assigned_regions>
+					<time_macro>Well_A_05: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_05</assigned_regions>
+					<time_macro>Well_A_05: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_06</assigned_regions>
+					<time_macro>Well_A_06: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_06</assigned_regions>
+					<time_macro>Well_A_06: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_07</assigned_regions>
+					<time_macro>Well_A_07: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_07</assigned_regions>
+					<time_macro>Well_A_07: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_08</assigned_regions>
+					<time_macro>Well_A_08: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_08</assigned_regions>
+					<time_macro>Well_A_08: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_09</assigned_regions>
+					<time_macro>Well_A_09: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_09</assigned_regions>
+					<time_macro>Well_A_09: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_10</assigned_regions>
+					<time_macro>Well_A_10: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_10</assigned_regions>
+					<time_macro>Well_A_10: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_11</assigned_regions>
+					<time_macro>Well_A_11: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_11</assigned_regions>
+					<time_macro>Well_A_11: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_12</assigned_regions>
+					<time_macro>Well_A_12: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_12</assigned_regions>
+					<time_macro>Well_A_12: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_13</assigned_regions>
+					<time_macro>Well_A_13: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_13</assigned_regions>
+					<time_macro>Well_A_13: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_14</assigned_regions>
+					<time_macro>Well_A_14: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_14</assigned_regions>
+					<time_macro>Well_A_14: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_15</assigned_regions>
+					<time_macro>Well_A_15: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_15</assigned_regions>
+					<time_macro>Well_A_15: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_16</assigned_regions>
+					<time_macro>Well_A_16: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_16</assigned_regions>
+					<time_macro>Well_A_16: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_17</assigned_regions>
+					<time_macro>Well_A_17: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_17</assigned_regions>
+					<time_macro>Well_A_17: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_18</assigned_regions>
+					<time_macro>Well_A_18: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_18</assigned_regions>
+					<time_macro>Well_A_18: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_19</assigned_regions>
+					<time_macro>Well_A_19: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_19</assigned_regions>
+					<time_macro>Well_A_19: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_20</assigned_regions>
+					<time_macro>Well_A_20: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_20</assigned_regions>
+					<time_macro>Well_A_20: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_21</assigned_regions>
+					<time_macro>Well_A_21: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_21</assigned_regions>
+					<time_macro>Well_A_21: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_22</assigned_regions>
+					<time_macro>Well_A_22: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_22</assigned_regions>
+					<time_macro>Well_A_22: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_23</assigned_regions>
+					<time_macro>Well_A_23: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_23</assigned_regions>
+					<time_macro>Well_A_23: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_24</assigned_regions>
+					<time_macro>Well_A_24: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_24</assigned_regions>
+					<time_macro>Well_A_24: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_25</assigned_regions>
+					<time_macro>Well_A_25: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_25</assigned_regions>
+					<time_macro>Well_A_25: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_26</assigned_regions>
+					<time_macro>Well_A_26: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_26</assigned_regions>
+					<time_macro>Well_A_26: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_27</assigned_regions>
+					<time_macro>Well_A_27: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_27</assigned_regions>
+					<time_macro>Well_A_27: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_28</assigned_regions>
+					<time_macro>Well_A_28: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_28</assigned_regions>
+					<time_macro>Well_A_28: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_29</assigned_regions>
+					<time_macro>Well_A_29: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_29</assigned_regions>
+					<time_macro>Well_A_29: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_30</assigned_regions>
+					<time_macro>Well_A_30: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_30</assigned_regions>
+					<time_macro>Well_A_30: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_A_31</assigned_regions>
+					<time_macro>Well_A_31: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_A_31</assigned_regions>
+					<time_macro>Well_A_31: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_C_01</assigned_regions>
+					<time_macro>Well_C_01: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_C_01</assigned_regions>
+					<time_macro>Well_C_01: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_C_02</assigned_regions>
+					<time_macro>Well_C_02: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_C_02</assigned_regions>
+					<time_macro>Well_C_02: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_C_03</assigned_regions>
+					<time_macro>Well_C_03: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_C_03</assigned_regions>
+					<time_macro>Well_C_03: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_C_04</assigned_regions>
+					<time_macro>Well_C_04: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_C_04</assigned_regions>
+					<time_macro>Well_C_04: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_C_05</assigned_regions>
+					<time_macro>Well_C_05: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_C_05</assigned_regions>
+					<time_macro>Well_C_05: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_C_06</assigned_regions>
+					<time_macro>Well_C_06: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_C_06</assigned_regions>
+					<time_macro>Well_C_06: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_C_07</assigned_regions>
+					<time_macro>Well_C_07: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_C_07</assigned_regions>
+					<time_macro>Well_C_07: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_C_08</assigned_regions>
+					<time_macro>Well_C_08: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_C_08</assigned_regions>
+					<time_macro>Well_C_08: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_C_09</assigned_regions>
+					<time_macro>Well_C_09: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_C_09</assigned_regions>
+					<time_macro>Well_C_09: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_C_10</assigned_regions>
+					<time_macro>Well_C_10: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_C_10</assigned_regions>
+					<time_macro>Well_C_10: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
+				<aqueous_conc solute="Tc-99">
+					<functional>point</functional>
+					<assigned_regions>Well_C_11</assigned_regions>
+					<time_macro>Well_C_11: Aqueous concentration: Tc-99</time_macro>
+				</aqueous_conc>
+				<gravimetric_water_content>
+					<functional>point</functional>
+					<assigned_regions>Well_C_11</assigned_regions>
+					<time_macro>Well_C_11: Gravimetric water content</time_macro>
+				</gravimetric_water_content>
 			</liquid_phase>
 		</observations>
-
-      <!-- Not currently supported in amanzi or akuna
-		<diagnostics>
-		</diagnostics>
-	-->
-
 	</output>
-
 </amanzi_input>

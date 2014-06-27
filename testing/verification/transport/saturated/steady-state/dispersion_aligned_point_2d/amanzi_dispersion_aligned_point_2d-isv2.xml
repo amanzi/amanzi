@@ -31,12 +31,13 @@
 		</macros>
 	</definitions>
 
-	<process_kernels>
-		<comments>Single phase flow only</comments>
-		<flow state = "on" model = "constant"/>
-		<transport state = "on" algorithm="explicit first-order" sub_cycling = "off"/>
-		<chemistry state = "off" process_model="none"/>
-	</process_kernels>
+	 <process_kernels>
+	        <comments>Single phase flow only</comments>
+                 <flow model="richards" state="on"/>
+                 <transport algorithm="explicit first-order" state="on"/>
+                 <chemistry process_model="none" engine = "none" state="off"/>
+         </process_kernels>
+
 
 	<phases>
 		<liquid_phase name="water">
@@ -73,16 +74,16 @@
 	<mesh framework="mstk"> 
 		<comments>no comment</comments>
 		<dimension>2</dimension>
+		<!--
 		<read>
 			<file>amanzi_dispersion_aligned_point_2d.exo</file>
 			<format>exodus ii</format>
 		</read>
-		<!--
+                -->
 		<generate>
 			<number_of_cells nx = "84"  nz = "37"/>
 			<box low_coordinates = "-271.0,-270.0" high_coordinates = "960.0,270.0"/>
 		</generate>
-                -->
 	</mesh>
 
 	<regions>
@@ -205,7 +206,7 @@
 		<vis>
 			<base_filename>plot</base_filename>
 			<num_digits>5</num_digits>
-			<time_macro>EveryYear</time_macro>
+			<time_macros>EveryYear</time_macros>
 		</vis>
 
 		<observations>
