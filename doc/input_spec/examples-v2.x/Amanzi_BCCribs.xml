@@ -329,8 +329,8 @@
 	</phases>
 	<execution_controls>
 		<verbosity level="extreme" />
-		<execution_control_defaults increase_factor="1.25" init_dt="3.168E-08 s" max_dt="0.01 s" method="bdf1" mode="transient" reduction_factor="0.8" />
-		<execution_control end="1956.0 s" increase_factor="1.2" init_dt="0.01 s" max_dt="500.0 s" mode="steady" reduction_factor="0.8" start="0.0 y" />
+		<execution_control_defaults increase_factor="1.25" init_dt="10 s" max_dt="1000 y" method="bdf1" mode="transient" reduction_factor="0.8" />
+		<execution_control end="1956.0 y" increase_factor="1.2" init_dt="10 s" max_dt="1.0 y" mode="steady" reduction_factor="0.8" start="0.0 y" />
 		<execution_control increase_factor="1.2" reduction_factor="0.8" start="1956.0 y" />
 		<execution_control increase_factor="1.2" reduction_factor="0.8" start="1956.0822 y" />
 		<execution_control start="1956.0849 y" />
@@ -346,7 +346,7 @@
 	<numerical_controls>
 		<steady-state_controls>
 			<min_iterations>10</min_iterations>
-			<max_iterations>20</max_iterations>
+			<max_iterations>19</max_iterations>
 			<max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
 			<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
 			<limit_iterations>20</limit_iterations>
@@ -365,7 +365,7 @@
 			</pseudo_time_integrator>
 		</steady-state_controls>
 		<transient_controls>
-			<bdf1_integration_method limit_iterations="20" max_divergent_iterations="3" max_iterations="20" max_preconditioner_lag_iterations="5" min_iterations="12" nonlinear_iteration_damping_factor="1.0" nonlinear_iteration_divergence_factor="1.0" nonlinear_tolerance="1.0e-05" restart_tolerance_factor="1.0" restart_tolerance_relaxation_factor="1.0" />
+			<bdf1_integration_method limit_iterations="20" max_divergent_iterations="3" max_iterations="19" max_preconditioner_lag_iterations="5" min_iterations="12" nonlinear_iteration_damping_factor="1.0" nonlinear_iteration_divergence_factor="1.0" nonlinear_tolerance="1.0e-05" restart_tolerance_factor="1.0" restart_tolerance_relaxation_factor="1.0" />
 			<preconditioner name="hypre_amg">
 				<hypre_cycle_applications>10</hypre_cycle_applications>
 				<hypre_smoother_sweeps>3</hypre_smoother_sweeps>
@@ -704,17 +704,16 @@
 	</boundary_conditions>
 	<output>
 		<vis>
-			<base_filename>amanzi_0/plot</base_filename>
+			<base_filename>plot</base_filename>
 			<num_digits>5</num_digits>
 			<time_macros>vis_macro</time_macros>
 		</vis>
 		<checkpoint>
-			<base_filename>amanzi_0/checkpoint</base_filename>
+			<base_filename>checkpoint</base_filename>
 			<num_digits>5</num_digits>
-			<cycle_macro>Every_100_timesteps</cycle_macro>
 		</checkpoint>
 		<observations>
-			<filename>amanzi_0/amanzi.out</filename>
+			<filename>amanzi.out</filename>
 			<liquid_phase name="water">
 				<aqueous_conc solute="Tc-99">
 					<functional>point</functional>
