@@ -59,7 +59,6 @@ namespace Amanzi {
 namespace Operators {
 
 // This is the old way to assemble matrices. (lipnikov@lanl.gov)
-// #define OPERATORS_MATRIX_FE_CRS
 
 class Operator {
  public:
@@ -115,13 +114,9 @@ class Operator {
   int ncells_owned, nfaces_owned, nnodes_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost;
  
-#ifdef OPERATORS_MATRIX_FE_CRS
-  Teuchos::RCP<Epetra_FECrsMatrix> A_;
-#else
   Teuchos::RCP<Epetra_CrsMatrix> A_;
   Teuchos::RCP<Epetra_CrsMatrix> A_off_;
   Teuchos::RCP<Epetra_Export> exporter_;
-#endif
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
   int offset_global_[3], offset_my_[3];
 
