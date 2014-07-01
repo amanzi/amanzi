@@ -17,6 +17,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "BCs.hh"
+#include "FnBaseDefs.hh"
 #include "OperatorDiffusion.hh"
 
 #include "Flow_PK.hh"
@@ -61,9 +62,10 @@ class Darcy_PK : public Flow_PK {
   bool ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector> u0, Teuchos::RCP<CompositeVector> u) {
     return false;
   }
-  ModifyCorrectionResult ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
-                        Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du) {
-    return CORRECTION_NOT_MODIFIED;
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
+                       Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du) {
+    return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
   void ChangedSolution() {};
 

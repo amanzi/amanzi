@@ -18,5 +18,4 @@ enum ModifyCorrectionResult {
 }
 }
 
-
 #endif

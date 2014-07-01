@@ -408,22 +408,11 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl 
-        << "****************************************" << std::endl
-        << vo_->color("green") << "New TI phase: " << ti_specs.ti_method_name.c_str() << vo_->reset() << std::endl
-        << "****************************************" << std::endl
-        << " start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << std::endl
-        << " error control id=" << error_control_ << std::endl
-        << " preconditioner for nonlinear solver: " << ti_specs.preconditioner_name.c_str() << std::endl
-        << " sources distribution id=" << src_sink_distribution << std::endl;
-
-    if (ti_specs.initialize_with_darcy) {
-      *vo_->os() << " initial pressure solver: " << ti_specs.solver_name_ini << std::endl;
-      if (ti_specs.clip_saturation > 0.0) {
-        *vo_->os() << "  clipping saturation at " << ti_specs.clip_saturation << " [-]" << std::endl;
-      } else if (ti_specs.clip_pressure > -5 * FLOW_PRESSURE_ATMOSPHERIC) {
-        *vo_->os() << "  clipping pressure at " << ti_specs.clip_pressure << " [Pa]" << std::endl;
-      }
-    }
+        << vo_->color("green") << "New TI phase: " << ti_specs.ti_method_name.c_str() 
+        << vo_->reset() << std::endl << std::endl;
+    *vo_->os() << "T=" << T0 / FLOW_YEAR << " [y] dT=" << dT0 << " [sec]" << std::endl
+        << "EC:" << error_control_ << " Src:" << src_sink_distribution
+        << " PC:\"" << ti_specs.preconditioner_name.c_str() << "\"" << std::endl;
   }
 
   // set up new time integration or solver
@@ -459,7 +448,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 #endif
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << " assigned default (no-flow) BC to " << missed_bc_faces_ << " faces" << std::endl << std::endl;
+    *vo_->os() << "assigned default (no-flow) BC to " << missed_bc_faces_ << " faces" << std::endl << std::endl;
   }
 
   // Well modeling

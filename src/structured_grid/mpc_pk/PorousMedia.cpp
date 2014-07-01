@@ -1268,12 +1268,6 @@ PorousMedia::initData ()
                   }
                   int comp = it3->second;
                   Real value = it2->second;
-
-                  if (comp < 3) {
-                    std::cout << "label " << parameter << std::endl;
-                    BoxLib::Abort();
-                  }
-
                   const PArray<RegionData>& rds = tic_array[iTracer];
                   for (int k=0; k<rds.size(); ++k) {
                     const Array<const Region*>& rock_regions = rds[k].Regions();
@@ -1309,7 +1303,6 @@ PorousMedia::initData ()
                   BL_ASSERT(sdat.nComp()>ncomps+iTracer);
                   BL_ASSERT(tic_regions.size()>jt);
                   tic_regions[jt]->setVal(sdat,val[val.size()-1],ncomps+iTracer,dx,0);
-
                   if (chemistry_model_name=="Alquimia" && do_tracer_chemistry>0) 
                   {
                     FArrayBox& aux =  get_new_data(Aux_Chem_Type)[mfi];
@@ -1334,7 +1327,6 @@ PorousMedia::initData ()
       if (chemistry_model_name=="Amanzi" && do_tracer_chemistry>0) {
 
         // "Speciate" the chemistry (set up remaining chem data)
-        std::cout << "Speciating "<< std::endl;
         for (MFIter mfi(S_new); mfi.isValid(); ++mfi) {
           Box box = mfi.validbox();
           FArrayBox& sat   = S_new[mfi];
@@ -1350,7 +1342,6 @@ PorousMedia::initData ()
           achp->Initialize(sat,0,press,0,phi,0,vol,0,sat,ncomps,fct,0,aux,density[0],298,box);
           sat.mult(density[0],0,1);
         }
-        std::cout << "Speciating complete" << std::endl;
       }
     }
 
@@ -6021,8 +6012,10 @@ PorousMedia::advance_chemistry (Real time,
       FArrayBox& vol_fab = volTemp[mfi];
       FArrayBox& fct_fab = fcnCntTemp[mfi];
       FArrayBox& aux_fab = auxTemp[mfi];
+
       chemistry_helper->Advance(sat_fab,0,press_fab,0,phi_fab,0,vol_fab,0,sat_fab,ncomps,
                                 fct_fab,0,aux_fab,density[0],298,box,dt_sub_chem);
+
       sat_fab.mult(density[0],0,1);
     }
   }

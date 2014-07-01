@@ -59,6 +59,9 @@ struct BDF1_State {
   // performane of nonlinear solver
   int solve_itrs;
 
+  // restart fine constrol
+  double tol_multiplier, tol_multiplier_damp;
+
   void InitializeFromPlist(Teuchos::ParameterList&, const Teuchos::RCP<const Vector>&);
 };
 
@@ -70,7 +73,6 @@ template<class Vector>
 void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const Vector>& initvec) {
   
-  //std::cout<<plist<<std::endl;
   // preconditioner lag control
   maxpclag = plist.get<int>("max preconditioner lag iterations", 0);
 
@@ -81,6 +83,9 @@ void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
   double t0 = plist.get<double>("initial time", 0.0);
   uhist = Teuchos::rcp(new SolutionHistory<Vector>(uhist_size, t0, *initvec));
 
+  // restart fine control
+  tol_multiplier = plist.get<double>("restart tolerance relaxation factor", 1.0);
+  tol_multiplier_damp = plist.get<double>("restart tolerance relaxation factor damping", 1.0);
 }
 
 }  // namespace Amanzi

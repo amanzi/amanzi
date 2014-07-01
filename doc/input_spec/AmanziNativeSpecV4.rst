@@ -8,8 +8,7 @@ Amanzi Native XML Input Specification V4
 Overview
 ========
 This is a continuously evolving specification format used by
-the code developers. It is used for the development of new
-capabilities.
+the code developers. It is used for development of new capabilities.
 
 
 ParameterList XML
@@ -706,6 +705,7 @@ nonlinear solvers during calculation of the initial guess time integration. Here
 
      <ParameterList name="pressure-lambda constraints">
        <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="inflow krel correction" type="bool" value="false"/>
        <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
      </ParameterList>
 
@@ -743,6 +743,7 @@ The first part controls preliminary steps in the time integrator.
 
      <ParameterList name="pressure-lambda constraints">
        <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="inflow krel correction" type="bool" value="false"/>
        <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
      </ParameterList>
    </ParameterList>
@@ -787,6 +788,9 @@ The parameters used here are
 
   * `"linear solver`" [string] refers to a solver sublist of the list `"Solvers`".
 
+  * `"inflow krel correction`" [bool] estimates relative permeability on inflow 
+    mesh faces. This estimate is more reliable than the upwinded relative premeability
+    value, especially in steady-state calculations.
 
 A specific time intergation method is invoked by parameter `"time integration method`".
 The available options are `"BDF1`" and `"Picard`".
@@ -799,6 +803,8 @@ The later is uder development and is based on error estimates.
    <ParameterList name="steady state time integrator">
      <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
      <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+     <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
+     <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
 
      <Parameter name="time integration method" type="string" value="BDF1"/>
      <ParameterList name="BDF1">
@@ -821,6 +827,19 @@ The parameters used here are
 
 * `"extrapolate initial guess`" [bool] identifies forward time extrapolation
   of the initial guess. Default is `"true`".
+
+* `"restart tolerance relaxation factor`" [double] changes the nonlinear
+  tolerance. The time integrator is usually restarted when a boundary condition 
+  changes drastically. It may be beneficial to loosen the nonlinear 
+  tolerance on the first several time steps after the time integrator restart. 
+  The default value is 1, while reasonable values maybe as large as 1000. 
+
+* `"restart tolerance relaxation factor damping`" controls how fast the loosened 
+  nonlinear tolerance will revert back to the one specified in `"nonlinear tolerance"`.
+  If the nonlinear tolerance is `"tol`", the relaxation factor is `"factor`", and 
+  the damping is `"d`", and the time step count is `"n`" then the actual nonlinear 
+  tolerance is `"tol * max(1.0, factor * d ** n)`".
+  The default value is 1, while reasonable values are between 0 and 1.
 
 * `"time step increase factor`" [double] defines geometric grow rate for the
   initial time step. This factor is applied when nonlinear solver converged
@@ -887,14 +906,7 @@ those needed for unit tests, and future code development:
      <ParameterList name="obsolete parameters">
        <Parameter name="start time" type="double" value="0.0"/>
        <Parameter name="end time" type="double" value="100.0"/>
-
        <Parameter name="maximum number of iterations" type="int" value="400"/>
-       <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
-       <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-       <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
-       <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-
-       <Parameter name="time stepping strategy" type="string" value='standard"/>
        <Parameter name="error abs tol" type="double" value="1"/>
        <Parameter name="error rel tol" type="double" value="0"/>
      </ParameterList>

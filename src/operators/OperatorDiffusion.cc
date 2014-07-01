@@ -512,11 +512,7 @@ void OperatorDiffusion::InitPreconditioner(
     const std::string& prec_name, const Teuchos::ParameterList& plist)
 {
   if (special_assembling_) { 
-#ifdef OPERATORS_MATRIX_FE_CRS
-    InitPreconditionerSpecialFE_(prec_name, plist);
-#else
     InitPreconditionerSpecialCRS_(prec_name, plist);
-#endif
   } else {
     Operator::InitPreconditioner(prec_name, plist);
   }
@@ -528,76 +524,6 @@ void OperatorDiffusion::InitPreconditioner(
 }
 
 
-#ifdef OPERATORS_MATRIX_FE_CRS
-/* ******************************************************************
-* Routine assembles the Schur complement for face-based degrees 
-* of freedom.
-****************************************************************** */
-void OperatorDiffusion::InitPreconditionerSpecialFE_(
-    const std::string& prec_name, const Teuchos::ParameterList& plist)
-{
-  const std::vector<int>& bc_model = bc_->bc_model();
-  const std::vector<double>& bc_value = bc_->bc_value();
-
-  // find the block of matrices
-  int schema_dofs = OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL;
-  int m(0), nblocks = blocks_schema_.size();
-  for (int nb = 0; nb < nblocks; nb++) {
-    int schema = blocks_schema_[nb];
-    if (schema & schema_dofs) {
-      m = nb;
-      break;
-    }
-  }
-  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
-
-  // create a face-based stiffness matrix from A.
-  A_->PutScalar(0.0);
-
-  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-  AmanziMesh::Entity_ID_List faces;
-  int gid[OPERATOR_MAX_FACES];
-
-  Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
-
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces(c, &faces);
-    int nfaces = faces.size();
-
-    WhetStone::DenseMatrix Scell(nfaces, nfaces);
-    WhetStone::DenseMatrix& Acell = matrix[c];
-
-    double tmp = Acell(nfaces, nfaces) + diag[0][c];
-    for (int n = 0; n < nfaces; n++) {
-      for (int m = 0; m < nfaces; m++) {
-        Scell(n, m) = Acell(n, m) - Acell(n, nfaces) * Acell(nfaces, m) / tmp;
-      }
-    }
-
-    for (int n = 0; n < nfaces; n++) {  // Symbolic boundary conditions
-      int f = faces[n];
-      if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
-        for (int m = 0; m < nfaces; m++) Scell(n, m) = Scell(m, n) = 0.0;
-        Scell(n, n) = 1.0;
-      }
-    }
-
-    for (int n = 0; n < nfaces; n++) {
-      gid[n] = fmap_wghost.GID(faces[n]);
-    }
-    A_->SumIntoGlobalValues(nfaces, gid, Scell.Values());
-  }
-  A_->GlobalAssemble();
-
-  // redefine (if necessary) preconditioner since only 
-  // one preconditioner is allowed.
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(prec_name, plist);
-  preconditioner_->Update(A_);
-}
-
-
-#else
 /* ******************************************************************
 * Routine assembles the Schur complement for face-based degrees 
 * of freedom.
@@ -682,7 +608,6 @@ void OperatorDiffusion::InitPreconditionerSpecialCRS_(
   preconditioner_ = factory.Create(prec_name, plist);
   preconditioner_->Update(A_);
 }
-#endif
 
 
 /* ******************************************************************

@@ -52,6 +52,8 @@ Teuchos::RCP<FieldEvaluator> DarcyVelocityEvaluator::Clone() const {
 void DarcyVelocityEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result) 
 {
+  S->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
+
   const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face");
   Epetra_MultiVector& result_c = *(result->ViewComponent("cell", false));
 

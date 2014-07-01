@@ -67,25 +67,13 @@ class Richards_PK : public Flow_PK {
   void ApplyPreconditioner(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu);
   void UpdatePreconditioner(double T, Teuchos::RCP<const CompositeVector> u, double dT);
   double ErrorNorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du);
-  void update_norm(double rtol, double atol) {};
-  bool IsAdmissible(Teuchos::RCP<const CompositeVector> up) { 
-   return true; 
-  }
+  bool IsAdmissible(Teuchos::RCP<const CompositeVector> up) { return true; }
   bool ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector> u0,
-                       Teuchos::RCP<CompositeVector> u) {
-    /*
-    Teuchos::RCP<CompositeVector> du = Teuchos::rcp(new CompositeVector(*u));
-    du->Update(-1.0, *u0, 1.0);
-
-    ModifyCorrection(dT, Teuchos::null, u0, du);
-
-    *u = *u0;
-    u->Update(1.0, *du, 1.0);
-    */
-    return false;
-  }
-  ModifyCorrectionResult ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
-                        Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du);
+                       Teuchos::RCP<CompositeVector> u);
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
+                       Teuchos::RCP<const CompositeVector> u, 
+                       Teuchos::RCP<CompositeVector> du);
   void ChangedSolution() {};
 
   // other main methods

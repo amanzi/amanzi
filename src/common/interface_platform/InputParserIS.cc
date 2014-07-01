@@ -1511,7 +1511,8 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
 
           // pressure-lambda constraints
           Teuchos::ParameterList &sti_plamb = steady_time_integrator.sublist("pressure-lambda constraints");
-          sti_plamb.set<std::string>("method","projection");
+          sti_plamb.set<std::string>("method", "projection");
+          sti_plamb.set<bool>("inflow krel correction", true);
           sti_plamb.set<std::string>("linear solver", ST_PLAMB_SOLVER);
 
           // time integration method
@@ -1553,10 +1554,12 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
 	    sti_bdf1_solver->set<int>("max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS);
 	    sti_bdf1_solver->set<int>("max nka vectors", ST_NKA_NUMVEC);
 	    sti_bdf1_solver->set<int>("limit iterations", ST_LIMIT_ITER);
+	    sti_bdf1_solver->set<bool>("modify correction", false);
 	  }
 
           // remaining BDF1 parameters
           sti_bdf1.set<int>("max preconditioner lag iterations", ST_MAX_PREC_LAG);
+          sti_bdf1.set<bool>("extrapolate initial guess", true);
 
           if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
             Teuchos::ParameterList& ncp_list =  plist->sublist("Execution Control").sublist("Numerical Control Parameters");
@@ -1576,8 +1579,6 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
                 sti_bdf1_std.set<double>("max time step", num_list.get<double>("steady max time step", ST_MAX_TS));
                 sti_bdf1.set<int>("max preconditioner lag iterations",
                                   num_list.get<int>("steady max preconditioner lag iterations", ST_MAX_PREC_LAG));
-                // sti_bdf1.set<double>("error abs tol", num_list.get<double>("steady error abs tol", ST_ERROR_ABS_TOL));
-                // sti_bdf1.set<double>("error rel tol", num_list.get<double>("steady error rel tol", ST_ERROR_REL_TOL));
                 sti_bdf1_solver->set<int>("max divergent iterations",
                                   num_list.get<int>("steady max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS));
                 sti_bdf1.set<double>("nonlinear iteration damping factor",
@@ -1606,6 +1607,8 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
               }
             }
           }
+
+          // overwrite parameters for special solvers
           if (nonlinear_solver == std::string("Newton")) {
             sti_bdf1.set<int>("max preconditioner lag iterations", 0);
 	    sti_bdf1.set<bool>("extrapolate initial guess", false);	    
@@ -1628,7 +1631,8 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
 
           // pressure-lambda constraints
           Teuchos::ParameterList &tti_plamb = transient_time_integrator.sublist("pressure-lambda constraints");
-          tti_plamb.set<std::string>("method","projection");
+          tti_plamb.set<std::string>("method", "projection");
+          tti_plamb.set<bool>("inflow krel correction", true);
           tti_plamb.set<std::string>("linear solver", TR_PLAMB_SOLVER);
 
           // time integration method
@@ -1669,10 +1673,12 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
 	    tti_bdf1_nka->set<int>("max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS);
 	    tti_bdf1_nka->set<int>("max nka vectors", TR_NKA_NUMVEC);
 	    tti_bdf1_nka->set<int>("limit iterations", TR_LIMIT_ITER);
+	    tti_bdf1_nka->set<bool>("modify correction", false);
 	  }
 
           // remaining parameters
           tti_bdf1.set<int>("max preconditioner lag iterations", TR_MAX_PREC_LAG);
+          tti_bdf1.set<bool>("extrapolate initial guess", true);
 
           if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
             Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
@@ -1719,11 +1725,7 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
 		// create an initialization sublist
 		if (num_list.get<bool>("transient initialize with darcy", TR_INIT_DARCY_BOOL)) {
 		  Teuchos::ParameterList &tti_init = transient_time_integrator.sublist("initialization");
-		  tti_init.set<std::string>("method","saturated solver");
-		  tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
-		} else {
-		  Teuchos::ParameterList &tti_init = transient_time_integrator.sublist("initialization");
-		  tti_init.set<std::string>("method","projection");
+		  tti_init.set<std::string>("method", "saturated solver");
 		  tti_init.set<std::string>("linear solver", TR_INIT_SOLVER);
 		}
 	      }

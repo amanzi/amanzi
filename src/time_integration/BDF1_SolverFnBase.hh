@@ -46,9 +46,10 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
   virtual bool IsAdmissible(const Teuchos::RCP<const Vector>& up);
 
   // Hack a correction for some reason.
-  virtual ModifyCorrectionResult ModifyCorrection(const Teuchos::RCP<const Vector>& res,
-          const Teuchos::RCP<const Vector>& u,
-          const Teuchos::RCP<Vector>& du);
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(const Teuchos::RCP<const Vector>& res,
+                       const Teuchos::RCP<const Vector>& u,
+                       const Teuchos::RCP<Vector>& du);
 
   // bookkeeping for state
   virtual void ChangedSolution();
@@ -114,7 +115,7 @@ bool BDF1_SolverFnBase<Vector>::IsAdmissible(const Teuchos::RCP<const Vector>& u
 
 // Hack a correction for some reason.
 template<class Vector>
-ModifyCorrectionResult
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 BDF1_SolverFnBase<Vector>::ModifyCorrection(const Teuchos::RCP<const Vector>& res,
         const Teuchos::RCP<const Vector>& u,
         const Teuchos::RCP<Vector>& du) {

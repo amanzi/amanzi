@@ -408,38 +408,6 @@ int Transport_PK::Advance(double dT_MPC)
   int number_components = tcc_prev.NumVectors();
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", false);
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << ncycles << " sub-cycles, dT_stable=" << dT_original 
-               << " [sec]  dT_MPC=" << dT_MPC << " [sec]" << std::endl;
-
-    double tccmin_vec[number_components];
-    double tccmax_vec[number_components];
-
-    tcc_next.MinValue(tccmin_vec);
-    tcc_next.MaxValue(tccmax_vec);
-
-    double tccmin, tccmax;
-    tcc_next.Comm().MinAll(tccmin_vec, &tccmin, 1);  // find the global extrema
-    tcc_next.Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
-
-    mass_tracer_exact += TracerVolumeChangePerSecond(0) * dT_MPC;
-    double mass_tracer = 0.0;
-    for (int c = 0; c < ncells_owned; c++) {
-      double vol = mesh_->cell_volume(c);
-      mass_tracer += (*ws)[0][c] * (*phi)[0][c] * tcc_next[0][c] * vol;
-    }
-
-    double mass_tracer_tmp = mass_tracer, mass_exact_tmp = mass_tracer_exact, mass_exact;
-    mesh_->get_comm()->SumAll(&mass_tracer_tmp, &mass_tracer, 1);
-    mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_exact, 1);
-
-    double mass_loss = mass_exact - mass_tracer;
-    *vo_->os() << "species #0: " << tccmin << " <= concentration <= " << tccmax << std::endl;
-    *vo_->os() << "species #0: reservoir mass=" << mass_tracer 
-               << " [kg], mass left=" << mass_loss << " [kg]" << std::endl;
-  }
-
   if (dispersion_models_.size() != 0) {
     Teuchos::ParameterList op_list;
     Teuchos::ParameterList& tmp_list = op_list.sublist("diffusion operator");
@@ -530,6 +498,40 @@ int Transport_PK::Advance(double dT_MPC)
                  << " itrs=" << num_itrs / number_components << std::endl;
     }
   }
+
+  // statistics output
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << ncycles << " sub-cycles, dT_stable=" << dT_original 
+               << " [sec]  dT_MPC=" << dT_MPC << " [sec]" << std::endl;
+
+    double tccmin_vec[number_components];
+    double tccmax_vec[number_components];
+
+    tcc_next.MinValue(tccmin_vec);
+    tcc_next.MaxValue(tccmax_vec);
+
+    double tccmin, tccmax;
+    tcc_next.Comm().MinAll(tccmin_vec, &tccmin, 1);  // find the global extrema
+    tcc_next.Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
+
+    mass_tracer_exact += TracerVolumeChangePerSecond(0) * dT_MPC;
+    double mass_tracer = 0.0;
+    for (int c = 0; c < ncells_owned; c++) {
+      double vol = mesh_->cell_volume(c);
+      mass_tracer += (*ws)[0][c] * (*phi)[0][c] * tcc_next[0][c] * vol;
+    }
+
+    double mass_tracer_tmp = mass_tracer, mass_exact_tmp = mass_tracer_exact, mass_exact;
+    mesh_->get_comm()->SumAll(&mass_tracer_tmp, &mass_tracer, 1);
+    mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_exact, 1);
+
+    double mass_loss = mass_exact - mass_tracer;
+    *vo_->os() << "species #0: " << tccmin << " <= concentration <= " << tccmax << std::endl;
+    *vo_->os() << "species #0: reservoir mass=" << mass_tracer 
+               << " [kg], mass left=" << mass_loss << " [kg]" << std::endl;
+  }
+
   return 0;
 }
 

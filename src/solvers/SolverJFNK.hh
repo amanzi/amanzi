@@ -11,6 +11,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "VerboseObject.hh"
+#include "FnBaseDefs.hh"
 #include "SolverFnBase.hh"
 #include "SolverDefs.hh"
 #include "Solver.hh"
@@ -44,16 +45,26 @@ class SolverJFNK : public Solver<Vector,VectorSpace> {
     return solver_->Solve(u);
   }
 
+  // mutators
+  void set_tolerance(double tol) {
+    solver_->set_tolerance(tol);
+  }
+
+  void set_pc_lag(double pc_lag) {
+    solver_->set_pc_lag(pc_lag);
+  }
+
+  // access
+  double tolerance() { 
+    return solver_->tolerance(); 
+  }
+
   double residual() {
     return solver_->residual();
   }
 
   int num_itrs() {
     return solver_->num_itrs();
-  }
-
-  void set_pc_lag(double pc_lag) {
-    return solver_->set_pc_lag(pc_lag);
   }
 
   int returned_code() {

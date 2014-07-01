@@ -6,6 +6,7 @@
 #include "Epetra_Vector.h"
 
 #include "exceptions.hh"
+#include "FnBaseDefs.hh"
 #include "LinearOperatorFactory.hh"
 #include "LinearOperatorGMRES.hh"
 #include "SolverJFNK.hh"

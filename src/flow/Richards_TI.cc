@@ -134,6 +134,25 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
 
 
 /* ******************************************************************
+* Modify preconditior as needed.
+****************************************************************** */
+bool Richards_PK::ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector> u0,
+                                  Teuchos::RCP<CompositeVector> u)
+{
+ /*
+ Teuchos::RCP<CompositeVector> du = Teuchos::rcp(new CompositeVector(*u));
+ du->Update(-1.0, *u0, 1.0);
+ 
+ ModifyCorrection(dT, Teuchos::null, u0, du);
+
+ *u = *u0;
+ u->Update(1.0, *du, 1.0);
+ */
+ return false;
+}
+
+
+/* ******************************************************************
 * Check difference du between the predicted and converged solutions.
 * This is a wrapper for various error control methods. 
 ****************************************************************** */
@@ -218,9 +237,10 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
 * Modifies nonlinear update du based on the maximum allowed change
 * of saturation.
 ****************************************************************** */
-ModifyCorrectionResult Richards_PK::ModifyCorrection(
-    double dT, Teuchos::RCP<const CompositeVector> f,
-    Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> du)
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+    Richards_PK::ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> f,
+                                  Teuchos::RCP<const CompositeVector> u,
+                                  Teuchos::RCP<CompositeVector> du)
 {
   const Epetra_MultiVector& uc = *u->ViewComponent("cell");
   const Epetra_MultiVector& duc = *du->ViewComponent("cell");
@@ -286,8 +306,8 @@ ModifyCorrectionResult Richards_PK::ModifyCorrection(
     }
   }
 
-  return ncells_clipped > 0 ? AmanziSolvers::CORRECTION_MODIFIED :
-      AmanziSolvers::CORRECTION_NOT_MODIFIED;
+  return ncells_clipped > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
+      AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
 
 }  // namespace Flow
