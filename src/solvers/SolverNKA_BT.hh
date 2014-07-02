@@ -139,7 +139,7 @@ void SolverNKA_BT<Vector, VectorSpace>::Init_()
   update_pc_calls_ = 0;
   pc_lag_ = 0;
   nka_lag_space_ = 0;
-  backtrack_lag_ = 2;
+  backtrack_lag_ = 0;
 
   residual_ = -1.0;
 
@@ -298,13 +298,11 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
       BackTracking<Vector> bt(fn_);
       int ok = bt.Bisection(u, du);
 
-      if (ok != 0) {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-          *vo_->os() << bt.num_steps() << " backtracking steps,  ||r||: " 
-                     << bt.initial_residual() << " -> " << bt.final_residual() << std::endl;
-        }
-        nka_->Restart();
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+        *vo_->os() << bt.num_steps() << " backtracking steps,  ||r||: " 
+                   << bt.initial_residual() << " -> " << bt.final_residual() << std::endl;
       }
+      nka_->Restart();
     }
 
     // Next solution iterate and error estimate: u  = u - du

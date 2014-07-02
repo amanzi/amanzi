@@ -70,7 +70,6 @@ class OperatorDiffusion : public Operator {
   void UpdateMatricesTPFA_();
   void UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector> flux);
   int ApplyInverseSpecial_(const CompositeVector& X, CompositeVector& Y) const;
-  void InitPreconditionerSpecialFE_(const std::string& prec_name, const Teuchos::ParameterList& plist);
   void InitPreconditionerSpecialCRS_(const std::string& prec_name, const Teuchos::ParameterList& plist);
 
  public:

@@ -41,6 +41,7 @@ struct BDF1_State {
   int maxpclag;  // maximum iterations that the preconditioner can be lagged
   bool extrapolate_guess;  // extrapolate forward in time or use previous
                            // step as initial guess for nonlinear solver
+  int extrapolation_order;
 
   // Solution history
   Teuchos::RCP<SolutionHistory<Vector> > uhist;
@@ -76,8 +77,10 @@ void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
   // preconditioner lag control
   maxpclag = plist.get<int>("max preconditioner lag iterations", 0);
 
-  // forward time extrapolation
+  // forward time extrapolation (fix me lipnikov@lanl.gov)
   extrapolate_guess = plist.get<bool>("extrapolate initial guess", true);
+  extrapolation_order = plist.get<int>("nonlinear iteration initial guess extrapolation order", 0);
+  if (extrapolation_order == 0) extrapolate_guess = false;
 
   // solution history object
   double t0 = plist.get<double>("initial time", 0.0);

@@ -339,7 +339,7 @@ double Transport_PK::TracerVolumeChangePerSecond(int idx_tracer)
           int f = faces[n];
           int c2 = (*downwind_cell_)[f];
 
-          if (c2 >= 0) {
+          if (f < nfaces_owned && c2 >= 0) {
             double u = fabs((*darcy_flux)[0][f]);
             volume += u * values[n][i];
           }
