@@ -339,11 +339,17 @@ Usage:
 
      * [U] `"steady nonlinear iteration divergence factor`" [double] If during the nonlinear solve, the inf norm of the nonlinear update is larger by this factor than the inf norm of the update in the prior iteration, we abort the nonlinear solve to protect against a runaway divergent iteration that causes numerical overflow. As a result the current time step will repeated with a smaller delta T. (default: `"1000.0`", suggested range: 100.0 ... 10000.0)
 
+     * [U] `"steady restart tolerance relaxation factor`" [double] when the time integrator is started, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several time steps. The parameter `"steady restart tolerance relaxation factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"steady nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every time step, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator start, the actual tolerance equals ntol, again. The default for this paramameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. (default: `"1.0`", suggested range: 1.0 ... 1000.0)
+
+     * [U] `"steady restart tolerance relaxation factor damping`" [double] see `"steady nonlinear iteration initial timestep factor`" for a detailed explanation of this parameter. (default: `"1.0`", suggested range: 0.001 ... 1.0)
+
      * [U] `"steady preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
      * [U] `"steady initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"true`")  
 
-   * [U] `"Transient Implicit Time Integration`" [list] Parameters for BDF1 time integration to reach steady-state
+     * [U] `"steady nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new time step is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
+
+   * [U] `"Transient Implicit Time Integration`" [list] Parameters for BDF1 transient time integration 
 
      * [U] `"transient max iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"transient time step reduction factor"`. (default: `"15`", suggested range: 10 ... 20)
 
@@ -374,6 +380,8 @@ Usage:
      * [U] `"transient preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
      * [U] `"transient initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"false`") 
+
+     * [U] `"transient nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new time step is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
 
 
    * [U] `"Steady-State Psuedo-Time Implicit Solver`" [list] Parameters for Damped Picard iteration to reach steady-state
@@ -411,6 +419,8 @@ Usage:
    * [U] `"Nonlinear Solver`" [list] Parameters for the nonlinear solver used in time-integration.
 
      * [U] `"Nonlinear Solver Type`" [string] select the nonlinear solver type from `"NKA`", `"Newton`", and `"inexact Newton`".
+
+     * [U] `"modify correction`" [bool] allows a process kernel to modify correction to a solution.(default: `"false`")
 
    * [U] `"Preconditioners`" [list] Parameters to control the linear solver algorithms used in the preconditioner.
 

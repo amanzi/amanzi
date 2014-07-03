@@ -1375,6 +1375,7 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
       std::string update_upwind("every timestep");
       double atm_pres(ATMOSPHERIC_PRESSURE);
       std::string nonlinear_solver("NKA");
+      bool modify_correction(false);
 
       if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
         if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
@@ -1395,6 +1396,7 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
             if (fl_exp_params.isParameter("Nonlinear Solver Type")) {
               nonlinear_solver = fl_exp_params.get<std::string>("Nonlinear Solver Type");
             }
+            modify_correction = fl_exp_params.get<bool>("modify correction", false);
           }
         }
       }
@@ -1554,7 +1556,7 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
 	    sti_bdf1_solver->set<int>("max divergent iterations", ST_MAX_DIVERGENT_ITERATIONS);
 	    sti_bdf1_solver->set<int>("max nka vectors", ST_NKA_NUMVEC);
 	    sti_bdf1_solver->set<int>("limit iterations", ST_LIMIT_ITER);
-	    sti_bdf1_solver->set<bool>("modify correction", false);
+	    sti_bdf1_solver->set<bool>("modify correction", modify_correction);
 	  }
 
           // remaining BDF1 parameters
@@ -1673,7 +1675,7 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
 	    tti_bdf1_nka->set<int>("max divergent iterations", TR_MAX_DIVERGENT_ITERATIONS);
 	    tti_bdf1_nka->set<int>("max nka vectors", TR_NKA_NUMVEC);
 	    tti_bdf1_nka->set<int>("limit iterations", TR_LIMIT_ITER);
-	    tti_bdf1_nka->set<bool>("modify correction", false);
+	    tti_bdf1_nka->set<bool>("modify correction", modify_correction);
 	  }
 
           // remaining parameters
