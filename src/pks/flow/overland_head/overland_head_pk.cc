@@ -71,7 +71,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   names2[0] = "cell";
   names2[1] = "face";
 
-  S->RequireField(key_, name_)->SetMesh(mesh_)
+  S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
     ->SetComponents(names2, locations2, num_dofs2);
 
 #if DEBUG_RES_FLAG
@@ -951,7 +951,6 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
   // skip accumulation terms, they're not needed
   // Assemble
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  matrix_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
   matrix_->UpdateConsistentFaceConstraints(pres_elev.ptr());

@@ -841,7 +841,6 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
 
   // Assemble
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  matrix_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
   matrix_->UpdateConsistentFaceConstraints(u.ptr());

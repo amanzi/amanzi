@@ -46,7 +46,6 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // assemble the stiffness matrix
   AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), matrix_.ptr());
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  matrix_->AssembleGlobalMatrices();
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres, g.ptr());
@@ -506,7 +505,7 @@ void Richards::AddVaporDiffusionResidual_(const Teuchos::Ptr<State>& S,
   matrix_vapor_->CreateMFDrhsVectors();
   // assemble the stiffness matrix
   //matrix_vapor_->ApplyBoundaryConditions(bc_markers_, bc_values_, false);
-  matrix_vapor_->AssembleGlobalMatrices();
+  //  matrix_vapor_->AssembleGlobalMatrices();
   // calculate the residual
   matrix_vapor_->ComputeNegativeResidual(*pres, res_vapor.ptr());
 
@@ -524,7 +523,7 @@ void Richards::AddVaporDiffusionResidual_(const Teuchos::Ptr<State>& S,
   matrix_vapor_->CreateMFDrhsVectors();
   // assemble the stiffness matrix
   //matrix_vapor_->ApplyBoundaryConditions(bc_markers_, bc_values_, false);
-  matrix_vapor_->AssembleGlobalMatrices();
+  //  matrix_vapor_->AssembleGlobalMatrices();
   // calculate the residual
   matrix_vapor_->ComputeNegativeResidual(*temp, res_vapor.ptr());
 

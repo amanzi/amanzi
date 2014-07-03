@@ -98,10 +98,6 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
   }
 
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  mfd_preconditioner_->AssembleGlobalMatrices();
-
-  mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-  mfd_preconditioner_->UpdatePreconditioner();
 };
 
 
