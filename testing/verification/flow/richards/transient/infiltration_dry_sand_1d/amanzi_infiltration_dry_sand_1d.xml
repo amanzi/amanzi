@@ -162,7 +162,6 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Output">
-      <ParameterList name="Time Macros"/>
       <ParameterList name="Time Macros">
         <ParameterList name="Every_0.1_day">
           <Parameter name="Start_Period_Stop" type="Array(double)" value="{0.0,8.64E3,-1}"/>

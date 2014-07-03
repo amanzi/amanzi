@@ -24,7 +24,7 @@
 		<comments>Variably saturated flow</comments>
       		<flow state = "on" model = "richards"/>
       		<transport state = "off" algorithm="none"/>
-      		<chemistry state = "off" process_model="none"/>
+      		<chemistry state = "off" process_model="none" engine="none"/>
 	</process_kernels>
 
 	<phases>
@@ -45,11 +45,41 @@
 	        <linear_solver>
 			<max_iterations>100</max_iterations>
 			<tolerance>1.0e-18</tolerance>
+
+			<method>gmres</method>
+			<cfl>1</cfl>
+			<preconditioner name="hypre_amg">
+				<hypre_cycle_applications>5</hypre_cycle_applications>
+				<hypre_smoother_sweeps>3</hypre_smoother_sweeps>
+				<hypre_tolerance>0.0</hypre_tolerance>
+				<hypre_strong_threshold>0.5</hypre_strong_threshold>
+			</preconditioner>
 		</linear_solver>
 		<steady-state_controls>
 		        <initialize_with_darcy>true</initialize_with_darcy>
+			<!--
 		        <restart_tolerance_factor>1000.0</restart_tolerance_factor>
 			<restart_tolerance_relaxation_factor>0.9</restart_tolerance_relaxation_factor>
+			-->
+                        <min_iterations>10</min_iterations>
+	                <max_iterations>15</max_iterations>
+			<max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+			<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+			<limit_iterations>20</limit_iterations>
+			<nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+			<nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+			<max_divergent_iterations>3</max_divergent_iterations>
+			<pseudo_time_integrator>
+				<initialize_with_darcy>true</initialize_with_darcy>
+				<clipping_saturation>0.9</clipping_saturation>
+				<method>picard</method>
+				<preconditioner>hypre_amg</preconditioner>
+				<linear_solver>aztec00</linear_solver>
+				<control_options>pressure</control_options>
+				<convergence_tolerance>1.0e-8</convergence_tolerance>
+				<max_iterations>100</max_iterations>
+			</pseudo_time_integrator>
+
 		</steady-state_controls>
 	</numerical_controls>
 
@@ -69,16 +99,19 @@
 			<box low_coordinates= "0.0, 0.0"   high_coordinates="499.872, 73.152"/>
 		</region>
 		<region name ="Left">
+                        <box high_coordinates="(0.0, 73.152)" low_coordinates="(0.0, 0.0)" name="-X_Boundary"/>
 			<comments>Left boundary</comments>
-			<plane location= "0.0, 0.0"   normal="-1.0, 0.0"/>
+			<!--plane location= "0.0, 0.0"   normal="-1.0, 0.0"/-->
 		</region>
 		<region name ="Right">
+                        <box high_coordinates="(499.872, 73.152)" low_coordinates="(499.872, 0.0)" name="+X_Boundary"/>
 			<comments>Right boundary</comments>
-			<plane location= "499.872, 0.0" normal="1.0, 0.0"/>
+			<!--plane location= "499.872, 0.0" normal="1.0, 0.0"/-->
 		</region>
 		<region name ="Top">
+                        <box high_coordinates="(499.872, 73.152)" low_coordinates="(0.0, 73.152)" name="+Y_Boundary"/>
 			<comments>Top boundary</comments>
-			<plane location= "0.0, 73.152" normal="0.0, 1.0"/>
+			<!--plane location= "0.0, 73.152" normal="0.0, 1.0"/-->
 		</region>
 		
 
@@ -125,7 +158,7 @@
 			<assigned_regions>Aquifer</assigned_regions>
 			<liquid_phase name = "water">
 				<liquid_component name = "water">
-					<pressure value = "101325.0" function="uniform"/>
+					<uniform_pressure value = "101325.0" function="uniform"/>
 				</liquid_component>
 			</liquid_phase>
          	</initial_condition>

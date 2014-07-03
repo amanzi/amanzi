@@ -892,6 +892,9 @@ Teuchos::ParameterList CreateTimePeriodControlList(Teuchos::ParameterList* plist
         ++initial_time_step_it;
       }
     }
+  for (std::map<double,double>::const_iterator map_it = time_map.begin();
+       map_it != time_map.end(); ++map_it) {
+  }
 
     // delete the start, switch, and end times, since the user must specify initial time steps for those seperately
     if (exe_sublist.isSublist("Time Integration Mode")) {

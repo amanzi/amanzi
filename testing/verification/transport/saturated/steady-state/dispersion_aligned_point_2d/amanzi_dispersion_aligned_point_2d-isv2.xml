@@ -31,13 +31,20 @@
 		</macros>
 	</definitions>
 
+	<process_kernels>
+		<comments>Single phase flow only</comments>
+		<flow state = "on" model = "constant"/>
+		<transport state = "on" algorithm="explicit first-order" sub_cycling = "off"/>
+		<chemistry state = "off" engine="none" process_model="none"/>
+	</process_kernels>
+	<!--
 	 <process_kernels>
 	        <comments>Single phase flow only</comments>
                  <flow model="richards" state="on"/>
                  <transport algorithm="explicit first-order" state="on"/>
                  <chemistry process_model="none" engine = "none" state="off"/>
          </process_kernels>
-
+        --> 
 
 	<phases>
 		<liquid_phase name="water">
@@ -55,7 +62,7 @@
 	</phases>
 
 	<execution_controls>
-		<verbosity level="high"/>
+		<verbosity level="extreme"/>
 		<execution_control_defaults mode="steady" method="picard" init_dt="1.0"/>
 		<execution_control  start="0.0" end="1.2096e+8" mode = "transient"/>
 	</execution_controls>

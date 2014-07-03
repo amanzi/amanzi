@@ -1120,9 +1120,10 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 		if (strcmp(attrName,"restart")==0) {
 		    hasRestart = true;
 		    //name = attrName;
-	            ecsPL.sublist("restart") = ecPL;
+	            //ecsPL.sublist("restart") = ecPL;
 		}
 	      }
+	      if (hasRestart && ecPL.isParameter("restart")) ecsPL.sublist("restart") = ecPL;
 	      ecsPL.sublist(name) = ecPL;
 	  }
 	}
@@ -1179,9 +1180,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
       gotValue = true;
     } else {
       for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-        if (ecsPL.sublist(it->first).isParameter("start")) {
-          value = ecsPL.sublist(it->first).get<std::string>("start");
-          gotValue = true;
+	if (it->first != "restart") {
+          if (ecsPL.sublist(it->first).isParameter("start")) {
+            value = ecsPL.sublist(it->first).get<std::string>("start");
+            gotValue = true;
+	  }
 	}
       }
     }
@@ -1197,9 +1200,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
       gotValue = true;
     } else {
       for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-        if (ecsPL.sublist(it->first).isParameter("end")) {
-          value = ecsPL.sublist(it->first).get<std::string>("end");
-          gotValue = true;
+	if (it->first != "restart") {
+          if (ecsPL.sublist(it->first).isParameter("end")) {
+            value = ecsPL.sublist(it->first).get<std::string>("end");
+            gotValue = true;
+	  }
 	}
       }
     }
@@ -1215,9 +1220,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
       gotValue = true;
     } else {
       for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-        if (ecsPL.sublist(it->first).isParameter("init_dt")) {
-          value = ecsPL.sublist(it->first).get<std::string>("init_dt");
-          gotValue = true;
+	if (it->first != "restart") {
+          if (ecsPL.sublist(it->first).isParameter("init_dt")) {
+            value = ecsPL.sublist(it->first).get<std::string>("init_dt");
+            gotValue = true;
+	  }
 	}
       }
     }
@@ -1233,9 +1240,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
       gotValue = true;
     } else {
       for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-        if (ecsPL.sublist(it->first).isParameter("method")) {
-          method = ecsPL.sublist(it->first).get<std::string>("method");
-          gotValue = true;
+	if (it->first != "restart") {
+          if (ecsPL.sublist(it->first).isParameter("method")) {
+            method = ecsPL.sublist(it->first).get<std::string>("method");
+            gotValue = true;
+	  }
 	}
       }
     }
@@ -1249,9 +1258,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
       haveSSF = true;
     } else {
       for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-        if (ecsPL.sublist(it->first).isParameter("reduction_factor")) {
-          value = ecsPL.sublist(it->first).get<std::string>("reduction_factor");
-          haveSSF = true;
+	if (it->first != "restart") {
+          if (ecsPL.sublist(it->first).isParameter("reduction_factor")) {
+            value = ecsPL.sublist(it->first).get<std::string>("reduction_factor");
+            haveSSF = true;
+	  }
 	}
       }
     }
@@ -1259,8 +1270,10 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
       haveSSF = true;
     } else {
       for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-        if (ecsPL.sublist(it->first).isParameter("increase_factor")) {
-          haveSSF = true;
+	if (it->first != "restart") {
+          if (ecsPL.sublist(it->first).isParameter("increase_factor")) {
+            haveSSF = true;
+	  }
 	}
       }
     }
@@ -1281,63 +1294,66 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
       Teuchos::Array<double> init_steps;
       Teuchos::Array<double> max_steps;
       for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-	bool gotValue;
-	std::string Value;
-	if (ecsPL.sublist(it->first).isParameter("start")) {
+	// skip this list, if labeled "restart" it is a duplicate list
+	if (it->first != "restart") {
+	  bool gotValue;
+	  std::string Value;
+	  if (ecsPL.sublist(it->first).isParameter("start")) {
             Value = ecsPL.sublist(it->first).get<std::string>("start");
             gotValue = true;
-	} else {
+	  } else {
             Value = defPL.get<std::string>("start");
             gotValue = true;
-	}
-        if (gotValue) {
+	  }
+          if (gotValue) {
 	    double time = get_time_value(Value,*def_list);
 	    start_times.append(time);
 	    gotValue = false;
-	}
-	if (ecsPL.sublist(it->first).isParameter("end")) {
+	  }
+	  if (ecsPL.sublist(it->first).isParameter("end")) {
             Value = ecsPL.sublist(it->first).get<std::string>("end");
             gotValue = true;
-	} else {
+	  } else {
             Value = defPL.get<std::string>("end");
             gotValue = true;
-	}
-        if (gotValue) {
+	  }
+          if (gotValue) {
 	    double time = get_time_value(Value,*def_list);
 	    transPL.set<double>("End",time);
 	    gotValue = false;
-	}
-	if (ecsPL.sublist(it->first).isParameter("init_dt")) {
+	  }
+	  if (ecsPL.sublist(it->first).isParameter("init_dt")) {
             Value = ecsPL.sublist(it->first).get<std::string>("init_dt");
             gotValue = true;
-	} else {
-	  if (defPL.isParameter("init_dt")) {
-            Value = defPL.get<std::string>("init_dt");
-            gotValue = true;
-	  } 
-	}
-        if (gotValue) {
+	  } else {
+	    if (defPL.isParameter("init_dt")) {
+              Value = defPL.get<std::string>("init_dt");
+              gotValue = true;
+	    } 
+	  }
+          if (gotValue) {
 	    init_steps.append(get_time_value(Value,*def_list));
 	    gotValue = false;
-	}
-	if (ecsPL.sublist(it->first).isParameter("max_dt")) {
+	  }
+	  if (ecsPL.sublist(it->first).isParameter("max_dt")) {
             Value = ecsPL.sublist(it->first).get<std::string>("max_dt");
             gotValue = true;
-	} else {
-	  if (defPL.isParameter("max_dt")) {
-            Value = defPL.get<std::string>("max_dt");
-            gotValue = true;
+	  } else {
+	    if (defPL.isParameter("max_dt")) {
+              Value = defPL.get<std::string>("max_dt");
+              gotValue = true;
+	    }
 	  }
-	}
-        if (gotValue) {
+          if (gotValue) {
 	    max_steps.append(get_time_value(Value,*def_list));
 	    gotValue = false;
-	}
-	if (ecsPL.sublist(it->first).isParameter("reduction_factor") || defPL.isParameter("reduction_factor")) {
+	  }
+	  if (ecsPL.sublist(it->first).isParameter("reduction_factor") || defPL.isParameter("reduction_factor")) {
             haveTF = true;
-        }
-	if (ecsPL.sublist(it->first).isParameter("increase_factor") || defPL.isParameter("increase_factor")) {
+          }
+	  if (ecsPL.sublist(it->first).isParameter("increase_factor") || defPL.isParameter("increase_factor")) {
             haveTF = true;
+          }
         }
       }
       transPL.set<double>("Start",start_times[0]);
@@ -1377,9 +1393,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
           gotValue = true;
         } else {
           for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-            if (ecsPL.sublist(it->first).isParameter("start")) {
-              value = ecsPL.sublist(it->first).get<std::string>("start");
-              gotValue = true;
+	    if (it->first != "restart") {
+              if (ecsPL.sublist(it->first).isParameter("start")) {
+                value = ecsPL.sublist(it->first).get<std::string>("start");
+                gotValue = true;
+	      }
 	    }
           }
         }
@@ -1395,9 +1413,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
           gotValue = true;
         } else {
           for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-            if (ecsPL.sublist(it->first).isParameter("end")) {
-              value = ecsPL.sublist(it->first).get<std::string>("end");
-              gotValue = true;
+	    if (it->first != "restart") {
+              if (ecsPL.sublist(it->first).isParameter("end")) {
+                value = ecsPL.sublist(it->first).get<std::string>("end");
+                gotValue = true;
+	      }
 	    }
           }
         }
@@ -1413,9 +1433,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
           gotValue = true;
         } else {
           for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-            if (ecsPL.sublist(it->first).isParameter("init_dt")) {
-              value = ecsPL.sublist(it->first).get<std::string>("init_dt");
-              gotValue = true;
+	    if (it->first != "restart") {
+              if (ecsPL.sublist(it->first).isParameter("init_dt")) {
+                value = ecsPL.sublist(it->first).get<std::string>("init_dt");
+                gotValue = true;
+	      }
 	    }
           }
         }
@@ -1431,9 +1453,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
           gotValue = true;
         } else {
           for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-            if (ecsPL.sublist(it->first).isParameter("method")) {
-              method = ecsPL.sublist(it->first).get<std::string>("method");
-              gotValue = true;
+	    if (it->first != "restart") {
+              if (ecsPL.sublist(it->first).isParameter("method")) {
+                method = ecsPL.sublist(it->first).get<std::string>("method");
+                gotValue = true;
+	      }
 	    }
           }
         }
@@ -1447,18 +1471,22 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
           haveSSF = true;
         } else {
           for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-            if (ecsPL.sublist(it->first).isParameter("reduction_factor")) {
-              value = ecsPL.sublist(it->first).get<std::string>("reduction_factor");
-              haveSSF = true;
-	    }
+	    if (it->first != "restart") {
+              if (ecsPL.sublist(it->first).isParameter("reduction_factor")) {
+                value = ecsPL.sublist(it->first).get<std::string>("reduction_factor");
+                haveSSF = true;
+	      }
+    	    }
           }
         }
         if (defPL.isParameter("increase_factor")) {
           haveSSF = true;
         } else {
           for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-            if (ecsPL.sublist(it->first).isParameter("increase_factor")) {
-              haveSSF = true;
+	    if (it->first != "restart") {
+              if (ecsPL.sublist(it->first).isParameter("increase_factor")) {
+                haveSSF = true;
+    	      }
     	    }
           }
         }
@@ -1479,58 +1507,60 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         std::string value;
         bool gotValue = false;
         for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
-	  std::string mode("none");
-	  if (defPL.isParameter("mode")) mode = defPL.get<std::string>("mode");
-          if (ecsPL.sublist(it->first).isParameter("mode")) mode = ecsPL.sublist(it->first).get<std::string>("mode");
-	  if (strcmp(mode.c_str(),"steady")==0) {
-	    if (ecsPL.sublist(it->first).isParameter("start")) {
-              value = ecsPL.sublist(it->first).get<std::string>("start");
-	      double time = get_time_value(value,*def_list);
-	      initPL.set<double>("Start",time);
-	    }
-	    if (ecsPL.sublist(it->first).isParameter("end")) {
-              value = ecsPL.sublist(it->first).get<std::string>("end");
-	      double time = get_time_value(value,*def_list);
-	      initPL.set<double>("Switch",time);
-	    }
-	    if (ecsPL.sublist(it->first).isParameter("init_dt")) {
-              value = ecsPL.sublist(it->first).get<std::string>("init_dt");
-	      initPL.set<double>("Steady Initial Time Step",get_time_value(value,*def_list));
-	    } 
-	    if (ecsPL.sublist(it->first).isParameter("method")) {
-              value = ecsPL.sublist(it->first).get<std::string>("method");
-	      if (strcmp(value.c_str(),"true")==0) 
-	        initPL.set<bool>("Use Picard",true);
-	    } 
-	    if (ecsPL.sublist(it->first).isParameter("reduction_factor")) {
-              haveSSF = true;
-	    } 
-	    if (ecsPL.sublist(it->first).isParameter("increase_factor")) {
-              haveSSF = true;
-	    } 
-	  } else {
-	    if (ecsPL.sublist(it->first).isParameter("start")) {
-              value = ecsPL.sublist(it->first).get<std::string>("start");
-	      double time = get_time_value(value,*def_list);
-	      start_times.append(time);
-	    }
-	    if (ecsPL.sublist(it->first).isParameter("end")) {
-              value = ecsPL.sublist(it->first).get<std::string>("end");
-	      double time = get_time_value(value,*def_list);
-	      initPL.set<double>("End",time);
-	    }
-	    if (ecsPL.sublist(it->first).isParameter("init_dt")) {
-              value = ecsPL.sublist(it->first).get<std::string>("init_dt");
-	      gotValue = true;
-	    } else {
-	      if (defPL.isParameter("init_dt")) {
-                value = defPL.get<std::string>("init_dt");
-	        gotValue = true;
+	  if (it->first != "restart") {
+	    std::string mode("none");
+	    if (defPL.isParameter("mode")) mode = defPL.get<std::string>("mode");
+            if (ecsPL.sublist(it->first).isParameter("mode")) mode = ecsPL.sublist(it->first).get<std::string>("mode");
+	    if (strcmp(mode.c_str(),"steady")==0) {
+	      if (ecsPL.sublist(it->first).isParameter("start")) {
+                value = ecsPL.sublist(it->first).get<std::string>("start");
+	        double time = get_time_value(value,*def_list);
+	        initPL.set<double>("Start",time);
 	      }
-	    }
-	    if (gotValue) {
-	      init_steps.append(get_time_value(value,*def_list));
-	      gotValue = false;
+	      if (ecsPL.sublist(it->first).isParameter("end")) {
+                value = ecsPL.sublist(it->first).get<std::string>("end");
+	        double time = get_time_value(value,*def_list);
+	        initPL.set<double>("Switch",time);
+	      }
+	      if (ecsPL.sublist(it->first).isParameter("init_dt")) {
+                value = ecsPL.sublist(it->first).get<std::string>("init_dt");
+	        initPL.set<double>("Steady Initial Time Step",get_time_value(value,*def_list));
+	      } 
+	      if (ecsPL.sublist(it->first).isParameter("method")) {
+                value = ecsPL.sublist(it->first).get<std::string>("method");
+	        if (strcmp(value.c_str(),"true")==0) 
+	          initPL.set<bool>("Use Picard",true);
+	      } 
+	      if (ecsPL.sublist(it->first).isParameter("reduction_factor")) {
+                haveSSF = true;
+	      } 
+	      if (ecsPL.sublist(it->first).isParameter("increase_factor")) {
+                haveSSF = true;
+	      } 
+	    } else {
+	      if (ecsPL.sublist(it->first).isParameter("start")) {
+                value = ecsPL.sublist(it->first).get<std::string>("start");
+	        double time = get_time_value(value,*def_list);
+	        start_times.append(time);
+	      }
+	      if (ecsPL.sublist(it->first).isParameter("end")) {
+                value = ecsPL.sublist(it->first).get<std::string>("end");
+	        double time = get_time_value(value,*def_list);
+	        initPL.set<double>("End",time);
+	      }
+	      if (ecsPL.sublist(it->first).isParameter("init_dt")) {
+                value = ecsPL.sublist(it->first).get<std::string>("init_dt");
+	        gotValue = true;
+	      } else {
+	        if (defPL.isParameter("init_dt")) {
+                  value = defPL.get<std::string>("init_dt");
+	          gotValue = true;
+	        }
+	      }
+	      if (gotValue) {
+	        init_steps.append(get_time_value(value,*def_list));
+	        gotValue = false;
+	      }
 	    }
 	  }
         }

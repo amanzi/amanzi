@@ -43,7 +43,7 @@
 
 	<numerical_controls>
 	        <linear_solver>
-			<max_iterations>10</max_iterations>
+			<max_iterations>100</max_iterations>
 			<tolerance>1.0e-18</tolerance>
 		</linear_solver>
 	</numerical_controls>
