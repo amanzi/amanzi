@@ -443,12 +443,15 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     int missed_tmp = missed_bc_faces_;
+    int dirichlet_tmp = dirichlet_bc_faces_;
 #ifdef HAVE_MPI
     mesh_->get_comm()->SumAll(&missed_tmp, &missed_bc_faces_, 1);
+    mesh_->get_comm()->SumAll(&dirichlet_tmp, &dirichlet_bc_faces_, 1);
 #endif
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "assigned default (no-flow) BC to " << missed_bc_faces_ << " faces" << std::endl << std::endl;
+    *vo_->os() << "pressure BC assigned to " << dirichlet_bc_faces_ << " faces" << std::endl;
+    *vo_->os() << "default (no-flow) BC assigned to " << missed_bc_faces_ << " faces" << std::endl << std::endl;
   }
 
   // Well modeling

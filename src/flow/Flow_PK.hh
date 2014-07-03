@@ -129,7 +129,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   double T_physics, dT, dTnext;
 
   int MyPID;  // parallel information: will be moved to private
-  int missed_bc_faces_;
+  int missed_bc_faces_, dirichlet_bc_faces_;
   int ti_phase_counter;
 
  public:

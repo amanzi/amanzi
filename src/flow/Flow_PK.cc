@@ -100,6 +100,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
   
   int flag_essential_bc = 0;
+  dirichlet_bc_faces_ = 0;
   for (int n = 0; n < bc_model.size(); n++) {
     bc_model[n] = Operators::OPERATOR_BC_NONE;
     bc_value[n] = 0.0;
@@ -112,6 +113,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
     bc_value[f] = bc->second;
     flag_essential_bc = 1;
+    dirichlet_bc_faces_++;
   }
 
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
@@ -119,6 +121,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
     bc_value[f] = bc->second;
     flag_essential_bc = 1;
+    dirichlet_bc_faces_++;
   }
 
   for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
