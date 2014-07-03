@@ -235,13 +235,6 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   FixBCsForPrecon_(S_next_.ptr());
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
-  // 3.b: Assemble the operator if requested
-  if (assemble_preconditioner_) {
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "  assembling forward PC operator..." << std::endl;
-    mfd_preconditioner_->AssembleGlobalMatrices();
-  }
-
   // 3.c: Add in full Jacobian terms
   if (tpfa_ && full_jacobian_) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -290,11 +283,6 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
       *vo_->os() << "  Right scaling TPFA" << std::endl;
     db_->WriteVector("    dh_dp", S_next_->GetFieldData(pd_deriv_key).ptr());
     ASSERT(!ierr);
-  }
-
-  if (assemble_preconditioner_ && precon_used_) {
-    mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    mfd_preconditioner_->UpdatePreconditioner();
   }
 
   /*

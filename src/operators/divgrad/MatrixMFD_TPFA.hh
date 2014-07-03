@@ -29,7 +29,8 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
  public:
   MatrixMFD_TPFA(Teuchos::ParameterList& plist,
                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      MatrixMFD(plist,mesh) {
+      MatrixMFD(plist,mesh),
+      assembled_app_(false) {
     cells_only_ = plist.get<bool>("TPFA use cells only", false);
     if (cells_only_) {
       space_ = Teuchos::rcp(new CompositeVectorSpace());
@@ -40,9 +41,6 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
   // override main methods of the base class
   virtual void CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVector>& Krel);
   virtual void SymbolicAssembleGlobalMatrices();
-  virtual void AssembleGlobalMatrices();
-  virtual void ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
-				      const std::vector<double>& bc_values);
 
   virtual int Apply(const CompositeVector& X,
                      CompositeVector& Y) const;
@@ -60,8 +58,8 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
 			const std::vector<double>& bc_values);
 
   Teuchos::RCP<Epetra_FECrsMatrix> TPFA() {
-    AssertAssembledOperator_or_die_();
-    return Spp_;
+    if (!assembled_app_) AssembleApp_();
+    return App_;
   }
 
   virtual void UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u);
@@ -73,9 +71,25 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
   }
 
  protected:
-  Teuchos::RCP<CompositeVector> Dff_;
-  Teuchos::RCP<Epetra_FECrsMatrix> Spp_;  // Explicit Schur complement
+  virtual void MarkLocalMatricesAsChanged_() {
+    assembled_operator_ = false;
+    assembled_schur_ = false;
+    assembled_rhs_ = false;
+    assembled_dff_ = false;
+    assembled_app_ = false;
+  }
+
+  virtual void AssembleApp_() const;
+  virtual void AssembleRHS_() const;
+  virtual void AssembleSchur_() const;
+  virtual void AssembleDff_() const;
+
+ protected:
+  mutable Teuchos::RCP<CompositeVector> Dff_;
+  mutable Teuchos::RCP<Epetra_FECrsMatrix> App_;  // Explicit Schur complement
   bool cells_only_;
+  mutable bool assembled_app_;
+  mutable bool assembled_dff_;
 
  private:
   MatrixMFD_TPFA(const MatrixMFD& other);

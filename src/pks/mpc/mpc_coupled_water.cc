@@ -229,7 +229,7 @@ MPCCoupledWater::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 }
 
 // -- Modify the correction.
-ModifyCorrectionResult
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -308,8 +308,8 @@ MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
     surf_db_->WriteVectors(vnames, vecs, true);
   }
 
-  return modified ? AmanziSolvers::CORRECTION_MODIFIED_LAG_BACKTRACKING :
-      AmanziSolvers::CORRECTION_NOT_MODIFIED;
+  return modified ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING :
+      AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
 
 void

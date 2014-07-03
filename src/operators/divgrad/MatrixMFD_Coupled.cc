@@ -55,7 +55,8 @@ MatrixMFD_Coupled::MatrixMFD_Coupled(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
     plist_(plist),
     mesh_(mesh),
-    is_matrix_constructed_(false) {
+    assembled_schur_(false),
+    is_schur_created_(false) {
   InitializeFromPList_();
 }
 
@@ -63,7 +64,8 @@ MatrixMFD_Coupled::MatrixMFD_Coupled(Teuchos::ParameterList& plist,
 MatrixMFD_Coupled::MatrixMFD_Coupled(const MatrixMFD_Coupled& other) :
     plist_(other.plist_),
     mesh_(other.mesh_),
-    is_matrix_constructed_(false) {
+    assembled_schur_(false),
+    is_schur_created_(false) {
   InitializeFromPList_();
 }
 
@@ -97,10 +99,17 @@ void MatrixMFD_Coupled::SetSubBlocks(const Teuchos::RCP<MatrixMFD>& blockA,
   space_ = Teuchos::rcp(new TreeVectorSpace());
   space_->PushBack(spaceA_TV);
   space_->PushBack(spaceB_TV);    
+
+  MarkLocalMatricesAsChanged_();
 }
 
 int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
         TreeVector& Y) const {
+  if (!assembled_schur_) {
+    AssembleSchur_();
+    UpdatePreconditioner_();
+  }
+
   if (S_pc_ == Teuchos::null) {
     Errors::Message msg("MatrixMFD::ApplyInverse called but no preconditioner sublist was provided");
     Exceptions::amanzi_throw(msg);
@@ -115,11 +124,15 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
   const Epetra_MultiVector& XB_f = *XB->ViewComponent("face", false);
 
   // Temporary cell and face vectors.
-  Epetra_MultiVector Xc(*double_cmap_, 1);
   Epetra_MultiVector Xf(*double_fmap_, 1);
-
-  Epetra_MultiVector Yc(*double_cmap_, 1);
   Epetra_MultiVector Yf(*double_fmap_, 1);
+
+  Teuchos::RCP<CompositeVector> A = 
+    Teuchos::rcp(new CompositeVector(*XA, INIT_MODE_ZERO));
+  Teuchos::RCP<CompositeVector> B = 
+    Teuchos::rcp(new CompositeVector(*XB, INIT_MODE_ZERO));
+  Teuchos::RCP<const CompositeVector> A_const = A;
+  Teuchos::RCP<const CompositeVector> B_const = B;
 
   int ierr(0);
 
@@ -128,80 +141,77 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
   double val = 0.;
 
   // Forward Eliminate
-  // Xc <-- - A2c2c_Inv * (x_Ac, x_Bc)^T
-  for (int c=0; c!=ncells; ++c){
-    double a_c = XA_c[0][c];
-    double b_c = XB_c[0][c];
-    val = -(A2c2c_cells_Inv_[c](0,0)*a_c + A2c2c_cells_Inv_[c](0,1)*b_c);
-    ierr = Xc.ReplaceMyValue(c, 0, 0, val);
-    ASSERT(!ierr);
-
-    val = -(A2c2c_cells_Inv_[c](1,0)*a_c + A2c2c_cells_Inv_[c](1,1)*b_c);
-    ierr = Xc.ReplaceMyValue(c, 1, 0, val);
-    ASSERT(!ierr);
+  // Wc <-- A2c2c_Inv * (x_Ac, x_Bc)^T
+  {
+    Epetra_MultiVector& Ac = *A->ViewComponent("cell",false);
+    Epetra_MultiVector& Bc = *B->ViewComponent("cell",false);
+    for (int c=0; c!=ncells; ++c){
+      Ac[0][c] = A2c2c_cells_Inv_[c](0,0)*XA_c[0][c] 
+	+ A2c2c_cells_Inv_[c](0,1)*XB_c[0][c];
+      Bc[0][c] = A2c2c_cells_Inv_[c](1,0)*XA_c[0][c] 
+	+ A2c2c_cells_Inv_[c](1,1)*XB_c[0][c];
+    }
   }
 
-  // Xf <-- A2f2c * Xc
-  ierr = A2f2c_->Multiply(true, Xc, Xf);
+  // Wf <-- Afc * Wc
+  ierr |= blockA_->ApplyAfc(*A,*A,0.);
+  ierr |= blockB_->ApplyAfc(*B,*B,0.);
   ASSERT(!ierr);
 
-  // Xf <-- (x_Af, x_Ac)^T + Xf
-  // This gives Xf = (x_Af, x_Ac)^T  - A2f2c * A2c2c_Inv * (x_Ac, x_Bc)^T, the rhs.
-  for (int f=0; f!=nfaces; ++f){
-    ierr = Xf.SumIntoMyValue(f, 0, 0, XA_f[0][f]);
-    ASSERT(!ierr);
-    ierr = Xf.SumIntoMyValue(f, 1, 0, XB_f[0][f]);
-    ASSERT(!ierr);
+  // Xf <-- (x_Af, x_Ac)^T - Afc * A2c2c_Inv * (x_Ac, x_Bc)^T, the rhs.
+  {
+    const Epetra_MultiVector& Af = *A_const->ViewComponent("face",false);
+    const Epetra_MultiVector& Bf = *B_const->ViewComponent("face",false);
+
+    for (int f=0; f!=nfaces; ++f) {
+      Xf[0][2*f] = XA_f[0][f] - Af[0][f]; 
+      Xf[0][2*f+1] = XB_f[0][f] - Bf[0][f]; 
+    }
   }
 
   // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  S_pc_->ApplyInverse(Xf, Yf);
-  //ierr = S_pc_->ApplyInverse(Xf, Yf);
-  //ASSERT(!ierr);
+  ierr = S_pc_->ApplyInverse(Xf, Yf);
+  ASSERT(!ierr);
+
+  // copy back into subblock
+  Teuchos::RCP<CompositeVector> YA = Y.SubVector(0)->Data();
+  Teuchos::RCP<CompositeVector> YB = Y.SubVector(1)->Data();
+  {
+    Epetra_MultiVector& YA_f = *YA->ViewComponent("face", false);
+    Epetra_MultiVector& YB_f = *YB->ViewComponent("face", false);
+
+    for (int f=0; f!=nfaces; ++f) {
+      YA_f[0][f] = Yf[0][2*f];
+      YB_f[0][f] = Yf[0][2*f+1];
+    }
+  }
 
   // Backward Substitution, Yc = inv( A2c2c) [  (x_Ac,x_Bc)^T - A2c2f * Yf ]
   // Yc <-- A2c2f * Yf
-  ierr = A2c2f_->Multiply(false, Yf, Yc);
+  ierr |= blockA_->ApplyAcf(*YA,*YA,0.);
+  ierr |= blockB_->ApplyAcf(*YB,*YB,0.);
   ASSERT(!ierr);
 
-
   // Yc -= (x_Ac,x_Bc)^T
-  for (int c=0; c!=ncells; ++c){
-    double a_c = -XA_c[0][c];
-    double b_c = -XB_c[0][c];
-    Yc.SumIntoMyValue(c, 0, 0, a_c);
-    Yc.SumIntoMyValue(c, 1, 0, b_c);
-  }
+  {
+    Epetra_MultiVector& YA_c = *YA->ViewComponent("cell", false);
+    Epetra_MultiVector& YB_c = *YB->ViewComponent("cell", false);
+    for (int c=0; c!=ncells; ++c){
+      double tmpA = XA_c[0][c] - YA_c[0][c];
+      double tmpB = XB_c[0][c] - YB_c[0][c];
 
-  // Yc <-- -Yc, now Yc =  (x_Ac,x_Bc)^T - A2c2f * Yf
-  Yc.Scale(-1.0);
-
-  // pull Y data
-  Teuchos::RCP<CompositeVector> YA = Y.SubVector(0)->Data();
-  Teuchos::RCP<CompositeVector> YB = Y.SubVector(1)->Data();
-  Epetra_MultiVector& YA_c = *YA->ViewComponent("cell", false);
-  Epetra_MultiVector& YB_c = *YB->ViewComponent("cell", false);
-  Epetra_MultiVector& YA_f = *YA->ViewComponent("face", false);
-  Epetra_MultiVector& YB_f = *YB->ViewComponent("face", false);
-
-  // Yc <-- inv(A2c2c) * Yc
-  // Copy data back into Y-vectors
-  for (int c=0; c!=ncells; ++c){
-    YA_c[0][c] = A2c2c_cells_Inv_[c](0,0)*Yc[0][2*c]
-        + A2c2c_cells_Inv_[c](0,1)*Yc[0][2*c + 1];
-    YB_c[0][c] = A2c2c_cells_Inv_[c](1,0)*Yc[0][2*c]
-        + A2c2c_cells_Inv_[c](1,1)*Yc[0][2*c + 1];
-  }
-
-  for (int f=0; f!=nfaces; ++f){
-    YA_f[0][f] = Yf[0][2*f];
-    YB_f[0][f] = Yf[0][2*f + 1];
+      YA_c[0][c] = A2c2c_cells_Inv_[c](0,0)*tmpA + A2c2c_cells_Inv_[c](0,1)*tmpB;
+      YB_c[0][c] = A2c2c_cells_Inv_[c](1,0)*tmpA + A2c2c_cells_Inv_[c](1,1)*tmpB;
+    }
   }
 
   return ierr;
 }
 
 
+/* ******************************************************************
+ * Parallel matvec product Y <-- A * X.
+ ****************************************************************** */
 int MatrixMFD_Coupled::Apply(const TreeVector& X,
         TreeVector& Y) const {
   Teuchos::RCP<const CompositeVector> XA = X.SubVector(0)->Data();
@@ -209,19 +219,97 @@ int MatrixMFD_Coupled::Apply(const TreeVector& X,
   Teuchos::RCP<CompositeVector> YA = Y.SubVector(0)->Data();
   Teuchos::RCP<CompositeVector> YB = Y.SubVector(1)->Data();
 
-  blockA_->Apply(*XA, *YA);
-  blockB_->Apply(*XB, *YB);
+  int ierr = blockA_->Apply(*XA, *YA);
+  ierr |= blockB_->Apply(*XB, *YB);
 
   // add in the off-diagonals
-  YA->ViewComponent("cell",false)->Multiply(scaling_, *Ccc_,
+  ierr |= YA->ViewComponent("cell",false)->Multiply(scaling_, *Ccc_,
           *XB->ViewComponent("cell",false), 1.);
-  YB->ViewComponent("cell",false)->Multiply(scaling_, *Dcc_,
+  ierr |= YB->ViewComponent("cell",false)->Multiply(scaling_, *Dcc_,
           *XA->ViewComponent("cell",false), 1.);
-  return 0;
+  ASSERT(!ierr);
+  return ierr;
 }
 
 
-void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
+// void MatrixMFD_Coupled::AssembleAff_() {
+//   int ierr(0);
+
+//   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
+//   const Epetra_BlockMap& fmap = mesh_->face_map(false);
+//   const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
+
+//   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+//   // Get the assorted sub-blocks
+//   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff = blockA_->Aff_cells();
+//   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Bff = blockB_->Aff_cells();
+
+//   // workspace
+//   Epetra_SerialDenseMatrix values(2, 2);
+//   AmanziMesh::Entity_ID_List faces;
+//   const int MFD_MAX_FACES = 14;
+//   int faces_LID[MFD_MAX_FACES];  // Contigious memory is required.
+//   int faces_GID[MFD_MAX_FACES];
+
+//   if (is_matrix_constructed_) A2f2f_->PutScalar(0.0);
+
+//   // Assemble
+//   for (int c=0; c!=ncells; ++c){
+//     int cell_GID = cmap.GID(c);
+//     mesh_->cell_get_faces(c, &faces);
+//     int nfaces = faces.size();
+//     int nentries = nfaces; // not sure if this is required, but may be passed by ref
+
+//     Epetra_SerialDenseMatrix S2f2f(2*nfaces, 2*nfaces);
+
+//     // get IDs of faces
+//     for (int i=0; i!=nfaces; ++i) {
+//       faces_LID[i] = faces[i];
+//       faces_GID[i] = fmap_wghost.GID(faces_LID[i]);
+//     }
+
+//     for (int i=0; i!=nfaces; ++i) {
+//       for (int j=0; j!=nfaces; ++j) {
+//         S2f2f(i, j) = Aff[c](i, j);
+//         S2f2f(nfaces + i, nfaces + j) = Bff[c](i, j);
+//       }
+//     }
+
+//     // -- Assemble Schur complement
+//     for (int i=0; i!=nfaces; ++i) {
+//       ierr = A2f2f_->BeginSumIntoGlobalValues(faces_GID[i], nentries, faces_GID);
+//       ASSERT(!ierr);
+
+//       for (int j=0; j!=nfaces; ++j){
+//         values(0,0) = S2f2f(i,j);
+//         values(0,1) = S2f2f(i,j + nfaces);
+//         values(1,0) = S2f2f(i + nfaces,j);
+//         values(1,1) = S2f2f(i+ nfaces,j+ nfaces);
+
+//         //ierr = A2f2f_->SubmitBlockEntry(values);  // Bug in Trilinos 10.10 FeVbrMatrix
+//         ierr = A2f2f_->SubmitBlockEntry(values.A(), values.LDA(),
+//                 values.M(), values.N());
+//         ASSERT(!ierr);
+//       }
+
+//       ierr = A2f2f_->EndSubmitEntries();
+//       ASSERT(!ierr);
+//     }
+//   }
+
+//   // Finish assembly
+//   ierr = A2f2f_->GlobalAssemble();
+//   is_matrix_constructed_ = true;
+//   ASSERT(!ierr);
+// }
+
+
+
+/* ******************************************************************
+ * Assemble Schur complement from elemental matrices.
+ ****************************************************************** */
+void MatrixMFD_Coupled::AssembleSchur_() const {
   int ierr(0);
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
@@ -256,7 +344,7 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
     A2c2c_cells_Inv_.resize(static_cast<size_t>(ncells));
   }
 
-  if (is_matrix_constructed_) P2f2f_->PutScalar(0.0);
+  if (is_schur_created_) P2f2f_->PutScalar(0.0);
 
   // Assemble
   for (int c=0; c!=ncells; ++c){
@@ -267,8 +355,6 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
 
     // space for the local matrices
     Epetra_SerialDenseMatrix S2f2f(2*nfaces, 2*nfaces);
-    Epetra_SerialDenseMatrix A2c2f(2, 2*nfaces);
-    Epetra_SerialDenseMatrix A2f2c(2, 2*nfaces);
 
     // get IDs of faces
     for (int i=0; i!=nfaces; ++i) {
@@ -290,108 +376,16 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
     }
     A2c2c_cells_Inv_[c] = cell_inv;
 
-    /*
-    if (c == 131) {
-      std::cout << "MatrixMFD_Coupled c(131), f(595) terms:\n"
-		<< "   scaling=" << scaling_ << "\n"
-		<< "  Acc(131,131) = " << Acc[c] << "\n"
-		<< "  Bcc(131,131) = " << Bcc[c] << "\n"
-		<< "  Ccc(131,131) = " << (*Ccc_)[0][c] * scaling_ << "\n"
-		<< "  Dcc(131,131) = " << (*Dcc_)[0][c] * scaling_ << "\n"
-		<< "     (det = " << det_cell << ")\n"
-		<< "  ------" << std::endl;
-    }
-    */
-
-
-    // Make the cell-local Schur complement
-    for (int i=0; i!=nfaces; ++i) {
-      for (int j=0; j!=nfaces; ++j) {
-        S2f2f(i, j) = Aff[c](i, j) - Afc[c](i)*cell_inv(0, 0)*Acf[c](j);
-        if ((i == j) && std::abs(S2f2f(i,j)) < 1.e-40) {
-	  std::cout << "MatrixMFD_Coupled: Schur complement pressure diagonal is zero" << std::endl;
-          //          ASSERT(0);
-          //          Exceptions::amanzi_throw(Errors::CutTimeStep());
-        }
-
-	//	if (c == 131 && faces_GID[i] == 595 && i == j)
-	  //	  std::cout << "  ( Aff[595]= " << Aff[c](i,j) << " ) - ( Afc*c_inv*Acf = " << Afc[c](i)*cell_inv(0, 0)*Acf[c](j) << ")" << std::endl;
-
-      }
-    }
-
-    for (int i=0; i!=nfaces; ++i) {
-      for (int j=0; j!=nfaces; ++j) {
-        S2f2f(nfaces + i, nfaces + j) = Bff[c](i, j) - Bfc[c](i)*cell_inv(1, 1)*Bcf[c](j);
-        if ((i == j) && std::abs(S2f2f(nfaces+i,nfaces+j)) < 1.e-40) {
-          std::cout << "MatrixMFD_Coupled: Schur complement temperature diagonal is zero" << std::endl;
-          //          ASSERT(0);
-          //          Exceptions::amanzi_throw(Errors::CutTimeStep());
-        }
-	//	if (c == 131 && faces_GID[i] == 595 && i == j)
-	//	  std::cout << "  ( Bff[595]= " << Bff[c](i,j) << " ) - ( Bfc*c_inv*Bcf = " << Bfc[c](i)*cell_inv(1, 1)*Bcf[c](j) << ")" << std::endl;
-
-      }
-    }
-
-    for (int i=0; i!=nfaces; ++i) {
-      for (int j=0; j!=nfaces; ++j) {
-        S2f2f(i, nfaces + j) = - Afc[c](i)*cell_inv(0, 1)*Bcf[c](j);
-        if (std::abs(S2f2f(i,nfaces+j)) > 1.e+21) {
-          std::cout << "BREAKING!" << std::endl;
-        }
-
-	//	if (c == 131 && faces_GID[i] == 595 && i == j)
-	//	  std::cout << "   - ( Afc*c_inv*Bcf = " << Afc[c](i)*cell_inv(0, 1)*Bcf[c](j) << std::endl;
-
-      }
-    }
-
-    for (int i=0; i!=nfaces; ++i) {
-      for (int j=0; j!=nfaces; ++j) {
-        S2f2f(nfaces + i, j) = - Bfc[c](i)*cell_inv(1, 0)*Acf[c](j);
-
-	//	if (c == 131 && faces_GID[i] == 595 && i == j)
-	//	  std::cout << "   - ( Bfc*c_inv*Acf = " << Bfc[c](i)*cell_inv(1,0)*Acf[c](j) << "\n  -------" << std::endl;
-
-      }
-    }
-
-    // Make the local A2c2f, A2f2c
-    for (int i=0; i!=nfaces; ++i) {
-      A2c2f(0,i) =           Acf[c](i);
-      A2c2f(0,i + nfaces)  = 0;
-      A2c2f(1,i) =           0;
-      A2c2f(1,i + nfaces)  = Bcf[c](i);
-
-      A2f2c(0,i) =           Afc[c](i);
-      A2f2c(0,i + nfaces)  = 0;
-      A2f2c(1,i) =           0;
-      A2f2c(1,i + nfaces)  = Bfc[c](i);
-    }
-
     // -- Assemble Schur complement
     for (int i=0; i!=nfaces; ++i) {
       ierr = P2f2f_->BeginSumIntoGlobalValues(faces_GID[i], nentries, faces_GID);
       ASSERT(!ierr);
 
       for (int j=0; j!=nfaces; ++j){
-        values(0,0) = S2f2f(i,j);
-        values(0,1) = S2f2f(i,j + nfaces);
-        values(1,0) = S2f2f(i + nfaces,j);
-        values(1,1) = S2f2f(i+ nfaces,j+ nfaces);
-
-	/*
-	if (c == 131 && faces_GID[i] == 595 && i == j) {
-	  std::cout << "total values =" << "\n"
-		    << "      Sff_pp[65,65] = " << values(0,0) << "\n"
-		    << "      Sff_TT[65,65] = " << values(1,1) << "\n"
-		    << "      Sff_pT[65,65] = " << values(0,1) << "\n"
-		    << "      Sff_Tp[65,65] = " << values(1,0) << "\n  ------" << std::endl;
-	}
-	*/
-
-        //ierr = P2f2f_->SubmitBlockEntry(values);  // Bug in Trilinos 10.10 FeVbrMatrix
+        values(0,0) = Aff[c](i, j) - Afc[c](i)*cell_inv(0, 0)*Acf[c](j);
+        values(0,1) = - Afc[c](i)*cell_inv(0, 1)*Bcf[c](j);
+        values(1,0) = - Bfc[c](i)*cell_inv(1, 0)*Acf[c](j);
+        values(1,1) = Bff[c](i, j) - Bfc[c](i)*cell_inv(1, 1)*Bcf[c](j);
         ierr = P2f2f_->SubmitBlockEntry(values.A(), values.LDA(),
                 values.M(), values.N());
         ASSERT(!ierr);
@@ -400,52 +394,16 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
       ierr = P2f2f_->EndSubmitEntries();
       ASSERT(!ierr);
     }
-
-    // -- Assemble A2f2c, which is stored as transpose
-    ierr = A2f2c_->BeginReplaceGlobalValues(cell_GID, nentries, faces_GID);
-    ASSERT(!ierr);
-
-    for (int i=0; i!=nfaces; ++i) {
-      values(0,0) = A2f2c(0,i);
-      values(0,1) = A2f2c(0,i + nfaces);
-      values(1,0) = A2f2c(1,i);
-      values(1,1) = A2f2c(1,i + nfaces);
-      ierr = A2f2c_->SubmitBlockEntry(values);
-      ASSERT(!ierr);
-    }
-
-    ierr = A2f2c_->EndSubmitEntries();
-    ASSERT(!ierr);
-
-    // -- Assemble A2c2f
-    ierr = A2c2f_->BeginReplaceGlobalValues(cell_GID, nentries, faces_GID);
-    ASSERT(!ierr);
-
-    for (int i=0; i!=nfaces; ++i) {
-      values(0,0) = A2c2f(0,i);
-      values(0,1) = A2c2f(0,i + nfaces);
-      values(1,0) = A2c2f(1,i);
-      values(1,1) = A2c2f(1,i + nfaces);
-      ierr = A2c2f_->SubmitBlockEntry(values);
-      ASSERT(!ierr);
-    }
-
-    ierr = A2c2f_->EndSubmitEntries();
-    ASSERT(!ierr);
-
   }
 
   // Finish assembly
-  ierr = A2f2c_->FillComplete(*double_fmap_, *double_cmap_);
-  ASSERT(!ierr);
-  ierr = A2c2f_->FillComplete(*double_fmap_, *double_cmap_);
-  ASSERT(!ierr);
   ierr = P2f2f_->GlobalAssemble();
   ASSERT(!ierr);
-  is_matrix_constructed_ = true;
+  assembled_schur_ = true;
+  is_schur_created_ = true;
 
   // DEBUG dump
-  if (dump || dump_schur_) {
+  if (dump_schur_) {
     std::stringstream filename_s;
     filename_s << "schur_MatrixMFD_Coupled_" << 0 << ".txt";
     EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
@@ -454,6 +412,11 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
 }
 
 
+/* ******************************************************************
+ * Initialize global matrices.
+ *
+ * This likely should only be called once.
+ ****************************************************************** */
 void MatrixMFD_Coupled::SymbolicAssembleGlobalMatrices() {
   int ierr(0);
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
@@ -505,15 +468,11 @@ void MatrixMFD_Coupled::SymbolicAssembleGlobalMatrices() {
 }
 
 
-/* ******************************************************************
- * Initialization of the preconditioner
- ****************************************************************** */
-void MatrixMFD_Coupled::InitPreconditioner() {}
 
 /* ******************************************************************
  * Rebuild preconditioner.
  ****************************************************************** */
-void MatrixMFD_Coupled::UpdatePreconditioner() {
+void MatrixMFD_Coupled::UpdatePreconditioner_() const {
   if (S_pc_ == Teuchos::null) {
     Errors::Message msg("MatrixMFD::UpdatePreconditioner called but no preconditioner sublist was provided");
     Exceptions::amanzi_throw(msg);
@@ -523,6 +482,9 @@ void MatrixMFD_Coupled::UpdatePreconditioner() {
 }
 
 
+/* ******************************************************************
+ * Solve the bottom row of the block system for lambda, given p.
+ ****************************************************************** */
 void MatrixMFD_Coupled::UpdateConsistentFaceCorrection(const TreeVector& u,
         const Teuchos::Ptr<TreeVector>& Pu) {
   blockA_->UpdateConsistentFaceCorrection(*u.SubVector(0)->Data(),

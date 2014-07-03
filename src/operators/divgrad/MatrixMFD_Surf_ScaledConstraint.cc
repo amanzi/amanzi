@@ -27,11 +27,11 @@ MatrixMFD_Surf_ScaledConstraint::MatrixMFD_Surf_ScaledConstraint(
 
 
 // Assumes the Surface A was already assembled.
-void MatrixMFD_Surf_ScaledConstraint::AssembleGlobalMatrices() {
+void MatrixMFD_Surf_ScaledConstraint::AssembleAff_() const {
   int ierr(0);
 
   // Get the standard MFD pieces.
-  MatrixMFD_ScaledConstraint::AssembleGlobalMatrices();
+  MatrixMFD_ScaledConstraint::AssembleAff_();
 
   // Add the TPFA on the surface parts from surface_A.
   const Epetra_Map& surf_cmap_wghost = surface_mesh_->cell_map(true);
@@ -123,13 +123,19 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleGlobalMatrices() {
   delete[] values;
   delete[] gsubsurfindices;
   delete[] gsubsurfvalues;
+}
 
+void MatrixMFD_Surf_ScaledConstraint::AssembleRHS_() const {
+  // MFD portion
+  MatrixMFD::AssembleRHS_();
 
-  // Deal with RHS
+  // Add in surf portion
   const Epetra_MultiVector& rhs_surf_cells =
       *surface_A_->rhs()->ViewComponent("cell",false);
   const Epetra_MultiVector& rhs_faces =
       *rhs_->ViewComponent("face",false);
+
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     if (std::abs(rhs_surf_cells[0][sc]) > 0.) {
@@ -139,10 +145,10 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleGlobalMatrices() {
   }
 }
 
-
 void MatrixMFD_Surf_ScaledConstraint::ApplyBoundaryConditions(
     const std::vector<MatrixBC>& bc_markers,
-    const std::vector<double>& bc_values) {
+    const std::vector<double>& bc_values,
+    bool APPLY_BC_FLUX) {
   // Ensure that none of the surface faces have a BC in them.
   std::vector<MatrixBC> new_markers(bc_markers);
 
@@ -152,28 +158,18 @@ void MatrixMFD_Surf_ScaledConstraint::ApplyBoundaryConditions(
     new_markers[f] = MATRIX_BC_NULL;
   }
 
-  MatrixMFD_ScaledConstraint::ApplyBoundaryConditions(new_markers, bc_values);
+  MatrixMFD_ScaledConstraint::ApplyBoundaryConditions(new_markers, bc_values, APPLY_BC_FLUX);
 }
 
 
 
-void MatrixMFD_Surf_ScaledConstraint::ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
-        const std::vector<double>& bc_values) {
-  std::vector<MatrixBC> new_markers(bc_markers);
-
+void MatrixMFD_Surf_ScaledConstraint::AssembleSchur_() const {
   int ierr(0);
   int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_sub = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
-  for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
-    AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
-    new_markers[f] = MATRIX_BC_NULL;
-  }
-
   // Call base Schur
-  //  std::cout << " Acc(99) = " << Acc_cells_[99] << std::endl;
-  //  std::cout << " Aff(501,501) = " << Aff_cells_[99](5,5) << std::endl;
-  MatrixMFD_ScaledConstraint::ComputeSchurComplement(new_markers, bc_values);
+  MatrixMFD_ScaledConstraint::AssembleSchur_();
 
   //  dump the schur complement
   // std::stringstream filename_s;

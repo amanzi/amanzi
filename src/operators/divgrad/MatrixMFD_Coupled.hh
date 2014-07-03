@@ -77,6 +77,7 @@ class MatrixMFD_Coupled : public TreeMatrix {
     scaling_ = scaling;
     Ccc_ = Ccc;
     Dcc_ = Dcc;
+    MarkLocalMatricesAsChanged_();
   }
 
   Teuchos::RCP<const Epetra_FEVbrMatrix> Schur() {
@@ -108,12 +109,18 @@ class MatrixMFD_Coupled : public TreeMatrix {
                             const Teuchos::Ptr<TreeVector>& Y) const {
     ApplyInverse(X, *Y); }
 
-  virtual void ComputeSchurComplement(bool dump=false);
   virtual void SymbolicAssembleGlobalMatrices();
-  virtual void InitPreconditioner();
-  virtual void UpdatePreconditioner();
+  virtual void InitPreconditioner() {}
   virtual void UpdateConsistentFaceCorrection(const TreeVector& u,
           const Teuchos::Ptr<TreeVector>& Pu);
+
+ protected:
+  virtual void MarkLocalMatricesAsChanged_() {
+    assembled_schur_ = false;
+  }
+
+  virtual void AssembleSchur_() const;
+  virtual void UpdatePreconditioner_() const;
 
  protected:
   // mesh
@@ -133,12 +140,12 @@ class MatrixMFD_Coupled : public TreeMatrix {
   double scaling_;
 
   // local matrices
-  std::vector<Teuchos::SerialDenseMatrix<int, double> > A2c2c_cells_Inv_;
+  mutable std::vector<Teuchos::SerialDenseMatrix<int, double> > A2c2c_cells_Inv_;
 
   // global matrices
-  Teuchos::RCP<Epetra_VbrMatrix> A2f2c_;
-  Teuchos::RCP<Epetra_VbrMatrix> A2c2f_;
-  Teuchos::RCP<Epetra_FEVbrMatrix> P2f2f_;
+  mutable Teuchos::RCP<Epetra_VbrMatrix> A2f2c_;
+  mutable Teuchos::RCP<Epetra_VbrMatrix> A2c2f_;
+  mutable Teuchos::RCP<Epetra_FEVbrMatrix> P2f2f_;
 
   // maps
   Teuchos::RCP<const Epetra_BlockMap> double_fmap_;
@@ -146,8 +153,8 @@ class MatrixMFD_Coupled : public TreeMatrix {
   Teuchos::RCP<const Epetra_BlockMap> double_fmap_wghost_;
 
   // flags
-  bool is_matrix_constructed_;
-  bool decoupled_;
+  mutable bool assembled_schur_;
+  mutable bool is_schur_created_;
   bool dump_schur_;
 
   // preconditioner for Schur complement

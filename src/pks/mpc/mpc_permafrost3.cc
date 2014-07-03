@@ -431,15 +431,6 @@ MPCPermafrost3::UpdatePreconditioner(double t,
                            Teuchos::null, // dWC_dT = 0
                            dEdp_surf->ViewComponent("cell",false),
                            1./h);
-
-  // Assemble the precon, form Schur complement
-  precon_->ComputeSchurComplement();
-  precon_->UpdatePreconditioner();
-
-  // ewc precon
-  if (precon_type_ == PRECON_EWC) {
-    sub_ewc_->UpdatePreconditioner(t, up, h);
-  }
 }
 
 // -- Modify the predictor.
@@ -491,7 +482,7 @@ MPCPermafrost3::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 }
 
 // -- Modify the correction.
-ModifyCorrectionResult
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 MPCPermafrost3::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -577,8 +568,8 @@ MPCPermafrost3::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
     domain_db_->WriteVectors(vnames, vecs, true);
   }
 
-  return modified ? AmanziSolvers::CORRECTION_MODIFIED_LAG_BACKTRACKING :
-      AmanziSolvers::CORRECTION_NOT_MODIFIED;
+  return modified ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING :
+      AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
 
 void

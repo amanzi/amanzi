@@ -114,7 +114,6 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // finish assembly of the stiffness matrix
   matrix_->CreateMFDrhsVectors();
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  matrix_->AssembleGlobalMatrices();
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*temp, g);
