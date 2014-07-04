@@ -385,7 +385,6 @@
       </ParameterList>
 
 
-
       <ParameterList name="sorption_sites">
         <ParameterList name="function">
           <ParameterList name="domain">
@@ -414,14 +413,8 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
-
-
   </ParameterList> 
         
-
-
-
 
   <ParameterList name="Flow">
     <ParameterList name="Darcy Problem">
@@ -430,11 +423,13 @@
       
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
-          <Parameter name="discretization primary" type="string" value="optimized mfd scaled"/>
-          <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
-          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-          <Parameter name="gravity" type="bool" value="true"/>
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="optimized mfd scaled"/>
+            <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
 
@@ -506,13 +501,9 @@
 	    </ParameterList>
 	  </ParameterList>
 	</ParameterList>  
-
       </ParameterList>
-
     </ParameterList> 
-
   </ParameterList>     
-
 
 
   <ParameterList name="Transport">
@@ -545,9 +536,7 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>      
-
   </ParameterList>     
-
 
 
   <ParameterList name="Checkpoint Data">
@@ -561,6 +550,5 @@
     <Parameter name="file name digits" type="int" value="5"/>    
     <Parameter name="cycle start period stop" type="Array(double)" value="{0,1,10}"/>
   </ParameterList>
-
 
 </ParameterList> <!-- End Main -->

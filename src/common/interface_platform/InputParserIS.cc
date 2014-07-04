@@ -3211,8 +3211,8 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 ****************************************************************** */
 Teuchos::ParameterList CreateFlowOperatorList(const std::string& disc_method) {
   Teuchos::ParameterList op_list;
-  Teuchos::ParameterList& tmp_list = op_list.sublist("diffusion operator");
 
+  Teuchos::ParameterList tmp_list;
   tmp_list.set<std::string>("discretization primary", disc_method);
   tmp_list.set<std::string>("discretization secondary", "optimized mfd scaled");
 
@@ -3225,8 +3225,7 @@ Teuchos::ParameterList CreateFlowOperatorList(const std::string& disc_method) {
     stensil.remove(1);
     tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
     tmp_list.set<bool>("gravity", true);
- }
-  else{
+  } else{
     Teuchos::Array<std::string> stensil(1);
     stensil[0] = "cell";
     tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
@@ -3234,6 +3233,9 @@ Teuchos::ParameterList CreateFlowOperatorList(const std::string& disc_method) {
     tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
     tmp_list.set<bool>("gravity", true);
   }
+
+  op_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
+  op_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
 
   return op_list;
 }

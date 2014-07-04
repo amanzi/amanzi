@@ -55,11 +55,13 @@
 
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
-          <Parameter name="discretization primary" type="string" value="optimized mfd scaled"/>
-          <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
-          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-          <Parameter name="gravity" type="bool" value="true"/>
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="optimized mfd scaled"/>
+            <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
 

@@ -782,11 +782,12 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   std::string primary = plist.get<std::string>("discretization primary");
   std::string secondary = plist.get<std::string>("discretization secondary");
 
-  schema_base_ = 0;
-  if (primary == "finite volume" || primary == "two point flux approximation") {
+  schema_base_ = OPERATOR_SCHEMA_BASE_CELL;
+  if (primary == "finite volume") {
     schema_base_ = OPERATOR_SCHEMA_BASE_FACE;
-  } else {
-    schema_base_ = OPERATOR_SCHEMA_BASE_CELL;
+  }
+  if (primary == "two point flux approximation" && schema_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
+    schema_base_ = OPERATOR_SCHEMA_BASE_FACE;
   }
 
   // Primary discretization methods

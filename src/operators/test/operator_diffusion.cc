@@ -206,7 +206,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
 
   // create diffusion operator 
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator");
+  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator");
   OperatorDiffusionFactory opfactory;
   Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g);
   const CompositeVectorSpace& cvs = op->DomainMap();

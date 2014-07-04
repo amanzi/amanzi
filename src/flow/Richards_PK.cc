@@ -213,9 +213,9 @@ void Richards_PK::InitPK()
   rel_perm_->ProcessStringRelativePermeability(krel_method_name);
 
   // parameter which defines when update direction of update
-  Teuchos::ParameterList tmp_list;
+  Teuchos::ParameterList aux_list;
   upwind_ = Teuchos::rcp(new Operators::Upwind<RelativePermeability>(mesh_, rel_perm_));
-  upwind_->Init(tmp_list);
+  upwind_->Init(aux_list);
 
   std::string upw_upd = rp_list_.get<std::string>("upwind update", "every timestep");
   if (upw_upd == "every nonlinear iteration") update_upwind = FLOW_UPWIND_UPDATE_ITERATION;
@@ -248,17 +248,22 @@ void Richards_PK::InitPK()
   }
 
   // Select a proper matrix class. 
-  Teuchos::ParameterList oplist = rp_list_.sublist("operators");
+  Teuchos::ParameterList& tmp_list = rp_list_.sublist("operators").sublist("diffusion operator");
+  Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
+  Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
+
   std::string name = rp_list_.get<std::string>("relative permeability");
   if (name == "upwind with Darcy flux" || name == "upwind with gravity") {
-    oplist.sublist("diffusion operator").set<std::string>("upwind", "with flux");
+    oplist_matrix.set<std::string>("upwind", "with flux");
+    oplist_pc.set<std::string>("upwind", "with flux");
   } else if (name == "upwind amanzi") {
-    oplist.sublist("diffusion operator").set<std::string>("upwind", "amanzi");
+    oplist_matrix.set<std::string>("upwind", "amanzi");
+    oplist_pc.set<std::string>("upwind", "amanzi");
   }
 
   Operators::OperatorDiffusionFactory opfactory;
-  op_matrix_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_);
-  op_preconditioner_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_);
+  op_matrix_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, gravity_);
+  op_preconditioner_ = opfactory.Create(mesh_, op_bc_, oplist_pc, gravity_);
 
   // Create the solution (pressure) vector and auxiliary vector for time history.
   solution = Teuchos::rcp(new CompositeVector(op_matrix_->DomainMap()));

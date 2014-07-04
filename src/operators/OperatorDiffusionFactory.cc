@@ -26,60 +26,53 @@ namespace Operators {
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     Teuchos::RCP<const AmanziMesh::Mesh> mesh, 
     Teuchos::RCP<BCs> bc, 
-    const Teuchos::ParameterList& oplist,
+    Teuchos::ParameterList& oplist,
     const AmanziGeometry::Point& g)
 {
-  if (oplist.isSublist("diffusion operator")) {
-    Teuchos::ParameterList dlist = oplist.sublist("diffusion operator");
+  std::vector<std::string> names;
+  names = oplist.get<Teuchos::Array<std::string> > ("schema").toVector();
+  int nnames = names.size();
 
-    std::vector<std::string> names;
-    names = dlist.get<Teuchos::Array<std::string> > ("schema").toVector();
-    int nnames = names.size();
+  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh);
+  cvs->SetGhosted(true);
 
-    Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh);
-    cvs->SetGhosted(true);
-
-    std::vector<AmanziMesh::Entity_kind> locations(nnames);
-    std::vector<int> num_dofs(nnames, 1);
+  std::vector<AmanziMesh::Entity_kind> locations(nnames);
+  std::vector<int> num_dofs(nnames, 1);
  
-    for (int i = 0; i < nnames; i++) {
-      if (names[i] == "cell") {
-        locations[i] = AmanziMesh::CELL;
-      } else if (names[i] == "node") {
-        locations[i] = AmanziMesh::NODE;
-      } else if (names[i] == "face") {
-        locations[i] = AmanziMesh::FACE;
-      }
+  for (int i = 0; i < nnames; i++) {
+    if (names[i] == "cell") {
+      locations[i] = AmanziMesh::CELL;
+    } else if (names[i] == "node") {
+      locations[i] = AmanziMesh::NODE;
+    } else if (names[i] == "face") {
+      locations[i] = AmanziMesh::FACE;
     }
+  }
 
-    cvs->SetComponents(names, locations, num_dofs);
-    cvs->SetOwned(false);
+  cvs->SetComponents(names, locations, num_dofs);
+  cvs->SetOwned(false);
 
-    // Let us try to identify a FV scheme.
-    std::string name = dlist.get<std::string>("discretization primary");
-    if (name == "finite volume") {
-      Teuchos::RCP<OperatorDiffusionTPFA> op = Teuchos::rcp(new OperatorDiffusionTPFA(cvs, dlist, bc));
-      op->Init();
-      op->SetGravity(g);
-      return op;
-    }
+  // Let us try to identify a FV scheme.
+  std::string name = oplist.get<std::string>("discretization primary");
+  if (name == "finite volume") {
+    Teuchos::RCP<OperatorDiffusionTPFA> op = Teuchos::rcp(new OperatorDiffusionTPFA(cvs, oplist, bc));
+    op->Init();
+    op->SetGravity(g);
+    return op;
+  }
 
-    // Let us see if we have gravity.
-    bool flag = dlist.get<bool>("gravity", false);
-    if (! flag) {
-      Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(cvs, dlist, bc));
-      op->Init();
-      return op;
-    } else {
-      Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::rcp(new OperatorDiffusionWithGravity(cvs, dlist, bc));
-      op->Init();
-      op->SetGravity(g);
-      return op;
-    }
+  // Let us see if we have gravity.
+  bool flag = oplist.get<bool>("gravity", false);
+  if (! flag) {
+    Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusion(cvs, oplist, bc));
+    op->Init();
+    return op;
   } else {
-    Errors::Message msg("OperatorDiffusionFactory: \"diffusion operator\" does not exist.");
-    Exceptions::amanzi_throw(msg);
+    Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::rcp(new OperatorDiffusionWithGravity(cvs, oplist, bc));
+    op->Init();
+    op->SetGravity(g);
+    return op;
   }
 }
 

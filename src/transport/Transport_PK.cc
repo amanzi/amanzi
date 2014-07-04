@@ -410,22 +410,21 @@ int Transport_PK::Advance(double dT_MPC)
 
   if (dispersion_models_.size() != 0) {
     Teuchos::ParameterList op_list;
-    Teuchos::ParameterList& tmp_list = op_list.sublist("diffusion operator");
-    tmp_list.set<std::string>("discretization secondary", "two point flux approximation");
+    op_list.set<std::string>("discretization secondary", "two point flux approximation");
 
     if (mesh_->mesh_type() == AmanziMesh::RECTANGULAR) {
-      tmp_list.set<std::string>("discretization primary", "monotone mfd hex");
+      op_list.set<std::string>("discretization primary", "monotone mfd hex");
       Teuchos::Array<std::string> stensil(2);
       stensil[0] = "face";
       stensil[1] = "cell";
-      tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
+      op_list.set<Teuchos::Array<std::string> >("schema", stensil);
       stensil.remove(1);
-      tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
+      op_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
     } else {
-      tmp_list.set<std::string>("discretization primary", "two point flux approximation");
+      op_list.set<std::string>("discretization primary", "two point flux approximation");
       Teuchos::Array<std::string> stensil(1);
       stensil[0] = "cell";
-      tmp_list.set<Teuchos::Array<std::string> >("schema", stensil);
+      op_list.set<Teuchos::Array<std::string> >("schema", stensil);
     }
 
     // default parameters

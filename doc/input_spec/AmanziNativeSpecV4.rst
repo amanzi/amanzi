@@ -562,8 +562,8 @@ if the list `"Output`" is provided. This list has two mandatory parameters:
 In this example, we define two different water retention models in two soils.
 
 
-Operators
----------
+Diffusion operators
+-------------------
 
 Operators sublist describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
@@ -593,11 +593,20 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 
     <ParameterList name="operators">
       <ParameterList name="diffusion operator">
-        <Parameter name="discretization primary" type="string" value="monotone mfd"/>
-        <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
-        <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-        <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-        <Parameter name="gravity" type="bool" value="true"/>
+        <ParameterList name="matrix">
+          <Parameter name="discretization primary" type="string" value="monotone mfd"/>
+          <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+          <Parameter name="gravity" type="bool" value="true"/>
+        </ParameterList>
+        <ParameterList name="preconditioner">
+          <Parameter name="discretization primary" type="string" value="monotone mfd"/>
+          <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+          <Parameter name="gravity" type="bool" value="true"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 

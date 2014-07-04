@@ -357,7 +357,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   // initialize diffusion operator
   SetAbsolutePermeabilityTensor();
 
-  Teuchos::ParameterList& oplist = dp_list_.sublist("operators");
+  Teuchos::ParameterList& oplist = dp_list_.sublist("operators").sublist("diffusion operator").sublist("matrix");
   Operators::OperatorDiffusionFactory opfactory;
   op_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_);
   op_->InitOperator(K, Teuchos::null, Teuchos::null, rho_, mu_);
