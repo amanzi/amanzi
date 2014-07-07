@@ -18,17 +18,17 @@ include(TestManager)
 # through these variables.
 project(MSTK)
 
+# External (TPL) include directories
+include_directories(${MSTK_INCLUDE_DIRS})
+include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Epetra_INCLUDE_DIRS})
+
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 
-
-# External (TPL) include directories
-include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${MSTK_INCLUDE_DIRS})
 
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
