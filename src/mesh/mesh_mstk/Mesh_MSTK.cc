@@ -3858,7 +3858,7 @@ void Mesh_MSTK::init_set_info() {
 
 
 void Mesh_MSTK::collapse_degen_edges() {
-  const int topoflag=1;
+  const int topoflag=0; // Don't worry about violation of model classification
   int idx, idx2, evgid0, evgid1;
   MVertex_ptr ev0, ev1, vkeep, vdel;
   MEdge_ptr edge;
@@ -3914,6 +3914,46 @@ void Mesh_MSTK::collapse_degen_edges() {
         vdelid = MV_ID(vdel);
       }
 
+#ifdef MSTK_2_20rc1_OR_NEWER
+
+      List_ptr deleted_ents;
+      vkeep = ME_Collapse(edge, vkeep, topoflag, &deleted_ents);
+
+      if (!vkeep) {
+	vkeep = vdel;
+	vdel = (vkeep == ev0) ? ev1 : ev1;
+        vdelid = MV_ID(vdel);
+
+	vkeep = ME_Collapse(edge, vkeep, topoflag, &deleted_ents);
+      }
+
+      if (!vkeep) {
+        Errors::Message mesg("Could not collapse degenerate edge. Expect computational issues with connected elements");
+        amanzi_throw(mesg);
+      }
+      
+      MEntity_ptr ent;
+      int idx1 = 0;
+      while ((ent = List_Next_Entry(deleted_ents,&idx1))) {
+        switch (MEnt_Dim(ent)) {
+        case MREGION:
+          List_Add(deleted_regions,ent);
+          break;
+        case MFACE:
+          List_Add(deleted_faces,ent);
+          break;
+        case MEDGE:
+          List_Add(deleted_edges,ent);
+          break;
+        case MVERTEX:
+          List_Add(deleted_vertices,ent);
+          break;
+        }
+      }
+      List_Delete(deleted_ents);
+
+#else
+
       eregs = ME_Regions(edge);
       efaces = ME_Faces(edge);
 
@@ -3961,6 +4001,8 @@ void Mesh_MSTK::collapse_degen_edges() {
       if (vfaces) List_Delete(vfaces);
       if (eregs) List_Delete(eregs);
       if (efaces) List_Delete(efaces);
+
+#endif
     }
 
   }
