@@ -230,8 +230,8 @@ struct SurfaceParams {
   double Zsmooth, Zrough;      // roughness coefs
 
   SurfaceParams() :
-      a_tundra(0.14),           // [-] Grenfell and Perovich, (2004)
-      a_water(0.13),           // [-] Cogley J.G. (1979)
+      a_tundra(0.135),           // [-] Grenfell and Perovich, (2004)
+      a_water(0.1168),           // [-] Cogley J.G. (1979)
       a_ice(0.44),              // [-] deteriorated ice, Grenfell and Perovich, (2004)
       e_snow(0.98),             // [-] emissivity for snow, From P. ReVelle (Thesis)
       e_tundra(0.92),           // [-] emissivity for tundra, From P. ReVelle
