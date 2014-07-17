@@ -45,6 +45,7 @@ Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
 
   ParseMeshBlocks_();
   RequireData_();
+  RequireAuxData_();
 }
 
 
@@ -67,7 +68,8 @@ Chemistry_State::Chemistry_State(const Teuchos::RCP<State>& S,
     compnames_(component_names),
     num_aux_data_(-1) {
   mesh_ = S_->GetMesh();
-  RequireData_();
+  RequireData_();  
+  RequireAuxData_();
 }
 
 void Chemistry_State::SetupMineralNames_() {
@@ -458,6 +460,20 @@ void Chemistry_State::RequireData_() {
 }
 
 
+void Chemistry_State::RequireAuxData_() {
+  if (plist_.isParameter("Auxiliary Data"))  {
+    Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("Auxiliary Data");  
+    
+    for (Teuchos::Array<std::string>::const_iterator name = names.begin(); name != names.end(); ++name) {
+      std::vector<std::vector<std::string> > subname(1);
+      subname[0].push_back("0");
+      S_->RequireField(*name, name_, subname)
+          ->SetMesh(mesh_)->SetGhosted(false)
+          ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+  }
+}
+
 void Chemistry_State::InitializeField_(Teuchos::ParameterList& ic_plist,
     std::string fieldname, bool sane_default, double default_val) {
   // Initialize mineral volume fractions
@@ -522,6 +538,15 @@ void Chemistry_State::Initialize() {
     InitializeField_(ic_plist, "surface_complex_free_site_conc", true, 1.0);
   }
 
+  // initialize auxiliary fields
+  if (plist_.isParameter("Auxiliary Data"))  {
+    Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("Auxiliary Data");  
+    
+    for (Teuchos::Array<std::string>::const_iterator name = names.begin(); name != names.end(); ++name) {
+      S_->GetFieldData(*name, name_)->PutScalar(0.0);
+      S_->GetField(*name, name_)->set_initialized();
+    }  
+  }
 }
 
 // This can only be done AFTER the chemistry is initialized and fully set up?
