@@ -102,7 +102,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   RPK->ti_specs_sss().T1 = 1e+10;
   RPK->ti_specs_sss().dTmax = 1e+8;
   RPK->ti_specs_sss().residual_tol = 1e-5;
-  RPK->ti_specs_sss().max_itrs = 300;
+  RPK->ti_specs_sss().max_itrs = 100;
 
   RPK->InitSteadyState(0.0, 0.01);
 
