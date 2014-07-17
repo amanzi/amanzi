@@ -887,7 +887,7 @@ void MPC::cycle_driver() {
               // total_component_concentration in state
               if (chemistry_enabled) {
                 if (vo_->os_OK(Teuchos::VERB_LOW)) {
-                  *vo_->os() << "Chemistry PK: advancing, current subcycling time step = " << tc_dT << std::endl;
+                  *vo_->os() << "Chemistry PK: advancing, current subcycling time step [sec] = " << tc_dT << std::endl;
                 }
 
                 Amanzi::timer_manager.start("Chemistry PK");
