@@ -193,6 +193,13 @@ class Chemistry_State {
     } 
   }
 
+  // accessor of aux data
+  Teuchos::RCP<Epetra_MultiVector> aux_data(std::string &auxname) {
+    return S_->GetFieldData(auxname, name_)
+      ->ViewComponent("cell", true);
+  }  
+
+
 
   bool using_sorption() const {
     return using_sorption_;
@@ -231,6 +238,8 @@ class Chemistry_State {
     return using_sorption_isotherms_;
   }
 
+
+  
   // Set the solution component names.
 //  void SetComponentNames(const std::vector<std::string>& comp_names);
 
@@ -279,6 +288,8 @@ class Chemistry_State {
   void VerifySorptionSites_(const std::string& region_name,
                             const Teuchos::ParameterList& sorption_site_list);
   void RequireData_();
+  void RequireAuxData_();
+  
 
  private:
   // not implemented

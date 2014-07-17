@@ -204,6 +204,7 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
   if (chem_param_list_.isParameter("Auxiliary Data")) 
   {
     Teuchos::Array<std::string> names = chem_param_list_.get<Teuchos::Array<std::string> >("Auxiliary Data");
+    std::cout << "--------> " << names[0] << std::endl;
     for (Teuchos::Array<std::string>::const_iterator name = names.begin();
          name != names.end(); ++name) 
     {
@@ -617,7 +618,13 @@ void Alquimia_Chemistry_PK::advance(
       ierr = 1;
     }
   }
-
+  // now publish auxiliary data to state
+  if (aux_output_ != Teuchos::null) {
+    for (int i=0; i<aux_output_->NumVectors(); ++i) {
+      Teuchos::RCP<Epetra_MultiVector> aux_state_vec = chemistry_state_->aux_data(aux_names_[i]);
+      (*aux_state_vec)[0] = (*aux_output_)[i];
+    }
+  }
 }  // end advance()
 
 
