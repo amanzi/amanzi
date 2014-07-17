@@ -731,6 +731,13 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epet
   }
 }
 
+double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u){
+
+  return op_matrix_ -> DeriveBoundaryFaceValue(f, u);
+
+}
+
+
 
 }  // namespace Flow
 }  // namespace Amanzi

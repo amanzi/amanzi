@@ -841,5 +841,28 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   }
 }
 
+double OperatorDiffusion::DeriveBoundaryFaceValue(int f, const CompositeVector& u){
+
+  if (u.HasComponent("face")) {
+    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
+    return u_face[f][0];
+  }
+  else {
+    const std::vector<int>& bc_model = bc_->bc_model();
+    const std::vector<double>& bc_value = bc_->bc_value();
+    if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET){
+      return bc_value[f];
+    }
+    else {
+      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+      return u_cell[0][c];
+    }
+  }
+
+}
+
 }  // namespace Operators
 }  // namespace Amanzi

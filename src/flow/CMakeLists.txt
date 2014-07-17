@@ -157,6 +157,12 @@ if (BUILD_TESTS)
                         SOURCE test/Main.cc test/flow_richards_seepage.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+        # Test: 2D Richards TPFA discretization test seepage BC
+        add_amanzi_test(flow_richards_seepage_tpfa flow_richards_seepage_tpfa
+	                KIND unit
+                        SOURCE test/Main.cc test/flow_richards_seepage_tpfa.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
         # Test: pseudo-1D Richards
         add_amanzi_test(flow_richards_bc_cribs flow_richards_bc_cribs
 	                KIND unit

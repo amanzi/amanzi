@@ -310,6 +310,51 @@ void OperatorDiffusionTPFA::UpdateFlux(
   }
 }
 
+double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(int f, const CompositeVector& u){
+
+  if (u.HasComponent("face")) {
+    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
+    return u_face[f][0];
+  }
+  else {
+    const std::vector<int>& bc_model = bc_->bc_model();
+    const std::vector<double>& bc_value = bc_->bc_value();
+    if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET){
+      return bc_value[f];
+    }
+    else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN){
+      AmanziMesh::Entity_ID_List cells, faces;
+      std::vector<int> dirs;
+      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");      
+      const Epetra_MultiVector& Krel_face = *k_->ViewComponent("face");
+
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      for (int i=0; i<faces.size(); i++){
+	if (faces[i] == f){
+	  if ((*transmissibility_)[f] < 1e-24 || Krel_face[0][f] < 1e-24){
+	    Errors::Message msg("OperatorDiffusionTPFA: Either transmisibility or relative permeabilty on a boundary is too small");
+	    Exceptions::amanzi_throw(msg);
+	  }
+	  double a = dirs[i] * (*transmissibility_)[f];
+	  double b = bc_value[f]* mesh_->face_area(f);	  
+	  double ub_val = u_cell[0][c] + (*gravity_term_)[f]/a - b/(a*Krel_face[0][f]);
+	  return ub_val;	  
+	}
+      }
+    }
+    else {
+      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+      return u_cell[0][c];
+    }
+  }
+
+}
+
 
 /* ******************************************************************
 * Computation the part of the Jacobian which depends on derivatives 

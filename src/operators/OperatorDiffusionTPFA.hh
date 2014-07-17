@@ -54,6 +54,8 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
 
   void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
 
+  virtual double DeriveBoundaryFaceValue(int f, const CompositeVector& u);
+
  private:
   void ComputeTransmissibilities_();
 

@@ -104,6 +104,9 @@ class Richards_PK : public Flow_PK {
 
   // developement members
   void ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epetra_Vector& ws);
+
+  virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
+
   
  public:
   Teuchos::ParameterList rp_list_;

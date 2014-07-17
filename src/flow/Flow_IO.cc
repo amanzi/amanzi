@@ -175,6 +175,7 @@ void Flow_PK::ProcessSublistTimeIntegration(
 void Flow_PK::ProcessStringTimeIntegration(const std::string name, int* method)
 {
   Errors::Message msg;
+
   if (name == "Picard") {
     *method = Flow::FLOW_TIME_INTEGRATION_PICARD;
   } else if (name == "backward Euler") {

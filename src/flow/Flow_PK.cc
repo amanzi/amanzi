@@ -215,6 +215,38 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
       }
     }
   }
+  else {
+    double face_value;
+    double ref_pressure = bc_seepage->reference_pressure();
+    double tol = ref_pressure * 1e-14;
+
+    for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
+      int f = bc->first;
+      int c = BoundaryFaceGetCell(f);
+      face_value = BoundaryFaceValue(f, u);
+
+      //if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {
+    
+	if (face_value < ref_pressure - tol) {
+	  bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+	  bc_value[f] = bc->second * rainfall_factor[f];
+	} else {
+	  int c = BoundaryFaceGetCell(f);
+	  if (u_cell[0][c] < face_value) {
+	    bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+	    bc_value[f] = bc->second * rainfall_factor[f];
+	  } else {
+	    bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
+	    bc_value[f] = ref_pressure;
+	    flag_essential_bc = 1;
+	    nseepage++;
+	    area_seepage += mesh_->face_area(f);
+	  }
+	}
+
+	//}
+    }
+  }
 
   // mark missing boundary conditions as zero flux conditions
   AmanziMesh::Entity_ID_List cells;
@@ -385,6 +417,18 @@ int Flow_PK::BoundaryFaceGetCell(int f)
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
   return cells[0];
+}
+
+/* ******************************************************************
+* Returns approximation of a solution on a boundary face   
+****************************************************************** */
+
+double Flow_PK::BoundaryFaceValue(int f, const CompositeVector& pressure){
+
+  const Epetra_MultiVector& u_cell = *pressure.ViewComponent("cell");
+  int c = BoundaryFaceGetCell(f);
+  return u_cell[0][c];
+
 }
 
 

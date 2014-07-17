@@ -44,6 +44,7 @@ class OperatorDiffusion : public Operator {
 
   virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
+  virtual double DeriveBoundaryFaceValue(int f, const CompositeVector& u);
 
   // re-implementation of basic operator virtual members
   void AssembleMatrix(int schema);
