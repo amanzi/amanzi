@@ -20,7 +20,8 @@ get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
 set(CHEM_INCLUDES_DIR ${CHEM_INCLUDES_DIR} ${GEOCHEM_SOURCE_DIR} ${ALQUIMIA_INCLUDE_DIRS})
 set_property(GLOBAL PROPERTY CHEM_INCLUDES_DIR "${CHEM_INCLUDES_DIR}")
 get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
-set(GEOCHEM_LIBS ${GEOCHEM_LIBS} geochemistry ${ALQUIMIA_LIBRARIES} ${PFLOTRAN_LIBRARIES} ${PETSC_LIBRARIES})
+set(GEOCHEM_SUPPORT_LIBS ${GEOCHEM_LIBS} ${ALQUIMIA_LIBRARIES} ${PFLOTRAN_LIBRARIES} ${PETSC_LIBRARIES})
+set(GEOCHEM_LIBS ${GEOCHEM_LIBS} geochemistry ${GEOCHEM_SUPPORT_LIBS})
 set_property(GLOBAL PROPERTY GEOCHEM_LIBS "${GEOCHEM_LIBS}")
 
 # Amanzi include directories
@@ -35,5 +36,5 @@ set(chem_src_files ChemistryEngine.cc)
 add_amanzi_library(geochemistry
                    SOURCE ${chem_src_files}
                    HEADERS ${chem_inc_files}
-                   LINK_LIBS ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
+                   LINK_LIBS ${GEOCHEM_SUPPORT_LIBS} ${Epetra_LIBRARIES})
 

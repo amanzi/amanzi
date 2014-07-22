@@ -60,16 +60,17 @@ class ChemistryEngine {
   int NumPrimarySpecies() const;
   int NumAqueousComplexes() const;
   int NumSorbedSpecies() const;
-  void GetPrimarySpeciesNames(std::vector<std::string>& speciesNames) const;
+  void GetPrimarySpeciesNames(std::vector<std::string>& species_names) const;
   int NumMinerals() const;
-  void GetMineralNames(std::vector<std::string>& mineralNames) const;
+  void GetMineralNames(std::vector<std::string>& mineral_names) const;
   int NumSurfaceSites() const;
-  void GetSurfaceSiteNames(std::vector<std::string>& siteNames) const;
+  void GetSurfaceSiteNames(std::vector<std::string>& site_names) const;
   int NumIonExchangeSites() const;
-  void GetIonExchangeNames(std::vector<std::string>& ionExchangeNames) const;
+  void GetIonExchangeNames(std::vector<std::string>& ion_exchange_names) const;
   int NumIsothermSpecies() const;
-  void GetIsothermSpeciesNames(std::vector<std::string>& speciesNames) const;
+  void GetIsothermSpeciesNames(std::vector<std::string>& species_names) const;
   int NumFreeIonSpecies() const;
+  void GetAuxiliaryOutputNames(std::vector<std::string>& aux_names) const;
 
   // Returns a reference to a "sizes" object that can be queried to find the sizes of the various 
   // arrays representing the geochemical state within the engine.
@@ -150,9 +151,6 @@ class ChemistryEngine {
   // Back-end engine name and input file.
   std::string chem_engine_name_;
   std::string chem_engine_inputfile_;
-
-  // Names of auxiliary data.
-  std::vector<std::string> aux_names_;
 
   // forbidden.
   ChemistryEngine();

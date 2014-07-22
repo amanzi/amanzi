@@ -165,13 +165,13 @@ int ChemistryEngine::NumSorbedSpecies() const
   return sizes_.num_sorbed;
 }
 
-void ChemistryEngine::GetPrimarySpeciesNames(std::vector<std::string>& speciesNames) const
+void ChemistryEngine::GetPrimarySpeciesNames(std::vector<std::string>& species_names) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_metadata_;
   int N = metadata->primary_names.size;
-  speciesNames.resize(N);
+  species_names.resize(N);
   for (int i = 0; i < N; ++i)
-    speciesNames[i] = std::string(metadata->primary_names.data[i]);
+    species_names[i] = std::string(metadata->primary_names.data[i]);
 }
 
 int ChemistryEngine::NumMinerals() const
@@ -179,13 +179,13 @@ int ChemistryEngine::NumMinerals() const
   return sizes_.num_kinetic_minerals;
 }
 
-void ChemistryEngine::GetMineralNames(std::vector<std::string>& mineralNames) const
+void ChemistryEngine::GetMineralNames(std::vector<std::string>& mineral_names) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_metadata_;
   int N = metadata->mineral_names.size;
-  mineralNames.resize(N);
+  mineral_names.resize(N);
   for (int i = 0; i < N; ++i)
-    mineralNames[i] = std::string(metadata->mineral_names.data[i]);
+    mineral_names[i] = std::string(metadata->mineral_names.data[i]);
 }
 
 int ChemistryEngine::NumSurfaceSites() const
@@ -193,13 +193,13 @@ int ChemistryEngine::NumSurfaceSites() const
   return sizes_.num_surface_sites;
 }
 
-void ChemistryEngine::GetSurfaceSiteNames(std::vector<std::string>& siteNames) const
+void ChemistryEngine::GetSurfaceSiteNames(std::vector<std::string>& site_names) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_metadata_;
   int N = metadata->surface_site_names.size;
-  siteNames.resize(N);
+  site_names.resize(N);
   for (int i = 0; i < N; ++i)
-    siteNames[i] = std::string(metadata->surface_site_names.data[i]);
+    site_names[i] = std::string(metadata->surface_site_names.data[i]);
 }
 
 int ChemistryEngine::NumIonExchangeSites() const
@@ -207,13 +207,13 @@ int ChemistryEngine::NumIonExchangeSites() const
   return sizes_.num_ion_exchange_sites;
 }
 
-void ChemistryEngine::GetIonExchangeNames(std::vector<std::string>& ionExchangeNames) const
+void ChemistryEngine::GetIonExchangeNames(std::vector<std::string>& ion_exchange_names) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_metadata_;
   int N = metadata->ion_exchange_names.size;
-  ionExchangeNames.resize(N);
+  ion_exchange_names.resize(N);
   for (int i = 0; i < N; ++i)
-    ionExchangeNames[i] = std::string(metadata->ion_exchange_names.data[i]);
+    ion_exchange_names[i] = std::string(metadata->ion_exchange_names.data[i]);
 }
 
 int ChemistryEngine::NumIsothermSpecies() const
@@ -221,18 +221,54 @@ int ChemistryEngine::NumIsothermSpecies() const
   return sizes_.num_isotherm_species;
 }
 
-void ChemistryEngine::GetIsothermSpeciesNames(std::vector<std::string>& speciesNames) const
+void ChemistryEngine::GetIsothermSpeciesNames(std::vector<std::string>& species_names) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_metadata_;
   int N = metadata->isotherm_species_names.size;
-  speciesNames.resize(N);
+  species_names.resize(N);
   for (int i = 0; i < N; ++i)
-    speciesNames[i] = std::string(metadata->isotherm_species_names.data[i]);
+    species_names[i] = std::string(metadata->isotherm_species_names.data[i]);
 }
 
 int ChemistryEngine::NumFreeIonSpecies() const
 {
   return sizes_.num_primary;
+}
+
+void ChemistryEngine::GetAuxiliaryOutputNames(std::vector<std::string>& aux_names) const
+{
+  aux_names.clear();
+  aux_names.push_back("pH");
+
+  // Mineral data -- one per mineral.
+  const AlquimiaProblemMetaData* metadata = &chem_metadata_;
+  int N = metadata->mineral_names.size;
+  for (int i = 0; i < N; ++i) {
+    std::string sat_index = std::string("mineral_saturation_index_") + std::string(metadata->mineral_names.data[i]);
+    aux_names.push_back(sat_index);
+    std::string rxn_rate = std::string("mineral_reaction_rate_") + std::string(metadata->mineral_names.data[i]);
+    aux_names.push_back(rxn_rate);
+  }
+
+  // Auxiliary data per primary species.
+  N = metadata->primary_names.size;
+  for (int i = 0; i < N; ++i) {
+    std::string free_ion = std::string("primary_free_ion_concentration_") + std::string(metadata->primary_names.data[i]);
+    aux_names.push_back(free_ion);
+    std::string activity_coeff = std::string("primary_activity_coeff_") + std::string(metadata->primary_names.data[i]);
+    aux_names.push_back(activity_coeff);
+  }
+
+  // Secondary auxiliary data.
+  N = this->NumAqueousComplexes();
+  for (int i = 0; i < N; ++i) {
+    char num_str[16];
+    snprintf(num_str, 15, "%d", i);
+    std::string free_ion = std::string("secondary_free_ion_concentration_") + std::string(num_str);
+    aux_names.push_back(free_ion);
+    std::string activity_coeff = std::string("secondary_activity_coeff") + std::string(num_str);
+    aux_names.push_back(activity_coeff);
+  }
 }
 
 void ChemistryEngine::CreateCondition(const std::string& condition_name)
