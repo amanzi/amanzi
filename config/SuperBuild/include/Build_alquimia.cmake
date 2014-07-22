@@ -62,7 +62,7 @@ ExternalProject_Add(${ALQUIMIA_BUILD_TARGET}
                     URL_MD5      ${ALQUIMIA_MD5_SUM}                  # md5sum of the archive file
                     # -- Configure
                     SOURCE_DIR       ${ALQUIMIA_source_dir}               # Source directory
-                    PATCH_COMMAND patch ${ALQUIMIA_source_dir}/src/alquimia/fortran/pflotran_alquimia_interface.F90 ${SuperBuild_SOURCE_DIR}/include/pflotran_alquimia_interface.F90.patch
+#                    PATCH_COMMAND patch ${ALQUIMIA_source_dir}/src/alquimia/fortran/pflotran_alquimia_interface.F90 ${SuperBuild_SOURCE_DIR}/include/pflotran_alquimia_interface.F90.patch
                     CONFIGURE_COMMAND ""
 #                    CMAKE_CACHE_ARGS ${ALQUIMIA_CMAKE_CACHE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
 #                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
