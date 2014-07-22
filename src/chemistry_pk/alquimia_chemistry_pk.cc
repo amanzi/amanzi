@@ -199,70 +199,15 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
   // NOTE that our parameter list should be the top-level parameter list "Main", 
   // not the "Chemistry" one used by the native Amanzi Chemistry PK.
 
-  // Auxiliary Data
-  aux_names_.clear();
-  if (chem_param_list_.isParameter("Auxiliary Data")) 
-  {
-    Teuchos::Array<std::string> names = chem_param_list_.get<Teuchos::Array<std::string> >("Auxiliary Data");
-    std::cout << "--------> " << names[0] << std::endl;
-    for (Teuchos::Array<std::string>::const_iterator name = names.begin();
-         name != names.end(); ++name) 
-    {
-      if (*name == "pH") 
-      {
-        aux_names_.push_back(*name);
-      } 
-      else if ((*name == "mineral_saturation_index") || (*name == "mineral_reaction_rate"))
-      {
-        // We need one of these for each mineral.
-        std::vector<std::string> mineralNames;
-        chem_engine_->GetMineralNames(mineralNames);
-        for (int i = 0; i < mineralNames.size(); ++i)
-        {
-          std::string aux_name = *name + std::string("_") + mineralNames[i];
-          aux_names_.push_back(*name);
-        }
-      }
-      else if ((*name == "primary_free_ion_concentration") || (*name == "primary_activity_coeff"))
-      {
-        // We need one of these for each primary species.
-        std::vector<std::string> primaryNames;
-        chem_engine_->GetPrimarySpeciesNames(primaryNames);
-        for (int i = 0; i < primaryNames.size(); ++i)
-        {
-          std::string aux_name = *name + std::string("_") + primaryNames[i];
-          aux_names_.push_back(*name);
-        }
-      }
-      else if ((*name == "secondary_free_ion_concentration") || (*name == "secondary_activity_coeff"))
-      {
-        // We need one of these for each secondary species, which aren't named.
-        for (int i = 0; i < chem_engine_->NumAqueousComplexes(); ++i)
-        {
-          char num_str[16];
-          snprintf(num_str, 15, "%d", i);
-          std::string aux_name = *name + std::string("_") + std::string(num_str);
-          aux_names_.push_back(*name);
-        }
-        aux_names_.push_back(*name);
-      } 
-      else 
-      {
-        std::stringstream message;
-        message << "Alquimia_ChemistryPK::XMLParameters(): unknown value in 'Auxiliary Data' list: " 
-                << *name << std::endl;
-        chem_out->Write(kWarning, message);
-      }
-    }
-    if (names.size() > 0)
-    {
-      aux_output_ = Teuchos::rcp(new Epetra_MultiVector(
-           chemistry_state_->mesh_maps()->cell_map(false), names.size()));
-    }
-    else
-    {
-      aux_output_ = Teuchos::null;
-    }
+  // We retrieve the names of the auxiliary output data from the chemistry engine--we don't rely on 
+  // the Auxiliary Data parameter list.
+  chem_engine_->GetAuxiliaryOutputNames(aux_names_);
+  if (!aux_names_.empty()) {
+    aux_output_ = Teuchos::rcp(new Epetra_MultiVector(
+         chemistry_state_->mesh_maps()->cell_map(false), aux_names_.size()));
+  }
+  else {
+    aux_output_ = Teuchos::null;
   }
 
   // Add any geochemical conditions we find in the Chemistry section of the file.

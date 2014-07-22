@@ -45,6 +45,7 @@ class Chemistry_State {
 
   void AllocateAdditionalChemistryStorage(const Beaker::BeakerComponents&);
   void AllocateAdditionalChemistryStorage(int num_aqueous_components);
+  void SetAuxDataNames(const std::vector<std::string>& aux_data_names);
 
   void Initialize();
 

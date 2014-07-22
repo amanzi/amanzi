@@ -460,6 +460,16 @@ void Chemistry_State::RequireData_() {
 }
 
 
+void Chemistry_State::SetAuxDataNames(const std::vector<std::string>& aux_data_names) {
+  for (size_t i = 0; i < aux_data_names.size(); ++i) {
+    std::vector<std::vector<std::string> > subname(1);
+    subname[0].push_back("0");
+    S_->RequireField(aux_data_names[i], name_, subname)
+        ->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+}
+
 void Chemistry_State::RequireAuxData_() {
   if (plist_.isParameter("Auxiliary Data"))  {
     Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("Auxiliary Data");  

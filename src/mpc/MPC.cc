@@ -151,6 +151,15 @@ void MPC::mpc_init() {
 #endif
     // Initialize the chemistry state.
     CS = Teuchos::rcp(new AmanziChemistry::Chemistry_State(chemistry_parameter_list, component_names, S));
+
+#ifdef ALQUIMIA_ENABLED
+    // Set up auxiliary chemistry data using the ChemistryEngine.
+    if (chemistry_model == "Alquimia") {
+      std::vector<std::string> auxNames;
+      chem_engine->GetAuxiliaryOutputNames(auxNames);
+      CS->SetAuxDataNames(auxNames); 
+    }
+#endif
   }
 
   // transport and chemistry...
