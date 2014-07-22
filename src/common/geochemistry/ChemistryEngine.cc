@@ -266,7 +266,7 @@ void ChemistryEngine::GetAuxiliaryOutputNames(std::vector<std::string>& aux_name
     snprintf(num_str, 15, "%d", i);
     std::string free_ion = std::string("secondary_free_ion_concentration_") + std::string(num_str);
     aux_names.push_back(free_ion);
-    std::string activity_coeff = std::string("secondary_activity_coeff") + std::string(num_str);
+    std::string activity_coeff = std::string("secondary_activity_coeff_") + std::string(num_str);
     aux_names.push_back(activity_coeff);
   }
 }

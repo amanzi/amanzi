@@ -464,9 +464,19 @@ void Chemistry_State::SetAuxDataNames(const std::vector<std::string>& aux_data_n
   for (size_t i = 0; i < aux_data_names.size(); ++i) {
     std::vector<std::vector<std::string> > subname(1);
     subname[0].push_back("0");
-    S_->RequireField(aux_data_names[i], name_, subname)
-        ->SetMesh(mesh_)->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    if (!S_->HasField(aux_data_names[i])) {
+      Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField(aux_data_names[i], name_, subname);
+      fac->SetMesh(mesh_);
+      fac->SetGhosted(false);
+      fac->SetComponent("cell", AmanziMesh::CELL, 1);
+      Teuchos::RCP<CompositeVector> sac = Teuchos::rcp(new CompositeVector(*fac));
+
+      // Zero the field.
+      S_->GetField(aux_data_names[i], name_)->SetData(sac);
+      S_->GetField(aux_data_names[i], name_)->CreateData();
+      S_->GetFieldData(aux_data_names[i], name_)->PutScalar(0.0);
+      S_->GetField(aux_data_names[i], name_)->set_initialized();
+    }
   }
 }
 
@@ -475,6 +485,8 @@ void Chemistry_State::RequireAuxData_() {
     Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("Auxiliary Data");  
     
     for (Teuchos::Array<std::string>::const_iterator name = names.begin(); name != names.end(); ++name) {
+
+      // Insert the field into the state.
       std::vector<std::vector<std::string> > subname(1);
       subname[0].push_back("0");
       S_->RequireField(*name, name_, subname)

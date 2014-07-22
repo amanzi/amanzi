@@ -144,6 +144,14 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
     Exceptions::amanzi_throw(msg); 
   }
 
+  // now publish auxiliary data to state
+  if (aux_output_ != Teuchos::null) {
+    for (int i=0; i<aux_output_->NumVectors(); ++i) {
+      Teuchos::RCP<Epetra_MultiVector> aux_state_vec = chemistry_state_->aux_data(aux_names_[i]);
+      (*aux_state_vec)[0] = (*aux_output_)[i];
+    }
+  }
+
   chem_initialized_ = true;
 }  // end InitializeChemistry()
 
