@@ -196,7 +196,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
           bc_value[f] = influx;
         } else if (pc >= 0.0) {
           int c = BoundaryFaceGetCell(f);
-          if (u_cell[c] < u_face[f]) {
+          if (u_cell[0][c] < u_face[0][f]) {
             bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
             bc_value[f] = influx;
           } else {
@@ -225,7 +225,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
       int c = BoundaryFaceGetCell(f);
       face_value = BoundaryFaceValue(f, u);
 
-      //if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {
+      if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {   // Model I
     
 	if (face_value < ref_pressure - tol) {
 	  bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
@@ -243,8 +243,58 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
 	    area_seepage += mesh_->face_area(f);
 	  }
 	}
+      } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_FACT) {  // Model II.
+        double I = FLOW_BC_SEEPAGE_FACE_IMPEDANCE;
+        double influx = bc->second * rainfall_factor[f];
+        double pcreg = influx / I;
+        double pcmin = 3 * pcreg / 2;
+        double pcmax = pcreg / 2;
 
-	//}
+        double pc = face_value - ref_pressure;
+        if (pc < pcmin) {
+          bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+          bc_value[f] = influx;
+        } else if (pc >= pcmax) {
+          bc_model[f] = Operators::OPERATOR_BC_FACE_MIXED;
+          bc_value[f] = I * ref_pressure;
+          bc_coef[f] = -I;  // Impedance I should be positive.
+          flag_essential_bc = 1;
+          nseepage++;
+          area_seepage += mesh_->face_area(f);
+        } else {
+          bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+          double f = 2 * (pcreg - pc) / pcreg;
+          double q = (7 - 2 * f - f * f) / 8;
+          bc_value[f] = q * influx; 
+        }
+      } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_AMANZI) {  // Model III.
+        double influx = bc->second * rainfall_factor[f];
+        double pcreg = -FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
+
+        double pc = face_value - ref_pressure;
+        if (pc < pcreg) {
+          bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+          bc_value[f] = influx;
+        } else if (pc >= 0.0) {
+          int c = BoundaryFaceGetCell(f);
+          if (u_cell[0][c] < face_value) {
+            bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+            bc_value[f] = influx;
+          } else {
+            bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
+            bc_value[f] = ref_pressure;
+            flag_essential_bc = 1;
+            nseepage++;
+            area_seepage += mesh_->face_area(f);
+          }
+        } else {
+          bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+          double f = pc / pcreg;
+          double q = f * f * (3 - 2 * f);
+          bc_value[f] = q * influx;
+        }
+      }
+
     }
   }
 
