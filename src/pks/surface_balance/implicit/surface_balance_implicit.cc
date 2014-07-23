@@ -711,8 +711,12 @@ SurfaceBalanceImplicit::UpdatePreconditioner(double t,
 double
 SurfaceBalanceImplicit::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
+  Teuchos::OSTab tab = vo_->getOSTab();
   double err;
   du->NormInf(&err);
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    *vo_->os() << "ENorm (cells) = " << err << std::endl;
+  }
   return err;
 }
 
