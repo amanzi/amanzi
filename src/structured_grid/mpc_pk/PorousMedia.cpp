@@ -7925,7 +7925,6 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
               }
           }
           
-          
           predictDT(u_mac,cur_time);
           if (diffuse_tracers && be_cn_theta_trac==0) {
             Real dt_diff = predictDT_diffusion_explicit(cur_time);
@@ -7989,14 +7988,7 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
   MultiFab RhoSat(grids,ncomps,nGrowEIGEST);
   get_fillpatched_rhosat(t_eval,RhoSat,nGrowEIGEST);
 
-  // Find Ung
-  int Ung = -1;
-  for (int i=0; i<10; ++i) {
-    if (BoxLib::surroundingNodes(BoxLib::grow(grids[0],i),0) == u_macG[0][0].box()) {
-      Ung = i;
-    }
-  }
-  BL_ASSERT(Ung>=0);
+  int Ung = 1;
   int Uidx = 0;
 
   for (MFIter mfi(RhoSat); mfi.isValid(); ++mfi) {
