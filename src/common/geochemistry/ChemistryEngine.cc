@@ -11,6 +11,7 @@ This implements the Alquimia chemistry engine.
 
 #include <iostream>
 #include <cstring>
+#include <cstdio>
 #include <assert.h>
 #include "ChemistryEngine.hh"
 #include "errors.hh"
@@ -263,7 +264,7 @@ void ChemistryEngine::GetAuxiliaryOutputNames(std::vector<std::string>& aux_name
   N = this->NumAqueousComplexes();
   for (int i = 0; i < N; ++i) {
     char num_str[16];
-    snprintf(num_str, 15, "%d", i);
+    std::snprintf(num_str, 15, "%d", i);
     std::string free_ion = std::string("secondary_free_ion_concentration_") + std::string(num_str);
     aux_names.push_back(free_ion);
     std::string activity_coeff = std::string("secondary_activity_coeff_") + std::string(num_str);
