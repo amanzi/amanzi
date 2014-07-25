@@ -218,8 +218,8 @@ SurfaceBalanceImplicit::initialize(const Teuchos::Ptr<State>& S) {
   SEBPhysics::SEB seb;
 
   // initialize snow density, age
-  ASSERT(plist_->isSublist("initial conditions"));
-  Teuchos::ParameterList& ic_list = plist_->sublist("initial conditions");
+  ASSERT(plist_->isSublist("initial condition"));
+  Teuchos::ParameterList& ic_list = plist_->sublist("initial condition");
   if (ic_list.isParameter("restart file")) {
     // initialize density, age from restart file
     S->GetField("snow_density", name_)->Initialize(ic_list);
