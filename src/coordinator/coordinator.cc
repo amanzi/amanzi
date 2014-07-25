@@ -42,6 +42,9 @@ Coordinator::Coordinator(Teuchos::ParameterList& parameter_list,
     S_(S),
     comm_(comm),
     restart_(false) {
+
+  // create and start the timer
+  timer_ = Teuchos::rcp(new Teuchos::Time("wallclock_monitor",true));
   coordinator_init();
 
   vo_ = Teuchos::rcp(new VerboseObject("Coordinator", *parameter_list_));
@@ -368,6 +371,7 @@ void Coordinator::read_parameter_list() {
   min_dt_ = coordinator_list_->get<double>("min time step size", 1.0e-12);
   cycle0_ = coordinator_list_->get<int>("start cycle",0);
   cycle1_ = coordinator_list_->get<int>("end cycle",-1);
+  duration_ = coordinator_list_->get<double>("wallclock duration [hrs]", -1.0);
 
   // restart control
   restart_ = coordinator_list_->isParameter("restart from checkpoint file");
@@ -471,6 +475,9 @@ void Coordinator::checkpoint(double dt, bool force) {
 // timestep loop
 // -----------------------------------------------------------------------------
 void Coordinator::cycle_driver() {
+  // wallclock duration -- in seconds
+  const double duration(duration_ * 3600);
+
   // start at time t = t0 and initialize the state.
   setup();
   initialize();
@@ -487,7 +494,9 @@ void Coordinator::cycle_driver() {
   try {
 #endif
     bool fail = false;
-    while ((S_->time() < t1_) && ((cycle1_ == -1) || (S_->cycle() <= cycle1_))) {
+    while ((S_->time() < t1_) &&
+           ((cycle1_ == -1) || (S_->cycle() <= cycle1_)) &&
+           (duration_ < 0 || timer_->totalElapsedTime(true) < duration)) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "======================================================================"
