@@ -900,7 +900,7 @@ void MPC::cycle_driver() {
                 }
 
                 Amanzi::timer_manager.start("Chemistry PK");
-                CPK->advance(tc_dT, total_component_concentration_star);
+                CPK->Advance(tc_dT, total_component_concentration_star);
 
                 Amanzi::timer_manager.stop("Chemistry PK");
 
@@ -917,7 +917,7 @@ void MPC::cycle_driver() {
               // for each pk
               S->set_intermediate_time(S->intermediate_time() + tc_dT);
               Amanzi::timer_manager.start("Chemistry PK");
-              if (chemistry_enabled) CPK->commit_state(CS, tc_dT);
+              if (chemistry_enabled) CPK->CommitState(CS, tc_dT);
               Amanzi::timer_manager.stop("Chemistry PK");
             }
             success = true;
@@ -993,7 +993,7 @@ void MPC::cycle_driver() {
         Amanzi::timer_manager.stop("Transport PK");
 
         Amanzi::timer_manager.start("Chemistry PK");
-        if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
+        if (chemistry_enabled) CPK->CommitState(CS, mpc_dT);
         Amanzi::timer_manager.stop("Chemistry PK");
       }
 

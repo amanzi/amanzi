@@ -37,13 +37,13 @@ namespace AmanziChemistry {
  **    - chemistry_state will always hold the state at the begining of
  **    the time step. should not (can not?) be changed by chemistry.
  **
- **    - when advance is called, total_component_concentration_star
+ **    - when Advance is called, total_component_concentration_star
  **    holds the value of component concentrations after transport!
  **
  **    - where do we write to when advance state is done? tcc is read
  **    only, do we want to write over the values in tcc_star?
  **
- **    - when commit_state is called, we get a new Chemistry_State
+ **    - when CommitState is called, we get a new Chemistry_State
  **    object which will hold the final info for the end of the time
  **    step. We can use it if we want, to update our internal data.
  **
@@ -503,7 +503,7 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time,
 
 /*******************************************************************************
  **
- ** Alquimia_Chemistry_PK::advance()
+ ** Alquimia_Chemistry_PK::Advance()
  **
  ** Notes:
  **
@@ -522,7 +522,7 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time,
  **
  *******************************************************************************/
 
-void Alquimia_Chemistry_PK::advance(
+void Alquimia_Chemistry_PK::Advance(
     const double& delta_time,
     Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star) 
 {
@@ -585,11 +585,11 @@ void Alquimia_Chemistry_PK::advance(
 // process kernel that it has accepted the
 // state update, thus, the PK should update
 // possible auxilary state variables here
-void Alquimia_Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
-                                         const double& delta_time) 
+void Alquimia_Chemistry_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
+                                        const double& delta_time) 
 {
   saved_time_ += delta_time;
-}  // end commit_state()
+}  // end CommitState()
 
 
 

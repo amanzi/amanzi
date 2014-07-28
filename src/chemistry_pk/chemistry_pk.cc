@@ -42,13 +42,13 @@ namespace AmanziChemistry {
  **    - chemistry_state will always hold the state at the begining of
  **    the time step. should not (can not?) be changed by chemistry.
  **
- **    - when advance is called, total_component_concentration_star
+ **    - when Advance is called, total_component_concentration_star
  **    holds the value of component concentrations after transport!
  **
  **    - where do we write to when advance state is done? tcc is read
  **    only, do we want to write over the values in tcc_star?
  **
- **    - when commit_state is called, we get a new Chemistry_State
+ **    - when CommitState is called, we get a new Chemistry_State
  **    object which will hold the final info for the end of the time
  **    step. We can use it if we want, to update our internal data.
  **
@@ -658,7 +658,7 @@ Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_total_component_concentration
 
 /*******************************************************************************
  **
- ** Chemistry_PK::advance()
+ ** Chemistry_PK::Advance()
  **
  ** Notes:
  **
@@ -677,11 +677,11 @@ Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_total_component_concentration
  **
  *******************************************************************************/
 
-void Chemistry_PK::advance(
+void Chemistry_PK::Advance(
     const double& delta_time,
     Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star) {
   if (debug()) {
-    chem_out->Write(kVerbose, "  Chemistry_PK::advance() : advancing the chemistry process model...\n");
+    chem_out->Write(kVerbose, "  Chemistry_PK::Advance() : advancing the chemistry process model...\n");
   }
 
   current_time_ = saved_time_ + delta_time;
@@ -726,7 +726,7 @@ void Chemistry_PK::advance(
     } catch (ChemistryException& geochem_error) {
       ierr = 1;
 
-      // std::cout << "ERROR: Chemistry_PK::advance() "
+      // std::cout << "ERROR: Chemistry_PK::Advance() "
       //           << "cell[" << cell << "]: " << std::endl;
       // std::cout << geochem_error.what();
       // std::vector<std::string> names;
@@ -758,7 +758,7 @@ void Chemistry_PK::advance(
   int recv(0);
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
-    ChemistryException geochem_error("Error in Chemistry_PK::advance");
+    ChemistryException geochem_error("Error in Chemistry_PK::Advance");
     Exceptions::amanzi_throw(geochem_error); 
   }  
   
@@ -767,11 +767,11 @@ void Chemistry_PK::advance(
 #ifdef GLENN_DEBUG
   if (debug() == kDebugChemistryProcessKernel) {
     std::stringstream message;
-    message << "  Chemistry_PK::advance() : "
+    message << "  Chemistry_PK::Advance() : "
             << "max iterations - " << max_iterations << " " << "  cell id: " << imax << std::endl;
-    message << "  Chemistry_PK::advance() : "
+    message << "  Chemistry_PK::Advance() : "
             << "min iterations - " << min_iterations << " " << "  cell id: " << imin << std::endl;
-    message << "  Chemistry_PK::advance() : "
+    message << "  Chemistry_PK::Advance() : "
             << "ave iterations - " << static_cast<float>(ave_iterations) / num_cells << std::endl;
   }
 #endif
@@ -782,18 +782,18 @@ void Chemistry_PK::advance(
     chem_->DisplayTotalColumnHeaders(display_free_columns_);
     chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
   }
-}  // end advance()
+}  // end Advance()
 
 
 // the MPC will call this function to signal to the
 // process kernel that it has accepted the
 // state update, thus, the PK should update
 // possible auxilary state variables here
-void Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
+void Chemistry_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
                                 const double& delta_time) {
   if (debug() == kDebugChemistryProcessKernel) {
     chem_out->Write(kVerbose,
-                    "  Chemistry_PK::commit_state() : Committing internal state.\n");
+                    "  Chemistry_PK::CommitState() : Committing internal state.\n");
   }
 
   saved_time_ += delta_time;
@@ -804,7 +804,7 @@ void Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
     chem_->DisplayTotalColumnHeaders(display_free_columns_);
     chem_->DisplayTotalColumns(saved_time_, beaker_components_, true);
   }
-}  // end commit_state()
+}  // end CommitState()
 
 
 
