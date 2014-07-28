@@ -79,7 +79,7 @@ void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
 
   // forward time extrapolation (fix me lipnikov@lanl.gov)
   extrapolate_guess = plist.get<bool>("extrapolate initial guess", true);
-  extrapolation_order = plist.get<int>("nonlinear iteration initial guess extrapolation order", 0);
+  extrapolation_order = plist.get<int>("nonlinear iteration initial guess extrapolation order", 1);
   if (extrapolation_order == 0) extrapolate_guess = false;
 
   // solution history object
