@@ -49,10 +49,12 @@ class MatrixMFD_Coupled_TPFA : public MatrixMFD_Coupled {
   virtual int ApplyInverse(const TreeVector& X,
                             TreeVector& Y) const;
 
-  virtual void ComputeSchurComplement(bool dump=false);
   virtual void SymbolicAssembleGlobalMatrices();
 
  protected:
+
+  virtual void AssembleSchur_() const;
+
   // sub-blocks
   Teuchos::RCP<MatrixMFD_TPFA> blockA_TPFA_;
   Teuchos::RCP<MatrixMFD_TPFA> blockB_TPFA_;
