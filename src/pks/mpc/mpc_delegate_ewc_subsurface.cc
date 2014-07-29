@@ -350,7 +350,7 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
             *dcvo->os() << "   above freezing, keep std correction" << std::endl;
           // pass, guesses are good
 
-        } else if (model_->Freezing(T_prev + 0.001, p_prev)) {
+        } else if (model_->Freezing(T_prev, p_prev)) {
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
             *dcvo->os() << "   linearization point past the freezing point, keep std correction" << std::endl;
           // pass, guesses are good
