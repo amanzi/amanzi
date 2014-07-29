@@ -109,7 +109,7 @@ GeometricModel::GeometricModel(const unsigned int dim,
               // Create the region
 
               Amanzi::AmanziGeometry::RegionPtr regptr = 
-                RegionFactory(region_name, region_id, reg_spec, comm);
+                RegionFactory(region_name, region_id, reg_spec, dim, comm);
               
               
               // Add it to the geometric model

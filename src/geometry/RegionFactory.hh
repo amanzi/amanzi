@@ -28,6 +28,7 @@ namespace AmanziGeometry {
 
 RegionPtr RegionFactory(const std::string reg_name, const unsigned int reg_id,
                         const Teuchos::ParameterList& reg_spec,
+                        const int space_dimension,
                         const Epetra_MpiComm *comm);
 
 } // namespace AmanziGeometry

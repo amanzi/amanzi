@@ -45,7 +45,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
 
   /* create an MSTK mesh framework */
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, (Epetra_MpiComm *)comm);
+  GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
