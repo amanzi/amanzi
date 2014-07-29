@@ -86,7 +86,15 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
  protected:
 
  private:
-  double max_time_step_;
+
+  // Timestepping controls.
+  double max_time_step_, prev_time_step_;
+  std::string time_step_control_method_;
+  int num_iterations_for_time_step_cut_, num_steps_before_time_step_increase_;
+  double time_step_cut_factor_, time_step_increase_factor_;
+  int num_iterations_, num_successful_steps_;
+  void ComputeNextTimeStep();
+
   // auxilary state for process kernel
   Teuchos::RCP<Chemistry_State> chemistry_state_;
 

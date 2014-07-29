@@ -60,8 +60,10 @@ void CopyAlquimiaAuxiliaryData(AlquimiaAuxiliaryData* dest, AlquimiaAuxiliaryDat
 
 }
 
-ChemistryEngine::ChemistryEngine(const std::string& engineName, 
+ChemistryEngine::ChemistryEngine(MPI_Comm comm,
+                                 const std::string& engineName, 
                                  const std::string& inputFile):
+  comm_(comm),
   chem_engine_name_(engineName),
   chem_engine_inputfile_(inputFile)
 {
@@ -474,7 +476,7 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
 #endif
 }
 
-void ChemistryEngine::Advance(const double delta_time,
+bool ChemistryEngine::Advance(const double delta_time,
                               const AlquimiaMaterialProperties& mat_props,
                               AlquimiaState& chem_state,
                               AlquimiaAuxiliaryData& aux_data,
@@ -508,25 +510,19 @@ void ChemistryEngine::Advance(const double delta_time,
                            &aux_output,
                            &chem_status_);
 
-// FIXME: Figure out a neutral parallel-friendly way to report errors.
-  assert(chem_status_.error == 0);
+  // Check for errors on this communicator.
+  int send[2], recv[2];
+  send[0] = chem_status_.error;
+  send[1] = chem_status_.num_newton_iterations;
+  MPI_Allreduce(send, recv, 2, MPI_INT, MPI_MAX, comm_);
 
-#if 0
-  if (chem_status_.error != 0)
-    ierr = -1;
+  // Did we succeed?
+  if (recv[0] != kAlquimiaNoError)
+    return false;
 
-  // figure out if any of the processes threw an error, if so all processes will re-throw
-  int recv = 0;
-  mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
-  if (recv != 0) 
-  {
-    msg << "Error in advance of chemical reactions.";
-    Exceptions::amanzi_throw(msg); 
-  }  
-#endif
-
-  // Write down the number of Newton iterations.
-  num_iterations = chem_status_.num_newton_iterations;
+  // Write down the (maximum) number of Newton iterations.
+  num_iterations = recv[1];
+  return true;
 }
 
 const AlquimiaSizes& ChemistryEngine::Sizes() const

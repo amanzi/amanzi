@@ -17,6 +17,7 @@ and to integrate reactions given a chemical configuration.
 #include <string>
 #include <vector>
 #include <map>
+#include <mpi.h>
 
 #include "alquimia_memory.h"
 #include "alquimia_util.h"
@@ -44,7 +45,7 @@ class ChemistryEngine {
  public:
 
   // Constructs a chemistry engine using the given engine (backend) name and input file.
-  ChemistryEngine(const std::string& engineName, const std::string& inputFile);
+  ChemistryEngine(MPI_Comm comm, const std::string& engineName, const std::string& inputFile);
 
   // Destructor.
   ~ChemistryEngine();
@@ -125,8 +126,9 @@ class ChemistryEngine {
 
   // Advances the species represented by the given array of concentrations, replacing old values 
   // with new values. The order of the concentrations in the array matches that of the species names 
-  // returned by GetSpeciesNames.
-  void Advance(const double delta_time,
+  // returned by GetSpeciesNames. Returns true if the advance is successful, 
+  // false if it fails.
+  bool Advance(const double delta_time,
                const AlquimiaMaterialProperties& mat_props,
                AlquimiaState& chem_state,
                AlquimiaAuxiliaryData& aux_data,
@@ -134,6 +136,8 @@ class ChemistryEngine {
                int& num_iterations);
 
  private:
+
+  MPI_Comm comm_;
 
   // Alquimia data structures.
   bool chem_initialized_;

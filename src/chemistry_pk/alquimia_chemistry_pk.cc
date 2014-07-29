@@ -153,6 +153,9 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
   }
 
   chem_initialized_ = true;
+  num_iterations_ = 0;
+  num_successful_steps_ = 0;
+
 }  // end InitializeChemistry()
 
 /*******************************************************************************
@@ -350,7 +353,36 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
 
   // Other settings.
   set_max_time_step(chem_param_list_.get<double>("Max Time Step (s)", 9.9e9));
-
+  prev_time_step_ = chem_param_list_.get<double>("Initial Time Step (s)", 9.9e9);
+  time_step_control_method_ = chem_param_list_.get<std::string>("Time Step Control Method", "fixed");
+  num_iterations_for_time_step_cut_ = chem_param_list_.get<int>("Time Step Cut Threshold", 8);
+  if (num_iterations_for_time_step_cut_ <= 0)
+  {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Invalid Time Step Cut Threshold: " << num_iterations_for_time_step_cut_ << " (must be > 1).\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  num_steps_before_time_step_increase_ = chem_param_list_.get<int>("Time Step Increase Threshold", 4);
+  if (num_steps_before_time_step_increase_ <= 0)
+  {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Invalid Time Step Increase Threshold: " << num_steps_before_time_step_increase_ << " (must be > 1).\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  time_step_cut_factor_ = chem_param_list_.get<double>("Time Step Cut Factor", 2.0);
+  if (time_step_cut_factor_ <= 1.0)
+  {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Invalid Time Step Cut Factor: " << time_step_cut_factor_ << " (must be > 1).\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  time_step_increase_factor_ = chem_param_list_.get<double>("Time Step Increase Factor", 1.2);
+  if (time_step_increase_factor_ <= 1.0)
+  {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Invalid Time Step Increase Factor: " << time_step_increase_factor_ << " (must be > 1).\n";
+    Exceptions::amanzi_throw(msg);
+  }
 }  // end XMLParameters()
 
 void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
@@ -490,15 +522,16 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time,
                             alq_mat_props_, alq_state_, alq_aux_data_);
 
   // Do the reaction.
-  int num_iterations;
-  chem_engine_->Advance(delta_time, alq_mat_props_, alq_state_, 
-                        alq_aux_data_, alq_aux_output_, num_iterations);
+  bool success = chem_engine_->Advance(delta_time, alq_mat_props_, alq_state_, 
+                                       alq_aux_data_, alq_aux_output_, num_iterations_);
+  if (not success) 
+    return -1;
 
   // Move the information back into Amanzi's state, updating the given total concentration vector.
   CopyAlquimiaStateToAmanzi(cellIndex, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_, 
                             chemistry_state_->total_component_concentration());
 
-  return num_iterations;
+  return num_iterations_;
 }
 
 /*******************************************************************************
@@ -529,6 +562,7 @@ void Alquimia_Chemistry_PK::Advance(
   Errors::Message msg;
 
   current_time_ = saved_time_ + delta_time;
+  prev_time_step_ = delta_time;
 
   // shorter name for the state that came out of transport
   Teuchos::RCP<const Epetra_MultiVector> tcc_star =
@@ -548,27 +582,32 @@ void Alquimia_Chemistry_PK::Advance(
   int ierr = 0;
   for (int cell = 0; cell < num_cells; ++cell)
   {
-    int num_iterations = AdvanceSingleCell(delta_time, tcc_star, cell);
-    if (num_iterations > 0)
+    num_iterations_ = AdvanceSingleCell(delta_time, tcc_star, cell);
+    if (num_iterations_ > 0)
     {
       //std::stringstream message;
       //message << "--- " << cell << "\n";
       //beaker_components_.Display(message.str().c_str());
-      if (max_iterations < num_iterations) 
+      if (max_iterations < num_iterations_) 
       {
-        max_iterations = num_iterations;
+        max_iterations = num_iterations_;
         imax = cell;
       }
-      if (min_iterations > num_iterations) 
+      if (min_iterations > num_iterations_) 
       {
-        min_iterations = num_iterations;
+        min_iterations = num_iterations_;
         imin = cell;
       }
-      ave_iterations += num_iterations;
+      ave_iterations += num_iterations_;
+      num_successful_steps_++;
     } 
     else
     {
-      ierr = 1;
+      // Convergence failure. Compute the next time step size.
+      num_successful_steps_ = 0;
+      ComputeNextTimeStep();
+      msg << "Failure in Alquimia_Chemistry_PK::Advance";
+      Exceptions::amanzi_throw(msg); 
     }
   }
   // now publish auxiliary data to state
@@ -580,6 +619,16 @@ void Alquimia_Chemistry_PK::Advance(
   }
 }  // end advance()
 
+void Alquimia_Chemistry_PK::ComputeNextTimeStep()
+{
+  if (time_step_control_method_ == "simple")
+  {
+    if ((num_successful_steps_ == 0) || (num_iterations_ >= num_iterations_for_time_step_cut_))
+      max_time_step_ = prev_time_step_ / time_step_cut_factor_;
+    else if (num_successful_steps_ >= num_steps_before_time_step_increase_)
+      max_time_step_ = prev_time_step_ * time_step_increase_factor_;
+  }
+}
 
 // the MPC will call this function to signal to the
 // process kernel that it has accepted the

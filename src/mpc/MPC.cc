@@ -143,7 +143,8 @@ void MPC::mpc_init() {
       }
       std::string chemEngineName = chemistry_parameter_list.get<std::string>("Engine");
       std::string chemEngineInputFile = chemistry_parameter_list.get<std::string>("Engine Input File");
-      chem_engine = Teuchos::rcp(new AmanziChemistry::ChemistryEngine(chemEngineName, chemEngineInputFile));
+      MPI_Comm comm = mesh_maps->get_comm()->Comm();
+      chem_engine = Teuchos::rcp(new AmanziChemistry::ChemistryEngine(comm, chemEngineName, chemEngineInputFile));
 
       // Overwrite the component names with the primary species names from the engine.
       chem_engine->GetPrimarySpeciesNames(component_names);
