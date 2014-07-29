@@ -95,7 +95,9 @@ private:
   // observations
   Teuchos::RCP<UnstructuredObservations> observations_;
 
-  // timer
+  // timers
+  Teuchos::RCP<Teuchos::Time> setup_timer_;
+  Teuchos::RCP<Teuchos::Time> cycle_timer_;
   Teuchos::RCP<Teuchos::Time> timer_;
   double duration_;
   
