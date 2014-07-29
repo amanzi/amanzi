@@ -184,7 +184,7 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
     knc->UpdateValues(solution);
 
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                        .get<Teuchos::ParameterList>("diffusion operator");
+                                        .get<Teuchos::ParameterList>("diffusion operator Sff");
     Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist, bc));
 
     int schema_dofs = op2->schema_dofs();

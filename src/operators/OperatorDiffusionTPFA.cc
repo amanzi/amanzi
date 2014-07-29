@@ -310,19 +310,21 @@ void OperatorDiffusionTPFA::UpdateFlux(
   }
 }
 
-double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(int f, const CompositeVector& u){
 
+/* ******************************************************************
+* TBW.
+****************************************************************** */
+double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(int f, const CompositeVector& u)
+{
   if (u.HasComponent("face")) {
     const Epetra_MultiVector& u_face = *u.ViewComponent("face");
     return u_face[f][0];
-  }
-  else {
+  } else {
     const std::vector<int>& bc_model = bc_->bc_model();
     const std::vector<double>& bc_value = bc_->bc_value();
     if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET){
       return bc_value[f];
-    }
-    else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN){
+    } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN){
       AmanziMesh::Entity_ID_List cells, faces;
       std::vector<int> dirs;
       const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");      
@@ -343,8 +345,7 @@ double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(int f, const CompositeVect
 	  return ub_val;	  
 	}
       }
-    }
-    else {
+    } else {
       const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -352,7 +353,6 @@ double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(int f, const CompositeVect
       return u_cell[0][c];
     }
   }
-
 }
 
 

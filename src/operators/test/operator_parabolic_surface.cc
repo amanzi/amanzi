@@ -36,7 +36,7 @@
 
 
 /* *****************************************************************
-* This test replaves tensor and boundary conditions by continuous
+* This test replaces tensor and boundary conditions by continuous
 * functions. This is a prototype for future solvers.
 * **************************************************************** */
 TEST(LAPLACE_BELTRAMI_CLOSED) {
@@ -125,7 +125,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
 
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("diffusion operator");
+                                      .get<Teuchos::ParameterList>("diffusion operator Sff");
   Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist, bc));
   int schema_dofs = op2->schema_dofs();
   int schema_prec_dofs = op2->schema_prec_dofs();

@@ -325,7 +325,6 @@ void OperatorDiffusion::UpdateMatricesTPFA_()
   T->GatherGhostedToMaster();
  
   // populate the global matrix
-
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
@@ -356,9 +355,9 @@ void OperatorDiffusion::UpdateMatricesTPFA_()
 ****************************************************************** */
 void OperatorDiffusion::AssembleMatrix(int schema)
 {
-  if (special_assembling_) {
-    // We do not need it since preconditoner creates independent matrix.
-    // AssembleMatrixSpecial_();
+  if (special_assembling_ != 0) {
+    // We do not need it since preconditoner creates a special matrix.
+    // AssembleMatrixSpecialSff_();
   } else {
     Operator::AssembleMatrix(schema);
   }
@@ -418,8 +417,10 @@ void OperatorDiffusion::ModifyMatrices(const CompositeVector& u)
 int OperatorDiffusion::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
   int ierr;
-  if (special_assembling_) {
-    ierr = ApplyInverseSpecial_(X, Y);
+  if (special_assembling_ == 1) {
+    ierr = ApplyInverseSpecialSff_(X, Y);
+  } else if (special_assembling_ == 2) {
+    ierr = ApplyInverseSpecialScc_(X, Y);
   } else {
     ierr = Operator::ApplyInverse(X, Y);
   }
@@ -431,7 +432,7 @@ int OperatorDiffusion::ApplyInverse(const CompositeVector& X, CompositeVector& Y
 * The cell-based and face-based d.o.f. are packed together into 
 * the X and Y vectors.
 ****************************************************************** */
-int OperatorDiffusion::ApplyInverseSpecial_(const CompositeVector& X, CompositeVector& Y) const
+int OperatorDiffusion::ApplyInverseSpecialSff_(const CompositeVector& X, CompositeVector& Y) const
 {
   // Y = X;
   // return 0;
@@ -506,13 +507,106 @@ int OperatorDiffusion::ApplyInverseSpecial_(const CompositeVector& X, CompositeV
 
 
 /* ******************************************************************
+* The cell-based and face-based d.o.f. are packed together into 
+* the X and Y vectors.
+****************************************************************** */
+int OperatorDiffusion::ApplyInverseSpecialScc_(const CompositeVector& X, CompositeVector& Y) const
+{
+  // Y = X;
+  // return 0;
+
+  // find the block of matrices
+  int m, nblocks = blocks_.size();
+  for (int nb = 0; nb < nblocks; nb++) {
+    int schema = blocks_schema_[nb];
+    if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
+      m = nb;
+      break;
+    }
+  }
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+
+  // apply preconditioner inversion
+  const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
+  const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
+
+  Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
+  Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
+
+  // Temporary cell and face vectors.
+  CompositeVector T(X);
+  Epetra_MultiVector& Tf = *T.ViewComponent("face", true);
+  Epetra_MultiVector& Tc = *T.ViewComponent("cell");
+
+  // populate Aff
+  AmanziMesh::Entity_ID_List faces;
+
+  Epetra_MultiVector& diag_face = *diagonal_->ViewComponent("face", true);
+  Tf = diag_face;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    WhetStone::DenseMatrix& Acell = matrix[c];
+   
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      Tf[0][f] += Acell(n, n);
+    }
+  }
+
+  // FORWARD ELIMINATION:  Tc = Xc - Acf inv(Aff) Xf
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    WhetStone::DenseMatrix& Acell = matrix[c];
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      Tc[0][c] -= Acell(n, nfaces) / Tf[0][f] * Xf[0][f];
+    }
+  }
+
+  // Solve the Schur complement system Scc * Yc = Tc.
+  preconditioner_->ApplyInverse(Tc, Yc);
+
+  // BACKWARD SUBSTITUTION:  Yf = inv(Aff) (Xf - Afc Yc)
+  Yf = Xf;
+  for (int f = nfaces_owned; f < nfaces_wghost; f++) {
+    Yf[0][f] = 0.0;
+  }
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    WhetStone::DenseMatrix& Acell = matrix[c];
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      Yf[0][f] -= Acell(nfaces, n) * Yc[0][c];
+    }
+  }
+
+  Y.GatherGhostedToMaster("face", Add);
+  for (int f = 0; f < nfaces_owned; f++) Yf[0][f] /= Tf[0][f];
+
+  return 0;
+}
+
+
+/* ******************************************************************
 * Initialization of the preconditioner                                                 
 ****************************************************************** */
 void OperatorDiffusion::InitPreconditioner(
     const std::string& prec_name, const Teuchos::ParameterList& plist)
 {
-  if (special_assembling_) { 
-    InitPreconditionerSpecialCRS_(prec_name, plist);
+  if (special_assembling_ == 1) { 
+    InitPreconditionerSpecialSff_(prec_name, plist);
+  } else if (special_assembling_ == 2) { 
+    InitPreconditionerSpecialScc_(prec_name, plist);
   } else {
     Operator::InitPreconditioner(prec_name, plist);
   }
@@ -526,9 +620,9 @@ void OperatorDiffusion::InitPreconditioner(
 
 /* ******************************************************************
 * Routine assembles the Schur complement for face-based degrees 
-* of freedom.
+* of freedom, Sff = Aff - Afc Acc^{-1} Acf. 
 ****************************************************************** */
-void OperatorDiffusion::InitPreconditionerSpecialCRS_(
+void OperatorDiffusion::InitPreconditionerSpecialSff_(
     const std::string& prec_name, const Teuchos::ParameterList& plist)
 {
   const std::vector<int>& bc_model = bc_->bc_model();
@@ -592,6 +686,105 @@ void OperatorDiffusion::InitPreconditionerSpecialCRS_(
         A_->SumIntoMyValues(lid[n], nfaces, values, lid);
       } else {
         A_off_->SumIntoMyValues(lid[n] - ndof, nfaces, values, lid);
+      }
+    }
+  }
+
+  // Scatter off proc to their locations
+  A_->Export(*A_off_, *exporter_, Add);
+      
+  const Epetra_Map& map = A_->RowMap();
+  A_->FillComplete(map, map);
+
+  // redefine (if necessary) preconditioner since only 
+  // one preconditioner is allowed.
+  AmanziPreconditioners::PreconditionerFactory factory;
+  preconditioner_ = factory.Create(prec_name, plist);
+  preconditioner_->Update(A_);
+}
+
+
+/* ******************************************************************
+* Routine assembles the Schur complement for face-based degrees 
+* of freedom, Scc = Acc - Acf Aff^{-1} Afc. 
+****************************************************************** */
+void OperatorDiffusion::InitPreconditionerSpecialScc_(
+    const std::string& prec_name, const Teuchos::ParameterList& plist)
+{
+  // find location of matrix blocks
+  int schema_dofs = OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL;
+  int m(0), nblocks = blocks_.size();
+  for (int nb = 0; nb < nblocks; nb++) {
+    int schema = blocks_schema_[nb];
+    if (schema & schema_dofs) {
+      m = nb;
+      break;
+    }
+  }
+
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+
+  // create a cell-based stiffness matrix from A.
+  A_->PutScalar(0.0);
+  A_off_->PutScalar(0.0);
+  int ndof = A_->NumMyRows();
+
+  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+
+  // populate Aff
+  CompositeVectorSpace cv_space;
+  cv_space.SetMesh(mesh_);
+  cv_space.SetGhosted(true);
+  cv_space.SetComponent("face", AmanziMesh::FACE, 1);
+
+  Teuchos::RCP<CompositeVector> T = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
+  Epetra_MultiVector& Ttmp = *T->ViewComponent("face", true);
+
+  AmanziMesh::Entity_ID_List cells, faces;
+  Epetra_MultiVector& diag_face = *diagonal_->ViewComponent("face", true);
+
+  Ttmp = diag_face;
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    WhetStone::DenseMatrix& Acell = matrix[c];
+   
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      Ttmp[0][f] += Acell(n, n);
+    }
+  }
+  T->GatherGhostedToMaster();
+ 
+  // populate the global matrix
+  int lid[2], gid[2];
+  double values[2];
+
+  Epetra_MultiVector& diag_cell = *diagonal_->ViewComponent("cell");
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    for (int n = 0; n < ncells; n++) {
+      lid[n] = cells[n];
+      gid[n] = cmap_wghost.GID(cells[n]);
+    }
+
+    double coef = 1.0 / Ttmp[0][f];
+    for (int n = 0; n < ncells; n++) {
+      if (n == 0) {
+        values[0] = coef + diag_cell[0][cells[0]];
+        values[1] = -coef;
+      } else {
+        values[0] = -coef;
+        values[1] = coef + diag_cell[0][cells[1]];
+      }
+      if (lid[n] < ndof) {
+        A_->SumIntoMyValues(lid[n], ncells, values, lid);
+      } else {
+        A_off_->SumIntoMyValues(lid[n] - ndof, ncells, values, lid);
       }
     }
   }
@@ -775,8 +968,11 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
     schema_prec_dofs_ = schema_dofs_;
   }
 
-  special_assembling_ = false;
-  if (schema_prec_dofs_ != schema_dofs_) special_assembling_ = true;
+  special_assembling_ = 0;
+  if (schema_prec_dofs_ != schema_dofs_) {
+    if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_FACE) special_assembling_ = 1;
+    if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) special_assembling_ = 2;
+  }
 
   // Define base for assembling.
   std::string primary = plist.get<std::string>("discretization primary");
@@ -841,19 +1037,21 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   }
 }
 
-double OperatorDiffusion::DeriveBoundaryFaceValue(int f, const CompositeVector& u){
 
+/* ******************************************************************
+* TBW.
+****************************************************************** */
+double OperatorDiffusion::DeriveBoundaryFaceValue(int f, const CompositeVector& u)
+{
   if (u.HasComponent("face")) {
     const Epetra_MultiVector& u_face = *u.ViewComponent("face");
     return u_face[f][0];
-  }
-  else {
+  } else {
     const std::vector<int>& bc_model = bc_->bc_model();
     const std::vector<double>& bc_value = bc_->bc_value();
     if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET){
       return bc_value[f];
-    }
-    else {
+    } else {
       const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -861,7 +1059,6 @@ double OperatorDiffusion::DeriveBoundaryFaceValue(int f, const CompositeVector& 
       return u_cell[0][c];
     }
   }
-
 }
 
 }  // namespace Operators

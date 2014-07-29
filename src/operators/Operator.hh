@@ -74,7 +74,7 @@ class Operator {
   virtual int Apply(const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
-  virtual void SymbolicAssembleMatrix(int schema);
+  virtual void SymbolicAssembleMatrix(int schema, int nonstandard = 0);
   virtual void AssembleMatrix(int schema);
 
   virtual void ApplyBCs(); 
