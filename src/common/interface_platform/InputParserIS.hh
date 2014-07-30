@@ -55,10 +55,13 @@ static Teuchos::Array<std::string> comp_names;
 static std::map<std::string, int> comp_names_map;
 static Teuchos::Array<std::string> mineral_names_;
 static Teuchos::Array<std::string> sorption_site_names_;
+
+static double constant_density;
+static int spatial_dimension_;  
+static bool need_dispersion_;
+
 static std::string verbosity_level("low");
 static int numproc_;
-static int spatial_dimension_;  
 
-static bool need_dispersion_;
 }
 }

@@ -1375,11 +1375,11 @@ The following boundary condition parameterizations are supported:
 * [SU] `"BC: Flux`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] 
   (see the note below) and one of the following: 
 
-    * []  `"Inward Volumetric Flux`" [Array(double)], 
+    * [U]  `"Inward Volumetric Flux`" [Array(double)], 
 
     * [SU] `"Inward Mass Flux`" [Array(double)], 
 
-    * []  `"Outward Volumetric Flux`" [Array(double)], or
+    * [U]  `"Outward Volumetric Flux`" [Array(double)], or
 
     * [SU] `"Outward Mass Flux`" [Array(double)]. 
 

@@ -1336,11 +1336,11 @@ Teuchos::ParameterList CreateSolversList(Teuchos::ParameterList* plist) {
 
 
 /* ******************************************************************
-* Empty
+* This routine has to be called after routine CreateStateList so that
+* constant density will be properly initialized.
 ****************************************************************** */
 Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList flw_list;
-
 
   if (plist->isSublist("Execution Control")) {
     if (plist->sublist("Execution Control").isParameter("Flow Model")) {
@@ -2234,21 +2234,19 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
         Teuchos::Array<double> times = bc_flux.get<Teuchos::Array<double> >("Times");
         Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time Functions");
 
-        if (! (bc_flux.isParameter("Inward Mass Flux") || bc_flux.isParameter("Outward Mass Flux"))  )  {
-          // we can only handle mass fluxes right now
-          Exceptions::amanzi_throw(Errors::Message("In BC: Flux we can only handle Mass Flux"));
-        }
-
         Teuchos::Array<double> flux;
 
         if (bc_flux.isParameter("Inward Mass Flux")) {
           flux = bc_flux.get<Teuchos::Array<double> >("Inward Mass Flux");
+          for (int i = 0; i < flux.size(); i++) flux[i] *= -1;
         } else if (bc_flux.isParameter("Outward Mass Flux")) {
           flux = bc_flux.get<Teuchos::Array<double> >("Outward Mass Flux");
-        }
-
-        if (bc_flux.isParameter("Inward Mass Flux")) {
-          for (int i = 0; i < flux.size(); i++) flux[i] = - flux[i];
+        } else if (bc_flux.isParameter("Inward Volumetric Flux")) {
+          flux = bc_flux.get<Teuchos::Array<double> >("Inward Volumetric Flux");
+          for (int i = 0; i < flux.size(); i++) flux[i] *= -constant_density;
+        } else if (bc_flux.isParameter("Outward Volumetric Flux")) {
+          flux = bc_flux.get<Teuchos::Array<double> >("Outward Volumetric Flux");
+          for (int i = 0; i < flux.size(); i++) flux[i] *= constant_density;
         }
 
         std::stringstream ss;
@@ -2431,15 +2429,16 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
         Teuchos::Array<double> times = bc_flux.get<Teuchos::Array<double> >("Times");
         Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time Functions");
 
-        if (! bc_flux.isParameter("Inward Mass Flux") )  {
-          // we can only handle mass fluxes right now
-          Exceptions::amanzi_throw(Errors::Message("In BC: Seepage we can only handle Inward Mass Flux"));
-        }
-
         Teuchos::Array<double> flux;
 
-        flux = bc_flux.get<Teuchos::Array<double> >("Inward Mass Flux");
-        for (int i = 0; i < flux.size(); i++) flux[i] = - flux[i];
+        if (bc_flux.isParameter("Inward Volumetric Flux")) {
+          flux = bc_flux.get<Teuchos::Array<double> >("Inward Mass Flux");
+          for (int i = 0; i < flux.size(); i++) flux[i] *= -1;
+        } else if (bc_flux.isParameter("Inward Volumetric Flux")) {
+          for (int i = 0; i < flux.size(); i++) flux[i] *= -constant_density;
+        } else {
+          Exceptions::amanzi_throw(Errors::Message("In \"BC: Seepage\" we can only handle \"Inward Mass Flux\" or \"Inward Volumetric Flux\""));
+        }
 
         std::stringstream ss;
         ss << "BC " << bc_counter++;
@@ -2513,6 +2512,8 @@ Teuchos::ParameterList CreateStateList(Teuchos::ParameterList* plist) {
       .set<std::string>("component","cell")
       .sublist("function").sublist("function-constant")
       .set<double>("value", density);
+
+  constant_density = density;  // save it for PKs
   //
   // --- region specific initial conditions from material properties
   //
@@ -2959,7 +2960,7 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
       chem_list.set<Teuchos::Array<std::string> >("Sorption Sites", sorption_site_names_);
     }
 
-    chem_list.set<int>("Number of component concentrations", comp_names.size() );
+    chem_list.set<int>("Number of component concentrations", comp_names.size());
 
     //
     // --- region specific initial conditions
