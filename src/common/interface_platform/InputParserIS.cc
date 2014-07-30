@@ -21,34 +21,10 @@
 namespace Amanzi {
 namespace AmanziInput {
 
-
-/**
- * /author   Nathan Barnett
- * /fn       compareEpsilon
- * /brief    When handed an element in an array and an epsilon value,
- *           compares the absolute difference between the two values
- * /returns  boolean - true if out of epsilon value
- */
-template <typename T>
-bool compareEpsilon(T& first, T eps) {
-  return fabs(first-*(&first-1))<eps;
-}
-
-
-template <typename T>
-T amanzi_get(Teuchos::ParameterList& plist, const std::string &name) {
-  if (plist.isParameter(name)) {
-    return plist.get<T>(name);
-  } else {
-    Exceptions::amanzi_throw(Errors::Message("Trying to read required parameter '" + name + "'  "));
-  }
-}
-
-
 /* ******************************************************************
 * Empty
 ****************************************************************** */
-Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
+Teuchos::ParameterList Translate(Teuchos::ParameterList* plist, int numproc) {
   numproc_ = numproc;
 
   // first make sure the version is correct
@@ -176,7 +152,7 @@ Teuchos::ParameterList get_Cycle_Macro(const std::string& macro_name, Teuchos::P
 Teuchos::Array<std::string> get_Variable_Macro(Teuchos::Array<std::string>& macro_name, Teuchos::ParameterList* plist) {
   std::vector<std::string> vars;
 
-  for (int i=0; i<macro_name.size(); i++) {
+  for (int i = 0; i < macro_name.size(); i++) {
     if (plist->sublist("Output").sublist("Variable Macros").isSublist(macro_name[i])) {
       Teuchos::ParameterList& macro_list = plist->sublist("Output").sublist("Variable Macros").sublist(macro_name[i]);
 
@@ -204,7 +180,7 @@ Teuchos::Array<std::string> get_Variable_Macro(Teuchos::Array<std::string>& macr
       if (macro_list.isParameter("Solute")) {
         std::string macro_solute = macro_list.get<std::string>("Solute");
         if (macro_solute == "All") {
-          for ( int i=0; i<comp_names.size(); i++) vars.push_back(comp_names[i]);
+          for (int i = 0; i<comp_names.size(); i++) vars.push_back(comp_names[i]);
         } else {
           vars.push_back(macro_solute);
         }
@@ -218,7 +194,7 @@ Teuchos::Array<std::string> get_Variable_Macro(Teuchos::Array<std::string>& macr
 
   Teuchos::Array<std::string> ret_vars(vars.size());
 
-  for (int i=0; i<vars.size(); i++) {
+  for (int i = 0; i < vars.size(); i++) {
     ret_vars[i] = vars[i];
   }
 
@@ -227,8 +203,8 @@ Teuchos::Array<std::string> get_Variable_Macro(Teuchos::Array<std::string>& macr
 
 
 /* ******************************************************************
- * Empty
- ****************************************************************** */
+* Empty
+****************************************************************** */
 void init_global_info(Teuchos::ParameterList* plist) {
 
   // spatial dimension
@@ -323,7 +299,7 @@ void init_global_info(Teuchos::ParameterList* plist) {
 
   if (comp_names.size() > 0) {
     // create a map for the components
-    for (int i=0; i<comp_names.size(); i++) {
+    for (int i = 0; i < comp_names.size(); i++) {
       comp_names_map[comp_names[i]] = i;
     }
   }
@@ -458,7 +434,7 @@ Teuchos::ParameterList CreateVisualizationDataList(Teuchos::ParameterList* plist
        	cycle_macros = vis_list.get<Teuchos::Array<std::string> >("Cycle Macros").toVector();
 
 	int j(0);
-        for (int i=0; i < cycle_macros.size(); i++) {
+        for (int i = 0; i < cycle_macros.size(); i++) {
           //Teuchos::Array<int> cm = get_Cycle_Macro(cycle_macro,plist);
           Teuchos::ParameterList cycle_macro_list = get_Cycle_Macro(cycle_macros[i], plist);
           if (cycle_macro_list.isParameter("Start_Period_Stop")) {
@@ -503,7 +479,7 @@ Teuchos::ParameterList CreateVisualizationDataList(Teuchos::ParameterList* plist
         time_macros = vis_list.get<Teuchos::Array<std::string> >("Time Macros").toVector();
 
         int j(0);
-        for (int i=0; i < time_macros.size(); i++) {
+        for (int i = 0; i < time_macros.size(); i++) {
           // Create a local parameter to store the time macro
           Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macros[i], plist);
           if (time_macro_list.isParameter("Start_Period_Stop")) {
@@ -715,9 +691,9 @@ Teuchos::ParameterList TranslateMeshList(Teuchos::ParameterList* plist) {
         std::string format = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("Format");
         if (format == "Exodus II") {
           // process the file name to replace .exo with .par in the case of a parallel run
-          Teuchos::ParameterList& fn_list =  msh_list.sublist("Unstructured").sublist("Read Mesh File");
+          Teuchos::ParameterList& fn_list = msh_list.sublist("Unstructured").sublist("Read Mesh File");
           fn_list.set<std::string>("Format", "Exodus II");
-          std::string file =  plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("File");
+          std::string file = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("File");
           std::string suffix(file.substr(file.size()-4, 4));
 
           if (suffix != ".exo") {
@@ -1251,7 +1227,7 @@ Teuchos::ParameterList CreateTransportList(Teuchos::ParameterList* plist) {
                           Teuchos::ParameterList &bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
                           bcfn.set<Teuchos::Array<double> >("y values", values);
                           bcfn.set<Teuchos::Array<double> >("x values", times);
-                          bcfn.set<Teuchos::Array<std::string> >("forms", translate_forms(time_fns));
+                          bcfn.set<Teuchos::Array<std::string> >("forms", TranslateForms(time_fns));
                         }
                       }
                     }
@@ -1273,7 +1249,7 @@ Teuchos::ParameterList CreateTransportList(Teuchos::ParameterList* plist) {
 /* ******************************************************************
 * Empty
 ****************************************************************** */
-Teuchos::Array<std::string> translate_forms(Teuchos::Array<std::string>& forms) {
+Teuchos::Array<std::string> TranslateForms(Teuchos::Array<std::string>& forms) {
   Teuchos::Array<std::string>  target_forms;
   for (Teuchos::Array<std::string>::const_iterator i = forms.begin();
        i != forms.end(); ++i) {
@@ -1567,7 +1543,7 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
           sti_bdf1.set<bool>("extrapolate initial guess", true);
 
           if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
-            Teuchos::ParameterList& ncp_list =  plist->sublist("Execution Control").sublist("Numerical Control Parameters");
+            Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
             if (ncp_list.isSublist("Unstructured Algorithm")) {
               Teuchos::ParameterList& ncpu_list = ncp_list.sublist("Unstructured Algorithm");
               if (ncpu_list.isSublist("Steady-State Implicit Time Integration")) {
@@ -1797,7 +1773,7 @@ Teuchos::ParameterList CreateFlowSrcList(Teuchos::ParameterList* plist)
         src_sub_out_fn.sublist("function-constant").set<double>("value",values[0]);
       } else if (values.size() > 1) {
         Teuchos::Array<double> times = src_fn.get<Teuchos::Array<double> >("Times");
-        Teuchos::Array<std::string> time_fns =  src_fn.get<Teuchos::Array<std::string> >("Time Functions");
+        Teuchos::Array<std::string> time_fns = src_fn.get<Teuchos::Array<std::string> >("Time Functions");
 
         Teuchos::ParameterList& ssofn = src_sub_out_fn.sublist("function-tabular");
 
@@ -1806,7 +1782,7 @@ Teuchos::ParameterList CreateFlowSrcList(Teuchos::ParameterList* plist)
 
         Teuchos::Array<std::string> forms_(time_fns.size());
 
-        for (int i=0; i<time_fns.size(); i++) {
+        for (int i = 0; i < time_fns.size(); i++) {
           if (time_fns[i] == "Linear") {
             forms_[i] = "linear";
           } else if (time_fns[i] == "Constant") {
@@ -1887,7 +1863,7 @@ Teuchos::ParameterList CreateTransportSrcList(Teuchos::ParameterList* plist)
                 src_sub_out_fn.sublist("function-constant").set<double>("value",values[0]);
               } else if (values.size() > 1) {
                 Teuchos::Array<double> times = src_fn.get<Teuchos::Array<double> >("Times");
-                Teuchos::Array<std::string> time_fns =  src_fn.get<Teuchos::Array<std::string> >("Time Functions");
+                Teuchos::Array<std::string> time_fns = src_fn.get<Teuchos::Array<std::string> >("Time Functions");
 
                 Teuchos::ParameterList& ssofn = src_sub_out_fn.sublist("function-tabular");
 
@@ -1896,7 +1872,7 @@ Teuchos::ParameterList CreateTransportSrcList(Teuchos::ParameterList* plist)
 
                 Teuchos::Array<std::string> forms_(time_fns.size());
 
-                for (int i=0; i<time_fns.size(); i++) {
+                for (int i = 0; i < time_fns.size(); i++) {
                   if (time_fns[i] == "Linear") {
                     forms_[i] = "linear";
                   } else if (time_fns[i] == "Constant") {
@@ -1928,13 +1904,12 @@ Teuchos::ParameterList CreateWRM_List(Teuchos::ParameterList* plist)
   Teuchos::ParameterList wrm_list;
 
   // loop through the material properties list and extract the water retention model info
-
   Teuchos::ParameterList& matprop_list = plist->sublist("Material Properties");
 
   int counter = 0;
   for (Teuchos::ParameterList::ConstIterator i = matprop_list.begin(); i != matprop_list.end(); i++) {
     // get the wrm parameters
-    Teuchos::ParameterList& cp_list =  matprop_list.sublist(i->first);
+    Teuchos::ParameterList& cp_list = matprop_list.sublist(i->first);
     // we can have either van Genuchten or Brooks Corey
     if (cp_list.isSublist("Capillary Pressure: van Genuchten")) {
       Teuchos::ParameterList vG_list = cp_list.sublist("Capillary Pressure: van Genuchten");
@@ -1989,14 +1964,14 @@ Teuchos::ParameterList CreateWRM_List(Teuchos::ParameterList* plist)
       }
 
       double lambda = BC_list.get<double>("lambda");
-      double alpha  = BC_list.get<double>("alpha");
+      double alpha = BC_list.get<double>("alpha");
       double ell;
       if (rel_perm == "Mualem") {
         ell = BC_list.get<double>("ell",ELL_MUALEM);
       } else if (rel_perm == "Burdine") {
         ell = BC_list.get<double>("ell",ELL_BURDINE);
       }
-      double Sr          = BC_list.get<double>("Sr");
+      double Sr = BC_list.get<double>("Sr");
       double krel_smooth = BC_list.get<double>("krel smoothing interval",0.0);
 
       if (krel_smooth < 0.0) {
@@ -2273,7 +2248,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
         }
 
         if (bc_flux.isParameter("Inward Mass Flux")) {
-          for (int i=0; i<flux.size(); i++) flux[i] = - flux[i];
+          for (int i = 0; i < flux.size(); i++) flux[i] = - flux[i];
         }
 
         std::stringstream ss;
@@ -2295,7 +2270,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
 
           std::vector<std::string> forms_(time_fns.size());
 
-          for (int i=0; i<time_fns.size(); i++) {
+          for (int i = 0; i < time_fns.size(); i++) {
 
             if (time_fns[i] == "Linear") {
               forms_[i] = "linear";
@@ -2334,7 +2309,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
 
           std::vector<std::string> forms_(time_fns.size());
 
-          for (int i=0; i<time_fns.size(); i++)
+          for (int i = 0; i < time_fns.size(); i++)
             if (time_fns[i] == "Linear") {
               forms_[i] = "linear";
             } else if (time_fns[i] == "Constant") {
@@ -2375,13 +2350,42 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
         tbcs.set<Teuchos::Array<double> >("x0", refcoord_with_time);
         tbcs.set<Teuchos::Array<double> >("gradient", grad_with_time);
 
+      } else if (bc.isSublist("BC: Linear Hydrostatic")) {
+        Teuchos::ParameterList& bc_dir = bc.sublist("BC: Linear Hydrostatic");
+        Teuchos::Array<double> grad = bc_dir.get<Teuchos::Array<double> >("Gradient");
+        Teuchos::Array<double> refcoord = bc_dir.get<Teuchos::Array<double> >("Reference Coordinate");
+        double refval = bc_dir.get<double>("Reference Water Table Height");
+
+        Teuchos::Array<double> grad_with_time(grad.size() + 1);
+        grad_with_time[0] = 0.0;
+        for (int j = 0; j != grad.size(); ++j) {
+          grad_with_time[j + 1] = grad[j];
+        }
+
+        Teuchos::Array<double> refcoord_with_time(refcoord.size() + 1);
+        refcoord_with_time[0] = 0.0;
+        for (int j = 0; j != refcoord.size(); ++j) {
+          refcoord_with_time[j + 1] = refcoord[j];
+        }
+
+        std::stringstream ss;
+        ss << "BC " << bc_counter++;
+
+        Teuchos::ParameterList& tbc = ssf_list.sublist("static head").sublist(ss.str());
+        tbc.set<Teuchos::Array<std::string> >("regions", regions);
+
+        Teuchos::ParameterList& tbcs = tbc.sublist("water table elevation").sublist("function-linear");
+        tbcs.set<double>("y0", refval);
+        tbcs.set<Teuchos::Array<double> >("x0", refcoord_with_time);
+        tbcs.set<Teuchos::Array<double> >("gradient", grad_with_time);
+
       } else if (bc.isSublist("BC: Hydrostatic")) {
         Teuchos::ParameterList& bc_dir = bc.sublist("BC: Hydrostatic");
 
-        Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");
+        Teuchos::Array<double> times = bc_dir.get<Teuchos::Array<double> >("Times");
         Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
-        Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Water Table Height");
-        std::string                 coordsys = bc_dir.get<std::string>("Coordinate System",BCHYDRST_COORD);
+        Teuchos::Array<double> values = bc_dir.get<Teuchos::Array<double> >("Water Table Height");
+        std::string coordsys = bc_dir.get<std::string>("Coordinate System", BCHYDRST_COORD);
 
         std::stringstream ss;
         ss << "BC " << bc_counter++;
@@ -2410,7 +2414,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
 
           std::vector<std::string> forms_(time_fns.size());
 
-          for (int i=0; i<time_fns.size(); i++)
+          for (int i = 0; i < time_fns.size(); i++)
             if (time_fns[i] == "Linear") {
               forms_[i] = "linear";
             } else if (time_fns[i] == "Constant") {
@@ -2435,7 +2439,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
         Teuchos::Array<double> flux;
 
         flux = bc_flux.get<Teuchos::Array<double> >("Inward Mass Flux");
-        for (int i=0; i<flux.size(); i++) flux[i] = - flux[i];
+        for (int i = 0; i < flux.size(); i++) flux[i] = - flux[i];
 
         std::stringstream ss;
         ss << "BC " << bc_counter++;
@@ -2454,7 +2458,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
 
           std::vector<std::string> forms_(time_fns.size());
 
-          for (int i=0; i<time_fns.size(); i++)
+          for (int i = 0; i < time_fns.size(); i++)
             if (time_fns[i] == "Linear") {
               forms_[i] = "linear";
             } else if (time_fns[i] == "Constant") {
@@ -2489,8 +2493,8 @@ Teuchos::ParameterList CreateStateList(Teuchos::ParameterList* plist) {
   //
   // --- gravity
   Teuchos::Array<double> gravity(spatial_dimension_);
-  for (int i=0; i!=spatial_dimension_-1; ++i) gravity[i] = 0.0;
-  gravity[spatial_dimension_-1] =  - GRAVITY_MAGNITUDE;
+  for (int i = 0; i != spatial_dimension_-1; ++i) gravity[i] = 0.0;
+  gravity[spatial_dimension_-1] = -GRAVITY_MAGNITUDE;
   stt_ic.sublist("gravity").set<Teuchos::Array<double> >("value", gravity);
   //
   // --- viscosity
@@ -2523,7 +2527,7 @@ Teuchos::ParameterList CreateStateList(Teuchos::ParameterList* plist) {
 
     // record the material ID for each region that this material occupies
     matid_ctr++;
-    for (int ii=0; ii<regions.size(); ii++) {
+    for (int ii = 0; ii < regions.size(); ii++) {
       if (region_to_matid.find(regions[ii]) == region_to_matid.end()) {
         region_to_matid[regions[ii]] = matid_ctr;
         matid_to_material[matid_ctr] = matprop_list.name(i);
@@ -2740,7 +2744,7 @@ Teuchos::ParameterList CreateStateList(Teuchos::ParameterList* plist) {
       // pressure...
       if (ic_for_region->isSublist("IC: Uniform Pressure") || ic_for_region->isSublist("IC: Linear Pressure")) {
 
-        Teuchos::ParameterList &pressure_ic = stt_ic.sublist("pressure");
+        Teuchos::ParameterList& pressure_ic = stt_ic.sublist("pressure");
         if (ic_for_region->isSublist("IC: Uniform Pressure")) {
           double p = ic_for_region->sublist("IC: Uniform Pressure").get<double>("Value");
 
@@ -2753,18 +2757,18 @@ Teuchos::ParameterList CreateStateList(Teuchos::ParameterList* plist) {
         } else if (ic_for_region->isSublist("IC: Linear Pressure")) {
           Teuchos::Array<double> grad = ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Gradient Value");
           Teuchos::Array<double> refcoord = ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Reference Coordinate");
-          double refval =  ic_for_region->sublist("IC: Linear Pressure").get<double>("Reference Value");
+          double refval = ic_for_region->sublist("IC: Linear Pressure").get<double>("Reference Value");
 
           Teuchos::Array<double> grad_with_time(grad.size()+1);
           grad_with_time[0] = 0.0;
-          for (int j=0; j!=grad.size(); ++j) {
-            grad_with_time[j+1] = grad[j];
+          for (int j = 0; j != grad.size(); ++j) {
+            grad_with_time[j + 1] = grad[j];
           }
 
           Teuchos::Array<double> refcoord_with_time(refcoord.size()+1);
           refcoord_with_time[0] = 0.0;
-          for (int j=0; j!=refcoord.size(); ++j) {
-            refcoord_with_time[j+1] = refcoord[j];
+          for (int j = 0; j != refcoord.size(); ++j) {
+            refcoord_with_time[j + 1] = refcoord[j];
           }
 
           pressure_ic.sublist("function").sublist(reg_str)
@@ -2782,8 +2786,7 @@ Teuchos::ParameterList CreateStateList(Teuchos::ParameterList* plist) {
 
       // saturation...
       if (ic_for_region->isSublist("IC: Uniform Saturation") || ic_for_region->isSublist("IC: Linear Saturation")) {
-
-        Teuchos::ParameterList &saturation_ic = stt_ic.sublist("water_saturation");
+        Teuchos::ParameterList& saturation_ic = stt_ic.sublist("water_saturation");
         if (ic_for_region->isSublist("IC: Uniform Saturation")) {
           double s = ic_for_region->sublist("IC: Uniform Saturation").get<double>("Value");
           saturation_ic.sublist("function").sublist(reg_str)
@@ -2792,20 +2795,21 @@ Teuchos::ParameterList CreateStateList(Teuchos::ParameterList* plist) {
               .sublist("function").sublist("function-constant")
               .set<double>("value", s);
         } else if (ic_for_region->isSublist("IC: Linear Saturation")) {
-          Teuchos::Array<double> grad = ic_for_region->sublist("IC: Linear Saturation").get<Teuchos::Array<double> >("Gradient Value");
-          Teuchos::Array<double> refcoord = ic_for_region->sublist("IC: Linear Saturation").get<Teuchos::Array<double> >("Reference Coordinate");
-          double refval =  ic_for_region->sublist("IC: Linear Saturation").get<double>("Reference Value");
+          Teuchos::ParameterList& saturation_ic = ic_for_region->sublist("IC: Linear Saturation");
+          Teuchos::Array<double> grad = saturation_ic.get<Teuchos::Array<double> >("Gradient Value");
+          Teuchos::Array<double> refcoord = saturation_ic.get<Teuchos::Array<double> >("Reference Coordinate");
+          double refval = saturation_ic.get<double>("Reference Value");
 
-          Teuchos::Array<double> grad_with_time(grad.size()+1);
+          Teuchos::Array<double> grad_with_time(grad.size() + 1);
           grad_with_time[0] = 0.0;
-          for (int j=0; j!=grad.size(); ++j) {
-            grad_with_time[j+1] = grad[j];
+          for (int j = 0; j != grad.size(); ++j) {
+            grad_with_time[j + 1] = grad[j];
           }
 
           Teuchos::Array<double> refcoord_with_time(refcoord.size()+1);
           refcoord_with_time[0] = 0.0;
-          for (int j=0; j!=refcoord.size(); ++j) {
-            refcoord_with_time[j+1] = refcoord[j];
+          for (int j = 0; j != refcoord.size(); ++j) {
+            refcoord_with_time[j + 1] = refcoord[j];
           }
 
           saturation_ic.sublist("function").sublist(reg_str)
@@ -2822,7 +2826,7 @@ Teuchos::ParameterList CreateStateList(Teuchos::ParameterList* plist) {
 
       // darcy_flux...
       if (ic_for_region->isSublist("IC: Uniform Velocity")) {
-        Teuchos::ParameterList &darcy_flux_ic =  stt_ic.sublist("darcy_flux");
+        Teuchos::ParameterList &darcy_flux_ic = stt_ic.sublist("darcy_flux");
         Teuchos::Array<double> vel_vec = ic_for_region->sublist("IC: Uniform Velocity").get<Teuchos::Array<double> >("Velocity Vector");
 
         if (vel_vec.size() != spatial_dimension_) {
@@ -2838,7 +2842,7 @@ Teuchos::ParameterList CreateStateList(Teuchos::ParameterList* plist) {
             .set<int>("Number of DoFs", vel_vec.size())
             .set<std::string>("Function type", "composite function");
 
-        for (int ii=0; ii != vel_vec.size(); ++ii) {
+        for (int ii = 0; ii != vel_vec.size(); ++ii) {
           std::stringstream dof_str;
           dof_str << "DoF " << ii+1 << " Function";
 
@@ -2864,9 +2868,9 @@ Teuchos::ParameterList CreateStateList(Teuchos::ParameterList* plist) {
               .set<std::string>("Function type", "composite function");
 
 
-          for (int ii=0; ii<comp_names.size(); ii++) {
+          for (int ii = 0; ii < comp_names.size(); ii++) {
             if (ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).isSublist(comp_names[ii])) {
-              Teuchos::ParameterList& conc_ic =  ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration");
+              Teuchos::ParameterList& conc_ic = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration");
 
               if (conc_ic.isParameter("Geochemical Condition")) { // Geochemical condition?
                 // Add an entry to State->initial conditions->geochemical conditions.
@@ -2971,7 +2975,7 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 
       // record the material ID for each region that this material occupies
       matid_ctr++;
-      for (int ii=0; ii<regions.size(); ii++) {
+      for (int ii = 0; ii < regions.size(); ii++) {
         if (region_to_matid.find(regions[ii]) == region_to_matid.end()) {
           region_to_matid[regions[ii]] = matid_ctr;
           matid_to_material[matid_ctr] = matprop_list.name(i);
@@ -3014,7 +3018,7 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 
           for (int j = 0; j<mineral_names_.size(); ++j) {
             std::stringstream ss;
-            ss << "DoF " << j+1 << " Function";
+            ss << "DoF " << j + 1 << " Function";
 
             mvf = matprop_list.sublist(matprop_list.name(i)).sublist("Mineralogy").sublist(mineral_names_[j])
                 .get<double>("Volume Fraction");
@@ -3219,7 +3223,7 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 
           for (int j = 0; j<comp_names.size(); ++j) {
             std::stringstream ss;
-            ss << "DoF " << j+1 << " Function";
+            ss << "DoF " << j + 1 << " Function";
 
             double value(1.0e-9);
             value = ics.sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[j]).sublist("IC: Uniform Concentration").get<double>("Free Ion Guess",1.0e-9);
@@ -3306,7 +3310,7 @@ void output_boundary_conditions(Teuchos::ParameterList* plist) {
   int bc_counter = 0;
 
   if (plist->isSublist("Flow")) {
-    flow_list =  plist->sublist("Flow");
+    flow_list = plist->sublist("Flow");
 
     Teuchos::ParameterList richards_list;
     if (flow_list.isSublist("Richards Problem")) {
@@ -3339,7 +3343,7 @@ void output_boundary_conditions(Teuchos::ParameterList* plist) {
               Teuchos::Array<double> times_plot(np);
               Teuchos::Array<double> values_plot(np);
 
-              for (int i=0; i < times.size() - 1; i++) {
+              for (int i = 0; i < times.size() - 1; i++) {
                 times_plot[2*i] = times[i];
                 values_plot[2*i] = values[i];
                 times_plot[2*i + 1] = 0.5*(times[i] + times[i+1]);
@@ -3347,7 +3351,7 @@ void output_boundary_conditions(Teuchos::ParameterList* plist) {
               times_plot[np - 1] = times[times.size() - 1];
               values_plot[np - 1] = values[times.size() - 1];
 
-              for (int i=0; i<time_fns.size(); i++) {
+              for (int i = 0; i < time_fns.size(); i++) {
                 if (time_fns[i] == "linear") {
                   values_plot[2*i + 1] = 0.5 *( values[i] + values[i+1]);
                 } else if (time_fns[i] == "constant") {
@@ -3362,7 +3366,7 @@ void output_boundary_conditions(Teuchos::ParameterList* plist) {
               std::ofstream ofile(filename.c_str());
 
               ofile << "# "<<"time "<< "flux"<<std::endl;
-              for (int i=0; i < np; i++) {
+              for (int i = 0; i < np; i++) {
                 ofile <<times_plot[i] << " " << values_plot[i] << std::endl;
               }
 
@@ -3392,7 +3396,7 @@ void output_boundary_conditions(Teuchos::ParameterList* plist) {
               Teuchos::Array<double> times_plot(np);
               Teuchos::Array<double> values_plot(np);
 
-              for (int i=0; i < times.size() - 1; i++) {
+              for (int i = 0; i < times.size() - 1; i++) {
                 times_plot[2*i] = times[i];
                 values_plot[2*i] = values[i];
                 times_plot[2*i + 1] = 0.5*(times[i] + times[i+1]);
@@ -3400,7 +3404,7 @@ void output_boundary_conditions(Teuchos::ParameterList* plist) {
               times_plot[np - 1] = times[times.size() - 1];
               values_plot[np - 1] = values[times.size() - 1];
 
-              for (int i=0; i<time_fns.size(); i++) {
+              for (int i = 0; i<time_fns.size(); i++) {
                 if (time_fns[i] == "linear") {
                   values_plot[2*i + 1] = 0.5 *( values[i] + values[i+1]);
                 } else if (time_fns[i] == "constant") {
@@ -3415,7 +3419,7 @@ void output_boundary_conditions(Teuchos::ParameterList* plist) {
               std::ofstream ofile(filename.c_str());
 
               ofile << "# time "<<"pressure"<<std::endl;
-              for (int i=0; i < np; i++) {
+              for (int i = 0; i < np; i++) {
                 ofile << times_plot[i] << " " << values_plot[i] << std::endl;
               }
 
@@ -3445,7 +3449,7 @@ void output_boundary_conditions(Teuchos::ParameterList* plist) {
               Teuchos::Array<double> times_plot(np);
               Teuchos::Array<double> values_plot(np);
 
-              for (int i=0; i < times.size() - 1; i++) {
+              for (int i = 0; i < times.size() - 1; i++) {
                 times_plot[2*i] = times[i];
                 values_plot[2*i] = values[i];
                 times_plot[2*i + 1] = 0.5*(times[i] + times[i+1]);
@@ -3453,7 +3457,7 @@ void output_boundary_conditions(Teuchos::ParameterList* plist) {
               times_plot[np - 1] = times[times.size() - 1];
               values_plot[np - 1] = values[times.size() - 1];
 
-              for (int i=0; i<time_fns.size(); i++) {
+              for (int i = 0; i<time_fns.size(); i++) {
                 if (time_fns[i] == "linear") {
                   values_plot[2*i + 1] = 0.5 *( values[i] + values[i+1]);
                 } else if (time_fns[i] == "constant") {
@@ -3467,8 +3471,8 @@ void output_boundary_conditions(Teuchos::ParameterList* plist) {
               std::string filename = ss.str() + ".dat";
               std::ofstream ofile(filename.c_str());
 
-              ofile << "# time "<<"flux"<<std::endl;
-              for (int i=0; i < np; i++) {
+              ofile << "# time " << "flux" << std::endl;
+              for (int i = 0; i < np; i++) {
                 ofile << times_plot[i] << " " << values_plot[i] << std::endl;
               }
 
@@ -3498,7 +3502,7 @@ void output_boundary_conditions(Teuchos::ParameterList* plist) {
               Teuchos::Array<double> times_plot(np);
               Teuchos::Array<double> values_plot(np);
 
-              for (int i=0; i < times.size() - 1; i++) {
+              for (int i = 0; i < times.size() - 1; i++) {
                 times_plot[2*i] = times[i];
                 values_plot[2*i] = values[i];
                 times_plot[2*i + 1] = 0.5*(times[i] + times[i+1]);
@@ -3506,7 +3510,7 @@ void output_boundary_conditions(Teuchos::ParameterList* plist) {
               times_plot[np - 1] = times[times.size() - 1];
               values_plot[np - 1] = values[times.size() - 1];
 
-              for (int i=0; i<time_fns.size(); i++) {
+              for (int i = 0; i < time_fns.size(); i++) {
                 if (time_fns[i] == "linear") {
                   values_plot[2*i + 1] = 0.5 *( values[i] + values[i+1]);
                 } else if (time_fns[i] == "constant") {
@@ -3520,8 +3524,8 @@ void output_boundary_conditions(Teuchos::ParameterList* plist) {
               std::string filename = ss.str() + ".dat";
               std::ofstream ofile(filename.c_str());
 
-              ofile << "# time "<<"head"<<std::endl;
-              for (int i=0; i < np; i++) {
+              ofile << "# time " << "head" << std::endl;
+              for (int i = 0; i < np; i++) {
                 ofile << times_plot[i] << " " << values_plot[i] << std::endl;
               }
 

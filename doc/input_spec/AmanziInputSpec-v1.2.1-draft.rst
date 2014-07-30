@@ -1322,7 +1322,7 @@ Next, we specify boundary conditions.  Again, support is provided for specifying
 
  * [SU] BC [list] label for a boundary condition, accepts boundary condition function names, and parameters to specify assigned regions and solute boundary conditions
 
-  * [SU see below] Function [list] Parameterized model to specify boundary conditions.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Linear Pressure`", `"BC: Uniform Saturation`", `"BC: Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
+  * [SU see below] Function [list] Parameterized model to specify boundary conditions.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Linear Pressure`", `"BC: Uniform Saturation`", `"BC: Hydrostatic`", `"BC: Linear Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
 
   * [SU] `"Assigned Regions`" [Array(string)] list of regions to which this condition is assigned
 
@@ -1405,6 +1405,8 @@ The following boundary condition parameterizations are supported:
 * [U] `"BC: Seepage`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and one of `"Inward Mass Flux`" [Array(double)] or `"Inward Volumetric Flux`" [Array(double)].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
 
 * [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array(double)] (see below)
+
+* [U] `"BC: Linear Hydrostatic`" [list] requires `"Reference Water Table Height`" [double] `"Reference Coordinate`" [Array(double)] `"Gradient`" [Array(double)]
 
 * `"BC: Impermeable`"  requires no parameters
 
