@@ -2321,11 +2321,11 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
         ss << "BC " << bc_counter++;
 
         Teuchos::ParameterList& tbc = ssf_list.sublist("pressure").sublist(ss.str());
-        tbc.set<Teuchos::Array<std::string> >("regions", regions );
+        tbc.set<Teuchos::Array<std::string> >("regions", regions);
 
         if (times.size() == 1) {
           Teuchos::ParameterList& tbcs = tbc.sublist("boundary pressure").sublist("function-constant");
-          tbcs.set<double>("value",values[0]);
+          tbcs.set<double>("value", values[0]);
         } else {
           Teuchos::ParameterList& tbcs = tbc.sublist("boundary pressure").sublist("function-tabular");
 
@@ -2346,7 +2346,36 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
         }
 
-      } else if ( bc.isSublist("BC: Hydrostatic")) {
+      } else if (bc.isSublist("BC: Linear Pressure")) {
+        Teuchos::ParameterList& bc_dir = bc.sublist("BC: Linear Pressure");
+        Teuchos::Array<double> grad = bc_dir.get<Teuchos::Array<double> >("Gradient");
+        Teuchos::Array<double> refcoord = bc_dir.get<Teuchos::Array<double> >("Reference Coordinate");
+        double refval = bc_dir.get<double>("Reference Value");
+
+        Teuchos::Array<double> grad_with_time(grad.size() + 1);
+        grad_with_time[0] = 0.0;
+        for (int j = 0; j != grad.size(); ++j) {
+          grad_with_time[j + 1] = grad[j];
+        }
+
+        Teuchos::Array<double> refcoord_with_time(refcoord.size() + 1);
+        refcoord_with_time[0] = 0.0;
+        for (int j = 0; j != refcoord.size(); ++j) {
+          refcoord_with_time[j + 1] = refcoord[j];
+        }
+
+        std::stringstream ss;
+        ss << "BC " << bc_counter++;
+
+        Teuchos::ParameterList& tbc = ssf_list.sublist("pressure").sublist(ss.str());
+        tbc.set<Teuchos::Array<std::string> >("regions", regions);
+
+        Teuchos::ParameterList& tbcs = tbc.sublist("boundary pressure").sublist("function-linear");
+        tbcs.set<double>("y0", refval);
+        tbcs.set<Teuchos::Array<double> >("x0", refcoord_with_time);
+        tbcs.set<Teuchos::Array<double> >("gradient", grad_with_time);
+
+      } else if (bc.isSublist("BC: Hydrostatic")) {
         Teuchos::ParameterList& bc_dir = bc.sublist("BC: Hydrostatic");
 
         Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");

@@ -1396,11 +1396,11 @@ The following boundary condition parameterizations are supported:
 
 * [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [SU] `"BC: Linear Pressure`" [list] requires `"Reference Value`" [double] `"Reference Coordinates`" [Array(double)] `"Gradient`" [Array(double)]
+* [SU] `"BC: Linear Pressure`" [list] requires `"Reference Value`" [double] `"Reference Coordinate`" [Array(double)] `"Gradient`" [Array(double)]
 
 * [S] `"BC: Uniform Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* `"BC: Linear Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Reference Values`" [Array(double)] `"Reference Coordinates`" [Array(double)] `"Gradient`" [Array(double)]
+* `"BC: Linear Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Reference Values`" [Array(double)] `"Reference Coordinate`" [Array(double)] `"Gradient`" [Array(double)]
 
 * [U] `"BC: Seepage`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and one of `"Inward Mass Flux`" [Array(double)] or `"Inward Volumetric Flux`" [Array(double)].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
 
