@@ -223,6 +223,9 @@ void Coordinator::initialize() {
     (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
   }
 
+  // -- register checkpoint times
+  checkpoint_->RegisterWithTimeStepManager(tsm_.ptr());
+
   // -- register observation times
   observations_->RegisterWithTimeStepManager(tsm_.ptr());
 
