@@ -40,11 +40,8 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   void CommitState(Teuchos::RCP<Chemistry_State> chem_state, const double& delta_time);
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration(void) const;
 
-  void set_max_time_step(const double mts) {
-    this->max_time_step_ = mts;
-  }
-  double max_time_step(void) const {
-    return this->max_time_step_;
+  double time_step(void) const {
+    return this->time_step_;
   }
 
   int number_aqueous_components(void) const {
@@ -88,7 +85,7 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
  private:
 
   // Timestepping controls.
-  double max_time_step_, prev_time_step_;
+  double time_step_, max_time_step_, prev_time_step_;
   std::string time_step_control_method_;
   int num_iterations_for_time_step_cut_, num_steps_before_time_step_increase_;
   double time_step_cut_factor_, time_step_increase_factor_;

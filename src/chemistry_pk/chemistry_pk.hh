@@ -41,7 +41,7 @@ class Chemistry_PK: public Chemistry_PK_Base {
   void set_max_time_step(const double mts) {
     this->max_time_step_ = mts;
   }
-  double max_time_step(void) const {
+  double time_step(void) const {
     return this->max_time_step_;
   }
 

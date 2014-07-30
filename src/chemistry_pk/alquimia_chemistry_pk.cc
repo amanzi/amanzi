@@ -352,8 +352,9 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
   }
 
   // Other settings.
-  set_max_time_step(chem_param_list_.get<double>("Max Time Step (s)", 9.9e9));
+  max_time_step_ = chem_param_list_.get<double>("Max Time Step (s)", 9.9e9);
   prev_time_step_ = chem_param_list_.get<double>("Initial Time Step (s)", 9.9e9);
+  time_step_ = prev_time_step_;
   time_step_control_method_ = chem_param_list_.get<std::string>("Time Step Control Method", "fixed");
   num_iterations_for_time_step_cut_ = chem_param_list_.get<int>("Time Step Cut Threshold", 8);
   if (num_iterations_for_time_step_cut_ <= 0)
@@ -624,10 +625,12 @@ void Alquimia_Chemistry_PK::ComputeNextTimeStep()
   if (time_step_control_method_ == "simple")
   {
     if ((num_successful_steps_ == 0) || (num_iterations_ >= num_iterations_for_time_step_cut_))
-      max_time_step_ = prev_time_step_ / time_step_cut_factor_;
+      time_step_ = prev_time_step_ / time_step_cut_factor_;
     else if (num_successful_steps_ >= num_steps_before_time_step_increase_)
-      max_time_step_ = prev_time_step_ * time_step_increase_factor_;
+      time_step_ = prev_time_step_ * time_step_increase_factor_;
   }
+  if (time_step_ > max_time_step_)
+    time_step_ = max_time_step_;
 }
 
 // the MPC will call this function to signal to the

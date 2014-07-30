@@ -26,8 +26,8 @@ class Chemistry_PK_Base {
   virtual void CommitState(Teuchos::RCP<Chemistry_State> chem_state, const double& delta_time) = 0;
   virtual Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration(void) const = 0;
 
-  // Returns the maximum time step allowed for this chemistry PK.
-  virtual double max_time_step(void) const = 0;
+  // Returns the (maximum) time step allowed for this chemistry PK.
+  virtual double time_step(void) const = 0;
 
   // Ben: the following two routines provide the interface for
   // output of auxillary cellwise data from chemistry

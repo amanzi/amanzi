@@ -694,7 +694,7 @@ void MPC::cycle_driver() {
         }
         if (chemistry_enabled) {
           Amanzi::timer_manager.start("Chemistry PK");
-          chemistry_dT = CPK->max_time_step();
+          chemistry_dT = CPK->time_step();
           Amanzi::timer_manager.stop("Chemistry PK");
         }
       }
