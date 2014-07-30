@@ -2324,7 +2324,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
       } else if (bc.isSublist("BC: Linear Pressure")) {
         Teuchos::ParameterList& bc_dir = bc.sublist("BC: Linear Pressure");
         Teuchos::Array<double> grad = bc_dir.get<Teuchos::Array<double> >("Gradient");
-        Teuchos::Array<double> refcoord = bc_dir.get<Teuchos::Array<double> >("Reference Coordinate");
+        Teuchos::Array<double> refcoord = bc_dir.get<Teuchos::Array<double> >("Reference Point");
         double refval = bc_dir.get<double>("Reference Value");
 
         Teuchos::Array<double> grad_with_time(grad.size() + 1);
@@ -2353,7 +2353,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
       } else if (bc.isSublist("BC: Linear Hydrostatic")) {
         Teuchos::ParameterList& bc_dir = bc.sublist("BC: Linear Hydrostatic");
         Teuchos::Array<double> grad = bc_dir.get<Teuchos::Array<double> >("Gradient");
-        Teuchos::Array<double> refcoord = bc_dir.get<Teuchos::Array<double> >("Reference Coordinate");
+        Teuchos::Array<double> refcoord = bc_dir.get<Teuchos::Array<double> >("Reference Point");
         double refval = bc_dir.get<double>("Reference Water Table Height");
 
         Teuchos::Array<double> grad_with_time(grad.size() + 1);
@@ -2756,7 +2756,7 @@ Teuchos::ParameterList CreateStateList(Teuchos::ParameterList* plist) {
 
         } else if (ic_for_region->isSublist("IC: Linear Pressure")) {
           Teuchos::Array<double> grad = ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Gradient Value");
-          Teuchos::Array<double> refcoord = ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Reference Coordinate");
+          Teuchos::Array<double> refcoord = ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Reference Point");
           double refval = ic_for_region->sublist("IC: Linear Pressure").get<double>("Reference Value");
 
           Teuchos::Array<double> grad_with_time(grad.size()+1);
@@ -2797,7 +2797,7 @@ Teuchos::ParameterList CreateStateList(Teuchos::ParameterList* plist) {
         } else if (ic_for_region->isSublist("IC: Linear Saturation")) {
           Teuchos::ParameterList& saturation_ic = ic_for_region->sublist("IC: Linear Saturation");
           Teuchos::Array<double> grad = saturation_ic.get<Teuchos::Array<double> >("Gradient Value");
-          Teuchos::Array<double> refcoord = saturation_ic.get<Teuchos::Array<double> >("Reference Coordinate");
+          Teuchos::Array<double> refcoord = saturation_ic.get<Teuchos::Array<double> >("Reference Point");
           double refval = saturation_ic.get<double>("Reference Value");
 
           Teuchos::Array<double> grad_with_time(grad.size() + 1);

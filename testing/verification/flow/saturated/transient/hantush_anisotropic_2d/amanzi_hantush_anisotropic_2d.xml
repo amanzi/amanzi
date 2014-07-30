@@ -161,7 +161,7 @@
       
       <!-- Confined Aquifer with h=200m -->
       <ParameterList name="IC: Linear Pressure">
-        <Parameter name="Reference Coordinate" type="Array(double)" value="{0.0, 0.0, 5.0}"/>
+        <Parameter name="Reference Point" type="Array(double)" value="{0.0, 0.0, 5.0}"/>
         <Parameter name="Reference Value" type="double" value="101325.0"/>
         <Parameter name="Gradient Value" type="Array(double)" value="{0.0, 0.0, -9792.34}"/>
       </ParameterList>

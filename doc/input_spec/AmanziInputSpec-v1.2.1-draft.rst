@@ -1356,11 +1356,11 @@ The following initial condition parameterizations are supported:
 
 * [SU] `"IC: Uniform Saturation`" requires `"Value`" [double] OR `"Geochemical Condition`" [string] if Alquimia is providing initial conditions.
 
-* [U] `"IC: Linear Saturation`" requires `"Reference Coordinate`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
+* [U] `"IC: Linear Saturation`" requires `"Reference Point`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
 
 * [U] `"IC: Uniform Pressure`" requires `"Value`" [double]
 
-* [SU] `"IC: Linear Pressure`" requires `"Reference Coordinate`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
+* [SU] `"IC: Linear Pressure`" requires `"Reference Point`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
 
 * [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array(double)).
 
@@ -1396,17 +1396,17 @@ The following boundary condition parameterizations are supported:
 
 * [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [SU] `"BC: Linear Pressure`" [list] requires `"Reference Value`" [double] `"Reference Coordinate`" [Array(double)] `"Gradient`" [Array(double)]
+* [SU] `"BC: Linear Pressure`" [list] requires `"Reference Value`" [double] `"Reference Point`" [Array(double)] `"Gradient`" [Array(double)]
 
 * [S] `"BC: Uniform Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* `"BC: Linear Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Reference Values`" [Array(double)] `"Reference Coordinate`" [Array(double)] `"Gradient`" [Array(double)]
+* `"BC: Linear Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Reference Values`" [Array(double)] `"Reference Point`" [Array(double)] `"Gradient`" [Array(double)]
 
 * [U] `"BC: Seepage`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and one of `"Inward Mass Flux`" [Array(double)] or `"Inward Volumetric Flux`" [Array(double)].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
 
 * [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array(double)] (see below)
 
-* [U] `"BC: Linear Hydrostatic`" [list] requires `"Reference Water Table Height`" [double] `"Reference Coordinate`" [Array(double)] `"Gradient`" [Array(double)]
+* [U] `"BC: Linear Hydrostatic`" [list] requires `"Reference Water Table Height`" [double] `"Reference Point`" [Array(double)] `"Gradient`" [Array(double)]
 
 * `"BC: Impermeable`"  requires no parameters
 
@@ -2278,7 +2278,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              <ParameterList name="IC: Linear Pressure">
                <Parameter name="Phase" type="string" value="Aqueous"/>
                <Parameter name="Reference Value" type="double" value="101325."/>
-               <Parameter name="Reference Coordinate" type="Array(double)" value="{0., 0., 0.}"/>
+               <Parameter name="Reference Point" type="Array(double)" value="{0., 0., 0.}"/>
                <!-- GEH: Units of gradient are Pa/m = rho*g = 998.32 kg/m^3 * 9.81 m/s^2-->
                <Parameter name="Gradient Value" type="Array(double)" value="{0., 0., -9793.5192}"/>
              </ParameterList>
