@@ -2323,7 +2323,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
 
       } else if (bc.isSublist("BC: Linear Pressure")) {
         Teuchos::ParameterList& bc_dir = bc.sublist("BC: Linear Pressure");
-        Teuchos::Array<double> grad = bc_dir.get<Teuchos::Array<double> >("Gradient");
+        Teuchos::Array<double> grad = bc_dir.get<Teuchos::Array<double> >("Gradient Value");
         Teuchos::Array<double> refcoord = bc_dir.get<Teuchos::Array<double> >("Reference Point");
         double refval = bc_dir.get<double>("Reference Value");
 
@@ -2352,7 +2352,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
 
       } else if (bc.isSublist("BC: Linear Hydrostatic")) {
         Teuchos::ParameterList& bc_dir = bc.sublist("BC: Linear Hydrostatic");
-        Teuchos::Array<double> grad = bc_dir.get<Teuchos::Array<double> >("Gradient");
+        Teuchos::Array<double> grad = bc_dir.get<Teuchos::Array<double> >("Gradient Value");
         Teuchos::Array<double> refcoord = bc_dir.get<Teuchos::Array<double> >("Reference Point");
         double refval = bc_dir.get<double>("Reference Water Table Height");
 
