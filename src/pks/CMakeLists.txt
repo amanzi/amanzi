@@ -1,0 +1,52 @@
+# -*- mode: cmake -*-
+
+#
+#  Amanzi
+#    PK class
+#
+
+# Amanzi include directories
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+include_directories(${OUTPUT_SOURCE_DIR})
+
+# External (TPL) include directories
+include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${ASCEMIO_INCLUDE_DIR})
+
+#
+# Library: pks
+#
+set(pks_src_files PK_Factory.cc
+   )
+
+add_amanzi_library(pks
+                   SOURCE ${pks_src_files} HEADERS ${pks_inc_files}
+                   LINK_LIBS )
+
+#
+# Install Targets
+#
+set(pks_inc_files 
+  PK.hh
+  PK_Factory.hh)  
+
+add_install_include_file(${pks_inc_files})
+
+if (BUILD_TESTS) 
+endif()
+
+add_subdirectory(flow)
+
+
+
+
+
+
+

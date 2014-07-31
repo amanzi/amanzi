@@ -63,7 +63,7 @@ endif()
 
 if (ENABLE_Unstructured AND ENABLE_Physics)  
   add_subdirectory(chemistry_pk) 
-  add_subdirectory(flow)
+  add_subdirectory(pks)
   add_subdirectory(transport)
 
   # Multiprocess coordinator
