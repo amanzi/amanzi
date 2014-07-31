@@ -616,15 +616,11 @@ void Alquimia_Chemistry_PK::Advance(
         imin = cell;
       }
       ave_iterations += num_iterations;
-      num_successful_steps_++;
-      ComputeNextTimeStep();
     } 
     else
     {
       // Convergence failure. Compute the next time step size.
       convergence_failure = 1;
-      num_successful_steps_ = 0;
-      ComputeNextTimeStep();
       break;
     }
   }
@@ -635,12 +631,20 @@ void Alquimia_Chemistry_PK::Advance(
   send[0] = convergence_failure;
   send[1] = max_iterations;
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(send, recv, 2);
+  if (recv[0] != 0) 
+    num_successful_steps_ = 0;
+  else
+    num_successful_steps_++;
+  num_iterations_ = recv[1];
+
+  // Compute the next time step.
+  ComputeNextTimeStep();
+
   if (recv[0] != 0)
   {
     msg << "Failure in Alquimia_Chemistry_PK::Advance";
     Exceptions::amanzi_throw(msg); 
   }
-  num_iterations_ = recv[1];
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     *vo_->os() << "Chemistry PK: Advanced after " << num_iterations_ << " Newton iterations." << std::endl;
   }
@@ -658,10 +662,19 @@ void Alquimia_Chemistry_PK::ComputeNextTimeStep()
 {
   if (time_step_control_method_ == "simple")
   {
-    if ((num_successful_steps_ == 0) || (num_iterations_ >= num_iterations_for_time_step_cut_))
+    if ((num_successful_steps_ == 0) || (num_iterations_ >= num_iterations_for_time_step_cut_)) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << "Chemistry PK: Number of Newton iterations exceeds threshold (" << num_iterations_for_time_step_cut_ << ") for time step cut, cutting dT by " << time_step_cut_factor_ << std::endl;
+      }
       time_step_ = prev_time_step_ / time_step_cut_factor_;
-    else if (num_successful_steps_ >= num_steps_before_time_step_increase_)
+    }
+    else if (num_successful_steps_ >= num_steps_before_time_step_increase_) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << "Chemistry PK: Number of successful steps exceeds threshold (" << num_steps_before_time_step_increase_ << ") for time step increase, growing dT by " << time_step_increase_factor_ << std::endl;
+      }
       time_step_ = prev_time_step_ * time_step_increase_factor_;
+      num_successful_steps_ = 0;
+    }
   }
   if (time_step_ > max_time_step_)
     time_step_ = max_time_step_;
