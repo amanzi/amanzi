@@ -163,12 +163,6 @@ void MPC::mpc_init() {
 #endif
   }
 
-  // transport and chemistry...
-  chem_trans_dt_ratio = CHEM_TRANS_DT_RATIO;
-  if (transport_enabled && chemistry_enabled) {
-    chem_trans_dt_ratio = parameter_list.sublist("MPC").get<double>("max chemistry to transport timestep ratio", CHEM_TRANS_DT_RATIO);
-  }
-
   // flow...
   if (flow_enabled) {
     flow_model = mpc_parameter_list.get<std::string>("Flow model", "Darcy");
@@ -729,24 +723,24 @@ void MPC::cycle_driver() {
           if (S->time() == reset_info_.front().first) {
             if (vo_->os_OK(Teuchos::VERB_LOW)) {
               *vo_->os() << std::setprecision(5) << "Resetting the time integrator at time(y) = "
-                         << std::fixed << S->time()/(365.25*24*60*60) << std::endl;
+                << std::fixed << S->time()/(365.25*24*60*60) << std::endl;
             }
             mpc_dT = reset_info_.front().second;
             mpc_dT = TSM->TimeStep(S->time(), mpc_dT);
             tslimiter = MPC_LIMITS;
-	    // now reset the flow time integrator..
-	    if (S->time() >= Tswitch) {
-	      // we are now in transient mode
-	      Amanzi::timer_manager.start("Flow PK");
-	      if (flow_enabled) FPK->InitTransient(S->time(), mpc_dT);
-	      Amanzi::timer_manager.stop("Flow PK");
-	    } else {
-	      // we are still in steady state mode
-	      // and cannot handle this case, currently
-	      // so we throw an exception
-	      Errors::Message message("MPC: Restarting the time integrator before switch time is not supported.");
-	      Exceptions::amanzi_throw(message);	      
-	    }
+            // now reset the flow time integrator..
+            if (S->time() >= Tswitch) {
+              // we are now in transient mode
+              Amanzi::timer_manager.start("Flow PK");
+              if (flow_enabled) FPK->InitTransient(S->time(), mpc_dT);
+              Amanzi::timer_manager.stop("Flow PK");
+            } else {
+              // we are still in steady state mode
+              // and cannot handle this case, currently
+              // so we throw an exception
+              Errors::Message message("MPC: Restarting the time integrator before switch time is not supported.");
+              Exceptions::amanzi_throw(message);	      
+            }
           }
         }
       }
@@ -775,15 +769,15 @@ void MPC::cycle_driver() {
              ( (flow_model == std::string("Steady State Richards") && S->time() >= Tswitch) ||
                (flow_model == std::string("Steady State Saturated") && S->time() >= Tswitch) ||
                (flow_model == std::string("Richards")))) ) {
-	  double actual_dT(mpc_dT);
-	  FPK->Advance(mpc_dT, actual_dT);
-	  // adjust the mpc timestep to the one that the flow
-	  // pk actually took
-	  if (actual_dT != mpc_dT) {
-	    mpc_dT = actual_dT;
-	    tslimiter = FLOW_LIMITS;
-	  }
-	  FPK->CommitState(S);
+          double actual_dT(mpc_dT);
+          FPK->Advance(mpc_dT, actual_dT);
+          // adjust the mpc timestep to the one that the flow
+          // pk actually took
+          if (actual_dT != mpc_dT) {
+            mpc_dT = actual_dT;
+            tslimiter = FLOW_LIMITS;
+          }
+          FPK->CommitState(S);
         }
       }
       S->set_final_time(S->initial_time() + mpc_dT);
@@ -807,176 +801,102 @@ void MPC::cycle_driver() {
 
       // then advance transport and chemistry
       if ( (ti_mode == TRANSIENT) || 
-	   (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) || 
-	   (ti_mode == TRANSIENT_STATIC_FLOW) ) {
+           (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) || 
+           (ti_mode == TRANSIENT_STATIC_FLOW) ) {
         double tc_dT(mpc_dT);
         double c_dT(chemistry_dT);
-        int ntc(1);
 
         S->set_intermediate_time(S->initial_time());
 
+        double t_dT(transport_dT);
         if (chemistry_enabled) {
           Amanzi::timer_manager.start("Chemistry PK");
-          // reduce chemistry time step according to the
-          // ratio with transport time step that is specified
-          // in the input file
-          double t_dT(transport_dT);
+
+          // The chemistry and transport PKs will both proceed with the 
+          // lesser of their respective timesteps.
           if (transport_enabled) {
             t_dT = TPK->EstimateTransportDt();
-            double ratio(c_dT/t_dT);
-            if (ratio > chem_trans_dt_ratio) {
-              c_dT = chem_trans_dt_ratio * t_dT;
-            }
           }
-          if (mpc_dT > c_dT) {
-            ntc = floor(mpc_dT/c_dT)+1;
-            tc_dT = mpc_dT/static_cast<double>(ntc);
-          }
+          tc_dT = std::min(std::min(t_dT, c_dT), mpc_dT);
 
           if (vo_->os_OK(Teuchos::VERB_LOW)) {
-            *vo_->os() << "Subcycling info: MPC is taking " << ntc << " chemistry subcycling timesteps" << std::endl;
-            if (transport_enabled) {
-              *vo_->os() << "  (chemistry sub cycling time step) / (transport time step) = " << tc_dT/t_dT << std::endl;
-            }
+            *vo_->os() << "Subcycling info: MPC is allowing chemistry to subcycle" << std::endl;
             *vo_->os() << "  chemistry subcycling timestep = " << tc_dT << std::endl;
           }
           Amanzi::timer_manager.stop("Chemistry PK");
         }
 
-        // at this time we know the time step that we are going to use during subcycling: tc_dT
-
-        if (chemistry_enabled) {
-          // first store the chemistry state
-
-          chem_data_->store(CS->free_ion_species(),
-                            CS->primary_activity_coeff(),
-                            CS->secondary_activity_coeff(),
-                            CS->mineral_volume_fractions(),
-                            CS->mineral_specific_surface_area(),
-                            CS->total_sorbed(),
-                            CS->sorption_sites(),
-                            CS->surface_complex_free_site_conc(),
-                            CS->ion_exchange_sites(),
-                            CS->ion_exchange_ref_cation_conc(),
-                            CS->isotherm_kd(),
-                            CS->isotherm_freundlich_n(),
-                            CS->isotherm_langmuir_b());
-        }
-        // store the total component concentration, so that we
-        // can restore it in the case of a chemistry failure
-        Teuchos::RCP<Epetra_MultiVector> tcc_stor;
-        if (chemistry_enabled || transport_enabled) {
-          tcc_stor = Teuchos::rcp(new Epetra_MultiVector(*total_component_concentration_star));
-        }
-        bool success(true);
-        int tries(0);
-
-        do {
-          // try to subcycle with tc_dT, if that fails, we will cut that time step and try again
+        // Now advance one step at a time till we reach the end of the flow timestep.
+        while (S->intermediate_time() < S->time() + mpc_dT) {
+          // Try to subcycle with tc_dT. If a timestep fails, we rely on the Chemistry PK 
+          // to select a new one and try again.
           try {
-
-            // subcycling loop
-            for (int iss = 0; iss<ntc; ++iss) {
-
-              // first we do a transport step, or if transport is off, we simply prepare
-              // total_component_concentration_star for the chemistry step
-              if (transport_enabled) {
-                Amanzi::timer_manager.start("Transport PK");
-                int ok = TPK->Advance(tc_dT);
-                if (ok == 0) {
-                  *total_component_concentration_star = *TPK->total_component_concentration()->ViewComponent("cell", true);
-                } else {
-                  Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
-                  Exceptions::amanzi_throw(message);
-                }
-              } else if (chemistry_enabled) { // if we're not advancing transport we still need to prepare for chemistry
-                *total_component_concentration_star = *S->GetFieldData("total_component_concentration")->ViewComponent("cell", true);
-              }
-
-              // second we do a chemistry step, or if chemistry is off, we simply update
-              // total_component_concentration in state
-              if (chemistry_enabled) {
-                if (vo_->os_OK(Teuchos::VERB_LOW)) {
-                  *vo_->os() << "Chemistry PK: advancing, current subcycling time step [sec] = " << tc_dT << std::endl;
-                }
-
-                Amanzi::timer_manager.start("Chemistry PK");
-                CPK->Advance(tc_dT, total_component_concentration_star);
-
-                Amanzi::timer_manager.stop("Chemistry PK");
-
-                *S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
-                    = * CPK->get_total_component_concentration();
+            // First we do a transport step. If transport is off, we simply prepare
+            // total_component_concentration_star for the chemistry step
+            if (transport_enabled) {
+              Amanzi::timer_manager.start("Transport PK");
+              int ok = TPK->Advance(tc_dT);
+              if (ok == 0) {
+                *total_component_concentration_star = *TPK->total_component_concentration()->ViewComponent("cell", true);
               } else {
-                if (chemistry_enabled || transport_enabled) {
-                  *S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
-                      = *total_component_concentration_star;
-                }
+                Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
+                Exceptions::amanzi_throw(message);
+              }
+            } else if (chemistry_enabled) { // if we're not advancing transport we still need to prepare for chemistry
+              *total_component_concentration_star = *S->GetFieldData("total_component_concentration")->ViewComponent("cell", true);
+            }
+
+            // Second, we do a chemistry step. If chemistry is off, we simply update
+            // total_component_concentration in state
+            if (chemistry_enabled) {
+              if (vo_->os_OK(Teuchos::VERB_LOW)) {
+                *vo_->os() << "Chemistry PK: advancing, current subcycling time step [sec] = " << tc_dT << std::endl;
               }
 
-              // all went well, so we can advance intermediate time, and call commit state
-              // for each pk
-              S->set_intermediate_time(S->intermediate_time() + tc_dT);
               Amanzi::timer_manager.start("Chemistry PK");
-              if (chemistry_enabled) CPK->CommitState(CS, tc_dT);
+              CPK->Advance(tc_dT, total_component_concentration_star);
+
               Amanzi::timer_manager.stop("Chemistry PK");
-            }
-            success = true;
-          } catch (const Errors::Message& chem_error) {
 
-            // if the chemistry step failed, we back up to the beginning of
-            // the chemistry subcycling loop, but to do that we must restore
-            // a few things, such as the chemistry state, total component
-            // concentration, and back up the intermediate time
-
-            // decrease the chemistry subcycling timestep and adjust the
-            // number of subcycles we need to take accordingly
-            ntc = 2*ntc;
-            tc_dT = 0.5 * tc_dT;
-
-            // increase the retry count
-            ++tries;
-
-            // bail if we've cut the subcycling timestep too many times
-            if (tries>=3) {
-              Errors::Message message("MPC: cut chemistry subcycling time step too many times, bailing...");
-              Exceptions::amanzi_throw(message);
+              *S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
+                  = * CPK->get_total_component_concentration();
+            } else {
+              if (chemistry_enabled || transport_enabled) {
+                *S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
+                    = *total_component_concentration_star;
+              }
             }
 
-            // the the user know that we're backing up due to a chemistry failure
+            // all went well, so we can advance intermediate time, and call commit state
+            // for each pk
+            S->set_intermediate_time(S->intermediate_time() + tc_dT);
+            Amanzi::timer_manager.start("Chemistry PK");
+            if (chemistry_enabled) CPK->CommitState(CS, tc_dT);
+            Amanzi::timer_manager.stop("Chemistry PK");
+          }
+          catch (const Errors::Message& chem_error) {
+
+            // If the chemistry step failed, we have to try again.
+
+            // the the user know that the chemistrty step failed.
             if (vo_->os_OK(Teuchos::VERB_LOW)) {
               *vo_->os() << chem_error.what() << std::endl
-                         << "Chemistry step failed, reducing chemistry subcycling time step." << std::endl
-                         << "  new chemistry subcycling time step = " << tc_dT << std::endl;
+                << "Chemistry step failed, reducing chemistry time step." << std::endl;
+            } // end if
+          } // end catch
+
+          if (chemistry_enabled) {
+            // Compute the next chemistry time step.
+            c_dT = CPK->time_step();
+
+            // If the new time step is essentially equal to the old one, chop it in half.
+            if (c_dT/tc_dT > 0.99) {
+              c_dT *= 0.5;
             }
-
-            // restore chemistry data to the beginning of the subcycling
-
-            chem_data_->retrieve(CS->free_ion_species(),
-                                 CS->primary_activity_coeff(),
-                                 CS->secondary_activity_coeff(),
-                                 CS->mineral_volume_fractions(),
-                                 CS->mineral_specific_surface_area(),
-                                 CS->total_sorbed(),
-                                 CS->sorption_sites(),
-                                 CS->surface_complex_free_site_conc(),
-                                 CS->ion_exchange_sites(),
-                                 CS->ion_exchange_ref_cation_conc(),
-                                 CS->isotherm_kd(),
-                                 CS->isotherm_freundlich_n(),
-                                 CS->isotherm_langmuir_b());
-
-            // restore the total component concentration to the beginning of chemistry subcycling
-            *S->GetFieldData("total_component_concentration","transport")->ViewComponent("cell", true)
-                = *tcc_stor;
-
-            // reset the intermediate time to the beginning
-            S->set_intermediate_time(S->initial_time());
-
-            success = false;
+            tc_dT = std::min(std::min(t_dT, c_dT), mpc_dT);
           }
-        } while (!success);
-      }
+        } // end while
+      } // end if
 
       // update the times in the state object
       S->advance_time(mpc_dT);

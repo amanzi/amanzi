@@ -353,7 +353,12 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
 
   // Other settings.
   max_time_step_ = chem_param_list_.get<double>("Max Time Step (s)", 9.9e9);
-  prev_time_step_ = chem_param_list_.get<double>("Initial Time Step (s)", 9.9e9);
+  prev_time_step_ = chem_param_list_.get<double>("Initial Time Step (s)", max_time_step_);
+  if (prev_time_step_ > max_time_step_) {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Initial Time Step exceeds Max Time Step!\n";
+    Exceptions::amanzi_throw(msg);
+  }
   time_step_ = prev_time_step_;
   time_step_control_method_ = chem_param_list_.get<std::string>("Time Step Control Method", "fixed");
   num_iterations_for_time_step_cut_ = chem_param_list_.get<int>("Time Step Cut Threshold", 8);
@@ -601,6 +606,7 @@ void Alquimia_Chemistry_PK::Advance(
       }
       ave_iterations += num_iterations_;
       num_successful_steps_++;
+      ComputeNextTimeStep();
     } 
     else
     {
