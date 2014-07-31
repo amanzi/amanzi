@@ -893,7 +893,8 @@ void MPC::cycle_driver() {
             if (c_dT/tc_dT > 0.99) {
               c_dT *= 0.5;
             }
-            tc_dT = std::min(std::min(t_dT, c_dT), mpc_dT);
+            double remaining_dT = S->initial_time() + mpc_dT - S->intermediate_time();
+            tc_dT = std::min(std::min(t_dT, c_dT), remaining_dT);
           }
         } // end while
       } // end if
