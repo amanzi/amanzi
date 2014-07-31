@@ -2431,7 +2431,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
 
         Teuchos::Array<double> flux;
 
-        if (bc_flux.isParameter("Inward Volumetric Flux")) {
+        if (bc_flux.isParameter("Inward Mass Flux")) {
           flux = bc_flux.get<Teuchos::Array<double> >("Inward Mass Flux");
           for (int i = 0; i < flux.size(); i++) flux[i] *= -1;
         } else if (bc_flux.isParameter("Inward Volumetric Flux")) {
