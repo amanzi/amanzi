@@ -207,6 +207,8 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
 {
   Errors::Message msg;
 
+  vo_ = Teuchos::rcp(new VerboseObject("Chemistry_PK", chem_param_list_));
+
   // NOTE that our parameter list should be the top-level parameter list "Main", 
   // not the "Chemistry" one used by the native Amanzi Chemistry PK.
 
@@ -528,8 +530,9 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time,
                             alq_mat_props_, alq_state_, alq_aux_data_);
 
   // Do the reaction.
+  int num_iterations;
   bool success = chem_engine_->Advance(delta_time, alq_mat_props_, alq_state_, 
-                                       alq_aux_data_, alq_aux_output_, num_iterations_);
+                                       alq_aux_data_, alq_aux_output_, num_iterations);
   if (not success) 
     return -1;
 
@@ -537,7 +540,7 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time,
   CopyAlquimiaStateToAmanzi(cellIndex, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_, 
                             chemistry_state_->total_component_concentration());
 
-  return num_iterations_;
+  return num_iterations;
 }
 
 /*******************************************************************************
@@ -586,37 +589,55 @@ void Alquimia_Chemistry_PK::Advance(
 
   // Now loop through all the cells and advance the chemistry.
   int ierr = 0;
+  int convergence_failure = 0;
   for (int cell = 0; cell < num_cells; ++cell)
   {
-    num_iterations_ = AdvanceSingleCell(delta_time, tcc_star, cell);
-    if (num_iterations_ > 0)
+    int num_iterations = AdvanceSingleCell(delta_time, tcc_star, cell);
+    if (num_iterations > 0)
     {
       //std::stringstream message;
       //message << "--- " << cell << "\n";
       //beaker_components_.Display(message.str().c_str());
-      if (max_iterations < num_iterations_) 
+      if (max_iterations < num_iterations) 
       {
-        max_iterations = num_iterations_;
+        max_iterations = num_iterations;
         imax = cell;
       }
-      if (min_iterations > num_iterations_) 
+      if (min_iterations > num_iterations) 
       {
-        min_iterations = num_iterations_;
+        min_iterations = num_iterations;
         imin = cell;
       }
-      ave_iterations += num_iterations_;
+      ave_iterations += num_iterations;
       num_successful_steps_++;
       ComputeNextTimeStep();
     } 
     else
     {
       // Convergence failure. Compute the next time step size.
+      convergence_failure = 1;
       num_successful_steps_ = 0;
       ComputeNextTimeStep();
-      msg << "Failure in Alquimia_Chemistry_PK::Advance";
-      Exceptions::amanzi_throw(msg); 
+      break;
     }
   }
+
+  // Check for convergence failure and broadcast if needed. Also agree on the maximum number 
+  // of Newton iterations.
+  int send[2], recv[2];
+  send[0] = convergence_failure;
+  send[1] = max_iterations;
+  chemistry_state_->mesh_maps()->get_comm()->MaxAll(send, recv, 2);
+  if (recv[0] != 0)
+  {
+    msg << "Failure in Alquimia_Chemistry_PK::Advance";
+    Exceptions::amanzi_throw(msg); 
+  }
+  num_iterations_ = recv[1];
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    *vo_->os() << "Chemistry PK: Advanced after " << num_iterations_ << " Newton iterations." << std::endl;
+  }
+
   // now publish auxiliary data to state
   if (aux_output_ != Teuchos::null) {
     for (int i=0; i<aux_output_->NumVectors(); ++i) {

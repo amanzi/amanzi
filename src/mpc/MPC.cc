@@ -143,8 +143,7 @@ void MPC::mpc_init() {
       }
       std::string chemEngineName = chemistry_parameter_list.get<std::string>("Engine");
       std::string chemEngineInputFile = chemistry_parameter_list.get<std::string>("Engine Input File");
-      MPI_Comm comm = mesh_maps->get_comm()->Comm();
-      chem_engine = Teuchos::rcp(new AmanziChemistry::ChemistryEngine(comm, chemEngineName, chemEngineInputFile));
+      chem_engine = Teuchos::rcp(new AmanziChemistry::ChemistryEngine(chemEngineName, chemEngineInputFile));
 
       // Overwrite the component names with the primary species names from the engine.
       chem_engine->GetPrimarySpeciesNames(component_names);
@@ -855,7 +854,6 @@ void MPC::cycle_driver() {
 
               Amanzi::timer_manager.start("Chemistry PK");
               CPK->Advance(tc_dT, total_component_concentration_star);
-
               Amanzi::timer_manager.stop("Chemistry PK");
 
               *S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)

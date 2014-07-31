@@ -1936,8 +1936,7 @@ void  PorousMedia::read_tracer()
         const std::string Chemistry_Engine_Input_stru = "Engine_Input_File";
         ppc.query(Chemistry_Engine_stru.c_str(),chemistry_engine_name);
         std::string chem_engine_input_filename; ppc.get(Chemistry_Engine_Input_stru.c_str(),chem_engine_input_filename);
-        MPI_Comm comm = ParallelDescriptor::Communicator();
-        chemistry_engine = new Amanzi::AmanziChemistry::ChemistryEngine(comm, chemistry_engine_name,chem_engine_input_filename);
+        chemistry_engine = new Amanzi::AmanziChemistry::ChemistryEngine(chemistry_engine_name,chem_engine_input_filename);
         chemistry_helper = new AlquimiaHelper_Structured(chemistry_engine);
         
         //

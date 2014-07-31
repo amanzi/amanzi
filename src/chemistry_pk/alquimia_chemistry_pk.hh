@@ -11,6 +11,7 @@
 
 #include "chemistry_pk_base.hh"
 #include "ChemistryEngine.hh"
+#include "VerboseObject.hh"
 
 // forward declarations
 class Epetra_MultiVector;
@@ -120,6 +121,9 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   // Auxiliary output data, requested by and stored within Amanzi.
   std::vector<std::string> aux_names_;
   Teuchos::RCP<Epetra_MultiVector> aux_output_;
+
+  // For printing diagnostic information.
+  Teuchos::RCP<VerboseObject> vo_;
 
   void UpdateChemistryStateStorage(void);
   int InitializeSingleCell(int cellIndex, const std::string& condition);

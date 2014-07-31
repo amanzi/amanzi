@@ -17,7 +17,6 @@ and to integrate reactions given a chemical configuration.
 #include <string>
 #include <vector>
 #include <map>
-#include <mpi.h>
 
 #include "alquimia_memory.h"
 #include "alquimia_util.h"
@@ -45,7 +44,7 @@ class ChemistryEngine {
  public:
 
   // Constructs a chemistry engine using the given engine (backend) name and input file.
-  ChemistryEngine(MPI_Comm comm, const std::string& engineName, const std::string& inputFile);
+  ChemistryEngine(const std::string& engineName, const std::string& inputFile);
 
   // Destructor.
   ~ChemistryEngine();
@@ -136,8 +135,6 @@ class ChemistryEngine {
                int& num_iterations);
 
  private:
-
-  MPI_Comm comm_;
 
   // Alquimia data structures.
   bool chem_initialized_;
