@@ -571,7 +571,14 @@ void Alquimia_Chemistry_PK::Advance(
   Errors::Message msg;
 
   current_time_ = saved_time_ + delta_time;
-  prev_time_step_ = delta_time;
+
+  // If we are given a dt that is less than the one we wanted, we don't record it.
+  if (delta_time < time_step_) {
+    prev_time_step_ = time_step_;
+  }
+  else {
+    prev_time_step_ = delta_time;
+  }
 
   // shorter name for the state that came out of transport
   Teuchos::RCP<const Epetra_MultiVector> tcc_star =
