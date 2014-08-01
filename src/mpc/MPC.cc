@@ -231,7 +231,7 @@ void MPC::mpc_init() {
   if (transport_enabled) {
     bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
     transport_subcycling = (subcycling) ? 1 : 0;
-    TPK->InitPK();
+    TPK->Initialize(S.ptr());
   }
 
   if (chemistry_enabled) {
@@ -685,7 +685,7 @@ void MPC::cycle_driver() {
 	   (ti_mode == TRANSIENT_STATIC_FLOW) ) {
         if (transport_enabled) {
           Amanzi::timer_manager.start("Transport PK");
-          double transport_dT_tmp = TPK->EstimateTransportDt();
+          double transport_dT_tmp = TPK->get_dt();
           if (transport_subcycling == 0) transport_dT = transport_dT_tmp;
           Amanzi::timer_manager.stop("Transport PK");
         }
@@ -819,7 +819,7 @@ void MPC::cycle_driver() {
           // in the input file
           double t_dT(transport_dT);
           if (transport_enabled) {
-            t_dT = TPK->EstimateTransportDt();
+            t_dT = TPK->get_dt();
             double ratio(c_dT/t_dT);
             if (ratio > chem_trans_dt_ratio) {
               c_dT = chem_trans_dt_ratio * t_dT;
@@ -871,15 +871,14 @@ void MPC::cycle_driver() {
         do {
           // try to subcycle with tc_dT, if that fails, we will cut that time step and try again
           try {
-
             // subcycling loop
-            for (int iss = 0; iss<ntc; ++iss) {
-
+            for (int iss = 0; iss < ntc; ++iss) {
               // first we do a transport step, or if transport is off, we simply prepare
               // total_component_concentration_star for the chemistry step
               if (transport_enabled) {
                 Amanzi::timer_manager.start("Transport PK");
-                int ok = TPK->Advance(tc_dT);
+                double tmp_dT;
+                int ok = TPK->Advance(tc_dT, tmp_dT);
                 if (ok == 0) {
                   *total_component_concentration_star = *TPK->total_component_concentration()->ViewComponent("cell", true);
                 } else {
@@ -987,7 +986,7 @@ void MPC::cycle_driver() {
 	   (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ||
 	   (ti_mode == TRANSIENT_STATIC_FLOW) ) {
         Amanzi::timer_manager.start("Transport PK");
-        if (transport_enabled && !chemistry_enabled) TPK->CommitState(S);
+        if (transport_enabled && !chemistry_enabled) TPK->CommitState(0.0, S);
         Amanzi::timer_manager.stop("Transport PK");
 
         Amanzi::timer_manager.start("Chemistry PK");

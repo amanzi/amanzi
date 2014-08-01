@@ -81,11 +81,11 @@ TEST(ADVANCE_WITH_2D_MESH) {
   }
 
   /* initialize a transport process kernel */
-  TPK.InitPK();
+  TPK.Initialize(S.ptr());
   TPK.PrintStatistics();
 
   /* advance the transport state */
-  double T = 0.0;
+  double dummy_dT, T = 0.0;
   Teuchos::RCP<Epetra_MultiVector> 
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
@@ -93,8 +93,8 @@ TEST(ADVANCE_WITH_2D_MESH) {
   bool flag = true;
   while (T < 0.3) {
     double dT = TPK.CalculateTransportDt();
-    TPK.Advance(dT);
-    TPK.CommitState(S);
+    TPK.Advance(dT, dummy_dT);
+    TPK.CommitState(dT, S);
     T += dT;
     iter++;
 

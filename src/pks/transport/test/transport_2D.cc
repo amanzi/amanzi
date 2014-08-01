@@ -83,20 +83,20 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   }
 
   /* initialize a transport process kernel from a transport state */
-  TPK.InitPK();
+  TPK.Initialize(S.ptr());
   TPK.PrintStatistics();
 
   /* advance the transport state */
   int iter, k;
-  double T = 0.0;
+  double dummy_dT, T = 0.0;
   Teuchos::RCP<Epetra_MultiVector> 
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
   iter = 0;
   while (T < 1.0) {
     double dT = TPK.CalculateTransportDt();
-    TPK.Advance(dT);
-    TPK.CommitState(S);
+    TPK.Advance(dT, dummy_dT);
+    TPK.CommitState(dT, S);
     T += dT;
     iter++;
 

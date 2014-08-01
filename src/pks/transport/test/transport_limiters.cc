@@ -84,7 +84,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   }
 
   /* initialize a transport process kernel */
-  TPK.InitPK();
+  TPK.Initialize(S.ptr());
   TPK.PrintStatistics();
   double dT = TPK.CalculateTransportDt();  // We call it to identify upwind cells.
 

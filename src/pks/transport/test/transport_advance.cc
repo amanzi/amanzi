@@ -95,12 +95,12 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     }
 
     // initialize a transport process kernel
-    TPK.InitPK();
+    TPK.Initialize(S.ptr());
     TPK.PrintStatistics();
 
     // advance the state
-    double dT = TPK.CalculateTransportDt();
-    TPK.Advance(dT);
+    double dummy_dT, dT = TPK.CalculateTransportDt();
+    TPK.Advance(dT, dummy_dT);
 
     // printing cell concentration
     double T = 0.0;
@@ -109,8 +109,8 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
 
     while(T < 1.2) {
       dT = TPK.CalculateTransportDt();
-      TPK.Advance(dT);
-      TPK.CommitState(S);
+      TPK.Advance(dT, dummy_dT);
+      TPK.CommitState(dT, S);
       T += dT;
  
       if (T < 0.4) {

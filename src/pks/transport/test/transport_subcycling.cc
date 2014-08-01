@@ -80,7 +80,7 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   }
 
   /* initialize a transport process kernel */
-  TPK.InitPK();
+  TPK.Initialize(S.ptr());
   TPK.PrintStatistics();
 
   /* advance the state */
@@ -91,11 +91,11 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   int iter = 0;
   while (T < 1.0) {
     // imitation of a small time step relative to flow time step
-    double dT = TPK.CalculateTransportDt();  
+    double dummy_dT, dT = TPK.CalculateTransportDt();  
     double dT_MPC = dT * 7.7;
 
-    TPK.Advance(dT_MPC);
-    TPK.CommitState(S);
+    TPK.Advance(dT_MPC, dummy_dT);
+    TPK.CommitState(dT_MPC, S);
     T += dT_MPC;
     iter++;
 

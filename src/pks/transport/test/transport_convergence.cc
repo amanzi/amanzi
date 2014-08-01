@@ -103,17 +103,17 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.InitPK();
+    TPK.Initialize(S.ptr());
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
     if (nx == 20) TPK.PrintStatistics();
  
     /* advance the state */
     int iter = 0;
-    double T = 0.0, T1 = 1.0;
+    double dummy_dT, T = 0.0, T1 = 1.0;
     while (T < T1) {
       double dT = std::min(TPK.CalculateTransportDt(), T1 - T);
-      TPK.Advance(dT);
-      TPK.CommitState(S);
+      TPK.Advance(dT, dummy_dT);
+      TPK.CommitState(dT, S);
       T += dT;
       iter++;
     }
@@ -212,12 +212,12 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.InitPK();
+    TPK.Initialize(S.ptr());
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
     if (nx == 20) TPK.PrintStatistics();
  
     /* advance the state */
-    double dT, dT0;
+    double dummy_dT, dT, dT0;
     if (nx == 20) dT0 = TPK.CalculateTransportDt();
     else dT0 /= 2;
 
@@ -227,8 +227,8 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
       dT = std::min(TPK.CalculateTransportDt(), T1 - T);
       dT = std::min(dT, dT0);
 
-      TPK.Advance(dT);
-      TPK.CommitState(S);
+      TPK.Advance(dT, dummy_dT);
+      TPK.CommitState(dT, S);
       T += dT;
       if (TPK.internal_tests) {
         TPK.CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);

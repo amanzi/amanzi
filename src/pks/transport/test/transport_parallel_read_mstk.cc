@@ -87,20 +87,20 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL_READ) {
   }
 
   /* initialize a transport process kernel from a transport state */
-  TPK.InitPK();
+  TPK.Initialize(S.ptr());
   TPK.PrintStatistics();
 
   /* advance the state */
-  double dT = TPK.CalculateTransportDt();  
-  TPK.Advance(dT);
+  double dummy_dT, dT = TPK.CalculateTransportDt();  
+  TPK.Advance(dT, dummy_dT);
 
   /* print cell concentrations */
   double T = 0.0;
   int iter = 0;
   while(T < 1.0) {
     dT = TPK.CalculateTransportDt();
-    TPK.Advance(dT);
-    TPK.CommitState(S);
+    TPK.Advance(dT, dummy_dT);
+    TPK.CommitState(dT, S);
     T += dT;
     iter++;
 

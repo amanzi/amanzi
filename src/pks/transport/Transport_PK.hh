@@ -24,13 +24,14 @@
 #include "VerboseObject.hh"
 
 #include "CompositeVector.hh"
-#include "tensor.hh"
 #include "Explicit_TI_FnBase.hh"
+#include "tensor.hh"
 #include "TransportBoundaryFunction.hh"
 #include "TransportDomainFunction.hh"
 
-#include "State.hh"
+#include "PK.hh"
 #include "Reconstruction.hh"
+#include "State.hh"
 
 #include "TransportDefs.hh"
 #include "TransportSourceFactory.hh"
@@ -42,14 +43,14 @@
 #endif
 
 /*
-This is Amanzi Transport Process Kernel (PK).
+  This is Amanzi Transport Process Kernel (PK).
 
-The transport PK receives a reduced (optional) copy of 
-a physical state at time n and returns a different state 
-at time n+1. 
+  The transport PK receives a reduced (optional) copy of 
+  a physical state at time n and returns a different state 
+  at time n+1. 
 
-Unmodified physical quantaties in the returned state are
-the smart pointers to the original variables.
+  Unmodified physical quantaties in the returned state are
+  the smart pointers to the original variables.
 */
 
 namespace Amanzi {
@@ -58,7 +59,7 @@ namespace Transport {
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
-class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
+class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
  public:
   Transport_PK();
 #ifdef ALQUIMIA_ENABLED
@@ -70,14 +71,26 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
                std::vector<std::string>& component_names);
   ~Transport_PK();
 
-  // primary members
-  int InitPK();
-  void InitializeFields();
+  // main PK members
+  void Setup(const Teuchos::Ptr<State>& S) {};
 
-  double EstimateTransportDt();
+  void Initialize(const Teuchos::Ptr<State>& S);
+  double get_dt();
+  int Advance(double dT, double &dT_actual); 
+  void CommitState(double dummy_dT, const Teuchos::RCP<State>& S);
+
+  void StateToSolution(const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& soln) {};
+  void SolutionToState(const Teuchos::RCP<TreeVector>& soln, const Teuchos::RCP<State>& S) {};
+
+  void SetStates(const Teuchos::RCP<const State>& S,
+                 const Teuchos::RCP<State>& S_inter,
+                 const Teuchos::RCP<State>& S_next) {};
+  void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
+  std::string name() { return "transport"; }
+
+  // main transport members
+  void InitializeFields();
   double CalculateTransportDt();
-  int Advance(double dT);
-  void CommitState(Teuchos::RCP<State> S);
 
   // access members  
   Teuchos::RCP<const State> state() { return S_; }

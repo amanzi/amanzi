@@ -73,7 +73,7 @@ TEST(CONSTRUCTOR) {
   TPK.CreateDefaultState(mesh, 2);
 
   /* initialize a transport process kernel from a transport state */
-  TPK.InitPK();
+  TPK.Initialize(S.ptr());
   TPK.PrintStatistics();
 
   double cfl = TPK.cfl();

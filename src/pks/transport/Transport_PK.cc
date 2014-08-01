@@ -151,7 +151,7 @@ Transport_PK::~Transport_PK()
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
-int Transport_PK::InitPK()
+void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Check that stars are oriented favorably for transport PK.
   Policy(S_);
@@ -225,8 +225,6 @@ int Transport_PK::InitPK()
   if (src_sink_distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
-
-  return 0;
 }
 
 
@@ -306,7 +304,7 @@ double Transport_PK::CalculateTransportDt()
 /* ******************************************************************* 
 * Estimate returns last time step unless it is zero.     
 ******************************************************************* */
-double Transport_PK::EstimateTransportDt()
+double Transport_PK::get_dt()
 {
   if (dT == 0.0) CalculateTransportDt();
   return dT;
@@ -318,7 +316,7 @@ double Transport_PK::EstimateTransportDt()
 * Efficient subcycling requires to calculate an intermediate state of
 * saturation only once, which leads to a leap-frog-type algorithm.
 ******************************************************************* */
-int Transport_PK::Advance(double dT_MPC)
+int Transport_PK::Advance(double dT_MPC, double& dT_actual)
 { 
   // We use original tcc and make a copy of it later if needed.
   tcc = S_->GetFieldData("total_component_concentration", name_);
@@ -538,7 +536,7 @@ int Transport_PK::Advance(double dT_MPC)
 /* ******************************************************************* 
 * Copy theadvected tcc to the provided state.
 ******************************************************************* */
-void Transport_PK::CommitState(Teuchos::RCP<State> S) 
+void Transport_PK::CommitState(double dummy_dT, const Teuchos::RCP<State>& S) 
 {
   Teuchos::RCP<CompositeVector> cv;
   cv = S->GetFieldData("total_component_concentration", name_);

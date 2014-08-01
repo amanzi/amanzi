@@ -109,11 +109,11 @@ TEST(DISPERSION) {
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::hide_line_prefix = true;
-  TPK.InitPK();
+  TPK.Initialize(S.ptr());
   TPK.PrintStatistics();
 
   /* advance the state */
-  double dT, dT0;
+  double dummy_dT, dT, dT0;
   dT0 = TPK.CalculateTransportDt();
 
   int i, k, iter = 0;
@@ -124,8 +124,8 @@ TEST(DISPERSION) {
     // for (int k = 0; k < nx; k++) printf("%10.8f\n", (*tcc)[0][k]); 
     // printf("\n");
 
-    TPK.Advance(dT);
-    TPK.CommitState(S);
+    TPK.Advance(dT, dummy_dT);
+    TPK.CommitState(dT, S);
     T += dT;
     iter++;
 
