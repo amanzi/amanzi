@@ -966,6 +966,16 @@
     <Parameter name="Engine Input File" type="string" value="rifle-arora-spycher.in"/>
     <Parameter name="Max Time Step (s)" type="double" value="1e4"/> <!-- "31556926.0"/> -->
     <Parameter name="Verbosity" type="string" value="high"/>
+
+    <!-- time step control -->
+    <Parameter name="Initial Time Step (s)" type="double" value="5.0"/>
+    <Parameter name="Time Step Control Method" type="string" value="simple"/>  <!-- default is fixed -->
+    <Parameter name="Time Step Cut Threshold" type="int" value="8"/>           <!-- default is 8     -->
+    <Parameter name="Time Step Cut Factor" type="double" value="2.0"/>         <!-- default is 2.0   -->
+    <Parameter name="Time Step Increase Threshold" type="int" value="4"/>      <!-- default is 4     -->
+    <Parameter name="Time Step Increase Factor" type="double" value="1.2"/>    <!-- default is 1.2   -->
+    <Parameter name="Max Time Step (s)" type="double" value="1e5"/> -->
+
   </ParameterList> <!-- Chemistry -->
 
 </ParameterList>
