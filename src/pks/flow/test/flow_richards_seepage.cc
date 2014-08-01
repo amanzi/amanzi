@@ -98,7 +98,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   RPK->DeriveFaceValuesFromCellValues(p, lambda); 
 
   /* create Richards process kernel */
-  RPK->InitPK();
+  RPK->Initialize(S.ptr());
   RPK->ti_specs_sss().T1 = 1e+10;
   RPK->ti_specs_sss().dTmax = 1e+8;
   RPK->ti_specs_sss().residual_tol = 1e-9;
@@ -108,7 +108,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
 
   /* solve the steady-state problem */
   RPK->AdvanceToSteadyState(0.0, 0.01);
-  RPK->CommitState(S);
+  RPK->CommitState(0.0, S);
 
   const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell");
   if (MyPID == 0) {

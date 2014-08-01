@@ -112,16 +112,11 @@ if (BUILD_TESTS)
        set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow operators whetstone data_structures)
 
         # Test: transient Darcy flow 
-        add_amanzi_test(flow_darcy_2D flow_darcy_2D
+        add_amanzi_test(flow_darcy_transient flow_darcy_transient
 	                KIND int
-                        SOURCE test/Main.cc test/flow_darcy_2D.cc
+                        SOURCE test/Main.cc test/flow_darcy_transient.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
- 
-        # Test: transient Darcy flow 
-        add_executable(flow_darcy_3D test/Main.cc test/flow_darcy_3D.cc)
-        target_link_libraries(flow_darcy_3D ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(flow_darcy_3D flow_darcy_3D KIND int)
-        add_amanzi_test(flow_darcy_3D_parallel flow_darcy_3D NPROCS 2 KIND unit)
+        add_amanzi_test(flow_darcy_transient_parallel flow_darcy_transient NPROCS 2 KIND unit)
  
         # Test: transient Darcy flow 
         add_amanzi_test(flow_darcy_dual2D flow_darcy_dual2D

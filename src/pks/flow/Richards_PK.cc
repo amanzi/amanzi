@@ -172,7 +172,7 @@ Richards_PK::~Richards_PK()
 /* ******************************************************************
 * Extract information from Richards Problem parameter list.
 ****************************************************************** */
-void Richards_PK::InitPK()
+void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Initialize miscalleneous default parameters.
   ti_specs = NULL;
@@ -539,7 +539,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 /* ******************************************************************
 * This routine avoid limitations of MPC by bumping up the time step.                                          
 ****************************************************************** */
-double Richards_PK::CalculateFlowDt()
+double Richards_PK::get_dt()
 {
   if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_PICARD && block_picard == 1) dT *= 1e+4;
   return dT;
@@ -601,7 +601,7 @@ int Richards_PK::Advance(double dT_MPC, double& dT_actual)
 * The consistency condition is improved by adjusting saturation while
 * preserving its LED property.
 ****************************************************************** */
-void Richards_PK::CommitState(Teuchos::RCP<State> S)
+void Richards_PK::CommitState(double dt, const Teuchos::RCP<State>& S)
 {
   // copy solution to State
   CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);

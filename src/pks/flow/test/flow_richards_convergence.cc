@@ -151,13 +151,13 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     S->CheckAllFieldsInitialized();
 
     /* create Richards process kernel */
-    RPK->InitPK();
+    RPK->Initialize(S.ptr());
     RPK->ti_specs_sss().T1 = 1e+4;
     RPK->ti_specs_sss().max_itrs = 1000;
 
     RPK->InitSteadyState(0.0, 0.001);
     RPK->AdvanceToSteadyState(0.0, 0.001);
-    RPK->CommitState(S);
+    RPK->CommitState(0.0, S);
 
     double pressure_err, flux_err, div_err;  // error checks
     const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

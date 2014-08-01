@@ -86,7 +86,7 @@ TEST(FLOW_2D_DARCY_WELL) {
   S->GetFieldData("specific_storage", passwd)->PutScalar(0.1);
 
   /* initialize the Darcy process kernel */
-  DPK->InitPK();
+  DPK->Initialize(S.ptr());
   DPK->InitTransient(0.0, 1e-8);
 
   /* transient solution */
@@ -94,7 +94,7 @@ TEST(FLOW_2D_DARCY_WELL) {
   for (int n = 0; n < 10; n++) {
     double dT_actual(dT);
     DPK->Advance(dT, dT_actual);
-    DPK->CommitState(S);
+    DPK->CommitState(dT, S);
 
     if (MyPID == 0) {
       const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

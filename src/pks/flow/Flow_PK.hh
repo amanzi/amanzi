@@ -9,7 +9,7 @@
   Authors: Neil Carlson (version 1) 
            Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
-  This is a base virtual class.
+  This is a derived abstract class.
 */
 
 #ifndef AMANZI_FLOW_PK_HH_
@@ -45,18 +45,13 @@ double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
 class Flow_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
  public:
   Flow_PK();
-  ~Flow_PK() {};
+  virtual ~Flow_PK() {};
 
   // main PK methods
   void Setup(const Teuchos::Ptr<State>& S) {};
-  void Initialize(const Teuchos::Ptr<State>& S) {};
 
   void StateToSolution(const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& soln) {};
   void SolutionToState(const Teuchos::RCP<TreeVector>& soln, const Teuchos::RCP<State>& S) {};
-
-  double GetDt() {};
-  int Advance(double dt, double& dt_actual) {};
-  void CommitState(double dt, const Teuchos::RCP<State>& S) {};
 
   void SetStates(const Teuchos::RCP<const State>& S,
                  const Teuchos::RCP<State>& S_inter,
@@ -64,19 +59,15 @@ class Flow_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
   void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
   std::string name() { return "flow"; }
 
-  // main methods
+  // main flow methods
   void Init();
-  virtual void InitPK() = 0;
   virtual void InitPicard(double T0) = 0;
   virtual void InitSteadyState(double T0, double dT0) = 0;
   virtual void InitTransient(double T0, double dT0) = 0;
 
-  virtual double CalculateFlowDt() = 0;
   virtual int AdvanceToSteadyState(double T0, double dT0) = 0;
   virtual void InitializeAuxiliaryData() = 0;
   virtual void InitializeSteadySaturated() = 0;
-
-  virtual void CommitState(Teuchos::RCP<State> S) = 0;
 
   void UpdateAuxilliaryData();  // auxilliary data management
   void InitializeFields();

@@ -31,20 +31,21 @@ class Darcy_PK : public Flow_PK {
   Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S);
   ~Darcy_PK();
 
-  // main methods
-  void InitPK();
+  // main PK methods
+  void Initialize(const Teuchos::Ptr<State>& S);
+  int Advance(double dT, double &dT_actual); 
+  double get_dt() { return dT_desirable_; }
+  void CommitState(double dt, const Teuchos::RCP<State>& S);
+
+  // main flow methods
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
   void InitPicard(double T0) {};  // not used yet.
   void InitNextTI(double T0, double dT0, TI_Specs& ti_specs);
 
-  double CalculateFlowDt() { return dT_desirable_; }
-  int Advance(double dT, double &dT_actual); 
   int AdvanceToSteadyState(double T0, double dT0);
   void InitializeAuxiliaryData();
   void InitializeSteadySaturated();
-
-  void CommitState(Teuchos::RCP<State> S);
 
   // methods required for time integration
   void Functional(const double Told, double Tnew, 

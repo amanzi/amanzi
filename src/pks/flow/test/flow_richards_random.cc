@@ -157,14 +157,14 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     S->CheckAllFieldsInitialized();
 
     /* create Richards process kernel */
-    RPK->InitPK();
+    RPK->Initialize(S.ptr());
     RPK->ti_specs_sss().T1 = 1e+4;
     RPK->ti_specs_sss().max_itrs = 400;
 
     RPK->InitializeAuxiliaryData();
     RPK->InitSteadyState(0.0, 1.0);
     RPK->AdvanceToSteadyState(0.0, 1.0);
-    RPK->CommitState(S);
+    RPK->CommitState(0.0, S);
 
     S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
     const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

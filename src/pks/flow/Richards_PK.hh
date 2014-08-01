@@ -37,15 +37,18 @@ class Richards_PK : public Flow_PK {
   Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<State> S);
   ~Richards_PK();
 
-  // main methods
-  void InitPK();
+  // main PK methods
+  void Initialize(const Teuchos::Ptr<State>& S);
+  int Advance(double dT_MPC, double& dT_actual); 
+  double get_dt();
+  void CommitState(double dt, const Teuchos::RCP<State>& S);
+
+  // main flow methods
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
   void InitPicard(double T0);
   void InitNextTI(double T0, double dT0, TI_Specs& ti_specs);
 
-  double CalculateFlowDt();
-  int Advance(double dT_MPC, double& dT_actual); 
   int AdvanceToSteadyState(double T0, double dT0);
   void InitializeAuxiliaryData();
   void InitializeSteadySaturated();
@@ -53,8 +56,6 @@ class Richards_PK : public Flow_PK {
   int AdvanceToSteadyState_Picard(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BDF1(TI_Specs& ti_specs);
-
-  void CommitState(Teuchos::RCP<State> S);
 
   // methods for experimental time integration
   double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);

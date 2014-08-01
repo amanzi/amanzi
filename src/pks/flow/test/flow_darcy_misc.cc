@@ -212,10 +212,10 @@ TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
     createBClist("pressure", "BC 2", regions, 1.0);
 
     DPK->ResetParameterList(dp_list);
-    DPK->InitPK();  // setup the problem
+    DPK->Initialize(S.ptr());  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(S);
+    DPK->CommitState(0.0, S);
 
     // calculate errors
     double p0 = 1.0;
@@ -250,10 +250,10 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
     createBClist("pressure", "BC 2", regions, 1.0);
     DPK->ResetParameterList(dp_list);
 
-    DPK->InitPK();  // setup the problem
+    DPK->Initialize(S.ptr());  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(S);
+    DPK->CommitState(0.0, S);
 
     // calculate errors
     double p0 = 1.0;
@@ -289,10 +289,10 @@ TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
 
     DPK->ResetParameterList(dp_list);
 
-    DPK->InitPK();  // setup the problem
+    DPK->Initialize(S.ptr());  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(S);
+    DPK->CommitState(0.0, S);
 
     // calculate errors
     double p0 = 2.0;
@@ -329,10 +329,10 @@ TEST_FIXTURE(DarcyProblem, DDprisms) {
     createBClist("pressure", "BC 2", regions, 1.0);
     DPK->ResetParameterList(dp_list);
 
-    DPK->InitPK();  // setup the problem
+    DPK->Initialize(S.ptr());  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(S);
+    DPK->CommitState(0.0, S);
 
     // calculate errors
     double p0 = 1.0;
@@ -370,10 +370,10 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
     createBClist("pressure", "BC 2", regions, 1.0);
     DPK->ResetParameterList(dp_list);
 
-    DPK->InitPK();  // setup the problem
+    DPK->Initialize(S.ptr());  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(S);
+    DPK->CommitState(0.0, S);
 
     // calculate errors
     double p0 = 1.0;
@@ -411,10 +411,10 @@ TEST_FIXTURE(DarcyProblem, DDmixed) {
     createBClist("pressure", "BC 2", regions, 1.0);
     DPK->ResetParameterList(dp_list);
 
-    DPK->InitPK();  // setup the problem
+    DPK->Initialize(S.ptr());  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);
-    DPK->CommitState(S);
+    DPK->CommitState(0.0, S);
 
     // calculate errors
     double p0 = 1.0;

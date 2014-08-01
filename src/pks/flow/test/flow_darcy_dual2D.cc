@@ -90,7 +90,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   }
 
   /* initialize Darcy process kernel */
-  DPK->InitPK();
+  DPK->Initialize(S.ptr());
   DPK->InitTransient(0.0, 1e-8);
 
   /* transient solution */
@@ -98,7 +98,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   for (int n = 0; n < 2; n++) {
     double dT_actual(dT);
     DPK->Advance(dT, dT_actual);
-    DPK->CommitState(S);
+    DPK->CommitState(dT, S);
 
     if (MyPID == 0) {
       GMV::open_data_file(*mesh, (std::string)"flow.gmv");

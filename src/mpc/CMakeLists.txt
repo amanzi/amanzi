@@ -65,7 +65,6 @@ list(REVERSE mpc_tpl_libs)
 
 set(mpc_inc_files
   MPC.hh
-  PK.hh
   Unstructured_observations.hh
 )
 

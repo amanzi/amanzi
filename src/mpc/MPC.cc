@@ -225,7 +225,7 @@ void MPC::mpc_init() {
   S->CheckAllFieldsInitialized();
 
   if (flow_enabled) {
-    FPK->InitPK();
+    FPK->Initialize(S.ptr());
   }
 
   if (transport_enabled) {
@@ -458,26 +458,24 @@ void MPC::cycle_driver() {
     S->set_intermediate_time(Tswitch);
   }
 
-
   if (chemistry_enabled) {
     // create stor for chemistry data
     int number_of_secondaries(0);
     if (CS->secondary_activity_coeff() != Teuchos::null) {
       number_of_secondaries = CS->secondary_activity_coeff()->NumVectors();
     }
-    chem_data_ = Teuchos::rcp( new chemistry_data (mesh_maps->cell_map(false),
-                                                   S->GetFieldData("total_component_concentration")->ViewComponent("cell", true)->NumVectors(),
-                                                   CS->number_of_minerals(),
-                                                   number_of_secondaries,
-                                                   CS->number_of_ion_exchange_sites(),
-                                                   CS->number_of_sorption_sites(),
-                                                   CS->using_sorption(),
-                                                   CS->using_sorption_isotherms()) );
+    chem_data_ = Teuchos::rcp(new chemistry_data(mesh_maps->cell_map(false),
+                                                 S->GetFieldData("total_component_concentration")->ViewComponent("cell", true)->NumVectors(),
+                                                 CS->number_of_minerals(),
+                                                 number_of_secondaries,
+                                                 CS->number_of_ion_exchange_sites(),
+                                                 CS->number_of_sorption_sites(),
+                                                 CS->using_sorption(),
+                                                 CS->using_sorption_isotherms()));
   }
 
   int iter = 0;  // set the iteration counter to zero
   S->set_cycle(iter);
-
 
   double restart_dT(1.0e99);
   // read the checkpoint file as requested
@@ -495,7 +493,7 @@ void MPC::cycle_driver() {
     if (flow_enabled) FPK->InitializeAuxiliaryData();
     if (do_picard_) {
       FPK->InitPicard(S->time());
-      FPK->CommitState(S);
+      FPK->CommitState(0.0, S);
     }
     Amanzi::timer_manager.stop("Flow PK");
   }
@@ -521,7 +519,7 @@ void MPC::cycle_driver() {
       if (!restart_requested) {
         FPK->InitSteadyState(S->time(), dTsteady);
         FPK->InitializeSteadySaturated();
-        FPK->CommitState(S);
+        FPK->CommitState(0.0, S);
         if (ti_mode == INIT_TO_STEADY) S->advance_time(Tswitch-T0);
         if (ti_mode == STEADY)         S->advance_time(T1-T0);
       } else {
@@ -674,7 +672,7 @@ void MPC::cycle_driver() {
                ( (flow_model == std::string("Steady State Richards") && S->time() >= Tswitch) ||
                  (flow_model == std::string("Steady State Saturated") && S->time() >= Tswitch) ||
                  (flow_model == std::string("Richards") ) ) ) ) {
-            flow_dT = FPK->CalculateFlowDt();
+            flow_dT = FPK->get_dt();
           }
         } else {
           flow_dT = restart_dT;
@@ -782,7 +780,7 @@ void MPC::cycle_driver() {
 	    mpc_dT = actual_dT;
 	    tslimiter = FLOW_LIMITS;
 	  }
-	  FPK->CommitState(S);
+	  FPK->CommitState(mpc_dT, S);
         }
       }
       S->set_final_time(S->initial_time() + mpc_dT);

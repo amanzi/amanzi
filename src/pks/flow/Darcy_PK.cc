@@ -176,7 +176,7 @@ Darcy_PK::~Darcy_PK()
 /* ******************************************************************
 * Extract information from Diffusion Problem parameter list.
 ****************************************************************** */
-void Darcy_PK::InitPK()
+void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Initialize defaults
   bc_pressure = NULL; 
@@ -517,7 +517,7 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
 * Transfer data from the external flow state FS_MPC. MPC may request
 * to populate the original state FS. 
 ****************************************************************** */
-void Darcy_PK::CommitState(Teuchos::RCP<State> S)
+void Darcy_PK::CommitState(double dt, const Teuchos::RCP<State>& S)
 {
   CompositeVector& p = *S_->GetFieldData("pressure", passwd_);
   p = *solution;

@@ -74,7 +74,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   S->CheckAllFieldsInitialized();
 
   /* create Richards problem */
-  RPK->InitPK();
+  RPK->Initialize(S.ptr());
   RPK->ti_specs_sss().T1 = 100.0;
   RPK->ti_specs_sss().max_itrs = 400;
 
@@ -100,7 +100,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   std::cout << "grad(p)=" << v0 << std::endl;
 
   RPK->AdvanceToSteadyState(0.0, 1.0);
-  RPK->CommitState(S);
+  RPK->CommitState(0.0, S);
 
   /* check accuracy */
   const Epetra_MultiVector& pressure = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");

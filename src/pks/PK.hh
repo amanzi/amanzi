@@ -35,7 +35,7 @@ class PK {
                                const Teuchos::RCP<State>& S) = 0;
 
   // Choose a time step compatible with physics.
-  virtual double GetDt() = 0;
+  virtual double get_dt() = 0;
 
   // Advance from state S0 to state S1 at time S0.time + dt.
   // Due to Flow PK / MPC conflict (FIXME when MPC will be upgraded)

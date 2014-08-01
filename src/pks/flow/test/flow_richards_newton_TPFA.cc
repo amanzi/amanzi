@@ -77,14 +77,14 @@ TEST(NEWTON_RICHARD_STEADY) {
   S->CheckAllFieldsInitialized();
 
   /* create Richards process kernel */
-  RPK->InitPK();
+  RPK->Initialize(S.ptr());
   RPK->ti_specs_sss().T1 = 3e+9;
   RPK->ti_specs_sss().max_itrs = 400;
   RPK->InitSteadyState(0.0, 1.0);
 
   /* solve the problem */
   RPK->AdvanceToSteadyState(0.0, 1e+7);
-  RPK->CommitState(S);
+  RPK->CommitState(0.0, S);
 
   /* derive dependent variable */
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
