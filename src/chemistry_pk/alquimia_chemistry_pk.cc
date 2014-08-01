@@ -626,16 +626,18 @@ void Alquimia_Chemistry_PK::Advance(
   }
 
   // Check for convergence failure and broadcast if needed. Also agree on the maximum number 
-  // of Newton iterations.
-  int send[2], recv[2];
+  // of Newton iterations and its location.
+  int send[3], recv[3];
   send[0] = convergence_failure;
   send[1] = max_iterations;
-  chemistry_state_->mesh_maps()->get_comm()->MaxAll(send, recv, 2);
+  send[2] = imax;
+  chemistry_state_->mesh_maps()->get_comm()->MaxAll(send, recv, 3);
   if (recv[0] != 0) 
     num_successful_steps_ = 0;
   else
     num_successful_steps_++;
   num_iterations_ = recv[1];
+  imax = recv[2];
 
   // Compute the next time step.
   ComputeNextTimeStep();
@@ -646,7 +648,7 @@ void Alquimia_Chemistry_PK::Advance(
     Exceptions::amanzi_throw(msg); 
   }
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-    *vo_->os() << "Chemistry PK: Advanced after " << num_iterations_ << " Newton iterations." << std::endl;
+    *vo_->os() << "Chemistry PK: Advanced after maximum of " << num_iterations_ << " Newton iterations in cell " << imax << "." << std::endl;
   }
 
   // now publish auxiliary data to state
