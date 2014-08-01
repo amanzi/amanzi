@@ -5,6 +5,15 @@
 #    PK class
 #
 
+#
+# Define a project name
+# After this command the following varaibles are defined
+#   PKS_SOURCE_DIR
+#   PKS_BINARY_DIR
+# Other projects (subdirectories) can reference this directory
+# through these variables.
+project(PKS)
+
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})

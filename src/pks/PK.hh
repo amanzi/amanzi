@@ -20,7 +20,7 @@ namespace Amanzi {
 class PK {
  public:
   // Virtual destructor
-  virtual ~PK() {}
+  virtual ~PK() {};
 
   // Setup
   virtual void Setup(const Teuchos::Ptr<State>& S) = 0;
@@ -39,7 +39,7 @@ class PK {
 
   // Advance from state S0 to state S1 at time S0.time + dt.
   // Due to Flow PK / MPC conflict (FIXME when MPC will be upgraded)
-  virtual bool Advance(double dt, double& dt_actual) = 0;
+  virtual int Advance(double dt, double& dt_actual) = 0;
   // virtual bool Advance(double dt) = 0;
 
   // Commit any secondary (dependent) variables.

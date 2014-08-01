@@ -34,6 +34,7 @@ include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
+include_directories(${PKS_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
