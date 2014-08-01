@@ -41,7 +41,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   if (MyPID == 0) std::cout << "Test: 2D transient Darcy, 2-layer model" << std::endl;
 
   /* read parameter list */
-  std::string xmlFileName = "test/flow_darcy_2D.xml";
+  std::string xmlFileName = "test/flow_darcy_transient_2D.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
@@ -159,7 +159,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   if (MyPID == 0) std::cout << "Test: 3D transient Darcy, 3-layer model" << std::endl;
 
   /* read parameter list */
-  std::string xmlFileName = "test/flow_darcy_3D.xml";
+  std::string xmlFileName = "test/flow_darcy_transient_3D.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
