@@ -964,7 +964,6 @@
   <ParameterList name="Chemistry">
     <Parameter name="Engine" type="string" value="PFloTran"/>
     <Parameter name="Engine Input File" type="string" value="rifle-arora-spycher.in"/>
-    <Parameter name="Max Time Step (s)" type="double" value="1e4"/> <!-- "31556926.0"/> -->
     <Parameter name="Verbosity" type="string" value="high"/>
 
     <!-- time step control -->
