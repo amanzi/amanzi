@@ -132,11 +132,10 @@ Time Integration Mode
 
 The MPC list must have a sublist `"Time Integration Mode`" if flow is enabled.
 This sublist must have exactly one of the following three sublists: `"Steady`",
-`"Initialize To Steady`" or `"Transient`". The first one is used to find
-a steady-state solution and terminate the simulation. 
-The steady-state calculations starts at time `"Start`" and terminates at time
-`"End`". The corresponding values as well as the initial time step are given
-in seconds.
+`"Initialize To Steady`", `"Transient with Static Flow`", or `"Transient`". 
+The first one is used to find a steady-state solution and terminate the simulation. 
+The steady-state calculations starts at time `"Start`" and terminates at time `"End`". 
+The corresponding values as well as the initial time step are given in seconds.
 
 .. code-block:: xml
 
@@ -182,6 +181,25 @@ The third time integration mode is used for a transient simulation only.
     </ParameterList>
   </ParameterList>
 
+The fourth time integration mode is used for a transient simulation only.
+The flow field is static so no flow solver is called during time stepping. 
+During initialization the flow field is set in one of two ways: 
+(1) A constant Darcy velocity is specified in the initial condition; 
+(2) Boundary conditions for the flow (e.g., pressure), along with the 
+initial condition for the pressure field are used to solve for the Darcy velocity. 
+At present this mode only supports the "Single Phase" flow model.
+
+.. code-block:: xml
+
+  <ParameterList name="MPC">
+    <ParameterList name="Time Integration Mode">
+      <ParameterList name="Transient With Static Flow">
+        <Parameter name="Start" type="double" value="0.0"/>
+        <Parameter name="End" type="double" value="5.0"/>
+        <Parameter name="Initial Time Step" type="double" value="0.1"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
 
 Restart from Checkpoint Data File

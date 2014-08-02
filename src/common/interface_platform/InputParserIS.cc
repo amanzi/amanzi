@@ -1433,46 +1433,62 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
           use_picard = ti_mode_list.sublist("Initialize To Steady").get<bool>("Use Picard",USE_PICARD);
         }
         if (use_picard) {
-          bool have_picard_params_list(false);
-          Teuchos::ParameterList picard_params_list;
+          bool have_picard_params(false);
+          Teuchos::ParameterList picard_params;
           if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
             Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
             if (ncp_list.isSublist("Unstructured Algorithm")) {
               Teuchos::ParameterList& ncpu_list = ncp_list.sublist("Unstructured Algorithm");
               if (ncpu_list.isSublist("Steady-State Pseudo-Time Implicit Solver")) {
-                have_picard_params_list = true;
-                picard_params_list = ncpu_list.sublist("Steady-State Pseudo-Time Implicit Solver");
+                have_picard_params = true;
+                picard_params = ncpu_list.sublist("Steady-State Pseudo-Time Implicit Solver");
               }
             }
           }
 
           Teuchos::ParameterList& picard_list = flow_list->sublist("initial guess pseudo time integrator");
-          picard_list.sublist("Picard").set<double>("error abs tol", ST_ERROR_ABS_TOL);
-          picard_list.sublist("Picard").set<double>("error rel tol", ST_ERROR_REL_TOL);
-          picard_list.sublist("Picard").set<double>("time step increase factor", ST_TS_INC_FACTOR);
+          if (have_picard_params) {
+            bool ini = picard_params.get<bool>("pseudo time integrator initialize with darcy", PIC_INIT_DARCY);
+            if (ini) { 
+              Teuchos::ParameterList& picard_ini = picard_list.sublist("initialization");
+              picard_ini.set<std::string>("method", "saturated solver");
+              picard_ini.set<std::string>("linear solver",
+                  picard_params.get<std::string>("pseudo time integrator linear solver", PIC_SOLVE));
+              picard_ini.set<double>("clipping saturation value", 
+                  picard_params.get<double>("pseudo time integrator clipping saturation value", PIC_CLIP_SAT));
+            }
 
-          if (have_picard_params_list) {
-            picard_list.set<bool>("initialize with darcy",picard_params_list.get<bool>("pseudo time integrator initialize with darcy",PIC_INIT_DARCY));
-            picard_list.set<double>("clipping saturation value",picard_params_list.get<double>("pseudo time integrator clipping saturation value",PIC_CLIP_SAT));
-            picard_list.set<std::string>("time integration method",picard_params_list.get<std::string>("pseudo time integrator time integration method",PIC_METHOD));
-            picard_list.set<std::string>("preconditioner",picard_params_list.get<std::string>("pseudo time integrator preconditioner",PIC_PRECOND));
-            picard_list.set<std::string>("linear solver",picard_params_list.get<std::string>("pseudo time integrator linear solver",PIC_SOLVE));
+            picard_list.set<std::string>("time integration method", 
+                picard_params.get<std::string>("pseudo time integrator time integration method", PIC_METHOD));
+            picard_list.set<std::string>("preconditioner",
+                picard_params.get<std::string>("pseudo time integrator preconditioner", PIC_PRECOND));
+            picard_list.set<std::string>("linear solver",
+                picard_params.get<std::string>("pseudo time integrator linear solver", PIC_SOLVE));
+
             Teuchos::Array<std::string> error_ctrl(1);
             error_ctrl[0] = std::string(PIC_ERROR_METHOD);
-            picard_list.set<Teuchos::Array<std::string> >("error control options",picard_params_list.get<Teuchos::Array<std::string> >("pseudo time integrator error control options",error_ctrl));
-            picard_list.sublist("Picard").set<double>("convergence tolerance",picard_params_list.get<double>("pseudo time integrator picard convergence tolerance",PICARD_TOLERANCE));
-            picard_list.sublist("Picard").set<int>("maximum number of iterations",picard_params_list.get<int>("pseudo time integrator picard maximum number of iterations",PIC_MAX_ITER));
+            picard_list.set<Teuchos::Array<std::string> >("error control options",
+                picard_params.get<Teuchos::Array<std::string> >("pseudo time integrator error control options", error_ctrl));
+            picard_list.sublist("Picard").set<double>("convergence tolerance",
+                picard_params.get<double>("pseudo time integrator picard convergence tolerance", PICARD_TOLERANCE));
+            picard_list.sublist("Picard").set<int>("maximum number of iterations",
+                picard_params.get<int>("pseudo time integrator picard maximum number of iterations", PIC_MAX_ITER));
           } else {
-            picard_list.set<bool>("initialize with darcy",PIC_INIT_DARCY);
-            picard_list.set<double>("clipping saturation value",PIC_CLIP_SAT);
-            picard_list.set<std::string>("time integration method",PIC_METHOD);
-            picard_list.set<std::string>("preconditioner",PIC_PRECOND);
-            picard_list.set<std::string>("linear solver",PIC_SOLVE);
+            if (PIC_INIT_DARCY) {
+              Teuchos::ParameterList& picard_ini = picard_list.sublist("initialization");
+              picard_ini.set<std::string>("method", "saturated solver");
+              picard_ini.set<std::string>("linear solver", PIC_SOLVE);
+              picard_ini.set<double>("clipping saturation value", PIC_CLIP_SAT);
+            }
+            picard_list.set<std::string>("time integration method", PIC_METHOD);
+            picard_list.set<std::string>("preconditioner", PIC_PRECOND);
+            picard_list.set<std::string>("linear solver", PIC_SOLVE);
+
             Teuchos::Array<std::string> error_ctrl(1);
             error_ctrl[0] = std::string(PIC_ERROR_METHOD);
-            picard_list.set<Teuchos::Array<std::string> >("error control options",error_ctrl);
-            picard_list.sublist("Picard").set<double>("convergence tolerance",PICARD_TOLERANCE);
-            picard_list.sublist("Picard").set<int>("maximum number of iterations",PIC_MAX_ITER);
+            picard_list.set<Teuchos::Array<std::string> >("error control options", error_ctrl);
+            picard_list.sublist("Picard").set<double>("convergence tolerance", PICARD_TOLERANCE);
+            picard_list.sublist("Picard").set<int>("maximum number of iterations", PIC_MAX_ITER);
           }
         }
 

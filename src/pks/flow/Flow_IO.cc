@@ -160,7 +160,13 @@ void Flow_PK::ProcessSublistTimeIntegration(
       ti_specs.inflow_krel_correction = pl_list.get<bool>("inflow krel correction", "false");
 
       ti_specs.solver_name_constraint = FindStringLinearSolver(pl_list);
+    } else {
+      ti_specs.pressure_lambda_constraints = false;
     }
+
+    // Picard sublist
+    ti_specs.max_itrs = bdf1_list.get<int>("maximum number of iterations", FLOW_TI_MAX_ITERATIONS);
+    ti_specs.residual_tol = bdf1_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
 
   } else if (name != "none") {
     msg << "\nFlow PK: specified time integration sublist does not exist.";
