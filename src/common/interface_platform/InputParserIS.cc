@@ -1596,7 +1596,7 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
                   sti_bdf1_std.set<double>("time step increase factor",num_list.get<double>("steady time step increase factor",ST_SP_DT_INCR_FACTOR));
                 }
 		// initialization
-		if (num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL)) {
+		if (!use_picard && num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL)) {
 		  Teuchos::ParameterList &sti_init = steady_time_integrator.sublist("initialization");
 		  sti_init.set<std::string>("method", "saturated solver");
 		  sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
