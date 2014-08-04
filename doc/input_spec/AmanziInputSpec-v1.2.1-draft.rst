@@ -1429,14 +1429,14 @@ The following source parameterizations are supported.
 
 * [U] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [U] `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
+* [U] `"Source: Uniform Concentration`" [mol/s/m^3] uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
 
   * `"Times`" [Array(double)], list of times used by the time function.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
   * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
   * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
 
-* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`"
+* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`". Units are either [mol/m^3/s] or [mol/s] depending on definition of the flow source.
 
   * `"Times`" [Array(double)], list of times used by the time function.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
