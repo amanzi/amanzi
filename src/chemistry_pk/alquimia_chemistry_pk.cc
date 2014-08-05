@@ -355,10 +355,27 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
 
   // Other settings.
   max_time_step_ = chem_param_list_.get<double>("Max Time Step (s)", 9.9e9);
-  prev_time_step_ = chem_param_list_.get<double>("Initial Time Step (s)", max_time_step_);
+  min_time_step_ = chem_param_list_.get<double>("Min Time Step (s)", 9.9e9);
+  prev_time_step_ = chem_param_list_.get<double>("Initial Time Step (s)", min_time_step_);
+  if ((min_time_step_ == 9.9e9) && (prev_time_step_ < 9.9e9))
+    min_time_step_ = prev_time_step_;
+  else if ((min_time_step_ == 9.9e9) && (max_time_step_ < 9.9e9))
+    min_time_step_ = max_time_step_;
+  else if (min_time_step_ > max_time_step_) {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Min Time Step exceeds Max Time Step!\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  if ((min_time_step_ < max_time_step_) && (prev_time_step_ == max_time_step_))
+    prev_time_step_ = min_time_step_;
   if (prev_time_step_ > max_time_step_) {
     msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
     msg << "  Initial Time Step exceeds Max Time Step!\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  if (prev_time_step_ < min_time_step_) {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Initial Time Step is smaller than Min Time Step!\n";
     Exceptions::amanzi_throw(msg);
   }
   time_step_ = prev_time_step_;
@@ -680,6 +697,8 @@ void Alquimia_Chemistry_PK::ComputeNextTimeStep()
   }
   if (time_step_ > max_time_step_)
     time_step_ = max_time_step_;
+  else if (time_step_ > min_time_step_)
+    time_step_ = min_time_step_;
 }
 
 // the MPC will call this function to signal to the

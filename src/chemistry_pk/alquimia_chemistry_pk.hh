@@ -86,7 +86,7 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
  private:
 
   // Timestepping controls.
-  double time_step_, max_time_step_, prev_time_step_;
+  double time_step_, max_time_step_, min_time_step_, prev_time_step_;
   std::string time_step_control_method_;
   int num_iterations_for_time_step_cut_, num_steps_before_time_step_increase_;
   double time_step_cut_factor_, time_step_increase_factor_;
