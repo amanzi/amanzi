@@ -90,7 +90,7 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
   // requirements: primary variable
   S->RequireField(key_, name_)->SetMesh(mesh_)->
       SetComponent("cell", AmanziMesh::CELL, 1);
-
+  
 
   // requirements: other primary variables
   Teuchos::RCP<FieldEvaluator> fm;
@@ -140,6 +140,23 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
+  // requirements: diagnostic variables
+  S->RequireField("albedo",name_)->SetMesh(mesh_)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->GetField("albedo",name_)->set_io_checkpoint(false);
+  S->RequireField("evaporative_flux",name_)->SetMesh(mesh_)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->GetField("evaporative_flux",name_)->set_io_checkpoint(false);
+  S->RequireField("qE_latent_heat",name_)->SetMesh(mesh_)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->GetField("qE_latent_heat",name_)->set_io_checkpoint(false);
+  S->RequireField("qE_sensible_heat",name_)->SetMesh(mesh_)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->GetField("qE_sensible_heat",name_)->set_io_checkpoint(false);
+  S->RequireField("qE_lw_out",name_)->SetMesh(mesh_)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->GetField("qE_lw_out",name_)->set_io_checkpoint(false);
+  
   // requirements: independent variables (data from MET)
   S->RequireFieldEvaluator("incoming_shortwave_radiation");
   S->RequireField("incoming_shortwave_radiation")->SetMesh(mesh_)
@@ -217,13 +234,23 @@ SurfaceBalanceImplicit::initialize(const Teuchos::Ptr<State>& S) {
 
   SEBPhysics::SEB seb;
 
-  // initialize snow density to fresh powder
-  S->GetFieldData("snow_density",name_)->PutScalar(seb.params.density_freshsnow);
-  S->GetField("snow_density", name_)->set_initialized();
+  // initialize snow density, age
+  ASSERT(plist_->isSublist("initial condition"));
+  Teuchos::ParameterList& ic_list = plist_->sublist("initial condition");
+  if (ic_list.isParameter("restart file")) {
+    // initialize density, age from restart file
+    S->GetField("snow_density", name_)->Initialize(ic_list);
+    S->GetField("snow_density", name_)->set_initialized();
+    S->GetField("snow_age", name_)->Initialize(ic_list);
+    S->GetField("snow_age", name_)->set_initialized();
+  } else {
+    // initialize density to fresh powder, age to 0
+    S->GetFieldData("snow_density",name_)->PutScalar(seb.params.density_freshsnow);
+    S->GetField("snow_density", name_)->set_initialized();
 
-  // initialize snow age to 0.
-  S->GetFieldData("snow_age",name_)->PutScalar(0.);
-  S->GetField("snow_age", name_)->set_initialized();
+    S->GetFieldData("snow_age",name_)->PutScalar(0.);
+    S->GetField("snow_age", name_)->set_initialized();
+  }
 
   // initialize swe consistently with snow height and density
   Epetra_MultiVector& swe = *S->GetFieldData("stored_SWE",name_)->ViewComponent("cell",false);
@@ -255,6 +282,13 @@ SurfaceBalanceImplicit::initialize(const Teuchos::Ptr<State>& S) {
 
   S->GetFieldData("surface_mass_source_temperature",name_)->PutScalar(273.15);
   S->GetField("surface_mass_source_temperature",name_)->set_initialized();
+
+  // initialize diagnostics
+  S->GetField("albedo",name_)->set_initialized();
+  S->GetField("evaporative_flux",name_)->set_initialized();
+  S->GetField("qE_latent_heat",name_)->set_initialized();
+  S->GetField("qE_sensible_heat",name_)->set_initialized();
+  S->GetField("qE_lw_out",name_)->set_initialized();
 }
 
 
@@ -301,7 +335,19 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       ->ViewComponent("cell",false);
   Epetra_MultiVector& snow_dens_new = *S_next_->GetFieldData("snow_density", name_)
       ->ViewComponent("cell",false);
-    Epetra_MultiVector& stored_SWE_new = *S_next_->GetFieldData("stored_SWE", name_)
+  Epetra_MultiVector& stored_SWE_new = *S_next_->GetFieldData("stored_SWE", name_)
+      ->ViewComponent("cell",false);
+
+  // pull diagnostics
+  Epetra_MultiVector& albedo = *S_next_->GetFieldData("albedo",name_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& evaporative_flux = *S_next_->GetFieldData("evaporative_flux",name_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& qE_latent_heat = *S_next_->GetFieldData("qE_latent_heat",name_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& qE_sensible_heat = *S_next_->GetFieldData("qE_sensible_heat",name_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& qE_lw_out = *S_next_->GetFieldData("qE_lw_out",name_)
       ->ViewComponent("cell",false);
 
   // pull ATS data
@@ -475,7 +521,6 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       surf_water_flux[0][c] = seb.out.mb.MWg;
       surf_water_flux_temp[0][c] = seb.out.mb.MWg_temp;
 
-
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
       // surface mass sources are in m^3 water / (m^2 s)
@@ -489,6 +534,13 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       snow_dens_new[0][c] = seb.out.snow_new.density;
       snow_temp_new[0][c] = seb.in.vp_snow.temp;
       stored_SWE_new[0][c] = seb.out.snow_new.SWE;
+
+      // -- diagnostics
+      albedo[0][c] = seb.in.surf.albedo;
+      evaporative_flux[0][c] = seb.out.mb.Me;
+      qE_latent_heat[0][c] = seb.out.eb.fQe;
+      qE_sensible_heat[0][c] = seb.out.eb.fQh;
+      qE_lw_out[0][c] = seb.out.eb.fQlwOut;
 
       if (eval_derivatives_) {
         // evaluate FD derivative of energy flux wrt surface temperature
@@ -536,13 +588,13 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       seb.in.met.vp_air.temp = air_temp[0][c];
       seb.in.met.vp_air.relative_humidity = relative_humidity[0][c];
 
-     if (longwave_input_) {
-          seb.in.met.QlwIn = (*incoming_longwave)[0][c];
-      }else{
-          seb.in.met.vp_air.UpdateVaporPressure();
-          double e_air = std::pow(10*seb.in.met.vp_air.actual_vaporpressure, seb.in.met.vp_air.temp / 2016.);
-          e_air = 1.08 * (1 - std::exp(-e_air));
-          seb.in.met.QlwIn = e_air * seb.params.stephB * std::pow(seb.in.met.vp_air.temp,4); // Add if statement here ~ AA
+      if (longwave_input_) {
+	seb.in.met.QlwIn = (*incoming_longwave)[0][c];
+      } else {
+	seb.in.met.vp_air.UpdateVaporPressure();
+	double e_air = std::pow(10*seb.in.met.vp_air.actual_vaporpressure, seb.in.met.vp_air.temp / 2016.);
+	e_air = 1.08 * (1 - std::exp(-e_air));
+	seb.in.met.QlwIn = e_air * seb.params.stephB * std::pow(seb.in.met.vp_air.temp,4); // Add if statement here ~ AA
       }
 
       // -- smoothed/interpolated surface properties
@@ -637,6 +689,13 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       }
       snow_temp_new[0][c] = seb.in.vp_snow.temp;
 
+      // -- diagnostics
+      albedo[0][c] = theta * seb.in.surf.albedo + (1-theta) * seb_bare.in.surf.albedo;
+      evaporative_flux[0][c] = theta * seb.out.mb.Me + (1-theta) * seb.out.mb.Me;
+      qE_latent_heat[0][c] = theta * seb.out.eb.fQe + (1-theta) * seb.out.eb.fQe;
+      qE_sensible_heat[0][c] = theta * seb.out.eb.fQh + (1-theta) * seb.out.eb.fQh;
+      qE_lw_out[0][c] = theta * seb.out.eb.fQlwOut + (1-theta) * seb.out.eb.fQlwOut;
+
       // Evaluate derivatives, if requested
       if (eval_derivatives_) {
         // evaluate FD derivative of energy flux wrt surface temperature
@@ -711,8 +770,12 @@ SurfaceBalanceImplicit::UpdatePreconditioner(double t,
 double
 SurfaceBalanceImplicit::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
+  Teuchos::OSTab tab = vo_->getOSTab();
   double err;
   du->NormInf(&err);
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    *vo_->os() << "ENorm (cells) = " << err << std::endl;
+  }
   return err;
 }
 

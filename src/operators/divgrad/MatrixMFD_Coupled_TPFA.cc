@@ -33,6 +33,11 @@ void MatrixMFD_Coupled_TPFA::SetSubBlocks(const Teuchos::RCP<MatrixMFD>& blockA,
 
 int MatrixMFD_Coupled_TPFA::ApplyInverse(const TreeVector& X,
         TreeVector& Y) const {
+  if (!assembled_schur_) {
+    AssembleSchur_();
+    UpdatePreconditioner_();
+  }
+
   if (S_pc_ == Teuchos::null) {
     Errors::Message msg("MatrixMFD::ApplyInverse called but no preconditioner sublist was provided");
     Exceptions::amanzi_throw(msg);
@@ -64,10 +69,10 @@ int MatrixMFD_Coupled_TPFA::ApplyInverse(const TreeVector& X,
   }
 
   // Solve the Schur complement system Spp * Yc = Xc.
-  Xc.Print(std::cout);
-  S_pc_->ApplyInverse(Xc, Yc);
-  //ierr = S_pc_->ApplyInverse(Xc, Tc);
-  //ASSERT(!ierr);
+  //  Xc.Print(std::cout);
+  //S_pc_->ApplyInverse(Xc, Yc);
+  ierr = S_pc_->ApplyInverse(Xc, Yc);
+  ASSERT(!ierr);
 
   for (int c=0; c!=ncells; ++c) {
     YA_c[0][c] = Yc[0][2*c];
@@ -112,7 +117,7 @@ int MatrixMFD_Coupled_TPFA::ApplyInverse(const TreeVector& X,
 }
 
 
-void MatrixMFD_Coupled_TPFA::ComputeSchurComplement(bool dump) {
+void MatrixMFD_Coupled_TPFA::AssembleSchur_() const {
   int ierr(0);
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
@@ -183,7 +188,7 @@ void MatrixMFD_Coupled_TPFA::ComputeSchurComplement(bool dump) {
   P2f2f_ = P2c2c_; // alias for use by PC
 
   // DEBUG dump
-  if (dump || dump_schur_) {
+  if (dump_schur_) {
     std::stringstream filename_s;
     filename_s << "schur_MatrixMFD_Coupled_TPFA_" << 0 << ".txt";
     EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);

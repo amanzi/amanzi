@@ -19,6 +19,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "TimeStepManager.hh"
 #include "visualization.hh"
@@ -42,6 +43,11 @@ Coordinator::Coordinator(Teuchos::ParameterList& parameter_list,
     S_(S),
     comm_(comm),
     restart_(false) {
+
+  // create and start the global timer
+  timer_ = Teuchos::rcp(new Teuchos::Time("wallclock_monitor",true));
+  setup_timer_ = Teuchos::TimeMonitor::getNewCounter("setup");
+  cycle_timer_ = Teuchos::TimeMonitor::getNewCounter("cycle");
   coordinator_init();
 
   vo_ = Teuchos::rcp(new VerboseObject("Coordinator", *parameter_list_));
@@ -368,6 +374,7 @@ void Coordinator::read_parameter_list() {
   min_dt_ = coordinator_list_->get<double>("min time step size", 1.0e-12);
   cycle0_ = coordinator_list_->get<int>("start cycle",0);
   cycle1_ = coordinator_list_->get<int>("end cycle",-1);
+  duration_ = coordinator_list_->get<double>("wallclock duration [hrs]", -1.0);
 
   // restart control
   restart_ = coordinator_list_->isParameter("restart from checkpoint file");
@@ -471,9 +478,15 @@ void Coordinator::checkpoint(double dt, bool force) {
 // timestep loop
 // -----------------------------------------------------------------------------
 void Coordinator::cycle_driver() {
+  // wallclock duration -- in seconds
+  const double duration(duration_ * 3600);
+
   // start at time t = t0 and initialize the state.
-  setup();
-  initialize();
+  {
+    Teuchos::TimeMonitor monitor(*setup_timer_);
+    setup();
+    initialize();
+  }
 
   // get the intial timestep -- note, this would have to be fixed for a true restart
   double dt = get_dt();
@@ -483,11 +496,15 @@ void Coordinator::cycle_driver() {
   checkpoint(dt);
 
   // iterate process kernels
+  {
+    Teuchos::TimeMonitor cycle_monitor(*cycle_timer_);
 #if !DEBUG_MODE
   try {
 #endif
     bool fail = false;
-    while ((S_->time() < t1_) && ((cycle1_ == -1) || (S_->cycle() <= cycle1_))) {
+    while ((S_->time() < t1_) &&
+           ((cycle1_ == -1) || (S_->cycle() <= cycle1_)) &&
+           (duration_ < 0 || timer_->totalElapsedTime(true) < duration)) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "======================================================================"
@@ -526,8 +543,10 @@ void Coordinator::cycle_driver() {
     throw e;
   }
 #endif
-
+  }
+  
   report_memory();
+  Teuchos::TimeMonitor::summarize(*vo_->os());
 
   finalize();
 
