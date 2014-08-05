@@ -486,6 +486,7 @@ void MPC::cycle_driver() {
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
          it != reset_info_.end(); ++it) {
       if (it->first < S->time()) it = reset_info_.erase(it);
+      if (it == reset_info_.end() ) break;
     }
     S->set_initial_time(S->time());
   } else { // no restart, we will call the PKs to allow them to init their auxilary data and massage initial conditions
@@ -603,9 +604,7 @@ void MPC::cycle_driver() {
     }
   }
 
-
   Amanzi::timer_manager.stop("I/O");
-
 
   if (flow_enabled || transport_enabled || chemistry_enabled) {
     if (observations != Teuchos::null) {
