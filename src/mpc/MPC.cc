@@ -886,9 +886,9 @@ void MPC::cycle_driver() {
             c_dT = CPK->time_step();
 
             // If the new time step is essentially equal to the old one, chop it in half.
-            if (c_dT/tc_dT > 0.99) {
+	    /*   if (c_dT/tc_dT > 0.99) {
               c_dT *= 0.5;
-            }
+	      } */
             double remaining_dT = S->initial_time() + mpc_dT - S->intermediate_time();
             tc_dT = std::min(std::min(t_dT, c_dT), remaining_dT);
           }
