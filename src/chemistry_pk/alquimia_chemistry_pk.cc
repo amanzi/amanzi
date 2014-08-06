@@ -78,7 +78,8 @@ Alquimia_Chemistry_PK::Alquimia_Chemistry_PK(const Teuchos::ParameterList& param
 Alquimia_Chemistry_PK::~Alquimia_Chemistry_PK() 
 {
   // Destroy ansilary data structures.
-  chem_engine_->FreeState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+  if (chem_initialized_)
+    chem_engine_->FreeState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 }  // end ~Alquimia_Chemistry_PK()
 
 // This helper performs initialization on a single cell within Amanzi's state.
