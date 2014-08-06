@@ -106,7 +106,7 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Closed");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
   FrameworkPreference pref;
   pref.clear();
@@ -184,7 +184,7 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
     knc->UpdateValues(solution);
 
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                        .get<Teuchos::ParameterList>("diffusion operator");
+                                        .get<Teuchos::ParameterList>("diffusion operator Sff");
     Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist, bc));
 
     int schema_dofs = op2->schema_dofs();

@@ -111,7 +111,7 @@ void SolverNKA<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
-  overflow_l2_tol_ = plist_.get<double>("diverged l2 tolerance", 1.0e5);
+  overflow_l2_tol_ = plist_.get<double>("diverged l2 tolerance", 1.0e10);
   max_itrs_ = plist_.get<int>("limit iterations", 20);
   max_du_growth_factor_ = plist_.get<double>("max du growth factor", 1.0e5);
   max_error_growth_factor_ = plist_.get<double>("max error growth factor", 1.0e5);

@@ -140,10 +140,10 @@
     <ParameterList name="Initial Condition">
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
-        <Parameter name="Phase"                type="string"        value="Aqueous"/>
-        <Parameter name="Reference Value"      type="double"        value="0"/>
-        <Parameter name="Reference Coordinate" type="Array(double)" value="{100, 4}"/>
-        <Parameter name="Gradient Value"       type="Array(double)" value="{-97.893474, -9789.3474}"/>
+        <Parameter name="Phase"           type="string"        value="Aqueous"/>
+        <Parameter name="Reference Value" type="double"        value="0"/>
+        <Parameter name="Reference Point" type="Array(double)" value="{100, 4}"/>
+        <Parameter name="Gradient Value"  type="Array(double)" value="{-97.893474, -9789.3474}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

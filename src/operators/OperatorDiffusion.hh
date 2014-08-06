@@ -70,8 +70,10 @@ class OperatorDiffusion : public Operator {
   void UpdateMatricesNodal_();
   void UpdateMatricesTPFA_();
   void UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector> flux);
-  int ApplyInverseSpecial_(const CompositeVector& X, CompositeVector& Y) const;
-  void InitPreconditionerSpecialCRS_(const std::string& prec_name, const Teuchos::ParameterList& plist);
+  int ApplyInverseSpecialSff_(const CompositeVector& X, CompositeVector& Y) const;
+  int ApplyInverseSpecialScc_(const CompositeVector& X, CompositeVector& Y) const;
+  void InitPreconditionerSpecialSff_(const std::string& prec_name, const Teuchos::ParameterList& plist);
+  void InitPreconditionerSpecialScc_(const std::string& prec_name, const Teuchos::ParameterList& plist);
 
  public:
   std::vector<WhetStone::DenseMatrix> Wff_cells_;
@@ -84,7 +86,7 @@ class OperatorDiffusion : public Operator {
 
   int schema_base_, schema_dofs_, schema_;
   int schema_prec_dofs_;
-  mutable bool special_assembling_;
+  mutable int special_assembling_;
 
   double factor_;
 

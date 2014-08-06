@@ -3401,7 +3401,7 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
 	              Exceptions::amanzi_throw(msg);
 	            }
 	            Teuchos::Array<double> coord = make_coordinates(attrValue, def_list);
-		    pressureList.set<Teuchos::Array<double> >("Reference Coordinate",coord);
+		    pressureList.set<Teuchos::Array<double> >("Reference Point",coord);
 	            XMLString::release(&attrValue);
 		    //gradient
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("gradient"));

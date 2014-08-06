@@ -9,6 +9,9 @@
  * 
  */
 
+#include <iostream>
+#include <sstream>
+
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_StrUtils.hpp"
@@ -37,8 +40,10 @@ Amanzi::AmanziGeometry::RegionPtr
 Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
                                       const unsigned int reg_id, 
                                       const Teuchos::ParameterList& reg_params,
+                                      const int space_dim,
                                       const Epetra_MpiComm *comm)
 {
+  std::stringstream sstream;
 
   // There should be only one item below the region name
   // which indicates the shape of the
@@ -76,6 +81,14 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
 
       if (p0_vec.size() == 3) 
         {
+          if (space_dim != 3) {
+            sstream << "Box " << reg_name << 
+              " specified using 3D coordinates but problem is " << 
+              space_dim << " dimensional. Check input!" << std::endl;
+            Errors::Message mesg(sstream.str());
+            amanzi_throw(mesg);
+          }
+
           p0.init(3);
           p0.set(p0_vec[0], p0_vec[1], p0_vec[2]);
           p1.init(3);
@@ -83,6 +96,14 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         }
       else if (p0_vec.size() == 2)
         {
+          if (space_dim != 2) {
+            sstream << "Box " << reg_name << 
+              " specified using 2D coordinates but problem is " << 
+              space_dim << " dimensional. Check input!" << std::endl;
+            Errors::Message mesg(sstream.str());
+            amanzi_throw(mesg);
+          }
+
           p0.init(2);
           p0.set(p0_vec[0], p0_vec[1]);
           p1.init(2);
@@ -97,9 +118,14 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         if (comm->MyPID() == 0) {
           int ndeg=0;
           if (((BoxRegionPtr) regptr)->is_degenerate(&ndeg) && ndeg > 1) {
-            std::cerr << "\n" << "Box region \"" << reg_name << "\" is degenerate in 2 or more directions" << std::endl;
-            std::cerr << "This means it is a line or point in 3D, or it is a point in 2D" << std::endl;
-            std::cerr << "The code can only ask for nodes (not cells or faces) on this region" << std::endl << std::endl;
+            std::cerr << "\n" << "Box region \"" << reg_name << 
+              "\" is degenerate in 2 or more directions" << std::endl;
+            std::cerr << 
+            "This means it is a line or point in 3D, or it is a point in 2D" <<
+              std::endl;
+            std::cerr << 
+            "Can only ask for nodes (not cells or faces) on this region" << 
+              std::endl << std::endl;
           }
         }
 
@@ -122,6 +148,14 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
 
       if (p_vec.size() == 3) 
         {
+          if (space_dim != 3) {
+            sstream << "Plane " << reg_name << 
+              " specified using 3D coordinates but problem is " << 
+              space_dim << " dimensional. Check input!" << std::endl;
+            Errors::Message mesg(sstream.str());
+            amanzi_throw(mesg);
+          }
+
           p.init(3);
           p.set(p_vec[0], p_vec[1], p_vec[2]);
           n.init(3);
@@ -129,6 +163,14 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         }
       else if (p_vec.size() == 2)
         {
+          if (space_dim != 2) {
+            sstream << "Plane " << reg_name << 
+              " specified using 2D coordinates but problem is " << 
+              space_dim << " dimensional. Check input!" << std::endl;
+            Errors::Message mesg(sstream.str());
+            amanzi_throw(mesg);
+          }
+
           p.init(2);
           p.set(p_vec[0], p_vec[1]);
           n.init(2);
@@ -158,6 +200,23 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
       }
       int dim = pvec.size()/num_points;
 
+      if (dim == 3 && space_dim != 3) {
+        sstream << "Polygon " << reg_name << 
+          " specified using 3D coordinates but problem is " << 
+          space_dim << " dimensional. Check input!" << std::endl;
+        Errors::Message mesg(sstream.str());
+        amanzi_throw(mesg);
+      }
+      else if (dim == 2 && space_dim != 2) {
+        sstream << "Polygon " << reg_name << 
+          " specified using 3D coordinates but problem is " << 
+          space_dim << " dimensional. Check input!" << std::endl;
+        Errors::Message mesg(sstream.str());
+        amanzi_throw(mesg);
+      }
+
+
+
       std::vector<Point> points;
       Point pnt(dim);
       for (int i = 0; i < num_points; i++) {
@@ -177,41 +236,7 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         Exceptions::amanzi_throw(mesg);
       }
     }
-  else if (shape == "Region: Plane")
-    {
-      Teuchos::ParameterList plane_params = reg_params.sublist(shape);
-
-      Teuchos::Array<double> p_vec = plane_params.get< Teuchos::Array<double> >("Location");
-        
-      Teuchos::Array<double> n_vec = plane_params.get< Teuchos::Array<double> >("Direction");
-
-      Point p, n;
-
-      if (p_vec.size() == 3) 
-        {
-          p.init(3);
-          p.set(p_vec[0], p_vec[1], p_vec[2]);
-          n.init(3);
-          n.set(n_vec[0], n_vec[1], n_vec[2]);
-        }
-      else if (p_vec.size() == 2)
-        {
-          p.init(2);
-          p.set(p_vec[0], p_vec[1]);
-          n.init(2);
-          n.set(n_vec[0], n_vec[1]);          
-        }
-
-      try {
-        RegionPtr regptr = new PlaneRegion(reg_name, reg_id, p, n, lifecycle);
-        return regptr;
-      }
-      catch (Errors::Message mesg) {
-        mesg << "\n" << "Cannot create region of type Plane";
-        Exceptions::amanzi_throw(mesg);
-      }
-    }
-  else if (shape == "Region: Labeled Set")
+ else if (shape == "Region: Labeled Set")
     {
       Teuchos::ParameterList labeledset_params = reg_params.sublist(shape);
 
@@ -264,11 +289,27 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
 
       if (p_vec.size() == 3) 
         {
+          if (space_dim != 3) {
+            sstream << "Point " << reg_name << 
+              " specified using 3D coordinates but problem is " << 
+              space_dim << " dimensional. Check input!" << std::endl;
+            Errors::Message mesg(sstream.str());
+            amanzi_throw(mesg);
+          }
+
           pnt.init(3);
           pnt.set(p_vec[0], p_vec[1], p_vec[2]);
         }
       else if (p_vec.size() == 2)
         {
+          if (space_dim != 2) {
+            sstream << "Plane " << reg_name << 
+              " specified using 3D coordinates but problem is " << 
+              space_dim << " dimensional. Check input!" << std::endl;
+            Errors::Message mesg(sstream.str());
+            amanzi_throw(mesg);
+          }
+
           pnt.init(2);
           pnt.set(p_vec[0], p_vec[1]);
         }

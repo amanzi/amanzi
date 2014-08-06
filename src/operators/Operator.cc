@@ -129,8 +129,10 @@ void Operator::Init()
 
 /* ******************************************************************
 * Create a global matrix.
+* The non-standard option has default value 0. This violation of the
+* standards is due to the experimental nature of this option.
 ****************************************************************** */
-void Operator::SymbolicAssembleMatrix(int schema)
+void Operator::SymbolicAssembleMatrix(int schema, int nonstandard)
 {
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
@@ -243,8 +245,34 @@ void Operator::SymbolicAssembleMatrix(int schema)
   for (int nb = 0; nb < nblocks; nb++) {
     int subschema = blocks_schema_[nb] & schema;
 
+    // Non-standard combinations of schemas 
+    if (nonstandard == 1 && 
+        (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) && 
+        subschema == OPERATOR_SCHEMA_DOFS_CELL) {
+      for (int f = 0; f < nfaces_owned; f++) {
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        int ncells = cells.size();
+
+        int nd;
+        if (subschema == OPERATOR_SCHEMA_DOFS_CELL) {
+          for (int n = 0; n < ncells; n++) {
+            lid[n] = offset_my_[1] + cells[n];
+            gid[n] = offset_global_[1] + cmap_wghost.GID(cells[n]);
+          }
+          nd = ncells;
+        }
+
+        for (int n = 0; n < nd; n++) {
+          if (lid[n] < ndof) {
+            ff_graph.InsertGlobalIndices(gid[n], nd, gid);
+          } else {
+            ff_graph_off.InsertMyIndices(lid[n] - ndof, nd, lid);
+          }
+        }
+      }
+
     // Typical representatives of cell-based methods are MFD and FEM.
-    if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
+    } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
       for (int c = 0; c < ncells_owned; c++) {
         int nd;
         if (subschema == OPERATOR_SCHEMA_DOFS_FACE) {
@@ -278,6 +306,8 @@ void Operator::SymbolicAssembleMatrix(int schema)
             gid[n] = offset_global_[2] + vmap_wghost.GID(nodes[n]);
           }
           nd = nnodes;
+        } else {
+          ASSERT(false);
         }
 
         for (int n = 0; n < nd; n++) {

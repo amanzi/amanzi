@@ -107,6 +107,10 @@ MeshFactory::create(const std::string& filename,
     if (framework_reads(*i, fmt, my_comm->NumProc() > 1)) {
       try {
         result = framework_read(my_comm, *i, filename, gm);
+        if (gm && (gm->dimension() != result->space_dimension())) {
+          Errors::Message mesg("Geometric model and mesh dimension do not match");
+          amanzi_throw(mesg);
+        }
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -158,6 +162,11 @@ MeshFactory::create(double x0, double y0, double z0,
   aerr[0] = 0;
 
   unsigned int dim = 3;
+
+  if (gm && (gm->dimension() != 3)) {
+    Errors::Message mesg("Geometric model and mesh dimension do not match");
+    amanzi_throw(mesg);
+  }
 
   if (nx <= 0 || ny <= 0 || nz <= 0) {
     ierr[0] += 1;
@@ -231,6 +240,11 @@ MeshFactory::create(double x0, double y0,
 
   unsigned int dim = 2;
 
+  if (gm && (gm->dimension() != 2)) {
+    Errors::Message mesg("Geometric model and mesh dimension do not match");
+    amanzi_throw(mesg);
+  }
+
   if (nx <= 0 || ny <= 0) {
     ierr[0] += 1;
     e.add_data(boost::str(boost::format("invalid mesh cells requested: %d x %d") %
@@ -299,6 +313,10 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
     if (framework_generates(*i, my_comm->NumProc() > 1, dim)) {
       try {
         result = framework_generate(my_comm, *i, parameter_list, gm);
+        if (gm && (gm->dimension() != result->space_dimension())) {
+          Errors::Message mesg("Geometric model and mesh dimension do not match");
+          amanzi_throw(mesg);
+        }
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;

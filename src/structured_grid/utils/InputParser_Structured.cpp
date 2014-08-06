@@ -2578,7 +2578,7 @@ namespace Amanzi {
       const std::string phase_name="Phase";reqP.push_back(phase_name);
       const std::string rval_name="Reference Value";reqP.push_back(rval_name);
       const std::string grad_name="Gradient Value";reqP.push_back(grad_name);
-      const std::string ref_name="Reference Coordinate";reqP.push_back(ref_name);
+      const std::string ref_name="Reference Point";reqP.push_back(ref_name);
       PLoptions opt(fPLin,nullList,reqP,true,true);  
     
       fPLout.set<std::string>("type","linear_pressure");
@@ -2594,7 +2594,7 @@ namespace Amanzi {
       const std::string phase_name="Phase";
       const std::string val_name="Reference Value";
       const std::string grad_name="Gradient Value";
-      const std::string ref_name="Reference Coordinate";
+      const std::string ref_name="Reference Point";
       const std::string vel_name="Aqueous Volumetric Flux";
 
       Array<std::string> reqP, nullList;
@@ -2829,7 +2829,7 @@ namespace Amanzi {
       {
         const std::string val_name="Reference Value"; reqP.push_back(val_name);
         const std::string grad_name="Gradient Value";reqP.push_back(grad_name);
-        const std::string ref_name="Reference Coordinate"; reqP.push_back(ref_name);
+        const std::string ref_name="Reference Point"; reqP.push_back(ref_name);
         PLoptions opt(fPLin,nullList,reqP,true,true);
 
         fPLout.set<double>("val",fPLin.get<double>(val_name));

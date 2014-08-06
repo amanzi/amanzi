@@ -1322,7 +1322,7 @@ Next, we specify boundary conditions.  Again, support is provided for specifying
 
  * [SU] BC [list] label for a boundary condition, accepts boundary condition function names, and parameters to specify assigned regions and solute boundary conditions
 
-  * [SU see below] Function [list] Parameterized model to specify boundary conditions.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Linear Pressure`", `"BC: Uniform Saturation`", `"BC: Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
+  * [SU see below] Function [list] Parameterized model to specify boundary conditions.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Linear Pressure`", `"BC: Uniform Saturation`", `"BC: Hydrostatic`", `"BC: Linear Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
 
   * [SU] `"Assigned Regions`" [Array(string)] list of regions to which this condition is assigned
 
@@ -1356,11 +1356,11 @@ The following initial condition parameterizations are supported:
 
 * [SU] `"IC: Uniform Saturation`" requires `"Value`" [double] OR `"Geochemical Condition`" [string] if Alquimia is providing initial conditions.
 
-* [U] `"IC: Linear Saturation`" requires `"Reference Coordinate`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
+* [U] `"IC: Linear Saturation`" requires `"Reference Point`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
 
 * [U] `"IC: Uniform Pressure`" requires `"Value`" [double]
 
-* [SU] `"IC: Linear Pressure`" requires `"Reference Coordinate`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
+* [SU] `"IC: Linear Pressure`" requires `"Reference Point`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
 
 * [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array(double)).
 
@@ -1375,11 +1375,11 @@ The following boundary condition parameterizations are supported:
 * [SU] `"BC: Flux`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] 
   (see the note below) and one of the following: 
 
-    * []  `"Inward Volumetric Flux`" [Array(double)], 
+    * [U]  `"Inward Volumetric Flux`" [Array(double)], 
 
     * [SU] `"Inward Mass Flux`" [Array(double)], 
 
-    * []  `"Outward Volumetric Flux`" [Array(double)], or
+    * [U]  `"Outward Volumetric Flux`" [Array(double)], or
 
     * [SU] `"Outward Mass Flux`" [Array(double)]. 
 
@@ -1396,15 +1396,17 @@ The following boundary condition parameterizations are supported:
 
 * [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [SU] `"BC: Linear Pressure`" [list] requires `"Reference Value`" [double] `"Reference Coordinates`" [Array(double)] `"Gradient`" [Array(double)]
+* [SU] `"BC: Linear Pressure`" [list] requires `"Reference Value`" [double] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
 
 * [S] `"BC: Uniform Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* `"BC: Linear Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Reference Values`" [Array(double)] `"Reference Coordinates`" [Array(double)] `"Gradient`" [Array(double)]
+* `"BC: Linear Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Reference Values`" [Array(double)] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
 
 * [U] `"BC: Seepage`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and one of `"Inward Mass Flux`" [Array(double)] or `"Inward Volumetric Flux`" [Array(double)].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
 
 * [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array(double)] (see below)
+
+* [U] `"BC: Linear Hydrostatic`" [list] requires `"Reference Water Table Height`" [double] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
 
 * `"BC: Impermeable`"  requires no parameters
 
@@ -1427,14 +1429,14 @@ The following source parameterizations are supported.
 
 * [U] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [U] `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
+* [U] `"Source: Uniform Concentration`" [mol/s/m^3] uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
 
   * `"Times`" [Array(double)], list of times used by the time function.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
   * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
   * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
 
-* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`"
+* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`". Units are either [mol/m^3/s] or [mol/s] depending on definition of the flow source.
 
   * `"Times`" [Array(double)], list of times used by the time function.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
@@ -2276,7 +2278,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              <ParameterList name="IC: Linear Pressure">
                <Parameter name="Phase" type="string" value="Aqueous"/>
                <Parameter name="Reference Value" type="double" value="101325."/>
-               <Parameter name="Reference Coordinate" type="Array(double)" value="{0., 0., 0.}"/>
+               <Parameter name="Reference Point" type="Array(double)" value="{0., 0., 0.}"/>
                <!-- GEH: Units of gradient are Pa/m = rho*g = 998.32 kg/m^3 * 9.81 m/s^2-->
                <Parameter name="Gradient Value" type="Array(double)" value="{0., 0., -9793.5192}"/>
              </ParameterList>

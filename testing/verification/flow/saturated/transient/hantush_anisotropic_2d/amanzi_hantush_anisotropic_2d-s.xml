@@ -111,7 +111,7 @@
     <ParameterList name="Initial Condition">
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
-	<Parameter name="Reference Coordinate" type="Array(double)" value="{1200,1200}"/>
+	<Parameter name="Reference Point" type="Array(double)" value="{1200,1200}"/>
 	<Parameter name="Reference Value" type="double" value="248430"/>
 	<Parameter name="Gradient Value" type="Array(double)" value="{0,0}"/>
       </ParameterList>

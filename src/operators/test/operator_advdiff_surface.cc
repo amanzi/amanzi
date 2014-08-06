@@ -57,7 +57,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
   FrameworkPreference pref;
   pref.clear();

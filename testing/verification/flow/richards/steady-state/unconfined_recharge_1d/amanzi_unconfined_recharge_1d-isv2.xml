@@ -17,6 +17,12 @@
 			<time_macro name="Steady State">
 				<time>3.0e+10</time>
 			</time_macro>
+
+			<cycle_macro name = "Every_20">
+      				<start>0</start>
+      				<timestep_interval>20</timestep_interval>
+      				<stop>-1 </stop>
+    			</cycle_macro>
 		</macros>	
 	</definitions>
 
@@ -38,13 +44,13 @@
 	<execution_controls>
 		<verbosity level="medium"/>
 		<execution_control_defaults mode="steady" method="bdf1" />
-		<execution_control  start="0.0" end="3.0e+10" init_dt="0.01" mode = "steady" method="bdf1" />
+		<execution_control  start="0.0" end="3.0e+10" init_dt="0.01" reduction_factor="0.5" mode = "steady" method="bdf1" />
 	</execution_controls>
 
 	<numerical_controls>
 	        <linear_solver>
 			<max_iterations>100</max_iterations>
-			<tolerance>1.0e-18</tolerance>
+			<tolerance>1.0e-17</tolerance>
 
 			<method>gmres</method>
 			<cfl>1</cfl>
@@ -57,10 +63,8 @@
 		</linear_solver>
 		<steady-state_controls>
 		        <initialize_with_darcy>true</initialize_with_darcy>
-			<!--
 		        <restart_tolerance_factor>1000.0</restart_tolerance_factor>
-			<restart_tolerance_relaxation_factor>0.9</restart_tolerance_relaxation_factor>
-			-->
+			<restart_tolerance_relaxation_factor>0.95</restart_tolerance_relaxation_factor>
                         <min_iterations>10</min_iterations>
 	                <max_iterations>15</max_iterations>
 			<max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
@@ -99,7 +103,8 @@
 			<box low_coordinates= "0.0, 0.0"   high_coordinates="499.872, 73.152"/>
 		</region>
 		<region name ="Left">
-                        <box high_coordinates="(0.0, 73.152)" low_coordinates="(0.0, 0.0)" name="-X_Boundary"/>
+                        <!--box high_coordinates="(0.0, 73.152)" low_coordinates="(0.0, 0.0)" name="-X_Boundary"/-->
+                        <box high_coordinates="(0.0, 49.9872)" low_coordinates="(0.0, 0.0)" name="-X_Boundary"/>
 			<comments>Left boundary</comments>
 			<!--plane location= "0.0, 0.0"   normal="-1.0, 0.0"/-->
 		</region>
@@ -144,7 +149,7 @@
  	 	      	</mechanical_properties>
  	 	        <permeability x="1.1844e-12" y="1.1844e-12"/>
 			<cap_pressure model="van_genuchten">
-				<parameters alpha="1.46e-3" sr="0.052" m="0.314"/>
+				<parameters alpha="1.46e-3" sr="0.052" m="0.314" optional_krel_smoothing_interval="100.0"/>
 			</cap_pressure>
 			<rel_perm model="mualem">
 			</rel_perm>
@@ -292,7 +297,7 @@
 		<vis>
 			<base_filename>steady-flow</base_filename>
 		  	<num_digits>5</num_digits>
-		  	<time_macro>Steady State</time_macro>
+		  	<time_macros>Steady State</time_macros>
 		</vis>
 	</output>
 

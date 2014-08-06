@@ -45,7 +45,7 @@ TEST(LABELEDSET_REGION)
     // Create a Labeled Set Region
   
     Amanzi::AmanziGeometry::RegionPtr reg = 
-      Amanzi::AmanziGeometry::RegionFactory(reg_spec.name(i), reg_id, reg_params, &ecomm);
+      Amanzi::AmanziGeometry::RegionFactory(reg_spec.name(i), reg_id, reg_params, 3, &ecomm);
   
     // See if we retrieved the name and id correctly
   
