@@ -384,7 +384,7 @@ Usage:
      * [U] `"transient nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new time step is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
 
 
-   * [U] `"Steady-State Psuedo-Time Implicit Solver`" [list] Parameters for Damped Picard iteration to reach steady-state
+   * [U] `"Steady-State Pseudo-Time Implicit Solver`" [list] Parameters for Damped Picard iteration to reach steady-state
 
      * [U] `"pseudo time integrator initialize with darcy`" [bool] Initialize the pseudo time integrator (Picard) with a Darcy solution. (default: `"true`")
 
