@@ -25,7 +25,11 @@ def _valid_parameter_from_string(ptype, value):
             retval = value
         elif value == "true":
             retval = True
+        elif value == "True":
+            retval = True
         elif value == "false":
+            retval = False
+        elif value == "False":
             retval = False
         else:
             raise RuntimeError("Parameter of type bool with invalid value %s"%str(value))
