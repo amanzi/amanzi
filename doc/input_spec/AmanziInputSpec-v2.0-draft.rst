@@ -518,7 +518,7 @@ Within the Materials block an unbounded number of `"material`" elements can be d
 
   <material>
       Required Elements: mechanical_properties, permeability, hydraulic_conductivity, assigned_regions
-      Optional Elements: comments, cap_pressure (rel_perm - NOT YET IMPLEMENTED)
+      Optional Elements: comments, cap_pressure, rel_perm 
   </material>
 
 `"mechanical_properties`" has two elements that can be either values or specified as files.  It has the following requirements.
@@ -554,7 +554,7 @@ Within the Materials block an unbounded number of `"material`" elements can be d
 
 * `"cap_pressure`" is an optional element.  The available models are `"van_genuchten`", `"brooks_corey`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
 
-  * `"van_genuchten`" parameters include `"alpha`", `"sr`", and `"m`".  `"brooks_corey`" parameters include `"alpha`", `"sr`", and `"m`".
+  * `"van_genuchten`" parameters include `"alpha`", `"sr`", `"m`", and `"optional_krel_smoothing_interval`".  `"brooks_corey`" parameters include `"alpha`", `"sr`", `"m`", and `"optional_krel_smoothing_interval`".
 
 .. code-block:: xml
 
@@ -564,25 +564,38 @@ Within the Materials block an unbounded number of `"material`" elements can be d
 
 * `"rel_perm`" is an optional element.  The available models are `"mualem`", `"burdine`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
 
-  * `"mualem`" parameters include `"optional_krel_smoothing_interval`".  `"burdine`" parameters include `"optional_krel_smoothing_interval`", and `"exp`".
+  * `"mualem`" has no parameters.  `"burdine`" parameters include `"exp`".
 
 .. code-block:: xml
 
   <rel_perm name="mualem | burdine | none )" >
-      Required Elements: parameters
+      Required Elements: none 
+      Optional Elements: exp (burdine only)
   </rel_perm>
 
-* `"<sorption_isotherms>`" is an optional element for providing Kd models for individual solutes.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes.
-
-  * `"linear`" only accepts the parameter `"kd`". `"langmuir`" expects `"kd`" and `"b`".  `"freundlich`" expects `"kd`" and `"n`".
+* `"<sorption_isotherms>`" is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All solutes should be listed under each material.  Values of 0 indicate that the solute is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
 
 .. code-block:: xml
 
     <sorption_isotherms>
-	<solute name="string" model="linear | langmuir | langmuir" kd="exponential" b="exponential" n="exponential"/>
-        Required Elements: name, model, kd
-        Optional Elements: b, n (depending on model selected)
+	<solute name="string" />
+        model="linear | langmuir | langmuir" kd="exponential" b="exponential" n="exponential"/>
+            Required Elements: none
+            Optional Elements: kd_model, molecular_diffusion
     </sorption_isotherms>
+
+The subelements kd_model and molecular_diffusion that the following forms:
+
+.. code-block:: xml
+ 
+    <kd_model model="linear|langmuir|freundlich" kd="Value" b="Value (langmuir only)" n="Value (freundlich only)" />
+  
+    
+.. code-block:: xml
+   
+    <molecular_diffusion value="Value" />
+    or
+    <molecular_diffusion type="exodus ii" filename="file" />
 
 
 Process Kernels
@@ -642,8 +655,8 @@ Some general discussion of the `"Phases`" section goes here.
 .. code-block:: xml
 
   <liquid_phase>
-      Required Elements: eos, viscosity, density
-      Optional Elements: dissolved_components 
+      Required Elements: viscosity, density
+      Optional Elements: dissolved_components, eos
   </liquid_phase>
 
 Here is more info on the `"liquid_phase`" elements:
@@ -654,9 +667,15 @@ Here is more info on the `"liquid_phase`" elements:
 
     * `"density`"="exponential"
 
-    * `"dissolved_components`" has the elements 
+    * `"dissolved_components`" has the required element
 
         * `"solutes`"
+
+The subelement `"solutes`" can have an unbounded number of subelements `"solute`" which defines individual solutes present.  The `"solute`" element takes the following form:
+  
+    * `"solute`"="string", containing the name of the solute
+
+        * `"coefficient_of_diffusion`"="exponential", this is an optional attribute
 
 * `"solid_phase`" has the following elements 
 

@@ -156,7 +156,10 @@ Changes by TDS June 2013:
       </xs:documentation>
   </xs:annotation>
   <xs:restriction base="xs:token">
-    <xs:pattern value="[(]?([-+]?[0-1]*\.?[0]+)?,([-+]?[0-1]*\.?[0]+)?,([-+]?[0-1]*\.?[0]+)?[)]?"/>
+    <!-- EIBs -->
+    <!--xs:pattern value="[(]?([-+]?[0-1]*\.?[0]+)?,([-+]?[0-1]*\.?[0]+)?,([-+]?[0-1]*\.?[0]+)?[)]?"/-->
+    <!-- Ellens -->
+    <xs:pattern value="[(]?([-+]?[01]*\.?[0]+)?, *([-+]?[01]*\.?[0]+)?, *([-+]?[01]*\.?[0]+)?[)]?"/>
   </xs:restriction>
 </xs:simpleType>
 
@@ -418,7 +421,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="process_kernels" type="typedef_process_kernels" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="phases" type="typedef_phases" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="execution_controls" type="typedef_execution_controls" minOccurs="1" maxOccurs="1"/>
-		<xs:element name="numerical_controls" type="typedef_numerical_controls" minOccurs="1" maxOccurs="1"/>
+		<xs:element name="numerical_controls" type="typedef_numerical_controls" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="regions" type="typedef_regions" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="geochemistry" type="typedef_main_geochemistry" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="materials" type="typedef_materials" minOccurs="1" maxOccurs="1"/>
@@ -474,7 +477,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
       <xs:element type="xs:string" name="model_id" minOccurs="0"/>
       <xs:element type="xs:string" name="description" minOccurs="0"/>
       <xs:element type="xs:string" name="purpose" minOccurs="0"/>
-      <xs:element type="typedef_default_units" name="units"/>
+      <xs:element type="typedef_default_units" name="units" minOccurs="0"/>
     </xs:all>
     <xs:attribute type="xs:string" name="name"/>
 </xs:complexType>
@@ -747,8 +750,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	</xs:sequence>
 	<xs:attribute name="framework" type="xs:string" use="required"/>
 	<xs:assert  test="@framework = ('mstk','stk::mesh','simple')"/>	 
-                                        <!-- EIB: moab current doesn't work, exodus is a file format, boxlib in the future -->
-                                        <!-- EIB: translator default is mstk -->
+            <!-- EIB: moab current doesn't work, exodus is a file format, boxlib in the future -->
+            <!-- EIB: translator default is mstk -->
 </xs:complexType>
 
 <xs:complexType name="typedef_mesh_structured">
@@ -773,17 +776,17 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 </xs:complexType>
 
 <xs:complexType name="typedef_generate">
-	<xs:sequence>
+	<xs:all>
 		<xs:element name="number_of_cells" type="typedef_xyz" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="box" type="typedef_box" minOccurs="1" maxOccurs="1"/>
-	</xs:sequence>	
+	</xs:all>	
 </xs:complexType>
 
 <xs:complexType name="typedef_read">
-	<xs:sequence>
+	<xs:all>
 		<xs:element name="format" type="typedef_mesh_file_formats" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="file" type="xs:string" minOccurs="1" maxOccurs="1"/>
-	</xs:sequence>	
+	</xs:all>	
 </xs:complexType>
 
 
@@ -798,7 +801,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 			<xs:element name="point" type="typedef_labeled_point" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="plane" type="typedef_labeled_plane" minOccurs="0" maxOccurs="unbounded"/>
 		</xs:choice>
-	</xs:sequence>	
+	</xs:sequence>
 </xs:complexType>
 
 <xs:complexType name="typedef_region">
@@ -806,14 +809,14 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:documentation xml:lang="en">
 		</xs:documentation>
 	</xs:annotation>
-	<xs:sequence>
+	<xs:all>
 		<xs:element name="comments" minOccurs="0" maxOccurs="1"/>
 		<xs:choice minOccurs="1" maxOccurs="1">
 			<xs:element name="region_file" type="typedef_region_file"/>
 			<xs:element name="box" type="typedef_box"/>
 			<xs:element name="plane" type="typedef_plane"/>
 		</xs:choice>
-	</xs:sequence>
+	</xs:all>
 	<xs:attribute name="name" type="xs:string"/>
 </xs:complexType>
 
@@ -947,10 +950,6 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 			<xs:alternative test="@type='file'" type="typedef_property_file"/>
 			<xs:alternative type="typedef_dispersion_tensor"/>
 		</xs:element>
-		<xs:element name="molecular_diffusion" minOccurs="0" maxOccurs="1">			
-			<xs:alternative test="@type='file'" type="typedef_property_file"/>
-			<xs:alternative type="typedef_molecular_diffusion"/>
-		</xs:element>
 		<xs:element name="tortuosity" minOccurs="0" maxOccurs="1">			
 			<xs:alternative test="@type='file'" type="typedef_property_file"/>
 			<xs:alternative type="typedef_tortuosity"/>
@@ -978,10 +977,6 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_dispersion_tensor">
 	<xs:attribute name="alpha_l" use="required" type="typedef_exponential"/>
 	<xs:attribute name="alpha_t" use="required" type="typedef_exponential"/>
-</xs:complexType>
-
-<xs:complexType name="typedef_molecular_diffusion">
-	<xs:attribute name="value" use="required" type="typedef_exponential"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_tortuosity">
@@ -1027,6 +1022,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 						<xs:attribute name="alpha" type="typedef_exponential"/>
 						<xs:attribute name="sr" type="typedef_exponential"/>
 						<xs:attribute name="m" type="typedef_exponential"/>
+                                                <xs:attribute name="optional_krel_smoothing_interval" type="typedef_exponential"/>
 					</xs:complexType>
 				</xs:element>
 			</xs:all>
@@ -1043,6 +1039,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 						<xs:attribute name="lambda" type="typedef_exponential"/>
 						<xs:attribute name="alpha" type="typedef_exponential"/>
 						<xs:attribute name="sr" type="typedef_exponential"/>
+                                                <xs:attribute name="optional_krel_smoothing_interval" type="typedef_exponential"/>
 					</xs:complexType>
 				</xs:element>
 			</xs:all>
@@ -1058,9 +1055,11 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_mualem">	
 	<xs:complexContent>
 		<xs:extension base="typedef_rel_perm">
+                        <!--
 			<xs:all>
      				<xs:element name="optional_krel_smoothing_interval" minOccurs="0" maxOccurs="1"/>
 			</xs:all>
+                         -->
 		</xs:extension>
 	</xs:complexContent>
 </xs:complexType>
@@ -1070,7 +1069,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:extension base="typedef_rel_perm">
 			<xs:all>
 				<xs:element name="exp" minOccurs="1" maxOccurs="1"/>
-     				<xs:element name="optional_krel_smoothing_interval" minOccurs="0" maxOccurs="1"/>
+     				<!-- xs:element name="optional_krel_smoothing_interval" minOccurs="0" maxOccurs="1"/ -->
 			</xs:all>
 		</xs:extension>
 	</xs:complexContent>
@@ -1079,13 +1078,23 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_sorption_isotherms">
 	<xs:all>
 		<xs:element name="solute" minOccurs="1" maxOccurs="unbounded">			
-			<xs:alternative type="typedef_solute_isotherms"/>
+			<xs:alternative type="typedef_solute_isotherms" minOccurs="0" maxOccurs="1"/>
 		</xs:element>
 	</xs:all>
 </xs:complexType>
 
 <xs:complexType name="typedef_solute_isotherms">
+	<xs:all>
+        	<xs:element name="molecular_diffusion" minOccurs="0" maxOccurs="1">			
+	        	<xs:alternative test="@type='file'" type="typedef_property_file"/>
+		        <xs:alternative type="typedef_molecular_diffusion"/>
+	        </xs:element>
+		<xs:element name="kd_model" type="typedef_kd_model" minOccurs="0" maxOccurs="1"/>
+	</xs:all>
 	<xs:attribute name="name" type="xs:string" use="required"/>
+</xs:complexType>
+
+<xs:complexType name="typedef_kd_model">
 	<xs:attribute name="model" type="xs:string" use="required"/>
 	<xs:attribute name="kd" type="typedef_exponential" use="required"/>
 	<xs:attribute name="b" type="typedef_exponential" />
@@ -1093,6 +1102,9 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:assert test="@model = ('linear','langmuir','freundlich')"/>
 </xs:complexType>
 
+<xs:complexType name="typedef_molecular_diffusion">
+	<xs:attribute name="value" use="required" type="typedef_exponential"/>
+</xs:complexType>
 
 <!-- ============================================ Process Kernels ============================================== -->
 
@@ -1171,6 +1183,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
   <xs:simpleContent>
   <xs:extension base="xs:string">
       <xs:attribute name="coefficient_of_diffusion" type="typedef_exponential"/>
+      <xs:attribute name="first_order_decay_constant" type="typedef_exponential"/>	
   </xs:extension>
   </xs:simpleContent>
 </xs:complexType>
@@ -1253,10 +1266,10 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:element name="uniform_saturation" substitutionGroup="ic_choice" type="typedef_ic_uniform_saturation"/>
 <xs:element name="linear_saturation" substitutionGroup="ic_choice" type="typedef_ic_saturation"/>
 <xs:complexType name="typedef_ic_liquid_component">
-	<xs:sequence>
+	<xs:all>
 		<xs:element name="velocity" type="typedef_ic_velocity" minOccurs="0" maxOccurs="1"/>
 		<xs:element ref="ic_choice" minOccurs="1" maxOccurs="1"/>
-	</xs:sequence>
+	</xs:all>
 	<xs:attribute name="name" type="xs:string"/>
 </xs:complexType>
 
@@ -1291,7 +1304,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="function" type="xs:string"/>
 	<xs:attribute name="reference_coord" type="typedef_coordinate"/>
 	<xs:attribute name="gradient" type="typedef_coordinate"/>
-	<!--<xs:assert  test="@function = ('linear','uniform')"/>-->	
+	<!--<xs:assert  test="@function = ('linear','constant')"/>-->	
 </xs:complexType>
 
 <xs:complexType name="typedef_ic_mineral_component">
@@ -1304,8 +1317,6 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="x" type="typedef_exponential"/>
 	<xs:attribute name="y" type="typedef_exponential"/>
 	<xs:attribute name="z" type="typedef_exponential"/>
-	<xs:attribute name="function" type="xs:string"/>
-	<xs:assert  test="@function = ('linear','uniform')"/>
 </xs:complexType>
 <!-- ====================================== Boundary Conditions ========================================= -->
 
@@ -1344,7 +1355,9 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="outward_volumetric_flux" type="typedef_bc_outward_volumetric_flux" minOccurs="0" maxOccurs="unbounded"/>
 		-->
 		<xs:element name="uniform_pressure" type="typedef_bc_uniform_pressure" minOccurs="0" maxOccurs="unbounded"/>
+		<xs:element name="linear_pressure" type="typedef_bc_linear_pressure" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="hydrostatic" type="typedef_bc_hydrostatic" minOccurs="0" maxOccurs="unbounded"/>
+		<xs:element name="linear_hydrostatic" type="typedef_bc_linear_hydrostatic" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="seepage_face" type="typedef_bc_seepage_face" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="no_flow" type="typedef_bc_no_flow" minOccurs="0" maxOccurs="unbounded"/>
 	</xs:all>
@@ -1368,7 +1381,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="name" type="xs:string"/>
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
-	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_no_flow">
@@ -1376,8 +1389,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<!-- TODO: It would be nice to evaluate these as either value or string somehow? -->
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
-	<!-- TODO: Which functions are allowed? Isn't uniform and constant the same? -->
-	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_inward_mass_flux">
@@ -1386,8 +1398,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="xs:string" use="required"/>
-	<!-- TODO: Which functions are allowed? Isn't uniform and constant the same? -->
-	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_inward_volumetric_flux">
@@ -1396,8 +1407,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="xs:string" use="required"/>
-	<!-- TODO: Which functions are allowed? Isn't uniform and constant the same? -->
-	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_outward_mass_flux">
@@ -1406,8 +1416,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="xs:string" use="required"/>
-	<!-- TODO: Which functions are allowed? Isn't uniform and constant the same? -->
-	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_outward_volumetric_flux">
@@ -1416,8 +1425,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="xs:string" use="required"/>
-	<!-- TODO: Which functions are allowed? Isn't uniform and constant the same? -->
-	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_seepage_face">
@@ -1426,8 +1434,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="inward_mass_flux" type="xs:string" use="required"/>
-	<!-- TODO: Which functions are allowed? Isn't uniform and constant the same? -->
-	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_uniform_pressure">
@@ -1435,7 +1442,14 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="xs:string" use="required"/>
-	<xs:assert  test="@function = ('uniform','constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
+</xs:complexType>
+
+<xs:complexType name="typedef_bc_linear_pressure">
+	<xs:attribute name="name" type="xs:string"/>
+	<xs:attribute name="gradient_value" type="xs:string" use="required"/>
+	<xs:attribute name="reference_point" type="typedef_coordinate" use="required"/>
+	<xs:attribute name="reference_value" type="xs:string" use="required"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_hydrostatic">
@@ -1444,7 +1458,15 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="xs:string" use="required"/>
-	<xs:assert  test="@function = ('uniform','constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
+	<xs:assert  test="@coordinate_system = ('absolute','relative to mesh top')"/>	
+</xs:complexType>
+
+<xs:complexType name="typedef_bc_linear_hydrostatic">
+	<xs:attribute name="name" type="xs:string"/>
+	<xs:attribute name="gradient_value" type="xs:string" use="required"/>
+	<xs:attribute name="reference_point" type="typedef_coordinate" use="required"/>
+	<xs:attribute name="reference_water_table_height" type="xs:string" use="required"/>
 </xs:complexType>
 
 
@@ -1455,7 +1477,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="name" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
-	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 <!-- ====================================== Sources ========================================= -->
 
@@ -1497,14 +1519,14 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string"/>
 	<xs:attribute name="value" type="typedef_exponential"/>
 	<xs:attribute name="function" type="xs:string"/>
-	<xs:assert  test="not(exists(@function)) or @function = ('linear', 'uniform', 'constant')"/>	
+	<xs:assert  test="not(exists(@function)) or @function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_src_perm_weighted">
 	<xs:attribute name="start" type="xs:string"/>
 	<xs:attribute name="value" type="typedef_exponential"/>
 	<xs:attribute name="function" type="xs:string"/>
-	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_src_solute_component">
@@ -1523,7 +1545,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string"/>
 	<xs:attribute name="value" type="xs:string"/>
 	<xs:attribute name="function" type="xs:string"/>
-	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <!-- TODO: Do we need to define an aqueous conc specific to source? -->
@@ -1533,7 +1555,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="xs:string"/>
 	<xs:attribute name="value" type="xs:string"/>
 	<xs:attribute name="function" type="xs:string"/>
-	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 <xs:complexType name="typedef_src_geochemistry">
@@ -1546,7 +1568,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="name" type="xs:string"/>
 	<xs:attribute name="start" type="xs:string"/>
 	<xs:attribute name="function" type="xs:string"/>
-	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	
+	<xs:assert  test="@function = ('linear', 'constant')"/>	
 </xs:complexType>
 
 

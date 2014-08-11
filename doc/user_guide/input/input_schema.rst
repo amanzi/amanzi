@@ -554,28 +554,37 @@ A ``material`` element can contain the following:
         <specific_storage value="Value"/>
         <specific_yield value="Value"/>
         <dispersion_tensor alpha_l="Value" alpha_t="Value"/>
-        <molecular_diffusion value="Value"/>
         <tortuosity value="Value"/>
     </mechanical_properties>
     <permeability x="Value" y="Value" z="Value"/>
     <hydraulic_conductivity x="Value" y="Value" z="Value"/>
     <cap_pressure model="van_genuchten | brooks_corey | none">
- 	<parameters m="Value" alpha="Value" sr="Value"/>
-             ( for van_genuchten or for brooks_corey )
- 	<parameters lambda="Value" alpha="Value" sr="Value"/>
+        <!-- for van_genuchten -->
+ 	<parameters m="Value" alpha="Value" sr="Value" optional_krel_smoothing_interval="Value"/>
+        <!-- for brooks_corey -->
+ 	<parameters lambda="Value" alpha="Value" sr="Value" optional_krel_smoothing_interval="Value"/>
     </cap_pressure>
     <rel_perm model="mualem | burdine | none">
-        <optional_krel_smoothing_interval value="Value"/>
-        <exp value="Value"/> (burdine only)
+        <!-- burdine only -->
+        <exp value="Value"/>
     </rel_perm>
     <sorption_isotherms>
-          <!-- Three models available, add b or n parameter for appropriate model -->
-	<solute name="Name of Solute" model="linear" kd="Value"/>
-	<solute name="Name of Solute" model="langmuir" kd="Value" b="Value"/>
-        <solute name="Name of Solute" model="freundlich" kd="Value" n="Value"/>
+        <!-- Three kd models available plus molecular diffusion -->
+        <!-- Note: all solutes should be listed under all materials, value="0" indicates the solute isn't present/active -->
+	<solute name="Name of Solute" >
+            <kd_model model="linear" kd = "Value" />
+            <molecular_diffusion value="Value" />
+        </solute>
+	<solute name="Name of Solute" >
+            <kd_model model="langmuir" kd="Value" b="Value"/>
+        </solute>
+	<solute name="Name of Solute" >
+            <kd_model model="freundlich" kd="Value" n="Value" />
+        </solute>
     </sorption_isotherms>
     <assigned_regions>Comma seperated list of Regions</assigned_regions>
   </material>
+
 
 While many material properties are available for the user to define,
 the minimum requirements for a valid material definition are
@@ -589,18 +598,17 @@ An example material would look like
 .. code-block:: xml
 
   <material name="Facies_1">
-  <comments>Material corresponds to region facies1</comments>
-  <mechanical_properties>
-    <porosity value="0.4082"/>
-    <particle_density value="2720.0"/>
-  </mechanical_properties>
-  <permeability x="1.9976E-12" y="1.9976E-12" z="1.9976E-13"/>
-  <cap_pressure model="van_genuchten">
-    <parameters m="0.2294" alpha="1.9467E-04" sr="0.0"/>
-  </cap_pressure>
-  <rel_perm model="mualem">
-  </rel_perm>
-  <assigned_regions>Between_Planes_1_and_2</assigned_regions>
+    <comments>Material corresponds to region facies1</comments>
+    <mechanical_properties>
+      <porosity value="0.4082"/>
+      <particle_density value="2720.0"/>
+    </mechanical_properties>
+    <permeability x="1.9976E-12" y="1.9976E-12" z="1.9976E-13"/>
+    <cap_pressure model="van_genuchten">
+      <parameters m="0.2294" alpha="1.9467E-04" sr="0.0"/>
+    </cap_pressure>
+    <rel_perm model="mualem"/>
+    <assigned_regions>Between_Planes_1_and_2</assigned_regions>
   </material>
 
 Process Kernels
@@ -717,8 +725,8 @@ required elements, ``dissolved_components`` is optional.
 ``dissolved_components`` contains a subelement ``solutes`` under which
 individual ``solute`` elements are used to specify any solutes present
 in the liquid phase.  The text of the ``solute`` contains the name of
-the solute while an attribute specifies the value
-*coefficient_of_diffusion*.
+the solute while an attributes specifies the value
+*coefficient_of_diffusion*.  
 
 The ``solid_phase`` element allows the user to define a ``minerals``
 element under which a series of ``mineral`` elements can be listed to
