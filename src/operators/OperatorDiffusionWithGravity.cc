@@ -31,6 +31,8 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
   rho_g *= rho_ * rho_ / mu_;
 
   if (rhs_->HasComponent("face")) {
+    int dim = mesh_->space_dimension();
+
     // preparing upwind data
     Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
     Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
@@ -54,7 +56,8 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
       double kc(1.0);
       std::vector<double> kf(nfaces, 1.0);
       if (upwind_ == OPERATOR_UPWIND_AMANZI) {
-        for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+        kc = (*k_cell)[0][c];
+        for (int n = 0; n < nfaces; n++) kf[n] = std::max(kc, (*k_face)[0][faces[n]]);
       } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = kc;
