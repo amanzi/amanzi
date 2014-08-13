@@ -2686,7 +2686,8 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
 	      Teuchos::Array<double> dir = make_coordinates(textContent2, *def_list);
               list.sublist(textContent).sublist("Region: Plane").set<Teuchos::Array<double> >("Direction",dir);
 	      XMLString::release(&textContent2);
-	    } else if  (strcmp(nodeName,"region_file") == 0){
+	    }
+            else if  (strcmp(nodeName,"region_file") == 0){
 	      //TODO: EIB - add file
 	      Teuchos::ParameterList rfPL;
 	      attrMap = curKid->getAttributes();
@@ -2857,7 +2858,8 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
         list.sublist(textContent).sublist("Region: Point").set<Teuchos::Array<double> >("Coordinate",coord);
 	XMLString::release(&textContent);
 	XMLString::release(&textContent2);
-      } else if  (strcmp(tagName,"plane") == 0){
+      }
+      else if  (strcmp(tagName,"plane") == 0){
 	attrMap = cur->getAttributes();
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
 	if (nodeAttr) {
@@ -3301,7 +3303,8 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
             if (strcmp(textContent2,"burdine")==0) {
               caplist.set<std::string>("Relative Permeability","Burdine");
               // TODO: EIB - should get child element exp here. Don't know where it goes in v1.2.1 (ELL_BURDINE=2??)
-            } else if (strcmp(textContent2,"mualem")==0) {
+            }
+            else if (strcmp(textContent2,"mualem")==0) {
               caplist.set<std::string>("Relative Permeability","Mualem");
             }
             if (strcmp(textContent2,"none")!=0) {
@@ -3470,7 +3473,8 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
       nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
       if (nodeAttr) {
         textContent = XMLString::transcode(nodeAttr->getNodeValue());
-      } else {
+      }
+      else {
 	Errors::Message msg;
 	msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing initial_conditions - " ;
 	msg << "No attribute name found for initial_condition. \n" ;
@@ -3503,7 +3507,8 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
           nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
 	  if (nodeAttr) {
             phaseName = XMLString::transcode(nodeAttr->getNodeValue());
-	  } else {
+	  }
+          else {
 	    Errors::Message msg;
 	    msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing initial_conditions - " ;
 	    msg << "No attribute name found for liquid_phase. \n" ;
@@ -3646,7 +3651,8 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
 	      if (nodeAttr) {
                 solName = XMLString::transcode(nodeAttr->getNodeValue());
-	      } else {
+	      }
+              else {
 	        Errors::Message msg;
 	        msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing initial_conditions - " ;
 	        msg << "No attribute name found for solute_component. \n" ;
@@ -3658,7 +3664,8 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("function"));
 	      if (nodeAttr) {
                 funcType = XMLString::transcode(nodeAttr->getNodeValue());
-	      } else {
+	      }
+              else {
 	        Errors::Message msg;
 	        msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing initial_conditions - " ;
 	        msg << "No attribute function found for solute_component. \n" ;
@@ -3669,7 +3676,8 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
                 nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
 		if (nodeAttr) {
                   textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-	        } else {
+	        }
+                else {
 	          Errors::Message msg;
 	          msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing initial_conditions - " ;
 	          msg << "No attribute value found for solute_component. \n" ;
@@ -3758,7 +3766,8 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
         if (nodeAttr) {
           textContent = XMLString::transcode(nodeAttr->getNodeValue());
-        } else {
+        }
+        else {
 	  Errors::Message msg;
 	  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing boundary_conditions - " ;
 	  msg << "No attribute name found for boundary_condition. \n" ;
@@ -3791,7 +3800,8 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
             nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
 	    if (nodeAttr) {
               phaseName = XMLString::transcode(nodeAttr->getNodeValue());
-	    } else {
+	    }
+            else {
 	      Errors::Message msg;
 	      msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing boundary_conditions - " ;
 	      msg << "No attribute name found for liquid_phase. \n" ;
@@ -4059,10 +4069,6 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		        bcname = "BC: Uniform Pressure";
 		        valname = "Values";
 		      }
-                      else if (strcmp(bcChildName,"linear_pressure")==0) {
-		        bcname = "BC: Linear Pressure";
-		        valname = "Values";
-		      }
                       else if (strcmp(bcChildName,"hydrostatic")==0) {
 		        bcname = "BC: Hydrostatic";
 		        valname = "Water Table Height";
@@ -4270,7 +4276,8 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		    }
 		    if (strcmp(textContent2,"linear")==0) {
 		      function = "Linear";
-		    } else if (strcmp(textContent2,"constant")==0) {
+		    }
+                    else if (strcmp(textContent2,"constant")==0) {
 		      function = "Constant";
 		      // EIB - uniform is a space option, not a time option
 		    }
@@ -4301,7 +4308,8 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		      tmpF = sc_tmplist.sublist(solName).get<Teuchos::Array<std::string> >("function");
 		      tmpF.append(function);
 		      sc_tmplist.sublist(solName).set<Teuchos::Array<std::string> >("function",tmpF);
-		    } else {
+		    }
+                    else {
 		      Teuchos::ParameterList tmpsc_list;
 		      Teuchos::Array<double> tmpV;
 		      Teuchos::Array<double> tmpT;
@@ -4330,12 +4338,14 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                       sort_times.append(times[j]);
                       sort_func.append(funcs[j]);
                       sort_vals.append(values[j]);
-                    } else {
+                    }
+                    else {
                       if (times[j] >= sort_times[sort_times.length()-1]) { //if already sorted
                         sort_times.append(times[j]);
                         sort_func.append(funcs[j]);
                         sort_vals.append(values[j]);
-                      } else {                                            // otherwise sort
+                      }
+                      else {                                            // otherwise sort
                         int idx = times.length()-1;
                         Teuchos::Array<double> hold_times;
                         Teuchos::Array<double> hold_vals;
@@ -4373,7 +4383,8 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                     //sort_times.append(sort_times[0]+1.);
                     if (def_list.sublist("simulation").isParameter("simulation_end")) {
                       sort_times.append(def_list.sublist("simulation").get<double>("simulation_end")+1.);
-                    } else {
+                    }
+                    else {
                       sort_times.append(times[0]+1.);
                     }
                     sort_vals.append(sort_vals[0]);
@@ -4452,7 +4463,8 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
       DOMNode* nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
       if (nodeAttr) {
         textContent = XMLString::transcode(nodeAttr->getNodeValue());
-      } else {
+      }
+      else {
 	Errors::Message msg;
 	msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing sources - " ;
 	msg << "No attribute name found for source. \n" ;
@@ -4480,13 +4492,15 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 		msg << "Exiting due to errors in input xml file" ;
                 Exceptions::amanzi_throw(msg);
 	    }
-          } else if (strcmp(tagName,"liquid_phase")==0) {
+          }
+          else if (strcmp(tagName,"liquid_phase")==0) {
             attrMap = SCNode->getAttributes();
             nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
             char* phaseName;
 	    if (nodeAttr) {
               phaseName = XMLString::transcode(nodeAttr->getNodeValue());
-            } else {
+            }
+            else {
 	      Errors::Message msg;
       	      msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing sources - " ;
 	      msg << "No attribute name found for liquid_phase. \n" ;
@@ -4511,7 +4525,8 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 		if (nodeAttr) {
                   compName2 = XMLString::transcode(nodeAttr->getNodeValue());
 		  component = std::string(compName2);
-                } else {
+                }
+                else {
 	          Errors::Message msg;
       	          msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing sources - " ;
 	          msg << "No attribute name found for liquid_component. \n" ;
@@ -4527,7 +4542,8 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                     char* scChildName  = XMLString::transcode(scChildNode->getNodeName());
 		    if (strcmp(scChildName,"volume_weighted")==0){
 		     scname = "Source: Volume Weighted";
-		    } else if (strcmp(scChildName,"permeability_weighted")==0){
+		    }
+                    else if (strcmp(scChildName,"permeability_weighted")==0){
 		     scname = "Source: Permeability Weighted";
 		    }
 		    // loop over any attributes that may exist
@@ -4540,14 +4556,18 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 			if (strcmp(attrName,"function")==0) {
 		          if (strcmp(attrValue,"linear")==0) {
 		            funcs.append("Linear");
-		          } else if (strcmp(attrValue,"constant")==0) {
+		          }
+                          else if (strcmp(attrValue,"constant")==0) {
 		            funcs.append("Constant");
-		          } else if (strcmp(attrValue,"uniform")==0) {
+		          }
+                          else if (strcmp(attrValue,"uniform")==0) {
 		            funcs.append("Uniform");
 		          }
-			} else if (strcmp(attrName,"start")==0) {
+			}
+                        else if (strcmp(attrName,"start")==0) {
 		          times.append(get_time_value(attrValue, def_list));
-			} else if (strcmp(attrName,"value")==0) {
+			}
+                        else if (strcmp(attrName,"value")==0) {
 		          vals.append(get_time_value(attrValue, def_list));
 			}
 		      }
@@ -4558,7 +4578,8 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 	  	  //times.append(times[0]+1.);
 		  if (def_list.sublist("simulation").isParameter("simulation_end")) {
 	  	    times.append(def_list.sublist("simulation").get<double>("simulation_end")+1.);
-		  } else { 
+		  }
+                  else {
 	  	    times.append(times[0]+1.);
 		  }
 		  vals.append(vals[0]);
@@ -4572,7 +4593,8 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 	          newsclist.set<Teuchos::Array<double> >("Values",vals);
 		}
 	        sclist.sublist(scname) = newsclist;
-	      } else if (strcmp(compName,"solute_component")==0) {
+	      }
+              else if (strcmp(compName,"solute_component")==0) {
 	        Teuchos::Array<double> vals;
 	        Teuchos::Array<double> times;
 	        Teuchos::Array<std::string> funcs;
@@ -4585,7 +4607,8 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
                     char* scChildName  = XMLString::transcode(scChildNode->getNodeName());
 		    if (strcmp(scChildName,"flow_weighted_conc")==0){
 		     scname = "Source: Flow Weighted Concentration";
-		    } else if (strcmp(scChildName,"uniform_conc")==0){
+		    }
+                    else if (strcmp(scChildName,"uniform_conc")==0){
 		     scname = "Source: Uniform Concentration";
 		    }
 		    // loop over any attributes that may exist
@@ -4598,16 +4621,21 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 			if (strcmp(attrName,"function")==0) {
 		          if (strcmp(attrValue,"linear")==0) {
 		            funcs.append("Linear");
-		          } else if (strcmp(attrValue,"constant")==0) {
+		          }
+                          else if (strcmp(attrValue,"constant")==0) {
 		            funcs.append("Constant");
-		          } else if (strcmp(attrValue,"uniform")==0) {
+		          }
+                          else if (strcmp(attrValue,"uniform")==0) {
 		            funcs.append("Uniform");
 		          }
-			} else if (strcmp(attrName,"start")==0) {
+			}
+                        else if (strcmp(attrName,"start")==0) {
 		          times.append(get_time_value(attrValue, def_list));
-			} else if (strcmp(attrName,"value")==0) {
+			}
+                        else if (strcmp(attrName,"value")==0) {
 		          vals.append(get_time_value(attrValue, def_list));
-			} else if (strcmp(attrName,"name")==0) {
+			}
+                        else if (strcmp(attrName,"name")==0) {
 		          soluteName = attrValue;
 			}
                         XMLString::release(&attrName);
@@ -4619,7 +4647,8 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 	        if (times.length()==1 ){
 		  if (def_list.sublist("simulation").isParameter("simulation_end")) {
 	  	    times.append(def_list.sublist("simulation").get<double>("simulation_end")+1.);
-		  } else { 
+		  }
+                  else {
 	  	    times.append(times[0]+1.);
 		  }
 		  vals.append(vals[0]);
@@ -4698,7 +4727,8 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
           nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
 	  if (nodeAttr) {
             textContent = XMLString::transcode(nodeAttr->getNodeValue());
-	  } else {
+	  }
+          else {
 	    Errors::Message msg;
 	    msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	    msg << "No attribute name found for time_macro. \n" ;
@@ -4727,7 +4757,8 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	      }
 	    }
 	    tm_parameter.set<Teuchos::Array<double> >("Values", times);
-	  } else {
+	  }
+          else {
             DOMElement* curElement = static_cast<DOMElement*>(currentNode);
             DOMNodeList* curList = curElement->getElementsByTagName(XMLString::transcode("start"));
             tmpNode = curList->item(0);
@@ -4747,23 +4778,27 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	        nodeTxt = XMLString::transcode(tmpNode->getTextContent());
 	        sps.append(get_time_value(nodeTxt,def_list));
 	        XMLString::release(&nodeTxt);
-	      } else {
+	      }
+              else {
 	        sps.append(-1.0);
 	      }
 	      tm_parameter.set<Teuchos::Array<double> >("Start_Period_Stop", sps);
-	    } else {
+	    }
+            else {
 	      tm_parameter.set<Teuchos::Array<double> >("Values", sps);
 	    }
 	  }
 	  tmPL.sublist(textContent) = tm_parameter;
 	  XMLString::release(&textContent);
-	} else if (strcmp(tagname,"cycle_macro")==0) {
+	}
+        else if (strcmp(tagname,"cycle_macro")==0) {
           Teuchos::ParameterList cm_parameter;
           attrMap = currentNode->getAttributes();
           nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
 	  if (nodeAttr) {
             textContent = XMLString::transcode(nodeAttr->getNodeValue());
-	  } else {
+	  }
+          else {
 	    Errors::Message msg;
 	    msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	    msg << "No attribute name found for cycle_macro. \n" ;
@@ -4790,11 +4825,13 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	      nodeTxt = XMLString::transcode(tmpNode->getTextContent());
 	      sps.append(get_int_constant(nodeTxt,def_list));
 	      XMLString::release(&nodeTxt);
-	    } else {
+	    }
+            else {
 	      sps.append(-1.0);
 	    }
 	    cm_parameter.set<Teuchos::Array<int> >("Start_Period_Stop", sps);
-	  } else {
+	  }
+          else {
 	    cm_parameter.set<Teuchos::Array<int> >("Values", sps);
 	  }
 	  cmPL.sublist(textContent) = cm_parameter;
@@ -4828,16 +4865,19 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
               visPL.set<std::string>("File Name Base",textContent2);
               XMLString::release(&textContent2);
-	    } else if (strcmp(textContent,"num_digits")==0) {
+	    }
+            else if (strcmp(textContent,"num_digits")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
               visPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
               XMLString::release(&textContent2);
-	    } else if (strcmp(textContent,"time_macros")==0) {
+	    }
+            else if (strcmp(textContent,"time_macros")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
 	      Teuchos::Array<std::string> macro = make_regions_list(textContent2);
               visPL.set<Teuchos::Array<std::string> >("Time Macros",macro);
               XMLString::release(&textContent2);
-	    } else if (strcmp(textContent,"cycle_macros")==0) {
+	    }
+            else if (strcmp(textContent,"cycle_macros")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
 	      Teuchos::Array<std::string> macro;
               macro.append(textContent2);
@@ -4860,11 +4900,13 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
               chkPL.set<std::string>("File Name Base",textContent2);
               XMLString::release(&textContent2);
-	    } else if (strcmp(textContent,"num_digits")==0) {
+	    }
+            else if (strcmp(textContent,"num_digits")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
               chkPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
               XMLString::release(&textContent2);
-	    } else if (strcmp(textContent,"cycle_macro")==0) {
+	    }
+            else if (strcmp(textContent,"cycle_macro")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
 	      Teuchos::Array<std::string> macro;
               macro.append(textContent2);
@@ -4886,11 +4928,13 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
               chkPL.set<std::string>("File Name Base",textContent2);
               XMLString::release(&textContent2);
-	    } else if (strcmp(textContent,"num_digits")==0) {
+	    }
+            else if (strcmp(textContent,"num_digits")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
               chkPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
               XMLString::release(&textContent2);
-	    } else if (strcmp(textContent,"cycle_macro")==0) {
+	    }
+            else if (strcmp(textContent,"cycle_macro")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
 	      Teuchos::Array<std::string> macro;
               macro.append(textContent2);
@@ -4901,7 +4945,8 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
             XMLString::release(&textContent);
           }
           list.sublist("Walkabout Data") = chkPL;
-	} else if (strcmp(outName,"observations")==0) {
+	}
+        else if (strcmp(outName,"observations")==0) {
 
           Teuchos::ParameterList obsPL;
           DOMNodeList* OBList = curoutNode->getChildNodes();
@@ -4913,13 +4958,15 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	        textContent2 = XMLString::transcode(curNode->getTextContent());
                 obsPL.set<std::string>("Observation Output Filename",textContent2);
 	        XMLString::release(&textContent2);
-              } else if (strcmp(textContent,"liquid_phase")==0) {
+              }
+              else if (strcmp(textContent,"liquid_phase")==0) {
                 DOMNamedNodeMap* attrMap = curNode->getAttributes();
                 DOMNode* nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
 	        char* phaseName;
 		if (nodeAttr) {
                   phaseName = XMLString::transcode(nodeAttr->getNodeValue());
-	        } else {
+	        }
+                else {
 	          Errors::Message msg;
 	          msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing observations - " ;
 	          msg << "No attribute name found for liquid_phase. \n" ;
@@ -4936,40 +4983,53 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
                     char* obsType = XMLString::transcode(curObs->getNodeName());
                     if (strcmp(obsType,"aqueous_pressure")==0) {
 	              obPL.set<std::string>("Variable","Aqueous pressure");
-	            } else if (strcmp(obsType,"integrated_mass")==0) {
+	            }
+                    else if (strcmp(obsType,"integrated_mass")==0) {
 	              // TODO: EIB can't find matching version
 	              //obPL.set<std::string>("Variable","Aqueous pressure");
-                    } else if (strcmp(obsType,"volumetric_water_content")==0) {
+                    }
+                    else if (strcmp(obsType,"volumetric_water_content")==0) {
 	              obPL.set<std::string>("Variable","Volumetric water content");
-                    } else if (strcmp(obsType,"gravimetric_water_content")==0) {
+                    }
+                    else if (strcmp(obsType,"gravimetric_water_content")==0) {
 	              obPL.set<std::string>("Variable","Gravimetric water content");
-                    } else if (strcmp(obsType,"x_aqueous_volumetric_flux")==0) {
+                    }
+                    else if (strcmp(obsType,"x_aqueous_volumetric_flux")==0) {
 	              // TODO: EIB needs double checking
 	              obPL.set<std::string>("Variable","X-Aqueous volumetric flux");
-                    } else if (strcmp(obsType,"y_aqueous_volumetric_flux")==0) {
+                    }
+                    else if (strcmp(obsType,"y_aqueous_volumetric_flux")==0) {
 	              // TODO: EIB needs double checking
 	              obPL.set<std::string>("Variable","Y-Aqueous volumetric flux");
-                    } else if (strcmp(obsType,"z_aqueous_volumetric_flux")==0) {
+                    }
+                    else if (strcmp(obsType,"z_aqueous_volumetric_flux")==0) {
 	              // TODO: EIB needs double checking
 	              obPL.set<std::string>("Variable","Z-Aqueous volumetric flux");
-                    } else if (strcmp(obsType,"material_id")==0) {
+                    }
+                    else if (strcmp(obsType,"material_id")==0) {
 	              obPL.set<std::string>("Variable","MaterialID");
-                    } else if (strcmp(obsType,"hydraulic_head")==0) {
+                    }
+                    else if (strcmp(obsType,"hydraulic_head")==0) {
 	              obPL.set<std::string>("Variable","Hydraulic Head");
-                    } else if (strcmp(obsType,"aqueous_mass_flow_rate")==0) {
+                    }
+                    else if (strcmp(obsType,"aqueous_mass_flow_rate")==0) {
 	              obPL.set<std::string>("Variable","Aqueous mass flow rate");
-                    } else if (strcmp(obsType,"aqueous_volumetric_flow_rate")==0) {
+                    }
+                    else if (strcmp(obsType,"aqueous_volumetric_flow_rate")==0) {
 	              obPL.set<std::string>("Variable","Aqueous volumetric flow rate");
-		    } else if (strcmp(obsType,"aqueous_saturation")==0) {
+		    }
+                    else if (strcmp(obsType,"aqueous_saturation")==0) {
 		      obPL.set<std::string>("Variable","Aqueous saturation");
-                    } else if (strcmp(obsType,"aqueous_conc")==0) {
+                    }
+                    else if (strcmp(obsType,"aqueous_conc")==0) {
 	              // get solute name
                       DOMNamedNodeMap* attrMap = curObs->getAttributes();
                       DOMNode* nodeAttr = attrMap->getNamedItem(XMLString::transcode("solute"));
 	              char* soluteName ;
 		      if (nodeAttr) {
                         soluteName = XMLString::transcode(nodeAttr->getNodeValue());
-	              } else {
+	              }
+                      else {
 	                Errors::Message msg;
 	                msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing observations - " ;
 	                msg << "No attribute solute found for aqueous_conc. \n" ;
@@ -4980,7 +5040,8 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	              std::stringstream name;
 	              name<< soluteName << " Aqueous concentration";
 	              obPL.set<std::string>("Variable",name.str());
-                    } else if (strcmp(obsType,"drawdown")==0) {
+                    }
+                    else if (strcmp(obsType,"drawdown")==0) {
 	              obPL.set<std::string>("Variable","Drawdown");
 	            }
 	            DOMNodeList* kidList = curObs->getChildNodes();
@@ -5002,15 +5063,19 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
                           obPL.set<Teuchos::Array<std::string> >("Region",regs);
 		          */
                           obPL.set<std::string>("Region",Value);
-		        } else if (strcmp(Elem,"functional")==0) {
+		        }
+                        else if (strcmp(Elem,"functional")==0) {
 	                  if (strcmp(Value,"point")==0) {
 	                    obPL.set<std::string>("Functional","Observation Data: Point");
-	                  } else if (strcmp(Value,"integral")==0) {
+	                  }
+                          else if (strcmp(Value,"integral")==0) {
 	                    obPL.set<std::string>("Functional","Observation Data: Integral");
-	                  } else if (strcmp(Value,"mean")==0) {
+	                  }
+                          else if (strcmp(Value,"mean")==0) {
 	                    obPL.set<std::string>("Functional","Observation Data: Mean");
 	                  }
-		        } else if (strcmp(Elem,"time_macro")==0) {
+		        }
+                        else if (strcmp(Elem,"time_macro")==0) {
 	                  obPL.set<std::string>("Time Macro",Value);
 		        }
                         XMLString::release(&Elem);
@@ -5055,11 +5120,13 @@ double get_time_value(std::string time_value, Teuchos::ParameterList def_list)
     time = def_list.sublist("constants").sublist("constants").sublist(time_value).get<double>("value");
 
   // Check if time_value is: listed in time_constants
-  } else if (def_list.sublist("constants").sublist("time_constants").isSublist(time_value)) {
+  }
+  else if (def_list.sublist("constants").sublist("time_constants").isSublist(time_value)) {
     time = def_list.sublist("constants").sublist("time_constants").sublist(time_value).get<double>("value");
 
   // Otherwise, it must be a string or typedef_labeled_time (0000.00,y)
-  } else {
+  }
+  else {
     char* tmp = strcpy(new char[time_value.size() + 1], time_value.c_str());
     char* char_array = strtok(tmp,";, ");
     time = atof(char_array);
@@ -5090,11 +5157,13 @@ double get_double_constant(std::string pos_name, Teuchos::ParameterList def_list
     value = def_list.sublist("constants").sublist("constants").sublist(pos_name).get<double>("value");
 
   // Check if pos_name is: listed in time_constants
-  } else if (def_list.sublist("constants").sublist("numerical_constant").isSublist(pos_name)) {
+  }
+  else if (def_list.sublist("constants").sublist("numerical_constant").isSublist(pos_name)) {
     value = def_list.sublist("constants").sublist("numerical_constant").sublist(pos_name).get<double>("value");
 
   // Otherwise, we must assume it's already a value
-  } else {
+  }
+  else {
     value = atof(pos_name.c_str());
   }
   
@@ -5116,11 +5185,13 @@ int get_int_constant(std::string pos_name, Teuchos::ParameterList def_list)
     value = def_list.sublist("constants").sublist("constants").sublist(pos_name).get<int>("value");
 
   // Check if pos_name is: listed in time_constants
-  } else if (def_list.sublist("constants").sublist("numerical_constant").isSublist(pos_name)) {
+  }
+  else if (def_list.sublist("constants").sublist("numerical_constant").isSublist(pos_name)) {
     value = def_list.sublist("constants").sublist("numerical_constant").sublist(pos_name).get<int>("value");
 
   // Otherwise, we must assume it's already a value
-  } else {
+  }
+  else {
     value = atoi(pos_name.c_str());
   }
   
@@ -5160,7 +5231,8 @@ bool compare_region_names(Teuchos::Array<std::string> regions, Teuchos::Paramete
   for (int i = 0; i < regions.size(); i++) { 
     if (def_list.sublist("regions").isParameter(regions[i].c_str())) {
       cnt++;
-    } else {
+    }
+    else {
       std::cout << "Amanzi::InputTranslator: ERROR - region "<< regions[i] << " NOT in known regions!" << std::endl;
       return false;
     }
@@ -5206,7 +5278,8 @@ Teuchos::ParameterList make_chemistry(Teuchos::ParameterList def_list)
         std::string new_extension(".bgd");
         size_t pos = bgdfilename.find(".xml");
         bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
-    } else {
+    }
+    else {
         // defaulting to hardcoded name
         bgdfilename = "isotherms.bgd" ;
     }
@@ -5221,20 +5294,25 @@ Teuchos::ParameterList make_chemistry(Teuchos::ParameterList def_list)
         if (verbosity == "extreme") {
 	    verb.append("error");
 	    chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-        } else if (verbosity == "high") {
+        }
+        else if (verbosity == "high") {
 	    verb.append("warning");
 	    chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-	} else if (verbosity == "medium") {
+	}
+        else if (verbosity == "medium") {
 	    verb.append("verbose");
 	    chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-	} else if (verbosity == "low") {
+	}
+        else if (verbosity == "low") {
 	    verb.append("terse");
 	    chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
-	} else {
+	}
+        else {
 	    verb.append("silent");
 	    chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
 	}
-    } else {
+    }
+    else {
 	verb.append("silent");
 	chemistryPL.set<Teuchos::Array<std::string> >("Verbosity",verb);
     }
@@ -5266,9 +5344,11 @@ void write_BDG_file(Teuchos::ParameterList sorption_list, Teuchos::ParameterList
       species_string << sorption_list.name(i) << " ;   0.00 ;   0.00 ;   1.00 \n";
       if ( tmpList.isParameter("Langmuir b") ) {
           isotherms_string << sorption_list.name(i) << " ; langmuir ; " << tmpList.get<double>("Kd")<< " " <<tmpList.get<double>("Langmuir b") << std::endl;
-      } else if ( tmpList.isParameter("Freundlich n") ) {
+      }
+      else if ( tmpList.isParameter("Freundlich n") ) {
           isotherms_string << sorption_list.name(i) << " ; freundlich ; " << tmpList.get<double>("Kd")<< " " <<tmpList.get<double>("Freundlich n") << std::endl;
-      } else {
+      }
+      else {
           isotherms_string << sorption_list.name(i) << " ; linear ; " << tmpList.get<double>("Kd")<< std::endl;
       }
   }
@@ -5280,7 +5360,8 @@ void write_BDG_file(Teuchos::ParameterList sorption_list, Teuchos::ParameterList
       std::string new_extension(".bgd");
       size_t pos = bgdfilename.find(".xml");
       bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
-  } else {
+  }
+  else {
       // defaulting to hardcoded name
       bgdfilename = "isotherms.bgd" ;
   }

@@ -1350,10 +1350,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:all>
 		<xs:element name="inward_mass_flux" type="typedef_bc_inward_mass_flux" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="outward_mass_flux" type="typedef_bc_outward_mass_flux" minOccurs="0" maxOccurs="unbounded"/>
-		<!-- volumetric flux not currently supported
 		<xs:element name="inward_volumetric_flux" type="typedef_bc_inward_volumetric_flux" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="outward_volumetric_flux" type="typedef_bc_outward_volumetric_flux" minOccurs="0" maxOccurs="unbounded"/>
-		-->
 		<xs:element name="uniform_pressure" type="typedef_bc_uniform_pressure" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="linear_pressure" type="typedef_bc_linear_pressure" minOccurs="0" maxOccurs="unbounded"/>
 		<xs:element name="hydrostatic" type="typedef_bc_hydrostatic" minOccurs="0" maxOccurs="unbounded"/>
