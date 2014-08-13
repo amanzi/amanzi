@@ -268,11 +268,9 @@ Numerical Controls
 .. code-block:: xml
 
   <numerical_controls>
-      Required Elements: NONE????
-      Optional Elements: steady-state_controls, transient_controls, comments, linear_solver (not specified)
+      Required Elements: NONE
+      Optional Elements: comments, steady-state_controls, transient_controls, linear_solver, nonlinear_solver, chemistry_controls
   </numerical_controls>
-
-NOTE: EIB - Currently `"linear_solver`" isn't listed in the schema with a min/max occurs.
 
 Some discussion of the elements, what the minimum necessary for a simulation is goes here.  For now I have just listed the elements that are available.  
 
@@ -284,7 +282,7 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"comments`"="string" - SKIPPED
  
-    * `"min_iterations`"="integer"
+    * `"min_iterations`"="integer" (min_iterations must be <= max_iterations)
 
     * `"max_iterations`"="integer"
 
@@ -292,83 +290,79 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"nonlinear_tolerance`"="exponential"
 
-    * `"error_rel_tol`"="exponential"
-
-    * `"error_abs_tol`"="exponential"
-
     * `"pseudo_time_integrator`"  has the following elements
 
-        * `"method`"="string"
+        * `"method`"="string" (options: picard)
 
-        * `"preconditioner`"="string"
+        * `"preconditioner`"="string" (options: trilinos_ml, hypre_amg, block_ilu) See below for subelements based on preconditioner name.
 
-        * `"linear_solver`"="string"
+        * `"linear_solver`"="string" (options: aztec00)
 
         * `"control_options`"="string"
 
-        * `"divergent_max_iterations`"="integer"
+        * `"max_iterations`"="integer"
 
         * `"clipping_saturation`"="exponential"
 
         * `"convergence_tolerance`"="exponential"
 
-        * `"initialize_with_darcy`"="string"
+        * `"initialize_with_darcy`"="boolean"
+
+    * `"limit_iterations`"="integer"
+
+    * `"nonlinear_iteration_damping_factor`"="exponential"
+
+    * `"nonlinear_iteration_divergence_factor`"="exponential"
+
+    * `"max_divergent_iterations`"="integer"
+
+    * `"initialize_with_darcy`"="boolean"
 
 * `"transient_controls`" has the elements `"comments`" and `"integration_method`". `"integration_method`" has the following elements
 
     * `"comments`"="string" - SKIPPED 
       
-    * `"integration_method`" has the following elements
+    * `"bdf1_integration_method`" has the following attributes
 
-        * `"convergence_criteria`" has the following elements
+        * `"min_iterations`"="integer"
 
-            * `"error_rel_tol`"="exponential"
+        * `"max_iterations`"="integer"
 
-            * `"error_abs_tol`"="exponential"
-
-        * `"nonlinear_solver_parameters`" has the following elements
-
-            * `"min_iterations`"="integer"
-
-            * `"max_iterations`"="integer"
-
-            * `"limit_iterations`"="integer"
+        * `"limit_iterations`"="integer"
  
-            * `"nonlinear_tolerance`"="exponential"
+        * `"nonlinear_tolerance`"="exponential"
 
-            * `"max_divergent_iterations`"="integer"
+        * `"max_preconditioner_lag_iterations`"="integer"
 
-            * `"max_preconditioner_lag`"="integer"
+        * `"max_divergent_iterations`"="integer"
+
+        * `"nonlinear_iteration_damping_factor`"="exponential"
+
+        * `"nonlinear_iteration_divergence_factor`"="exponential"
+
+        * `"restart_tolerance_factor`"="exponential"
+
+        * `"restart_tolerance_relaxation_factor`"="exponential"
+
+        * `"initialize_with_darcy`"="boolean"
+
+    * `"preconditioner`" requires an attribute `"name`". (options: trilinos_ml, hypre_amg, block_ilu) See below for subelements based on preconditioner name.
 
 * `"linear_solver`"  has the following elements
 
     * `"comments`"="string" - SKIPPED
  
-    * `"method`"="string"
+    * `"method`"="string" (options: aztec00)
 
     * `"max_iterations`"="integer"
 
     * `"tolerance`"="exponential"
 
-    * `"ml_cycle_applications`"="integer"
+    * `"cfl`"="exponential"
 
-    * `"use_hypre_amg`"="string"
+    * `"preconditioner`" requires an attribute `"name`". (options: trilinos_ml, hypre_amg, block_ilu) See below for subelements based on preconditioner name.
 
-    * `"use_block_ilu`"="string"
-
-    * `"hypre_amg_cycle_applications`"="integer"
-
-    * `"hypre_amg_smoother_sweeps`"="integer"
-
-    * `"hypre_amg_tolerance`"="exponential"
-
-    * `"hypre_amg_threshold`"="exponential"
-
-    * `"ml_smoother_type`"="string"
-
-    * `"sub_cycling`"="string"
-
-    * `"transport_sub_cycling`"="string"
+* `"nonlinear_solver`"  has an attribute `"name`". (options: nka, newton, inexact newton)
 
 * `"chemistry_controls`"  has the following elements
 
@@ -376,6 +370,39 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
  
     * `"chem_max_newton_iterations`"="integer"
 
+`"transient_controls`", `"linear_solver`", and `"pseudo_time_integrator`" accept a subelement for specifing the `"preconditioner`".  Current preconditioners available are Trilinos' ML, Hypre's AMG, and block ILU.  Below are the structures for each preconditioner.
+
+* `"preconditioners`" with `"name = 'trilinos_ml'`" has the following optional elements
+
+    * `"trilinos_smoother_type`"="string" (options: jacobi, gauss_seidel, ilu)
+
+    * `"trilinos_threshold`"="exponential" 
+
+    * `"trilinos_smoother_sweeps`"="integer"
+
+    * `"trilinos_cycle_applications`"="integer"
+
+* `"preconditioners`" with `"name = 'hypre_amg'`" has the following optional elements
+
+    * `"hypre_cycle_applications`"="integer"
+
+    * `"hypre_smoother_sweeps`"="integer"
+
+    * `"hypre_tolerance`"="exponential" 
+
+    * `"hypre_strong_threshold`"="exponential" 
+
+* `"preconditioners`" with `"name = 'block_ilu'`" has the following optional elements
+
+    * `"ilu_overlap`"="integer"
+
+    * `"ilu_relax`"="exponential"
+
+    * `"ilu_rel_threshold`"="exponential" 
+
+    * `"ilu_abs_threshold`"="exponential" 
+
+    * `"ilu_level_of_fill`"="integer" 
 
 
 Mesh

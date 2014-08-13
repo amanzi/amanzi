@@ -264,6 +264,23 @@ The list of available options is as follows:
         <clipping_saturation>Value</clipping_saturation>
         <method>picard</method>
         <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
+             <!-- if trilinos_ml -->
+          <trilinos_smoother_type> jacobi | gauss_seidel | ilu </trilinos_smoother_type>
+          <trilinos_threshold> Value </trilinos_threshold>
+          <trilinos_smoother_sweeps> Value </trilinos_smoother_sweeps>
+          <trilinos_cycle_applications> Value </trilinos_cycle_applications>
+             <!-- if hypre_amg -->
+          <hypre_cycle_applications> Value </hypre_cycle_applications>
+          <hypre_smoother_sweeps >Value </hypre_smoother_sweeps>
+          <hypre_tolerance >Value </hypre_tolerance>
+          <hypre_strong_threshold> Value </hypre_strong_threshold>
+             <!-- if block_ilu -->
+          <ilu_overlap> Value </ilu_overlap>
+          <ilu_relax> Value </ilu_relax>
+          <ilu_rel_threshold> Value </ilu_rel_threshold>
+          <ilu_abs_threshold> Value </ilu_abs_threshold>
+          <ilu_level_of_fill> Value </ilu_level_of_fill>
+        </preconditioner>
         <linear_solver>aztec00</linear_solver>
         <control_options>Value</control_options>
         <convergence_tolerance>Value</convergence_tolerance>
@@ -288,6 +305,23 @@ The list of available options is as follows:
                                restart_tolerance_factor="Value"
                                restart_tolerance_relaxation_factor="Value" />
       <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
+           <!-- if trilinos_ml -->
+        <trilinos_smoother_type> jacobi | gauss_seidel | ilu </trilinos_smoother_type>
+        <trilinos_threshold> Value </trilinos_threshold>
+        <trilinos_smoother_sweeps> Value </trilinos_smoother_sweeps>
+        <trilinos_cycle_applications> Value </trilinos_cycle_applications>
+           <!-- if hypre_amg -->
+        <hypre_cycle_applications> Value </hypre_cycle_applications>
+        <hypre_smoother_sweeps >Value </hypre_smoother_sweeps>
+        <hypre_tolerance >Value </hypre_tolerance>
+        <hypre_strong_threshold> Value </hypre_strong_threshold>
+           <!-- if block_ilu -->
+        <ilu_overlap> Value </ilu_overlap>
+        <ilu_relax> Value </ilu_relax>
+        <ilu_rel_threshold> Value </ilu_rel_threshold>
+        <ilu_abs_threshold> Value </ilu_abs_threshold>
+        <ilu_level_of_fill> Value </ilu_level_of_fill>
+      </preconditioner>
     </transient_controls>
 
     <linear_solver>
@@ -296,17 +330,17 @@ The list of available options is as follows:
       <max_iterations> Value </max_iterations>
       <tolerance> Value </tolerance>
       <preconditioner name="trilinos_ml | hypre_amg | block_ilu">
-           if trilinos_ml
+           <!-- if trilinos_ml -->
         <trilinos_smoother_type> jacobi | gauss_seidel | ilu </trilinos_smoother_type>
         <trilinos_threshold> Value </trilinos_threshold>
         <trilinos_smoother_sweeps> Value </trilinos_smoother_sweeps>
         <trilinos_cycle_applications> Value </trilinos_cycle_applications>
-           if hypre_amg
+           <!-- if hypre_amg -->
         <hypre_cycle_applications> Value </hypre_cycle_applications>
         <hypre_smoother_sweeps >Value </hypre_smoother_sweeps>
         <hypre_tolerance >Value </hypre_tolerance>
         <hypre_strong_threshold> Value </hypre_strong_threshold>
-           if block_ilu
+           <!-- if block_ilu -->
         <ilu_overlap> Value </ilu_overlap>
         <ilu_relax> Value </ilu_relax>
         <ilu_rel_threshold> Value </ilu_rel_threshold>
@@ -315,7 +349,7 @@ The list of available options is as follows:
       </preconditioner>
     </linear_solver>
 
-    <nonlinear_solver name="nka | newton | inexact | newton">
+    <nonlinear_solver name="nka | newton | inexact newton">
 
     <chemistry_controls>
       <chem_tolerance> Value </chem_tolerance>
