@@ -675,6 +675,8 @@ void Chemistry_State::CopyToAlquimia(const int cell_id,
   }
 
   // Auxiliary data -- block copy.
+  if (S_->HasField("alquimia_aux_data"))
+    aux_data_ = S_->GetField("alquimia_aux_data", name_)->GetFieldData()->ViewComponent("cell");
   if (num_aux_data_ != -1) 
   {
     int num_aux_ints = aux_data.aux_ints.size;
@@ -781,10 +783,26 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
   int num_aux_doubles = aux_data.aux_doubles.size;
   if (num_aux_data_ == -1) 
   {
+    // Set things up and register a vector in the State.
     assert(num_aux_ints >= 0);
     assert(num_aux_doubles >= 0);
     num_aux_data_ = num_aux_ints + num_aux_doubles;
-    aux_data_ = Teuchos::rcp(new Epetra_MultiVector(this->mesh_maps()->cell_map(false), num_aux_data_));
+    if (!S_->HasField("alquimia_aux_data"))
+    {
+      Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField("alquimia_aux_data", name_);
+      fac->SetMesh(mesh_);
+      fac->SetGhosted(false);
+      fac->SetComponent("cell", AmanziMesh::CELL, num_aux_data_);
+      Teuchos::RCP<CompositeVector> sac = Teuchos::rcp(new CompositeVector(*fac));
+
+      // Zero the field.
+      Teuchos::RCP<Field> F = S_->GetField("alquimia_aux_data", name_);
+      F->SetData(sac);
+      F->CreateData();
+      F->GetFieldData()->PutScalar(0.0);
+      F->set_initialized();
+    }
+    aux_data_ = S_->GetField("alquimia_aux_data", name_)->GetFieldData()->ViewComponent("cell");
   }
   else
   {

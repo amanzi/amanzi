@@ -357,7 +357,7 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
   // Other settings.
   max_time_step_ = chem_param_list_.get<double>("Max Time Step (s)", 9.9e9);
   min_time_step_ = chem_param_list_.get<double>("Min Time Step (s)", 9.9e9);
-  prev_time_step_ = chem_param_list_.get<double>("Initial Time Step (s)", min_time_step_);
+  prev_time_step_ = chem_param_list_.get<double>("Initial Time Step (s)", std::min(min_time_step_, max_time_step_));
   /*  if ((min_time_step_ == 9.9e9) && (prev_time_step_ < 9.9e9))
     min_time_step_ = prev_time_step_;
   else if ((min_time_step_ == 9.9e9) && (max_time_step_ < 9.9e9))
