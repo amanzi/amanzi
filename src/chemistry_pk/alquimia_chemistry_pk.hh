@@ -38,7 +38,7 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
 
   void Advance(const double& delta_time,
                Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star);
-  void CommitState(Teuchos::RCP<Chemistry_State> chem_state, const double& delta_time);
+  void CommitState(Teuchos::RCP<Chemistry_State> chem_state, const double& time);
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration(void) const;
 
   double time_step(void) const {

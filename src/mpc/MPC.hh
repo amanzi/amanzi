@@ -108,9 +108,6 @@ class MPC {
   // picard flag
   bool do_picard_;
 
-  // stor for chemistry data to allow repeat of chemistry step
-  Teuchos::RCP<chemistry_data> chem_data_;
-
  public:
   Teuchos::RCP<VerboseObject> vo_;
 };

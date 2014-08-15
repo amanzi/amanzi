@@ -707,12 +707,10 @@ void Alquimia_Chemistry_PK::ComputeNextTimeStep()
 // state update, thus, the PK should update
 // possible auxilary state variables here
 void Alquimia_Chemistry_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
-                                        const double& delta_time) 
+                                        const double& time) 
 {
-  saved_time_ += delta_time;
+  saved_time_ = time;
 }  // end CommitState()
-
-
 
 Teuchos::RCP<Epetra_MultiVector> Alquimia_Chemistry_PK::get_extra_chemistry_output_data() 
 {

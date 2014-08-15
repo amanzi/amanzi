@@ -790,13 +790,13 @@ void Chemistry_PK::Advance(
 // state update, thus, the PK should update
 // possible auxilary state variables here
 void Chemistry_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
-                                const double& delta_time) {
+                                const double& time) {
   if (debug() == kDebugChemistryProcessKernel) {
     chem_out->Write(kVerbose,
                     "  Chemistry_PK::CommitState() : Committing internal state.\n");
   }
 
-  saved_time_ += delta_time;
+  saved_time_ = time;
 
   if (debug() && false) {
     chem_->Speciate(&beaker_components_, beaker_parameters_);
