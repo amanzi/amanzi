@@ -171,7 +171,7 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
       Acell(nfaces, n) = -colsum;
     }
 
-    // Amanzi's upwind
+    // Amanzi's upwind: add additional flux 
     if (upwind_ == OPERATOR_UPWIND_AMANZI) {
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];

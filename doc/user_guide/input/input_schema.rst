@@ -264,6 +264,23 @@ The list of available options is as follows:
         <clipping_saturation>Value</clipping_saturation>
         <method>picard</method>
         <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
+             <!-- if trilinos_ml -->
+          <trilinos_smoother_type> jacobi | gauss_seidel | ilu </trilinos_smoother_type>
+          <trilinos_threshold> Value </trilinos_threshold>
+          <trilinos_smoother_sweeps> Value </trilinos_smoother_sweeps>
+          <trilinos_cycle_applications> Value </trilinos_cycle_applications>
+             <!-- if hypre_amg -->
+          <hypre_cycle_applications> Value </hypre_cycle_applications>
+          <hypre_smoother_sweeps >Value </hypre_smoother_sweeps>
+          <hypre_tolerance >Value </hypre_tolerance>
+          <hypre_strong_threshold> Value </hypre_strong_threshold>
+             <!-- if block_ilu -->
+          <ilu_overlap> Value </ilu_overlap>
+          <ilu_relax> Value </ilu_relax>
+          <ilu_rel_threshold> Value </ilu_rel_threshold>
+          <ilu_abs_threshold> Value </ilu_abs_threshold>
+          <ilu_level_of_fill> Value </ilu_level_of_fill>
+        </preconditioner>
         <linear_solver>aztec00</linear_solver>
         <control_options>Value</control_options>
         <convergence_tolerance>Value</convergence_tolerance>
@@ -288,6 +305,23 @@ The list of available options is as follows:
                                restart_tolerance_factor="Value"
                                restart_tolerance_relaxation_factor="Value" />
       <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
+           <!-- if trilinos_ml -->
+        <trilinos_smoother_type> jacobi | gauss_seidel | ilu </trilinos_smoother_type>
+        <trilinos_threshold> Value </trilinos_threshold>
+        <trilinos_smoother_sweeps> Value </trilinos_smoother_sweeps>
+        <trilinos_cycle_applications> Value </trilinos_cycle_applications>
+           <!-- if hypre_amg -->
+        <hypre_cycle_applications> Value </hypre_cycle_applications>
+        <hypre_smoother_sweeps >Value </hypre_smoother_sweeps>
+        <hypre_tolerance >Value </hypre_tolerance>
+        <hypre_strong_threshold> Value </hypre_strong_threshold>
+           <!-- if block_ilu -->
+        <ilu_overlap> Value </ilu_overlap>
+        <ilu_relax> Value </ilu_relax>
+        <ilu_rel_threshold> Value </ilu_rel_threshold>
+        <ilu_abs_threshold> Value </ilu_abs_threshold>
+        <ilu_level_of_fill> Value </ilu_level_of_fill>
+      </preconditioner>
     </transient_controls>
 
     <linear_solver>
@@ -296,17 +330,17 @@ The list of available options is as follows:
       <max_iterations> Value </max_iterations>
       <tolerance> Value </tolerance>
       <preconditioner name="trilinos_ml | hypre_amg | block_ilu">
-           if trilinos_ml
+           <!-- if trilinos_ml -->
         <trilinos_smoother_type> jacobi | gauss_seidel | ilu </trilinos_smoother_type>
         <trilinos_threshold> Value </trilinos_threshold>
         <trilinos_smoother_sweeps> Value </trilinos_smoother_sweeps>
         <trilinos_cycle_applications> Value </trilinos_cycle_applications>
-           if hypre_amg
+           <!-- if hypre_amg -->
         <hypre_cycle_applications> Value </hypre_cycle_applications>
         <hypre_smoother_sweeps >Value </hypre_smoother_sweeps>
         <hypre_tolerance >Value </hypre_tolerance>
         <hypre_strong_threshold> Value </hypre_strong_threshold>
-           if block_ilu
+           <!-- if block_ilu -->
         <ilu_overlap> Value </ilu_overlap>
         <ilu_relax> Value </ilu_relax>
         <ilu_rel_threshold> Value </ilu_rel_threshold>
@@ -315,7 +349,7 @@ The list of available options is as follows:
       </preconditioner>
     </linear_solver>
 
-    <nonlinear_solver name="nka | newton | inexact | newton">
+    <nonlinear_solver name="nka | newton | inexact newton">
 
     <chemistry_controls>
       <chem_tolerance> Value </chem_tolerance>
@@ -554,28 +588,37 @@ A ``material`` element can contain the following:
         <specific_storage value="Value"/>
         <specific_yield value="Value"/>
         <dispersion_tensor alpha_l="Value" alpha_t="Value"/>
-        <molecular_diffusion value="Value"/>
         <tortuosity value="Value"/>
     </mechanical_properties>
     <permeability x="Value" y="Value" z="Value"/>
     <hydraulic_conductivity x="Value" y="Value" z="Value"/>
     <cap_pressure model="van_genuchten | brooks_corey | none">
- 	<parameters m="Value" alpha="Value" sr="Value"/>
-             ( for van_genuchten or for brooks_corey )
- 	<parameters lambda="Value" alpha="Value" sr="Value"/>
+        <!-- for van_genuchten -->
+ 	<parameters m="Value" alpha="Value" sr="Value" optional_krel_smoothing_interval="Value"/>
+        <!-- for brooks_corey -->
+ 	<parameters lambda="Value" alpha="Value" sr="Value" optional_krel_smoothing_interval="Value"/>
     </cap_pressure>
     <rel_perm model="mualem | burdine | none">
-        <optional_krel_smoothing_interval value="Value"/>
-        <exp value="Value"/> (burdine only)
+        <!-- burdine only -->
+        <exp value="Value"/>
     </rel_perm>
     <sorption_isotherms>
-          <!-- Three models available, add b or n parameter for appropriate model -->
-	<solute name="Name of Solute" model="linear" kd="Value"/>
-	<solute name="Name of Solute" model="langmuir" kd="Value" b="Value"/>
-        <solute name="Name of Solute" model="freundlich" kd="Value" n="Value"/>
+        <!-- Three kd models available plus molecular diffusion -->
+        <!-- Note: all solutes should be listed under all materials, value="0" indicates the solute isn't present/active -->
+	<solute name="Name of Solute" >
+            <kd_model model="linear" kd = "Value" />
+            <molecular_diffusion value="Value" />
+        </solute>
+	<solute name="Name of Solute" >
+            <kd_model model="langmuir" kd="Value" b="Value"/>
+        </solute>
+	<solute name="Name of Solute" >
+            <kd_model model="freundlich" kd="Value" n="Value" />
+        </solute>
     </sorption_isotherms>
     <assigned_regions>Comma seperated list of Regions</assigned_regions>
   </material>
+
 
 While many material properties are available for the user to define,
 the minimum requirements for a valid material definition are
@@ -589,18 +632,17 @@ An example material would look like
 .. code-block:: xml
 
   <material name="Facies_1">
-  <comments>Material corresponds to region facies1</comments>
-  <mechanical_properties>
-    <porosity value="0.4082"/>
-    <particle_density value="2720.0"/>
-  </mechanical_properties>
-  <permeability x="1.9976E-12" y="1.9976E-12" z="1.9976E-13"/>
-  <cap_pressure model="van_genuchten">
-    <parameters m="0.2294" alpha="1.9467E-04" sr="0.0"/>
-  </cap_pressure>
-  <rel_perm model="mualem">
-  </rel_perm>
-  <assigned_regions>Between_Planes_1_and_2</assigned_regions>
+    <comments>Material corresponds to region facies1</comments>
+    <mechanical_properties>
+      <porosity value="0.4082"/>
+      <particle_density value="2720.0"/>
+    </mechanical_properties>
+    <permeability x="1.9976E-12" y="1.9976E-12" z="1.9976E-13"/>
+    <cap_pressure model="van_genuchten">
+      <parameters m="0.2294" alpha="1.9467E-04" sr="0.0"/>
+    </cap_pressure>
+    <rel_perm model="mualem"/>
+    <assigned_regions>Between_Planes_1_and_2</assigned_regions>
   </material>
 
 Process Kernels
@@ -717,8 +759,8 @@ required elements, ``dissolved_components`` is optional.
 ``dissolved_components`` contains a subelement ``solutes`` under which
 individual ``solute`` elements are used to specify any solutes present
 in the liquid phase.  The text of the ``solute`` contains the name of
-the solute while an attribute specifies the value
-*coefficient_of_diffusion*.
+the solute while an attributes specifies the value
+*coefficient_of_diffusion*.  
 
 The ``solid_phase`` element allows the user to define a ``minerals``
 element under which a series of ``mineral`` elements can be listed to
