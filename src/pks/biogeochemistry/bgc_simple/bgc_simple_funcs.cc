@@ -634,8 +634,8 @@ void BGCAdvance(double t, double dt, double gridarea,
       double totalConvrtC = 0.0;
       for (int m=0; m!=nPools; ++m) {
         if (m != l) {
-          totalConvrtC += SOMConvt[l]* soilcarr[k]->params->Tij[m][l]; // *SOMConvt[l];
-        }
+          totalConvrtC += SOMConvt[m]* soilcarr[k]->params->Tij[m][l]; // *SOMConvt[l];
+ 	  }
       }
 
       soilcarr[k]->SOM[l] += totalConvrtC;

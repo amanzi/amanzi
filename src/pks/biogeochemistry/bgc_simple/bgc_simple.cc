@@ -43,7 +43,7 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
   soil_part_name_ = plist_->get<std::string>("soil partition name");
 
   // Create the additional, non-managed data structures
-  int nPools = plist_->get<int>("number of carbon pools", 10);
+  int nPools = plist_->get<int>("number of carbon pools", 7);
 
   // -- SoilCarbonParameters
   Teuchos::ParameterList& sc_params = plist_->sublist("soil carbon parameters");
