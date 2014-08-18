@@ -345,7 +345,7 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   decreasing temps..." << std::endl;
 
-        if (!model_->Freezing(T_std+0.001, p_std)) {
+        if (!model_->Freezing(T_std, p_std)) {
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
             *dcvo->os() << "   above freezing, keep std correction" << std::endl;
           // pass, guesses are good
