@@ -255,7 +255,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     // NOTE: these rates can only be correct if over mb.dt
     mb.MWg = mb.Mm + seb.in.met.Pr;
     mb.MWg_subsurf = 0.;
-    mb.MWg_temp = (mb.MWg > 0. && mb.Mm > 0.) ? (mb.Mm * 273.15 + seb.in.met.Pr * seb.in.met.vp_air.temp) / mb.MWg : seb.in.met.vp_air.temp;
+    mb.MWg_temp = (mb.MWg > 0. && mb.Mm > 0.) ? (mb.Mm * 273.15 + seb.in.met.Pr * seb.in.met.vp_air.temp) / mb.MWg : (seb.in.met.vp_air.temp > 273.15) ? seb.in.met.vp_air.temp: 273.15;
 
   } else {
     // set the snow properties
@@ -268,7 +268,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     // set the water properties
     // -- water source to ground is rainfall + condensation
     // -- evaporation is taken from ground if ponded water, from cell source if not (with transition)
-    mb.MWg_temp = seb.in.met.vp_air.temp;
+    mb.MWg_temp = (seb.in.met.vp_air.temp > 273.15) ? seb.in.met.vp_air.temp: 273.15;
     mb.MWg = seb.in.met.Pr;
     mb.MWg_subsurf = 0.;
     if (mb.Me > 0.) {

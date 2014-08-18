@@ -90,7 +90,7 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
   // requirements: primary variable
   S->RequireField(key_, name_)->SetMesh(mesh_)->
       SetComponent("cell", AmanziMesh::CELL, 1);
-
+  
 
   // requirements: other primary variables
   Teuchos::RCP<FieldEvaluator> fm;
@@ -143,15 +143,20 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
   // requirements: diagnostic variables
   S->RequireField("albedo",name_)->SetMesh(mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->GetField("albedo",name_)->set_io_checkpoint(false);
   S->RequireField("evaporative_flux",name_)->SetMesh(mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->GetField("evaporative_flux",name_)->set_io_checkpoint(false);
   S->RequireField("qE_latent_heat",name_)->SetMesh(mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->GetField("qE_latent_heat",name_)->set_io_checkpoint(false);
   S->RequireField("qE_sensible_heat",name_)->SetMesh(mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->GetField("qE_sensible_heat",name_)->set_io_checkpoint(false);
   S->RequireField("qE_lw_out",name_)->SetMesh(mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
-
+  S->GetField("qE_lw_out",name_)->set_io_checkpoint(false);
+  
   // requirements: independent variables (data from MET)
   S->RequireFieldEvaluator("incoming_shortwave_radiation");
   S->RequireField("incoming_shortwave_radiation")->SetMesh(mesh_)

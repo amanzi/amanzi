@@ -867,7 +867,7 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
     *vo_->os() << "    Admissible p? (min/max): " << minp << ",  " << maxp << std::endl;
   }
 
-  if (ierr || minp < -1.e8 || maxp > 1.e8) {
+  if (ierr || minp < -1.e9 || maxp > 1.e8) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << " is not admissible, as it is not within bounds of constitutive models: min(p) = " << minp << ", max(p) = " << maxp << std::endl;
     }
