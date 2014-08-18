@@ -19,6 +19,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "TimeStepManager.hh"
 #include "visualization.hh"
@@ -43,8 +44,10 @@ Coordinator::Coordinator(Teuchos::ParameterList& parameter_list,
     comm_(comm),
     restart_(false) {
 
-  // create and start the timer
+  // create and start the global timer
   timer_ = Teuchos::rcp(new Teuchos::Time("wallclock_monitor",true));
+  setup_timer_ = Teuchos::TimeMonitor::getNewCounter("setup");
+  cycle_timer_ = Teuchos::TimeMonitor::getNewCounter("cycle");
   coordinator_init();
 
   vo_ = Teuchos::rcp(new VerboseObject("Coordinator", *parameter_list_));
@@ -219,6 +222,9 @@ void Coordinator::initialize() {
        vis!=visualization_.end(); ++vis) {
     (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
   }
+
+  // -- register checkpoint times
+  checkpoint_->RegisterWithTimeStepManager(tsm_.ptr());
 
   // -- register observation times
   observations_->RegisterWithTimeStepManager(tsm_.ptr());
@@ -479,8 +485,11 @@ void Coordinator::cycle_driver() {
   const double duration(duration_ * 3600);
 
   // start at time t = t0 and initialize the state.
-  setup();
-  initialize();
+  {
+    Teuchos::TimeMonitor monitor(*setup_timer_);
+    setup();
+    initialize();
+  }
 
   // get the intial timestep -- note, this would have to be fixed for a true restart
   double dt = get_dt();
@@ -490,6 +499,8 @@ void Coordinator::cycle_driver() {
   checkpoint(dt);
 
   // iterate process kernels
+  {
+    Teuchos::TimeMonitor cycle_monitor(*cycle_timer_);
 #if !DEBUG_MODE
   try {
 #endif
@@ -535,8 +546,10 @@ void Coordinator::cycle_driver() {
     throw e;
   }
 #endif
-
+  }
+  
   report_memory();
+  Teuchos::TimeMonitor::summarize(*vo_->os());
 
   finalize();
 
