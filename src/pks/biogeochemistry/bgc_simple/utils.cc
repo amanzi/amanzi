@@ -19,7 +19,7 @@ double PermafrostDepth(const Epetra_SerialDenseVector& SoilTArr,
                        double freeze_temp) {
   int i = 0;
   int nSoilLayers = SoilTArr.Length();
-  while (SoilDArr[i] > 0. && i < nSoilLayers) i++;
+  while (SoilTArr[i] > 0. && i < nSoilLayers-1) i++;
   return SoilDArr[i];
 }
 
