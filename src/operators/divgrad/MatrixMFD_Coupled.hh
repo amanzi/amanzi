@@ -117,9 +117,11 @@ class MatrixMFD_Coupled : public TreeMatrix {
  protected:
   virtual void MarkLocalMatricesAsChanged_() {
     assembled_schur_ = false;
+    assembled_operator_ = false;
   }
 
   virtual void AssembleSchur_() const;
+  virtual void AssembleAff_() const;
   virtual void UpdatePreconditioner_() const;
 
  protected:
@@ -146,6 +148,7 @@ class MatrixMFD_Coupled : public TreeMatrix {
   mutable Teuchos::RCP<Epetra_VbrMatrix> A2f2c_;
   mutable Teuchos::RCP<Epetra_VbrMatrix> A2c2f_;
   mutable Teuchos::RCP<Epetra_FEVbrMatrix> P2f2f_;
+  mutable Teuchos::RCP<Epetra_FEVbrMatrix> A2f2f_;
 
   // maps
   Teuchos::RCP<const Epetra_BlockMap> double_fmap_;
@@ -153,8 +156,10 @@ class MatrixMFD_Coupled : public TreeMatrix {
   Teuchos::RCP<const Epetra_BlockMap> double_fmap_wghost_;
 
   // flags
+  mutable bool assembled_operator_;
   mutable bool assembled_schur_;
   mutable bool is_schur_created_;
+  mutable bool is_operator_created_;
   bool dump_schur_;
 
   // preconditioner for Schur complement
