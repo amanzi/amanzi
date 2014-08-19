@@ -73,20 +73,15 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
 
   // main PK members
   void Setup(const Teuchos::Ptr<State>& S) {};
+  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
 
   void Initialize(const Teuchos::Ptr<State>& S);
   double get_dt();
+  bool Advance(double dT); 
   int Advance(double dT, double &dT_actual); 
-  void CommitState(double dummy_dT, const Teuchos::RCP<State>& S);
-
-  void StateToSolution(const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& soln) {};
-  void SolutionToState(const Teuchos::RCP<TreeVector>& soln, const Teuchos::RCP<State>& S) {};
-
-  void SetStates(const Teuchos::RCP<const State>& S,
-                 const Teuchos::RCP<State>& S_inter,
-                 const Teuchos::RCP<State>& S_next) {};
-  void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
-  std::string name() { return "transport"; }
+  void CommitState(double dummy_dT, const Teuchos::Ptr<State>& S);
+  void CalculateDiagnostics(const Teuchos::Ptr<State>& S) {};
+  std::string name() { return name_; }
 
   // main transport members
   void InitializeFields();

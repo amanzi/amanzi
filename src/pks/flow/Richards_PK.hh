@@ -39,9 +39,11 @@ class Richards_PK : public Flow_PK {
 
   // main PK methods
   void Initialize(const Teuchos::Ptr<State>& S);
+  bool Advance(double dT); 
   int Advance(double dT_MPC, double& dT_actual); 
   double get_dt();
-  void CommitState(double dt, const Teuchos::RCP<State>& S);
+  void CommitState(double dt, const Teuchos::Ptr<State>& S);
+  void CalculateDiagnostics(const Teuchos::Ptr<State>& S) {}
 
   // main flow methods
   void InitSteadyState(double T0, double dT0);

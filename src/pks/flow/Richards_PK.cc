@@ -546,10 +546,31 @@ double Richards_PK::get_dt()
 }
 
 
+/* *******************************************************************
+* Performs one time step of size dT_MPC either for steady-state or transient
+* calculations.  Attempts to catch errors in timestepping that might otherwise
+* be covered up by Rickards.
+******************************************************************* */
+bool Richards_PK::Advance(double dT)
+{
+  bool failed = false;
+  double dT_actual(dT);
+  int ierr = Advance(dT, dT_actual);
+  if (std::abs(dT - dT_actual) > 1.e-10 || ierr) {
+    failed = true;
+  }
+  return failed;
+}
+
 /* ******************************************************************* 
 * Performs one time step of size dT_MPC either for steady-state or 
 * transient calculations.
 * Warning: BDF2 and BDF1 will merge eventually.
+*
+* WARNING: This might require refactor for working in a more general process
+*          tree.  Semantic of Advance() is that it must take step of size
+*          dT_MPC, otherwise return true (for failed).  Steps should not be
+*          taken internally in case coupling fails at a higher level.
 ******************************************************************* */
 int Richards_PK::Advance(double dT_MPC, double& dT_actual)
 {
@@ -580,6 +601,9 @@ int Richards_PK::Advance(double dT_MPC, double& dT_actual)
     while (bdf1_dae->TimeStep(dT, dTnext, solution)) {
       dT = dTnext;
     }
+
+    // --etc this is a bug in general -- should not commit the solution unless
+    //   the step passes all other PKs
     bdf1_dae->CommitSolution(dT, solution);
     T_physics = bdf1_dae->time();
   }
@@ -601,7 +625,7 @@ int Richards_PK::Advance(double dT_MPC, double& dT_actual)
 * The consistency condition is improved by adjusting saturation while
 * preserving its LED property.
 ****************************************************************** */
-void Richards_PK::CommitState(double dt, const Teuchos::RCP<State>& S)
+void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
 {
   // copy solution to State
   CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
@@ -635,7 +659,7 @@ void Richards_PK::CommitState(double dt, const Teuchos::RCP<State>& S)
   // ImproveAlgebraicConsistency(ws_prev, ws);
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    Epetra_MultiVector& phi = *S_->GetFieldData("porosity", passwd_)->ViewComponent("cell", false);
+    Epetra_MultiVector& phi = *S->GetFieldData("porosity", passwd_)->ViewComponent("cell", false);
     double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dT;
 
     mass_amanzi = 0.0;

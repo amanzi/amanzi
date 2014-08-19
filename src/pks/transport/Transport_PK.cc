@@ -312,6 +312,19 @@ double Transport_PK::get_dt()
 
 
 /* ******************************************************************* 
+* Performs one time step of size dT, in the form required for PK
+******************************************************************* */
+bool Transport_PK::Advance(double dT) {
+  bool failed = false;
+  double dT_actual(dT);
+  int ierr = Advance(dT, dT_actual);
+  if (std::abs(dT - dT_actual) > 1.e-10 || ierr) {
+    failed = true;
+  }
+  return failed;
+}
+
+/* ******************************************************************* 
 * MPC will call this function to advance the transport state.
 * Efficient subcycling requires to calculate an intermediate state of
 * saturation only once, which leads to a leap-frog-type algorithm.
@@ -536,7 +549,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
 /* ******************************************************************* 
 * Copy theadvected tcc to the provided state.
 ******************************************************************* */
-void Transport_PK::CommitState(double dummy_dT, const Teuchos::RCP<State>& S) 
+void Transport_PK::CommitState(double dummy_dT, const Teuchos::Ptr<State>& S) 
 {
   Teuchos::RCP<CompositeVector> cv;
   cv = S->GetFieldData("total_component_concentration", name_);

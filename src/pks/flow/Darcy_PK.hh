@@ -33,9 +33,11 @@ class Darcy_PK : public Flow_PK {
 
   // main PK methods
   void Initialize(const Teuchos::Ptr<State>& S);
+  bool Advance(double dT);
   int Advance(double dT, double &dT_actual); 
   double get_dt() { return dT_desirable_; }
-  void CommitState(double dt, const Teuchos::RCP<State>& S);
+  void CommitState(double dt, const Teuchos::Ptr<State>& S);
+  void CalculateDiagnostics(const Teuchos::Ptr<State>& S) {}
 
   // main flow methods
   void InitSteadyState(double T0, double dT0);

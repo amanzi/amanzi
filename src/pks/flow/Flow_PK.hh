@@ -50,12 +50,7 @@ class Flow_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
   // main PK methods
   void Setup(const Teuchos::Ptr<State>& S) {};
 
-  void StateToSolution(const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& soln) {};
-  void SolutionToState(const Teuchos::RCP<TreeVector>& soln, const Teuchos::RCP<State>& S) {};
-
-  void SetStates(const Teuchos::RCP<const State>& S,
-                 const Teuchos::RCP<State>& S_inter,
-                 const Teuchos::RCP<State>& S_next) {};
+  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
   void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
   std::string name() { return "flow"; }
 
@@ -65,6 +60,7 @@ class Flow_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
   virtual void InitSteadyState(double T0, double dT0) = 0;
   virtual void InitTransient(double T0, double dT0) = 0;
 
+  virtual int Advance(double dT, double &dT_actual) = 0;
   virtual int AdvanceToSteadyState(double T0, double dT0) = 0;
   virtual void InitializeAuxiliaryData() = 0;
   virtual void InitializeSteadySaturated() = 0;

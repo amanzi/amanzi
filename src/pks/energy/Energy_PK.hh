@@ -37,12 +37,8 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
   // main PK methods
   void Setup(const Teuchos::Ptr<State>& S) {};
 
-  void StateToSolution(const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& soln) {};
-  void SolutionToState(const Teuchos::RCP<TreeVector>& soln, const Teuchos::RCP<State>& S) {};
+  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
 
-  void SetStates(const Teuchos::RCP<const State>& S,
-                 const Teuchos::RCP<State>& S_inter,
-                 const Teuchos::RCP<State>& S_next) {};
   void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
   std::string name() { return "flow"; }
 

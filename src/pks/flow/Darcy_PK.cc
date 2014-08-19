@@ -411,6 +411,20 @@ int Darcy_PK::AdvanceToSteadyState(double T0, double dT0)
 
 
 /* ******************************************************************* 
+* Performs one time step of size dT, in the form required for PK
+******************************************************************* */
+bool Darcy_PK::Advance(double dT) {
+  bool failed = false;
+  double dT_actual(dT);
+  int ierr = Advance(dT, dT_actual);
+  if (std::abs(dT - dT_actual) > 1.e-10 || ierr) {
+    failed = true;
+  }
+  return failed;
+}
+
+
+/* ******************************************************************* 
 * Performs one time step of size dT. The boundary conditions are 
 * calculated only once, during the initialization step.  
 ******************************************************************* */
@@ -517,13 +531,13 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
 * Transfer data from the external flow state FS_MPC. MPC may request
 * to populate the original state FS. 
 ****************************************************************** */
-void Darcy_PK::CommitState(double dt, const Teuchos::RCP<State>& S)
+void Darcy_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
 {
-  CompositeVector& p = *S_->GetFieldData("pressure", passwd_);
+  CompositeVector& p = *S->GetFieldData("pressure", passwd_);
   p = *solution;
 
   // calculate darcy mass flux
-  CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+  CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux", passwd_);
   op_->UpdateFlux(*solution, darcy_flux);
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);

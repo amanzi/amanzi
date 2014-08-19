@@ -113,7 +113,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     while (T < T1) {
       double dT = std::min(TPK.CalculateTransportDt(), T1 - T);
       TPK.Advance(dT, dummy_dT);
-      TPK.CommitState(dT, S);
+      TPK.CommitState(dT, S.ptr());
       T += dT;
       iter++;
     }
@@ -228,7 +228,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
       dT = std::min(dT, dT0);
 
       TPK.Advance(dT, dummy_dT);
-      TPK.CommitState(dT, S);
+      TPK.CommitState(dT, S.ptr());
       T += dT;
       if (TPK.internal_tests) {
         TPK.CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);

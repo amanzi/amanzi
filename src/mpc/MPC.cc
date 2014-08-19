@@ -494,7 +494,7 @@ void MPC::cycle_driver() {
     if (flow_enabled) FPK->InitializeAuxiliaryData();
     if (do_picard_) {
       FPK->InitPicard(S->time());
-      FPK->CommitState(0.0, S);
+      FPK->CommitState(0.0, S.ptr());
     }
     Amanzi::timer_manager.stop("Flow PK");
   }
@@ -520,7 +520,7 @@ void MPC::cycle_driver() {
       if (!restart_requested) {
         FPK->InitSteadyState(S->time(), dTsteady);
         FPK->InitializeSteadySaturated();
-        FPK->CommitState(0.0, S);
+        FPK->CommitState(0.0, S.ptr());
         if (ti_mode == INIT_TO_STEADY) S->advance_time(Tswitch-T0);
         if (ti_mode == STEADY)         S->advance_time(T1-T0);
       } else {
@@ -779,7 +779,7 @@ void MPC::cycle_driver() {
 	    mpc_dT = actual_dT;
 	    tslimiter = FLOW_LIMITS;
 	  }
-	  FPK->CommitState(mpc_dT, S);
+	  FPK->CommitState(mpc_dT, S.ptr());
         }
       }
       S->set_final_time(S->initial_time() + mpc_dT);
@@ -985,7 +985,7 @@ void MPC::cycle_driver() {
 	   (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ||
 	   (ti_mode == TRANSIENT_STATIC_FLOW) ) {
         Amanzi::timer_manager.start("Transport PK");
-        if (transport_enabled && !chemistry_enabled) TPK->CommitState(0.0, S);
+        if (transport_enabled && !chemistry_enabled) TPK->CommitState(0.0, S.ptr());
         Amanzi::timer_manager.stop("Transport PK");
 
         Amanzi::timer_manager.start("Chemistry PK");

@@ -84,7 +84,7 @@ TEST(NEWTON_RICHARD_STEADY) {
 
   /* solve the problem */
   RPK->AdvanceToSteadyState(0.0, 1e+7);
-  RPK->CommitState(0.0, S);
+  RPK->CommitState(0.0, S.ptr());
 
   /* derive dependent variable */
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

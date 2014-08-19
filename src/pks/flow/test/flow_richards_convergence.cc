@@ -157,7 +157,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
     RPK->InitSteadyState(0.0, 0.001);
     RPK->AdvanceToSteadyState(0.0, 0.001);
-    RPK->CommitState(0.0, S);
+    RPK->CommitState(0.0, S.ptr());
 
     double pressure_err, flux_err, div_err;  // error checks
     const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

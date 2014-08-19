@@ -1,4 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
    ATS
 
@@ -250,10 +249,6 @@ class State {
   //
   Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition(Key);
 
-  // -----------------------------------------------------------------------------
-  // State is representative of an instant in time and a single cycle within
-  // the time integration process.
-  // -----------------------------------------------------------------------------
   // Time accessor and mutators.
   double time() const { return time_; }
   void set_time(double new_time);  // note this also evaluates state-owned functions

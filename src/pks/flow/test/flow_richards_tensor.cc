@@ -100,7 +100,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   std::cout << "grad(p)=" << v0 << std::endl;
 
   RPK->AdvanceToSteadyState(0.0, 1.0);
-  RPK->CommitState(0.0, S);
+  RPK->CommitState(0.0, S.ptr());
 
   /* check accuracy */
   const Epetra_MultiVector& pressure = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");

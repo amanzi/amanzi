@@ -94,7 +94,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
   while (T < 0.3) {
     double dT = TPK.CalculateTransportDt();
     TPK.Advance(dT, dummy_dT);
-    TPK.CommitState(dT, S);
+    TPK.CommitState(dT, S.ptr());
     T += dT;
     iter++;
 

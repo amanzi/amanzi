@@ -55,8 +55,8 @@ class FlowBoundaryFunction : public UniqueMeshFunction {
 
   // access / set
   const std::vector<Action>& actions() { return actions_; } 
-  inline double reference_pressure() { return reference_pressure_; }
-  inline double set_reference_pressure(double p0) { reference_pressure_ = p0; }
+  double reference_pressure() { return reference_pressure_; }
+  void set_reference_pressure(double p0) { reference_pressure_ = p0; }
 
   // iterator methods
   typedef std::map<int,double>::const_iterator Iterator;
