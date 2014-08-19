@@ -249,7 +249,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   double damping_factor = 0.6;
   double reference_pressure = 101325.0;
 
-  int ncells_clipped(0);
+  int nsat_clipped(0), npre_clipped(0);
 
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM(); 
   const Epetra_IntVector& map = rel_perm_->map_c2mb();
@@ -277,7 +277,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
       if (duc[0][c] >= 0.0) duc[0][c] = du_pert_max;
       else duc[0][c] = -du_pert_max;
       
-      ncells_clipped++;
+      nsat_clipped++;
     }    
   }
 
@@ -290,23 +290,24 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 	 *vo_->os() << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
       }
       duc[0][c] = tmp * damping_factor;
-      ncells_clipped++;
+      npre_clipped++;
     }
   }
 
   // output statistics
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    int ncells_tmp = ncells_clipped;
-    mesh_->get_comm()->SumAll(&ncells_tmp, &ncells_clipped, 1);
+    int nsat_tmp = nsat_clipped, npre_tmp = npre_clipped;
+    mesh_->get_comm()->SumAll(&nsat_tmp, &nsat_clipped, 1);
+    mesh_->get_comm()->SumAll(&npre_tmp, &npre_clipped, 1);
 
-    if (MyPID == 0 && ncells_clipped > 0) {
+    if (nsat_clipped > 0 || npre_clipped > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << vo_->color("red") << "saturation was clipped in " 
-                 << ncells_clipped << " cells" << vo_->reset() << std::endl;
+      *vo_->os() << vo_->color("red") << "saturation/pressure clipped in " 
+                 << nsat_clipped << "/" << npre_clipped << " cells" << vo_->reset() << std::endl;
     }
   }
 
-  return ncells_clipped > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
+  return (nsat_clipped + npre_clipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
       AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
 
