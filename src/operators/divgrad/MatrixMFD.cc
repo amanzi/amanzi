@@ -52,6 +52,8 @@ void MatrixMFD::InitializeFromPList_() {
   std::string methodstring = plist_.get<std::string>("MFD method");
   method_ = MFD3D_NULL;
 
+  std::cout << methodstring <<"\n";
+
   // standard MFD
   if (methodstring == "monotone mfd hex") {  // two monotone methods
     method_ = MFD3D_HEXAHEDRA_MONOTONE;
@@ -78,10 +80,17 @@ void MatrixMFD::InitializeFromPList_() {
 
   // vector space
   std::vector<std::string> names;
-  names.push_back("cell"); names.push_back("face");
-  std::vector<AmanziMesh::Entity_kind> locations;
-  locations.push_back(AmanziMesh::CELL); locations.push_back(AmanziMesh::FACE);
+    std::vector<AmanziMesh::Entity_kind> locations;
+  if ( method_ != FV_TPFA){
+    names.push_back("cell"); names.push_back("face");
+    locations.push_back(AmanziMesh::CELL); locations.push_back(AmanziMesh::FACE);
+  }
+  else {
+    names.push_back("cell"); names.push_back("boundary_face");
+    locations.push_back(AmanziMesh::CELL); locations.push_back(AmanziMesh::BOUNDARY_FACE);
+  }
   std::vector<int> ndofs(2,1);
+
   space_ = Teuchos::rcp(new CompositeVectorSpace());
   space_->SetMesh(mesh_)->SetComponents(names,locations,ndofs);
 
@@ -654,6 +663,7 @@ void MatrixMFD::ComputeResidual(const CompositeVector& solution,
         const Teuchos::Ptr<CompositeVector>& residual) const {
   Apply(solution, *residual);
   residual->Update(1.0, *rhs_, -1.0);
+
 }
 
 
@@ -663,7 +673,14 @@ void MatrixMFD::ComputeResidual(const CompositeVector& solution,
 void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
         const Teuchos::Ptr<CompositeVector>& residual) const {
   Apply(solution, *residual);
+  std::cout<<"solut cell\n"<<*solution.ViewComponent("cell", false)<<"\n";
+  std::cout<<"solut face\n"<<*solution.ViewComponent("face", false)<<"\n";
+  //std::cout<<"resid\n"<<*(*residual).ViewComponent("cell", false)<<"\n";
+  std::cout<<"resid\n"<<*(*residual).ViewComponent("cell", false)<<"\n";
   residual->Update(-1.0, *rhs_, 1.0);
+  std::cout<<"rhs\n"<<*(*rhs_).ViewComponent("cell", false)<<"\n";
+  std::cout<<"resid\n"<<*(*residual).ViewComponent("cell", false)<<"\n";
+
 }
 
 
@@ -700,6 +717,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
   AmanziMesh::Entity_ID_List faces;
   std::vector<double> dp;
   std::vector<int> dirs;
+
 
   flux->PutScalar(0.);
 
@@ -926,7 +944,6 @@ void MatrixMFD::Add2MFDstiffnessMatrices(std::vector<double> *Acc_ptr,
 
   if (Acc_ptr){
     for (int c=0; c!=ncells; ++c) {
-      //cout<<Acc_cells_[c]<<" "<<(*Acc_ptr)[c]<<endl;
       Acc_cells_[c] += (*Acc_ptr)[c];
     }
   }

@@ -13,6 +13,8 @@
 #include "wrm_partition.hh"
 #include "boundary_function.hh"
 #include "MatrixMFD.hh"
+#include "Matrix_TPFA.hh"
+#include "MatrixMFD_Defs.hh"
 #include "upwinding.hh"
 
 #include "pk_factory.hh"
@@ -116,6 +118,11 @@ protected:
           const Teuchos::Ptr<const CompositeVector>& rho,
           const Teuchos::Ptr<Operators::MatrixMFD>& matrix);
 
+  virtual void AddGravityFluxes_FV_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
+          const Teuchos::Ptr<const CompositeVector>& rel_perm,
+          const Teuchos::Ptr<const CompositeVector>& rho,
+          const Teuchos::Ptr<Operators::Matrix_TPFA>& matrix);
+
   virtual void AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
           const Teuchos::Ptr<const CompositeVector>& rel_perm,
           const Teuchos::Ptr<const CompositeVector>& rho,
@@ -129,6 +136,8 @@ protected:
   virtual bool ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u);
 
   virtual void PreconWC_(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+
+  virtual double BoundaryValue(Teuchos::RCP<const Amanzi::CompositeVector> solution, int face_id);
 
 protected:
   enum FluxUpdateMode {

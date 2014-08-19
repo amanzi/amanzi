@@ -11,6 +11,7 @@ include_directories(upwind_scheme)
 
 add_library(divgrad MatrixMFD.cc
                     MatrixMFD_TPFA.cc
+                    Matrix_TPFA.cc
                     MatrixMFD_ScaledConstraint.cc
                     MatrixMFD_TPFA_ScaledConstraint.cc
                     MatrixMFD_Surf.cc

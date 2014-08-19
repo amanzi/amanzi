@@ -28,6 +28,7 @@
 #include "MatrixMFD_Surf.hh"
 #include "MatrixMFD_TPFA_ScaledConstraint.hh"
 #include "MatrixMFD_TPFA.hh"
+#include "Matrix_TPFA.hh"
 #include "MatrixMFD_ScaledConstraint.hh"
 #include "MatrixMFD.hh"
 #include "MatrixMFD_Coupled_Surf.hh"
@@ -43,6 +44,7 @@ CreateMatrixMFD(Teuchos::ParameterList& plist,
 
   bool surf = plist.get<bool>("coupled to surface", false);
   bool tpfa = plist.get<bool>("TPFA", false);
+  bool fv = plist.get<bool>("FV", false);
   bool scaled_constraint = plist.get<bool>("scaled constraint equation", false);
 
   if (surf && tpfa) {
@@ -60,8 +62,10 @@ CreateMatrixMFD(Teuchos::ParameterList& plist,
     if (scaled_constraint) {
       return Teuchos::rcp(new MatrixMFD_TPFA_ScaledConstraint(plist, mesh));
     } else {
-      return Teuchos::rcp(new MatrixMFD_TPFA(plist, mesh));
+      return Teuchos::rcp(new MatrixMFD_TPFA(plist, mesh));     
     }
+  } else if (fv){
+     return Teuchos::rcp(new Matrix_TPFA(plist, mesh));  
   } else {
     if (scaled_constraint) {
       return Teuchos::rcp(new MatrixMFD_ScaledConstraint(plist, mesh));

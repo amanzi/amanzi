@@ -121,6 +121,7 @@ class MatrixMFD : public CompositeMatrix {
   }
 
   // Other accessors/mutators.
+  MFDMethod method(){return method_;}
   bool symmetric() { return flag_symmetry_; }
   void set_symmetric(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
@@ -161,6 +162,9 @@ class MatrixMFD : public CompositeMatrix {
   // First derivative quantities.
   virtual void DeriveFlux(const CompositeVector& solution,
                           const Teuchos::Ptr<CompositeVector>& flux) const;
+  // void DeriveFluxFV(const CompositeVector& solution,
+  // 		    const Teuchos::Ptr<CompositeVector>& flux,
+  // 		    const Teuchos::Ptr<const CompositeVector>& rel_perm){};
   virtual void DeriveCellVelocity(const CompositeVector& flux,
           const Teuchos::Ptr<CompositeVector>& velocity) const;
 
@@ -183,6 +187,7 @@ class MatrixMFD : public CompositeMatrix {
           const Teuchos::Ptr<Epetra_FECrsGraph> ff_graph);
   virtual void CreateMatrices_(const Epetra_CrsGraph& cf_graph,
           const Epetra_FECrsGraph& ff_graph);
+
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -233,6 +238,7 @@ class MatrixMFD : public CompositeMatrix {
 
   friend class MatrixMFD_Coupled;
   friend class MatrixMFD_Coupled_Surf;
+
 };
 
 

@@ -72,8 +72,7 @@ void Richards::Functional(double t_old,
   
   if (vapor_diffusion_) AddVaporDiffusionResidual_(S_next_.ptr(), res.ptr());
 
-  // cout<<"Residual\n";
-  // cout<<*res->ViewComponent("cell",false);
+
 
 #if DEBUG_FLAG
   // dump s_old, s_new
@@ -277,11 +276,8 @@ double Richards::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   // Collect additional data.
   Teuchos::RCP<const CompositeVector> res = du->Data();
-  const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
-  const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
-  const Epetra_MultiVector& cv = *S_next_->GetFieldData("cell_volume")
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& pres_f = *u->Data()->ViewComponent("face",false);
+  const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false); 
+  const Epetra_MultiVector& cv = *S_next_->GetFieldData("cell_volume")->ViewComponent("cell",false);
   double h = S_next_->time() - S_inter_->time();
 
   // Cell error is based upon error in mass conservation relative to
@@ -290,24 +286,50 @@ double Richards::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   int bad_cell = -1;
   unsigned int ncells = res_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
+    std::cout<<"res "<<res_c[0][c]<<" wc "<<wc[0][c]<<"\n";
     double tmp = std::abs(h*res_c[0][c]) / (atol_ * .5*.5*55000.*cv[0][c] + rtol_*std::abs(wc[0][c]));
     if (tmp > enorm_cell) {
       enorm_cell = tmp;
       bad_cell = c;
     }
   }
+  std::cout<<"enorm_cell "<<enorm_cell<<"\n";
 
   // Face error is mismatch in flux, so relative to water in neighboring cells
   double enorm_face(-1.);
   int bad_face = -1;
-  unsigned int nfaces = res_f.MyLength();
-  for (unsigned int f=0; f!=nfaces; ++f) {
-    AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
-    double tmp = std::abs(h*res_f[0][f])  / (atol_ * .5*.5*55000.*cv[0][cells[0]] + rtol_*std::abs(wc[0][cells[0]]));
-    if (tmp > enorm_face) {
-      enorm_face = tmp;
-      bad_face = f;
+  if (res->HasComponent("face")){
+    const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
+    const Epetra_MultiVector& pres_f = *u->Data()->ViewComponent("face",false);
+    unsigned int nfaces = res_f.MyLength();
+    for (unsigned int f=0; f!=nfaces; ++f) {
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+      double tmp = std::abs(h*res_f[0][f])  / (atol_ * .5*.5*55000.*cv[0][cells[0]] + rtol_*std::abs(wc[0][cells[0]]));
+      if (tmp > enorm_face) {
+        enorm_face = tmp;
+        bad_face = f;
+      }
+    }
+
+    // Write out Inf norms too.
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      double infnorm_c(0.), infnorm_f(0.);
+      res_c.NormInf(&infnorm_c);
+      if (res->HasComponent("face")) res_f.NormInf(&infnorm_f);
+
+      ENorm_t err_f, err_c;
+#ifdef HAVE_MPI
+      ENorm_t l_err_f, l_err_c;
+      l_err_f.value = enorm_face;
+      l_err_f.gid = res_f.Map().GID(bad_face);
+      MPI_Allreduce(&l_err_f, &err_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+#else
+      err_f.value = enorm_face;
+      err_f.gid = bad_face;
+#endif
+
+      *vo_->os() << "ENorm (faces) = " << err_f.value << "[" << err_f.gid << "] (" << infnorm_f << ")" << std::endl;
     }
   }
 
@@ -315,27 +337,20 @@ double Richards::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     double infnorm_c(0.), infnorm_f(0.);
     res_c.NormInf(&infnorm_c);
-    res_f.NormInf(&infnorm_f);
-
+    
     ENorm_t err_f, err_c;
 #ifdef HAVE_MPI
     ENorm_t l_err_f, l_err_c;
-    l_err_f.value = enorm_face;
-    l_err_f.gid = res_f.Map().GID(bad_face);
     l_err_c.value = enorm_cell;
     l_err_c.gid = res_c.Map().GID(bad_cell);
 
-    MPI_Allreduce(&l_err_c, &err_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-    MPI_Allreduce(&l_err_f, &err_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+    MPI_Allreduce(&l_err_c, &err_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);    
 #else
-    err_f.value = enorm_face;
-    err_f.gid = bad_face;
     err_c.value = enorm_cell;
     err_c.gid = bad_cell;
 #endif
 
     *vo_->os() << "ENorm (cells) = " << err_c.value << "[" << err_c.gid << "] (" << infnorm_c << ")" << std::endl;
-    *vo_->os() << "ENorm (faces) = " << err_f.value << "[" << err_f.gid << "] (" << infnorm_f << ")" << std::endl;
   }
 
   // Communicate and take the max.

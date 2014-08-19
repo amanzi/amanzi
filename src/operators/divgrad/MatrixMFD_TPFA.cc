@@ -177,6 +177,18 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   AmanziMesh::Entity_ID_List faces;
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
+  int c=0;
+  std::cout<<"Aff\n"<<Aff_cells_[c]<<"\n";
+  std::cout<<"Acc\n"<<Acc_cells_[c]<<"\n";
+  std::cout<<"Afc\n"<<Acf_cells_[c]<<"\n";
+  Teuchos::RCP<Epetra_MultiVector> rhs_cells_tmp = rhs_->ViewComponent("cell",false);
+  std::cout<<"rhs_cell\n"<<*rhs_cells_tmp<<"\n";
+  // Teuchos::RCP<Epetra_MultiVector> rhs_faces_tmp = rhs_->ViewComponent("face",false);
+  // for (int i=45;i<51;i++){
+  //   std::cout<<"rhs_faces "<<(*rhs_faces_tmp)[0][i]<<"\n";
+  // }
+  //exit(0);
+
   // Dff
   Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",true);
   Dff_f.PutScalar(0.);
@@ -207,6 +219,12 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   }
   (*Acf_).Multiply(false, *rhs_faces, Tc);
   for (int c=0; c!=ncells_owned; ++c) (*rhs_cells)[0][c] -= Tc[c];
+
+  // std::cout<<"rhs_faces\n"<<*rhs_faces<<"\n";
+  // std::cout<<"Tc\n"<<Tc<<"\n";
+  // std::cout<<"rhs_cell\n"<<*rhs_cells_tmp<<"\n";
+  // exit(0);
+
 
   // unscale the rhs
   for (int f=0; f!=nfaces_owned; ++f) {
@@ -295,6 +313,13 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   }
   (*Spp_).GlobalAssemble();
 
+
+   std::cout<< (*Spp_);
+   std::cout<<"rhs_cell\n"<<*rhs_cells<<"\n";
+   // std::cout<< (*Acf_);
+   //exit(0);
+
+
   // Check min
 #ifdef ENABLE_DBC
   Epetra_Vector Spp_diag(mesh_->cell_map(false));
@@ -327,6 +352,8 @@ int MatrixMFD_TPFA::Apply(const CompositeVector& X,
 
   int ierr = Spp_->Multiply(false, *X.ViewComponent("cell",false),
                             *Y.ViewComponent("cell",false));
+
+ 
 
   if (Y.HasComponent("face")) {
     Epetra_MultiVector& Yf = *Y.ViewComponent("face",false);
@@ -385,6 +412,9 @@ int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
     const Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",false);
 
     Afc_->Multiply(true, Tc, Yf);  // Afc is kept in the transpose form.
+
+
+
     Yf.Update(1., Xf, -1.);
 
     int nfaces = Yf.MyLength();
@@ -392,6 +422,23 @@ int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
       Yf[0][f] /= Dff_f[0][f];
     }
   }
+  // std::cout<<*X.ViewComponent("cell",false)<<*Y.ViewComponent("cell",false);
+  // std::cout<<*X.ViewComponent("face",false)<<*Y.ViewComponent("face",false);
+
+
+  // CompositeVector Z(X);
+
+  // Z.PutScalar(0.);
+  // Apply(Y,Z);
+
+  // std::cout<<*Z.ViewComponent("cell",false)<<*Z.ViewComponent("boundary_face",false);
+
+
+
+
+  //  exit(0);
+
+
   return ierr;
 }
 
