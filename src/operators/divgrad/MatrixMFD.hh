@@ -46,6 +46,8 @@ class MatrixMFD : public CompositeMatrix {
  public:
 
   // Constructor
+  //MatrixMFD(){};
+
   MatrixMFD(Teuchos::ParameterList& plist,
             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 

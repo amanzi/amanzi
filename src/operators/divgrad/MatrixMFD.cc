@@ -355,6 +355,7 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<MatrixBC>& bc_markers,
           Bff(n, m) = Bff(m, n) = 0.0;
         }
         Fc -= Bcf(n) * bc_values[f];
+
         Bcf(n) = Bfc(n) = 0.0;
 
         Bff(n, n) = 1.0;
