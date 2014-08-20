@@ -433,6 +433,10 @@ MPCPermafrost3::UpdatePreconditioner(double t,
                            Teuchos::null, // dWC_dT = 0
                            dEdp_surf->ViewComponent("cell",false),
                            1./h);
+
+  // update ewc Precons if needed
+  sub_ewc_->UpdatePreconditioner(t, up, h);
+  surf_ewc_->UpdatePreconditioner(t, up, h);
 }
 
 // -- Modify the predictor.
