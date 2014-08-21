@@ -62,6 +62,7 @@ protected:
   double kSWE_conv_;
 
   double tol_;
+  double atol_;
   int max_it_;
   
   Teuchos::RCP<Function> precip_func_;

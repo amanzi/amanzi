@@ -49,7 +49,11 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
                      const Teuchos::Ptr<TreeVector>& Y) const {
     Apply(X,*Y); }
 
+  virtual void UpdateConsistentFaceCorrection(const TreeVector& u,
+          const Teuchos::Ptr<TreeVector>& Pu);
+
  protected:
+  virtual void AssembleAff_() const;
   virtual void AssembleSchur_() const;
 
 
@@ -63,6 +67,9 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
   Teuchos::RCP<MatrixMFD_TPFA> surface_A_;
   Teuchos::RCP<MatrixMFD_TPFA> surface_B_;
 
+  Teuchos::RCP<EpetraMatrixDefault<Epetra_FEVbrMatrix> > A2f2f_op_;
+  Teuchos::RCP<EpetraMatrix> A2f2f_solver_;
+  
   Teuchos::RCP<const Epetra_MultiVector> Ccc_surf_;
   Teuchos::RCP<const Epetra_MultiVector> Dcc_surf_;
 };
