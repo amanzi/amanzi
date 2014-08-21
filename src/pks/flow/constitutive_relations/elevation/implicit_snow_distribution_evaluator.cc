@@ -46,6 +46,7 @@ ImplicitSnowDistributionEvaluator::ImplicitSnowDistributionEvaluator(Teuchos::Pa
   kCFL_ = plist_.get<double>("Courant number", 1.);
   kSWE_conv_ = plist_.get<double>("SWE-to-snow conversion ratio", 10.);
   tol_ = plist_.get<double>("solver tolerance", 1.e-2);
+  atol_ = plist_.get<double>("absolute solver tolerance", 1.e-10);
   max_it_ = plist_.get<int>("max iterations", 10);
 
   FunctionFactory fac;
@@ -67,10 +68,12 @@ ImplicitSnowDistributionEvaluator::ImplicitSnowDistributionEvaluator(const Impli
     kCFL_(other.kCFL_),
     kSWE_conv_(other.kSWE_conv_),
     tol_(other.tol_),
+    atol_(other.atol_),
     max_it_(other.max_it_),
     assembled_(other.assembled_),
     mesh_name_(other.mesh_name_),
-    matrix_(other.matrix_) {}
+    matrix_(other.matrix_),
+    matrix_linsolve_(other.matrix_linsolve_) {}
 
 
 void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -150,8 +153,11 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     for (int istep=0; istep!=nsteps; ++istep) {
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "Snow distribution inner timestep " << istep << " with size " << dt << std::endl
-                   << "   Qe*t_total = " << std::endl;
-        result->Print(*vo_->os());
+                   << "   Qe*t_total (min,max) = ";
+        double min, max;
+        result->ViewComponent("cell",false)->MinValue(&min);
+        result->ViewComponent("cell",false)->MaxValue(&max);
+        *vo_->os() << min << ", " << max << std::endl;
       }
 
       *result_prev = *result;
@@ -240,7 +246,7 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
           residual->Print(*vo_->os());
         }
 
-        if ((norm0 == 0.) || (norm / norm0 < tol_) || (ncycle > max_it_)) {
+        if ((norm0 < atol_) || (norm / norm0 < tol_) || (ncycle > max_it_)) {
           done = true;
           continue;
         }
@@ -267,7 +273,7 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
         // Update
         result->Update(-1., *dresult, 1.);
         if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-          *vo_->os() << "  new snow depth = " << std::endl;
+          *vo_->os() << "  new snow depth = ";
           result->Print(*vo_->os());
         }
       }
@@ -298,6 +304,8 @@ ImplicitSnowDistributionEvaluator::AssembleOperator_(const Teuchos::Ptr<State>& 
 
   AmanziSolvers::LinearOperatorFactory<CompositeMatrix,CompositeVector,CompositeVectorSpace> fac;
   matrix_linsolve_ = fac.Create(plist_.sublist("Diffusion Solver"), matrix_);
+
+  assembled_ = true;
 }
 
 
