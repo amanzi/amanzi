@@ -164,12 +164,12 @@ void BGCAdvance(double t, double dt, double gridarea,
 
       //---------------------------------------------------------------------------------
       //calculate leaf projections and light attenuations
-      double PARi = PAR;
+      double PARi0 = PAR;
       for (std::vector<Teuchos::RCP<PFT> >::iterator pft_other_iter=pftarr.begin();
            pft_other_iter!=pft_iter; ++pft_other_iter) {
-        PARi *= std::exp(-(*pft_other_iter)->LER * (*pft_other_iter)->lai);
+        PARi0 *= std::exp(-(*pft_other_iter)->LER * (*pft_other_iter)->lai);
       }
-
+      double PARi=PARi0;	
       //----------------------------------------------------------------
       // photosynthesis and respiration, no soil water limitation yet and need
       // to be implemented for more realistic simulation
@@ -184,7 +184,7 @@ void BGCAdvance(double t, double dt, double gridarea,
 
       for (int leaf_layer=0; leaf_layer!=max_leaf_layers; ++leaf_layer){
         Photosynthesis(PARi, pft.LUE, pft.LER, p_atm,
-                       met.windv, met.tair - 273.15, met.relhum, met.CO2a, pft.mp, Vcmax25,
+                       met.windv,double(met.tair - 273.15), met.relhum, met.CO2a, pft.mp, Vcmax25,
                        &psn, &tleaf, &leafresp);
 
         if (thawD <= 0.0) psn = 0.0;
@@ -221,12 +221,12 @@ void BGCAdvance(double t, double dt, double gridarea,
         }
 
       } else {
-        PARi = PARi*std::exp(-pft.LER * max_leaf_layers);
+        PARi = PARi0;
         Photosynthesis(PARi, pft.LUE, pft.LER, p_atm,
                        met.windv, met.tair - 273.15, met.relhum, met.CO2a, pft.mp, Vcmax25,
                        &psn, &tleaf, &leafresp);
 
-        leafresptotal = 24.0 * 3600.0 * Cv*leafresp*gridarea;
+        leafresptotal = dt_days * Cv*leafresp*gridarea;
         double bleaf0 = 1.0 / pft.SLA;
         stemresp = leafresptotal*pft.Bstem / bleaf0*pft.stem2leafrespratio;
         rootresp = 0.0;
