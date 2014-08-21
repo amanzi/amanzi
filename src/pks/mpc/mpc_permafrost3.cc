@@ -340,7 +340,9 @@ MPCPermafrost3::ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
     domain_Pu_tv->SubVector(1)->Data()->ViewComponent("face",false)->Update(1.,
             *Pu_std->SubVector(1)->Data()->ViewComponent("face",false), 1.);
   }
+  // end EWC PRECON
 
+  
   // Copy subsurface face corrections to surface cell corrections
   CopySubsurfaceToSurface(*Pr->SubVector(0)->Data(),
                           Pr->SubVector(2)->Data().ptr());
@@ -431,6 +433,10 @@ MPCPermafrost3::UpdatePreconditioner(double t,
                            Teuchos::null, // dWC_dT = 0
                            dEdp_surf->ViewComponent("cell",false),
                            1./h);
+
+  // update ewc Precons if needed
+  sub_ewc_->UpdatePreconditioner(t, up, h);
+  surf_ewc_->UpdatePreconditioner(t, up, h);
 }
 
 // -- Modify the predictor.
@@ -525,26 +531,48 @@ MPCPermafrost3::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
           *u->SubVector(0)->Data(),
           du->SubVector(0)->Data().ptr());
     }
+  }
 
+  // // modify correction on subsurface cells using EWC
+  // if (precon_type_ == PRECON_EWC) {
+  //     // make a new TreeVector that is just the subsurface values (by pointer).
+  //     // -- note these const casts are necessary to create the new TreeVector, but
+  //     //    since the TreeVector COULD be const (it is only used in a single method,
+  //     //    in which it is const), const-correctness is not violated here.
+  //     Teuchos::RCP<TreeVector> domain_res_tv = Teuchos::rcp(new TreeVector());
+  //     domain_res_tv->PushBack(Teuchos::rcp_const_cast<TreeVector>(r->SubVector(0)));
+  //     domain_res_tv->PushBack(Teuchos::rcp_const_cast<TreeVector>(r->SubVector(1)));
+      
+  //     Teuchos::RCP<TreeVector> domain_du_tv = Teuchos::rcp(new TreeVector());
+  //     domain_du_tv->PushBack(du->SubVector(0));
+  //     domain_du_tv->PushBack(du->SubVector(1));
+
+  //     // make sure we can back-calc face corrections that preserve residuals on faces
+  //     Teuchos::RCP<TreeVector> res0 = Teuchos::rcp(new TreeVector(*domain_res_tv));
+  //     res0->PutScalar(0.);
+  //     Teuchos::RCP<TreeVector> du_std = Teuchos::rcp(new TreeVector(*domain_du_tv));
+  //     *du_std = *domain_du_tv;
+
+  //     // call EWC, which does Pu_p <-- Pu_p_std + dPu_p
+  //     sub_ewc_->ApplyPreconditioner(domain_res_tv, domain_du_tv);
+
+  //     // calculate dPu_lambda from dPu_p
+  //     du_std->Update(1.0, *domain_du_tv, -1.0);
+  //     precon_->UpdateConsistentFaceCorrection(*res0, du_std.ptr());
+
+  //     // update Pu_lambda <-- Pu_lambda_std + dPu_lambda
+  //     domain_du_tv->SubVector(0)->Data()->ViewComponent("face",false)->Update(1.,
+  //             *du_std->SubVector(0)->Data()->ViewComponent("face",false), 1.);
+  //     domain_du_tv->SubVector(1)->Data()->ViewComponent("face",false)->Update(1.,
+  //             *du_std->SubVector(1)->Data()->ViewComponent("face",false), 1.);
+  //     modified = true;
+  // }
+  
+  if (modified) {
     // Copy subsurface face corrections to surface cell corrections
     CopySubsurfaceToSurface(*du->SubVector(0)->Data(),
                             du->SubVector(2)->Data().ptr());
-  }
 
-  // -- damping can be then applied to energy corrections well
-  // if (damping < 1.) {
-  //   du->SubVector(1)->Scale(damping);
-  //   du->SubVector(3)->Scale(damping);
-  // }
-
-  // modify correction for dumping water onto a frozen surface
-  //  n_modified = ModifyCorrection_FrozenSurface_(h, r, u, du);
-  // -- accumulate globally
-  // n_modified_l = n_modified;
-  // u->SubVector(0)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
-  // modified |= (n_modified > 0) || (damping < 1.);
-
-  if (modified) {
     // Derive surface face corrections.
     UpdateConsistentFaceCorrectionWater_(r.ptr(), u.ptr(), du.ptr());
   }
