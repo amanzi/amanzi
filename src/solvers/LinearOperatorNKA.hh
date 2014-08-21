@@ -117,7 +117,8 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
 
   x.Norm2(&xnorm);
 
-  m_->Apply(x, *r);  // r = f - A * x
+  int ierr = m_->Apply(x, *r);  // r = f - A * x
+  ASSERT(!ierr);
   r->Update(1.0, f, -1.0);
 
   double rnorm0;
@@ -129,7 +130,7 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
       *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
     }
   }
-  if (criteria == LIN_SOLVER_RELATIVE_RHS) {
+  if (criteria & LIN_SOLVER_RELATIVE_RHS) {
     if (rnorm0 < tol * fnorm) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
         *vo_->os() << "Converged (relative ||RHS|| = " << fnorm << "), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
@@ -145,11 +146,14 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
 
   bool done = false;
   while (!done) {
-    h_->ApplyInverse(*r, *dxp);
+    ierr = h_->ApplyInverse(*r, *dxp);
+    ASSERT(!ierr);
+
     nka_->Correction(*dxp, *dx);
     x.Update(1.0, *dx, 1.0);
 
-    m_->Apply(x, *r);  // r = f - A * x
+    ierr = m_->Apply(x, *r);  // r = f - A * x
+    ASSERT(!ierr);
     r->Update(1.0, f, -1.0);
 
     double rnorm;
@@ -176,13 +180,16 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
           *vo_->os() << "Converged (relative ||RHS|| = " << fnorm << "), itr = " << num_itrs_ << " ||r|| = " << rnorm << std::endl;
         return LIN_SOLVER_RELATIVE_RHS;
       }
-    } else if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
+    }
+
+    if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
       if (rnorm < tol * rnorm0) {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM))
           *vo_->os() << "Converged (relative ||res|| = " << rnorm0 << "), itr = " << num_itrs_ << " ||r|| = " << rnorm << std::endl;
         return LIN_SOLVER_RELATIVE_RESIDUAL;
       }
-    } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
+    }
+    if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
       if (rnorm < tol) {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM))
           *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << rnorm << std::endl;
@@ -234,6 +241,7 @@ void LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList
   } else {
     criteria = LIN_SOLVER_RELATIVE_RHS;
   }
+  set_criteria(criteria);
 
   // parameters for NKA
   nka_dim_ = plist.get<int>("max nka vectors", 10);
