@@ -38,9 +38,9 @@ void TestSnowDist::setup(const Teuchos::Ptr<State>& S) {
 
 // -- call your favorite
 bool TestSnowDist::advance(double dt) {
-  S_next_->GetFieldEvaluator("precipitation_snow")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("precipitation_snow")->HasFieldChanged(S_inter_.ptr(), name_);
   S_next_->GetFieldData("snow_depth", name_)
-    ->Update(10.*dt, *S_next_->GetFieldData("precipitation_snow"), 1.); // factor of 10 for SWE-to-snow ht conversion
+    ->Update(10.*dt, *S_inter_->GetFieldData("precipitation_snow"), 1.); // factor of 10 for SWE-to-snow ht conversion
   solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
 };
 
