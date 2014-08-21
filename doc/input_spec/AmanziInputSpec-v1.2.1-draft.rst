@@ -293,7 +293,7 @@ Usage:
 
      * [U] `"Discretization Method`" [string]: Specifies the spatial discretization 
        method. The Available options are: `"mfd scaled`", `"optimized mfd scaled`"
-       (default), `"two-point flux approximation`", and `"support operator`".
+       (default), `"two point flux approximation`", and `"support operator`".
        The second option is recommended for orthogonal meshes and diagonal absolute permeability.
 
      * [U] `"Relative Permeability`" [string]: Defines a method for calculating the *upwinded*

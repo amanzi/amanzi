@@ -261,9 +261,9 @@ void Flow_PK::WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk)
        
 
     for (it = velocity.begin(), i = 0; it != velocity.end(); ++it, ++i) {
-      (*(*aux)(0))[i]  = (*it)[0];
-      if (dim > 1) (*(*aux)(1))[i]  = (*it)[1];
-      if (dim > 2) (*(*aux)(2))[i]  = (*it)[2];
+      (*(*aux)(0))[i] = (*it)[0];
+      if (dim > 1) (*(*aux)(1))[i] = (*it)[1];
+      if (dim > 2) (*(*aux)(2))[i] = (*it)[2];
     }
     name.resize(0);
     name.push_back("pore velocity x");
@@ -277,8 +277,8 @@ void Flow_PK::WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk)
     std::vector<double>::const_iterator it0, it1;
     
     for (it0 = saturation.begin(), it1 = porosity.begin(), i = 0; it0 != saturation.end(); ++it0, ++it1, ++i) {    
-      (*(*aux)(0))[i]  = *it0;
-      (*(*aux)(1))[i]  = *it1;
+      (*(*aux)(0))[i] = *it0;
+      (*(*aux)(1))[i] = *it1;
     }
     name.resize(0);
     name.push_back("saturation");    
