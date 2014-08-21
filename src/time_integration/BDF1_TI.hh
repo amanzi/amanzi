@@ -193,7 +193,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
 
   if (factor > 1.0) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "tolerace factor=" << factor << std::endl;
+      *vo_->os() << "tolerance factor=" << factor << std::endl;
     }
   }
 
