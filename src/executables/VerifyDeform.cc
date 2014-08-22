@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
 
   // Read the deformation file
 
-  ifstream deffile;
+  std::ifstream deffile;
 
   deffile.open(def_filename.c_str());
   if (deffile.is_open()) {
