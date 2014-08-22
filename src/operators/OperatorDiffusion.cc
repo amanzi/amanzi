@@ -711,6 +711,8 @@ void OperatorDiffusion::InitPreconditionerSpecialSff_(
 void OperatorDiffusion::InitPreconditionerSpecialScc_(
     const std::string& prec_name, const Teuchos::ParameterList& plist)
 {
+  const std::vector<int>& bc_model = bc_->bc_model();
+
   // find location of matrix blocks
   int schema_dofs = OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL;
   int m(0), nblocks = blocks_.size();
@@ -723,6 +725,7 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
   }
 
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
 
   // create a cell-based stiffness matrix from A.
   A_->PutScalar(0.0);
@@ -743,16 +746,21 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
   AmanziMesh::Entity_ID_List cells, faces;
   Epetra_MultiVector& diag_face = *diagonal_->ViewComponent("face", true);
 
-  Ttmp = diag_face;
+  Ttmp.PutScalar(0.0);
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
-    WhetStone::DenseMatrix& Acell = matrix[c];
-   
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      Ttmp[0][f] += Acell(n, n);
+    if (matrix_shadow[c].NumRows() == 0) { 
+      WhetStone::DenseMatrix& Acell = matrix[c];
+      for (int n = 0; n < nfaces; n++) {
+        Ttmp[0][faces[n]] += 1.0 / Acell(n, n);
+      }
+    } else {
+      WhetStone::DenseMatrix& Acell = matrix_shadow[c];
+      for (int n = 0; n < nfaces; n++) {
+        Ttmp[0][faces[n]] += 1.0 / Acell(n, n);
+      }
     }
   }
   T->GatherGhostedToMaster();
@@ -760,8 +768,6 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
   // populate the global matrix
   int lid[2], gid[2];
   double values[2];
-
-  Epetra_MultiVector& diag_cell = *diagonal_->ViewComponent("cell");
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -775,11 +781,11 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
     double coef = 1.0 / Ttmp[0][f];
     for (int n = 0; n < ncells; n++) {
       if (n == 0) {
-        values[0] = coef + diag_cell[0][cells[0]];
+        values[0] = coef;
         values[1] = -coef;
       } else {
         values[0] = -coef;
-        values[1] = coef + diag_cell[0][cells[1]];
+        values[1] = coef;
       }
       if (lid[n] < ndof) {
         A_->SumIntoMyValues(lid[n], ncells, values, lid);
@@ -794,6 +800,18 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
       
   const Epetra_Map& map = A_->RowMap();
   A_->FillComplete(map, map);
+
+  // Add diagonal (a hack)
+  Epetra_Vector tmp(A_->RowMap());
+  A_->ExtractDiagonalCopy(tmp);
+
+  if (diagonal_->HasComponent("cell")) {
+    Epetra_MultiVector& diag_cell = *diagonal_->ViewComponent("cell");
+    for (int c = 0; c < ncells_owned; c++) tmp[c] += diag_cell[0][c];
+  }
+
+  A_->ReplaceDiagonalValues(tmp);
+// std::cout << *A_ << std::endl;
 
   // redefine (if necessary) preconditioner since only 
   // one preconditioner is allowed.

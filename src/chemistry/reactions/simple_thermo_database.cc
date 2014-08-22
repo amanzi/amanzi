@@ -657,7 +657,7 @@ void SimpleThermoDatabase::ParseReactionString(const std::string reaction,
    Purpose: Maps a primary species name to an id
    Author: Glenn Hammond
    Date: 07/28/11
-   / ************************************************************************** */
+/ ************************************************************************** */
 int SimpleThermoDatabase::SpeciesNameToID(const SpeciesName species_name) {
   for (SpeciesArray::const_iterator primary_species =
            this->primary_species().begin();
@@ -667,7 +667,7 @@ int SimpleThermoDatabase::SpeciesNameToID(const SpeciesName species_name) {
     }
   }
   return -1;
-} /* end SpeciesNameToID
+} /* end SpeciesNameToID */
 
 /* ************************************************************************** /
 Name: RemoveLeadingAndTrailingSpaces
@@ -680,7 +680,7 @@ void SimpleThermoDatabase::RemoveLeadingAndTrailingSpaces(std::string* s) {
   if (offset > 0) s->erase(0, offset);  // remove them
   offset = s->find_last_not_of(" ");   // trailing spaces
   if (s->size() > offset) s->erase(offset+1, s->size());  // remove them
-} /* end RemoveLeadingAndTrailingSpaces
+} /* end RemoveLeadingAndTrailingSpaces */
 
 /*******************************************************************************
 **
