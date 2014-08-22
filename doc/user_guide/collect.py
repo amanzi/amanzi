@@ -68,7 +68,7 @@ verification['confined_flow']={'index_entry' : 'confined_flow/index.rst',
                                 'index_file' : 'doc/user_guide/verification/confined_flow/index.rst',
                                 'index_list' : ['linear_head_head', 'linear_flux_head',
                                                 'linear_materials_serial','linear_materials_parallel',
-                                                'theis_isotropic', 'hantush_anisotropic',
+                                                'theis_isotropic', 'hantush_anisotropic','butler_strip_2d',
                                                 ],
                                 },
                                'linear_head_head' :
@@ -100,6 +100,11 @@ verification['confined_flow']={'index_entry' : 'confined_flow/index.rst',
                                    {'from_dir' : 'testing/verification/flow/saturated/transient/hantush_anisotropic_2d',
                                     'dest_dir' : 'doc/user_guide/verification/confined_flow/hantush_anisotropic_2d',
                                     'index_entry' : 'hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.rst',
+                                    },
+                               'butler_strip_2d' :
+                                   {'from_dir' : 'testing/verification/flow/saturated/transient/butler_strip_2d',
+                                    'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_strip_2d',
+                                    'index_entry' : 'butler_strip_2d/amanzi_butler_strip_2d.rst',
                                     },
                                }
 
