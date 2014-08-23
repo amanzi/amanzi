@@ -148,7 +148,8 @@ void Flow_PK::CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz,
 void Flow_PK::CalculatePoreVelocity(
     std::vector<AmanziGeometry::Point>& xyz, 
     std::vector<AmanziGeometry::Point>& velocity,
-    std::vector<double>& porosity, std::vector<double>& saturation)
+    std::vector<double>& porosity, std::vector<double>& saturation,
+    std::vector<double>& pressure, std::vector<double>& water_density)
 {
   S_->GetFieldData("porosity")->ScatterMasterToGhosted();
   S_->GetFieldData("water_saturation")->ScatterMasterToGhosted();
@@ -156,6 +157,7 @@ void Flow_PK::CalculatePoreVelocity(
   const Epetra_MultiVector& flux = *(S_->GetFieldData("darcy_flux")->ViewComponent("face", true));
   const Epetra_MultiVector& phi = *(S_->GetFieldData("porosity")->ViewComponent("cell", true));
   const Epetra_MultiVector& ws = *(S_->GetFieldData("water_saturation")->ViewComponent("cell", true));
+  const Epetra_MultiVector& p = *(S_->GetFieldData("pressure")->ViewComponent("cell", true));
 
   CalculateDarcyVelocity(xyz, velocity);
 
@@ -181,14 +183,18 @@ void Flow_PK::CalculatePoreVelocity(
   // STEP 1: populate porosity and saturations in cell centers
   porosity.clear();
   saturation.clear();
+  pressure.clear();
+  water_density.clear();
 
   for (int c = 0; c < ncells_owned; c++) {
     porosity.push_back(phi[0][c]);
     saturation.push_back(ws[0][c]);
+    pressure.push_back(p[0][c]);
+    water_density.push_back(rho_);
   }
     
   // STEP 2: recover porosity and saturation at boundary nodes
-  double local_phi, local_ws;
+  double local_phi, local_ws, local_p;
 
   for (int v = 0; v < nnodes_owned; v++) {
     if (node_marker[v] > 0) {
@@ -197,16 +203,23 @@ void Flow_PK::CalculatePoreVelocity(
 
       local_phi = 0.0;
       local_ws = 0.0;
+      local_p = 0.0;
       for (int n = 0; n < ncells; n++) {
         int c = cells[n];
         local_phi += phi[0][c];
         local_ws += ws[0][c];
+        local_p += p[0][c];
       }
-      local_phi /= static_cast<double>(ncells);
+      local_phi /= ncells;
       porosity.push_back(local_phi);
 
-      local_ws /= static_cast<double>(ncells);
+      local_ws /= ncells;
       saturation.push_back(local_ws);
+
+      local_p /= ncells;
+      pressure.push_back(local_p);
+
+      water_density.push_back(rho_);
     }
   }
 
@@ -226,9 +239,9 @@ void Flow_PK::WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk)
 
     std::vector<AmanziGeometry::Point> xyz;
     std::vector<AmanziGeometry::Point> velocity;
-    std::vector<double> porosity;
-    std::vector<double> saturation;
-    CalculatePoreVelocity(xyz, velocity, porosity, saturation);
+    std::vector<double> porosity, saturation;
+    std::vector<double> pressure, water_density;
+    CalculatePoreVelocity(xyz, velocity, porosity, saturation, pressure, water_density);
     
     int n_loc = xyz.size();
     int n_glob;
@@ -248,26 +261,26 @@ void Flow_PK::WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk)
     std::vector<AmanziGeometry::Point>::const_iterator it;
     int i;
     for (it = xyz.begin(), i = 0; it != xyz.end(); ++it, ++i) {      
-      (*(*aux)(0))[i]  = (*it)[0];
-      if (dim > 1) (*(*aux)(1))[i]  = (*it)[1];
-      if (dim > 2) (*(*aux)(2))[i]  = (*it)[2];
+      (*(*aux)(0))[i] = (*it)[0];
+      (*(*aux)(1))[i] = (*it)[1];
+      if (dim > 2) (*(*aux)(2))[i] = (*it)[2];
     }
     std::vector<std::string>  name;
     name.resize(0);
     name.push_back("x");
-    if (dim > 1) name.push_back("y");
+    name.push_back("y");
     if (dim > 2) name.push_back("z");
     wlk->WriteVector(*aux, name);
        
 
     for (it = velocity.begin(), i = 0; it != velocity.end(); ++it, ++i) {
       (*(*aux)(0))[i] = (*it)[0];
-      if (dim > 1) (*(*aux)(1))[i] = (*it)[1];
+      (*(*aux)(1))[i] = (*it)[1];
       if (dim > 2) (*(*aux)(2))[i] = (*it)[2];
     }
     name.resize(0);
     name.push_back("pore velocity x");
-    if (dim > 1) name.push_back("pore velocity y");
+    name.push_back("pore velocity y");
     if (dim > 2) name.push_back("pore velocity z");
     wlk->WriteVector(*aux, name);
     
@@ -285,12 +298,19 @@ void Flow_PK::WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk)
     name.push_back("porosity");
     wlk->WriteVector(*aux, name);
 
+    for (it0 = pressure.begin(), it1 = water_density.begin(), i = 0; it0 != pressure.end(); ++it0, ++it1, ++i) {    
+      (*(*aux)(0))[i] = *it0;
+      (*(*aux)(1))[i] = *it1;
+    }
+    name.resize(0);
+    name.push_back("pressure");    
+    name.push_back("water density");
+    wlk->WriteVector(*aux, name);
+
     wlk->WriteAttributes(S_->time(), S_->cycle());    
     wlk->Finalize();
   }
 }
-
-
 
 }  // namespace Flow
 }  // namespace Amanzi
