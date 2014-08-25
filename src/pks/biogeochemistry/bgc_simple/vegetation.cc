@@ -247,7 +247,7 @@ void Photosynthesis(double PARi, double LUE, double LER, double pressure, double
       }
 
       double lamda = (2501000 - 2400 * tleafnew) * 14.0 / 1000 * 1.0 / 1000000; // J/kg to J/mol to J/umol;
-      tleafnew = tair + 1 / 38.4 * (ARAD - (lamda / rs * (es - ea) / pressure));
+      tleafnew = tair + 1 / 38.4 * (ARAD - (lamda / rs * (ei - ea) / pressure));
       //4.6 is the unit conversion factor from umol photon/m2/s->w/s
       // but there is no 4.6 in this code.........
 
