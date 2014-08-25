@@ -127,14 +127,11 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
 
     // Create temporary work space
     // -- not necessarily ghosted workspace
-    Teuchos::RCP<CompositeVector> residual = Teuchos::rcp(new CompositeVector(*result));
     Teuchos::RCP<CompositeVector> result_prev = Teuchos::rcp(new CompositeVector(*result));
-    Teuchos::RCP<CompositeVector> dresult = Teuchos::rcp(new CompositeVector(*result));
     
     // -- necessarily ghosted workspace
     CompositeVectorSpace ghosted_space(result->Map());
     ghosted_space.SetGhosted();
-    Teuchos::RCP<CompositeVector> hz = Teuchos::rcp(new CompositeVector(ghosted_space));
     Teuchos::RCP<CompositeVector> Krel_c = Teuchos::rcp(new CompositeVector(ghosted_space));
 
     CompositeVectorSpace Krel_f_space;
@@ -142,6 +139,18 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     Teuchos::RCP<CompositeVector> Krel_uw = Teuchos::rcp(new CompositeVector(Krel_f_space));
     Teuchos::RCP<CompositeVector> Krel_uw_dir = Teuchos::rcp(new CompositeVector(Krel_f_space));
 
+    CompositeVectorSpace plambda_space;
+    std::vector<std::string> compnames;
+    compnames.push_back("cell"); compnames.push_back("face");
+    std::vector<AmanziMesh::Entity_kind> entities;
+    entities.push_back(AmanziMesh::CELL); entities.push_back(AmanziMesh::FACE);
+    std::vector<int> dofs(2,1);
+    plambda_space.SetMesh(mesh)->SetGhosted()->SetComponents(compnames, entities, dofs);
+
+    Teuchos::RCP<CompositeVector> hz = Teuchos::rcp(new CompositeVector(plambda_space));
+    Teuchos::RCP<CompositeVector> dresult = Teuchos::rcp(new CompositeVector(plambda_space));
+    Teuchos::RCP<CompositeVector> residual = Teuchos::rcp(new CompositeVector(plambda_space));
+    
     // Gather dependencies
     // NOTE: this is incorrect approximation... should be | sqrt( grad( z+h_pd ) ) |
     const Epetra_MultiVector& slope = *S->GetFieldData(slope_key_)->ViewComponent("cell",false);
@@ -168,9 +177,12 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
       int ncycle = 0;
       while(!done) {
         // update snow potential, z + h_pd + h_s + Qe*dt
-        *hz = *result;
-        hz->Update(1., *elev, 1., *pd, 1.);
-        hz->Update(1., *snow_height, 1.);
+        *hz->ViewComponent("cell",false) = *result->ViewComponent("cell",false);
+        hz->ViewComponent("cell",false)->Update(1., *elev->ViewComponent("cell",false),
+                1., *pd->ViewComponent("cell",false), 1.);
+        hz->ViewComponent("cell",false)->Update(1.,
+                *snow_height->ViewComponent("cell",false), 1.);
+        matrix_flux_->UpdateConsistentFaceConstraints(hz.ptr());
 
         if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
           *vo_->os() << "  z + h_pd + h_s potential = " << std::endl;
@@ -381,11 +393,12 @@ ImplicitSnowDistributionEvaluator::AssembleOperator_(const Teuchos::Ptr<State>& 
   matrix_linsolve_ = fac.Create(plist_.sublist("Diffusion Solver"), matrix_);
 
   // assemble a 2nd operator with kr = 1 for upwinding
-  matrix_ = Operators::CreateMatrixMFD(plist_.sublist("Diffusion"), mesh);
+  matrix_flux_ = Operators::CreateMatrixMFD(plist_.sublist("Diffusion"), mesh);
   //  matrix_->set_symmetric(true);
   matrix_flux_->SymbolicAssembleGlobalMatrices();
   matrix_flux_->CreateMFDmassMatrices(Teuchos::null);
   matrix_flux_->CreateMFDstiffnessMatrices(Teuchos::null);
+  matrix_flux_->CreateMFDrhsVectors();
 
   assembled_ = true;
 }
