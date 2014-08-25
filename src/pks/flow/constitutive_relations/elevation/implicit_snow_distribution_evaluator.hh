@@ -69,6 +69,7 @@ protected:
 
   bool assembled_;
   std::string mesh_name_;
+  Teuchos::RCP<Operators::MatrixMFD> matrix_flux_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   Teuchos::RCP<CompositeMatrix> matrix_linsolve_;
 
