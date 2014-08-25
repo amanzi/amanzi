@@ -242,7 +242,7 @@ void CompositeVector::CreateData_() {
 
 CompositeVector& CompositeVector::operator=(const CompositeVector& other) {
   if (this != &other) {
-    ASSERT(Map().SameAs(other.Map()));
+    //    ASSERT(Map().SameAs(other.Map()));
 
     if (Ghosted() && other.Ghosted()) {
       // If both are ghosted, copy the ghosted vector.
