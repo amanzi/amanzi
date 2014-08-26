@@ -257,14 +257,14 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
 
             // uw coef
             if (uw == -1) {
-              coefs[0] = coef_faces[0][f];
+              coefs[0] = coef_cells[0][dw];
             } else {
               coefs[0] = coef_cells[0][uw];
             }
 
             // dw coef
             if (dw == -1) {
-              coefs[1] = coef_faces[0][f];
+              coefs[1] = coef_cells[0][uw];
             } else {
               coefs[1] = coef_cells[0][dw];
             }
