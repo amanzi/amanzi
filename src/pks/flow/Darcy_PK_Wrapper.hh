@@ -2,45 +2,33 @@
   License: see $AMANZI_DIR/COPYRIGHT
   Authors: Ethan Coon
 
-  Temporary wrapper converting the Flow_PK, which inherits from 
+  Temporary wrapper converting the Darcy_PK, which inherits from 
   BDFFnBase<CompositeVector>, to use TreeVectors.
 
 */
 
-#ifndef AMANZI_FLOW_PK_WRAPPER_HH_
-#define AMANZI_FLOW_PK_WRAPPER_HH_
+#ifndef AMANZI_DARCY_PK_WRAPPER_HH_
+#define AMANZI_DARCY_PK_WRAPPER_HH_
 
 #include "Teuchos_RCP.hpp"
 
 #include "FnTimeIntegratorPK.hh"
-#include "Flow_PK.hh"
+#include "Darcy_PK.hh"
+#include "PK_Factory.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class Flow_PK_Wrapper : public FnTimeIntegratorPK {
+class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
 
  public:
-  Flow_PK_Wrapper(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-		  Teuchos::ParameterList& FElist,
-		  const Teuchos::RCP<TreeVector>& soln) {
-    // fix this...
-    std::string pk_type = plist->get<std::string>("PK type");
-    if (pk_type == "richards") {
-      pk_ = Teuchos::rcp(new Richards_PK(plist, FElist, soln));
-    } else if (pk_type == "darcy") {
-      pk_ = Teuchos::rcp(new Darcy_PK(plist, FElist, soln));
-    } else {
-      Errors::Message msg("Flow PK: input parameter list PK type is not \"darcy\" or \"richards\"");
-      Exceptions::amanzi_throw(msg);      
-    }
-  }
+  Darcy_PK_Wrapper(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                  Teuchos::ParameterList& glist,
+                  const Teuchos::RCP<TreeVector>& soln);
 
   // Setup
-  virtual void Setup(const Teuchos::Ptr<State>& S) {
-    pk_->Setup(S);
-  }
-
+  virtual void Setup(const Teuchos::Ptr<State>& S) {}
+  
   // Initialize owned (dependent) variables.
   virtual void Initialize(const Teuchos::Ptr<State>& S) {
     pk_->Initialize(S);
@@ -52,11 +40,9 @@ class Flow_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
   // Advance from state S0 to state S1 at time S0.time + dt.
-  // Due to Flow PK / MPC conflict (FIXME when MPC will be upgraded)
+  // Due to Darcy PK / MPC conflict (FIXME when MPC will be upgraded)
   //  virtual int Advance(double dt, double& dt_actual) = 0;
-  virtual bool Advance(double dt) {
-    return pk_->Advance(dt);
-  }
+  virtual bool Advance(double dt);
 
   // Commit any secondary (dependent) variables.
   virtual void CommitState(double dt, const Teuchos::Ptr<State>& S) {
@@ -64,13 +50,9 @@ class Flow_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics(const Teuchos::Ptr<State>& S) {
-    pk_->CalculateDiagnostics(S);
-  }
+  virtual void CalculateDiagnostics(const Teuchos::Ptr<State>& S) {}
 
-  virtual void SetState(const Teuchos::RCP<State>& S) {
-    pk_->SetState(S);
-  }
+  virtual void SetState(const Teuchos::RCP<State>& S);
 
   virtual std::string name() {
     return pk_->name();
@@ -137,8 +119,14 @@ class Flow_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
  protected:
-  Teuchos::RCP<Flow_PK> pk_;
+  Teuchos::ParameterList glist_;
+  Teuchos::RCP<Darcy_PK> pk_;
+  Teuchos::RCP<TreeVector> soln_;
 
+ private:
+  // factory registration
+  static RegisteredPKFactory<Darcy_PK_Wrapper> reg_;
+    
 };
 
 } // namespace

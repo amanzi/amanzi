@@ -42,16 +42,12 @@ namespace Flow {
 
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 
-class Flow_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
+class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
  public:
   Flow_PK();
   virtual ~Flow_PK() {};
 
-  // main PK methods
-  void Setup(const Teuchos::Ptr<State>& S) {};
-
   void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
-  void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
   std::string name() { return "flow"; }
 
   // main flow methods
@@ -60,6 +56,11 @@ class Flow_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
   virtual void InitSteadyState(double T0, double dT0) = 0;
   virtual void InitTransient(double T0, double dT0) = 0;
 
+  virtual void Initialize(const Teuchos::Ptr<State>& S) = 0;
+  virtual void CommitState(double dt, const Teuchos::Ptr<State>& S) = 0;
+  virtual double get_dt() = 0;
+
+  
   virtual int Advance(double dT, double &dT_actual) = 0;
   virtual int AdvanceToSteadyState(double T0, double dT0) = 0;
   virtual void InitializeAuxiliaryData() = 0;

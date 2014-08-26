@@ -59,7 +59,7 @@ namespace Transport {
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
-class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
+class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
  public:
   Transport_PK();
 #ifdef ALQUIMIA_ENABLED
@@ -72,15 +72,12 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   ~Transport_PK();
 
   // main PK members
-  void Setup(const Teuchos::Ptr<State>& S) {};
   void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
 
   void Initialize(const Teuchos::Ptr<State>& S);
   double get_dt();
-  bool Advance(double dT); 
   int Advance(double dT, double &dT_actual); 
   void CommitState(double dummy_dT, const Teuchos::Ptr<State>& S);
-  void CalculateDiagnostics(const Teuchos::Ptr<State>& S) {};
   std::string name() { return name_; }
 
   // main transport members
@@ -96,7 +93,7 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   inline double cfl() { return cfl_; }
 
   // control members
-  void Policy(Teuchos::RCP<State> S);
+  void Policy(Teuchos::Ptr<State> S);
   void PrintStatistics() const;
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 

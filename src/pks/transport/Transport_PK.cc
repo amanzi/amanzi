@@ -103,32 +103,32 @@ void Transport_PK::Construct_(Teuchos::ParameterList& glist,
   name_ = "state";  //  state password
 
   // require state variables when Flow is off
-  if (!S_->HasField("porosity")) {
-    S_->RequireField("porosity", name_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("porosity")) {
+    S->RequireField("porosity", name_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
-  if (!S_->HasField("darcy_flux")) {
-    S_->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("darcy_flux")) {
+    S->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
-  if (!S_->HasField("water_saturation")) {
-    S_->RequireField("water_saturation", name_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("water_saturation")) {
+    S->RequireField("water_saturation", name_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
-  if (!S_->HasField("prev_water_saturation")) {
-    S_->RequireField("prev_water_saturation", name_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("prev_water_saturation")) {
+    S->RequireField("prev_water_saturation", name_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // require state variables when Transport is on
-  if (!S_->HasField("total_component_concentration")) {
+  if (!S->HasField("total_component_concentration")) {
     std::vector<std::vector<std::string> > subfield_names(1);
     int ncomponents = component_names_.size();
     for (int i = 0; i != ncomponents; ++i) {
       subfield_names[0].push_back(component_names_[i]);
     }
 
-    S_->RequireField("total_component_concentration", name_, subfield_names)->SetMesh(mesh_)
+    S->RequireField("total_component_concentration", name_, subfield_names)->SetMesh(mesh_)
       ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 }
@@ -154,7 +154,7 @@ Transport_PK::~Transport_PK()
 void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Check that stars are oriented favorably for transport PK.
-  Policy(S_);
+  Policy(S);
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -171,24 +171,24 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // state pre-prosessing
   Teuchos::RCP<CompositeVector> cv1;
-  S_->GetFieldData("darcy_flux", name_)->ScatterMasterToGhosted("face");
-  cv1 = S_->GetFieldData("darcy_flux", name_);
+  S->GetFieldData("darcy_flux", name_)->ScatterMasterToGhosted("face");
+  cv1 = S->GetFieldData("darcy_flux", name_);
   darcy_flux = cv1->ViewComponent("face", true);
 
   Teuchos::RCP<const CompositeVector> cv2;
-  cv2 = S_->GetFieldData("water_saturation");
+  cv2 = S->GetFieldData("water_saturation");
   ws = cv2->ViewComponent("cell", false);
 
-  cv2 = S_->GetFieldData("prev_water_saturation");
+  cv2 = S->GetFieldData("prev_water_saturation");
   ws_prev = cv2->ViewComponent("cell", false);
 
-  cv2 = S_->GetFieldData("porosity");
+  cv2 = S->GetFieldData("porosity");
   phi = cv2->ViewComponent("cell", false);
 
-  tcc = S_->GetFieldData("total_component_concentration", name_);
+  tcc = S->GetFieldData("total_component_concentration", name_);
 
   // memory for new components
-  tcc_tmp = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("total_component_concentration"))));
+  tcc_tmp = Teuchos::rcp(new CompositeVector(*(S->GetFieldData("total_component_concentration"))));
   tcc_tmp->PutScalar(0.0);
 
   // upwind 
@@ -310,19 +310,6 @@ double Transport_PK::get_dt()
   return dT;
 }
 
-
-/* ******************************************************************* 
-* Performs one time step of size dT, in the form required for PK
-******************************************************************* */
-bool Transport_PK::Advance(double dT) {
-  bool failed = false;
-  double dT_actual(dT);
-  int ierr = Advance(dT, dT_actual);
-  if (std::abs(dT - dT_actual) > 1.e-10 || ierr) {
-    failed = true;
-  }
-  return failed;
-}
 
 /* ******************************************************************* 
 * MPC will call this function to advance the transport state.
