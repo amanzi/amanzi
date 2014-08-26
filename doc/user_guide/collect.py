@@ -215,14 +215,18 @@ benchmark['transport']={'index_entry' : 'transport/index.rst',
 mycase={}
 mycase['index']={'index_title' : 'My Prototype Documentation',
                  'index_file' : 'doc/user_guide/mycase/index.rst',
-                 'index_list' : ['newcase'],
+                 'index_list' : ['newcase', 'pod'],
              }
 
-mycase['newcase']={'from_dir' : 'testing/verification/flow/saturated/transient/hantush_anisotropic_2d',
-                   'dest_dir' : 'doc/user_guide/mycase/hantush_anisotropic_2d',
-                   'index_entry' : 'hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.rst',
-               }
+mycase['pod']={'from_dir' : 'testing/verification/flow/saturated/transient/butler_pod_2d',
+                   'dest_dir' : 'doc/user_guide/mycase/butler_pod_2d',
+                   'index_entry' : 'butler_pod_2d/amanzi_butler_pod_2d.rst',
+             }
 
+mycase['newcase']={'from_dir' : 'testing/verification/flow/saturated/transient/butler_strip_2d',
+                   'dest_dir' : 'doc/user_guide/mycase/butler_strip_2d',
+                   'index_entry' : 'butler_strip_2d/amanzi_butler_strip_2d.rst',
+             }
 
 # =========================================================================================================================
 #

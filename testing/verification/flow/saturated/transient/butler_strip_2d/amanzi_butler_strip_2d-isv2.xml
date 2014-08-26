@@ -61,7 +61,7 @@
     <comments>Single-phase transient flow</comments>
     <flow state = "on" model = "saturated"/>
     <transport state = "off" algorithm = "none"/>
-    <chemistry state = "off" process_model="none" engine="none"/>
+    <chemistry state = "off" process_model="none"/>
   </process_kernels>
   
 
@@ -136,21 +136,14 @@
 
     <region name ="yz1">
      <comments>Left Plane</comments>
-      <!--plane location="-1202.0,-1202.0,0.0" normal="-1.0,0.0,0.0"/-->
-      <box  low_coordinates="-1202.0,-1202.0,0.0"  high_coordinates="1202.0,-1202.0,1.0"/>
+      <plane location="-1202.0,-1202.0,0.0" normal="-1.0,0.0,0.0"/>
     </region>
     <!--
     <plane name="yz1" location="-1202.0,-1202.0,0.0" normal="-1.0,0.0,0.0"/>
     -->
-    <!--
     <plane name="yz2" location="1202.0,-1202.0,0.0" normal="1.0,0.0,0.0"/>
     <plane name="xz1" location="-1202.0,-1202.0,0.0" normal="0.0,-1.0,0.0"/>
-    <plane name="xz3" location="-1202.0,1202.0,0.0" normal="0.0,1.0,0.0"/>
-    -->
-
-      <box  name="yz2" low_coordinates="-1202.0,1202.0,0.0"  high_coordinates="1202.0,1202.0,1.0"/>
-      <box  name="xz1" low_coordinates="-1202.0,-1202.0,0.0"  high_coordinates="-1202.0,1202.0,1.0"/>
-      <box  name="xz2" low_coordinates="1202.0,-1202.0,0.0"  high_coordinates="1202.0,1202.0,1.0"/>
+    <plane name="xz2" location="-1202.0,1202.0,0.0" normal="0.0,1.0,0.0"/>
 
     <point name="Obs_r24" coordinate="(24.0,0.0,1.0)"/>
     <point name="Obs_r100" coordinate="(100.0,0.0,1.0)"/>
