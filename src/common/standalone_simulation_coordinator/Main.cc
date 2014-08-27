@@ -390,7 +390,7 @@ int main(int argc, char *argv[]) {
   }
   catch (std::exception& e) {
     if (rank == 0) {
-      if (e.what() == "amanzi not run") {
+      if (! strcmp(e.what(), "amanzi not run")) {
 	std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
       } else {
 	std::cout << e.what() << std::endl;

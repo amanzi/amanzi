@@ -195,7 +195,7 @@ int OperatorDiffusionTPFA::ApplyInverse(const CompositeVector& X, CompositeVecto
   Teuchos::ParameterList& pre_list = plist.sublist("gmres");
   Teuchos::ParameterList& slist = pre_list.sublist("gmres parameters");
 
-  pre_list.set<string>("iterative method", "gmres");
+  pre_list.set<std::string>("iterative method", "gmres");
   slist.set<double>("error tolerance", 1e-7);
   slist.set<int>("maximum number of iterations", 200);
   Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");

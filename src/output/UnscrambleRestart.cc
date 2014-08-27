@@ -9,7 +9,6 @@
  *
  */
 
-using namespace std;
 
 #include <string>
 #include <vector>
@@ -21,7 +20,7 @@ using namespace std;
 
 #define FALSE 0
 
-std::vector<string> datasetList;
+std::vector<std::string> datasetList;
 int num_nodes;
 int num_elems;
 
@@ -344,7 +343,7 @@ int main (int argc, char *argv[])
     }
     std::cout << std::endl;
     for (int i=0; i<datasetList.size(); ++i) {
-      stringstream ds_name;
+      std::stringstream ds_name;
       ds_name << "/" << datasetList[i];
       std::cout << "E>> checking " << ds_name.str() << std::endl;  
       status = unpermute(ds_name.str().c_str(), restart_file, new_file, nodemap, elemmap);
