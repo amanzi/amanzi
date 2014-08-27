@@ -340,8 +340,9 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
 #endif
     if (MyPID == 0 && nseepage > 0 && nseepage != nseepage_prev) {
+    //if (MyPID == 0 && nseepage > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "seepage face has changed: " << area_seepage << " [m^2]" << std::endl;
+      *vo_->os() << "seepage face has changed: " << area_seepage << " [m^2] "<<nseepage<<" "<<nseepage_prev<< std::endl;
     }
   }
   nseepage_prev = nseepage;

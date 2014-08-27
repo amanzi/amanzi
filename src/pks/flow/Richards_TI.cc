@@ -246,7 +246,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   const Epetra_MultiVector& duc = *du->ViewComponent("cell");
   AmanziGeometry::Point face_centr, cell_cntr;
   double max_sat_pert = 0.25;
-  double damping_factor = 0.6;
+  double damping_factor = 0.5;
   double reference_pressure = 101325.0;
 
   int nsat_clipped(0), npre_clipped(0);

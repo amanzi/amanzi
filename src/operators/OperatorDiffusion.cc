@@ -1041,7 +1041,9 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-double OperatorDiffusion::DeriveBoundaryFaceValue(int f, const CompositeVector& u)
+double OperatorDiffusion::DeriveBoundaryFaceValue(int f, 
+						  const CompositeVector& u, 
+						  Teuchos::RCP<Flow::WaterRetentionModel>)
 {
   if (u.HasComponent("face")) {
     const Epetra_MultiVector& u_face = *u.ViewComponent("face");
