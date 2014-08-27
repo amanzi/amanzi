@@ -11,8 +11,8 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_IMPLICIT_SNOW_DISTRIBUTION_EVALUATOR_
-#define AMANZI_FLOWRELATIONS_IMPLICIT_SNOW_DISTRIBUTION_EVALUATOR_
+#ifndef AMANZI_FLOWRELATIONS_IMPLICIT_SNOW_DISTRIBUTION_UWFLUX_EVALUATOR_
+#define AMANZI_FLOWRELATIONS_IMPLICIT_SNOW_DISTRIBUTION_UWFLUX_EVALUATOR_
 
 #include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -25,15 +25,15 @@ namespace Operators { class MatrixMFD; }
 namespace Flow {
 namespace FlowRelations {
 
-class ImplicitSnowDistributionEvaluator : public SecondaryVariableFieldEvaluator {
+class ImplicitSnowDistributionUWFluxEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   explicit
-  ImplicitSnowDistributionEvaluator(Teuchos::ParameterList& plist);
+  ImplicitSnowDistributionUWFluxEvaluator(Teuchos::ParameterList& plist);
 
-  ImplicitSnowDistributionEvaluator(const ImplicitSnowDistributionEvaluator& other);
+  ImplicitSnowDistributionUWFluxEvaluator(const ImplicitSnowDistributionUWFluxEvaluator& other);
   virtual Teuchos::RCP<FieldEvaluator> Clone() const {
-    return Teuchos::rcp(new ImplicitSnowDistributionEvaluator(*this));
+    return Teuchos::rcp(new ImplicitSnowDistributionUWFluxEvaluator(*this));
   }
 
 protected:
@@ -69,11 +69,12 @@ protected:
 
   bool assembled_;
   std::string mesh_name_;
+  Teuchos::RCP<Operators::MatrixMFD> matrix_flux_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   Teuchos::RCP<CompositeMatrix> matrix_linsolve_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,ImplicitSnowDistributionEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,ImplicitSnowDistributionUWFluxEvaluator> factory_;
 
 };
 
