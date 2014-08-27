@@ -20,9 +20,13 @@
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionTPFA.hh"
+#include "FluxTPFABCfunc.hh"
+#include <boost/math/tools/roots.hpp>
 
 namespace Amanzi {
 namespace Operators {
+
+#define DEBUG_FLAG 0
 
 /* ******************************************************************
 * Constructor.                                           
@@ -92,13 +96,16 @@ void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> f
     int ncells = cells.size();
 
     WhetStone::DenseMatrix Aface(ncells, ncells);
+    Aface = 0.;
 
-    double tij = (*transmissibility_)[f] * k_face[0][f];
-    for (int i = 0; i < ncells; i++) {
-      Aface(i, i) = tij;
-      for (int j = i + 1; j < ncells; j++) {
-	Aface(i, j) = -tij;
-	Aface(j, i) = -tij;
+    if (bc_model[f] != OPERATOR_BC_FACE_NEUMANN){
+      double tij = (*transmissibility_)[f] * k_face[0][f];
+      for (int i = 0; i < ncells; i++) {
+	Aface(i, i) = tij;
+	for (int j = i + 1; j < ncells; j++) {
+	  Aface(i, j) = -tij;
+	  Aface(j, i) = -tij;
+	}
       }
     }
 
@@ -108,6 +115,7 @@ void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> f
       matrix.push_back(Aface);
       matrix_shadow.push_back(null_matrix);
     }
+    
   }
 
   // populating right-hand side
@@ -151,7 +159,7 @@ void OperatorDiffusionTPFA::ApplyBCs()
         rhs_cell[0][c] += bc_value[f] * (*transmissibility_)[f] * k_face[0][f];
       } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) {
         rhs_cell[0][c] -= bc_value[f] * mesh_->face_area(f);
-        (*transmissibility_)[f] = 0.0;
+        //(*transmissibility_)[f] = 0.0;
         (*gravity_term_)[f] = 0.0;
       }
     }
@@ -187,7 +195,7 @@ int OperatorDiffusionTPFA::ApplyInverse(const CompositeVector& X, CompositeVecto
   Teuchos::ParameterList& pre_list = plist.sublist("gmres");
   Teuchos::ParameterList& slist = pre_list.sublist("gmres parameters");
 
-  pre_list.set<string>("iterative method", "gmres");
+  pre_list.set<std::string>("iterative method", "gmres");
   slist.set<double>("error tolerance", 1e-7);
   slist.set<int>("maximum number of iterations", 200);
   Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
@@ -217,7 +225,33 @@ void OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, Co
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
   Epetra_MultiVector& rc = *r.ViewComponent("cell");
 
+
+  // find location of matrix blocks
+  int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
+  int m(0), nblocks = blocks_.size();
+  bool flag(false);
+
+  for (int n = 0; n < nblocks; n++) {
+    if (blocks_schema_[n] == schema_my) {
+      m = n;
+      flag = true;
+      break;
+    }
+  }
+
+  if (flag == false) { 
+    m = nblocks++;
+    blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL);
+    blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
+    blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
+  }
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
+  const std::vector<int>& bc_model = bc_->bc_model();
+  const std::vector<double>& bc_value = bc_->bc_value();
+
   AmanziMesh::Entity_ID_List cells;
+
 
   // matvec product A*u
   u.ScatterMasterToGhosted("cell");
@@ -236,8 +270,15 @@ void OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, Co
       if (c1 < ncells_owned) rc[0][c1] += tmp; 
       if (c2 < ncells_owned) rc[0][c2] -= tmp; 
     } else {
+
       int c = cells[0];
-      double tmp = k_face[0][f] * (*transmissibility_)[f] * uc[0][c];
+      double tmp = 0;
+
+      if (bc_model[f] != Operators::OPERATOR_BC_FACE_NEUMANN){
+	tmp = k_face[0][f] * (*transmissibility_)[f] * uc[0][c];    
+      }
+      //double tmp = matrix[f](0,0) * uc[0][c];
+
       if (c < ncells_owned) rc[0][c] += tmp;
     }							
   } 
@@ -248,6 +289,7 @@ void OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, Co
   for (int c = 0; c < ncells_owned; c++) {    
     rc[0][c] -= rhs_cell[0][c];   
   }
+
 }
 
 
@@ -314,7 +356,7 @@ void OperatorDiffusionTPFA::UpdateFlux(
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(int f, const CompositeVector& u)
+  double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(int f, const CompositeVector& u, Teuchos::RCP<Flow::WaterRetentionModel> wrm)
 {
   if (u.HasComponent("face")) {
     const Epetra_MultiVector& u_face = *u.ViewComponent("face");
@@ -334,22 +376,92 @@ double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(int f, const CompositeVect
       int c = cells[0];
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       for (int i=0; i<faces.size(); i++){
-	if (faces[i] == f){
-	  if ((*transmissibility_)[f] < 1e-24 || Krel_face[0][f] < 1e-24){
-	    Errors::Message msg("OperatorDiffusionTPFA: Either transmisibility or relative permeabilty on a boundary is too small");
-	    Exceptions::amanzi_throw(msg);
+      	if (faces[i] == f){
+
+      	  double a = dirs[i] * (*transmissibility_)[f];
+      	  double b = bc_value[f]* mesh_->face_area(f);	  
+      	  double face_val = u_cell[0][c] + (*gravity_term_)[f]/a - b/(a*Krel_face[0][f]);
+
+
+	  double trans = (*transmissibility_)[f];
+	  double gflux = (*gravity_term_)[f];
+	  double bc_flux = bc_value[f]* mesh_->face_area(f);
+	  double atm_pressure_ = 101325;
+
+	  Teuchos::RCP<FlowFluxTPFA_BCFunc> func = 
+	     Teuchos::rcp(new FlowFluxTPFA_BCFunc(trans, face_val, i, u_cell[0][c],
+						  bc_flux, gflux, dirs[i], atm_pressure_, wrm ));
+
+
+  // -- convergence criteria
+	  double eps = std::max(1.e-4 * std::abs(bc_flux), 1.e-8);
+	  Tol_ tol(eps);
+	  boost::uintmax_t max_it = 100;
+	  boost::uintmax_t actual_it(max_it);
+	  
+	  double res = (*func)(face_val);
+	  double left = 0.;
+	  double right = 0.;
+	  double lres = 0.;
+	  double rres = 0.;
+
+	  if (res > 0.) {
+	    left = face_val;
+	    lres = res;
+	    right = std::max(face_val, atm_pressure_);
+	    rres = (*func)(right);
+	    while (rres > 0.) {
+	      right += atm_pressure_;
+	      rres = (*func)(right);
+	    }
+	  } else {
+	    right = face_val;
+	    rres = res;
+#if DEBUG_FLAG
+	    std::cout << "RIGHT = " << right << ", " << rres << std::endl;
+#endif
+	    left = std::min(101325., face_val);
+	    lres = (*func)(left);
+	    while (lres < 0.) {
+#if DEBUG_FLAG
+	      std::cout << "LEFT = " << left << ", " << lres << std::endl;
+#endif
+	      left -= 101325.;
+	      lres = (*func)(left);
+	    }
 	  }
-	  double a = dirs[i] * (*transmissibility_)[f];
-	  double b = bc_value[f]* mesh_->face_area(f);	  
-	  double ub_val = u_cell[0][c] + (*gravity_term_)[f]/a - b/(a*Krel_face[0][f]);
-	  return ub_val;	  
-	}
+#if DEBUG_FLAG
+  std::cout << "   bracket (res): " << left << " (" << lres << "), "
+            << right << " (" << rres << ")" << std::endl;
+#endif
+
+  //return face_val;
+  
+
+          std::pair<double,double> result =
+	    boost::math::tools::toms748_solve(*func, left, right, lres, rres, tol, actual_it);
+	  if (actual_it >= max_it) {
+	    std::cout << " Failed to converged in " << actual_it << " steps." << std::endl;
+	    return 3;
+	  }
+	  
+	  face_val = (result.first + result.second) / 2.;
+
+#if DEBUG_FLAG
+	  std::cout << "face_val = "<<face_val<<"\n";
+#endif
+	  //exit(0);
+	  return face_val;
+	  
+      	}
       }
+
     } else {
       const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int c = cells[0];
+      //std::cout<<"face val "<<u_cell[0][c]<<"\n";
       return u_cell[0][c];
     }
   }
@@ -488,6 +600,7 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
       pres[1] = bc_value;
       dpres = pres[0] - pres[1];  // + grn;
       Jpp(0, 0) = ((*transmissibility_)[f] * dpres + face_dir * (*gravity_term_)[f]) * dkdp_cell[0];
+      //Jpp(0, 0) = 0.0;
     } else {
       Jpp(0, 0) = 0.0;
     }

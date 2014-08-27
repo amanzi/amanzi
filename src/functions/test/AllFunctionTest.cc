@@ -296,7 +296,10 @@ SUITE(separable_test) {
     Function *fz = new SmoothStepFunction(0.0, 1.0, 1.0, 4.0);
     Function *fyz = new SeparableFunction(*fy, *fz);
     Function *fxyz = new SeparableFunction(*fx, *fyz);
-    delete fx, fy, fz, fyz;
+    delete fx;
+    delete fy;
+    delete fz;
+    delete fyz;
     double x0[3] = {0.0, 0.0, 0.0};
     double x1[3] = {1.0, 0.0, 0.0};
     double x2[3] = {0.0, 1.0, 0.0};

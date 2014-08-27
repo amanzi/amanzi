@@ -118,6 +118,13 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
 
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
     int f = bc->first;
+    if (bc_submodel[f] & FLOW_BC_SUBMODEL_NOFLOW_ABOVE_WATER_TABLE) {
+      if (bc->second < FLOW_PRESSURE_ATMOSPHERIC) {
+        bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+        bc_value[f] = 0.0;
+        continue;
+      }
+    }
     bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
     bc_value[f] = bc->second;
     flag_essential_bc = 1;
@@ -333,8 +340,9 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
 #endif
     if (MyPID == 0 && nseepage > 0 && nseepage != nseepage_prev) {
+    //if (MyPID == 0 && nseepage > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "seepage face has changed: " << area_seepage << " [m^2]" << std::endl;
+      *vo_->os() << "seepage face has changed: " << area_seepage << " [m^2] "<<nseepage<<" "<<nseepage_prev<< std::endl;
     }
   }
   nseepage_prev = nseepage;

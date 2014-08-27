@@ -20,6 +20,7 @@
 
 #include "Operator.hh"
 #include "OperatorTypeDefs.hh"
+#include "../pks/flow/WaterRetentionModel.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -44,7 +45,7 @@ class OperatorDiffusion : public Operator {
 
   virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
-  virtual double DeriveBoundaryFaceValue(int f, const CompositeVector& u);
+  virtual double DeriveBoundaryFaceValue(int f, const CompositeVector& u, Teuchos::RCP<Flow::WaterRetentionModel>);
 
   // re-implementation of basic operator virtual members
   void AssembleMatrix(int schema);

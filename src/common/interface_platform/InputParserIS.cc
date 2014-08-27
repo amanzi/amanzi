@@ -2400,6 +2400,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
         Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
         Teuchos::Array<double> values = bc_dir.get<Teuchos::Array<double> >("Water Table Height");
         std::string coordsys = bc_dir.get<std::string>("Coordinate System", BCHYDRST_COORD);
+        std::string submodel = bc_dir.get<std::string>("Submodel", "None");
 
         std::stringstream ss;
         ss << "BC " << bc_counter++;
@@ -2408,9 +2409,9 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
         tbc.set<Teuchos::Array<std::string> >("regions", regions );
 
         if (coordsys == "Absolute") {
-          tbc.set<bool>("relative to top",false);
+          tbc.set<bool>("relative to top", false);
         } else if (coordsys == "Relative") {
-          tbc.set<bool>("relative to top",true);
+          tbc.set<bool>("relative to top", true);
         } else {
           // we have a default for this value... "Absolute", if for some reason this does not
           // get read, then we must bail
@@ -2439,6 +2440,12 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
           Teuchos::Array<std::string> forms = forms_;
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
         }
+
+        if (submodel == "No Flow Above Water Table") {
+          tbc.set<bool>("no flow above water table", true);
+        } else if (submodel != "None") {
+          Exceptions::amanzi_throw(Errors::Message("In 'BC: Hydrostatic': optional parameter 'Submodel': valid values are 'No Flow Above Water Table' or 'None'"));
+        } 
       } else if (bc.isSublist("BC: Seepage")) {
         Teuchos::ParameterList& bc_flux = bc.sublist("BC: Seepage");
 

@@ -30,6 +30,7 @@ class TransportBoundaryFunction_Tracer : public TransportBoundaryFunction {
  public:
   TransportBoundaryFunction_Tracer(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :
       TransportBoundaryFunction(mesh) {};
+  ~TransportBoundaryFunction_Tracer() {};
   
   void Compute(double time);
 

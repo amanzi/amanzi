@@ -719,7 +719,7 @@ void MPC::cycle_driver() {
       }
 
       // make sure that if we are currently on a reset time, to reset the time step
-      if (! ti_mode == STEADY) {
+      if (! (ti_mode == STEADY)) {
         if (!reset_info_.empty()) {
           // this is probably iffy...
           if (S->time() == reset_info_.front().first) {
@@ -1031,7 +1031,7 @@ void MPC::cycle_driver() {
       // will reset the time integrator, if so we
       // force a checkpoint
       bool force_checkpoint(false);
-      if (! ti_mode == STEADY)
+      if (! (ti_mode == STEADY))
         if (!reset_info_.empty())
           if (S->time() == reset_info_.front().first)
             force_checkpoint = true;

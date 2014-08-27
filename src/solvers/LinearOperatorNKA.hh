@@ -130,7 +130,7 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
       *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
     }
   }
-  if (criteria == LIN_SOLVER_RELATIVE_RHS) {
+  if (criteria & LIN_SOLVER_RELATIVE_RHS) {
     if (rnorm0 < tol * fnorm) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
         *vo_->os() << "Converged (relative ||RHS|| = " << fnorm << "), itr = " << num_itrs_ << " ||r|| = " << rnorm0 << std::endl;
@@ -180,13 +180,16 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
           *vo_->os() << "Converged (relative ||RHS|| = " << fnorm << "), itr = " << num_itrs_ << " ||r|| = " << rnorm << std::endl;
         return LIN_SOLVER_RELATIVE_RHS;
       }
-    } else if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
+    }
+
+    if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
       if (rnorm < tol * rnorm0) {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM))
           *vo_->os() << "Converged (relative ||res|| = " << rnorm0 << "), itr = " << num_itrs_ << " ||r|| = " << rnorm << std::endl;
         return LIN_SOLVER_RELATIVE_RESIDUAL;
       }
-    } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
+    }
+    if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
       if (rnorm < tol) {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM))
           *vo_->os() << "Converged (absolute), itr = " << num_itrs_ << " ||r|| = " << rnorm << std::endl;
@@ -238,6 +241,7 @@ void LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList
   } else {
     criteria = LIN_SOLVER_RELATIVE_RHS;
   }
+  set_criteria(criteria);
 
   // parameters for NKA
   nka_dim_ = plist.get<int>("max nka vectors", 10);

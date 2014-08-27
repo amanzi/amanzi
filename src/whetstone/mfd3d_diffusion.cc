@@ -505,6 +505,8 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrixHex(
 
   ok = StabilityMMatrixHex_(cell, permeability, Wc, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 

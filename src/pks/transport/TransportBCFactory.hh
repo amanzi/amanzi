@@ -70,8 +70,8 @@ class TransportBCFactory {
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
   const Teuchos::RCP<Teuchos::ParameterList>& list_;
 #ifdef ALQUIMIA_ENABLED
-  const Teuchos::RCP<AmanziChemistry::Chemistry_State>& chem_state_;
-  const Teuchos::RCP<AmanziChemistry::ChemistryEngine>& chem_engine_;
+  const Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state_;
+  const Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 #endif
 };
 
