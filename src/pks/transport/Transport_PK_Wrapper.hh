@@ -22,16 +22,17 @@ namespace Transport {
 class Transport_PK_Wrapper : public PK {
 
  public:
-  Transport_PK_Wrapper(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                  Teuchos::ParameterList& glist,
-                  const Teuchos::RCP<TreeVector>& soln);
+  Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
+                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                       const Teuchos::RCP<State>& S,
+                       const Teuchos::RCP<TreeVector>& soln);
 
   // Setup
-  virtual void Setup(const Teuchos::Ptr<State>& S) {}
+  virtual void Setup() {}
   
   // Initialize owned (dependent) variables.
-  virtual void Initialize(const Teuchos::Ptr<State>& S) {
-    pk_->Initialize(S);
+  virtual void Initialize() {
+    pk_->Initialize(S_.ptr());
   }
 
   // Choose a time step compatible with physics.
@@ -45,14 +46,12 @@ class Transport_PK_Wrapper : public PK {
   virtual bool Advance(double dt);
 
   // Commit any secondary (dependent) variables.
-  virtual void CommitState(double dt, const Teuchos::Ptr<State>& S) {
-    pk_->CommitState(dt, S);
+  virtual void CommitState(double t_old, double t_new) {
+    pk_->CommitState(t_new-t_old, S_.ptr());
   }
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics(const Teuchos::Ptr<State>& S) {}
-
-  virtual void SetState(const Teuchos::RCP<State>& S);
+  virtual void CalculateDiagnostics() {}
 
   virtual std::string name() {
     return pk_->name();
@@ -60,9 +59,10 @@ class Transport_PK_Wrapper : public PK {
 
  protected:
   std::vector<std::string> comp_names_;
-  Teuchos::ParameterList glist_;
+  Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Transport_PK> pk_;
   Teuchos::RCP<TreeVector> soln_;
+  Teuchos::RCP<State> S_;
 
  private:
   // factory registration

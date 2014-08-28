@@ -7,8 +7,8 @@
 
 */
 
-#ifndef ARCOS_FN_TIME_INTEGRATOR_PK_HH_
-#define ARCOS_FN_TIME_INTEGRATOR_PK_HH_
+#ifndef AMANZI_FN_TIME_INTEGRATOR_PK_HH_
+#define AMANZI_FN_TIME_INTEGRATOR_PK_HH_
 
 #include "Teuchos_RCP.hpp"
 

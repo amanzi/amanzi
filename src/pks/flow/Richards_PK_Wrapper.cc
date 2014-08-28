@@ -9,27 +9,24 @@
 
 
 #include "Richards_PK.hh"
-#include "Darcy_PK.hh"
-
 #include "Richards_PK_Wrapper.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-Richards_PK_Wrapper::Richards_PK_Wrapper(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& glist,
+Richards_PK_Wrapper::Richards_PK_Wrapper(Teuchos::ParameterList& pk_tree,
+        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+        const Teuchos::RCP<State>& S,
         const Teuchos::RCP<TreeVector>& soln) :
-    soln_(soln),
-    glist_(glist) {      
-  // Richards PK expects a single global Plist with the flow PK as a sublist
-  glist_.set("Flow", *plist);
-}
+    S_(S),
+    soln_(soln)
+{
+  // Richards expects a single global list with sublist Flow
+  glist_ = Teuchos::rcp(new ParameterList(*global_list));
+  glist_->set("Flow", global_list->sublist("PKs").sublist(pk_tree.name()));
 
-void
-Richards_PK_Wrapper::SetState(const Teuchos::RCP<State>& S) {
-  // can finally construct, as Richards PK expects state in constructor
-  pk_ = Teuchos::rcp(new Richards_PK(glist_, S));
-  pk_->SetState(S);
+  // construct
+  pk_ = Teuchos::rcp(new Richards_PK(*glist_, S_));
 }
 
 bool

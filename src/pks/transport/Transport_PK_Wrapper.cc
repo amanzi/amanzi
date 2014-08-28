@@ -16,23 +16,21 @@
 namespace Amanzi {
 namespace Transport {
 
-Transport_PK_Wrapper::Transport_PK_Wrapper(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& glist,
+Transport_PK_Wrapper::Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
+        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+        const Teuchos::RCP<State>& S,
         const Teuchos::RCP<TreeVector>& soln) :
-    soln_(soln),
-    glist_(glist) {      
-  comp_names_ = plist->get<Teuchos::Array<std::string> >("component names").toVector();
+    S_(S),
+    soln_(soln)
+{
+  // Transport expects a single global list with sublist Flow
+  glist_ = Teuchos::rcp(new ParameterList(*global_list));
+  glist_->set("Transport", global_list->sublist("PKs").sublist(pk_tree.name()));
 
-  // Transport PK expects a single global Plist with the flow PK as a sublist
-  glist_.set("Transport", *plist);
+  // construct
+  pk_ = Teuchos::rcp(new Transport_PK(*glist_, S_));
 }
 
-void
-Transport_PK_Wrapper::SetState(const Teuchos::RCP<State>& S) {
-  // can finally construct, as Transport PK expects state in constructor
-  pk_ = Teuchos::rcp(new Transport_PK(glist_, S, comp_names_));
-  pk_->SetState(S);
-}
 
 bool
 Transport_PK_Wrapper::Advance(double dt) {
@@ -45,7 +43,6 @@ Transport_PK_Wrapper::Advance(double dt) {
   return failed;
 }
 
+} // namespace Transport
+} // namespace Amanzi
 
-
-}
-}

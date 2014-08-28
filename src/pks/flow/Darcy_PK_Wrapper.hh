@@ -22,9 +22,10 @@ namespace Flow {
 class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
 
  public:
-  Darcy_PK_Wrapper(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                  Teuchos::ParameterList& glist,
-                  const Teuchos::RCP<TreeVector>& soln);
+  Darcy_PK_Wrapper(Teuchos::ParameterList& pk_tree,
+                   const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                   const Teuchos::RCP<State>& S,
+                   const Teuchos::RCP<TreeVector>& soln);
 
   // Setup
   virtual void Setup(const Teuchos::Ptr<State>& S) {}
@@ -45,14 +46,12 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
   virtual bool Advance(double dt);
 
   // Commit any secondary (dependent) variables.
-  virtual void CommitState(double dt, const Teuchos::Ptr<State>& S) {
-    pk_->CommitState(dt, S);
+  virtual void CommitState(double t_old, double t_new) {
+    pk_->CommitState(t_new-t_old, S_.ptr());
   }
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics(const Teuchos::Ptr<State>& S) {}
-
-  virtual void SetState(const Teuchos::RCP<State>& S);
+  virtual void CalculateDiagnostics() {}
 
   virtual std::string name() {
     return pk_->name();
@@ -119,9 +118,10 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
  protected:
-  Teuchos::ParameterList glist_;
+  Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Darcy_PK> pk_;
   Teuchos::RCP<TreeVector> soln_;
+  Teuchos::RCP<State> S_;
 
  private:
   // factory registration

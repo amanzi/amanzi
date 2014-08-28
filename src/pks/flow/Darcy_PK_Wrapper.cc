@@ -16,21 +16,21 @@
 namespace Amanzi {
 namespace Flow {
 
-Darcy_PK_Wrapper::Darcy_PK_Wrapper(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& glist,
+Darcy_PK_Wrapper::Darcy_PK_Wrapper(Teuchos::ParameterList& pk_tree,
+        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+        const Teuchos::RCP<State>& S,
         const Teuchos::RCP<TreeVector>& soln) :
-    soln_(soln),
-    glist_(glist) {      
-  // Darcy PK expects a single global Plist with the flow PK as a sublist
-  glist_.set("Flow", *plist);
+    S_(S),
+    soln_(soln)
+{
+  // Darcy expects a single global list with sublist Flow
+  glist_ = Teuchos::rcp(new ParameterList(*global_list));
+  glist_->set("Flow", global_list->sublist("PKs").sublist(pk_tree.name()));
+
+  // construct
+  pk_ = Teuchos::rcp(new Darcy_PK(*glist_, S_));
 }
 
-void
-Darcy_PK_Wrapper::SetState(const Teuchos::RCP<State>& S) {
-  // can finally construct, as Darcy PK expects state in constructor
-  pk_ = Teuchos::rcp(new Darcy_PK(glist_, S));
-  pk_->SetState(S);
-}
 
 bool
 Darcy_PK_Wrapper::Advance(double dt) {
@@ -43,7 +43,6 @@ Darcy_PK_Wrapper::Advance(double dt) {
   return failed;
 }
 
+} // namespace
+} // namespace
 
-
-}
-}
