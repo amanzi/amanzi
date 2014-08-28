@@ -422,6 +422,8 @@ Usage:
 
      * [U] `"modify correction`" [bool] allows a process kernel to modify correction to a solution.(default: `"false`")
 
+     * [U] `"update upwind frequency`" [string] define frequency of the updates for upwind direction: `"every nonlinear iteration`", `"every timestep`".(default: `"every timestep`")
+
    * [U] `"Preconditioners`" [list] Parameters to control the linear solver algorithms used in the preconditioner.
 
      * [U] `"Trilinos ML`" Parameter used by Trilinos multi-level solver, ML
@@ -1403,6 +1405,9 @@ The following boundary condition parameterizations are supported:
 * `"BC: Linear Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Reference Values`" [Array(double)] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
 
 * [U] `"BC: Seepage`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and one of `"Inward Mass Flux`" [Array(double)] or `"Inward Volumetric Flux`" [Array(double)].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
+    * [U] "rainfall" [bool] indicates that the mass flux is defined with respect
+      to the gravity vector and the actual influx depends on boundary
+      slope (default value is "false").
 
 * [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Coordinate System`" [string] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"), `"Submodel`" [string] (available option is `"No Flow Above Water Table`", this parameter is optional with a default of `"None`"), and `"Water Table Height`" [Array(double)] (see below)
 
