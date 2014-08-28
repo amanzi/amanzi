@@ -645,9 +645,91 @@ void BGCAdvance(double t, double dt, double gridarea,
 
   //================================================
   //do vertical diffusion
-  // -- not yet implemented!
+  double diffusion_coef = 0.001; // units, L^2 / day
+  Cryoturbate(dt_days, SoilTArr, SoilDArr, SoilThicknessArr, soilcarr, diffusion_coef);
   return;
 }
+
+
+// Cryoturbation -- move the carbon around via diffusion
+void Cryoturbate(double dt,
+		 const Epetra_SerialDenseVector& SoilTArr,
+		 const Epetra_SerialDenseVector& SoilDArr,
+		 const Epetra_SerialDenseVector& SoilThicknessArr,
+		 std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
+		 double diffusion_coef) {
+  std::vector<double> diffusion_coefs(soilcarr[0]->nPools, diffusion_coef);
+  Cryoturbate(dt, SoilTArr, SoilDArr, SoilThicknessArr, soilcarr, diffusion_coefs);
+}
+
+
+// Cryoturbation -- move the carbon around via diffusion
+void Cryoturbate(double dt,
+		 const Epetra_SerialDenseVector& SoilTArr,
+		 const Epetra_SerialDenseVector& SoilDArr,
+		 const Epetra_SerialDenseVector& SoilThicknessArr,
+		 std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
+		 std::vector<double>& diffusion_coefs) {
+  // only cryoturbate unfrozen soil
+  int k_frozen = PermafrostDepthIndex(SoilTArr, SoilDArr);
+
+  // fast and dirty diffusion
+  int npools = soilcarr[0]->nPools;
+  Epetra_SerialDenseVector dC_up(npools);
+  Epetra_SerialDenseVector dC_dn(npools);
+  std::vector<Epetra_SerialDenseVector> dC(k_frozen, Epetra_SerialDenseVector(npools));
+
+  int k = 0;
+  while (k < k_frozen) {
+    Epetra_SerialDenseVector& C = soilcarr[k]->SOM;
+
+    // dC/dz on the face above
+    if (k == 0) {
+      // dC_up initialized to zero already
+    } else {
+      Epetra_SerialDenseVector& C_up = soilcarr[k-1]->SOM;
+      double dz_up = SoilDArr[k] - SoilDArr[k-1];
+      for (int l=0; l!=npools; ++l) {
+	dC_up[l] = (C[l] - C_up[l]) / dz_up;
+      }
+    }
+
+    // dC/dz on the face below
+    if ((k == soilcarr.size()-1) || k+1 >= k_frozen) {
+      // boundary case
+      for (int l=0; l!=npools; ++l) {
+	dC_dn[l] = 0;
+      }
+    } else {
+      Epetra_SerialDenseVector& C_dn = soilcarr[k+1]->SOM;
+      double dz_dn = SoilDArr[k+1] - SoilDArr[k];
+      for (int l=0; l!=npools; ++l) {
+	dC_dn[l] = (C_dn[l] - C[l]) / dz_dn;
+      }
+    }
+
+    // dC = dt * D * (dC/dz_below - dC/dz_above) / dz
+    double dz = SoilThicknessArr[k];
+    for (int l=0; l!=npools; ++l) {
+      dC[k][l] = dt * diffusion_coefs[l] / dz * (dC_dn[l] - dC_up[l]);
+    }
+
+    // increment
+    k++;
+  }
+  
+  // Now that dC is calculated everywhere, update carbon pools
+  k = 0;
+  while (k < k_frozen) {
+    Epetra_SerialDenseVector& C_k = soilcarr[k]->SOM;
+    Epetra_SerialDenseVector& dC_k = dC[k];
+    
+    for (int l=0; l!=npools; ++l) {
+      C_k[l] -= dC_k[l];
+    }
+  }
+}
+
 
 } // namespace BGC
 } // namespace Amanzi
