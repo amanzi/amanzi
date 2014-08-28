@@ -23,6 +23,15 @@ double PermafrostDepth(const Epetra_SerialDenseVector& SoilTArr,
   return SoilDArr[i];
 }
 
+int PermafrostDepthIndex(const Epetra_SerialDenseVector& SoilTArr,
+			 const Epetra_SerialDenseVector& SoilDArr,
+			 double freeze_temp) {
+  int i = 0;
+  int nSoilLayers = SoilTArr.Length();
+  while (SoilTArr[i] > 0. && i < nSoilLayers-1) i++;
+  return i;
+}
+
 // This function calculate the effect of temperature on biological process.
 double TEffectsQ10(double Q10, double T, double refT) {
   return std::pow(Q10, 0.1 * (T - refT));
