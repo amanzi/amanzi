@@ -10,8 +10,8 @@ Assumes that intermediate_time() can be used (i.e. this is not nestable?)
 See additional documentation in the base class src/pks/mpc/MPC.hh
 ------------------------------------------------------------------------- */
 
-#ifndef ARCOS_SUBCYCLED_MPC_HH_
-#define ARCOS_SUBCYCLED_MPC_HH_
+#ifndef AMANZI_SUBCYCLED_MPC_HH_
+#define AMANZI_SUBCYCLED_MPC_HH_
 
 #include "PK.hh"
 #include "MPC_tmp.hh"
@@ -21,8 +21,9 @@ namespace Amanzi {
 class MPCSubcycled : public MPCTmp<PK> {
 
 public:
-  MPCSubcycled(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-               Teuchos::ParameterList& FElist,
+  MPCSubcycled(Teuchos::ParameterList& pk_tree,
+               const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+               const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
@@ -30,7 +31,7 @@ public:
   virtual double get_dt();
 
   // -- advance each sub pk dt.
-  virtual bool Advance(double dt);
+  virtual bool AdvanceStep(double t_old, double t_new);
 
 protected:
   int master_;

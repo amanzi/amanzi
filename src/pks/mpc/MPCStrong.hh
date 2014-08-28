@@ -15,8 +15,8 @@ preconditioner.
 See additional documentation in the base class src/pks/mpc/MPC.hh
 ------------------------------------------------------------------------- */
 
-#ifndef ARCOS_STRONG_MPC_HH_
-#define ARCOS_STRONG_MPC_HH_
+#ifndef AMANZI_STRONG_MPC_HH_
+#define AMANZI_STRONG_MPC_HH_
 
 #include <vector>
 
@@ -31,19 +31,20 @@ class MPCStrong : public MPCTmp<PK_t>,
                   public FnTimeIntegratorPK {
 
 public:
-  MPCStrong(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-            Teuchos::ParameterList& FElist,
+  MPCStrong(Teuchos::ParameterList& pk_tree,
+            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+            const Teuchos::RCP<State>& S,
             const Teuchos::RCP<TreeVector>& soln);
 
   // MPCStrong is a PK
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup();
+  virtual void Initialize();
 
   // -- dt is the minimum of the sub pks
   virtual double get_dt();
 
   // -- advance each sub pk dt.
-  virtual bool Advance(double dt);
+  virtual bool AdvanceStep(double t_old, double t_new);
 
   // MPCStrong is an ImplicitFn
   // -- computes the non-linear functional g = g(t,u,udot)
@@ -98,22 +99,24 @@ private:
 // Constructor
 // -----------------------------------------------------------------------------
 template<class PK_t>
-MPCStrong<PK_t>::MPCStrong(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                           Teuchos::ParameterList& FElist,
-                           const Teuchos::RCP<TreeVector>& soln) :
-    MPCTmp<PK_t>(plist, FElist, soln) {}
+MPCStrong<PK_t>::MPCTmp(Teuchos::ParameterList& pk_tree,
+                        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                        const Teuchos::RCP<State>& S,
+                        const Teuchos::RCP<TreeVector>& soln) :
+    MPCTmp<PK_t>(pk_tree, global_list, S, soln) {}
 
 
 // -----------------------------------------------------------------------------
 // Setup
 // -----------------------------------------------------------------------------
 template<class PK_t>
-void MPCStrong<PK_t>::Setup(const Teuchos::Ptr<State>& S) {
+void MPCStrong<PK_t>::Setup() {
   // Tweak the sub-PK parameter lists.  This allows the PK to
   // potentially not assemble things.
-  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(plist_, "PKs");
-  for (Teuchos::ParameterList::ConstIterator param=pks_list->begin();
-       param!=pks_list->end(); ++param) {
+  Teuchos::RCP<Teuchos::ParameterList> pks_list =
+      Teuchos::sublist(global_list_, "PKs");
+  for (Teuchos::ParameterList::ConstIterator param=pk_tree_.begin();
+       param!=pk_tree_.end(); ++param) {
     std::string pname = param->first;
     if (pks_list->isSublist(pname)) {
       pks_list->sublist(pname).set("strongly coupled PK", true);
@@ -123,7 +126,7 @@ void MPCStrong<PK_t>::Setup(const Teuchos::Ptr<State>& S) {
   }
 
   // call each sub-PKs Setup()
-  MPCTmp<PK_t>::Setup(S);
+  MPCTmp<PK_t>::Setup();
 
   // Set the initial timestep as the min of the sub-pk sizes.
   dt_ = get_dt();
@@ -134,21 +137,22 @@ void MPCStrong<PK_t>::Setup(const Teuchos::Ptr<State>& S) {
 // Initialize each sub-PK and the time integrator.
 // -----------------------------------------------------------------------------
 template<class PK_t>
-void MPCStrong<PK_t>::Initialize(const Teuchos::Ptr<State>& S) {
+void MPCStrong<PK_t>::Initialize() {
   // Just calls both subclass's initialize.  NOTE - order is important
   // here -- MPC<PK_t> grabs the primary variables from each sub-PK
   // and stuffs them into the solution, which must be done prior to
   // initializing the timestepper.
 
   // Initialize all sub PKs.
-  MPCTmp<PK_t>::Initialize(S);
+  MPCTmp<PK_t>::Initialize();
 
-  // set up the timestepping algorithm
-  if (!plist_->get<bool>("strongly coupled PK", false)) { // avoid setting up TS if not used
+  // set up the timestepping algorithm if this is not strongly coupled
+  if (!my_list_->get<bool>("strongly coupled PK", false)) {
     // -- instantiate time stepper
-    Teuchos::ParameterList& ts_plist = plist_->sublist("time integrator");
+    Teuchos::ParameterList& ts_plist = my_list_->sublist("time integrator");
     ts_plist.set("initial time", S->time());
-    time_stepper_ = Teuchos::rcp(new Amanzi::BDF1_TI<TreeVector,TreeVectorSpace>(*this, ts_plist, solution_));
+    time_stepper_ = Teuchos::rcp(new Amanzi::BDF1_TI<TreeVector,
+            TreeVectorSpace>(*this, ts_plist, solution_));
 
     // -- initialize time derivative
     Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
@@ -166,9 +170,6 @@ void MPCStrong<PK_t>::Initialize(const Teuchos::Ptr<State>& S) {
 template<class PK_t>
 void MPCStrong<PK_t>::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
-#ifdef ARCOS_USE_FULL_INTERFACE
-  SolutionToState(u_new, S_next_);
-#endif
 
   // loop over sub-PKs
   for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
@@ -267,10 +268,6 @@ double MPCStrong<PK_t>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 // -----------------------------------------------------------------------------
 template<class PK_t>
 void MPCStrong<PK_t>::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
-
-#ifdef ARCOS_USE_FULL_INTERFACE
-  SolutionToState(u_new, S_next_);
-#endif
 
   // loop over sub-PKs
   for (unsigned int i=0; i!=sub_pks_.size(); ++i) {

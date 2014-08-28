@@ -36,7 +36,7 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
 
   // Initialize owned (dependent) variables.
   virtual void Initialize() {
-    pk_->Initialize();
+    pk_->Initialize(S_.ptr());
     pk_->InitializeAuxiliaryData();
   }
 
@@ -46,10 +46,10 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
   }
 
   // Advance PK by step size dt.
-  virtual bool Advance(double dt);
+  virtual bool AdvanceStep(double t_old, double t_new);
 
   // Commit any secondary (dependent) variables.
-  virtual void CommitState(double t_old, double t_new) {
+  virtual void CommitStep(double t_old, double t_new) {
     pk_->CommitState(t_new-t_old, S_.ptr());
   }
 

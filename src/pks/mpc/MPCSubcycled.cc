@@ -18,13 +18,14 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
-MPCSubcycled::MPCSubcycled(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-             Teuchos::ParameterList& FElist,
-             const Teuchos::RCP<TreeVector>& soln) :
-    MPCTmp<PK>(plist, FElist, soln) {
+MPCSubcycled::MPCSubcycled(Teuchos::ParameterList& pk_tree,
+                           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                           const Teuchos::RCP<State>& S,
+                           const Teuchos::RCP<TreeVector>& soln) :
+    MPCTmp<PK>(pk_tree, global_list, S, soln) {
 
   // Master PK is the PK whose time step size sets the size, the slave is subcycled.
-  master_ = plist->get<int>("master PK index", 0);
+  master_ = my_list_->get<int>("master PK index", 0);
   slave_ = master_ == 1 ? 0 : 1;
 
   if (sub_pks_.size() != 2 || master_ > 1) {
@@ -33,7 +34,7 @@ MPCSubcycled::MPCSubcycled(const Teuchos::RCP<Teuchos::ParameterList>& plist,
   }
 
   // min dt allowed in subcycling
-  min_dt_ = plist->get<double>("mininum subcycled relative dt", 1.e-5);
+  min_dt_ = my_list_->get<double>("mininum subcycled relative dt", 1.e-5);
 
 }
   
@@ -53,33 +54,33 @@ double MPCSubcycled::get_dt() {
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
-bool MPCSubcycled::Advance(double dt) {
+bool MPCSubcycled::AdvanceStep(double t_old, double t_new) {
   bool fail = false;
 
-  // advance the master PK
-  fail = sub_pks_[master_]->Advance(dt);
+  // advance the master PK using the full step size
+  fail = sub_pks_[master_]->AdvanceStep(t_old, t_new);
   if (fail) return fail;
 
   // --etc: unclear if state should be commited?
-  sub_pks_[master_]->CommitState(dt, S_.ptr());
+  sub_pks_[master_]->CommitStep(t_old, t_new);
 
   // advance the slave, subcycling if needed
-  S_->set_intermediate_time(S_->last_time());
+  S_->set_intermediate_time(t_old);
   bool done = false;
 
   double dt_next = slave_dt_;
   double dt_done = 0.;
   while (!done) {
     // do not overstep
-    if (dt_done + dt_next > dt) {
-      dt_next = dt - dt_done;
+    if (t_old + dt_done + dt_next > t_new) {
+      dt_next = t_new - t_old - dt_done;
     }
 
     // set the intermediate time
-    S_->set_intermediate_time(S_->last_time() + dt_done + dt_next);
+    S_->set_intermediate_time(t_old + dt_done + dt_next);
 
     // take the step
-    fail = sub_pks_[slave_]->Advance(dt_next);
+    fail = sub_pks_[slave_]->AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next);
 
     if (fail) {
       // if fail, cut the step and try again
@@ -87,22 +88,22 @@ bool MPCSubcycled::Advance(double dt) {
     } else {
       // if success, commit the state and increment to next intermediate
       // -- etc: unclear if state should be commited or not?
-      sub_pks_[slave_]->CommitState(dt_next, S_.ptr());
+      sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next);
       dt_done += dt_next;
     }
 
     // check for done condition
-    done = (std::abs(dt_done - dt) / dt < 0.1*min_dt_) || // finished the step
-      (dt_next / dt < min_dt_); // failed
+    done = (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) || // finished the step
+        (dt_next / (t_new - t_old) < min_dt_); // failed
   }
 
-  if (std::abs(dt_done - dt) / dt < 0.1*min_dt_) {
+  if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) {
     // done, success
     // --etc: unclear if state should be commited or not?
-    CommitState(dt, S_.ptr());
-    return true;
-  } else {
+    CommitStep(t_old, t_new);
     return false;
+  } else {
+    return true;
   }
 }
 

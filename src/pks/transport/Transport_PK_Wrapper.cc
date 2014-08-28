@@ -24,17 +24,22 @@ Transport_PK_Wrapper::Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     soln_(soln)
 {
   // Transport expects a single global list with sublist Flow
-  glist_ = Teuchos::rcp(new ParameterList(*global_list));
+  glist_ = Teuchos::rcp(new Teuchos::ParameterList(*global_list));
   glist_->set("Transport", global_list->sublist("PKs").sublist(pk_tree.name()));
 
+  // grab the component names
+  comp_names_ = glist_->sublist("PKs").sublist(pk_tree.name())
+      .get<Teuchos::Array<std::string> >("component names").toVector();
+  
   // construct
-  pk_ = Teuchos::rcp(new Transport_PK(*glist_, S_));
+  pk_ = Teuchos::rcp(new Transport_PK(*glist_, S_, comp_names_));
 }
 
 
 bool
-Transport_PK_Wrapper::Advance(double dt) {
+Transport_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   bool failed = false;
+  double dt = t_new - t_old;
   double dt_actual(dt);
   int ierr = pk_->Advance(dt, dt_actual);
   if (std::abs(dt - dt_actual) > 1.e-10 || ierr) {

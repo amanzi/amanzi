@@ -12,6 +12,7 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "TreeVector.hh"
 #include "FnTimeIntegratorPK.hh"
 #include "Darcy_PK.hh"
 #include "PK_Factory.hh"
@@ -28,11 +29,11 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
                    const Teuchos::RCP<TreeVector>& soln);
 
   // Setup
-  virtual void Setup(const Teuchos::Ptr<State>& S) {}
+  virtual void Setup() {}
   
   // Initialize owned (dependent) variables.
-  virtual void Initialize(const Teuchos::Ptr<State>& S) {
-    pk_->Initialize(S);
+  virtual void Initialize() {
+    pk_->Initialize(S_.ptr());
   }
 
   // Choose a time step compatible with physics.
@@ -40,13 +41,11 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
     return pk_->get_dt();
   }
 
-  // Advance from state S0 to state S1 at time S0.time + dt.
-  // Due to Darcy PK / MPC conflict (FIXME when MPC will be upgraded)
-  //  virtual int Advance(double dt, double& dt_actual) = 0;
-  virtual bool Advance(double dt);
+  // Advance from t_old to t_new
+  virtual bool AdvanceStep(double t_old, double t_new);
 
   // Commit any secondary (dependent) variables.
-  virtual void CommitState(double t_old, double t_new) {
+  virtual void CommitStep(double t_old, double t_new) {
     pk_->CommitState(t_new-t_old, S_.ptr());
   }
 

@@ -42,6 +42,7 @@
 #include <string>
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include "errors.hh"
 #include "PK.hh"
@@ -64,7 +65,27 @@ class PKFactory {
           const Teuchos::RCP<State>& state,
           const Teuchos::RCP<TreeVector>& soln) {
 
-    std::string s = plist->get<std::string>("PK type");
+    if (!global_list->isSublist("PKs")) {
+      Errors::Message message("PK_Factory: Missing sublist \"PKs\" in global list.");
+      Exceptions::amanzi_throw(message);
+    }
+
+    if (!global_list->sublist("PKs").isSublist(pk_tree.name())) {
+      std::stringstream errmsg;
+      errmsg << "PK_Factory: Missing PK list \"" << pk_tree.name() << "\" from global PK list";
+      Errors::Message message(errmsg.str());
+      Exceptions::amanzi_throw(message);
+    }
+
+    if (!global_list->sublist("PKs").sublist(pk_tree.name()).isParameter("PK type")) {
+      std::stringstream errmsg;
+      errmsg << "PK_Factory: PK list \"" << pk_tree.name() << "\" is missing the \"PK type\" parameter.";
+      Errors::Message message(errmsg.str());
+      Exceptions::amanzi_throw(message);
+    }
+
+    std::string s = global_list->sublist("PKs").sublist(pk_tree.name())
+        .get<std::string>("PK type");
     map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
       std::stringstream errmsg;

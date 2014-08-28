@@ -17,8 +17,8 @@ Most of these methods simply loop through the coordinated PKs, calling their
 respective methods.
 ------------------------------------------------------------------------- */
 
-#ifndef ARCOS_MPC_HH_
-#define ARCOS_MPC_HH_
+#ifndef AMANZI_MPC_HH_
+#define AMANZI_MPC_HH_
 
 #include <vector>
 
@@ -38,26 +38,24 @@ template <class PK_t>
 class MPCTmp : public PK {
 
 public:
-  MPCTmp(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-      Teuchos::ParameterList& FElist,
-      const Teuchos::RCP<TreeVector>& soln);
+  MPCTmp(Teuchos::ParameterList& pk_tree,
+         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+         const Teuchos::RCP<State>& S,
+         const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
   // -- sets up sub-PKs
-  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup();
 
   // -- calls all sub-PK initialize() methods
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize();
 
   // -- loops over sub-PKs
-  virtual void CommitState(double dt, const Teuchos::Ptr<State>& S);
-  virtual void CalculateDiagnostics(const Teuchos::Ptr<State>& S);
+  virtual void CommitStep(double t_old, double t_new);
+  virtual void CalculateDiagnostics();
 
   // -- identifier accessor
   std::string name() const { return name_; }
-
-  // set States
-  virtual void SetState(const Teuchos::RCP<State>& S);
 
  protected:
   // identifier
@@ -70,6 +68,11 @@ public:
   // single solution vector for the coupled problem
   Teuchos::RCP<TreeVector> solution_;
 
+  // plists
+  Teuchos::RCP<Teuchos::ParameterList> global_list_;
+  Teuchos::RCP<Teuchos::ParameterList> my_list_;
+  Teuchos::ParameterList pk_tree_;
+
   // states
   Teuchos::RCP<State> S_;
   
@@ -80,59 +83,46 @@ public:
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_t>
-MPCTmp<PK_t>::MPCTmp(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-               Teuchos::ParameterList& FElist,
-               const Teuchos::RCP<TreeVector>& soln) {
+MPCTmp<PK_t>::MPCTmp(Teuchos::ParameterList& pk_tree,
+                     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                     const Teuchos::RCP<State>& S,
+                     const Teuchos::RCP<TreeVector>& soln) :
+    pk_tree_(pk_tree),
+    global_list_(global_list),
+    S_(S),
+    solution_(soln)
+{
   // name the PK
-  name_ = plist->name();
+  name_ = pk_tree.name();
 
-  // set the solution vector
-  solution_ = soln;
+  // get my ParameterList
+  my_list_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);
+
+  Teuchos::RCP<Teuchos::ParameterList> plist =
+      Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), name_);
 
   // loop over sub-PKs in the PK sublist, constructing the hierarchy recursively
-  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(plist, "PKs");
   PKFactory pk_factory;
-
-  if (plist->isParameter("PKs order")) {
-    // ordered
-    Teuchos::Array<std::string> pk_order = plist->get< Teuchos::Array<std::string> >("PKs order");
-    int npks = pk_order.size();
-
-    for (int i=0; i!=npks; ++i) {
-      // create the solution vector
-      Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
-      solution_->PushBack(pk_soln);
-
-      // create the PK
-      std::string name_i = pk_order[i];
-      Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
-      pk_list->set("PK name", name_i);
-      Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, FElist, pk_soln);
-      Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
-      sub_pks_.push_back(pk);
+  for (Teuchos::ParameterList::ConstIterator sub=plist->begin();
+       sub!=plist->end(); ++sub) {
+    const std::string& sub_name = sub->first;
+    if (!plist->isSublist(sub_name)) {
+      Errors::Message message("PK Tree: All entries in the PK tree must be ParameterLists");
+      Exceptions::amanzi_throw(message);
     }
 
-  } else {
-    // no order, just loop over all sublists
-    for (Teuchos::ParameterList::ConstIterator i = pks_list->begin();
-         i != pks_list->end(); ++i) {
+    // Collect arguments to the constructor
+    Teuchos::ParameterList& pk_sub_tree = pk_tree.sublist(sub_name);
+    Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
+    solution_->PushBack(pk_soln);
 
-      const std::string &name_i  = pks_list->name(i);
-      const Teuchos::ParameterEntry  &entry_i = pks_list->entry(i);
-      if (entry_i.isList()) {
-        // create the solution vector
-        Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
-        solution_->PushBack(pk_soln);
-
-        // create the PK
-        Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
-        pk_list->set("PK name", name_i);
-        Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, FElist, pk_soln);
-        Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
-        sub_pks_.push_back(pk);
-      }
-    }
+    // create the PK
+    Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_sub_tree, global_list,
+            S, pk_soln);
+    Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
+    sub_pks_.push_back(pk);
   }
+
 }
 
 
@@ -140,10 +130,10 @@ MPCTmp<PK_t>::MPCTmp(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_t>
-void MPCTmp<PK_t>::Setup(const Teuchos::Ptr<State>& S) {
+void MPCTmp<PK_t>::Setup() {
   for (typename SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
-    (*pk)->Setup(S);
+    (*pk)->Setup();
   }
 }
 
@@ -152,10 +142,10 @@ void MPCTmp<PK_t>::Setup(const Teuchos::Ptr<State>& S) {
 // Loop over sub-PKs, calling their initialization methods
 // -----------------------------------------------------------------------------
 template <class PK_t>
-void MPCTmp<PK_t>::Initialize(const Teuchos::Ptr<State>& S) {
+void MPCTmp<PK_t>::Initialize() {
   for (typename SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
-    (*pk)->Initialize(S);
+    (*pk)->Initialize();
   }
 };
 
@@ -164,10 +154,10 @@ void MPCTmp<PK_t>::Initialize(const Teuchos::Ptr<State>& S) {
 // loop over sub-PKs, calling their commit state method
 // -----------------------------------------------------------------------------
 template <class PK_t>
-void MPCTmp<PK_t>::CommitState(double dt, const Teuchos::Ptr<State>& S) {
+void MPCTmp<PK_t>::CommitStep(double t_old, double t_new) {
   for (typename SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
-    (*pk)->CommitState(dt, S);
+    (*pk)->CommitStep(t_old, t_new);
   }
 };
 
@@ -176,28 +166,13 @@ void MPCTmp<PK_t>::CommitState(double dt, const Teuchos::Ptr<State>& S) {
 // loop over sub-PKs, calling their CalculateDiagnostics method
 // -----------------------------------------------------------------------------
 template <class PK_t>
-void MPCTmp<PK_t>::CalculateDiagnostics(const Teuchos::Ptr<State>& S) {
+void MPCTmp<PK_t>::CalculateDiagnostics() {
   for (typename SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
-    (*pk)->CalculateDiagnostics(S);
+    (*pk)->CalculateDiagnostics();
   }
 };
 
-
-// -----------------------------------------------------------------------------
-// loop over sub-PKs, calling their set_states() methods
-// -----------------------------------------------------------------------------
-template <class PK_t>
-void MPCTmp<PK_t>::SetState(const Teuchos::RCP<State>& S) {
-
-  S_ = S;
-
-  // do the loop
-  for (typename SubPKList::iterator pk = sub_pks_.begin();
-       pk != sub_pks_.end(); ++pk) {
-    (*pk)->SetState(S);
-  }
-};
 
 } // close namespace Amanzi
 

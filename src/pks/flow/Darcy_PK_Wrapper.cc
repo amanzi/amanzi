@@ -24,7 +24,7 @@ Darcy_PK_Wrapper::Darcy_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     soln_(soln)
 {
   // Darcy expects a single global list with sublist Flow
-  glist_ = Teuchos::rcp(new ParameterList(*global_list));
+  glist_ = Teuchos::rcp(new Teuchos::ParameterList(*global_list));
   glist_->set("Flow", global_list->sublist("PKs").sublist(pk_tree.name()));
 
   // construct
@@ -33,8 +33,9 @@ Darcy_PK_Wrapper::Darcy_PK_Wrapper(Teuchos::ParameterList& pk_tree,
 
 
 bool
-Darcy_PK_Wrapper::Advance(double dt) {
+Darcy_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   bool failed = false;
+  double dt = t_new - t_old;
   double dt_actual(dt);
   int ierr = pk_->Advance(dt, dt_actual);
   if (std::abs(dt - dt_actual) > 1.e-10 || ierr) {

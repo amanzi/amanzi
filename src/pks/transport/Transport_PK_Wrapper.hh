@@ -43,10 +43,10 @@ class Transport_PK_Wrapper : public PK {
   // Advance from state S0 to state S1 at time S0.time + dt.
   // Due to Transport PK / MPC conflict (FIXME when MPC will be upgraded)
   //  virtual int Advance(double dt, double& dt_actual) = 0;
-  virtual bool Advance(double dt);
+  virtual bool AdvanceStep(double t_old, double t_new);
 
   // Commit any secondary (dependent) variables.
-  virtual void CommitState(double t_old, double t_new) {
+  virtual void CommitStep(double t_old, double t_new) {
     pk_->CommitState(t_new-t_old, S_.ptr());
   }
 
