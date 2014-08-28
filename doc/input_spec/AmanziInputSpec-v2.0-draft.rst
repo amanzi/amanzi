@@ -840,6 +840,13 @@ Here is more info on the `"liquid_phase`" elements:
      <uniform_pressure name="some name" value="exponential" function="uniform | constant" start="time" />
 
 .
+        * `"seepage_face`" is an element with the following attributes: 
+
+.. code-block:: xml
+
+     <seepage_face name="some name" inward_mass_flux="exponential" function="linear | uniform | constant" start="time" />
+
+.
         * `"hydrostatic`" is an element with the following attributes: ONLY CONSTANT, for now
 
 .. code-block:: xml

@@ -892,6 +892,7 @@ associated with the boundary condition.
 |                         | | coordinate_system| | 'absolute','relative to mesh top'|
 +-------------------------+--------------------+------------------------------------+ 
 |seepage_face             | | name             | | string                           |
+|                         | | start            | | double/time_constant/constant    |
 |                         | | inward_mass_flux | | double/time_constant/constant    |
 |                         | | function         | | 'linear','uniform','constant'    |
 +-------------------------+--------------------+------------------------------------+
