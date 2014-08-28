@@ -248,6 +248,14 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   double max_sat_pert = 0.25;
   double damping_factor = 0.5;
   double reference_pressure = 101325.0;
+  
+
+
+  if (rp_list_.isSublist("clipping parameters")){
+    Teuchos::ParameterList clip_list = rp_list_.sublist("clipping parameters");
+    max_sat_pert = clip_list.get<double>("max sat change", 0.25);
+    damping_factor = clip_list.get<double>("damping_factor", 0.5);
+  }
 
   int nsat_clipped(0), npre_clipped(0);
 
