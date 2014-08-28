@@ -1375,6 +1375,7 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
             if (fl_exp_params.isParameter("Nonlinear Solver Type")) {
               nonlinear_solver = fl_exp_params.get<std::string>("Nonlinear Solver Type");
             }
+	    update_upwind = fl_exp_params.get<std::string>("update upwind frequency", "every timestep");
             modify_correction = fl_exp_params.get<bool>("modify correction", false);
           }
         }
@@ -2468,6 +2469,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
 
         Teuchos::ParameterList& tbc = ssf_list.sublist("seepage face").sublist(ss.str());
         tbc.set<Teuchos::Array<std::string> >("regions", regions );
+        tbc.set<bool>("rainfall", bc_flux.get<bool>("rainfall",false));
 
         if (times.size() == 1) {
           Teuchos::ParameterList& tbcs = tbc.sublist("outward mass flux").sublist("function-constant");
