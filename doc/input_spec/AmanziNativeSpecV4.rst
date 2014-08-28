@@ -1075,6 +1075,15 @@ The remaining `"Flow`" parameters are
   for the New ton solver. It may impact significantly upwinding of the relative permeability 
   and convergence rate of this solver.
 
+* `"clipping parameters`"[list] defines how corrections in nonlinear solver modified (clipped)
+
+.. code-block:: xml
+
+   <ParameterList name="clipping parameters">
+      <Parameter name="max sat change" type="double" value="0.25"/>
+      <Parameter name="damping factor" type="double" value="0.5"/>
+   </ParameterList>	
+
 * `"plot time history`" [bool] produces an ASCII file with time history when exists.
 
 * `"VerboseObject`" [list] defines default verbosity level for the process kernel.
