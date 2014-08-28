@@ -422,6 +422,8 @@ Usage:
 
      * [U] `"modify correction`" [bool] allows a process kernel to modify correction to a solution.(default: `"false`")
 
+     * [U] `"update upwind frequency`" [string] define frequency of the updates for upwind direction: `"every nonlinear iteration`", `"every timestep`".(default: `"every timestep`")
+
    * [U] `"Preconditioners`" [list] Parameters to control the linear solver algorithms used in the preconditioner.
 
      * [U] `"Trilinos ML`" Parameter used by Trilinos multi-level solver, ML
