@@ -59,7 +59,7 @@ namespace Transport {
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
-class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
+class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
  public:
   Transport_PK();
 #ifdef ALQUIMIA_ENABLED
@@ -72,21 +72,13 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   ~Transport_PK();
 
   // main PK members
-  void Setup(const Teuchos::Ptr<State>& S) {};
+  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
 
   void Initialize(const Teuchos::Ptr<State>& S);
   double get_dt();
   int Advance(double dT, double &dT_actual); 
-  void CommitState(double dummy_dT, const Teuchos::RCP<State>& S);
-
-  void StateToSolution(const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& soln) {};
-  void SolutionToState(const Teuchos::RCP<TreeVector>& soln, const Teuchos::RCP<State>& S) {};
-
-  void SetStates(const Teuchos::RCP<const State>& S,
-                 const Teuchos::RCP<State>& S_inter,
-                 const Teuchos::RCP<State>& S_next) {};
-  void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
-  std::string name() { return "transport"; }
+  void CommitState(double dummy_dT, const Teuchos::Ptr<State>& S);
+  std::string name() { return name_; }
 
   // main transport members
   void InitializeFields();
@@ -101,7 +93,7 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   inline double cfl() { return cfl_; }
 
   // control members
-  void Policy(Teuchos::RCP<State> S);
+  void Policy(Teuchos::Ptr<State> S);
   void PrintStatistics() const;
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 

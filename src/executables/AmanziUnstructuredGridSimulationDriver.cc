@@ -26,6 +26,9 @@
 
 #include "TimerManager.hh"
 
+// includes for PK registration
+#include "pks_flow_registration.hh"
+#include "pks_transport_registration.hh"
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,

@@ -98,7 +98,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   while (T < 0.3) {
     double dT = TPK.CalculateTransportDt();
     TPK.Advance(dT, dummy_dT);
-    TPK.CommitState(dT, S);
+    TPK.CommitState(dT, S.ptr());
     T += dT;
     iter++;
 

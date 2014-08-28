@@ -115,7 +115,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   for (int n = 0; n < 10; n++) {
     double dT_actual(dT);
     DPK->Advance(dT, dT_actual);
-    DPK->CommitState(dT, S);
+    DPK->CommitState(dT, S.ptr());
 
     if (MyPID == 0 && n > 5) {
       GMV::open_data_file(*mesh, (std::string)"flow.gmv");
@@ -232,7 +232,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   for (int n = 0; n < 5; n++) {
     double dT_actual(dT);
     DPK->Advance(dT, dT_actual);
-    DPK->CommitState(dT, S);
+    DPK->CommitState(dT, S.ptr());
 
     if (MyPID == 0) {
       GMV::open_data_file(*mesh, (std::string)"flow.gmv");

@@ -125,7 +125,7 @@ TEST(DISPERSION) {
     // printf("\n");
 
     TPK.Advance(dT, dummy_dT);
-    TPK.CommitState(dT, S);
+    TPK.CommitState(dT, S.ptr());
     T += dT;
     iter++;
 

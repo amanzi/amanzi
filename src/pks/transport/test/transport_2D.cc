@@ -96,7 +96,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   while (T < 1.0) {
     double dT = TPK.CalculateTransportDt();
     TPK.Advance(dT, dummy_dT);
-    TPK.CommitState(dT, S);
+    TPK.CommitState(dT, S.ptr());
     T += dT;
     iter++;
 

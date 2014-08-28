@@ -164,7 +164,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     RPK->InitializeAuxiliaryData();
     RPK->InitSteadyState(0.0, 1.0);
     RPK->AdvanceToSteadyState(0.0, 1.0);
-    RPK->CommitState(0.0, S);
+    RPK->CommitState(0.0, S.ptr());
 
     S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
     const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

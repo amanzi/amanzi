@@ -108,7 +108,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
 
   /* solve the steady-state problem */
   RPK->AdvanceToSteadyState(0.0, 0.01);
-  RPK->CommitState(0.0, S);
+  RPK->CommitState(0.0, S.ptr());
 
   const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell");
   if (MyPID == 0) {

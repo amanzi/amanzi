@@ -42,6 +42,20 @@ include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 #
+# Flow registrations
+#
+register_evaluator_with_factory( HEADERFILE Darcy_PK_Wrapper_reg.hh
+  LISTNAME   PKS_FLOW_REGISTRATIONS )
+register_evaluator_with_factory( HEADERFILE Richards_PK_Wrapper_reg.hh
+  LISTNAME   PKS_FLOW_REGISTRATIONS )
+
+generate_evaluators_registration_header( 
+  HEADERFILE pks_flow_registration.hh   
+  LISTNAME   PKS_FLOW_REGISTRATIONS
+  INSTALL    True )
+
+
+#
 # Library: flow
 #
 set(flow_src_files Flow_PK.cc Flow_IO.cc
@@ -54,6 +68,7 @@ set(flow_src_files Flow_PK.cc Flow_IO.cc
                    RelativePermeability.cc RelativePermeability_IO.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    darcy_velocity_evaluator.cc
+                   Darcy_PK_Wrapper.cc Richards_PK_Wrapper.cc
                    )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )

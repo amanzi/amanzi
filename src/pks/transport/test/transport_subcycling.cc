@@ -95,7 +95,7 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
     double dT_MPC = dT * 7.7;
 
     TPK.Advance(dT_MPC, dummy_dT);
-    TPK.CommitState(dT_MPC, S);
+    TPK.CommitState(dT_MPC, S.ptr());
     T += dT_MPC;
     iter++;
 
