@@ -13,6 +13,7 @@ SRC = \
 	AmanziChemistryInputSpec.rst \
 	AmanziInputSpec-v1.2-draft.rst \
 	AmanziInputSpec-v1.2.1-draft.rst \
+	AmanziInputSpec-v1.2.2-draft.rst \
 	AmanziInputSpec-v2.0-draft.rst
 
 HTML = $(SRC:%.rst=%.html)
@@ -32,9 +33,9 @@ PDF = $(SRC:%.rst=%.pdf)
 	pdflatex $<
 	pdflatex $<
 
-all : html pdf
-
 html : $(HTML)
+
+all : html pdf
 
 pdf : $(PDF)
 
