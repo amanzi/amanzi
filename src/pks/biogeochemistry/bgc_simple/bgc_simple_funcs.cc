@@ -164,12 +164,12 @@ void BGCAdvance(double t, double dt, double gridarea,
 
       //---------------------------------------------------------------------------------
       //calculate leaf projections and light attenuations
-      double PARi = PAR;
+      double PARi0 = PAR;
       for (std::vector<Teuchos::RCP<PFT> >::iterator pft_other_iter=pftarr.begin();
            pft_other_iter!=pft_iter; ++pft_other_iter) {
-        PARi *= std::exp(-(*pft_other_iter)->LER * (*pft_other_iter)->lai);
+        PARi0 *= std::exp(-(*pft_other_iter)->LER * (*pft_other_iter)->lai);
       }
-
+      double PARi=PARi0;	
       //----------------------------------------------------------------
       // photosynthesis and respiration, no soil water limitation yet and need
       // to be implemented for more realistic simulation
@@ -184,7 +184,7 @@ void BGCAdvance(double t, double dt, double gridarea,
 
       for (int leaf_layer=0; leaf_layer!=max_leaf_layers; ++leaf_layer){
         Photosynthesis(PARi, pft.LUE, pft.LER, p_atm,
-                       met.windv, met.tair - 273.15, met.relhum, met.CO2a, pft.mp, Vcmax25,
+                       met.windv,double(met.tair - 273.15), met.relhum, met.CO2a, pft.mp, Vcmax25,
                        &psn, &tleaf, &leafresp);
 
         if (thawD <= 0.0) psn = 0.0;
@@ -221,12 +221,12 @@ void BGCAdvance(double t, double dt, double gridarea,
         }
 
       } else {
-        PARi = PARi*std::exp(-pft.LER * max_leaf_layers);
+        PARi = PARi0;
         Photosynthesis(PARi, pft.LUE, pft.LER, p_atm,
                        met.windv, met.tair - 273.15, met.relhum, met.CO2a, pft.mp, Vcmax25,
                        &psn, &tleaf, &leafresp);
 
-        leafresptotal = 24.0 * 3600.0 * Cv*leafresp*gridarea;
+        leafresptotal = dt_days * Cv*leafresp*gridarea;
         double bleaf0 = 1.0 / pft.SLA;
         stemresp = leafresptotal*pft.Bstem / bleaf0*pft.stem2leafrespratio;
         rootresp = 0.0;
@@ -645,9 +645,91 @@ void BGCAdvance(double t, double dt, double gridarea,
 
   //================================================
   //do vertical diffusion
-  // -- not yet implemented!
+  double diffusion_coef = 0.001; // units, L^2 / day
+  Cryoturbate(dt_days, SoilTArr, SoilDArr, SoilThicknessArr, soilcarr, diffusion_coef);
   return;
 }
+
+
+// Cryoturbation -- move the carbon around via diffusion
+void Cryoturbate(double dt,
+		 const Epetra_SerialDenseVector& SoilTArr,
+		 const Epetra_SerialDenseVector& SoilDArr,
+		 const Epetra_SerialDenseVector& SoilThicknessArr,
+		 std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
+		 double diffusion_coef) {
+  std::vector<double> diffusion_coefs(soilcarr[0]->nPools, diffusion_coef);
+  Cryoturbate(dt, SoilTArr, SoilDArr, SoilThicknessArr, soilcarr, diffusion_coefs);
+}
+
+
+// Cryoturbation -- move the carbon around via diffusion
+void Cryoturbate(double dt,
+		 const Epetra_SerialDenseVector& SoilTArr,
+		 const Epetra_SerialDenseVector& SoilDArr,
+		 const Epetra_SerialDenseVector& SoilThicknessArr,
+		 std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
+		 std::vector<double>& diffusion_coefs) {
+  // only cryoturbate unfrozen soil
+  int k_frozen = PermafrostDepthIndex(SoilTArr, SoilDArr);
+
+  // fast and dirty diffusion
+  int npools = soilcarr[0]->nPools;
+  Epetra_SerialDenseVector dC_up(npools);
+  Epetra_SerialDenseVector dC_dn(npools);
+  std::vector<Epetra_SerialDenseVector> dC(k_frozen, Epetra_SerialDenseVector(npools));
+
+  int k = 0;
+  while (k < k_frozen) {
+    Epetra_SerialDenseVector& C = soilcarr[k]->SOM;
+
+    // dC/dz on the face above
+    if (k == 0) {
+      // dC_up initialized to zero already
+    } else {
+      Epetra_SerialDenseVector& C_up = soilcarr[k-1]->SOM;
+      double dz_up = SoilDArr[k] - SoilDArr[k-1];
+      for (int l=0; l!=npools; ++l) {
+	dC_up[l] = (C[l] - C_up[l]) / dz_up;
+      }
+    }
+
+    // dC/dz on the face below
+    if ((k == soilcarr.size()-1) || k+1 >= k_frozen) {
+      // boundary case
+      for (int l=0; l!=npools; ++l) {
+	dC_dn[l] = 0;
+      }
+    } else {
+      Epetra_SerialDenseVector& C_dn = soilcarr[k+1]->SOM;
+      double dz_dn = SoilDArr[k+1] - SoilDArr[k];
+      for (int l=0; l!=npools; ++l) {
+	dC_dn[l] = (C_dn[l] - C[l]) / dz_dn;
+      }
+    }
+
+    // dC = dt * D * (dC/dz_below - dC/dz_above) / dz
+    double dz = SoilThicknessArr[k];
+    for (int l=0; l!=npools; ++l) {
+      dC[k][l] = dt * diffusion_coefs[l] / dz * (dC_dn[l] - dC_up[l]);
+    }
+
+    // increment
+    k++;
+  }
+  
+  // Now that dC is calculated everywhere, update carbon pools
+  k = 0;
+  while (k < k_frozen) {
+    Epetra_SerialDenseVector& C_k = soilcarr[k]->SOM;
+    Epetra_SerialDenseVector& dC_k = dC[k];
+    
+    for (int l=0; l!=npools; ++l) {
+      C_k[l] -= dC_k[l];
+    }
+  }
+}
+
 
 } // namespace BGC
 } // namespace Amanzi
