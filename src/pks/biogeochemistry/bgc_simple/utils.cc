@@ -14,21 +14,28 @@ Licencse: BSD
 namespace Amanzi {
 namespace BGC {
 
+// returns the depth of the face whose cell above is thawed but cell
+// below is frozen
 double PermafrostDepth(const Epetra_SerialDenseVector& SoilTArr,
-                       const Epetra_SerialDenseVector& SoilDArr,
+                       const Epetra_SerialDenseVector& SoilThicknessArr,
                        double freeze_temp) {
   int i = 0;
+  double depth = 0.;
   int nSoilLayers = SoilTArr.Length();
-  while (SoilTArr[i] > 0. && i < nSoilLayers-1) i++;
-  return SoilDArr[i];
+  while (i < nSoilLayers && SoilTArr[i] > freeze_temp) {
+    depth += SoilThicknessArr[i];
+    i++;
+  }
+  return depth;
 }
 
+// returns the index of the top-most frozen cell, or ncells if all are
+// frozen
 int PermafrostDepthIndex(const Epetra_SerialDenseVector& SoilTArr,
-			 const Epetra_SerialDenseVector& SoilDArr,
 			 double freeze_temp) {
   int i = 0;
   int nSoilLayers = SoilTArr.Length();
-  while (SoilTArr[i] > 0. && i < nSoilLayers-1) i++;
+  while (i < nSoilLayers && SoilTArr[i] > freeze_temp) i++;
   return i;
 }
 

@@ -54,7 +54,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
   double PAR = met.qSWin * 2.3 * 24.0 *60.0 / daylen; // convert to PAR at the daytime
 
   // determine the thaw depth
-  double thawD = PermafrostDepth(SoilTArr,SoilDArr);
+  double thawD = PermafrostDepth(SoilTArr,SoilThicknessArr,273.15);
 
   for (std::vector<Teuchos::RCP<PFT> >::iterator pft_iter=pftarr.begin();
        pft_iter!=pftarr.end(); ++pft_iter) {
@@ -670,7 +670,7 @@ void Cryoturbate(double dt,
 		 std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
 		 std::vector<double>& diffusion_coefs) {
   // only cryoturbate unfrozen soil
-  int k_frozen = PermafrostDepthIndex(SoilTArr, SoilDArr);
+  int k_frozen = PermafrostDepthIndex(SoilTArr, 273.15);
 
   // fast and dirty diffusion
   int npools = soilcarr[0]->nPools;

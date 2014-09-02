@@ -96,7 +96,7 @@ void PFT::InitRoots(const Epetra_SerialDenseVector& SoilTArr,
 
   // locate the root depth
   int nSoilLayers = SoilTArr.Length();
-  double initPermD = PermafrostDepth(SoilTArr,SoilDArr);
+  double initPermD = PermafrostDepth(SoilTArr,SoilThicknessArr,273.15);
   rootD = std::min(maxRootD, initPermD);
 
   double totalweights = 0.0;
