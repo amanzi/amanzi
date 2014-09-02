@@ -49,13 +49,15 @@ if __name__ == "__main__":
             data = parse_file(fid)
             plt.subplot(121)
             plt.semilogy(data[0][:,1], data[0][:,2], '-x', color=cm(i), label=fname)
-            plt.semilogy(data[1][:,1], data[1][:,2], 'x', color=cm(i))
+            if data[1].shape != (0,):
+                plt.semilogy(data[1][:,1], data[1][:,2], 'x', color=cm(i))
             plt.xlabel("time [days]")
             plt.ylabel("dt [days]")
             plt.legend()
             plt.subplot(122)
             plt.semilogy(data[0][:,0], data[0][:,2], '-x', color=cm(i))
-            plt.semilogy(data[1][:,0], data[1][:,2], 'x', color=cm(i))
+            if data[1].shape != (0,):
+                plt.semilogy(data[1][:,0], data[1][:,2], 'x', color=cm(i))
             plt.xlabel("cycles [-]")
             plt.ylabel("dt [days]")
     plt.show()
