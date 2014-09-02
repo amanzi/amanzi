@@ -149,7 +149,7 @@ void ExplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
         Epetra_MultiVector& Krel_c_vec = *Krel_c->ViewComponent("cell",false);
         const Epetra_MultiVector& result_c = *result->ViewComponent("cell",false);
         for (int c=0; c!=ncells; ++c) {
-          Krel_c_vec[0][c] = std::pow(std::max(result_c[0][c],0.), 4./3)
+          Krel_c_vec[0][c] = std::pow(std::max(result_c[0][c],0.), 5./3)
               / (std::sqrt(std::max(slope[0][c], 1.e-6)) * nm);
         }
       }
