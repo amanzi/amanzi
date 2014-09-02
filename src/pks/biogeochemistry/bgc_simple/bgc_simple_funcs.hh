@@ -33,6 +33,21 @@ void BGCAdvance(double t, double dt, double gridarea,
              std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
              Epetra_SerialDenseVector& SoilCO2Arr);
 
+void Cryoturbate(double dt,
+		 const Epetra_SerialDenseVector& SoilTArr,
+		 const Epetra_SerialDenseVector& SoilDArr,
+		 const Epetra_SerialDenseVector& SoilThicknessArr,
+		 std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
+		 double diffusion_coef);
+
+void Cryoturbate(double dt,
+		 const Epetra_SerialDenseVector& SoilTArr,
+		 const Epetra_SerialDenseVector& SoilDArr,
+		 const Epetra_SerialDenseVector& SoilThicknessArr,
+		 std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
+		 std::vector<double>& diffusion_coefs);
+
+
 } // namespace
 } // namespace
 
