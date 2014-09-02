@@ -7,16 +7,7 @@ Amanzi XML Input Specification (Version 2.0.x)
 Overview
 ========
 
-The Amanzi simulator evolves a system of conservation equations for
-reacting flows in porous media, as detailed in the ASCEM report
-entitled "Mathematical Formulation Requirements and Specifications for
-the Process Models`" (hereafter referred to as the 'Model Requirements
-Document (MRD)'). The purpose of the present document is to specify
-the data required to execute Amanzi.  This specification should be
-regarded as a companion to the MRD, and parameterizations of the
-individual submodels are consistent between Amanzi, the MRD and this
-document. Where applicable, the relevant sections of the MRD are
-indicated.
+The Amanzi simulator evolves a system of conservation equations for reacting flows in porous media, as detailed in the ASCEM report entitled "Mathematical Formulation Requirements and Specifications for the Process Models`" (hereafter referred to as the 'Model Requirements Document (MRD)'). The purpose of the present document is to specify the data required to execute Amanzi.  This specification should be regarded as a companion to the MRD, and parameterizations of the individual submodels are consistent between Amanzi, the MRD and this document. Where applicable, the relevant sections of the MRD are indicated.
 
 All data required to execute Amanzi is specified within an XML formated file layed out according to the Amanzi input schema.  The current version of the Amanzi schema is located with the Amanzi source code repository.  The following discusses each section of the schema, its purpose and provides examples.  Further details can be found in the schema document amanzi.xsd.
 
@@ -27,34 +18,9 @@ Amanzi Input
 
 Here, the user specifies which version of the input the input file adheres to. The user also specifies the overall type of simulation being run.  Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The attribute `"type`" is used to selected between the following:
 
-* `"Structured`": This instructs Amanzi to use BoxLib data structures
-  and an associated paradigm to numerically represent the flow
-  equations.  Data containers in the BoxLib software library,
-  developed by CCSE at LBNL, are based on a hierarchical set of
-  uniform Cartesian grid patches.  `"Structured`" requires that the
-  simulation domain be a single coordinate-aligned rectangle, and that
-  the "base mesh" consists of a logically rectangular set of uniform
-  hexahedral cells.  This option supports a block-structured approach
-  to dynamic mesh refinement, wherein successively refined subregions
-  of the solution are constructed dynamically to track "interesting"
-  features of the evolving solution.  The numerical solution approach
-  implemented under the `"Structured`" framework is highly optimized
-  to exploit regular data and access patterns on massively parallel
-  computing architectures. 
+* `"Structured`": This instructs Amanzi to use BoxLib data structures and an associated paradigm to numerically represent the flow equations.  Data containers in the BoxLib software library, developed by CCSE at LBNL, are based on a hierarchical set of uniform Cartesian grid patches.  `"Structured`" requires that the simulation domain be a single coordinate-aligned rectangle, and that the "base mesh" consists of a logically rectangular set of uniform hexahedral cells.  This option supports a block-structured approach to dynamic mesh refinement, wherein successively refined subregions of the solution are constructed dynamically to track "interesting" features of the evolving solution.  The numerical solution approach implemented under the `"Structured`" framework is highly optimized to exploit regular data and access patterns on massively parallel computing architectures. 
 
-* `"Unstructured`": This instructs Amanzi to use data structures
-  provided in the Trilinos software framework.  To the extent
-  possible, the discretization algorithms implemented under this
-  option are largely independent of the shape and connectivity of the
-  underlying cells.  As a result, this option supports an arbitrarily
-  complex computational mesh structure that enables users to work with
-  numerical meshes that can be aligned with geometrically complex
-  man-made or geostatigraphical features.  Under this option, the user
-  typically provides a mesh file that was generated with an external
-  software package.  The following mesh file formats are currently
-  supported: `"Exodus II`".  Amanzi also provides a rudmentary
-  capability to generate regular meshes within the unstructured
-  framework internally.
+* `"Unstructured`": This instructs Amanzi to use data structures provided in the Trilinos software framework.  To the extent possible, the discretization algorithms implemented under this option are largely independent of the shape and connectivity of the underlying cells.  As a result, this option supports an arbitrarily complex computational mesh structure that enables users to work with numerical meshes that can be aligned with geometrically complex man-made or geostatigraphical features.  Under this option, the user typically provides a mesh file that was generated with an external software package.  The following mesh file formats are currently supported: `"Exodus II`".  Amanzi also provides a rudmentary capability to generate regular meshes within the unstructured framework internally.
 
 An exmample root tag of an input file would look like the following.
 
@@ -748,13 +714,24 @@ Here is more info on the `"liquid_phase`" elements:
 
     * `"liquid_component`" is an element with the following subelement: 
 
-        * `"pressure`" is an element with the following attributes: 
+        * `"uniform_pressure`" is an element with the following attributes: 
 
 .. code-block:: xml
 
-     <pressure name="some name" value="exponential" function="linear | uniform" reference_coord="coordinate" gradient="coordinate"/>
+     <uniform_pressure name="some name" value="exponential" />
 
-.
+        * `"linear_pressure`" is an element with the following attributes: 
+
+.. code-block:: xml
+
+     linear_pressure name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
+
+        * `"velocity`" is an element with the following attributes: 
+
+.. code-block:: xml
+
+     <velocity name="some name" x="exponential" y="exponential" z="exponential"/>
+
     * `"solute_component`" is an element with the following attributes: 
 
 .. code-block:: xml
@@ -874,8 +851,7 @@ Here is more info on the `"liquid_phase`" elements:
 Output
 ======
 
-Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", and `"Observations`".  
-Each of these is controlled in different ways, reflecting their intended use.
+Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", and `"Observations`".  Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Vis`" is intended to represent snapshots of the solution at defined instances during the simulation to be visualized.  The ''vis'' element defines the naming and frequencing of saving the visualization files.  The visualizatoin files may include only a fraction of the state data, and may contiain auxiliary "derived" information (see *elsewhere* for more discussion).
 
