@@ -107,6 +107,7 @@ class BGCSimple : public PKPhysicalBase {
   // extras
   double lat_;
   double wind_speed_ref_ht_;
+  double cryoturbation_coef_;
   int ncells_per_col_;
   std::string soil_part_name_;
 

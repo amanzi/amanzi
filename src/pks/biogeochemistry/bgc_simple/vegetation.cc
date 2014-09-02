@@ -8,6 +8,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 Licencse: BSD
 */
 
+#include <iostream>
 #include <cmath>
 #include <algorithm>
 #include "vegetation.hh"
@@ -148,7 +149,7 @@ void Photosynthesis(double PARi, double LUE, double LER, double pressure, double
     double q10act = q10actf * std::exp(-0.009 * (*tleaf - 15.0));
     double Vcmax = Vcmax25 * HighTLim(*tleaf) * std::pow(q10act, 0.1 * (*tleaf - 25.0));
     *Resp = Vcmax * 0.0089; // maintenance respiration
-	if (*tleaf < -1.0) (*Resp) *= 0.1;
+    if (*tleaf < -1.0) (*Resp) *= 0.1;
 
   } else {
     double ARAD = PARi * (1.0 - std::exp(-LER)) / 2.3;
@@ -214,8 +215,14 @@ void Photosynthesis(double PARi, double LUE, double LER, double pressure, double
 
       // converge ci?
       double ci = 0.7 * co2c;
+      double ci_old;
       double rs;
-      for (int i=0; i!=5; ++i) {
+      bool inner_done = false;
+      int inner_itr = 0;
+      while (!inner_done) {
+	inner_itr++;
+	ci_old = ci;
+
         double Kj = std::max(ci - c_p, 0.0) / (4.0 * ci + 8.0 * c_p);
         double Kc = std::max(ci - c_p, 0.0) / (ci + awc);
 
@@ -244,6 +251,11 @@ void Photosynthesis(double PARi, double LUE, double LER, double pressure, double
         double r2 = ctmp / q;
         rs = std::max(r1, r2);
         ci = std::max(c_s - myA * pressure * 1.65 * rs, 0.0);
+	
+	inner_done = inner_itr > 5 || std::abs((ci - ci_old)/ci) < 0.001;
+	if (inner_itr > 5) std::cout << "Photosynthesis: warning, inner fixed point not converged:" << std::endl
+				      << "   ci_old = " << ci_old << ", ci_new = " << ci << std::endl;
+
       }
 
       double lamda = (2501000 - 2400 * tleafnew) * 14.0 / 1000 * 1.0 / 1000000; // J/kg to J/mol to J/umol;
@@ -252,7 +264,10 @@ void Photosynthesis(double PARi, double LUE, double LER, double pressure, double
       // but there is no 4.6 in this code.........
 
       // check convergence criteria
-      done = itr > 10 || std::abs(tleafnew - tleafold) < 0.1;
+      done = itr > 10 || std::abs((tleafnew - tleafold) / tleafnew) < 0.001;
+      if (itr > 10) std::cout << "Photosynthesis: warning, outer fixed point not converged:" << std::endl
+			      << "   tleafold = " << tleafold << ", tleafnew = " << tleafnew << std::endl;
+      
     }
 
     *tleaf = tleafnew;

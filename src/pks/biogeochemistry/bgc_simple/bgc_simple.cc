@@ -144,6 +144,8 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
   // parameters
   lat_ = plist_->get<double>("latitude [degrees]", 60.);
   wind_speed_ref_ht_ = plist_->get<double>("wind speed reference height [m]", 2.0);
+  cryoturbation_coef_ = plist_->get<double>("cryoturbation mixing coefficient [cm^2/yr]", 5.0);
+  cryoturbation_coef_ /= 365.25e4; // convert to m^2/day
 
 }
 
@@ -297,7 +299,7 @@ bool BGCSimple::advance(double dt) {
     met.lat = lat_;
 
     // call the model
-    BGCAdvance(S_inter_->time(), dt, scv[0][col], met,
+    BGCAdvance(S_inter_->time(), dt, scv[0][col], cryoturbation_coef_, met,
                *temp_c, *pres_c, *depth_c, *dz_c,
                pfts_[col], soil_carbon_pools_[col], co2_decomp_c);
 

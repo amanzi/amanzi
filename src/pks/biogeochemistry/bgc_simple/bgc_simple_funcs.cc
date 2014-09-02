@@ -27,7 +27,7 @@ namespace BGC {
 // SoilWPArr [Pa] (water pressure)
 // SoilDArr [m] (depth)
 // SoilThicknessArr [m] (dz)
-void BGCAdvance(double t, double dt, double gridarea,
+void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
              const MetData& met,
              const Epetra_SerialDenseVector& SoilTArr,
              const Epetra_SerialDenseVector& SoilWPArr,
@@ -645,8 +645,7 @@ void BGCAdvance(double t, double dt, double gridarea,
 
   //================================================
   //do vertical diffusion
-  double diffusion_coef = 0.001; // units, L^2 / day
-  Cryoturbate(dt_days, SoilTArr, SoilDArr, SoilThicknessArr, soilcarr, diffusion_coef);
+  Cryoturbate(dt_days, SoilTArr, SoilDArr, SoilThicknessArr, soilcarr, cryoturbation_coef);
   return;
 }
 
@@ -725,8 +724,9 @@ void Cryoturbate(double dt,
     Epetra_SerialDenseVector& dC_k = dC[k];
     
     for (int l=0; l!=npools; ++l) {
-      C_k[l] -= dC_k[l];
+      C_k[l] += dC_k[l];
     }
+    k++;
   }
 }
 
