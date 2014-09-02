@@ -27,6 +27,8 @@ public:
       PKDefaultBase(plist, FElist, solution),
       PKPhysicalBase(plist, FElist, solution) {
     plist_->set("solution key", "snow_depth");
+    sink_type_ = plist_->get<std::string>("sink type", "none");
+    sink_value_ = plist_->get<double>("sink value", 1.);
   }
 
   // ConstantTemperature is a PK
@@ -46,7 +48,11 @@ public:
     return 24*60*60.0; // 1 day
   }
 
-private:
+ protected:
+  std::string sink_type_;
+  double sink_value_;
+
+ private:
   // factory registration
   static RegisteredPKFactory<TestSnowDist> reg_;
 };
