@@ -57,10 +57,10 @@ namespace AmanziMesh {
     // order is important here, it is the order in which the framework
     // is chosen, if there is a choice
 
-    if (framework_available(STKMESH)) result.push_back(STKMESH);
-    if (framework_available(Simple)) result.push_back(Simple);
-    if (framework_available(MOAB)) result.push_back(MOAB);
     if (framework_available(MSTK)) result.push_back(MSTK);
+    if (framework_available(STKMESH)) result.push_back(STKMESH);
+    if (framework_available(MOAB)) result.push_back(MOAB);
+    if (framework_available(Simple)) result.push_back(Simple);
   
     return result;
   }
