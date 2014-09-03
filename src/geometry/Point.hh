@@ -50,21 +50,27 @@ class Point {
   ~Point() {}
 
   // main members
-  void init(const int N) {
-    d = N;
-    xyz[0] = xyz[1] = xyz[2] = 0.0;
-  }
+
+  // Not necessary - the constructor and set functions do the
+  // equivalent things
+  //
+  //  void init(const int N) {
+  //    d = N;
+  //    xyz[0] = xyz[1] = xyz[2] = 0.0;
+  //  }
 
   void set(const double& val) {
     ASSERT(this);
+    ASSERT(d > 0);
     for (int i = 0; i < d; i++) xyz[i] = val;
   }
   void set(const Point& p) {
-    ASSERT(d == p.d);
+    d = p.d;
     std::copy(p.xyz, p.xyz+d, xyz);
   }
   void set(const double *val) {
     ASSERT(val);
+    ASSERT(d > 0);
     std::copy(val, val+d, xyz);
   }
   void set(const int N, const double *val) {
@@ -73,12 +79,12 @@ class Point {
     std::copy(val,val+d,xyz);
   }
   void set(const double& x, const double& y) {
-    ASSERT(d == 2);
+    d = 2;
     xyz[0] = x;
     xyz[1] = y;
   }
   void set(const double& x, const double& y, const double& z) {
-    ASSERT(d == 3);
+    d = 3;
     xyz[0] = x;
     xyz[1] = y;
     xyz[2] = z;
