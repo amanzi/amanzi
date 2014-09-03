@@ -77,9 +77,10 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         
       Teuchos::Array<double> p1_vec = box_params.get< Teuchos::Array<double> >("High Coordinate");
 
-      Point p0, p1;
+      int dim = p0_vec.size();
+      Point p0(dim), p1(dim);
 
-      if (p0_vec.size() == 3) 
+      if (dim == 3) 
         {
           if (space_dim != 3) {
             sstream << "Box " << reg_name << 
@@ -89,12 +90,10 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
             amanzi_throw(mesg);
           }
 
-          p0.init(3);
           p0.set(p0_vec[0], p0_vec[1], p0_vec[2]);
-          p1.init(3);
           p1.set(p1_vec[0], p1_vec[1], p1_vec[2]);
         }
-      else if (p0_vec.size() == 2)
+      else if (dim == 2)
         {
           if (space_dim != 2) {
             sstream << "Box " << reg_name << 
@@ -104,9 +103,7 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
             amanzi_throw(mesg);
           }
 
-          p0.init(2);
           p0.set(p0_vec[0], p0_vec[1]);
-          p1.init(2);
           p1.set(p1_vec[0], p1_vec[1]);          
         }
 
@@ -144,9 +141,10 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         
       Teuchos::Array<double> n_vec = plane_params.get< Teuchos::Array<double> >("Direction");
 
-      Point p, n;
+      int dim = p_vec.size();
+      Point p(dim), n(dim);
 
-      if (p_vec.size() == 3) 
+      if (dim == 3) 
         {
           if (space_dim != 3) {
             sstream << "Plane " << reg_name << 
@@ -156,12 +154,10 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
             amanzi_throw(mesg);
           }
 
-          p.init(3);
           p.set(p_vec[0], p_vec[1], p_vec[2]);
-          n.init(3);
           n.set(n_vec[0], n_vec[1], n_vec[2]);
         }
-      else if (p_vec.size() == 2)
+      else if (dim == 2)
         {
           if (space_dim != 2) {
             sstream << "Plane " << reg_name << 
@@ -171,9 +167,7 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
             amanzi_throw(mesg);
           }
 
-          p.init(2);
           p.set(p_vec[0], p_vec[1]);
-          n.init(2);
           n.set(n_vec[0], n_vec[1]);          
         }
 
@@ -285,10 +279,10 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
 
       Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("Coordinate");
         
-      Point pnt, n;
+      int dim = p_vec.size();
+      Point pnt(dim), n(dim);
 
-      if (p_vec.size() == 3) 
-        {
+      if (dim == 3) {
           if (space_dim != 3) {
             sstream << "Point " << reg_name << 
               " specified using 3D coordinates but problem is " << 
@@ -297,11 +291,9 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
             amanzi_throw(mesg);
           }
 
-          pnt.init(3);
-          pnt.set(p_vec[0], p_vec[1], p_vec[2]);
-        }
-      else if (p_vec.size() == 2)
-        {
+        pnt.set(p_vec[0], p_vec[1], p_vec[2]);
+      }
+      else if (dim == 2) {
           if (space_dim != 2) {
             sstream << "Plane " << reg_name << 
               " specified using 3D coordinates but problem is " << 
@@ -310,9 +302,8 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
             amanzi_throw(mesg);
           }
 
-          pnt.init(2);
-          pnt.set(p_vec[0], p_vec[1]);
-        }
+        pnt.set(p_vec[0], p_vec[1]);
+      }
 
       try {
         RegionPtr regptr = new PointRegion(reg_name, reg_id, pnt, lifecycle);

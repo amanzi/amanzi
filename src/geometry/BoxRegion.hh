@@ -61,9 +61,9 @@ public:
     assert (lo_corner != NULL);
     assert (hi_corner != NULL);
 
-    lo_corner->init(p0_.dim());
+    //    lo_corner->init(p0_.dim());
     lo_corner->set(p0_);
-    hi_corner->init(p1_.dim());
+    //    hi_corner->init(p1_.dim());
     hi_corner->set(p1_);
   }
 
