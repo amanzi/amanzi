@@ -49,6 +49,12 @@ if (BUILD_TESTS)
          copy_directory ${GEOMETRY_SOURCE_DIR}/test ${GEOMETRY_BINARY_DIR}/test) 
    endif()
 
+   # Test: test point creation and deletion
+   add_amanzi_test(point-tests test_points
+                   KIND unit
+		   SOURCE test/Main.cc test/test_points.cc
+		   LINK_LIBS geometry ${UnitTest_LIBRARIES})
+
    # Test: test geometric operators
    add_amanzi_test(geometry-operators test_geomops
                    KIND unit
