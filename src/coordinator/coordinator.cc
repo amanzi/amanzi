@@ -423,6 +423,9 @@ bool Coordinator::advance(double dt) {
   S_next_->advance_cycle();
 
   if (!fail) {
+    // commit the state
+    pk_->commit_state(dt, S_next_);
+    
     // make observations, vis, and checkpoints
     observations_->MakeObservations(*S_next_);
     visualize();
