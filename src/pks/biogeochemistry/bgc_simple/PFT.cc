@@ -69,7 +69,7 @@ void PFT::Init()
   leafstatus = 1;
   leafondays = 5;
   leafoffdays = 5;
-  leafoffdaysi = 365;
+  leafoffdaysi = 365.25;
   leafondaysi = 0;
   CSinkLimit = 0.0;
   seedrainlai = 0.01;
