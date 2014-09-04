@@ -635,7 +635,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
       for (int m=0; m!=nPools; ++m) {
         if (m != l) {
           totalConvrtC += SOMConvt[m]* soilcarr[k]->params->Tij[m][l]; // *SOMConvt[l];
- 	  }
+        }
       }
 
       soilcarr[k]->SOM[l] += totalConvrtC;
