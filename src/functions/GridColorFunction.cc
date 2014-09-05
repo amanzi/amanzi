@@ -4,7 +4,7 @@
 
 namespace Amanzi {
 
-int GridColorFunction::operator() (const double *x) const
+int GridColorFunction::operator()(const double* x) const
 {
   int offset = 0;
   for (int k = dim_-1; k >= 0; --k) {

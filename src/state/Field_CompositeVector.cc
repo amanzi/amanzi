@@ -357,7 +357,8 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
   // evaluate
   Epetra_MultiVector& vec = *data_->ViewComponent("cell",false);
   if (orientation == "depth") {
-    double z0, z;
+    double z0;
+    std::vector<double> z(1);
 
     AmanziMesh::Entity_ID_List surf_faces;
     for (Teuchos::Array<std::string>::const_iterator setname=sidesets.begin();
@@ -379,15 +380,16 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
 
         while (c >= 0) {
           AmanziGeometry::Point x1 = data_->Mesh()->cell_centroid(c);
-          z = z0 - x1[x1.dim()-1];
-          vec[0][c] = (*func)(&z);
+          z[0] = z0 - x1[x1.dim()-1];
+          vec[0][c] = (*func)(z);
           c = data_->Mesh()->cell_get_cell_below(c);
         }
       }
     }
 
   } else {
-    double z0, z;
+    double z0;
+    std::vector<double> z(1);
 
     AmanziMesh::Entity_ID_List surf_faces;
     for (Teuchos::Array<std::string>::const_iterator setname=sidesets.begin();
@@ -409,8 +411,8 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
 
         while (c >= 0) {
           AmanziGeometry::Point x1 = data_->Mesh()->cell_centroid(c);
-          z = x1[x1.dim()-1] - z0;
-          vec[0][c] = (*func)(&z);
+          z[0] = x1[x1.dim()-1] - z0;
+          vec[0][c] = (*func)(z);
           c = data_->Mesh()->cell_get_cell_above(c);
         }
       }

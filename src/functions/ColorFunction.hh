@@ -7,7 +7,7 @@ class ColorFunction {
   public:
     virtual ~ColorFunction() {}
     virtual ColorFunction* Clone() const = 0;
-    virtual int operator() (const double*) const = 0;
+    virtual int operator()(const double* ) const = 0;
 };
 
 } // namespace Amanzi
