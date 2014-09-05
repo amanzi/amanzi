@@ -25,12 +25,14 @@ class SoilCarbon {
 
   SoilCarbon(const Teuchos::RCP<const SoilCarbonParameters> params_) :
       params(params_),
-      SOM(params_->nPools) {}
+      SOM(params_->nPools),
+      nPools(params_->nPools) {}
 
   SoilCarbon(const Teuchos::RCP<const SoilCarbonParameters> params_,
              double * som) :
       params(params_),
-      SOM(View, som, params_->nPools) {}
+      SOM(View, som, params_->nPools),
+      nPools(params_->nPools) {}
 
  public:
   int nPools;

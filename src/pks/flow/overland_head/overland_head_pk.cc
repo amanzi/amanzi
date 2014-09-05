@@ -71,7 +71,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   names2[0] = "cell";
   names2[1] = "face";
 
-  S->RequireField(key_, name_)->SetMesh(mesh_)
+  S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
     ->SetComponents(names2, locations2, num_dofs2);
 
 #if DEBUG_RES_FLAG
@@ -302,6 +302,14 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("ponded_depth_bar")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("ponded_depth_bar");
+
+  // -- effective accumulation ponded depth (smoothing of derivatives as h --> 0)
+  smoothed_ponded_accumulation_ = plist_->get<bool>("smooth ponded accumulation",false);
+  if (smoothed_ponded_accumulation_) {
+    S->RequireField("smoothed_ponded_depth")->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator("smoothed_ponded_depth");
+  }
 
   // -- conductivity evaluator
   S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()
@@ -943,7 +951,6 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
   // skip accumulation terms, they're not needed
   // Assemble
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  matrix_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
   matrix_->UpdateConsistentFaceConstraints(pres_elev.ptr());

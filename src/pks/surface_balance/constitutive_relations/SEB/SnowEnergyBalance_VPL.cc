@@ -71,9 +71,12 @@ void SurfaceEnergyBalance_VPL::UpdateEFluxesSnow(LocalData& seb, double T) {
   } else {
     double Ri  = seb.st_energy.gZr * (seb.st_energy.temp_air-T)
                   / (seb.st_energy.temp_air*std::pow(seb.st_energy.Us,2));
-    Sqig = 1 / (1 + 10*Ri);
+  if (Ri >=0){
+      Sqig = 1 / (1 + 10*Ri);
+  }else{
+     Sqig = (1 - 10*Ri);
+  } 
   }
-
   // Calculate outgoing long-wave radiation
   seb.st_energy.fQlwOut = -seb.st_energy.SEs*seb.st_energy.stephB*std::pow(T,4);
 

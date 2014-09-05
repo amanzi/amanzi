@@ -6,7 +6,7 @@
 #include "MeshFactory.hh"
 #include "Mesh.hh"
 
-#include "MatrixMFD_TPFA.hh"
+#include "MatrixMFD_TPFA_ScaledConstraint.hh"
 #include "MatrixMFD_Surf.hh"
 
 using namespace Amanzi;
@@ -17,7 +17,7 @@ struct test_mfd {
   Teuchos::RCP<AmanziMesh::Mesh> surf_mesh;
   Teuchos::RCP<Teuchos::ParameterList> plist;
 
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> Atpf;
+  Teuchos::RCP<Operators::MatrixMFD_TPFA_ScaledConstraint> Atpf;
   Teuchos::RCP<Operators::MatrixMFD_Surf> As;
 
   test_mfd() {
@@ -50,7 +50,7 @@ struct test_mfd {
 
     // create the matrices
     Teuchos::ParameterList mfd_plist;
-    mfd_plist.set("MFD method", "optimized");
+    mfd_plist.set("MFD method", "two point flux approximation");
 
     // set a subsurface face to Dirichlet -- this is the bottom and should be
     // trivially handled.
@@ -62,14 +62,13 @@ struct test_mfd {
     bc_surf_values[0] = 100.;
 
     // -- TPF on surface
-    Atpf = Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_plist, surf_mesh));
+    Atpf = Teuchos::rcp(new Operators::MatrixMFD_TPFA_ScaledConstraint(mfd_plist, surf_mesh));
     Atpf->set_symmetric(false);
     Atpf->SymbolicAssembleGlobalMatrices();
     Atpf->CreateMFDmassMatrices(Teuchos::null);
     Atpf->CreateMFDstiffnessMatrices(Teuchos::null);
     Atpf->CreateMFDrhsVectors();
     Atpf->ApplyBoundaryConditions(bc_surf_markers, bc_surf_values);
-    Atpf->AssembleGlobalMatrices();
 
     // -- combined on domain
     As = Teuchos::rcp(new Operators::MatrixMFD_Surf(mfd_plist, mesh));
@@ -79,9 +78,7 @@ struct test_mfd {
     As->CreateMFDmassMatrices(Teuchos::null);
     As->CreateMFDstiffnessMatrices(Teuchos::null);
     As->CreateMFDrhsVectors();
-    As->ApplyBoundaryConditions(bc_surf_markers, bc_surf_values);
-    As->AssembleGlobalMatrices();
-
+    As->ApplyBoundaryConditions(bc_markers, bc_values);
 
     // dump the schur complement
     Teuchos::RCP<const Epetra_FECrsMatrix> Spp = Atpf->TPFA();

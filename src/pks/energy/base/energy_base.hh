@@ -42,7 +42,7 @@ public:
       coupled_to_surface_via_temp_(false),
       coupled_to_surface_via_flux_(false),
       niter_(0),
-      implicit_advection_(true) {}
+      explicit_advection_(false) {}
 
   // Virtual destructor
   virtual ~EnergyBase() {}
@@ -156,7 +156,8 @@ protected:
   bool modify_predictor_with_consistent_faces_;
   bool is_source_term_;
   bool is_mass_source_term_;
-  bool implicit_advection_;
+  bool explicit_advection_;
+  int explicit_advection_iter_;
   bool precon_used_;
 
   bool coupled_to_subsurface_via_temp_;

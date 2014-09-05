@@ -106,7 +106,7 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         Epetra_MultiVector& Krel_c_vec = *Krel_c->ViewComponent("cell",false);
         const Epetra_MultiVector& result_c = *result->ViewComponent("cell",false);
         for (int c=0; c!=ncells; ++c) {
-          Krel_c_vec[0][c] = std::pow(std::max(result_c[0][c],0.), 4./3)
+          Krel_c_vec[0][c] = std::pow(std::max(result_c[0][c],0.), 5./3)
               / (std::sqrt(std::max(slope[0][c], 1.e-4)) * manning_);
         }
       }
@@ -137,7 +137,6 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       matrix_->CreateMFDstiffnessMatrices(Krel_uw.ptr());
       matrix_->CreateMFDrhsVectors();
       matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
-      matrix_->AssembleGlobalMatrices();
 
       // Apply the operator to get a residual
       matrix_->ComputeNegativeResidual(*hz, residual.ptr());
@@ -170,9 +169,6 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         Acc_cells[c] += cv[0][c];
       }
       matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
-      matrix_->AssembleGlobalMatrices();
-      matrix_->ComputeSchurComplement(bc_markers, bc_values);
-      matrix_->UpdatePreconditioner();
       matrix_->ApplyInverse(*residual, *du);
 
       // apply correction

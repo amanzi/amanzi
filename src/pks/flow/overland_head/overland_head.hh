@@ -144,6 +144,7 @@ protected:
   bool symmetric_;
   bool perm_update_required_;
   bool source_only_if_unfrozen_;
+  bool smoothed_ponded_accumulation_;
 
   // coupling term
   bool coupled_to_subsurface_via_head_;
@@ -160,6 +161,8 @@ protected:
   // note PC is in PKPhysicalBDFBase
 
   bool tpfa_;
+
+  // accumulation smoothing
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;

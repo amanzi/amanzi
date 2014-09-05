@@ -84,7 +84,8 @@ struct SurfaceProperties {
 // struct of input MetData.
 struct MetData {
   double Us;                    // wind speed, [m/s]
-  double QswIn;                 // incoming short-wave radiation, [J/ ??]
+  double QswIn;                 // incoming short-wave radiation, [W/m^2]
+  double QlwIn;                // incoming longwave radiaton, [W/m^2]
   double Ps;                    // precip snow, [m (SWE)/s]
   double Pr;                    // precip rain, [m/s]
   ThermoProperties vp_air;
@@ -92,6 +93,7 @@ struct MetData {
   MetData() :
       Us(MY_LOCAL_NAN),
       QswIn(MY_LOCAL_NAN),
+      QlwIn(MY_LOCAL_NAN),
       Ps(MY_LOCAL_NAN),
       Pr(MY_LOCAL_NAN),
       vp_air() {}
@@ -228,8 +230,8 @@ struct SurfaceParams {
   double Zsmooth, Zrough;      // roughness coefs
 
   SurfaceParams() :
-      a_tundra(0.15),           // [-] Grenfell and Perovich, (2004)
-      a_water(0.141),           // [-] Cogley J.G. (1979)
+      a_tundra(0.135),           // [-] Grenfell and Perovich, (2004)
+      a_water(0.1168),           // [-] Cogley J.G. (1979)
       a_ice(0.44),              // [-] deteriorated ice, Grenfell and Perovich, (2004)
       e_snow(0.98),             // [-] emissivity for snow, From P. ReVelle (Thesis)
       e_tundra(0.92),           // [-] emissivity for tundra, From P. ReVelle

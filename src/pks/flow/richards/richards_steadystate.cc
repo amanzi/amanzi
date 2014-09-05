@@ -54,13 +54,6 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   // Assemble and precompute the Schur complement for inversion.
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
-  if (assemble_preconditioner_) {
-    mfd_preconditioner_->AssembleGlobalMatrices();
-    mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    mfd_preconditioner_->UpdatePreconditioner();
-  }
-
-
   // // TEST
   // if (S_next_->cycle() == 0 && niter_ == 0) {
   //   // Dump the Schur complement

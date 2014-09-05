@@ -33,13 +33,33 @@ def parse_file(fid, wallclock=False):
 if __name__ == "__main__":
     import sys
     from matplotlib import pyplot as plt
-    fname = sys.argv[-1]
-    with open(fname,'r') as fid:
-        data = parse_file(fid)
-    plt.semilogy(data[0][:,1], data[0][:,2], 'b-x')
-    plt.semilogy(data[1][:,1], data[1][:,2], 'bx')
-    plt.xlabel("time [days]")
-    plt.ylabel("dt [days]")
+    fnames = sys.argv[:]
+
+    fnames.pop(0) # removes python or potential just executable name
+    if len(fnames) > 0 and fnames[0].endswith(".py"):
+        fnames.pop(0) # removes exectuable name
+    if len(fnames) == 0:
+        print "Usage: parse_logfile.py logfile.out"
+        sys.exit(1)
+
+    import colors
+    cm = colors.cm_mapper(0,len(fnames)-1)
+    for i,fname in enumerate(fnames):
+        with open(fname,'r') as fid:
+            data = parse_file(fid)
+            plt.subplot(121)
+            plt.semilogy(data[0][:,1], data[0][:,2], '-x', color=cm(i), label=fname)
+            if data[1].shape != (0,):
+                plt.semilogy(data[1][:,1], data[1][:,2], 'x', color=cm(i))
+            plt.xlabel("time [days]")
+            plt.ylabel("dt [days]")
+            plt.legend()
+            plt.subplot(122)
+            plt.semilogy(data[0][:,0], data[0][:,2], '-x', color=cm(i))
+            if data[1].shape != (0,):
+                plt.semilogy(data[1][:,0], data[1][:,2], 'x', color=cm(i))
+            plt.xlabel("cycles [-]")
+            plt.ylabel("dt [days]")
     plt.show()
 
 

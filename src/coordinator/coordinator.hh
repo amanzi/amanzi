@@ -15,6 +15,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #ifndef _COORDINATOR_HH_
 #define _COORDINATOR_HH_
 
+#include "Teuchos_Time.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MpiComm.h"
@@ -94,6 +95,12 @@ private:
   // observations
   Teuchos::RCP<UnstructuredObservations> observations_;
 
+  // timers
+  Teuchos::RCP<Teuchos::Time> setup_timer_;
+  Teuchos::RCP<Teuchos::Time> cycle_timer_;
+  Teuchos::RCP<Teuchos::Time> timer_;
+  double duration_;
+  
   // fancy OS
   Teuchos::RCP<VerboseObject> vo_;
 };

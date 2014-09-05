@@ -19,9 +19,9 @@ PFT::PFT(std::string pft_type_, int ncells) :
 
 PFT::PFT(std::string pft_type_, int ncells, double* brootcells_) :
     pft_type(pft_type_),
-    BRootSoil(View, ncells, brootcells_) {}
+    BRootSoil(View, brootcells_, ncells) {}
 
-Void PFT::Init()
+void PFT::Init()
 {
   Bstem = 0.2;
   Broot = 1.0;
@@ -69,7 +69,7 @@ Void PFT::Init()
   leafstatus = 1;
   leafondays = 5;
   leafoffdays = 5;
-  leafoffdaysi = 365;
+  leafoffdaysi = 365.25;
   leafondaysi = 0;
   CSinkLimit = 0.0;
   seedrainlai = 0.01;
@@ -81,7 +81,7 @@ Void PFT::Init()
   }
 }
 
-void Init(Teuchos::ParameterList& plist)
+void PFT::Init(Teuchos::ParameterList& plist)
 {
   Init();
   // ex:
@@ -96,10 +96,10 @@ void PFT::InitRoots(const Epetra_SerialDenseVector& SoilTArr,
 
   // locate the root depth
   int nSoilLayers = SoilTArr.Length();
-  double initPermD = PermafrostDepth(SoilTArr,SoilDArr);
+  double initPermD = PermafrostDepth(SoilTArr,SoilThicknessArr,273.15);
   rootD = std::min(maxRootD, initPermD);
 
-  totalweights = 0.0;
+  double totalweights = 0.0;
   for (int c=0; c!=nSoilLayers; ++c) {
     if (SoilDArr[c] < rootD){
       BRootSoil[c] = SoilThicknessArr[c]*std::exp((rootD - SoilDArr[c]) / rootD);

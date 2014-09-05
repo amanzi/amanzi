@@ -49,17 +49,19 @@ class PKBDFBase : public virtual PKDefaultBase,
 
   // -- Check the admissibility of a solution.
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) { return true; }
- 
+
   // -- Possibly modify the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator.
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up,
           Teuchos::RCP<TreeVector> u) { return false; }
 
   // -- Possibly modify the correction before it is applied
-  virtual bool ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
-    return false; }
-
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                       Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<TreeVector> du) {
+    return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+  }
 
  protected: // data
   // preconditioner assembly control

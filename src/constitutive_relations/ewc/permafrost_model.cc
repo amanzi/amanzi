@@ -210,7 +210,9 @@ int PermafrostModel::EvaluateSaturations(double T, double p, double& s_gas, doub
 }
 
 int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, AmanziGeometry::Point& result) {
-  if (T < 100) return 1; // invalid temperature
+  if (T < 100.0 || T > 373.0) {
+    return 1; // invalid temperature
+  }
   int ierr = 0;
   try {
     double poro = poro_model_->Porosity(poro_, p, p_atm_);
@@ -249,7 +251,7 @@ int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, AmanziGe
 
     // energy
     result[0] = poro * (u_l * rho_l * s_l + u_i * rho_i * s_i + u_g * rho_g * s_g)
-        + (1.0 - poro) * (rho_rock_ * u_rock);
+        + (1.0 - poro_) * (rho_rock_ * u_rock);
   } catch (const Exceptions::Amanzi_exception& e) {
     if (e.what() == std::string("Cut time step")) {
       ierr = 1;

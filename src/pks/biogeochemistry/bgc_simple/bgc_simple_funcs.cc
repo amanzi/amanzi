@@ -19,7 +19,7 @@ namespace BGC {
 // t and dt [s]
 // gridarea [m^2]
 // qSWin [W/m^2]
-// tair [C]
+// tair [K]
 // met.windv [m/s]
 // met.relhum [-]
 // met.CO2a [ppm]
@@ -27,7 +27,7 @@ namespace BGC {
 // SoilWPArr [Pa] (water pressure)
 // SoilDArr [m] (depth)
 // SoilThicknessArr [m] (dz)
-void advance(double t, double dt, double gridarea,
+void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
              const MetData& met,
              const Epetra_SerialDenseVector& SoilTArr,
              const Epetra_SerialDenseVector& SoilWPArr,
@@ -42,7 +42,8 @@ void advance(double t, double dt, double gridarea,
   double Cv = 1.2e-8;
   double dt_days = dt / 86400.;
   double t_days = t / 86400.;
-  double max_wp = -1.e-6;
+  double wp_max = -1.e-6; //MPa wp = p - p_atm
+  double wp_min = -10.; //MPa
   int max_leaf_layers = 10;
 
   // calculate fractional day length
@@ -53,7 +54,7 @@ void advance(double t, double dt, double gridarea,
   double PAR = met.qSWin * 2.3 * 24.0 *60.0 / daylen; // convert to PAR at the daytime
 
   // determine the thaw depth
-  double thawD = PermafrostDepth(SoilTArr,SoilDArr);
+  double thawD = PermafrostDepth(SoilTArr,SoilThicknessArr,273.15);
 
   for (std::vector<Teuchos::RCP<PFT> >::iterator pft_iter=pftarr.begin();
        pft_iter!=pftarr.end(); ++pft_iter) {
@@ -66,8 +67,8 @@ void advance(double t, double dt, double gridarea,
         //---------------------------------------------------------------------------------
         //calculate plant phenology
         if (pft.leafstatus == 1) {
-          if (met.tair > pft.GDDbase) {
-            pft.GDD += (met.tair - pft.GDDbase) * dt_days;
+          if (met.tair - 273.15 > pft.GDDbase) {
+            pft.GDD += (met.tair - 273.15 - pft.GDDbase) * dt_days;
           }
 
           if (pft.GDD >= pft.GDDleafon){
@@ -163,12 +164,12 @@ void advance(double t, double dt, double gridarea,
 
       //---------------------------------------------------------------------------------
       //calculate leaf projections and light attenuations
-      double PARi = PAR;
+      double PARi0 = PAR;
       for (std::vector<Teuchos::RCP<PFT> >::iterator pft_other_iter=pftarr.begin();
            pft_other_iter!=pft_iter; ++pft_other_iter) {
-        PARi *= std::exp(-(*pft_other_iter)->LER * (*pft_other_iter)->lai);
+        PARi0 *= std::exp(-(*pft_other_iter)->LER * (*pft_other_iter)->lai);
       }
-
+      double PARi=PARi0;	
       //----------------------------------------------------------------
       // photosynthesis and respiration, no soil water limitation yet and need
       // to be implemented for more realistic simulation
@@ -183,7 +184,7 @@ void advance(double t, double dt, double gridarea,
 
       for (int leaf_layer=0; leaf_layer!=max_leaf_layers; ++leaf_layer){
         Photosynthesis(PARi, pft.LUE, pft.LER, p_atm,
-                       met.windv, met.tair, met.relhum, met.CO2a, pft.mp, Vcmax25,
+                       met.windv,double(met.tair - 273.15), met.relhum, met.CO2a, pft.mp, Vcmax25,
                        &psn, &tleaf, &leafresp);
 
         if (thawD <= 0.0) psn = 0.0;
@@ -220,12 +221,12 @@ void advance(double t, double dt, double gridarea,
         }
 
       } else {
-        PARi = PARi*std::exp(-pft.LER * max_leaf_layers);
+        PARi = PARi0;
         Photosynthesis(PARi, pft.LUE, pft.LER, p_atm,
-                       met.windv, met.tair, met.relhum, met.CO2a, pft.mp, Vcmax25,
+                       met.windv, met.tair - 273.15, met.relhum, met.CO2a, pft.mp, Vcmax25,
                        &psn, &tleaf, &leafresp);
 
-        leafresptotal = 24.0 * 3600.0 * Cv*leafresp*gridarea;
+        leafresptotal = dt_days * Cv*leafresp*gridarea;
         double bleaf0 = 1.0 / pft.SLA;
         stemresp = leafresptotal*pft.Bstem / bleaf0*pft.stem2leafrespratio;
         rootresp = 0.0;
@@ -261,7 +262,7 @@ void advance(double t, double dt, double gridarea,
       double frac = leafstorageccon / pft.tar_leafstorageccon;
       double csink_factor = 1.0 - frac > 0. ? std::exp(-std::pow(frac, 3.0)) : 1.0;
 
-      double Emax = met.tair > 0. ? TEffectsQ10(2.0, met.tair, 25.0) * pft.Emax25 : 0.;
+      double Emax = met.tair - 273.15 > 0. ? TEffectsQ10(2.0, met.tair - 273.15, 25.0) * pft.Emax25 : 0.;
 
       // calculate the carbon sink limitation for photosynthesis
       pft.CSinkLimit = 0.0;
@@ -304,9 +305,9 @@ void advance(double t, double dt, double gridarea,
         double deficitBstem = std::max(tarBstem - pft.Bstem, 0.);
         double totalDeficit = deficitBstem + deficitBroot + deficitBleaf;
 
-        double frcBleaf = deficitBleaf / totalDeficit;
-        double frcBroot = deficitBroot / totalDeficit;
-        double frcBstem = deficitBstem / totalDeficit;
+        double frcBleaf = totalDeficit > 0 ? deficitBleaf / totalDeficit : 0.;
+        double frcBroot = totalDeficit > 0 ? deficitBroot / totalDeficit : 0.;
+        double frcBstem = totalDeficit > 0 ? deficitBstem / totalDeficit : 0.;
 
         if (totalDeficit >= GrowthFlux){
           grwBleaf += frcBleaf*GrowthFlux;
@@ -322,9 +323,9 @@ void advance(double t, double dt, double gridarea,
           //--------------------------------------------------------------------
           //grow
           if (pft.lai <= pft.maxLAI){
-            frcBleaf = tarBleaf / tarBtotal;
-            frcBroot = tarBroot / tarBtotal;
-            frcBstem = tarBstem / tarBtotal;
+            frcBleaf = tarBtotal > 0 ? tarBleaf / tarBtotal : 0.;
+            frcBroot = tarBtotal > 0 ? tarBroot / tarBtotal : 0.;
+            frcBstem = tarBtotal > 0 ? tarBstem / tarBtotal : 0.;
 
             grwBleaf += frcBleaf*GrowthFlux;
             grwBroot += frcBroot*GrowthFlux;
@@ -369,7 +370,7 @@ void advance(double t, double dt, double gridarea,
           for (int k=0; k!=soilcarr.size(); ++k) {
             double TFactor = SoilTArr[k] < 273.15 ? 0. :
                 TEffectsQ10(2.0, SoilTArr[k] - 273.15, 25.0) * HighTLim(SoilTArr[k]-273.15);
-            double soil_wp = std::min(SoilWPArr[k] - p_atm, max_wp);
+            double soil_wp = std::max(std::min( (SoilWPArr[k] - p_atm) / 1.e6, wp_max), wp_min);
             double WFactor = std::max((soil_wp - pft.minLeafWP) / (-0.05 - pft.minLeafWP),0.);
             weightArr[k] = pft.BRootSoil[k] * TFactor*WFactor;
             totalweights += weightArr[k];
@@ -515,14 +516,14 @@ void advance(double t, double dt, double gridarea,
         // AFFECTED BY DT! --etc
         double turnoverLeaf = pft.evergreen == 0 ? 0. : dt_days / (pft.leaflongevity * 365.25);
         double carbondrawnLeaf = turnoverLeaf*pft.Bleaf;
-        ASSERT(turnoverLeaf > 0.9);
+        ASSERT(turnoverLeaf <= 0.9);
 
         double turnoverStem = dt_days / (pft.stemlongevity * 365.25);
         double carbondrawnStem = turnoverStem*pft.Bstem;
-        ASSERT(turnoverStem > 0.9);
+        ASSERT(turnoverStem <= 0.9);
 
         double turnoverRoot = dt_days / (pft.rootlongevity * 365.25);
-        ASSERT(turnoverRoot > 0.9);
+        ASSERT(turnoverRoot <= 0.9);
 
         double storagecdrawn = carbondrawnLeaf*leafstoragecratio*(1.0-pft.storagecRspFrc);
         soilcarr[0]->SOM[0] += storagecdrawn;
@@ -603,12 +604,13 @@ void advance(double t, double dt, double gridarea,
   for (int k=0; k!=soilcarr.size(); ++k) {
     double TFactor = TEffectsQ10(2.0, SoilTArr[k] - 273.15, 25.0);
     SoilCO2Arr[k] = 0.0;
-    double SWPMin = -10.;
     double WFactor;
-    if (SoilWPArr[k] - p_atm < SWPMin){
+
+    double soil_wp = std::max(std::min( (SoilWPArr[k] - p_atm) / 1.e6, wp_max), wp_min);
+    if (soil_wp == wp_min) {
       WFactor = 0.0;
     } else {
-      WFactor = std::log(SWPMin / std::min(SoilWPArr[k] - p_atm, max_wp)) / std::log(SWPMin / max_wp);
+      WFactor = std::log(wp_min / soil_wp) / std::log(wp_min / wp_max);
     }
 
     double DFactor = std::exp(-SoilDArr[k] / 0.5);
@@ -618,7 +620,7 @@ void advance(double t, double dt, double gridarea,
     for (int l=0; l!=nPools; ++l){
       // AFFECTED BY DT --etc
       double turnover = dt_days * WFactor*TFactor*DFactor / (soilcarr[k]->params->TurnoverRates[l] * 365.25);
-      ASSERT(turnover > 0.9);
+      ASSERT(turnover <= 0.9);
 
       double SOMDecomp = soilcarr[k]->SOM[l] * turnover;
       soilcarr[k]->SOM[l] *= 1.0 - turnover;
@@ -632,7 +634,7 @@ void advance(double t, double dt, double gridarea,
       double totalConvrtC = 0.0;
       for (int m=0; m!=nPools; ++m) {
         if (m != l) {
-          totalConvrtC += SOMConvt[l]* soilcarr[k]->params->Tij[m][l]; // *SOMConvt[l];
+          totalConvrtC += SOMConvt[m]* soilcarr[k]->params->Tij[m][l]; // *SOMConvt[l];
         }
       }
 
@@ -643,9 +645,91 @@ void advance(double t, double dt, double gridarea,
 
   //================================================
   //do vertical diffusion
-  // -- not yet implemented!
+  Cryoturbate(dt_days, SoilTArr, SoilDArr, SoilThicknessArr, soilcarr, cryoturbation_coef);
   return;
 }
+
+
+// Cryoturbation -- move the carbon around via diffusion
+void Cryoturbate(double dt,
+		 const Epetra_SerialDenseVector& SoilTArr,
+		 const Epetra_SerialDenseVector& SoilDArr,
+		 const Epetra_SerialDenseVector& SoilThicknessArr,
+		 std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
+		 double diffusion_coef) {
+  std::vector<double> diffusion_coefs(soilcarr[0]->nPools, diffusion_coef);
+  Cryoturbate(dt, SoilTArr, SoilDArr, SoilThicknessArr, soilcarr, diffusion_coefs);
+}
+
+
+// Cryoturbation -- move the carbon around via diffusion
+void Cryoturbate(double dt,
+		 const Epetra_SerialDenseVector& SoilTArr,
+		 const Epetra_SerialDenseVector& SoilDArr,
+		 const Epetra_SerialDenseVector& SoilThicknessArr,
+		 std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
+		 std::vector<double>& diffusion_coefs) {
+  // only cryoturbate unfrozen soil
+  int k_frozen = PermafrostDepthIndex(SoilTArr, 273.15);
+
+  // fast and dirty diffusion
+  int npools = soilcarr[0]->nPools;
+  Epetra_SerialDenseVector dC_up(npools);
+  Epetra_SerialDenseVector dC_dn(npools);
+  std::vector<Epetra_SerialDenseVector> dC(k_frozen, Epetra_SerialDenseVector(npools));
+
+  int k = 0;
+  while (k < k_frozen) {
+    Epetra_SerialDenseVector& C = soilcarr[k]->SOM;
+
+    // dC/dz on the face above
+    if (k == 0) {
+      // dC_up initialized to zero already
+    } else {
+      Epetra_SerialDenseVector& C_up = soilcarr[k-1]->SOM;
+      double dz_up = SoilDArr[k] - SoilDArr[k-1];
+      for (int l=0; l!=npools; ++l) {
+	dC_up[l] = (C[l] - C_up[l]) / dz_up;
+      }
+    }
+
+    // dC/dz on the face below
+    if ((k == soilcarr.size()-1) || k+1 >= k_frozen) {
+      // boundary case
+      for (int l=0; l!=npools; ++l) {
+	dC_dn[l] = 0;
+      }
+    } else {
+      Epetra_SerialDenseVector& C_dn = soilcarr[k+1]->SOM;
+      double dz_dn = SoilDArr[k+1] - SoilDArr[k];
+      for (int l=0; l!=npools; ++l) {
+	dC_dn[l] = (C_dn[l] - C[l]) / dz_dn;
+      }
+    }
+
+    // dC = dt * D * (dC/dz_below - dC/dz_above) / dz
+    double dz = SoilThicknessArr[k];
+    for (int l=0; l!=npools; ++l) {
+      dC[k][l] = dt * diffusion_coefs[l] / dz * (dC_dn[l] - dC_up[l]);
+    }
+
+    // increment
+    k++;
+  }
+  
+  // Now that dC is calculated everywhere, update carbon pools
+  k = 0;
+  while (k < k_frozen) {
+    Epetra_SerialDenseVector& C_k = soilcarr[k]->SOM;
+    Epetra_SerialDenseVector& dC_k = dC[k];
+    
+    for (int l=0; l!=npools; ++l) {
+      C_k[l] += dC_k[l];
+    }
+    k++;
+  }
+}
+
 
 } // namespace BGC
 } // namespace Amanzi

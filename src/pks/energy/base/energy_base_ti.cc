@@ -85,11 +85,11 @@ void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
   db_->WriteVector("res (acc)", res.ptr());
 #endif
 
-  // advection term, implicit
-  if (implicit_advection_) {
-    AddAdvection_(S_next_.ptr(), res.ptr(), true);
-  } else {
+  // advection term, implicit by default, options for explicit
+  if (explicit_advection_ && niter_ <= explicit_advection_iter_) {
     AddAdvection_(S_inter_.ptr(), res.ptr(), true);
+  } else {
+    AddAdvection_(S_next_.ptr(), res.ptr(), true);
   }
 #if DEBUG_FLAG
   db_->WriteVector("res (adv)", res.ptr());
@@ -199,22 +199,6 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 
   // Apply boundary conditions.
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-
-  // Assemble
-  if (assemble_preconditioner_) {
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "  assembling forward PC operator..." << std::endl;
-    // -- assemble
-    mfd_preconditioner_->AssembleGlobalMatrices();
-
-    if (precon_used_) {
-      // -- form and prep the Schur complement for inversion
-      if (vo_->os_OK(Teuchos::VERB_EXTREME))
-        *vo_->os() << "  assembling Schur complement..." << std::endl;
-      mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-      mfd_preconditioner_->UpdatePreconditioner();
-    }
-  }
 };
 
 

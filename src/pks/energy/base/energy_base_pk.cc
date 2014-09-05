@@ -187,7 +187,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   bc_flux_ = bc_factory.CreateEnthalpyFlux();
 
   // operator for advection terms
-  implicit_advection_ = plist_->get<bool>("implicit advection", true);
+  explicit_advection_ = plist_->get<bool>("explicit advection", false);
+  explicit_advection_iter_ = plist_->get<int>("explicit advection iteration", 1e99);
   Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
   advection_ = advection_factory.create(advect_plist, mesh_);
@@ -453,7 +454,6 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
   // skip accumulation terms, they're not needed
   // Assemble and precompute the Schur complement for inversion.
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  matrix_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
   matrix_->UpdateConsistentFaceConstraints(u.ptr());

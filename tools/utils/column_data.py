@@ -14,15 +14,17 @@ import sys,os
 import numpy as np
 import h5py
 
-elem_type = {8:'PRISM',
+elem_type = {5:'QUAD',
+             8:'PRISM',
              9:'HEX',
              }
 
-def meshZ(filename="visdump_mesh.h5", directory="."):
+def meshX(coord=2, filename="visdump_mesh.h5", directory="."):
     with h5py.File(os.path.join(directory, filename), 'r') as dat:
-        mesh = dat['0']['Mesh']
+        mesh = dat[dat.keys()[0]]['Mesh']
         elem_conn = mesh['MixedElements'][:,0]
 
+        print 'elem conn:', elem_conn[0]
         etype = elem_type[elem_conn[0]]
         if (etype == 'PRISM'):
             nnodes_per_elem = 6
@@ -30,6 +32,9 @@ def meshZ(filename="visdump_mesh.h5", directory="."):
         elif (etype == 'HEX'):
             nnodes_per_elem = 8
             nnodes_per_face = 4
+        elif (etype == 'QUAD'):
+            nnodes_per_elem = 4
+            nnodes_per_face = 2
 
         n_elems = len(elem_conn) / (nnodes_per_elem+1)
         conn = elem_conn.reshape((n_elems, nnodes_per_elem+1))
@@ -40,7 +45,7 @@ def meshZ(filename="visdump_mesh.h5", directory="."):
         coords = dict(zip(mesh['NodeMap'][:,0], mesh['Nodes'][:]))
         for i,elem in enumerate(conn):
             elem_coords = np.array([coords[gid] for gid in elem[1:]])
-            elem_z = np.mean(elem_coords[:,-1])
+            elem_z = np.mean(elem_coords[:,coord])
             z[i] = elem_z
 
     return z
@@ -51,9 +56,9 @@ def fullname(varname):
         fullname = fullname+'.cell.0'
     return fullname
 
-def sort(varnames, keys='all', directory=".", filename="visdump_data.h5", mesh_filename="visdump_mesh.h5"):
+def sort(varnames, keys='all', directory=".", filename="visdump_data.h5", mesh_filename="visdump_mesh.h5", coord=2):
     """Returns data of shape ( len(varnames+1), len(keys), n_cells )"""
-    z = meshZ(mesh_filename, directory)
+    z = meshX(coord, mesh_filename, directory)
     if type(varnames) is str:
         varnames = [varnames,]
 

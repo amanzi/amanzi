@@ -26,6 +26,7 @@ ThreePhaseEnergyEvaluator::ThreePhaseEnergyEvaluator(Teuchos::ParameterList& pli
   my_key_ = plist_.get<std::string>("energy key", "energy");
 
   dependencies_.insert(std::string("porosity"));
+  dependencies_.insert(std::string("base_porosity"));
 
   dependencies_.insert(std::string("saturation_liquid"));
   dependencies_.insert(std::string("molar_density_liquid"));
@@ -70,6 +71,7 @@ void ThreePhaseEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& u_i = *S->GetFieldData("internal_energy_ice")->ViewComponent("cell",false);
 
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell",false);
+  const Epetra_MultiVector& phib = *S->GetFieldData("base_porosity")->ViewComponent("cell",false);
   const Epetra_MultiVector& u_rock = *S->GetFieldData("internal_energy_rock")->ViewComponent("cell",false);
   const Epetra_MultiVector& rho_rock = *S->GetFieldData("density_rock")->ViewComponent("cell",false);
   const Epetra_MultiVector& cell_volume = *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
@@ -82,7 +84,7 @@ void ThreePhaseEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         s_l[0][c] * n_l[0][c] * u_l[0][c]
         + s_i[0][c] * n_i[0][c] * u_i[0][c]
         + s_g[0][c] * n_g[0][c] * u_g[0][c])
-        + (1.0 - phi[0][c]) * u_rock[0][c] * rho_rock[0][c];
+        + (1.0 - phib[0][c]) * u_rock[0][c] * rho_rock[0][c];
     result_v[0][c] *= cell_volume[0][c];
   }
 };
@@ -103,6 +105,7 @@ void ThreePhaseEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
   const Epetra_MultiVector& u_i = *S->GetFieldData("internal_energy_ice")->ViewComponent("cell",false);
 
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell",false);
+  const Epetra_MultiVector& phib = *S->GetFieldData("base_porosity")->ViewComponent("cell",false);
   const Epetra_MultiVector& u_rock = *S->GetFieldData("internal_energy_rock")->ViewComponent("cell",false);
   const Epetra_MultiVector& rho_rock = *S->GetFieldData("density_rock")->ViewComponent("cell",false);
   const Epetra_MultiVector& cell_volume = *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
@@ -111,9 +114,12 @@ void ThreePhaseEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
   if (wrt_key == "porosity") {
     for (unsigned int c=0; c!=result->size("cell"); ++c) {
       result_v[0][c] = s_l[0][c]*n_l[0][c]*u_l[0][c]
-        + s_i[0][c]*n_i[0][c]*u_i[0][c]
-        + s_g[0][c]*n_g[0][c]*u_g[0][c]
-        - rho_rock[0][c] * u_rock[0][c];
+          + s_i[0][c]*n_i[0][c]*u_i[0][c]
+          + s_g[0][c]*n_g[0][c]*u_g[0][c];
+    }
+  } else if (wrt_key == "base_porosity") {
+    for (unsigned int c=0; c!=result->size("cell"); ++c) {
+      result_v[0][c] = - rho_rock[0][c] * u_rock[0][c];
     }
 
   } else if (wrt_key == "saturation_liquid") {
@@ -157,11 +163,11 @@ void ThreePhaseEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
 
   } else if (wrt_key == "internal_energy_rock") {
     for (unsigned int c=0; c!=result->size("cell"); ++c) {
-      result_v[0][c] = (1.0 - phi[0][c])*rho_rock[0][c];
+      result_v[0][c] = (1.0 - phib[0][c])*rho_rock[0][c];
     }
   } else if (wrt_key == "density_rock") {
     for (unsigned int c=0; c!=result->size("cell"); ++c) {
-      result_v[0][c] = (1.0 - phi[0][c])*u_rock[0][c];
+      result_v[0][c] = (1.0 - phib[0][c])*u_rock[0][c];
     }
   } else {
     ASSERT(0);

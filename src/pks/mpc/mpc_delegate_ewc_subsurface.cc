@@ -9,8 +9,14 @@ Interface for EWC, a helper class that does projections and preconditioners in
 energy/water-content space instead of temperature/pressure space.
 ------------------------------------------------------------------------- */
 #define DEBUG_FLAG 1
-#define EWC_THAWING 1
 
+#define EWC_THAWING 1
+#define EWC_SATURATION 1
+#define EWC_INCREASING_PRESSURE 1
+
+#define EWC_PC_THAWING 1
+#define EWC_PC_SATURATION 1
+#define EWC_PC_INCREASING_PRESSURE 1
 
 #include "ewc_model.hh"
 #include "FieldEvaluator.hh"
@@ -198,6 +204,7 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
 #endif
     }
 
+#if EWC_SATURATION    
     // SATURATED-UNSATURATED TRANSITION
     if (!ewc_completed) { // do not do this if we already are doing ewc for temperature reasons
       if (p_guess - p < 0.) {  // decreasing, becoming unsaturated
@@ -237,6 +244,7 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
           }
         }
 
+#if EWC_INCREASING_PRESSURE
       } else { // increasing, becoming saturated
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   increasing pressures..." << std::endl;
@@ -276,8 +284,10 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
             }
           }
         }
+#endif
       }
     }
+#endif
 
   }
   return true;
@@ -345,12 +355,12 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   decreasing temps..." << std::endl;
 
-        if (!model_->Freezing(T_std+0.001, p_std)) {
+        if (!model_->Freezing(T_std, p_std)) {
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
             *dcvo->os() << "   above freezing, keep std correction" << std::endl;
           // pass, guesses are good
 
-        } else if (model_->Freezing(T_prev + 0.001, p_prev)) {
+        } else if (model_->Freezing(T_prev, p_prev)) {
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
             *dcvo->os() << "   linearization point past the freezing point, keep std correction" << std::endl;
           // pass, guesses are good
@@ -406,7 +416,7 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
           }
         }
 
-#if EWC_THAWING
+#if EWC_PC_THAWING
       } else { // increasing, thawing
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   increasing temps..." << std::endl;
@@ -473,7 +483,7 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
 #endif
       }
 
-
+#if EWC_PC_SATURATION
       if (!ewc_completed) {
         // SATURATED-UNSATURATED TRANSITION
         if (-dp_std[0][c] < 0.) {  // decreasing, going unsaturated
@@ -541,6 +551,7 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
             }
           }
 
+#if EWC_PC_INCREASING_PRESSURE          
         } else { // increasing, thawing
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
             *dcvo->os() << "   increasing pressures..." << std::endl;
@@ -605,9 +616,10 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
               }
             }
           }
+#endif          
         }
       }
-
+#endif
     }
   }
 }

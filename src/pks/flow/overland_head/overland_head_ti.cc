@@ -235,13 +235,6 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   FixBCsForPrecon_(S_next_.ptr());
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
-  // 3.b: Assemble the operator if requested
-  if (assemble_preconditioner_) {
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "  assembling forward PC operator..." << std::endl;
-    mfd_preconditioner_->AssembleGlobalMatrices();
-  }
-
   // 3.c: Add in full Jacobian terms
   if (tpfa_ && full_jacobian_) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -279,21 +272,17 @@ void OverlandHeadFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
     Teuchos::RCP<Epetra_FECrsMatrix> Spp = tpfa_preconditioner_->TPFA();
 
     // Scale Spp by dh/dp (h, NOT h_bar), clobbering rows with p < p_atm
-    S_next_->GetFieldEvaluator("ponded_depth")
+    std::string pd_key = smoothed_ponded_accumulation_ ? "smoothed_ponded_depth" : "ponded_depth";
+    std::string pd_deriv_key = "d"+pd_key+"_d"+key_;
+    S_next_->GetFieldEvaluator(pd_key)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-    const Epetra_MultiVector& dh0_dp =
-        *S_next_->GetFieldData("dponded_depth_d"+key_)
+    const Epetra_MultiVector& dh0_dp = *S_next_->GetFieldData(pd_deriv_key)
         ->ViewComponent("cell",false);
     int ierr = Spp->RightScale(*dh0_dp(0));
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "  Right scaling TPFA" << std::endl;
-    db_->WriteVector("    dh_dp", S_next_->GetFieldData("dponded_depth_dsurface_pressure").ptr());
+    db_->WriteVector("    dh_dp", S_next_->GetFieldData(pd_deriv_key).ptr());
     ASSERT(!ierr);
-  }
-
-  if (assemble_preconditioner_ && precon_used_) {
-    mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    mfd_preconditioner_->UpdatePreconditioner();
   }
 
   /*

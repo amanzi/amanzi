@@ -58,7 +58,8 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     dynamic_mesh_(false),
     clobber_surf_kr_(false),
     vapor_diffusion_(false),
-    perm_scale_(1.)
+    perm_scale_(1.),
+    tpfa_(false)
 {
   // set a few parameters before setup
   plist_->set("primary variable key", "pressure");
@@ -204,12 +205,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
 
   // Create the upwinding method
-  S->RequireField("sc_numerical_rel_perm", name_)->SetMesh(mesh_)->SetGhosted()
-                    ->SetComponents(names2, locations2, num_dofs2);
-  S->GetField("sc_numerical_rel_perm",name_)->set_io_vis(false);
-
-
-
   S->RequireField("numerical_rel_perm", name_)->SetMesh(mesh_)->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("numerical_rel_perm",name_)->set_io_vis(false);
@@ -286,6 +281,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
+  tpfa_ = mfd_pc_plist.get<bool>("TPFA", false) ||
+      (mfd_pc_plist.get<std::string>("MFD method") == "two point flux approximation");
   if (scaled_constraint_ && !mfd_pc_plist.isParameter("scaled constraint equation"))
     mfd_pc_plist.set("scaled constraint equation", scaled_constraint_);
   mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
@@ -415,8 +412,6 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   // and will be initialized in the call to commit_state()
   S->GetFieldData("numerical_rel_perm",name_)->PutScalar(1.0);
   S->GetField("numerical_rel_perm",name_)->set_initialized();
-  S->GetFieldData("sc_numerical_rel_perm",name_)->PutScalar(1.0);
-  S->GetField("sc_numerical_rel_perm",name_)->set_initialized();
 
   if (vapor_diffusion_){
     S->GetFieldData("vapor_diffusion_pressure",name_)->PutScalar(1.0);
@@ -562,7 +557,6 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
         vel_c[n][c] /= nliq_c[0][c];
       }
     }
-
   }
 };
 
@@ -577,7 +571,6 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Updating permeability?";
 
-  Teuchos::RCP<CompositeVector> sc_uw_rel_perm = S->GetFieldData("sc_numerical_rel_perm", name_);
   Teuchos::RCP<CompositeVector> uw_rel_perm = S->GetFieldData("numerical_rel_perm", name_);
   Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
   bool update_perm = S->GetFieldEvaluator("relative_permeability")
@@ -601,7 +594,6 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       // Add in the gravity fluxes
       Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
       Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
-      // AddGravityFluxesToVector_(gvec.ptr(), sc_uw_rel_perm.ptr(), rho.ptr(), flux_dir.ptr());
       AddGravityFluxesToVector_(gvec.ptr(), Teuchos::null, rho.ptr(), flux_dir.ptr());
     }
 
@@ -863,8 +855,11 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_();
 
-  Teuchos::RCP<CompositeVector> rel_perm =
-      S_next_->GetFieldData("sc_numerical_rel_perm", name_);
+  Teuchos::RCP<const CompositeVector> rel_perm = 
+    S_next_->GetFieldData("numerical_rel_perm");
+
+  const Epetra_MultiVector& rel_perm_f =
+    *rel_perm->ViewComponent("face",false);
 
   Teuchos::RCP<const CompositeVector> rho =
       S_next_->GetFieldData("mass_density_liquid");
@@ -872,15 +867,20 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
       S_next_->GetConstantVectorData("gravity");
 
   // Update the preconditioner with darcy and gravity fluxes
-  matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+  matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), matrix_.ptr());
+  AddGravityFluxes_(gvec.ptr(), Teuchos::null, rho.ptr(), matrix_.ptr());
 
   // skip accumulation terms, they're not needed
 
   // Assemble
+  for (int f=0; f!=bc_markers_.size(); ++f) {
+    if (bc_markers_[f] == Operators::MATRIX_BC_FLUX &&
+        std::abs(rel_perm_f[0][f]) > 0.) {
+      bc_values_[f] /= rel_perm_f[0][f];
+    }
+  }
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  matrix_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
   matrix_->UpdateConsistentFaceConstraints(u.ptr());
@@ -907,7 +907,7 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
     *vo_->os() << "    Admissible p? (min/max): " << minp << ",  " << maxp << std::endl;
   }
 
-  if (ierr || minp < -1.e8 || maxp > 1.e8) {
+  if (ierr || minp < -1.e9 || maxp > 1.e8) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << " is not admissible, as it is not within bounds of constitutive models: min(p) = " << minp << ", max(p) = " << maxp << std::endl;
     }

@@ -48,8 +48,9 @@ class MPCSubsurface : public MPCCoupledCells {
 
   // preconditioner application
   virtual void ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
-  virtual bool ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                       Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
  protected:
 

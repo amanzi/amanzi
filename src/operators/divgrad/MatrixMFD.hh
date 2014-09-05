@@ -76,49 +76,50 @@ class MatrixMFD : public CompositeMatrix {
 
   // Access to local matrices for external tweaking.
   std::vector<double>& Acc_cells() {
+    MarkLocalMatricesAsChanged_();
     return Acc_cells_;
   }
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() {
+    MarkLocalMatricesAsChanged_();
     return Aff_cells_;
   }
   std::vector<Epetra_SerialDenseVector>& Acf_cells() {
+    MarkLocalMatricesAsChanged_();
     return Acf_cells_;
   }
   std::vector<Epetra_SerialDenseVector>& Afc_cells() {
+    MarkLocalMatricesAsChanged_();
     return Afc_cells_;
   }
+  const std::vector<double>& Acc_cells() const { return Acc_cells_; }
+  const std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() const { return Aff_cells_; }
+  const std::vector<Epetra_SerialDenseVector>& Acf_cells() const { return Acf_cells_; }
+  const std::vector<Epetra_SerialDenseVector>& Afc_cells() const { return Afc_cells_; }
 
   // Access to local rhs
   std::vector<double>& Fc_cells() {
+    assembled_rhs_ = false;
     return Fc_cells_;
   }
   std::vector<Epetra_SerialDenseVector>& Ff_cells() {
+    assembled_rhs_ = false;
     return Ff_cells_;
   }
 
   // Const access to assembled matrices.
   Teuchos::RCP<const Epetra_Vector> Acc() {
-    AssertAssembledOperator_or_die_();
     return Acc_;
   }
   Teuchos::RCP<const Epetra_FECrsMatrix> Aff() {
-    AssertAssembledOperator_or_die_();
+    if (!assembled_operator_) AssembleAff_();
     return Aff_;
   }
-  Teuchos::RCP<const Epetra_CrsMatrix> Afc() {
-    AssertAssembledOperator_or_die_();
-    return Afc_;
-  }
-  Teuchos::RCP<const Epetra_CrsMatrix> Acf() {
-    AssertAssembledOperator_or_die_();
-    return Acf_;
-  }
   Teuchos::RCP<const Epetra_FECrsMatrix> Schur() {
-    AssertAssembledSchur_or_die_();
+    if (!assembled_schur_) AssembleSchur_();
     return Sff_;
   }
   Teuchos::RCP<const CompositeVector> rhs() {
-    AssertAssembledOperator_or_die_();
+    if (!assembled_rhs_) AssembleRHS_();
     return rhs_;
   }
 
@@ -147,9 +148,6 @@ class MatrixMFD : public CompositeMatrix {
 
   // -- global matrices
   virtual void SymbolicAssembleGlobalMatrices();
-  virtual void AssembleGlobalMatrices();
-  virtual void ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
-          const std::vector<double>& bc_values);
 
   // Operator methods.
   virtual void ComputeResidual(const CompositeVector& X,
@@ -159,7 +157,6 @@ class MatrixMFD : public CompositeMatrix {
 
   // Solver methods.
   virtual void InitPreconditioner();
-  virtual void UpdatePreconditioner();
 
   // First derivative quantities.
   virtual void DeriveFlux(const CompositeVector& solution,
@@ -177,18 +174,42 @@ class MatrixMFD : public CompositeMatrix {
   virtual void UpdateConsistentCellCorrection(const CompositeVector& u,
           const Teuchos::Ptr<CompositeVector>& Pu);
 
+  // note X == Y is valid
+  int ApplyAfc(const CompositeVector& X, CompositeVector& Y, double scalar) const;
+  int ApplyAcf(const CompositeVector& X, CompositeVector& Y, double scalar) const;
 
  protected:
-  void InitializeFromPList_();
-
   // Assertions of assembly process
   void AssertAssembledOperator_or_die_() const;
   void AssertAssembledSchur_or_die_() const;
+  void AssertAssembledRHS_or_die_() const;
+  virtual void MarkLocalMatricesAsChanged_() {
+    assembled_operator_ = false;
+    assembled_schur_ = false;
+    assembled_rhs_ = false;
+  }
+
+  int ApplyAfc_(const Epetra_MultiVector& X, CompositeVector& Y, double scalar) const;
+  int ApplyAcf_(const CompositeVector& X, Epetra_MultiVector& Y, double scalar) const;
+
+  void InitializeFromPList_();
+  virtual void UpdatePreconditioner_() const;
 
   virtual void FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,
           const Teuchos::Ptr<Epetra_FECrsGraph> ff_graph);
   virtual void CreateMatrices_(const Epetra_CrsGraph& cf_graph,
           const Epetra_FECrsGraph& ff_graph);
+
+  virtual void AssembleAff_() const;
+  virtual void AssembleRHS_() const;
+  virtual void AssembleSchur_() const;
+  
+ private:
+  // These are dangerous -- they require ghosted vectors, and a
+  // communication either before or after application.
+  int ApplyAfc_(const Epetra_MultiVector& X, Epetra_MultiVector& Y, double scalar) const;
+  int ApplyAcf_(const Epetra_MultiVector& X, Epetra_MultiVector& Y, double scalar) const;
+
 
 
  protected:
@@ -197,8 +218,9 @@ class MatrixMFD : public CompositeMatrix {
   bool flag_symmetry_;
 
   // lazy assembly
-  bool assembled_operator_;
-  bool assembled_schur_;
+  mutable bool assembled_operator_;
+  mutable bool assembled_schur_;
+  mutable bool assembled_rhs_;
 
   MFDMethod method_;
 
@@ -210,15 +232,16 @@ class MatrixMFD : public CompositeMatrix {
   std::vector<Epetra_SerialDenseVector> Ff_cells_;
   std::vector<double> Fc_cells_;
 
+  // boundary condition flags
+  std::vector<MatrixBC> bc_markers_;
+
   // global matrices
   Teuchos::RCP<Epetra_Vector> Acc_;
-  Teuchos::RCP<Epetra_CrsMatrix> Acf_;
-  Teuchos::RCP<Epetra_CrsMatrix> Afc_;  // We generate transpose of this matrix block.
-  Teuchos::RCP<Epetra_FECrsMatrix> Aff_;
-  Teuchos::RCP<Epetra_FECrsMatrix> Sff_;  // Schur complement
+  mutable Teuchos::RCP<Epetra_FECrsMatrix> Aff_;
+  mutable Teuchos::RCP<Epetra_FECrsMatrix> Sff_;  // Schur complement
 
   // global rhs
-  Teuchos::RCP<CompositeVector> rhs_;
+  mutable Teuchos::RCP<CompositeVector> rhs_;
 
   // diagnostics
   int nokay_;
@@ -228,7 +251,7 @@ class MatrixMFD : public CompositeMatrix {
   Teuchos::RCP<CompositeVectorSpace> space_;
 
   // preconditioner for Schur complement
-  Teuchos::RCP<AmanziPreconditioners::Preconditioner> S_pc_;
+  mutable Teuchos::RCP<AmanziPreconditioners::Preconditioner> S_pc_;
 
   // LinearOperator and Preconditioner for solving face system
   // Aff * x_f = r_Aff c - Afc * x_c for x_f

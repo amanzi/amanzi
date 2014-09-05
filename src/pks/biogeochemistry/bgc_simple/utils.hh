@@ -28,14 +28,11 @@ struct MetData {
 };
 
 double PermafrostDepth(const Epetra_SerialDenseVector& SoilTArr,
-                       const Epetra_SerialDenseVector& SoilDArr,
-                       double freeze_temp=273.15) {
-  int i = 0;
-  int nSoilLayers = SoilTArr.Length();
-  while (SoilDArr[i] > 0. && i < nSoilLayers) i++;
-  return SoilDArr[i];
-}
+                       const Epetra_SerialDenseVector& SoilThicknessArr,
+                       double freeze_temp);
 
+int PermafrostDepthIndex(const Epetra_SerialDenseVector& SoilTArr,
+                       double freeze_temp);
 
 // This function calculate the effect of temperature on biological process.
 double TEffectsQ10(double Q10, double T, double refT);

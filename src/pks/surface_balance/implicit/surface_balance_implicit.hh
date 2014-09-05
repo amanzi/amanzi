@@ -70,6 +70,9 @@ public:
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_wtemp_;
 
   bool eval_derivatives_;
+  bool implicit_snow_;
+  bool modify_predictor_advance_;
+  bool longwave_input_;
 
   double min_wind_speed_;
   double wind_speed_ref_ht_;

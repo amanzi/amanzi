@@ -46,6 +46,7 @@ ImplicitSnowDistributionEvaluator::ImplicitSnowDistributionEvaluator(Teuchos::Pa
   kCFL_ = plist_.get<double>("Courant number", 1.);
   kSWE_conv_ = plist_.get<double>("SWE-to-snow conversion ratio", 10.);
   tol_ = plist_.get<double>("solver tolerance", 1.e-2);
+  atol_ = plist_.get<double>("absolute solver tolerance", 1.e-10);
   max_it_ = plist_.get<int>("max iterations", 10);
 
   FunctionFactory fac;
@@ -67,10 +68,12 @@ ImplicitSnowDistributionEvaluator::ImplicitSnowDistributionEvaluator(const Impli
     kCFL_(other.kCFL_),
     kSWE_conv_(other.kSWE_conv_),
     tol_(other.tol_),
+    atol_(other.atol_),
     max_it_(other.max_it_),
     assembled_(other.assembled_),
     mesh_name_(other.mesh_name_),
-    matrix_(other.matrix_) {}
+    matrix_(other.matrix_),
+    matrix_linsolve_(other.matrix_linsolve_) {}
 
 
 void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -138,7 +141,7 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     Teuchos::RCP<CompositeVector> Krel_uw = Teuchos::rcp(new CompositeVector(Krel_f_space));
 
     // Gather dependencies
-    // NOTE: this is incorrect approximation... should be | sqrt( grad( z+h_pd ) ) |
+    // NOTE: this is incorrect approximation... should be | sqrt( grad( z+h_pd+h_sd ) ) |
     const Epetra_MultiVector& slope = *S->GetFieldData(slope_key_)->ViewComponent("cell",false);
     const Epetra_MultiVector& cv = *S->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
     Teuchos::RCP<const CompositeVector> elev = S->GetFieldData(elev_key_);
@@ -148,9 +151,14 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     // initialize and begin timestep loop
     result->PutScalar(Qe * ktmax_ * kSWE_conv_);
     for (int istep=0; istep!=nsteps; ++istep) {
-      if (vo_->os_OK(Teuchos::VERB_HIGH))
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "Snow distribution inner timestep " << istep << " with size " << dt << std::endl
-                   << "   Qe*t_total =" << std::endl;
+                   << "   Qe*t_total (min,max) = ";
+        double min, max;
+        result->ViewComponent("cell",false)->MinValue(&min);
+        result->ViewComponent("cell",false)->MaxValue(&max);
+        *vo_->os() << min << ", " << max << std::endl;
+      }
 
       *result_prev = *result;
       double norm0 = 0.;
@@ -172,7 +180,7 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
           Epetra_MultiVector& Krel_c_vec = *Krel_c->ViewComponent("cell",false);
           const Epetra_MultiVector& result_c = *result->ViewComponent("cell",false);
           for (int c=0; c!=ncells; ++c) {
-            Krel_c_vec[0][c] = std::pow(std::max(result_c[0][c],0.), 4./3)
+            Krel_c_vec[0][c] = std::pow(std::max(result_c[0][c],0.), 5./3)
               / (std::sqrt(std::max(slope[0][c], 1.e-6)) * nm);
           }
         }
@@ -204,7 +212,6 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
         matrix_->CreateMFDstiffnessMatrices(Krel_uw.ptr());
         matrix_->CreateMFDrhsVectors();
         matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
-        matrix_->AssembleGlobalMatrices();
 
         // Apply the operator to get div flux
         matrix_->ComputeNegativeResidual(*hz, residual.ptr());
@@ -239,7 +246,7 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
           residual->Print(*vo_->os());
         }
 
-        if ((norm0 == 0.) || (norm / norm0 < tol_) || (ncycle > max_it_)) {
+        if ((norm0 < atol_) || (norm / norm0 < tol_) || (ncycle > max_it_)) {
           done = true;
           continue;
         }
@@ -255,9 +262,6 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
             Acc_cells[c] += cv[0][c] / dt;
           }
         }
-        matrix_->AssembleGlobalMatrices();
-        matrix_->ComputeSchurComplement(bc_markers, bc_values);
-        matrix_->UpdatePreconditioner();
 
         dresult->PutScalar(0.);
         matrix_linsolve_->ApplyInverse(*residual, *dresult);
@@ -269,7 +273,7 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
         // Update
         result->Update(-1., *dresult, 1.);
         if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-          *vo_->os() << "  new snow depth = " << std::endl;
+          *vo_->os() << "  new snow depth = ";
           result->Print(*vo_->os());
         }
       }
@@ -291,8 +295,13 @@ void ImplicitSnowDistributionEvaluator::EvaluateFieldPartialDerivative_(const Te
 void
 ImplicitSnowDistributionEvaluator::AssembleOperator_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_name_);
-  matrix_ = Operators::CreateMatrixMFD(plist_.sublist("Diffusion"), mesh);
+  Teuchos::ParameterList& diffusion_plist = plist_.sublist("Diffusion");
+  diffusion_plist.set("TPFA", true);
+  diffusion_plist.set("scaled constraint equation", true);
+  diffusion_plist.set<std::string>("MFD method", "two point flux approximation");
+  diffusion_plist.set("TPFA use cells only", true);
 
+  matrix_ = Operators::CreateMatrixMFD(diffusion_plist, mesh);
   matrix_->set_symmetric(true);
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->CreateMFDmassMatrices(Teuchos::null);
@@ -300,6 +309,8 @@ ImplicitSnowDistributionEvaluator::AssembleOperator_(const Teuchos::Ptr<State>& 
 
   AmanziSolvers::LinearOperatorFactory<CompositeMatrix,CompositeVector,CompositeVectorSpace> fac;
   matrix_linsolve_ = fac.Create(plist_.sublist("Diffusion Solver"), matrix_);
+
+  assembled_ = true;
 }
 
 

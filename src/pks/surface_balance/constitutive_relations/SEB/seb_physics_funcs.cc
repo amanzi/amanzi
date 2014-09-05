@@ -20,21 +20,21 @@ void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug) {
   // Calculate incoming short-wave radiation
   eb.fQswIn = (1 - seb.in.surf.albedo) * seb.in.met.QswIn;
 
-  // Calculate incoming long-wave radiation
-  const ThermoProperties& vp_air = seb.in.met.vp_air;
-  double e_air = std::pow(10*vp_air.actual_vaporpressure, vp_air.temp / 2016.);
-  e_air = 1.08 * (1 - std::exp(-e_air));
-  eb.fQlwIn = e_air * seb.params.stephB * std::pow(vp_air.temp,4);
+//  // Calculate incoming long-wave radiation
+//  const ThermoProperties& vp_air = seb.in.met.vp_air;
+//  double e_air = std::pow(10*vp_air.actual_vaporpressure, vp_air.temp / 2016.);
+//  e_air = 1.08 * (1 - std::exp(-e_air));
+  eb.fQlwIn = seb.in.met.QlwIn;
 
   // Calculate D_h, D_e, 
   eb.Dhe = std::pow(seb.params.VKc,2) * seb.in.met.Us
                        / std::pow(std::log(seb.params.Zr / seb.in.surf.Zo), 2);
-
   if (debug) {
     std::cout << "Incoming Radiation Energy Terms:" << "\n"
               << "  windspeed, Zo: " << seb.in.met.Us <<"  "<<seb.in.surf.Zo << "\n"
               << "  fQswIn   = " << eb.fQswIn << "\n"
-              << "  fQlwIn   = " << eb.fQlwIn << std::endl;
+              << "  fQlwIn   = " << eb.fQlwIn << "\n"
+              << "  wind Ref Ht [m] = " << seb.params.Zr << std::endl;
   }
 
 }
@@ -46,11 +46,11 @@ void UpdateEvapResistance(const SEB& seb, const ThermoProperties& vp_surf, Energ
    
 // Equation for reduced vapor diffusivity See Sakagucki and Zeng 2009 eqaution (9) and Moldrup et al., 2004. 
    double Clab_Horn_b = 1;
-   double actual_porosity = 0.9;  // Hard coded for moss Fix this to pass in form ATS ~AA
+   double actual_porosity = 0.9;  // Hard coded for moss Fix this to pass in form ATS ~AA  *******************
    double Surface_Vap_Diffusion = std::pow((1-(0.0556/actual_porosity)),(2+3*Clab_Horn_b));
    Surface_Vap_Diffusion = 0.000022 * (std::pow(actual_porosity,2)) * Surface_Vap_Diffusion;
 // Sakagucki and Zeng 2009 eqaution (10)
-   double cell_dimension = 0.01/2; // This is from cell center to the boundary.
+   double cell_dimension = 0.01/2; // This is from cell center to the boundary **** HARD CODED FOR CURENT MOSS CELLS ********.
    double VWC = seb.in.surf.saturation_liquid * actual_porosity;
    double L_Rsoil = std::exp(std::pow((1-(VWC/actual_porosity)),5));
    L_Rsoil = cell_dimension * (L_Rsoil -1) * (1/(2.718-1));
@@ -121,6 +121,11 @@ void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf, Energy
   // Calculate heat conducted to ground, if snow
   if (seb.in.snow_old.ht > 0.) {
     double Ks = 2.9e-6 * std::pow(seb.in.snow_old.density,2);
+    double snow_hoar_density = 0;
+    if(seb.in.snow_old.density>150){
+      snow_hoar_density = 1/((0.90/seb.in.snow_old.density)+(0.10/150));
+      Ks = 2.9e-6 * std::pow(snow_hoar_density,2);
+    }
     eb.fQc = Ks * (vp_surf.temp - seb.in.vp_ground.temp) / seb.in.snow_old.ht;
   }
 
@@ -239,17 +244,18 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
 
     // set the snow properties
     double swe_total = std::max(swe_settled + swe_frost + swe_precip, 0.);
+    ASSERT(std::abs(swe_total - swe_new) < SWE_EPS);
     snow_new.ht = std::max(ht_settled + ht_frost + ht_precip, 0.);
-    snow_new.age = swe_total > 0. ? (swe_settled*age_settled + swe_frost*age_frost + swe_precip*age_precip) / swe_total : 0.;
+    snow_new.age = swe_new > 0. ? (swe_settled*age_settled + swe_frost*age_frost + swe_precip*age_precip) / swe_new : 0.;
     snow_new.density = snow_new.ht > 0. ? swe_new * seb.in.vp_ground.density_w / snow_new.ht : seb.params.density_freshsnow;
-    snow_new.SWE = snow_new.ht * snow_new.density / seb.in.vp_ground.density_w;
+    snow_new.SWE = swe_new;
 
     // set the water properties
     // -- water source to ground is (corrected) melt and rainfall
     // NOTE: these rates can only be correct if over mb.dt
     mb.MWg = mb.Mm + seb.in.met.Pr;
     mb.MWg_subsurf = 0.;
-    mb.MWg_temp = (mb.MWg > 0. && mb.Mm > 0.) ? (mb.Mm * 273.15 + seb.in.met.Pr * seb.in.met.vp_air.temp) / mb.MWg : seb.in.met.vp_air.temp;
+    mb.MWg_temp = (mb.MWg > 0. && mb.Mm > 0.) ? (mb.Mm * 273.15 + seb.in.met.Pr * seb.in.met.vp_air.temp) / mb.MWg : (seb.in.met.vp_air.temp > 273.15) ? seb.in.met.vp_air.temp: 273.15;
 
   } else {
     // set the snow properties
@@ -262,7 +268,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     // set the water properties
     // -- water source to ground is rainfall + condensation
     // -- evaporation is taken from ground if ponded water, from cell source if not (with transition)
-    mb.MWg_temp = seb.in.met.vp_air.temp;
+    mb.MWg_temp = (seb.in.met.vp_air.temp > 273.15) ? seb.in.met.vp_air.temp: 273.15;
     mb.MWg = seb.in.met.Pr;
     mb.MWg_subsurf = 0.;
     if (mb.Me > 0.) {

@@ -8,7 +8,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 Licencse: BSD
 */
 
-
+#include "dbc.hh"
 #include "SoilCarbonParameters.hh"
 
 namespace Amanzi {
@@ -17,7 +17,7 @@ namespace BGC {
 SoilCarbonParameters::SoilCarbonParameters(int nPools_, double percent_sand) :
     nPools(nPools_),
     RespF(nPools_),
-    TurnoverRates (nPools_),
+    TurnoverRates(nPools_),
     Tij(nPools_,nPools_)
 {
   InitCentury_(percent_sand);
@@ -27,7 +27,7 @@ SoilCarbonParameters::SoilCarbonParameters(int nPools_, double percent_sand) :
 SoilCarbonParameters::SoilCarbonParameters(int nPools_, Teuchos::ParameterList& plist) :
     nPools(nPools_),
     RespF(nPools_),
-    TurnoverRates (nPools_),
+    TurnoverRates(nPools_),
     Tij(nPools_,nPools_)
 {
   Init_(plist);
@@ -72,9 +72,12 @@ void SoilCarbonParameters::InitCentury_(double percent_sand)
 
 void SoilCarbonParameters::Init_(Teuchos::ParameterList& plist)
 {
-  if (plist.isParameter("percent sand")) {
+  std::string model = plist.get<std::string>("soil carbon model", "century");
+  if (model == "century") {
     double p_sand = plist.get<double>("percent sand");
     InitCentury_(p_sand);
+  } else {
+    ASSERT(0);
   }
 
   // special case init from plist here...

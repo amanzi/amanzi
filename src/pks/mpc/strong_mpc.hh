@@ -74,8 +74,10 @@ public:
           Teuchos::RCP<TreeVector> u);
 
   // -- Modify the correction.
-  virtual bool ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                       Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<TreeVector> du);
 
 protected:
   using MPC<PK_t>::sub_pks_;
@@ -341,10 +343,13 @@ bool StrongMPC<PK_t>::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u
 // Modify correction from each sub pk.
 // -----------------------------------------------------------------------------
 template<class PK_t>
-bool StrongMPC<PK_t>::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+    StrongMPC<PK_t>::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                                      Teuchos::RCP<const TreeVector> u,
+                                      Teuchos::RCP<TreeVector> du) {
   // loop over sub-PKs
-  bool modified = false;
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult 
+      modified = AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
     // pull out the u sub-vector
     Teuchos::RCP<const TreeVector> pk_u = u->SubVector(i);
@@ -356,7 +361,7 @@ bool StrongMPC<PK_t>::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
       Exceptions::amanzi_throw(message);
     }
 
-    modified |= sub_pks_[i]->ModifyCorrection(h, pk_res, pk_u, pk_du);
+    modified = std::max(modified, sub_pks_[i]->ModifyCorrection(h, pk_res, pk_u, pk_du));
   }
   return modified;
 };
