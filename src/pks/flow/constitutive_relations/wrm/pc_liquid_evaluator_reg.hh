@@ -1,0 +1,22 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+
+/*
+  PCLiquidEvaluator is the interface between state/data and the model, a PC relation.
+
+  License: BSD
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+#include "pc_liq_atm.hh"
+#include "pc_liquid_evaluator.hh"
+
+namespace Amanzi {
+namespace Flow {
+namespace FlowRelations {
+
+// registry of method
+Utils::RegisteredFactory<FieldEvaluator,PCLiquidEvaluator> PCLiquidEvaluator::factory_("capillary pressure, atmospheric gas over liquid");
+
+} // namespace
+} // namespace
+} // namespace
