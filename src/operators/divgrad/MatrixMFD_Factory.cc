@@ -65,7 +65,12 @@ CreateMatrixMFD(Teuchos::ParameterList& plist,
       return Teuchos::rcp(new MatrixMFD_TPFA(plist, mesh));     
     }
   } else if (fv){
-     return Teuchos::rcp(new Matrix_TPFA(plist, mesh));  
+    if (surf){
+      return Teuchos::rcp(new Matrix_TPFA_Surf(plist, mesh));  
+    }
+    else {
+      return Teuchos::rcp(new Matrix_TPFA(plist, mesh));  
+    }
   } else {
     if (scaled_constraint) {
       return Teuchos::rcp(new MatrixMFD_ScaledConstraint(plist, mesh));

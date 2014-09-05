@@ -64,18 +64,19 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   if ((*pres).HasComponent("face")){
     Epetra_MultiVector sol_fc = *pres->ViewComponent("face");
     Epetra_MultiVector res_fc = *g.ptr()->ViewComponent("face");
-    //std::cout<< sol_fc<<"\n";
-    //std::cout<< res_fc<<"\n";
+    std::cout<< sol_fc<<"\n";
+    std::cout<< res_fc<<"\n";
   }
   if ((*pres).HasComponent("boundary_face")){
     Epetra_MultiVector sol_fc =    *pres->ViewComponent("boundary_face");
     Epetra_MultiVector res_fc = *g.ptr()->ViewComponent("boundary_face");
-    //std::cout<< sol_fc<<"\n";
+    std::cout<< sol_fc<<"\n";
+    std::cout<< res_fc<<"\n";
   }
   //Epetra_MultiVector& rb = *g.ptr()->ViewComponent("boundary_face");
   Epetra_MultiVector rc = *g.ptr()->ViewComponent("cell");
-  //std::cout<< sol_c<<"\n";
-  std::cout<< rc<<"\n";
+  // std::cout<< sol_c<<"\n";
+  // std::cout<< rc<<"\n";
 
   //exit(0);
 };
