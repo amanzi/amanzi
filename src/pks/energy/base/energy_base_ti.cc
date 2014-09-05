@@ -85,11 +85,11 @@ void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
   db_->WriteVector("res (acc)", res.ptr());
 #endif
 
-  // advection term, implicit
-  if (implicit_advection_ || niter_ > implicit_advection_iter_) {
-    AddAdvection_(S_next_.ptr(), res.ptr(), true);
-  } else {
+  // advection term, implicit by default, options for explicit
+  if (explicit_advection_ && niter_ <= explicit_advection_iter_) {
     AddAdvection_(S_inter_.ptr(), res.ptr(), true);
+  } else {
+    AddAdvection_(S_next_.ptr(), res.ptr(), true);
   }
 #if DEBUG_FLAG
   db_->WriteVector("res (adv)", res.ptr());
