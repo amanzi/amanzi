@@ -86,7 +86,7 @@ void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
 #endif
 
   // advection term, implicit
-  if (implicit_advection_) {
+  if (implicit_advection_ || niter_ > implicit_advection_iter_) {
     AddAdvection_(S_next_.ptr(), res.ptr(), true);
   } else {
     AddAdvection_(S_inter_.ptr(), res.ptr(), true);

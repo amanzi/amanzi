@@ -157,6 +157,7 @@ protected:
   bool is_source_term_;
   bool is_mass_source_term_;
   bool implicit_advection_;
+  int implicit_advection_iter_;
   bool precon_used_;
 
   bool coupled_to_subsurface_via_temp_;

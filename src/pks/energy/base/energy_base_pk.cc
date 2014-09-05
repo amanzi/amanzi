@@ -188,6 +188,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // operator for advection terms
   implicit_advection_ = plist_->get<bool>("implicit advection", true);
+  implicit_advection_iter_ = plist_->get<int>("implicit advection iteration", 0);
   Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
   advection_ = advection_factory.create(advect_plist, mesh_);
