@@ -305,9 +305,9 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
         double deficitBstem = std::max(tarBstem - pft.Bstem, 0.);
         double totalDeficit = deficitBstem + deficitBroot + deficitBleaf;
 
-        double frcBleaf = deficitBleaf / totalDeficit;
-        double frcBroot = deficitBroot / totalDeficit;
-        double frcBstem = deficitBstem / totalDeficit;
+        double frcBleaf = totalDeficit > 0 ? deficitBleaf / totalDeficit : 0.;
+        double frcBroot = totalDeficit > 0 ? deficitBroot / totalDeficit : 0.;
+        double frcBstem = totalDeficit > 0 ? deficitBstem / totalDeficit : 0.;
 
         if (totalDeficit >= GrowthFlux){
           grwBleaf += frcBleaf*GrowthFlux;
@@ -323,9 +323,9 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
           //--------------------------------------------------------------------
           //grow
           if (pft.lai <= pft.maxLAI){
-            frcBleaf = tarBleaf / tarBtotal;
-            frcBroot = tarBroot / tarBtotal;
-            frcBstem = tarBstem / tarBtotal;
+            frcBleaf = tarBtotal > 0 ? tarBleaf / tarBtotal : 0.;
+            frcBroot = tarBtotal > 0 ? tarBroot / tarBtotal : 0.;
+            frcBstem = tarBtotal > 0 ? tarBstem / tarBtotal : 0.;
 
             grwBleaf += frcBleaf*GrowthFlux;
             grwBroot += frcBroot*GrowthFlux;
