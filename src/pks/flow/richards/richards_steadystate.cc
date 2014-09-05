@@ -136,6 +136,7 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();
 
+  
   niter_++;
 
   double h = t_new - t_old;
