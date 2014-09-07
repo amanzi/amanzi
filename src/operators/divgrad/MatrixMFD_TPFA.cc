@@ -352,8 +352,6 @@ void MatrixMFD_TPFA::AssembleApp_() const {
   assembled_app_ = true;
 
 
-   std::cout<< (*Spp_);
-   std::cout<<"rhs_cell\n"<<*rhs_cells<<"\n";
    // std::cout<< (*Acf_);
    //exit(0);
 

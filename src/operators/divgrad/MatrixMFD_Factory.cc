@@ -29,6 +29,7 @@
 #include "MatrixMFD_TPFA_ScaledConstraint.hh"
 #include "MatrixMFD_TPFA.hh"
 #include "Matrix_TPFA.hh"
+#include "Matrix_TPFA_Surf.hh"
 #include "MatrixMFD_ScaledConstraint.hh"
 #include "MatrixMFD.hh"
 #include "MatrixMFD_Coupled_Surf.hh"
