@@ -74,7 +74,6 @@ void Richards::setup(const Teuchos::Ptr<State>& S) {
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
 
-
   flux_tol_ = plist_->get<double>("flux tolerance", 1.e-4);
 };
 
@@ -368,21 +367,8 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 void Richards::initialize(const Teuchos::Ptr<State>& S) {
 
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
-  std::cout<<key_<<" "<<name_<<"\n";
-
-
-  if (pres->HasComponent("face")){
-    Epetra_MultiVector sol_fc = *pres->ViewComponent("face");
-    std::cout<< sol_fc<<"\n";
-  }
   // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);
-
-  if (pres->HasComponent("boundary_face")){
-    Epetra_MultiVector sol_fc = *pres->ViewComponent("boundary_face");
-    std::cout<< sol_fc<<"\n";
-  }
 
 
   // debugggin cruft

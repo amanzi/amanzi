@@ -50,34 +50,12 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
-  //matrix_->Apply(*pres, *g.ptr());
-  
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres, g.ptr());
 
-  std::cout.precision(12);
-
   Epetra_MultiVector sol_c = *(*pres).ViewComponent("cell");
     
-  //Epetra_MultiVector sol_fc = *(*pres).ViewComponent("boundary_face");
-  if ((*pres).HasComponent("face")){
-    Epetra_MultiVector sol_fc = *pres->ViewComponent("face");
-    Epetra_MultiVector res_fc = *g.ptr()->ViewComponent("face");
-    std::cout<< sol_fc<<"\n";
-    std::cout<< res_fc<<"\n";
-  }
-  if ((*pres).HasComponent("boundary_face")){
-    Epetra_MultiVector sol_fc =    *pres->ViewComponent("boundary_face");
-    Epetra_MultiVector res_fc = *g.ptr()->ViewComponent("boundary_face");
-    //std::cout<< sol_fc<<"\n";
-    //std::cout<< res_fc<<"\n";
-  }
-  //Epetra_MultiVector& rb = *g.ptr()->ViewComponent("boundary_face");
-  Epetra_MultiVector rc = *g.ptr()->ViewComponent("cell");
-  // std::cout<< sol_c<<"\n";
-  // std::cout<< rc<<"\n";
-   
-  //exit(0);
+
 };
 
 
@@ -390,24 +368,36 @@ void Richards::AddGravityFluxes_FV_(const Teuchos::Ptr<const Epetra_Vector>& g_v
   std::vector<int> dirs;
 
   if (rel_perm == Teuchos::null) { // no rel perm
+
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell", true);
     unsigned int ncells = rho->size("cell",false);
+
     for (unsigned int c=0; c!=ncells; ++c) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
+      Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
+      Fc_cell[c] = 0.;
 
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        if (bc_markers_[f] == Amanzi::Operators::MATRIX_BC_FLUX) continue;
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
         double rho_avr = 0.;
         for (int i=0; i<cells.size(); ++i) rho_avr += rho_v[0][cells[i]];
-        rho_avr = 1./cells.size();
+        rho_avr *= 1./cells.size();
 
-        Fc_cell[c] -= dirs[n] * gravity[dim-1] * (*grav_terms)[f] * rho_avr;  
-
+        double grav_flux = dirs[n] * gravity[dim-1] * (*grav_terms)[f] * rho_avr;
+        if (cells.size() == 1){
+          if (bc_markers_[f] != Amanzi::Operators::MATRIX_BC_DIRICHLET){
+            Ff[n] -= grav_flux;
+          }
+          Fc_cell[c] -= grav_flux;
+        }
+        else{
+          Fc_cell[c] -= grav_flux;
+        }  
       }
     }
+
   }
   // else if (!rel_perm->HasComponent("cell")) { // rel perm on faces only
   else{
@@ -440,19 +430,13 @@ void Richards::AddGravityFluxes_FV_(const Teuchos::Ptr<const Epetra_Vector>& g_v
           if (bc_markers_[f] != Amanzi::Operators::MATRIX_BC_DIRICHLET){
             Ff[n] -= grav_flux;
           }
-          //else{
           Fc_cell[c] -= grav_flux;
-          //   if (c==0) std::cout<<"Fc_cell "<<Fc_cell[c]<<" "<<c<<" "<< grav_flux <<"\n";
-          // }
         }
         else{
           Fc_cell[c] -= grav_flux;
-          if (c==0) std::cout<<"Fc_cell "<<Fc_cell[c]<<" "<<c<<" "<< grav_flux <<"\n";
         }  
 
-        //std::cout<<"grav "<<  gravity[dim-1] * (*grav_terms)[f]<<" rho "<<rho_avr<<" krel "<<krel_faces[0][f]<<"\n";        
       }
-      //std::cout<<"Fc_cell["<<c<<"]  "<<Fc_cell[c]<<"\n";
     }
   }
  // else {
