@@ -42,8 +42,7 @@ void CompositeVectorFunction::Compute(double time,
 
   // create the input tuple
   int dim = mesh->space_dimension();
-  double *args = new double[1+dim];
-  double *xargs = args+1;
+  std::vector<double> args(1+dim, 0.);
   args[0] = time;
 
   // loop over the name/spec pair
@@ -76,7 +75,7 @@ void CompositeVectorFunction::Compute(double time,
 
               // get the coordinate
               AmanziGeometry::Point xf = mesh->face_centroid(id);
-              for (int i=0; i!=dim; ++i) xargs[i] = xf[i];
+              for (int i=0; i!=dim; ++i) args[i+1] = xf[i];
 
               // evaluate the functions and stuff the result into the CV
               double *value = (*spec->second)(args);
@@ -98,7 +97,7 @@ void CompositeVectorFunction::Compute(double time,
             } else {
               ASSERT(0);
             }
-            for (int i=0; i!=dim; ++i) xargs[i] = xc[i];
+            for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
 
             // evaluate the functions and stuff the result into the CV
             double *value = (*spec->second)(args);
@@ -131,7 +130,7 @@ void CompositeVectorFunction::Compute(double time,
 
                 // get the coordinate
                 AmanziGeometry::Point xf = mesh->face_centroid(*id);
-                for (int i=0; i!=dim; ++i) xargs[i] = xf[i];
+                for (int i=0; i!=dim; ++i) args[i+1] = xf[i];
 
                 // evaluate the functions and stuff the result into the CV
                 double *value = (*spec->second)(args);
@@ -167,7 +166,7 @@ void CompositeVectorFunction::Compute(double time,
               } else {
                 ASSERT(0);
               }
-              for (int i=0; i!=dim; ++i) xargs[i] = xc[i];
+              for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
 
               // evaluate the functions and stuff the result into the CV
               double *value = (*spec->second)(args);
@@ -185,7 +184,6 @@ void CompositeVectorFunction::Compute(double time,
       }
     }
   }
-  delete [] args;
 }
 
 } // namespace

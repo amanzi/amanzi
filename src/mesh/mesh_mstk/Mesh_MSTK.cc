@@ -268,6 +268,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
     int topo_dim=3; // What is the topological dimension of the mesh
     int ring = 1; // One layer of ghost cells in parallel meshes
     int with_attr = 1;  // update of attributes in parallel meshes
+    int del_inmesh = 1; // delete input mesh as soon as possible
     int method = 1; /* Partition with ZOLTAN */
 
     
@@ -283,10 +284,15 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
       ok = 1;
     }
 
-    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,method,mpicomm);
-
+#ifdef MSTK_2_21rc1_OR_NEWER
+    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
+                                   method,del_inmesh,mpicomm);
+#else
+    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
+                                   method,mpicomm);
     if (myprocid == 0)
       MESH_Delete(globalmesh);
+#endif
 
     set_cell_dimension(topo_dim);
   }
@@ -355,6 +361,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
     Mesh_ptr globalmesh;
     int ring = 1; // One layer of ghost cells in parallel meshes
     int with_attr = 1;  // update of attributes in parallel meshes
+    int del_inmesh = 1; // delete input mesh at the earliest
     int method = 1; /* Partition with ZOLTAN */
 
     if (myprocid == 0) {
@@ -369,10 +376,16 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
       ok = 1;
     }
 
-    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,method,mpicomm);
-
+#ifdef MSTK_2_21rc1_OR_NEWER
+    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
+                                   method,del_inmesh,mpicomm);
+#else
+    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
+                                   method,mpicomm);
     if (myprocid == 0)
       MESH_Delete(globalmesh);
+#endif
+
   }
 
   if (!ok) {
@@ -470,10 +483,15 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
       ok = 1;
     }
       
-    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,method,mpicomm);
-
+#ifdef MSTK_2_21rc1_OR_NEWER
+    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
+                                   method,del_inmesh,mpicomm);
+#else
+    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
+                                   method,mpicomm);
     if (myprocid == 0)
       MESH_Delete(globalmesh);
+#endif
   }
 
   if (!ok) {

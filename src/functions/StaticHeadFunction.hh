@@ -18,7 +18,7 @@ class StaticHeadFunction : public Function {
   ~StaticHeadFunction() {}
   StaticHeadFunction* Clone() const { return new StaticHeadFunction(*this); }
   // The array (t,x,y,z) is passed as *x, so that x[dim_] is z in 3D, y in 2D
-  double operator() (const double *x) const { return patm_+rho_g_ * ((*h_)(x)-x[dim_]); }
+  double operator()(const std::vector<double>& x) const { return patm_+rho_g_ * ((*h_)(x)-x[dim_]); }
  
  private:
   int dim_;

@@ -32,7 +32,7 @@ StandardMathFunction::StandardMathFunction(std::string op,
   }
 }
 
-double StandardMathFunction::operator() (const double *x) const
+double StandardMathFunction::operator()(const std::vector<double>& x) const
 {
   if (op_ == "cos") {
     return amplitude_ * cos(x[0]);

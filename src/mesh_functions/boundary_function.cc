@@ -46,8 +46,7 @@ void BoundaryFunction::Compute(double time) {
 
   // create the input tuple
   int dim = mesh_->space_dimension();
-  double *args = new double[1+dim];
-  double *xargs = args+1;
+  std::vector<double> args(1+dim);
   args[0] = time;
 
   // Loop over all FACE specs and evaluate the function at all IDs in the
@@ -63,14 +62,13 @@ void BoundaryFunction::Compute(double time) {
     Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
     for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
       AmanziGeometry::Point xc = mesh_->face_centroid(*id);
-      for (int i=0; i!=dim; ++i) xargs[i] = xc[i];
+      for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
       // Careful tracing of the typedefs is required here: spec_and_ids->first
       //  is a RCP<Spec>, and the Spec's second is an RCP to the function.
       value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
     }
   }
 
-  delete [] args;
 };
 
 

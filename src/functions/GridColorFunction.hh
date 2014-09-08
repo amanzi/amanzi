@@ -14,7 +14,7 @@ class GridColorFunction : public ColorFunction {
       : dim_(dim), count_(count), x0_(x0), dx_(dx), array_(array) {}
   ~GridColorFunction() {}
   GridColorFunction* Clone() const { return new GridColorFunction(*this); }
-  int operator() (const double*) const;
+  int operator()(const double* ) const;
   
  private:
   int dim_;

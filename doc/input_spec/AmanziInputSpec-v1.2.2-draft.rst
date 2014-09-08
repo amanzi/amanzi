@@ -210,8 +210,6 @@ Usage:
 
    * [SU] `"Initial Time Step`" [double]: The initial time step for the steady calculation.
 
-   * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver. (default: `"false`")
-
   * [SU] `"Transient`" [list] - A time-accurate evolution is desired
 
    * [SU] `"Start`" [double] Start time for integration (if a steady mode exists then this time must equal the steady end time) (S: Optional)
@@ -220,13 +218,10 @@ Usage:
    
    * [SU] `"Initial Time Step`" [double] The intitial time step for the transient calculation. (S: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`")
 
-   * [S] `"Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
-
-   * [S] `"Maximum Time Step Size`" [double]: The maximum time step size allowed.
 
    * [S] `"Maximum Time Step Change`" [double]: The maximum allowed increase in successive time steps.
 
-   * [S] `"Maximum Cycle Number`" [double]: The maximum allowed cycle number.
+   * [SU] `"Maximum Cycle Number`" [double]: The maximum allowed cycle number.
 
   * [SU] `"Transient with Static Flow`" [list] - The flow field is static so no flow solver is called during time stepping. During initialization the flow 
     field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; 
@@ -239,13 +234,9 @@ Usage:
    
    * [SU] `"Initial Time Step`" [double] The intitial time step for the transient calculation. (S: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`")
 
-   * [S] `"Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
-
-   * [S] `"Maximum Time Step Size`" [double]: The maximum time step size allowed.
-
    * [S] `"Maximum Time Step Change`" [double]: The maximum allowed increase in successive time steps.
 
-   * [S] `"Maximum Cycle Number`" [double]: The maximum allowed cycle number.
+   * [SU] `"Maximum Cycle Number`" [double]: The maximum allowed cycle number.
 
   * [U] `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
 
@@ -259,15 +250,10 @@ Usage:
 
    * [SU] `"Transient Initial Time Step`" [double]: (S: Optional) The intitial time step for the transient calculation after "Switch" time.  (S: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`")
 
-   * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver. (default: `"false`")
-
  * [SU] `"Time Period Control`" (Optional)
 
   * [SU] `"Start Times`" [Array(double)]: List of times at which the current time-integrator will be reinitialized.
-  * [SU] `"Initial Time Step`"[Array(double)]: The initial time step for each time period. If unspecified, Amanzi 
-    will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
-  * [S] `"Initial Time Step Multiplier`" [Array(double)]: (Optional) If internally computed time step used, it will be 
-    scaled by this factor (default value: 1)
+  * [SU] `"Initial Time Step`"[Array(double)]: The initial time step for each time period. If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
   * [S] `"Maximum Time Step`"[Array(double)]: (Optional) The maximum time step for each time period. 
   * [U] `"Default Initial Time Step`" [double]: (Optional) set the default initial time step, this is used for time integrator restarts that are required by boundary conditions and sources, but are not specified in this list under Start Times, the default value is 1.0. 
 
@@ -302,6 +288,8 @@ Usage:
        (experimental).  The first three calculate the relative permeability on mesh interfaces.
 
      * [U] `"atmospheric pressure`" [double]: Defines the atmospheric pressure, [Pa].   
+
+     * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver. (default: `"false`")
 
    * [U] `"Transport Process Kernel`" [list]: Control parameters for the transport methods
 
@@ -466,6 +454,16 @@ Usage:
   * [S] `"Basic Algorithm Control`" [list] Additional controls for details of the structured-grid algorithm. Optional.
 
    * [S] `"Expert Settings`" [int] Options passed to Amanzi that are not specifically checked for validity/relevance
+
+     * [S] `"steady_time_step_reduction_factor"` [double] When time step reduction is necessary during the steady calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
+
+     * [S] `"steady_time_step_increase_factor"` [double] When time step increase is possible during the steady calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
+
+     * [S] `"transient_time_step_reduction_factor"` [double] When time step reduction is necessary during the transient calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
+
+     * [S] `"maximum_time_step_size`" [double]: The maximum time step size allowed.
+
+     * [S] `"initial_time_step_multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
 
      * [S] `"do_richard_init_to_steady`" [int]  If 1, triggers a psuedo-transient time-evolution of the initial data, prior to entering the `"Execution Mode`" phases descussed above.  (default: `"0`", suggested range: 0 ... 1)
 
@@ -716,8 +714,8 @@ Example of `"Structured`" mesh:
    <ParameterList name="Mesh">
      <ParameterList name="Structured">
        <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 100}"/>
-       <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
-       <Parameter name="Domain High Corner" type="Array(double)" value="{103.2, 1.0, 103.2}" />
+       <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+       <Parameter name="Domain High Coordinate" type="Array(double)" value="{103.2, 1.0, 103.2}" />
      </ParameterList>   
    </ParameterList>
 
@@ -730,8 +728,8 @@ Example of `"Unstructured`" mesh generated internally:
        <ParameterList name="Generate Mesh">
          <ParameterList name="Uniform Structured">
            <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 100}"/>
-           <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
-           <Parameter name="Domain High Corner" type="Array(double)" value="{103.2, 1.0, 103.2}" />
+           <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+           <Parameter name="Domain High Coordinate" type="Array(double)" value="{103.2, 1.0, 103.2}" />
          </ParameterList>   
        </ParameterList>   
      </ParameterList>   
@@ -968,8 +966,6 @@ the following set of physical properties using the supported models described be
 
 * [SU] "Material Properties" [list] can accept multiple lists for named material types (MATERIAL)
 
- * [S] "Saturation Threshold For Kr" [double] Global threshold in saturation above which the analytic forms for van Genuchten are replaced with a Hermite polynomial fit 
-
  * [SU] MATERIAL [list] can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
 
   The flow related matrial properties *Intrinsic Permeability* or *Hydraulic Conductivity* must be specified, but not both:  
@@ -1004,14 +1000,14 @@ the following set of physical properties using the supported models described be
   * [SU] Mineralogy [list] List of minerals in the system.  Any mineral present in the phase definition but 
     not listed here must still be allocated in memory with default to zero parameter values.
 
-    * [SU] `"Mineral Name`" [list] Name of a mineral from the phase definitions "Minerals" list.
+    * [SU] `"MINERAL NAME`" [list] Name of a mineral from the phase definitions "Minerals" list.
 
       * [SU] `"Volume Fraction`" (double) [-] Uniform over the assigned region, constant in time (default: 0.0).
       * [SU] `"Specific Surface Area`" (double) [m^2 / m^3 bulk] Uniform over the assigned region, constant in time (default: 0.0).
 
   * [SU] `"Surface Complexation Sites`" [list]
 
-    * [SU] `"Site Name`" [list] Name of a site from the phase definitions "Sorption Sites" list.
+    * [SU] `"SITE NAME`" [list] Name of a site from the phase definitions "Sorption Sites" list.
 
       * [SU] `"Site Density`" (double) [mol / m^3 bulk] Uniform over the assigned region, constant in time (default: 0.0)
 
@@ -1094,7 +1090,7 @@ The following models are currently supported for capillary pressure (Section 3.3
  * [SU] `"Relative Permeability`" [string] (either (0) [U] `"Burdine`", or (2) [SU] `"Mualem`") determines n
    in Equation 3.10, and the form of relative permeability (either Equation 3.12, or Equation 3.11, respectively).
 
- * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing.  Note that running Amanzi under the Structured Grid option, an alternative comparable feature is available as a global option (see `"Saturation Threshold For Kr`" discussed above).
+ * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing.  
 
  * [] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
 
@@ -1136,9 +1132,9 @@ The following models are currently supported for Specific Yield.
 
 The following models are currently supported for Specific Storage.
 
-* [U] `"Specific Storage: Uniform`" [list] requires
+* [SU] `"Specific Storage: Uniform`" [list] requires
 
- * [U] `"Value`" [double] to specify specific storage.
+ * [SU] `"Value`" [double] to specify specific storage.
 
 The following models are currently supported for the dispersion tensor
 in transport
@@ -1168,7 +1164,7 @@ Example:
 
   <ParameterList name="Material Properties">
     <ParameterList name="Backfill">
-      <ParameterList name="Mass Density: Uniform">
+      <ParameterList name="Particle Density: Uniform">
         <Parameter name="Value" type="double" value="2.8e3"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
@@ -1282,15 +1278,21 @@ In order to support the rather general specification requirements (involving com
 
   * [SU] `"Phase Properties`" can accept models for viscosity and density
 
-   * [SU only uniform] Density [list] Parameterized model for phase mass density.  Choose exactly one of the following: `"Phase Mass Density: Uniform`", `"Phase Mass Density: File`" (see below)
+   * [SU only uniform] Density [list] Parameterized model for phase mass density.  Choose exactly one of the following: `"Density: Uniform`", `"Density: File`" (see below)
 
-   * [SU only uniform] Viscosity [list] Parameterized model for phase viscosity.  Choose exactly one of the following: `"Phase Viscosity: Uniform`", `"Phase Viscosity: File`" (see below)
+   * [SU only uniform] Viscosity [list] Parameterized model for phase viscosity.  Choose exactly one of the following: `"Viscosity: Uniform`", `"Viscosity: File`" (see below)
 
   * [SU] `"Phase Components`" can accept COMP [list] named after a user-defined phase component (e.g., Water).
 
    * [SU] COMP [list] can accept a list of solutes carried by the component.
 
     * [SU] `"Component Solutes`" [Array(string)] List of primary or basis species for the aqueous solutes in the system. The order of this list must be the same as the order in the chemistry database file.
+
+    * [SU] SOLUTE [list] can accept a solute name from the above list. 
+
+      * [SU] `"Molecular Diffusivity`" [double] specify the molecular diffusivity coefficient [m^2/s] for the current solute, optional parameter
+        
+      * [SU] `"First Order Decay Constant`" [double] specify the decay constant for the current solute, optional parameter
 
  * [SU] `"Solid`" phase [list] can accept the following parameters: `"Minerals`", and `"Sorption Sites`"
 
@@ -1305,7 +1307,7 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
  * [SU] IC [list] label for an initial condition, accepts initial condition function names, and parameters to specify assigned regions and solute initial conditions
 
-  * [SU] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: Uniform Velocity`" (see below)
+  * [SU] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: Uniform Velocity`" (see below)
 
   * [SU] `"Assigned Regions`" [Array(string)] list of regions to which this condition is assigned.  Note [S] when multiple regions specified overlap, this list implies a precedence, ordered right to left.
 
@@ -1782,19 +1784,19 @@ In this example, Checkpoint Data files are written when the cycle number is even
 
 
 
-Restart from Checkpoint Data File
----------------------------------
+Restart
+-------
 
 A user may request a restart from a Checkpoint Data file by including the sublist 
-`"Restart from Checkpoint Data File`" in the Execution Control list. This mode of restarting
+`"Restart`" in the Execution Control list. This mode of restarting
 will overwrite all other initializations of data that are called out in the input file.
 The purpose of restarting Amanzi in this fashion is mostly to continue a run that has been 
 terminated because its allocation of time ran out.
 
 
-* [S] `"Restart from Checkpoint Data File`" [list]
+* [S] `"Restart`" [list]
 
-  * [S] `"Checkpoint Data File Name`" [string] file name of the specific Checkpoint Data file to restart from
+  * [S] `"File Name`" [string] file name of the specific Checkpoint Data file to restart from
 
 Example:
 

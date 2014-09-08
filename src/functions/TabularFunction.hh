@@ -18,7 +18,7 @@ class TabularFunction : public Function {
                   const int xi, const std::vector<Form> &form);
   ~TabularFunction() {}
   TabularFunction* Clone() const { return new TabularFunction(*this); }
-  double operator() (const double *x) const;
+  double operator()(const std::vector<double>& x) const;
 
  private:
   std::vector<double> x_, y_;

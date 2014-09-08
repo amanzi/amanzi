@@ -10,7 +10,7 @@ class SmoothStepFunction : public Function {
   SmoothStepFunction(double x0, double y0, double x1, double y1);
   ~SmoothStepFunction() {};
   SmoothStepFunction* Clone() const { return new SmoothStepFunction(*this); }
-  double operator() (const double *x) const;
+  double operator()(const std::vector<double>& x) const;
 
  private:
   double x0_, y0_, x1_, y1_;
