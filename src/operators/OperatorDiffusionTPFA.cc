@@ -375,17 +375,12 @@ void OperatorDiffusionTPFA::UpdateFlux(
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int c = cells[0];
       
-      //return u_cell[0][c];
-
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       for (int i=0; i<faces.size(); i++){
       	if (faces[i] == f){
-
       	  double a = dirs[i] * (*transmissibility_)[f];
       	  double b = bc_value[f]* mesh_->face_area(f);	  
       	  double face_val = u_cell[0][c] + (*gravity_term_)[f]/a - b/(a*Krel_face[0][f]);
-
-
 	  double trans = (*transmissibility_)[f];
 	  double gflux = (*gravity_term_)[f];
 	  double bc_flux = bc_value[f]* mesh_->face_area(f);
@@ -394,8 +389,6 @@ void OperatorDiffusionTPFA::UpdateFlux(
 	  Teuchos::RCP<FlowFluxTPFA_BCFunc> func = 
 	     Teuchos::rcp(new FlowFluxTPFA_BCFunc(trans, face_val, i, u_cell[0][c],
 						  bc_flux, gflux, dirs[i], atm_pressure_, wrm ));
-
-
   // -- convergence criteria
 	  double eps = std::max(1.e-4 * std::abs(bc_flux), 1.e-8);
 	  Tol_ tol(eps);
@@ -438,9 +431,6 @@ void OperatorDiffusionTPFA::UpdateFlux(
             << right << " (" << rres << ")" << std::endl;
 #endif
 
-  //return face_val;
-  
-
           std::pair<double,double> result =
 	    boost::math::tools::toms748_solve(*func, left, right, lres, rres, tol, actual_it);
 	  if (actual_it >= max_it) {
@@ -464,7 +454,6 @@ void OperatorDiffusionTPFA::UpdateFlux(
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int c = cells[0];
-      //std::cout<<"face val "<<u_cell[0][c]<<"\n";
       return u_cell[0][c];
     }
   }
@@ -508,6 +497,7 @@ void OperatorDiffusionTPFA::AnalyticJacobian_(const CompositeVector& u)
   const Epetra_MultiVector& dKdP_cell = *dkdp_->ViewComponent("cell");
   const Epetra_MultiVector& dKdP_face = *dkdp_->ViewComponent("face", true);
 
+
   std::vector<int> flag(nfaces_owned, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -535,7 +525,10 @@ void OperatorDiffusionTPFA::AnalyticJacobian_(const CompositeVector& u)
 	  dkdp[n] = dKdP_cell[0][c1];
 	}
 
-	if (mcells == 1) dkdp[0] = dKdP_face[0][f];
+	if (mcells == 1) {
+	  dkdp[0] = dKdP_face[0][f];
+	  //std::cout<<"cell "<<c<<" face "<<f<<" "<<dKdP_face[0][f]<<"\n";
+	}
 
 	const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0]);
 	ComputeJacobianLocal_(mcells, f, face_dir, upwind_, bc_model[f], bc_value[f], pres, dkdp, Aface);
@@ -602,8 +595,9 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
     if (bc_models == OPERATOR_BC_FACE_DIRICHLET) {                   
       pres[1] = bc_value;
       dpres = pres[0] - pres[1];  // + grn;
-      Jpp(0, 0) = ((*transmissibility_)[f] * dpres + face_dir * (*gravity_term_)[f]) * dkdp_cell[0];
+      //Jpp(0, 0) = ((*transmissibility_)[f] * dpres + face_dir * (*gravity_term_)[f]) * dkdp_cell[0];
       Jpp(0, 0) = 0.0;
+      //std::cout<<"Local J dkdp_cell[0] "<<f<<"  "<<dkdp_cell[0]<<"\n";
     } else {
       Jpp(0, 0) = 0.0;
     }
