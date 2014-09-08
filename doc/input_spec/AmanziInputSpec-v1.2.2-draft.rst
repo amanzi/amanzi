@@ -219,8 +219,6 @@ Usage:
    * [SU] `"Initial Time Step`" [double] The intitial time step for the transient calculation. (S: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`")
 
 
-   * [S] `"Maximum Time Step Change`" [double]: The maximum allowed increase in successive time steps.
-
    * [SU] `"Maximum Cycle Number`" [double]: The maximum allowed cycle number.
 
   * [SU] `"Transient with Static Flow`" [list] - The flow field is static so no flow solver is called during time stepping. During initialization the flow 
@@ -233,8 +231,6 @@ Usage:
    * [SU] `"End`" [double]: End of integration period
    
    * [SU] `"Initial Time Step`" [double] The intitial time step for the transient calculation. (S: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`")
-
-   * [S] `"Maximum Time Step Change`" [double]: The maximum allowed increase in successive time steps.
 
    * [SU] `"Maximum Cycle Number`" [double]: The maximum allowed cycle number.
 
@@ -269,7 +265,17 @@ Usage:
 
   * [SU] `"Extreme`": Includes detailed iteration-level convergence properties of process kernal sovlers
 
- * [SU] `"Numerical Control Parameters`" [list]: Detailed control parameters associated with the underlying numerical implementation
+ * [SU] `"Numerical Control Parameters`" [list]: Any common control parameters are in the `"Common Controls`" list while detailed control parameters associated with the underlying numerical implementation are seperated into specific lists.
+ 
+ For both unstructured and structured, the following common list of parameters is valid:
+
+  * [SU] `"Comon Controls"` [list]: Control parameters associtated with the unstructured algorithm.
+
+     * [SU] `"steady min iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"steady time step increase factor"`. (default: `"10`", suggested range: 5 ... 15)
+
+     * [SU] `"steady limit iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. (default: `"20`", suggested range: 20 ... 50)
+
+     * [SU] `"CFL`" [double]: Time step limiter, a number less than 1 with default of 1.
 
   If the unstructured option is active, the following list of parameters is valid:
 
@@ -295,8 +301,6 @@ Usage:
 
      * [U] `"Transport Integration Algorithm`" [string]: Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default: `"Explicit First-Order`")
 
-     * [U] `"CFL`" [double]: Time step limiter, a number less than 1 with default of 1.
-
      * [U] `"transport subcycling`" [bool]: Accepts `"true`" or `"false`" which corresponds to transport subcycling on or off, respectively. (default: `"true`") Note that setting this parameter to false does not always preclude transport from subcycling. Since the estimate for the transport time step is based on velocities from the previous time step, the actual time step that transport can take after the current flow step might be different from its initial estimate.
 
    * [U] `"Chemistry Process Kernel`" [list]: Control parameters for the reactive transport methods
@@ -306,10 +310,6 @@ Usage:
    * [U] `"Steady-State Implicit Time Integration`" [list] Parameters for BDF1 time integration to reach steady-state
 
      * [U] `"steady max iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"steady time step reduction factor"`. (default: `"15`", suggested range: 10 ... 20)
-
-     * [U] `"steady min iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"steady time step increase factor"`. (default: `"10`", suggested range: 5 ... 15)
-
-     * [U] `"steady limit iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. (default: `"20`", suggested range: 20 ... 50)
 
      * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation. (default: `"1.0e-5`", suggested range: 1.0e-8 ... 1.0e-6)
 
@@ -451,7 +451,7 @@ Usage:
 
   If the structured option is active, the following list of parameters is valid (Note: all lists here accept an optional sublist `"Expert Settings`".  Parameters listed in the expert area are not checked for validity/relevance during input reading stage, but are simply passed to the underlying implementation.)
 
-  * [S] `"Basic Algorithm Control`" [list] Additional controls for details of the structured-grid algorithm. Optional.
+  * [S] `"Structured Algorithm`" [list] Additional controls for details of the structured-grid algorithm. Optional.
 
    * [S] `"Expert Settings`" [int] Options passed to Amanzi that are not specifically checked for validity/relevance
 
@@ -460,6 +460,8 @@ Usage:
      * [S] `"steady_time_step_increase_factor"` [double] When time step increase is possible during the steady calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
 
      * [S] `"transient_time_step_reduction_factor"` [double] When time step reduction is necessary during the transient calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
+
+     * [S] `"transient_time_step_increase_factor"` [double] When time step increase is possible during the steady calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
 
      * [S] `"maximum_time_step_size`" [double]: The maximum time step size allowed.
 
@@ -471,11 +473,7 @@ Usage:
 
      * [S] `"steady_max_pseudo_time`" [double]  Stopping time for the psuedo-transient time-evolution of the initial data, prior to entering the `"Execution Mode`" phases descussed above.  (default: `"1.e10`", suggested range: 0 ... 1.e12)
 
-     * [S] `"steady_limit_iterations`" [int]  Maximum number of Newton iterations to attempt when solving for a single time step evolution of Richards equation.  (default: `"20`", suggested range: 5 ... 200)
-
      * [S] `"steady_time_step_reduction_factor`" [double]  Scale factor to reduce time step size for retry if Newton iterations fail.  (default: `"0.8`", suggested range: 0.1 ... 0.99)
-
-     * [S] `"steady_min_iterations`" [int]  Maximum iteration count of successful Newton solve leading to time step increase of `"steady_time_increase_factor`".  (default: `"10`", suggested range: 5 ... 100)
 
      * [S] `"steady_time_step_increase_factor`" [double]  Scale factor to increase next step after successful solve with less than `"steady_min_iterations`" newton iterations.  (default: `"1.25`", suggested range: 1.1 ... 10)
 
@@ -537,43 +535,41 @@ Usage:
 
      * [S] `"max_n_subcycle_transport`" [int] Maximum number of level-0 subcycled transport time steps for each flow step.  Transport will be limited by an advective CFL stability constriant, so this will contribute to limiting the over step size taken. (default: `"10`", suggested values: 1 ... 20)
 
-     * [S] `"cfl`" [double] Fraction of stability-limited maximum time step allowed by the advective transport scheme.  (default: `"1`", suggested values: .01 ... 1)
+   * [S] `"Adaptive Mesh Refinement`" [list] Additional details related to the adaptive mesh refinement algorithm. Optional.
 
-  * [S] `"Adaptive Mesh Refinement`" [list] Additional details related to the adaptive mesh refinement algorithm. Optional.
+     * [S] `"Number Of AMR Levels`" [int] Maximum number of adaptive levels, including the base grid (default=1)
 
-   * [S] `"Number Of AMR Levels`" [int] Maximum number of adaptive levels, including the base grid (default=1)
+     * [S] `"Refinement Ratio`" [Array(int)] Grid spacing ratio between adjacent refinement levels.  One value required for each coarse level. Only values of 2 or 4 are supported.
 
-   * [S] `"Refinement Ratio`" [Array(int)] Grid spacing ratio between adjacent refinement levels.  One value required for each coarse level. Only values of 2 or 4 are supported.
+     * [S] `"Do AMR Subcycling`" [bool] For integration of transport and chemistry, AMR subcycling time-steps each level with the same ratio of dx/dt, the levels are integrated and synchronized recursively.  If "`False"`, the time step is identical across levels.
 
-   * [S] `"Do AMR Subcycling`" [bool] For integration of transport and chemistry, AMR subcycling time-steps each level with the same ratio of dx/dt, the levels are integrated and synchronized recursively.  If "`False"`, the time step is identical across levels.
+     * [S] `"Regrid Interval`" [Array(int)] Number of base (coarse) grid time steps between regrid operations (one value > 0 required for each coarse level)
 
-   * [S] `"Regrid Interval`" [Array(int)] Number of base (coarse) grid time steps between regrid operations (one value > 0 required for each coarse level) 
+     * [S] `"Blocking Factor`" [Array(int)] Number by which each grid per level is evenly divisable in each dimension (typically used to guarantee multigrid hierachy depth).  A single value implies that the same is to be used for all levels, otherwise one value is required for each fine level.
 
-   * [S] `"Blocking Factor`" [Array(int)] Number by which each grid per level is evenly divisable in each dimension (typically used to guarantee multigrid hierachy depth).  A single value implies that the same is to be used for all levels, otherwise one value is required for each fine level.
+     * [S] `"Number Error Buffer Cells`" [Array(int)] Number of coarse cells automatically tagged to surround user-tagged cells prior to generation of fine grids.  Used to guarantee buffer between refinement levels.
 
-   * [S] `"Number Error Buffer Cells`" [Array(int)] Number of coarse cells automatically tagged to surround user-tagged cells prior to generation of fine grids.  Used to guarantee buffer between refinement levels.
+     * [S] `"Maximum Grid Size`" [Array(int)] Size of largest dimension of any mesh generated at each level.  A single value implies that the same value is to be used for all levels.
 
-   * [S] `"Maximum Grid Size`" [Array(int)] Size of largest dimension of any mesh generated at each level.  A single value implies that the same value is to be used for all levels.
+     * [S] `"Refinement Indicators`" [list] A list of user-labeled refinement indicators, REFINE.  Criteria will be applied in the order listed.
 
-   * [S] `"Refinement Indicators`" [list] A list of user-labeled refinement indicators, REFINE.  Criteria will be applied in the order listed.
+      * [S] REFINE [list] A user-defined label for a single refinement criteria indicator function.  Definition of the criteria must indicate `"Field Name`" (the name of a known derive field), `"Regions`" (a list of user-named regions over which this criteria is to apply) and one of the following parameters:
 
-    * [S] REFINE [list] A user-defined label for a single refinement criteria indicator function.  Definition of the criteria must indicate `"Field Name`" (the name of a known derive field), `"Regions`" (a list of user-named regions over which this criteria is to apply) and one of the following parameters:
+       * [S] `"Value Greater`" [double] The threshold value.  For each coarse cell, if the value of the given field is larger than this value, tag the cell for refinement
 
-     * [S] `"Value Greater`" [double] The threshold value.  For each coarse cell, if the value of the given field is larger than this value, tag the cell for refinement
+       * [S] `"Value Less`" [double] The threshold value.  For each coarse cell, if the value of the given field is smaller than this value, tag the cell for refinement
 
-     * [S] `"Value Less`" [double] The threshold value.  For each coarse cell, if the value of the given field is smaller than this value, tag the cell for refinement
+       * [S] `"Adjacent Difference Greater`" [double] The threshold value.  For each coarse cell, if the maximum difference of the values for the given field between adjacent neighbors is larger than this value, tag the cell for refinement.
 
-     * [S] `"Adjacent Difference Greater`" [double] The threshold value.  For each coarse cell, if the maximum difference of the values for the given field between adjacent neighbors is larger than this value, tag the cell for refinement.
+       * [S] `"Inside Region`" [bool] Set this TRUE if all coarse cells in the identified list of regions should be tagged for refinement.
 
-     * [S] `"Inside Region`" [bool] Set this TRUE if all coarse cells in the identified list of regions should be tagged for refinement.
+       Additionally, the following optional parameters are available:
 
-     Additionally, the following optional parameters are available:
+       * [S] `"Maximum Refinement Level`" [int] If set, this identifies the highest level of refinement that will be triggered by this indicator
 
-     * [S] `"Maximum Refinement Level`" [int] If set, this identifies the highest level of refinement that will be triggered by this indicator
+       * [S] `"Start Time`" [double] If set, this identifies the time after which this criteria will be applied
 
-     * [S] `"Start Time`" [double] If set, this identifies the time after which this criteria will be applied
-
-     * [S] `"End Time`" [double] If set, this identifies the time before which this criteria will be applied
+       * [S] `"End Time`" [double] If set, this identifies the time before which this criteria will be applied
 
   * [S] `"Diffusion Discretization Control`" [list] Additional details related to the parabolic diffusion solver. Optional.  Details to be added.
 
@@ -1802,8 +1798,8 @@ Example:
 
 .. code-block:: xml
 
-  <ParameterList name="Restart from Checkpoint Data File">
-     <Parameter name="Checkpoint Data File Name" type="string" value="chk00123.h5"/>
+  <ParameterList name="Restart">
+     <Parameter name="File Name" type="string" value="chk00123.h5"/>
   </ParameterList>
 
 In this example, Amanzi is restarted with all state data initialized from the Checkpoint 
