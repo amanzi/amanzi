@@ -108,8 +108,7 @@ void DeformMesh::print_VTK_unstructured_mesh( string fname ) {
 
   // get and print the coordinates of the mesh nodes
   for (int iV=0; iV<nV; iV++) {
-    Amanzi::AmanziGeometry::Point coords;
-    coords.init(dim);
+    Amanzi::AmanziGeometry::Point coords(dim);
     mesh_->node_get_coordinates(iV,&coords);
     if ( dim==2 ) {
       vtk_out << coords[0] << "  "
@@ -178,8 +177,7 @@ void DeformMesh::print_VTK_domain_boundary( string fname ) {
 
   // get and print the coordinates of the mesh nodes
   for (int iV=0; iV<nV; iV++) {
-    Amanzi::AmanziGeometry::Point coords;
-    coords.init(dim);
+    Amanzi::AmanziGeometry::Point coords(dim);
     mesh_->node_get_coordinates(iV,&coords);
     if ( dim==2 ) {
       vtk_out << coords[0] << "  "
@@ -246,8 +244,7 @@ void DeformMesh::print_VTK_submesh( string fname ) {
   int sub_nV = 0;
   Entity_ID_List sub_nodeids(nV);
   for (unsigned int iV=0; iV<nV; iV++) {
-    Amanzi::AmanziGeometry::Point coords;
-    coords.init(dim);
+    Amanzi::AmanziGeometry::Point coords(dim);
     mesh_->node_get_coordinates(iV,&coords);
     if ( coords[dim-1]>threshold ) {
       sub_nodeids[iV]=sub_nV;
@@ -271,8 +268,7 @@ void DeformMesh::print_VTK_submesh( string fname ) {
   // get and print the coordinates of the mesh nodes
   for (unsigned int iV=0; iV<nV; iV++) {
     if ( sub_nodeids[iV]!=-1 ) { // check if the node is flagged
-      Amanzi::AmanziGeometry::Point coords;
-      coords.init(dim);
+      Amanzi::AmanziGeometry::Point coords(dim);
       mesh_->node_get_coordinates(iV,&coords);
       vtk_out << coords[0] << "  "
               << coords[1] << "  "
@@ -296,8 +292,7 @@ void DeformMesh::print_VTK_submesh( string fname ) {
     unsigned int nFV=nodeids.size();
     bool ok_face=true;
     for (unsigned int ilV=0; ilV<nFV; ++ilV ) {
-      Amanzi::AmanziGeometry::Point coords;
-      coords.init(dim);
+      Amanzi::AmanziGeometry::Point coords(dim);
       int iV = nodeids[ilV];
       mesh_->node_get_coordinates(iV,&coords);
       ok_face &= coords[dim-1]>threshold;
@@ -342,8 +337,7 @@ void DeformMesh::print_VTK_submesh( string fname ) {
       if ( nc++%20==0 && nc>0 ) {
         vtk_out<<endl;
       }
-      Amanzi::AmanziGeometry::Point coords;
-      coords.init(dim);
+      Amanzi::AmanziGeometry::Point coords(dim);
       mesh_->node_get_coordinates(iV,&coords);
       vtk_out << coords[2] << "  ";
     }
@@ -367,8 +361,7 @@ void DeformMesh::bell_shaped_profile( double ss ) {
   // get space dimensions
   int dim = mesh0_->space_dimension();
 
-  Amanzi::AmanziGeometry::Point P0;
-  P0.init(dim);
+  Amanzi::AmanziGeometry::Point P0(dim);
   if ( dim==2 ) {
     P0[0]=0.5;
     P0[1]=1.;
@@ -389,9 +382,7 @@ void DeformMesh::bell_shaped_profile( double ss ) {
   unsigned int nV = mesh0_->num_entities(Amanzi::AmanziMesh::NODE,
           Amanzi::AmanziMesh::OWNED);
 
-  Amanzi::AmanziGeometry::Point coords, new_coords;
-  coords.init(dim);
-  new_coords.init(dim);
+  Amanzi::AmanziGeometry::Point coords(dim), new_coords(dim);
 
   // search the id of the mid point on the top
   for (unsigned int iV=0; iV<nV; iV++) {
@@ -473,9 +464,7 @@ void DeformMesh::layer_profile( double ss ) {
   unsigned int nV = mesh0_->num_entities(Amanzi::AmanziMesh::NODE,
           Amanzi::AmanziMesh::OWNED);
 
-  Amanzi::AmanziGeometry::Point coords, new_coords;
-  coords.init(dim);
-  new_coords.init(dim);
+  Amanzi::AmanziGeometry::Point coords(dim), new_coords(dim);
 
   // search the id of the mid point on the top
   for (unsigned int iV=0; iV<nV; iV++) {
@@ -540,9 +529,7 @@ void DeformMesh::bell_shaped_profile( double ss,
   unsigned int nV = mesh0_->num_entities(Amanzi::AmanziMesh::NODE,
           Amanzi::AmanziMesh::OWNED);
 
-  Amanzi::AmanziGeometry::Point coords, new_coords;
-  coords.init(dim);
-  new_coords.init(dim);
+  Amanzi::AmanziGeometry::Point coords(dim), new_coords(dim);
 
   // search the id of the mid point on the top
   cout << "--->modify the coordinates" << endl ;
@@ -611,8 +598,7 @@ void DeformMesh::bell_shaped_profile() {
   assert( dim==3 ) ;
 
   // build a bell_shaped profile centered at P0
-  Amanzi::AmanziGeometry::Point P0;
-  P0.init(dim);
+  Amanzi::AmanziGeometry::Point P0(dim);
 
   P0[0]=1065;
   P0[1]= 810;
@@ -753,8 +739,7 @@ void DeformMesh::build_the_starting_mesh( Entity_ID_List & newnod ) {
   printf("--------------------\n");
   printf("zmax=%14.7e\n",zmax);
 
-  Amanzi::AmanziGeometry::Point new_coords;
-  new_coords.init(dim);
+  Amanzi::AmanziGeometry::Point new_coords(dim);
 
   // set the list of the new position coords
   AmanziGeometry::Point_List newpos, finpos;
@@ -804,10 +789,7 @@ void DeformMesh::mesh_deformation() {
   AmanziGeometry::Point_List newpos, finpos;
 
   // node coordinates
-  Point new_coords, xV0, xV1;
-  xV0.init(dim);
-  xV1.init(dim);
-  new_coords.init(dim);
+  Point new_coords(dim), xV0(dim), xV1(dim);
 
   // set the number of intermediate steps and the step parameter
   int kmax = 20;
@@ -882,10 +864,7 @@ void DeformMesh::mesh_deformation_top_nodes() {
   AmanziGeometry::Point_List newpos, finpos;
 
   // node coordinates
-  Point new_coords, xV0, xV1;
-  xV0.init(dim);
-  xV1.init(dim);
-  new_coords.init(dim);
+  Point new_coords(dim), xV0(dim), xV1(dim);
 
   // set the number of intermediate steps and the step parameter
   int kmax = 1;
@@ -1034,8 +1013,7 @@ void DeformMesh::analyze_final_Mesh() {
           Amanzi::AmanziMesh::OWNED);
 
   // new_coords
-  Amanzi::AmanziGeometry::Point new_coords;
-  new_coords.init(dim);
+  Amanzi::AmanziGeometry::Point new_coords(dim);
 
   // list of the new position coords
   AmanziGeometry::Point_List newpos, finpos;

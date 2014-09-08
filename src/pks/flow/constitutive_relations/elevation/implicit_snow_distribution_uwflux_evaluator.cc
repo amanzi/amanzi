@@ -83,8 +83,8 @@ void ImplicitSnowDistributionUWFluxEvaluator::EvaluateField_(const Teuchos::Ptr<
 
   if (!assembled_) AssembleOperator_(S);
 
-  double time = S->time();
-  double Qe = (*precip_func_)(&time);
+  std::vector<double> time(1,S->time());
+  double Qe = (*precip_func_)(time);
   double dt_sim = *S->GetScalarData("dt");
 
   // NOTE: snow precip comes in SWE, must convert it to snow depth!
