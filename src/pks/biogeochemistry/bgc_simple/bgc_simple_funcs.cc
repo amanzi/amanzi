@@ -4,7 +4,13 @@ Main functions for biogeochemistry on a column.
 Author: Ethan Coon (ecoon@lanl.gov)
         Chonggang Xu (cxu@lanl.gov)
 
-Licencse: BSD
+
+Issues:
+
+ -- has no knowledge of snow cover?
+ -- has no use of wind speed ref ht
+
+ License: BSD
 */
 
 #include <algorithm>

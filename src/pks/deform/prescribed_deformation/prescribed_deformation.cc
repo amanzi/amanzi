@@ -99,14 +99,13 @@ void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
   // initialize the vertex coordinate to the current mesh
   AmanziGeometry::Point_List pos;
   Entity_ID_List nodeids;
-  Amanzi::AmanziGeometry::Point coords;
 
   // spatial dimension
   int dim = mesh_->space_dimension();
+  Amanzi::AmanziGeometry::Point coords(dim);
   // number of vertices
   int nV = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
           Amanzi::AmanziMesh::OWNED);
-  coords.init(dim);
 
   Epetra_MultiVector& vc = *S->GetFieldData("vertex coordinate",name_)
       ->ViewComponent("node",false);
@@ -156,8 +155,10 @@ bool PrescribedDeformation::advance(double dt) {
   AmanziGeometry::Point_List surface_newpos, surface_finpos;
   AmanziGeometry::Point_List surface3d_newpos, surface3d_finpos;
   Entity_ID_List nodeids, surface_nodeids, surface3d_nodeids;
-  Amanzi::AmanziGeometry::Point coords, new_coords;
 
+  // get space dimensions
+  int dim = write_access_mesh_->space_dimension();
+  Amanzi::AmanziGeometry::Point coords(dim), new_coords(dim);
 
   switch (prescribed_deformation_case_) {
 
@@ -172,14 +173,9 @@ bool PrescribedDeformation::advance(double dt) {
         double factor = thickness/thickness0;
         // std::cout << "SETTING factor = " << factor << std::endl;
 
-        // get space dimensions
-        int dim = write_access_mesh_->space_dimension();
-
         // number of vertices
         int nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
                 Amanzi::AmanziMesh::OWNED);
-        coords.init(dim);
-        new_coords.init(dim);
 
         // search the id of the mid point on the top
         for (int iV=0; iV<nV; iV++) {
@@ -201,15 +197,9 @@ bool PrescribedDeformation::advance(double dt) {
 
     case 2: // this is denting the the mesh with a gaussian that is centered at (x,y) = (0,0)
       {
-        // get space dimensions
-        int dim = write_access_mesh_->space_dimension();
-
         // number of vertices
         int nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
                 Amanzi::AmanziMesh::OWNED);
-
-        coords.init(dim);
-        new_coords.init(dim);
 
         if (vo_->os_OK(Teuchos::VERB_HIGH))
           *vo_->os() << std::setprecision(16)
@@ -236,15 +226,9 @@ bool PrescribedDeformation::advance(double dt) {
   case 4:
   case 5:
       {
-        // get space dimensions
-        int dim = write_access_mesh_->space_dimension();
-
         // number of vertices
         int nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
                 Amanzi::AmanziMesh::OWNED);
-
-        coords.init(dim);
-        new_coords.init(dim);
 
         if (vo_->os_OK(Teuchos::VERB_HIGH))
           *vo_->os() << std::setprecision(16)
@@ -320,7 +304,6 @@ bool PrescribedDeformation::advance(double dt) {
   // update vertex coordinates in state
   Epetra_MultiVector& vc = *S_next_->GetFieldData("vertex coordinate",name_)
       ->ViewComponent("node",false);
-  int dim = write_access_mesh_->space_dimension();
   nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
           Amanzi::AmanziMesh::OWNED);
   // loop over vertices and update vc
