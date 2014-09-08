@@ -197,9 +197,9 @@ int OperatorDiffusionTPFA::ApplyInverse(const CompositeVector& X, CompositeVecto
 
   pre_list.set<std::string>("iterative method", "gmres");
   slist.set<double>("error tolerance", 1e-7);
-  slist.set<int>("maximum number of iterations", 200);
+  slist.set<int>("maximum number of iterations", 50);
   Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
-  vlist.set("Verbosity Level", "low");
+  vlist.set("Verbosity Level", "high");
 
   // delegating preconditioning to the base operator
   Teuchos::RCP<const OperatorDiffusionTPFA> op_matrix = Teuchos::rcp(this, false);
@@ -374,6 +374,9 @@ void OperatorDiffusionTPFA::UpdateFlux(
 
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int c = cells[0];
+      
+      //return u_cell[0][c];
+
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       for (int i=0; i<faces.size(); i++){
       	if (faces[i] == f){
@@ -600,7 +603,7 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
       pres[1] = bc_value;
       dpres = pres[0] - pres[1];  // + grn;
       Jpp(0, 0) = ((*transmissibility_)[f] * dpres + face_dir * (*gravity_term_)[f]) * dkdp_cell[0];
-      //Jpp(0, 0) = 0.0;
+      Jpp(0, 0) = 0.0;
     } else {
       Jpp(0, 0) = 0.0;
     }
@@ -648,7 +651,8 @@ void OperatorDiffusionTPFA::ComputeTransmissibilities_()
       beta[i] = fabs(perm[i] / dxn);
     }
 
-    double grav = (gravity * normal) / area;
+    // double grav = (gravity * normal) / area;
+    double grav = gravity * a_dist;
     trans_f = 0.0;
 
     if (ncells == 2) {
