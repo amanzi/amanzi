@@ -32,15 +32,28 @@ int FindPosition(const std::vector<T>& v, const T& value) {
   return -1;
 }
 
-  Matrix_TPFA::Matrix_TPFA(Teuchos::ParameterList& plist,
+ Matrix_TPFA::Matrix_TPFA(Teuchos::ParameterList& plist,
 			   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-    MatrixMFD(plist,mesh) {
-    cells_only_ = plist.get<bool>("TPFA use cells only", false);
-    if (cells_only_) {
-      space_ = Teuchos::rcp(new CompositeVectorSpace());
-      space_->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
-    }
-  }
+   MatrixMFD(plist,mesh) {
+   cells_only_ = plist.get<bool>("TPFA use cells only", false);
+   if (cells_only_) {
+     space_ = Teuchos::rcp(new CompositeVectorSpace());
+     space_->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
+   }
+   else{
+     std::vector<std::string> names(2);
+     names[0] = "cell";
+     names[1] = "boundary_face";
+     std::vector<AmanziMesh::Entity_kind> locations(2);
+     locations[0] = AmanziMesh::CELL;
+     locations[1] = AmanziMesh::BOUNDARY_FACE;
+
+     std::vector<int> num_dofs(2,1); 
+     space_ = Teuchos::rcp(new CompositeVectorSpace());
+     space_->SetMesh(mesh_)->SetGhosted()->SetComponents(names,locations,num_dofs);
+   }
+
+}
 
 
 /* ******************************************************************
@@ -52,7 +65,7 @@ void Matrix_TPFA::CreateMFDstiffnessMatrices(
    assembled_schur_ = false;
    assembled_operator_ = false;
    assembled_rhs_ = false;
-
+    
   // communicate as necessary
   if (Krel.get() && Krel->HasComponent("face"))
     Krel->ScatterMasterToGhosted("face");
@@ -362,10 +375,10 @@ void Matrix_TPFA::SymbolicAssembleGlobalMatrices() {
   //(*Acf_).FillComplete();
 
 
-  std::cout<< (*Spp_);
+  //std::cout<< (*Spp_);
   // std::cout<<"rhs_cells\n"<<rhs_cells<<"\n";
   //std::cout<< (*Aff_);
-  exit(0);
+  //exit(0);
 // tag matrices as assembled
   assembled_operator_ = true;
 
@@ -460,7 +473,7 @@ void Matrix_TPFA::AssembleSchur_() const{
   //(*Acf_).FillComplete();
 
 
-  std::cout<< (*Spp_);
+  //std::cout<< (*Spp_);
   // std::cout<<"rhs_cells\n"<<rhs_cells<<"\n";
   //std::cout<< (*Aff_);
   //exit(0);
@@ -517,6 +530,10 @@ void Matrix_TPFA::AssembleRHS_() const{
 int Matrix_TPFA::Apply(const CompositeVector& X,
 			   CompositeVector& Y) const {
 
+  if (!assembled_schur_) {
+    AssembleSchur_();
+    UpdatePreconditioner_();
+  }
 
   int ierr = Spp_->Multiply(false, *X.ViewComponent("cell",false),
                           *Y.ViewComponent("cell",false));
@@ -646,8 +663,7 @@ void Matrix_TPFA::ComputeNegativeResidual(const CompositeVector& solution,
   AmanziMesh::Entity_ID_List faces;
   //std::cout<<"\n";
   for (int c = 0; c < ncells_owned; c++) {    
-    //std::cout<<"c "<<c<<" rc "<< rc[0][c] <<" rhs "<<rhs_cell[0][c]<<"\n";
-    rc[0][c] += rhs_cell[0][c];      
+    rc[0][c] -= rhs_cell[0][c];      
   } 
 
   //exit(0);
@@ -721,9 +737,6 @@ int Matrix_TPFA::ApplyInverse(const CompositeVector& X,
   //AssertAssembledSchur_or_die_();
   if (!assembled_schur_) {
     AssembleSchur_();
-
-    //std::cout<<*Spp_<<*Aff_<<"\n";
-
     UpdatePreconditioner_();
   }
 
@@ -747,10 +760,11 @@ int Matrix_TPFA::ApplyInverse(const CompositeVector& X,
   Teuchos::ParameterList& slist = pre_list.sublist("gmres parameters");
 
   pre_list.set<std::string>("iterative method", "gmres");
-  pre_list.set<double>("error tolerance", 1e-16);
-  pre_list.set<int>("maximum number of iterations", 1000);
-  Teuchos::ParameterList& vlist = pre_list.sublist("VerboseObject");
-  vlist.set("Verbosity Level", "extreme");  
+  slist.set<double>("error tolerance", 1e-12);
+  slist.set<int>("maximum number of iterations", 1000);
+  Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
+  //vlist.set("Verbosity Level", "extreme");  
+  vlist.set("Verbosity Level", "high");  
 
 // delegating preconditioning to the base operator
   Teuchos::RCP<const Matrix_TPFA> op_matrix = Teuchos::rcp(this, false);
@@ -758,9 +772,8 @@ int Matrix_TPFA::ApplyInverse(const CompositeVector& X,
 
   op_prec -> SetNumberofBlocks(2);
   op_prec -> SetBlock(0, Spp_);   op_prec -> SetBlock(1, Aff_); 
-  //std::cout<<*Aff_<<"\n";
+
   op_prec -> SetPrec(0, S_pc_); op_prec -> SetPrec(1, Aff_pc_);
-  //op_prec -> InitPreconditioner(plist_);
 
 
   AmanziSolvers::LinearOperatorFactory< CompositeMatrix, CompositeVector, CompositeVectorSpace> factory;
@@ -877,6 +890,11 @@ void Matrix_TPFA::ComputeTransmissibilities_(const Teuchos::Ptr<std::vector<Whet
   int dim = mesh_->space_dimension();
   AmanziGeometry::Point gravity(dim);
 
+  WhetStone::Tensor Kc;
+  if (K == Teuchos::null) {
+    Kc.init(mesh_->space_dimension(), 1);
+    Kc(0,0) = 1.0;
+  }
 
   // Gravity tems are computed with respect to vector (0,0,-1)^T
   // and should be rescaled later by real gravity 
@@ -912,7 +930,10 @@ void Matrix_TPFA::ComputeTransmissibilities_(const Teuchos::Ptr<std::vector<Whet
       a[i] = face_centr - mesh_->cell_centroid(cells[i]);
       h[i] = norm(a[i]);
       double s = area / h[i];
-      perm[i] =  (((*K)[cells[i]] * a[i]) * normal) * s;
+      if (K != Teuchos::null) {
+	Kc = (*K)[cells[i]];
+      }
+      perm[i] =  ((Kc * a[i]) * normal) * s;
       //perm_test[i] = (rho_/mu_) * (((*K_)[cells[i]] * normal) * a_dist);
       //h_test[i] = pow(-1.0, i)*((face_centr - mesh_->cell_centroid(cells[i]))*normal) / area;  
       double dxn = a[i]*normal;
@@ -1029,7 +1050,7 @@ void Matrix_TPFA::ApplyBoundaryConditions(const std::vector<MatrixBC>& bc_marker
 
       //Epetra_SerialDenseVector& Bfc = Afc_cells_[f];
       
-      rhs_cells[0][cells[0]] -= -Afc_cells_[f](0)*bc_values[f];
+      rhs_cells[0][cells[0]] -= Afc_cells_[f](0)*bc_values[f];
       Afc_cells_[f](0) = 0.;
       Dff_f[0][face_lbid] = -1;
       

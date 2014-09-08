@@ -40,7 +40,7 @@ class Matrix_TPFA_Surf : public Matrix_TPFA {
   virtual void SymbolicAssembleGlobalMatrices() {
     // This must be protected from being called too early.
     if (surface_mesh_ != Teuchos::null) {
-      MatrixMFD::SymbolicAssembleGlobalMatrices();
+      Matrix_TPFA::SymbolicAssembleGlobalMatrices();
     }
   }
   // virtual int Apply(const CompositeVector& X,

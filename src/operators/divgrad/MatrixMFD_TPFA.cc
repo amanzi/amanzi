@@ -169,15 +169,13 @@ void MatrixMFD_TPFA::AssembleDff_() const {
   AmanziMesh::Entity_ID_List faces;
 
   int c=0;
-  std::cout<<"Aff\n"<<Aff_cells_[c]<<"\n";
-  std::cout<<"Acc\n"<<Acc_cells_[c]<<"\n";
-  std::cout<<"Afc\n"<<Acf_cells_[c]<<"\n";
-  Teuchos::RCP<Epetra_MultiVector> rhs_cells_tmp = rhs_->ViewComponent("cell",false);
-  std::cout<<"rhs_cell\n"<<*rhs_cells_tmp<<"\n";
+  // std::cout<<"Aff\n"<<Aff_cells_[c]<<"\n";
+  // std::cout<<"Acc\n"<<Acc_cells_[c]<<"\n";
+  // std::cout<<"Afc\n"<<Acf_cells_[c]<<"\n";
+  // Teuchos::RCP<Epetra_MultiVector> rhs_cells_tmp = rhs_->ViewComponent("cell",false);
+  // std::cout<<"rhs_cell\n"<<*rhs_cells_tmp<<"\n";
   // Teuchos::RCP<Epetra_MultiVector> rhs_faces_tmp = rhs_->ViewComponent("face",false);
-  // for (int i=45;i<51;i++){
-  //   std::cout<<"rhs_faces "<<(*rhs_faces_tmp)[0][i]<<"\n";
-  // }
+
   //exit(0);
 
   Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",true);

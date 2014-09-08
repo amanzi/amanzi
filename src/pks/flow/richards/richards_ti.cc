@@ -304,7 +304,7 @@ double Richards::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       bad_cell = c;
     }
   }
-  std::cout<<"enorm_cell "<<enorm_cell<<"\n";
+  //std::cout<<"enorm_cell "<<enorm_cell<<"\n";
 
   // Face error is mismatch in flux, so relative to water in neighboring cells
   double enorm_face(-1.);

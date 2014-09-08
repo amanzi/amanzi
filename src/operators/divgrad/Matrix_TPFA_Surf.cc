@@ -156,6 +156,11 @@ void Matrix_TPFA_Surf::ApplyBoundaryConditions(
 void Matrix_TPFA_Surf::ComputeNegativeResidual(const CompositeVector& solution,
 			     const Teuchos::Ptr<CompositeVector>& residual) const{
 
+  if (!assembled_rhs_) AssembleRHS_();
+  if (!assembled_schur_) {
+    AssembleSchur_();   
+    UpdatePreconditioner_();
+  }
 
   Apply(solution, (*residual));
   //if (!assembled_rhs_) AssembleRHS_();

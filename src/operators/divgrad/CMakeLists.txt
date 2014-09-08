@@ -80,6 +80,24 @@ if (BUILD_TESTS)
       ${Amanzi_TPL_UnitTest_LIBRARIES}
       ${Amanzi_TPL_Trilinos_LIBRARIES})
 
+    add_executable(test_matrix_tpfa
+      test/Main.cc test/test_matrix_tpfa.cc)
+    target_link_libraries(test_matrix_tpfa
+      divgrad amanzi_atk amanzi_whetstone amanzi_geometry
+      amanzi_mesh_factory amanzi_mstk_mesh
+      amanzi_data_structures amanzi_solvers
+      ${Amanzi_TPL_UnitTest_LIBRARIES}
+      ${Amanzi_TPL_Trilinos_LIBRARIES})
+
+    add_executable(test_matrix_tpfa_surf
+      test/Main.cc test/test_matrix_tpfa_surf.cc)
+    target_link_libraries(test_matrix_tpfa_surf
+      divgrad amanzi_atk amanzi_whetstone amanzi_geometry
+      amanzi_mesh_factory amanzi_mstk_mesh
+      amanzi_data_structures amanzi_solvers
+      ${Amanzi_TPL_UnitTest_LIBRARIES}
+      ${Amanzi_TPL_Trilinos_LIBRARIES})
+
     add_executable(test_matrix_mfd_surf_sc
       test/Main.cc test/test_matrix_mfd_surf_sc.cc)
     target_link_libraries(test_matrix_mfd_surf_sc

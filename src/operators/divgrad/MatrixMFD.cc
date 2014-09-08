@@ -57,8 +57,6 @@ void MatrixMFD::InitializeFromPList_() {
   std::string methodstring = plist_.get<std::string>("MFD method");
   method_ = MFD3D_NULL;
 
-  std::cout << methodstring <<"\n";
-
   // standard MFD
   if (methodstring == "monotone mfd hex") {  // two monotone methods
     method_ = MFD3D_HEXAHEDRA_MONOTONE;
@@ -582,12 +580,10 @@ void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
         const Teuchos::Ptr<CompositeVector>& residual) const {
   Apply(solution, *residual);
   if (!assembled_rhs_) AssembleRHS_();
-  std::cout<<"solut face\n"<<*solution.ViewComponent("face", false)<<"\n";
-  //std::cout<<"resid\n"<<*(*residual).ViewComponent("cell", false)<<"\n";
-  std::cout<<"resid\n"<<*(*residual).ViewComponent("cell", false)<<"\n";
+ 
   residual->Update(-1.0, *rhs_, 1.0);
-  std::cout<<"rhs\n"<<*(*rhs_).ViewComponent("cell", false)<<"\n";
-  std::cout<<"resid\n"<<*(*residual).ViewComponent("cell", false)<<"\n";
+ 
+ 
 
 }
 
