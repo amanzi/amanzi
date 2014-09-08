@@ -82,26 +82,26 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
 
       if (dim == 3) 
         {
-          if (space_dim != 3) {
-            sstream << "Box " << reg_name << 
-              " specified using 3D coordinates but problem is " << 
-              space_dim << " dimensional. Check input!" << std::endl;
-            Errors::Message mesg(sstream.str());
-            amanzi_throw(mesg);
-          }
+          // if (space_dim != 3) {
+          //   sstream << "Box " << reg_name << 
+          //     " specified using 3D coordinates but problem is " << 
+          //     space_dim << " dimensional. Check input!" << std::endl;
+          //   Errors::Message mesg(sstream.str());
+          //   amanzi_throw(mesg);
+          // }
 
           p0.set(p0_vec[0], p0_vec[1], p0_vec[2]);
           p1.set(p1_vec[0], p1_vec[1], p1_vec[2]);
         }
       else if (dim == 2)
         {
-          if (space_dim != 2) {
-            sstream << "Box " << reg_name << 
-              " specified using 2D coordinates but problem is " << 
-              space_dim << " dimensional. Check input!" << std::endl;
-            Errors::Message mesg(sstream.str());
-            amanzi_throw(mesg);
-          }
+          // if (space_dim != 2) {
+          //   sstream << "Box " << reg_name << 
+          //     " specified using 2D coordinates but problem is " << 
+          //     space_dim << " dimensional. Check input!" << std::endl;
+          //   Errors::Message mesg(sstream.str());
+          //   amanzi_throw(mesg);
+          // }
 
           p0.set(p0_vec[0], p0_vec[1]);
           p1.set(p1_vec[0], p1_vec[1]);          
