@@ -93,9 +93,25 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   names2[0] = "cell";
   names2[1] = "face";
 
-  // -- primary variable: pressure on both cells and faces, ghosted, with 1 dof
-  S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
-                    ->SetComponents(names2, locations2, num_dofs2);
+
+  std::vector<AmanziMesh::Entity_kind> locations1(2);
+  std::vector<std::string> names1(2);
+  std::vector<int> num_dofs1(2,1);
+  locations1[0] = AmanziMesh::CELL;
+  locations1[1] = AmanziMesh::BOUNDARY_FACE;
+  names1[0] = "cell";
+  names1[1] = "boundary_face";
+
+  if (!(plist_->sublist("Diffusion").get<bool>("TPFA use cells only", false)) ){
+      // -- primary variable: pressure on both cells and faces, ghosted, with 1 dof
+    S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
+                          ->SetComponents(names2, locations2, num_dofs2);
+  }
+  else {
+      // -- primary variable: pressure on both cells and boundary faces, ghosted, with 1 dof
+    S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
+                           ->SetComponents(names1, locations1, num_dofs1);
+  }
 
 #if DEBUG_RES_FLAG
   // -- residuals of various iterations for debugging
@@ -286,6 +302,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     plist_->get<bool>("modify predictor for initial flux BCs", false);
   modify_predictor_wc_ =
     plist_->get<bool>("modify predictor via water content", false);
+
+
 }
 
 
@@ -339,15 +357,19 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("mass_density_liquid")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("mass_density_liquid"); // simply picks up the molar density one.
-}
 
+
+}
+    
 
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
 void Richards::initialize(const Teuchos::Ptr<State>& S) {
+
   // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);
+
 
   // debugggin cruft
 #if DEBUG_RES_FLAG
@@ -429,6 +451,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
   niter_ = 0;
 
   bool update = UpdatePermeabilityData_(S.ptr());
+
   update |= S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
   update |= S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
 
@@ -447,6 +470,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", name_);
     matrix_->DeriveFlux(*pres, flux.ptr());
     AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), flux.ptr());
+
   }
 
   // As a diagnostic, calculate the mass balance error
@@ -632,11 +656,12 @@ void Richards::UpdateBoundaryConditions_() {
   }
 
   // seepage face -- pressure <= p_atm, outward mass flux >= 0
-  const Epetra_MultiVector pressure = *S_next_->GetFieldData(key_)->ViewComponent("face");
+  // const Epetra_MultiVector pressure = *S_next_->GetFieldData(key_)->ViewComponent("face");
   const double& p_atm = *S_next_->GetScalarData("atmospheric_pressure");
   for (bc=bc_seepage_->begin(); bc!=bc_seepage_->end(); ++bc) {
     int f = bc->first;
-    if (pressure[0][f] < p_atm) {
+    double bc_pressure = BoundaryValue(S_next_->GetFieldData(key_), f);
+    if (bc_pressure < p_atm) {
       bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = bc->second;
     } else {
@@ -763,7 +788,9 @@ bool Richards::ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  modifications for consistent face pressures." << std::endl;
+  
   CalculateConsistentFaces(u->Data().ptr());
+
   return true;
 }
 
@@ -873,6 +900,34 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
     return false;
   }
   return true;
+}
+
+
+double Richards::BoundaryValue(Teuchos::RCP<const Amanzi::CompositeVector> solution, int face_id){
+
+  double value=0.;
+
+  if (solution->HasComponent("face")){
+    const Epetra_MultiVector& pres = *solution -> ViewComponent("face",false);
+    value = pres[0][face_id];
+  }
+  else if  (solution->HasComponent("boundary_face")){
+    const Epetra_MultiVector& pres = *solution -> ViewComponent("boundary_face",false);
+    const Epetra_Map& fb_map = mesh_->exterior_face_map();
+    const Epetra_Map& f_map = mesh_->face_map(false);
+
+    int face_gid = f_map.GID(face_id);
+    int face_lbid = fb_map.LID(face_gid);
+
+    value =  pres[0][face_lbid];
+  }
+  else{
+    Errors::Message msg("No component is defined for boundary faces\n");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return value;
+
 }
 
 } // namespace
