@@ -29,10 +29,6 @@ class IndependentVariableFieldEvaluator : public FieldEvaluator {
   IndependentVariableFieldEvaluator(Teuchos::ParameterList& plist);
   IndependentVariableFieldEvaluator(const IndependentVariableFieldEvaluator& other);
 
-  // virtual destructor
-  virtual ~IndependentVariableFieldEvaluator() {}
-
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
   virtual void operator=(const FieldEvaluator& other);
 
 
@@ -61,7 +57,7 @@ class IndependentVariableFieldEvaluator : public FieldEvaluator {
   // ---------------------------------------------------------------------------
   // Update the value in the state.
   // ---------------------------------------------------------------------------
-  virtual void UpdateField_(const Teuchos::Ptr<State>& S);
+  virtual void UpdateField_(const Teuchos::Ptr<State>& S) = 0;
 
  protected:
   Key my_key_;
