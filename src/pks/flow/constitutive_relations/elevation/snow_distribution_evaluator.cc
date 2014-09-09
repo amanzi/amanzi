@@ -66,8 +66,8 @@ void SnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   result->PutScalar(0.);
 
   double dt = *S->GetScalarData("dt");
-  double time = S->time();
-  double Qe = (*precip_func_)(&time);
+  std::vector<double> time(1,S->time());
+  double Qe = (*precip_func_)(time);
   if (Qe * dt * swe_conv_ > 0.) {
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_name_);
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);

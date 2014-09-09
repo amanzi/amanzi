@@ -9,6 +9,7 @@
 #ifndef AMANZI_FLOWRELATIONS_OVERLAND_CONDUCTIVITY_EVALUATOR_
 #define AMANZI_FLOWRELATIONS_OVERLAND_CONDUCTIVITY_EVALUATOR_
 
+#include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
@@ -40,6 +41,12 @@ private:
   Key coef_key_;
   Key dens_key_;
 
+  bool dt_;
+  double factor_;
+  bool dens_;
+
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,OverlandConductivityEvaluator> factory_;
 };
 
 } //namespace

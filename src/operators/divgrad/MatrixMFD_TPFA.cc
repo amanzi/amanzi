@@ -168,6 +168,16 @@ void MatrixMFD_TPFA::AssembleDff_() const {
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   AmanziMesh::Entity_ID_List faces;
 
+  int c=0;
+  // std::cout<<"Aff\n"<<Aff_cells_[c]<<"\n";
+  // std::cout<<"Acc\n"<<Acc_cells_[c]<<"\n";
+  // std::cout<<"Afc\n"<<Acf_cells_[c]<<"\n";
+  // Teuchos::RCP<Epetra_MultiVector> rhs_cells_tmp = rhs_->ViewComponent("cell",false);
+  // std::cout<<"rhs_cell\n"<<*rhs_cells_tmp<<"\n";
+  // Teuchos::RCP<Epetra_MultiVector> rhs_faces_tmp = rhs_->ViewComponent("face",false);
+
+  //exit(0);
+
   Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",true);
   Dff_f.PutScalar(0.);
   for (int c=0; c!=ncells_owned; ++c) {
@@ -205,6 +215,12 @@ void MatrixMFD_TPFA::AssembleRHS_() const {
   }
   ApplyAcf(*rhs_, *rhs_, -1.);
   rhs_cells->Scale(-1.);
+
+  // std::cout<<"rhs_faces\n"<<*rhs_faces<<"\n";
+  // std::cout<<"Tc\n"<<Tc<<"\n";
+  // std::cout<<"rhs_cell\n"<<*rhs_cells_tmp<<"\n";
+  // exit(0);
+
 
   // unscale the rhs
   for (int f=0; f!=nfaces_owned; ++f) {
@@ -333,6 +349,11 @@ void MatrixMFD_TPFA::AssembleApp_() const {
   (*App_).GlobalAssemble();
   assembled_app_ = true;
 
+
+   // std::cout<< (*Acf_);
+   //exit(0);
+
+
   // Check min
 #ifdef ENABLE_DBC
   Epetra_Vector App_diag(mesh_->cell_map(false));
@@ -361,6 +382,8 @@ int MatrixMFD_TPFA::Apply(const CompositeVector& X,
 
   int ierr = App_->Multiply(false, *X.ViewComponent("cell",false),
                             *Y.ViewComponent("cell",false));
+
+ 
 
   if (Y.HasComponent("face")) {
     ApplyAfc(X, Y, 0.);
@@ -426,6 +449,7 @@ int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
     ierr |= ApplyAfc_(Tc, Y, 0.);  // Afc is kept in the transpose form.
     ASSERT(!ierr);
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", false);
+
     Yf.Update(1., Xf, -1.);
 
     int nfaces = Yf.MyLength();
@@ -433,6 +457,23 @@ int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
       Yf[0][f] /= Dff_f[0][f];
     }
   }
+  // std::cout<<*X.ViewComponent("cell",false)<<*Y.ViewComponent("cell",false);
+  // std::cout<<*X.ViewComponent("face",false)<<*Y.ViewComponent("face",false);
+
+
+  // CompositeVector Z(X);
+
+  // Z.PutScalar(0.);
+  // Apply(Y,Z);
+
+  // std::cout<<*Z.ViewComponent("cell",false)<<*Z.ViewComponent("boundary_face",false);
+
+
+
+
+  //  exit(0);
+
+
   return ierr;
 }
 
