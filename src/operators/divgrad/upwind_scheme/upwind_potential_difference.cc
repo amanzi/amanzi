@@ -69,14 +69,16 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
   Epetra_MultiVector& face_coef_f = *face_coef->ViewComponent("face",false);
   const Epetra_MultiVector& overlap_c = *overlap.ViewComponent("cell",true);
   const Epetra_MultiVector& potential_c = *potential.ViewComponent("cell",true);
+  Teuchos::RCP<const Epetra_MultiVector> potential_f;
+  if (potential.HasComponent("face")) potential_f = potential.ViewComponent("face",false);
   const Epetra_MultiVector& cell_coef_c = *cell_coef.ViewComponent("cell",true);
 
   int nfaces = face_coef->size("face",false);
   for (unsigned int f=0; f!=nfaces; ++f) {
     mesh->face_get_cells(f, AmanziMesh::USED, &cells);
 
-    if (cells.size() == 1) {
-      if (potential_c[0][cells[0]] >= potential("face", f)) {
+    if (cells.size() == 1 && potential_f != Teuchos::null) {      
+      if (potential_c[0][cells[0]] >= (*potential_f)[0][f]) {
         face_coef_f[0][f] = cell_coef_c[0][cells[0]];
       }
     } else {
