@@ -220,11 +220,11 @@ bool BGCSimple::advance(double dt) {
   Epetra_MultiVector& co2_decomp = *S_next_->GetFieldData("co2_decomposition", name_)
       ->ViewComponent("cell",false);
 
-  S_inter_->GetFieldEvaluator("temperature")->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator("temperature")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& temp = *S_inter_->GetFieldData("temperature")
       ->ViewComponent("cell",false);
 
-  S_inter_->GetFieldEvaluator("pressure")->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator("pressure")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& pres = *S_inter_->GetFieldData("pressure")
       ->ViewComponent("cell",false);
 

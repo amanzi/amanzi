@@ -31,9 +31,9 @@ void TestSnowDist::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField(key_, name_)->SetMesh(S->GetMesh("surface"))
           ->SetComponent("cell", AmanziMesh::CELL, 1);
 
+  S->RequireFieldEvaluator("precipitation_snow");
   S->RequireField("precipitation_snow")->SetMesh(S->GetMesh("surface"))
       ->AddComponent("cell", AmanziMesh::CELL,1);
-  S->RequireFieldEvaluator("precipitation_snow");
 };
 
 // -- call your favorite
@@ -54,6 +54,7 @@ bool TestSnowDist::advance(double dt) {
     ->Update(10.*dt, *S_next_->GetFieldData("precipitation_snow"), 1.); // factor of 10 for SWE-to-snow ht conversion
 
   solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
+  return false;
 };
 
 

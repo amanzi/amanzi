@@ -26,9 +26,17 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   coef_key_ = plist_.get<std::string>("coefficient key", "manning_coefficient");
   dependencies_.insert(coef_key_);
 
-  dens_key_ = plist_.get<std::string>("density key", "surface_molar_density_liquid");
-  dependencies_.insert(dens_key_);
+  dt_ = plist_.get<bool>("include dt factor", false);
+  if (dt_) {
+    factor_ = plist_.get<double>("dt factor");
+  }
+  dens_ = plist_.get<bool>("include density factor", true);
 
+  if (dens_) {
+    dens_key_ = plist_.get<std::string>("density key", "surface_molar_density_liquid");
+    dependencies_.insert(dens_key_);
+  }
+  
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<std::string>("overland conductivity key",
             "overland_conductivity");
@@ -47,6 +55,9 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(const OverlandCondu
     slope_key_(other.slope_key_),
     coef_key_(other.coef_key_),
     dens_key_(other.dens_key_),
+    dt_(other.dt_),
+    factor_(other.factor_),
+    dens_(other.dens_),
     model_(other.model_) {}
 
 
@@ -63,19 +74,31 @@ void OverlandConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> depth = S->GetFieldData(depth_key_);
   Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_key_);
   Teuchos::RCP<const CompositeVector> coef = S->GetFieldData(coef_key_);
-  Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
 
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
     const Epetra_MultiVector& depth_v = *depth->ViewComponent(*comp,false);
     const Epetra_MultiVector& slope_v = *slope->ViewComponent(*comp,false);
     const Epetra_MultiVector& coef_v = *coef->ViewComponent(*comp,false);
-    const Epetra_MultiVector& dens_v = *dens->ViewComponent(*comp,false);
     Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
     int ncomp = result->size(*comp, false);
-    for (int i=0; i!=ncomp; ++i) {
-      result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]) * dens_v[0][i];
+    if (dt_) {
+      for (int i=0; i!=ncomp; ++i) {
+        result_v[0][i] = model_->Conductivity(factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+      }
+    } else {
+      //      double dt = *S->GetScalarData("dt");
+      for (int i=0; i!=ncomp; ++i) {
+        result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+      }
+    }
+
+    if (dens_) {
+      const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(*comp,false);
+      for (int i=0; i!=ncomp; ++i) {
+        result_v[0][i] *= dens_v[0][i];
+      }
     }
   }
 }
@@ -88,8 +111,6 @@ void OverlandConductivityEvaluator::EvaluateFieldPartialDerivative_(
   Teuchos::RCP<const CompositeVector> depth = S->GetFieldData(depth_key_);
   Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_key_);
   Teuchos::RCP<const CompositeVector> coef = S->GetFieldData(coef_key_);
-  Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
-
 
   if (wrt_key == depth_key_) {
     for (CompositeVector::name_iterator comp=result->begin();
@@ -97,27 +118,47 @@ void OverlandConductivityEvaluator::EvaluateFieldPartialDerivative_(
       const Epetra_MultiVector& depth_v = *depth->ViewComponent(*comp,false);
       const Epetra_MultiVector& slope_v = *slope->ViewComponent(*comp,false);
       const Epetra_MultiVector& coef_v = *coef->ViewComponent(*comp,false);
-      const Epetra_MultiVector& dens_v = *dens->ViewComponent(*comp,false);
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
       int ncomp = result->size(*comp, false);
-      for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DConductivityDDepth(depth_v[0][i], slope_v[0][i], coef_v[0][i]) * dens_v[0][i];
+      if (dt_) {
+        //        double dt = *S->GetScalarData("dt");
+        for (int i=0; i!=ncomp; ++i) {
+          result_v[0][i] = model_->DConductivityDDepth(factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]) * factor_;
+        }
+      } else {
+        for (int i=0; i!=ncomp; ++i) {
+          result_v[0][i] = model_->DConductivityDDepth(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+        }
+      }
+
+      if (dens_) {
+        const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(*comp,false);
+        for (int i=0; i!=ncomp; ++i) {
+          result_v[0][i] *= dens_v[0][i];
+        }
       }
     }
 
   } else if (wrt_key == dens_key_) {
+    ASSERT(dens_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& depth_v = *depth->ViewComponent(*comp,false);
       const Epetra_MultiVector& slope_v = *slope->ViewComponent(*comp,false);
       const Epetra_MultiVector& coef_v = *coef->ViewComponent(*comp,false);
-      const Epetra_MultiVector& dens_v = *dens->ViewComponent(*comp,false);
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
       int ncomp = result->size(*comp, false);
-      for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+      if (dt_) {
+        //        double dt = *S->GetScalarData("dt");
+        for (int i=0; i!=ncomp; ++i) {
+          result_v[0][i] = model_->Conductivity(factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+        }
+      } else {
+        for (int i=0; i!=ncomp; ++i) {
+          result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+        }
       }
     }
 

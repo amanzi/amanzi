@@ -34,21 +34,28 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
   Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
 
+
   if (update_flux_ == UPDATE_FLUX_ITERATION) {
     // update the flux
     Teuchos::RCP<CompositeVector> flux =
         S->GetFieldData("darcy_flux", name_);
 
     matrix_->DeriveFlux(*pres, flux.ptr());
-    AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), flux.ptr());
+    if (matrix_->method() != Amanzi::Operators::FV_TPFA)
+      AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), flux.ptr());
   }
 
   // assemble the stiffness matrix
   AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), matrix_.ptr());
+
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres, g.ptr());
+
+  Epetra_MultiVector sol_c = *(*pres).ViewComponent("cell");
+    
+
 };
 
 
@@ -170,6 +177,15 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
         const Teuchos::Ptr<const CompositeVector>& rel_perm,
         const Teuchos::Ptr<const CompositeVector>& rho,
         const Teuchos::Ptr<Operators::MatrixMFD>& matrix) {
+
+  if (matrix->method() == Amanzi::Operators::FV_TPFA){
+    Teuchos::Ptr<Operators::Matrix_TPFA> matrix_tpfa = Teuchos::ptr_dynamic_cast<Operators::Matrix_TPFA>(matrix);
+    AddGravityFluxes_FV_(g_vec, rel_perm, rho, matrix_tpfa);
+    return;
+  }
+
+
+
 
   AmanziGeometry::Point gravity(g_vec->MyLength());
   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
@@ -316,12 +332,118 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
         }
 
         double outward_flux = ( ((*K_)[c] * gravity) * normal) * krel_cells[0][c] * rho_v[0][c];
+
+        //std::cout<<"grav "<<( ((*K_)[c] * gravity) * normal) * dirs[n]<<" rho "<<rho_v[0][c]<<" krel "<<krel_cells[0][c]<<"\n";
+
         Ff[n] += outward_flux * (scaled_constraint_ ? 1. : krel_faces[0][f]);
         Fc -= outward_flux * krel_faces[0][f];  // Nonzero-sum contribution when not upwinding
-      }
+
+      }      
     }
   }
 };
+
+// -----------------------------------------------------------------------------
+// Update elemental discretization matrices with gravity terms.
+//
+// Must be called before applying boundary conditions and global assembling.
+// -----------------------------------------------------------------------------
+void Richards::AddGravityFluxes_FV_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
+        const Teuchos::Ptr<const CompositeVector>& rel_perm,
+        const Teuchos::Ptr<const CompositeVector>& rho,
+        const Teuchos::Ptr<Operators::Matrix_TPFA>& matrix) {
+
+  int dim = g_vec->MyLength();
+  AmanziGeometry::Point gravity(dim);
+  for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
+
+  //Teuchos::RCP<const CompositeVector> rhs = matrix->rhs();
+  //Epetra_MultiVector& F_cell = *rhs.ViewComponent("cell",false);
+
+  std::vector<double>& Fc_cell = matrix->Fc_cells();
+
+  Teuchos::RCP<Epetra_Vector> grav_terms = matrix->gravity_terms();
+
+  AmanziMesh::Entity_ID_List faces, cells;
+  std::vector<int> dirs;
+
+  if (rel_perm == Teuchos::null) { // no rel perm
+
+    const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell", true);
+    unsigned int ncells = rho->size("cell",false);
+
+    for (unsigned int c=0; c!=ncells; ++c) {
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      int nfaces = faces.size();
+      Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
+      Fc_cell[c] = 0.;
+
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        double rho_avr = 0.;
+        for (int i=0; i<cells.size(); ++i) rho_avr += rho_v[0][cells[i]];
+        rho_avr *= 1./cells.size();
+
+        double grav_flux = dirs[n] * gravity[dim-1] * (*grav_terms)[f] * rho_avr;
+        if (cells.size() == 1){
+          if (bc_markers_[f] != Amanzi::Operators::MATRIX_BC_DIRICHLET){
+            Ff[n] -= grav_flux;
+          }
+          Fc_cell[c] -= grav_flux;
+        }
+        else{
+          Fc_cell[c] -= grav_flux;
+        }  
+      }
+    }
+
+  }
+  // else if (!rel_perm->HasComponent("cell")) { // rel perm on faces only
+  else{
+    rel_perm->ScatterMasterToGhosted("face");
+
+    const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell", true);
+    const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
+    unsigned int ncells = rho->size("cell",false);
+    //Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell",false);
+
+    for (unsigned int c=0; c!=ncells; ++c) {
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      int nfaces = faces.size();
+      Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
+      Fc_cell[c] = 0.;
+
+
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+
+
+        double rho_avr = 0.;
+        for (int i=0; i<cells.size(); ++i) rho_avr += rho_v[0][cells[i]];
+        rho_avr *= 1./cells.size();
+
+        double grav_flux = dirs[n] * gravity[dim-1] * (*grav_terms)[f] * rho_avr * krel_faces[0][f];
+
+        if (cells.size() == 1){
+          if (bc_markers_[f] != Amanzi::Operators::MATRIX_BC_DIRICHLET){
+            Ff[n] -= grav_flux;
+          }
+          Fc_cell[c] -= grav_flux;
+        }
+        else{
+          Fc_cell[c] -= grav_flux;
+        }  
+
+      }
+    }
+  }
+ // else {
+ //   Errors::Message message(std::string("FV discretization doesn't support this type of relative permeability\n"));
+ // }
+
+}
 
 
 // -----------------------------------------------------------------------------
@@ -331,6 +453,9 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
         const Teuchos::Ptr<const CompositeVector>& rel_perm,
         const Teuchos::Ptr<const CompositeVector>& rho,
         const Teuchos::Ptr<CompositeVector>& darcy_flux) {
+
+
+
 
   AmanziGeometry::Point gravity(g_vec->MyLength());
   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];

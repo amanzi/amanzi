@@ -261,8 +261,7 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
 
   { // initialize the vertex coordinate to the current mesh
     int dim = mesh_->space_dimension();
-    AmanziGeometry::Point coords;
-    coords.init(dim);
+    AmanziGeometry::Point coords(dim);
     int nnodes = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
             Amanzi::AmanziMesh::OWNED);
 
@@ -279,8 +278,7 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
   if (S->HasMesh("surface")) {
     // initialize the vertex coordinates of the surface meshes
     int dim = surf_mesh_->space_dimension();
-    AmanziGeometry::Point coords;
-    coords.init(dim);
+    AmanziGeometry::Point coords(dim);
     int nnodes = surf_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
             Amanzi::AmanziMesh::OWNED);
 
@@ -297,8 +295,7 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
   if (S->HasMesh("surface_3d")) {
     // initialize the vertex coordinates of the surface meshes
     int dim = surf3d_mesh_->space_dimension();
-    AmanziGeometry::Point coords;
-    coords.init(dim);
+    AmanziGeometry::Point coords(dim);
     int nnodes = surf3d_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
             Amanzi::AmanziMesh::OWNED);
 
@@ -322,10 +319,10 @@ bool VolumetricDeformation::advance(double dt) {
                << S_next_->time() << " with step size " << dt << std::endl
                << "----------------------------------------------------------------" << std::endl;
 
-  double ss = S_next_->time();
+  std::vector<double> ss(1,S_next_->time());
   double ss0 = S_->time();
-  double dT = ss - ss0;
-  double T_mid = (ss + ss0) / 2.;
+  double dT = ss[0] - ss0;
+  double T_mid = (ss[0] + ss0) / 2.;
 
   // Collect data from state
   Teuchos::RCP<CompositeVector> dcell_vol_vec =
@@ -393,7 +390,7 @@ bool VolumetricDeformation::advance(double dt) {
       Epetra_MultiVector& cv1 = *S_next_->GetFieldData("integrated_cell_volume",name_)
           ->ViewComponent("cell",false);
 
-      double thaw_height = (*thaw_front_func_)(&ss);
+      double thaw_height = (*thaw_front_func_)(ss);
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
         *vo_->os() << "Thaw Height = " << thaw_height << std::endl;
 
@@ -475,10 +472,9 @@ bool VolumetricDeformation::advance(double dt) {
 
       // form list of deformed nodes
       Entity_ID_List nodeids;
-      AmanziGeometry::Point_List newpos;
-      Amanzi::AmanziGeometry::Point coords, new_coords;
       int dim = mesh_->space_dimension();
-      new_coords.init(dim);
+      AmanziGeometry::Point_List newpos;
+      Amanzi::AmanziGeometry::Point coords(dim), new_coords(dim);
 
       // WORKAROUND for non-communication in deform() by Mesh
       //  const Epetra_MultiVector& nodal_dz_l =
@@ -602,10 +598,9 @@ bool VolumetricDeformation::advance(double dt) {
 
       // form list of deformed nodes
       Entity_ID_List nodeids;
-      AmanziGeometry::Point_List newpos;
-      Amanzi::AmanziGeometry::Point coords, new_coords;
       int dim = mesh_->space_dimension();
-      new_coords.init(dim);
+      AmanziGeometry::Point_List newpos;
+      Amanzi::AmanziGeometry::Point coords(dim), new_coords(dim);
 
       // WORKAROUND for non-communication in deform() by Mesh
       //  const Epetra_MultiVector& nodal_dz_l =
