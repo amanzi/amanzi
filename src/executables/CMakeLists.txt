@@ -63,6 +63,7 @@ set(ATS_LIBS
                       pk_energy_base
 		              pk_flow_permafrost
                       pk_flow_richards
+                      pk_flow_snow_distribution
                       pk_flow_overland
                       pk_flow_overland_head
                       pk_flow_icy_overland
