@@ -232,6 +232,13 @@ void Coordinator::initialize() {
   // -- register the final time
   tsm_->RegisterTimeEvent(t1_);
 
+  // -- register any intermediate requested times
+  if (coordinator_list_->isSublist("required times")) {
+    Teuchos::ParameterList& sublist = coordinator_list_->sublist("required times");
+    IOEvent pause_times(sublist, comm_);
+    pause_times.RegisterWithTimeStepManager(tsm_.ptr());
+  }
+
   // Create an intermediate state that will store the updated solution until
   // we know it has succeeded.
   S_next_ = Teuchos::rcp(new State(*S_));
@@ -522,6 +529,8 @@ void Coordinator::cycle_driver() {
                   << std::endl;
       }
 
+      *S_->GetScalarData("dt", "coordinator") = dt;
+      *S_inter_->GetScalarData("dt", "coordinator") = dt;
       *S_next_->GetScalarData("dt", "coordinator") = dt;
       fail = advance(dt);
       dt = get_dt();
