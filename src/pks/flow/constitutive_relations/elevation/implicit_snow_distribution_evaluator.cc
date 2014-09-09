@@ -94,7 +94,7 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     double dt = kCFL_ * kdx_ / kV;
 
     const double kh0 = Qe * ktmax_ * kSWE_conv_;
-    const double nm = std::pow(kh0, 1./3) * std::sqrt(kS_) / kV;
+    const double nm = std::pow(kh0, 2./3) * std::sqrt(kS_) / kV;
 
     int nsteps = std::ceil(ktmax_ / dt);
     dt = ktmax_ / nsteps;
@@ -110,7 +110,7 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
                  << "  -------" << std::endl
                  << "  h0    = " << kh0 << std::endl
                  << "  nm    = " << nm << std::endl
-                 << "  V(man)= " << std::pow(kh0,1./3) * std::sqrt(kS_) / nm << std::endl
+                 << "  V(man)= " << std::pow(kh0,2./3) * std::sqrt(kS_) / nm << std::endl
                  << "  -------" << std::endl;
     }
 
@@ -158,6 +158,7 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
         result->ViewComponent("cell",false)->MinValue(&min);
         result->ViewComponent("cell",false)->MaxValue(&max);
         *vo_->os() << min << ", " << max << std::endl;
+        ASSERT(min >= 0.0);
       }
 
       *result_prev = *result;
@@ -192,16 +193,30 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
           Epetra_MultiVector& Krel_uw_vec = *Krel_uw->ViewComponent("face",false);
           const Epetra_MultiVector& Krel_c_vec = *Krel_c->ViewComponent("cell",true);
           const Epetra_MultiVector& hz_c = *hz->ViewComponent("cell",true);
+          const Epetra_MultiVector& result_c = *result->ViewComponent("cell",false);
           for (int f=0; f!=nfaces; ++f) {
             AmanziMesh::Entity_ID_List cells;
             mesh->face_get_cells(f,AmanziMesh::USED,&cells);
             if (cells.size() == 1) {
-            Krel_uw_vec[0][f] = Krel_c_vec[0][cells[0]];
+              Krel_uw_vec[0][f] = Krel_c_vec[0][cells[0]];
             } else {
-              if (hz_c[0][cells[0]] > hz_c[0][cells[1]]) {
+              double flux_tol = 0.;
+              if (result_c[0][cells[0]] > 0. || result_c[0][cells[1]] > 0.) {
+                flux_tol = result_c[0][cells[0]]*result_c[0][cells[1]] / (result_c[0][cells[0]] + result_c[0][cells[1]]);
+              }
+              
+              if (hz_c[0][cells[0]] > hz_c[0][cells[1]] + flux_tol) {
                 Krel_uw_vec[0][f] = Krel_c_vec[0][cells[0]];
-              } else {
+              } else if (hz_c[0][cells[1]] > hz_c[0][cells[0]] + flux_tol) {
                 Krel_uw_vec[0][f] = Krel_c_vec[0][cells[1]];
+              } else {
+                // Parameterization of a linear scaling between upwind and downwind.
+                double param = (hz_c[0][cells[1]] - hz_c[0][cells[0]])
+                    / (2*flux_tol) + 0.5;
+                ASSERT(param >= 0.0);
+                ASSERT(param <= 1.0);
+                Krel_uw_vec[0][f] = Krel_c_vec[0][cells[1]] * param
+                    + Krel_c_vec[0][cells[0]] * (1. - param);
               }
             }
           }
@@ -246,7 +261,7 @@ void ImplicitSnowDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>
           residual->Print(*vo_->os());
         }
 
-        if ((norm0 < atol_) || (norm / norm0 < tol_) || (ncycle > max_it_)) {
+        if ((norm < atol_) || (norm / norm0 < tol_) || (ncycle > max_it_)) {
           done = true;
           continue;
         }
