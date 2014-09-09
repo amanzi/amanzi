@@ -45,6 +45,14 @@ class RelativePermeability {
   void DerivedKdP(const Epetra_MultiVector& p, Epetra_MultiVector& dk);
 
   double Value(int c, double pc) const { return WRM_[(*map_c2mb_)[c]]->k_relative(atm_pressure - pc); } 
+  double Value(int c, double pc, const std::string name) const { 
+    if (name == "k_relative"){
+      return WRM_[(*map_c2mb_)[c]]->k_relative(atm_pressure - pc); 
+    }
+    else if (name == "dkdpc"){
+      return WRM_[(*map_c2mb_)[c]]->dKdPc(atm_pressure - pc); 
+    }
+  } 
 
   void ComputeGravityFlux(const std::vector<WhetStone::Tensor>& K, const AmanziGeometry::Point& g,
                           Teuchos::RCP<CompositeVector> flux);

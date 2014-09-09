@@ -547,7 +547,7 @@ void OperatorDiffusionTPFA::AnalyticJacobian_(const CompositeVector& u)
 ****************************************************************** */
 void OperatorDiffusionTPFA::ComputeJacobianLocal_(
     int mcells, int f, int face_dir, int Krel_method,
-    int bc_models, double bc_value,
+    int bc_model_f, double bc_value_f,
     double *pres, double *dkdp_cell,
     WhetStone::DenseMatrix& Jpp)
 {
@@ -592,12 +592,12 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
     Jpp(1, 1) = -Jpp(0, 1);
 
   } else if (mcells == 1) {
-    if (bc_models == OPERATOR_BC_FACE_DIRICHLET) {                   
-      pres[1] = bc_value;
+    if (bc_model_f == OPERATOR_BC_FACE_DIRICHLET) {                   
+      pres[1] = bc_value_f;
       dpres = pres[0] - pres[1];  // + grn;
-      //Jpp(0, 0) = ((*transmissibility_)[f] * dpres + face_dir * (*gravity_term_)[f]) * dkdp_cell[0];
-      Jpp(0, 0) = 0.0;
-      //std::cout<<"Local J dkdp_cell[0] "<<f<<"  "<<dkdp_cell[0]<<"\n";
+      Jpp(0, 0) = ((*transmissibility_)[f] * dpres + face_dir * (*gravity_term_)[f]) * dkdp_cell[0];
+      //Jpp(0, 0) = 0.0;
+      //std::cout<<"Local J dkdp_cell[0] "<<f<<"  "<<dkdp_cell[0]<<" "<<bc_value_f<<" "<<pres[0]<<" "<<"\n";
     } else {
       Jpp(0, 0) = 0.0;
     }
