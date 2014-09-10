@@ -10,6 +10,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #define PK_FLOW_SNOW_DISTRIBUTION_HH_
 
 #include "MatrixMFD.hh"
+#include "MatrixMFD_TPFA.hh"
 #include "upwinding.hh"
 
 #include "Function.hh"
@@ -43,7 +44,9 @@ public:
   virtual void initialize(const Teuchos::Ptr<State>& S);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {}
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {
+    PKPhysicalBDFBase::commit_state(dt,S);
+  }
 
   // -- Update diagnostics for vis.
   virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
@@ -63,6 +66,9 @@ public:
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
 
+  virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
+          Teuchos::RCP<TreeVector> u);
+  
 protected:
   // setup methods
   virtual void SetupSnowDistribution_(const Teuchos::Ptr<State>& S);
@@ -93,6 +99,7 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
+  Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;
   // note PC is in PKPhysicalBDFBase
 
   // factory registration

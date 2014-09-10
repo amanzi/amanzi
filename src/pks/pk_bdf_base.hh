@@ -47,6 +47,9 @@ class PKBDFBase : public virtual PKDefaultBase,
   // -- Advance from state S0 to state S1 at time S0.time + dt.
   virtual bool advance(double dt);
 
+  // -- Commit any secondary (dependent) variables.
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
+
   // -- Check the admissibility of a solution.
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) { return true; }
 
