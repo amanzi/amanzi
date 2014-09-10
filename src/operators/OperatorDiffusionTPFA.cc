@@ -356,7 +356,8 @@ void OperatorDiffusionTPFA::UpdateFlux(
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-  double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(int f, const CompositeVector& u, Teuchos::RCP<Flow::WaterRetentionModel> wrm)
+double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(
+    int f, const CompositeVector& u, Teuchos::RCP<Flow::WaterRetentionModel> wrm)
 {
   if (u.HasComponent("face")) {
     const Epetra_MultiVector& u_face = *u.ViewComponent("face");
@@ -376,8 +377,8 @@ void OperatorDiffusionTPFA::UpdateFlux(
       int c = cells[0];
       
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-      for (int i=0; i<faces.size(); i++){
-      	if (faces[i] == f){
+      for (int i=0; i<faces.size(); i++) {
+      	if (faces[i] == f) {
       	  double a = dirs[i] * (*transmissibility_)[f];
       	  double b = bc_value[f]* mesh_->face_area(f);	  
       	  double face_val = u_cell[0][c] + (*gravity_term_)[f]/a - b/(a*Krel_face[0][f]);
@@ -445,7 +446,6 @@ void OperatorDiffusionTPFA::UpdateFlux(
 #endif
 	  //exit(0);
 	  return face_val;
-	  
       	}
       }
 

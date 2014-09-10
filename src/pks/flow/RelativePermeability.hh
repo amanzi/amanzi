@@ -48,10 +48,10 @@ class RelativePermeability {
   double Value(int c, double pc, const std::string name) const { 
     if (name == "k_relative"){
       return WRM_[(*map_c2mb_)[c]]->k_relative(atm_pressure - pc); 
-    }
-    else if (name == "dkdpc"){
+    } else if (name == "dkdpc"){
       return WRM_[(*map_c2mb_)[c]]->dKdPc(atm_pressure - pc); 
     }
+    return 0.0;
   } 
 
   void ComputeGravityFlux(const std::vector<WhetStone::Tensor>& K, const AmanziGeometry::Point& g,
