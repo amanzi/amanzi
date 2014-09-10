@@ -448,6 +448,8 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Commiting state." << std::endl;
 
+  PKPhysicalBDFBase::commit_state(dt, S);
+  
   niter_ = 0;
 
   bool update = UpdatePermeabilityData_(S.ptr());

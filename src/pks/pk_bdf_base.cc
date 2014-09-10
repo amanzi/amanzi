@@ -59,6 +59,13 @@ void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
 double PKBDFBase::get_dt() { return dt_; }
 
 
+// -- Commit any secondary (dependent) variables.
+void PKBDFBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
+  if (dt > 0. && time_stepper_ != Teuchos::null)
+    time_stepper_->CommitSolution(dt, solution_);
+}
+
+
 // -----------------------------------------------------------------------------
 // Advance from state S to state S_next at time S.time + dt.
 // -----------------------------------------------------------------------------
@@ -83,8 +90,8 @@ bool PKBDFBase::advance(double dt) {
 
   if (!fail) {
     // commit the step as successful
-    time_stepper_->CommitSolution(dt, solution_);
-    commit_state(dt, S_next_);
+    //    time_stepper_->CommitSolution(dt, solution_);
+    //    commit_state(dt, S_next_);
 
     // update the timestep size
     if (dt_solver < dt_ && dt_solver >= dt) {

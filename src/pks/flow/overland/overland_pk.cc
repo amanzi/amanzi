@@ -288,6 +288,8 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Commiting state." << std::endl;
 
+  PKPhysicalBDFBase::commit_state(dt, S);
+
   // update boundary conditions
   bc_head_->Compute(S->time());
   bc_flux_->Compute(S->time());
