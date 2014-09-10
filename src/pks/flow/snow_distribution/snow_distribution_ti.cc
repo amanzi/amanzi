@@ -128,10 +128,13 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
 
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_snow_conductivity");
-
+  Teuchos::RCP<CompositeVector> cond_times_factor = Teuchos::rcp(new CompositeVector(*cond));
+  *cond_times_factor = *cond;
+  cond_times_factor->Scale(864000);
+  
   // calculating the operator is done in 3 steps:
   // 1. Create all local matrices.
-  mfd_preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
+  mfd_preconditioner_->CreateMFDstiffnessMatrices(cond_times_factor.ptr());
   mfd_preconditioner_->CreateMFDrhsVectors();
 
   // 2.b Update local matrices diagonal with the accumulation terms.
@@ -143,8 +146,32 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   int ncells = cell_volume.MyLength();
   for (int c=0; c!=ncells; ++c) {
     // accumulation term
-    Acc_cells[c] += cell_volume[0][c] * 10.;
+    Acc_cells[c] += 10*cell_volume[0][c];
   }
+
+  // 3.c: Add in full Jacobian terms
+  if (full_jacobian_) {
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "    including full Jacobian terms" << std::endl;
+
+    // Update conductivity.
+    // -- Krel_face gets conductivity
+    S_next_->GetFieldEvaluator("snow_conductivity")
+        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+    Teuchos::RCP<const CompositeVector> cond =
+        S_next_->GetFieldData("snow_conductivity");
+    Teuchos::RCP<const CompositeVector> dcond_dp =
+        S_next_->GetFieldData("dsnow_conductivity_dprecipitation_snow");
+
+    // -- Add in the Jacobian
+    int nfaces = mesh_->num_entities(AmanziMesh::FACE,AmanziMesh::USED);
+    std::vector<Operators::MatrixBC> markers(nfaces, Operators::MATRIX_BC_NULL);
+    std::vector<double> values(nfaces,0.);
+
+    tpfa_preconditioner_->AnalyticJacobian(*upwinding_, S_next_.ptr(),
+            "snow_skin_potential", *dcond_dp, markers, values);
+  }
+
 };
 
 double SnowDistribution::ErrorNorm(Teuchos::RCP<const TreeVector> u,
@@ -199,6 +226,15 @@ double SnowDistribution::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 #endif
   return enorm_cell;
 };
+
+bool SnowDistribution::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
+        Teuchos::RCP<TreeVector> u) {
+  std::vector<double> time(1, S_next_->time());
+  double Qe = (*precip_func_)(time);
+  u->PutScalar(Qe);
+  return true;
+}
+
 
 }  // namespace Flow
 }  // namespace Amanzi
