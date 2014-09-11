@@ -25,14 +25,16 @@ namespace AmanziGeometry {
 PointRegion::PointRegion(const std::string name, 
 			 const unsigned int id,
 			 const Point& p,
-                         const LifeCycleType lifecycle)
-  : Region(name,id,0,lifecycle), p_(p)
+                         const LifeCycleType lifecycle,
+                         const VerboseObject *verbobj)
+  : Region(name,id,0,lifecycle,verbobj), p_(p)
 {
 }
 
 PointRegion::PointRegion(const char *name, const unsigned int id,
-			 const Point& p, const LifeCycleType lifecycle)
-  : Region(name,id,0,lifecycle), p_(p)
+			 const Point& p, const LifeCycleType lifecycle,
+                         const VerboseObject *verbobj)
+  : Region(name,id,0,lifecycle,verbobj), p_(p)
 {
 }
 
@@ -54,14 +56,19 @@ bool
 PointRegion::inside(const Point& p) const
 {
 
-#ifdef ENABLE_DBC
+
   if (p.dim() != p_.dim()) {
     std::stringstream tempstr;
     tempstr << "\nMismatch in dimension of PointRegion \"" << Region::name() << "\" and query point.\n Perhaps the region is improperly defined?\n";
+
+    const VerboseObject *verbobj = Region::verbosity_obj();
+    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = verbosity_obj()->getOSTab();
+      *(verbobj->os()) << tempstr;
+    }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
   }
-#endif
 
   bool result(true);
 

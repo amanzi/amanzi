@@ -18,6 +18,8 @@
 
 #include "Point.hh"
 
+#include "VerboseObject.hh"
+
 namespace Amanzi {
 namespace AmanziGeometry {
 
@@ -72,9 +74,11 @@ public:
 
   /// Constructor with name and ID
   Region(const std::string name, const unsigned int id, 
-         const unsigned int dim=3, const LifeCycleType lifecycle=PERMANENT);
+         const unsigned int dim=3, const LifeCycleType lifecycle=PERMANENT,
+         const VerboseObject *verbobj=NULL);
   Region(const char *name, const unsigned int id, const unsigned int dim=3, 
-         const LifeCycleType lifecycle=PERMANENT);
+         const LifeCycleType lifecycle=PERMANENT,
+         const VerboseObject *verbobj=NULL);
 
   /// Copy constructor 
   Region(const Region& old);
@@ -121,6 +125,12 @@ public:
     return lifecycle_;
   }
 
+  // Get object encoding verbosity of diagnostic messages and output stream
+
+  inline
+  const VerboseObject *verbosity_obj(void) const {
+    return verbosity_obj_;
+  }
 
   // Type of the region
   virtual RegionType type() const = 0;
@@ -134,6 +144,9 @@ public:
   /// void extents(Point *pmin, Point *pmax) const;
 
 private:
+
+  // Object encoding output stream and verbosity of diagnostics
+  const VerboseObject *verbosity_obj_;
 
   // Lifecycle (Temporary or Permanent)
 

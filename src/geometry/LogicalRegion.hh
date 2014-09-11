@@ -39,14 +39,16 @@ public:
                 const unsigned int id, 
                 const std::string operation_str,
                 const std::vector<std::string> region_names,
-                const LifeCycleType lifecycle=PERMANENT);
+                const LifeCycleType lifecycle=PERMANENT,
+                const VerboseObject *verbobj=NULL);
 
 
   LogicalRegion(const char *name, 
                 const unsigned int id, 
                 const std::string operation_str,
                 const std::vector<std::string> region_names,
-                const LifeCycleType lifecycle=PERMANENT);
+                const LifeCycleType lifecycle=PERMANENT,
+                const VerboseObject *verbobj=NULL);
 
 
   /// Protected copy constructor to avoid unwanted copies.

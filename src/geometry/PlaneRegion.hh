@@ -28,9 +28,11 @@ public:
   /// Default constructor uses point and normal
 
   PlaneRegion(const std::string name, const unsigned int id, const Point& p, 
-              const Point& normal, const LifeCycleType lifecycle=PERMANENT);
+              const Point& normal, const LifeCycleType lifecycle=PERMANENT,
+              const VerboseObject *verbobj=NULL);
   PlaneRegion(const char *name, const unsigned int id, const Point& p, 
-              const Point& normal, const LifeCycleType lifecycle=PERMANENT);
+              const Point& normal, const LifeCycleType lifecycle=PERMANENT,
+              const VerboseObject *verbobj=NULL);
 
   /// Protected copy constructor to avoid unwanted copies.
   PlaneRegion(const PlaneRegion& old);

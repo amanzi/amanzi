@@ -25,35 +25,41 @@ namespace AmanziGeometry {
 PlaneRegion::PlaneRegion(const std::string name, 
 			 const unsigned int id,
 			 const Point& p, const Point& normal,
-                         const LifeCycleType lifecycle)
-  : Region(name,id,p.dim()-1,lifecycle), p_(p), n_(normal)
+                         const LifeCycleType lifecycle,
+                         const VerboseObject *verbobj)
+  : Region(name,id,p.dim()-1,lifecycle,verbobj), p_(p), n_(normal)
 {
 
-#ifdef ENABLE_DBC
   if (p_.dim() != n_.dim()) {
     std::stringstream tempstr;
     tempstr << "\nMismatch in point and normal dimensions of PlaneRegion " << Region::name() << "Perhaps the region is improperly defined?\n";
+    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = verbobj->getOSTab();
+      *(verbobj->os()) << tempstr;
+    }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
   }
-#endif
 
 }
 
 PlaneRegion::PlaneRegion(const char *name, const unsigned int id,
 			 const Point& p, const Point& normal,
-                         const LifeCycleType lifecycle)
-  : Region(name,id,p.dim()-1,lifecycle), p_(p), n_(normal)
+                         const LifeCycleType lifecycle,
+                         const VerboseObject *verbobj)
+  : Region(name,id,p.dim()-1,lifecycle,verbobj), p_(p), n_(normal)
 {
 
-#ifdef ENABLE_DBC
   if (p_.dim() != n_.dim()) {
     std::stringstream tempstr;
     tempstr << "\nMismatch in point and normal dimensions of PlaneRegion " << Region::name() << "Perhaps the region is improperly defined?\n";
+    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = verbobj->getOSTab();
+      *(verbobj->os()) << tempstr;
+    }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
   }
-#endif
 
 }
 
@@ -74,14 +80,19 @@ PlaneRegion::~PlaneRegion(void)
 bool
 PlaneRegion::inside(const Point& p) const
 {
-#ifdef ENABLE_DBC
+
   if (p.dim() != p_.dim()) {
     std::stringstream tempstr;
     tempstr << "\nMismatch in point dimension of PlaneRegion \"" << Region::name() << "\" and query point.\n Perhaps the region is improperly defined?\n";
+
+    const VerboseObject *verbobj = Region::verbosity_obj();
+    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = verbobj->getOSTab();
+      *(verbobj->os()) << tempstr;
+    }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
   }
-#endif
 
   bool result(true);
 

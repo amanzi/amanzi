@@ -48,7 +48,8 @@ public:
                    const std::string file,
                    const std::string format,
                    const std::string label,
-                   const LifeCycleType lifecycle=PERMANENT);
+                   const LifeCycleType lifecycle=PERMANENT,
+                   const VerboseObject *verbobj=NULL);
 
   LabeledSetRegion(const char *name, 
                    const unsigned int id, 
@@ -56,7 +57,8 @@ public:
                    const std::string file,
                    const std::string format,
                    const std::string label,
-                   const LifeCycleType lifecycle=PERMANENT);
+                   const LifeCycleType lifecycle=PERMANENT,
+                   const VerboseObject *verbobj=NULL);
 
 
   /// Protected copy constructor to avoid unwanted copies.
