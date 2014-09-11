@@ -33,9 +33,11 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 
   int ok;
 
+#ifdef DEBUG
   if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
       *(verbobj->os()) << "Testing Verbosity !!!! - Construct mesh from file" << std::endl;
   }
+#endif
 
   // Pre-processing (init, MPI queries etc)
 
