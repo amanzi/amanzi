@@ -13,6 +13,8 @@
 #include "Epetra_IntVector.h"
 
 #include "tensor.hh"
+#include "WhetStoneDefs.hh"
+
 #include "Operator.hh"
 #include "OperatorDiffusion.hh"
 
@@ -24,13 +26,13 @@ class BCs;
 
 class OperatorDiffusionWithGravity : public OperatorDiffusion {
  public:
-  OperatorDiffusionWithGravity() {};
+  OperatorDiffusionWithGravity() { Init(); }
   OperatorDiffusionWithGravity(Teuchos::RCP<const CompositeVectorSpace> cvs, 
                                Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
-      : OperatorDiffusion(cvs, plist, bc) {};
+      : OperatorDiffusion(cvs, plist, bc) { Init(); }
   OperatorDiffusionWithGravity(const Operator& op, 
                                Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
-      : OperatorDiffusion(op, plist, bc) {};
+      : OperatorDiffusion(op, plist, bc) { Init(); }
 
   ~OperatorDiffusionWithGravity() {};
 
@@ -38,10 +40,16 @@ class OperatorDiffusionWithGravity : public OperatorDiffusion {
   void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
   void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
-  void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
+  inline void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
+  
+  inline void Init() { gravity_special_projection_ = (mfd_primary_ == WhetStone::DIFFUSION_TPFA); }
+
+ private:
+  inline AmanziGeometry::Point GravitySpecialDirection_(int f) const;
 
  private:
   AmanziGeometry::Point g_;
+  bool gravity_special_projection_;
 };
 
 }  // namespace Operators
