@@ -25,6 +25,7 @@ project(MFUNCS)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 
