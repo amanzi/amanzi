@@ -20,9 +20,10 @@ namespace AmanziMesh
 //--------------------------------------
 
 Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
-		      const AmanziGeometry::GeometricModelPtr& gm) :
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), target_cell_volumes(NULL),
-  min_cell_volumes(NULL)
+		      const AmanziGeometry::GeometricModelPtr& gm,
+                      const VerboseObject * verbobj) :
+  Mesh(verbobj), mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  target_cell_volumes(NULL), min_cell_volumes(NULL)
 {  
 
   int numprocs = incomm->NumProc();
@@ -32,6 +33,9 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 
   int ok;
 
+  if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+      *(verbobj->os()) << "Testing Verbosity !!!! - Construct mesh from file" << std::endl;
+  }
 
   // Pre-processing (init, MPI queries etc)
 
@@ -144,9 +148,10 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 
 Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, 
 		      int space_dimension,
-		      const AmanziGeometry::GeometricModelPtr& gm) :
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), target_cell_volumes(NULL),
-  min_cell_volumes(NULL)
+		      const AmanziGeometry::GeometricModelPtr& gm,
+                      const VerboseObject * verbobj) :
+  Mesh(verbobj), mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  target_cell_volumes(NULL), min_cell_volumes(NULL)
 {
 
   // Assume three dimensional problem if constructor called without 
@@ -239,9 +244,10 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 		     const unsigned int nx, const unsigned int ny, 
 		     const unsigned int nz, 
 		     const Epetra_MpiComm *incomm,
-		     const AmanziGeometry::GeometricModelPtr& gm) :
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), target_cell_volumes(NULL),
-  min_cell_volumes(NULL)
+		     const AmanziGeometry::GeometricModelPtr& gm,
+                     const VerboseObject * verbobj) :
+  Mesh(verbobj), mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  target_cell_volumes(NULL), min_cell_volumes(NULL)
 {
   int ok;
 
@@ -325,9 +331,10 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 		     const double x1, const double y1,
 		     const int nx, const int ny, 
 		     const Epetra_MpiComm *incomm,
-		     const AmanziGeometry::GeometricModelPtr& gm) :
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), target_cell_volumes(NULL),
-  min_cell_volumes(NULL)
+		     const AmanziGeometry::GeometricModelPtr& gm,
+                     const VerboseObject *verbobj) :
+  Mesh(verbobj), mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  target_cell_volumes(NULL), min_cell_volumes(NULL)
 {
   int ok;
   int space_dim = 2;
@@ -340,6 +347,14 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
     int DebugWait=0;
     while (DebugWait);
     }
+
+#ifdef DEBUG
+  if (Mesh::verbosity_obj()) {
+    if (verbosity_obj()->os_OK(Teuchos::VERB_MEDIUM)) {
+      verbosity_obj()->os() << "Testing Verbosity !!!! - Construct mesh from low/hi coords - 2D" << std::endl;
+    }
+  }
+#endif
 
 
   Mesh::set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
@@ -414,9 +429,10 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 
 Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
 		     const Epetra_MpiComm *incomm,
-		     const AmanziGeometry::GeometricModelPtr& gm) :
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), target_cell_volumes(NULL),
-  min_cell_volumes(NULL)
+		     const AmanziGeometry::GeometricModelPtr& gm,
+                     const VerboseObject *verbobj) :
+  Mesh(verbobj), mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  target_cell_volumes(NULL), min_cell_volumes(NULL)
 {
   int ok;
 
@@ -463,6 +479,7 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
     Mesh_ptr globalmesh;
     int ring = 1; // One layer of ghost cells in parallel meshes
     int with_attr = 1;  // update of attributes in parallel meshes
+    int del_inmesh = 1; // delete global mesh
     int method = 1; // Partition with ZOLTAN
     
     if (myprocid == 0) {
@@ -552,7 +569,8 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
                                   const std::vector<std::string>& setnames, 
                                   const Entity_kind setkind,
                                   const bool flatten,
-                                  const bool extrude) {
+                                  const bool extrude)
+{
                          
   // Assume three dimensional problem if constructor called without 
   // the space_dimension parameter
@@ -1076,7 +1094,8 @@ Mesh_MSTK::Mesh_MSTK (const Mesh *inmesh,
                       const Entity_kind setkind,
                       const bool flatten,
                       const bool extrude) :
-  mpicomm(inmesh->get_comm()->GetMpiComm())
+  mpicomm(inmesh->get_comm()->GetMpiComm()),
+  Mesh(inmesh->verbosity_obj())
 {  
 
   extract_mstk_mesh(*((Mesh_MSTK *) inmesh),setnames,setkind,flatten,extrude);
@@ -1088,7 +1107,8 @@ Mesh_MSTK::Mesh_MSTK (const Mesh_MSTK& inmesh,
                       const Entity_kind setkind,
                       const bool flatten,
                       const bool extrude) :
-  mpicomm(inmesh.get_comm()->GetMpiComm())
+  mpicomm(inmesh.get_comm()->GetMpiComm()),
+  Mesh(inmesh.verbosity_obj())
 {  
 
   extract_mstk_mesh(inmesh,setnames,setkind,flatten,extrude);
@@ -3932,7 +3952,7 @@ void Mesh_MSTK::collapse_degen_edges() {
         vdelid = MV_ID(vdel);
       }
 
-#ifdef MSTK_2_20rc1_OR_NEWER
+#if defined (MSTK_2_20rc1_OR_NEWER) || defined (MSTK_2_21rc1_OR_NEWER)
 
       List_ptr deleted_ents;
       vkeep = ME_Collapse(edge, vkeep, topoflag, &deleted_ents);
