@@ -85,8 +85,11 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
       Teuchos::Array<double> p1_vec = box_params.get< Teuchos::Array<double> >("High Coordinate");
 
       int dim = p0_vec.size();
-      Point p0(dim), p1(dim);
+      Point p0, p1;
       
+      p0.set(dim,&(p0_vec[0]));
+      p1.set(dim,&(p1_vec[0]));
+
       if (dim == 3) 
         {
           if (space_dim != 3) {
@@ -96,10 +99,7 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
                 " specified using 3D coordinates but problem is " << 
                 space_dim << " dimensional. Check input!" << std::endl;
             }
-      
-          p0.set(p0_vec[0], p0_vec[1], p0_vec[2]);
-          p1.set(p1_vec[0], p1_vec[1], p1_vec[2]);
-        }
+          }
       else if (dim == 2)
         {
           // if (space_dim != 2) {
@@ -110,9 +110,6 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
                 space_dim << " dimensional. Check input!" << std::endl;
             }
           }
-
-          p0.set(p0_vec[0], p0_vec[1]);
-          p1.set(p1_vec[0], p1_vec[1]);          
         }
 
       try {
@@ -156,7 +153,10 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
       Teuchos::Array<double> n_vec = plane_params.get< Teuchos::Array<double> >("Direction");
 
       int dim = p_vec.size();
-      Point p(dim), n(dim);
+      Point p, n;
+
+      p.set(dim,&(p_vec[0]));
+      n.set(dim,&(n_vec[0]));
 
       if (dim == 3) 
         {
@@ -168,9 +168,6 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
                 space_dim << " dimensional. Check input!" << std::endl;
             }
           }
-
-          p.set(p_vec[0], p_vec[1], p_vec[2]);
-          n.set(n_vec[0], n_vec[1], n_vec[2]);
         }
       else if (dim == 2)
         {
@@ -182,9 +179,6 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
                 space_dim << " dimensional. Check input!" << std::endl;
             }
           }
-
-          p.set(p_vec[0], p_vec[1]);
-          n.set(n_vec[0], n_vec[1]);          
         }
 
       try {
@@ -323,31 +317,29 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
       Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("Coordinate");
         
       int dim = p_vec.size();
-      Point pnt(dim), n(dim);
+      Point pnt;
+
+      pnt.set(dim,&(p_vec[0]));
 
       if (dim == 3) {
-          if (space_dim != 3) {
-            if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
-              Teuchos::OSTab tab = verbobj->getOSTab();
-              *(verbobj->os()) << "Point " << reg_name << 
-                " specified using 3D coordinates but problem is " << 
-                space_dim << " dimensional. Check input!" << std::endl;
-            }
+        if (space_dim != 3) {
+          if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+            Teuchos::OSTab tab = verbobj->getOSTab();
+            *(verbobj->os()) << "Point " << reg_name << 
+              " specified using 3D coordinates but problem is " << 
+              space_dim << " dimensional. Check input!" << std::endl;
           }
-
-        pnt.set(p_vec[0], p_vec[1], p_vec[2]);
+        }
       }
       else if (dim == 2) {
-          if (space_dim != 2) {
-            if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
-              Teuchos::OSTab tab = verbobj->getOSTab();
-              *(verbobj->os()) << "Point " << reg_name << 
-                " specified using 2D coordinates but problem is " << 
-                space_dim << " dimensional. Check input!" << std::endl;
-            }
+        if (space_dim != 2) {
+          if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+            Teuchos::OSTab tab = verbobj->getOSTab();
+            *(verbobj->os()) << "Point " << reg_name << 
+              " specified using 2D coordinates but problem is " << 
+              space_dim << " dimensional. Check input!" << std::endl;
           }
-
-        pnt.set(p_vec[0], p_vec[1]);
+        }
       }
 
       try {
