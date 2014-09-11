@@ -70,7 +70,8 @@ Mesh_STK::read_exodus_(const std::string& fname)
 // -------------------------------------------------------------
   Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm, 
                      const std::string& fname,
-                     const AmanziGeometry::GeometricModelPtr& gm)
+                     const AmanziGeometry::GeometricModelPtr& gm,
+                     const VerboseObject *verbosity_obj)
     : mesh_(), 
       map_owned_(), map_used_()
       
@@ -81,7 +82,8 @@ Mesh_STK::read_exodus_(const std::string& fname)
   }
 
   Mesh_STK::Mesh_STK(const char *fname, const Epetra_MpiComm *comm,
-		     const AmanziGeometry::GeometricModelPtr& gm)
+		     const AmanziGeometry::GeometricModelPtr& gm,
+                     const VerboseObject *verbosity_obj)
     : mesh_(), 
       map_owned_(), map_used_()
       
