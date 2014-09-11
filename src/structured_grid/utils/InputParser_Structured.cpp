@@ -247,14 +247,6 @@ namespace Amanzi {
         prob_out_list.set("have_capillary",0);
         prob_out_list.set("cfl",-1);
       }
-      else if (flow_mode == "Single-phase") {
-        model_name = "single-phase";
-        prob_out_list.set("do_simple",1);
-      }
-      else if (flow_mode == "Multi-phase") {
-        model_name = "two-phase";
-        prob_out_list.set("cfl",0.75);
-      }
       else {
         MyAbort("\"" + flow_str + "\" = \"" + flow_mode + "\" not supported");
       }
@@ -264,7 +256,15 @@ namespace Amanzi {
       // Set transport model
       //
       std::string transport_mode = ec_list.get<std::string>(trans_str);
-      do_tracer_advection = (transport_mode == "Off"  ?  0  :  1);
+      if (transport_mode == "Off") {
+        do_tracer_advection = 0;
+      }
+      else if (transport_mode == "On") {
+        do_tracer_advection = 1;
+      }
+      else {
+        MyAbort("\"" + trans_str + "\" = \"" + transport_mode + "\" not supported");
+      }
       do_tracer_diffusion = false; 
 
       //
@@ -351,7 +351,7 @@ namespace Amanzi {
         }
       }
       else {
-        MyAbort("Chemistry Model \"" + chem_mode + "\" not yet supported" );
+        MyAbort("\"" + chem_mod_str + "\" = \"" + chem_mode + "\" not supported");
       }
       struc_out_list.set(underscore(chem_str),chem_out_list);
 
@@ -1818,6 +1818,13 @@ namespace Amanzi {
                 mtest["Porosity"] = true;
               }
               else if (rlabel==perm_uniform_str || rlabel==perm_anisotropic_uniform_str) {
+                if (mtest["Intrinsic_Permeability"]) {
+                  std::string str = "More than one of: (\""+perm_uniform_str
+                    +"\", \""+perm_anisotropic_uniform_str
+                    +"\", \""+hydraulic_conductivity_uniform_str
+                    +"\") specified for material \""+label+"\"";
+                  BoxLib::Abort(str.c_str());
+                }
                 ParameterList psublist;
                 convert_PermeabilityAnisotropic(rsslist,psublist,1.0);
                 rsublist.set("permeability",psublist);
@@ -1825,6 +1832,13 @@ namespace Amanzi {
                 mtest["Intrinsic_Permeability"] = true;
               }
               else if (rlabel==hydraulic_conductivity_uniform_str) {
+                if (mtest["Intrinsic_Permeability"]) {
+                  std::string str = "More than one of: (\""+perm_uniform_str
+                    +"\", \""+perm_anisotropic_uniform_str
+                    +"\", \""+hydraulic_conductivity_uniform_str
+                    +"\") specified for material \""+label+"\"";
+                  BoxLib::Abort(str.c_str());
+                }
                 const std::string aq = "Aqueous";
                 if (state.getPhases().count(aq) == 0) {
                   std::string str = "Hydraulic conductivity specified for material \""+label

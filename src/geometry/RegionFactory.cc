@@ -96,14 +96,13 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
                 " specified using 3D coordinates but problem is " << 
                 space_dim << " dimensional. Check input!" << std::endl;
             }
-          }
       
           p0.set(p0_vec[0], p0_vec[1], p0_vec[2]);
           p1.set(p1_vec[0], p1_vec[1], p1_vec[2]);
         }
       else if (dim == 2)
         {
-          if (space_dim != 2) {
+          // if (space_dim != 2) {
             if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
               Teuchos::OSTab tab = verbobj->getOSTab();
               *(verbobj->os()) << "Box" << reg_name <<

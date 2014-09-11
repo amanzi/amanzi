@@ -24,6 +24,7 @@ StandardMathFunction::StandardMathFunction(std::string op,
         (op_ == "ceil") ||
         (op_ == "fabs") ||
         (op_ == "floor") ||
+        (op_ == "mod") ||
         (op_ == "pow"))) {
     std::stringstream m;
     m << "Invalid or unknown standard math function " << op_;
@@ -32,7 +33,7 @@ StandardMathFunction::StandardMathFunction(std::string op,
   }
 }
 
-double StandardMathFunction::operator() (const double *x) const
+double StandardMathFunction::operator()(const std::vector<double>& x) const
 {
   if (op_ == "cos") {
     return amplitude_ * cos(x[0]);
@@ -69,6 +70,8 @@ double StandardMathFunction::operator() (const double *x) const
     return amplitude_ * floor(x[0]);
   } else if (op_ == "pow") {
     return amplitude_ * pow(x[0], parameter_);
+  } else if (op_ == "mod") {
+    return fmod(x[0], parameter_);
   } else {
     std::stringstream m;
     m << "Invalid or unknown standard math function " << op_;

@@ -253,10 +253,10 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
       double u_norm2, du_norm2;
       u->Norm2(&u_norm2);
       du->Norm2(&du_norm2);
-      if (du_norm2 > overflow_l2_tol_ * u_norm2) {
+      if (u_norm2 > 0 && du_norm2 > overflow_l2_tol_ * u_norm2) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
            *vo_->os() << "terminating due to L2-norm overflow ||du||=" << du_norm2
-                      << ", ||du||=" << u_norm2 << std::endl;
+                      << ", ||u||=" << u_norm2 << std::endl;
         return SOLVER_OVERFLOW;
       }
     }

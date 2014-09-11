@@ -518,27 +518,46 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
     UpdateSourceBoundaryData(Tp, *solution);
     rel_perm_->Compute(pressure);
-    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel());
-    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP());
+    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(),"k_relative");
+    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(),"dkdpc");
     if (ti_specs.inflow_krel_correction) {
-      Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face", true);
-      Epetra_MultiVector& dk_face = *rel_perm_->dKdP()->ViewComponent("face", true);
-      AmanziMesh::Entity_ID_List cells;
+      //if (solution->HasComponent("face")){      
+	Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face", true);
+	AmanziMesh::Entity_ID_List cells;
+	
+	for (int f = 0; f < nfaces_wghost; f++) {
+	  if (bc_model[f] == Operators::OPERATOR_BC_FACE_NEUMANN && bc_value[f] < 0.0) {
+	    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
 
-      for (int f = 0; f < nfaces_wghost; f++) {
-	if (bc_model[f] == Operators::OPERATOR_BC_FACE_NEUMANN && bc_value[f] < 0.0) {
-	  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+	    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+	    double area = mesh_->face_area(f);
+	    double Knn = ((K[cells[0]] * normal) * normal) / (area * area);
+	    k_face[0][f] = std::min(1.0, -bc_value[f]  * mu_ / (Knn * rho_ * rho_ * g_));
+	  } 
+	}    
+	//}
+      // else {
+      // 	Epetra_MultiVector& u_cell = *solution->ViewComponent("cell");
+      // 	Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face");
+      // 	Epetra_MultiVector& dk_face = *rel_perm_->dKdP()->ViewComponent("face");
 
-	  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-	  double area = mesh_->face_area(f);
-	  double Knn = ((K[cells[0]] * normal) * normal) / (area * area);
-	  //std::cout<<" k_face[0][f] "<< k_face[0][f]<<"\n";
-	  k_face[0][f] = std::min(1.0, -bc_value[f]  * mu_ / (Knn * rho_ * rho_ * g_));
-	  //std::cout<<" k_face[0][f] "<< k_face[0][f]<<" dk_face"<<dk_face[0][f]<<"\n";
-	} 
-      }
+      // 	std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();
+      // 	const Epetra_IntVector& map_c2mb = rel_perm_->map_c2mb();
+      // 	for (int f = 0; f < nfaces_wghost; f++) {
+      // 	  if (bc_model[f] == Operators::OPERATOR_BC_FACE_NEUMANN && bc_value[f] < 0.0) {
+      // 	    int c = BoundaryFaceGetCell(f);
+      // 	    double face_val = op_matrix_ -> DeriveBoundaryFaceValue(f, *solution, WRM[map_c2mb[c]]);
+ 
+      // 	    k_face[0][f] =  WRM[map_c2mb[c]]->k_relative (atm_pressure_ - face_val);
+      // 	    dk_face[0][f] = -WRM[map_c2mb[c]]->dKdPc (atm_pressure_ - face_val);
+      // 	  }
+      // 	}
+
+      // }	
     }
   }
+
+
 
   // normalize to obtain Darcy flux
   Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
@@ -551,6 +570,8 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     VV_PrintHeadExtrema(*solution);
   }
+
+  
   //exit(0);
 }
 
@@ -581,6 +602,7 @@ int Richards_PK::Advance(double dT_MPC, double& dT_actual)
   double time = S_->time();
   if (time >= 0.0) T_physics = time;
 
+
   // predict water mass change during time step
   time = T_physics;
   if (ti_specs->num_itrs == 0) {  // initialization
@@ -595,10 +617,11 @@ int Richards_PK::Advance(double dT_MPC, double& dT_actual)
       AdvanceToSteadyState(time, dT_MPC);
       block_picard = 1;  // We will wait for transient initialization.
     }
-
     UpdatePreconditioner(time, solution, dT);
     ti_specs->num_itrs++;
   }
+
+
 
   if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
     while (bdf1_dae->TimeStep(dT, dTnext, solution)) {
@@ -707,6 +730,7 @@ void Richards_PK::UpdateSourceBoundaryData(double Tp, const CompositeVector& u)
     bc_head->ComputeShift(Tp, shift_water_table_->Values());
 
   ComputeBCs(u);
+  
 }
 
 
@@ -767,19 +791,16 @@ double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u) {
 
 
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-  Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face", true);
-  Epetra_MultiVector& dk_face = *rel_perm_->dKdP()->ViewComponent("face", true);
+  Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face");
+  Epetra_MultiVector& dk_face = *rel_perm_->dKdP()->ViewComponent("face");
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();
   const Epetra_IntVector& map_c2mb = rel_perm_->map_c2mb();
   //const Epetra_Vector
   int c = BoundaryFaceGetCell(f);
   double face_val = op_matrix_ -> DeriveBoundaryFaceValue(f, u, WRM[map_c2mb[c]]);
  
-  //face_val = u_cell[0][c];
-
-
-  k_face[0][f] =  WRM[map_c2mb[c]]->k_relative (atm_pressure_ - face_val);
-  dk_face[0][f] = WRM[map_c2mb[c]]->dKdPc (atm_pressure_ - face_val);
+  // k_face[0][f] =  WRM[map_c2mb[c]]->k_relative (atm_pressure_ - face_val);
+  // dk_face[0][f] = -WRM[map_c2mb[c]]->dKdPc (atm_pressure_ - face_val);
 
   return face_val;
 }

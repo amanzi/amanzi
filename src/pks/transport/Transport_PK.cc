@@ -497,6 +497,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
   }
 
   // statistics output
+  nsubcycles = ncycles;
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << ncycles << " sub-cycles, dT_stable=" << dT_original 

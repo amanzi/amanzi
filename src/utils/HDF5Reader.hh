@@ -12,6 +12,8 @@ Interface for grabbing vectors of data from HDF5 files for use with i/o.
 #ifndef HDF5_READER_HH_
 #define HDF5_READER_HH_
 
+#include <vector>
+
 #define H5Gcreate_vers 2
 #define H5Dcreate_vers 2
 #define H5Gopen_vers 2

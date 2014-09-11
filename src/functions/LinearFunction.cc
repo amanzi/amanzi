@@ -32,9 +32,14 @@ LinearFunction::LinearFunction (double y0, const std::vector<double> &grad)
   x0_.assign(grad.size(), 0.0);
 }
 
-double LinearFunction::operator() (const double *x) const
+double LinearFunction::operator()(const std::vector<double>& x) const
 {
   double y = y0_;
+  if (x.size() < grad_.size()) {
+    Errors::Message m;
+    m << "LinearFunction expects higher-dimensional argument.";
+    Exceptions::amanzi_throw(m);
+  }    
   for (int j = 0; j < grad_.size(); ++j) y += grad_[j]*(x[j] - x0_[j]);
   return y;
 }

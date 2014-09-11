@@ -22,7 +22,7 @@ class AdditiveFunction : public Function {
      : f1_(source.f1_->Clone()), f2_(source.f2_->Clone()) {}
   ~AdditiveFunction() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
   AdditiveFunction* Clone() const { return new AdditiveFunction(*this); }
-  double operator() (const double *x) const { return (*f1_)(x) + (*f2_)(x); }
+  double operator()(const std::vector<double>& x) const { return (*f1_)(x) + (*f2_)(x); }
 
  private:
   std::auto_ptr<Function> f1_, f2_;

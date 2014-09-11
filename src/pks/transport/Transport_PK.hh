@@ -185,7 +185,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   int MyPID;  // parallel information: will be moved to private
   int spatial_disc_order, temporal_disc_order, limiter_model;
 
-  int internal_tests;  // output information
+  int nsubcycles;  // output information
+  int internal_tests;
   double tests_tolerance;
 
  private:

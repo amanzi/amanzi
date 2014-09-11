@@ -2,21 +2,33 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
 
+  <ParameterList name="Domain">
+    <Parameter name="Spatial Dimension" type="int" value="2"/>
+  </ParameterList>
+
   <ParameterList name="Mesh">
-    <Parameter name="Framework" type="string" value="mesh::simple"/>
+    <ParameterList name="Unstructured">
+      <ParameterList name="Read">
+        <Parameter name="File" type="string" value="medium15x16.exo"/>
+        <Parameter name="Format" type="string" value="Exodus II"/>
+      </ParameterList>
+      <ParameterList name="Expert">
+        <Parameter name="Framework" type="string" value="MSTK"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>    
    
   <ParameterList name="Regions">
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{5.0,1.0,1.0}"/>
+        <Parameter name="Low Coordinate"  type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0,0.0}"/>
+        <Parameter name="Location"  type="Array(double)" value="{ 0.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

@@ -232,6 +232,8 @@ This section allows the user to define control parameters associated with the un
       <limit_iterations>Value</limit_iterations>
       <nonlinear_iteration_damping_factor>Value</nonlinear_iteration_damping_factor>
       <nonlinear_iteration_divergence_factor>Value</nonlinear_iteration_divergence_factor>
+      <restart_tolerance_factor>Value</restart_tolerance_factor>
+      <restart_tolerance_relaxation_factor>Value</restart_tolerance_relaxation_factor>
       <max_divergent_iterations>Value</max_divergent_iterations>
     </steady-state_controls>
 
