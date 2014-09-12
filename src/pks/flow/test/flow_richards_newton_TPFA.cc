@@ -54,6 +54,7 @@ TEST(FLOW_3D_RICHARDS) {
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(STKMESH);
+  pref.push_back(MSTK);
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
