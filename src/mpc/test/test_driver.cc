@@ -20,8 +20,7 @@
 
 TEST(DRIVER) {
 
-
-  using namespace std;
+using namespace std;
 
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
@@ -29,25 +28,19 @@ TEST(DRIVER) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
   
-  std::string    xmlInFileName = "test/driver.xml";
+  std::string xmlInFileName = "test/driver.xml";
 
-
-  
   // read the main parameter list
   Teuchos::ParameterList driver_parameter_list;
   Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
   driver_parameter_list = xmlreader.getParameters();
   
-
-
   // For now create one geometric model from all the regions in the spec
-
   Teuchos::ParameterList reg_params = driver_parameter_list.sublist("Regions");
 
   int spdim = 3;
   Amanzi::AmanziGeometry::GeometricModelPtr 
       geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
-
 
   // get the Mesh sublist
   Teuchos::ParameterList mesh_parameter_list = driver_parameter_list.sublist("Mesh");
@@ -58,27 +51,24 @@ TEST(DRIVER) {
   
   std::cout << "Using mesh framework " << mesh_class << std::endl;
 
-  if (mesh_class == "MSTK")  
-    {      
-      Teuchos::ParameterList mstk_mesh_parameter_list = 
+  if (mesh_class == "MSTK") {      
+    Teuchos::ParameterList mstk_mesh_parameter_list = 
       	mesh_parameter_list.sublist("MSTK Mesh Parameters");
       
-      string filename = mstk_mesh_parameter_list.get<string>("Exodus file name");
+    string filename = mstk_mesh_parameter_list.get<string>("Exodus file name");
 
-      Amanzi::AmanziMesh::FrameworkPreference pref;
-      pref.clear();
-      pref.push_back(Amanzi::AmanziMesh::MSTK);
+    Amanzi::AmanziMesh::FrameworkPreference pref;
+    pref.clear();
+    pref.push_back(Amanzi::AmanziMesh::MSTK);
+    pref.push_back(Amanzi::AmanziMesh::STKMESH);
       
-      Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
-      meshfactory.preference(pref);
+    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+    meshfactory.preference(pref);
  
-      mesh = meshfactory(filename.c_str(), geom_model_ptr);      
-    }
-  else
-    {
-      throw std::exception();
-    }
-
+    mesh = meshfactory(filename.c_str(), geom_model_ptr);      
+  } else {
+    throw std::exception();
+  }
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;
@@ -88,9 +78,7 @@ TEST(DRIVER) {
   
   mpc.cycle_driver();
   
-  
   delete comm;
-      
 }
 
 

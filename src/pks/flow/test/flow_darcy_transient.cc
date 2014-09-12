@@ -52,6 +52,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
+  pref.push_back(STKMESH);
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);

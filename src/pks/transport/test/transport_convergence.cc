@@ -58,7 +58,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
   std::vector<double> L1error, L2error;
 
   for (int nx = 20; nx < 321; nx *= 2) {
-    /* create an simple mesh framework */
+    /* create a SIMPLE mesh framework */
     ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
@@ -169,7 +169,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
   std::vector<double> L1error, L2error;
 
   for (int nx = 20; nx < 321; nx *= 2) {
-    /* create an simple mesh framework */
+    /* create a SIMPLE mesh framework */
     ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
@@ -281,7 +281,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  /* create an MSTK mesh framework */
+  /* create a SIMPLE mesh framework */
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
  
@@ -403,13 +403,14 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
   std::vector<double> L1error, L2error;
 
   for (int loop = 0; loop < 3; loop++) {
-    /* create an MSTK mesh framework */
+    /* create a mesh framework */
     ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
 
     FrameworkPreference pref;
     pref.clear();
     pref.push_back(MSTK);
+    pref.push_back(STKMESH);
     
     MeshFactory meshfactory(comm);
     meshfactory.preference(pref);
@@ -522,13 +523,14 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
   std::vector<double> L1error, L2error;
 
   for (int loop = 0; loop < 3; loop++) {
-    /* create an MSTK mesh framework */
+    /* create a mesh framework */
     ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
 
     FrameworkPreference pref;
     pref.clear();
     pref.push_back(MSTK);
+    pref.push_back(STKMESH);
     
     MeshFactory meshfactory(comm);
     meshfactory.preference(pref);
