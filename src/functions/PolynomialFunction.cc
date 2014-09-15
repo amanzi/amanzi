@@ -27,18 +27,18 @@ PolynomialFunction::PolynomialFunction (const std::vector<double> &c, const std:
   x0_ = x0;
 }
 
-double PolynomialFunction::operator() (const double *x) const
+double PolynomialFunction::operator()(const std::vector<double>& x) const
 {
   // Polynomial terms with non-negative exponents
   double y = c_[pmax_-pmin_];
   if (pmax_ > 0) {
-    double z = *x - x0_;
+    double z = x[0] - x0_;
     for (int j = pmax_; j > 0; --j) y = c_[j-1-pmin_] + z*y;
   }
   // Polynomial terms with negative exponents.
   if (pmin_ < 0) {
     double w = c_[0];
-    double z = 1.0 / (*x - x0_);
+    double z = 1.0 / (x[0] - x0_);
     for (int j = pmin_; j < -1; ++j) w = c_[j+1-pmin_] + z*w;
     y += z*w;
   }

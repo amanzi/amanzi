@@ -107,13 +107,10 @@ SUITE(RESTART) {
   	cycles[ic] = R.DumpRequested(ic);
       }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
-
   }
 
 
-
   TEST(RESTART_DUMP_REQUIRED_CYCLES) {
-    
     Teuchos::ParameterList plist;
 
     plist.set<std::string>("file name base","restartdump");
@@ -146,11 +143,10 @@ SUITE(RESTART) {
   	cycles[ic] = R.DumpRequested(ic);
       }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
-
   }
 
+
   TEST(RESTART_DUMP_REQUIRED_TIMES) {
-    
     Teuchos::ParameterList plist;
 
     plist.set<std::string>("file name base","restartdump");
@@ -178,17 +174,14 @@ SUITE(RESTART) {
                         0, 0, 0, 0, 
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  };
     int times [31];
-    for (int ic = 0; ic<=30; ic+=1)
-      {
-  	times[ic] = R.DumpRequested((double)ic);
-      }
+    for (int ic = 0; ic<=30; ic+=1) {
+      times[ic] = R.DumpRequested((double)ic);
+    }
     CHECK_ARRAY_EQUAL(times_, times, 31);
-
   }
 
 
-  TEST(DUMP_DATA) 
-  {
+  TEST(DUMP_DATA) {
     Teuchos::ParameterList plist;
     // plist.set<std::string>("File Name Base","restart_dump");
     // plist.set<int>("File Name Digits",4);
@@ -206,9 +199,15 @@ SUITE(RESTART) {
 
     Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
     Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm);
-    
-    
+   
+    Amanzi::AmanziMesh::FrameworkPreference pref;
+    pref.clear();
+    pref.push_back(Amanzi::AmanziMesh::MSTK);
+    pref.push_back(Amanzi::AmanziMesh::STKMESH);
+    pref.push_back(Amanzi::AmanziMesh::Simple);
+
     Amanzi::AmanziMesh::MeshFactory meshfactory(&comm);
+    meshfactory.preference(pref);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh
       = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, gm);
 
@@ -226,14 +225,11 @@ SUITE(RESTART) {
     
     S0->set_time(1.02);
 
-    
     Teuchos::ParameterList checkpoint_list = plist.get<Teuchos::ParameterList>("checkpoint");
     Teuchos::Ptr<Amanzi::Checkpoint> R = Teuchos::ptr( new Amanzi::Checkpoint(checkpoint_list, &comm));
 
-    
     WriteCheckpoint(R, S0, 0.0);
 
-    
     Teuchos::Ptr<Amanzi::State> S1 = Teuchos::ptr(new Amanzi::State(state_list) );
     S1->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);;
 
@@ -243,7 +239,6 @@ SUITE(RESTART) {
     // fill with random data before reading checkpoint
     Teuchos::RCP<Epetra_Vector> s1p =  Teuchos::rcpFromRef(*(*S1->GetFieldData("celldata", "state")->ViewComponent("cell", false))(0)); 
     s1p->Random();
-
 
     ReadCheckpoint(&comm, S1, "restartdump00000.h5");
 
@@ -257,7 +252,6 @@ SUITE(RESTART) {
     for (int i=0; i<s1p->MyLength(); ++i) {
       CHECK_EQUAL((*s1p)[i],(*s0p)[i]);
     }
-
   }
-  
 }
+

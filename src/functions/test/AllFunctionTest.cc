@@ -25,36 +25,36 @@ int main (int argc, char *argv[])
 TEST(constant_test)
 {
   Function *f = new ConstantFunction(1.0);
-  double x = 3.0;
-  CHECK_EQUAL((*f)(&x), 1.0);
+  std::vector<double> x(1,3.0);
+  CHECK_EQUAL((*f)(x), 1.0);
   Function *g = f->Clone();
   delete f;
-  CHECK_EQUAL((*g)(&x), 1.0);
+  CHECK_EQUAL((*g)(x), 1.0);
   delete g;
 }
 
 TEST(smooth_step_test)
 {
   Function *f = new SmoothStepFunction(1.0, 1.0, 3.0, 0.0);
-  double x;
-  x = 0.0;
-  CHECK_EQUAL((*f)(&x), 1.0);
-  x = 1.0;
-  CHECK_EQUAL((*f)(&x), 1.0);
-  x = 1.5;
-  CHECK_EQUAL((*f)(&x), 0.84375);
-  x = 2.0;
-  CHECK_EQUAL((*f)(&x), 0.5);
-  x = 2.5;
-  CHECK_EQUAL((*f)(&x), 0.15625);
-  x = 3.0;
-  CHECK_EQUAL((*f)(&x), 0.0);
-  x = 4.0;
-  CHECK_EQUAL((*f)(&x), 0.0);
+  std::vector<double> x(1,0.0);
+  x[0] = 0.0;
+  CHECK_EQUAL((*f)(x), 1.0);
+  x[0] = 1.0;
+  CHECK_EQUAL((*f)(x), 1.0);
+  x[0] = 1.5;
+  CHECK_EQUAL((*f)(x), 0.84375);
+  x[0] = 2.0;
+  CHECK_EQUAL((*f)(x), 0.5);
+  x[0] = 2.5;
+  CHECK_EQUAL((*f)(x), 0.15625);
+  x[0] = 3.0;
+  CHECK_EQUAL((*f)(x), 0.0);
+  x[0] = 4.0;
+  CHECK_EQUAL((*f)(x), 0.0);
   Function *g = f->Clone();
   delete f;
-  x = 2.0;
-  CHECK_EQUAL((*g)(&x), 0.5);
+  x[0] = 2.0;
+  CHECK_EQUAL((*g)(x), 0.5);
   delete g;
   CHECK_THROW(SmoothStepFunction f(3.0, 1.0, 3.0, 0.0), Errors::Message);
 }
@@ -67,57 +67,56 @@ TEST(tabular_test)
   std::vector<double> yvec(y, y+4);
   int xi = 0;
   Function *f = new TabularFunction(xvec, yvec, xi);
-  double z;
-  z = -1.0;
-  CHECK_EQUAL((*f)(&z), 1.0);
-  z = 0.0;
-  CHECK_EQUAL((*f)(&z), 1.0);
-  z = 0.5;
-  CHECK_EQUAL((*f)(&z), 2.0);
-  z = 1.0;
-  CHECK_EQUAL((*f)(&z), 3.0);
-  z = 2.0;
-  CHECK_EQUAL((*f)(&z), 2.5);
-  z = 3.0;
-  CHECK_EQUAL((*f)(&z), 2.0);
-  z = 3.25;
-  CHECK_EQUAL((*f)(&z), 1.0);
-  z = 3.5;
-  CHECK_EQUAL((*f)(&z), 0.0);
-  z = 4.0;
-  CHECK_EQUAL((*f)(&z), 0.0);
+  std::vector<double> z(1,-1.);
+  CHECK_EQUAL((*f)(z), 1.0);
+  z[0] = 0.0;
+  CHECK_EQUAL((*f)(z), 1.0);
+  z[0] = 0.5;
+  CHECK_EQUAL((*f)(z), 2.0);
+  z[0] = 1.0;
+  CHECK_EQUAL((*f)(z), 3.0);
+  z[0] = 2.0;
+  CHECK_EQUAL((*f)(z), 2.5);
+  z[0] = 3.0;
+  CHECK_EQUAL((*f)(z), 2.0);
+  z[0] = 3.25;
+  CHECK_EQUAL((*f)(z), 1.0);
+  z[0] = 3.5;
+  CHECK_EQUAL((*f)(z), 0.0);
+  z[0] = 4.0;
+  CHECK_EQUAL((*f)(z), 0.0);
   Function *g = f->Clone();
   delete f;
-  z = 3.0;
-  CHECK_EQUAL((*g)(&z), 2.0);
+  z[0] = 3.0;
+  CHECK_EQUAL((*g)(z), 2.0);
   delete g;
   // Now try with optional form argument
   TabularFunction::Form form[3] = {TabularFunction::CONSTANT,
       TabularFunction::LINEAR, TabularFunction::CONSTANT};
   std::vector<TabularFunction::Form> formvec(form, form+3);
   f = new TabularFunction(xvec, yvec, xi, formvec);
-  z = -1.0;
-  CHECK_EQUAL((*f)(&z), 1.0);
-  z = 0.0;
-  CHECK_EQUAL((*f)(&z), 1.0);
-  z = 0.5;
-  CHECK_EQUAL((*f)(&z), 1.0);
-  z = 1.0;
-  CHECK_EQUAL((*f)(&z), 1.0);
-  z = 2.0;
-  CHECK_EQUAL((*f)(&z), 2.5);
-  z = 3.0;
-  CHECK_EQUAL((*f)(&z), 2.0);
-  z = 3.25;
-  CHECK_EQUAL((*f)(&z), 2.0);
-  z = 3.5;
-  CHECK_EQUAL((*f)(&z), 2.0);
-  z = 4.0;
-  CHECK_EQUAL((*f)(&z), 0.0);
+  z[0] = -1.0;
+  CHECK_EQUAL((*f)(z), 1.0);
+  z[0] = 0.0;
+  CHECK_EQUAL((*f)(z), 1.0);
+  z[0] = 0.5;
+  CHECK_EQUAL((*f)(z), 1.0);
+  z[0] = 1.0;
+  CHECK_EQUAL((*f)(z), 1.0);
+  z[0] = 2.0;
+  CHECK_EQUAL((*f)(z), 2.5);
+  z[0] = 3.0;
+  CHECK_EQUAL((*f)(z), 2.0);
+  z[0] = 3.25;
+  CHECK_EQUAL((*f)(z), 2.0);
+  z[0] = 3.5;
+  CHECK_EQUAL((*f)(z), 2.0);
+  z[0] = 4.0;
+  CHECK_EQUAL((*f)(z), 0.0);
   g = f->Clone();
   delete f;
-  z = 3.0;
-  CHECK_EQUAL((*g)(&z), 2.0);
+  z[0] = 3.0;
+  CHECK_EQUAL((*g)(z), 2.0);
   delete g;
   // Verify the constructor fails with only a single table entry.
   xvec.assign(x, x+1);
@@ -149,17 +148,17 @@ SUITE(polynomial_test) {
     std::vector<double> cvec(c, c+2);
     std::vector<int> pvec(p, p+2);
     Function *f = new PolynomialFunction(cvec, pvec);
-    double x = 2.0;
-    CHECK_EQUAL((*f)(&x), -4.0);
-    x = -2.0;
-    CHECK_EQUAL((*f)(&x), 4.0);
+    std::vector<double> x(1,2.0);
+    CHECK_EQUAL((*f)(x), -4.0);
+    x[0] = -2.0;
+    CHECK_EQUAL((*f)(x), 4.0);
     delete f;
     // same polynomial shifted 2 to the right
     f = new PolynomialFunction(cvec, pvec, 2.0);
-    x = 4.0;
-    CHECK_EQUAL((*f)(&x), -4.0);
-    x = 0.0;
-    CHECK_EQUAL((*f)(&x), 4.0);
+    x[0] = 4.0;
+    CHECK_EQUAL((*f)(x), -4.0);
+    x[0] = 0.0;
+    CHECK_EQUAL((*f)(x), 4.0);
     delete f;
   }
   TEST(poly2)
@@ -170,12 +169,12 @@ SUITE(polynomial_test) {
     std::vector<double> cvec(c, c+4);
     std::vector<int> pvec(p, p+4);
     Function *f = new PolynomialFunction(cvec, pvec);
-    double x = 2.0;
-    CHECK_EQUAL((*f)(&x), 0.0);
-    x = 0.0;
-    CHECK_EQUAL((*f)(&x), 4.0);
-    x = -2.0;
-    CHECK_EQUAL((*f)(&x), 8.0);
+    std::vector<double> x(1,2.0);
+    CHECK_EQUAL((*f)(x), 0.0);
+    x[0] = 0.0;
+    CHECK_EQUAL((*f)(x), 4.0);
+    x[0] = -2.0;
+    CHECK_EQUAL((*f)(x), 8.0);
     delete f;
   }
   TEST(poly3)
@@ -186,12 +185,12 @@ SUITE(polynomial_test) {
     std::vector<double> cvec(c, c+2);
     std::vector<int> pvec(p, p+2);
     Function *f = new PolynomialFunction(cvec, pvec, 1.0);
-    double x = 3.0;
-    CHECK_EQUAL((*f)(&x), 0.0);
-    x = 2.0;
-    CHECK_EQUAL((*f)(&x), 1.0);
-    x = -1.0;
-    CHECK_EQUAL((*f)(&x), -0.5);
+    std::vector<double> x(1,3.0);
+    CHECK_EQUAL((*f)(x), 0.0);
+    x[0] = 2.0;
+    CHECK_EQUAL((*f)(x), 1.0);
+    x[0] = -1.0;
+    CHECK_EQUAL((*f)(x), -0.5);
     delete f;
   }
   TEST(poly4)
@@ -202,14 +201,14 @@ SUITE(polynomial_test) {
     std::vector<double> cvec(c, c+4);
     std::vector<int> pvec(p, p+4);
     Function *f = new PolynomialFunction(cvec, pvec);
-    double x = 2.0;
-    CHECK_EQUAL((*f)(&x), -5.0);
-    x = 1.0;
-    CHECK_EQUAL((*f)(&x), 3.0);
-    x = -1.0;
-    CHECK_EQUAL((*f)(&x), 1.0);
-    x = -2.0;
-    CHECK_EQUAL((*f)(&x), 3.0);
+    std::vector<double> x(1,2.0);
+    CHECK_EQUAL((*f)(x), -5.0);
+    x[0] = 1.0;
+    CHECK_EQUAL((*f)(x), 3.0);
+    x[0] = -1.0;
+    CHECK_EQUAL((*f)(x), 1.0);
+    x[0] = -2.0;
+    CHECK_EQUAL((*f)(x), 3.0);
     delete f;
   }
   TEST(poly_clone)
@@ -220,11 +219,11 @@ SUITE(polynomial_test) {
     std::vector<double> cvec(c, c+4);
     std::vector<int> pvec(p, p+4);
     PolynomialFunction *f = new PolynomialFunction(cvec, pvec);
-    double x = 2.0;
-    CHECK_EQUAL((*f)(&x), -5.0);
+    std::vector<double> x(1, 2.0);
+    CHECK_EQUAL((*f)(x), -5.0);
     PolynomialFunction *g = f->Clone();
     delete f;
-    CHECK_EQUAL((*g)(&x), -5.0);
+    CHECK_EQUAL((*g)(x), -5.0);
     delete g;
   }
 }
@@ -237,8 +236,8 @@ TEST(linear_test)
   Function *f;
   // Three variable linear function.
   f = new LinearFunction(y0, gradvec);
-  double a[3] = {3.0, 2.0, 1.0};
-  double b[3] = {1.0, -1.0, 1.0};
+  std::vector<double> a(3,3.); a[1] = 2.; a[2] = 1.;
+  std::vector<double> b(3,1.); b[1] = -1.;
   CHECK_EQUAL(5.0, (*f)(a));
   CHECK_EQUAL(-3.0, (*f)(b));
   Function *g = f->Clone();
@@ -252,7 +251,11 @@ TEST(linear_test)
   f = new LinearFunction(y0, gradvec, x0vec);
   CHECK_EQUAL(3.0, (*f)(a));
   CHECK_EQUAL(-5.0, (*f)(b));
+  // -- check error in case of point smaller than gradient
+  std::vector<double> c(1,1.);
+  CHECK_THROW((*f)(c), Errors::Message);
   delete f;
+
   // Single variable linear function.
   gradvec.pop_back();
   f = new LinearFunction(y0, gradvec);
@@ -281,7 +284,8 @@ SUITE(separable_test) {
     Function *f2 = new LinearFunction(1.0, gradvec);
     Function *f = new SeparableFunction(f1, *f2);
     delete f2;
-    double x[4] = {0.0, 1.0, 2.0, -1.0}; // t, x, y, z
+    std::vector<double> x(4,0.);
+    x[1] = 1.; x[2] = 2.; x[3] = -1.;
     CHECK_EQUAL(3.0, (*f)(x));
     x[0] = 5.0;
     CHECK_EQUAL(0.0, (*f)(x));
@@ -296,16 +300,23 @@ SUITE(separable_test) {
     Function *fz = new SmoothStepFunction(0.0, 1.0, 1.0, 4.0);
     Function *fyz = new SeparableFunction(*fy, *fz);
     Function *fxyz = new SeparableFunction(*fx, *fyz);
-    delete fx, fy, fz, fyz;
-    double x0[3] = {0.0, 0.0, 0.0};
-    double x1[3] = {1.0, 0.0, 0.0};
-    double x2[3] = {0.0, 1.0, 0.0};
-    double x3[3] = {0.0, 0.0, 1.0};
-    double x4[3] = {0.5, 0.5, 0.5};
+    delete fx;
+    delete fy;
+    delete fz;
+    delete fyz;
+    std::vector<double> x0(3,0.);
     CHECK_EQUAL(1.0, (*fxyz)(x0));
-    CHECK_EQUAL(2.0, (*fxyz)(x1));
-    CHECK_EQUAL(3.0, (*fxyz)(x2));
-    CHECK_EQUAL(4.0, (*fxyz)(x3));
+
+    x0[0] = 1.;
+    CHECK_EQUAL(2.0, (*fxyz)(x0));
+
+    x0[0] = 0.; x0[1] = 1.;
+    CHECK_EQUAL(3.0, (*fxyz)(x0));
+
+    x0[1] = 0.; x0[2] = 1.;
+    CHECK_EQUAL(4.0, (*fxyz)(x0));
+
+    std::vector<double> x4(3,0.5);
     CHECK_EQUAL(7.5, (*fxyz)(x4));
     delete fxyz;
   }
@@ -319,9 +330,12 @@ TEST(static_head_test)
   Function *h = new LinearFunction(y0, gradvec);
   double patm = -1.0, rho = 0.5, g = 4.0;
   Function *f = new StaticHeadFunction(patm, rho, g, *h, 3);
-  double a[4] = {0.0, 1.0, 0.5, 2.0}; // t, x, y, z
+
+  std::vector<double> a(4);
+  a[1] = 1.; a[2] = 0.5; a[3] = 2.;
   CHECK_EQUAL(patm+rho*g*(y0+grad[1]*a[1]+grad[2]*a[2]-a[3]), (*f)(a));
-  double b[4] = {1.0, 2.0, 1.0, 1.0}; // t, x, y, z
+  std::vector<double> b(4,1.);
+  b[1] = 2.;
   CHECK_EQUAL(patm+rho*g*(y0+grad[1]*b[1]+grad[2]*b[2]-b[3]), (*f)(b));
   Function *ff = f->Clone();
   double val = (*f)(b);
@@ -385,43 +399,43 @@ TEST(bilinear_test)
   reader.ReadMatData(v_name, mat_v);
   Function *f = new BilinearFunction(vec_x, vec_y, mat_v, xi, yi);
   // Corners
-  double z[2]={0,0};
-  CHECK_EQUAL((*f)(&z[0]), 0.0);
+  std::vector<double> z(2,0.);
+  CHECK_EQUAL((*f)(z), 0.0);
   z[0]=10.; z[1]=0.;
-  CHECK_EQUAL((*f)(&z[0]), 60.0);
+  CHECK_EQUAL((*f)(z), 60.0);
   z[0]=10.; z[1]=5.;
-  CHECK_EQUAL((*f)(&z[0]), 65.0);
+  CHECK_EQUAL((*f)(z), 65.0);
   z[0]=0.; z[1]=5.;
-  CHECK_EQUAL((*f)(&z[0]), 5.0);
+  CHECK_EQUAL((*f)(z), 5.0);
   // Both coordinates out of bounds
   z[0]=-1.; z[1]=-1.;
-  CHECK_EQUAL((*f)(&z[0]), 0.0);
+  CHECK_EQUAL((*f)(z), 0.0);
   z[0]=11.; z[1]=-1.;
-  CHECK_EQUAL((*f)(&z[0]), 60.0);
+  CHECK_EQUAL((*f)(z), 60.0);
   z[0]=11.; z[1]=6.;
-  CHECK_EQUAL((*f)(&z[0]), 65.0);
+  CHECK_EQUAL((*f)(z), 65.0);
   z[0]=-1.; z[1]=6.;
-  CHECK_EQUAL((*f)(&z[0]), 5.0);
+  CHECK_EQUAL((*f)(z), 5.0);
   // One coordinate out of bounds
   z[0]=5.5; z[1]=-1.;
-  CHECK_EQUAL((*f)(&z[0]), 33.0);
+  CHECK_EQUAL((*f)(z), 33.0);
   z[0]=5.5; z[1]=6.;
-  CHECK_EQUAL((*f)(&z[0]), 38.0);
+  CHECK_EQUAL((*f)(z), 38.0);
   z[0]=-1.; z[1]=2.5;
-  CHECK_EQUAL((*f)(&z[0]), 2.5);
+  CHECK_EQUAL((*f)(z), 2.5);
   z[0]=11; z[1]=2.5;
-  CHECK_EQUAL((*f)(&z[0]), 62.5);
+  CHECK_EQUAL((*f)(z), 62.5);
   // Interior points
   z[0]=5.5; z[1]=2.5;
-  CHECK_EQUAL((*f)(&z[0]), 35.5);
+  CHECK_EQUAL((*f)(z), 35.5);
   z[0]=2.5; z[1]=2.5;
-  CHECK_EQUAL((*f)(&z[0]), 17.5);
+  CHECK_EQUAL((*f)(z), 17.5);
   z[0]=7.5; z[1]=2.5;
-  CHECK_EQUAL((*f)(&z[0]), 47.5);
+  CHECK_EQUAL((*f)(z), 47.5);
   z[0]=5.5; z[1]=1.5;
-  CHECK_EQUAL((*f)(&z[0]), 34.5);
+  CHECK_EQUAL((*f)(z), 34.5);
   z[0]=5.5; z[1]=3.5;
-  CHECK_EQUAL((*f)(&z[0]), 36.5);
+  CHECK_EQUAL((*f)(z), 36.5);
 }
 
 double f_using_no_params (const double *x, const double *p)
@@ -437,15 +451,15 @@ double f_using_params (const double *x, const double *p)
 TEST(pointer_test)
 {
   Function *f = new PointerFunction(&f_using_no_params);
-  double x[2] = {2.0, 1.0};
-  CHECK_EQUAL(f_using_no_params(x,0), (*f)(x));
+  std::vector<double> x(2,2.0); x[1] = 1.;
+  CHECK_EQUAL(f_using_no_params(&x[0],0), (*f)(x));
   delete f;
   double p[2] = {-1.0, 2.0};
   std::vector<double> pvec(p,p+2);
   f = new PointerFunction(&f_using_params, pvec);
-  CHECK_EQUAL(f_using_params(x,p), (*f)(x));
+  CHECK_EQUAL(f_using_params(&x[0],p), (*f)(x));
   Function *g = f->Clone();
   delete f;
-  CHECK_EQUAL(f_using_params(x,p), (*g)(x));
+  CHECK_EQUAL(f_using_params(&x[0],p), (*g)(x));
   delete g;
 }

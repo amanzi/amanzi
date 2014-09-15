@@ -13,7 +13,7 @@ class LinearFunction : public Function {
   LinearFunction(double y0, const std::vector<double> &grad, const std::vector<double> &x0);
   ~LinearFunction() {}
   LinearFunction* Clone() const { return new LinearFunction(*this); }
-  double operator() (const double *x) const;
+  double operator()(const std::vector<double>& x) const;
 
  private:
   double y0_;

@@ -97,9 +97,11 @@ Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm,
                    const double& xdelta, 
                    const double& ydelta, 
                    const double& zdelta,
-                   const AmanziGeometry::GeometricModelPtr& gm) 
+                   const AmanziGeometry::GeometricModelPtr& gm,
+                   const VerboseObject *verbobj) 
     : mesh_(), 
-      map_owned_(), map_used_()
+      map_owned_(), map_used_(),
+      Mesh(verbobj)
       
 {
   Mesh::set_comm(comm);
@@ -112,10 +114,11 @@ Mesh_STK::Mesh_STK(const double x0, const double y0, const double z0,
                    const double x1, const double y1, const double z1,
                    const int nx, const int ny, const int nz, 
                    const Epetra_MpiComm *comm,
-                   const AmanziGeometry::GeometricModelPtr& gm)
+                   const AmanziGeometry::GeometricModelPtr& gm,
+                   const VerboseObject *verbobj)
   : mesh_(), 
-    map_owned_(), map_used_()
-      
+    map_owned_(), map_used_(),
+    Mesh(verbobj)  
 {
   Mesh::set_comm(comm);
   Mesh::set_geometric_model(gm);
@@ -141,9 +144,11 @@ Mesh_STK::Mesh_STK (const double x0,
                     const int nx, 
                     const int ny, 
                     const Epetra_MpiComm *communicator,
-                    const AmanziGeometry::GeometricModelPtr &gm) 
+                    const AmanziGeometry::GeometricModelPtr &gm,
+                    const VerboseObject *verbobj) 
   : mesh_(),
-    map_owned_(), map_used_()
+    map_owned_(), map_used_(),
+    Mesh(verbobj)
 {
   Exceptions::amanzi_throw(Errors::Message("STKMesh mesh cannot generate 2D meshes"));
 }
@@ -153,9 +158,11 @@ Mesh_STK::Mesh_STK (const double x0,
 
 Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
                    const Epetra_MpiComm *comm,
-                   const AmanziGeometry::GeometricModelPtr& gm)
+                   const AmanziGeometry::GeometricModelPtr& gm,
+                   const VerboseObject *verbobj)
   : mesh_(), 
-    map_owned_(), map_used_()
+    map_owned_(), map_used_(),
+    Mesh(verbobj)
 {
   Mesh::set_comm(comm);
   Mesh::set_geometric_model(gm);
@@ -168,9 +175,11 @@ Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
 
 Mesh_STK::Mesh_STK(const GenerationSpec& gspec,
                    const Epetra_MpiComm *comm,
-                   const AmanziGeometry::GeometricModelPtr& gm)
+                   const AmanziGeometry::GeometricModelPtr& gm,
+                   const VerboseObject *verbobj)
   : mesh_(), 
-    map_owned_(), map_used_()
+    map_owned_(), map_used_(),
+    Mesh(verbobj)
 {
   Mesh::set_comm(comm);
   Mesh::set_geometric_model(gm);

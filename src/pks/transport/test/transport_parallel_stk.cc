@@ -106,7 +106,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   while(T < 1.0) {
     dT = TPK.CalculateTransportDt();
     TPK.Advance(dT, dummy_dT);
-    TPK.CommitState(dT, S);
+    TPK.CommitState(dT, S.ptr());
     T += dT;
     iter++;
 

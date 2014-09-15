@@ -41,7 +41,8 @@ class Upwind {
 
   void Compute(const CompositeVector& flux,
                const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-               const CompositeVector& field, CompositeVector& field_upwind);
+               const CompositeVector& field, CompositeVector& field_upwind,
+	       const std::string name = "k_relative");
 
  protected:
   Teuchos::RCP<VerboseObject> vo_;
@@ -82,7 +83,8 @@ template<class Model>
 void Upwind<Model>::Compute(
     const CompositeVector& flux,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-    const CompositeVector& field, CompositeVector& field_upwind)
+    const CompositeVector& field, CompositeVector& field_upwind,
+    const std::string name)
 {
   ASSERT(field.HasComponent("cell"));
   ASSERT(field_upwind.HasComponent("face"));
@@ -110,7 +112,7 @@ void Upwind<Model>::Compute(
 
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
+     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
@@ -119,7 +121,7 @@ void Upwind<Model>::Compute(
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
         upw[0][f] += fcells[0][c] / 2;  // Almost vertical face.
       } else if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET && flag) {
-        upw[0][f] = model_->Value(c, bc_value[f]);
+        upw[0][f] = model_->Value(c, bc_value[f], name);
       } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN && flag) {
         // upw[0][f] = model_->Value(c, ffaces[0][f]);
         upw[0][f] = fcells[0][c];

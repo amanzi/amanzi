@@ -29,6 +29,7 @@
 #include "Mesh.hh"
 
 #include "GeometricModel.hh"
+#include "VerboseObject.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -50,10 +51,16 @@ class MeshFactory {
   /// private, undefined copy constructor to avoid unwanted copies
   MeshFactory(MeshFactory& old);
 
+  /// Object encoding the level of verbosity and output stream for
+  /// diagnostic messages
+
+  const VerboseObject *verbosity_obj;
+
  public:
 
   /// Default constructor.
-  explicit MeshFactory(const Epetra_MpiComm *communicator);
+  explicit MeshFactory(const Epetra_MpiComm *communicator, 
+                       const VerboseObject *meshverbobj = NULL);
 
   /// Destructor
   ~MeshFactory(void);
@@ -103,8 +110,8 @@ class MeshFactory {
   /// Create a mesh by reading the specified file (or set of files) -- operator
   Teuchos::RCP<Mesh> operator() (const std::string& filename, 
                                  const AmanziGeometry::GeometricModelPtr &gm = 
-                                 (AmanziGeometry::GeometricModelPtr) NULL)
-  {
+                                 (AmanziGeometry::GeometricModelPtr) NULL) {
+
     return create(filename, gm);
   }
   
@@ -113,8 +120,8 @@ class MeshFactory {
                                  double x1, double y1, double z1,
                                  int nx, int ny, int nz, 
                                  const AmanziGeometry::GeometricModelPtr &gm = 
-                                 (AmanziGeometry::GeometricModelPtr) NULL)
-  { 
+                                 (AmanziGeometry::GeometricModelPtr) NULL) {
+
     return create(x0, y0, z0, x1, y1, z1, nx, ny, nz, gm);
   }
 
@@ -123,16 +130,16 @@ class MeshFactory {
                                  double x1, double y1,
                                  int nx, int ny,
                                  const AmanziGeometry::GeometricModelPtr &gm = 
-                                 (AmanziGeometry::GeometricModelPtr) NULL)
-  { 
+                                 (AmanziGeometry::GeometricModelPtr) NULL)  {
+ 
     return create(x0, y0, x1, y1, nx, ny, gm);
   }
 
   /// Create a quadrilateral/hexahedral mesh using the specified parameter list
   Teuchos::RCP<Mesh> operator() (Teuchos::ParameterList &parameter_list, 
                                  const AmanziGeometry::GeometricModelPtr &gm = 
-                                 (AmanziGeometry::GeometricModelPtr) NULL)
-  {
+                                 (AmanziGeometry::GeometricModelPtr) NULL) {
+
     return create(parameter_list, gm);
   }
 
@@ -142,6 +149,7 @@ class MeshFactory {
                                  const Entity_kind setkind,
                                  const bool flatten = false,
                                  const bool extrude = false) {
+
     return create(inmesh, setnames, setkind, flatten, extrude);
   }
 

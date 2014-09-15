@@ -364,6 +364,9 @@ void FlowBCFactory::ProcessStaticHeadSpec(
     method = Amanzi::Functions::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE;
   }
 
+  if (list.get<bool>("no flow above water table", false))
+      PopulateSubmodelFlag(regions, FLOW_BC_SUBMODEL_NOFLOW_ABOVE_WATER_TABLE, submodel);
+
   // Add this BC specification to the boundary function.
   bc->Define(regions, f, method);
 }

@@ -38,7 +38,7 @@ public:
 
   // constructor.
 
-  GeometricModel(const unsigned int dim);
+  GeometricModel(const unsigned int dim, const VerboseObject *verbobj=NULL);
 
   // Copy constructor 
 
@@ -48,12 +48,14 @@ public:
   // Constructor from parameter list
 
   GeometricModel(const unsigned int dim, Teuchos::ParameterList gm_param_list,
-                 const Epetra_MpiComm *comm);
+                 const Epetra_MpiComm *comm, const VerboseObject *verbobj=NULL);
 
 
   // Constructor from a list of regions
 
-  GeometricModel(const unsigned int dim, const std::vector<RegionPtr>& in_Regions); 
+  GeometricModel(const unsigned int dim, 
+                 const std::vector<RegionPtr>& in_Regions,
+                 const VerboseObject *verbobj=NULL); 
 
 
   // Destructor
@@ -61,11 +63,18 @@ public:
   ~GeometricModel(void);
 
 
+  // Object specifying verbosity of diagnostic error messages
+
+  inline
+  const VerboseObject *verbosity_obj() const {
+    return verbosity_obj_;
+  }
+
+
   // Topological Dimension of geometric model
 
   inline
-  unsigned int dimension() const
-  {
+  unsigned int dimension() const {
     return topo_dimension_;
   }
 
@@ -109,6 +118,7 @@ private:
 
   std::vector<RegionPtr> Regions;
 
+  const VerboseObject *verbosity_obj_;
 };
 
 

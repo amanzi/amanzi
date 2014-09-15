@@ -472,7 +472,7 @@ void MPC::cycle_driver() {
     if (flow_enabled) FPK->InitializeAuxiliaryData();
     if (do_picard_) {
       FPK->InitPicard(S->time());
-      FPK->CommitState(0.0, S);
+      FPK->CommitState(0.0, S.ptr());
     }
     Amanzi::timer_manager.stop("Flow PK");
   }
@@ -498,7 +498,7 @@ void MPC::cycle_driver() {
       if (!restart_requested) {
         FPK->InitSteadyState(S->time(), dTsteady);
         FPK->InitializeSteadySaturated();
-        FPK->CommitState(0.0, S);
+        FPK->CommitState(0.0, S.ptr());
         if (ti_mode == INIT_TO_STEADY) S->advance_time(Tswitch-T0);
         if (ti_mode == STEADY)         S->advance_time(T1-T0);
       } else {
@@ -697,13 +697,13 @@ void MPC::cycle_driver() {
       }
 
       // make sure that if we are currently on a reset time, to reset the time step
-      if (! ti_mode == STEADY) {
+      if (! (ti_mode == STEADY)) {
         if (!reset_info_.empty()) {
           // this is probably iffy...
           if (S->time() == reset_info_.front().first) {
             if (vo_->os_OK(Teuchos::VERB_LOW)) {
               *vo_->os() << std::setprecision(5) << "Resetting the time integrator at time(y) = "
-                << std::fixed << S->time()/(365.25*24*60*60) << std::endl;
+                         << std::fixed << S->time()/(365.25*24*60*60) << std::endl;
             }
             mpc_dT = reset_info_.front().second;
             mpc_dT = TSM->TimeStep(S->time(), mpc_dT);
@@ -757,7 +757,7 @@ void MPC::cycle_driver() {
             mpc_dT = actual_dT;
             tslimiter = FLOW_LIMITS;
           }
-          FPK->CommitState(mpc_dT, S);
+          FPK->CommitState(mpc_dT, S.ptr());
         }
       }
       S->set_final_time(S->initial_time() + mpc_dT);

@@ -15,11 +15,14 @@
 namespace Amanzi {
 namespace Flow {
 
+// special bits for submodels
 const int FLOW_BC_SUBMODEL_RAINFALL = 1;  // should be 2^n
 const int FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN = 2;
 const int FLOW_BC_SUBMODEL_SEEPAGE_FACT = 4;
 const int FLOW_BC_SUBMODEL_SEEPAGE_AMANZI = 8;
 const int FLOW_BC_SUBMODEL_HEAD_RELATIVE = 16;
+const int FLOW_BC_SUBMODEL_NOFLOW_ABOVE_WATER_TABLE = 32;
+
 const double FLOW_BC_SEEPAGE_FACE_IMPEDANCE = 1e-10;  // [sec / m]
 const double FLOW_BC_SEEPAGE_FACE_REGULARIZATION = 1000.0;  // [Pa] 
 
@@ -27,6 +30,8 @@ const int FLOW_TIME_INTEGRATION_PICARD = 1;
 const int FLOW_TIME_INTEGRATION_BACKWARD_EULER = 2;  // Only for testing.
 const int FLOW_TIME_INTEGRATION_BDF1 = 3;
 const int FLOW_TIME_INTEGRATION_BDF2 = 4;
+
+// time intervals
 const double FLOW_INITIAL_DT = 1e-8;  // [sec]
 const double FLOW_MAXIMUM_DT = 3.15e+10;  // [sec] 1000 years
 const double FLOW_YEAR = 3.15576e+7;  // [sec]

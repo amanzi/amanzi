@@ -20,7 +20,7 @@ include(TestManager)
 project(GEOMETRY)
 
 # Amanzi include directories
-include_directories(${DBC_SOURCE_DIR} ${FUNCS_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR} ${FUNCS_SOURCE_DIR} ${ATK_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -48,6 +48,12 @@ if (BUILD_TESTS)
        execute_process(COMMAND ${CMAKE_COMMAND} -E 
          copy_directory ${GEOMETRY_SOURCE_DIR}/test ${GEOMETRY_BINARY_DIR}/test) 
    endif()
+
+   # Test: test point creation and deletion
+   add_amanzi_test(point-tests test_points
+                   KIND unit
+		   SOURCE test/Main.cc test/test_points.cc
+		   LINK_LIBS geometry ${UnitTest_LIBRARIES})
 
    # Test: test geometric operators
    add_amanzi_test(geometry-operators test_geomops

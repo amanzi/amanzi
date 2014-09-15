@@ -34,7 +34,7 @@ class Model {
   ~Model() {};
 
   // main members
-  double Value(int c, double pc) const { 
+  double Value(int c, double pc, std::string name) const { 
     return analytic(pc); 
   }
 
@@ -75,6 +75,7 @@ TEST(UPWIND) {
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
+  pref.push_back(STKMESH);
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
@@ -116,11 +117,11 @@ TEST(UPWIND) {
 
     for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      fcells[0][c] = model->Value(c, xc[0]); 
+      fcells[0][c] = model->Value(c, xc[0], " "); 
     }
     for (int f = 0; f < nfaces_wghost; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-      ffaces[0][f] = model->Value(0, xf[0]); 
+      ffaces[0][f] = model->Value(0, xf[0], " "); 
     }
 
     // create and initialize face-based flux field
@@ -143,7 +144,7 @@ TEST(UPWIND) {
 
     ParameterList& ulist = plist.sublist("upwind");
     upwind.Init(ulist);
-    upwind.Compute(flux, bc_model, bc_value, field, upw_field);
+    upwind.Compute(flux, bc_model, bc_value, field, upw_field, " ");
 
     // calculate error
     Epetra_MultiVector& upw = *upw_field.ViewComponent("face");

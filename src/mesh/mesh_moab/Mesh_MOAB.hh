@@ -25,6 +25,7 @@
 #include <PointRegion.hh>
 #include <LogicalRegion.hh>
 #include <GenerationSpec.hh>
+#include <VerboseObject.hh>
 
 #include <memory>
 #include <vector>
@@ -190,7 +191,8 @@ public:
   
   Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm, 
 	     const AmanziGeometry::GeometricModelPtr& gm = 
-	     (AmanziGeometry::GeometricModelPtr) NULL);
+	     (AmanziGeometry::GeometricModelPtr) NULL,
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
 
   // Construct a mesh by extracting a subset of entities from another
   // mesh. In some cases like extracting a surface mesh from a volume

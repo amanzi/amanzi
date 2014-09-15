@@ -22,9 +22,9 @@ TEST(basic_test) {
   functions.push_back(f2);
 
   Teuchos::RCP<MultiFunction> fc = Teuchos::rcp(new MultiFunction(functions));
-  double x = 3.0;
-  CHECK_EQUAL((*fc)(&x)[0], 1.0);
-  CHECK_EQUAL((*fc)(&x)[1], 2.0);
+  std::vector<double> x(1,3.0);
+  CHECK_EQUAL((*fc)(x)[0], 1.0);
+  CHECK_EQUAL((*fc)(x)[1], 2.0);
 }
 
 TEST(factory_test) {
@@ -42,7 +42,7 @@ TEST(factory_test) {
 
   Teuchos::RCP<MultiFunction> f = Teuchos::rcp(new MultiFunction(list));
 
-  double x = 3.0;
-  CHECK_EQUAL((*f)(&x)[0], 1.0);
-  CHECK_EQUAL((*f)(&x)[1], 2.0);
+  std::vector<double> x(1,3.0);
+  CHECK_EQUAL((*f)(x)[0], 1.0);
+  CHECK_EQUAL((*f)(x)[1], 2.0);
 }

@@ -236,7 +236,8 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 	        namedNode = attrMap->getNamedItem(XMLString::transcode("name"));
 		if (namedNode) {
 	            name = XMLString::transcode(namedNode->getNodeValue());
-		} else {
+		}
+                else {
 		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "constant name was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
@@ -244,7 +245,8 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 	        namedNode = attrMap->getNamedItem(XMLString::transcode("type"));
 		if (namedNode) {
 	          type = XMLString::transcode(namedNode->getNodeValue());
-		} else {
+		}
+                else {
 		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "constant type for " << name << " was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
@@ -252,7 +254,8 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 	        namedNode = attrMap->getNamedItem(XMLString::transcode("value"));
 		if (namedNode) {
 	          value = XMLString::transcode(namedNode->getNodeValue());
-		} else {
+		}
+                else {
 		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "constant value for " << name << " was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
@@ -267,7 +270,8 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 		  if (strcmp(char_array,"y")==0) { time = time*365.25*24.0*60.0*60.0; }
 		  else if (strcmp(char_array,"d")==0) { time = time*24.0*60.0*60.0; }
 		  else if (strcmp(char_array,"h")==0) { time = time*60.0*60.0; }
-		} else {
+		}
+                else {
 		  time = atof(value);
 		}
 		// add to list
@@ -278,12 +282,14 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
                 XMLString::release(&name);
                 XMLString::release(&type);
                 XMLString::release(&value);
-	      } else if (strcmp(kidname,"time_constant")==0) {
+	      }
+              else if (strcmp(kidname,"time_constant")==0) {
 	        attrMap = currentKid->getAttributes();
 	        namedNode = attrMap->getNamedItem(XMLString::transcode("name"));
 		if (namedNode) {
 	          name = XMLString::transcode(namedNode->getNodeValue());
-		} else {
+		}
+                else {
 		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "time_constant name was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
@@ -291,7 +297,8 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 	        namedNode = attrMap->getNamedItem(XMLString::transcode("value"));
 		if (namedNode) {
 	          value = XMLString::transcode(namedNode->getNodeValue());
-		} else {
+		}
+                else {
 		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "time_constant value for " << name << " was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
@@ -311,12 +318,14 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 		list.sublist("time_constants").sublist(name) = tmp;
                 XMLString::release(&name);
                 XMLString::release(&value);
-	      } else if (strcmp(kidname,"numerical_constant")==0) {
+	      }
+              else if (strcmp(kidname,"numerical_constant")==0) {
 	        attrMap = currentKid->getAttributes();
 	        namedNode = attrMap->getNamedItem(XMLString::transcode("name"));
 		if (namedNode) {
 	          name = XMLString::transcode(namedNode->getNodeValue());
-		} else {
+		}
+                else {
 		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "numerical_constant name was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
@@ -324,7 +333,8 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 	        namedNode = attrMap->getNamedItem(XMLString::transcode("value"));
 		if (namedNode) {
 	          value = XMLString::transcode(namedNode->getNodeValue());
-		} else {
+		}
+                else {
 		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "numerical_constant value for " << name << " was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
@@ -335,12 +345,14 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 		list.sublist("numerical_constant").sublist(name) = tmp;
                 XMLString::release(&name);
                 XMLString::release(&value);
-	      } else if (strcmp(kidname,"area_mass_flux_constant")==0) {
+	      }
+              else if (strcmp(kidname,"area_mass_flux_constant")==0) {
 	        attrMap = currentKid->getAttributes();
 	        namedNode = attrMap->getNamedItem(XMLString::transcode("name"));
 		if (namedNode) {
 	          name = XMLString::transcode(namedNode->getNodeValue());
-		} else {
+		}
+                else {
 		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "area_mass_flux_constant name was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
@@ -348,7 +360,8 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 	        namedNode = attrMap->getNamedItem(XMLString::transcode("value"));
 		if (namedNode) {
 	          value = XMLString::transcode(namedNode->getNodeValue());
-		} else {
+		}
+                else {
 		  msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing definitions - " ;
 	 	  msg << "area_mass_flux_constant value for " << name << " was missing or ill-formed. \n  Please correct and try again \n" ;
 	 	  Exceptions::amanzi_throw(msg);
@@ -363,7 +376,8 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
               XMLString::release(&kidname);
 	    }
 	  }
-	} else if (strcmp(tagname,"named_times")==0) {
+	}
+        else if (strcmp(tagname,"named_times")==0) {
 	  //TODO: EIB - deal with named times
           DOMNodeList* kids = currentNode->getChildNodes();
           for (int j=0; j<kids->getLength(); j++) {
@@ -431,12 +445,14 @@ std::string get_amanzi_version(DOMDocument* xmlDoc, Teuchos::ParameterList def_l
       // now we can proceed, we translate to a v1.2.1 parameterlist
       old_version << AMANZI_OLD_INPUT_VERSION_MAJOR <<"."<< AMANZI_OLD_INPUT_VERSION_MINOR <<"."<< AMANZI_OLD_INPUT_VERSION_MICRO; 
                   // "1.2.0";
-    } else {
+    }
+    else {
       std::stringstream ver;
       ver << AMANZI_INPUT_VERSION_MAJOR << "." << AMANZI_INPUT_VERSION_MINOR << "." << AMANZI_INPUT_VERSION_MICRO;      
       Exceptions::amanzi_throw(Errors::Message("The input version " + version + " specified in the input file is not supported. This version of amanzi supports version "+ ver.str() + "."));
     }
-  } else {
+  }
+  else {
     // amanzi inpurt description did not exist, error
     Exceptions::amanzi_throw(Errors::Message("Amanzi input description does not exist <amanzi_input version=...>"));
   }
@@ -464,16 +480,19 @@ void get_sim_type(DOMDocument* xmlDoc, Teuchos::ParameterList* def_list) {
       def_list->set<std::string>("sim_type",sim_type);
       if (strcmp(sim_type.c_str(),"structured")==0) {
 	  isUnstr_ = false;
-      } else {
+      }
+      else {
 	  isUnstr_ = true;
       }
-    } else {
+    }
+    else {
       msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing amanzi_input - " ;
       msg << "type was missing or ill-formed. \n  Please correct and try again \n" ;
       Exceptions::amanzi_throw(msg);
     }
     
-  } else {
+  }
+  else {
     // amanzi inpurt description did not exist, error
     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing amanzi_input - " ;
     msg << "type was missing or ill-formed. \n  Please correct and try again \n" ;
@@ -2959,6 +2978,10 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
   DOMNodeList* childern = nodeMat->getChildNodes();
   for (int i=0; i<childern->getLength(); i++) {
     bool cappressON = false;
+    bool dispersionON = false;
+    bool diffusionON = false;
+    bool tortuosityON = false;
+    bool kdON = false;
     Teuchos::ParameterList caplist;
     std::string capname;
     DOMNode* cur = childern->item(i) ;
@@ -3074,6 +3097,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                   nodeAttr = attrMap->getNamedItem(XMLString::transcode("alpha_l"));
                   if (nodeAttr) {
                     textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
+                    dispersionON = true;
                   } else {
                     Errors::Message msg;
                     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing material - " ;
@@ -3086,6 +3110,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                   nodeAttr = attrMap->getNamedItem(XMLString::transcode("alpha_t"));
                   if (nodeAttr) {
                     textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
+                    dispersionON = true;
                   } else {
                     Errors::Message msg;
                     msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing material - " ;
@@ -3098,6 +3123,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                 }
                 else if  (strcmp("tortuosity",propName)==0){
                   // TODO: EIB - not handling file case
+                  tortuosityON = true;
                   attrMap = curkiddy->getAttributes();
                   nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                   if (nodeAttr) {
@@ -3356,6 +3382,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                       // Look for molecular_diffusion element (optional)
                       if (strcmp("molecular_diffusion",propertyName)==0){
                         // loop over molecular_diffusion attributes
+                        Teuchos::ParameterList diffusion;
                         propAttrMap = propNode->getAttributes();
                         for (int m=0; m<propAttrMap->getLength(); m++) {
                           DOMNode* attrNode = propAttrMap->item(m) ;
@@ -3371,15 +3398,20 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                               Exceptions::amanzi_throw(msg);
                             }
                             if (strcmp("value",attrName)==0) {
-                              solutePL.set<double>("Molecular Diffusion: Uniform",get_double_constant(XMLString::transcode(attrNode->getNodeValue()),def_list));
+                              //solutePL.set<double>("Molecular Diffusion: Uniform 1",get_double_constant(XMLString::transcode(attrNode->getNodeValue()),def_list));
                               //TODO: EIB - this is a hack for now!!!!
-                              matlist.sublist("Molecular Diffusion: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
+                              diffusionON = true;
+                              diffusion.set<double>("Value",get_double_constant(XMLString::transcode(attrNode->getNodeValue()),def_list));
+                              matlist.sublist("Molecular Diffusion: Uniform") = diffusion;
+                              //std::cout << "EIB>> adding moledular diffusion: " << std::endl;
+                              //matlist.print(std::cout, true, false);
                             }
                           }
                         }
                       }
                       // Look for kd_model element (optional)
                       else if (strcmp("kd_model",propertyName)==0){
+                        kdON = true;
                         // loop over kd_model attributes
                         propAttrMap = propNode->getAttributes();
                         for (int m=0; m<propAttrMap->getLength(); m++) {
@@ -3406,12 +3438,39 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
 	      }
 	    }
 	    matlist.sublist("Sorption Isotherms") = sorptionPL;
-	    // write BGD file
-            write_BDG_file(sorptionPL, def_list);
-	    // Chemistry list is also necessary - this is created under numerical controls section 
+            if (kdON) {
+	      // write BGD file
+              write_BGD_file(sorptionPL, def_list);
+	      // Chemistry list is also necessary - this is created under numerical controls section 
+            }
 	  }
  	  XMLString::release(&tagName);
 	}
+      }
+      // If dispersion or diffusion is on, need the other.  This is a hack to correct for user forgetting one.
+      if ((dispersionON != diffusionON) && (dispersionON != tortuosityON))
+      {
+        // If dispersion is on: default Moleculare diffusion and Tortuosity
+        if (dispersionON) {
+          // TODO: EIB - add notification message here
+          if (!diffusionON) {
+            matlist.sublist("Molecular Diffusion: Uniform").set<double>("Value",1e-9);
+          }
+          if (!tortuosityON) {
+            matlist.sublist("Tortuosity: Uniform").set<double>("Value",0.0);
+          }
+        }
+        // else if dispersion is off, remove Molecular diffusion and Tortuosity
+        else {
+          matlist.print(std::cout, true, false);
+          // TODO: EIB - add notification message here
+          if (matlist.isSublist("Molecular Diffusion: Uniform")) {
+            matlist.remove("Molecular Diffusion: Uniform");
+          }
+          if (matlist.isSublist("Tortuosity: Uniform")) {
+            matlist.remove("Tortuosity: Uniform");
+          }
+        }
       }
       if(cappressON) matlist.sublist(capname) = caplist;
       list.sublist(textContent) = matlist;
@@ -5331,7 +5390,7 @@ Teuchos::ParameterList make_chemistry(Teuchos::ParameterList def_list)
  * Empty
  ******************************************************************
  */
-void write_BDG_file(Teuchos::ParameterList sorption_list, Teuchos::ParameterList def_list)
+void write_BGD_file(Teuchos::ParameterList sorption_list, Teuchos::ParameterList def_list)
 {
 
   std::ofstream bgd_file;

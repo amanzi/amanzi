@@ -7,16 +7,7 @@ Amanzi XML Input Specification (Version 2.0.x)
 Overview
 ========
 
-The Amanzi simulator evolves a system of conservation equations for
-reacting flows in porous media, as detailed in the ASCEM report
-entitled "Mathematical Formulation Requirements and Specifications for
-the Process Models`" (hereafter referred to as the 'Model Requirements
-Document (MRD)'). The purpose of the present document is to specify
-the data required to execute Amanzi.  This specification should be
-regarded as a companion to the MRD, and parameterizations of the
-individual submodels are consistent between Amanzi, the MRD and this
-document. Where applicable, the relevant sections of the MRD are
-indicated.
+The Amanzi simulator evolves a system of conservation equations for reacting flows in porous media, as detailed in the ASCEM report entitled "Mathematical Formulation Requirements and Specifications for the Process Models`" (hereafter referred to as the 'Model Requirements Document (MRD)'). The purpose of the present document is to specify the data required to execute Amanzi.  This specification should be regarded as a companion to the MRD, and parameterizations of the individual submodels are consistent between Amanzi, the MRD and this document. Where applicable, the relevant sections of the MRD are indicated.
 
 All data required to execute Amanzi is specified within an XML formated file layed out according to the Amanzi input schema.  The current version of the Amanzi schema is located with the Amanzi source code repository.  The following discusses each section of the schema, its purpose and provides examples.  Further details can be found in the schema document amanzi.xsd.
 
@@ -27,34 +18,9 @@ Amanzi Input
 
 Here, the user specifies which version of the input the input file adheres to. The user also specifies the overall type of simulation being run.  Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The attribute `"type`" is used to selected between the following:
 
-* `"Structured`": This instructs Amanzi to use BoxLib data structures
-  and an associated paradigm to numerically represent the flow
-  equations.  Data containers in the BoxLib software library,
-  developed by CCSE at LBNL, are based on a hierarchical set of
-  uniform Cartesian grid patches.  `"Structured`" requires that the
-  simulation domain be a single coordinate-aligned rectangle, and that
-  the "base mesh" consists of a logically rectangular set of uniform
-  hexahedral cells.  This option supports a block-structured approach
-  to dynamic mesh refinement, wherein successively refined subregions
-  of the solution are constructed dynamically to track "interesting"
-  features of the evolving solution.  The numerical solution approach
-  implemented under the `"Structured`" framework is highly optimized
-  to exploit regular data and access patterns on massively parallel
-  computing architectures. 
+* `"Structured`": This instructs Amanzi to use BoxLib data structures and an associated paradigm to numerically represent the flow equations.  Data containers in the BoxLib software library, developed by CCSE at LBNL, are based on a hierarchical set of uniform Cartesian grid patches.  `"Structured`" requires that the simulation domain be a single coordinate-aligned rectangle, and that the "base mesh" consists of a logically rectangular set of uniform hexahedral cells.  This option supports a block-structured approach to dynamic mesh refinement, wherein successively refined subregions of the solution are constructed dynamically to track "interesting" features of the evolving solution.  The numerical solution approach implemented under the `"Structured`" framework is highly optimized to exploit regular data and access patterns on massively parallel computing architectures. 
 
-* `"Unstructured`": This instructs Amanzi to use data structures
-  provided in the Trilinos software framework.  To the extent
-  possible, the discretization algorithms implemented under this
-  option are largely independent of the shape and connectivity of the
-  underlying cells.  As a result, this option supports an arbitrarily
-  complex computational mesh structure that enables users to work with
-  numerical meshes that can be aligned with geometrically complex
-  man-made or geostatigraphical features.  Under this option, the user
-  typically provides a mesh file that was generated with an external
-  software package.  The following mesh file formats are currently
-  supported: `"Exodus II`".  Amanzi also provides a rudmentary
-  capability to generate regular meshes within the unstructured
-  framework internally.
+* `"Unstructured`": This instructs Amanzi to use data structures provided in the Trilinos software framework.  To the extent possible, the discretization algorithms implemented under this option are largely independent of the shape and connectivity of the underlying cells.  As a result, this option supports an arbitrarily complex computational mesh structure that enables users to work with numerical meshes that can be aligned with geometrically complex man-made or geostatigraphical features.  Under this option, the user typically provides a mesh file that was generated with an external software package.  The following mesh file formats are currently supported: `"Exodus II`".  Amanzi also provides a rudmentary capability to generate regular meshes within the unstructured framework internally.
 
 An exmample root tag of an input file would look like the following.
 
@@ -259,6 +225,8 @@ NOTE: start is REQUIRED
     * method=" bdf1 | picard" 
 
     * restart="string"
+       
+    * max_cycles="integer" (ONLY valid for Transient and Transient with Static Flow)
 
 Note, the value of the attribute ``restart`` is the name of the Amanzi checkpoint file previously created and to be used to initialize the current simulation.
 
@@ -269,7 +237,7 @@ Numerical Controls
 
   <numerical_controls>
       Required Elements: NONE
-      Optional Elements: comments, steady-state_controls, transient_controls, linear_solver, nonlinear_solver, chemistry_controls
+      Optional Elements: comments, common_controls, unstructured_controls, structured_controls
   </numerical_controls>
 
 Some discussion of the elements, what the minimum necessary for a simulation is goes here.  For now I have just listed the elements that are available.  
@@ -278,11 +246,41 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * Note: In many cases extra elements, such as comments, are not accommodated in the current input parsing. Therefore, for the most part `"comment`" elements are ignored.
 
-* `"steady-state_controls`"  has the following elements
+.. code-block:: xml
+
+  <common_controls>
+      Required Elements: NONE
+      Optional Elements: steady-state_controls, linear_solver
+  </common_controls>
+
+`"common_controls`" contains options common to both the structured and unstructured modes.  It has the following structure and elements
+
+* `"common_controls`" 
+ 
+  * `"steady-state_controls`"  has the following elements
+ 
+    * `"min_iterations`"="integer" (min_iterations must be <= limit_iterations)
+
+    * `"limit_iterations`"="integer"
+  
+  * `"linear_solver`"  has the following elements
+
+    * `"cfl`"="exponential"
+
+.. code-block:: xml
+
+  <unstructured_controls>
+      Required Elements: NONE
+      Optional Elements: unstr_steady-state_controls, unstr_transient_controls, unstr_linear_solver, unstr_nonlinear_solver, unstr_chemistry_controls
+  </unstructured_controls>
+
+`"unstructured_controls`" contains options specific to the unstructured modes.  It has the following structure and elements
+
+* `"unstructured_controls`" 
+
+  * `"unstr_steady-state_controls`"  has the following elements
 
     * `"comments`"="string" - SKIPPED
- 
-    * `"min_iterations`"="integer" (min_iterations must be <= max_iterations)
 
     * `"max_iterations`"="integer"
 
@@ -290,11 +288,11 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"nonlinear_tolerance`"="exponential"
 
-    * `"pseudo_time_integrator`"  has the following elements
+    * `"unstr_pseudo_time_integrator`"  has the following elements
 
         * `"method`"="string" (options: picard)
 
-        * `"preconditioner`"="string" (options: trilinos_ml, hypre_amg, block_ilu) See below for subelements based on preconditioner name.
+        * `"preconditioner`"="string" (options: trilinos_ml, hypre_amg, block_ilu)
 
         * `"linear_solver`"="string" (options: aztec00)
 
@@ -308,8 +306,6 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
         * `"initialize_with_darcy`"="boolean"
 
-    * `"limit_iterations`"="integer"
-
     * `"nonlinear_iteration_damping_factor`"="exponential"
 
     * `"nonlinear_iteration_divergence_factor`"="exponential"
@@ -318,7 +314,11 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"initialize_with_darcy`"="boolean"
 
-* `"transient_controls`" has the elements `"comments`" and `"integration_method`". `"integration_method`" has the following elements
+    * `"restart_tolerance_factor`"="exponential"
+ 
+    * `"restart_tolerance_relaxation_factor`"="exponential"
+
+  * `"unstr_transient_controls`"  has the following elements
 
     * `"comments`"="string" - SKIPPED 
       
@@ -348,7 +348,7 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"preconditioner`" requires an attribute `"name`". (options: trilinos_ml, hypre_amg, block_ilu) See below for subelements based on preconditioner name.
 
-* `"linear_solver`"  has the following elements
+  * `"unstr_linear_solver`"  has the following elements
 
     * `"comments`"="string" - SKIPPED
  
@@ -358,19 +358,17 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"tolerance`"="exponential"
 
-    * `"cfl`"="exponential"
-
     * `"preconditioner`" requires an attribute `"name`". (options: trilinos_ml, hypre_amg, block_ilu) See below for subelements based on preconditioner name.
 
-* `"nonlinear_solver`"  has an attribute `"name`". (options: nka, newton, inexact newton)
+* `"unstr_nonlinear_solver`"  has an attribute `"name`". (options: nka, newton, inexact newton)
 
-* `"chemistry_controls`"  has the following elements
+* `"unstr_chemistry_controls`"  has the following elements
 
     * `"chem_tolerance`"="exponential" 
  
     * `"chem_max_newton_iterations`"="integer"
 
-`"transient_controls`", `"linear_solver`", and `"pseudo_time_integrator`" accept a subelement for specifing the `"preconditioner`".  Current preconditioners available are Trilinos' ML, Hypre's AMG, and block ILU.  Below are the structures for each preconditioner.
+`"unstr_transient_controls`" and `"unstr_linear_solver`" accept a subelement for specifing the `"preconditioner`" and it's options.  Current preconditioners available are Trilinos' ML, Hypre's AMG, and block ILU.  Below are the structures for each preconditioner.
 
 * `"preconditioners`" with `"name = 'trilinos_ml'`" has the following optional elements
 
@@ -404,6 +402,124 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"ilu_level_of_fill`"="integer" 
 
+.. code-block:: xml
+
+  <unstructured_controls>
+      Required Elements: NONE
+      Optional Elements: str_steady-state_controls, str_transient_controls, str_amr_controls, max_n_subcycle_transport
+  </unstructured_controls>
+
+`"structured_controls`" contains options specific to the structured modes.  It has the following structure and elements
+
+* `"structured_controls`" 
+
+  * `"str_steady-state_controls`"  has the following elements
+  
+    * `"max_pseudo_time`" = "exponential"
+  
+    * `"min_iterations_2`" = "integer"
+  
+    * `"time_step_increase_factor_`" = "exponential"
+  
+    * `"max_consecutive_failures_1`" = "integer"
+  
+    * `"time_step_retry_factor_1`" = "exponential"
+  
+    * `"max_consecutive_failures_2`" = "integer"
+  
+    * `"time_step_retry_factor_2`" = "exponential"
+  
+    * `"time_step_retry_factor_f`" = "exponential"
+  
+    * `"max_num_consecutive_success`" = "integer"
+  
+    * `"extra_time_step_increase_factor`" = "exponential"
+  
+    * `"abort_on_psuedo_timestep_failure`" = "integer"
+  
+    * `"use_PETSc_snes`" = "bool"
+  
+    * `"limit_function_evals`" = "exponential"
+  
+    * `"do_grid_sequence`" = "bool"
+  
+    * `"grid_sequence_new_level_dt_factor`" takes a sequence of exponential values as subelements
+
+        * `"dt_factor`" = "exponential"
+
+  * `"str_transient_controls`"  has the following elements
+  
+    * `"max_ls_iterations`" = "integer"
+  
+    * `"ls_reduction_factor`" = "exponential"
+  
+    * `"min_ls_factor`" = "exponential"
+  
+    * `"ls_acceptance_factor`" = "exponential"
+  
+    * `"monitor_line_search`" = "integer"
+  
+    * `"monitor_linear_solve`" = "integer"
+  
+    * `"use_fd_jac`" = "bool"
+  
+    * `"perturbation_scale_for_J`" = "exponential"
+  
+    * `"use_dense_Jacobian`" = "bool"
+  
+    * `"upwind_krel`" = "bool"
+  
+    * `"pressure_maxorder`" = "integer"
+  
+    * `"scale_solution_before_solve`" = "bool"
+  
+    * `"semi_analytic_J`" = "bool"
+
+  * `"str_amr_controls`"  has the following elements
+  
+    * `"amr_levels`" = "integer"
+  
+    * `"refinement_ratio`" takes a sequence of integer values as subelements
+
+        * `"int`" = "integer"
+  
+    * `"do_amr_cubcycling`" = "bool"
+  
+    * `"regrid_interval`" takes a sequence of integer values as subelements
+
+        * `"int`" = "integer"
+  
+    * `"blocking_factor`" takes a sequence of integer values as subelements
+
+        * `"int`" = "integer"
+  
+    * `"number_error_buffer_cells`" takes a sequence of integer values as subelements
+
+        * `"int`" = "integer"
+  
+    * `"max_grid_size`" = "integer"
+  
+    * `"refinement_indicators`" takes the following subelements
+    
+      * `"field_name`" = "string"
+    
+      * `"regions`" = "string"
+    
+      * `"max_refinement_level`" = "string"
+    
+      * `"start_time`" = "exponential"
+    
+      * `"end_time`" = "exponential"
+      
+      * The user may also specify exactly 1 of the follwing
+      
+        * `"value_greater`" = "exponential"
+      
+        * `"value_less`" = "exponential"
+      
+        * `"adjacent_difference_greater`" = "exponential"
+      
+        * `"inside_region`" = "bool"
 
 Mesh
 ====
@@ -746,20 +862,36 @@ The `"initial_conditions`" section contains at least 1 and up to an unbounded nu
 
 Here is more info on the `"liquid_phase`" elements:
 
-    * `"liquid_component`" is an element with the following subelement: 
-
-        * `"pressure`" is an element with the following attributes: 
+    * `"liquid_component`" is an element with the possible subelements: `"uniform_pressure`", `"linear_pressure`", `"uniform_saturation`", `"linear_saturation`", and `"velocity`".  They would like the following: 
 
 .. code-block:: xml
 
-     <pressure name="some name" value="exponential" function="linear | uniform" reference_coord="coordinate" gradient="coordinate"/>
+    <uniform_pressure name="some name" value="exponential" />
+
+.. code-block:: xml
+
+            <linear_pressure name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
+
+.. code-block:: xml
+
+            <uniform_saturation name="some name" value="exponential" />
+
+.. code-block:: xml
+
+            <linear_saturation name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
+
+.. code-block:: xml
+
+            <velocity name="some name" x="exponential" y="exponential" z="exponential"/>
 
 .
     * `"solute_component`" is an element with the following attributes: 
 
 .. code-block:: xml
 
-     <solute_component name="some name" (filename="filename" SKIPPED) value="exponential" function="uniform (|linear SKIPPED) " (reference_coord="coordinate" gradient="coordinate" - linear skipped) />
+     <solute_component name="some name" value="exponential" function="uniform" />
+
+..     <solute_component name="some name" (filename="filename" SKIPPED) value="exponential" function="uniform (|linear SKIPPED) " (reference_coord="coordinate" gradient="coordinate" - linear skipped) />
 
 NOTE: Reading from a file is not yet implemeneted.  Also, the reference_coord and gradient attributes are only needed for the "linear" function type, which is also not yet implemeneted.
 
@@ -840,6 +972,13 @@ Here is more info on the `"liquid_phase`" elements:
      <uniform_pressure name="some name" value="exponential" function="uniform | constant" start="time" />
 
 .
+        * `"seepage_face`" is an element with the following attributes: 
+
+.. code-block:: xml
+
+     <seepage_face name="some name" inward_mass_flux="exponential" function="linear | uniform | constant" start="time" />
+
+.
         * `"hydrostatic`" is an element with the following attributes: ONLY CONSTANT, for now
 
 .. code-block:: xml
@@ -867,8 +1006,7 @@ Here is more info on the `"liquid_phase`" elements:
 Output
 ======
 
-Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", and `"Observations`".  
-Each of these is controlled in different ways, reflecting their intended use.
+Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", and `"Observations`".  Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Vis`" is intended to represent snapshots of the solution at defined instances during the simulation to be visualized.  The ''vis'' element defines the naming and frequencing of saving the visualization files.  The visualizatoin files may include only a fraction of the state data, and may contiain auxiliary "derived" information (see *elsewhere* for more discussion).
 

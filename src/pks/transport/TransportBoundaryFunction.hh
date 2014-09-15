@@ -31,6 +31,7 @@ class TransportBoundaryFunction : public Functions::UniqueMeshFunction {
  public:
   TransportBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :
       UniqueMeshFunction(mesh) {};
+  virtual ~TransportBoundaryFunction() {};
   
   virtual void Compute(double time) = 0;
 

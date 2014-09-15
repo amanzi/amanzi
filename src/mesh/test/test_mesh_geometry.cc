@@ -570,7 +570,7 @@ TEST(MESH_GEOMETRY_SOLID)
       CHECK_EQUAL(found,true);
 
       Amanzi::AmanziMesh::Entity_ID_List cfaces;
-      Amanzi::AmanziGeometry::Point normal_sum(2), normal(2);      
+      Amanzi::AmanziGeometry::Point normal_sum(3), normal(3);      
 
       mesh->cell_get_faces(i,&cfaces);
       normal_sum.set(0.0);
@@ -675,7 +675,7 @@ TEST(MESH_GEOMETRY_SOLID)
     for (int i = 0; i < ncells; i++) {
 
       Amanzi::AmanziMesh::Entity_ID_List cfaces;
-      Amanzi::AmanziGeometry::Point normal_sum(2), normal(2);      
+      Amanzi::AmanziGeometry::Point normal_sum(3), normal(3);      
 
       mesh->cell_get_faces(i,&cfaces);
       normal_sum.set(0.0);

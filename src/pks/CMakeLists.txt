@@ -54,7 +54,7 @@ endif()
 add_subdirectory(flow)
 add_subdirectory(transport)
 add_subdirectory(energy)
-
+add_subdirectory(mpc)
 
 
 

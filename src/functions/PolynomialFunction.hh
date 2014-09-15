@@ -12,7 +12,7 @@ class PolynomialFunction : public Function {
   PolynomialFunction(const std::vector<double> &c, const std::vector<int> &p, double x0 = 0.0);
   ~PolynomialFunction() {}
   PolynomialFunction* Clone() const { return new PolynomialFunction(*this); }
-  double operator() (const double *x) const;
+  double operator()(const std::vector<double>& x) const;
 
  private:
   int pmin_;

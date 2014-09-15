@@ -6,7 +6,7 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Daniil Svyatskiy (dasvyat@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
@@ -21,18 +21,16 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
-#include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "MeshAudit.hh"
 #include "GMVMesh.hh"
 
 #include "State.hh"
 #include "Richards_PK.hh"
 
-#include "BDF1_TI.hh"
 
-
-/* ******************************** */
-TEST(NEWTON_RICHARD_STEADY) {
+/* **************************************************************** */
+TEST(FLOW_3D_RICHARDS) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -42,30 +40,30 @@ TEST(NEWTON_RICHARD_STEADY) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "Test: orthogonal newton solver, 2-layer model" << std::endl;
+  if (MyPID == 0) std::cout << "Test: 3D Richards, 2-layer model" << std::endl;
+
   /* read parameter list */
   std::string xmlFileName = "test/flow_richards_newton_TPFA.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  /* create a mesh framework */
+  // create an SIMPLE mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
   FrameworkPreference pref;
   pref.clear();
+  pref.push_back(STKMESH);
   pref.push_back(MSTK);
 
-  MeshFactory factory(&comm);
-  factory.preference(pref);
-  ParameterList mesh_list = plist.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
-  ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
-  Teuchos::RCP<const Mesh> mesh(factory(factory_list, gm));
+  MeshFactory meshfactory(&comm);
+  meshfactory.preference(pref);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, -2.0, 1.0, 1.0, 0.0, 18, 1, 18, gm);
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = false;
 
-  Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
+  Teuchos::ParameterList state_list;
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
@@ -76,34 +74,62 @@ TEST(NEWTON_RICHARD_STEADY) {
   RPK->InitializeFields();
   S->CheckAllFieldsInitialized();
 
-  /* create Richards process kernel */
+  /* modify the default state for the problem at hand */
+  std::string passwd("state"); 
+  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
+  
+  AmanziMesh::Entity_ID_List block;
+  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  for (int i = 0; i != block.size(); ++i) {
+    int c = block[i];
+    K[0][c] = 0.1;
+    K[1][c] = 0.1;
+    K[2][c] = 2.0;
+  }
+
+  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  for (int i = 0; i != block.size(); ++i) {
+    int c = block[i];
+    K[0][c] = 0.5;
+    K[1][c] = 0.5;
+    K[2][c] = 0.5;
+  }
+
+  *S->GetScalarData("fluid_density", passwd) = 1.0;
+  *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
+  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", passwd);
+  gravity[2] = -1.0;
+
+  /* create the initial pressure function */
+  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
+
+  for (int c = 0; c < p.MyLength(); c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    p[0][c] = xc[2] * (xc[2] + 2.0);
+  }
+
+  /* initialize the Richards process kernel */
   RPK->Initialize(S.ptr());
-  RPK->ti_specs_sss().T1 = 3e+9;
+  RPK->ti_specs_sss().T1 = 100.0;
   RPK->ti_specs_sss().max_itrs = 400;
-  RPK->InitSteadyState(0.0, 1.0);
+
+  RPK->InitializeAuxiliaryData();
+  RPK->InitSteadyState(0.0, 0.01);  // dT0 is not used
 
   /* solve the problem */
-  RPK->AdvanceToSteadyState(0.0, 1e+7);
-  RPK->CommitState(0.0, S);
-
-  /* derive dependent variable */
-  const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
-  const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell");
+  RPK->AdvanceToSteadyState(0.0, 0.01);
+  RPK->CommitState(0.0, S.ptr());
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "pressure");
-    GMV::write_cell_data(ws, 0, "saturation");
     GMV::close_data_file();
   }
 
+  /* check the pressure */
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c = 0; c < ncells; c++) {
-    // std::cout << (mesh->cell_centroid(c))[2] << " " << p[0][c] << std::endl;
-    CHECK(p[0][c] > 4500.0 && p[0][c] < 101325.0);
-  }
-  
+  for (int c = 0; c < ncells; c++) CHECK(p[0][c] > 0.0 && p[0][c] < 2.0);
+
   delete RPK;
 }
-

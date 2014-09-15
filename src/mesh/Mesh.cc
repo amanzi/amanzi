@@ -219,30 +219,27 @@ void Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
 
 int Mesh::compute_geometric_quantities() const {
 
-  // this might be called after mesh deformation,
-  // so we make sure that the arrays that are
-  // being initialized are empty
-  cell_volumes.clear();
-  cell_centroids.clear();
-  face_areas.clear();
-  face_centroids.clear();
-  face_normal0.clear();
-  face_normal1.clear();
-
   int ncells = num_entities(CELL,USED);
 
+  cell_volumes.resize(ncells);
+  cell_centroids.resize(ncells);
   for (int i = 0; i < ncells; i++) {
     double volume;
     AmanziGeometry::Point centroid(spacedim);
 
     compute_cell_geometry(i,&volume,&centroid);
 
-    cell_volumes.push_back(volume);
-    cell_centroids.push_back(centroid);
+    cell_volumes[i] = volume;
+    cell_centroids[i] = centroid;
   }
 
 
   int nfaces = num_entities(FACE,USED);
+
+  face_areas.resize(nfaces);
+  face_centroids.resize(nfaces);
+  face_normal0.resize(nfaces);
+  face_normal1.resize(nfaces);
 
   for (int i = 0; i < nfaces; i++) {
     double area;
@@ -256,10 +253,10 @@ int Mesh::compute_geometric_quantities() const {
 
     compute_face_geometry(i,&area,&centroid,&normal0,&normal1);
 
-    face_areas.push_back(area);
-    face_centroids.push_back(centroid);
-    face_normal0.push_back(normal0);
-    face_normal1.push_back(normal1);
+    face_areas[i] = area;
+    face_centroids[i] = centroid;
+    face_normal0[i] = normal0;
+    face_normal1[i] = normal1;
   }
 
   geometry_precomputed = true;
@@ -288,11 +285,12 @@ int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume, AmanziGe
     cell_get_faces_and_dirs(cellid,&faces,&fdirs);
 
     int nf = faces.size();
+    nfnodes.resize(nf);
 
     for (int j = 0; j < nf; j++) {
 
       face_get_coordinates(faces[j],&fcoords);
-      nfnodes.push_back(fcoords.size());
+      nfnodes[j] = fcoords.size();
 
       if (fdirs[j] == 1) {
         for (int k = 0; k < nfnodes[j]; k++)
@@ -390,7 +388,7 @@ int Mesh::compute_face_geometry(const Entity_ID faceid, double *area,
 
       *centroid = 0.5*(fcoords[0]+fcoords[1]);
 
-      AmanziGeometry::Point normal = AmanziGeometry::Point(evec[1],-evec[0]);
+      AmanziGeometry::Point normal(evec[1],-evec[0]);
 
       Entity_ID_List cellids;
       face_get_cells(faceid, USED, &cellids);
@@ -582,22 +580,24 @@ AmanziGeometry::Point Mesh::face_centroid (const Entity_ID faceid, const bool re
 
 AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool recompute, const Entity_ID cellid) const {
 
-  AmanziGeometry::Point normal0(spacedim), normal1(spacedim);
+  AmanziGeometry::Point normal0(spacedim);
+  AmanziGeometry::Point normal1(spacedim);
 
   if (!geometry_precomputed) {
     compute_geometric_quantities();
 
-    normal0 = face_normal0[faceid];
-    normal1 = face_normal1[faceid];
+    normal0 = face_normal0[faceid];    
+    normal1 = face_normal1[faceid];   
   }
   else {
     if (recompute) {
       double area;
       AmanziGeometry::Point centroid(spacedim);
+      
       compute_face_geometry(faceid, &area, &centroid, &normal0, &normal1);
     }
     else {
-      normal0 = face_normal0[faceid];
+      normal0 = face_normal0[faceid];  
       normal1 = face_normal1[faceid];
     }
   }
@@ -635,15 +635,15 @@ AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool reco
 
     if (dir == 1) {
       ASSERT(L22(normal0) != 0.0);
-      return normal0;
+      return normal0;              // Copy to output
     }
     else {
       ASSERT(L22(normal1) != 0.0);
-      return normal1;
+      return normal1;              // Copy to output
     }
   }
 
-  return normal0;
+  return normal0;      // Copy to output
 }
 
 
@@ -807,12 +807,13 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
     cell_get_faces_and_dirs(cellid,&faces,&fdirs);
 
     nf = faces.size();
+    nfnodes.resize(nf);
 
     for (int j = 0; j < nf; j++) {
       std::vector<AmanziGeometry::Point> fcoords;
 
       face_get_coordinates(faces[j],&fcoords);
-      nfnodes.push_back(fcoords.size());
+      nfnodes[j] = fcoords.size();
 
       if (fdirs[j] == 1) {
         for (int k = 0; k < nfnodes[j]; k++)
@@ -894,8 +895,6 @@ int Mesh::deform (const Entity_ID_List& nodeids,
   ASSERT(nodeids.size() == new_positions.size());
   ASSERT(final_positions != NULL);
 
-  final_positions->clear();
-
 
   // Once we start moving nodes around, the precomputed/cached
   // geometric quantities are no longer valid. So any geometric calls
@@ -903,6 +902,8 @@ int Mesh::deform (const Entity_ID_List& nodeids,
   // where we once again call compute_geometric_quantities
 
   int nn = nodeids.size();
+  final_positions->resize(nn);
+
 
   bool done_outer = false;
   int iter = 0, maxiter = 5;
@@ -974,7 +975,7 @@ int Mesh::deform (const Entity_ID_List& nodeids,
     AmanziGeometry::Point newcoords;
 
     node_get_coordinates(node,&newcoords);
-    final_positions->push_back(newcoords);
+    (*final_positions)[j] = newcoords;
   }
 
 

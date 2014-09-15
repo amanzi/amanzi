@@ -27,8 +27,9 @@
 #include <Epetra_MpiComm.h>
 #include <memory>
 
-#include "GeometricModel.hh"
-#include "LabeledSetRegion.hh"
+#include <GeometricModel.hh>
+#include <LabeledSetRegion.hh>
+#include <VerboseObject.hh>
 
 
 #include "Mesh.hh"
@@ -62,7 +63,8 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const double& ydelta = 1.0, 
            const double& zdelta = 1.0,
            const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL);
+           (AmanziGeometry::GeometricModelPtr) NULL,
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
   
   /// Construct hexahedral mesh (Mesh_simple alternative)
   Mesh_STK(double x0, double y0, double z0,
@@ -70,39 +72,46 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            int nx, int ny, int nz, 
            const Epetra_MpiComm *comm,
            const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL);
+           (AmanziGeometry::GeometricModelPtr) NULL,
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
 
-  Mesh_STK (const double x0, 
-            const double y0,
-            const double x1, 
-            const double y1,
-            const int nx, 
-            const int ny, 
-            const Epetra_MpiComm *communicator,
-            const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
-
+  Mesh_STK(const double x0, 
+           const double y0,
+           const double x1, 
+           const double y1,
+           const int nx, 
+           const int ny, 
+           const Epetra_MpiComm *communicator,
+           const AmanziGeometry::GeometricModelPtr &gm = 
+           (AmanziGeometry::GeometricModelPtr) NULL,
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
+  
   /// Construct a hexedral mesh from a parameter list (Mesh_simple alternative)
   Mesh_STK(Teuchos::ParameterList &parameter_list,
            const Epetra_MpiComm *comm,
            const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL);
+           (AmanziGeometry::GeometricModelPtr) NULL,
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
 
   /// Construct a hexedral mesh from specs (Mesh_simple alternative)
   Mesh_STK(const GenerationSpec& gspec,
            const Epetra_MpiComm *comm,
            const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL);
+           (AmanziGeometry::GeometricModelPtr) NULL,
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
 
   /// Construct a mesh from a Exodus II file or file set
   Mesh_STK(const Epetra_MpiComm *comm, 
            const std::string& fname,
            const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL);
+           (AmanziGeometry::GeometricModelPtr) NULL,
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
 
   /// Construct a mesh from a Exodus II file or file set
   Mesh_STK(const char *filename, const Epetra_MpiComm *comm,
            const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL);
+           (AmanziGeometry::GeometricModelPtr) NULL,
+           const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
 
   // Construct a mesh by extracting a subset of entities from another
   // mesh. In some cases like extracting a surface mesh from a volume

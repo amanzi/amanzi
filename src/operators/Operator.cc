@@ -557,7 +557,7 @@ void Operator::ApplyBCs()
             double value = bc_value[f];
 
             if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
-              if (flag) {  // make a copy of elemntal matrix
+              if (flag) {  // make a copy of elemental matrix
                 matrix_shadow[c] = Acell;
                 flag = false;
               }

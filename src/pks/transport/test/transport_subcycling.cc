@@ -42,13 +42,14 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  /* create an MSTK mesh framework */
+  /* create a mesh framework */
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, (Epetra_MpiComm *)comm);
 
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
+  pref.push_back(STKMESH);
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
@@ -95,7 +96,7 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
     double dT_MPC = dT * 7.7;
 
     TPK.Advance(dT_MPC, dummy_dT);
-    TPK.CommitState(dT_MPC, S);
+    TPK.CommitState(dT_MPC, S.ptr());
     T += dT_MPC;
     iter++;
 

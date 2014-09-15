@@ -721,6 +721,10 @@ parameters described below. Mix and match of parameters is allowed.
   to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
   Default value is `"false`". 
 
+* `"no flow above water table`" [bool] indicates that no-flow (Neumann) boundary condition 
+  has to be used above the water table. This switch uses the pressure value at a face
+  centroid. Default is `"false`".
+
 * `"submodel`" [string] indicates different models for the seepage face boundary condition.
   It can take values `"PFloTran`", `"FACT`", and `"Amanzi`". The first option leads to a 
   discontinuous change of the boundary condition type from the infiltration to pressure. 
@@ -1070,6 +1074,15 @@ The remaining `"Flow`" parameters are
   updates it on each iteration of a nonlinear solver. The second option is recommended
   for the New ton solver. It may impact significantly upwinding of the relative permeability 
   and convergence rate of this solver.
+
+* `"clipping parameters`"[list] defines how corrections in nonlinear solver modified (clipped)
+
+.. code-block:: xml
+
+   <ParameterList name="clipping parameters">
+      <Parameter name="max sat change" type="double" value="0.25"/>
+      <Parameter name="damping factor" type="double" value="0.5"/>
+   </ParameterList>	
 
 * `"plot time history`" [bool] produces an ASCII file with time history when exists.
 

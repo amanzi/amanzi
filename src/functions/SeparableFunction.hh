@@ -7,6 +7,7 @@
 #define AMANZI_SEPARABLE_FUNCTION_HH_
 
 #include <memory>
+#include <algorithm>
 
 #include "Function.hh"
 
@@ -22,7 +23,11 @@ class SeparableFunction : public Function {
      : f1_(source.f1_->Clone()), f2_(source.f2_->Clone()) {}
   ~SeparableFunction() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
   SeparableFunction* Clone() const { return new SeparableFunction(*this); }
-  double operator() (const double *x) const { return (*f1_)(x) * (*f2_)(x+1); }
+  double operator()(const std::vector<double>& x) const {
+    std::vector<double>::const_iterator xb = x.begin(); xb++;
+    std::vector<double> y(xb, x.end());
+    return (*f1_)(x) * (*f2_)(y);
+  }
 
  private:
   std::auto_ptr<Function> f1_, f2_;

@@ -42,14 +42,16 @@ public:
                       const std::string file,
                       const int value,
                       const Epetra_MpiComm *comm,
-                      const LifeCycleType lifecycle=PERMANENT);
+                      const LifeCycleType lifecycle=PERMANENT,
+                      const VerboseObject *verbobj=NULL);
 
   ColorFunctionRegion(const char *name, 
                       const unsigned int id, 
                       const char *file,
                       const int value,
                       const Epetra_MpiComm *comm,
-                      const LifeCycleType lifecycle=PERMANENT);
+                      const LifeCycleType lifecycle=PERMANENT,
+                      const VerboseObject *verbobj=NULL);
 
 
   /// Protected copy constructor to avoid unwanted copies.

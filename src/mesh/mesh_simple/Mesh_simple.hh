@@ -14,6 +14,7 @@
 #include "Region.hh"
 
 #include "GeometricModel.hh"
+#include "VerboseObject.hh"
 
 namespace Amanzi {
 
@@ -29,20 +30,28 @@ public:
   Mesh_simple (double x0, double y0, double z0,
 	       double x1, double y1, double z1,
 	       int nx, int ny, int nz, const Epetra_MpiComm *communicator,
-	       const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
+	       const AmanziGeometry::GeometricModelPtr &gm = 
+               (AmanziGeometry::GeometricModelPtr) NULL,
+               const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
   
   Mesh_simple (double x0, double y0,
 	       double x1, double y1,
 	       int nx, int ny, const Epetra_MpiComm *communicator,
-	       const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
+	       const AmanziGeometry::GeometricModelPtr &gm = 
+               (AmanziGeometry::GeometricModelPtr) NULL,
+               const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
   
   Mesh_simple ( const GenerationSpec& gspec,
 		const Epetra_MpiComm *communicator,
-                const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
+                const AmanziGeometry::GeometricModelPtr &gm = 
+                (AmanziGeometry::GeometricModelPtr) NULL,
+                const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
 
   Mesh_simple ( Teuchos::ParameterList &parameter_list,
 		const Epetra_MpiComm *communicator,
-		const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
+		const AmanziGeometry::GeometricModelPtr &gm = 
+                (AmanziGeometry::GeometricModelPtr) NULL,
+                const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
   
   // Construct a mesh by extracting a subset of entities from another
   // mesh. In some cases like extracting a surface mesh from a volume

@@ -14,7 +14,7 @@ class BilinearFunction : public Function {
 		 		  const Epetra_SerialDenseMatrix &v, const int xi, const int yi);
   ~BilinearFunction() {}
   BilinearFunction* Clone() const { return new BilinearFunction(*this); }
-  double operator() (const double *x) const;
+  double operator()(const std::vector<double>& x) const;
 
  private:
   std::vector<double> x_, y_;
