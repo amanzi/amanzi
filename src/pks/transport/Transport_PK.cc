@@ -478,7 +478,13 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
         sol_cell[0][c] = tcc_next[i][c];
       }
 
-      solver->ApplyInverse(rhs, sol);
+      int ierr = solver->ApplyInverse(rhs, sol);
+
+      if (ierr != 0) {
+        Errors::Message msg;
+        msg << "\nLinear solver returned an unrecoverable error code.\n";
+        Exceptions::amanzi_throw(msg);
+      }
 
       residual += solver->residual();
       num_itrs += solver->num_itrs();
