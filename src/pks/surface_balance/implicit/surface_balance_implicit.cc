@@ -237,19 +237,20 @@ SurfaceBalanceImplicit::initialize(const Teuchos::Ptr<State>& S) {
   // initialize snow density, age
   ASSERT(plist_->isSublist("initial condition"));
   Teuchos::ParameterList& ic_list = plist_->sublist("initial condition");
-  if (ic_list.isParameter("restart file")) {
-    // initialize density, age from restart file
-    S->GetField("snow_density", name_)->Initialize(ic_list);
-    S->GetField("snow_density", name_)->set_initialized();
-    S->GetField("snow_age", name_)->Initialize(ic_list);
-    S->GetField("snow_age", name_)->set_initialized();
-  } else {
-    // initialize density to fresh powder, age to 0
-    S->GetFieldData("snow_density",name_)->PutScalar(seb.params.density_freshsnow);
-    S->GetField("snow_density", name_)->set_initialized();
-
-    S->GetFieldData("snow_age",name_)->PutScalar(0.);
-    S->GetField("snow_age", name_)->set_initialized();
+  if (!S->GetField("snow_density")->initialized()) {
+    if (ic_list.isParameter("restart file")) {
+      // initialize density, age from restart file
+      S->GetField("snow_density", name_)->Initialize(ic_list);
+      S->GetField("snow_density", name_)->set_initialized();
+      S->GetField("snow_age", name_)->Initialize(ic_list);
+      S->GetField("snow_age", name_)->set_initialized();
+    } else {
+      // initialize density to fresh powder, age to 0
+      S->GetFieldData("snow_density",name_)->PutScalar(seb.params.density_freshsnow);
+      S->GetField("snow_density", name_)->set_initialized();
+      S->GetFieldData("snow_age",name_)->PutScalar(0.);
+      S->GetField("snow_age", name_)->set_initialized();
+    }
   }
 
   // initialize swe consistently with snow height and density

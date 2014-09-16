@@ -43,6 +43,12 @@ public:
   virtual void setup(const Teuchos::Ptr<State>& S);
   virtual void initialize(const Teuchos::Ptr<State>& S);
 
+  // -- Commit any secondary (dependent) variables.
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {
+    PKBDFBase::commit_state(dt,S);
+    MPC<PK_t>::commit_state(dt, S);
+  }
+  
   // StrongMPC is a BDFFnBase
   // -- computes the non-linear functional g = g(t,u,udot)
   //    By default this just calls each sub pk Functional().
