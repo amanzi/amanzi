@@ -1167,8 +1167,6 @@ description in the Process Models document.
      </ParameterList>  
    </ParameterList>  
 
-If all dispersion parameters are set to zero in at least one sublist, 
-dispersivity is ignored for all sublists.
 
 Boundary Conditions
 -------------------
