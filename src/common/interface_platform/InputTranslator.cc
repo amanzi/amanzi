@@ -679,7 +679,7 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
 	  if (strlen(temp) > 0) {
 	    // translate to array
 	    Teuchos::Array<double> low = make_coordinates(temp, def_list);
-            mesh_list.set<Teuchos::Array<double> >("Domain Low Corner",low);
+            mesh_list.set<Teuchos::Array<double> >("Domain Low Coordinate",low);
 	    if (low.length() != dimension_) {
 	      helper << "  -> low_coordinates ill-formed or missing\n";
 	      all_good = false;
@@ -693,7 +693,7 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
 	  if (strlen(temp) > 0) {
 	    // translate to array
 	    Teuchos::Array<double> high = make_coordinates(temp, def_list);
-            mesh_list.set<Teuchos::Array<double> >("Domain High Corner",high);
+            mesh_list.set<Teuchos::Array<double> >("Domain High Coordinate",high);
 	    if (high.length() != dimension_) {
 	      helper << "  -> high_coordinates ill-formed or missing\n";
 	      all_good = false;

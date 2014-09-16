@@ -33,8 +33,8 @@
   </ParameterList>
   <ParameterList name="Mesh">
     <ParameterList name="Structured">
-      <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0}"/>
-      <Parameter name="Domain High Corner" type="Array(double)" value="{1.0, 0.02}"/>
+      <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+      <Parameter name="Domain High Coordinate" type="Array(double)" value="{1.0, 0.02}"/>
       <Parameter name="Number of Cells" type="Array(int)" value="{100, 2}"/>
     </ParameterList>
   </ParameterList>

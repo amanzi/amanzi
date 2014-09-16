@@ -85,28 +85,38 @@ namespace Amanzi {
           Array<std::string> regions;
       };
       
-
+      struct TRACER
+      {
+        TRACER(const std::string& _name)
+          : name(_name),
+            molecularDiffusivity(0),
+            firstOrderDecayConstant(0) {}
+        std::string name;
+        double molecularDiffusivity;
+        double firstOrderDecayConstant;
+      };
 
       struct COMP
       {
-          const Array<std::string>& getTracerArray() const {return tracers;}
+          Array<TRACER>& getTracerArray() {return tracers;}
+          const Array<TRACER>& getTracerArray() const {return tracers;}
           bool HasTracer(const std::string& name) {
               for (int i=0; i<tracers.size(); ++i) {
-                  if (tracers[i]==name) {
+                  if (tracers[i].name==name) {
                       return true;
                   }
               }
               return false;
           }
-          std::string& operator [] (int i) {return tracers[i];}
+          std::string& operator [] (int i) {return tracers[i].name;}
           int size() const {return tracers.size();}
           void push_back(const std::string& str)
               {
-                  tracers.push_back(str);
+                tracers.push_back(TRACER(str));
               }
           
       protected:
-          Array<std::string> tracers;
+          Array<TRACER> tracers;
       };
       
       struct PHASE

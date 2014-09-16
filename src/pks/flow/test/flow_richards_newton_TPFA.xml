@@ -11,8 +11,8 @@
         <Parameter name="Framework" type="string" value="MSTK"/>
       </ParameterList>
       <ParameterList name="Generate Mesh">
-        <Parameter name="Domain High Corner" type="Array(double)" value="{1.475e+02, 1.0, 1.0752e+02}"/>  
-        <Parameter name="Domain Low Corner" type="Array(double)" value="{1.435e+02, 0.0, 0.0}"/>
+        <Parameter name="Domain High Coordinate" type="Array(double)" value="{1.475e+02, 1.0, 1.0752e+02}"/>  
+        <Parameter name="Domain Low Coordinate" type="Array(double)" value="{1.435e+02, 0.0, 0.0}"/>
         <Parameter name="Number of Cells" type="Array(int)" value="{4, 1, 48}"/>
       </ParameterList>
     </ParameterList>
