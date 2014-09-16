@@ -89,6 +89,20 @@ void Transport_PK::ProcessParameterList()
         dispersion_models_[iblock]->tau = model_list.get<double>("tortuosity", 0.0);
         dispersion_models_[iblock]->regions = model_list.get<Teuchos::Array<std::string> >("regions").toVector();
 
+        // run-time verification
+        if (dispersion_models_[iblock]->alphaL == 0.0 && 
+            dispersion_models_[iblock]->alphaT == 0.0 && 
+            dispersion_models_[iblock]->D == 0.0 && 
+            dispersion_models_[iblock]->tau == 0.0) {
+          if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+            Teuchos::OSTab tab = vo_->getOSTab();
+            *vo_->os() << vo_->color("yellow") << "Zero dispersion for sublist \"" << dlist.name(i) 
+                       << "\", removing all dispersion parameters."<< vo_->reset() << std::endl;
+          }
+          dispersion_models_.clear();
+          break;
+        }
+
         iblock++;
       }
     }
