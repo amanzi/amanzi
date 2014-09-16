@@ -47,8 +47,8 @@ GenerationSpec::parse_(const Teuchos::ParameterList& parameter_list)
   // read the parameters from the parameter list
 
   Teuchos::Array<int> ncells = parameter_list.get< Teuchos::Array<int> >("Number of Cells");
-  Teuchos::Array<double> low_corner = parameter_list.get< Teuchos::Array<double> >("Domain Low Corner");
-  Teuchos::Array<double> high_corner = parameter_list.get< Teuchos::Array<double> >("Domain High Corner");
+  Teuchos::Array<double> low_corner = parameter_list.get< Teuchos::Array<double> >("Domain Low Coordinate");
+  Teuchos::Array<double> high_corner = parameter_list.get< Teuchos::Array<double> >("Domain High Coordinate");
   
   unsigned int dimension = ncells.size();
 

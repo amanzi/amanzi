@@ -230,8 +230,8 @@ SUITE (MeshFramework)
     Teuchos::Array<double> low = Teuchos::tuple<double>(0.0, 0.0, 0.0);
     Teuchos::Array<double> high = Teuchos::tuple<double>(1.0, 1.0, 1.0);
     parameter_list.set< Teuchos::Array<int> >("Number of Cells", ncells);
-    parameter_list.set< Teuchos::Array<double> >("Domain Low Corner", low);
-    parameter_list.set< Teuchos::Array<double> >("Domain High Corner", high);
+    parameter_list.set< Teuchos::Array<double> >("Domain Low Coordinate", low);
+    parameter_list.set< Teuchos::Array<double> >("Domain High Coordinate", high);
     
     pref.clear(); pref.push_back(Amanzi::AmanziMesh::Simple);
     mesh_factory.preference(pref);
@@ -291,8 +291,8 @@ SUITE (MeshFramework)
     Teuchos::Array<double> low = Teuchos::tuple<double>(0.0, 0.0);
     Teuchos::Array<double> high = Teuchos::tuple<double>(1.0, 1.0);
     parameter_list.set< Teuchos::Array<int> >("Number of Cells", ncells);
-    parameter_list.set< Teuchos::Array<double> >("Domain Low Corner", low);
-    parameter_list.set< Teuchos::Array<double> >("Domain High Corner", high);
+    parameter_list.set< Teuchos::Array<double> >("Domain Low Coordinate", low);
+    parameter_list.set< Teuchos::Array<double> >("Domain High Coordinate", high);
     
 
     // MSTK, if available, can generate 2D meshes
