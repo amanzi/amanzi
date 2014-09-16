@@ -146,7 +146,7 @@ void Observable::Update_(const State& S,
         }
 
         value += subvec[0][*id] * vol;
-        volume += vol;
+        volume += std::abs(vol);
       }
     } else if (entity == AmanziMesh::NODE) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
