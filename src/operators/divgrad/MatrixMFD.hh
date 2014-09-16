@@ -252,6 +252,7 @@ class MatrixMFD : public CompositeMatrix {
 
   // preconditioner for Schur complement
   mutable Teuchos::RCP<AmanziPreconditioners::Preconditioner> S_pc_;
+  mutable Teuchos::RCP<AmanziPreconditioners::Preconditioner> Aff_pc_;
 
   // LinearOperator and Preconditioner for solving face system
   // Aff * x_f = r_Aff c - Afc * x_c for x_f

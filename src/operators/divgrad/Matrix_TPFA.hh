@@ -36,7 +36,7 @@ class Matrix_TPFA :  public MatrixMFD {
   virtual void CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVector>& Krel);
   // virtual void CreateMFDrhsVectors();
   virtual void SymbolicAssembleGlobalMatrices();
-  virtual void AssembleGlobalMatrices();
+  virtual void AssembleGlobalMatrices(){};
   virtual void ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
 				      const std::vector<double>& bc_values);
   virtual void ApplyBoundaryConditions(const std::vector<MatrixBC>& bc_markers,
@@ -100,9 +100,10 @@ class Matrix_TPFA :  public MatrixMFD {
  protected:
   mutable Teuchos::RCP<CompositeVector> Dff_;
   mutable Teuchos::RCP<Epetra_FECrsMatrix> Spp_;  // Explicit Schur complement
+  mutable Teuchos::RCP<Epetra_FECrsMatrix> Att_;  
   mutable Teuchos::RCP<Epetra_CrsMatrix> Afc_;
   mutable Teuchos::RCP<Epetra_CrsMatrix> Acf_;
-  mutable Teuchos::RCP<AmanziPreconditioners::Preconditioner> Aff_pc_;
+  //mutable Teuchos::RCP<AmanziPreconditioners::Preconditioner> Aff_pc_;
   bool cells_only_;
 
   Teuchos::RCP<Epetra_Vector> transmissibility_;

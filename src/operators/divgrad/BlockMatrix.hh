@@ -81,51 +81,16 @@ class BlockMatrix : public CompositeMatrix{
     int err = 0;
 
 
-    // Y = X;
+    i=0;
+    for (CompositeVector::name_iterator comp=X.begin(); comp!=X.end(); ++comp, ++i){
+    //for (CompositeVector::name_iterator comp=X.end(); comp!=X.begin(); --comp){
+      //--comp;
 
-    // return err;
-
-    // for (int i=0; i < blocks_pc.size(); i++){
-    //   if (blocks_pc[i] == Teuchos::null) {
-    // 	Errors::Message msg("BlockMFD::UpdatePreconditioner block is not initialized");
-    // 	Exceptions::amanzi_throw(msg);
-    //   }
-    //   blocks_pc[i]->Destroy();
-    //   blocks_pc[i]->Update(blocks[i]);
-    // }
-
-
-    // i=0;
-    // for (CompositeVector::name_iterator comp=X.begin(); comp!=X.end(); ++comp){
-    // //for (CompositeVector::name_iterator comp=X.end(); comp!=X.begin(); --comp){
-    //   //--comp;
-
-    //   const Epetra_MultiVector& temp_x = *(X.ViewComponent(*comp,false));
-    //   Epetra_MultiVector& temp_y = *(Y.ViewComponent(*comp,false));
-    //   std::cout<<i<<" "<<*comp<<"\n";
-    //   if (i==0){
-    // 	// cout<<temp_x<<"\n";
-    // 	// err = blocks_pc[i]->ApplyInverse(temp_x, temp_y);      
-    // 	// cout<<temp_y<<"\n";
-    //   }
-    //   else
-    // 	temp_y = temp_x;
-      
-    //   i++;
-    // }
-
-    const Epetra_MultiVector& temp_x = *(X.ViewComponent("cell",false));
-    Epetra_MultiVector& temp_y = *(Y.ViewComponent("cell",false));
-
-    err = blocks_pc[0]->ApplyInverse(temp_x, temp_y);      
-    //temp_y = temp_x;
-
-    const Epetra_MultiVector& temp_bf_x = *(X.ViewComponent("boundary_face", false));
-    Epetra_MultiVector& temp_bf_y = *(Y.ViewComponent("boundary_face", false));
-
-    //err = blocks_pc[1]->ApplyInverse(temp_bf_x, temp_bf_y);      
-    temp_bf_y = temp_bf_x;
-
+      const Epetra_MultiVector& temp_x = *(X.ViewComponent(*comp,false));
+      Epetra_MultiVector& temp_y = *(Y.ViewComponent(*comp,false));
+      //std::cout<<i<<" "<<*comp<<"\n";
+      err = blocks_pc[i]->ApplyInverse(temp_x, temp_y);      
+    }
 
     return err;
 
@@ -138,7 +103,7 @@ class BlockMatrix : public CompositeMatrix{
   }
   int GetNumberofBlocks(){ return blocks.size();}
 
-  void SetBlock(int i, Teuchos::RCP<Epetra_CrsMatrix> A){
+  void SetBlock(int i, Teuchos::RCP<Epetra_FECrsMatrix> A){
     ASSERT(i < blocks.size());
     blocks[i] = A;
   }
@@ -174,9 +139,11 @@ class BlockMatrix : public CompositeMatrix{
    // VectorSpace describing both domain and range
   Teuchos::RCP<CompositeVectorSpace> space_;
 
+  Teuchos::ParameterList prec_list;
+
   protected:
-  std::vector<Teuchos::RCP<Epetra_CrsMatrix> > blocks;
-  std::vector<Teuchos::RCP<AmanziPreconditioners::Preconditioner> > blocks_pc;
+  mutable std::vector<Teuchos::RCP<Epetra_FECrsMatrix> > blocks;
+  mutable std::vector<Teuchos::RCP<AmanziPreconditioners::Preconditioner> > blocks_pc;
 
 };
 
