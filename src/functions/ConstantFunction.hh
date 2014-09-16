@@ -9,7 +9,7 @@ class ConstantFunction : public Function {
  public:
   ConstantFunction(double c) : c_(c) {}
   ConstantFunction* Clone() const { return new ConstantFunction(*this); }
-  double operator() (const double* x) const { return c_; }
+  double operator()(const std::vector<double>& x) const { return c_; }
   
  private:
   double c_;

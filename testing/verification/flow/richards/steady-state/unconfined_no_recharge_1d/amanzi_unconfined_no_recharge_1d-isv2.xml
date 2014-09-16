@@ -43,7 +43,7 @@
 
 	<numerical_controls>
 	        <linear_solver>
-			<max_iterations>10</max_iterations>
+			<max_iterations>100</max_iterations>
 			<tolerance>1.0e-18</tolerance>
 		</linear_solver>
 	</numerical_controls>
@@ -254,7 +254,7 @@
 		</observations>
 
 		<vis>
-			<base_filename>steady-flow</base_filename>
+			<base_filename>steady-flow-isv2</base_filename>
 		  	<num_digits>5</num_digits>
 		  	<time_macro>Steady State</time_macro>
 		</vis>

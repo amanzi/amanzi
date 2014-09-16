@@ -10,6 +10,9 @@
  */
 
 #include "GeometricModel.hh"
+#include "dbc.hh"
+#include "errors.hh"
+#include "VerboseObject.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
@@ -24,8 +27,9 @@ namespace AmanziGeometry {
 
 // Constructor
 
-GeometricModel::GeometricModel(const unsigned int dim) : 
-    topo_dimension_(dim)
+  GeometricModel::GeometricModel(const unsigned int dim, 
+                                 const VerboseObject *verbobj) : 
+    topo_dimension_(dim), verbosity_obj_(verbobj)
 {
   if (dim != 2 && dim != 3) {
     std::cerr << "Only 2D and 3D domains are supported" << std::endl;
@@ -36,11 +40,10 @@ GeometricModel::GeometricModel(const unsigned int dim) :
 
 // Copy constructor
 
-GeometricModel::GeometricModel(const GeometricModel& old)
+GeometricModel::GeometricModel(const GeometricModel& old) :
+  topo_dimension_(old.dimension()), verbosity_obj_(old.verbosity_obj())
 {
   int i, nr;
-
-  topo_dimension_ = old.dimension();
 
   nr = old.Num_Regions();
 
@@ -53,13 +56,14 @@ GeometricModel::GeometricModel(const GeometricModel& old)
 
 GeometricModel::GeometricModel(const unsigned int dim,
                                Teuchos::ParameterList gm_params,
-                               const Epetra_MpiComm *comm) :
-    topo_dimension_(dim)
+                               const Epetra_MpiComm *comm,
+                               const VerboseObject *verbobj) :
+  topo_dimension_(dim), verbosity_obj_(verbobj)
 {
-
+  
   if (dim != 2 && dim != 3) {
-    std::cerr << "Only 2D and 3D domains are supported" << std::endl;
-    throw std::exception();
+    Errors::Message mesg("Only 2D and 3D domains are supported");
+    amanzi_throw(mesg);
   }
 
   const int region_id_offset = 59049; // arbitrary number to avoid clashing
@@ -95,8 +99,11 @@ GeometricModel::GeometricModel(const unsigned int dim,
           
               if (k > 1) 
                 {
-                  std::cerr << "ERROR: Region " << region_name << " described in multiple ways" << std::endl;
-                  throw std::exception();
+                  std::stringstream sstream;
+                  sstream << "ERROR: Region " << region_name << 
+                    " described in multiple ways";
+                  Errors::Message mesg(sstream.str());
+                  amanzi_throw(mesg);
                 }
 
 
@@ -109,7 +116,8 @@ GeometricModel::GeometricModel(const unsigned int dim,
               // Create the region
 
               Amanzi::AmanziGeometry::RegionPtr regptr = 
-                RegionFactory(region_name, region_id, reg_spec, comm);
+                RegionFactory(region_name, region_id, reg_spec, dim, comm,
+                              verbosity_obj());
               
               
               // Add it to the geometric model
@@ -121,8 +129,8 @@ GeometricModel::GeometricModel(const unsigned int dim,
         }
       else 
         {
-          std::cerr << ": error: Improper region specification" << std::endl;
-          throw std::exception();
+          Errors::Message mesg("Error: Improper region specification");
+          amanzi_throw(mesg);
         }
     }
 }
@@ -149,8 +157,9 @@ GeometricModel::~GeometricModel(void)
 // Constructor with Region List
 
 GeometricModel::GeometricModel(const unsigned int dim, 
-                               const std::vector<RegionPtr>& in_Regions) : 
-  topo_dimension_(dim)
+                               const std::vector<RegionPtr>& in_Regions,
+                               const VerboseObject *verbobj) : 
+  topo_dimension_(dim), verbosity_obj_(verbobj)
 {
   Regions.clear();
   Regions = in_Regions;
@@ -162,8 +171,8 @@ GeometricModel::GeometricModel(const unsigned int dim,
 void GeometricModel::Add_Region(const RegionPtr& regptr)
 {
   if (topo_dimension_ < regptr->dimension()) {
-    std::cerr << "Topological dimension of geometric model less than that of the region" << std::endl;
-    throw std::exception();
+    Errors::Message mesg("Topological dimension of geometric model less than that of the region");
+    amanzi_throw(mesg);
   }
 
   Regions.push_back(regptr);

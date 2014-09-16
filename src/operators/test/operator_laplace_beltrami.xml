@@ -39,11 +39,18 @@
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
-    <ParameterList name="diffusion operator">
-      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
+    <ParameterList name="diffusion operator Sff">
       <Parameter name="discretization primary" type="string" value="mfd scaled"/>
       <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator Scc">
+      <Parameter name="discretization primary" type="string" value="two point flux approximation"/>
+      <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
     </ParameterList>
   </ParameterList>
 

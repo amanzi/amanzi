@@ -118,24 +118,24 @@ def getElementByTagPath(elem, path):
 #     container = getElementByName(pl, containing_path)
 #     container.remove(container.getElement(subpath[-1]))
 
-# def searchAndReplaceByName(pl, changeset):
-#     """Search for a path and replace the value.
+def searchAndReplaceByName(pl, changeset):
+    """Search for a path and replace the value.
 
-#     Changeset is expected of the form:
-#       path/to/my/parameter=newvalue
+    Changeset is expected of the form:
+      path/to/my/parameter=newvalue
 
-#     or
-#       /abs/path/to/my/parameter=newvalue
-#     """
-#     split = changeset.split("=")
-#     if len(split) != 2:
-#         raise RuntimeError("Invalid changeset %s not of form path=val"%changeset)
+    or
+      /abs/path/to/my/parameter=newvalue
+    """
+    split = changeset.split("=")
+    if len(split) != 2:
+        raise RuntimeError("Invalid changeset %s not of form path=val"%changeset)
 
-#     path,val = tuple(split)
-#     if path.startswith("/"):
-#         elem = getElementByName(pl, path)
-#         elem.setValue(val)
-#     else:
-#         for elem in findElementNameGenerator(pl,path):
-#             elem.setValue(val)
+    path,val = tuple(split)
+    if path.startswith("/"):
+        elem = getElementByNamePath(pl, path)
+        elem.setValue(val)
+    else:
+        for elem in generateElementByNamePath(pl,path):
+            elem.setValue(val)
 

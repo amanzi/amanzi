@@ -27,9 +27,14 @@ class Solver {
 
   virtual int Solve(const Teuchos::RCP<Vector>& u) = 0;
 
+  // mutators
+  virtual void set_tolerance(double tol) = 0;
+  virtual void set_pc_lag(double pc_lag) = 0;
+
+  // access 
+  virtual double tolerance() = 0;
   virtual double residual() = 0;
   virtual int num_itrs() = 0;
-  virtual void set_pc_lag(double pc_lag) = 0;
   virtual int returned_code() = 0;
 };
 

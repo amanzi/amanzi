@@ -84,17 +84,26 @@ Advection::FluxDivergence(const FArrayBox& CoCC, FArrayBox& CnCC,       int Ccom
   for (int i=0; i<nc; ++i) {
     F.copy(FsCC,Fscomp,i,1);
     F.mult(CoCC,Ccomp+i,i,1);
+    F.mult(-1,i,1);
     F.plus(FcCC,Fccomp+i,i,1);
     F.mult(capInv,0,i,1);
   }
   const Real* F_dat = F.dataPtr();
   int is_cons = is_conservative ? 1 : 0;
 
-  BDS_EDGE_STATES(co_dat, &Cng, ci_dat, &nGrowF, cex_dat, cey_dat, &Flng, u_dat, v_dat, &Ung, F_dat, &Fcng, 
+#if BL_SPACEDIM == 3
+  Real*       cez_dat = FluxEC[2].dataPtr(Flcomp);
+  const Real* w_dat   = UEC[2].dataPtr(Ucomp);
+  const Real* az_dat  = AEC[2].dataPtr();
+#endif
+
+  BDS_EDGE_STATES(co_dat, &Cng, ci_dat, &nGrowF, D_DECL(cex_dat, cey_dat, cez_dat), &Flng,
+                  D_DECL(u_dat, v_dat, w_dat), &Ung, F_dat, &Fcng, 
                   slope_dat, &nGrowF, &NWORK, dx, &dt, &nc, &is_cons, vbox.loVect(), vbox.hiVect(), bc);
 
-  ADV_FDIV(aofs_dat, &FDivng, cex_dat, cey_dat, &Flng,
-           u_dat, v_dat, &Ung, ax_dat, ay_dat, vol_dat, &nc, vbox.loVect(), vbox.hiVect());
+  ADV_FDIV(aofs_dat, &FDivng, D_DECL(cex_dat, cey_dat, cez_dat), &Flng,
+           D_DECL(u_dat, v_dat, w_dat), &Ung, D_DECL(ax_dat, ay_dat, az_dat), vol_dat, &nc, vbox.loVect(), vbox.hiVect());
+
 }
 
 void
@@ -140,5 +149,9 @@ Advection::EstimateMaxEigenvalues(const FArrayBox&        SatCC, int Scomp, int 
   const Real* vmac_dat = Uy.dataPtr(Ucomp);
   const Real* phi_dat  = PhiCC.dataPtr();
 
-  BDS_EST_EIGEN(s_dat,&Satng,umac_dat,vmac_dat,&Ung,phi_dat,&Phing,vbox.loVect(),vbox.hiVect(),eigmax);
+#if BL_SPACEDIM == 3
+  const Real* wmac_dat = Uz.dataPtr(Ucomp);
+#endif
+
+  BDS_EST_EIGEN(s_dat,&Satng,D_DECL(umac_dat,vmac_dat,wmac_dat),&Ung,phi_dat,&Phing,vbox.loVect(),vbox.hiVect(),eigmax);
 }

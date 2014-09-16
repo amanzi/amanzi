@@ -202,7 +202,7 @@ subroutine bds_edge_states(s,ng_s,ci,ng_ci,sedgex,sedgey,ng_se,umac,vmac,ng_u,fo
         else
            joff = 0
         endif
-        vmac(i,j) = vmac(i,j) * ci(i,j+ioff)
+        vmac(i,j) = vmac(i,j) * ci(i,j+joff)
      end do
   end do
 
@@ -237,7 +237,7 @@ subroutine bds_edge_states(s,ng_s,ci,ng_ci,sedgex,sedgey,ng_se,umac,vmac,ng_u,fo
         else
            joff = 0
         endif
-        vmac(i,j) = vmac(i,j) / ci(i,j+ioff)
+        vmac(i,j) = vmac(i,j) / ci(i,j+joff)
      end do
   end do
 

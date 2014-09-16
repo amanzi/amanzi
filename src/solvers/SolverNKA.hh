@@ -26,13 +26,13 @@ template<class Vector, class VectorSpace>
 class SolverNKA : public Solver<Vector,VectorSpace> {
  public:
   SolverNKA(Teuchos::ParameterList& plist) :
-      plist_(plist) {}
+      plist_(plist) {};
 
   SolverNKA(Teuchos::ParameterList& plist,
             const Teuchos::RCP<SolverFnBase<Vector> >& fn,
             const VectorSpace& map) :
       plist_(plist) {
-    Init(fn,map);
+    Init(fn, map);
   }
 
   void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
@@ -43,10 +43,12 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
     return (returned_code_ >= 0) ? 0 : 1;
   }
 
-  // control
+  // mutators
+  void set_tolerance(double tol) { tol_ = tol; }
   void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
 
   // access
+  double tolerance() { return tol_; }
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
   int pc_calls() { return pc_calls_; }
@@ -109,7 +111,7 @@ void SolverNKA<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
-  overflow_l2_tol_ = plist_.get<double>("diverged l2 tolerance", 1.0e5);
+  overflow_l2_tol_ = plist_.get<double>("diverged l2 tolerance", 1.0e10);
   max_itrs_ = plist_.get<int>("limit iterations", 20);
   max_du_growth_factor_ = plist_.get<double>("max du growth factor", 1.0e5);
   max_error_growth_factor_ = plist_.get<double>("max error growth factor", 1.0e5);
@@ -251,10 +253,10 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
       double u_norm2, du_norm2;
       u->Norm2(&u_norm2);
       du->Norm2(&du_norm2);
-      if (du_norm2 > overflow_l2_tol_ * u_norm2) {
+      if (u_norm2 > 0 && du_norm2 > overflow_l2_tol_ * u_norm2) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
            *vo_->os() << "terminating due to L2-norm overflow ||du||=" << du_norm2
-                      << ", ||du||=" << u_norm2 << std::endl;
+                      << ", ||u||=" << u_norm2 << std::endl;
         return SOLVER_OVERFLOW;
       }
     }

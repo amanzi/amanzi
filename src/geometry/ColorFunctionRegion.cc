@@ -30,8 +30,9 @@ ColorFunctionRegion::ColorFunctionRegion(const std::string name,
                                          const std::string file,
                                          const int value,
                                          const Epetra_MpiComm *comm,
-                                         const LifeCycleType lifecycle)
-  : Region(name,id,3,lifecycle),
+                                         const LifeCycleType lifecycle,
+                                         const VerboseObject *verbobj)
+  : Region(name,id,3,lifecycle,verbobj),
     file_(file), value_(value)
 {
   // Region dimension is set arbitrarily as 3 since the set of
@@ -52,8 +53,9 @@ ColorFunctionRegion::ColorFunctionRegion(const char *name,
                                          const char *file,
                                          const int value,
                                          const Epetra_MpiComm *comm,
-                                         const LifeCycleType lifecycle)
-  : Region(name,id,3,lifecycle),
+                                         const LifeCycleType lifecycle,
+                                         const VerboseObject *verbobj)
+  : Region(name,id,3,lifecycle,verbobj),
     file_(file), value_(value)
 {
   // Region dimension is set arbitrarily as 3 since the set of
@@ -90,7 +92,11 @@ ColorFunctionRegion::inside(const Point& p) const
     return (color == value_);
   }
   catch (Errors::Message &msg) {
-    std::cerr << msg.what() << std::endl;
+    const VerboseObject *verbobj = Region::verbosity_obj();
+    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = verbobj->getOSTab();
+      *(verbobj->os()) << msg.what() << std::endl;
+    }
     return false;
   }
 }

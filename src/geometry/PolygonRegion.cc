@@ -25,17 +25,19 @@ namespace AmanziGeometry {
 PolygonRegion::PolygonRegion(const std::string name, const unsigned int id,
                              const unsigned int num_points, 
                              const std::vector<Point>& points,
-                             const LifeCycleType lifecycle)
-  : Region(name,id,points[0].dim(),lifecycle), num_points_(num_points), 
+                             const LifeCycleType lifecycle,
+                             const VerboseObject *verbobj)
+  : Region(name,id,points[0].dim(),lifecycle,verbobj), num_points_(num_points), 
     points_(points),normal_(points[0].dim()),elim_dir_(0)
 {
   init();
 }
 
 PolygonRegion::PolygonRegion(const char *name, const unsigned int id,
-                 const unsigned int num_points,
-                 const std::vector<Point>& points,
-                 const LifeCycleType lifecycle)
+                             const unsigned int num_points,
+                             const std::vector<Point>& points,
+                             const LifeCycleType lifecycle,
+                             const VerboseObject *verbobj)
   : Region(name,id,points[0].dim(),lifecycle), num_points_(num_points), 
     points_(points),normal_(points[0].dim()),elim_dir_(0)
 {
@@ -44,7 +46,7 @@ PolygonRegion::PolygonRegion(const char *name, const unsigned int id,
 
 PolygonRegion::PolygonRegion(const PolygonRegion& old)
   : Region(old), num_points_(old.num_points_), points_(old.points_),
-  normal_(old.normal_), elim_dir_(old.elim_dir_)
+    normal_(old.normal_), elim_dir_(old.elim_dir_)
 {
   // empty
 }
@@ -61,16 +63,25 @@ void PolygonRegion::init() {
     tempstr << "\nDimension " << dimension() << 
       " regions need to be specified by at least " << dimension() << 
       " points\n";
+
+    const VerboseObject *verbobj = Region::verbosity_obj();
+    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tag = verbobj->getOSTab();
+      *(verbobj->os()) << tempstr;
+    }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
   }
-#ifdef ENABLE_DBC
+
   if (dimension() == 2 && num_points_ > 2) {
-    std::cerr << "\nDimension " << dimension() << 
-      " regions specified by more points (" << num_points_ << ") than needed\n";
-    std::cerr << "Using only the first two\n";
+    const VerboseObject *verbobj = Region::verbosity_obj();
+    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tag = verbobj->getOSTab();
+      *(verbobj->os()) << "\nDimension " << dimension() << 
+        " regions specified by more points (" << num_points_ << ") " <<
+        "than needed\n" << "Using only the first two\n";
+    }
   }
-#endif
   
   if (dimension() == 2) {
     Point vec = points_[1] - points_[0];
@@ -94,6 +105,12 @@ void PolygonRegion::init() {
 
       double dp = nrml*normal_;
       if (fabs(dp-1.0) > 1.0e-06) {
+        const VerboseObject *verbobj = Region::verbosity_obj();
+        if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tag = verbobj->getOSTab();
+          *(verbobj->os()) << "Polygon region is not exactly planar" << 
+            std::endl;
+        }
         Errors::Message mesg("Polygon region is not exactly planar");
         Exceptions::amanzi_throw(mesg);
       }
@@ -116,15 +133,18 @@ void PolygonRegion::init() {
        
     elim_dir_ = dmax;
   }
-
-#ifdef ENABLE_DBC
   else {
     std::stringstream tempstr;
     tempstr << "Cannot handle regions of dimension " << dimension() << "\n";
+    
+    const VerboseObject *verbobj = Region::verbosity_obj();
+    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = verbobj->getOSTab();
+      *(verbobj->os()) << tempstr;
+    }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
   }
-#endif
 }
 
 // -------------------------------------------------------------
@@ -138,6 +158,12 @@ PolygonRegion::inside(const Point& p) const
   if (p.dim() != points_[0].dim()) {
     std::stringstream tempstr;
     tempstr << "\nMismatch in corner dimension of Polygon \"" << Region::name() << "\" and query point.\n Perhaps the region is improperly defined?\n";
+
+    const VerboseObject *verbobj = Region::verbosity_obj();
+    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = verbobj->getOSTab();
+      *(verbobj->os()) << tempstr;
+    }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
   }

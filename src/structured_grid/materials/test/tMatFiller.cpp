@@ -412,9 +412,10 @@ main (int   argc,
 
   bool fail = false;
 
-  int nout = 1;
+  int nout = 2;
   Array<std::string> propNames(nout);
   propNames[0] = "porosity";
+  propNames[1] = "mat";
 
   Real t = 1.5;
   PArray<MultiFab> data(nLevs,PArrayManage);
@@ -429,7 +430,7 @@ main (int   argc,
     }
     ba.maxSize(64);
     data.set(lev, new MultiFab(ba,nout,0));
-    for (int n=0; n<nout; ++n) {
+    for (int n=0; n<nout-1; ++n) {
       bool ret = matFiller.SetProperty(t,lev,data[lev],propNames[n],n,0);
       fail |= !ret;
     }
@@ -437,18 +438,25 @@ main (int   argc,
 
   Array<Real> bins(materials.size(),0);
   for (int lev=0; lev<nLevs; ++lev) {
+    int fac = 1;
+    for (int k=lev; k<nLevs-1; ++k) {    
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        fac *= refRatio[k][d];
+      }
+    }
     iMultiFab mat(data[lev].boxArray(),1,0);
     matFiller.SetMaterialID(lev,mat,0);
     for (MFIter mfi(data[lev]); mfi.isValid(); ++mfi) {
       const Box& vbox = mfi.validbox();
-      const FArrayBox& fab = data[lev][mfi];
+      FArrayBox& fab = data[lev][mfi];
       const IArrayBox& id = mat[mfi];
       for (IntVect iv=vbox.smallEnd(), BIG=vbox.bigEnd(); iv<=BIG; vbox.next(iv)) {
 	int bin = (int) id(iv,0);
 	int val = fab(iv,0);
 	if (bin>=0) {
-	  bins[bin] += val;
+	  bins[bin] += val * fac;
 	}
+        fab(iv,nout-1) = bin;
       }
     }
   }
@@ -456,24 +464,34 @@ main (int   argc,
   ParallelDescriptor::ReduceRealSum(bins.dataPtr(),bins.size());
 
   if (case_size=="small") {
-    Real trueRes[2] = {4, 30};
+    Real trueRes[2] = {4, 120};
       bool success1 = true;
       for (int i=0; i<bins.size(); ++i) {
         success1 &= (bins[i] == trueRes[i]);
       }
       fail = !success1;
   }
-  else {
-    if (case_size=="large") {
-      Real trueRes[5] = {3774776, 79086, 5757, 1499236, 9685};
-      bool success1 = true;
-      for (int i=0; i<bins.size(); ++i) {
-        success1 &= (bins[i] == trueRes[i]);
-      }
-      fail = !success1;
+  else if (case_size=="medium") {
+    Real trueRes[5] = {221184, 4940, 120, 88264, 0};
+    bool success1 = true;
+    for (int i=0; i<bins.size(); ++i) {
+      success1 &= (bins[i] == trueRes[i]);
     }
-    else {
-      fail = true;
+    fail = !success1;
+  }
+  else if (case_size=="large") {
+    Real trueRes[5] = {13983184, 122646, 7125, 4622388, 9685};
+    bool success1 = true;
+    for (int i=0; i<bins.size(); ++i) {
+      success1 &= (bins[i] == trueRes[i]);
+    }
+    fail = !success1;
+  }
+  else if (case_size=="large") {
+    Real trueRes[5] = {13983184, 122646, 7125, 4622388, 9685};
+    bool success1 = true;
+    for (int i=0; i<bins.size(); ++i) {
+      success1 &= (bins[i] == trueRes[i]);
     }
   }
 
@@ -484,126 +502,90 @@ main (int   argc,
   t = 2.5;
 
   for (int lev=nLevs-1; lev>=0 && !fail; --lev) {
-    for (int n=0; n<nout; ++n) {
+    for (int n=0; n<nout-1; ++n) {
       bool ret = matFiller.SetProperty(t,lev,data[lev],propNames[n],n,0);
       fail |= !ret;
     }
   }
 
-  if (!fail) {
-    for (int lev=0; lev<nLevs; ++lev) {
-      iMultiFab mat(data[lev].boxArray(),1,0);
-      matFiller.SetMaterialID(lev,mat,0);
-
-      for (MFIter mfi(data[lev]); mfi.isValid(); ++mfi) {
-        const Box& vbox = mfi.validbox();
-        const FArrayBox& fab = data[lev][mfi];
-        const IArrayBox& id = mat[mfi];
-        for (IntVect iv=vbox.smallEnd(), BIG=vbox.bigEnd(); iv<=BIG; vbox.next(iv)) {
-          int bin = (int) id(iv,0);
-          int val = fab(iv,0);
-          if (bin>=0) {
-            bins[bin] += val;
-          }
-        }
-      }
-    }
-
-    ParallelDescriptor::ReduceRealSum(bins.dataPtr(),bins.size());
-
-    if (case_size=="small") {
-      Real trueRes[2] = {4, 30};
-      bool success1 = true;
-      for (int i=0; i<bins.size(); ++i) {
-        success1 &= (bins[i] == trueRes[i]);
-      }
-      fail = !success1;
-    }
-    else {
-      if (case_size=="large") {
-        Real trueRes[5] = {3774776, 79086, 5757, 1499236, 11622};
-        bool success1 = true;
-        for (int i=0; i<bins.size(); ++i) {
-          success1 &= (bins[i] == trueRes[i]);
-        }
-        fail = !success1;
-      }
-      else {
-        fail = true;
-      }
-    }
-
-    if (verbose) {
-      // Write out result to pltfile
-      std::string pfversion = "MaterialData-0.2";
-      Array<Box> pDomain(nLevs);
-      Array<Array<Real> > dxLevel(nLevs,Array<Real>(BL_SPACEDIM));
-      for (int i=0; i<nLevs; ++i) {
-        pDomain[i] = geomArray[i].Domain();
-        for (int d=0; d<BL_SPACEDIM; ++d) {
-          dxLevel[i][d] = geomArray[i].CellSize()[d];
-        }
-      }
-      int coordSys = (int)CoordSys::Coord();
-      std::string outFileName = "pltfile";
-      bool pl_verbose = false;
-      bool isCartGrid = false;
-      Array<Real> vfeps(nLevs,1.e-10);
-      Array<int> levelSteps(nLevs,0);
-    
-      WritePlotfile(pfversion,data,t,Geometry::ProbLo(),Geometry::ProbHi(),
-                    rRatio,pDomain,dxLevel,coordSys,outFileName,propNames,
-                    pl_verbose,isCartGrid,vfeps.dataPtr(),levelSteps.dataPtr());
-    }
-    ParallelDescriptor::Barrier();
+  if (fail) {
+    BoxLib::Abort();
   }
-  else {
-    if (case_size=="large") {
-      Real trueRes[5] = {3774776, 79086, 5757, 1499236, 11622};
-      bool success1 = true;
-      for (int i=0; i<bins.size(); ++i) {
-        success1 &= (bins[i] == trueRes[i]);
-      }
-      fail = !success1;
-    }
-    else {
-      if (case_size=="large") {
-        Real trueRes[5] = {3774776, 79086, 5757, 1499236, 11622};
-        bool success1 = true;
-        for (int i=0; i<bins.size(); ++i) {
-          success1 &= (bins[i] == trueRes[i]);
-        }
-        fail = !success1;
-      }
-      else {
-        fail = true;
-      }
-    }
 
-    if (verbose) {
-      // Write out result to pltfile
-      std::string pfversion = "MaterialData-0.2";
-      Array<Box> pDomain(nLevs);
-      Array<Array<Real> > dxLevel(nLevs,Array<Real>(BL_SPACEDIM));
-      for (int i=0; i<nLevs; ++i) {
-        pDomain[i] = geomArray[i].Domain();
-        for (int d=0; d<BL_SPACEDIM; ++d) {
-          dxLevel[i][d] = geomArray[i].CellSize()[d];
+  for (int lev=0; lev<nLevs; ++lev) {
+    int fac = 1;
+    for (int k=lev; k<nLevs-1; ++k) {    
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        fac *= refRatio[k][d];
+      }
+    }
+    iMultiFab mat(data[lev].boxArray(),1,0);
+    bool ignore_mixed = false;
+    matFiller.SetMaterialID(lev,mat,ignore_mixed);
+    for (MFIter mfi(data[lev]); mfi.isValid(); ++mfi) {
+      const Box& vbox = mfi.validbox();
+      const FArrayBox& fab = data[lev][mfi];
+      const IArrayBox& id = mat[mfi];
+      for (IntVect iv=vbox.smallEnd(), BIG=vbox.bigEnd(); iv<=BIG; vbox.next(iv)) {
+        int bin = (int) id(iv,0);
+        int val = fab(iv,0);
+        if (bin>=0) {
+          bins[bin] += val * fac;
         }
       }
-      int coordSys = (int)CoordSys::Coord();
-      std::string outFileName = "pltfile";
-      bool pl_verbose = false;
-      bool isCartGrid = false;
-      Array<Real> vfeps(nLevs,1.e-10);
-      Array<int> levelSteps(nLevs,0);
-    
-      WritePlotfile(pfversion,data,t,Geometry::ProbLo(),Geometry::ProbHi(),
-                    rRatio,pDomain,dxLevel,coordSys,outFileName,propNames,
-                    pl_verbose,isCartGrid,vfeps.dataPtr(),levelSteps.dataPtr());
     }
-    ParallelDescriptor::Barrier();
   }
+
+  ParallelDescriptor::ReduceRealSum(bins.dataPtr(),bins.size());
+
+  if (case_size=="small") {
+    Real trueRes[2] = {4, 120};
+    bool success1 = true;
+    for (int i=0; i<bins.size(); ++i) {
+      success1 &= (bins[i] == trueRes[i]);
+    }
+    fail = !success1;
+  }
+  else if (case_size=="medium") {
+    Real trueRes[5] = {221184, 4940, 120, 88264, 0};
+    bool success1 = true;
+    for (int i=0; i<bins.size(); ++i) {
+      success1 &= (bins[i] == trueRes[i]);
+    }
+    fail = !success1;
+  }
+  else if (case_size=="large") {
+    Real trueRes[5] = {13983184, 122646, 7125, 4622388, 11622};
+    bool success1 = true;
+    for (int i=0; i<bins.size(); ++i) {
+      success1 &= (bins[i] == trueRes[i]);
+    }
+    fail = !success1;
+  }
+    
+  if (verbose) {
+    // Write out result to pltfile
+    std::string pfversion = "MaterialData-0.2";
+    Array<Box> pDomain(nLevs);
+    Array<Array<Real> > dxLevel(nLevs,Array<Real>(BL_SPACEDIM));
+    for (int i=0; i<nLevs; ++i) {
+      pDomain[i] = geomArray[i].Domain();
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        dxLevel[i][d] = geomArray[i].CellSize()[d];
+      }
+    }
+    int coordSys = (int)CoordSys::Coord();
+    std::string outFileName = "pltfile";
+    bool pl_verbose = false;
+    bool isCartGrid = false;
+    Array<Real> vfeps(nLevs,1.e-10);
+    Array<int> levelSteps(nLevs,0);
+    
+    WritePlotfile(pfversion,data,t,Geometry::ProbLo(),Geometry::ProbHi(),
+                  rRatio,pDomain,dxLevel,coordSys,outFileName,propNames,
+                  pl_verbose,isCartGrid,vfeps.dataPtr(),levelSteps.dataPtr());
+  }
+  ParallelDescriptor::Barrier();
 
   DestroyMaterials();
   DestroyRegions();

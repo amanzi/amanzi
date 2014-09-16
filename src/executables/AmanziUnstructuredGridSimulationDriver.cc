@@ -26,6 +26,9 @@
 
 #include "TimerManager.hh"
 
+// includes for PK registration
+#include "pks_flow_registration.hh"
+#include "pks_transport_registration.hh"
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
@@ -54,7 +57,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Teuchos::ParameterList sub_list;
   
   if (! native) {
-    new_list = Amanzi::AmanziInput::translate(&input_parameter_list, comm->NumProc());
+    new_list = Amanzi::AmanziInput::Translate(&input_parameter_list, comm->NumProc());
 
     std::string verbosity = input_parameter_list.sublist("Execution Control").get<std::string>("Verbosity","Low");
     
@@ -99,6 +102,11 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   //------------ DOMAIN, GEOMETRIC MODEL, ETC ----------------------------
 
+  // Create a VerboseObject to pass to the geometric model class 
+
+  Amanzi::VerboseObject *gmverbobj = 
+    new Amanzi::VerboseObject("Geometric Model",new_list);
+
   // Create the simulation domain
   Amanzi::timer_manager.add("Geometric Model creation",Amanzi::Timer::ONCE);
   Amanzi::timer_manager.start("Geometric Model creation");
@@ -140,11 +148,16 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Amanzi::timer_manager.add("Mesh creation",Amanzi::Timer::ONCE);
   Amanzi::timer_manager.start("Mesh creation");
 
+  // Create a Verbose object to pass to the mesh_factory and mesh
+
+  Amanzi::VerboseObject *meshverbobj = 
+    new Amanzi::VerboseObject("Mesh",new_list);
+
   // Create a mesh factory for this geometric model
-  Amanzi::AmanziMesh::MeshFactory factory(comm) ;
+  Amanzi::AmanziMesh::MeshFactory factory(comm,meshverbobj) ;
 
   // Prepare to read/create the mesh specification
-   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   // get the Mesh sublist
   ierr = 0;

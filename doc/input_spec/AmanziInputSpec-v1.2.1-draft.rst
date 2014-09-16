@@ -293,7 +293,7 @@ Usage:
 
      * [U] `"Discretization Method`" [string]: Specifies the spatial discretization 
        method. The Available options are: `"mfd scaled`", `"optimized mfd scaled`"
-       (default), `"two-point flux approximation`", and `"support operator`".
+       (default), `"two point flux approximation`", and `"support operator`".
        The second option is recommended for orthogonal meshes and diagonal absolute permeability.
 
      * [U] `"Relative Permeability`" [string]: Defines a method for calculating the *upwinded*
@@ -339,11 +339,17 @@ Usage:
 
      * [U] `"steady nonlinear iteration divergence factor`" [double] If during the nonlinear solve, the inf norm of the nonlinear update is larger by this factor than the inf norm of the update in the prior iteration, we abort the nonlinear solve to protect against a runaway divergent iteration that causes numerical overflow. As a result the current time step will repeated with a smaller delta T. (default: `"1000.0`", suggested range: 100.0 ... 10000.0)
 
+     * [U] `"steady restart tolerance relaxation factor`" [double] when the time integrator is started, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several time steps. The parameter `"steady restart tolerance relaxation factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"steady nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every time step, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator start, the actual tolerance equals ntol, again. The default for this paramameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. (default: `"1.0`", suggested range: 1.0 ... 1000.0)
+
+     * [U] `"steady restart tolerance relaxation factor damping`" [double] see `"steady nonlinear iteration initial timestep factor`" for a detailed explanation of this parameter. (default: `"1.0`", suggested range: 0.001 ... 1.0)
+
      * [U] `"steady preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
      * [U] `"steady initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"true`")  
 
-   * [U] `"Transient Implicit Time Integration`" [list] Parameters for BDF1 time integration to reach steady-state
+     * [U] `"steady nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new time step is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
+
+   * [U] `"Transient Implicit Time Integration`" [list] Parameters for BDF1 transient time integration 
 
      * [U] `"transient max iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"transient time step reduction factor"`. (default: `"15`", suggested range: 10 ... 20)
 
@@ -375,8 +381,10 @@ Usage:
 
      * [U] `"transient initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"false`") 
 
+     * [U] `"transient nonlinear iteration initial guess extrapolation order`" [int] defines how the initial guess (predictor) for a new time step is calculated. If set to zero, the previous solution is used as the initial guess. (default: 1)  
 
-   * [U] `"Steady-State Psuedo-Time Implicit Solver`" [list] Parameters for Damped Picard iteration to reach steady-state
+
+   * [U] `"Steady-State Pseudo-Time Implicit Solver`" [list] Parameters for Damped Picard iteration to reach steady-state
 
      * [U] `"pseudo time integrator initialize with darcy`" [bool] Initialize the pseudo time integrator (Picard) with a Darcy solution. (default: `"true`")
 
@@ -411,6 +419,10 @@ Usage:
    * [U] `"Nonlinear Solver`" [list] Parameters for the nonlinear solver used in time-integration.
 
      * [U] `"Nonlinear Solver Type`" [string] select the nonlinear solver type from `"NKA`", `"Newton`", and `"inexact Newton`".
+
+     * [U] `"modify correction`" [bool] allows a process kernel to modify correction to a solution.(default: `"false`")
+
+     * [U] `"update upwind frequency`" [string] define frequency of the updates for upwind direction: `"every nonlinear iteration`", `"every timestep`".(default: `"every timestep`")
 
    * [U] `"Preconditioners`" [list] Parameters to control the linear solver algorithms used in the preconditioner.
 
@@ -995,23 +1007,23 @@ the following set of physical properties using the supported models described be
     * [SU] `"Mineral Name`" [list] Name of a mineral from the phase definitions "Minerals" list.
 
       * [SU] `"Volume Fraction`" (double) [-] Uniform over the assigned region, constant in time (default: 0.0).
-      * [SU] `"Specific Surface Area`" (double) [units?] Uniform over the assigned region, constant in time (default: 0.0).
+      * [SU] `"Specific Surface Area`" (double) [m^2 / m^3 bulk] Uniform over the assigned region, constant in time (default: 0.0).
 
   * [SU] `"Surface Complexation Sites`" [list]
 
     * [SU] `"Site Name`" [list] Name of a site from the phase definitions "Sorption Sites" list.
 
-      * [SU] `"Site Density`" (double) [units?] Uniform over the assigned region, constant in time (default: 0.0)
+      * [SU] `"Site Density`" (double) [mol / m^3 bulk] Uniform over the assigned region, constant in time (default: 0.0)
 
-  * [SU] `"Cation Exchange Capacity`" (double) Uniform over the assigned region, constant in time (default: 0.0)
+  * [SU] `"Cation Exchange Capacity`" (double) [equivalent / m^3 bulk] Uniform over the assigned region, constant in time (default: 0.0)
 
   * [SU] `"Sorption Isotherms`" [list]
 
     * [SU] `"Solute Name`" [list] The name of one of the solutes from the phase definitions "Component Solutes" list.
  
-      * [SU] `"Kd`" (double) distribution coefficient for this solute on this material (default: 0.0)
-      * [SU] `"Langmuir b`" (double) Langmuir isotherm "b" coefficient, optional parameter (default: 0.0)
-      * [SU] `"Freundlich n`" (double) Freundlich isotherm "n" coefficient, optional parameter (default to 1.0).
+      * [SU] `"Kd`" (double) [Kg H2O / m^3 bulk] molality-based distribution coefficient for this solute on this material (default: 0.0). If Kd is available in the more conventional units of mL/g or L/Kg, one needs to multiply that value by the water density [Kg water/L] and bulk density [Kg/m3 bulk]. Note: `"Kd`" is also used to enter the distribution coefficient in the Langmuir and Freundlich models. In the empirical Freundlich model, units will depend on the choice of n, i.e. [ mol^n / (m^3 bulk * Kg H2O)^n) ] . In the Langmuir model, units will be in [L H2O / mol]
+      * [SU] `"Langmuir b`" (double) [mol/m^3 bulk] Langmuir isotherm "b" coefficient, optional parameter (default: 0.0)
+      * [SU] `"Freundlich n`" (double) [-] Freundlich isotherm "n" coefficient, optional parameter (default to 1.0).
 
   Assigned regions are typically specified last:
 
@@ -1312,7 +1324,7 @@ Next, we specify boundary conditions.  Again, support is provided for specifying
 
  * [SU] BC [list] label for a boundary condition, accepts boundary condition function names, and parameters to specify assigned regions and solute boundary conditions
 
-  * [SU see below] Function [list] Parameterized model to specify boundary conditions.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Linear Pressure`", `"BC: Uniform Saturation`", `"BC: Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
+  * [SU see below] Function [list] Parameterized model to specify boundary conditions.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Linear Pressure`", `"BC: Uniform Saturation`", `"BC: Hydrostatic`", `"BC: Linear Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
 
   * [SU] `"Assigned Regions`" [Array(string)] list of regions to which this condition is assigned
 
@@ -1346,11 +1358,11 @@ The following initial condition parameterizations are supported:
 
 * [SU] `"IC: Uniform Saturation`" requires `"Value`" [double] OR `"Geochemical Condition`" [string] if Alquimia is providing initial conditions.
 
-* [U] `"IC: Linear Saturation`" requires `"Reference Coordinate`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
+* [U] `"IC: Linear Saturation`" requires `"Reference Point`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
 
 * [U] `"IC: Uniform Pressure`" requires `"Value`" [double]
 
-* [SU] `"IC: Linear Pressure`" requires `"Reference Coordinate`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
+* [SU] `"IC: Linear Pressure`" requires `"Reference Point`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
 
 * [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array(double)).
 
@@ -1365,11 +1377,11 @@ The following boundary condition parameterizations are supported:
 * [SU] `"BC: Flux`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] 
   (see the note below) and one of the following: 
 
-    * []  `"Inward Volumetric Flux`" [Array(double)], 
+    * [U]  `"Inward Volumetric Flux`" [Array(double)], 
 
     * [SU] `"Inward Mass Flux`" [Array(double)], 
 
-    * []  `"Outward Volumetric Flux`" [Array(double)], or
+    * [U]  `"Outward Volumetric Flux`" [Array(double)], or
 
     * [SU] `"Outward Mass Flux`" [Array(double)]. 
 
@@ -1386,15 +1398,20 @@ The following boundary condition parameterizations are supported:
 
 * [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [SU] `"BC: Linear Pressure`" [list] requires `"Reference Value`" [double] `"Reference Coordinates`" [Array(double)] `"Gradient`" [Array(double)]
+* [SU] `"BC: Linear Pressure`" [list] requires `"Reference Value`" [double] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
 
 * [S] `"BC: Uniform Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* `"BC: Linear Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Reference Values`" [Array(double)] `"Reference Coordinates`" [Array(double)] `"Gradient`" [Array(double)]
+* `"BC: Linear Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Reference Values`" [Array(double)] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
 
 * [U] `"BC: Seepage`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and one of `"Inward Mass Flux`" [Array(double)] or `"Inward Volumetric Flux`" [Array(double)].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
+    * [U] "rainfall" [bool] indicates that the mass flux is defined with respect
+      to the gravity vector and the actual influx depends on boundary
+      slope (default value is "false").
 
-* [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array(double)] (see below)
+* [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Coordinate System`" [string] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"), `"Submodel`" [string] (available option is `"No Flow Above Water Table`", this parameter is optional with a default of `"None`"), and `"Water Table Height`" [Array(double)] (see below)
+
+* [U] `"BC: Linear Hydrostatic`" [list] requires `"Reference Water Table Height`" [double] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
 
 * `"BC: Impermeable`"  requires no parameters
 
@@ -1417,14 +1434,14 @@ The following source parameterizations are supported.
 
 * [U] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [U] `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
+* [U] `"Source: Uniform Concentration`" [mol/s/m^3] uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
 
   * `"Times`" [Array(double)], list of times used by the time function.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
   * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
   * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
 
-* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`"
+* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`". Units are either [mol/m^3/s] or [mol/s] depending on definition of the flow source.
 
   * `"Times`" [Array(double)], list of times used by the time function.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
@@ -2266,7 +2283,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              <ParameterList name="IC: Linear Pressure">
                <Parameter name="Phase" type="string" value="Aqueous"/>
                <Parameter name="Reference Value" type="double" value="101325."/>
-               <Parameter name="Reference Coordinate" type="Array(double)" value="{0., 0., 0.}"/>
+               <Parameter name="Reference Point" type="Array(double)" value="{0., 0., 0.}"/>
                <!-- GEH: Units of gradient are Pa/m = rho*g = 998.32 kg/m^3 * 9.81 m/s^2-->
                <Parameter name="Gradient Value" type="Array(double)" value="{0., 0., -9793.5192}"/>
              </ParameterList>

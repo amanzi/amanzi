@@ -218,7 +218,7 @@ if __name__ == "__main__":
            x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
            Ca_amanzi_native = Ca_amanzi_native +[c_amanzi_native]
 
-        comp = 'free_ion_species.cell.0'
+        comp = 'free_ion_species.cell.H+'
         pH_amanzi_native = []
         for i, time in enumerate(times):
            x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
@@ -245,7 +245,7 @@ if __name__ == "__main__":
            x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
            Ca_amanzi_alquimia = Ca_amanzi_alquimia +[c_amanzi_alquimia]
 
-        comp = 'free_ion_species.cell.0'
+        comp = 'free_ion_species.cell.H+'
         pH_amanzi_alquimia = []
         for i, time in enumerate(times):
            x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)

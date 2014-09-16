@@ -36,6 +36,9 @@ Operator::Operator(Teuchos::RCP<const CompositeVectorSpace> cvs, int dummy)
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+
+  Teuchos::ParameterList plist;
+  vo_ = Teuchos::rcp(new VerboseObject("Operators", plist));
 }
 
 
@@ -67,6 +70,9 @@ Operator::Operator(const Operator& op)
     offset_global_[i] = op.offset_global_[i];
     offset_my_[i] = op.offset_my_[i];
   }
+
+  Teuchos::ParameterList plist;
+  vo_ = Teuchos::rcp(new VerboseObject("Operators", plist));
 }
 
 
@@ -121,150 +127,12 @@ void Operator::Init()
 }
 
 
-#ifdef OPERATORS_MATRIX_FE_CRS
 /* ******************************************************************
 * Create a global matrix.
+* The non-standard option has default value 0. This violation of the
+* standards is due to the experimental nature of this option.
 ****************************************************************** */
-void Operator::SymbolicAssembleMatrix(int schema)
-{
-  // create global Epetra map
-  const Epetra_Map& cmap = mesh_->cell_map(false);
-  const Epetra_Map& fmap = mesh_->face_map(false);
-  const Epetra_Map& vmap = mesh_->node_map(false);
-
-  int ndof(0), ndof_global(0), offset(0);
-
-  if (schema & OPERATOR_SCHEMA_DOFS_FACE) ndof += nfaces_owned;
-  if (schema & OPERATOR_SCHEMA_DOFS_CELL) ndof += ncells_owned;
-  if (schema & OPERATOR_SCHEMA_DOFS_NODE) ndof += nnodes_owned;
-
-  int* gids = new int[ndof];
-
-  offset_global_[0] = 0;
-  offset_my_[0] = 0;
-  if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
-    fmap.MyGlobalElements(&(gids[0]));
-    offset += nfaces_owned;
-    ndof_global += fmap.NumGlobalElements();
-  } 
-
-  offset_global_[1] = ndof_global;
-  offset_my_[1] = offset;
-  if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
-    cmap.MyGlobalElements(&(gids[offset]));
-    for (int c = 0; c < ncells_owned; c++) gids[offset + c] += ndof_global;
-    offset += ncells_owned;
-    ndof_global += cmap.NumGlobalElements();
-  }
-
-  offset_global_[2] = ndof_global;
-  offset_my_[2] = offset;
-  if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
-    vmap.MyGlobalElements(&(gids[offset]));
-    for (int v = 0; v < nnodes_owned; v++) gids[offset + v] += ndof_global;
-    offset += nnodes_owned;
-    ndof_global += vmap.NumGlobalElements();
-  }
-
-  Epetra_Map* map = new Epetra_Map(ndof_global, ndof, gids, 0, cmap.Comm());
-  delete [] gids;
-
-  // estimate size of the matrix graph
-  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-  const Epetra_Map& vmap_wghost = mesh_->node_map(true);
-
-  int row_size(0), dim = mesh_->space_dimension();
-  if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
-    int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
-    row_size += 2 * i;
-  }
-  if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
-    int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
-    row_size += i + 1;
-  }
-  if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
-    int i = (dim == 2) ? OPERATOR_QUAD_NODES : OPERATOR_HEX_NODES;
-    row_size += 8 * i;
-  }
-    
-  Epetra_FECrsGraph ff_graph(Copy, *map, row_size);
-  delete map;
-
-  // populate matrix graph using blocks that fit the schema
-  AmanziMesh::Entity_ID_List cells, faces, nodes;
-  int gid[OPERATOR_MAX_NODES];
-
-  int nblocks = blocks_.size();
-  for (int nb = 0; nb < nblocks; nb++) {
-    int subschema = blocks_schema_[nb] & schema;
-
-    if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
-      for (int c = 0; c < ncells_owned; c++) {
-        int nd;
-        if (subschema == OPERATOR_SCHEMA_DOFS_FACE) {
-          mesh_->cell_get_faces(c, &faces);
-          int nfaces = faces.size();
-
-          for (int n = 0; n < nfaces; n++) {
-            gid[n] = fmap_wghost.GID(faces[n]);
-          }
-          nd = nfaces;
-        } else if (subschema == OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
-          mesh_->cell_get_faces(c, &faces);
-          int nfaces = faces.size();
-
-          for (int n = 0; n < nfaces; n++) {
-            gid[n] = fmap_wghost.GID(faces[n]);
-          }
-          gid[nfaces] = offset_global_[1] + cmap_wghost.GID(c);
-
-          nd = nfaces + 1;
-        } else if (subschema == OPERATOR_SCHEMA_DOFS_NODE) {
-          mesh_->cell_get_nodes(c, &nodes);
-          int nnodes = nodes.size();
-
-          for (int n = 0; n < nnodes; n++) {
-            gid[n] = offset_global_[2] + vmap_wghost.GID(nodes[n]);
-          }
-          nd = nnodes;
-        }
-
-        ff_graph.InsertGlobalIndices(nd, gid, nd, gid);
-      }
-    } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_FACE) {
-      for (int f = 0; f < nfaces_owned; f++) {
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-        int ncells = cells.size();
-
-        int nd;
-        if (subschema == OPERATOR_SCHEMA_DOFS_CELL) {
-          for (int n = 0; n < ncells; n++) {
-            gid[n] = offset_global_[1] + cmap_wghost.GID(cells[n]);
-          }
-          nd = ncells;
-        }
-
-        ff_graph.InsertGlobalIndices(nd, gid, nd, gid);
-      }
-    } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_NODE) {
-      // not implemented yet
-    }
-  }
-
-  ff_graph.GlobalAssemble();  // Symbolic graph is complete.
-
-  // create global matrix
-  A_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
-  A_->GlobalAssemble();
-}
-
-
-#else
-/* ******************************************************************
-* Create a global matrix.
-****************************************************************** */
-void Operator::SymbolicAssembleMatrix(int schema)
+void Operator::SymbolicAssembleMatrix(int schema, int nonstandard)
 {
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
@@ -377,7 +245,34 @@ void Operator::SymbolicAssembleMatrix(int schema)
   for (int nb = 0; nb < nblocks; nb++) {
     int subschema = blocks_schema_[nb] & schema;
 
-    if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
+    // Non-standard combinations of schemas 
+    if (nonstandard == 1 && 
+        (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) && 
+        subschema == OPERATOR_SCHEMA_DOFS_CELL) {
+      for (int f = 0; f < nfaces_owned; f++) {
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        int ncells = cells.size();
+
+        int nd;
+        if (subschema == OPERATOR_SCHEMA_DOFS_CELL) {
+          for (int n = 0; n < ncells; n++) {
+            lid[n] = offset_my_[1] + cells[n];
+            gid[n] = offset_global_[1] + cmap_wghost.GID(cells[n]);
+          }
+          nd = ncells;
+        }
+
+        for (int n = 0; n < nd; n++) {
+          if (lid[n] < ndof) {
+            ff_graph.InsertGlobalIndices(gid[n], nd, gid);
+          } else {
+            ff_graph_off.InsertMyIndices(lid[n] - ndof, nd, lid);
+          }
+        }
+      }
+
+    // Typical representatives of cell-based methods are MFD and FEM.
+    } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
       for (int c = 0; c < ncells_owned; c++) {
         int nd;
         if (subschema == OPERATOR_SCHEMA_DOFS_FACE) {
@@ -411,6 +306,8 @@ void Operator::SymbolicAssembleMatrix(int schema)
             gid[n] = offset_global_[2] + vmap_wghost.GID(nodes[n]);
           }
           nd = nnodes;
+        } else {
+          ASSERT(false);
         }
 
         for (int n = 0; n < nd; n++) {
@@ -421,6 +318,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
           }
         }
       }
+    // Typical representative of face-based methods is FV.
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_FACE) {
       for (int f = 0; f < nfaces_owned; f++) {
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -443,6 +341,7 @@ void Operator::SymbolicAssembleMatrix(int schema)
           }
         }
       }
+    // Typical representative of node-based methods is MPFA.
     } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_NODE) {
       // not implemented yet
     }
@@ -467,107 +366,8 @@ void Operator::SymbolicAssembleMatrix(int schema)
   A_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, ff_graph));
   A_off_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, ff_graph_off));
 }
-#endif
 
 
-#ifdef OPERATORS_MATRIX_FE_CRS
-/* ******************************************************************
-* Assemble elemental face-based matrices into four global matrices. 
-****************************************************************** */
-void Operator::AssembleMatrix(int schema)
-{
-  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  const Epetra_Map& vmap_wghost = mesh_->node_map(true);
-
-  // populate matrix
-  A_->PutScalar(0.0);
-
-  AmanziMesh::Entity_ID_List cells, faces, nodes;
-  int gid[OPERATOR_MAX_NODES + 1];
-
-  int nblocks = blocks_.size();
-  for (int nb = 0; nb < nblocks; nb++) {
-    int subschema = blocks_schema_[nb] & schema;
-    std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[nb];
-
-    if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) {
-      for (int c = 0; c < ncells_owned; c++) {
-        if (subschema == OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
-          mesh_->cell_get_faces(c, &faces);
-          int nfaces = faces.size();
-
-          for (int n = 0; n < nfaces; n++) {
-            gid[n] = fmap_wghost.GID(faces[n]);
-          }
-          gid[nfaces] = offset_global_[1] + cmap_wghost.GID(c);
-
-          A_->SumIntoGlobalValues(nfaces + 1, gid, matrix[c].Values());
-
-        } else if (subschema == OPERATOR_SCHEMA_DOFS_FACE) {
-          mesh_->cell_get_faces(c, &faces);
-          int nfaces = faces.size();
-
-          for (int n = 0; n < nfaces; n++) {
-            gid[n] = fmap_wghost.GID(faces[n]);
-          }
-
-          A_->SumIntoGlobalValues(nfaces, gid, matrix[c].Values());
-
-        } else if (subschema == OPERATOR_SCHEMA_DOFS_NODE) {
-          mesh_->cell_get_nodes(c, &nodes);
-          int nnodes = nodes.size();
-
-          for (int n = 0; n < nnodes; n++) {
-            gid[n] = offset_global_[2] + vmap_wghost.GID(nodes[n]);
-          }
-
-          A_->SumIntoGlobalValues(nnodes, gid, matrix[c].Values());
-        }
-      }
-    // new schema
-    } else if (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_FACE) {
-      for (int f = 0; f < nfaces_owned; f++) {
-        if (subschema == OPERATOR_SCHEMA_DOFS_CELL) {
-          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-          int ncells = cells.size();
-
-          for (int n = 0; n < ncells; n++) {
-            gid[n] = offset_global_[1] + cmap_wghost.GID(cells[n]);
-          }
-
-          A_->SumIntoGlobalValues(ncells, gid, matrix[f].Values());
-        }
-      }
-    }
-  }
-
-  A_->GlobalAssemble();
-
-  // Add diagonal (a hack)
-  Epetra_Vector tmp(A_->RowMap());
-  A_->ExtractDiagonalCopy(tmp);
-
-  if (diagonal_->HasComponent("face")) {
-    Epetra_MultiVector& diag = *diagonal_->ViewComponent("face");
-    for (int f = 0; f < nfaces_owned; f++) tmp[f] += diag[0][f];
-  }
-
-  if (diagonal_->HasComponent("cell")) {
-    Epetra_MultiVector& diag = *diagonal_->ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; c++) tmp[offset_my_[1] + c] += diag[0][c];
-  }
-
-  if (diagonal_->HasComponent("node")) {
-    Epetra_MultiVector& diag = *diagonal_->ViewComponent("node");
-    for (int v = 0; v < nnodes_owned; v++) tmp[offset_my_[2] + v] += diag[0][v];
-  }
-
-  A_->ReplaceDiagonalValues(tmp);
-}
-
-
-#else
 /* ******************************************************************
 * Assemble elemental face-based matrices into four global matrices. 
 ****************************************************************** */
@@ -664,13 +464,18 @@ void Operator::AssembleMatrix(int schema)
           int ncells = cells.size();
 
           for (int n = 0; n < ncells; n++) {
+            lid[n] = offset_my_[1] + cells[n];
             gid[n] = offset_global_[1] + cmap_wghost.GID(cells[n]);
           }
 
           WhetStone::DenseMatrix& Acell = matrix[f];
           for (int n = 0; n < ncells; n++) {
             for (int m = 0; m < ncells; m++) values[m] = Acell(n, m);
-            A_->SumIntoMyValues(gid[n], ncells, values, gid);
+            if (lid[n] < ndof) {
+              A_->SumIntoMyValues(lid[n], ncells, values, lid);
+            } else {
+              A_off_->SumIntoMyValues(lid[n] - ndof, ncells, values, lid);
+            }
           }
         }
       }
@@ -704,15 +509,17 @@ void Operator::AssembleMatrix(int schema)
 
   A_->ReplaceDiagonalValues(tmp);
 }
-#endif
 
 
 /* ******************************************************************
 * Applies boundary conditions to matrix_blocks and update the
 * right-hand side and the diagonal block.                                           
 ****************************************************************** */
-void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_values)
+void Operator::ApplyBCs()
 {
+  const std::vector<int>& bc_model = bc_->bc_model();
+  const std::vector<double>& bc_value = bc_->bc_value();
+
   // clean ghosted values
   for (CompositeVector::name_iterator name = rhs_->begin(); name != rhs_->end(); ++name) {
     Epetra_MultiVector& rhs_g = *rhs_->ViewComponent(*name, true);
@@ -747,10 +554,10 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
           bool flag(true);
           for (int n = 0; n < nfaces; n++) {
             int f = faces[n];
-            double value = bc_values[f];
+            double value = bc_value[f];
 
             if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
-              if (flag) {  // make a copy of elemntal matrix
+              if (flag) {  // make a copy of elemental matrix
                 matrix_shadow[c] = Acell;
                 flag = false;
               }
@@ -782,7 +589,7 @@ void Operator::ApplyBCs(std::vector<int>& bc_model, std::vector<double>& bc_valu
           bool flag(true);
           for (int n = 0; n < nnodes; n++) {
             int v = nodes[n];
-            double value = bc_values[v];
+            double value = bc_value[v];
 
             if (bc_model[v] == OPERATOR_BC_FACE_DIRICHLET) {
               if (flag) {  // make a copy of cell-based matrix
@@ -907,6 +714,26 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y) const
 
 
 /* ******************************************************************
+* Linear algebra operations with matrices: r = f - A * u
+****************************************************************** */
+void Operator::ComputeResidual(const CompositeVector& u, CompositeVector& r)
+{
+  Apply(u, r);
+  r.Update(1.0, *rhs_, -1.0);
+}
+
+
+/* ******************************************************************
+* Linear algebra operations with matrices: r = A * u - f                                                 
+****************************************************************** */
+void Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r)
+{
+  Apply(u, r);
+  r.Update(-1.0, *rhs_, 1.0);
+}
+
+
+/* ******************************************************************
 * Parallel matvec product A * X.                                              
 ******************************************************************* */
 int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
@@ -953,8 +780,7 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 * Initialization of the preconditioner. Note that boundary conditions
 * may be used in re-implementation of this virtual function.
 ****************************************************************** */
-void Operator::InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist,
-                                  std::vector<int>& bc_model, std::vector<double>& bc_values)
+void Operator::InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist)
 {
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(prec_name, plist);

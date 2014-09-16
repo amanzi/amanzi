@@ -59,6 +59,7 @@ set(operators_inc_files
     OperatorDiffusion.hh
     OperatorDiffusionSurface.hh
     OperatorDiffusionWithGravity.hh
+    OperatorDiffusionTPFA.hh
     OperatorSource.hh
     Upwind.hh)
 
@@ -66,7 +67,7 @@ add_amanzi_library(operators
                    SOURCE Operator.cc 
                    OperatorDiffusion.cc OperatorDiffusionSurface.cc 
                    OperatorDiffusionWithGravity.cc OperatorDiffusionFactory.cc
-                   OperatorSource.cc 
+                   OperatorDiffusionTPFA.cc OperatorSource.cc 
                    OperatorAdvection.cc 
                    HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})

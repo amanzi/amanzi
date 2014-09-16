@@ -18,17 +18,21 @@
 namespace Amanzi {
 namespace Operators {
 
+class BCs;
+
 class OperatorDiffusionFactory {
  public:
   OperatorDiffusionFactory() {};
   ~OperatorDiffusionFactory() {};
 
   Teuchos::RCP<OperatorDiffusion> Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                                         const Teuchos::ParameterList& op_list,
+                                         Teuchos::RCP<BCs> bc,
+                                         Teuchos::ParameterList& oplist,
                                          const AmanziGeometry::Point& g);
 
   Teuchos::RCP<OperatorDiffusion> Create(Teuchos::RCP<Operator> op,
-                                         const Teuchos::ParameterList& op_list);
+                                         Teuchos::RCP<BCs> bc,
+                                         Teuchos::ParameterList& oplist);
 };
 
 }  // namespace Operators

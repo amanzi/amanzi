@@ -247,14 +247,6 @@ namespace Amanzi {
         prob_out_list.set("have_capillary",0);
         prob_out_list.set("cfl",-1);
       }
-      else if (flow_mode == "Single-phase") {
-        model_name = "single-phase";
-        prob_out_list.set("do_simple",1);
-      }
-      else if (flow_mode == "Multi-phase") {
-        model_name = "two-phase";
-        prob_out_list.set("cfl",0.75);
-      }
       else {
         MyAbort("\"" + flow_str + "\" = \"" + flow_mode + "\" not supported");
       }
@@ -264,7 +256,15 @@ namespace Amanzi {
       // Set transport model
       //
       std::string transport_mode = ec_list.get<std::string>(trans_str);
-      do_tracer_advection = (transport_mode == "Off"  ?  0  :  1);
+      if (transport_mode == "Off") {
+        do_tracer_advection = 0;
+      }
+      else if (transport_mode == "On") {
+        do_tracer_advection = 1;
+      }
+      else {
+        MyAbort("\"" + trans_str + "\" = \"" + transport_mode + "\" not supported");
+      }
       do_tracer_diffusion = false; 
 
       //
@@ -351,7 +351,7 @@ namespace Amanzi {
         }
       }
       else {
-        MyAbort("Chemistry Model \"" + chem_mode + "\" not yet supported" );
+        MyAbort("\"" + chem_mod_str + "\" = \"" + chem_mode + "\" not supported");
       }
       struc_out_list.set(underscore(chem_str),chem_out_list);
 
@@ -1818,6 +1818,13 @@ namespace Amanzi {
                 mtest["Porosity"] = true;
               }
               else if (rlabel==perm_uniform_str || rlabel==perm_anisotropic_uniform_str) {
+                if (mtest["Intrinsic_Permeability"]) {
+                  std::string str = "More than one of: (\""+perm_uniform_str
+                    +"\", \""+perm_anisotropic_uniform_str
+                    +"\", \""+hydraulic_conductivity_uniform_str
+                    +"\") specified for material \""+label+"\"";
+                  BoxLib::Abort(str.c_str());
+                }
                 ParameterList psublist;
                 convert_PermeabilityAnisotropic(rsslist,psublist,1.0);
                 rsublist.set("permeability",psublist);
@@ -1825,6 +1832,13 @@ namespace Amanzi {
                 mtest["Intrinsic_Permeability"] = true;
               }
               else if (rlabel==hydraulic_conductivity_uniform_str) {
+                if (mtest["Intrinsic_Permeability"]) {
+                  std::string str = "More than one of: (\""+perm_uniform_str
+                    +"\", \""+perm_anisotropic_uniform_str
+                    +"\", \""+hydraulic_conductivity_uniform_str
+                    +"\") specified for material \""+label+"\"";
+                  BoxLib::Abort(str.c_str());
+                }
                 const std::string aq = "Aqueous";
                 if (state.getPhases().count(aq) == 0) {
                   std::string str = "Hydraulic conductivity specified for material \""+label
@@ -2578,7 +2592,7 @@ namespace Amanzi {
       const std::string phase_name="Phase";reqP.push_back(phase_name);
       const std::string rval_name="Reference Value";reqP.push_back(rval_name);
       const std::string grad_name="Gradient Value";reqP.push_back(grad_name);
-      const std::string ref_name="Reference Coordinate";reqP.push_back(ref_name);
+      const std::string ref_name="Reference Point";reqP.push_back(ref_name);
       PLoptions opt(fPLin,nullList,reqP,true,true);  
     
       fPLout.set<std::string>("type","linear_pressure");
@@ -2594,7 +2608,7 @@ namespace Amanzi {
       const std::string phase_name="Phase";
       const std::string val_name="Reference Value";
       const std::string grad_name="Gradient Value";
-      const std::string ref_name="Reference Coordinate";
+      const std::string ref_name="Reference Point";
       const std::string vel_name="Aqueous Volumetric Flux";
 
       Array<std::string> reqP, nullList;
@@ -2829,7 +2843,7 @@ namespace Amanzi {
       {
         const std::string val_name="Reference Value"; reqP.push_back(val_name);
         const std::string grad_name="Gradient Value";reqP.push_back(grad_name);
-        const std::string ref_name="Reference Coordinate"; reqP.push_back(ref_name);
+        const std::string ref_name="Reference Point"; reqP.push_back(ref_name);
         PLoptions opt(fPLin,nullList,reqP,true,true);
 
         fPLout.set<double>("val",fPLin.get<double>(val_name));
@@ -3735,10 +3749,20 @@ namespace Amanzi {
       user_derive_list.push_back(underscore("Aqueous Volumetric Flux Z"));
 #endif
 
-      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient"));
+      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient X"));
+      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient Y"));
+#if BL_SPACEDIM==3
+      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient Z"));
+#endif
+
+      user_derive_list.push_back(underscore("Tortuosity X"));
+      user_derive_list.push_back(underscore("Tortuosity Y"));
+#if BL_SPACEDIM==3
+      user_derive_list.push_back(underscore("Tortuosity Z"));
+#endif
+
       user_derive_list.push_back(underscore("Dispersivity L"));
       user_derive_list.push_back(underscore("Dispersivity T"));
-      user_derive_list.push_back(underscore("Tortuosity"));
       user_derive_list.push_back(underscore("Specific Storage"));
 
       user_derive_list.push_back(underscore("Intrinsic Permeability X"));
@@ -4171,12 +4195,17 @@ namespace Amanzi {
               const ParameterList& lregion = 
                 parameter_list.sublist("Regions").sublist(region_name);
 
-              if (!lregion.isSublist("Region: Point"))
-              {
+              if (!lregion.isSublist("Region: Point")) {
                 std::cerr << label << " is a point observation and "
                           << region_name << " is not a point region.\n";
                 throw std::exception();
               }
+            }
+            else if (functional == "Observation Data: Peak Value") {
+              sublist.set("obs_type","peak_value");
+            }
+            else {
+              MyAbort("Unsupported functional for observation \""+label+"\": functional = \""+functional+"\"");
             }
             sublist.set("region",_region_name);
 

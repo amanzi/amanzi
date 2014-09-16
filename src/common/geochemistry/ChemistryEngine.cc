@@ -11,6 +11,7 @@ This implements the Alquimia chemistry engine.
 
 #include <iostream>
 #include <cstring>
+#include <cstdio>
 #include <assert.h>
 #include "ChemistryEngine.hh"
 #include "errors.hh"
@@ -25,6 +26,39 @@ This implements the Alquimia chemistry engine.
 namespace Amanzi {
 namespace AmanziChemistry {
 
+namespace {
+
+void CopyAlquimiaState(AlquimiaState* dest, AlquimiaState* src)
+{
+  dest->water_density = src->water_density;
+  dest->porosity = src->porosity;
+  dest->temperature = src->temperature;
+  dest->aqueous_pressure = src->aqueous_pressure;
+  memcpy(dest->total_mobile.data, src->total_mobile.data, sizeof(double) * src->total_mobile.size);
+  memcpy(dest->total_immobile.data, src->total_immobile.data, sizeof(double) * src->total_immobile.size);
+  memcpy(dest->mineral_volume_fraction.data, src->mineral_volume_fraction.data, sizeof(double) * src->mineral_volume_fraction.size);
+  memcpy(dest->mineral_specific_surface_area.data, src->mineral_specific_surface_area.data, sizeof(double) * src->mineral_specific_surface_area.size);
+  memcpy(dest->surface_site_density.data, src->surface_site_density.data, sizeof(double) * src->surface_site_density.size);
+  memcpy(dest->cation_exchange_capacity.data, src->cation_exchange_capacity.data, sizeof(double) * src->cation_exchange_capacity.size);
+}
+
+// These functions are going into the next release of Alquimia.
+void CopyAlquimiaMaterialProperties(AlquimiaMaterialProperties* dest, AlquimiaMaterialProperties* src)
+{
+  dest->volume = src->saturation;
+  dest->saturation = src->saturation;
+  memcpy(dest->isotherm_kd.data, src->isotherm_kd.data, sizeof(double) * src->isotherm_kd.size);
+  memcpy(dest->freundlich_n.data, src->freundlich_n.data, sizeof(double) * src->freundlich_n.size);
+  memcpy(dest->langmuir_b.data, src->langmuir_b.data, sizeof(double) * src->langmuir_b.size);
+}
+
+void CopyAlquimiaAuxiliaryData(AlquimiaAuxiliaryData* dest, AlquimiaAuxiliaryData* src)
+{
+  memcpy(dest->aux_ints.data, src->aux_ints.data, sizeof(int) * src->aux_ints.size);
+  memcpy(dest->aux_doubles.data, src->aux_doubles.data, sizeof(double) * src->aux_doubles.size);
+}
+
+}
 
 ChemistryEngine::ChemistryEngine(const std::string& engineName, 
                                  const std::string& inputFile):
@@ -86,10 +120,13 @@ ChemistryEngine::~ChemistryEngine()
   FreeAlquimiaProblemMetaData(&chem_metadata_);
 
   // Delete the various geochemical conditions.
-  for (std::map<std::string, AlquimiaGeochemicalCondition*>::iterator 
+  for (GeochemicalConditionMap::iterator 
        iter = chem_conditions_.begin(); iter != chem_conditions_.end(); ++iter)
   {
-    FreeAlquimiaGeochemicalCondition(iter->second);
+    FreeAlquimiaGeochemicalCondition(&iter->second->condition);
+    FreeAlquimiaState(&iter->second->chem_state);
+    FreeAlquimiaMaterialProperties(&iter->second->mat_props);
+    FreeAlquimiaAuxiliaryData(&iter->second->aux_data);
     delete iter->second;
   }
 
@@ -129,13 +166,13 @@ int ChemistryEngine::NumSorbedSpecies() const
   return sizes_.num_sorbed;
 }
 
-void ChemistryEngine::GetPrimarySpeciesNames(std::vector<std::string>& speciesNames) const
+void ChemistryEngine::GetPrimarySpeciesNames(std::vector<std::string>& species_names) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_metadata_;
   int N = metadata->primary_names.size;
-  speciesNames.resize(N);
+  species_names.resize(N);
   for (int i = 0; i < N; ++i)
-    speciesNames[i] = std::string(metadata->primary_names.data[i]);
+    species_names[i] = std::string(metadata->primary_names.data[i]);
 }
 
 int ChemistryEngine::NumMinerals() const
@@ -143,13 +180,13 @@ int ChemistryEngine::NumMinerals() const
   return sizes_.num_kinetic_minerals;
 }
 
-void ChemistryEngine::GetMineralNames(std::vector<std::string>& mineralNames) const
+void ChemistryEngine::GetMineralNames(std::vector<std::string>& mineral_names) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_metadata_;
   int N = metadata->mineral_names.size;
-  mineralNames.resize(N);
+  mineral_names.resize(N);
   for (int i = 0; i < N; ++i)
-    mineralNames[i] = std::string(metadata->mineral_names.data[i]);
+    mineral_names[i] = std::string(metadata->mineral_names.data[i]);
 }
 
 int ChemistryEngine::NumSurfaceSites() const
@@ -157,13 +194,13 @@ int ChemistryEngine::NumSurfaceSites() const
   return sizes_.num_surface_sites;
 }
 
-void ChemistryEngine::GetSurfaceSiteNames(std::vector<std::string>& siteNames) const
+void ChemistryEngine::GetSurfaceSiteNames(std::vector<std::string>& site_names) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_metadata_;
   int N = metadata->surface_site_names.size;
-  siteNames.resize(N);
+  site_names.resize(N);
   for (int i = 0; i < N; ++i)
-    siteNames[i] = std::string(metadata->surface_site_names.data[i]);
+    site_names[i] = std::string(metadata->surface_site_names.data[i]);
 }
 
 int ChemistryEngine::NumIonExchangeSites() const
@@ -171,13 +208,13 @@ int ChemistryEngine::NumIonExchangeSites() const
   return sizes_.num_ion_exchange_sites;
 }
 
-void ChemistryEngine::GetIonExchangeNames(std::vector<std::string>& ionExchangeNames) const
+void ChemistryEngine::GetIonExchangeNames(std::vector<std::string>& ion_exchange_names) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_metadata_;
   int N = metadata->ion_exchange_names.size;
-  ionExchangeNames.resize(N);
+  ion_exchange_names.resize(N);
   for (int i = 0; i < N; ++i)
-    ionExchangeNames[i] = std::string(metadata->ion_exchange_names.data[i]);
+    ion_exchange_names[i] = std::string(metadata->ion_exchange_names.data[i]);
 }
 
 int ChemistryEngine::NumIsothermSpecies() const
@@ -185,13 +222,13 @@ int ChemistryEngine::NumIsothermSpecies() const
   return sizes_.num_isotherm_species;
 }
 
-void ChemistryEngine::GetIsothermSpeciesNames(std::vector<std::string>& speciesNames) const
+void ChemistryEngine::GetIsothermSpeciesNames(std::vector<std::string>& species_names) const
 {
   const AlquimiaProblemMetaData* metadata = &chem_metadata_;
   int N = metadata->isotherm_species_names.size;
-  speciesNames.resize(N);
+  species_names.resize(N);
   for (int i = 0; i < N; ++i)
-    speciesNames[i] = std::string(metadata->isotherm_species_names.data[i]);
+    species_names[i] = std::string(metadata->isotherm_species_names.data[i]);
 }
 
 int ChemistryEngine::NumFreeIonSpecies() const
@@ -199,14 +236,54 @@ int ChemistryEngine::NumFreeIonSpecies() const
   return sizes_.num_primary;
 }
 
+void ChemistryEngine::GetAuxiliaryOutputNames(std::vector<std::string>& aux_names) const
+{
+  aux_names.clear();
+  aux_names.push_back("pH");
+
+  // Mineral data -- one per mineral.
+  const AlquimiaProblemMetaData* metadata = &chem_metadata_;
+  int N = metadata->mineral_names.size;
+  for (int i = 0; i < N; ++i) {
+    std::string sat_index = std::string("mineral_saturation_index_") + std::string(metadata->mineral_names.data[i]);
+    aux_names.push_back(sat_index);
+    std::string rxn_rate = std::string("mineral_reaction_rate_") + std::string(metadata->mineral_names.data[i]);
+    aux_names.push_back(rxn_rate);
+  }
+
+  // Auxiliary data per primary species.
+  N = metadata->primary_names.size;
+  for (int i = 0; i < N; ++i) {
+    std::string free_ion = std::string("primary_free_ion_concentration_") + std::string(metadata->primary_names.data[i]);
+    aux_names.push_back(free_ion);
+    std::string activity_coeff = std::string("primary_activity_coeff_") + std::string(metadata->primary_names.data[i]);
+    aux_names.push_back(activity_coeff);
+  }
+
+  // Secondary auxiliary data.
+  N = this->NumAqueousComplexes();
+  for (int i = 0; i < N; ++i) {
+    char num_str[16];
+    std::snprintf(num_str, 15, "%d", i);
+    std::string free_ion = std::string("secondary_free_ion_concentration_") + std::string(num_str);
+    aux_names.push_back(free_ion);
+    std::string activity_coeff = std::string("secondary_activity_coeff_") + std::string(num_str);
+    aux_names.push_back(activity_coeff);
+  }
+}
+
 void ChemistryEngine::CreateCondition(const std::string& condition_name)
 {
   // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 
   // NOTE: the backend engine's input file. 
-  AlquimiaGeochemicalCondition* condition = new AlquimiaGeochemicalCondition();
+  GeochemicalConditionData* condition = new GeochemicalConditionData();
+  condition->processed = false;
   int num_aq = 0, num_min = 0;
-  AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, num_aq, num_min, condition);
-  std::strcpy(condition->name, condition_name.c_str());
+  AllocateAlquimiaMaterialProperties(&sizes_, &condition->mat_props);
+  AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, num_aq, num_min, &condition->condition);
+  AllocateAlquimiaState(&sizes_, &condition->chem_state);
+  AllocateAlquimiaAuxiliaryData(&sizes_, &condition->aux_data);
+  std::strcpy(condition->condition.name, condition_name.c_str());
 
   // Add this to the conditions map.
   chem_conditions_[condition_name] = condition;
@@ -221,10 +298,10 @@ void ChemistryEngine::AddMineralConstraint(const std::string& condition_name,
   assert(volume_fraction >= 0.0);
   assert(specific_surface_area >= 0.0);
 
-  std::map<std::string, AlquimiaGeochemicalCondition*>::iterator iter = chem_conditions_.find(condition_name);
+  GeochemicalConditionMap::iterator iter = chem_conditions_.find(condition_name);
   if (iter != chem_conditions_.end())
   {
-    AlquimiaGeochemicalCondition* condition = iter->second;
+    AlquimiaGeochemicalCondition* condition = &iter->second->condition;
 
     // Do we have an existing constraint?
     int index = -1;
@@ -269,10 +346,10 @@ void ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
          (constraint_type == "free") || (constraint_type == "mineral") ||
          (constraint_type == "gas") || (constraint_type == "pH"));
 
-  std::map<std::string, AlquimiaGeochemicalCondition*>::iterator iter = chem_conditions_.find(condition_name);
+  GeochemicalConditionMap::iterator iter = chem_conditions_.find(condition_name);
   if (iter != chem_conditions_.end())
   {
-    AlquimiaGeochemicalCondition* condition = iter->second;
+    AlquimiaGeochemicalCondition* condition = &iter->second->condition;
 
     // Is there a mineral constraint for the associated species?
     if (!associated_species.empty())
@@ -339,7 +416,7 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
   Errors::Message msg;
 
   // Retrieve the chemical condition for the given name.
-  std::map<std::string, AlquimiaGeochemicalCondition*>::iterator iter = chem_conditions_.find(condition_name);
+  GeochemicalConditionMap::iterator iter = chem_conditions_.find(condition_name);
   if (iter == chem_conditions_.end())
   {
     CreateCondition(condition_name);
@@ -351,19 +428,31 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
   int fpe_mask = fedisableexcept(FE_DIVBYZERO);
 #endif 
 
-  // Process the condition on the given array at the given time.
-  // FIXME: Time is ignored for the moment.
-  int ierr = 0;
-  AlquimiaGeochemicalCondition* condition = iter->second;
-  chem_.ProcessCondition(&engine_state_,
-                         condition,
-                         &(const_cast<AlquimiaMaterialProperties&>(mat_props)),
-                         &chem_state,
-                         &aux_data,
-                         &chem_status_);
+  AlquimiaGeochemicalCondition* condition = &iter->second->condition;
+  AlquimiaMaterialProperties& nc_mat_props = const_cast<AlquimiaMaterialProperties&>(mat_props);
+  if (!iter->second->processed)
+  {
+    // Copy the given state data into place for this condition.
+    CopyAlquimiaMaterialProperties(&iter->second->mat_props, &nc_mat_props);
+    CopyAlquimiaState(&iter->second->chem_state, &chem_state);
+    CopyAlquimiaAuxiliaryData(&iter->second->aux_data, &aux_data);
+
+    // Process the condition on the given array at the given time.
+    // FIXME: Time is ignored for the moment.
+    int ierr = 0;
+    chem_.ProcessCondition(&engine_state_, condition, &iter->second->mat_props,
+                           &iter->second->chem_state, &iter->second->aux_data, &chem_status_);
+    iter->second->processed = true;
+  }
+
+  // Copy the constraint's data into place.
+  CopyAlquimiaMaterialProperties(&nc_mat_props, &iter->second->mat_props);
+  CopyAlquimiaState(&chem_state, &iter->second->chem_state);
+  CopyAlquimiaAuxiliaryData(&aux_data, &iter->second->aux_data);
 
 #ifdef AMANZI_USE_FENV
   // Re-enable pre-existing floating point exceptions.
+  feclearexcept(fpe_mask);
   fpe_mask = feenableexcept(fpe_mask);
 #endif 
 
@@ -385,7 +474,7 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
 #endif
 }
 
-void ChemistryEngine::Advance(const double delta_time,
+bool ChemistryEngine::Advance(const double delta_time,
                               const AlquimiaMaterialProperties& mat_props,
                               AlquimiaState& chem_state,
                               AlquimiaAuxiliaryData& aux_data,
@@ -407,28 +496,25 @@ void ChemistryEngine::Advance(const double delta_time,
 
 #ifdef AMANZI_USE_FENV
   // Re-enable pre-existing floating point exceptions.
+  feclearexcept(fpe_mask);
   fpe_mask = feenableexcept(fpe_mask);
 #endif 
 
-// FIXME: Figure out a neutral parallel-friendly way to report errors.
-  assert(chem_status_.error == 0);
+  // Retrieve auxiliary output.
+  chem_.GetAuxiliaryOutput(&engine_state_,
+                           &(const_cast<AlquimiaMaterialProperties&>(mat_props)),
+                           &chem_state,
+                           &aux_data,
+                           &aux_output,
+                           &chem_status_);
 
-#if 0
-  if (chem_status_.error != 0)
-    ierr = -1;
+  // Did we succeed?
+  if (chem_status_.error != kAlquimiaNoError)
+    return false;
 
-  // figure out if any of the processes threw an error, if so all processes will re-throw
-  int recv = 0;
-  mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
-  if (recv != 0) 
-  {
-    msg << "Error in advance of chemical reactions.";
-    Exceptions::amanzi_throw(msg); 
-  }  
-#endif
-
-  // Write down the number of Newton iterations.
+  // Write down the (maximum) number of Newton iterations.
   num_iterations = chem_status_.num_newton_iterations;
+  return true;
 }
 
 const AlquimiaSizes& ChemistryEngine::Sizes() const

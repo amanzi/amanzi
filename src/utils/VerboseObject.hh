@@ -66,10 +66,10 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   // NOTE: Default destructor, copy construct should be ok.
 
   // Is process 0 and verbosity is included?
-  inline bool os_OK(Teuchos::EVerbosityLevel verbosity);
+  inline bool os_OK(Teuchos::EVerbosityLevel verbosity) const;
 
   // Get the stream (errors if !os_OK()).
-  inline Teuchos::RCP<Teuchos::FancyOStream> os();
+  inline Teuchos::RCP<Teuchos::FancyOStream> os() const;
 
  public:
   // The default global verbosity level.
@@ -94,13 +94,13 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
 };
 
 
-bool VerboseObject::os_OK(Teuchos::EVerbosityLevel verbosity) {
+bool VerboseObject::os_OK(Teuchos::EVerbosityLevel verbosity) const {
   return out_.get() &&
       includesVerbLevel(getVerbLevel(), verbosity, true);
 };
 
 
-Teuchos::RCP<Teuchos::FancyOStream> VerboseObject::os() {
+Teuchos::RCP<Teuchos::FancyOStream> VerboseObject::os() const {
   return out_;
 };
 

@@ -22,9 +22,11 @@ class CompositionFunction : public Function {
      : f1_(source.f1_->Clone()), f2_(source.f2_->Clone()) {}
   ~CompositionFunction() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
   CompositionFunction* Clone() const { return new CompositionFunction(*this); }
-  double operator() (const double *x) const {
-    double y = (*f2_)(x);
-    return (*f1_)(&y); }
+  double operator()(const std::vector<double>& x) const {
+    std::vector<double> y(x);
+    y[0] = (*f2_)(x);
+    return (*f1_)(y);
+  }
 
  private:
   std::auto_ptr<Function> f1_, f2_;

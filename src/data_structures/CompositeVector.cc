@@ -201,9 +201,10 @@ void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
 
 // Initialize data
 void CompositeVector::InitData_(const CompositeVector& other, InitMode mode) {
-  if (mode == INIT_MODE_ZERO) {
-    PutScalar(0.);
-  } else if (mode == INIT_MODE_COPY) {
+  // Trilinos inits to 0
+  //  if (mode == INIT_MODE_ZERO) {
+  //    PutScalar(0.);
+  if (mode == INIT_MODE_COPY) {
     *this = other;
   }
 }

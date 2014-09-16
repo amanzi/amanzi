@@ -16,8 +16,11 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 #set(cpp_flags_list -I${NetCDF_prefix_dir}/include)
 
 set(cpp_flags_list -I${TPL_INSTALL_PREFIX}/include)
+set(ld_flags_list -L${TPL_INSTALL_PREFIX}/lib)
 list(REMOVE_DUPLICATES cpp_flags_list)
+list(REMOVE_DUPLICATES ld_flags_list)
 build_whitespace_string(netcdf_fortran_cppflags ${cpp_flags_list})
+build_whitespace_string(netcdf_fortran_ldflags ${ld_flags_list})
 
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
@@ -54,6 +57,7 @@ ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
 		FC=${CMAKE_Fortran_COMPILER}
 		FCFLAGS=${Amanzi_COMMON_FCFLAGS}
 		CPPFLAGS=${netcdf_fortran_cppflags}
+		LDFLAGS=${netcdf_fortran_ldflags}
 
 	# -- Build
 

@@ -10,6 +10,7 @@
 #include <Box.H>
 #include <BoxArray.H>
 #include <ParallelDescriptor.H>
+#include <RealBox.H>
 using std::map;
 
 //enum PurposeT {any, rock, source, output, boundary}; 
@@ -66,6 +67,8 @@ public:
   
   virtual bool inRegion (const Array<Real>& x) const = 0;
   virtual std::ostream& print (std::ostream& os) const;
+  virtual BoxArray approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const = 0;
 
   // Identifier for the region 
   std::string name;
@@ -95,8 +98,7 @@ public:
   PointRegion (const std::string& r_name,
                const std::string& r_purpose,
                const Array<Real>& coor)
-      : Region(r_name,r_purpose,"point"), coor(coor) {} ;
-
+      : Region(r_name,r_purpose,"point"), coor(coor) {}
 
   // Note: No virtual templates, must manually create
   virtual void setVal(BaseFab<Real>&     fab, 
@@ -129,6 +131,8 @@ public:
 
   virtual bool inRegion (const Array<Real>& x) const;
   virtual std::ostream& print (std::ostream& os) const;
+  virtual BoxArray approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const;
 
   Array<Real> coor;
 
@@ -158,6 +162,8 @@ public:
 
   virtual bool inRegion (const Array<Real>& x) const;
   virtual std::ostream& print (std::ostream& os) const;
+  virtual BoxArray approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const;
 
   Array<Real> lo;
   Array<Real> hi;
@@ -181,6 +187,8 @@ public:
 
   virtual bool inRegion (const Array<Real>& x) const;
   virtual std::ostream& print (std::ostream& os) const;
+  virtual BoxArray approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const;
 
   Array<Real> vector1;
   Array<Real> vector2;
@@ -197,6 +205,8 @@ public:
 
   virtual bool inRegion (const Array<Real>& x) const;
   virtual std::ostream& print (std::ostream& os) const;
+  virtual BoxArray approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const;
 
   Array<Real> center;
   Array<Real> radius;
@@ -219,6 +229,8 @@ public:
 
   virtual bool inRegion (const Array<Real>& x) const;
   virtual std::ostream& print (std::ostream& os) const;
+  virtual BoxArray approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const;
 
   Array<Real> vector1;
   Array<Real> vector2;
@@ -242,6 +254,8 @@ public:
 
   virtual bool inRegion (const Array<Real>& x) const;
   virtual std::ostream& print (std::ostream& os) const;
+  virtual BoxArray approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const;
 
   int n, t1, t2;
   Array<Real> vector1;
@@ -270,6 +284,8 @@ public:
 
   IntVect atIndex(Array<Real> x) const;
   virtual bool inRegion (const Array<Real>& x) const;
+  virtual BoxArray approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const;
   virtual std::ostream& print (std::ostream& os) const;
 
   void set_color_map();
@@ -280,7 +296,6 @@ public:
 };
 
 std::ostream& operator<< (std::ostream& os, const ColorFunctionRegion& rhs);
-
 
 class ComplementRegion : public Region
 {
@@ -293,6 +308,8 @@ public:
 
   virtual bool inRegion (const Array<Real>& x) const;
   virtual std::ostream& print (std::ostream& os) const;
+  virtual BoxArray approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const;
   Region* exclude_region;
 };
 
@@ -301,13 +318,15 @@ class UnionRegion : public Region
 public:
   UnionRegion (const std::string&    r_name,
                const std::string&    r_purpose,
-               const Array<Region*>& regions);
+               const Array<const Region*>& regions);
   virtual ~UnionRegion() {}
-  virtual void SetUnionRegions(const Array<Region*>& regions);
+  virtual void SetUnionRegions(const Array<const Region*>& regions);
 
   virtual bool inRegion (const Array<Real>& x) const;
   virtual std::ostream& print (std::ostream& os) const;
-  Array<Region*> regions;
+  virtual BoxArray approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const;
+  Array<const Region*> regions;
 };
 
 class SubtractionRegion : public Region
@@ -315,32 +334,15 @@ class SubtractionRegion : public Region
 public:
   SubtractionRegion (const std::string&    r_name,
                      const std::string&    r_purpose,
-                     const Array<Region*>& regions);
+                     const Array<const Region*>& regions);
   virtual ~SubtractionRegion() {}
-  virtual void SetRegions(const Array<Region*>& regions);
+  virtual void SetRegions(const Array<const Region*>& regions);
 
   virtual bool inRegion (const Array<Real>& x) const;
   virtual std::ostream& print (std::ostream& os) const;
-  Array<Region*> regions;
-};
-
-class CompoundRegion : public Region
-{
-public:
-  enum Op {INIT, UNION, INTERSECT, SUBTRACT};
-
-  CompoundRegion (const std::string& r_name,
-                  const std::string& r_purpose,
-                  Region&            src_region);
-  virtual ~CompoundRegion() {}
-
-  CompoundRegion& Union(Region& src_region);
-  CompoundRegion& Intersect(Region& src_region);
-  CompoundRegion& Subtract(Region& src_region);
-
-  virtual bool inRegion (const Array<Real>& x) const;
-  virtual std::ostream& print (std::ostream& os) const;
-  Array<std::pair<Op,Region*> > regions;
+  virtual BoxArray approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const;
+  Array<const Region*> regions;
 };
 
 class AllRegion : public BoxRegion
@@ -351,6 +353,8 @@ public:
   virtual ~AllRegion() {}
 
   virtual bool inRegion (const Array<Real>& x) const;
+  virtual BoxArray approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const;
 };
 
 class AllBCRegion : public BoxRegion
@@ -362,6 +366,8 @@ public:
   virtual ~AllBCRegion() {}
 
   virtual bool inRegion (const Array<Real>& x) const;
+  virtual BoxArray approximate_bounds(const Array<Real>& plo,
+                                      const Array<Real>& dx) const {}
 
 protected:
   int p_dir, p_lohi;

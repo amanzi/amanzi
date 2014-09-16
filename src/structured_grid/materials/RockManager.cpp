@@ -438,10 +438,13 @@ RockManager::Initialize(const Array<std::string>* solute_names)
 
     Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
 
-    Real rDmolec = 0;
+    Array<Real> rDmolec(BL_SPACEDIM,0);
     Property* Dmolec_func = 0;
     if (user_specified_molecular_diffusion_coefficient) {
-      ppr.query("molecular_diffusion.val",rDmolec);
+      ppr.query("molecular_diffusion.val",rDmolec[0]);
+      for (int d=1; d<BL_SPACEDIM; ++d) {
+        rDmolec[d] = rDmolec[0];
+      }
       std::string Dmolec_str = "molecular_diffusion_coefficient";
       Dmolec_func = new ConstantProperty(Dmolec_str,rDmolec,harm_crsn,pc_refine);
     }
@@ -455,10 +458,13 @@ RockManager::Initialize(const Array<std::string>* solute_names)
       Dispersivity_func = new ConstantProperty(Dispersivity_str,rDispersivity,harm_crsn,pc_refine);
     }
 
-    Real rTortuosity = 1;
+    Array<Real> rTortuosity(BL_SPACEDIM,1);
     Property* Tortuosity_func = 0;
     if (user_specified_tortuosity) {
-      ppr.query("tortuosity.val",rTortuosity);
+      ppr.query("tortuosity.val",rTortuosity[0]);
+      for (int d=1; d<BL_SPACEDIM; ++d) {
+        rTortuosity[d] = rTortuosity[0];
+      }
       std::string Tortuosity_str = "tortuosity";
       Tortuosity_func = new ConstantProperty(Tortuosity_str,rTortuosity,harm_crsn,pc_refine);
     }

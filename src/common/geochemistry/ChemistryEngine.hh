@@ -28,8 +28,16 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 
-// Forward declaration of GeochemicalConditionContext.
-class GeochemicalConditionContext;
+struct GeochemicalConditionData
+{
+  bool processed;
+  AlquimiaMaterialProperties mat_props;
+  AlquimiaGeochemicalCondition condition;
+  AlquimiaState chem_state;
+  AlquimiaAuxiliaryData aux_data;
+};
+
+typedef std::map<std::string, GeochemicalConditionData*> GeochemicalConditionMap;
 
 class ChemistryEngine {
 
@@ -52,16 +60,17 @@ class ChemistryEngine {
   int NumPrimarySpecies() const;
   int NumAqueousComplexes() const;
   int NumSorbedSpecies() const;
-  void GetPrimarySpeciesNames(std::vector<std::string>& speciesNames) const;
+  void GetPrimarySpeciesNames(std::vector<std::string>& species_names) const;
   int NumMinerals() const;
-  void GetMineralNames(std::vector<std::string>& mineralNames) const;
+  void GetMineralNames(std::vector<std::string>& mineral_names) const;
   int NumSurfaceSites() const;
-  void GetSurfaceSiteNames(std::vector<std::string>& siteNames) const;
+  void GetSurfaceSiteNames(std::vector<std::string>& site_names) const;
   int NumIonExchangeSites() const;
-  void GetIonExchangeNames(std::vector<std::string>& ionExchangeNames) const;
+  void GetIonExchangeNames(std::vector<std::string>& ion_exchange_names) const;
   int NumIsothermSpecies() const;
-  void GetIsothermSpeciesNames(std::vector<std::string>& speciesNames) const;
+  void GetIsothermSpeciesNames(std::vector<std::string>& species_names) const;
   int NumFreeIonSpecies() const;
+  void GetAuxiliaryOutputNames(std::vector<std::string>& aux_names) const;
 
   // Returns a reference to a "sizes" object that can be queried to find the sizes of the various 
   // arrays representing the geochemical state within the engine.
@@ -79,7 +88,8 @@ class ChemistryEngine {
                  AlquimiaAuxiliaryData& aux_data,
                  AlquimiaAuxiliaryOutputData& aux_output);
 
-  // Creates a geochemical condition with the given name within the chemistry engine.
+  // Creates a geochemical condition with the given name within the chemistry engine, using the 
+  // data in the given containers.
   void CreateCondition(const std::string& condition_name);
 
   // Adds a mineral constraint to the geochemical condition with the given name. If another 
@@ -115,8 +125,9 @@ class ChemistryEngine {
 
   // Advances the species represented by the given array of concentrations, replacing old values 
   // with new values. The order of the concentrations in the array matches that of the species names 
-  // returned by GetSpeciesNames.
-  void Advance(const double delta_time,
+  // returned by GetSpeciesNames. Returns true if the advance is successful, 
+  // false if it fails.
+  bool Advance(const double delta_time,
                const AlquimiaMaterialProperties& mat_props,
                AlquimiaState& chem_state,
                AlquimiaAuxiliaryData& aux_data,
@@ -134,15 +145,13 @@ class ChemistryEngine {
   AlquimiaEngineStatus chem_status_;
   AlquimiaProblemMetaData chem_metadata_;
 
-  // Mapping of geochemical condition names to geochemical conditions. 
-  std::map<std::string, AlquimiaGeochemicalCondition*> chem_conditions_;
+  // Mapping of geochemical condition names to geochemical conditions (and flags indicating 
+  // whether they have been processed).
+  GeochemicalConditionMap chem_conditions_;
 
   // Back-end engine name and input file.
   std::string chem_engine_name_;
   std::string chem_engine_inputfile_;
-
-  // Names of auxiliary data.
-  std::vector<std::string> aux_names_;
 
   // forbidden.
   ChemistryEngine();

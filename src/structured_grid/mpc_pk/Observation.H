@@ -64,6 +64,7 @@ protected:
   Real volume_integral(Real time);  
   Real volume_time_integral(Real t_old, Real t_new);
   Real point_sample (Real time);
+  Real peak_sample (Real time);
 
   Real val_old, val_new;  
   bool obs_data_initialized;

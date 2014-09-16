@@ -121,7 +121,7 @@
 	<execution_controls>
 
                 <execution_control_defaults init_dt= "10"   max_dt="0.01"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
-		<execution_control  start="0.0,y"  end="1956.0,y"   init_dt= "1000"  max_dt="500.0"  reduction_factor="0.8"  mode="steady"/>
+		<execution_control  start="0.0,y"  end="1956.0,y"   init_dt= "100, y"  max_dt="500.0,y"  reduction_factor="0.8"  mode="steady"/>
 		<execution_control  start="B-17_release_begin" />
 		<execution_control  start="B-17_release_end" />
 		<execution_control  start="B-18_release_begin" />
@@ -150,8 +150,8 @@
 		<linear_solver>
 			<comments>Proposed comment section.</comments>
 			<method>gmres</method>
-			<max_iterations>20</max_iterations>
-			<tolerance>1.0e-18</tolerance>
+			<max_iterations>100</max_iterations>
+			<tolerance>1.0e-17</tolerance>
 	                <preconditioner name = "hypre_amg">
 	                     	<hypre_cycle_applications>10</hypre_cycle_applications>
 	                	<hypre_smoother_sweeps>3</hypre_smoother_sweeps>

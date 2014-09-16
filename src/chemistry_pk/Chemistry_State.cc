@@ -45,6 +45,7 @@ Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
 
   ParseMeshBlocks_();
   RequireData_();
+  RequireAuxData_();
 }
 
 
@@ -67,7 +68,8 @@ Chemistry_State::Chemistry_State(const Teuchos::RCP<State>& S,
     compnames_(component_names),
     num_aux_data_(-1) {
   mesh_ = S_->GetMesh();
-  RequireData_();
+  RequireData_();  
+  RequireAuxData_();
 }
 
 void Chemistry_State::SetupMineralNames_() {
@@ -353,12 +355,19 @@ void Chemistry_State::RequireData_() {
 
 
     // CreateStoragePrimarySpecies()
-    S_->RequireField("free_ion_species", name_)
+    {
+      std::vector<std::vector<std::string> > species_names_cv(1);
+      for (std::vector<std::string>::const_iterator compname = compnames_.begin();
+           compname != compnames_.end(); ++compname) {
+        species_names_cv[0].push_back(*compname);
+      }
+      S_->RequireField("free_ion_species", name_, species_names_cv)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, number_of_aqueous_components_);
-    S_->RequireField("primary_activity_coeff", name_)
+      S_->RequireField("primary_activity_coeff", name_, species_names_cv)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, number_of_aqueous_components_);
+    }
 
     // CreateStorageTotalSorbed()
     if (using_sorption_) {
@@ -451,6 +460,42 @@ void Chemistry_State::RequireData_() {
 }
 
 
+void Chemistry_State::SetAuxDataNames(const std::vector<std::string>& aux_data_names) {
+  for (size_t i = 0; i < aux_data_names.size(); ++i) {
+    std::vector<std::vector<std::string> > subname(1);
+    subname[0].push_back("0");
+    if (!S_->HasField(aux_data_names[i])) {
+      Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField(aux_data_names[i], name_, subname);
+      fac->SetMesh(mesh_);
+      fac->SetGhosted(false);
+      fac->SetComponent("cell", AmanziMesh::CELL, 1);
+      Teuchos::RCP<CompositeVector> sac = Teuchos::rcp(new CompositeVector(*fac));
+
+      // Zero the field.
+      S_->GetField(aux_data_names[i], name_)->SetData(sac);
+      S_->GetField(aux_data_names[i], name_)->CreateData();
+      S_->GetFieldData(aux_data_names[i], name_)->PutScalar(0.0);
+      S_->GetField(aux_data_names[i], name_)->set_initialized();
+    }
+  }
+}
+
+void Chemistry_State::RequireAuxData_() {
+  if (plist_.isParameter("Auxiliary Data"))  {
+    Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("Auxiliary Data");  
+    
+    for (Teuchos::Array<std::string>::const_iterator name = names.begin(); name != names.end(); ++name) {
+
+      // Insert the field into the state.
+      std::vector<std::vector<std::string> > subname(1);
+      subname[0].push_back("0");
+      S_->RequireField(*name, name_, subname)
+          ->SetMesh(mesh_)->SetGhosted(false)
+          ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+  }
+}
+
 void Chemistry_State::InitializeField_(Teuchos::ParameterList& ic_plist,
     std::string fieldname, bool sane_default, double default_val) {
   // Initialize mineral volume fractions
@@ -515,6 +560,15 @@ void Chemistry_State::Initialize() {
     InitializeField_(ic_plist, "surface_complex_free_site_conc", true, 1.0);
   }
 
+  // initialize auxiliary fields
+  if (plist_.isParameter("Auxiliary Data"))  {
+    Teuchos::Array<std::string> names = plist_.get<Teuchos::Array<std::string> >("Auxiliary Data");  
+    
+    for (Teuchos::Array<std::string>::const_iterator name = names.begin(); name != names.end(); ++name) {
+      S_->GetFieldData(*name, name_)->PutScalar(0.0);
+      S_->GetField(*name, name_)->set_initialized();
+    }  
+  }
 }
 
 // This can only be done AFTER the chemistry is initialized and fully set up?
@@ -621,6 +675,8 @@ void Chemistry_State::CopyToAlquimia(const int cell_id,
   }
 
   // Auxiliary data -- block copy.
+  if (S_->HasField("alquimia_aux_data"))
+    aux_data_ = S_->GetField("alquimia_aux_data", name_)->GetFieldData()->ViewComponent("cell");
   if (num_aux_data_ != -1) 
   {
     int num_aux_ints = aux_data.aux_ints.size;
@@ -661,6 +717,7 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
                                        const AlquimiaMaterialProperties& mat_props,
                                        const AlquimiaState& state,
                                        const AlquimiaAuxiliaryData& aux_data,
+                                       const AlquimiaAuxiliaryOutputData& aux_output,
                                        Teuchos::RCP<const Epetra_MultiVector> aqueous_components)
 {
   // If the chemistry has modified the porosity and/or density, it needs to 
@@ -686,10 +743,13 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
     }
   }
 
-  // NOTE: For now, we do not copy material properties back from Alquimia 
-  // NOTE: to Amanzi. -JNJ
-  //#if 0 NOTE: Reverting this back to copying properties SMR
-  // minerals
+  // Free ion species.
+  for (unsigned int c = 0; c < number_of_aqueous_components(); c++) {
+    double* cell_free_ion = (*this->free_ion_species())[c];
+    cell_free_ion[cell_id] = aux_output.primary_free_ion_concentration.data[c];
+  }
+
+  // Mineral properties.
   for (unsigned int m = 0; m < number_of_minerals(); m++) 
   {
     double* cell_minerals = (*this->mineral_volume_fractions())[m];
@@ -717,17 +777,32 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
       cell_sorption_sites[cell_id] = state.surface_site_density.data[i];
     }
   }
-  //#endif
 
   // Auxiliary data -- block copy.
   int num_aux_ints = aux_data.aux_ints.size;
   int num_aux_doubles = aux_data.aux_doubles.size;
   if (num_aux_data_ == -1) 
   {
+    // Set things up and register a vector in the State.
     assert(num_aux_ints >= 0);
     assert(num_aux_doubles >= 0);
     num_aux_data_ = num_aux_ints + num_aux_doubles;
-    aux_data_ = Teuchos::rcp(new Epetra_MultiVector(this->mesh_maps()->cell_map(false), num_aux_data_));
+    if (!S_->HasField("alquimia_aux_data"))
+    {
+      Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField("alquimia_aux_data", name_);
+      fac->SetMesh(mesh_);
+      fac->SetGhosted(false);
+      fac->SetComponent("cell", AmanziMesh::CELL, num_aux_data_);
+      Teuchos::RCP<CompositeVector> sac = Teuchos::rcp(new CompositeVector(*fac));
+
+      // Zero the field.
+      Teuchos::RCP<Field> F = S_->GetField("alquimia_aux_data", name_);
+      F->SetData(sac);
+      F->CreateData();
+      F->GetFieldData()->PutScalar(0.0);
+      F->set_initialized();
+    }
+    aux_data_ = S_->GetField("alquimia_aux_data", name_)->GetFieldData()->ViewComponent("cell");
   }
   else
   {
@@ -744,11 +819,6 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
     cell_aux_doubles[cell_id] = aux_data.aux_doubles.data[i];
   }
 
-  // NOTE: volume and water saturation are read-only from the chemistry state, so they can't be 
-  // NOTE: altered by Alquimia.
-
-  // #if 0 NOTE: reverting this to copying properties from Alquimia SMR
-  // sorption isotherms
   if (using_sorption_isotherms()) 
   {
     for (unsigned int i = 0; i < number_of_aqueous_components(); ++i) 
@@ -763,7 +833,6 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
       cell_data[cell_id] = mat_props.langmuir_b.data[i];
     }
   }
-  //#endif
 }
 
 #endif

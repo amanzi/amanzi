@@ -106,7 +106,8 @@ void Field_Scalar::WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk) {
 // Compute from a function
 void Field_Scalar::Compute(double time) {
   if (func_ != Teuchos::null) {
-    SetData((*func_)(&time));
+    std::vector<double> x(1,time);
+    SetData((*func_)(x));
   }
 }
 

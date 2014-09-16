@@ -57,6 +57,9 @@ class BDF1_TI {
   Teuchos::RCP<VerboseObject> vo_;
 
   Teuchos::RCP<Vector> udot_prev_, udot_;  // for error estimate 
+
+ private:
+  double tol_solver_;  // reference solver's tolerance
 };
 
 
@@ -93,6 +96,9 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
   // timestep controller
   TimestepControllerFactory<Vector> fac;
   ts_control = fac.Create(plist, udot_, udot_prev_);
+
+  // misc internal parameters
+  tol_solver_=solver_->tolerance();
 }
 
 
@@ -146,7 +152,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   // initialize the output stream
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  // print some info about the time step
+  // print info about the time step
   double tlast = state_->uhist->MostRecentTime();
   double tnew = tlast + dt;
 
@@ -176,9 +182,20 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
     }
   }
 
-  // Set up the solver fn
+  // Set up the solver fn.
   solver_fn_->SetTimes(tlast, tnew);
   solver_fn_->SetPreviousTimeSolution(u0);
+
+  // Set up tolerance due to damping.
+  double factor = state_->tol_multiplier;
+  double tol = tol_solver_  * factor;
+  solver_->set_tolerance(tol);
+
+  if (factor > 1.0) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "tolerance factor=" << factor << std::endl;
+    }
+  }
 
   // Solve the nonlinear BCE system.
   int ierr, code, itr;
@@ -208,12 +225,13 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
   if (ierr != 0) itr = -1;
   dt_next = ts_control->get_timestep(dt, itr);
 
-  // update the preconditioner lag
+  // update the preconditioner lag and tolerance multiplier
   if (ierr != 0) {
     state_->pc_lag = 0;
   } else {
     if (dt_next > dt) {
       state_->pc_lag = std::min(state_->pc_lag + 1, state_->maxpclag);
+      state_->tol_multiplier= std::max(1.0, factor * state_->tol_multiplier_damp);
     } else if (dt_next < dt) {
       state_->pc_lag = std::max(state_->pc_lag - 1, 0);
     }

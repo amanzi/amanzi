@@ -33,10 +33,18 @@
 
 	<process_kernels>
 		<comments>Single phase flow only</comments>
-		<flow state = "on" model = "saturated"/>
-		<transport state = "on" algorithm="explicit first-order" sub_cycling = "on"/>
-		<chemistry state = "off" process_model="none"/>
+		<flow state = "on" model = "constant"/>
+		<transport state = "on" algorithm="explicit first-order" sub_cycling = "off"/>
+		<chemistry state = "off" engine="none" process_model="none"/>
 	</process_kernels>
+	<!--
+	 <process_kernels>
+	        <comments>Single phase flow only</comments>
+                 <flow model="richards" state="on"/>
+                 <transport algorithm="explicit first-order" state="on"/>
+                 <chemistry process_model="none" engine = "none" state="off"/>
+         </process_kernels>
+        --> 
 
 	<phases>
 		<liquid_phase name="water">
@@ -54,8 +62,8 @@
 	</phases>
 
 	<execution_controls>
-		<verbosity level="high"/>
-		<execution_control_defaults mode="steady" method="picard"/>
+		<verbosity level="extreme"/>
+		<execution_control_defaults mode="steady" method="picard" init_dt="1.0"/>
 		<execution_control  start="0.0" end="1.2096e+8" mode = "transient"/>
 	</execution_controls>
 
@@ -64,7 +72,8 @@
 		<linear_solver>
 			<max_iterations>100</max_iterations>
 			<tolerance>1e-20</tolerance>
-			<cfl>1e-20</cfl>
+			<!--cfl>1e-20</cfl-->
+			<cfl>1</cfl>
 		</linear_solver>
 	</numerical_controls>
 
@@ -72,6 +81,12 @@
 	<mesh framework="mstk"> 
 		<comments>no comment</comments>
 		<dimension>2</dimension>
+		<!--
+		<read>
+			<file>amanzi_dispersion_aligned_point_2d.exo</file>
+			<format>exodus ii</format>
+		</read>
+                -->
 		<generate>
 			<number_of_cells nx = "84"  nz = "37"/>
 			<box low_coordinates = "-271.0,-270.0" high_coordinates = "960.0,270.0"/>
@@ -79,6 +94,51 @@
 	</mesh>
 
 	<regions>
+		<region name = "All">
+			<box low_coordinates="-273.75, -273.75"  high_coordinates="971.25,  281.25"/>
+		</region>
+		<region name = "Well">
+			<box low_coordinates="-0.1,-0.1"  high_coordinates="0.1, 0.1"/>
+		</region>
+		<point name = "Upwind210"  coordinate="-210.0,0.0"/>
+		<point name = "Upwind150"  coordinate="-150.0,0.0"/>
+		<point name = "Upwind090"  coordinate="-90.0,0.0"/>
+		<point name = "Upwind030"  coordinate="-30.0,0.0"/>
+		<point name = "Origin"     coordinate="0.0,0.0"/>
+		<point name = "Dnwind030"  coordinate="30.0,0.0"/>
+		<point name = "Dnwind090"  coordinate="90.0,0.0"/>
+		<point name = "Dnwind150"  coordinate="150.0,0.0"/>
+		<point name = "Dnstrm210"  coordinate="210.0,0.0"/>
+		<point name = "Dnstrm270"  coordinate="270.0,0.0"/>
+		<point name = "Dnstrm330"  coordinate="330.0,0.0"/>
+		<point name = "Dnstrm390"  coordinate="390.0,0.0"/>
+		<point name = "Dnstrm450"  coordinate="450.0,0.0"/>
+		<point name = "Dnstrm510"  coordinate="510.0,0.0"/>
+		<point name = "Dnstrm570"  coordinate="570.0,0.0"/>
+		<point name = "Dnstrm630"  coordinate="630.0,0.0"/>
+		<point name = "Dnstrm690"  coordinate="690.0,0.0"/>
+		<point name = "Dnstrm750"  coordinate="750.0,0.0"/>
+		<point name = "Dnstrm810"  coordinate="810.0,0.0"/>
+		<point name = "Dnstrm870"  coordinate="870.0,0.0"/>
+		<point name = "Dnstrm930"  coordinate="930.0,0.0"/>
+		<point name = "Cross0030"  coordinate="0.0,30.0"/>
+		<point name = "Cross0060"  coordinate="0.0,60.0"/>
+		<point name = "Cross0090"  coordinate="0.0,90.0"/>
+		<point name = "Cross0120"  coordinate="0.0,120.0"/>
+		<point name = "Cross0150"  coordinate="0.0,150.0"/>
+		<point name = "Cross0180"  coordinate="0.0,180.0"/>
+		<point name = "Cross0210"  coordinate="0.0,210.0"/>
+		<point name = "Cross0240"  coordinate="0.0,240.0"/>
+		<point name = "Crossb030"  coordinate="424.0,30.0"/>
+		<point name = "Crossb060"  coordinate="424.0,60.0"/>
+		<point name = "Crossb090"  coordinate="424.0,90.0"/>
+		<point name = "Crossb120"  coordinate="424.0,120.0"/>
+		<point name = "Crossb150"  coordinate="424.0,150.0"/>
+		<point name = "Crossb180"  coordinate="424.0,180.0"/>
+		<point name = "Crossb210"  coordinate="424.0,210.0"/>
+		<point name = "Crossb240"  coordinate="424.0,240.0"/>
+
+		<!--
 		<region name = "All">
 			<box low_coordinates="-271.0,-270.0"  high_coordinates="960.0,270.0"/>
 		</region>
@@ -98,6 +158,7 @@
 		<point name = "Upwind330"  coordinate="330.0,0.0"/>
 		<point name = "Upwind390"  coordinate="390.0,0.0"/>
 		<point name = "Upwind450"  coordinate="450.0,0.0"/>
+                -->
 
 	</regions>
 
@@ -121,7 +182,8 @@
 			<assigned_regions>All</assigned_regions>
 			<liquid_phase name = "water">
 	       		         <liquid_component name = "water">
-					<velocity x = "1.8634e-06" z="1.8634e-06" function ="uniform"/>
+					<!--velocity x = "1.8634e-06" z="1.8634e-06" function ="uniform"/-->
+					<velocity x = "1.8634e-06" z="0.0" function ="uniform"/>
 	       		         	<uniform_pressure value = "101325"/>
 				</liquid_component>    
 				<solute_component name = "Tc-99" value = "0.0" function="uniform"/>
@@ -135,9 +197,13 @@
 		<source name ="SRC 1">
 			<assigned_regions>Well</assigned_regions>
 			<liquid_phase name="water">
+				<liquid_component name="water">
+   					<volume_weighted />
+				 </liquid_component>
 				<solute_component name = "solute">
 					<flow_weighted_conc name = "Tc-99" start = "0.0" function = "constant" value ="8.1483e-08"/>
-					<flow_weighted_conc name = "Tc-99" start = "1.0e7" function = "constant" value ="0.0"/>
+					<!--flow_weighted_conc name = "Tc-99" start = "1.0e7" function = "constant" value ="0.0"/-->
+					<flow_weighted_conc name = "Tc-99" start = "1.0e7" function = "constant" value ="8.1483e-08"/>
 				</solute_component>
 			</liquid_phase>
 		</source>
@@ -147,34 +213,19 @@
 		<vis>
 			<base_filename>plot</base_filename>
 			<num_digits>5</num_digits>
-			<time_macro>EveryYear</time_macro>
+			<time_macros>EveryYear</time_macros>
 		</vis>
 
 		<observations>
 			<filename>obs5_2_1.out</filename>
 			<liquid_phase name="water">
 				<aqueous_conc solute="Tc-99">
-					<assigned_regions>Dnwind150</assigned_regions>
+					<assigned_regions>Origin</assigned_regions>
 					<functional>point</functional>
 					<time_macro>Observation Times</time_macro>
 				</aqueous_conc>
 				<aqueous_conc solute="Tc-99">
-					<assigned_regions>Dnwind090</assigned_regions>
-					<functional>point</functional>
-					<time_macro>Observation Times</time_macro>
-				</aqueous_conc>
-				<aqueous_conc solute="Tc-99">
-					<assigned_regions>Dnwind030</assigned_regions>
-					<functional>point</functional>
-					<time_macro>Observation Times</time_macro>
-				</aqueous_conc>
-				<aqueous_conc solute="Tc-99">
-					<assigned_regions>Upwind030</assigned_regions>
-					<functional>point</functional>
-					<time_macro>Observation Times</time_macro>
-				</aqueous_conc>
-				<aqueous_conc solute="Tc-99">
-					<assigned_regions>Upwind090</assigned_regions>
+					<assigned_regions>Upwind210</assigned_regions>
 					<functional>point</functional>
 					<time_macro>Observation Times</time_macro>
 				</aqueous_conc>
@@ -184,28 +235,177 @@
 					<time_macro>Observation Times</time_macro>
 				</aqueous_conc>
 				<aqueous_conc solute="Tc-99">
-					<assigned_regions>Upwind270</assigned_regions>
+					<assigned_regions>Upwind090</assigned_regions>
 					<functional>point</functional>
 					<time_macro>Observation Times</time_macro>
 				</aqueous_conc>
 				<aqueous_conc solute="Tc-99">
-					<assigned_regions>Upwind330</assigned_regions>
+					<assigned_regions>Upwind030</assigned_regions>
 					<functional>point</functional>
 					<time_macro>Observation Times</time_macro>
 				</aqueous_conc>
 				<aqueous_conc solute="Tc-99">
-					<assigned_regions>Upwind390</assigned_regions>
+					<assigned_regions>Dnwind030</assigned_regions>
 					<functional>point</functional>
 					<time_macro>Observation Times</time_macro>
 				</aqueous_conc>
 				<aqueous_conc solute="Tc-99">
-					<assigned_regions>Upwind450</assigned_regions>
+					<assigned_regions>Dnwind090</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnwind150</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnstrm210</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnstrm270</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnstrm330</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnstrm390</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnstrm450</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnstrm510</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnstrm570</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnstrm630</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnstrm690</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnstrm750</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnstrm810</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnstrm870</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Dnstrm930</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Cross0030</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Cross0060</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Cross0090</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Cross0120</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Cross0150</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Cross0180</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Cross0210</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Cross0240</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Crossb030</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Crossb060</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Crossb090</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Crossb120</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Crossb150</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Crossb180</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Crossb210</assigned_regions>
+					<functional>point</functional>
+					<time_macro>Observation Times</time_macro>
+				</aqueous_conc>
+				<aqueous_conc solute="Tc-99">
+					<assigned_regions>Crossb240</assigned_regions>
 					<functional>point</functional>
 					<time_macro>Observation Times</time_macro>
 				</aqueous_conc>
 			</liquid_phase>
 		</observations>
-
 	</output>
 
 </amanzi_input>

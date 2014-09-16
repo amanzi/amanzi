@@ -50,7 +50,7 @@ void BilinearFunction::check_args(const std::vector<double> &x, const std::vecto
   }
 }
 
-double BilinearFunction::operator() (const double *x) const
+double BilinearFunction::operator()(const std::vector<double>& x) const
 {
   double v;
   int nx = x_.size();

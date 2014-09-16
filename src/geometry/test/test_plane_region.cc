@@ -42,7 +42,8 @@ TEST(PLANE_REGION)
   // Create a rectangular region
   
   Amanzi::AmanziGeometry::RegionPtr reg = 
-    Amanzi::AmanziGeometry::RegionFactory(reg_spec.name(i), reg_id, reg_params, &ecomm);
+    Amanzi::AmanziGeometry::RegionFactory(reg_spec.name(i), reg_id, reg_params,
+                                          3, &ecomm);
   
   // See if we retrieved the name and id correctly
   

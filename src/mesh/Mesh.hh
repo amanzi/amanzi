@@ -12,6 +12,7 @@
 #include "Point.hh"
 #include "GeometricModel.hh"
 #include "Region.hh"
+#include "VerboseObject.hh"
 
 
 #include <map>
@@ -57,6 +58,8 @@ class Mesh
 
  protected:
 
+  const VerboseObject *verbosity_obj_;
+
   int compute_geometric_quantities() const;
 
 
@@ -83,17 +86,22 @@ class Mesh
 
   // constructor
 
-  Mesh()
+  Mesh(const VerboseObject *verbosity_obj=NULL)
     : spacedim(3), celldim(3), mesh_type_(GENERAL), 
       geometry_precomputed(false), columns_built(false), 
       cell_faceids_current(false), face_cellids_current(false), 
-      comm(NULL), geometric_model_(NULL)
+      comm(NULL), geometric_model_(NULL), verbosity_obj_(verbosity_obj)
   {
   }
 
   // destructor
 
   virtual ~Mesh() {}
+
+  inline
+  const VerboseObject *verbosity_obj() const {
+    return verbosity_obj_;
+  }
 
   inline
   void set_space_dimension(const unsigned int dim) {
@@ -281,8 +289,9 @@ class Mesh
                             const Parallel_type ptype,
                             Entity_ID_List *faceids) const = 0;
 
-  // Cells connected to a face - The order of cells is not guaranteed to be 
-  // the same for corresponding faces on different processors 
+  // Cells connected to a face - The cells are returned in no
+  // particular order. Also, the order of cells is not guaranteed to
+  // be the same for corresponding faces on different processors
   
   void face_get_cells (const Entity_ID faceid,
                        const Parallel_type ptype,

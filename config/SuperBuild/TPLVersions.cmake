@@ -44,6 +44,9 @@
 #   0.92.0       - Merge lib updates through 0.91.15
 #   0.92.1       - update MSTK to version 2.12 (fixes debug version linking)
 #   0.92.2       - update CCSE to version 1.2.7 (adds f90 utility for plotting)
+#   0.92.3       - update CURL to version 7.37.0 (builds correctly on Mac OS X 10.9)
+#   0.92.4       - update NetCDF to version 4.3.2 (builds correctly on Mac OS X 10.9)
+#   0.92.5       - Patched Alquimia to build properly with GFortran 4.9.x
 #
 
 include(CMakeParseArguments)
@@ -94,7 +97,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 2)
+set (AMANZI_TPLS_VERSION_PATCH 5)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -124,12 +127,12 @@ set(OpenMPI_MD5_SUM        e58a1ea7b8af62453aaa0ddaee5f26a0)
 # TPL: CURL
 #
 set(CURL_VERSION_MAJOR 7)
-set(CURL_VERSION_MINOR 21)
-set(CURL_VERSION_PATCH 6)
+set(CURL_VERSION_MINOR 37)
+set(CURL_VERSION_PATCH 0)
 set(CURL_VERSION ${CURL_VERSION_MAJOR}.${CURL_VERSION_MINOR}.${CURL_VERSION_PATCH})
 set(CURL_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(CURL_ARCHIVE_FILE   curl-${CURL_VERSION}.tar.gz)
-set(CURL_MD5_SUM        c502b67898b4a1bd687fe1b86419a44b) 
+set(CURL_ARCHIVE_FILE   curl-${CURL_VERSION}.tar.bz2)
+set(CURL_MD5_SUM        7dda0cc2e4136f78d5801ac347be696b)
 
 #
 # TPL: zlib
@@ -212,12 +215,12 @@ set(HDF5_MD5_SUM        1196e668f5592bfb50d1de162eb16cff)
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 2)
-set(NetCDF_VERSION_PATCH 1.1)
+set(NetCDF_VERSION_MINOR 3)
+set(NetCDF_VERSION_PATCH 2)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        5eebcf19e6ac78a61c73464713cbfafc)
+set(NetCDF_MD5_SUM        2fd2365e1fe9685368cd6ab0ada532a0)
 
 #
 # TPL: NetCDF Fortran
@@ -368,6 +371,5 @@ set(ALQUIMIA_VERSION_MAJOR 0)
 set(ALQUIMIA_VERSION_MINOR 1)
 set(ALQUIMIA_VERSION_PATCH 1)
 set(ALQUIMIA_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(ALQUIMIA_ARCHIVE_FILE   alquimia-0.1.1.tar.gz)
-#set(ALQUIMIA_MD5_SUM        8001a8721a002937801562bcc242824f)
-set(ALQUIMIA_MD5_SUM        b537f51f2086216d3f7b1e3b107e86fc)
+set(ALQUIMIA_ARCHIVE_FILE   alquimia-0.1.1a.tar.gz)
+set(ALQUIMIA_MD5_SUM        0e0bb9fea4ba96e42b9f4cdcd530e6fc)

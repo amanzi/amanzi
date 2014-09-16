@@ -62,9 +62,9 @@
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
     <ParameterList name="diffusion operator">
-      <Parameter name="schema" type="Array(string)" value="{node}"/>
       <Parameter name="discretization primary" type="string" value="mfd scaled"/>
       <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+      <Parameter name="schema" type="Array(string)" value="{node}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{node}"/>
     </ParameterList>
   </ParameterList>

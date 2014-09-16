@@ -19,7 +19,8 @@ Mesh_simple::Mesh_simple (double x0, double y0, double z0,
  			  double x1, double y1, double z1,
 			  int nx, int ny, int nz,
 			  const Epetra_MpiComm *communicator,
-			  const AmanziGeometry::GeometricModelPtr &gm):
+			  const AmanziGeometry::GeometricModelPtr &gm,
+                          const VerboseObject *verbosity_obj):
     nx_(nx), ny_(ny), nz_(nz),
     x0_(x0), x1_(x1),
     y0_(y0), y1_(y1),
@@ -43,7 +44,8 @@ Mesh_simple::Mesh_simple (double x0, double y0,
                           double x1, double y1,
                           int nx, int ny, 
                           const Epetra_MpiComm *communicator,
-                          const AmanziGeometry::GeometricModelPtr &gm) 
+                          const AmanziGeometry::GeometricModelPtr &gm,
+                          const VerboseObject *verbosity_obj) 
 {
   Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generate 2D meshes"));
 }
@@ -52,7 +54,8 @@ Mesh_simple::Mesh_simple (double x0, double y0,
 
 Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
 			   const Epetra_MpiComm *communicator,
-			   const AmanziGeometry::GeometricModelPtr &gm)
+			   const AmanziGeometry::GeometricModelPtr &gm,
+                          const VerboseObject *verbosity_obj)
 {
   Mesh::set_comm(communicator);
   Mesh::set_mesh_type(RECTANGULAR);
@@ -65,7 +68,8 @@ Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
 
 Mesh_simple::Mesh_simple (const GenerationSpec& gspec,
                           const Epetra_MpiComm *communicator,
-                          const AmanziGeometry::GeometricModelPtr &gm)
+                          const AmanziGeometry::GeometricModelPtr &gm,
+                          const VerboseObject *verbosity_obj)
 {
   Mesh::set_comm(communicator);
   Mesh::set_mesh_type(RECTANGULAR);
@@ -525,9 +529,9 @@ void Mesh_simple::node_get_coordinates (const AmanziMesh::Entity_ID local_node_i
 {
   unsigned int offset = (unsigned int) 3*local_node_id;
 
-  ncoords->init(3);
+  //  ncoords->init(3);
 
-  ncoords->set( &(coordinates_[offset]) );
+  ncoords->set( 3, &(coordinates_[offset]) );
 }
 
 

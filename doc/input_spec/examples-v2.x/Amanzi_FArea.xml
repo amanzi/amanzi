@@ -55,24 +55,9 @@
 				
 	<process_kernels>
 		<comments>This is a proposed comment field for process_kernels</comments>
-      		<flow state = "on" model = "richards"/>
-      		<transport state = "on" algorithm = "explicit first-order"/>
-		<!-- is there other information that needs to be listed here?  in the previous file
-		the following was specified
-
-                <ParameterList name="Chemistry">
-                  <Parameter name="Thermodynamic Database Format" type="string" value="simple"/>
-                  <Parameter name="Thermodynamic Database File" type="string" value="ascem-2012-farea.bgd"/>
-                  <Parameter name="Verbosity" type="Array string" value="{verbose}" />
-                  <Parameter name="Activity Model" type="string" value="unit"/>
-                  <Parameter name="Tolerance" type="double" value="1.0e-10"/>
-                  <Parameter name="Maximum Newton Iterations" type="int" value="250"/>
-                  <Parameter name="Max Time Step (s)" type="double" value="864000.0"/>
-                  <Parameter name="Auxiliary Data" type="Array string" value="{pH}"/>
-                </ParameterList>
-		-->
-
-      		<chemistry state = "on" process_model="implicit operator split"/>
+	        <flow model="richards" state="on"/>
+	        <transport algorithm="explicit first-order" state="on"/>
+	        <chemistry engine="amanzi" process_model="implicit operator split" state="on"/>
 	</process_kernels>
 	
 
@@ -82,25 +67,24 @@
 			<viscosity>1.00E-03</viscosity>
 			<density>997.16</density>
 			<dissolved_components>
-			<!-- to validate, do we need to list as elements? TDS: I'm not sure what we would
-			      validate against; do we have a universal list of solutes that are simulated
-			      by amanzi? -->
-				<solutes>H+, Al+++, Ca+, Fe+++, CO2(aq), K+, Mg++, Na+, SiO2(aq), SO4--,
-					Tritium, NO3-, UO2++ </solutes>
-					<!--  e.g.,
-				<solutes>
-					<solute>H+</solute> 
-					<solute>Al+++</solute> 
-					<solute>Ca+</solute> 
-					<solute>Fe+++</solute> 
-					<solute>CO2(aq)</solute> 
-					<solute>K+</solute> 
-					...
+				<solutes> 
+					<solute coefficient_of_diffusion="1.0E-9">H+</solute>
+					<solute coefficient_of_diffusion="1.0E-9">Al+++</solute>
+					<solute coefficient_of_diffusion="1.0E-9">Ca++</solute>
+					<solute coefficient_of_diffusion="1.0E-9">Fe+++</solute>
+					<solute coefficient_of_diffusion="1.0E-9">CO2(aq)</solute>
+					<solute coefficient_of_diffusion="1.0E-9">K+</solute>
+					<solute coefficient_of_diffusion="1.0E-9">Mg++</solute>
+					<solute coefficient_of_diffusion="1.0E-9">Na+</solute>
+					<solute coefficient_of_diffusion="1.0E-9">SiO2(aq)+</solute>
+					<solute coefficient_of_diffusion="1.0E-9">SO4--</solute>
+					<solute coefficient_of_diffusion="1.0E-9">Tritium</solute>
+					<solute coefficient_of_diffusion="1.0E-9">NO3-</solute>
+					<solute coefficient_of_diffusion="1.0E-9">UO2++-</solute>
+					<solute coefficient_of_diffusion="1.0E-9">Cl-</solute>
+					<solute coefficient_of_diffusion="1.0E-9">SiO2(aq)</solute>
+					<solute coefficient_of_diffusion="1.0E-9">UO2++</solute>
 				</solutes> 
-					-->
-		<!-- coefficient of diffusion not in original F Area input file  TDS: Shouldn't diffusion 
-			coefficient be solute-specific? -->
-				<coefficient_of_diffusion>1.0e-9</coefficient_of_diffusion>
 			</dissolved_components>
 		</liquid_phase>
 		<!-- I changed this from the Calcite example; should it be minerals/sorption? -->
@@ -118,6 +102,8 @@
 		</solid_phase>
 	</phases>
 
+	<numerical_controls>
+	</numerical_controls>
 
 	<execution_controls>
 		<comments>Switch time is Jan 1955; end time is Jan 2055 </comments>
@@ -128,122 +114,73 @@
 			<execution_control  start="1988 y" init_dt="10"/>
 	</execution_controls>
 
-	<numerical_controls>
-		<comments>Numerical controls comments here</comments>
-		<steady-state_controls>
-			<comments>Steady-state controls comments here</comments>
-          		<min_iterations>10</min_iterations>
-		      	<max_iterations>20</max_iterations>
-          		<max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
-          		<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-          		<error_rel_tol>0.0</error_rel_tol>
-          		<error_abs_tol>1.0</error_abs_tol>
-          		<pseudo_time_integrator>
-               			<method>picard</method>
-          			<preconditioner>hypre amg</preconditioner>
-          			<linear_solver>aztec00</linear_solver>
-          			<control_options>pressure</control_options>
-          			<divergent_max_iterations>100</divergent_max_iterations>
-          			<clipping_saturation>0.9</clipping_saturation>
-          			<convergence_tolerance>1.0e-10</convergence_tolerance>
-          			<initialize_with_darcy>true</initialize_with_darcy>
-          		</pseudo_time_integrator>
-		</steady-state_controls>
-
-		<transient_controls>
-		 	<!-- Integration method named in execution controls; redundant? -->
-		 	<comments>Transient controls comments here</comments>
-			<integration_method name="bdf1">
-				<convergence_criteria error_rel_tol="0.0" error_abs_tol="0.0" />
-				<!-- why listed here as attributes, but as elements in steady-state controls -->
-				<!-- new parameters in F Area file -->
-       		    		<nonlinear_solver_parameters min_iterations="10" max_iterations="15" limit_iterations = "20" nonlinear_tolerance="1.0e-05" max_divergent_iterations="6" max_preconditioner_lag="10" />
-			</integration_method>
-		</transient_controls>
-
-		<linear_solver>
-		        <comments>linear solver method not specified in F-Area file; what is default? gmres?</comments>
-			<method>gmres</method>
-		        <!-- max iterations for gmres? -->
-			<max_iterations>20</max_iterations>
-			<tolerance>1.0e-15</tolerance>
-			<ml_cycle_applications>12</ml_cycle_applications>
-			<use_hypre_amg>true</use_hypre_amg>
-			<use_block_ilu>false</use_block_ilu>
-			<hypre_amg_cycle_applications>10</hypre_amg_cycle_applications>
-			<hypre_amg_smoother_sweeps>3</hypre_amg_smoother_sweeps>
-			<hypre_amg_tolerance>0.1</hypre_amg_tolerance>
-			<hypre_amg_threshold>0.4</hypre_amg_threshold>
-			<ml_smoother_type>jacobi</ml_smoother_type>
-       		         <sub_cycling>true</sub_cycling>
-			<transport_sub_cycling>true</transport_sub_cycling>
-		</linear_solver>
-
-	</numerical_controls>
 
         <mesh framework="mstk"> <!-- default is MSTK for unstructured; This had attribute verify="false" meaning what? -->
 		<comments>The meshes are available in https://software.lanl.gov/ascem/trac/wiki/CodeMilestones/Phase2/F-Area</comments>
 		<dimension>2</dimension>
-		<file>f_area_mesh_2D.exo</file>
+		<read>
+			<format>exodus ii</format>
+			<file>f_area_mesh_2D.exo</file>
+		</read>
 	</mesh>
 
 	<regions>
   		<comments>Regions: Each region is coincident  with those specified in the exodus II format.</comments>
 	  	<region name= "Upper aquifer">
-			<region_file name = "f_area_mesh_2D.exo" type="labeled set" format="exodus ii" entity="cell" label="50000"/>
+			<region_file name = "f_area_mesh_2D.exo" type="labeled set" entity="cell" label="50000"/>
  	   	</region>
 
   		<region name= "Lower aquifer">
-			<region_file name = "f_area_mesh_2D.exo" type="labeled set" format="exodus ii" entity="cell" label="30000"/>
+			<region_file name = "f_area_mesh_2D.exo" type="labeled set" entity="cell" label="30000"/>
    	 	</region>
 
  	 	<region name= "tan clay">
-			<region_file name = "f_area_mesh_2D.exo" type="labeled set" format="exodus ii" entity="cell" label="40000"/>
+			<region_file name = "f_area_mesh_2D.exo" type="labeled set" entity="cell" label="40000"/>
  	   	</region>
 
   		<region name= "natural recharge (left)">
 		<comments>This face is corresponding to natural recharge (left side) (Bc1)</comments>
-			<region_file name = "f_area_mesh_2D.exo" type="labeled set" format="exodus ii" entity="face" label="1"/>
+			<region_file name = "f_area_mesh_2D.exo" type="labeled set" entity="face" label="1"/>
  	   	</region>
 
   		<region name= "natural recharge (right)">
 			<comments>This face is corresponding to natural recharge (right side) (Bc3)</comments>
-			<region_file name = "f_area_mesh_2D.exo" type="labeled set" format="exodus ii" entity="face" label="3"/>
+			<region_file name = "f_area_mesh_2D.exo" type="labeled set" entity="face" label="3"/>
     		</region>
 	  	<region name= "seepage basin">
 		<comments>This face is corresponding to Seepage basin (Bc2)</comments>
-			<region_file name = "f_area_mesh_2D.exo" type="labeled set" format="exodus ii" entity="face" label="2"/>
+			<region_file name = "f_area_mesh_2D.exo" type="labeled set" entity="face" label="2"/>
     		</region>
   		<region name= "seepage face">
 		<comments>This face is corresponding to seepage face (Bc4)</comments>
-			<region_file name = "f_area_mesh_2D.exo" type="labeled set" format="exodus ii" entity="face" label="4"/>
+			<region_file name = "f_area_mesh_2D.exo" type="labeled set" entity="face" label="4"/>
     		</region>
   		<region name= "UTRA upstream">
 			<comments>This face is corresponding to UTRA (UUTRA + TCCZ + LUTRA) upstream side (Bc8)</comments>
-			<region_file name = "f_area_mesh_2D.exo" type="labeled set" format="exodus ii" entity="face" label="8"/>
+			<region_file name = "f_area_mesh_2D.exo" type="labeled set" entity="face" label="8"/>
     		</region>
 		<region name= "UTRA downstream">
 			<comments>This face is corresponding to UTRA (UUTRA + TCCZ + LUTRA) downstream side (Bc5)</comments>
-			<region_file name = "f_area_mesh_2D.exo" type="labeled set" format="exodus ii" entity="face" label="5"/>
+			<region_file name = "f_area_mesh_2D.exo" type="labeled set" entity="face" label="5"/>
     		</region>
 		<region name= "VZ">
 			<comments>This face is corresponding to vadose zone (Bc9, no flux)</comments>
-			<region_file name = "f_area_mesh_2D.exo" type="labeled set" format="exodus ii" entity="face" label="9"/>
+			<region_file name = "f_area_mesh_2D.exo" type="labeled set" entity="face" label="9"/>
     		</region>
 
 		<!-- TDS: To validate the coordinates using the current regexp, three values are required.  Here we have a 2D mesh,
 			so maybe we need to allow 1-D or 2-D coordinates as well? Could have point_1d, point_2d, point_3d etc. ?
 			For now, I have just added a third coordinate of zero so that it validates... -->
 
-    		<point name = "Well_1"      coordinate ="1866,58.1,0"/>
-    		<point name = "Well_2"      coordinate ="1866,43.8,0"/>
-    		<point name = "Well_3"      coordinate ="2072,58.1,0"/>
-    		<point name = "Basin_point" coordinate ="1721,84.8,0"/>
+    		<point name = "Well_1"      coordinate ="(1866,58.1)"/>
+    		<point name = "Well_2"      coordinate ="(1866,43.8)"/>
+    		<point name = "Well_3"      coordinate ="(2072,58.1)"/>
+    		<point name = "Basin_point" coordinate ="(1721,84.8)"/>
 
 	</regions>
     
   	<geochemistry>
-		<reaction_network_filename>calcite_flow_and_tran.in</reaction_network_filename>
+		<reaction_network file = "calcite_flow_and_tran.in" format = "simple"/>
 		<constraints>
 			<!-- Provide a list of constraints for various chemistry in system. -->
                         <!-- Chemistry input needs to be consolidated and migrated to xml file
@@ -307,7 +244,7 @@
 
 	<materials>
     		<!-- Upper aquifer (UUTRA) -->
-		<material name="upper aquifer">
+		<material name="Upper aquifer">
 			<mechanical_properties>
                          	<porosity value="0.39"/>
                          	<particle_density value="2720.0"/>  <!-- TDS Added this - is there a default for particle_density? -->
@@ -320,10 +257,10 @@
 			<rel_perm model="mualem">
 				<optional_krel_smoothing_interval>0.0</optional_krel_smoothing_interval>
 			</rel_perm>		
-			<assigned_regions>upper aquifer</assigned_regions>
+			<assigned_regions>Upper aquifer</assigned_regions>
 		</material>
 
-		<material name="lower aquifer">
+		<material name="Lower aquifer">
 			<mechanical_properties>
                          	<porosity value="0.39"/>
                          	<particle_density value="2720.0"/>  <!-- TDS Added this - is there a default for particle_density? -->
@@ -336,7 +273,7 @@
 			<rel_perm model="mualem">
 				<optional_krel_smoothing_interval>0.0</optional_krel_smoothing_interval>
 			</rel_perm>		
-			<assigned_regions>lower aquifer</assigned_regions>
+			<assigned_regions>Lower aquifer</assigned_regions>
 		</material>
 
 		<material name="tan clay">
@@ -357,33 +294,29 @@
 	</materials>
 
 	<initial_conditions>
-		<liquid_phase name="water">
-			<initial_condition name = "background aqueous">
-				<assigned_regions>all</assigned_regions>
+		<initial_condition name = "background aqueous">
+			<assigned_regions>Upper aquifer,Lower aquifer,tan clay</assigned_regions>
+			<liquid_phase name="water">
 				<liquid_component name = "water">
-					<!-- TDS: Added third coordinate of zero here... but note that ky is not defined, so perhaps the third
-					  non-existent coordinate is y? Need to figure out something consistent here... -->
-					<pressure value = "101325" function="linear" reference_coord ="(0.0,60.0,0.0)" gradient="(0.0,-9793.5192,0.0)"/>
+					<linear_pressure value = "101325" reference_coord ="(0.0,60.0)" gradient="(0.0,-9793.5192)"/>
 				</liquid_component>
 				<geochemistry>
 					<constraint name = "initial"/>
 				</geochemistry>
-			</initial_condition>
-		</liquid_phase>
-		<solid_phase name="solid">
-			<initial_condition name="background solid">
-				<assigned_regions>all</assigned_regions>
+			</liquid_phase>
+			<solid_phase name="solid">
 				<geochemistry>
 					<constraint name = "initial"/>
 				</geochemistry>
-			</initial_condition>
-		</solid_phase>
+			</solid_phase>
+		</initial_condition>
 	</initial_conditions>
+
 	<boundary_conditions>
-		<liquid_phase name = "water">
-			<boundary_condition name = "natural recharge (left side)">
-    				<comments>Boundary corresponding to the Natural recharge (left side)</comments>
-				<assigned_regions>natural recharge (left)</assigned_regions>
+		<boundary_condition name = "natural recharge (left side)">
+    			<comments>Boundary corresponding to the Natural recharge (left side)</comments>
+			<assigned_regions>natural recharge (left)</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name="water">
 					<inward_mass_flux start="0"         function="constant"  value="4.743e-6"/>
 					<inward_mass_flux start="3.1536e9"  function="constant"  value="4.743e-6"/>
@@ -391,10 +324,13 @@
 				<geochemistry>
 					<constraint name="initial" start="0" function="constant"/>
 				</geochemistry>
-			</boundary_condition>
-			<boundary_condition name = "natural recharge (right side)">
-    				<comments>Boundary corresponding to the Natural recharge (right side)</comments>
-				<assigned_regions>natural recharge (right)</assigned_regions>
+			</liquid_phase>
+		</boundary_condition>
+
+		<boundary_condition name = "natural recharge (right side)">
+    			<comments>Boundary corresponding to the Natural recharge (right side)</comments>
+			<assigned_regions>natural recharge (right)</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name="water">
 					<inward_mass_flux start="0"         function="constant"  value="4.743e-6"/>
 					<inward_mass_flux start="3.1536e9"  function="constant"  value="4.743e-6"/>
@@ -402,10 +338,13 @@
 				<geochemistry>
 					<constraint name="initial" start="0" function="constant"/>
 				</geochemistry>
-			</boundary_condition>
-			<boundary_condition name = "natural recharge (right side)">
-    				<comments>Boundary corresponding to the seepage basin</comments>
-				<assigned_regions>seepage basin</assigned_regions>
+			</liquid_phase>
+		</boundary_condition>
+
+		<boundary_condition name = "natural recharge (right side)">
+    			<comments>Boundary corresponding to the seepage basin</comments>
+			<assigned_regions>seepage basin</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name="water">
 					<inward_mass_flux                    start="0"         function="constant"  value="4.743e-6"/>
 					<inward_mass_flux                    start="1955 y"    function="constant"  value="1.2684e-4"/>
@@ -415,10 +354,13 @@
 				<geochemistry>
 					<constraint name="initial"           start="0"      function="constant"/>
 				</geochemistry>
-			</boundary_condition>
-			<boundary_condition name = "f-3_basin">
-    				<comments>Boundary corresponding to the seepage basin</comments>
-				<assigned_regions>seepage basin</assigned_regions>
+			</liquid_phase>
+		</boundary_condition>
+
+		<boundary_condition name = "f-3_basin">
+    			<comments>Boundary corresponding to the seepage basin</comments>
+			<assigned_regions>seepage basin</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name="water">
 					<inward_mass_flux                    start="0"         function="constant"  value="4743e-6"/>
 					<inward_mass_flux                    start="1955 y"    function="constant"  value="4.743e-6"/>
@@ -431,10 +373,13 @@
 					<constraint name="initial"           start="1988 y"    function="constant"/>
 					<constraint name="initial"           start="2000 y"    function="constant"/>
 				</geochemistry>
-			</boundary_condition>
-			<boundary_condition name = "seepage_face">
-    				<comments>Boundary corresponding to the seepage basin</comments>
-				<assigned_regions>seepage face</assigned_regions>
+			</liquid_phase>
+		</boundary_condition>
+		
+		<boundary_condition name = "seepage_face">
+    			<comments>Boundary corresponding to the seepage basin</comments>
+			<assigned_regions>seepage face</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name="water">
 					<inward_mass_flux                    start="0"         function="constant"  value="4.743e-6"/>
 					<inward_mass_flux                    start="50 y"      function="constant"  value="4.743e-6"/>
@@ -443,88 +388,51 @@
 					<constraint name="initial"           start="0"         function="constant"/>
 					<constraint name="initial"           start="50 y"      function="constant"/>
 				</geochemistry>
-			</boundary_condition>
-		</liquid_phase>
+			</liquid_phase>
+		</boundary_condition>
+
 	</boundary_conditions>
 	
+	<sources>
+	</sources>
+
 	<output>
 		<vis>
 			<base_filename>plot</base_filename>
 			<num_digits>5</num_digits>
-			<time_macro>Active basin</time_macro>
-			<time_macro>Plume evolution: every year</time_macro>
-			<time_macro>Plume evolution: every five years</time_macro>
+			<time_macros>Active basin</time_macros>
+			<time_macros>Plume evolution: every year</time_macros>
+			<time_macros>Plume evolution: every five years</time_macros>
 		</vis>
 
 		<checkpoint>
 			<base_filename>chk</base_filename>
 			<num_digits>5</num_digits>
-			<time_macro>Every-100-timesteps</time_macro>
 		</checkpoint>
 
 		<observations>
-   			<filename>observation.out</filename> 
+   			<filename>amanzi.out</filename> 
 			<liquid_phase name="water">
-				<observation variable="H+ Aqueous concentration">
+				<aqueous_conc solute ="H+">
 					<assigned_regions>Well_1</assigned_regions>
 					<functional>point</functional>
 					<time_macro>Every year</time_macro>
-				</observation>
-				<observation variable="H+ Aqueous concentration">
-					<assigned_regions>Well_2</assigned_regions>
-					<functional>point</functional>
-					<time_macro>Every year</time_macro>
-				</observation>
-				<observation variable="H+ Aqueous concentration">
-					<assigned_regions>Well_3</assigned_regions>
-					<functional>point</functional>
-					<time_macro>Every year</time_macro>
-				</observation>
-				<observation variable="UO2++ Aqueous concentration">
+				</aqueous_conc>
+				<aqueous_conc solute ="UO2++">
 					<assigned_regions>Well_1</assigned_regions>
 					<functional>point</functional>
 					<time_macro>Every year</time_macro>
-				</observation>
-				<observation variable="UO2++ Aqueous concentration">
-					<assigned_regions>Well_2</assigned_regions>
-					<functional>point</functional>
-					<time_macro>Every year</time_macro>
-				</observation>
-				<observation variable="UO2++ Aqueous concentration">
-					<assigned_regions>Well_3</assigned_regions>
-					<functional>point</functional>
-					<time_macro>Every year</time_macro>
-				</observation>
-				<observation variable="Al+++ Aqueous concentration">
+				</aqueous_conc>
+				<aqueous_conc solute ="Al+++">
 					<assigned_regions>Well_1</assigned_regions>
 					<functional>point</functional>
 					<time_macro>Every year</time_macro>
-				</observation>
-				<observation variable="Al+++ Aqueous concentration">
-					<assigned_regions>Well_2</assigned_regions>
-					<functional>point</functional>
-					<time_macro>Every year</time_macro>
-				</observation>
-				<observation variable="Al+++ Aqueous concentration">
-					<assigned_regions>Well_3</assigned_regions>
-					<functional>point</functional>
-					<time_macro>Every year</time_macro>
-				</observation>
-				<observation variable="NO3- Aqueous concentration">
+				</aqueous_conc>
+				<aqueous_conc solute ="NO3-">
 					<assigned_regions>Well_1</assigned_regions>
 					<functional>point</functional>
 					<time_macro>Every year</time_macro>
-				</observation>
-				<observation variable="NO3- Aqueous concentration">
-					<assigned_regions>Well_2</assigned_regions>
-					<functional>point</functional>
-					<time_macro>Every year</time_macro>
-				</observation>
-				<observation variable="NO3- Aqueous concentration">
-					<assigned_regions>Well_3</assigned_regions>
-					<functional>point</functional>
-					<time_macro>Every year</time_macro>
-				</observation>
+				</aqueous_conc>
 			</liquid_phase>
 		</observations>
 	</output>

@@ -44,10 +44,12 @@ class SolverNKA_BT : public Solver<Vector, VectorSpace> {
     return (returned_code_ >= 0) ? 0 : 1;
   }
 
-  // control
+  // mutators
+  void set_tolerance(double tol) { tol_ = tol; }
   void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
 
   // access
+  double tolerance() { return tol_; }
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
   int pc_calls() { return pc_calls_; }
@@ -137,7 +139,7 @@ void SolverNKA_BT<Vector, VectorSpace>::Init_()
   update_pc_calls_ = 0;
   pc_lag_ = 0;
   nka_lag_space_ = 0;
-  backtrack_lag_ = 2;
+  backtrack_lag_ = 0;
 
   residual_ = -1.0;
 
@@ -296,13 +298,11 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
       BackTracking<Vector> bt(fn_);
       int ok = bt.Bisection(u, du);
 
-      if (ok != 0) {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-          *vo_->os() << bt.num_steps() << " backtracking steps,  ||r||: " 
-                     << bt.initial_residual() << " -> " << bt.final_residual() << std::endl;
-        }
-        nka_->Restart();
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+        *vo_->os() << bt.num_steps() << " backtracking steps,  ||r||: " 
+                   << bt.initial_residual() << " -> " << bt.final_residual() << std::endl;
       }
+      nka_->Restart();
     }
 
     // Next solution iterate and error estimate: u  = u - du

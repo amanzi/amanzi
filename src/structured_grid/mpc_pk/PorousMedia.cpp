@@ -1268,12 +1268,6 @@ PorousMedia::initData ()
                   }
                   int comp = it3->second;
                   Real value = it2->second;
-
-                  if (comp < 3) {
-                    std::cout << "label " << parameter << std::endl;
-                    BoxLib::Abort();
-                  }
-
                   const PArray<RegionData>& rds = tic_array[iTracer];
                   for (int k=0; k<rds.size(); ++k) {
                     const Array<const Region*>& rock_regions = rds[k].Regions();
@@ -1309,7 +1303,6 @@ PorousMedia::initData ()
                   BL_ASSERT(sdat.nComp()>ncomps+iTracer);
                   BL_ASSERT(tic_regions.size()>jt);
                   tic_regions[jt]->setVal(sdat,val[val.size()-1],ncomps+iTracer,dx,0);
-
                   if (chemistry_model_name=="Alquimia" && do_tracer_chemistry>0) 
                   {
                     FArrayBox& aux =  get_new_data(Aux_Chem_Type)[mfi];
@@ -1334,7 +1327,6 @@ PorousMedia::initData ()
       if (chemistry_model_name=="Amanzi" && do_tracer_chemistry>0) {
 
         // "Speciate" the chemistry (set up remaining chem data)
-        std::cout << "Speciating "<< std::endl;
         for (MFIter mfi(S_new); mfi.isValid(); ++mfi) {
           Box box = mfi.validbox();
           FArrayBox& sat   = S_new[mfi];
@@ -1350,7 +1342,6 @@ PorousMedia::initData ()
           achp->Initialize(sat,0,press,0,phi,0,vol,0,sat,ncomps,fct,0,aux,density[0],298,box);
           sat.mult(density[0],0,1);
         }
-        std::cout << "Speciating complete" << std::endl;
       }
     }
 
@@ -3551,11 +3542,10 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
   if (!pm_amr) 
     BoxLib::Abort("Bad cast in PorousMedia::advance_multilevel_richards_flow");
 
-  int num_active_levels = finest_level + 1;
-  Layout layout_sub(parent,num_active_levels);
   if (steady_use_PETSc_snes) {
 
     // Prepare the state data structures
+    BL_ASSERT(richard_solver != 0);
     for (int lev=0; lev<=finest_level; ++lev) {
       PorousMedia& pm = getLevel(lev);        
       for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); 
@@ -3573,8 +3563,10 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     
   int nc = 0; // Component of water in state
 
-  // Save initial state, used in the native solver to build res_fix
   if (steady_use_PETSc_snes) {
+
+    // Save initial state, used in the native solver to build res_fix
+    BL_ASSERT(richard_solver != 0);
     for (int lev=0;lev<nlevs;lev++)
     {
       PorousMedia&    fine_lev   = getLevel(lev);
@@ -6020,8 +6012,10 @@ PorousMedia::advance_chemistry (Real time,
       FArrayBox& vol_fab = volTemp[mfi];
       FArrayBox& fct_fab = fcnCntTemp[mfi];
       FArrayBox& aux_fab = auxTemp[mfi];
+
       chemistry_helper->Advance(sat_fab,0,press_fab,0,phi_fab,0,vol_fab,0,sat_fab,ncomps,
                                 fct_fab,0,aux_fab,density[0],298,box,dt_sub_chem);
+
       sat_fab.mult(density[0],0,1);
     }
   }
@@ -7931,7 +7925,6 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
               }
           }
           
-          
           predictDT(u_mac,cur_time);
           if (diffuse_tracers && be_cn_theta_trac==0) {
             Real dt_diff = predictDT_diffusion_explicit(cur_time);
@@ -7995,14 +7988,7 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
   MultiFab RhoSat(grids,ncomps,nGrowEIGEST);
   get_fillpatched_rhosat(t_eval,RhoSat,nGrowEIGEST);
 
-  // Find Ung
-  int Ung = -1;
-  for (int i=0; i<10; ++i) {
-    if (BoxLib::surroundingNodes(BoxLib::grow(grids[0],i),0) == u_macG[0][0].box()) {
-      Ung = i;
-    }
-  }
-  BL_ASSERT(Ung>=0);
+  int Ung = 1;
   int Uidx = 0;
 
   for (MFIter mfi(RhoSat); mfi.isValid(); ++mfi) {
@@ -8567,22 +8553,37 @@ PorousMedia::PMParent() const
 //
 void PorousMedia::post_restart()
 {
-  if (level==0)
-  {
-      PMParent()->GetLayout().Build();
-  }
-
   init_rock_properties();
 
-  if (level == 0)
-    {
-      Observation::setPMAmrPtr(PMParent());
-      Real prev_time = state[State_Type].prevTime();
-      Real curr_time = state[State_Type].curTime();
-      PArray<Observation>& observations = PMParent()->TheObservations();
-      for (int i=0; i<observations.size(); ++i)
-          observations[i].process(prev_time, curr_time, parent->levelSteps(0));
+  if (level == 0) {
+
+    PMParent()->GetLayout().Build();
+
+    Observation::setPMAmrPtr(PMParent());
+    Real prev_time = state[State_Type].prevTime();
+    Real curr_time = state[State_Type].curTime();
+    PArray<Observation>& observations = PMParent()->TheObservations();
+    for (int i=0; i<observations.size(); ++i) {
+      observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
+
+    if (steady_use_PETSc_snes) {
+
+      Layout& layout = PMParent()->GetLayout();
+      PMAmr* pm_parent = PMParent();
+      int new_nLevs = parent->finestLevel() + 1;
+
+      BL_ASSERT(richard_solver_control == 0);
+      richard_solver_control = new NLScontrol();
+
+      BL_ASSERT(richard_solver_data == 0);
+      richard_solver_data = new RSAMRdata(0,new_nLevs,layout,pm_parent,*richard_solver_control,rock_manager);
+      BuildNLScontrolData(*richard_solver_control,*richard_solver_data,"Flow_PK");
+
+      BL_ASSERT(richard_solver == 0);
+      richard_solver = new RichardSolver(*richard_solver_data,*richard_solver_control);
+    }
+  }
 }
 
 //
@@ -8846,11 +8847,14 @@ PorousMedia::post_init_state ()
     }
 
     // Build a RS for the Flow_PK
+    BL_ASSERT(richard_solver_control == 0);
     richard_solver_control = new NLScontrol();
     Layout& layout = PMParent()->GetLayout();
     PMAmr* pm_parent = PMParent();
+    BL_ASSERT(richard_solver_data == 0);
     richard_solver_data = new RSAMRdata(0,layout.NumLevels(),layout,pm_parent,*richard_solver_control,rock_manager);
     BuildNLScontrolData(*richard_solver_control,*richard_solver_data,"Flow_PK");
+    BL_ASSERT(richard_solver == 0);
     richard_solver = new RichardSolver(*richard_solver_data,*richard_solver_control);
   }
 
@@ -10877,10 +10881,18 @@ PorousMedia::calcDiffusivity (const Real time,
 
       BL_ASSERT(dComp_tracs + num_tracs <= diff_cc->nComp());
 
-      bool retD = rock_manager->GetProperty(time,level,*diff_cc,"molecular_diffusion_coefficient",dComp_tracs,nGrow);
+      // FIXME: D and tau are n-dimensional because they may have come from averaging down, and if so 
+      // should use harmonic/arith formulas.  However, at the moment, the cell-centered diffusion coefficient has
+      // only a single component per species. As a HACK we will take just the first component of these vectors
+      // but this should be fixed by having an n-dim vector of these things.
 
+      MultiFab tmp(grids,BL_SPACEDIM,nGrow);
+      bool retD = rock_manager->GetProperty(time,level,tmp,"molecular_diffusion_coefficient",0,nGrow);
+      MultiFab::Copy(*diff_cc,tmp,0,dComp_tracs,1,nGrow);
+
+      bool retT = rock_manager->GetProperty(time,level,tmp,"tortuosity",0,nGrow);
       MultiFab tau(grids,1,nGrow);
-      bool retT = rock_manager->GetProperty(time,level,tau,"tortuosity",0,nGrow);
+      MultiFab::Copy(tau,tmp,0,0,1,nGrow);
 
       if (!retD || !retT) {
         diff_cc->setVal(0,dComp_tracs,num_tracs,nGrow);
@@ -12574,28 +12586,38 @@ PorousMedia::derive_Intrinsic_Permeability(Real      time,
 void
 PorousMedia::derive_Molecular_Diffusion_Coefficient(Real      time,
                                                     MultiFab& mf,
-                                                    int       dcomp)
+                                                    int       dcomp,
+                                                    int       dir)
 {
-  bool ret = rock_manager->GetProperty(state[State_Type].curTime(),level,mf,
+  MultiFab Dtmp(grids,BL_SPACEDIM,0);
+  bool ret = rock_manager->GetProperty(state[State_Type].curTime(),level,Dtmp,
                                   "molecular_diffusion_coefficient",dcomp,mf.nGrow());
   if (!ret) {
     // Assume one component, return def
     Real molecular_diffusion_coefficient_DEF = 0;
     mf.setVal(molecular_diffusion_coefficient_DEF,dcomp,1);
   }
+  else {
+    MultiFab::Copy(mf,Dtmp,dir,dcomp,1,0);
+  }
 }
 
 void
 PorousMedia::derive_Tortuosity(Real      time,
                                MultiFab& mf,
-                               int       dcomp)
+                               int       dcomp,
+                               int       dir)
 {
-  bool ret = rock_manager->GetProperty(state[State_Type].curTime(),level,mf,
+  MultiFab Ttmp(grids,BL_SPACEDIM,0);
+  bool ret = rock_manager->GetProperty(state[State_Type].curTime(),level,Ttmp,
                                   "tortuosity",dcomp,mf.nGrow());
   if (!ret) {
     // Assume one component, return def
     Real tortuosity_DEF = 1;
     mf.setVal(tortuosity_DEF,dcomp,1);
+  }
+  else {
+    MultiFab::Copy(mf,Ttmp,dir,dcomp,1,0);
   }
 }
 
@@ -12737,16 +12759,24 @@ PorousMedia::derive (const std::string& name,
                   name == "Intrinsic_Permeability_Y" ? 1 : 2);
       derive_Intrinsic_Permeability(time,mf,dcomp,dir);
     }
-    else if (name == "Molecular_Diffusion_Coefficient") {
-      derive_Molecular_Diffusion_Coefficient(time,mf,dcomp);
+    else if (name == "Molecular_Diffusion_Coefficient_X" ||
+        name == "Molecular_Diffusion_Coefficient_Y" ||
+        name == "Molecular_Diffusion_Coefficient_Z") {
+      int dir = ( name == "Molecular_Diffusion_Coefficient_X"  ?  0  :
+                  name == "Molecular_Diffusion_Coefficient_Y" ? 1 : 2);
+      derive_Molecular_Diffusion_Coefficient(time,mf,dcomp,dir);
     }
     else if (name == "Dispersivity_L" ||
              name == "Dispersivity_T") {
       int dir = ( name == "Dispersivity_L"  ?  0  : 1);
       derive_Dispersivity(time,mf,dcomp,dir);
     }
-    else if (name == "Tortuosity") {
-      derive_Tortuosity(time,mf,dcomp);
+    else if (name == "Tortuosity_X" ||
+             name == "Tortuosity_Y" ||
+             name == "Tortuosity_Z") {
+      int dir = ( name == "Tortuosity_X"  ?  0  :
+                  name == "Tortuosity_Y" ? 1 : 2);
+      derive_Tortuosity(time,mf,dcomp,dir);
     }
     else if (name == "Specific_Storage") {
       derive_SpecificStorage(time,mf,dcomp);

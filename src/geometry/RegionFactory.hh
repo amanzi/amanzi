@@ -18,6 +18,10 @@
 
 #include "Region.hh"
 
+#include "dbc.hh"
+#include "errors.hh"
+#include "VerboseObject.hh"
+
 namespace Amanzi {
 namespace AmanziGeometry {
 
@@ -28,7 +32,9 @@ namespace AmanziGeometry {
 
 RegionPtr RegionFactory(const std::string reg_name, const unsigned int reg_id,
                         const Teuchos::ParameterList& reg_spec,
-                        const Epetra_MpiComm *comm);
+                        const int space_dimension,
+                        const Epetra_MpiComm *comm,
+                        const VerboseObject *verbobj=NULL);
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

@@ -2,6 +2,7 @@
 #define ODE_TEST_FNBASE_HH_
 
 #include "BDFFnBase.hh"
+#include "FnBaseDefs.hh"
 
 // ODE for testing
 class nonlinearODE : public Amanzi::BDFFnBase<Epetra_Vector> {
@@ -65,9 +66,12 @@ public:
   bool IsAdmissible(Teuchos::RCP<const Epetra_Vector> up) { return true; }
   bool ModifyPredictor(double h, Teuchos::RCP<const Epetra_Vector> u0, 
                        Teuchos::RCP<Epetra_Vector> u) { return false; }
-  Amanzi::ModifyCorrectionResult ModifyCorrection(double h, Teuchos::RCP<const Epetra_Vector> res,
-          Teuchos::RCP<const Epetra_Vector> u,
-          Teuchos::RCP<Epetra_Vector> du) { return Amanzi::AmanziSolvers::CORRECTION_NOT_MODIFIED; }
+  Amanzi::AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(double h, Teuchos::RCP<const Epetra_Vector> res,
+                       Teuchos::RCP<const Epetra_Vector> u,
+                       Teuchos::RCP<Epetra_Vector> du) { 
+    return Amanzi::AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+  }
   void ChangedSolution() {}
 
 

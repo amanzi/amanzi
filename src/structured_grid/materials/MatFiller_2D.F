@@ -51,7 +51,7 @@
          call bl_abort("Invalid nc in MatFiller::FORT_CRSNHARM")
       endif
 
-      cdat(lo(1):hi(1),lo(2):hi(2),1:SDIM) = zero
+      cdat(lo(1):hi(1),lo(2):hi(2),:) = zero
       fac1 = DBLE(ratio(1)) / DBLE(ratio(2))
       fac2 = DBLE(ratio(2)) / DBLE(ratio(1))
 

@@ -14,7 +14,7 @@ class PointerFunction : public Function {
   PointerFunction(const PointerFunction&);
   ~PointerFunction();
   PointerFunction* Clone() const { return new PointerFunction(*this); }
-  double operator() (const double *x) const { return (*f_)(x, p_); }
+  double operator()(const std::vector<double>& x) const { return (*f_)(&x[0], p_); }
   
  private:
   double (*f_)(const double*, const double*);

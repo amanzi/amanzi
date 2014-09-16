@@ -7,16 +7,7 @@ Amanzi XML Input Specification (Version 2.0.x)
 Overview
 ========
 
-The Amanzi simulator evolves a system of conservation equations for
-reacting flows in porous media, as detailed in the ASCEM report
-entitled "Mathematical Formulation Requirements and Specifications for
-the Process Models`" (hereafter referred to as the 'Model Requirements
-Document (MRD)'). The purpose of the present document is to specify
-the data required to execute Amanzi.  This specification should be
-regarded as a companion to the MRD, and parameterizations of the
-individual submodels are consistent between Amanzi, the MRD and this
-document. Where applicable, the relevant sections of the MRD are
-indicated.
+The Amanzi simulator evolves a system of conservation equations for reacting flows in porous media, as detailed in the ASCEM report entitled "Mathematical Formulation Requirements and Specifications for the Process Models`" (hereafter referred to as the 'Model Requirements Document (MRD)'). The purpose of the present document is to specify the data required to execute Amanzi.  This specification should be regarded as a companion to the MRD, and parameterizations of the individual submodels are consistent between Amanzi, the MRD and this document. Where applicable, the relevant sections of the MRD are indicated.
 
 All data required to execute Amanzi is specified within an XML formated file layed out according to the Amanzi input schema.  The current version of the Amanzi schema is located with the Amanzi source code repository.  The following discusses each section of the schema, its purpose and provides examples.  Further details can be found in the schema document amanzi.xsd.
 
@@ -27,34 +18,9 @@ Amanzi Input
 
 Here, the user specifies which version of the input the input file adheres to. The user also specifies the overall type of simulation being run.  Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The attribute `"type`" is used to selected between the following:
 
-* `"Structured`": This instructs Amanzi to use BoxLib data structures
-  and an associated paradigm to numerically represent the flow
-  equations.  Data containers in the BoxLib software library,
-  developed by CCSE at LBNL, are based on a hierarchical set of
-  uniform Cartesian grid patches.  `"Structured`" requires that the
-  simulation domain be a single coordinate-aligned rectangle, and that
-  the "base mesh" consists of a logically rectangular set of uniform
-  hexahedral cells.  This option supports a block-structured approach
-  to dynamic mesh refinement, wherein successively refined subregions
-  of the solution are constructed dynamically to track "interesting"
-  features of the evolving solution.  The numerical solution approach
-  implemented under the `"Structured`" framework is highly optimized
-  to exploit regular data and access patterns on massively parallel
-  computing architectures. 
+* `"Structured`": This instructs Amanzi to use BoxLib data structures and an associated paradigm to numerically represent the flow equations.  Data containers in the BoxLib software library, developed by CCSE at LBNL, are based on a hierarchical set of uniform Cartesian grid patches.  `"Structured`" requires that the simulation domain be a single coordinate-aligned rectangle, and that the "base mesh" consists of a logically rectangular set of uniform hexahedral cells.  This option supports a block-structured approach to dynamic mesh refinement, wherein successively refined subregions of the solution are constructed dynamically to track "interesting" features of the evolving solution.  The numerical solution approach implemented under the `"Structured`" framework is highly optimized to exploit regular data and access patterns on massively parallel computing architectures. 
 
-* `"Unstructured`": This instructs Amanzi to use data structures
-  provided in the Trilinos software framework.  To the extent
-  possible, the discretization algorithms implemented under this
-  option are largely independent of the shape and connectivity of the
-  underlying cells.  As a result, this option supports an arbitrarily
-  complex computational mesh structure that enables users to work with
-  numerical meshes that can be aligned with geometrically complex
-  man-made or geostatigraphical features.  Under this option, the user
-  typically provides a mesh file that was generated with an external
-  software package.  The following mesh file formats are currently
-  supported: `"Exodus II`".  Amanzi also provides a rudmentary
-  capability to generate regular meshes within the unstructured
-  framework internally.
+* `"Unstructured`": This instructs Amanzi to use data structures provided in the Trilinos software framework.  To the extent possible, the discretization algorithms implemented under this option are largely independent of the shape and connectivity of the underlying cells.  As a result, this option supports an arbitrarily complex computational mesh structure that enables users to work with numerical meshes that can be aligned with geometrically complex man-made or geostatigraphical features.  Under this option, the user typically provides a mesh file that was generated with an external software package.  The following mesh file formats are currently supported: `"Exodus II`".  Amanzi also provides a rudmentary capability to generate regular meshes within the unstructured framework internally.
 
 An exmample root tag of an input file would look like the following.
 
@@ -222,7 +188,7 @@ Note, for debugging purposes use level="extreme".
 
 .. code-block:: xml
 
-  <execution_control_defaults init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="stead | transient" method=" bdf1 | picard" />
+  <execution_control_defaults init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="steady | transient" method=" bdf1 | picard" />
 
     * init_dt="labeled_time" 
       
@@ -238,7 +204,7 @@ Note, for debugging purposes use level="extreme".
 
 .. code-block:: xml
 
-  <execution_control start="string" end="labeled_time" init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="stead | transient" method=" bdf1 | picard" restart="string"/>
+  <execution_control start="string" end="labeled_time" init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="steady | transient" method=" bdf1 | picard" restart="string"/>
 
 NOTE: start is REQUIRED
   
@@ -254,7 +220,7 @@ NOTE: start is REQUIRED
       
     * increase_factor="exponential" 
       
-    * mode="stead | transient" 
+    * mode="steady | transient" 
       
     * method=" bdf1 | picard" 
 
@@ -268,11 +234,9 @@ Numerical Controls
 .. code-block:: xml
 
   <numerical_controls>
-      Required Elements: NONE????
-      Optional Elements: steady-state_controls, transient_controls, comments, linear_solver (not specified)
+      Required Elements: NONE
+      Optional Elements: comments, steady-state_controls, transient_controls, linear_solver, nonlinear_solver, chemistry_controls
   </numerical_controls>
-
-NOTE: EIB - Currently `"linear_solver`" isn't listed in the schema with a min/max occurs.
 
 Some discussion of the elements, what the minimum necessary for a simulation is goes here.  For now I have just listed the elements that are available.  
 
@@ -284,7 +248,7 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"comments`"="string" - SKIPPED
  
-    * `"min_iterations`"="integer"
+    * `"min_iterations`"="integer" (min_iterations must be <= max_iterations)
 
     * `"max_iterations`"="integer"
 
@@ -292,83 +256,79 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"nonlinear_tolerance`"="exponential"
 
-    * `"error_rel_tol`"="exponential"
-
-    * `"error_abs_tol`"="exponential"
-
     * `"pseudo_time_integrator`"  has the following elements
 
-        * `"method`"="string"
+        * `"method`"="string" (options: picard)
 
-        * `"preconditioner`"="string"
+        * `"preconditioner`"="string" (options: trilinos_ml, hypre_amg, block_ilu) See below for subelements based on preconditioner name.
 
-        * `"linear_solver`"="string"
+        * `"linear_solver`"="string" (options: aztec00)
 
         * `"control_options`"="string"
 
-        * `"divergent_max_iterations`"="integer"
+        * `"max_iterations`"="integer"
 
         * `"clipping_saturation`"="exponential"
 
         * `"convergence_tolerance`"="exponential"
 
-        * `"initialize_with_darcy`"="string"
+        * `"initialize_with_darcy`"="boolean"
+
+    * `"limit_iterations`"="integer"
+
+    * `"nonlinear_iteration_damping_factor`"="exponential"
+
+    * `"nonlinear_iteration_divergence_factor`"="exponential"
+
+    * `"max_divergent_iterations`"="integer"
+
+    * `"initialize_with_darcy`"="boolean"
 
 * `"transient_controls`" has the elements `"comments`" and `"integration_method`". `"integration_method`" has the following elements
 
     * `"comments`"="string" - SKIPPED 
       
-    * `"integration_method`" has the following elements
+    * `"bdf1_integration_method`" has the following attributes
 
-        * `"convergence_criteria`" has the following elements
+        * `"min_iterations`"="integer"
 
-            * `"error_rel_tol`"="exponential"
+        * `"max_iterations`"="integer"
 
-            * `"error_abs_tol`"="exponential"
-
-        * `"nonlinear_solver_parameters`" has the following elements
-
-            * `"min_iterations`"="integer"
-
-            * `"max_iterations`"="integer"
-
-            * `"limit_iterations`"="integer"
+        * `"limit_iterations`"="integer"
  
-            * `"nonlinear_tolerance`"="exponential"
+        * `"nonlinear_tolerance`"="exponential"
 
-            * `"max_divergent_iterations`"="integer"
+        * `"max_preconditioner_lag_iterations`"="integer"
 
-            * `"max_preconditioner_lag`"="integer"
+        * `"max_divergent_iterations`"="integer"
+
+        * `"nonlinear_iteration_damping_factor`"="exponential"
+
+        * `"nonlinear_iteration_divergence_factor`"="exponential"
+
+        * `"restart_tolerance_factor`"="exponential"
+
+        * `"restart_tolerance_relaxation_factor`"="exponential"
+
+        * `"initialize_with_darcy`"="boolean"
+
+    * `"preconditioner`" requires an attribute `"name`". (options: trilinos_ml, hypre_amg, block_ilu) See below for subelements based on preconditioner name.
 
 * `"linear_solver`"  has the following elements
 
     * `"comments`"="string" - SKIPPED
  
-    * `"method`"="string"
+    * `"method`"="string" (options: aztec00)
 
     * `"max_iterations`"="integer"
 
     * `"tolerance`"="exponential"
 
-    * `"ml_cycle_applications`"="integer"
+    * `"cfl`"="exponential"
 
-    * `"use_hypre_amg`"="string"
+    * `"preconditioner`" requires an attribute `"name`". (options: trilinos_ml, hypre_amg, block_ilu) See below for subelements based on preconditioner name.
 
-    * `"use_block_ilu`"="string"
-
-    * `"hypre_amg_cycle_applications`"="integer"
-
-    * `"hypre_amg_smoother_sweeps`"="integer"
-
-    * `"hypre_amg_tolerance`"="exponential"
-
-    * `"hypre_amg_threshold`"="exponential"
-
-    * `"ml_smoother_type`"="string"
-
-    * `"sub_cycling`"="string"
-
-    * `"transport_sub_cycling`"="string"
+* `"nonlinear_solver`"  has an attribute `"name`". (options: nka, newton, inexact newton)
 
 * `"chemistry_controls`"  has the following elements
 
@@ -376,6 +336,39 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
  
     * `"chem_max_newton_iterations`"="integer"
 
+`"transient_controls`", `"linear_solver`", and `"pseudo_time_integrator`" accept a subelement for specifing the `"preconditioner`".  Current preconditioners available are Trilinos' ML, Hypre's AMG, and block ILU.  Below are the structures for each preconditioner.
+
+* `"preconditioners`" with `"name = 'trilinos_ml'`" has the following optional elements
+
+    * `"trilinos_smoother_type`"="string" (options: jacobi, gauss_seidel, ilu)
+
+    * `"trilinos_threshold`"="exponential" 
+
+    * `"trilinos_smoother_sweeps`"="integer"
+
+    * `"trilinos_cycle_applications`"="integer"
+
+* `"preconditioners`" with `"name = 'hypre_amg'`" has the following optional elements
+
+    * `"hypre_cycle_applications`"="integer"
+
+    * `"hypre_smoother_sweeps`"="integer"
+
+    * `"hypre_tolerance`"="exponential" 
+
+    * `"hypre_strong_threshold`"="exponential" 
+
+* `"preconditioners`" with `"name = 'block_ilu'`" has the following optional elements
+
+    * `"ilu_overlap`"="integer"
+
+    * `"ilu_relax`"="exponential"
+
+    * `"ilu_rel_threshold`"="exponential" 
+
+    * `"ilu_abs_threshold`"="exponential" 
+
+    * `"ilu_level_of_fill`"="integer" 
 
 
 Mesh
@@ -518,7 +511,7 @@ Within the Materials block an unbounded number of `"material`" elements can be d
 
   <material>
       Required Elements: mechanical_properties, permeability, hydraulic_conductivity, assigned_regions
-      Optional Elements: comments, cap_pressure (rel_perm - NOT YET IMPLEMENTED)
+      Optional Elements: comments, cap_pressure, rel_perm 
   </material>
 
 `"mechanical_properties`" has two elements that can be either values or specified as files.  It has the following requirements.
@@ -554,7 +547,7 @@ Within the Materials block an unbounded number of `"material`" elements can be d
 
 * `"cap_pressure`" is an optional element.  The available models are `"van_genuchten`", `"brooks_corey`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
 
-  * `"van_genuchten`" parameters include `"alpha`", `"sr`", and `"m`".  `"brooks_corey`" parameters include `"alpha`", `"sr`", and `"m`".
+  * `"van_genuchten`" parameters include `"alpha`", `"sr`", `"m`", and `"optional_krel_smoothing_interval`".  `"brooks_corey`" parameters include `"alpha`", `"sr`", `"m`", and `"optional_krel_smoothing_interval`".
 
 .. code-block:: xml
 
@@ -564,25 +557,38 @@ Within the Materials block an unbounded number of `"material`" elements can be d
 
 * `"rel_perm`" is an optional element.  The available models are `"mualem`", `"burdine`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
 
-  * `"mualem`" parameters include `"optional_krel_smoothing_interval`".  `"burdine`" parameters include `"optional_krel_smoothing_interval`", and `"exp`".
+  * `"mualem`" has no parameters.  `"burdine`" parameters include `"exp`".
 
 .. code-block:: xml
 
   <rel_perm name="mualem | burdine | none )" >
-      Required Elements: parameters
+      Required Elements: none 
+      Optional Elements: exp (burdine only)
   </rel_perm>
 
-* `"<sorption_isotherms>`" is an optional element for providing Kd models for individual solutes.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes.
-
-  * `"linear`" only accepts the parameter `"kd`". `"langmuir`" expects `"kd`" and `"b`".  `"freundlich`" expects `"kd`" and `"n`".
+* `"<sorption_isotherms>`" is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All solutes should be listed under each material.  Values of 0 indicate that the solute is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
 
 .. code-block:: xml
 
     <sorption_isotherms>
-	<solute name="string" model="linear | langmuir | langmuir" kd="exponential" b="exponential" n="exponential"/>
-        Required Elements: name, model, kd
-        Optional Elements: b, n (depending on model selected)
+	<solute name="string" />
+        model="linear | langmuir | langmuir" kd="exponential" b="exponential" n="exponential"/>
+            Required Elements: none
+            Optional Elements: kd_model, molecular_diffusion
     </sorption_isotherms>
+
+The subelements kd_model and molecular_diffusion that the following forms:
+
+.. code-block:: xml
+ 
+    <kd_model model="linear|langmuir|freundlich" kd="Value" b="Value (langmuir only)" n="Value (freundlich only)" />
+  
+    
+.. code-block:: xml
+   
+    <molecular_diffusion value="Value" />
+    or
+    <molecular_diffusion type="exodus ii" filename="file" />
 
 
 Process Kernels
@@ -642,8 +648,8 @@ Some general discussion of the `"Phases`" section goes here.
 .. code-block:: xml
 
   <liquid_phase>
-      Required Elements: eos, viscosity, density
-      Optional Elements: dissolved_components 
+      Required Elements: viscosity, density
+      Optional Elements: dissolved_components, eos
   </liquid_phase>
 
 Here is more info on the `"liquid_phase`" elements:
@@ -654,9 +660,15 @@ Here is more info on the `"liquid_phase`" elements:
 
     * `"density`"="exponential"
 
-    * `"dissolved_components`" has the elements 
+    * `"dissolved_components`" has the required element
 
         * `"solutes`"
+
+The subelement `"solutes`" can have an unbounded number of subelements `"solute`" which defines individual solutes present.  The `"solute`" element takes the following form:
+  
+    * `"solute`"="string", containing the name of the solute
+
+        * `"coefficient_of_diffusion`"="exponential", this is an optional attribute
 
 * `"solid_phase`" has the following elements 
 
@@ -702,13 +714,24 @@ Here is more info on the `"liquid_phase`" elements:
 
     * `"liquid_component`" is an element with the following subelement: 
 
-        * `"pressure`" is an element with the following attributes: 
+        * `"uniform_pressure`" is an element with the following attributes: 
 
 .. code-block:: xml
 
-     <pressure name="some name" value="exponential" function="linear | uniform" reference_coord="coordinate" gradient="coordinate"/>
+     <uniform_pressure name="some name" value="exponential" />
 
-.
+        * `"linear_pressure`" is an element with the following attributes: 
+
+.. code-block:: xml
+
+     linear_pressure name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
+
+        * `"velocity`" is an element with the following attributes: 
+
+.. code-block:: xml
+
+     <velocity name="some name" x="exponential" y="exponential" z="exponential"/>
+
     * `"solute_component`" is an element with the following attributes: 
 
 .. code-block:: xml
@@ -794,6 +817,13 @@ Here is more info on the `"liquid_phase`" elements:
      <uniform_pressure name="some name" value="exponential" function="uniform | constant" start="time" />
 
 .
+        * `"seepage_face`" is an element with the following attributes: 
+
+.. code-block:: xml
+
+     <seepage_face name="some name" inward_mass_flux="exponential" function="linear | uniform | constant" start="time" />
+
+.
         * `"hydrostatic`" is an element with the following attributes: ONLY CONSTANT, for now
 
 .. code-block:: xml
@@ -821,8 +851,7 @@ Here is more info on the `"liquid_phase`" elements:
 Output
 ======
 
-Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", and `"Observations`".  
-Each of these is controlled in different ways, reflecting their intended use.
+Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", and `"Observations`".  Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Vis`" is intended to represent snapshots of the solution at defined instances during the simulation to be visualized.  The ''vis'' element defines the naming and frequencing of saving the visualization files.  The visualizatoin files may include only a fraction of the state data, and may contiain auxiliary "derived" information (see *elsewhere* for more discussion).
 

@@ -44,7 +44,7 @@ void TabularFunction::check_args(const std::vector<double> &x, const std::vector
   }
 }
 
-double TabularFunction::operator() (const double *x) const
+double TabularFunction::operator()(const std::vector<double>& x) const
 {
   double y;
   double xv = x[xi_];

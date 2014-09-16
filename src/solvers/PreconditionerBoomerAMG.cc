@@ -70,7 +70,6 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
     int num_funcs = plist_.get<int>("number of functions");
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
             &HYPRE_BoomerAMGSetNumFunctions, num_funcs)));
-    std::cout << "setting number of functions in Boomer AMG = " << num_funcs << std::endl;
 
     // additional options
     if (num_funcs > 1) {

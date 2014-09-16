@@ -41,10 +41,12 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
     return (returned_code_ >= 0) ? 0 : 1;
   }
 
-  // control
+  // mutators
+  void set_tolerance(double tol) { tol_ = tol; }
   void set_pc_lag(double pc_lag) {};  // Newton does not need it
 
   // access
+  double tolerance() { return tol_; }
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
   int pc_calls() { return pc_calls_; }
@@ -141,7 +143,9 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0), l2_error(0.0);
-  double l2_error_initial(0.0);
+  double l2_error_initial(0.0), u_norm(0.);
+  double res_l2(0.0), res_inf(0.);
+  double du_l2(0.0), du_inf(0.);
   double du_norm(1.0), previous_du_norm(1.0);
   int divergence_count(0);
 
@@ -168,6 +172,9 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       error = fn_->ErrorNorm(u, r);
       residual_ = error;
       r->Norm2(&l2_error);
+      u->Norm2(&u_norm);
+      *vo_->os() <<"sol "<<u_norm<<" resid "<<l2_error<<" error "<<error<<"\n";
+
 
       // attempt to catch non-convergence early
       if (num_itrs_ == 1) {
@@ -191,7 +198,12 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
 
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
+
+    r->Norm2(&res_l2);  r->NormInf(&res_inf);
     fn_->ApplyPreconditioner(r, du);
+    du->Norm2(&du_l2);  du->NormInf(&du_inf);
+    //*vo_->os() <<"res_l2 "<<res_l2<<" res_inf "<<res_inf<<" du_l2 "<<du_l2<<" du_inf "<<du_inf<<"\n";
+
 
     // Hack the correction
     if (modify_correction_) {

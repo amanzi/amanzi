@@ -106,7 +106,7 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Closed");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
   FrameworkPreference pref;
   pref.clear();
@@ -137,7 +137,8 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
 
   // create boundary data
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_values(nfaces_wghost);
+  std::vector<double> bc_value(nfaces_wghost);
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
 
   // create solution map.
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -183,8 +184,8 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
     knc->UpdateValues(solution);
 
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                        .get<Teuchos::ParameterList>("diffusion operator");
-    Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist));
+                                        .get<Teuchos::ParameterList>("diffusion operator Sff");
+    Teuchos::RCP<OperatorDiffusionSurface> op2 = Teuchos::rcp(new OperatorDiffusionSurface(*op1, olist, bc));
 
     int schema_dofs = op2->schema_dofs();
     CHECK(schema_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL);
@@ -192,14 +193,14 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
     CHECK(schema_prec_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE);
 
     op2->InitOperator(K, knc->values(), knc->derivatives(), rho, mu);
-    op2->UpdateMatrices(flux);
-    op2->ApplyBCs(bc_model, bc_values);
+    op2->UpdateMatrices(flux, Teuchos::null);
+    op2->ApplyBCs();
     op2->SymbolicAssembleMatrix(schema_prec_dofs);
     op2->AssembleMatrix(schema_prec_dofs);
 
     // create preconditoner
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
-    op2->InitPreconditioner("Hypre AMG", slist, bc_model, bc_values);
+    op2->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
     ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");

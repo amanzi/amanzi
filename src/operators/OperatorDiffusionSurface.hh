@@ -23,21 +23,23 @@
 namespace Amanzi {
 namespace Operators {
 
+class BCs;
+
 class OperatorDiffusionSurface : public OperatorDiffusion {
  public:
   OperatorDiffusionSurface() {};
   OperatorDiffusionSurface(Teuchos::RCP<const CompositeVectorSpace> cvs, 
-                           const Teuchos::ParameterList& plist) 
-      : OperatorDiffusion(cvs, plist) { InitDiffusionSurface_(plist); }
+                           Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc) 
+      : OperatorDiffusion(cvs, plist, bc) { InitDiffusionSurface_(plist); }
   OperatorDiffusionSurface(const Operator& op, 
-                           const Teuchos::ParameterList& plist)
-      : OperatorDiffusion(op, plist) { InitDiffusionSurface_(plist); };
+                           Teuchos::ParameterList& plist, Teuchos::RCP<BCs> bc)
+      : OperatorDiffusion(op, plist, bc) { InitDiffusionSurface_(plist); };
   ~OperatorDiffusionSurface() {}; 
 
   // re-implementation of basic operator virtual members
 
  private:
-  void InitDiffusionSurface_(const Teuchos::ParameterList& plist);
+  void InitDiffusionSurface_(Teuchos::ParameterList& plist);
 };
 
 }  // namespace Operators

@@ -31,6 +31,7 @@ Observation::Initialize()
     obs_type_list["squared_integral"] = 3;
     obs_type_list["flux"]             = 4;
     obs_type_list["point_sample"]     = 5;
+    obs_type_list["peak_value"]       = 6;
 }
 
 
@@ -101,6 +102,10 @@ Observation::process(Real t_old,
 
     case 5:
       val_new = point_sample(t_new);
+      break;
+
+    case 6:
+      val_new = peak_sample(t_new);
       break;
 
     default:
@@ -287,6 +292,57 @@ Observation::integral_and_volume (Real time)
   ParallelDescriptor::ReduceRealSum(vol_inside);
   ParallelDescriptor::ReduceRealSum(int_inside);
   return std::pair<Real,Real>(int_inside,vol_inside);
+}
+
+Real
+Observation::peak_sample (Real time)
+{
+  Real peak_val;
+  bool first = true;
+  const int finest_level = amrp->finestLevel();
+  const Array<IntVect>& refRatio = amrp->refRatio();
+
+  std::vector< std::pair<int,Box> > isects;
+  for (int lev = 0; lev <= finest_level; lev++) {
+
+    const Real* dx = amrp->Geom(lev).CellSize();
+    int nGrow = 0;
+    const MultiFab* S = amrp->getLevel(lev).derive(field,time,nGrow);
+
+    FArrayBox mask;
+    BoxArray cfba;
+    if (lev < finest_level) {
+      cfba = BoxArray(amrp->getLevel(lev).boxArray()).coarsen(refRatio[lev]);
+    }
+    for (MFIter mfi(*S); mfi.isValid(); ++mfi) {
+      const FArrayBox& fab = (*S)[mfi];
+      const Box& box = mfi.validbox();
+      mask.resize(box,1);
+      region.setVal(mask,1,0,dx,0);
+
+      // Mask out covered data
+      if (lev < finest_level) {
+	cfba.intersections(box,isects);
+	for (int i=0, N=isects.size(); i<N; ++i) {
+	  mask.setVal(0,isects[i].second,0,1);
+	}
+      }
+
+      for (IntVect iv=box.smallEnd(), End=box.bigEnd(); iv<=End; box.next(iv)) {
+        if (mask(iv,0) != 0) {
+          if (first) {
+            peak_val = fab(iv,0);
+            first = false;
+          }
+          else {
+            peak_val = std::max(peak_val,fab(iv,0));
+          }
+        }
+      }
+    }
+  }
+  ParallelDescriptor::ReduceRealMax(peak_val);
+  return peak_val;
 }
 
 Real

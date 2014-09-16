@@ -60,7 +60,9 @@ int main(int argc, char* argv[])
 
   std::string cname = "Comp";
   std::string cpurpose = "Test1";
-  CompoundRegion compound(cname,cpurpose,region1);
+  Array<const Region*> set1(1);
+  set1[0] = &region1;
+  UnionRegion compound(cname,cpurpose,set1);
 
   Box box(IntVect(D_DECL(0,0,0)),
           IntVect(D_DECL(29,29,29)));
@@ -79,8 +81,10 @@ int main(int argc, char* argv[])
     std::cout << "Test 0 fail: fab.sum(): " << fab.sum(0) << " " << res0 << std::endl;
   }
 
-  CompoundRegion compound1(cname,cpurpose,region1);
-  compound1.Union(region2);
+  Array<const Region*> set2(2);
+  set2[0] = &region1;
+  set2[1] = &region2;
+  UnionRegion compound1(cname,cpurpose,set2);
   fab.setVal(0);
   compound1.setVal(fab,vol,0,dx.dataPtr(),0);
   Real res1 = fab.sum(0);
@@ -89,61 +93,11 @@ int main(int argc, char* argv[])
     std::cout << "Test 1 fail: fab.sum(): " << fab.sum(0) << std::endl;
   }
 
-  CompoundRegion compound2(cname,cpurpose,region1);
-  compound2.Union(region2);
-  compound2.Intersect(region3);
-  fab.setVal(0);
-  compound2.setVal(fab,vol,0,dx.dataPtr(),0);
-  Real res2 = fab.sum(0);
-  pass &= std::abs(fab.sum(0)) < sum_eps;
-  if (ioproc && !pass) {
-    std::cout << "Test 2 fail: fab.sum(): " << fab.sum(0) << std::endl;
-  }
+  Array<const Region*> set3(2);
+  set3[0] = &regionA;
+  set3[1] = &region1;
+  SubtractionRegion compound4(cname,cpurpose,set3);
 
-
-  CompoundRegion compound3(cname,cpurpose,region1);
-  compound3.Union(region2);
-  compound3.Intersect(region4);
-  fab.setVal(0);
-  compound3.setVal(fab,vol,0,dx.dataPtr(),0);
-  pass &= std::abs(fab.sum(0) - vol4) < sum_eps;
-  if (ioproc && !pass) {
-    std::cout << "Test 3 fail: fab.sum(): " << fab.sum(0) << std::endl;
-  }
-
-  Box box2(IntVect(D_DECL(0,0,0)),
-           IntVect(D_DECL(59,59,59)));
-  FArrayBox fab2(box,1);
-  Array<Real> dx2(BL_SPACEDIM,0.5);
-  Real volB = 1;
-  for (int i=0; i<BL_SPACEDIM; ++i) {
-    volB *= dx2[i];
-  }
-
-  fab2.setVal(0);
-  compound3.setVal(fab2,volB,0,dx2.dataPtr(),0);
-  pass &= std::abs(fab2.sum(0) - vol4) < sum_eps;
-  if (ioproc && !pass) {
-    std::cout << "Test 4 fail: fab2.sum(): " << fab2.sum(0) << std::endl;
-  }
-
-  BoxArray ba(box2); ba.maxSize(30);
-  MultiFab mf(ba,2,0);
-  mf.setVal(0);
-  Real sum = 0;
-  for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
-    FArrayBox& fab_mf = mf[mfi];
-    compound3.setVal(fab_mf,volB,1,dx2.dataPtr(),0);
-    sum += fab_mf.sum(1);
-  }
-  ParallelDescriptor::ReduceRealSum(sum);
-  pass &= std::abs(sum - vol4) < sum_eps;
-  if (ioproc && !pass) {
-    std::cout << "Test 5 fail: sum: " << sum << std::endl;
-  }
-  
-  CompoundRegion compound4(cname,cpurpose,regionA);
-  compound4.Subtract(region1);
   fab.setVal(0);
   compound4.setVal(fab,vol,0,dx.dataPtr(),0);
   pass &= std::abs(fab.sum(0) - (volA - vol1)) < sum_eps;
@@ -151,8 +105,11 @@ int main(int argc, char* argv[])
     std::cout << "Test 6 fail: fab.sum(): " << fab.sum(0) << std::endl;
   }
 
-  CompoundRegion compound5(cname,cpurpose,region1);
-  compound5.Subtract(region2);
+  Array<const Region*> set4(2);
+  set4[0] = &region1;
+  set4[1] = &region2;
+  SubtractionRegion compound5(cname,cpurpose,set4);
+
   fab.setVal(0);
   compound5.setVal(fab,vol,0,dx.dataPtr(),0);
   pass &= std::abs(fab.sum(0) - vol1) < sum_eps;
@@ -173,6 +130,7 @@ int main(int argc, char* argv[])
   if (ioproc && !pass) {
     std::cout << "Test 8 fail" << std::endl;
   }
+
   BoxLib::Finalize();  
   return 0;
 }

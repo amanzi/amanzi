@@ -43,10 +43,10 @@ TEST(COLORFUNCTION_REGION)
 
     Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
 
-    // Create a Labeled Set Region
+    // Create a Color Function Region
   
     Amanzi::AmanziGeometry::RegionPtr reg = 
-      Amanzi::AmanziGeometry::RegionFactory(reg_spec.name(i), reg_id, reg_params, &ecomm);
+      Amanzi::AmanziGeometry::RegionFactory(reg_spec.name(i), reg_id, reg_params, 3, &ecomm);
   
     // See if we retrieved the name and id correctly
   

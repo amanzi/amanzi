@@ -179,14 +179,14 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
     # And METIS
 #    if (ENABLE_METIS)
       find_package(METIS QUIET REQUIRED)
-      list(APPEND MSTK_INCLUDE_DIR ${METIS_INCLUDE_DIRS})
+      list(APPEND MSTK_INCLUDE_DIRS ${METIS_INCLUDE_DIRS})
       list(APPEND _MSTK_DEP_LIBS ${METIS_LIBRARIES})
 #    endif()
 
     # And Zoltan
 #    if (ENABLE_ZOLTAN)
       find_package(Zoltan QUIET REQUIRED)
-      list(APPEND MSTK_INCLUDE_DIR ${Zoltan_INCLUDE_DIRS})
+      list(APPEND MSTK_INCLUDE_DIRS ${Zoltan_INCLUDE_DIRS})
       list(APPEND _MSTK_DEP_LIBS ${Zoltan_LIBRARIES})
 #    endif()
 

@@ -17,6 +17,7 @@
 #include <GenerationSpec.hh>
 #include <dbc.hh>
 #include <errors.hh>
+#include <VerboseObject.hh>
 
 namespace Amanzi 
 {
@@ -109,6 +110,10 @@ private:
 
   double *meshxyz;
   double *target_cell_volumes, *min_cell_volumes, *target_weights;
+
+  // Teuchos Verbose Object to control how much diagnostic info is printed
+
+  VerboseObject* verbose_obj_;
   
   // Private methods
   // ----------------------------
@@ -230,22 +235,26 @@ public:
 
   Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 	     const AmanziGeometry::GeometricModelPtr& gm = 
-	     (AmanziGeometry::GeometricModelPtr) NULL);
+	     (AmanziGeometry::GeometricModelPtr) NULL,
+             const VerboseObject * verbosity_obj = (VerboseObject *) NULL);
 
   Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, 
              int space_dimension,
 	     const AmanziGeometry::GeometricModelPtr& gm = 
-	     (AmanziGeometry::GeometricModelPtr) NULL);
+	     (AmanziGeometry::GeometricModelPtr) NULL,
+             const VerboseObject * verbosity_obj = (VerboseObject *) NULL);
 
   // Constructors that generate a mesh internally (regular hexahedral mesh only)
 
   // 3D
   Mesh_MSTK(const double x0, const double y0, const double z0,
 	    const double x1, const double y1, const double z1,
-	    const unsigned int nx, const unsigned int ny, const unsigned int nz, 
-           const Epetra_MpiComm *incomm,
-           const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL);
+	    const unsigned int nx, const unsigned int ny, 
+            const unsigned int nz, 
+            const Epetra_MpiComm *incomm,
+            const AmanziGeometry::GeometricModelPtr& gm = 
+            (AmanziGeometry::GeometricModelPtr) NULL,
+            const VerboseObject * verbosity_obj = (VerboseObject *) NULL);
 
 
   // 2D
@@ -254,13 +263,15 @@ public:
 	    const int nx, const int ny, 
 	    const Epetra_MpiComm *comm,
 	    const AmanziGeometry::GeometricModelPtr& gm = 
-	    (AmanziGeometry::GeometricModelPtr) NULL);
+	    (AmanziGeometry::GeometricModelPtr) NULL,
+             const VerboseObject * verbosity_obj = (VerboseObject *) NULL);
 
   // Construct a hexahedral mesh from specs 
   Mesh_MSTK(const GenerationSpec& gspec,
 	    const Epetra_MpiComm *comm,
 	    const AmanziGeometry::GeometricModelPtr& gm = 
-	    (AmanziGeometry::GeometricModelPtr) NULL);
+	    (AmanziGeometry::GeometricModelPtr) NULL,
+            const VerboseObject * verbosity_obj = (VerboseObject *) NULL);
 
 
   // Construct a mesh by extracting a subset of entities from another

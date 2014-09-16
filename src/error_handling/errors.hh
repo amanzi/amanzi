@@ -29,6 +29,8 @@ public:
 
 Message& operator<<(Message &message, const char* data);
 Message& operator<<(Message &message, const std::string& data);
+Message& operator<<(Message &message, double datum);
+Message& operator<<(Message &message, int datum);
 
 class CutTimeStep : public Exceptions::Amanzi_exception {};
 

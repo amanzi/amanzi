@@ -10,11 +10,12 @@
 
 #include "exceptions.hh"
 #include "LinearOperatorPCG.hh"
+#include "PreconditionerFactory.hh"
 #include "PreconditionerDiagonal.hh"
 #include "PreconditionerIdentity.hh"
 
 SUITE(SOLVERS) {
-const int N = 25;
+const int N = 125;
 using namespace Amanzi;
 using namespace Amanzi::AmanziPreconditioners;
 
@@ -25,11 +26,28 @@ class Matrix {
   ~Matrix() {};
   Matrix(const Matrix& other) : map_(other.map_) {}
 
-  void Init(std::string& name, const Epetra_Map& map) {
+  void Init(const std::string& name, const Epetra_Map& map) {
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("preconditioner type", name);
+    std::string params(name);
+    Teuchos::ParameterList& tmp = plist.sublist(params.append(" parameters"));
+
     if (name == "diagonal") {
       preconditioner_ = Teuchos::rcp(new PreconditionerDiagonal());
     } else if (name == "identity") {
       preconditioner_ = Teuchos::rcp(new PreconditionerIdentity());
+    } else if (name == "ml") {
+      PreconditionerFactory factory;
+      tmp.set<int>("coarse: max size", 5);
+      tmp.set<int>("cycle applications", 1);
+      tmp.set<int>("ML output", 0);
+      preconditioner_ = factory.Create(plist);
+    } else {
+      tmp.set<int>("max coarse size", 5);
+      tmp.set<int>("cycle applications", 1);
+      tmp.set<int>("verbosity", 0);
+      PreconditionerFactory factory;
+      preconditioner_ = factory.Create(plist);
     }
     A_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, map, map, 3));
     for (int i = 0; i < N; i++) {
@@ -58,8 +76,8 @@ class Matrix {
   Teuchos::RCP<Preconditioner> preconditioner_;
 };
 
-TEST(DIAGONAL_PRECONDITONER) {
-  std::cout << "Identity vs Diagonal preconditiner..." << std::endl;
+TEST(DIAGONAL_PRECONDITIONER) {
+  std::cout << "Comparison of preconditioners for N=125" << std::endl;
 
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(N, 0, *comm));
@@ -69,29 +87,27 @@ TEST(DIAGONAL_PRECONDITONER) {
   AmanziSolvers::LinearOperatorPCG<Matrix, Epetra_Vector, Epetra_Map> pcg(m, m);
   pcg.Init();
   pcg.set_tolerance(1e-12);
+  pcg.set_max_itrs(200);
 
   Epetra_Vector u(*map), v(*map);
   for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
 
   // solving with identity preconditioner
-  std::string prec_name("identity");
-  m->Init(prec_name, *map);
+  std::string prec_names[4];
+  prec_names[0] = "identity";
+  prec_names[1] = "diagonal";
+  prec_names[2] = "boomer amg";
+  prec_names[3] = "ml";
+  for (int n = 0; n < 4; n++) {
+    m->Init(prec_names[n], *map);
 
-  v.PutScalar(0.0);
-  pcg.ApplyInverse(u, v);
+    v.PutScalar(0.0);
+    printf("Preconditioner: %s\n", prec_names[n].c_str());
+    pcg.ApplyInverse(u, v);
 
-  CHECK_CLOSE(5.229210393e+0, v[0], 1e-6);
-  CHECK_CLOSE(4.729210393e+0, v[1], 1e-6);
-
-  // solving with diagonal preconditioner
-  prec_name = "diagonal";
-  m->Init(prec_name, *map);
-
-  v.PutScalar(0.0);
-  pcg.ApplyInverse(u, v);
-
-  CHECK_CLOSE(5.229210393e+0, v[0], 1e-6);
-  CHECK_CLOSE(4.729210393e+0, v[1], 1e-6);
+    CHECK_CLOSE(11.03249773994628, v[0], 1e-6);
+    CHECK_CLOSE(10.53249773994628, v[1], 1e-6);
+  }
 
   delete comm;
 };

@@ -60,9 +60,9 @@ TEST(MSTK_HEX_2x2x1)
   CHECK_EQUAL(NV,nv);
   
   for (i = 0; i < nv; i++) {
-    Amanzi::AmanziGeometry::Point coords;
+    Amanzi::AmanziGeometry::Point coords(mesh->space_dimension());
     
-    coords.init(mesh->space_dimension()); 
+    //    coords.init(mesh->space_dimension()); 
     
     mesh->node_get_coordinates(i,&coords);
     CHECK_EQUAL(xyz[i][0],coords[0]);

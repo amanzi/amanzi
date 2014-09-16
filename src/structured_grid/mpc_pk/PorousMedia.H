@@ -1060,11 +1060,13 @@ public:
 
   void derive_Molecular_Diffusion_Coefficient(Real      time,
                                               MultiFab& mf,
-                                              int       dcomp);
-  
+                                              int       dcomp,
+                                              int       dir);
+
   void derive_Tortuosity(Real      time,
                          MultiFab& mf,
-                         int       dcomp);
+                         int       dcomp,
+                         int       dir);
 
   void derive_SpecificStorage(Real      time,
                               MultiFab& mf,

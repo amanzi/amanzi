@@ -18,6 +18,23 @@ include(TestManager)
 # through these variables.
 project(MSTK)
 
+# External (TPL) include directories
+
+# Reverse the items in MSTK_INCLUDE_DIRS because when we ask the
+# include_directories command to prepend a set of directories using
+# the BEFORE keyword, it prepends each item in the MSTK_INCLUDE_DIRS
+# list, thereby effectively reversing the order of the
+# directories. For example, if we had MYDIRS=a;b;c and we specified
+# MYDIRS in the include_directories command, then the
+# INCLUDE_DIRECTORIES property for will end up with
+# c;b;a;whatever_existed_before
+
+list(REVERSE MSTK_INCLUDE_DIRS)
+include_directories(BEFORE ${MSTK_INCLUDE_DIRS})
+
+include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Epetra_INCLUDE_DIRS})
+
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
@@ -25,14 +42,17 @@ include_directories(${MESH_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 
 
-# External (TPL) include directories
-include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${MSTK_INCLUDE_DIRS})
-
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
 add_definitions("-DMSTK_HAVE_MPI")
+
+if (WITH_MSTK_2_20rc1_OR_NEWER)
+  add_definitions("-DMSTK_2_20rc1_OR_NEWER")
+endif ()
+
+if (WITH_MSTK_2_21rc1_OR_NEWER)
+  add_definitions("-DMSTK_2_21rc1_OR_NEWER")
+endif ()
 
 #
 # Library: mstk_mesh

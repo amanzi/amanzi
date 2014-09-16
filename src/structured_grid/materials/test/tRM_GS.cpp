@@ -68,9 +68,6 @@ main (int   argc,
     MultiFab phi(ba,1,nGrow);
     ParallelDescriptor::Barrier();
     rockManager.Porosity(time,lev,phi,0,nGrow);
-
-    if (lev==nLevs-1) 
-      VisMF::Write(phi,"PHI");
   }
   BoxLib::Finalize();
   return 0;

@@ -309,8 +309,9 @@ int main(int argc, char *argv[]) {
       // if ParameterList - do old and pass thru
       // if amanzi_input  - validate, convert to old
 
-      xercesc::XMLString::release( &temp2) ;
+      xercesc::XMLString::release(&temp2) ;
       doc->release();
+      delete parser;
       xercesc::XMLPlatformUtils::Terminate();
     }
     catch (std::exception& e)
@@ -390,7 +391,7 @@ int main(int argc, char *argv[]) {
   }
   catch (std::exception& e) {
     if (rank == 0) {
-      if (e.what() == "amanzi not run") {
+      if (! strcmp(e.what(), "amanzi not run")) {
 	std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
       } else {
 	std::cout << e.what() << std::endl;

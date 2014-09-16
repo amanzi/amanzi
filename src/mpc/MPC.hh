@@ -62,8 +62,8 @@ class MPC {
     
   // process kernels
   Teuchos::RCP<AmanziChemistry::Chemistry_PK_Base> CPK;
-  Teuchos::RCP<AmanziTransport::Transport_PK> TPK;
-  Teuchos::RCP<AmanziFlow::Flow_PK> FPK; 
+  Teuchos::RCP<Transport::Transport_PK> TPK;
+  Teuchos::RCP<Flow::Flow_PK> FPK; 
     
   Teuchos::ParameterList mpc_parameter_list;
     
@@ -90,7 +90,7 @@ class MPC {
     
   // observations
   Amanzi::ObservationData&  output_observations;
-  Amanzi::Unstructured_observations* observations;
+  Teuchos::RCP<Amanzi::Unstructured_observations> observations;
     
   // visualization
   Teuchos::Ptr<Amanzi::Visualization> visualization;
@@ -107,9 +107,6 @@ class MPC {
 
   // picard flag
   bool do_picard_;
-
-  // stor for chemistry data to allow repeat of chemistry step
-  Teuchos::RCP<chemistry_data> chem_data_;
 
  public:
   Teuchos::RCP<VerboseObject> vo_;
