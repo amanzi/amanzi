@@ -37,13 +37,13 @@ namespace AmanziChemistry {
  **    - chemistry_state will always hold the state at the begining of
  **    the time step. should not (can not?) be changed by chemistry.
  **
- **    - when advance is called, total_component_concentration_star
+ **    - when Advance is called, total_component_concentration_star
  **    holds the value of component concentrations after transport!
  **
  **    - where do we write to when advance state is done? tcc is read
  **    only, do we want to write over the values in tcc_star?
  **
- **    - when commit_state is called, we get a new Chemistry_State
+ **    - when CommitState is called, we get a new Chemistry_State
  **    object which will hold the final info for the end of the time
  **    step. We can use it if we want, to update our internal data.
  **
@@ -78,7 +78,8 @@ Alquimia_Chemistry_PK::Alquimia_Chemistry_PK(const Teuchos::ParameterList& param
 Alquimia_Chemistry_PK::~Alquimia_Chemistry_PK() 
 {
   // Destroy ansilary data structures.
-  chem_engine_->FreeState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+  if (chem_initialized_)
+    chem_engine_->FreeState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 }  // end ~Alquimia_Chemistry_PK()
 
 // This helper performs initialization on a single cell within Amanzi's state.
@@ -153,6 +154,9 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
   }
 
   chem_initialized_ = true;
+  num_iterations_ = 0;
+  num_successful_steps_ = 0;
+
 }  // end InitializeChemistry()
 
 /*******************************************************************************
@@ -203,6 +207,8 @@ void Alquimia_Chemistry_PK::ParseChemicalConditionRegions(const Teuchos::Paramet
 void Alquimia_Chemistry_PK::XMLParameters(void) 
 {
   Errors::Message msg;
+
+  vo_ = Teuchos::rcp(new VerboseObject("Chemistry_PK", chem_param_list_));
 
   // NOTE that our parameter list should be the top-level parameter list "Main", 
   // not the "Chemistry" one used by the native Amanzi Chemistry PK.
@@ -349,8 +355,60 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
   }
 
   // Other settings.
-  set_max_time_step(chem_param_list_.get<double>("Max Time Step (s)", 9.9e9));
-
+  max_time_step_ = chem_param_list_.get<double>("Max Time Step (s)", 9.9e9);
+  min_time_step_ = chem_param_list_.get<double>("Min Time Step (s)", 9.9e9);
+  prev_time_step_ = chem_param_list_.get<double>("Initial Time Step (s)", std::min(min_time_step_, max_time_step_));
+  /*  if ((min_time_step_ == 9.9e9) && (prev_time_step_ < 9.9e9))
+    min_time_step_ = prev_time_step_;
+  else if ((min_time_step_ == 9.9e9) && (max_time_step_ < 9.9e9))
+    min_time_step_ = max_time_step_;
+  else if (min_time_step_ > max_time_step_) {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Min Time Step exceeds Max Time Step!\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  if ((min_time_step_ < max_time_step_) && (prev_time_step_ == max_time_step_))
+    prev_time_step_ = min_time_step_; */
+  if (prev_time_step_ > max_time_step_) {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Initial Time Step exceeds Max Time Step!\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  /* if (prev_time_step_ < min_time_step_) {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Initial Time Step is smaller than Min Time Step!\n";
+    Exceptions::amanzi_throw(msg);
+    } */
+  time_step_ = prev_time_step_;
+  time_step_control_method_ = chem_param_list_.get<std::string>("Time Step Control Method", "fixed");
+  num_iterations_for_time_step_cut_ = chem_param_list_.get<int>("Time Step Cut Threshold", 8);
+  if (num_iterations_for_time_step_cut_ <= 0)
+  {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Invalid Time Step Cut Threshold: " << num_iterations_for_time_step_cut_ << " (must be > 1).\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  num_steps_before_time_step_increase_ = chem_param_list_.get<int>("Time Step Increase Threshold", 4);
+  if (num_steps_before_time_step_increase_ <= 0)
+  {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Invalid Time Step Increase Threshold: " << num_steps_before_time_step_increase_ << " (must be > 1).\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  time_step_cut_factor_ = chem_param_list_.get<double>("Time Step Cut Factor", 2.0);
+  if (time_step_cut_factor_ <= 1.0)
+  {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Invalid Time Step Cut Factor: " << time_step_cut_factor_ << " (must be > 1).\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  time_step_increase_factor_ = chem_param_list_.get<double>("Time Step Increase Factor", 1.2);
+  if (time_step_increase_factor_ <= 1.0)
+  {
+    msg << "Alquimia_Chemistry_PK::XMLParameters(): \n";
+    msg << "  Invalid Time Step Increase Factor: " << time_step_increase_factor_ << " (must be > 1).\n";
+    Exceptions::amanzi_throw(msg);
+  }
 }  // end XMLParameters()
 
 void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
@@ -491,8 +549,10 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time,
 
   // Do the reaction.
   int num_iterations;
-  chem_engine_->Advance(delta_time, alq_mat_props_, alq_state_, 
-                        alq_aux_data_, alq_aux_output_, num_iterations);
+  bool success = chem_engine_->Advance(delta_time, alq_mat_props_, alq_state_, 
+                                       alq_aux_data_, alq_aux_output_, num_iterations);
+  if (not success) 
+    return -1;
 
   // Move the information back into Amanzi's state, updating the given total concentration vector.
   CopyAlquimiaStateToAmanzi(cellIndex, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_, 
@@ -503,7 +563,7 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time,
 
 /*******************************************************************************
  **
- ** Alquimia_Chemistry_PK::advance()
+ ** Alquimia_Chemistry_PK::Advance()
  **
  ** Notes:
  **
@@ -522,13 +582,21 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time,
  **
  *******************************************************************************/
 
-void Alquimia_Chemistry_PK::advance(
+void Alquimia_Chemistry_PK::Advance(
     const double& delta_time,
     Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star) 
 {
   Errors::Message msg;
 
   current_time_ = saved_time_ + delta_time;
+
+  // If we are given a dt that is less than the one we wanted, we don't record it.
+  if (delta_time < time_step_) {
+    prev_time_step_ = time_step_;
+  }
+  else {
+    prev_time_step_ = delta_time;
+  }
 
   // shorter name for the state that came out of transport
   Teuchos::RCP<const Epetra_MultiVector> tcc_star =
@@ -546,6 +614,7 @@ void Alquimia_Chemistry_PK::advance(
 
   // Now loop through all the cells and advance the chemistry.
   int ierr = 0;
+  int convergence_failure = 0;
   for (int cell = 0; cell < num_cells; ++cell)
   {
     int num_iterations = AdvanceSingleCell(delta_time, tcc_star, cell);
@@ -568,9 +637,38 @@ void Alquimia_Chemistry_PK::advance(
     } 
     else
     {
-      ierr = 1;
+      // Convergence failure. Compute the next time step size.
+      convergence_failure = 1;
+      break;
     }
   }
+
+  // Check for convergence failure and broadcast if needed. Also agree on the maximum number 
+  // of Newton iterations and its location.
+  int send[3], recv[3];
+  send[0] = convergence_failure;
+  send[1] = max_iterations;
+  send[2] = imax;
+  chemistry_state_->mesh_maps()->get_comm()->MaxAll(send, recv, 3);
+  if (recv[0] != 0) 
+    num_successful_steps_ = 0;
+  else
+    num_successful_steps_++;
+  num_iterations_ = recv[1];
+  imax = recv[2];
+
+  // Compute the next time step.
+  ComputeNextTimeStep();
+
+  if (recv[0] != 0)
+  {
+    msg << "Failure in Alquimia_Chemistry_PK::Advance";
+    Exceptions::amanzi_throw(msg); 
+  }
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    *vo_->os() << "Chemistry PK: Advanced after maximum of " << num_iterations_ << " Newton iterations in cell " << imax << "." << std::endl;
+  }
+
   // now publish auxiliary data to state
   if (aux_output_ != Teuchos::null) {
     for (int i=0; i<aux_output_->NumVectors(); ++i) {
@@ -580,18 +678,39 @@ void Alquimia_Chemistry_PK::advance(
   }
 }  // end advance()
 
+void Alquimia_Chemistry_PK::ComputeNextTimeStep()
+{
+  if (time_step_control_method_ == "simple")
+  {
+    if ((num_successful_steps_ == 0) || (num_iterations_ >= num_iterations_for_time_step_cut_)) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << "Chemistry PK: Number of Newton iterations exceeds threshold (" << num_iterations_for_time_step_cut_ << ") for time step cut, cutting dT by " << time_step_cut_factor_ << std::endl;
+      }
+      time_step_ = prev_time_step_ / time_step_cut_factor_;
+    }
+    else if (num_successful_steps_ >= num_steps_before_time_step_increase_) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo_->os() << "Chemistry PK: Number of successful steps exceeds threshold (" << num_steps_before_time_step_increase_ << ") for time step increase, growing dT by " << time_step_increase_factor_ << std::endl;
+      }
+      time_step_ = prev_time_step_ * time_step_increase_factor_;
+      num_successful_steps_ = 0;
+    }
+  }
+  if (time_step_ > max_time_step_)
+    time_step_ = max_time_step_;
+  /* else if (time_step_ > min_time_step_)
+     time_step_ = min_time_step_; */
+}
 
 // the MPC will call this function to signal to the
 // process kernel that it has accepted the
 // state update, thus, the PK should update
 // possible auxilary state variables here
-void Alquimia_Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
-                                         const double& delta_time) 
+void Alquimia_Chemistry_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
+                                        const double& time) 
 {
-  saved_time_ += delta_time;
-}  // end commit_state()
-
-
+  saved_time_ = time;
+}  // end CommitState()
 
 Teuchos::RCP<Epetra_MultiVector> Alquimia_Chemistry_PK::get_extra_chemistry_output_data() 
 {

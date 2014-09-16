@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="utf-8"?>
+<amanzi_input version="2.0.0" type="unstructured">
+
+  <model_description name="Rifle 2D Unsaturated TT-01 / TT-02 / TT-03 transect">
+    <comments>Fill + Alluvium on top of Wasatch in 2D</comments>
+    <model_id>rifle_u2d</model_id>
+    <author>Sergi Molins, Bhavna Arora, Jeff Johnson</author>
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>d</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+  </model_description>
+
+  <definitions>
+    <constants>
+      <constant name="zero" type="none" value="0.000" />
+      <constant name="start_" type="time" value="100.000;d" /> 
+      <constant name="week1" type="time" value="107.881;d" />
+      <constant name="week2" type="time" value="115.762;d" />
+      <constant name="week3" type="time" value="123.642;d" />
+      <constant name="week4" type="time" value="131.528;d" />
+      <constant name="week5" type="time" value="139.405;d" />
+      <constant name="week6" type="time" value="147.286;d" />
+      <constant name="week7" type="time" value="155.166;d" />
+      <constant name="week8" type="time" value="163.047;d" />
+      <constant name="week9" type="time" value="170.928;d" />
+      <constant name="end_" type="time" value="177.0;d" />
+      <constant name="fifteen" type="time" value="15.0;y" />
+      <constant name="twentyone" type="time" value="21.0;y" />
+      <constant name="recharge" type="area_mass_flux" value="9.496e-7" /> <!--kg/m2/s, 3cm/yr-->
+      <constant name="winter" type="area_mass_flux" value="8.819e-7" /> <!--kg/m2/s-->
+      <constant name="spring" type="area_mass_flux" value="1.428e-5" /> <!--value="1.428e-5" /> -->
+      <constant name="ponding" type="area_mass_flux" value="7.0e-50" />
+      <constant name="summer" type="area_mass_flux" value="7.0439e-60" />
+    </constants>
+    <macros>
+      <time_macro name="Time Output">
+        <!-- <time>9504000</time>
+        <time>10368000</time>
+        <time>11232000</time>
+        <time>12096000</time>
+        <time>12960000</time>
+        <time>13824000</time>
+        <time>14688000</time> -->
+<!--        <time>864000</time>
+        <time>1728000</time>
+        <time>2592000</time>
+        <time>3456000</time>
+        <time>4320000</time>
+        <time>5184000</time>
+        <time>6048000</time> -->
+        <time>6.311e7</time>
+        <time>1.262e8</time>
+        <time>1.893e8</time>
+        <time>2.525e8</time>
+        <time>3.156e8</time>
+        <time>3.787e8</time>
+        <time>4.418e8</time>
+      </time_macro>      
+      <cycle_macro name="Every_1000_timesteps">
+        <start>0</start>
+        <timestep_interval>1000</timestep_interval>
+        <stop>-1 </stop>
+      </cycle_macro>
+    </macros>
+  </definitions>
+
+  <!--  if flow,transport,chemistry are missing, this implies that state == off -->
+  <process_kernels>
+    <comments>This is a proposed comment field for process_kernels</comments>
+    <flow state="on" model="richards" />
+    <transport state="on" algorithm="explicit first-order" sub_cycling="on" />
+    <chemistry engine="none" state="off" process_model="none" />
+  </process_kernels>
+
+  <phases>
+    <comments>Eliminated term "Uniform" from viscosity and density input. Designed for additional phases to be included.</comments>
+    <liquid_phase name="water">
+      <eos>false</eos>
+      <!-- default is false; and can be left out -->
+      <viscosity>1.002E-03</viscosity>
+      <density>998.2</density>
+      <dissolved_components>
+        <solutes>
+          <solute coefficient_of_diffusion="1.0e-9">tracer</solute>
+        </solutes>
+      </dissolved_components>
+    </liquid_phase>
+  </phases>
+
+  <execution_controls>
+    <execution_control_defaults init_dt="10" max_dt="1.0e+7" reduction_factor="0.5" increase_factor="1.25" mode="transient" method="bdf1" />
+    <execution_control start="0.0;d" end="start_" init_dt="1000" max_dt="0.1 y" increase_factor="1.25" reduction_factor="0.1" mode="steady" /> 
+    <execution_control start="start_" end="fifteen" />
+    <verbosity level="high"/>
+  </execution_controls>
+
+  <!-- There are few different ways to iterate to steady-state -
+        most use pseudo-time. But what may complicate this is that two different PKs may have different needs here or in transient.-->
+  <numerical_controls>
+    <comments>Numerical controls comments here</comments>
+    <steady-state_controls>
+      <comments>Note that this section contained data on timesteps, which was moved into the execution control section.</comments>
+      <min_iterations>10</min_iterations>
+      <max_iterations>15</max_iterations>
+      <max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
+      <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+    </steady-state_controls>
+    <transient_controls>
+      <comments>Proposed comments section.</comments>
+      <bdf1_integration_method min_iterations="10" max_iterations="15" max_preconditioner_lag_iterations="5" nonlinear_tolerance="1.0e-5"/>
+    </transient_controls>
+    <linear_solver>
+      <comments>Proposed comment section.</comments>
+      <method>gmres</method>
+      <max_iterations>50</max_iterations>
+      <tolerance>1.0e-18</tolerance>
+      <preconditioner name="hypre_amg">
+        <hypre_cycle_applications>5</hypre_cycle_applications>
+        <hypre_smoother_sweeps>3</hypre_smoother_sweeps>
+        <hypre_tolerance>0.0</hypre_tolerance>
+        <hypre_strong_threshold>0.4</hypre_strong_threshold>
+      </preconditioner>
+    </linear_solver>
+  </numerical_controls>
+
+<!--
+  <regions>
+    <box name="All" low_coordinates="(0.0,0.0)" high_coordinates="(230.0,7.0)" />
+    <box name="alluvium" low_coordinates="(0.0,0.0)" high_coordinates="(230.0,4.4)" />
+    <box name="fill" low_coordinates="(0.0,4.4)" high_coordinates="(230.0,7.0)" />
+    <box name="tt01" low_coordinates="(0.0,7.0)" high_coordinates="(75.0.0,7.0)" />
+    <box name="tt02" low_coordinates="(75.0,7.0)" high_coordinates="(150.0.0,7.0)" />
+    <box name="tt03" low_coordinates="(150.0,7.0)" high_coordinates="(230.0.0,7.0)" />
+    <box name="Water Table" low_coordinates="(0.0,0.0)" high_coordinates="(230.0,0.0)" />
+    <box name="left" low_coordinates="(0.0,0.0)" high_coordinates="(0.0,7.0)" />
+    <box name="right" low_coordinates="(230.0,0.0)" high_coordinates="(230.0,7.0)" />
+  </regions>
+-->
+  <regions>
+    <region name="alluvium">
+      <region_file label="2" name="rifle.exo" type="labeled set" format="exodus ii" entity="cell"/>
+    </region>
+    <region name="fill">
+      <region_file label="1" name="rifle.exo" type="labeled set" format="exodus ii" entity="cell"/>
+    </region>
+ 
+    <region name="surface">
+      <region_file label="2" name="rifle.exo" type="labeled set" format="exodus ii" entity="face"/>
+    </region>
+    <region name="left">
+      <region_file label="5" name="rifle.exo" type="labeled set" format="exodus ii" entity="face"/>
+    </region>
+    <region name="right">
+      <region_file label="3" name="rifle.exo" type="labeled set" format="exodus ii" entity="face"/>
+    </region>
+  </regions>
+
+<!--
+  <mesh framework="mstk">
+    <comments>Real 2D</comments>
+    <dimension>2</dimension>
+    <generate>
+      <number_of_cells nx="230" ny="30" /> 
+      <box low_coordinates="0.0,0.0" high_coordinates="230.0,7.0" />
+    </generate>
+    
+  </mesh>
+ -->
+
+  <mesh framework="mstk">
+    <comments>Read from Exodus II</comments>
+    <dimension>2</dimension>
+    <read>
+        <format>exodus ii</format>
+    	<file>rifle.exo</file>
+    </read>
+  </mesh>
+
+  <materials>
+    <material name="loam">
+      <comments>loam k_x = k_y = k_z, data from Boris Faybishenko, cobbles =0.5</comments>
+      <mechanical_properties>
+        <porosity value="0.206" />
+        <particle_density value="2720.0" />
+      </mechanical_properties>
+      <permeability x="4.524E-12" y="4.524E-12"></permeability>
+      <cap_pressure model="van_genuchten">
+        <parameters m="0.178" alpha="5.070e-4" sr="0.0728" />
+      </cap_pressure>
+      <rel_perm model="mualem"></rel_perm>
+      <assigned_regions>fill</assigned_regions>
+    </material>
+    <material name="sand">
+      <comments>sand, data from Boris Faybishenko, cobbles =0.5</comments>
+      <mechanical_properties>
+        <porosity value="0.1979" />
+        <particle_density value="2720.0" />
+      </mechanical_properties>
+      <permeability x="9.670E-12" y="9.760E-12" />
+      <cap_pressure model="van_genuchten">
+        <parameters m="0.306" alpha="8.461E-04" sr="0.1263" />
+      </cap_pressure>
+      <rel_perm model="mualem"></rel_perm>
+      <assigned_regions>alluvium</assigned_regions>
+    </material>
+  </materials>
+
+  <initial_conditions>
+    <initial_condition name="Pressure and concentration for entire domain">
+      <comments>Initial Conditions Comments</comments>
+      <assigned_regions>alluvium,fill</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+        <!--  <linear_pressure value="101325" reference_coord="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)" /> -->
+        <!--  <linear_pressure value="101325" reference_coord="(0.0,1.0)" gradient="(0.0,-9793.5192)" /> -->
+           <uniform_pressure value="101325"/>
+        </liquid_component>
+        <solute_component name="tracer" value="0" function="uniform" />
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions>
+    <comments>Format was changed because it is more readable for long time series</comments>
+    <boundary_condition name="Recharge at top of the domain with ponding">
+      <assigned_regions>surface</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_mass_flux start="0.0" function="constant" value="recharge" />
+        </liquid_component>
+        <solute_component name="solute">
+          <aqueous_conc name="tracer" start="0.0" function="constant" value="zero" />
+        </solute_component>
+      </liquid_phase>
+    </boundary_condition>
+<!--    <boundary_condition name="Recharge at top of the domain no ponding">
+      <assigned_regions>tt02</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_mass_flux start="0.0" function="constant" value="winter" />
+          <inward_mass_flux start="springtime" function="constant" value="spring" />
+          <inward_mass_flux start="summertime" function="constant" value="summer" />
+        </liquid_component>
+        <solute_component name="solute">
+          <aqueous_conc name="tracer" start="0.0" function="constant" value="zero" />
+        </solute_component>
+      </liquid_phase>
+    </boundary_condition> -->
+    <boundary_condition name="upstream">
+      <assigned_regions>right</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <hydrostatic start="0.000" function="constant" value="5.2319"/>
+      <!--    <hydrostatic start="week1" function="constant" value="5.2530"/>
+          <hydrostatic start="week2" function="constant" value="5.1081"/>
+          <hydrostatic start="week3" function="constant" value="4.9943"/>
+          <hydrostatic start="week4" function="constant" value="4.8978"/>
+          <hydrostatic start="week5" function="constant" value="4.8011"/>
+          <hydrostatic start="week6" function="constant" value="4.7265"/>
+          <hydrostatic start="week7" function="constant" value="4.7180"/>
+          <hydrostatic start="week8" function="constant" value="4.7017"/>
+          <hydrostatic start="week9" function="constant" value="4.6711"/> -->
+        </liquid_component>
+        <solute_component name="solute">
+          <aqueous_conc name="tracer" start="0.0" function="constant" value="1.0" />
+        </solute_component>
+      </liquid_phase>
+    </boundary_condition>
+    <boundary_condition name="downstream">
+      <assigned_regions>left</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <hydrostatic start="0.000" function="constant" value="4.5625"/>
+       <!--   <hydrostatic start="week1" function="constant" value="4.6746"/>
+          <hydrostatic start="week2" function="constant" value="4.4270"/>
+          <hydrostatic start="week3" function="constant" value="4.2260"/>
+          <hydrostatic start="week4" function="constant" value="4.1181"/>
+          <hydrostatic start="week5" function="constant" value="4.0908"/>
+          <hydrostatic start="week6" function="constant" value="4.08025"/>
+          <hydrostatic start="week7" function="constant" value="4.2175"/>
+          <hydrostatic start="week8" function="constant" value="4.1452"/>
+          <hydrostatic start="week9" function="constant" value="4.0108"/> -->
+        </liquid_component>
+        <solute_component name="solute">
+          <aqueous_conc name="tracer" start="0.0" function="constant" value="0.0" />
+        </solute_component>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <output>
+    <vis>
+      <base_filename>plot_const</base_filename>
+      <num_digits>5</num_digits>
+      <time_macros>Time Output</time_macros>
+    </vis>
+    <!--<checkpoint>
+      <base_filename>chk</base_filename>
+      <num_digits>5</num_digits>
+      <time_macro>Every_1000_timesteps</time_macro>
+    </checkpoint> -->
+  </output>
+
+</amanzi_input>
