@@ -32,7 +32,7 @@
     <!-- end of developers parameters -->
 
     <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="medium"/>
+      <Parameter name="Verbosity Level" type="string" value="low"/>
     </ParameterList>
 
 

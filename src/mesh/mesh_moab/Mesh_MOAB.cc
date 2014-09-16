@@ -16,7 +16,8 @@ namespace AmanziMesh
   // Constructor - load up mesh from file
 
   Mesh_MOAB::Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm, 
-			const AmanziGeometry::GeometricModelPtr& gm) 
+			const AmanziGeometry::GeometricModelPtr& gm,
+                        const VerboseObject *verbosity_obj) 
 {
   int result, rank;
   

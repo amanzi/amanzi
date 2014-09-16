@@ -8,16 +8,7 @@ Amanzi XML Input Specification
 Overview
 ========
 
-The Amanzi simulator evolves a system of conservation
-equations for reacting flow in porous media, as detailed in
-the ASCEM report entitled "Mathematical Formulation Requirements and
-Specifications for the Process Models`" (hereafter referred to
-as the 'Model Requirements Document (MRD)'). The purpose of the present
-document is to specify the data required to execute Amanzi.  This specification
-should be regarded as a companion to the MRD, and parameterizations of
-the individual submodels are consistent between Amanzi, the MRD and this
-document. Where applicable, the
-relevant sections of the MRD are indicated.
+The Amanzi simulator evolves a system of conservation equations for reacting flow in porous media, as detailed in the ASCEM report entitled "Mathematical Formulation Requirements and Specifications for the Process Models`" (hereafter referred to as the 'Model Requirements Document (MRD)'). The purpose of the present document is to specify the data required to execute Amanzi.  This specification should be regarded as a companion to the MRD, and parameterizations of the individual submodels are consistent between Amanzi, the MRD and this document. Where applicable, the relevant sections of the MRD are indicated.
 
 
 Preliminary Concepts
@@ -204,7 +195,7 @@ Usage:
 
   * [SU] `"Steady`" [list] - Amanzi is run in steady mode.
 
-   * [SU] `"Start`" [double] Initial value for psuedo time (used as a continuation parameter) to generate a steady solution (S: Optional).
+   * [SU] `"Start`" [double] (S: Optional) Initial value for psuedo time (used as a continuation parameter) to generate a steady solution.
 
    * [SU] `"End`" [double]: Time that defines a steady solution.  (stopping criteria may be generalized in future releases).
 
@@ -212,27 +203,27 @@ Usage:
 
   * [SU] `"Transient`" [list] - A time-accurate evolution is desired
 
-   * [SU] `"Start`" [double] Start time for integration (if a steady mode exists then this time must equal the steady end time) (S: Optional)
+   * [SU] `"Start`" [double] (S: Optional) Start time for integration (if a steady mode exists then this time must equal the steady end time)
 
    * [SU] `"End`" [double]: End of integration period
    
-   * [SU] `"Initial Time Step`" [double] The intitial time step for the transient calculation. (S: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`")
+   * [SU] `"Initial Time Step`" [double] (Optional) The intitial time step for the transient calculation. (see S Note below)
 
 
-   * [SU] `"Maximum Cycle Number`" [double]: The maximum allowed cycle number.
+   * [SU] `"Maximum Cycle Number`" [int]: (Optional) The maximum allowed cycle number.
 
   * [SU] `"Transient with Static Flow`" [list] - The flow field is static so no flow solver is called during time stepping. During initialization the flow 
     field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; 
     (2) Boundary conditions for the flow    (e.g., pressure), along with the initial condition for the pressure field are used to solve for the 
     Darcy velocity.  At present this mode only supports the "Single Phase" flow model.
 
-   * [SU] `"Start`" [double] Start time for integration (if a steady mode exists then this time must equal the steady end time) (S: Optional)
+   * [SU] `"Start`" [double] (S: Optional) Start time for integration (if a steady mode exists then this time must equal the steady end time)
 
    * [SU] `"End`" [double]: End of integration period
    
-   * [SU] `"Initial Time Step`" [double] The intitial time step for the transient calculation. (S: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`")
+   * [SU] `"Initial Time Step`" [double]  (Optional) The intitial time step for the transient calculation. (see S Note below)
 
-   * [SU] `"Maximum Cycle Number`" [double]: The maximum allowed cycle number.
+   * [SU] `"Maximum Cycle Number`" [int]: (Optional) The maximum allowed cycle number.
 
   * [U] `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
 
@@ -242,15 +233,17 @@ Usage:
 
    * [SU] `"End`" [double]: The end of the time-integration period
     
-   * [SU] `"Steady Initial Time Step`" [double]: The intitial time step for the steady state initialization calculation.
+   * [SU] `"Steady Initial Time Step`" [double]: (Optional) The intitial time step for the steady state initialization calculation.
 
-   * [SU] `"Transient Initial Time Step`" [double]: (S: Optional) The intitial time step for the transient calculation after "Switch" time.  (S: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`")
+   * [SU] `"Transient Initial Time Step`" [double]: (Optional)  The intitial time step for the transient calculation after "Switch" time.  (see S Note below)
+
+S Note: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
  * [SU] `"Time Period Control`" (Optional)
 
   * [SU] `"Start Times`" [Array(double)]: List of times at which the current time-integrator will be reinitialized.
   * [SU] `"Initial Time Step`"[Array(double)]: The initial time step for each time period. If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
-  * [S] `"Maximum Time Step`"[Array(double)]: (Optional) The maximum time step for each time period. 
+  * [SU] `"Maximum Time Step`"[Array(double)]: (Optional) The maximum time step for each time period. 
   * [U] `"Default Initial Time Step`" [double]: (Optional) set the default initial time step, this is used for time integrator restarts that are required by boundary conditions and sources, but are not specified in this list under Start Times, the default value is 1.0. 
 
  * [SU] `"Verbosity`" [string]: (default: `"Medium`") Choose one of `"None"`, `"Low"`, `"Medium"`, `"High`", or `"Extreme`".
@@ -269,13 +262,7 @@ Usage:
  
  For both unstructured and structured, the following common list of parameters is valid:
 
-  * [SU] `"Comon Controls"` [list]: Control parameters associtated with the unstructured algorithm.
-
-     * [SU] `"steady min iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"steady time step increase factor"`. (default: `"10`", suggested range: 5 ... 15)
-
-     * [SU] `"steady limit iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. (default: `"20`", suggested range: 20 ... 50)
-
-     * [SU] `"CFL`" [double]: Time step limiter, a number less than 1 with default of 1.
+  * [SU] `"Common Controls"` [list]: Control parameters associtated with both algorithms.  This section will be filled as the input parameters for both algorithms are brought closer in line with each other.
 
   If the unstructured option is active, the following list of parameters is valid:
 
@@ -301,6 +288,8 @@ Usage:
 
      * [U] `"Transport Integration Algorithm`" [string]: Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default: `"Explicit First-Order`")
 
+     * [U] `"CFL`" [double]: Time step limiter, a number less than 1 with default of 1.
+
      * [U] `"transport subcycling`" [bool]: Accepts `"true`" or `"false`" which corresponds to transport subcycling on or off, respectively. (default: `"true`") Note that setting this parameter to false does not always preclude transport from subcycling. Since the estimate for the transport time step is based on velocities from the previous time step, the actual time step that transport can take after the current flow step might be different from its initial estimate.
 
    * [U] `"Chemistry Process Kernel`" [list]: Control parameters for the reactive transport methods
@@ -310,6 +299,10 @@ Usage:
    * [U] `"Steady-State Implicit Time Integration`" [list] Parameters for BDF1 time integration to reach steady-state
 
      * [U] `"steady max iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"steady time step reduction factor"`. (default: `"15`", suggested range: 10 ... 20)
+
+     * [U] `"steady min iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"steady time step increase factor"`. (default: `"10`", suggested range: 5 ... 15)
+
+     * [U] `"steady limit iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. (default: `"20`", suggested range: 20 ... 50)
 
      * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation. (default: `"1.0e-5`", suggested range: 1.0e-8 ... 1.0e-6)
 
@@ -451,11 +444,15 @@ Usage:
 
   If the structured option is active, the following list of parameters is valid (Note: all lists here accept an optional sublist `"Expert Settings`".  Parameters listed in the expert area are not checked for validity/relevance during input reading stage, but are simply passed to the underlying implementation.)
 
-  * [S] `"Structured Algorithm`" [list] Additional controls for details of the structured-grid algorithm. Optional.
+  * [S] `"Structured Algorithm`" [list] (Optional) Additional controls for details of the structured-grid algorithm. 
 
    * [S] `"Expert Settings`" [int] Options passed to Amanzi that are not specifically checked for validity/relevance
 
+     * [S] `"steady_limit_iterations"` [int] Maximum number of Newton iterations to attempt when solving for a single time step evolution of Richards equation. (default: "20", suggested range: 5 ... 200)
+
      * [S] `"steady_time_step_reduction_factor"` [double] When time step reduction is necessary during the steady calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
+
+     * [S] `"steady_min_iterations"` [int] Maximum iteration count of successful Newton solve leading to time step increase of "steady_time_increase_factor". (default: "10", suggested range: 5 ... 100)
 
      * [S] `"steady_time_step_increase_factor"` [double] When time step increase is possible during the steady calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
 
@@ -535,7 +532,9 @@ Usage:
 
      * [S] `"max_n_subcycle_transport`" [int] Maximum number of level-0 subcycled transport time steps for each flow step.  Transport will be limited by an advective CFL stability constriant, so this will contribute to limiting the over step size taken. (default: `"10`", suggested values: 1 ... 20)
 
-   * [S] `"Adaptive Mesh Refinement`" [list] Additional details related to the adaptive mesh refinement algorithm. Optional.
+     * [S] `"cfl`" [double]: Fraction of stability-limited maximum time step allowed by the advective transport scheme. (default: "1", suggested values: .01 ... 1)
+
+   * [S] `"Adaptive Mesh Refinement`" [list] (Optional) Additional details related to the adaptive mesh refinement algorithm. 
 
      * [S] `"Number Of AMR Levels`" [int] Maximum number of adaptive levels, including the base grid (default=1)
 
@@ -571,15 +570,15 @@ Usage:
 
        * [S] `"End Time`" [double] If set, this identifies the time before which this criteria will be applied
 
-  * [S] `"Diffusion Discretization Control`" [list] Additional details related to the parabolic diffusion solver. Optional.  Details to be added.
+  * [S] `"Diffusion Discretization Control`" [list] (Optional) Additional details related to the parabolic diffusion solver. Details to be added.
 
-  * [S] `"Pressure Discretization Control`" [list] Algorithmic options for pressure solve. Optional.  Details to be added.
+  * [S] `"Pressure Discretization Control`" [list] (Optional) Algorithmic options for pressure solve. Details to be added.
 
   * [S] `"Iterative Linear Solver Control`" [list] Detailed controls for linear solvers. Details to be added.
 
-   * [S] `"Conjugate Gradient Algorithm`" [list] Algorithmic options for CG Solver. Optional. Details to be added.
+   * [S] `"Conjugate Gradient Algorithm`" [list] (Optional) Algorithmic options for CG Solver. Details to be added.
 
-   * [S] `"Multigrid Algorithm`" [list] Algorithmic options for Multigrid Solver. Optional.  Details to be added.
+   * [S] `"Multigrid Algorithm`" [list] (Optional) Algorithmic options for Multigrid Solver. Details to be added.
 
 
 
@@ -986,7 +985,7 @@ the following set of physical properties using the supported models described be
 
   * [SU] Dispersion Tensor [list] Parameterized model for Dispersion Tensor. Choose exactly one of the following: `"Dispersion Tensor:  Uniform Isotropic`".
 
-  * [SU] Molecular Diffusion [list] Parameterized model for
+..  * [SU] Molecular Diffusion [list] Parameterized model for
     a single molecular diffusion coefficient for all primary species [L^2 / time = m^2 / s]. Choose exactly one of the following: `"Molecular Diffusion: Uniform`".
 
   * [SU] Tortuosity [list] Parameterized model for the Tortuosity [-]. Choose exactly one of the following: `"Tortuosity: Uniform`".
@@ -1014,8 +1013,8 @@ the following set of physical properties using the supported models described be
     * [SU] `"Solute Name`" [list] The name of one of the solutes from the phase definitions "Component Solutes" list.
  
       * [SU] `"Kd`" (double) [Kg H2O / m^3 bulk] molality-based distribution coefficient for this solute on this material (default: 0.0). If Kd is available in the more conventional units of mL/g or L/Kg, one needs to multiply that value by the water density [Kg water/L] and bulk density [Kg/m3 bulk]. Note: `"Kd`" is also used to enter the distribution coefficient in the Langmuir and Freundlich models. In the empirical Freundlich model, units will depend on the choice of n, i.e. [ mol^n / (m^3 bulk * Kg H2O)^n) ] . In the Langmuir model, units will be in [L H2O / mol]
-      * [SU] `"Langmuir b`" (double) [mol/m^3 bulk] Langmuir isotherm "b" coefficient, optional parameter (default: 0.0)
-      * [SU] `"Freundlich n`" (double) [-] Freundlich isotherm "n" coefficient, optional parameter (default to 1.0).
+      * [SU] `"Langmuir b`" (double) (Optional) [mol/m^3 bulk] Langmuir isotherm "b" coefficient, (default: 0.0)
+      * [SU] `"Freundlich n`" (double) (Optional) [-] Freundlich isotherm "n" coefficient, (default to 1.0).
 
   Assigned regions are typically specified last:
 
@@ -1286,9 +1285,9 @@ In order to support the rather general specification requirements (involving com
 
     * [SU] SOLUTE [list] can accept a solute name from the above list. 
 
-      * [SU] `"Molecular Diffusivity`" [double] specify the molecular diffusivity coefficient [m^2/s] for the current solute, optional parameter
+      * [SU] `"Molecular Diffusivity`" [double] (Optional) specify the molecular diffusivity coefficient [m^2/s] for the current solute
         
-      * [SU] `"First Order Decay Constant`" [double] specify the decay constant for the current solute, optional parameter
+      * [SU] `"First Order Decay Constant`" [double] (Optional) specify the decay constant for the current solute
 
  * [SU] `"Solid`" phase [list] can accept the following parameters: `"Minerals`", and `"Sorption Sites`"
 
@@ -1299,11 +1298,11 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
 * [SU] `"Initial Conditions`" [list] accepts labels, IC, of named initial condition specifications 
 
- * [U] `"Init from Checkpoint File`" [string] (optional) specify the checkpoint file that all fields are to be initialized from. If this parameter is present, all initial conditions are ignored.
+ * [U] `"Init from Checkpoint File`" [string] (Optional) specify the checkpoint file that all fields are to be initialized from. If this parameter is present, all initial conditions are ignored.
 
  * [SU] IC [list] label for an initial condition, accepts initial condition function names, and parameters to specify assigned regions and solute initial conditions
 
-  * [SU] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: Uniform Velocity`" (see below)
+  * [SU] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: Uniform Velocity`" (see below)
 
   * [SU] `"Assigned Regions`" [Array(string)] list of regions to which this condition is assigned.  Note [S] when multiple regions specified overlap, this list implies a precedence, ordered right to left.
 
@@ -1520,7 +1519,7 @@ The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"
   * [SU] `"Activity Model`" [string] The type of model used for activity corrections. Valid values: "unit", "debye-huckel".
   * [SU] `"Tolerance`" [float] Tolerance in newton solves inside the chemistry library.
   * [SU] `"Maximum Newton Iterations`" [int] Maximum number of iteration the chemistry library can take.
-  * [SU] `"Output File Name`" [string] Optional parameter. A file name that the chemistry library should use to write simulation information and debugging info. An empty string (default) indicates that the chemistry library should not write to a file.
+  * [SU] `"Output File Name`" [string] (Optional) A file name that the chemistry library should use to write simulation information and debugging info. An empty string (default) indicates that the chemistry library should not write to a file.
   * [SU] `"Use Standard Out`" [bool] A flag indicating whether the chemistry library can write simulation information and debugging info to standard out. Default is true, so the amanzi u/s drivers will need to set this appropriately on mpi/openmp processes.
   * [SU] `"Auxiliary Data`" [string array] Additional chemistry related data that the user can request be saved to vis files. Currently "pH" is the only variable supported.
   * [SU] `"Max Time Step (s)`" [double] The maximum time step that chemistry will allow the MPC to take.

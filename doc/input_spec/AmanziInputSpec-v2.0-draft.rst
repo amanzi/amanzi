@@ -314,6 +314,10 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"initialize_with_darcy`"="boolean"
 
+    * `"restart_tolerance_factor`"="exponential"
+ 
+    * `"restart_tolerance_relaxation_factor`"="exponential"
+
   * `"unstr_transient_controls`"  has the following elements
 
     * `"comments`"="string" - SKIPPED 

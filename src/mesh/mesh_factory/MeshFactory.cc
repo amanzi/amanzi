@@ -31,8 +31,10 @@ namespace AmanziMesh {
 // -------------------------------------------------------------
 // MeshFactory:: constructors / destructor
 // -------------------------------------------------------------
-MeshFactory::MeshFactory(const Epetra_MpiComm *communicator)
-    : my_comm(communicator), my_preference(default_preference())
+ MeshFactory::MeshFactory(const Epetra_MpiComm *communicator,
+                          const VerboseObject *meshverbobj)
+   : my_comm(communicator), verbosity_obj(meshverbobj),
+     my_preference(default_preference())
 {
   
 }
@@ -106,7 +108,7 @@ MeshFactory::create(const std::string& filename,
        i != my_preference.end(); i++) {
     if (framework_reads(*i, fmt, my_comm->NumProc() > 1)) {
       try {
-        result = framework_read(my_comm, *i, filename, gm);
+        result = framework_read(my_comm, *i, filename, gm, verbosity_obj);
         if (gm && (gm->dimension() != result->space_dimension())) {
           Errors::Message mesg("Geometric model and mesh dimension do not match");
           amanzi_throw(mesg);
@@ -191,7 +193,7 @@ MeshFactory::create(double x0, double y0, double z0,
         result = framework_generate(my_comm, *i, 
                                     x0, y0, z0, x1, y1, z1, 
                                     nx, ny, nz,
-                                    gm);
+                                    gm, verbosity_obj);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -268,7 +270,7 @@ MeshFactory::create(double x0, double y0,
         result = framework_generate(my_comm, *i, 
                                     x0, y0, x1, y1,
                                     nx, ny,
-                                    gm);
+                                    gm, verbosity_obj);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -312,7 +314,8 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
        i != my_preference.end(); i++) {
     if (framework_generates(*i, my_comm->NumProc() > 1, dim)) {
       try {
-        result = framework_generate(my_comm, *i, parameter_list, gm);
+        result = framework_generate(my_comm, *i, parameter_list, gm, 
+                                    verbosity_obj);
         if (gm && (gm->dimension() != result->space_dimension())) {
           Errors::Message mesg("Geometric model and mesh dimension do not match");
           amanzi_throw(mesg);

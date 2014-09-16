@@ -54,6 +54,7 @@ TEST(FLOW_2D_DARCY_WELL) {
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
+  pref.push_back(STKMESH);
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);

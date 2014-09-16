@@ -34,7 +34,7 @@ Teuchos::Array<std::string> make_regions_list(char* char_array);
 bool compare_region_names(Teuchos::Array<std::string> regions, Teuchos::ParameterList def_list);
 Teuchos::Array<double> make_coordinates(char* char_array, Teuchos::ParameterList def_list);
 Teuchos::ParameterList make_chemistry(Teuchos::ParameterList def_list);
-void write_BDG_file(Teuchos::ParameterList solute_list, Teuchos::ParameterList def_list);
+void write_BGD_file(Teuchos::ParameterList solute_list, Teuchos::ParameterList def_list);
 
 static bool isUnstr_ ;
 static int dimension_;

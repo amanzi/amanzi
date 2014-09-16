@@ -1,0 +1,455 @@
+:Description: Input for Rifle simulation by B. Arora & N. Spycher 
+
+:=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    H+
+    Cl-
+    SO4--
+    HCO3-
+    SiO2(aq)
+    Al+++
+    Ca++
+    Mg++
+    Fe++
+    Fe+++
+    K+
+    Na+
+    O2(aq)
+    HS-
+    NO3-
+    NO2-
+    N2(aq)
+    Ac-
+    NH3(aq)
+    Tracer
+  /
+  SECONDARY_SPECIES
+    HAc        
+    AlAc+2     
+    AlAc2+     
+    CaAc+      
+    CaAc2      
+    FeAc+      
+    FeAc2      
+    KAc        
+    MgAc       
+    NaAc       
+    AlO+       
+    AlO2-      
+    AlOH+2     
+    AlSO4+     
+    HAlO2(aq)  
+    CO2(aq)    
+    CO3--      
+    CaCO3(aq)  
+    CaCl+      
+    CaCl2(aq)  
+    CaHCO3+    
+    CaHSiO3+   
+    CaNO3+     
+    CaOH+      
+    CaSO4(aq)  
+    Fe(CO3)2-2 
+    Fe(OH)3-   
+    Fe(OH)4-2  
+    FeCO3(aq)  
+    FeCl+      
+    FeCl+2     
+    FeCl2(aq)  
+    FeHCO3+    
+    FeNO2+2    
+    FeNO3+2    
+    FeO(aq)    
+    FeO+       
+    FeO2-      
+    FeOH+      
+    FeOH+2     
+    FeS(aq)    
+    FeSO4(aq)  
+    FeSO4+     
+    H2S(aq)    
+    H2SO4(aq)  
+    HFeO2(aq)  
+    HFeO2-     
+    HNO2(aq)   
+    HNO3(aq)   
+    HSO4-      
+    HSiO3-     
+    KCl(aq)    
+    KHSO4(aq)  
+    KOH(aq)    
+    KSO4-      
+    Mg4(OH)4+4 
+    MgCO3(aq)  
+    MgCl+      
+    MgHCO3+    
+    MgHSiO3+   
+    MgOH+      
+    MgSO4(aq)  
+    NH4+       
+    NH4SO4-    
+    NaCO3-     
+    NaCl(aq)   
+    NaHCO3(aq) 
+    NaHSiO3(aq)
+    NaOH(aq)   
+    NaSO4-     
+    OH-        
+    S--        
+  /
+
+  REDOX_SPECIES
+    Fe++
+    Fe+++
+    SO4--
+    HS-
+    NO3-
+    NO2-
+    NO2-
+    N2(aq)
+    Ac-
+    HCO3-
+  /
+
+  GAS_SPECIES
+    CO2(g)
+    O2(g)
+  /
+
+  MINERALS
+    Goethite
+    Calcite 
+    Siderite 
+    Pyrite   
+    Cellulose
+  /
+
+  MINERAL_KINETICS
+    Goethite
+      PREFACTOR
+        RATE_CONSTANT  -9.39 mol/m^2-sec
+       PREFACTOR_SPECIES H+
+          ALPHA 1.0
+        /
+      /
+    /
+   Calcite
+      PREFACTOR
+        RATE_CONSTANT -0.3 mol/m^2-sec
+        PREFACTOR_SPECIES H+
+          ALPHA 1.0 
+        /
+      /
+      PREFACTOR
+        RATE_CONSTANT -3.48 mol/m^2-sec
+        PREFACTOR_SPECIES CO3--
+          ALPHA 1.0 
+        /
+      /
+    /
+    Siderite
+      PREFACTOR
+        RATE_CONSTANT -3.747 mol/m^2-sec
+        PREFACTOR_SPECIES H+
+          ALPHA 0.75
+        /
+      /
+    /
+    Pyrite
+      PREFACTOR
+        RATE_CONSTANT -9.1 mol/m^2-sec
+        PREFACTOR_SPECIES O2(aq)
+          ALPHA 0.5
+        /
+        PREFACTOR_SPECIES H+
+          ALPHA -0.11
+        /
+      /
+      PREFACTOR
+        RATE_CONSTANT -9.58 mol/m^2-sec
+        PREFACTOR_SPECIES Fe+++
+          ALPHA 0.3
+        /
+        PREFACTOR_SPECIES Fe++
+          ALPHA -0.47
+        /
+        PREFACTOR_SPECIES H+
+          ALPHA -0.32
+        /
+      /
+    /
+    Cellulose
+      RATE_CONSTANT -12.0 mol/m^2-sec
+    /
+ /
+
+  DATABASE rifle-arora-spycher.dat
+  LOG_FORMULATION
+  ACTIVITY_COEFFICIENTS TIMESTEP
+
+  OUTPUT
+    primary_species
+    Goethite
+    Calcite
+    Siderite
+    Pyrite
+    Cellulose
+/
+END
+
+:=========================== solver options ===================================
+TIMESTEPPER
+  TS_ACCELERATION 8
+/
+
+:=========================== discretization ===================================
+GRID
+  TYPE structured
+  ORIGIN 0.d0 0.d0 0.d0
+  NXYZ 100 1 1
+  BOUNDS
+    0.d0 100.d0
+    0.d0 1.d0
+    0.d0 1.d0
+  /
+END
+
+:=========================== flow =============================================
+UNIFORM_VELOCITY 7.9274479960d-9 0.d0 0.d0
+
+:=========================== fluid properties =================================
+FLUID_PROPERTY 
+  DIFFUSION_COEFFICIENT 1.d-9
+/
+
+:=========================== material properties ==============================
+MATERIAL_PROPERTY soil1
+  ID 1
+  POROSITY 0.25d0
+/
+
+:=========================== observation points ===============================
+OBSERVATION
+  REGION all
+  AT_CELL_CENTER
+/
+
+:=========================== output options ===================================
+OUTPUT
+  FORMAT HDF5
+  PERIODIC TIME 1 y
+/
+
+:=========================== times ============================================
+TIME
+  FINAL_TIME 50.d0 y
+  INITIAL_TIMESTEP_SIZE 1.d-6 y
+  MAXIMUM_TIMESTEP_SIZE 1.d-1 y
+/
+
+:=========================== regions ==========================================
+REGION all
+  COORDINATES
+    0.d0 0.d0 0.d0
+    100.d0 1.d0 1.d0
+  /
+END
+
+REGION west
+  FACE WEST
+  COORDINATES
+    0.d0 0.d0 0.d0
+    0.d0 1.d0 1.d0
+  /
+END
+
+REGION east
+  FACE EAST
+  COORDINATES
+    100.d0 0.d0 0.d0
+    100.d0 1.d0 1.d0
+  /
+END
+
+:=========================== transport conditions =============================
+TRANSPORT_CONDITION initial
+  TYPE dirichlet
+  CONSTRAINT_LIST
+    0.d0 reduced
+  /
+END
+
+TRANSPORT_CONDITION west
+  TYPE dirichlet
+  CONSTRAINT_LIST
+    0.d0 oxidizedtracer
+  /
+END
+
+TRANSPORT_CONDITION east
+  TYPE dirichlet_zero_gradient
+  CONSTRAINT_LIST
+    0.d0 reduced
+  /
+END
+
+:=========================== constraints ======================================
+CONSTRAINT reduced
+  : reduced
+  CONCENTRATIONS  : total aqueous [moles/kg_h2o]
+    H+           1.238E-07     M  Calcite
+    Cl-		 2.57E-03      T
+    SO4--	 5.419E-03     T 
+    HCO3-	 7.35E-03      T
+    SiO2(aq)	 4.04E-04      T
+    Al+++	 1.08E-13      T
+    Ca++	 3.67E-03      T
+    Mg++	 3.17E-03      T
+    Fe++	 4.46E-05      T
+    Fe+++	 1.00E-20      M  Goethite
+    K+		 1.96E-04      T
+    Na+		 7.38E-03      T
+    O2(aq)	 1.00000E-10   T
+    HS-		 1.00E-08      M  Pyrite
+    NO3-	 1.00E-10      T
+    NO2-	 1.00E-10      T
+    N2(aq)	 1.00E-10      T
+    Ac-		 4.90E-05      M  Cellulose
+    NH3(aq)	 2.22E-04      T
+    Tracer	 1.0E-20       T
+  /
+  MINERALS : volume_fraction   SSA [m^2 mineral/m^3 bulk]
+    Goethite      0.0012      60000.0 m^2/m^3
+    Calcite       0.01        60000.0 m^2/m^3
+    Siderite      0.00409     60000.0 m^2/m^3
+    Pyrite        0.000036    60000.0 m^2/m^3
+    Cellulose     0.626      113000.0 m^2/m^3
+  /
+END
+
+CONSTRAINT oxidized
+  : reduced
+  CONCENTRATIONS  : total aqueous [moles/kg_h2o]
+    H+           1.176E-07     M  Calcite
+    Cl-          6.060E-03     T
+    SO4--        8.788E-03     T 
+    HCO3-        6.41E-03      T
+    SiO2(aq)     3.28E-04      T
+    Al+++        3.59E-10      T
+    Ca++         4.41E-03      T
+    Mg++         4.59E-03      T
+    Fe++         4.29E-05      T
+    Fe+++        1.00E-20      M  Goethite
+    K+           3.37E-04      T
+    Na+          1.21E-02      T
+    O2(aq)       7.83E-06      T
+    HS-          1.00E-20      M  Pyrite
+    NO3-         2.31E-05      T
+    NO2-         1.05E-06      T
+    N2(aq)       1.00E-10      T
+    Ac-          7.78E-05      M  Cellulose
+    NH3(aq)      6.67E-06      T
+    Tracer       1.0E-20       T
+  /
+  MINERALS : volume_fraction   SSA [m^2 mineral/m^3 bulk]
+    Goethite      0.0024      60000.0 m^2/m^3
+    Calcite       0.01        60000.0 m^2/m^3
+    Siderite      0.00        60000.0 m^2/m^3
+    Pyrite        0.00        60000.0 m^2/m^3
+    Cellulose     0.626      113000.0 m^2/m^3
+  /
+END
+
+CONSTRAINT oxidizedtracer
+  : oxidized w/tracer
+  CONCENTRATIONS  : total aqueous [moles/kg_h2o]
+    H+           1.176E-07     M  Calcite
+    Cl-          6.060E-03     T
+    SO4--        8.788E-03     T 
+    HCO3-        6.41E-03      T
+    SiO2(aq)     3.28E-04      T
+    Al+++        3.59E-10      T
+    Ca++         4.41E-03      T
+    Mg++         4.59E-03      T
+    Fe++         4.29E-05      T
+    Fe+++        1.00E-20      M  Goethite
+    K+           3.37E-04      T
+    Na+          1.21E-02      T
+    O2(aq)       7.83E-06      T
+    HS-          1.00E-20      M  Pyrite
+    NO3-         2.31E-05      T
+    NO2-         1.05E-06      T
+    N2(aq)       1.00E-10      T
+    Ac-          7.78E-05      M  Cellulose
+    NH3(aq)      6.67E-06      T
+    Tracer       1.0E+00       T
+  /
+  MINERALS : volume_fraction   SSA [m^2 mineral/m^3 bulk]
+    Goethite      0.0024      60000.0 m^2/m^3
+    Calcite       0.01        60000.0 m^2/m^3
+    Siderite      0.00        60000.0 m^2/m^3
+    Pyrite        0.00        60000.0 m^2/m^3
+    Cellulose     0.626      113000.0 m^2/m^3
+  /
+END
+
+CONSTRAINT atmosphere
+  : atmosphere
+  CONCENTRATIONS  : total aqueous [moles/kg_h2o]
+    H+           1.176E-07     M  Calcite
+    Cl-          6.060E-03     T
+    SO4--        8.788E-03     T 
+    HCO3-        -3.5          G  CO2(g)
+    SiO2(aq)     3.28E-04      T
+    Al+++        3.59E-10      T
+    Ca++         4.41E-03      T
+    Mg++         4.59E-03      T
+    Fe++         4.29E-05      T
+    Fe+++        1.00E-20      M  Goethite
+    K+           3.37E-04      T
+    Na+          1.21E-02      T
+    O2(aq)       -0.7          G  O2(g)
+    HS-          1.00E-20      M  Pyrite
+    NO3-         2.31E-05      T
+    NO2-         1.05E-06      T
+    N2(aq)       1.00E-10      T
+    Ac-          7.78E-05      M  Cellulose
+    NH3(aq)      6.67E-06      T
+    Tracer       1.0E+00       T
+  /
+  MINERALS : volume_fraction   SSA [m^2 mineral/m^3 bulk]
+    Goethite      0.00        60000.0 m^2/m^3
+    Calcite       0.00        60000.0 m^2/m^3
+    Siderite      0.00        60000.0 m^2/m^3
+    Pyrite        0.00        60000.0 m^2/m^3
+    Cellulose     0.00       113000.0 m^2/m^3
+  /
+END
+
+:=========================== condition couplers ===============================
+: initial condition
+INITIAL_CONDITION
+  TRANSPORT_CONDITION initial
+  REGION all
+END
+
+: west boundary condition
+BOUNDARY_CONDITION
+  TRANSPORT_CONDITION west
+  REGION west
+END
+
+: east boundary condition
+BOUNDARY_CONDITION
+  TRANSPORT_CONDITION east
+  REGION east
+END
+
+:=========================== stratigraphy couplers ============================
+STRATA
+  REGION all
+  MATERIAL soil1
+END
+
+

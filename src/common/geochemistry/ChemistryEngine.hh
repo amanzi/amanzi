@@ -125,8 +125,9 @@ class ChemistryEngine {
 
   // Advances the species represented by the given array of concentrations, replacing old values 
   // with new values. The order of the concentrations in the array matches that of the species names 
-  // returned by GetSpeciesNames.
-  void Advance(const double delta_time,
+  // returned by GetSpeciesNames. Returns true if the advance is successful, 
+  // false if it fails.
+  bool Advance(const double delta_time,
                const AlquimiaMaterialProperties& mat_props,
                AlquimiaState& chem_state,
                AlquimiaAuxiliaryData& aux_data,

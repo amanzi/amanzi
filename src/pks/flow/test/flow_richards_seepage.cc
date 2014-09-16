@@ -46,13 +46,14 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  // create an SIMPLE mesh framework
+  // create a mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
+  pref.push_back(STKMESH);
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);

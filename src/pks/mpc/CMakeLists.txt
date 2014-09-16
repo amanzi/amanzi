@@ -64,14 +64,12 @@ if (BUILD_TESTS)
     # Add the flow directory to the include paths
     include_directories(${MPC_TREE_SOURCE_DIR})
 
-    if ( ENABLE_MSTK_Mesh )
-       set(amanzi_libs geometry mesh mesh_audit mesh_factory state energy operators whetstone data_structures)
+    set(amanzi_libs geometry mesh mesh_audit mesh_factory state energy operators whetstone data_structures)
 
-        # Test: 1
-        #add_amanzi_test(energy_test energy_test
-	#                KIND int
-        #                SOURCE test/Main.cc test/energy_test.cc
-        #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-    endif()    
+    # Test: 1
+    #add_amanzi_test(energy_test energy_test
+    #                KIND int
+    #                SOURCE test/Main.cc test/energy_test.cc
+    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

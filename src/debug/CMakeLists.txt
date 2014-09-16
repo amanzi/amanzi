@@ -22,6 +22,7 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${ATK_SOURCE_DIR})
 
 
 add_amanzi_library(dbg

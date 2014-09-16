@@ -20,7 +20,7 @@ include(TestManager)
 project(GEOMETRY)
 
 # Amanzi include directories
-include_directories(${DBC_SOURCE_DIR} ${FUNCS_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR} ${FUNCS_SOURCE_DIR} ${ATK_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
