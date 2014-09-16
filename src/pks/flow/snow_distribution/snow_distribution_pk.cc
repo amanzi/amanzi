@@ -102,6 +102,9 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
   mfd_preconditioner_->InitPreconditioner();
+
+  tpfa_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_TPFA>(mfd_preconditioner_);
+  ASSERT(tpfa_preconditioner_ != Teuchos::null);
 };
 
 
