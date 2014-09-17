@@ -999,6 +999,8 @@ public:
   MultiFab* KappaCCavg() {return kappa;};
   MultiFab* Porosity() {return rock_phi;}
   MultiFab* SpecificStorage() {return specific_storage;}
+  MultiFab* SpecificYield() {return specific_yield;}
+  MultiFab* ParticleDensity() {return particle_density;}
   MultiFab* KappaEC() {return kpedge;}
   MultiFab* PCapParams() {return cpl_coef;}
   MultiFab* KrParams() {return kr_coef;}
@@ -1069,6 +1071,14 @@ public:
                          int       dir);
 
   void derive_SpecificStorage(Real      time,
+                              MultiFab& mf,
+                              int       dcomp);
+
+  void derive_SpecificYield(Real      time,
+                            MultiFab& mf,
+                            int       dcomp);
+
+  void derive_ParticleDensity(Real      time,
                               MultiFab& mf,
                               int       dcomp);
 
@@ -1212,6 +1222,8 @@ protected:
   MultiFab* kpedge;
   MultiFab* rock_phi;
   MultiFab* specific_storage;
+  MultiFab* specific_yield;
+  MultiFab* particle_density;
   MultiFab* kr_coef;
   MultiFab* cpl_coef;
   iMultiFab* materialID;
@@ -1278,8 +1290,8 @@ protected:
   static Real dt_grow_max;    // maximum change in dt over a timestep
   static Real dt_shrink_max;    // maximum change in dt over a timestep
   static Real fixed_dt;      // set > 0 to specify dt
-  static Real steady_richard_max_dt; // define maximum time step for the steady richard solver
-  static Real transient_richard_max_dt; // define maximum time step for the transient richard solver
+  static Real steady_max_dt; // define maximum time step taken in steady solver mode
+  static Real transient_max_dt; // define maximum time step taken in the transient solver mode
   static int  initial_iter;  // flag for initial pressure iterations
   static int  initial_step;  // flag for initial iterations
   static Real dt_cutoff;     // minimum dt allowed
@@ -1392,7 +1404,7 @@ protected:
   static int  steady_max_num_consecutive_increases;
   static Real steady_consecutive_increase_reduction_factor;
   static Real steady_max_psuedo_time;
-  static bool steady_use_PETSc_snes;
+  static bool flow_use_PETSc;
   static bool steady_abort_on_psuedo_timestep_failure;
   static int  steady_limit_function_evals;
   static Real steady_abs_tolerance;

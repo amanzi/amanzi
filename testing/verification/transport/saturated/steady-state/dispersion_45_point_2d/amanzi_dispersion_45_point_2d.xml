@@ -42,8 +42,8 @@
         <ParameterList name="Uniform Structured">
           <Parameter name="Number of Cells" type="Array(int)" value="{83, 83}"/>
           <!--Parameter name="Number of Cells" type="Array(int)" value="{249, 249}"/-->
-          <Parameter name="Domain Low Corner" type="Array(double)" value="{-2.77500e+02, -2.7750e+02}"/>
-          <Parameter name="Domain High Corner" type="Array(double)" value="{9.6750e+02,   9.6750e+02}"/>
+          <Parameter name="Domain Low Coordinate" type="Array(double)" value="{-2.77500e+02, -2.7750e+02}"/>
+          <Parameter name="Domain High Coordinate" type="Array(double)" value="{9.6750e+02,   9.6750e+02}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Expert">

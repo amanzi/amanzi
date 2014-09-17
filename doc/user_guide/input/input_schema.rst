@@ -759,7 +759,7 @@ An example ``sources`` element looks like the following.
 Outputs
 -------
 
-Output data from Amanzi is currently organized into three specific groups: "Visualization", "Checkpoint", "Observations".  Each of these is controlled in different ways, reflecting their intended use.  All output elements are optional.
+Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", `"Observations`", and `"Walkabout Data`".  Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Visualization`" is intended to represent snapshots of the solution at defined instances during the simulation to be visualized.  The ``vis`` element defines the naming and frequency of saving the visualization files.  The visualization files may include only a fraction of the state data, and may contain auxiliary "derived" information.
 
@@ -767,10 +767,12 @@ Output data from Amanzi is currently organized into three specific groups: "Visu
 
 * `"Observations`" is intended to represent diagnostic values to be returned to the calling routine from Amanzi's simulation driver.  Observations are typically generated at arbitrary times, and frequently involve various point samplings and volumetric reductions that are interpolated in time to the desired instant.  Observations may involve derived quantities or state fields.  The ``observations`` element may define one or more specific observation.
 
+* `"Walkabout Data`" is intended to be used as input to the particle tracking software Walkabout.
+
 Viz
 ---
 
-The ``vis`` element defines the visualization file naming scheme and how often to write out the files.  The ``base_filename`` element contain the text component of the how the visualization files will be named.  The ``base_filename`` is appended with an index number to indicate the sequential order of the visualization files.  The ``num_digits`` elements indicates how many digits to use for the index.  Finally, the ``time_macros`` or ``cycle_macros`` element indicates previously defined time_macro or cycle_macro to be used to determine the frequency at which to write the visualization files.  One or more macro can be listed in a comma separated list.  Amanzi will converted the list of macros to a single list of times or cycles contained by all of the macros listed and output accordingly.
+The ``vis`` element defines the visualization file naming scheme and how often to write out the files.  The ``base_filename`` element contain the text component of the how the visualization files will be named.  The ``base_filename`` is appended with an index number to indicate the sequential order of the visualization files.  The ``num_digits`` elements indicates how many digits to use for the index.  Finally, the ``time_macros`` or ``cycle_macros`` element indicates previously defined time_macros or cycle_macros to be used to determine the frequency at which to write the visualization files.  One or more macro can be listed in a comma separated list.  Amanzi will converted the list of macros to a single list of times or cycles contained by all of the macros listed and output accordingly.
 
 An example ``vis`` element looks like the following.
 
@@ -794,7 +796,7 @@ An example ``checkpoint`` element looks like the following.
     <checkpoint>
 	<base_filename>chk</base_filename>
 	<num_digits>5</num_digits>
-	<cycle_macro>Every_1000_timesteps</cycle_macro>
+	<cycle_macro>Every_1000_steps</cycle_macro>
     </checkpoint>
 
 Observations
@@ -851,4 +853,26 @@ An example ``observations`` element looks like the following.
 .. _Akuna : http://esd.lbl.gov/research/projects/ascem/thrusts/platform/
 .. _Mathematical Formulation Requirements and Specifications for the Process Models: http://software.lanl.gov/ascem/trac/attachment/wiki/Documents/ASCEM-HPC-ProcessModels_2011-01-0a.pdf
 
+Walkabout
+----------
 
+The ''walkabout'' element deines the filenaming scheme and frequency for writing out the walkabout files.  As mentioned above, the user does not influence what is written to the walkabout files only the writing frequency and naming scheme.  Thus, the ''walkabout'' element has the following requiements
+
+.. code-block:: xml
+
+  <checkpoint>
+      Required Elements: base_filename, num_digits, cycle_macro
+      Optional Elements: NONE
+  </checkpoint>
+
+The *base_filename* element contain the text component of the how the walkabout files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the walkabout files.  The *num_digits* elements indicates how many digits to use for the index.  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files.
+
+Example:
+
+.. code-block:: xml
+
+  <walkabout>
+     <base_filename>chk</base_filename>
+     <num_digits>5</num_digits>
+     <cycle_macro>Every_100_steps</cycle_macro>
+  </walkabout>
