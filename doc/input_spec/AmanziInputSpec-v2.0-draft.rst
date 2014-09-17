@@ -989,10 +989,10 @@ The ''walkabout'' element deines the filenaming scheme and frequency for writing
 
 .. code-block:: xml
 
-  <checkpoint>
+  <walkabout>
       Required Elements: base_filename, num_digits, cycle_macro
       Optional Elements: NONE
-  </checkpoint>
+  </walkabout>
 
 The *base_filename* element contain the text component of the how the walkabout files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the walkabout files.  The *num_digits* elements indicates how many digits to use for the index.  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files.
 
