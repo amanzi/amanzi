@@ -116,8 +116,8 @@ void Matrix_TPFA::CreateMFDstiffnessMatrices(
       Epetra_SerialDenseVector Bfc(1);
       int fb_lid = fb_map.LID(f_map.GID(f));
 
-      Bff(0,0) =  -(*rel_perm_transmissibility_)[f];
-      Bfc(0)   =   (*rel_perm_transmissibility_)[f];
+      Bff(0,0) =  (*rel_perm_transmissibility_)[f];
+      Bfc(0)   =  -(*rel_perm_transmissibility_)[f];
 
       Aff_cells_[f] = Bff;
       Afc_cells_[f] = Bfc;
@@ -162,6 +162,10 @@ void Matrix_TPFA::UpdatePreconditioner_() const {
   if (Aff_pc_ == Teuchos::null){
     if (plist_.isSublist("preconditioner")) {
       Teuchos::ParameterList pc_list = plist_.sublist("preconditioner");
+      if (pc_list.get<std::string>("preconditioner type") == (std::string)("boomer amg")){
+	Errors::Message msg("Matrix_TPFA:: boomer amg solver doesn't work with boundary faces set.");
+	Exceptions::amanzi_throw(msg);
+      }
       AmanziPreconditioners::PreconditionerFactory pc_fac;
       Aff_pc_ = pc_fac.Create(pc_list);
     }
@@ -172,11 +176,14 @@ void Matrix_TPFA::UpdatePreconditioner_() const {
     Exceptions::amanzi_throw(msg);
   }
 
+
   S_pc_->Destroy();
   S_pc_->Update(Spp_);
 
+
   Aff_pc_->Destroy();
   Aff_pc_->Update(Aff_);
+  
 
 }
 
@@ -184,7 +191,6 @@ void Matrix_TPFA::UpdatePreconditioner_() const {
 /* ******************************************************************
  * Initialize Trilinos matrices. It must be called only once.
  * If matrix is non-symmetric, we generate transpose of the matrix
- * block Afc to reuse cf_graph; otherwise, pointer Afc = Acf.
  ****************************************************************** */
 void Matrix_TPFA::SymbolicAssembleGlobalMatrices() {
   // get the standard matrices
@@ -196,31 +202,28 @@ void Matrix_TPFA::SymbolicAssembleGlobalMatrices() {
 
   int avg_entries_row = (mesh_->space_dimension() == 2) ? MFD_QUAD_FACES : MFD_HEX_FACES;
 
+
+  Epetra_FECrsGraph pp_graph(Copy, cmap, avg_entries_row + 1);
+  Teuchos::RCP<Epetra_FECrsGraph> fbfb_graph =
+    Teuchos::rcp(new Epetra_FECrsGraph(Copy, fbmap, avg_entries_row + 1));
+  
+
   // allocate the graphs
   Teuchos::RCP<Epetra_CrsGraph> cf_graph =
-      Teuchos::rcp(new Epetra_CrsGraph(Copy, cmap, fbmap, avg_entries_row, false));
-
-  Teuchos::RCP<Epetra_FECrsGraph> fbfb_graph =
-      Teuchos::rcp(new Epetra_FECrsGraph(Copy, fbmap, avg_entries_row));
+    Teuchos::rcp(new Epetra_CrsGraph(Copy, cmap, fbmap, avg_entries_row, false));
 
 
   FillMatrixGraphs_(cf_graph.ptr(), fbfb_graph.ptr());
-
-
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-
- 
-  Acc_ = Teuchos::rcp(new Epetra_Vector(cmap));
-  Acf_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *cf_graph));
-
-
-  if (symmetric()) {
-    Afc_ = Acf_;
-  } else {
-    Afc_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *cf_graph));
-  }
+  // Acc_ = Teuchos::rcp(new Epetra_Vector(cmap));
+  // Acf_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *cf_graph));
+  // if (symmetric()) {
+  //   Afc_ = Acf_;
+  // } else {
+  //   Afc_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *cf_graph));
+  // }
 
   AmanziMesh::Entity_ID_List cells;   
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
 // create the RHS
   std::vector<std::string> names(2);
@@ -239,8 +242,6 @@ void Matrix_TPFA::SymbolicAssembleGlobalMatrices() {
 
   // also create a cell-cell matrix for the TPFA
 
-  Epetra_FECrsGraph pp_graph(Copy, cmap, avg_entries_row + 1);
-
   int cells_GID[2], face_GID;
 
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -255,10 +256,13 @@ void Matrix_TPFA::SymbolicAssembleGlobalMatrices() {
       face_GID = fmap.GID(f);
       fbfb_graph->InsertGlobalIndices(1, &face_GID, 1, &face_GID);
     } 
+    // face_GID = fmap.GID(f);
+    // ff_graph.InsertGlobalIndices(1, &face_GID, 1, &face_GID);
       
   }
   pp_graph.GlobalAssemble();  // Symbolic graph is complete.
   fbfb_graph->GlobalAssemble(); 
+  //ff_graph.GlobalAssemble(); 
 
   // create global matrices
   std::vector<std::string> names1(1,"boundary_face");
@@ -276,113 +280,9 @@ void Matrix_TPFA::SymbolicAssembleGlobalMatrices() {
   Aff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, *fbfb_graph));  
   Aff_->GlobalAssemble();
 
-}
-
-
-/* ******************************************************************
- * Convert elemental mass matrices into stiffness matrices and
- * assemble them into four global matrices.
- * We need an auxiliary GHOST-based vector to assemble the RHS.
- ****************************************************************** */
-  void Matrix_TPFA::AssembleGlobalMatrices() {
-
-  //  MatrixMFD::AssembleGlobalMatrices();
-
-  std::vector<std::string> names_c(1,"cell");
-  std::vector<AmanziMesh::Entity_kind> locations_c(1,AmanziMesh::CELL);
-  std::vector<std::string> names_f(1,"face");
-  std::vector<AmanziMesh::Entity_kind> locations_f(1,AmanziMesh::FACE);
-  std::vector<int> ndofs(1,1);
-
-  AmanziMesh::Entity_ID_List faces;
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-  const Epetra_Map& fb_map = mesh_->exterior_face_map();
-  const Epetra_Map& cmap = mesh_->cell_map(false);
-  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  AmanziMesh::Entity_ID_List cells;
-  int cells_GID[2];
-  int face_GID;
-  // assemble rhs
-
-  Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell",false);
-  Epetra_MultiVector& rhs_bf = *rhs_->ViewComponent("boundary_face",false);
-  Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("boundary_face",false);
-
-
-  // std::cout<<"rhs_cells\n"<<rhs_cells<<"\n";
-  // std::cout<<"rhs_bf\n"<<rhs_bf<<"\n";
-  // exit(0);
-
- 
-
-  Spp_->PutScalar(0.0);
-  Aff_->PutScalar(0.0);
-
-  for (AmanziMesh::Entity_ID f=0; f!=nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int mcells = cells.size();
-
-    // populate face-based matrix.
-    Teuchos::SerialDenseMatrix<int, double> Bpp(mcells, mcells);
-    if (mcells == 2){
-      for (int i=0; i<mcells; i++){
-	int c = cells[i];
-	cells_GID[i] = cmap_wghost.GID(c);
-	// double tij;
-	double tij = (*rel_perm_transmissibility_)[f];
-	Bpp(i,i) = -tij;
-	for (int j=i+1; j<mcells; j++){
-	  Bpp(i,j) = tij; //Bpp(i,j) =0.;
-	  Bpp(j,i) = tij; //Bpp(j,i) = 0.;
-	}
-      }
-    }
-    else if (mcells == 1){
-      int c = cells[0];
-      cells_GID[0] = cmap_wghost.GID(c);
-      double val = Afc_cells_[f](0);
-      face_GID = fmap_wghost.GID(f); 
-      (*Acf_).ReplaceGlobalValues(cells_GID[0], 1, &val, &face_GID);  
-      int fb_lid = fb_map.LID(face_GID);
-      
-      /// Afc_cells_[f](0) = 0               if DIRICHLET boundary
-      /// Afc_cells_[f](0) = rel_perm_trans  else
-      /// Aff_cells_[f](0,0) = rel_perm_tran
-
-      if (fabs(Afc_cells_[f](0)) < 1e-23){   /// 
-	Bpp(0,0) = Aff_cells_[f](0,0);
-	Dff_f[0][fb_lid] = -1.;
-      }
-      else{
-	Bpp(0,0) = Aff_cells_[f](0,0);
-	Dff_f[0][fb_lid] = Aff_cells_[f](0,0);
-      }
-      
-
-      (*Aff_).SumIntoGlobalValues(face_GID, 1,  &(Dff_f[0][fb_lid]), &face_GID);
-      
-      /// Schur comlement contribution for rhs_cells (old verion)
-      //  rhs_cells[0][c] += rhs_bf[0][fb_lid]*Afc_cells_[f](0) / Dff_f[0][fb_lid];
-
-    }
-    (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Bpp.values());
-  }
-
-  (*Spp_).GlobalAssemble();
-  (*Aff_).GlobalAssemble();
-  //(*Acf_).FillComplete();
-
-
-  //std::cout<< (*Spp_);
-  // std::cout<<"rhs_cells\n"<<rhs_cells<<"\n";
-  //std::cout<< (*Aff_);
-  //exit(0);
-// tag matrices as assembled
-  assembled_operator_ = true;
 
 }
+
 
 void Matrix_TPFA::AssembleSchur_() const{
 
@@ -430,10 +330,10 @@ void Matrix_TPFA::AssembleSchur_() const{
 	cells_GID[i] = cmap_wghost.GID(c);
 	// double tij;
 	double tij = (*rel_perm_transmissibility_)[f];
-	Bpp(i,i) = -tij;
+	Bpp(i,i) = tij;
 	for (int j=i+1; j<mcells; j++){
-	  Bpp(i,j) = tij; //Bpp(i,j) =0.;
-	  Bpp(j,i) = tij; //Bpp(j,i) = 0.;
+	  Bpp(i,j) = -tij; //Bpp(i,j) =0.;
+	  Bpp(j,i) = -tij; //Bpp(j,i) = 0.;
 	}
       }
     }
@@ -442,7 +342,7 @@ void Matrix_TPFA::AssembleSchur_() const{
       cells_GID[0] = cmap_wghost.GID(c);
       double val = Afc_cells_[f](0);
       face_GID = fmap_wghost.GID(f); 
-      (*Acf_).ReplaceGlobalValues(cells_GID[0], 1, &val, &face_GID);  
+      //(*Acf_).ReplaceGlobalValues(cells_GID[0], 1, &val, &face_GID);  
       int fb_lid = fb_map.LID(face_GID);
       
       /// Afc_cells_[f](0) = 0               if DIRICHLET boundary
@@ -451,7 +351,7 @@ void Matrix_TPFA::AssembleSchur_() const{
 
       if (fabs(Afc_cells_[f](0)) < 1e-23){   /// 
 	Bpp(0,0) = Aff_cells_[f](0,0);
-	Dff_f[0][fb_lid] = -1.;
+	Dff_f[0][fb_lid] = 1.;
       }
       else{
 	Bpp(0,0) = Aff_cells_[f](0,0);
@@ -466,16 +366,24 @@ void Matrix_TPFA::AssembleSchur_() const{
 
     }
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Bpp.values());
+
+    // double val=100;
+    // face_GID = fmap_wghost.GID(f); 
+    // Att_->SumIntoGlobalValues(face_GID, 1,  &val, &face_GID);
+
   }
 
   (*Spp_).GlobalAssemble();
   (*Aff_).GlobalAssemble();
+
+  //(*Att_).GlobalAssemble();
   //(*Acf_).FillComplete();
 
 
   //std::cout<< (*Spp_);
   // std::cout<<"rhs_cells\n"<<rhs_cells<<"\n";
   //std::cout<< (*Aff_);
+  //std::cout<< Dff_f;
   //exit(0);
 // tag matrices as assembled
   assembled_operator_ = true;
@@ -487,7 +395,7 @@ void
 Matrix_TPFA::ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
 				       const std::vector<double>& bc_values) {
   //AssertAssembledOperator_or_die_();
-  assembled_schur_ = true;
+  //assembled_schur_ = true;
   //Sff_ = Spp_;
 }
 
@@ -507,17 +415,18 @@ void Matrix_TPFA::AssembleRHS_() const{
   /// Add Gravity to RHS
   /// 
   for (int c=0; c != ncells_owned; ++c){
-    rhs_cells[0][c] += Fc_cells_[c];
+    rhs_cells[0][c] -= Fc_cells_[c];
     mesh_->cell_get_faces(c, &faces);
     for (int n=0; n<faces.size(); n++){
       int f = faces[n];
       int f_gid = fmap_wghost.GID(f);
       int fb_lid = fb_map.LID(f_gid);
       if (fb_lid >= 0){
-        rhs_bf[0][fb_lid] += Ff_cells_[c][n];
+        rhs_bf[0][fb_lid] -= Ff_cells_[c][n];
       }
     }
   }
+  assembled_rhs_ = true; 
 
 }
 
@@ -538,6 +447,7 @@ int Matrix_TPFA::Apply(const CompositeVector& X,
   int ierr = Spp_->Multiply(false, *X.ViewComponent("cell",false),
                           *Y.ViewComponent("cell",false));
 
+  ASSERT(!ierr);
  
 
   const Epetra_Map& fb_map = mesh_->exterior_face_map();
@@ -552,6 +462,9 @@ int Matrix_TPFA::Apply(const CompositeVector& X,
   AmanziMesh::Entity_ID_List cells;
   int nb = fb_map.NumMyElements();
 
+  ierr = Aff_->Multiply(false, Xfb, Yfb);
+  ASSERT(!ierr);
+
   for (int fb=0; fb!=nb; ++fb){
     int face_lid = f_map.LID(fb_map.GID(fb));
     Epetra_SerialDenseVector Bfc = Afc_cells_[face_lid];
@@ -559,7 +472,7 @@ int Matrix_TPFA::Apply(const CompositeVector& X,
     mesh_->face_get_cells(face_lid, AmanziMesh::USED, &cells);    
 
     Yc[0][cells[0]] += Bfc(0) * Xfb[0][fb];
-    Yfb[0][fb] = Bfc(0) * Xc[0][cells[0]] + Dff_f[0][fb] * Xfb[0][fb];
+    Yfb[0][fb] += Bfc(0) * Xc[0][cells[0]];// + Dff_f[0][fb] * Xfb[0][fb];
     //Yfb[0][fb] = Dff_f[0][fb] * Xfb[0][fb];
   }
 
@@ -630,8 +543,8 @@ void Matrix_TPFA::ComputeNegativeResidual(const CompositeVector& solution,
 
       double tmp = (*rel_perm_transmissibility_)[f] * (uc[0][c1] - uc[0][c2]);  
       
-      if (c1 < ncells_owned) rc[0][c1] -= tmp; 
-      if (c2 < ncells_owned) rc[0][c2] += tmp; 
+      if (c1 < ncells_owned) rc[0][c1] += tmp; 
+      if (c2 < ncells_owned) rc[0][c2] -= tmp; 
 
       // if ((c1==0)||(c2==0)){
       // 	std::cout<<"c "<<c1<<" "<<c2<<" trans "<<(*rel_perm_transmissibility_)[f]<<" tmp "<<tmp<<" "<<uc[0][c1]<<" "<<uc[0][c2]<<"\n";
@@ -740,9 +653,6 @@ int Matrix_TPFA::ApplyInverse(const CompositeVector& X,
     UpdatePreconditioner_();
   }
 
-
-
-
   // Solve the Schur complement system Spp * Yc = Xc.
   int ierr = 0;   
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell",false);
@@ -761,7 +671,7 @@ int Matrix_TPFA::ApplyInverse(const CompositeVector& X,
 
   pre_list.set<std::string>("iterative method", "gmres");
   slist.set<double>("error tolerance", 1e-12);
-  slist.set<int>("maximum number of iterations", 1000);
+  slist.set<int>("maximum number of iterations", 10000);
   Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
   //vlist.set("Verbosity Level", "extreme");  
   vlist.set("Verbosity Level", "high");  
@@ -771,9 +681,9 @@ int Matrix_TPFA::ApplyInverse(const CompositeVector& X,
   Teuchos::RCP<BlockMatrix> op_prec   = Teuchos::rcp(new BlockMatrix(space_));
 
   op_prec -> SetNumberofBlocks(2);
-  op_prec -> SetBlock(0, Spp_);   op_prec -> SetBlock(1, Aff_); 
-
+  op_prec -> SetBlock(0, Spp_);  op_prec -> SetBlock(1, Aff_); 
   op_prec -> SetPrec(0, S_pc_); op_prec -> SetPrec(1, Aff_pc_);
+  op_prec -> prec_list = plist_;
 
 
   AmanziSolvers::LinearOperatorFactory< CompositeMatrix, CompositeVector, CompositeVectorSpace> factory;
@@ -792,41 +702,41 @@ int Matrix_TPFA::ApplyInverse(const CompositeVector& X,
 
 
 void Matrix_TPFA::UpdateConsistentFaceConstraints(
-    const Teuchos::Ptr<CompositeVector>& u) {
+  const Teuchos::Ptr<CompositeVector>& u) {
 
-   Teuchos::RCP<const Epetra_MultiVector> uc = u->ViewComponent("cell", false);
-  Epetra_MultiVector& uf = *u->ViewComponent("face", false);
+//    Teuchos::RCP<const Epetra_MultiVector> uc = u->ViewComponent("cell", false);
+//   Epetra_MultiVector& uf = *u->ViewComponent("face", false);
 
-  Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",false);
-  Epetra_MultiVector& rhs_f = *rhs_->ViewComponent("face", false);
-  Epetra_MultiVector update_f(rhs_f);
+//   Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",false);
+//   Epetra_MultiVector& rhs_f = *rhs_->ViewComponent("face", false);
+//   Epetra_MultiVector update_f(rhs_f);
 
-  Afc_->Multiply(true,*uc, update_f);  // Afc is kept in the transpose form.
-  update_f.Update(1.0, rhs_f, -1.0);
+//   Afc_->Multiply(true,*uc, update_f);  // Afc is kept in the transpose form.
+//   update_f.Update(1.0, rhs_f, -1.0);
 
-  int nfaces = rhs_f.MyLength();
-  for (int f=0; f!=nfaces; ++f) {
-    uf[0][f] = update_f[0][f] / Dff_f[0][f];
-  }
-}
+//   int nfaces = rhs_f.MyLength();
+//   for (int f=0; f!=nfaces; ++f) {
+//     uf[0][f] = update_f[0][f] / Dff_f[0][f];
+//   }
+ }
 
-void Matrix_TPFA::UpdateConsistentFaceCorrection(const CompositeVector& u,
-    const Teuchos::Ptr<CompositeVector>& Pu) {
-  //AssertAssembledOperator_or_die_();
+ void Matrix_TPFA::UpdateConsistentFaceCorrection(const CompositeVector& u,
+     const Teuchos::Ptr<CompositeVector>& Pu) {
+//   //AssertAssembledOperator_or_die_();
 
-  Teuchos::RCP<const Epetra_MultiVector> Pu_c = Pu->ViewComponent("cell", false);
-  Epetra_MultiVector& Pu_f = *Pu->ViewComponent("face", false);
-  const Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
+//   Teuchos::RCP<const Epetra_MultiVector> Pu_c = Pu->ViewComponent("cell", false);
+//   Epetra_MultiVector& Pu_f = *Pu->ViewComponent("face", false);
+//   const Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
 
-  Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",false);
+//   Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",false);
 
-  Afc_->Multiply(true, *Pu_c, Pu_f);  // Afc is kept in the transpose form.
-  Pu_f.Update(1., u_f, -1.);
+//   Afc_->Multiply(true, *Pu_c, Pu_f);  // Afc is kept in the transpose form.
+//   Pu_f.Update(1., u_f, -1.);
 
-  int nfaces = Pu_f.MyLength();
-  for (int f=0; f!=nfaces; ++f) {
-    Pu_f[0][f] /= Dff_f[0][f];
-  }
+//   int nfaces = Pu_f.MyLength();
+//   for (int f=0; f!=nfaces; ++f) {
+//     Pu_f[0][f] /= Dff_f[0][f];
+//   }
 }
 
 
@@ -1045,18 +955,17 @@ void Matrix_TPFA::ApplyBoundaryConditions(const std::vector<MatrixBC>& bc_marker
     if (bc_markers[f] == MATRIX_BC_DIRICHLET) {
       int face_gid = f_map.GID(f);
       int face_lbid = fb_map.LID(face_gid);
-      rhs_bc_faces[0][face_lbid] = bc_values[f];
       mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
 
       //Epetra_SerialDenseVector& Bfc = Afc_cells_[f];
       
       rhs_cells[0][cells[0]] -= Afc_cells_[f](0)*bc_values[f];
       Afc_cells_[f](0) = 0.;
-      Dff_f[0][face_lbid] = -1;
+      Dff_f[0][face_lbid] = 1;
       
       //Aff_cells_[f](0,0) = 1.;
       //rhs_bc_faces[0][face_lbid] =  Aff_cells_[f](0,0)*bc_values[f];
-      rhs_bc_faces[0][face_lbid] = -bc_values[f];
+      rhs_bc_faces[0][face_lbid] = bc_values[f];
 
     }
     else if  ((bc_markers[f] == MATRIX_BC_FLUX)&&(ADD_BC_FLUX)) {
@@ -1066,9 +975,8 @@ void Matrix_TPFA::ApplyBoundaryConditions(const std::vector<MatrixBC>& bc_marker
     }
 
   }
-  //std::cout<<"rhs_cells \n"<<rhs_cells;
 
-  assembled_rhs_ = true;
+
 
 
 }

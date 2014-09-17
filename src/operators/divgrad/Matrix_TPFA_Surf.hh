@@ -25,7 +25,7 @@ class Matrix_TPFA_Surf : public Matrix_TPFA {
   Matrix_TPFA_Surf(Teuchos::ParameterList& plist,
 		   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
-  virtual void AssembleGlobalMatrices();
+  virtual void AssembleGlobalMatrices(){};
   virtual void ApplyBoundaryConditions(const std::vector<MatrixBC>& subsurface_markers,
           const std::vector<double>& subsurface_values);
   virtual void ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
@@ -48,9 +48,14 @@ class Matrix_TPFA_Surf : public Matrix_TPFA {
   // virtual int ApplyInverse(const CompositeVector& X,
   //                           CompositeVector& Y);
 
+  virtual void AssembleRHS_() const;
+  virtual void AssembleSchur_() const;
+
+
   virtual void ComputeNegativeResidual(const CompositeVector& solution,
 				       const Teuchos::Ptr<CompositeVector>& residual) const;
 
+  
  protected:
   virtual void FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,
           const Teuchos::Ptr<Epetra_FECrsGraph> ff_graph);
@@ -58,6 +63,8 @@ class Matrix_TPFA_Surf : public Matrix_TPFA {
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh_;
   Teuchos::RCP<MatrixMFD_TPFA> surface_A_;
+
+  bool fill_graph;
 
   friend class MatrixMFD_Coupled_Surf;
 };
