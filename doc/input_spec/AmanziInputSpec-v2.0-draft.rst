@@ -851,13 +851,15 @@ Here is more info on the `"liquid_phase`" elements:
 Output
 ======
 
-Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", and `"Observations`".  Each of these is controlled in different ways, reflecting their intended use.
+Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", `"Observations`", and `"Walkabout Data`".  Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Vis`" is intended to represent snapshots of the solution at defined instances during the simulation to be visualized.  The ''vis'' element defines the naming and frequencing of saving the visualization files.  The visualizatoin files may include only a fraction of the state data, and may contiain auxiliary "derived" information (see *elsewhere* for more discussion).
 
 * `"Checkpoint`" is intended to represent all that is necesary to repeat or continue an Amanzi run.  The specific data contained in a Checkpoint Data dump is specific to the algorithm options and mesh framework selected.  Checkpoint is special in that no interpolation is perfomed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write Checkpoint at the discrete intervals of the simulation. The ''checkpoint'' element defines the naming and frequencing of saving the checkpoint files.
 
 * `"Observations`" is intended to represent diagnostic values to be returned to the calling routine from Amanzi's simulation driver.  Observations are typically generated at arbitrary times, and frequently involve various point samplings and volumetric reductions that are interpolated in time to the desired instant.  Observations may involve derived quantities (see discussion below) or state fields.  The ''observations'' element may define one or more specific ''observation''.
+
+* `"Walkabout Data`" is intended to be used as input to the particle tracking software Walkabout.
 
 *EIB NOTE* - All three of the above are REQUIRED!!
 For the obserservations I understand how to leave that empty.  But how do I execute without writing a checkpoint? If I'm running a dinky test am I really required to specify a checkpoint?  Will need to test this will validator.  Talk to Ellen about this.
@@ -894,16 +896,16 @@ Example:
 Checkpoint
 ----------
 
-The ''checkpoint'' element deines the filenaming scheme and frequency for writing out the checkpoint files.  As mentioned above, the user does not influence what is written to the checkpoint files.  Thus, the ''checkpoint'' element has the following requiements
+The ''checkpoint'' element defines the filenaming scheme and frequency for writing out the checkpoint files.  As mentioned above, the user does not influence what is written to the checkpoint files.  Thus, the ''checkpoint'' element has the following requiements
 
 .. code-block:: xml
 
   <checkpoint>
-      Required Elements: base_filename, num_digits, time_macro
+      Required Elements: base_filename, num_digits, cycle_macro
       Optional Elements: NONE
   </checkpoint>
 
-The *base_filename* element contain the text component of the how the checkpoint files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the checkpoint files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or interation id)  Final the *time_macro* element indicates the previously defined time_macro to be used to determin the frequency at which to write the checkpoint files.
+The *base_filename* element contain the text component of the how the checkpoint files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the checkpoint files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or interation id)  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the checkpoint files.
 
 Example:
 
@@ -912,7 +914,7 @@ Example:
   <checkpoint>
      <base_filename>chk</base_filename>
      <num_digits>5</num_digits>
-     <time_macro>Every_100_timesteps</time_macro>
+     <cycle_macro>Every_100_steps</cycle_macro>
   </checkpoint>
 
 
@@ -946,7 +948,7 @@ The observation element identifies the field quantity to be observed.  Subelemen
 .. code-block :: xml
 
    <observation_type>
-     Required Elements: assigned_region, functional, time_macro 
+     Required Elements: assigned_region, functional, time_macro
      Optional Elements: NONE
    </observation_type>
 
@@ -979,6 +981,30 @@ Example:
       </liquid_phase>
 
     </observations>
+
+Walkabout
+----------
+
+The ''walkabout'' element deines the filenaming scheme and frequency for writing out the walkabout files.  As mentioned above, the user does not influence what is written to the walkabout files only the writing frequency and naming scheme.  Thus, the ''walkabout'' element has the following requiements
+
+.. code-block:: xml
+
+  <checkpoint>
+      Required Elements: base_filename, num_digits, cycle_macro
+      Optional Elements: NONE
+  </checkpoint>
+
+The *base_filename* element contain the text component of the how the walkabout files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the walkabout files.  The *num_digits* elements indicates how many digits to use for the index.  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files.
+
+Example:
+
+.. code-block:: xml
+
+  <walkabout>
+     <base_filename>chk</base_filename>
+     <num_digits>5</num_digits>
+     <cycle_macro>Every_100_steps</cycle_macro>
+  </walkabout>
 
 
 
