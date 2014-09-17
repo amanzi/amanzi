@@ -111,7 +111,9 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
     Afc_cells_[c] = Bfc;
     Acf_cells_[c] = Bcf;
     Acc_cells_[c] = matsum;
+
   }
+
 }
 
 
@@ -350,8 +352,7 @@ void MatrixMFD_TPFA::AssembleApp_() const {
   assembled_app_ = true;
 
 
-   // std::cout<< (*Acf_);
-   //exit(0);
+
 
 
   // Check min
@@ -382,8 +383,6 @@ int MatrixMFD_TPFA::Apply(const CompositeVector& X,
 
   int ierr = App_->Multiply(false, *X.ViewComponent("cell",false),
                             *Y.ViewComponent("cell",false));
-
- 
 
   if (Y.HasComponent("face")) {
     ApplyAfc(X, Y, 0.);

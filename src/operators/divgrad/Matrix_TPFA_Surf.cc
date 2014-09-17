@@ -23,7 +23,7 @@ namespace Operators {
 
    Matrix_TPFA_Surf::Matrix_TPFA_Surf(Teuchos::ParameterList& plist,
 				      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh):
-     Matrix_TPFA(plist,mesh) {};
+     Matrix_TPFA(plist,mesh) {fill_graph = false;};
 
 
 void Matrix_TPFA_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,
@@ -60,15 +60,28 @@ void Matrix_TPFA_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_
             ncells_surf, equiv_face_GID);
     ASSERT(!ierr);
   }
+  fill_graph = true;
 }
 
 
 // Assumes the Surface A was already assembled.
-void Matrix_TPFA_Surf::AssembleGlobalMatrices() {
-  int ierr(0);
 
+void Matrix_TPFA_Surf::AssembleSchur_() const{
+
+  int ierr(0);
+  // std::vector<MatrixBC> new_markers(bc_markers);
+
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  // for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
+  //   AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
+  //   new_markers[f] = MATRIX_BC_NULL;
+  // }
+
+  // // Call Assemble TPFA matrices + boundary lambda
+
+  // Matrix_TPFA::ApplyBoundaryConditions(new_markers, bc_values);
   // Get the standard TPFA pieces.
-  Matrix_TPFA::AssembleGlobalMatrices();
+  Matrix_TPFA::AssembleSchur_();
 
   // Add the TPFA on the surface parts from surface_A.
   const Epetra_Map& surf_cmap_wghost = surface_mesh_->cell_map(true);
@@ -90,9 +103,10 @@ void Matrix_TPFA_Surf::AssembleGlobalMatrices() {
   int *indices_global;
   indices_global = new int[9];
 
+    
   // Loop over surface cells (subsurface faces)
   int nfaces_sub = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  //int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     // Access the row in Spp
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
@@ -126,15 +140,38 @@ void Matrix_TPFA_Surf::AssembleGlobalMatrices() {
 
 
   // Deal with RHS
+  // const Epetra_MultiVector& rhs_surf_cells =
+  //     *surface_A_->rhs()->ViewComponent("cell",false);
+  // const Epetra_MultiVector& rhs_faces =
+  //     *rhs_->ViewComponent("face",false);
+
+  // for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
+  //   AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
+  //   rhs_faces[0][f] += rhs_surf_cells[0][sc];
+  //}
+}
+
+void Matrix_TPFA_Surf::AssembleRHS_() const{
+
+  Matrix_TPFA::AssembleRHS_();
+
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  // Deal with RHS
   const Epetra_MultiVector& rhs_surf_cells =
       *surface_A_->rhs()->ViewComponent("cell",false);
   const Epetra_MultiVector& rhs_faces =
-      *rhs_->ViewComponent("face",false);
-
+      *rhs_->ViewComponent("boundary_face",false);
+  const Epetra_Map& fb_map = mesh_->exterior_face_map();
+  const Epetra_Map& f_map = mesh_->face_map(false);
+  
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
-    AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
-    rhs_faces[0][f] += rhs_surf_cells[0][sc];
+    AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL, sc);
+    int f_gid  = f_map.GID(f);
+    int fb_lid = fb_map.LID(f_gid);
+    rhs_faces[0][fb_lid] += rhs_surf_cells[0][sc];
   }
+
+
 }
 
 
@@ -156,23 +193,25 @@ void Matrix_TPFA_Surf::ApplyBoundaryConditions(
 void Matrix_TPFA_Surf::ComputeNegativeResidual(const CompositeVector& solution,
 			     const Teuchos::Ptr<CompositeVector>& residual) const{
 
-  if (!assembled_rhs_) AssembleRHS_();
+  if (!assembled_rhs_) 
+    AssembleRHS_();
   if (!assembled_schur_) {
-    AssembleSchur_();   
+    AssembleSchur_();    
     UpdatePreconditioner_();
   }
 
   Apply(solution, (*residual));
-  //if (!assembled_rhs_) AssembleRHS_();
 
-  // std::cout<<"solut face\n"<<*solution.ViewComponent("face", false)<<"\n";
+
+  //std::cout<<"solut face\n"<<*solution.ViewComponent("boundary_face", false)<<"\n";
   // //std::cout<<"resid\n"<<*(*residual).ViewComponent("cell", false)<<"\n";
   // std::cout<<"resid\n"<<*(*residual).ViewComponent("cell", false)<<"\n";
 
   residual->Update(-1.0, *rhs_, 1.0);
 
-  // std::cout<<"rhs\n"<<*(*rhs_).ViewComponent("cell", false)<<"\n";
-  // std::cout<<"resid\n"<<*(*residual).ViewComponent("cell", false)<<"\n";
+  //std::cout<<"rhs\n"<<*(*rhs_).ViewComponent("boundary_face", false)<<"\n";
+  //std::cout<<"resid\n"<<*(*residual).ViewComponent("boundary_face", false)<<"\n";
+  //exit(0);
 
 }
 
@@ -192,7 +231,7 @@ void Matrix_TPFA_Surf::ComputeSchurComplement(const std::vector<MatrixBC>& bc_ma
   // Call Assemble TPFA matrices + boundary lambda
 
   Matrix_TPFA::ApplyBoundaryConditions(new_markers, bc_values);
-  Matrix_TPFA::AssembleGlobalMatrices();
+  Matrix_TPFA::AssembleSchur_();
 
   // dump the schur complement
   // std::stringstream filename_s;

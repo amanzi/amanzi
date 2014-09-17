@@ -55,21 +55,21 @@ struct mfd {
       plist.set("TPFA", false);
       plist.set("FV", true);
     }
-    plist.sublist("preconditioner").set("preconditioner type", "boomer amg");
-    plist.sublist("preconditioner").sublist("boomer amg parameters")
+    plist.sublist("preconditioner").set("preconditioner type", "ml");
+    plist.sublist("preconditioner").sublist("ml parameters")
       .set("cycle applications", 10);
-    plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("tolerance", 1.e-14);
-    plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("verbosity", 0);
-    plist.sublist("consistent face solver")
-      .set("iterative method", "gmres");
-    plist.sublist("consistent face solver").sublist("gmres parameters")
-      .set("error tolerance", 1.e-10);
-    plist.sublist("consistent face solver").sublist("gmres parameters")
-      .set("maximum number of iterations", 100);
-    plist.sublist("consistent face solver").sublist("preconditioner")
-      .set("preconditioner type", "block ilu");
+    //plist.sublist("preconditioner").sublist("ml parameters")
+    //  .set("tolerance", 1.e-14);
+    //plist.sublist("preconditioner").sublist("ml parameters")
+    //  .set("verbosity", 0);
+    // plist.sublist("consistent face solver")
+    //   .set("iterative method", "gmres");
+    // plist.sublist("consistent face solver").sublist("gmres parameters")
+    //   .set("error tolerance", 1.e-10);
+    // plist.sublist("consistent face solver").sublist("gmres parameters")
+    //   .set("maximum number of iterations", 100);
+    // plist.sublist("consistent face solver").sublist("preconditioner")
+    //   .set("preconditioner type", "block ilu");
 
     A = Teuchos::rcp(new Operators::Matrix_TPFA(plist, mesh));
 
@@ -214,8 +214,8 @@ TEST_FIXTURE(mfd, ApplyLinearTwoPointKr) {
   Epetra_MultiVector& b_c = *b->ViewComponent("cell",false);
   const Epetra_MultiVector& rhs_c = *(*A->rhs()).ViewComponent("cell",false);
 
-  // std::cout << b_c <<"\n";
-  // std::cout << rhs_c <<"\n";
+  //std::cout << b_c <<"\n";
+  //std::cout << rhs_c <<"\n";
   // std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
