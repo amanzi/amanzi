@@ -186,14 +186,6 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
     RichardCoefs.set(d, new MFTower(layout,ctmp[d],nLevs));
     utmp.clear();
   }
-  KappaCCdir = new MFTower(layout,IndexType(IntVect::TheZeroVector()),BL_SPACEDIM,1,nLevs);
-
-  // Setup property managers
-  PropertyManagerCtx kappaCCdir_ctx;
-  kappaCCdir_ctx.rockMgr = PorousMedia::GetRockManager();
-  kappaCCdir_ctx.property_name = "permeability";
-  std::set<PropertyManager*> kappaCCdir_dep; // Empty
-  managed_properties[RSdata_KappaCCdir] = new PropertyManager(KappaCCdir,kappaCCdir_dep,kappaCCdir_ctx);
 
   if (upwind_krel) {
     KappaCCdir = 0;
@@ -218,6 +210,14 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
   }
   else {
     CoeffCC    = new MFTower(layout,IndexType(IntVect::TheZeroVector()),BL_SPACEDIM,1,nLevs);
+    KappaCCdir = new MFTower(layout,IndexType(IntVect::TheZeroVector()),BL_SPACEDIM,1,nLevs);
+
+    // Setup property managers
+    PropertyManagerCtx kappaCCdir_ctx;
+    kappaCCdir_ctx.rockMgr = PorousMedia::GetRockManager();
+    kappaCCdir_ctx.property_name = "permeability";
+    std::set<PropertyManager*> kappaCCdir_dep; // Empty
+    managed_properties[RSdata_KappaCCdir] = new PropertyManager(KappaCCdir,kappaCCdir_dep,kappaCCdir_ctx);
   }
 }
 

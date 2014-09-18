@@ -21,8 +21,8 @@
 
   <ParameterList name="Mesh">
     <ParameterList name="Structured">
-      <Parameter name="Domain Low Corner" type="Array(double)" value="{0,0}"/>
-      <Parameter name="Domain High Corner" type="Array(double)" value="{40,24}"/>
+      <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0,0}"/>
+      <Parameter name="Domain High Coordinate" type="Array(double)" value="{40,24}"/>
       <Parameter name="Number of Cells" type="Array(int)" value="{40,24}"/>
     </ParameterList>
   </ParameterList>
@@ -32,17 +32,22 @@
     <Parameter name="Transport Model" type="string" value="Off"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
  
-   <ParameterList name="Time Integration Mode">
-      <ParameterList name="Initialize To Steady">
+    <ParameterList name="Time Integration Mode">
+      <!-- <ParameterList name="Initialize To Steady"> -->
+      <!--   <Parameter name="Start" type="double" value="0"/> -->
+      <!--   <Parameter name="Switch" type="double" value="1.e11"/> -->
+      <!--   <Parameter name="End" type="double" value="1.e11"/> -->
+      <!--   <Parameter name="Transient Initial Time Step" type="double" value="1.e5"/> -->
+      <!--   <Parameter name="Steady Initial Time Step" type="double" value="1.e7"/> -->
+      <!--   <Parameter name="Steady Maximum Time Step Size" type="double" value="1.e10"/> -->
+      <!--   <Parameter name="Transient Maximum Time Step Size" type="double" value="1.e9"/> -->
+      <!--   <Parameter name="Maximum Cycle Number" type="int" value="100000"/> -->
+      <!--   <Parameter name="Initial Time Step Multiplier" type="double" value="1.0"/> -->
+      <!-- </ParameterList> -->
+      <ParameterList name="Steady">
         <Parameter name="Start" type="double" value="0"/>
-        <Parameter name="Switch" type="double" value="1.e11"/>
-        <Parameter name="End" type="double" value="0.e11"/>
-        <Parameter name="Transient Initial Time Step" type="double" value="1.e5"/>
-        <Parameter name="Steady Initial Time Step" type="double" value="1.e5"/>
-        <Parameter name="Steady Maximum Time Step Size" type="double" value="1.e9"/>
-        <Parameter name="Transient Maximum Time Step Size" type="double" value="1.e9"/>
-        <Parameter name="Maximum Cycle Number" type="int" value="100000"/>
-        <Parameter name="Initial Time Step Multiplier" type="double" value="1.0"/>
+        <Parameter name="End" type="double" value="1.e11"/>
+        <Parameter name="Initial Time Step" type="double" value="1.e5"/>
       </ParameterList>
     </ParameterList>
 
@@ -360,7 +365,7 @@
       <ParameterList name="IC: Linear Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Reference Value" type="double" value="101325"/>
-        <Parameter name="Reference Coordinate" type="Array(double)" value="{0,0}"/>
+        <Parameter name="Reference Point" type="Array(double)" value="{0,0}"/>
         <Parameter name="Gradient Value" type="Array(double)" value="{0,-9789.3474 }"/>
       </ParameterList>
       <ParameterList name="Solute IC">

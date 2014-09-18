@@ -133,7 +133,7 @@ NLScontrol::AdjustDt(Real      dt,
   dt_new = dt;
   if (first) {
     num_consecutive_increases = 0;
-    num_consecutive_success = 0;
+    num_consecutive_success = max_num_consecutive_success; // Should increase immediately, unless after failure
     first = false;
     prev_abs_err = -1;
   }

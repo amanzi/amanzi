@@ -72,8 +72,8 @@
           <Parameter name="Number of Cells" type="Array(int)" value="{250, 1, 525}"/>
 -->
           <Parameter name="Number of Cells" type="Array(int)" value="{50, 1, 105}"/>
-          <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
-          <Parameter name="Domain High Corner" type="Array(double)" value="{304.8, 1.0, 64.008}" />
+          <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+          <Parameter name="Domain High Coordinate" type="Array(double)" value="{304.8, 1.0, 64.008}" />
         </ParameterList>
       </ParameterList>
     </ParameterList>

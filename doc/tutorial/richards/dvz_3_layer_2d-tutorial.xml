@@ -11,8 +11,8 @@
       <ParameterList name="Generate Mesh">
         <ParameterList name="Uniform Structured">
           <Parameter name="Number of Cells" type="Array(int)" value="{432, 1, 256}"/>
-          <Parameter name="Domain Low Corner" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
-          <Parameter name="Domain High Corner" type="Array(double)" value="{2.16000000000000000e+02, 1.00000000000000000e+00, 1.07519999999999996e+02}"/>
+          <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
+          <Parameter name="Domain High Coordinate" type="Array(double)" value="{2.16000000000000000e+02, 1.00000000000000000e+00, 1.07519999999999996e+02}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Expert">
