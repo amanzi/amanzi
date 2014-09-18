@@ -47,6 +47,7 @@
 #   0.92.3       - update CURL to version 7.37.0 (builds correctly on Mac OS X 10.9)
 #   0.92.4       - update NetCDF to version 4.3.2 (builds correctly on Mac OS X 10.9)
 #   0.92.5       - Patched Alquimia to build properly with GFortran 4.9.x
+#   0.92.6       - update Boost to version 1.56.0 
 #
 
 include(CMakeParseArguments)
@@ -97,7 +98,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 5)
+set (AMANZI_TPLS_VERSION_PATCH 6)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -181,13 +182,13 @@ set(UnitTest_MD5_SUM       bd373a53403ed51ea1bbb60b1952d7e3)
 # TPL: Boost
 #
 set(Boost_VERSION_MAJOR 1)
-set(Boost_VERSION_MINOR 51)
+set(Boost_VERSION_MINOR 56)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
 set(Boost_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
-set(Boost_MD5_SUM        4b6bd483b692fd138aef84ed2c8eb679)
+set(Boost_MD5_SUM        a744cf167b05d72335f27c88115f211d)
 
 #
 # TPL: BoostCmake
