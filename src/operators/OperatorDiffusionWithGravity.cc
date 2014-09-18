@@ -52,12 +52,15 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
 
+      WhetStone::DenseMatrix& Wff = Wff_cells_[c];
+
       // Update terms due to nonlinear coefficient
       double kc(1.0);
       std::vector<double> kf(nfaces, 1.0);
       if (upwind_ == OPERATOR_UPWIND_AMANZI) {
         kc = (*k_cell)[0][c];
-        for (int n = 0; n < nfaces; n++) kf[n] = std::max(kc, (*k_face)[0][faces[n]]);
+        for (int n = 0; n < nfaces; n++) kf[n] = kc;
+        // for (int n = 0; n < nfaces; n++) kf[n] = std::max(kc, (*k_face)[0][faces[n]]);
       } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = kc;
@@ -79,6 +82,14 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
           tmp *= copysign(norm(normal) / norm(xcc), sign);
         } else {
           tmp = ((Kc * rho_g) * normal) * kf[n] * dirs[n];
+        }
+
+        if (upwind_ == OPERATOR_UPWIND_AMANZI) {
+          double alpha = (*k_face)[0][f] - kc;
+          if (alpha > 0) {
+            alpha *= Wff(n, n) * rho_ * norm(g_);
+            tmp -= alpha * (mesh_->face_centroid(f)[dim - 1] - mesh_->cell_centroid(c)[dim - 1]);
+          }
         }
 
         rhs_face[0][f] += tmp; 
@@ -110,6 +121,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
   }
 
   // Add gravity part to the flux.
+  int dim = mesh_->space_dimension();
   Epetra_MultiVector& flux_data = *flux.ViewComponent("face", true);
   AmanziGeometry::Point rho_g(g_);
   rho_g *= rho_ * rho_ / mu_;
@@ -122,12 +134,15 @@ void OperatorDiffusionWithGravity::UpdateFlux(
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
+    WhetStone::DenseMatrix& Wff = Wff_cells_[c];
+
     // Update terms due to nonlinear coefficient
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0);
     if (upwind_ == OPERATOR_UPWIND_AMANZI) {
-      // for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
-      for (int n = 0; n < nfaces; n++) kf[n] = std::max((*k_cell)[0][c], (*k_face)[0][faces[n]]);
+      kc = (*k_cell)[0][c];
+      for (int n = 0; n < nfaces; n++) kf[n] = kc;
+      // for (int n = 0; n < nfaces; n++) kf[n] = std::max(kc, (*k_face)[0][faces[n]]);
     } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
@@ -150,6 +165,15 @@ void OperatorDiffusionWithGravity::UpdateFlux(
         } else {
           flux_data[0][f] += (Kg * normal) * kf[n];
         }
+
+        if (upwind_ == OPERATOR_UPWIND_AMANZI) {
+          double alpha = (*k_face)[0][f] - kc;
+          if (alpha > 0) {
+            alpha *= Wff(n, n) * rho_ * norm(g_);
+            flux_data[0][f] -= alpha * (mesh_->face_centroid(f)[dim - 1] - mesh_->cell_centroid(c)[dim - 1]);
+          }
+        }
+
         flag[f] = 1;
       }
     }

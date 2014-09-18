@@ -855,7 +855,6 @@ void MPC::cycle_driver() {
             Amanzi::timer_manager.stop("Chemistry PK");
           }
           catch (const Errors::Message& chem_error) {
-
             // If the chemistry step failed, we have to try again.
             // Let the user know that the chemistry step failed.
             if (vo_->os_OK(Teuchos::VERB_LOW)) {
@@ -870,9 +869,9 @@ void MPC::cycle_driver() {
 
             // If the new time step is essentially equal to the old one and the last one 
             // failed, chop it in half.
-	          if (!chem_step_succeeded && (c_dT/tc_dT > 0.99)) {
+	    if (!chem_step_succeeded && (c_dT/tc_dT > 0.99)) {
               c_dT *= 0.5;
-    	      } 
+    	    } 
           } // end if
 
           // Factor in the time remaining till the end of the MPC time step.
