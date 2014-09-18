@@ -2,9 +2,9 @@
 
   <model_description name="SR Test Problem">
 
-    <comments>Confind aquifer transient drawdown (Theis 1935)</comments>
-    <model_id>Theis</model_id>
-    <author>Dylan Harp, Alec Thomas, David Moulton</author>
+    <comments>Confind aquifer transient drawdown (Butler and Liu, 1991)</comments>
+    <model_id>Butler</model_id>
+    <author>Dylan Harp, Zhiming Lu</author>
     <units>
       <length_unit>m</length_unit>
       <time_unit>s</time_unit>
@@ -264,16 +264,16 @@
       <filename>observations.out</filename>
 
       <liquid_phase name="water">
-	<aqueous_pressure>
+	<drawdown>
 	  <assigned_regions>Obs_r24</assigned_regions>
 	  <functional>point</functional>
 	  <time_macro>Observation Times</time_macro>
-	</aqueous_pressure>
-	<aqueous_pressure>
+	</drawdown>
+	<drawdown>
 	  <assigned_regions>Obs_r100</assigned_regions>
 	  <functional>point</functional>
 	  <time_macro>Observation Times</time_macro>
-	</aqueous_pressure>
+	</drawdown>
       </liquid_phase>
 
 
