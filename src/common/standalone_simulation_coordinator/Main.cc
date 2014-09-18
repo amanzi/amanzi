@@ -310,7 +310,6 @@ int main(int argc, char *argv[]) {
       // if amanzi_input  - validate, convert to old
 
       xercesc::XMLString::release(&temp2) ;
-      doc->release();
       delete parser;
       xercesc::XMLPlatformUtils::Terminate();
     }
