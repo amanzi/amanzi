@@ -31,7 +31,7 @@ def run_amanzi(input_file, directory=None):
     finally:
         os.chdir(CWD)
 
-        return ierr
+    return ierr
 
 if __name__ == "__main__":
 

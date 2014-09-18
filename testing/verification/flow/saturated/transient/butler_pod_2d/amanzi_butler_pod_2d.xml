@@ -80,7 +80,7 @@
     <mesh framework="mstk">
         <dimension>3</dimension>
         <read>
-        <file>mesh_cylinder.exo</file>
+        <file>../mesh_cylinder.exo</file>
         <format>exodus ii</format>
         </read>
     </mesh>
@@ -96,11 +96,11 @@
     </region>
 
     <region name="cylinder">
-    <region_file label="20000" name="mesh_cylinder.exo" format="exodus ii" type="labeled set" entity="Cell"/>
+    <region_file label="20000" name="../mesh_cylinder.exo" format="exodus ii" type="labeled set" entity="Cell"/>
     </region>
 
     <region name="bg">
-    <region_file label="10000" name="mesh_cylinder.exo" format="exodus ii" type="labeled set" entity="Cell"/>
+    <region_file label="10000" name="../mesh_cylinder.exo" format="exodus ii" type="labeled set" entity="Cell"/>
     </region>
 
     <region name="Well">

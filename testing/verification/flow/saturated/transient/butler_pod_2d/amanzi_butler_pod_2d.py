@@ -34,12 +34,9 @@ def plottest(axes1, obs_data, ana_data):
 
     ntime3 = len(obs_data[:,0])/2
     ntime4 = len(obs_data[:,0])
-    for i in range(0,ntime4):
-        if (obs_data[i,1] < 0):
-           obs_data[i,1] = 1e-10
 
     axes1.plot(numpy.log10(ana_data[0:ntime1,0]), ana_data[0:ntime1,1], '-r', label='Butler Pod Solution: Obs1')
-    axes1.plot(numpy.log10(obs_data[0:ntime3,0]), obs_data[0:ntime3,1], 'ro', label='Amanzi: Obs1')
+    axes1.plot(numpy.log10(obs_data[1:ntime3,0]), obs_data[1:ntime3,1], 'ro', label='Amanzi: Obs1')
     axes1.plot(numpy.log10(ana_data[ntime1+1:ntime2,0]), ana_data[ntime1+1:ntime2,1], '-b', label='Butler Pod Solution: Obs2')
     axes1.plot(numpy.log10(obs_data[ntime3+1:ntime4,0]), obs_data[ntime3+1:ntime4,1], 'bo', label='Amanzi: Obs2')
 
