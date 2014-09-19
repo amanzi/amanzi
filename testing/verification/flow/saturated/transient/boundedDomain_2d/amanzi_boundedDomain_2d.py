@@ -12,10 +12,12 @@ import prettytable
 
 # load the data from output file, which is in amanzi-output
 def load_amanzi_obs():
-    obs_data_file = open('amanzi-output/observations.out', 'r')
-    obs_data_file.readline()
-    obs_data_file.readline()
-    obs_data = [[float(line.split(',')[4]),float(line.split(',')[5])] for line in obs_data_file]
+#    output_file=Obs_xml.getObservationFilename()
+    output_file="observations.out"
+    obs_data = ObsDATA("amanzi-output/"+output_file)
+    obs_data.getObservationData()   # get all data
+
+
     return obs_data
 
 # load data from analytic solution
@@ -23,7 +25,7 @@ def load_ana_solution():
     ana_data =numpy.genfromtxt('analytic/test_h_tr.dat')
     return ana_data
 
-def plottest(axes1, obs_data, ana_data):
+def plottest(axes1, obstimes, obsdata, ana_data):
 
     axes1.set_ylabel('Drawdown [m]')
     axes1.set_xlabel('Time after pumping [days]')
@@ -32,13 +34,13 @@ def plottest(axes1, obs_data, ana_data):
     ntime1 = len(ana_data[:,0])/2
     ntime2= len(ana_data[:,0])
 
-    ntime3 = len(obs_data[:,0])/2
-    ntime4 = len(obs_data[:,0])
+    ntime3 = len(obstimes[:,0])
+    ntime4 = len(obstimes[:,0])
 
     axes1.plot(numpy.log10(ana_data[0:ntime1,0]), ana_data[0:ntime1,1], '-r', label='Analitical Solution: r=24m')
-    axes1.plot(numpy.log10(obs_data[1:ntime3,0]), obs_data[1:ntime3,1], 'ro', label='Amanzi: r=24m')
+    axes1.plot(numpy.log10(obstimes[1:ntime3,0]), obsdata[1:ntime3,0], 'ro', label='Amanzi: r=24m')
     axes1.plot(numpy.log10(ana_data[ntime1+1:ntime2,0]), ana_data[ntime1+1:ntime2,1], '-b', label='Analytial Solution: r=100m')
-    axes1.plot(numpy.log10(obs_data[ntime3+1:ntime4,0]), obs_data[ntime3+1:ntime4,1], 'bo', label='Amanzi: r=100m')
+    axes1.plot(numpy.log10(obstimes[1:ntime4,1]), obsdata[1:ntime4,1], 'bo', label='Amanzi: r=100m')
 
     axes1.legend(loc='lower right')
 
@@ -53,15 +55,24 @@ if __name__ == "__main__":
     try: 
         run_amanzi.run_amanzi('../'+input_filename)
         obs_data = load_amanzi_obs()
-        obs_data = numpy.array(obs_data) 
-        obs_data[:,0] =  obs_data[:,0]/24./3600.
+
+        obsdata = []
+        obstimes = []
+        for obs in obs_data.observations.itervalues():
+            obsdata.append(obs.data)
+            obstimes.append(obs.times)
+
+        obsdata  = numpy.transpose(numpy.array(obsdata))
+        obstimes  = numpy.transpose(numpy.array(obstimes))
+        obstimes[:] =  obstimes[:]/24./3600.
+
         ana_data=load_ana_solution()
 #       note: in analytical solution the drawdown (m) was given at time in days
 
         fig1= plt.figure()
         axes1=fig1.add_axes([.1,.1,.8,.8])
        
-        plottest(axes1,obs_data, ana_data)
+        plottest(axes1,obstimes, obsdata, ana_data)
 #        plt.show()
 
     finally:
