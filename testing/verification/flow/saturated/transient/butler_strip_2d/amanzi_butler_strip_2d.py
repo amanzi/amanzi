@@ -34,9 +34,9 @@ def plottest(axes1, obstimes, obsdata, ana_data):
     ntime4 = len(obstimes[:,1])
 
     axes1.plot(numpy.log10(ana_data[0:ntime1,0]), ana_data[0:ntime1,1], '-r', label='Butler Strip Solution: r=24m')
-    axes1.plot(numpy.log10(obstimes[1:ntime3,0]), obsdata[1:ntime3,0], 'ro', label='Amanzi: r=24m')
+    axes1.plot(numpy.log10(obstimes[1:ntime4,1]), obsdata[1:ntime4,1], 'ro', label='Amanzi: r=24m')
     axes1.plot(numpy.log10(ana_data[ntime1+1:ntime2,0]), ana_data[ntime1+1:ntime2,1], '-b', label='Butler Strip Solution: r=100m')
-    axes1.plot(numpy.log10(obstimes[1:ntime4,1]), obsdata[1:ntime4,1], 'bo', label='Amanzi: r=100m')
+    axes1.plot(numpy.log10(obstimes[1:ntime3,0]), obsdata[1:ntime3,0], 'bo', label='Amanzi: r=100m')
 
     axes1.legend(loc='upper left')
 
