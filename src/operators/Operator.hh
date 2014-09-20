@@ -121,6 +121,11 @@ class Operator {
   int offset_global_[3], offset_my_[3];
 
   Teuchos::RCP<VerboseObject> vo_;
+
+ protected:
+  int FindFacePositionInCell_(int f, int c);
+
+  int nonstandard_symbolic_;
 };
 
 }  // namespace Operators

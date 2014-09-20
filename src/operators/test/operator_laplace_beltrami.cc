@@ -193,7 +193,8 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
-    Kc(0, 0) = 1.0;
+    const Point& xc = mesh->cell_centroid(c);
+    Kc(0, 0) = (xc[0] + 1) * (xc[0] + 1) + 1.0;
     K.push_back(Kc);
   }
   double rho(1.0), mu(1.0);

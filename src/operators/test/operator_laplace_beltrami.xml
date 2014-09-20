@@ -51,6 +51,7 @@
       <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="nonstandard symbolic assembling" type="int" value="1"/>
     </ParameterList>
   </ParameterList>
 

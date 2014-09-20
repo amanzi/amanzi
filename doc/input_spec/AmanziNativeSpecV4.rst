@@ -607,6 +607,10 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 
 * `"gravity`" [bool] specifies if flow is driven also by the gravity.
 
+* `"nonstandard symbolic assembling`" [int] specifies a nonstandard treatment of schemas.
+  It is used for experiments with preconditioners.
+  Default is 0.
+
 .. code-block:: xml
 
     <ParameterList name="operators">

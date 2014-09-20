@@ -725,7 +725,6 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
   }
 
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
 
   // create a cell-based stiffness matrix from A.
   A_->PutScalar(0.0);
@@ -746,28 +745,21 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
   AmanziMesh::Entity_ID_List cells, faces;
   Epetra_MultiVector& diag_face = *diagonal_->ViewComponent("face", true);
 
-  Ttmp.PutScalar(0.0);
+  Ttmp = diag_face;
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
-    if (matrix_shadow[c].NumRows() == 0) { 
-      WhetStone::DenseMatrix& Acell = matrix[c];
-      for (int n = 0; n < nfaces; n++) {
-        Ttmp[0][faces[n]] += 1.0 / Acell(n, n);
-      }
-    } else {
-      WhetStone::DenseMatrix& Acell = matrix_shadow[c];
-      for (int n = 0; n < nfaces; n++) {
-        Ttmp[0][faces[n]] += 1.0 / Acell(n, n);
-      }
+    WhetStone::DenseMatrix& Acell = matrix[c];
+    for (int n = 0; n < nfaces; n++) {
+      Ttmp[0][faces[n]] += Acell(n, n);
     }
   }
   T->GatherGhostedToMaster();
  
   // populate the global matrix
-  int lid[2], gid[2];
-  double values[2];
+  int k, l, lid[2], gid[2];
+  double a1, a2, d1, d2(0.0), values[2];
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -778,15 +770,32 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
       gid[n] = cmap_wghost.GID(cells[n]);
     }
 
+    int c = cells[0];
+    WhetStone::DenseMatrix& Acell = matrix[c];
+    k = Acell.NumRows() - 1;
+    l = FindFacePositionInCell_(f, c); 
+    d1 = Acell(k, k) / k;
+    a1 = Acell(k, l); 
+
+    if (ncells == 2) {
+      int c = cells[1];
+      WhetStone::DenseMatrix& Acell = matrix[c];
+      k = Acell.NumRows() - 1;
+      l = FindFacePositionInCell_(f, c); 
+      d2 = Acell(k, k) / k;
+      a2 = Acell(k, l); 
+    }
+    
     double coef = 1.0 / Ttmp[0][f];
     for (int n = 0; n < ncells; n++) {
       if (n == 0) {
-        values[0] = coef;
-        values[1] = -coef;
+        values[0] = d1 - a1 * a1 * coef;
+        values[1] = -a2 * a1 * coef;
       } else {
-        values[0] = -coef;
-        values[1] = coef;
+        values[0] = -a1 * a2 * coef;
+        values[1] = d2 - a2 * a2 * coef;
       }
+
       if (lid[n] < ndof) {
         A_->SumIntoMyValues(lid[n], ncells, values, lid);
       } else {
@@ -811,7 +820,7 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
   }
 
   A_->ReplaceDiagonalValues(tmp);
-// std::cout << *A_ << std::endl;
+  // std::cout << *A_ << std::endl;
 
   // redefine (if necessary) preconditioner since only 
   // one preconditioner is allowed.
@@ -1053,6 +1062,9 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   } else {
     upwind_ = OPERATOR_UPWIND_NONE;  // cell-centered scheme.
   }
+
+  // experimental options
+  nonstandard_symbolic_ = plist.get<int>("nonstandard symbolic assembling", 0);
 }
 
 
