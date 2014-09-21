@@ -123,8 +123,6 @@ class Operator {
   Teuchos::RCP<VerboseObject> vo_;
 
  protected:
-  int FindFacePositionInCell_(int f, int c);
-
   int nonstandard_symbolic_;
 };
 

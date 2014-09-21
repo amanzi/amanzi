@@ -914,6 +914,7 @@ void Operator::RestoreCheckPoint()
 /* ******************************************************************
 * Extension of Mesh API. 
 ****************************************************************** */
+/*
 int Operator::FindFacePositionInCell_(int f, int c)
 {
   AmanziMesh::Entity_ID_List faces;
@@ -925,6 +926,7 @@ int Operator::FindFacePositionInCell_(int f, int c)
   }
   return -1;
 }
+*/
 }  // namespace Operators
 }  // namespace Amanzi
 

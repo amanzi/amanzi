@@ -77,7 +77,8 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
-    Kc(0, 0) = 1.0;
+    const Point& xc = mesh->cell_centroid(c);
+    Kc(0, 0) = 1.0 + xc[0] * xc[0];
     K.push_back(Kc);
   }
   double rho(1.0), mu(1.0);
@@ -125,6 +126,48 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   op->InitPreconditioner("Hypre AMG", slist);
+
+  // Test SPD properties of the matrix.
+  CompositeVector a(*cvs), ha(*cvs), b(*cvs), hb(*cvs);
+  a.Random();
+  b.Random();
+  op->Apply(a, ha);
+  op->Apply(b, hb);
+
+  double ahb, bha, aha, bhb;
+  a.Dot(hb, &ahb);
+  b.Dot(ha, &bha);
+  a.Dot(ha, &aha);
+  b.Dot(hb, &bhb);
+
+  if (MyPID == 0) {
+    std::cout << "Matrix:\n" 
+              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
+    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
+  } 
+  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
+  CHECK(aha > 0.0);
+  CHECK(bhb > 0.0);
+
+  // Test SPD properties of the preconditioner.
+  a.Random();
+  b.Random();
+  op->ApplyInverse(a, ha);
+  op->ApplyInverse(b, hb);
+
+  a.Dot(hb, &ahb);
+  b.Dot(ha, &bha);
+  a.Dot(ha, &aha);
+  b.Dot(hb, &bhb);
+
+  if (MyPID == 0) {
+    std::cout << "Preconditioner:\n" 
+              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
+    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
+  } 
+  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
+  CHECK(aha > 0.0);
+  CHECK(bhb > 0.0);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
@@ -194,7 +237,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
     const Point& xc = mesh->cell_centroid(c);
-    Kc(0, 0) = (xc[0] + 1) * (xc[0] + 1) + 1.0;
+    Kc(0, 0) = 1.0 + xc[0] * xc[0];
     K.push_back(Kc);
   }
   double rho(1.0), mu(1.0);
@@ -243,6 +286,48 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   // create preconditoner
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   op->InitPreconditioner("Hypre AMG", slist);
+
+  // Test SPD properties of the matrix.
+  CompositeVector a(*cvs), ha(*cvs), b(*cvs), hb(*cvs);
+  a.Random();
+  b.Random();
+  op->Apply(a, ha);
+  op->Apply(b, hb);
+
+  double ahb, bha, aha, bhb;
+  a.Dot(hb, &ahb);
+  b.Dot(ha, &bha);
+  a.Dot(ha, &aha);
+  b.Dot(hb, &bhb);
+
+  if (MyPID == 0) {
+    std::cout << "Matrix:\n" 
+              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
+    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
+  } 
+  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
+  CHECK(aha > 0.0);
+  CHECK(bhb > 0.0);
+
+  // Test SPD properties of the preconditioner.
+  a.Random();
+  b.Random();
+  op->ApplyInverse(a, ha);
+  op->ApplyInverse(b, hb);
+
+  a.Dot(hb, &ahb);
+  b.Dot(ha, &bha);
+  a.Dot(ha, &aha);
+  b.Dot(hb, &bhb);
+
+  if (MyPID == 0) {
+    std::cout << "Preconditioner:\n" 
+              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
+    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
+  } 
+  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
+  CHECK(aha > 0.0);
+  CHECK(bhb > 0.0);
 
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
