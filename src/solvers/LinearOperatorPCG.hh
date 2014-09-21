@@ -121,7 +121,6 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
   double gamma0;
   p.Dot(r, &gamma0);
   if (gamma0 <= 0) {
-std::cout << gamma0 << std::endl;
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Failed: non-SPD ApplyInverse" << std::endl;
     return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
@@ -170,7 +169,6 @@ std::cout << gamma0 << std::endl;
     double gamma1;
     v.Dot(r, &gamma1);
     if (gamma1 <= 0.0) {
-std::cout << gamma1 << std::endl;
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
 	*vo_->os() << "Failed: non-SPD ApplyInverse" << std::endl;
       return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
