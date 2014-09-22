@@ -44,7 +44,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Laplace Beltrami solver" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Laplace Beltrami solver: preconditioner Sff" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_laplace_beltrami.xml";
@@ -161,7 +161,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   b.Dot(hb, &bhb);
 
   if (MyPID == 0) {
-    std::cout << "Preconditioner:\n" 
+    std::cout << "Preconditioner: size=" << op->A_->NumGlobalRows() << "\n" 
               << "  Symmetry test: " << ahb << " = " << bha << std::endl;
     std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
   } 
@@ -178,9 +178,12 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   CompositeVector rhs = *op->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
 
+  int num_itrs = solver->num_itrs();
+  CHECK(num_itrs < 10);
+
   if (MyPID == 0) {
     std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+              << "): ||r||=" << solver->residual() << " itr=" << num_itrs
               << " code=" << solver->returned_code() << std::endl;
 
     // visualization
@@ -203,7 +206,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Laplace Beltrami solver" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Laplace Beltrami solver: preconditioner Scc" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_laplace_beltrami.xml";
@@ -321,7 +324,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   b.Dot(hb, &bhb);
 
   if (MyPID == 0) {
-    std::cout << "Preconditioner:\n" 
+    std::cout << "Preconditioner: size=" << op->A_->NumGlobalRows() << "\n" 
               << "  Symmetry test: " << ahb << " = " << bha << std::endl;
     std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
   } 
@@ -338,9 +341,12 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   CompositeVector rhs = *op->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
 
+  int num_itrs = solver->num_itrs();
+  CHECK(num_itrs < 10);
+
   if (MyPID == 0) {
     std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+              << "): ||r||=" << solver->residual() << " itr=" << num_itrs
               << " code=" << solver->returned_code() << std::endl;
 
     // visualization
@@ -351,3 +357,138 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
     GMV::close_data_file();
   }
 }
+
+TEST(LAPLACE_BELTRAMI_FLAT) {
+  using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Operators;
+
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+
+  if (MyPID == 0) std::cout << "\nTest: Laplace Beltrami solver: preconditioner A" << std::endl;
+
+  // read parameter list
+  std::string xmlFileName = "test/operator_laplace_beltrami.xml";
+  ParameterXMLFileReader xmlreader(xmlFileName);
+  ParameterList plist = xmlreader.getParameters();
+
+  // create an SIMPLE mesh framework
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Flat");
+  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+
+  MeshFactory meshfactory(&comm);
+  meshfactory.preference(pref);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 5, gm);
+  RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
+
+  // extract surface mesh
+  std::vector<std::string> setnames;
+  setnames.push_back(std::string("Top surface"));
+
+  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
+
+  /* modify diffusion coefficient */
+  std::vector<WhetStone::Tensor> K;
+  int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+
+  for (int c = 0; c < ncells_owned; c++) {
+    WhetStone::Tensor Kc(2, 1);
+    const Point& xc = mesh->cell_centroid(c);
+    Kc(0, 0) = 1.0 + xc[0] * xc[0];
+    K.push_back(Kc);
+  }
+  double rho(1.0), mu(1.0);
+
+  // create boundary data
+  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
+  std::vector<double> bc_value(nfaces_wghost);
+
+  for (int f = 0; f < nfaces_wghost; f++) {
+    const Point& xf = surfmesh->face_centroid(f);
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+      bc_model[f] = OPERATOR_BC_FACE_DIRICHLET;
+      bc_value[f] = xf[1] * xf[1];
+    }
+  }
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
+
+  // create diffusion operator 
+  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(surfmesh);
+  cvs->SetGhosted(true);
+  cvs->SetComponent("cell", AmanziMesh::CELL, 1);
+  cvs->SetOwned(false);
+  cvs->AddComponent("face", AmanziMesh::FACE, 1);
+
+  CompositeVector solution(*cvs);
+  solution.PutScalarMasterAndGhosted(0.0);
+
+  // populate the diffusion operator
+  int schema_base = Operators::OPERATOR_SCHEMA_BASE_CELL;
+  int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
+  int schema_prec_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
+  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
+                                      .get<Teuchos::ParameterList>("diffusion operator");
+
+  Teuchos::RCP<OperatorDiffusionSurface> op = Teuchos::rcp(new OperatorDiffusionSurface(cvs, olist, bc));
+  op->Init();
+  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op->ApplyBCs();
+  op->SymbolicAssembleMatrix(schema_prec_dofs);
+  op->AssembleMatrix(schema_prec_dofs);
+
+  // create preconditoner
+  ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+  op->InitPreconditioner("Hypre AMG", slist);
+
+  // Test SPD properties of the preconditioner.
+  CompositeVector a(*cvs), ha(*cvs), b(*cvs), hb(*cvs);
+  a.Random();
+  b.Random();
+  op->ApplyInverse(a, ha);
+  op->ApplyInverse(b, hb);
+
+  double ahb, bha, aha, bhb;
+  a.Dot(hb, &ahb);
+  b.Dot(ha, &bha);
+  a.Dot(ha, &aha);
+  b.Dot(hb, &bhb);
+
+  if (MyPID == 0) {
+    std::cout << "Preconditioner: size=" << op->A_->NumGlobalRows() << "\n" 
+              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
+    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
+  } 
+  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
+  CHECK(aha > 0.0);
+  CHECK(bhb > 0.0);
+
+  // solve the problem
+  ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+  AmanziSolvers::LinearOperatorFactory<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusionSurface, CompositeVector, CompositeVectorSpace> >
+     solver = factory.Create("AztecOO CG", lop_list, op);
+
+  CompositeVector rhs = *op->rhs();
+  int ierr = solver->ApplyInverse(rhs, solution);
+
+  int num_itrs = solver->num_itrs();
+  CHECK(num_itrs < 10);
+
+  if (MyPID == 0) {
+    std::cout << "pressure solver (" << solver->name() 
+              << "): ||r||=" << solver->residual() << " itr=" << num_itrs
+              << " code=" << solver->returned_code() << std::endl;
+  }
+}
+

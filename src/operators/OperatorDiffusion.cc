@@ -561,6 +561,9 @@ int OperatorDiffusion::ApplyInverseSpecialScc_(const CompositeVector& X, Composi
   T.GatherGhostedToMaster("face");
 
   // FORWARD ELIMINATION:  Tc = Xc - Acf inv(Aff) Xf
+  T.ScatterMasterToGhosted("face");
+  X.ScatterMasterToGhosted("face");
+
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
