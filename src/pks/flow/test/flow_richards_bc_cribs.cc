@@ -53,6 +53,7 @@ TEST(FLOW_3D_RICHARDS) {
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
+  pref.push_back(STKMESH);
 
   MeshFactory factory(&comm);
   factory.preference(pref);  
@@ -85,7 +86,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   /* solve the problem */
   RPK->AdvanceToSteadyState(0.0, 1e-7);
-  RPK->CommitState(0.0, S);
+  RPK->CommitState(0.0, S.ptr());
 
   /* derive dependent variable */
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

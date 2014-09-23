@@ -33,15 +33,15 @@ class Chemistry_PK: public Chemistry_PK_Base {
 
   void InitializeChemistry(void);
 
-  void advance(const double& delta_time,
+  void Advance(const double& delta_time,
                Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star);
-  void commit_state(Teuchos::RCP<Chemistry_State> chem_state, const double& delta_time);
+  void CommitState(Teuchos::RCP<Chemistry_State> chem_state, const double& time);
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration(void) const;
 
   void set_max_time_step(const double mts) {
     this->max_time_step_ = mts;
   }
-  double max_time_step(void) const {
+  double time_step(void) const {
     return this->max_time_step_;
   }
 

@@ -24,18 +24,21 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 BoxRegion::BoxRegion(const std::string name, const unsigned int id,
                      const Point& p0, const Point& p1,
-                     const LifeCycleType lifecycle)
-  : Region(name,id,p0.dim(),lifecycle), p0_(p0), p1_(p1)
+                     const LifeCycleType lifecycle,
+                     const VerboseObject *verbobj)
+  : Region(name,id,p0.dim(),lifecycle,verbobj), p0_(p0), p1_(p1)
 {
 
-#ifdef ENABLE_DBC
   if (p0_.dim() != p1_.dim()) {
     std::stringstream tempstr;
     tempstr << "\nMismatch in dimensions of corner points of BoxRegion \"" << Region::name() << "\"\n Perhaps the region is improperly defined?\n";
+    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = verbobj->getOSTab();
+      *(verbobj->os()) << tempstr.str();
+    }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
   }
-#endif
   
   // Check if this is a reduced dimensionality box (e.g. even though
   // it is in 3D space it is a 2D box)
@@ -49,18 +52,21 @@ BoxRegion::BoxRegion(const std::string name, const unsigned int id,
 
 BoxRegion::BoxRegion(const char *name, const unsigned int id,
                      const Point& p0, const Point& p1,
-                     const LifeCycleType lifecycle)
-  : Region(name,id,p0.dim(),lifecycle), p0_(p0), p1_(p1)
+                     const LifeCycleType lifecycle,
+                     const VerboseObject *verbobj)
+  : Region(name,id,p0.dim(),lifecycle,verbobj), p0_(p0), p1_(p1)
 {
 
-#ifdef ENABLE_DBC
-  if (p0_.dim() != p1_.dim()) {
+  if (p0_.dim() != p1_.dim()) {    
     std::stringstream tempstr;
     tempstr << "\nMismatch in dimensions of corner points of BoxRegion \"" << Region::name() << "\"\nPerhaps the region is improperly defined?\n";
+    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = verbobj->getOSTab();
+      *(verbobj->os()) << tempstr.str();
+    }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
   }
-#endif
 
   // Check if this is a reduced dimensionality box (e.g. even though
   // it is in 3D space it is a 2D box)
@@ -100,14 +106,17 @@ bool
 BoxRegion::inside(const Point& p) const
 {
 
-#ifdef ENABLE_DBC
   if (p.dim() != p0_.dim()) {
     std::stringstream tempstr;
     tempstr << "\nMismatch in corner dimension of BoxRegion \"" << Region::name() << "\" and query point.\n Perhaps the region is improperly defined?\n";
+    const VerboseObject *verbobj = Region::verbosity_obj();
+    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = verbobj->getOSTab();
+      *(verbobj->os()) << tempstr.str();
+    }
     Errors::Message mesg(tempstr.str());
     Exceptions::amanzi_throw(mesg);
   }
-#endif
 
   bool result(true);
   for (int i = 0; i < p.dim(); ++i) {

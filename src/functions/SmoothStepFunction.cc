@@ -16,15 +16,15 @@ SmoothStepFunction::SmoothStepFunction(double x0, double y0, double x1, double y
   }
 }
 
-double SmoothStepFunction::operator() (const double *x) const
+double SmoothStepFunction::operator()(const std::vector<double>& x) const
 {
   double y;
-  if (*x <= x0_) {
+  if (x[0] <= x0_) {
     y = y0_;
-  } else if (*x >= x1_) {
+  } else if (x[0] >= x1_) {
     y = y1_;
   } else {
-    double s = (*x - x0_)/(x1_ - x0_);
+    double s = (x[0] - x0_)/(x1_ - x0_);
     y = y0_ + (y1_ - y0_)*s*s*(3 - 2*s);
   }
   return y;

@@ -46,8 +46,7 @@ void TransportBoundaryFunction_Tracer::Compute(double time) {
 
   // create the input tuple
   int dim = mesh_->space_dimension();
-  double *args = new double[dim + 1];
-  double *xargs = args + 1;
+  std::vector<double> args(1+dim);
   args[0] = time;
 
   // Loop over side set specs and evaluate the function at all faces 
@@ -64,11 +63,10 @@ void TransportBoundaryFunction_Tracer::Compute(double time) {
     Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
     for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
       AmanziGeometry::Point xc = mesh_->face_centroid(*id);
-      for (int i = 0; i != dim; ++i) xargs[i] = xc[i];
+      for (int i = 0; i != dim; ++i) args[i+1] = xc[i];
       values_[n++][0] = (*(*spec_and_ids)->first->second)(args)[0];
     }
   }
-  delete [] args;
 }
 
 

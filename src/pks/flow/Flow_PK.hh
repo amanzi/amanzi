@@ -42,21 +42,12 @@ namespace Flow {
 
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 
-class Flow_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
+class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
  public:
   Flow_PK();
   virtual ~Flow_PK() {};
 
-  // main PK methods
-  void Setup(const Teuchos::Ptr<State>& S) {};
-
-  void StateToSolution(const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& soln) {};
-  void SolutionToState(const Teuchos::RCP<TreeVector>& soln, const Teuchos::RCP<State>& S) {};
-
-  void SetStates(const Teuchos::RCP<const State>& S,
-                 const Teuchos::RCP<State>& S_inter,
-                 const Teuchos::RCP<State>& S_next) {};
-  void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
+  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
   std::string name() { return "flow"; }
 
   // main flow methods
@@ -65,6 +56,12 @@ class Flow_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
   virtual void InitSteadyState(double T0, double dT0) = 0;
   virtual void InitTransient(double T0, double dT0) = 0;
 
+  virtual void Initialize(const Teuchos::Ptr<State>& S) = 0;
+  virtual void CommitState(double dt, const Teuchos::Ptr<State>& S) = 0;
+  virtual double get_dt() = 0;
+
+  
+  virtual int Advance(double dT, double &dT_actual) = 0;
   virtual int AdvanceToSteadyState(double T0, double dT0) = 0;
   virtual void InitializeAuxiliaryData() = 0;
   virtual void InitializeSteadySaturated() = 0;
@@ -110,7 +107,8 @@ class Flow_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
                               std::vector<AmanziGeometry::Point>& velocity);
   void CalculatePoreVelocity(std::vector<AmanziGeometry::Point>& xyz, 
                              std::vector<AmanziGeometry::Point>& velocity,
-                             std::vector<double>& porosity, std::vector<double>& saturation);
+                             std::vector<double>& porosity, std::vector<double>& saturation,
+                             std::vector<double>& pressure, std::vector<double>& water_density);
   void WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk);
 
   // V&V

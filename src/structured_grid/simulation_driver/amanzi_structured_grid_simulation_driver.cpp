@@ -139,9 +139,9 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     strt_time =  0.0;  
     stop_time = -1.0;
 
-    pp.get("max_step",max_step);
-    pp.get("strt_time",strt_time);
-    pp.get("stop_time",stop_time);
+    pp.query("max_step",max_step);
+    pp.query("strt_time",strt_time);
+    pp.query("stop_time",stop_time);
 
     if (strt_time < 0.0)
         BoxLib::Abort("MUST SPECIFY a non-negative strt_time");

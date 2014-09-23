@@ -47,6 +47,18 @@ include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 #
+# Flow registrations
+#
+register_evaluator_with_factory( HEADERFILE Transport_PK_Wrapper_reg.hh
+  LISTNAME   PKS_TRANSPORT_REGISTRATIONS )
+
+generate_evaluators_registration_header( 
+  HEADERFILE pks_transport_registration.hh   
+  LISTNAME   PKS_TRANSPORT_REGISTRATIONS
+  INSTALL    True )
+
+
+#
 # Library: transport
 #
 set(transport_inc_files
@@ -64,6 +76,7 @@ set(transport_inc_files
 set(transport_src_files Transport_PK.cc Transport_TI.cc 
                         Transport_Limiters.cc Transport_VandV.cc Transport_IO.cc 
                         Transport_Dispersion.cc 
+                        Transport_PK_Wrapper.cc
                         Reconstruction.cc 
                         TransportBCFactory.cc TransportSourceFactory.cc
                         TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
@@ -78,7 +91,6 @@ add_amanzi_library(transport
                              ${geochem_lib} chemistry_pk time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
-
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
 
@@ -119,10 +131,32 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/transport_dispersion.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    if ( ENABLE_MSTK_Mesh )
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport operators 
-                        whetstone output mesh_functions functions data_structures)
+    add_amanzi_test(transport_2D transport_2D
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_2D.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(transport_2D_long transport_2D_long 
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_2D_long.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(transport_2D_source transport_2D_source
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_2D_source.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(transport_3D_long transport_3D_long
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_3D_long.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(transport_subcycling transport_subcycling
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_subcycling.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    if ( ENABLE_MSTK_Mesh )
         add_amanzi_test(transport_parallel_mstk transport_parallel_mstk
 		       KIND int
 	               NPROCS 4 
@@ -134,44 +168,14 @@ if ( BUILD_TESTS )
 	               NPROCS 4 
                        SOURCE test/Main.cc test/transport_parallel_read_mstk.cc
                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-        add_amanzi_test(transport_2D transport_2D
-	                KIND unit
-                        SOURCE test/Main.cc test/transport_2D.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-        add_amanzi_test(transport_2D_long transport_2D_long 
-	                KIND unit
-                        SOURCE test/Main.cc test/transport_2D_long.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-        add_amanzi_test(transport_2D_source transport_2D_source
-                        KIND unit
-                        SOURCE test/Main.cc test/transport_2D_source.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-        add_amanzi_test(transport_3D_long transport_3D_long
-	                KIND unit
-                        SOURCE test/Main.cc test/transport_3D_long.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-        add_amanzi_test(transport_subcycling transport_subcycling
-	                KIND unit
-                        SOURCE test/Main.cc test/transport_subcycling.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
     endif()    
 
     if ( ENABLE_STK_Mesh )
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport operators 
-                        whetstone mesh_functions data_structures)
-
         add_amanzi_test(transport_parallel_stk transport_parallel_stk
 			KIND unit
 	                NPROCS 4
                         SOURCE test/Main.cc test/transport_parallel_stk.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-          
     endif()    
 endif()
 

@@ -14,7 +14,7 @@ public:
   StandardMathFunction(std::string op, double amplitude, double parameter);
   ~StandardMathFunction() {}
   StandardMathFunction* Clone() const { return new StandardMathFunction(*this); }
-  double operator() (const double *x) const;
+  double operator()(const std::vector<double>& x) const;
 
 private:
   void InvalidDomainError_(double x) const;

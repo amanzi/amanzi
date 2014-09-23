@@ -7,39 +7,20 @@ Input File XML Schema
 Overview
 ++++++++
 
-The present document describes how to specify the data required to
-execute Amanzi and perform a simulation.  This specification should
-be regarded as a companion to the 
-mathematical requirements document 
-entitled *Mathematical Formulation Requirements and
-Specifications for the Process Models* (see :ref:`ASCEM Overview
-<ASCEM Overview>`), and
-parameterizations of the individual submodels are consistent between
-Amanzi, the mathematical requirements document and this document.
+The present document describes how to specify the data required to execute Amanzi and perform a simulation.  This specification should be regarded as a companion to the mathematical requirements document entitled *Mathematical Formulation Requirements and Specifications for the Process Models* (see :ref:`ASCEM Overview <ASCEM Overview>`), and parameterizations of the individual submodels are consistent between Amanzi, the mathematical requirements document and this document.
 
-The open-source, platform independent Akuna_ user environment can
-generate *Amanzi* models and generate corresponding valid,
-human-readable XML input files that can then be executed by *Amanzi*.
-Example input files are available in the Amanzi source repository.
+The open-source, platform independent Akuna_ user environment can generate *Amanzi* models and generate corresponding valid, human-readable XML input files that can then be executed by *Amanzi*.  Example input files are available in the Amanzi source repository.
 
 XML Schema 2.0
 ++++++++++++++
 
 Amanzi solves a set of parameterized models for multiphase flow in porous media. An Amanzi simulation is specified by providing:
 
-* values for a parameterized PDE-based transport model, including
-  boundary and initial conditions, constitutive laws, and
-  parameterized/phenomenological models for fluid and chemical sources
-  and characterizations of the porous medium,
+* values for a parameterized PDE-based transport model, including boundary and initial conditions, constitutive laws, and parameterized/phenomenological models for fluid and chemical sources and characterizations of the porous medium,
 * parameters controlling the selection of key algorithmic options and output,
 * a description of the (discrete) state of the computational system, including a list of the independent variables and instructions for obtaining or generating the discrete mesh, and a characterization of the (parallel) computing environment.
 
-The primary input to *Amanzi* is through an XML file. The Amanzi input
-XML format is defined in terms of the XML schema that can found in the
-Amanzi source code repository.  Users can construct models and
-generate compliant XML input files using the Akuna_ tool suite.  Users
-can also choose to generate compliant file using a text editor or
-other method.
+The primary input to *Amanzi* is through an XML file. The Amanzi input XML format is defined in terms of the XML schema that can found in the Amanzi source code repository.  Users can construct models and generate compliant XML input files using the Akuna_ tool suite.  Users can also choose to generate compliant file using a text editor or other method.
 
 .. In practice, Amanzi is called by a "simulation coordinator" which
 .. manages the simulation instructions and orchestrates the flow of
@@ -49,14 +30,7 @@ other method.
 .. template for user-generated extensions supporting more intricate
 .. workflows.
 
-The following is a description of each of the sections with the XML
-input schema.  Each section includes a short description of what is
-defined within the section followed by the XML elements available for
-the section.  Not all elements described are required to generated a
-valid input file.  The limited set of required elements is noted in
-each section.  Note that tags for all sections must be present for an
-input file to be valid even if no elements within that section are
-required.
+The following is a description of each of the sections with the XML input schema.  Each section includes a short description of what is defined within the section followed by the XML elements available for the section.  Not all elements described are required to generated a valid input file.  The limited set of required elements is noted in each section.  Note that tags for all sections must be present for an input file to be valid even if no elements within that section are required.
 
 Please note, many attributes within the XML list a limited set of specified values.  During validation of the input file or initialization of Amanzi the values in the user provided input file will be compared against the limited set provided in the XML Schema document.  Errors will occur is the values do not match exactly.  These values are CASE SENSITIVE.  The Amanzi schema has been designed will all LOWER CASE values.  Please note this when writing input file.  In particular, `"Exodus II`" will be evaluated as `"exodus ii`".
 
@@ -75,18 +49,9 @@ For an unstructured simulations the root tag would looks as the following.
 Model Description
 -------------------
 
-This section allows the user to provide information about the model
-being developed and how and when it was developed.  Default units for
-the model are also stored in this section.  This entire section is
-optional but encouraged for documentation purposes.
+This section allows the user to provide information about the model being developed and how and when it was developed.  Default units for the model are also stored in this section.  This entire section is optional but encouraged for documentation purposes.
 
-The opening tag ``model_description`` accepts an attribute ``name`` in
-which the user may give the current model a name.  The available
-elements within ``model_description`` include: ``comments``,
-``author``, ``created``, ``modified``, ``model_id``, ``description``,
-``purpose``, and ``units``.  Under the ``units`` element, the user may
-define the default units to used throughout the rest of the input
-file.  The options available for the units element are as follows:
+The opening tag ``model_description`` accepts an attribute ``name`` in which the user may give the current model a name.  The available elements within ``model_description`` include: ``comments``, ``author``, ``created``, ``modified``, ``model_id``, ``description``, ``purpose``, and ``units``.  Under the ``units`` element, the user may define the default units to used throughout the rest of the input file.  The options available for the units element are as follows:
 
 .. code-block:: xml
 
@@ -118,13 +83,9 @@ Here is an overall example for the model description element.
 Definitions
 -----------
 
-This section allows the user to provide useful definitions to be used
-throughout the other sections.  Definitions are grouped as elements
-constants, named times, and macros.
+This section allows the user to provide useful definitions to be used throughout the other sections.  Definitions are grouped as elements constants, named times, and macros.
 
-Constants can be one of four types: constant, time_constant,
-numerical_constant, and area_mass_flux_constant. Each of these types
-look as the follows:
+Constants can be one of four types: constant, time_constant, numerical_constant, and area_mass_flux_constant. Each of these types look as the follows:
 
 .. code-block:: xml
 
@@ -191,19 +152,7 @@ Here is an overall example for the ``definition`` element.
 Execution Control
 -----------------
 
-The ``execution_controls`` section defines the general execution of
-the Amanzi simulation.  Amanzi can execute in three modes: steady
-state, transient or initialize to a steady state and then continue
-it transient.  Default values for execution are defined in the
-``execution_control_defaults`` element.  These values are used for any
-time period during the simulation for which the controls were not
-specified.  Individual time periods of the simulation are defined
-using ``execution_control`` elements.  For a steady state simulation,
-only one ``execution_control`` element will be defined.  However, for
-a transient simulation a series of controls may be defined during
-which different control values will be used.  For a valid
-``execution_controls`` section the ``execution_control_defaults``
-element and at least one ``execution_control`` element must appear.
+The ``execution_controls`` section defines the general execution of the Amanzi simulation.  Amanzi can execute in three modes: steady state, transient or initialize to a steady state and then continue it transient.  Default values for execution are defined in the ``execution_control_defaults`` element.  These values are used for any time period during the simulation for which the controls were not specified.  Individual time periods of the simulation are defined using ``execution_control`` elements.  For a steady state simulation, only one ``execution_control`` element will be defined.  However, for a transient simulation a series of controls may be defined during which different control values will be used.  For a valid ``execution_controls`` section the ``execution_control_defaults`` element and at least one ``execution_control`` element must appear.
 
 The ``execution_control_defaults`` element has the following attributes.
 
@@ -239,13 +188,7 @@ Here is an overall example for the ``execution_control`` element.
 Numerical Controls
 ------------------
 
-This section allows the user to define control parameters associated
-with the underlying numerical implementation.  The list of available
-options is lengthy.  However, none are required for a valid input
-file.  The ``numerical_controls`` section is divided up into the
-subsections: ``steady-state_controls``, ``transient_controls``,
-``linear_solver``, ``nonlinear_solver``, and ``chemistry_controls``.
-The list of available options is as follows:
+This section allows the user to define control parameters associated with the underlying numerical implementation.  The list of available options is lengthy.  However, none are required for a valid input file.  The ``numerical_controls`` section is divided up into the subsections: ``steady-state_controls``, ``transient_controls``, ``linear_solver``, ``nonlinear_solver``, and ``chemistry_controls``.  The list of available options is as follows:
 
 .. code-block:: xml
 
@@ -289,6 +232,8 @@ The list of available options is as follows:
       <limit_iterations>Value</limit_iterations>
       <nonlinear_iteration_damping_factor>Value</nonlinear_iteration_damping_factor>
       <nonlinear_iteration_divergence_factor>Value</nonlinear_iteration_divergence_factor>
+      <restart_tolerance_factor>Value</restart_tolerance_factor>
+      <restart_tolerance_relaxation_factor>Value</restart_tolerance_relaxation_factor>
       <max_divergent_iterations>Value</max_divergent_iterations>
     </steady-state_controls>
 
@@ -395,31 +340,13 @@ Here is an overall example for the ``numerical_controls`` element.
 Mesh
 ----
 
-A mesh must be defined for the simulation to be conducted on.  The
-mesh can be structured or unstructured.  Structured meshes are always
-internally generated while unstructured meshes may be generated
-internally or imported from an existing `Exodus II
-<http://sourceforge.net/projects/exodusii/>`_ file. Generated
-meshes in both frameworks are always regular uniformly spaced meshes.
+A mesh must be defined for the simulation to be conducted on.  The mesh can be structured or unstructured.  Structured meshes are always internally generated while unstructured meshes may be generated internally or imported from an existing `Exodus II <http://sourceforge.net/projects/exodusii/>`_ file. Generated meshes in both frameworks are always regular uniformly spaced meshes.
 
-Mesh parameters are specified in the ``mesh`` section. If the mesh is
-unstructured the opening tag of the ``mesh`` section takes an attribute called called ``framework`` which can take the value of ``mstk``, ``stk::mesh``, ``moab`` or ``simple``. This specifies which mesh infrastructure library is to be used for managing
-the mesh queries under-the-hood. 
+Mesh parameters are specified in the ``mesh`` section. If the mesh is unstructured the opening tag of the ``mesh`` section takes an attribute called called ``framework`` which can take the value of ``mstk``, ``stk::mesh``, ``moab`` or ``simple``. This specifies which mesh infrastructure library is to be used for managing the mesh queries under-the-hood. 
 
-The ``mesh`` section takes a ``dimension`` element which indicates if
-the mesh is 2D or 3D. A 2D mesh can be given in 3D space with a third
-coordinate of 0. If a 2D mesh is specified this impacts other aspects of the input file.  It is up to the user to ensure consistency within the input file.  Other effected parts of the input file include region definitions and initial conditions which use coordinates, the material property permeability which must be specified using the correct subset of x, y, and z coordinates, and the initial condiction velocity which also requires the correct subset of x, y, and z coordinates.
+The ``mesh`` section takes a ``dimension`` element which indicates if the mesh is 2D or 3D. A 2D mesh can be given in 3D space with a third coordinate of 0. If a 2D mesh is specified this impacts other aspects of the input file.  It is up to the user to ensure consistency within the input file.  Other effected parts of the input file include region definitions and initial conditions which use coordinates, the material property permeability which must be specified using the correct subset of x, y, and z coordinates, and the initial condiction velocity which also requires the correct subset of x, y, and z coordinates.
 
-This section also takes an element indicating if the
-mesh is to be internally generated (structured and unstructured) or
-read from an external file (unstructured only). If the mesh is to be
-generated internally, a ``generate`` element is specified with details
-about the number of cells in each direction and the low and high
-coordinates of the bounding box. If the mesh is to be read from a
-file, a ``read`` element is specified with the file name and file
-format. Currently only Exodus II files are supported.  Finally, as in other sections, a ``comments``
-element is provide to include any comments or documentation the user
-wishes.
+This section also takes an element indicating if the mesh is to be internally generated (structured and unstructured) or read from an external file (unstructured only). If the mesh is to be generated internally, a ``generate`` element is specified with details about the number of cells in each direction and the low and high coordinates of the bounding box. If the mesh is to be read from a file, a ``read`` element is specified with the file name and file format. Currently only Exodus II files are supported.  Finally, as in other sections, a ``comments`` element is provide to include any comments or documentation the user wishes.
 
 Here is an example specification for a structured ``mesh`` element.
 
@@ -448,8 +375,7 @@ mesh.
     </generate>
   </mesh>
 
-Finally, an example of reading an unstructured mesh from a file is
-given below.
+Finally, an example of reading an unstructured mesh from a file is given below.
 
 .. code-block:: xml
 
@@ -466,36 +392,18 @@ given below.
 Regions
 -------
 
-Regions are geometrical constructs used in Amanzi to define subsets of
-the computational domain in order to specify the problem to be solved,
-and the output desired. Regions are commonly used to specify material
-properties, boundary conditions and obervation domains. Regions may
-represent zero-, one-, two- or three-dimensional subsets of physical
-space. For a three-dimensional problem, the simulation domain will be
-a three-dimensional region bounded by a set of two-dimensional
-regions. If the simulation domain is N-dimensional, the boundary
-conditions must be specified over a set of regions are
-(N-1)-dimensional.
+Regions are geometrical constructs used in Amanzi to define subsets of the computational domain in order to specify the problem to be solved, and the output desired. Regions are commonly used to specify material properties, boundary conditions and obervation domains. Regions may represent zero-, one-, two- or three-dimensional subsets of physical space. For a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional regions. If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.
 
-Amanzi automatically defines the special region labeled "All", which
-is the entire simulation domain. Under the "Structured" option, Amanzi
-also automatically defines regions for the coordinate-aligned planes
-that bound the domain, using the following labels: "XLOBC", "XHIBC",
-"YLOBC", "YHIBC", "ZLOBC", "ZHIBC"
+Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. Under the "Structured" option, Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain, using the following labels: "XLOBC", "XHIBC", "YLOBC", "YHIBC", "ZLOBC", "ZHIBC"
 
-The ``regions`` block is required.  Within the region block no regions are
-required to be defined.  The optional elements include ``region``, ``box``, ``point``, and ``plane``.  As in other sections there is also an options ``comments`` element.
+The ``regions`` block is required.  Within the region block no regions are required to be defined.  The optional elements include ``region``, ``box``, ``point``, and ``plane``.  As in other sections there is also an options ``comments`` element.
 
-The elements ``box``, ``point``, and ``plane`` allow for inline
-description of regions.  The ``region`` element uses a subelement to
-either define a ``box`` or ``plane`` region or specify a region file.
-Below are further descriptions of these elements.
+The elements ``box``, ``point``, and ``plane`` allow for inline description of regions.  The ``region`` element uses a subelement to either define a ``box`` or ``plane`` region or specify a region file.  Below are further descriptions of these elements.
 
 Box
 ---
 
-A box region region is defined by a low corner coordinates and high
-corner coordinates. Box regions can be degenerate in one or more directions.
+A box region region is defined by a low corner coordinates and high corner coordinates. Box regions can be degenerate in one or more directions.
 
 .. code-block:: xml
 
@@ -515,8 +423,7 @@ A point region is defined by a point coordinates.
 Plane
 -----
 
-A plane region is defined by a point on the plane and the normal
-direction of the plane
+A plane region is defined by a point on the plane and the normal direction of the plane
 
 .. code-block:: xml
 
@@ -564,17 +471,7 @@ A color function region defines a region based on a specified integer color in a
 Material
 --------
 
-The ``material`` in this context is meant to represent the media
-through which fluid phases are transported. In the literature, this is
-also referred to as the "soil", "rock", "matrix", etc. Properties of
-the material must be specified over the entire simulation domain, and
-is carried out using the Region constructs defined above. For example,
-a single material may be defined over the "All" region (see above), or
-a set of materials can be defined over subsets of the domain via
-user-defined regions. If multiple regions are used for this purpose,
-they should be disjoint, but should collectively tile the entire
-domain. Each material requires a label and the following set of
-physical properties using the supported models described below.
+The ``material`` in this context is meant to represent the media through which fluid phases are transported. In the literature, this is also referred to as the "soil", "rock", "matrix", etc. Properties of the material must be specified over the entire simulation domain, and is carried out using the Region constructs defined above. For example, a single material may be defined over the "All" region (see above), or a set of materials can be defined over subsets of the domain via user-defined regions. If multiple regions are used for this purpose, they should be disjoint, but should collectively tile the entire domain. Each material requires a label and the following set of physical properties using the supported models described below.
 
 A ``material`` element can contain the following:
 
@@ -620,12 +517,7 @@ A ``material`` element can contain the following:
   </material>
 
 
-While many material properties are available for the user to define,
-the minimum requirements for a valid material definition are
-specifying the ``assigned_regions`` and the ``porosity``.  However, if
-a capillary pressure model or relative permeability model is chosen
-(other than ``none``), the associated parameters must also be
-provided.
+While many material properties are available for the user to define, the minimum requirements for a valid material definition are specifying the ``assigned_regions`` and the ``porosity``.  However, if a capillary pressure model or relative permeability model is chosen (other than ``none``), the associated parameters must also be provided.
 
 An example material would look like
 
@@ -648,11 +540,7 @@ An example material would look like
 Process Kernels
 ---------------
 
-Amanzi current employees three process kernels that need to be defined
-in the input file (1) flow, (2) transport, and (3) chemistry.  The
-``process_kernels`` section allows the user to define which kernels
-are to be used during the section and select high level features of
-those kernels.  The ``process_kernels`` element is as follows:
+Amanzi current employees three process kernels that need to be defined in the input file (1) flow, (2) transport, and (3) chemistry.  The ``process_kernels`` section allows the user to define which kernels are to be used during the section and select high level features of those kernels.  The ``process_kernels`` element is as follows:
 
 .. code-block:: xml
 
@@ -683,89 +571,19 @@ An example ``process_kernels`` is as follows:
 Phases
 ------
 
-The ``phases`` section is used to specify components of each of the
-phases that are mobile, and solutes that are contained within
-them. For each phase, the list identifies the set of all independent
-variables that are to be stored on each discrete mesh cell.
+The ``phases`` section is used to specify components of each of the phases that are mobile, and solutes that are contained within them. For each phase, the list identifies the set of all independent variables that are to be stored on each discrete mesh cell.
 
-The terminology for flow in porous media can be somewhat ambiguous
-between the multiphase and groundwater communities, particularly in
-regards to "components", "solutes" and "chemicals". Since Amanzi is
-designed to handle a wide variety of problems, we must settle on a
-nomenclature for our use here. In the general problem, multiple
-"phases" may coexist in the domain (e.g. gaseous, aqueous/liquid,
-etc), and each is comprised of a number of "components" (section
-2.2). In turn, each component may carry a number of "solutes" and some
-of these may participate in chemical reactions. As a result of
-reactions, a chemical source or sink term may appear for the solutes
-involved in the reaction, including solutes in other mobile phases or
-in the material matrix. Additionally, certain reactions such as
-precipitation may affect the flow properties of the material itself
-during the simulation, and some might affect the properties of the
-fluid (e.g. brines affect the liquid density). While Amanzi does not
-currently support chemical reactions and thermal processes, the
-specification here allows for the existence of the necessary data
-structures and input data framework. Note that if solute
-concentrations are significant, the system may be better modeled with
-that solute treated as a separate component. Clearly, these
-definitions are highly problem-dependent, so Amanzi provide a
-generalized interface to accommodate a variety of scenarios.
+The terminology for flow in porous media can be somewhat ambiguous between the multiphase and groundwater communities, particularly in regards to "components", "solutes" and "chemicals". Since Amanzi is designed to handle a wide variety of problems, we must settle on a nomenclature for our use here. In the general problem, multiple "phases" may coexist in the domain (e.g. gaseous, aqueous/liquid, etc), and each is comprised of a number of "components" (section 2.2). In turn, each component may carry a number of "solutes" and some of these may participate in chemical reactions. As a result of reactions, a chemical source or sink term may appear for the solutes involved in the reaction, including solutes in other mobile phases or in the material matrix. Additionally, certain reactions such as precipitation may affect the flow properties of the material itself during the simulation, and some might affect the properties of the fluid (e.g. brines affect the liquid density). While Amanzi does not currently support chemical reactions and thermal processes, the specification here allows for the existence of the necessary data structures and input data framework. Note that if solute concentrations are significant, the system may be better modeled with that solute treated as a separate component. Clearly, these definitions are highly problem-dependent, so Amanzi provide a generalized interface to accommodate a variety of scenarios.
 
-Currently in Amanzi, solutes are transported in the various phase
-components, and are treated in "complexes". Each complex is typically
-in chemical equilibrium with itself and does not undergo phase
-change. Under these conditions, knowledge of the local concentration
-of the "basis" or "primary" species (the terms are used here
-interchangeably) in a chemical complex is sufficient to determine the
-concentrations of all related secondary species in the phase. Each
-basis species has a total component concentration and a free ion
-concentration. The total component concentration for each basis
-species is a sum of the free ion concentrations in the phase
-components and its stoichiometric contribution to all secondary
-species. Amanzi splits the total component concentration into a set of
-totals for each of the transported phase components, and a total
-sorbed concentration. Given the free ion concentration of each basis
-species (and if there is more than one phase, a specification of the
-thermodynamic relationships that determine the partitioning between
-phase components (if mass transfer is allowed - not in current
-Amanzi), we can reconstruct the concentration of the primary and
-secondary species in each phase. As a result only the basis species
-are maintained in the state data structures for each phases component.
+Currently in Amanzi, solutes are transported in the various phase components, and are treated in "complexes". Each complex is typically in chemical equilibrium with itself and does not undergo phase change. Under these conditions, knowledge of the local concentration of the "basis" or "primary" species (the terms are used here interchangeably) in a chemical complex is sufficient to determine the concentrations of all related secondary species in the phase. Each basis species has a total component concentration and a free ion concentration. The total component concentration for each basis species is a sum of the free ion concentrations in the phase components and its stoichiometric contribution to all secondary species. Amanzi splits the total component concentration into a set of totals for each of the transported phase components, and a total sorbed concentration. Given the free ion concentration of each basis species (and if there is more than one phase, a specification of the thermodynamic relationships that determine the partitioning between phase components (if mass transfer is allowed - not in current Amanzi), we can reconstruct the concentration of the primary and secondary species in each phase. As a result only the basis species are maintained in the state data structures for each phases component.
 
-In addition to solutes in the transported phases, there may be various
-immobile chemical constituents within the porous media (material)
-matrix, such as "minerals" and "surface complexes". Bookkeeping for
-these constituents is managed in Amanzi data structures by
-generalizing the "solute" concept - a slot in the state is allocated
-for each of these immobile species, but their concentrations are not
-included in the transport/flow components of the numerical
-integration. To allow selective transport of the various solutes,
-Amanzi uses the concept of solute groups. The aqueous solute
-concentrations are typically treated together as a group, for example,
-and often represent the only chemical constituents that are
-mobile. Thus, the current Amanzi will assume that any other groups
-specified in an Aqueous phase are immobile.
+In addition to solutes in the transported phases, there may be various immobile chemical constituents within the porous media (material) matrix, such as "minerals" and "surface complexes". Bookkeeping for these constituents is managed in Amanzi data structures by generalizing the "solute" concept - a slot in the state is allocated for each of these immobile species, but their concentrations are not included in the transport/flow components of the numerical integration. To allow selective transport of the various solutes, Amanzi uses the concept of solute groups. The aqueous solute concentrations are typically treated together as a group, for example, and often represent the only chemical constituents that are mobile. Thus, the current Amanzi will assume that any other groups specified in an Aqueous phase are immobile.
 
-This section specifies the phases present and specific properties
-about those phases.  The first grouping is by ``liquid_phase`` and
-``solid_phase``.  The ``liquid_phase`` element is required to produce
-a valid input file.
+This section specifies the phases present and specific properties about those phases.  The first grouping is by ``liquid_phase`` and ``solid_phase``.  The ``liquid_phase`` element is required to produce a valid input file.
 
-The ``liquid_phase`` element requires an attribute *name*.  This is
-used by other sections to identify this phase.  Subelements are used
-to define the ``viscosity``, ``density``, and
-``dissolved_components``. While ``viscosity`` and ``density`` are
-required elements, ``dissolved_components`` is optional.
-``dissolved_components`` contains a subelement ``solutes`` under which
-individual ``solute`` elements are used to specify any solutes present
-in the liquid phase.  The text of the ``solute`` contains the name of
-the solute while an attributes specifies the value
-*coefficient_of_diffusion*.  
+The ``liquid_phase`` element requires an attribute *name*.  This is used by other sections to identify this phase.  Subelements are used to define the ``viscosity``, ``density``, and ``dissolved_components``. While ``viscosity`` and ``density`` are required elements, ``dissolved_components`` is optional.  ``dissolved_components`` contains a subelement ``solutes`` under which individual ``solute`` elements are used to specify any solutes present in the liquid phase.  The text of the ``solute`` contains the name of the solute while an attributes specifies the value *coefficient_of_diffusion*.  
 
-The ``solid_phase`` element allows the user to define a ``minerals``
-element under which a series of ``mineral`` elements can be listed to
-specify any minerals present in the solida phase.  The ``mineral``
-elements contain the name of the mineral.
+The ``solid_phase`` element allows the user to define a ``minerals`` element under which a series of ``mineral`` elements can be listed to specify any minerals present in the solida phase.  The ``mineral`` elements contain the name of the mineral.
 
 An example ``phases`` element looks like the following.
 
@@ -787,26 +605,11 @@ An example ``phases`` element looks like the following.
 Initial Conditions
 ------------------
 
-The `"initial_conditions`" section contains at least 1 and up to an
-unbounded number of `"initial_condition`" elements.  Each
-`"initial_condition`" element defines a single initial condition that
-is applied to one or more region specified in the ``assigned_regions``
-element.  The initial condition can be applied to a liquid phase or
-solid phase using the appropriate subelement.
+The `"initial_conditions`" section contains at least 1 and up to an unbounded number of `"initial_condition`" elements.  Each `"initial_condition`" element defines a single initial condition that is applied to one or more region specified in the ``assigned_regions`` element.  The initial condition can be applied to a liquid phase or solid phase using the appropriate subelement.
 
-To specify a liquid phase the ``liquid_phase`` element is used.  At
-least one ``liquid_component`` must be specified.  In addition an
-unbounded number of ``solute_component`` elements and a single
-``geochemistry`` element can be specified.  Under the
-``liquid_component`` and ``solute_component`` elements an initial
-condition can be defined.  Under the ``geochemistry`` element a
-geochemistry constraint is defined.
+To specify a liquid phase the ``liquid_phase`` element is used.  At least one ``liquid_component`` must be specified.  In addition an unbounded number of ``solute_component`` elements and a single ``geochemistry`` element can be specified.  Under the ``liquid_component`` and ``solute_component`` elements an initial condition can be defined.  Under the ``geochemistry`` element a geochemistry constraint is defined.
 
-The initial conditions are defined using a specific elements.  The
-element name indicates the type of condition and the attributes define
-the necessary information.  Below is a table of the conditions
-available for the liquid phase and the attributes required to define
-them.
+The initial conditions are defined using a specific elements.  The element name indicates the type of condition and the attributes define the necessary information.  Below is a table of the conditions available for the liquid phase and the attributes required to define them.
 
 +-----------------------+------------------+---------------------------------+
 | Initial Condition Type| Attributes       | Value Type                      |
@@ -819,21 +622,25 @@ them.
 |                       | | reference_coord| | coordinate                    |
 |                       | | gradient       | | coordinate                    |
 +-----------------------+------------------+---------------------------------+
-| uniform_saturation    | | name           | | string                        |
-|                       | | value          | | double/time_constant/constant |
-+-----------------------+------------------+---------------------------------+
-| linear_saturation     | | name           | | string                        |
-|                       | | value          | | double/time_constant/constant |
-|                       | | reference_coord| | coordinate                    |
-|                       | | gradient       | | coordinate                    |
+| velocity              | | name           | | string                        |
+|                       | | x              | | double/constant               |
+|                       | | y              | | double/constant               |
+|                       | | (z)            | | double/constant               |
 +-----------------------+------------------+---------------------------------+
 
+.. | uniform_saturation    | | name           | | string                        |
+.. |                       | | value          | | double/time_constant/constant |
+.. +-----------------------+------------------+---------------------------------+
+.. | linear_saturation     | | name           | | string                        |
+.. |                       | | value          | | double/time_constant/constant |
+.. |                       | | reference_coord| | coordinate                    |
+.. |                       | | gradient       | | coordinate                    |
+.. +-----------------------+------------------+---------------------------------+
 
-For the solute_component the attributes available are *name*, *value*,
-*function*, *reference_coord*, and *gradient*.  The function options
-available are *uniform* and *linear*.  The attributes
-*reference_coord*, and *gradient* are only necessary for the *linear*
-function type.
+
+For the solute_component the attributes available are *name*, *value*, *function*, *reference_coord*, and *gradient*.  The function options available are *uniform* and *linear*.  The attributes *reference_coord*, and *gradient* are only necessary for the *linear* function type.
+
+If in the ``process_kernels`` section the flow model is set to *constant* then the flow field is set in one of the following ways: (1) A constant Darcy velocity is specified in the initial condition (as above); (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
 An example ``initial_conditions`` element looks like the following.
 
@@ -855,22 +662,9 @@ An example ``initial_conditions`` element looks like the following.
 Boundary Conditions
 -------------------
 
-Boundary conditions are defined in a similar manor to the initial
-conditions.  Under the tag ``boundary_conditions`` and series of
-individual ``boundary_condition`` elements can be defined.  Within
-each ``boundary_condition`` element the ``assigned_regions`` and
-``liquid_phase`` elements must appear.  The boundary condition can be
-applied to one or more region using a comma separated list of region
-names.  Under the ``liquid_phase`` element the ``liquid_component``
-element must be define.  An unbounded number of ``solute_component``
-elements and one ``geochemistry`` element may optionally be defined.
+Boundary conditions are defined in a similar manor to the initial conditions.  Under the tag ``boundary_conditions`` and series of individual ``boundary_condition`` elements can be defined.  Within each ``boundary_condition`` element the ``assigned_regions`` and ``liquid_phase`` elements must appear.  The boundary condition can be applied to one or more region using a comma separated list of region names.  Under the ``liquid_phase`` element the ``liquid_component`` element must be define.  An unbounded number of ``solute_component`` elements and one ``geochemistry`` element may optionally be defined.
 
-Under the ``liquid_component`` and ``solute_component`` elements a
-time series of boundary conditions is defined using the boundary
-condition elements available in the table below.  Each component
-element can only contain one type of boundary condition.  Both
-elements also accept a *name* attribute to indicate the phase
-associated with the boundary condition.
+Under the ``liquid_component`` and ``solute_component`` elements a time series of boundary conditions is defined using the boundary condition elements available in the table below.  Each component element can only contain one type of boundary condition.  Both elements also accept a *name* attribute to indicate the phase associated with the boundary condition.
 
 +-------------------------+--------------------+------------------------------------+
 |Boundary Condition Type  | Attributes         | Value Type                         |
@@ -892,6 +686,7 @@ associated with the boundary condition.
 |                         | | coordinate_system| | 'absolute','relative to mesh top'|
 +-------------------------+--------------------+------------------------------------+ 
 |seepage_face             | | name             | | string                           |
+|                         | | start            | | double/time_constant/constant    |
 |                         | | inward_mass_flux | | double/time_constant/constant    |
 |                         | | function         | | 'linear','uniform','constant'    |
 +-------------------------+--------------------+------------------------------------+
@@ -900,10 +695,7 @@ associated with the boundary condition.
 |                         | | function         | | 'linear','uniform','constant'    |
 +-------------------------+--------------------+------------------------------------+
 
-For the solute component, the boundary condition available is
-``aqueous_conc`` which has the attributes *name*, *value*, *function*,
-and *start*.  The function options available are *uniform*, *linear*,
-and *constant*.
+For the solute component, the boundary condition available is ``aqueous_conc`` which has the attributes *name*, *value*, *function*, and *start*.  The function options available are *uniform*, *linear*, and *constant*.
 
 An example ``boundary_conditions`` element looks like the following.
 
@@ -933,22 +725,9 @@ An example ``boundary_conditions`` element looks like the following.
 Sources
 -------
 
-Sources are defined in a similar manner to the boundary conditions.
-Under the tag ``sources`` and series of individual ``source`` elements
-can be defined.  Within each ``source`` element the
-``assigned_regions`` and ``liquid_phase`` elements must appear.
-Sources can be applied to one or more region using a comma separated
-list of region names.  Under the ``liquid_phase`` element the
-``liquid_component`` element must be define.  An unbounded number of
-``solute_component`` elements and one ``geochemistry`` element may
-optionally be defined.
+Sources are defined in a similar manner to the boundary conditions.  Under the tag ``sources`` and series of individual ``source`` elements can be defined.  Within each ``source`` element the ``assigned_regions`` and ``liquid_phase`` elements must appear.  Sources can be applied to one or more region using a comma separated list of region names.  Under the ``liquid_phase`` element the ``liquid_component`` element must be define.  An unbounded number of ``solute_component`` elements and one ``geochemistry`` element may optionally be defined.
 
-Under the ``liquid_component`` and ``solute_component`` elements a
-time series of boundary conditions is defined using the boundary
-condition elements available in the table below.  Each component
-element can only contain one type of source.  Both elements also
-accept a *name* attribute to indicate the phase associated with the
-source.
+Under the ``liquid_component`` and ``solute_component`` elements a time series of boundary conditions is defined using the boundary condition elements available in the table below.  Each component element can only contain one type of source.  Both elements also accept a *name* attribute to indicate the phase associated with the source.
 
 +-------------------------+--------------------+------------------------------------+
 |Liquid Phase Source Type | Attributes         | Value Type                         |
@@ -958,10 +737,7 @@ source.
 |                         | | function         | | 'linear','uniform','constant'    |
 +-------------------------+--------------------+------------------------------------+
 
-For the solute component, the source available is ``aqueous_conc``
-which has the attributes *name*, *value*, *function*, and *start*.
-The function options available are *uniform*, *linear*, and
-*constant*.
+For the solute component, the source available is ``aqueous_conc`` which has the attributes *name*, *value*, *function*, and *start*.  The function options available are *uniform*, *linear*, and *constant*.
 
 
 An example ``sources`` element looks like the following.
@@ -983,52 +759,20 @@ An example ``sources`` element looks like the following.
 Outputs
 -------
 
-Output data from Amanzi is currently organized into three specific
-groups: "Visualization", "Checkpoint", "Observations".  Each of these
-is controlled in different ways, reflecting their intended use.  All
-output elements are optional.
+Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", `"Observations`", and `"Walkabout Data`".  Each of these is controlled in different ways, reflecting their intended use.
 
-* `"Visualization`" is intended to represent snapshots of the solution
-  at defined instances during the simulation to be visualized.  The
-  ``vis`` element defines the naming and frequency of saving the
-  visualization files.  The visualization files may include only a
-  fraction of the state data, and may contain auxiliary "derived"
-  information.
+* `"Visualization`" is intended to represent snapshots of the solution at defined instances during the simulation to be visualized.  The ``vis`` element defines the naming and frequency of saving the visualization files.  The visualization files may include only a fraction of the state data, and may contain auxiliary "derived" information.
 
-* `"Checkpoint`" is intended to represent all that is necessary to
-  repeat or continue an Amanzi run.  The specific data contained in a
-  checkpoint dump is specific to the algorithm options and mesh
-  framework selected.  Checkpoint is special in that no interpolation
-  is performed prior to writing the data files; the raw binary state
-  is necessary.  As a result, the user is allowed to only write
-  checkpoint at the discrete intervals of the simulation. The
-  ``checkpoint`` element defines the naming and frequency of saving
-  the checkpoint files.
+* `"Checkpoint`" is intended to represent all that is necessary to repeat or continue an Amanzi run.  The specific data contained in a checkpoint dump is specific to the algorithm options and mesh framework selected.  Checkpoint is special in that no interpolation is performed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write checkpoint at the discrete intervals of the simulation. The ``checkpoint`` element defines the naming and frequency of saving the checkpoint files.
 
-* `"Observations`" is intended to represent diagnostic values to be
-  returned to the calling routine from Amanzi's simulation driver.
-  Observations are typically generated at arbitrary times, and
-  frequently involve various point samplings and volumetric reductions
-  that are interpolated in time to the desired instant.  Observations
-  may involve derived quantities or state fields.  The
-  ``observations`` element may define one or more specific
-  observation.
+* `"Observations`" is intended to represent diagnostic values to be returned to the calling routine from Amanzi's simulation driver.  Observations are typically generated at arbitrary times, and frequently involve various point samplings and volumetric reductions that are interpolated in time to the desired instant.  Observations may involve derived quantities or state fields.  The ``observations`` element may define one or more specific observation.
+
+* `"Walkabout Data`" is intended to be used as input to the particle tracking software Walkabout.
 
 Viz
 ---
 
-The ``vis`` element defines the visualization file naming scheme and
-how often to write out the files.  The ``base_filename`` element
-contain the text component of the how the visualization files will be
-named.  The ``base_filename`` is appended with an index number to
-indicate the sequential order of the visualization files.  The
-``num_digits`` elements indicates how many digits to use for the
-index.  Finally, the ``time_macros`` or ``cycle_macros`` element
-indicates previously defined time_macro or cycle_macro to be used
-to determine the frequency at which to write the visualization files.
-One or more macro can be listed in a comma separated list.  Amanzi
-will converted the list of macros to a single list of times or cycles
-contained by all of the macros listed and output accordingly.
+The ``vis`` element defines the visualization file naming scheme and how often to write out the files.  The ``base_filename`` element contain the text component of the how the visualization files will be named.  The ``base_filename`` is appended with an index number to indicate the sequential order of the visualization files.  The ``num_digits`` elements indicates how many digits to use for the index.  Finally, the ``time_macros`` or ``cycle_macros`` element indicates previously defined time_macros or cycle_macros to be used to determine the frequency at which to write the visualization files.  One or more macro can be listed in a comma separated list.  Amanzi will converted the list of macros to a single list of times or cycles contained by all of the macros listed and output accordingly.
 
 An example ``vis`` element looks like the following.
 
@@ -1043,15 +787,7 @@ An example ``vis`` element looks like the following.
 Checkpoint
 ----------
 
-The ``checkpoint`` element defines the file naming scheme and
-frequency for writing out the checkpoint files.  The ``base_filename``
-element contains the text component of the how the checkpoint files
-will be named.  The ``base_filename`` is appended with an index number
-to indicate the sequential order of the checkpoint files.  The
-``num_digits`` elements indicates how many digits to use for the
-index.  Finally, the ``cycle_macro`` element indicates the previously
-defined cycle_macro to be used to determine the frequency at which to
-write the checkpoint files.
+The ``checkpoint`` element defines the file naming scheme and frequency for writing out the checkpoint files.  The ``base_filename`` element contains the text component of the how the checkpoint files will be named.  The ``base_filename`` is appended with an index number to indicate the sequential order of the checkpoint files.  The ``num_digits`` elements indicates how many digits to use for the index.  Finally, the ``cycle_macro`` element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the checkpoint files.
 
 An example ``checkpoint`` element looks like the following.
 
@@ -1060,27 +796,15 @@ An example ``checkpoint`` element looks like the following.
     <checkpoint>
 	<base_filename>chk</base_filename>
 	<num_digits>5</num_digits>
-	<cycle_macro>Every_1000_timesteps</cycle_macro>
+	<cycle_macro>Every_1000_steps</cycle_macro>
     </checkpoint>
 
 Observations
 ------------
 
-The ``observations`` element defines the the file for writing
-observations to and specifies individual observations to be made.  At
-this time, all observations are written to a single file defined in
-the ``filename`` element.  Also, observations are only available for
-the liquid phases.  Therefore individual observations are defined in
-subelements under the ``liquid_phase`` tag.  The ``liquid_phase`` tag
-takes an attribute ``name`` to identify which phase the observations
-are associated with.
+The ``observations`` element defines the the file for writing observations to and specifies individual observations to be made.  At this time, all observations are written to a single file defined in the ``filename`` element.  Also, observations are only available for the liquid phases.  Therefore individual observations are defined in subelements under the ``liquid_phase`` tag.  The ``liquid_phase`` tag takes an attribute ``name`` to identify which phase the observations are associated with.
 
-The element name of individual observations indicate the quantity
-being observed.  Below is a list of currently available observations.
-Individual observations require the subelements ``assigned_regions``,
-``functional``, and ``time_macro``.  ``aqueous_conc`` observations
-also take an attribute ``name`` which indicates the name of the solute
-being observed.
+The element name of individual observations indicate the quantity being observed.  Below is a list of currently available observations.  Individual observations require the subelements ``assigned_regions``, ``functional``, and ``time_macro``.  ``aqueous_conc`` observations also take an attribute ``name`` which indicates the name of the solute being observed.
 
 Available Observations:
 
@@ -1129,4 +853,26 @@ An example ``observations`` element looks like the following.
 .. _Akuna : http://esd.lbl.gov/research/projects/ascem/thrusts/platform/
 .. _Mathematical Formulation Requirements and Specifications for the Process Models: http://software.lanl.gov/ascem/trac/attachment/wiki/Documents/ASCEM-HPC-ProcessModels_2011-01-0a.pdf
 
+Walkabout
+----------
 
+The ''walkabout'' element deines the filenaming scheme and frequency for writing out the walkabout files.  As mentioned above, the user does not influence what is written to the walkabout files only the writing frequency and naming scheme.  Thus, the ''walkabout'' element has the following requiements
+
+.. code-block:: xml
+
+  <walkabout>
+      Required Elements: base_filename, num_digits, cycle_macro
+      Optional Elements: NONE
+  </walkabout>
+
+The *base_filename* element contain the text component of the how the walkabout files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the walkabout files.  The *num_digits* elements indicates how many digits to use for the index.  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files.
+
+Example:
+
+.. code-block:: xml
+
+  <walkabout>
+     <base_filename>chk</base_filename>
+     <num_digits>5</num_digits>
+     <cycle_macro>Every_100_steps</cycle_macro>
+  </walkabout>

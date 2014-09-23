@@ -58,7 +58,8 @@ set(state_inc_files
   secondary_variable_field_evaluator.hh
   secondary_variables_field_evaluator.hh
   independent_variable_field_evaluator.hh
-  independent_variable_field_evaluator_reg.hh
+  independent_variable_field_evaluator_fromfunction.hh
+  independent_variable_field_evaluator_fromfile.hh
   deforming_cell_volume_evaluator.hh
   deforming_cell_volume_evaluator_reg.hh
   checkpoint.hh
@@ -100,6 +101,8 @@ add_amanzi_library(state
                           secondary_variable_field_evaluator.cc
                           secondary_variables_field_evaluator.cc
                           independent_variable_field_evaluator.cc
+                          independent_variable_field_evaluator_fromfunction.cc
+                          independent_variable_field_evaluator_fromfile.cc
                           deforming_cell_volume_evaluator.cc
                           Debugger.cc
                    HEADERS ${state_inc_files}
@@ -115,7 +118,8 @@ add_install_include_file(${state_inc_files})
 register_evaluator_with_factory(HEADERFILE cell_volume_evaluator_reg.hh   LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE rank_evaluator_reg.hh          LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE primary_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_fromfunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_fromfile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE deforming_cell_volume_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 
 generate_evaluators_registration_header(HEADERFILE state_evaluators_registration.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS  INSTALL True)
@@ -139,21 +143,19 @@ if (BUILD_TESTS)
     
     #set(amanzi_libs geometry mesh state)
     
-    if ( ENABLE_STK_Mesh )
-      add_amanzi_test(state_restart state_restart
-                      KIND int
-                      SOURCE
+    add_amanzi_test(state_restart state_restart
+                    KIND int
+                    SOURCE
 	  	          test/Main.cc
 	 		  test/test_restart.cc
 	 		  test/test_vis.cc
-                      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 
-      add_amanzi_test(state_copy state_copy
-                      KIND int
-                      SOURCE
+    add_amanzi_test(state_copy state_copy
+                    KIND int
+                    SOURCE
 	  	          test/Main.cc
 	 		  test/test_copy.cc
-                      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
-    endif()
-
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 endif()
+

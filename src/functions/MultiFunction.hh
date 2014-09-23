@@ -29,7 +29,7 @@ public:
   ~MultiFunction();
 
   int size() const;
-  double* operator() (const double* xt) const;
+  double* operator()(const std::vector<double>& xt) const;
 
  private:
   std::vector<Teuchos::RCP<const Function> > functions_;

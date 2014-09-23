@@ -11,6 +11,7 @@
 
 #include "chemistry_pk_base.hh"
 #include "ChemistryEngine.hh"
+#include "VerboseObject.hh"
 
 // forward declarations
 class Epetra_MultiVector;
@@ -35,16 +36,13 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
 
   void InitializeChemistry(void);
 
-  void advance(const double& delta_time,
+  void Advance(const double& delta_time,
                Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star);
-  void commit_state(Teuchos::RCP<Chemistry_State> chem_state, const double& delta_time);
+  void CommitState(Teuchos::RCP<Chemistry_State> chem_state, const double& time);
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration(void) const;
 
-  void set_max_time_step(const double mts) {
-    this->max_time_step_ = mts;
-  }
-  double max_time_step(void) const {
-    return this->max_time_step_;
+  double time_step(void) const {
+    return this->time_step_;
   }
 
   int number_aqueous_components(void) const {
@@ -86,7 +84,15 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
  protected:
 
  private:
-  double max_time_step_;
+
+  // Timestepping controls.
+  double time_step_, max_time_step_, min_time_step_, prev_time_step_;
+  std::string time_step_control_method_;
+  int num_iterations_for_time_step_cut_, num_steps_before_time_step_increase_;
+  double time_step_cut_factor_, time_step_increase_factor_;
+  int num_iterations_, num_successful_steps_;
+  void ComputeNextTimeStep();
+
   // auxilary state for process kernel
   Teuchos::RCP<Chemistry_State> chemistry_state_;
 
@@ -115,6 +121,9 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   // Auxiliary output data, requested by and stored within Amanzi.
   std::vector<std::string> aux_names_;
   Teuchos::RCP<Epetra_MultiVector> aux_output_;
+
+  // For printing diagnostic information.
+  Teuchos::RCP<VerboseObject> vo_;
 
   void UpdateChemistryStateStorage(void);
   int InitializeSingleCell(int cellIndex, const std::string& condition);

@@ -542,11 +542,9 @@ Mesh_STK::node_get_coordinates (const Entity_ID nodeid,
   const double *c = mesh_->coordinates(gid);
   switch (space_dimension()) {
     case 2:
-      x->init(2);
       x->set(c[0], c[1]);
       break;
     case 3:
-      x->init(3);
       x->set(c[0], c[1], c[2]);
       break;
     default:
@@ -573,11 +571,9 @@ Mesh_STK::face_get_coordinates (const Entity_ID faceid,
     AmanziGeometry::Point p;
     switch (space_dimension()) {
       case (2):
-        p.init(2);
         p.set(c[0], c[1]);
         break;
       case (3):
-        p.init(3);
         p.set(c[0], c[1], c[2]);
         break;
       default:
@@ -607,11 +603,9 @@ Mesh_STK::cell_get_coordinates (const Entity_ID cellid,
     AmanziGeometry::Point p;
     switch (space_dimension()) {
       case (2):
-        p.init(2);
         p.set(c[0], c[1]);
         break;
       case (3):
-        p.init(3);
         p.set(c[0], c[1], c[2]);
         break;
       default:

@@ -679,7 +679,7 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
 	  if (strlen(temp) > 0) {
 	    // translate to array
 	    Teuchos::Array<double> low = make_coordinates(temp, def_list);
-            mesh_list.set<Teuchos::Array<double> >("Domain Low Corner",low);
+            mesh_list.set<Teuchos::Array<double> >("Domain Low Coordinate",low);
 	    if (low.length() != dimension_) {
 	      helper << "  -> low_coordinates ill-formed or missing\n";
 	      all_good = false;
@@ -693,7 +693,7 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
 	  if (strlen(temp) > 0) {
 	    // translate to array
 	    Teuchos::Array<double> high = make_coordinates(temp, def_list);
-            mesh_list.set<Teuchos::Array<double> >("Domain High Corner",high);
+            mesh_list.set<Teuchos::Array<double> >("Domain High Coordinate",high);
 	    if (high.length() != dimension_) {
 	      helper << "  -> high_coordinates ill-formed or missing\n";
 	      all_good = false;
@@ -2981,6 +2981,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
     bool dispersionON = false;
     bool diffusionON = false;
     bool tortuosityON = false;
+    bool kdON = false;
     Teuchos::ParameterList caplist;
     std::string capname;
     DOMNode* cur = childern->item(i) ;
@@ -3381,6 +3382,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                       // Look for molecular_diffusion element (optional)
                       if (strcmp("molecular_diffusion",propertyName)==0){
                         // loop over molecular_diffusion attributes
+                        Teuchos::ParameterList diffusion;
                         propAttrMap = propNode->getAttributes();
                         for (int m=0; m<propAttrMap->getLength(); m++) {
                           DOMNode* attrNode = propAttrMap->item(m) ;
@@ -3399,13 +3401,17 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                               //solutePL.set<double>("Molecular Diffusion: Uniform 1",get_double_constant(XMLString::transcode(attrNode->getNodeValue()),def_list));
                               //TODO: EIB - this is a hack for now!!!!
                               diffusionON = true;
-                              matlist.sublist("Molecular Diffusion: Uniform").set<double>("Value",get_double_constant(XMLString::transcode(attrNode->getNodeValue()),def_list));
+                              diffusion.set<double>("Value",get_double_constant(XMLString::transcode(attrNode->getNodeValue()),def_list));
+                              matlist.sublist("Molecular Diffusion: Uniform") = diffusion;
+                              //std::cout << "EIB>> adding moledular diffusion: " << std::endl;
+                              //matlist.print(std::cout, true, false);
                             }
                           }
                         }
                       }
                       // Look for kd_model element (optional)
                       else if (strcmp("kd_model",propertyName)==0){
+                        kdON = true;
                         // loop over kd_model attributes
                         propAttrMap = propNode->getAttributes();
                         for (int m=0; m<propAttrMap->getLength(); m++) {
@@ -3432,36 +3438,39 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
 	      }
 	    }
 	    matlist.sublist("Sorption Isotherms") = sorptionPL;
-	    // write BGD file
-            write_BDG_file(sorptionPL, def_list);
-	    // Chemistry list is also necessary - this is created under numerical controls section 
+            if (kdON) {
+	      // write BGD file
+              write_BGD_file(sorptionPL, def_list);
+	      // Chemistry list is also necessary - this is created under numerical controls section 
+            }
 	  }
  	  XMLString::release(&tagName);
-          // If dispersion or diffusion is on, need the other.  This is a hack to correct for user forgetting one.
-          if (dispersionON != diffusionON != tortuosityON)
-          {
-            // If dispersion is on: default Moleculare diffusion and Tortuosity
-            if (dispersionON) {
-              // TODO: EIB - add notification message here
-              if (!diffusionON) {
-                matlist.sublist("Molecular Diffusion: Uniform").set<double>("Value",1e-9);
-              }
-              if (!tortuosityON) {
-                matlist.sublist("Tortuosity: Uniform").set<double>("Value",0.0);
-              }
-            }
-            // else if dispersion is off, remove Molecular diffusion and Tortuosity
-            else {
-              // TODO: EIB - add notification message here
-              if (matlist.isSublist("Molecular Diffusion: Uniform")) {
-                matlist.remove("Molecular Diffusion: Uniform");
-              }
-              if (matlist.isSublist("Tortuosity: Uniform")) {
-                matlist.remove("Tortuosity: Uniform");
-              }
-            }
-          }
 	}
+      }
+      // If dispersion or diffusion is on, need the other.  This is a hack to correct for user forgetting one.
+      if ((dispersionON != diffusionON) && (dispersionON != tortuosityON))
+      {
+        // If dispersion is on: default Moleculare diffusion and Tortuosity
+        if (dispersionON) {
+          // TODO: EIB - add notification message here
+          if (!diffusionON) {
+            matlist.sublist("Molecular Diffusion: Uniform").set<double>("Value",1e-9);
+          }
+          if (!tortuosityON) {
+            matlist.sublist("Tortuosity: Uniform").set<double>("Value",0.0);
+          }
+        }
+        // else if dispersion is off, remove Molecular diffusion and Tortuosity
+        else {
+          matlist.print(std::cout, true, false);
+          // TODO: EIB - add notification message here
+          if (matlist.isSublist("Molecular Diffusion: Uniform")) {
+            matlist.remove("Molecular Diffusion: Uniform");
+          }
+          if (matlist.isSublist("Tortuosity: Uniform")) {
+            matlist.remove("Tortuosity: Uniform");
+          }
+        }
       }
       if(cappressON) matlist.sublist(capname) = caplist;
       list.sublist(textContent) = matlist;
@@ -5381,7 +5390,7 @@ Teuchos::ParameterList make_chemistry(Teuchos::ParameterList def_list)
  * Empty
  ******************************************************************
  */
-void write_BDG_file(Teuchos::ParameterList sorption_list, Teuchos::ParameterList def_list)
+void write_BGD_file(Teuchos::ParameterList sorption_list, Teuchos::ParameterList def_list)
 {
 
   std::ofstream bgd_file;

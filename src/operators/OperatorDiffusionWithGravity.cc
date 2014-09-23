@@ -69,7 +69,18 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-        double tmp = ((Kc * rho_g) * normal) * kf[n] * dirs[n];
+        double tmp;
+
+        if (gravity_special_projection_) {
+          const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
+          double sign = normal * xcc;
+
+          tmp = ((Kc * rho_g) * xcc) * kf[n] * dirs[n];
+          tmp *= copysign(norm(normal) / norm(xcc), sign);
+        } else {
+          tmp = ((Kc * rho_g) * normal) * kf[n] * dirs[n];
+        }
+
         rhs_face[0][f] += tmp; 
         rhs_cell[0][c] -= tmp; 
       }
@@ -81,7 +92,7 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
 
 
 /* ******************************************************************
-* WARNING: Since gavity flux is not continuous, we derive it only once
+* WARNING: Since gravity flux is not continuous, we derive it only once
 * (using flag) and in exactly the same manner as in other routines.
 * **************************************************************** */
 void OperatorDiffusionWithGravity::UpdateFlux(
@@ -130,10 +141,36 @@ void OperatorDiffusionWithGravity::UpdateFlux(
       int f = faces[n];
       if (f < nfaces_owned && !flag[f]) {
         const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-        flux_data[0][f] += (Kg * normal) * kf[n];
+
+        if (gravity_special_projection_) {
+          const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
+          double sign = normal * xcc;
+          double tmp = copysign(norm(normal) / norm(xcc), sign);
+          flux_data[0][f] += (Kg * xcc) * kf[n] * tmp;
+        } else {
+          flux_data[0][f] += (Kg * normal) * kf[n];
+        }
         flag[f] = 1;
       }
     }
+  }
+}
+
+
+/* ******************************************************************
+* Compute non-normalized direction to the next cell needed to 
+* project gravity vector in the MFD-TPFA discretization method.
+* **************************************************************** */
+inline AmanziGeometry::Point OperatorDiffusionWithGravity::GravitySpecialDirection_(int f) const
+{
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  int ncells = cells.size();
+
+  if (ncells == 2) {
+    return mesh_->cell_centroid(cells[1]) - mesh_->cell_centroid(cells[0]);
+  } else {
+    return mesh_->face_centroid(f) - mesh_->cell_centroid(cells[0]);
   }
 }
 

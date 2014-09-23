@@ -196,7 +196,7 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   }
 
   // ------ Set face values by interpolation -----
-  if (data_->HasComponent("face") && data_->HasComponent("cell") &&
+  if ((data_->HasComponent("face") || data_->HasComponent("boundary_face"))  && data_->HasComponent("cell") &&
       plist.get<bool>("initialize faces from cells", false) && initialized()) {
     DeriveFaceValuesFromCellValues_();
   }
@@ -357,7 +357,8 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
   // evaluate
   Epetra_MultiVector& vec = *data_->ViewComponent("cell",false);
   if (orientation == "depth") {
-    double z0, z;
+    double z0;
+    std::vector<double> z(1);
 
     AmanziMesh::Entity_ID_List surf_faces;
     for (Teuchos::Array<std::string>::const_iterator setname=sidesets.begin();
@@ -379,15 +380,16 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
 
         while (c >= 0) {
           AmanziGeometry::Point x1 = data_->Mesh()->cell_centroid(c);
-          z = z0 - x1[x1.dim()-1];
-          vec[0][c] = (*func)(&z);
+          z[0] = z0 - x1[x1.dim()-1];
+          vec[0][c] = (*func)(z);
           c = data_->Mesh()->cell_get_cell_below(c);
         }
       }
     }
 
   } else {
-    double z0, z;
+    double z0;
+    std::vector<double> z(1);
 
     AmanziMesh::Entity_ID_List surf_faces;
     for (Teuchos::Array<std::string>::const_iterator setname=sidesets.begin();
@@ -409,8 +411,8 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
 
         while (c >= 0) {
           AmanziGeometry::Point x1 = data_->Mesh()->cell_centroid(c);
-          z = x1[x1.dim()-1] - z0;
-          vec[0][c] = (*func)(&z);
+          z[0] = x1[x1.dim()-1] - z0;
+          vec[0][c] = (*func)(z);
           c = data_->Mesh()->cell_get_cell_above(c);
         }
       }
@@ -423,22 +425,49 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
 // Interpolate pressure ICs on cells to ICs for lambda (faces).
 // -----------------------------------------------------------------------------
 void Field_CompositeVector::DeriveFaceValuesFromCellValues_() {
-  data_->ScatterMasterToGhosted("cell");
-  Teuchos::Ptr<const CompositeVector> cv_const(data_.ptr());
-  const Epetra_MultiVector& cv_c = *cv_const->ViewComponent("cell",true);
-  Epetra_MultiVector& cv_f = *data_->ViewComponent("face",false);
 
-  int f_owned = cv_f.MyLength();
-  for (int f=0; f!=f_owned; ++f) {
-    AmanziMesh::Entity_ID_List cells;
-    cv_const->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
+  if (data_->HasComponent("face")){
+    data_->ScatterMasterToGhosted("cell");
+    Teuchos::Ptr<const CompositeVector> cv_const(data_.ptr());
+    const Epetra_MultiVector& cv_c = *cv_const->ViewComponent("cell",true);
+    Epetra_MultiVector& cv_f = *data_->ViewComponent("face",false);
 
-    double face_value = 0.0;
-    for (int n=0; n!=ncells; ++n) {
-      face_value += cv_c[0][cells[n]];
+    int f_owned = cv_f.MyLength();
+    for (int f=0; f!=f_owned; ++f) {
+      AmanziMesh::Entity_ID_List cells;
+      cv_const->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+      int ncells = cells.size();
+
+      double face_value = 0.0;
+      for (int n=0; n!=ncells; ++n) {
+        face_value += cv_c[0][cells[n]];
+      }
+      cv_f[0][f] = face_value / ncells;
     }
-    cv_f[0][f] = face_value / ncells;
+  }
+  else if (data_->HasComponent("boundary_face")){
+    Teuchos::Ptr<const CompositeVector> cv_const(data_.ptr());
+    const Epetra_MultiVector& cv_c = *cv_const->ViewComponent("cell",true);
+    Epetra_MultiVector& cv_f = *data_->ViewComponent("boundary_face",false);
+
+    const Epetra_Map& fb_map = cv_const->Mesh()->exterior_face_map();
+    const Epetra_Map& f_map = cv_const->Mesh()->face_map(false);
+
+    int fb_owned = cv_f.MyLength();
+    for (int fb=0; fb!=fb_owned; ++fb) {
+      AmanziMesh::Entity_ID_List cells;
+
+      int f_gid = fb_map.GID(fb);
+      int f_lid = f_map.LID(f_gid);
+      
+      cv_const->Mesh()->face_get_cells(f_lid, AmanziMesh::USED, &cells);
+      int ncells = cells.size();
+
+      ASSERT((ncells==1));
+
+      double face_value = cv_c[0][cells[0]];
+      cv_f[0][fb] = face_value;
+    }
   }
 };
 

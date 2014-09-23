@@ -201,6 +201,7 @@ void SecondaryVariableFieldEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<
     Teuchos::RCP<CompositeVectorSpace> new_fac =
       S->RequireField(dmy_key, my_key_);
     new_fac->Update(*my_fac);
+    new_fac->SetGhosted(my_fac->Ghosted());
     dmy = Teuchos::rcp(new CompositeVector(*new_fac));
     S->SetData(dmy_key, my_key_, dmy);
     S->GetField(dmy_key,my_key_)->set_initialized();

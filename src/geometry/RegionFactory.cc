@@ -41,7 +41,8 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
                                       const unsigned int reg_id, 
                                       const Teuchos::ParameterList& reg_params,
                                       const int space_dim,
-                                      const Epetra_MpiComm *comm)
+                                      const Epetra_MpiComm *comm,
+                                      const VerboseObject *verbobj)
 {
   std::stringstream sstream;
 
@@ -62,7 +63,13 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
     std::string lifecycle_str = reg_params.get<std::string>("Lifecycle");
 
     if (lifecycle_str != "Permanent" || lifecycle_str != "Temporary") {
-      std::cerr << "Lifecycle can only be Temporary or Permanent. Reset to Permanent" << std::endl;
+      if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = verbobj->getOSTab();
+        *(verbobj->os()) << 
+          "Lifecycle can only be Temporary or Permanent. Reset to Permanent" 
+                       << std::endl;
+      }
+
       lifecycle = PERMANENT;
     }
 
@@ -77,62 +84,63 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         
       Teuchos::Array<double> p1_vec = box_params.get< Teuchos::Array<double> >("High Coordinate");
 
+      int dim = p0_vec.size();
       Point p0, p1;
+      
+      p0.set(dim,&(p0_vec[0]));
+      p1.set(dim,&(p1_vec[0]));
 
-      if (p0_vec.size() == 3) 
+      if (dim == 3) 
         {
           if (space_dim != 3) {
-            sstream << "Box " << reg_name << 
-              " specified using 3D coordinates but problem is " << 
-              space_dim << " dimensional. Check input!" << std::endl;
-            Errors::Message mesg(sstream.str());
-            amanzi_throw(mesg);
+            if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+              Teuchos::OSTab tab = verbobj->getOSTab();
+              *(verbobj->os()) << "Box" << reg_name <<
+                " specified using 3D coordinates but problem is " << 
+                space_dim << " dimensional. Check input!" << std::endl;
+            }
           }
-
-          p0.init(3);
-          p0.set(p0_vec[0], p0_vec[1], p0_vec[2]);
-          p1.init(3);
-          p1.set(p1_vec[0], p1_vec[1], p1_vec[2]);
-        }
-      else if (p0_vec.size() == 2)
+      else if (dim == 2)
         {
-          if (space_dim != 2) {
-            sstream << "Box " << reg_name << 
-              " specified using 2D coordinates but problem is " << 
-              space_dim << " dimensional. Check input!" << std::endl;
-            Errors::Message mesg(sstream.str());
-            amanzi_throw(mesg);
+          // if (space_dim != 2) {
+            if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+              Teuchos::OSTab tab = verbobj->getOSTab();
+              *(verbobj->os()) << "Box" << reg_name <<
+                " specified using 2D coordinates but problem is " << 
+                space_dim << " dimensional. Check input!" << std::endl;
+            }
           }
-
-          p0.init(2);
-          p0.set(p0_vec[0], p0_vec[1]);
-          p1.init(2);
-          p1.set(p1_vec[0], p1_vec[1]);          
         }
 
       try {
-        RegionPtr regptr = new BoxRegion(reg_name, reg_id, p0, p1, lifecycle);        
+        RegionPtr regptr = new BoxRegion(reg_name, reg_id, p0, p1, lifecycle,
+                                         verbobj);
 
         // Verify that we have a usable box
 
         if (comm->MyPID() == 0) {
           int ndeg=0;
           if (((BoxRegionPtr) regptr)->is_degenerate(&ndeg) && ndeg > 1) {
-            std::cerr << "\n" << "Box region \"" << reg_name << 
-              "\" is degenerate in 2 or more directions" << std::endl;
-            std::cerr << 
-            "This means it is a line or point in 3D, or it is a point in 2D" <<
-              std::endl;
-            std::cerr << 
-            "Can only ask for nodes (not cells or faces) on this region" << 
-              std::endl << std::endl;
+            if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+              Teuchos::OSTab tab = verbobj->getOSTab();
+              *(verbobj->os())() << "Box region \"" << reg_name << 
+                "\" is degenerate in 2 or more directions" << std::endl;
+              *(verbobj->os()) << "This means it is a line or point in 3D, " <<
+                "or it is a point in 2D" << std::endl;
+              *(verbobj->os()) << "Can only ask for nodes (not cells or faces) " <<
+                "on this region" << std::endl << std::endl;
+            }
           }
         }
 
         return regptr;
       }
       catch (Errors::Message mesg) {
-        mesg << "\n" << "Cannot create region of type Box";
+        if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tab = verbobj->getOSTab();
+          *(verbobj->os()) << "Cannot create region of type Box" << std::endl;
+        }
+        mesg << "Cannot create region of type Box";
         Exceptions::amanzi_throw(mesg);
       }
     }
@@ -144,45 +152,46 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         
       Teuchos::Array<double> n_vec = plane_params.get< Teuchos::Array<double> >("Direction");
 
+      int dim = p_vec.size();
       Point p, n;
 
-      if (p_vec.size() == 3) 
+      p.set(dim,&(p_vec[0]));
+      n.set(dim,&(n_vec[0]));
+
+      if (dim == 3) 
         {
           if (space_dim != 3) {
-            sstream << "Plane " << reg_name << 
-              " specified using 3D coordinates but problem is " << 
-              space_dim << " dimensional. Check input!" << std::endl;
-            Errors::Message mesg(sstream.str());
-            amanzi_throw(mesg);
+            if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+              Teuchos::OSTab tab = verbobj->getOSTab();
+              *(verbobj->os()) << "Plane " << reg_name << 
+                " specified using 3D coordinates but problem is " << 
+                space_dim << " dimensional. Check input!" << std::endl;
+            }
           }
-
-          p.init(3);
-          p.set(p_vec[0], p_vec[1], p_vec[2]);
-          n.init(3);
-          n.set(n_vec[0], n_vec[1], n_vec[2]);
         }
-      else if (p_vec.size() == 2)
+      else if (dim == 2)
         {
           if (space_dim != 2) {
-            sstream << "Plane " << reg_name << 
-              " specified using 2D coordinates but problem is " << 
-              space_dim << " dimensional. Check input!" << std::endl;
-            Errors::Message mesg(sstream.str());
-            amanzi_throw(mesg);
+            if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+              Teuchos::OSTab tab = verbobj->getOSTab();
+              *(verbobj->os()) << "Plane " << reg_name << 
+                " specified using 2D coordinates but problem is " << 
+                space_dim << " dimensional. Check input!" << std::endl;
+            }
           }
-
-          p.init(2);
-          p.set(p_vec[0], p_vec[1]);
-          n.init(2);
-          n.set(n_vec[0], n_vec[1]);          
         }
 
       try {
-        RegionPtr regptr = new PlaneRegion(reg_name, reg_id, p, n, lifecycle);
+        RegionPtr regptr = new PlaneRegion(reg_name, reg_id, p, n, lifecycle,
+                                           verbobj);
         return regptr;
       }
       catch (Errors::Message mesg) {
-        mesg << "\n" << "Cannot create region of type Plane";
+        if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tab = verbobj->getOSTab();
+          *(verbobj->os()) << "Cannot create region of type Plane" << std::endl;
+        }
+        mesg << "Cannot create region of type Plane";
         Exceptions::amanzi_throw(mesg);
       }
     }
@@ -195,24 +204,31 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
       Teuchos::Array<double> pvec = poly_params.get< Teuchos::Array<double> >("Points");
 
       if (pvec.size()%num_points != 0) {
+        if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tab = verbobj->getOSTab();
+          *(verbobj->os()) << "Incorrect number of values specified for " <<
+            "polygon point specification" << std::endl;
+        }
         Errors::Message mesg("Incorrect number of values specified for polygon point specification");
         amanzi_throw(mesg);
       }
       int dim = pvec.size()/num_points;
 
       if (dim == 3 && space_dim != 3) {
-        sstream << "Polygon " << reg_name << 
-          " specified using 3D coordinates but problem is " << 
-          space_dim << " dimensional. Check input!" << std::endl;
-        Errors::Message mesg(sstream.str());
-        amanzi_throw(mesg);
+        if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tab = verbobj->getOSTab();
+          *(verbobj->os()) << "Polygon " << reg_name << 
+            " specified using 3D coordinates but problem is " << 
+            space_dim << " dimensional. Check input!" << std::endl;
+        }
       }
       else if (dim == 2 && space_dim != 2) {
-        sstream << "Polygon " << reg_name << 
-          " specified using 3D coordinates but problem is " << 
-          space_dim << " dimensional. Check input!" << std::endl;
-        Errors::Message mesg(sstream.str());
-        amanzi_throw(mesg);
+        if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tab = verbobj->getOSTab();
+          *(verbobj->os()) << "Polygon " << reg_name << 
+            " specified using 2D coordinates but problem is " << 
+            space_dim << " dimensional. Check input!" << std::endl;
+        }
       }
 
 
@@ -228,10 +244,15 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
       }
 
       try {
-        RegionPtr regptr = new PolygonRegion(reg_name, reg_id, num_points, points, lifecycle);
+        RegionPtr regptr = new PolygonRegion(reg_name, reg_id, num_points, 
+                                             points, lifecycle, verbobj);
         return regptr;
       }
       catch (Errors::Message mesg) {
+        if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tab = verbobj->getOSTab();
+          *(verbobj->os()) << "Cannot create region of type Polygon" << std::endl;
+        }
         mesg << "\n" << "Cannot create region of type Polygon";
         Exceptions::amanzi_throw(mesg);
       }
@@ -257,6 +278,10 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         return regptr;
       }
       catch (Errors::Message mesg) {
+        if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tab = verbobj->getOSTab();
+          *(verbobj->os()) << "Cannot create region of type LabeledSet" << std::endl;
+        }
         mesg << "\n" << "Cannot create region of type LabeledSet";
         Exceptions::amanzi_throw(mesg);
       }
@@ -270,11 +295,17 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
       int value = colorfunc_params.get<int>("Value");
 
       try {
-        RegionPtr regptr = new ColorFunctionRegion(reg_name, reg_id, file, value, comm, lifecycle);
+        RegionPtr regptr = new ColorFunctionRegion(reg_name, reg_id, file, 
+                                                   value, comm, lifecycle,
+                                                   verbobj);
         return regptr;
       }
       catch (Errors::Message mesg) {
-        mesg << "\n" << "Cannot create region of type Color Function";
+        if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tab = verbobj->getOSTab();
+          *(verbobj->os()) << "Cannot create region of type Color Function" << std::endl;
+        }
+        mesg << "Cannot create region of type Color Function";
         Exceptions::amanzi_throw(mesg);
       }
 
@@ -285,41 +316,43 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
 
       Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("Coordinate");
         
-      Point pnt, n;
+      int dim = p_vec.size();
+      Point pnt;
 
-      if (p_vec.size() == 3) 
-        {
-          if (space_dim != 3) {
-            sstream << "Point " << reg_name << 
+      pnt.set(dim,&(p_vec[0]));
+
+      if (dim == 3) {
+        if (space_dim != 3) {
+          if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+            Teuchos::OSTab tab = verbobj->getOSTab();
+            *(verbobj->os()) << "Point " << reg_name << 
               " specified using 3D coordinates but problem is " << 
               space_dim << " dimensional. Check input!" << std::endl;
-            Errors::Message mesg(sstream.str());
-            amanzi_throw(mesg);
           }
-
-          pnt.init(3);
-          pnt.set(p_vec[0], p_vec[1], p_vec[2]);
         }
-      else if (p_vec.size() == 2)
-        {
-          if (space_dim != 2) {
-            sstream << "Plane " << reg_name << 
-              " specified using 3D coordinates but problem is " << 
+      }
+      else if (dim == 2) {
+        if (space_dim != 2) {
+          if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+            Teuchos::OSTab tab = verbobj->getOSTab();
+            *(verbobj->os()) << "Point " << reg_name << 
+              " specified using 2D coordinates but problem is " << 
               space_dim << " dimensional. Check input!" << std::endl;
-            Errors::Message mesg(sstream.str());
-            amanzi_throw(mesg);
           }
-
-          pnt.init(2);
-          pnt.set(p_vec[0], p_vec[1]);
         }
+      }
 
       try {
-        RegionPtr regptr = new PointRegion(reg_name, reg_id, pnt, lifecycle);
+        RegionPtr regptr = new PointRegion(reg_name, reg_id, pnt, lifecycle,
+                                           verbobj);
         return regptr;
       }
       catch (Errors::Message mesg) {
-        mesg << "\n" << "Cannot create region of type Point";
+        if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tab = verbobj->getOSTab();
+          *(verbobj->os()) << "Cannot create region of type Point" << std::endl;
+        }
+        mesg << "Cannot create region of type Point";
         Exceptions::amanzi_throw(mesg);
       }
     }
@@ -339,16 +372,24 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         region_names1.push_back(region_names[i]);      
 
       try {
-        RegionPtr regptr = new LogicalRegion(reg_name, reg_id, opstr, region_names1, lifecycle);
+        RegionPtr regptr = new LogicalRegion(reg_name, reg_id, opstr, region_names1, lifecycle, verbobj);
         return regptr;
       }
       catch (Errors::Message mesg) {
+        if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tab = verbobj->getOSTab();
+          *(verbobj->os()) << "Cannot create region of type Logical" << std::endl;
+        }
         mesg << "\n" << "Cannot create region of type Logical";
         Exceptions::amanzi_throw(mesg);
       }
     }
   else 
     {
+      if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = verbobj->getOSTab();
+        *(verbobj->os()) << "ERROR: Cannot process region with given shape " << std::endl;
+      }
       Errors::Message mesg("ERROR: Cannot process region with given shape ");
       Exceptions::amanzi_throw(mesg);
     }

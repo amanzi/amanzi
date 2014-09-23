@@ -38,8 +38,7 @@ namespace Flow {
 Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_PK()
 {
   S_ = S;
-
-  mesh_ = S_->GetMesh();
+  mesh_ = S->GetMesh();
   dim = mesh_->space_dimension();
 
   // We need the flow list
@@ -85,70 +84,70 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_
   std::vector<int> ndofs(2, 1);
 
   // require state variables for the Darcy PK
-  if (!S_->HasField("fluid_density")) {
-    S_->RequireScalar("fluid_density", passwd_);
+  if (!S->HasField("fluid_density")) {
+    S->RequireScalar("fluid_density", passwd_);
   }
-  if (!S_->HasField("fluid_viscosity")) {
-    S_->RequireScalar("fluid_viscosity", passwd_);
+  if (!S->HasField("fluid_viscosity")) {
+    S->RequireScalar("fluid_viscosity", passwd_);
   }
-  if (!S_->HasField("gravity")) {
-    S_->RequireConstantVector("gravity", passwd_, dim);
+  if (!S->HasField("gravity")) {
+    S->RequireConstantVector("gravity", passwd_, dim);
   }
 
-  if (!S_->HasField("pressure")) {
-    S_->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("pressure")) {
+    S->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
   }
 
-  if (!S_->HasField("permeability")) {
-    S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("permeability")) {
+    S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
   }
 
-  if (!S_->HasField("porosity")) {
-    S_->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("porosity")) {
+    S->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S_->HasField("specific_storage")) {
-    S_->RequireField("specific_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("specific_storage")) {
+    S->RequireField("specific_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
-  if (!S_->HasField("specific_yield")) {
-    S_->RequireField("specific_yield", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("specific_yield")) {
+    S->RequireField("specific_yield", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
-  if (!S_->HasField("water_saturation")) {
-    S_->RequireField("water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("water_saturation")) {
+    S->RequireField("water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
-  if (!S_->HasField("prev_water_saturation")) {
-    S_->RequireField("prev_water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("prev_water_saturation")) {
+    S->RequireField("prev_water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
-  if (!S_->HasField("darcy_flux")) {
-    S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("darcy_flux")) {
+    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", "darcy_flux");
     darcy_flux_eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S_->SetFieldEvaluator("darcy_flux", darcy_flux_eval);
+    S->SetFieldEvaluator("darcy_flux", darcy_flux_eval);
   }
 
   // secondary fields and evaluators
-  if (!S_->HasField("darcy_velocity")) {
-    S_->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("darcy_velocity")) {
+    S->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
 
     Teuchos::ParameterList elist;
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
-    S_->SetFieldEvaluator("darcy_velocity", eval);
+    S->SetFieldEvaluator("darcy_velocity", eval);
   }
 
 
-  if (!S_->HasField("hydraulic_head")) {
-    S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("hydraulic_head")) {
+    S->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 }
@@ -212,7 +211,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   ProcessParameterList(dp_list_);
 
   // Create solution and auxiliary data for time history.
-  solution = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("pressure"))));
+  solution = Teuchos::rcp(new CompositeVector(*(S->GetFieldData("pressure"))));
   solution->PutScalar(0.0);
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
@@ -220,7 +219,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
   
   // Initialize times.
-  double time = S_->time();
+  double time = S->time();
   if (time >= 0.0) T_physics = time;
 
   // Initialize boundary condtions. 
@@ -236,7 +235,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
     bc_head->ComputeShift(time, shift_water_table_->Values());
   }
 
-  const CompositeVector& pressure = *S_->GetFieldData("pressure");
+  const CompositeVector& pressure = *S->GetFieldData("pressure");
   ComputeBCs(pressure);
 
   // Allocate memory for other fundamental structures
@@ -517,13 +516,13 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
 * Transfer data from the external flow state FS_MPC. MPC may request
 * to populate the original state FS. 
 ****************************************************************** */
-void Darcy_PK::CommitState(double dt, const Teuchos::RCP<State>& S)
+void Darcy_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
 {
-  CompositeVector& p = *S_->GetFieldData("pressure", passwd_);
+  CompositeVector& p = *S->GetFieldData("pressure", passwd_);
   p = *solution;
 
   // calculate darcy mass flux
-  CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+  CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux", passwd_);
   op_->UpdateFlux(*solution, darcy_flux);
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);

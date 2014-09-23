@@ -110,7 +110,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     while(T < 1.2) {
       dT = TPK.CalculateTransportDt();
       TPK.Advance(dT, dummy_dT);
-      TPK.CommitState(dT, S);
+      TPK.CommitState(dT, S.ptr());
       T += dT;
  
       if (T < 0.4) {

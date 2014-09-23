@@ -60,8 +60,9 @@ void Flow_PK::Init()
   // Fundamental physical quantities
   double* gravity_data;
   S_->GetConstantVectorData("gravity")->ExtractView(&gravity_data);
-  gravity_.init(dim);
-  for (int k = 0; k < dim; k++) gravity_[k] = gravity_data[k];
+  gravity_.set(dim,&(gravity_data[0])); // do it in complicated way because we
+                                        // are not sure if gravity_data is an
+                                        // array or vector
   g_ = fabs(gravity_[dim - 1]);
 
   // Other constant (temporarily) physical quantaties
@@ -340,8 +341,9 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
 #endif
     if (MyPID == 0 && nseepage > 0 && nseepage != nseepage_prev) {
+    //if (MyPID == 0 && nseepage > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "seepage face has changed: " << area_seepage << " [m^2]" << std::endl;
+      *vo_->os() << "seepage face has changed: " << area_seepage << " [m^2] "<<nseepage<<" "<<nseepage_prev<< std::endl;
     }
   }
   nseepage_prev = nseepage;

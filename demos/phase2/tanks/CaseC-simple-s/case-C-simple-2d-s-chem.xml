@@ -20,8 +20,8 @@
 
   <ParameterList name="Mesh">
     <ParameterList name="Structured">
-      <Parameter name="Domain Low Corner" type="Array double" value="{0,0}"/>
-      <Parameter name="Domain High Corner" type="Array double" value="{40,24}"/>
+      <Parameter name="Domain Low Coordinate" type="Array double" value="{0,0}"/>
+      <Parameter name="Domain High Coordinate" type="Array double" value="{40,24}"/>
       <Parameter name="Number of Cells" type="Array int" value="{32,64}"/>
     </ParameterList>
   </ParameterList>
@@ -176,11 +176,6 @@
   </ParameterList>
 
   <ParameterList name="Material Properties">
-
-    <Parameter name="Permeability Output File" type="string" value="case-C-simple-2d-s/kp"/>
-    <Parameter name="Porosity Output File" type="string" value="case-C-simple-2d-s/pp"/>
-    <Parameter name="Saturation Threshold For Kr" type="double" value="-0.99"/>
-
     <ParameterList name="Soil">
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.38"/>

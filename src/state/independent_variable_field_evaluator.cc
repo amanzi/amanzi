@@ -41,14 +41,6 @@ IndependentVariableFieldEvaluator::IndependentVariableFieldEvaluator(const Indep
 
 
 // ---------------------------------------------------------------------------
-// Virtual Copy constructor
-// ---------------------------------------------------------------------------
-Teuchos::RCP<FieldEvaluator> IndependentVariableFieldEvaluator::Clone() const {
-  return Teuchos::rcp(new IndependentVariableFieldEvaluator(*this));
-}
-
-
-// ---------------------------------------------------------------------------
 // Operator=
 // ---------------------------------------------------------------------------
 void IndependentVariableFieldEvaluator::operator=(const FieldEvaluator& other) {
@@ -94,11 +86,6 @@ bool IndependentVariableFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State
       *vo_->os() << "INDEPENDENT Variable requested by " << request
             << " has changed." << std::endl;
     }
-
-    // Create the function.
-    Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(my_key_);
-    ASSERT(plist_.isSublist("function"));
-    func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cv->Map());
 
     // field DOES have to be computed at least once, even if it never changes.
     UpdateField_(S);

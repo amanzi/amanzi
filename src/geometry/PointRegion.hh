@@ -26,9 +26,11 @@ class PointRegion : public Region {
 public:
 
   PointRegion(const std::string name, const unsigned int id, const Point& p,
-              const LifeCycleType lifecycle=PERMANENT);
+              const LifeCycleType lifecycle=PERMANENT,
+              const VerboseObject *verbobj=NULL);
   PointRegion(const char *name, const unsigned int id, const Point& p,
-              const LifeCycleType lifecycle=PERMANENT);
+              const LifeCycleType lifecycle=PERMANENT,
+              const VerboseObject *verbobj=NULL);
 
   /// Protected copy constructor to avoid unwanted copies.
   PointRegion(const PointRegion& old);

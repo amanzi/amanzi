@@ -42,6 +42,20 @@ include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 #
+# Flow registrations
+#
+register_evaluator_with_factory( HEADERFILE Darcy_PK_Wrapper_reg.hh
+  LISTNAME   PKS_FLOW_REGISTRATIONS )
+register_evaluator_with_factory( HEADERFILE Richards_PK_Wrapper_reg.hh
+  LISTNAME   PKS_FLOW_REGISTRATIONS )
+
+generate_evaluators_registration_header( 
+  HEADERFILE pks_flow_registration.hh   
+  LISTNAME   PKS_FLOW_REGISTRATIONS
+  INSTALL    True )
+
+
+#
 # Library: flow
 #
 set(flow_src_files Flow_PK.cc Flow_IO.cc
@@ -54,6 +68,7 @@ set(flow_src_files Flow_PK.cc Flow_IO.cc
                    RelativePermeability.cc RelativePermeability_IO.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    darcy_velocity_evaluator.cc
+                   Darcy_PK_Wrapper.cc Richards_PK_Wrapper.cc
                    )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
@@ -105,71 +120,67 @@ if (BUILD_TESTS)
     # Add the flow directory to the include paths
     include_directories(${FLOW_SOURCE_DIR})
 
-    if ( ENABLE_MSTK_Mesh )
-       set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow operators whetstone data_structures)
+    set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow operators whetstone data_structures)
 
-        # Test: transient Darcy flow 
-        add_amanzi_test(flow_darcy_transient flow_darcy_transient
-	                KIND int
-                        SOURCE test/Main.cc test/flow_darcy_transient.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(flow_darcy_transient_parallel flow_darcy_transient NPROCS 2 KIND unit)
+    # Test: transient Darcy flow 
+    add_amanzi_test(flow_darcy_transient flow_darcy_transient
+                    KIND int
+                    SOURCE test/Main.cc test/flow_darcy_transient.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(flow_darcy_transient_parallel flow_darcy_transient NPROCS 2 KIND unit)
  
-        # Test: transient Darcy flow 
-        add_amanzi_test(flow_darcy_dual2D flow_darcy_dual2D
-	                KIND int
-                        SOURCE test/Main.cc test/flow_darcy_dual2D.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    # Test: transient Darcy flow 
+    add_amanzi_test(flow_darcy_dual2D flow_darcy_dual2D
+                    KIND int
+                    SOURCE test/Main.cc test/flow_darcy_dual2D.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
-        # Test: transient Darcy flow with a source
-        add_amanzi_test(flow_darcy_well flow_darcy_well
-	                KIND int
-                        SOURCE test/Main.cc test/flow_darcy_well.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    # Test: transient Darcy flow with a source
+    add_amanzi_test(flow_darcy_well flow_darcy_well
+                    KIND int
+                    SOURCE test/Main.cc test/flow_darcy_well.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        # Test: convergence analysis
-        add_amanzi_test(flow_richards_convergence flow_richards_convergence
-	                KIND int
-                        SOURCE test/Main.cc test/flow_richards_convergence.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    # Test: convergence analysis
+    add_amanzi_test(flow_richards_convergence flow_richards_convergence
+                    KIND int
+                    SOURCE test/Main.cc test/flow_richards_convergence.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        # Test: convergence analysis on random meshes
-        add_amanzi_test(flow_richards_random flow_richards_random
-	                KIND int
-                        SOURCE test/Main.cc test/flow_richards_random.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    # Test: convergence analysis on random meshes
+    add_amanzi_test(flow_richards_random flow_richards_random
+                    KIND int
+                    SOURCE test/Main.cc test/flow_richards_random.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        # Test: 2D Richards
-        add_amanzi_test(flow_richards_2D flow_richards_2D
-	                KIND unit
-                        SOURCE test/Main.cc test/flow_richards_2D.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    # Test: 2D Richards
+    add_amanzi_test(flow_richards_2D flow_richards_2D
+                    KIND unit
+                    SOURCE test/Main.cc test/flow_richards_2D.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        add_amanzi_test(flow_richards_seepage flow_richards_seepage
-	                KIND unit
-                        SOURCE test/Main.cc test/flow_richards_seepage.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(flow_richards_seepage flow_richards_seepage
+                    KIND unit
+                    SOURCE test/Main.cc test/flow_richards_seepage.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        # Test: 2D Richards TPFA discretization test seepage BC
-        add_amanzi_test(flow_richards_seepage_tpfa flow_richards_seepage_tpfa
-	                KIND unit
-                        SOURCE test/Main.cc test/flow_richards_seepage_tpfa.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    # Test: 2D Richards TPFA discretization test seepage BC
+    add_amanzi_test(flow_richards_seepage_tpfa flow_richards_seepage_tpfa
+                    KIND unit
+                    SOURCE test/Main.cc test/flow_richards_seepage_tpfa.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        # Test: pseudo-1D Richards
-        add_amanzi_test(flow_richards_bc_cribs flow_richards_bc_cribs
-	                KIND unit
-                        SOURCE test/Main.cc test/flow_richards_bc_cribs.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    # Test: pseudo-1D Richards
+    add_amanzi_test(flow_richards_bc_cribs flow_richards_bc_cribs
+                    KIND unit
+                    SOURCE test/Main.cc test/flow_richards_bc_cribs.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        # Test: Newton
-        add_amanzi_test(flow_richards_newton_TPFA flow_richards_newton_TPFA
-                        KIND unit
-                        SOURCE test/Main.cc test/flow_richards_newton_TPFA.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-    endif()    
- 
-    set(amanzi_libs geometry mesh mesh_factory state flow operators whetstone data_structures)
+    # Test: Newton
+    add_amanzi_test(flow_richards_newton_TPFA flow_richards_newton_TPFA
+                    KIND unit
+                    SOURCE test/Main.cc test/flow_richards_newton_TPFA.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
     # Test: miscaleneous Darcy flow routines
     add_amanzi_test(flow_darcy_misc flow_darcy_misc 
@@ -200,12 +211,10 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/flow_richards_tensor.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    if ( ENABLE_STK_Mesh )
-        add_amanzi_test(flow_richards_3D flow_richards_3D
-	                KIND unit
-                        SOURCE test/Main.cc test/flow_richards_3D.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-    endif()
+    add_amanzi_test(flow_richards_3D flow_richards_3D
+                    KIND unit
+                    SOURCE test/Main.cc test/flow_richards_3D.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
 option(ENABLE_FLOW_EXAMPLES "Build flow examples" OFF)

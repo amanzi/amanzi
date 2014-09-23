@@ -111,8 +111,8 @@ namespace Amanzi {
 
       reqL.clear(); reqP.clear();
       std::string NCells_str = "Number of Cells"; reqP.push_back(NCells_str);
-      std::string ProbLo_str = "Domain Low Corner"; reqP.push_back(ProbLo_str);
-      std::string ProbHi_str = "Domain High Corner"; reqP.push_back(ProbHi_str);
+      std::string ProbLo_str = "Domain Low Coordinate"; reqP.push_back(ProbLo_str);
+      std::string ProbHi_str = "Domain High Coordinate"; reqP.push_back(ProbHi_str);
       PLoptions MSOopt(st_list,reqL,reqP,true,true); 
 
       Array<int> n_cell = st_list.get<Array<int> >(NCells_str);
@@ -247,14 +247,6 @@ namespace Amanzi {
         prob_out_list.set("have_capillary",0);
         prob_out_list.set("cfl",-1);
       }
-      else if (flow_mode == "Single-phase") {
-        model_name = "single-phase";
-        prob_out_list.set("do_simple",1);
-      }
-      else if (flow_mode == "Multi-phase") {
-        model_name = "two-phase";
-        prob_out_list.set("cfl",0.75);
-      }
       else {
         MyAbort("\"" + flow_str + "\" = \"" + flow_mode + "\" not supported");
       }
@@ -264,7 +256,15 @@ namespace Amanzi {
       // Set transport model
       //
       std::string transport_mode = ec_list.get<std::string>(trans_str);
-      do_tracer_advection = (transport_mode == "Off"  ?  0  :  1);
+      if (transport_mode == "Off") {
+        do_tracer_advection = 0;
+      }
+      else if (transport_mode == "On") {
+        do_tracer_advection = 1;
+      }
+      else {
+        MyAbort("\"" + trans_str + "\" = \"" + transport_mode + "\" not supported");
+      }
       do_tracer_diffusion = false; 
 
       //
@@ -351,7 +351,7 @@ namespace Amanzi {
         }
       }
       else {
-        MyAbort("Chemistry Model \"" + chem_mode + "\" not yet supported" );
+        MyAbort("\"" + chem_mod_str + "\" = \"" + chem_mode + "\" not supported");
       }
       struc_out_list.set(underscore(chem_str),chem_out_list);
 
@@ -387,13 +387,12 @@ namespace Amanzi {
         std::string Time_Step_Shrink_Max_str = "Maximum Time Step Shrink";
         std::string Init_Time_Step_Mult_str = "Initial Time Step Multiplier";
         std::string Max_Time_Step_Size_str = "Maximum Time Step Size";
-        std::string Max_Step_str = "Maximum Cycle Number"; reqP.push_back(Max_Step_str);
+        std::string Max_Step_str = "Maximum Cycle Number";
 
         PLoptions Topt(tran_list,reqL,reqP,true,false);
         const Array<std::string> ToptP = Topt.OptParms();
         struc_out_list.set<double>("strt_time", tran_list.get<double>(Start_str));
         struc_out_list.set<double>("stop_time", tran_list.get<double>(End_str));
-        struc_out_list.set<int>("max_step", tran_list.get<int>(Max_Step_str));
         double dt_init = -1;
         double dt_init_mult = -1;
         double dt_grow_max = -1;
@@ -444,14 +443,11 @@ namespace Amanzi {
         }
 
         if (step_max>=0) {
-          if (step_max<0) {
-            MyAbort("Negative value specified for \""+Max_Step_str+"\"");
-          }
           struc_out_list.set<int>("max_step", step_max);
         }
                 
         if (dt_max > 0) {
-          prob_out_list.set<double>("max_dt", dt_max);
+          prob_out_list.set<double>("steady_max_dt", dt_max);
         }
       }
       else if (t_list.isSublist(init_to_steady_str))
@@ -521,9 +517,9 @@ namespace Amanzi {
           } else if (it->first==Time_Step_Shrink_Max_str) {
             prob_out_list.set<double>("dt_shrink_max", it->second);
           } else if (it->first==Steady_Max_Time_Step_Size_str) {
-            prob_out_list.set<double>("steady_richard_max_dt", it->second);
+            prob_out_list.set<double>("steady_max_dt", it->second);
           } else if (it->first==Transient_Max_Time_Step_Size_str) {
-            prob_out_list.set<double>("transient_richard_max_dt", it->second);
+            prob_out_list.set<double>("transient_max_dt", it->second);
           } else if (it->first==Transient_Init_Time_Step_str) {
             prob_out_list.set<double>("dt_init", it->second);
           }
@@ -535,7 +531,7 @@ namespace Amanzi {
           if (it->first==Max_Step_str) {
             int max_step = it->second;
             if (max_step<0) {
-              std::cout << "Negative value specified for \""+Max_Step_str+"\": " << max_step << std::endl;
+              std::cerr << "Negative value specified for \""+Max_Step_str+"\": " << max_step << std::endl;
               MyAbort("");
             }
             struc_out_list.set<int>("max_step", it->second);
@@ -554,17 +550,58 @@ namespace Amanzi {
         std::string End_str = "End"; reqP.push_back(End_str);
         std::string Init_Time_Step_str = "Initial Time Step"; reqP.push_back(Init_Time_Step_str);
 
-        PLoptions Sopt(steady_list,reqL,reqP,true,true); 
+        PLoptions Sopt(steady_list,reqL,reqP,true,false); 
         struc_out_list.set<double>("strt_time", steady_list.get<double>(Start_str));
         struc_out_list.set<double>("stop_time", steady_list.get<double>(End_str));
         prob_out_list.set<double>(underscore("steady_init_time_step"),steady_list.get<double>(Init_Time_Step_str));
 
         struc_out_list.set<std::string>("execution_mode", "steady");
-        int a_large_number_of_steps = 1000000;
-        struc_out_list.set<int>("max_step", a_large_number_of_steps);
+
+ 
+        // Set defaults for optional parameters
+        std::map<std::string,double> optPd;
+        std::map<std::string,int> optPi;
+        std::string Max_Time_Step_Size_str = "Maximum Time Step Size";     optPd[Max_Time_Step_Size_str] = -1; // <0 means inactive
+        std::string Time_Step_Grow_Max_str = "Maximum Time Step Grow";     optPd[Time_Step_Grow_Max_str] = -1; // <0 means inactive
+        std::string Time_Step_Shrink_Max_str = "Maximum Time Step Shrink"; optPd[Time_Step_Shrink_Max_str] = -1; // <0 means inactive
+                                                                           optPd[Init_Time_Step_str] = -1; // <0 means inactive
+
+        // Extract optional parameters
+        const Array<std::string> SoptP = Sopt.OptParms();
+        for (int i=0; i<SoptP.size(); ++i) {
+          if (optPd.find(SoptP[i]) != optPd.end()) {
+            optPd[SoptP[i]] = steady_list.get<double>(SoptP[i]); // replace default value
+          }
+          else if (optPi.find(SoptP[i]) != optPi.end()) {
+            optPi[SoptP[i]] = steady_list.get<int>(SoptP[i]); // replace default value
+          }
+          else {
+            MyAbort("Unrecognized option under \""+steady_str+"\": \""+SoptP[i]+"\"" );
+          }
+        }
+
+        for (std::map<std::string,double>::const_iterator it=optPd.begin(); it!=optPd.end(); ++it) {
+          if (it->first==Time_Step_Grow_Max_str) {
+            prob_out_list.set<double>("dt_grow_max", it->second);
+          } else if (it->first==Time_Step_Shrink_Max_str) {
+            prob_out_list.set<double>("dt_shrink_max", it->second);
+          } else if (it->first==Max_Time_Step_Size_str) {
+            prob_out_list.set<double>("steady_max_dt", it->second);
+          } else if (it->first==Init_Time_Step_str) {
+            prob_out_list.set<double>("dt_init", it->second);
+          }
+          else {
+            prob_out_list.set<double>(underscore(it->first), it->second);
+          }
+        }
+
+        struc_out_list.set<int>("max_step", 1); // For steady flow, we take 1 step
+        for (std::map<std::string,int>::const_iterator it=optPi.begin(); it!=optPi.end(); ++it) {
+          prob_out_list.set<int>(underscore(it->first), it->second);
+        }
       }
       else {
-        std::cout << t_list << std::endl;
+        std::cerr << t_list << std::endl;
         MyAbort("No recognizable value for \"" + tim_str + "\"");
       }
 
@@ -607,20 +644,12 @@ namespace Amanzi {
       // 
       // Optional parameters
       //
-      std::string restart_file_str = "Restart from Checkpoint Data File";
-
       for (int i=0; i<optP.size(); ++i) {
         if (optP[i] == v_str) {
           //
           // Verbosity level
           //
           v_val = ec_list.get<std::string>(v_str);
-        }
-        else if (optP[i] == restart_file_str) {
-          //
-          // Restart from checkpoint?
-          //
-          amr_out_list.set<std::string>("restart",ec_list.get<std::string>(restart_file_str));
         }
         else {
           MyAbort("Unrecognized optional parameter to \"" + ec_str + "\": \"" + optP[i] + "\"");
@@ -649,9 +678,22 @@ namespace Amanzi {
       // 
       // Optional lists
       //
+      const std::string restart_str = "Restart";
+
       for (int i=0; i<optL.size(); ++i)
       {                
-        if (optL[i] == tpc_str)
+
+        if (optL[i] == restart_str) {
+
+          const std::string restart_file_str = "File Name";
+          const ParameterList& restart_list = ec_list.sublist(restart_str);
+          Array<std::string> nL, nP;
+          nP.push_back(restart_file_str);
+          PLoptions Resopt(restart_list,nL,nP,true,true);
+          amr_out_list.set<std::string>("restart",restart_list.get<std::string>(restart_file_str));
+
+        }
+        else if (optL[i] == tpc_str)
         {
           const std::string tpc_start_times_str = "Start Times";
           const std::string tpc_initial_time_steps_str = "Initial Time Step";
@@ -1129,6 +1171,7 @@ namespace Amanzi {
       const std::string Comp_str = "Complement";
       const std::string Union_str = "Union";
       const std::string Sub_str = "Subtraction";
+      const std::string Isect_str = "Intersection";
       const std::string CompReg_str = "Region";
       const std::string Regs_str = "Regions";
 
@@ -1163,6 +1206,15 @@ namespace Amanzi {
         }
         const Array<std::string>& s_reg = rsslist.get<Array<std::string> >(Regs_str);
         rsublist.set("operation","subtraction");
+        rsublist.set("regions",underscore(s_reg));
+      }
+      else if (op==Isect_str) {
+        if (!rsslist.isParameter(Regs_str)) {
+          MyAbort("\""+Regs_str+"\" required with "+"\""+Op_str+"\" = \"" + Isect_str + "\" "
+                  "for \"" + rlabel + "\"");
+        }
+        const Array<std::string>& s_reg = rsslist.get<Array<std::string> >(Regs_str);
+        rsublist.set("operation","intersection");
         rsublist.set("regions",underscore(s_reg));
       }
       else {
@@ -1474,7 +1526,7 @@ namespace Amanzi {
       }
       else {
         std::string str = "Unrecognized porosity function parameters";
-        std::cout << fPLin << std::endl;
+        std::cerr << fPLin << std::endl;
         BoxLib::Abort(str.c_str());
       }
     }
@@ -1502,7 +1554,7 @@ namespace Amanzi {
 	}
 	else {
           std::string str = "Unrecognized \"Porosity: GSLib\" option";
-          std::cout << fPLin << std::endl;
+          std::cerr << fPLin << std::endl;
           BoxLib::Abort(str.c_str());
 	}
       }
@@ -1555,7 +1607,7 @@ namespace Amanzi {
           local_vvals[0] = fPLin.get<double>(vertical_str);
         } else {
           std::string str = "Unrecognized vertical permeability function parameters";
-          std::cout << fPLin << std::endl;
+          std::cerr << fPLin << std::endl;
           BoxLib::Abort(str.c_str());
         }
 
@@ -1584,7 +1636,7 @@ namespace Amanzi {
         }
         else {
           std::string str = "Unrecognized horizontal permeability function parameters";
-          std::cout << fPLin << std::endl;
+          std::cerr << fPLin << std::endl;
           BoxLib::Abort(str.c_str());
         }
 
@@ -1614,7 +1666,7 @@ namespace Amanzi {
         }
         else {
           std::string str = "Unrecognized horizontal1 permeability function parameters";
-          std::cout << fPLin << std::endl;
+          std::cerr << fPLin << std::endl;
           BoxLib::Abort(str.c_str());
         }
 
@@ -1640,7 +1692,7 @@ namespace Amanzi {
       }
       else {
         std::string str = "Unrecognized molecular diffusion parameters";
-        std::cout << fPLin << std::endl;
+        std::cerr << fPLin << std::endl;
         BoxLib::Abort(str.c_str());
       }
       return true;
@@ -1658,7 +1710,7 @@ namespace Amanzi {
       }
       else {
         std::string str = "Unrecognized tortuosity parameters";
-        std::cout << fPLin << std::endl;
+        std::cerr << fPLin << std::endl;
         BoxLib::Abort(str.c_str());
       }
     }
@@ -1675,7 +1727,41 @@ namespace Amanzi {
       }
       else {
         std::string str = "Unrecognized specific_storage parameters";
-        std::cout << fPLin << std::endl;
+        std::cerr << fPLin << std::endl;
+        BoxLib::Abort(str.c_str());
+      }
+    }
+
+    void convert_SpecificYieldUniform(const ParameterList& fPLin,
+                                      ParameterList&       fPLout)
+    {
+      Array<std::string> nullList, reqP;
+      if (fPLin.isParameter("Value")) {
+        const std::string val_name="Value"; reqP.push_back(val_name);
+        PLoptions opt(fPLin,nullList,reqP,true,true);
+        double val = fPLin.get<double>(val_name);
+        fPLout.set<double>("val",val);
+      }
+      else {
+        std::string str = "Unrecognized specific_yield parameters";
+        std::cerr << fPLin << std::endl;
+        BoxLib::Abort(str.c_str());
+      }
+    }
+
+    void convert_ParticleDensityUniform(const ParameterList& fPLin,
+                                        ParameterList&       fPLout)
+    {
+      Array<std::string> nullList, reqP;
+      if (fPLin.isParameter("Value")) {
+        const std::string val_name="Value"; reqP.push_back(val_name);
+        PLoptions opt(fPLin,nullList,reqP,true,true);
+        double val = fPLin.get<double>(val_name);
+        fPLout.set<double>("val",val);
+      }
+      else {
+        std::string str = "Unrecognized particle_density parameters";
+        std::cerr << fPLin << std::endl;
         BoxLib::Abort(str.c_str());
       }
     }
@@ -1762,6 +1848,8 @@ namespace Amanzi {
       const std::string tortuosity_str = "Tortuosity: Uniform";
       const std::string dispersivity_str = "Dispersion Tensor: Uniform Isotropic";
       const std::string specific_storage_uniform_str = "Specific Storage: Uniform";
+      const std::string specific_yield_uniform_str = "Specific Yield: Uniform";
+      const std::string particle_density_uniform_str = "Particle Density: Uniform";
 
       std::string kp_file_in, kp_file_out, pp_file_in, pp_file_out;
       std::string porosity_plotfile_in, porosity_plotfile_out;
@@ -1818,6 +1906,13 @@ namespace Amanzi {
                 mtest["Porosity"] = true;
               }
               else if (rlabel==perm_uniform_str || rlabel==perm_anisotropic_uniform_str) {
+                if (mtest["Intrinsic_Permeability"]) {
+                  std::string str = "More than one of: (\""+perm_uniform_str
+                    +"\", \""+perm_anisotropic_uniform_str
+                    +"\", \""+hydraulic_conductivity_uniform_str
+                    +"\") specified for material \""+label+"\"";
+                  BoxLib::Abort(str.c_str());
+                }
                 ParameterList psublist;
                 convert_PermeabilityAnisotropic(rsslist,psublist,1.0);
                 rsublist.set("permeability",psublist);
@@ -1825,6 +1920,13 @@ namespace Amanzi {
                 mtest["Intrinsic_Permeability"] = true;
               }
               else if (rlabel==hydraulic_conductivity_uniform_str) {
+                if (mtest["Intrinsic_Permeability"]) {
+                  std::string str = "More than one of: (\""+perm_uniform_str
+                    +"\", \""+perm_anisotropic_uniform_str
+                    +"\", \""+hydraulic_conductivity_uniform_str
+                    +"\") specified for material \""+label+"\"";
+                  BoxLib::Abort(str.c_str());
+                }
                 const std::string aq = "Aqueous";
                 if (state.getPhases().count(aq) == 0) {
                   std::string str = "Hydraulic conductivity specified for material \""+label
@@ -1881,6 +1983,16 @@ namespace Amanzi {
                 ParameterList ssublist;
                 convert_SpecificStorageUniform(rsslist,ssublist);
                 rsublist.set("specific_storage",ssublist);
+              }
+              else if (rlabel==specific_yield_uniform_str) {
+                ParameterList ssublist;
+                convert_SpecificYieldUniform(rsslist,ssublist);
+                rsublist.set("specific_yield",ssublist);
+              }
+              else if (rlabel==particle_density_uniform_str) {
+                ParameterList ssublist;
+                convert_ParticleDensityUniform(rsslist,ssublist);
+                rsublist.set("particle_density",ssublist);
               }
               else if (rlabel=="Capillary Pressure: van Genuchten" || rlabel=="Capillary Pressure: Brooks Corey") {
                 double alpha = rsslist.get<double>("alpha");
@@ -2164,24 +2276,13 @@ namespace Amanzi {
           }
         }
         else {
-          std::string sat_str = "Saturation Threshold For Kr";
-          if (rlist.isParameter(sat_str)) {
-            double saturation_threshold_for_vg_Kr;
-            saturation_threshold_for_vg_Kr = rlist.get<double>(sat_str);
-            rock_list.set(underscore(sat_str),saturation_threshold_for_vg_Kr);
-          }
-                    
-          std::string shift_str = "Use Shifted Kr Eval";
-          if (rlist.isParameter(shift_str)) {
-            bool use_shifted_kr_eval = rlist.get<bool>(shift_str);
-            rock_list.set(underscore(shift_str),(int)use_shifted_kr_eval);
-          }
+          std::cerr << "Unsupported material property: " << label << std::endl;
+          throw std::exception();
         }
       }
 
       if (add_chemistry_properties)
       {
-                
         const Array<std::string>& minerals = state.getSolid().mineral_names;
         const Array<std::string>& sorption_sites = state.getSolid().sorption_site_names;
 
@@ -2231,9 +2332,9 @@ namespace Amanzi {
             StateDef::CompMap& comps = state[p];
             for (StateDef::CompMap::iterator cit=comps.begin(); cit!=comps.end(); ++cit) {
               const std::string& c=cit->first;
-              const Array<std::string>& solutes = cit->second.getTracerArray();   
+              const Array<TRACER>& solutes = cit->second.getTracerArray();
               for (int i=0; i<solutes.size(); ++i) {
-                const std::string& s=solutes[i];                            
+                const std::string& s=solutes[i].name;
                 if (solid_chem[label].HasSorptionIsotherm(s)) {
                   SolidChem::SorptionIsothermData sid = solid_chem[label].SorptionIsotherm(s);
                   ParameterList sitPL = sid.BuildPL();
@@ -2392,24 +2493,56 @@ namespace Amanzi {
           const Array<std::string>& cLabels = optC.OptLists(); // each optional list names a component
           for (int j=0; j<cLabels.size(); ++j) {
             const std::string& compLabel = cLabels[j];
-                        
+
             Array<std::string> reqLc, reqPc;
             const ParameterList& slist = pclist.sublist(compLabel);
-                        
-            PLoptions optCC(slist,reqLc,reqPc,true,false); 
+            PLoptions optCC(slist,reqLc,reqPc,false,false);
             const Array<std::string>& sParams = optCC.OptParms();
-                        
             Array<std::string> sLabels;
             for (int k=0; k<sParams.size(); ++k) {
               if (sParams[k] == "Component Solutes") {
                 sLabels = pclist.sublist(compLabel).get<Array<std::string> >(sParams[k]);
               }
             }
-                        
+
             COMP& c = (*this)[phaseLabel][compLabel];
             for (int L=0; L<sLabels.size(); ++L) {
               c.push_back(sLabels[L]);
             }
+
+            const Array<std::string>& sLists = optCC.OptLists();
+            for (int k=0; k<sLists.size(); ++k) {
+              int iSolute = -1;
+              for (int L=0; L<sLabels.size(); ++L) {
+                if (sLabels[L] == sLists[k]) {
+                  iSolute = L;
+                }
+              }
+              if (iSolute < 0) {
+                std::cerr << "Solute ParameterList has name not in \"Component Solutes\" list: " << sLists[k] << std::endl;
+                throw std::exception();
+              }
+
+              PLoptions optS(slist.sublist(sLists[k]),nullList,nullList,true,false);
+              const Array<std::string>& slParams = optS.OptParms();
+              const std::string molec_diff_str = "Molecular Diffusivity";
+              const std::string fodecay_constant_str = "First Order Decay Constant";
+
+              TRACER& s = c.getTracerArray()[iSolute];
+              for (int M=0; M<slParams.size(); ++M) {
+                if (slParams[M] == molec_diff_str) {
+                  s.molecularDiffusivity = pclist.sublist(compLabel).sublist(sLabels[iSolute]).get<double>(molec_diff_str);
+                }
+                else if (slParams[M] == fodecay_constant_str) {
+                  s.firstOrderDecayConstant = pclist.sublist(compLabel).sublist(sLabels[iSolute]).get<double>(fodecay_constant_str);
+                }
+                else {
+                  std::cerr << "Solute ParameterList contains unrecognized parameter: " << slParams[M] << std::endl;
+                  throw std::exception();
+                }
+              }
+            }
+
           }
         }
       }
@@ -2503,7 +2636,7 @@ namespace Amanzi {
                 // Get function name/list
                 const Array<std::string>& funcNames = soluteOPTf.OptLists();
                 if (funcNames.size()!=1) {
-                  std::cout << "Each solute BC expects a single function" << std::endl;
+                  std::cerr << "Each solute BC expects a single function" << std::endl;
                   throw std::exception();
                 }
                 const std::string& Amanzi_solute_type = funcNames[0];
@@ -2524,10 +2657,10 @@ namespace Amanzi {
             CompFunc::ICBCFuncMap& fm = cit->second.getICBCFuncMap();
             for (CompFunc::ICBCFuncMap::iterator fit=fm.begin(); fit!=fm.end(); ++fit) {
               const std::string& soluteName = fit->first;
-              const Array<std::string>& ds=(*this)[phaseName][compName].getTracerArray();
+              const Array<TRACER>& ds=(*this)[phaseName][compName].getTracerArray();
               bool found = false;
               for (int it=0; it<ds.size() && !found; ++it) {
-                found = ds[it] == soluteName;
+                found = ds[it].name == soluteName;
               }
               if (!found) {
                 std::cerr << "function: phase/comp/solute not in Phase Definition: "
@@ -2547,6 +2680,10 @@ namespace Amanzi {
                               const std::string&   Amanzi_type,
                               ParameterList&       fPLout)
     {
+      {
+        std::cerr << "IC: Saturation functions no longer supported " << std::endl;
+        throw std::exception();
+      }
       Array<std::string> nullList, reqP;
       const std::string val_name="Value"; reqP.push_back(val_name);
       PLoptions opt(fPLin,nullList,reqP,true,true); 
@@ -3481,10 +3618,10 @@ namespace Amanzi {
           std::string _compLabel = underscore(compLabel);
           arraycomp.push_back(_compLabel);
 
-          const Array<std::string>& soluteNames = cit->second.getTracerArray();
-          for (int i=0; i<soluteNames.size(); ++i)
+          const Array<TRACER>& solutes = cit->second.getTracerArray();
+          for (int i=0; i<solutes.size(); ++i)
           {
-            std::string _soluteLabel = underscore(soluteNames[i]);
+            std::string _soluteLabel = underscore(solutes[i].name);
             arraysolute.push_back(_soluteLabel);
           }
         }
@@ -3750,6 +3887,8 @@ namespace Amanzi {
       user_derive_list.push_back(underscore("Dispersivity L"));
       user_derive_list.push_back(underscore("Dispersivity T"));
       user_derive_list.push_back(underscore("Specific Storage"));
+      user_derive_list.push_back(underscore("Specific Yield"));
+      user_derive_list.push_back(underscore("Particle Density"));
 
       user_derive_list.push_back(underscore("Intrinsic Permeability X"));
       user_derive_list.push_back(underscore("Intrinsic Permeability Y"));
@@ -4014,7 +4153,7 @@ namespace Amanzi {
                                     
                   for (std::set<std::string>::const_iterator it=cycle_macros.begin();
                        it!=cycle_macros.end(); ++it) {
-                    std::cout << *it << " " << std::endl;
+                    std::cerr << *it << " " << std::endl;
                   }
                   throw std::exception();
                 }
@@ -4045,12 +4184,12 @@ namespace Amanzi {
                   std::cerr << "Unrecognized time macro in \""+vis_data_str+"\": \""
                             << vtMacros[i] << "\"" << std::endl;
                                     
-                  std::cout << "Known macros: ";
+                  std::cerr << "Known macros: ";
                   for (std::set<std::string>::const_iterator it=time_macros.begin();
                        it!=time_macros.end(); ++it) {
-                    std::cout << *it << " ";
+                    std::cerr << *it << " ";
                   }
-                  std::cout << std::endl;
+                  std::cerr << std::endl;
                 }
                 throw std::exception();
               }
@@ -4127,7 +4266,7 @@ namespace Amanzi {
                                     
                   for (std::set<std::string>::const_iterator it=cycle_macros.begin();
                        it!=cycle_macros.end(); ++it) {
-                    std::cout << *it << " " << std::endl;
+                    std::cerr << *it << " " << std::endl;
                   }
                   throw std::exception();
                 }
@@ -4232,7 +4371,7 @@ namespace Amanzi {
               for (int k=0; k<user_derive_list.size(); ++k) {
                 std::cerr << "\"" << AMR_to_Amanzi_label_map[user_derive_list[k]] << "\"";
                 if (k<=user_derive_list.size()-2) {
-                  std::cout << ", ";
+                  std::cerr << ", ";
                 }
               }
               std::cerr << std::endl;

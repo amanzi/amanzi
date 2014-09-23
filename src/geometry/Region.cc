@@ -21,7 +21,7 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 // Region:: constructors / destructor
 // -------------------------------------------------------------
-Region::Region()
+Region::Region() :   verbosity_obj_(NULL)
 {
   name_ = "";
   id_ = 0;
@@ -29,22 +29,25 @@ Region::Region()
 
 Region::Region(const Region& old) :
   topo_dimension_(old.dimension()), name_(old.name()), id_(old.id()),
-  lifecycle_(old.lifecycle())
+  lifecycle_(old.lifecycle()), verbosity_obj_(old.verbosity_obj())
 {
   // empty
 }
 
 
 Region::Region(const std::string name, const unsigned int id, 
-               const unsigned int dim, const LifeCycleType lifecycle) :
-  name_(name), id_(id), topo_dimension_(dim), lifecycle_(lifecycle)
+               const unsigned int dim, const LifeCycleType lifecycle,
+               const VerboseObject *verbobj) :
+  name_(name), id_(id), topo_dimension_(dim), lifecycle_(lifecycle),
+  verbosity_obj_(verbobj)
 {
 }
   
   
 Region::Region(const char *name, const unsigned int id, const unsigned int dim,
-               const LifeCycleType lifecycle) :
-  name_(name), id_(id), topo_dimension_(dim), lifecycle_(lifecycle)
+               const LifeCycleType lifecycle, const VerboseObject *verbobj) :
+  name_(name), id_(id), topo_dimension_(dim), lifecycle_(lifecycle),
+  verbosity_obj_(verbobj)
 {
 }
 

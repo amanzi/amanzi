@@ -27,8 +27,9 @@ LogicalRegion::LogicalRegion(const std::string name,
                              const unsigned int id,
                              const std::string operation_str,
                              const std::vector<std::string> region_names,
-                             const LifeCycleType lifecycle)
-  : Region(name,id,3,lifecycle), operation_(NOBOOLEAN),
+                             const LifeCycleType lifecycle,
+                             const VerboseObject *verbobj)
+  : Region(name,id,3,lifecycle,verbobj), operation_(NOBOOLEAN),
     region_names_(region_names)
 {
   // Region dimension is set arbitrarily as 3 since the set of
@@ -53,8 +54,9 @@ LogicalRegion::LogicalRegion(const char *name,
                              const unsigned int id,
                              const std::string operation_str,
                              const std::vector<std::string> region_names,
-                             const LifeCycleType lifecycle)
-  : Region(name,id,3,lifecycle), operation_(NOBOOLEAN),
+                             const LifeCycleType lifecycle,
+                             const VerboseObject *verbobj)
+  : Region(name,id,3,lifecycle,verbobj), operation_(NOBOOLEAN),
     region_names_(region_names)
 {
   // Region dimension is set arbitrarily as 3 since the set of

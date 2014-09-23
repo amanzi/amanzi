@@ -1,58 +1,56 @@
-/* 
-  ATS & ASCEM
+/*
+  Amanzi
 
-  Licenses: see $ATS_DIR/COPYRIGHT, $ASCEM_DIR/COPYRIGHT
+  Licenses: see $ASCEM_DIR/COPYRIGHT
   Author: Ethan Coon
 
-  Virtual interface for Process Kernels. 
+  Virtual interface for Process Kernels.  Note that PKs deriving from this
+  class mustimplement the commented constructor interface as well, and should
+  add the private static member (following the Usage notes in
+  src/pks/PK_Factory.hh) to register the derived PK with the PK factory.
 */
 
-#ifndef PK_HH_
-#define PK_HH_
+#ifndef AMANZI_PK_HH_
+#define AMANZI_PK_HH_
 
 #include "Teuchos_RCP.hpp"
 
-#include "State.hh"
-#include "TreeVector.hh"
-
 namespace Amanzi {
+
+class State;
 
 class PK {
  public:
+  // Required constructor of the form:
+  // PK(Teuchos::ParameterList& pk_tree,
+  //    const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+  //    const Teuchos::RCP<State>& S,
+  //    const Teuchos::RCP<TreeVector>& solution);
+
   // Virtual destructor
   virtual ~PK() {};
 
   // Setup
-  virtual void Setup(const Teuchos::Ptr<State>& S) = 0;
+  virtual void Setup() = 0;
 
   // Initialize owned (dependent) variables.
-  virtual void Initialize(const Teuchos::Ptr<State>& S) = 0;
-
-  // Transfer operators
-  virtual void StateToSolution(const Teuchos::RCP<State>& S,
-                               const Teuchos::RCP<TreeVector>& soln) = 0;
-  virtual void SolutionToState(const Teuchos::RCP<TreeVector>& soln,
-                               const Teuchos::RCP<State>& S) = 0;
+  virtual void Initialize() = 0;
 
   // Choose a time step compatible with physics.
   virtual double get_dt() = 0;
 
-  // Advance from state S0 to state S1 at time S0.time + dt.
-  // Due to Flow PK / MPC conflict (FIXME when MPC will be upgraded)
-  virtual int Advance(double dt, double& dt_actual) = 0;
-  // virtual bool Advance(double dt) = 0;
+  // Advance PK by step size dt.
+  virtual bool AdvanceStep(double t_old, double t_new) = 0;
 
-  // Commit any secondary (dependent) variables.
-  virtual void CommitState(double dt, const Teuchos::RCP<State>& S) = 0;
+  // Update any needed secondary variables at time t_new from a sucessful step
+  // from t_old.  This is called after every successful AdvanceStep() call,
+  // independent of coupling.
+  virtual void CommitStep(double t_old, double t_new) = 0;
 
-  // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) = 0;
+  // Calculate any diagnostics at S->time() for viz.
+  virtual void CalculateDiagnostics() = 0;
 
-  // -- set pointers to State, and point the solution vector to the data in S_next
-  virtual void SetStates(const Teuchos::RCP<const State>& S,
-                         const Teuchos::RCP<State>& S_inter,
-                         const Teuchos::RCP<State>& S_next) = 0;
-
+  // name the PK
   virtual std::string name() = 0;
 };
 

@@ -678,14 +678,14 @@ Teuchos::ParameterList TranslateMeshList(Teuchos::ParameterList* plist) {
       if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Generate Mesh")) {
         Teuchos::ParameterList& generate = plist->sublist("Mesh").sublist("Unstructured").sublist("Generate Mesh").sublist("Uniform Structured");
         Teuchos::Array<int> ncells = generate.get<Teuchos::Array<int> >("Number of Cells");
-        Teuchos::Array<double> low = generate.get<Teuchos::Array<double> >("Domain Low Corner");
-        Teuchos::Array<double> high = generate.get<Teuchos::Array<double> >("Domain High Corner");
+        Teuchos::Array<double> low = generate.get<Teuchos::Array<double> >("Domain Low Coordinate");
+        Teuchos::Array<double> high = generate.get<Teuchos::Array<double> >("Domain High Coordinate");
 
         Teuchos::ParameterList& msh_gen = msh_list.sublist("Unstructured").sublist("Generate Mesh");
 
         msh_gen.set< Teuchos::Array<int> >("Number of Cells",ncells);
-        msh_gen.set< Teuchos::Array<double> >("Domain Low Corner",low);
-        msh_gen.set< Teuchos::Array<double> >("Domain High Corner",high);
+        msh_gen.set< Teuchos::Array<double> >("Domain Low Coordinate",low);
+        msh_gen.set< Teuchos::Array<double> >("Domain High Coordinate",high);
 
       } else if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Read Mesh File")) {
         std::string format = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("Format");
@@ -1375,6 +1375,7 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
             if (fl_exp_params.isParameter("Nonlinear Solver Type")) {
               nonlinear_solver = fl_exp_params.get<std::string>("Nonlinear Solver Type");
             }
+	    update_upwind = fl_exp_params.get<std::string>("update upwind frequency", "every timestep");
             modify_correction = fl_exp_params.get<bool>("modify correction", false);
           }
         }
@@ -2468,6 +2469,7 @@ Teuchos::ParameterList CreateSS_FlowBC_List(Teuchos::ParameterList* plist) {
 
         Teuchos::ParameterList& tbc = ssf_list.sublist("seepage face").sublist(ss.str());
         tbc.set<Teuchos::Array<std::string> >("regions", regions );
+        tbc.set<bool>("rainfall", bc_flux.get<bool>("rainfall",false));
 
         if (times.size() == 1) {
           Teuchos::ParameterList& tbcs = tbc.sublist("outward mass flux").sublist("function-constant");

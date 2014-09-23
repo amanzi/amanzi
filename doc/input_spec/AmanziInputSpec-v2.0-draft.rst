@@ -7,16 +7,7 @@ Amanzi XML Input Specification (Version 2.0.x)
 Overview
 ========
 
-The Amanzi simulator evolves a system of conservation equations for
-reacting flows in porous media, as detailed in the ASCEM report
-entitled "Mathematical Formulation Requirements and Specifications for
-the Process Models`" (hereafter referred to as the 'Model Requirements
-Document (MRD)'). The purpose of the present document is to specify
-the data required to execute Amanzi.  This specification should be
-regarded as a companion to the MRD, and parameterizations of the
-individual submodels are consistent between Amanzi, the MRD and this
-document. Where applicable, the relevant sections of the MRD are
-indicated.
+The Amanzi simulator evolves a system of conservation equations for reacting flows in porous media, as detailed in the ASCEM report entitled "Mathematical Formulation Requirements and Specifications for the Process Models`" (hereafter referred to as the 'Model Requirements Document (MRD)'). The purpose of the present document is to specify the data required to execute Amanzi.  This specification should be regarded as a companion to the MRD, and parameterizations of the individual submodels are consistent between Amanzi, the MRD and this document. Where applicable, the relevant sections of the MRD are indicated.
 
 All data required to execute Amanzi is specified within an XML formated file layed out according to the Amanzi input schema.  The current version of the Amanzi schema is located with the Amanzi source code repository.  The following discusses each section of the schema, its purpose and provides examples.  Further details can be found in the schema document amanzi.xsd.
 
@@ -27,34 +18,9 @@ Amanzi Input
 
 Here, the user specifies which version of the input the input file adheres to. The user also specifies the overall type of simulation being run.  Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface. The attribute `"type`" is used to selected between the following:
 
-* `"Structured`": This instructs Amanzi to use BoxLib data structures
-  and an associated paradigm to numerically represent the flow
-  equations.  Data containers in the BoxLib software library,
-  developed by CCSE at LBNL, are based on a hierarchical set of
-  uniform Cartesian grid patches.  `"Structured`" requires that the
-  simulation domain be a single coordinate-aligned rectangle, and that
-  the "base mesh" consists of a logically rectangular set of uniform
-  hexahedral cells.  This option supports a block-structured approach
-  to dynamic mesh refinement, wherein successively refined subregions
-  of the solution are constructed dynamically to track "interesting"
-  features of the evolving solution.  The numerical solution approach
-  implemented under the `"Structured`" framework is highly optimized
-  to exploit regular data and access patterns on massively parallel
-  computing architectures. 
+* `"Structured`": This instructs Amanzi to use BoxLib data structures and an associated paradigm to numerically represent the flow equations.  Data containers in the BoxLib software library, developed by CCSE at LBNL, are based on a hierarchical set of uniform Cartesian grid patches.  `"Structured`" requires that the simulation domain be a single coordinate-aligned rectangle, and that the "base mesh" consists of a logically rectangular set of uniform hexahedral cells.  This option supports a block-structured approach to dynamic mesh refinement, wherein successively refined subregions of the solution are constructed dynamically to track "interesting" features of the evolving solution.  The numerical solution approach implemented under the `"Structured`" framework is highly optimized to exploit regular data and access patterns on massively parallel computing architectures. 
 
-* `"Unstructured`": This instructs Amanzi to use data structures
-  provided in the Trilinos software framework.  To the extent
-  possible, the discretization algorithms implemented under this
-  option are largely independent of the shape and connectivity of the
-  underlying cells.  As a result, this option supports an arbitrarily
-  complex computational mesh structure that enables users to work with
-  numerical meshes that can be aligned with geometrically complex
-  man-made or geostatigraphical features.  Under this option, the user
-  typically provides a mesh file that was generated with an external
-  software package.  The following mesh file formats are currently
-  supported: `"Exodus II`".  Amanzi also provides a rudmentary
-  capability to generate regular meshes within the unstructured
-  framework internally.
+* `"Unstructured`": This instructs Amanzi to use data structures provided in the Trilinos software framework.  To the extent possible, the discretization algorithms implemented under this option are largely independent of the shape and connectivity of the underlying cells.  As a result, this option supports an arbitrarily complex computational mesh structure that enables users to work with numerical meshes that can be aligned with geometrically complex man-made or geostatigraphical features.  Under this option, the user typically provides a mesh file that was generated with an external software package.  The following mesh file formats are currently supported: `"Exodus II`".  Amanzi also provides a rudmentary capability to generate regular meshes within the unstructured framework internally.
 
 An exmample root tag of an input file would look like the following.
 
@@ -748,13 +714,24 @@ Here is more info on the `"liquid_phase`" elements:
 
     * `"liquid_component`" is an element with the following subelement: 
 
-        * `"pressure`" is an element with the following attributes: 
+        * `"uniform_pressure`" is an element with the following attributes: 
 
 .. code-block:: xml
 
-     <pressure name="some name" value="exponential" function="linear | uniform" reference_coord="coordinate" gradient="coordinate"/>
+     <uniform_pressure name="some name" value="exponential" />
 
-.
+        * `"linear_pressure`" is an element with the following attributes: 
+
+.. code-block:: xml
+
+     linear_pressure name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
+
+        * `"velocity`" is an element with the following attributes: 
+
+.. code-block:: xml
+
+     <velocity name="some name" x="exponential" y="exponential" z="exponential"/>
+
     * `"solute_component`" is an element with the following attributes: 
 
 .. code-block:: xml
@@ -840,6 +817,13 @@ Here is more info on the `"liquid_phase`" elements:
      <uniform_pressure name="some name" value="exponential" function="uniform | constant" start="time" />
 
 .
+        * `"seepage_face`" is an element with the following attributes: 
+
+.. code-block:: xml
+
+     <seepage_face name="some name" inward_mass_flux="exponential" function="linear | uniform | constant" start="time" />
+
+.
         * `"hydrostatic`" is an element with the following attributes: ONLY CONSTANT, for now
 
 .. code-block:: xml
@@ -867,14 +851,15 @@ Here is more info on the `"liquid_phase`" elements:
 Output
 ======
 
-Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", and `"Observations`".  
-Each of these is controlled in different ways, reflecting their intended use.
+Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", `"Observations`", and `"Walkabout Data`".  Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Vis`" is intended to represent snapshots of the solution at defined instances during the simulation to be visualized.  The ''vis'' element defines the naming and frequencing of saving the visualization files.  The visualizatoin files may include only a fraction of the state data, and may contiain auxiliary "derived" information (see *elsewhere* for more discussion).
 
 * `"Checkpoint`" is intended to represent all that is necesary to repeat or continue an Amanzi run.  The specific data contained in a Checkpoint Data dump is specific to the algorithm options and mesh framework selected.  Checkpoint is special in that no interpolation is perfomed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write Checkpoint at the discrete intervals of the simulation. The ''checkpoint'' element defines the naming and frequencing of saving the checkpoint files.
 
 * `"Observations`" is intended to represent diagnostic values to be returned to the calling routine from Amanzi's simulation driver.  Observations are typically generated at arbitrary times, and frequently involve various point samplings and volumetric reductions that are interpolated in time to the desired instant.  Observations may involve derived quantities (see discussion below) or state fields.  The ''observations'' element may define one or more specific ''observation''.
+
+* `"Walkabout Data`" is intended to be used as input to the particle tracking software Walkabout.
 
 *EIB NOTE* - All three of the above are REQUIRED!!
 For the obserservations I understand how to leave that empty.  But how do I execute without writing a checkpoint? If I'm running a dinky test am I really required to specify a checkpoint?  Will need to test this will validator.  Talk to Ellen about this.
@@ -911,16 +896,16 @@ Example:
 Checkpoint
 ----------
 
-The ''checkpoint'' element deines the filenaming scheme and frequency for writing out the checkpoint files.  As mentioned above, the user does not influence what is written to the checkpoint files.  Thus, the ''checkpoint'' element has the following requiements
+The ''checkpoint'' element defines the filenaming scheme and frequency for writing out the checkpoint files.  As mentioned above, the user does not influence what is written to the checkpoint files.  Thus, the ''checkpoint'' element has the following requiements
 
 .. code-block:: xml
 
   <checkpoint>
-      Required Elements: base_filename, num_digits, time_macro
+      Required Elements: base_filename, num_digits, cycle_macro
       Optional Elements: NONE
   </checkpoint>
 
-The *base_filename* element contain the text component of the how the checkpoint files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the checkpoint files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or interation id)  Final the *time_macro* element indicates the previously defined time_macro to be used to determin the frequency at which to write the checkpoint files.
+The *base_filename* element contain the text component of the how the checkpoint files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the checkpoint files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or interation id)  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the checkpoint files.
 
 Example:
 
@@ -929,7 +914,7 @@ Example:
   <checkpoint>
      <base_filename>chk</base_filename>
      <num_digits>5</num_digits>
-     <time_macro>Every_100_timesteps</time_macro>
+     <cycle_macro>Every_100_steps</cycle_macro>
   </checkpoint>
 
 
@@ -963,7 +948,7 @@ The observation element identifies the field quantity to be observed.  Subelemen
 .. code-block :: xml
 
    <observation_type>
-     Required Elements: assigned_region, functional, time_macro 
+     Required Elements: assigned_region, functional, time_macro
      Optional Elements: NONE
    </observation_type>
 
@@ -996,6 +981,30 @@ Example:
       </liquid_phase>
 
     </observations>
+
+Walkabout
+----------
+
+The ''walkabout'' element deines the filenaming scheme and frequency for writing out the walkabout files.  As mentioned above, the user does not influence what is written to the walkabout files only the writing frequency and naming scheme.  Thus, the ''walkabout'' element has the following requiements
+
+.. code-block:: xml
+
+  <walkabout>
+      Required Elements: base_filename, num_digits, cycle_macro
+      Optional Elements: NONE
+  </walkabout>
+
+The *base_filename* element contain the text component of the how the walkabout files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the walkabout files.  The *num_digits* elements indicates how many digits to use for the index.  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files.
+
+Example:
+
+.. code-block:: xml
+
+  <walkabout>
+     <base_filename>chk</base_filename>
+     <num_digits>5</num_digits>
+     <cycle_macro>Every_100_steps</cycle_macro>
+  </walkabout>
 
 
 

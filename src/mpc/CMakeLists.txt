@@ -69,7 +69,7 @@ set(mpc_inc_files
 )
 
 add_amanzi_library(mpc 
-                   SOURCE MPC.cc Unstructured_observations.cc 
+                   SOURCE MPC.cc Unstructured_observations.cc CycleDriver.cc
                    HEADERS ${mpc_inc_files}
                    LINK_LIBS time_integration solvers output state mesh dbg ${mpc_tpl_libs})
 
@@ -94,16 +94,11 @@ if (BUILD_TESTS)
     set(amanzi_libs mpc flow transport chemistry_pk state operators mesh_factory 
                     geometry whetstone mesh_functions functions)
     
-    if ( ENABLE_MSTK_Mesh )
-        # Test: mpc-mstk
-	add_amanzi_test(mpc-mstk test_mpc_mstk
-	                KIND      int
-			SOURCE    test/Main.cc test/test_driver.cc
-			LINK_LIBS ${amanzi_libs}
-				  ${UnitTest_LIBRARIES})
-
-    
-    endif()
+    # Test: mpc-mstk
+    add_amanzi_test(mpc-mstk test_mpc_mstk
+                    KIND      int
+                    SOURCE    test/Main.cc test/test_driver.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 #    add_executable(test_vis test/Main.cc test/test_vis.cpp)
 #    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})
