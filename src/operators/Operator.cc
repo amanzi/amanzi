@@ -39,6 +39,8 @@ Operator::Operator(Teuchos::RCP<const CompositeVectorSpace> cvs, int dummy)
 
   Teuchos::ParameterList plist;
   vo_ = Teuchos::rcp(new VerboseObject("Operators", plist));
+
+  nonstandard_symbolic_ = 0;
 }
 
 
@@ -73,6 +75,8 @@ Operator::Operator(const Operator& op)
 
   Teuchos::ParameterList plist;
   vo_ = Teuchos::rcp(new VerboseObject("Operators", plist));
+
+  nonstandard_symbolic_ = 0;
 }
 
 
@@ -105,6 +109,8 @@ void Operator::Clone(const Operator& op)
     offset_global_[i] = op.offset_global_[i];
     offset_my_[i] = op.offset_my_[i];
   }
+
+  nonstandard_symbolic_ = op.nonstandard_symbolic_;
 }
 
 
@@ -246,20 +252,17 @@ void Operator::SymbolicAssembleMatrix(int schema, int nonstandard)
     int subschema = blocks_schema_[nb] & schema;
 
     // Non-standard combinations of schemas 
-    if (nonstandard == 1 && 
+    if ((nonstandard == 1 || nonstandard_symbolic_ == 1) && 
         (blocks_schema_[nb] & OPERATOR_SCHEMA_BASE_CELL) && 
         subschema == OPERATOR_SCHEMA_DOFS_CELL) {
       for (int f = 0; f < nfaces_owned; f++) {
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
         int ncells = cells.size();
 
-        int nd;
-        if (subschema == OPERATOR_SCHEMA_DOFS_CELL) {
-          for (int n = 0; n < ncells; n++) {
-            lid[n] = offset_my_[1] + cells[n];
-            gid[n] = offset_global_[1] + cmap_wghost.GID(cells[n]);
-          }
-          nd = ncells;
+        int nd(ncells);
+        for (int n = 0; n < ncells; n++) {
+          lid[n] = offset_my_[1] + cells[n];
+          gid[n] = offset_global_[1] + cmap_wghost.GID(cells[n]);
         }
 
         for (int n = 0; n < nd; n++) {
@@ -907,6 +910,23 @@ void Operator::RestoreCheckPoint()
   }
 }
 
+
+/* ******************************************************************
+* Extension of Mesh API. 
+****************************************************************** */
+/*
+int Operator::FindFacePositionInCell_(int f, int c)
+{
+  AmanziMesh::Entity_ID_List faces;
+  mesh_->cell_get_faces(c, &faces);
+  int nfaces = faces.size();
+
+  for (int n = 0; n < nfaces; ++n) {
+    if (f == faces[n]) return n;
+  }
+  return -1;
+}
+*/
 }  // namespace Operators
 }  // namespace Amanzi
 

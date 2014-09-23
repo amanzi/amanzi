@@ -353,5 +353,17 @@ void BlockVector::Print(std::ostream& os) const {
   }
 };
 
+
+// Populate by random numbers between -1 and 1. 
+int BlockVector::Random() {
+  int ierr = 0;
+  for (int i = 0; i != num_components_; ++i) {
+    ierr = data_[i]->Random();
+    if (ierr) return ierr;
+  }
+  return ierr;
+};
+
+
 } // namespace
 

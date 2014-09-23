@@ -358,6 +358,9 @@ public:
   // Write components to outstream.
   void Print(std::ostream &os) const;
 
+  // Populate by random numbers between -1 and 1.
+  int Random();
+
  private:
   void InitMap_(const CompositeVectorSpace& space);
   void InitData_(const CompositeVector& other, InitMode mode);
@@ -478,6 +481,11 @@ CompositeVector::Print(std::ostream &os) const {
   return mastervec_->Print(os);
 }
 
+inline int
+CompositeVector::Random() {
+  ChangedValue();
+  return mastervec_->Random();
+}
 
 } // namespace
 

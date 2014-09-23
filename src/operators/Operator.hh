@@ -121,6 +121,9 @@ class Operator {
   int offset_global_[3], offset_my_[3];
 
   Teuchos::RCP<VerboseObject> vo_;
+
+ protected:
+  int nonstandard_symbolic_;
 };
 
 }  // namespace Operators
