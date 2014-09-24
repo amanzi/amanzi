@@ -83,3 +83,13 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
                     # -- Output control
                     ${CCSE_logging_args}) 
+
+# --- This custom command builds fsnapshot.so, which is a Python module used 
+# --- to extract Amanzi-S plot data. It executes after the CCSE library is 
+# --- built, builds the module, and copies it into place.
+add_custom_command(TARGET ${CCSE_BUILD_TARGET}
+                   POST_BUILD
+                   COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir}
+                   COMMAND ${CMAKE_COMMAND} -E copy fsnapshot.so ${TPL_INSTALL_PREFIX}/lib
+                   DEPENDS ${CCSE_BUILD_TARGET}
+                   WORKING_DIRECTORY ${CCSE_source_dir}/Tools/Py_util)
