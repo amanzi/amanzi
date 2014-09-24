@@ -31,6 +31,13 @@ elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
   set(CXXFLAGS "${CXXFLAGS} ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 endif()
 
+# Sometimes Xerces needs help remembering to use -fPIC.
+string(TOLOWER ${CMAKE_C_COMPILER_ID} compiler_id_lc)
+if ( ${compiler_id_lc} STREQUAL "gnu" )
+  set(CFLAGS "${CFLAGS} -fPIC")
+  set(CXXFLAGS "${CXXFLAGS} -fPIC")
+endif()
+
 # Build the build script
 set(XERCES_sh_build ${XERCES_prefix_dir}/xerces-build-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/xerces-build-step.sh.in
