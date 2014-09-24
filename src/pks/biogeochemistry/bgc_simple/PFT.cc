@@ -23,9 +23,7 @@ PFT::PFT(std::string pft_type_, int ncells, double* brootcells_) :
 
 void PFT::Init()
 {
-  Bstem = 0.2;
-  Broot = 1.0;
-
+  
   SLA = 20;
   leaf2rootratio = 1.0;
   leaf2stemratio = 5;
@@ -34,10 +32,11 @@ void PFT::Init()
   GDDleafon = 100;
   GDDbase = 0.0;
   GDD = 0.0;
-  Bleaf = 1.0;
+  Bleaf = 1.0/SLA;//es note that all the following B vals are perm^2, so that elsewhere they should be *gridarea to account for varying grid areas.
   Bstore = 2* Bleaf;
   Bleafmemory = Bleaf;
-  Bleaf = 0.0;
+  Bstem = Bleaf/leaf2stemratio;
+  Broot = Bleaf/leaf2rootratio; 
   leaflitterfrc[0] = 0.1;
   leaflitterfrc[1] = 0.5;
   leaflitterfrc[1] = 0.4;
@@ -97,8 +96,9 @@ void PFT::InitRoots(const Epetra_SerialDenseVector& SoilTArr,
   // locate the root depth
   int nSoilLayers = SoilTArr.Length();
   double initPermD = PermafrostDepth(SoilTArr,SoilThicknessArr,273.15);
-  rootD = std::min(maxRootD, initPermD);
-
+  //rootD = std::min(maxRootD, initPermD);
+  rootD = std::min(maxRootD, 0.3);//es following Xu's advice - 0.3m accounts for the previous year root depth that will contribute to this yr Broot. Note that if spinning data exists feed in last year's root depth instead of 0.3.
+ 
   double totalweights = 0.0;
   for (int c=0; c!=nSoilLayers; ++c) {
     if (SoilDArr[c] < rootD){
