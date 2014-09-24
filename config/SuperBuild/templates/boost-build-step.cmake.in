@@ -1,4 +1,4 @@
-set(command_opts --prefix=@TPL_INSTALL_PREFIX@ --build-dir=@Boost_build_dir@ cxxflags=@Boost_bjam_cxxflags@ linkflags=@Boost_bjam_linkflags@ --debug-configuration --debug-building)
+set(command_opts --prefix=@TPL_INSTALL_PREFIX@ --build-dir=@Boost_build_dir@ @Boost_bjam_args@ --debug-configuration --debug-building)
 set(command @Boost_source_dir@/bjam ${command_opts} install)
 execute_process(
   COMMAND ${command}
