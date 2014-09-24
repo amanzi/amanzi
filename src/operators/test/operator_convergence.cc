@@ -173,9 +173,8 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
-  // RCP<const Mesh> mesh = meshfactory("test/median255x256.exo", gm);
 
   // create diffusion coefficient
   std::vector<WhetStone::Tensor> K;
@@ -235,7 +234,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
   // MAIN LOOP
   for (int n = 0; n < 240; n+=50) {
-    double factor = pow(10.0, (double)(n - 50) / 100.0);
+    double factor = pow(10.0, (double)(n - 50) / 100.0) / 2;
     
     // create source operator 
     Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(cvs, 0));
@@ -423,8 +422,8 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
 
   // MAIN LOOP
   for (int n = 0; n < 400; n+=110) {
-    // double factor = pow(10.0, (double)(n - 50) / 100.0);
-    double factor = pow(10.0, (double)(n - 150) / 100.0);
+    // double factor = pow(10.0, (double)(n - 50) / 100.0) / 2;
+    double factor = pow(10.0, (double)(n - 150) / 100.0) / 2;
 
     // create source operator 
     Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(cvs, 0));

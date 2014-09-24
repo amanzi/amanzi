@@ -31,9 +31,10 @@ Layout::GetBndryCells (const BoxArray& ba,
     //
     // Now strip out intersections with original BoxArray (or, local boxes)
     //
+    std::vector< std::pair<int,Box> > isects;
     for (BoxList::const_iterator it = gcells.begin(); it != gcells.end(); ++it)
     {
-        std::vector< std::pair<int,Box> > isects = ba.intersections(*it);
+         ba.intersections(*it,isects);
 
         if (isects.empty())
             bcells.push_back(*it);

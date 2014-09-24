@@ -138,6 +138,8 @@ public:
   // Extras
   void Print(std::ostream &os) const;
 
+  int Random();
+
   const Epetra_MpiComm& Comm() const { return comm_; }
 
 private:

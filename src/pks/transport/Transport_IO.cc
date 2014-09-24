@@ -73,7 +73,7 @@ void Transport_PK::ProcessParameterList()
 
     dispersion_models_.resize(nblocks);
 
-    int iblock = 0;
+    int iblock = 0, iblock0 = 0;
     for (Teuchos::ParameterList::ConstIterator i = dlist.begin(); i != dlist.end(); i++) {
       if (dlist.isSublist(dlist.name(i))) {
         dispersion_models_[iblock] = Teuchos::rcp(new DispersionModel());
@@ -96,15 +96,22 @@ void Transport_PK::ProcessParameterList()
             dispersion_models_[iblock]->tau == 0.0) {
           if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
             Teuchos::OSTab tab = vo_->getOSTab();
-            *vo_->os() << vo_->color("yellow") << "Zero dispersion for sublist \"" << dlist.name(i) 
-                       << "\", removing all dispersion parameters."<< vo_->reset() << std::endl;
+            *vo_->os() << vo_->color("yellow") << "Zero dispersion for sublist \"" 
+                       << dlist.name(i) << "\"" << vo_->reset() << std::endl;
           }
-          dispersion_models_.clear();
-          break;
+          iblock0++;
         }
 
         iblock++;
       }
+    }
+
+    if (iblock0 == iblock) {
+      dispersion_models_.clear();
+    } else if (iblock0 > 0) {
+      Errors::Message msg;
+      msg << "Transport PK: Zero dispersion tensor is not supported.\n";
+      Exceptions::amanzi_throw(msg);  
     }
   }
 

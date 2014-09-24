@@ -43,7 +43,7 @@ double MFD3D::CalculateStabilityScalar(DenseMatrix& Mc)
 
   scalar_stability_ = 0.0;
   for (int i = 0; i < nrows; i++) scalar_stability_ += Mc(i, i);
-  scalar_stability_ /= nrows;
+  scalar_stability_ /= double(nrows) / 2.0;
 
   if (stability_method_ == WHETSTONE_STABILITY_GENERIC_SCALED) {
     scalar_stability_ *= scaling_factor_;

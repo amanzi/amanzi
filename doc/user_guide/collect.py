@@ -68,7 +68,8 @@ verification['confined_flow']={'index_entry' : 'confined_flow/index.rst',
                                 'index_file' : 'doc/user_guide/verification/confined_flow/index.rst',
                                 'index_list' : ['linear_head_head', 'linear_flux_head',
                                                 'linear_materials_serial','linear_materials_parallel',
-                                                'theis_isotropic', 'hantush_anisotropic','butler_strip_2d',
+                                                'theis_isotropic', 'hantush_anisotropic','butler_strip_2d', 'butler_pod_2d',
+                                                'boundedDomain_2d',
                                                 ],
                                 },
                                'linear_head_head' :
@@ -105,6 +106,16 @@ verification['confined_flow']={'index_entry' : 'confined_flow/index.rst',
                                    {'from_dir' : 'testing/verification/flow/saturated/transient/butler_strip_2d',
                                     'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_strip_2d',
                                     'index_entry' : 'butler_strip_2d/amanzi_butler_strip_2d.rst',
+                                    },
+                               'butler_pod_2d' :
+                                   {'from_dir' : 'testing/verification/flow/saturated/transient/butler_pod_2d',
+                                    'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_pod_2d',
+                                    'index_entry' : 'butler_pod_2d/amanzi_butler_pod_2d.rst',
+                                    },
+                               'boundedDomain_2d' :
+                                   {'from_dir' : 'testing/verification/flow/saturated/transient/boundedDomain_2d',
+                                    'dest_dir' : 'doc/user_guide/verification/confined_flow/boundedDomain_2d',
+                                    'index_entry' : 'boundedDomain_2d/amanzi_boundedDomain_2d.rst',
                                     },
                                }
 
@@ -215,7 +226,13 @@ benchmark['transport']={'index_entry' : 'transport/index.rst',
 mycase={}
 mycase['index']={'index_title' : 'My Prototype Documentation',
                  'index_file' : 'doc/user_guide/mycase/index.rst',
-                 'index_list' : ['newcase', 'pod'],
+                 'index_list' : ['strip', 'pod', 'boundedDomain'],
+#                 'index_list' : ['strip', 'pod', 'boundedDomain', 'theis_isotropic'],
+             }
+
+mycase['strip']={'from_dir' : 'testing/verification/flow/saturated/transient/butler_strip_2d',
+                   'dest_dir' : 'doc/user_guide/mycase/butler_strip_2d',
+                   'index_entry' : 'butler_strip_2d/amanzi_butler_strip_2d.rst',
              }
 
 mycase['pod']={'from_dir' : 'testing/verification/flow/saturated/transient/butler_pod_2d',
@@ -223,11 +240,15 @@ mycase['pod']={'from_dir' : 'testing/verification/flow/saturated/transient/butle
                    'index_entry' : 'butler_pod_2d/amanzi_butler_pod_2d.rst',
              }
 
-mycase['newcase']={'from_dir' : 'testing/verification/flow/saturated/transient/butler_strip_2d',
-                   'dest_dir' : 'doc/user_guide/mycase/butler_strip_2d',
-                   'index_entry' : 'butler_strip_2d/amanzi_butler_strip_2d.rst',
+mycase['boundedDomain']={'from_dir' : 'testing/verification/flow/saturated/transient/boundedDomain_2d',
+                   'dest_dir' : 'doc/user_guide/mycase/boundedDomain_2d',
+                   'index_entry' : 'boundedDomain_2d/amanzi_boundedDomain_2d.rst',
              }
 
+#mycase['theis_isotropic']= {'from_dir' : 'testing/verification/flow/saturated/transient/theis_isotropic_1d',
+#                            'dest_dir' : 'doc/user_guide/verification/confined_flow/theis_isotropic',
+#                            'index_entry' : 'theis_isotropic/amanzi_theis_isotropic_1d.rst',
+#             }
 # =========================================================================================================================
 #
 #  Create parser and options

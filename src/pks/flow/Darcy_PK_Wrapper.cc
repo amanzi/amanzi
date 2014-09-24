@@ -44,6 +44,6 @@ Darcy_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   return failed;
 }
 
-} // namespace
-} // namespace
+} // namespace Flow
+} // namespace Amanzi
 

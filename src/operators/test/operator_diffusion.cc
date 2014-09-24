@@ -248,6 +248,31 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   Teuchos::RCP<Operator> op2 = Teuchos::rcp(new Operator(*op1));
   op2->InitPreconditioner("Hypre AMG", slist);
 
+
+  // Test SPD properties of the preconditioner.
+  CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
+  a.Random();
+  b.Random();
+  op2->ApplyInverse(a, ha);
+  op2->ApplyInverse(b, hb);
+
+  double ahb, bha, aha, bhb;
+  a.Dot(hb, &ahb);
+  b.Dot(ha, &bha);
+  a.Dot(ha, &aha);
+  b.Dot(hb, &bhb);
+
+  if (MyPID == 0) {
+    std::cout << "Preconditioner:\n"
+              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
+    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
+  }
+  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
+  CHECK(aha > 0.0);
+  CHECK(bhb > 0.0);
+
+
+
   // solve the problem
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;

@@ -481,9 +481,12 @@ int OperatorDiffusion::ApplyInverseSpecialSff_(const CompositeVector& X, Composi
   }
 
   // Solve the Schur complement system Sff * Yf = Tf.
+  Epetra_MultiVector& Tf_short = *T.ViewComponent("face", false);
+  Epetra_MultiVector& Yf_short = *Y.ViewComponent("face", false);
+
   T.GatherGhostedToMaster("face", Add);
 
-  preconditioner_->ApplyInverse(Tf, Yf);
+  preconditioner_->ApplyInverse(Tf_short, Yf_short);
 
   Y.ScatterMasterToGhosted("face");
 
@@ -555,8 +558,12 @@ int OperatorDiffusion::ApplyInverseSpecialScc_(const CompositeVector& X, Composi
       Tf[0][f] += Acell(n, n);
     }
   }
+  T.GatherGhostedToMaster("face");
 
   // FORWARD ELIMINATION:  Tc = Xc - Acf inv(Aff) Xf
+  T.ScatterMasterToGhosted("face");
+  X.ScatterMasterToGhosted("face");
+
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -725,7 +732,6 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
   }
 
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
 
   // create a cell-based stiffness matrix from A.
   A_->PutScalar(0.0);
@@ -734,11 +740,11 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
 
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
 
-  // populate Aff
+  // populate ecofficients that form transmissibility
   CompositeVectorSpace cv_space;
   cv_space.SetMesh(mesh_);
   cv_space.SetGhosted(true);
-  cv_space.SetComponent("face", AmanziMesh::FACE, 1);
+  cv_space.SetComponent("face", AmanziMesh::FACE, 2);
 
   Teuchos::RCP<CompositeVector> T = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
   Epetra_MultiVector& Ttmp = *T->ViewComponent("face", true);
@@ -751,15 +757,19 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
-    if (matrix_shadow[c].NumRows() == 0) { 
-      WhetStone::DenseMatrix& Acell = matrix[c];
-      for (int n = 0; n < nfaces; n++) {
-        Ttmp[0][faces[n]] += 1.0 / Acell(n, n);
-      }
-    } else {
-      WhetStone::DenseMatrix& Acell = matrix_shadow[c];
-      for (int n = 0; n < nfaces; n++) {
-        Ttmp[0][faces[n]] += 1.0 / Acell(n, n);
+    int c0 = cmap_wghost.GID(c);
+    WhetStone::DenseMatrix& Acell = matrix[c];
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+
+      if (cells.size() == 1) { 
+        Ttmp[0][f] = Acell(n, nfaces);
+      } else {
+        int c1 = cmap_wghost.GID(cells[0]);
+        int c2 = cmap_wghost.GID(cells[1]);
+        int i = (c0 == std::min(c1, c2)) ? 0 : 1; 
+        Ttmp[i][f] = Acell(n, nfaces);
       }
     }
   }
@@ -767,7 +777,7 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
  
   // populate the global matrix
   int lid[2], gid[2];
-  double values[2];
+  double a1, a2, values[2];
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -778,15 +788,25 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
       gid[n] = cmap_wghost.GID(cells[n]);
     }
 
-    double coef = 1.0 / Ttmp[0][f];
+    a1 = Ttmp[0][f]; 
+    a2 = Ttmp[1][f];
+    if (ncells == 2 && gid[0] > gid[1]) {
+      a1 = Ttmp[1][f]; 
+      a2 = Ttmp[0][f];
+    }
+
+    double coef = fabs(a1 + a2) + diag_face[0][f];
+    if (coef == 0.0) continue;
+
     for (int n = 0; n < ncells; n++) {
       if (n == 0) {
-        values[0] = coef;
-        values[1] = -coef;
+        values[0] = -a1 * a1 / coef;
+        values[1] = -a1 * a2 / coef;
       } else {
-        values[0] = -coef;
-        values[1] = coef;
+        values[0] = -a1 * a2 / coef;
+        values[1] = -a2 * a2 / coef;
       }
+
       if (lid[n] < ndof) {
         A_->SumIntoMyValues(lid[n], ncells, values, lid);
       } else {
@@ -807,11 +827,15 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
 
   if (diagonal_->HasComponent("cell")) {
     Epetra_MultiVector& diag_cell = *diagonal_->ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; c++) tmp[c] += diag_cell[0][c];
+    for (int c = 0; c < ncells_owned; c++) {
+      WhetStone::DenseMatrix& Acell = matrix[c];
+      int n = Acell.NumRows() - 1;
+      tmp[c] += Acell(n, n) + diag_cell[0][c];
+    }
   }
 
   A_->ReplaceDiagonalValues(tmp);
-// std::cout << *A_ << std::endl;
+  // std::cout << *A_ << std::endl;
 
   // redefine (if necessary) preconditioner since only 
   // one preconditioner is allowed.
@@ -1053,6 +1077,9 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   } else {
     upwind_ = OPERATOR_UPWIND_NONE;  // cell-centered scheme.
   }
+
+  // experimental options
+  nonstandard_symbolic_ = plist.get<int>("nonstandard symbolic assembling", 0);
 }
 
 

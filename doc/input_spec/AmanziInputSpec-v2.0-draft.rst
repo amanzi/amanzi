@@ -225,8 +225,6 @@ NOTE: start is REQUIRED
     * method=" bdf1 | picard" 
 
     * restart="string"
-       
-    * max_cycles="integer" (ONLY valid for Transient and Transient with Static Flow)
 
 Note, the value of the attribute ``restart`` is the name of the Amanzi checkpoint file previously created and to be used to initialize the current simulation.
 
@@ -237,7 +235,7 @@ Numerical Controls
 
   <numerical_controls>
       Required Elements: NONE
-      Optional Elements: comments, common_controls, unstructured_controls, structured_controls
+      Optional Elements: comments, steady-state_controls, transient_controls, linear_solver, nonlinear_solver, chemistry_controls
   </numerical_controls>
 
 Some discussion of the elements, what the minimum necessary for a simulation is goes here.  For now I have just listed the elements that are available.  
@@ -246,41 +244,11 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * Note: In many cases extra elements, such as comments, are not accommodated in the current input parsing. Therefore, for the most part `"comment`" elements are ignored.
 
-.. code-block:: xml
-
-  <common_controls>
-      Required Elements: NONE
-      Optional Elements: steady-state_controls, linear_solver
-  </common_controls>
-
-`"common_controls`" contains options common to both the structured and unstructured modes.  It has the following structure and elements
-
-* `"common_controls`" 
- 
-  * `"steady-state_controls`"  has the following elements
- 
-    * `"min_iterations`"="integer" (min_iterations must be <= limit_iterations)
-
-    * `"limit_iterations`"="integer"
-  
-  * `"linear_solver`"  has the following elements
-
-    * `"cfl`"="exponential"
-
-.. code-block:: xml
-
-  <unstructured_controls>
-      Required Elements: NONE
-      Optional Elements: unstr_steady-state_controls, unstr_transient_controls, unstr_linear_solver, unstr_nonlinear_solver, unstr_chemistry_controls
-  </unstructured_controls>
-
-`"unstructured_controls`" contains options specific to the unstructured modes.  It has the following structure and elements
-
-* `"unstructured_controls`" 
-
-  * `"unstr_steady-state_controls`"  has the following elements
+* `"steady-state_controls`"  has the following elements
 
     * `"comments`"="string" - SKIPPED
+ 
+    * `"min_iterations`"="integer" (min_iterations must be <= max_iterations)
 
     * `"max_iterations`"="integer"
 
@@ -288,11 +256,11 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"nonlinear_tolerance`"="exponential"
 
-    * `"unstr_pseudo_time_integrator`"  has the following elements
+    * `"pseudo_time_integrator`"  has the following elements
 
         * `"method`"="string" (options: picard)
 
-        * `"preconditioner`"="string" (options: trilinos_ml, hypre_amg, block_ilu)
+        * `"preconditioner`"="string" (options: trilinos_ml, hypre_amg, block_ilu) See below for subelements based on preconditioner name.
 
         * `"linear_solver`"="string" (options: aztec00)
 
@@ -306,6 +274,8 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
         * `"initialize_with_darcy`"="boolean"
 
+    * `"limit_iterations`"="integer"
+
     * `"nonlinear_iteration_damping_factor`"="exponential"
 
     * `"nonlinear_iteration_divergence_factor`"="exponential"
@@ -314,11 +284,7 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"initialize_with_darcy`"="boolean"
 
-    * `"restart_tolerance_factor`"="exponential"
- 
-    * `"restart_tolerance_relaxation_factor`"="exponential"
-
-  * `"unstr_transient_controls`"  has the following elements
+* `"transient_controls`" has the elements `"comments`" and `"integration_method`". `"integration_method`" has the following elements
 
     * `"comments`"="string" - SKIPPED 
       
@@ -348,7 +314,7 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"preconditioner`" requires an attribute `"name`". (options: trilinos_ml, hypre_amg, block_ilu) See below for subelements based on preconditioner name.
 
-  * `"unstr_linear_solver`"  has the following elements
+* `"linear_solver`"  has the following elements
 
     * `"comments`"="string" - SKIPPED
  
@@ -358,17 +324,19 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"tolerance`"="exponential"
 
+    * `"cfl`"="exponential"
+
     * `"preconditioner`" requires an attribute `"name`". (options: trilinos_ml, hypre_amg, block_ilu) See below for subelements based on preconditioner name.
 
-* `"unstr_nonlinear_solver`"  has an attribute `"name`". (options: nka, newton, inexact newton)
+* `"nonlinear_solver`"  has an attribute `"name`". (options: nka, newton, inexact newton)
 
-* `"unstr_chemistry_controls`"  has the following elements
+* `"chemistry_controls`"  has the following elements
 
     * `"chem_tolerance`"="exponential" 
  
     * `"chem_max_newton_iterations`"="integer"
 
-`"unstr_transient_controls`" and `"unstr_linear_solver`" accept a subelement for specifing the `"preconditioner`" and it's options.  Current preconditioners available are Trilinos' ML, Hypre's AMG, and block ILU.  Below are the structures for each preconditioner.
+`"transient_controls`", `"linear_solver`", and `"pseudo_time_integrator`" accept a subelement for specifing the `"preconditioner`".  Current preconditioners available are Trilinos' ML, Hypre's AMG, and block ILU.  Below are the structures for each preconditioner.
 
 * `"preconditioners`" with `"name = 'trilinos_ml'`" has the following optional elements
 
@@ -402,124 +370,6 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
 
     * `"ilu_level_of_fill`"="integer" 
 
-.. code-block:: xml
-
-  <unstructured_controls>
-      Required Elements: NONE
-      Optional Elements: str_steady-state_controls, str_transient_controls, str_amr_controls, max_n_subcycle_transport
-  </unstructured_controls>
-
-`"structured_controls`" contains options specific to the structured modes.  It has the following structure and elements
-
-* `"structured_controls`" 
-
-  * `"str_steady-state_controls`"  has the following elements
-  
-    * `"max_pseudo_time`" = "exponential"
-  
-    * `"min_iterations_2`" = "integer"
-  
-    * `"time_step_increase_factor_`" = "exponential"
-  
-    * `"max_consecutive_failures_1`" = "integer"
-  
-    * `"time_step_retry_factor_1`" = "exponential"
-  
-    * `"max_consecutive_failures_2`" = "integer"
-  
-    * `"time_step_retry_factor_2`" = "exponential"
-  
-    * `"time_step_retry_factor_f`" = "exponential"
-  
-    * `"max_num_consecutive_success`" = "integer"
-  
-    * `"extra_time_step_increase_factor`" = "exponential"
-  
-    * `"abort_on_psuedo_timestep_failure`" = "integer"
-  
-    * `"use_PETSc_snes`" = "bool"
-  
-    * `"limit_function_evals`" = "exponential"
-  
-    * `"do_grid_sequence`" = "bool"
-  
-    * `"grid_sequence_new_level_dt_factor`" takes a sequence of exponential values as subelements
-
-        * `"dt_factor`" = "exponential"
-
-  * `"str_transient_controls`"  has the following elements
-  
-    * `"max_ls_iterations`" = "integer"
-  
-    * `"ls_reduction_factor`" = "exponential"
-  
-    * `"min_ls_factor`" = "exponential"
-  
-    * `"ls_acceptance_factor`" = "exponential"
-  
-    * `"monitor_line_search`" = "integer"
-  
-    * `"monitor_linear_solve`" = "integer"
-  
-    * `"use_fd_jac`" = "bool"
-  
-    * `"perturbation_scale_for_J`" = "exponential"
-  
-    * `"use_dense_Jacobian`" = "bool"
-  
-    * `"upwind_krel`" = "bool"
-  
-    * `"pressure_maxorder`" = "integer"
-  
-    * `"scale_solution_before_solve`" = "bool"
-  
-    * `"semi_analytic_J`" = "bool"
-
-  * `"str_amr_controls`"  has the following elements
-  
-    * `"amr_levels`" = "integer"
-  
-    * `"refinement_ratio`" takes a sequence of integer values as subelements
-
-        * `"int`" = "integer"
-  
-    * `"do_amr_cubcycling`" = "bool"
-  
-    * `"regrid_interval`" takes a sequence of integer values as subelements
-
-        * `"int`" = "integer"
-  
-    * `"blocking_factor`" takes a sequence of integer values as subelements
-
-        * `"int`" = "integer"
-  
-    * `"number_error_buffer_cells`" takes a sequence of integer values as subelements
-
-        * `"int`" = "integer"
-  
-    * `"max_grid_size`" = "integer"
-  
-    * `"refinement_indicators`" takes the following subelements
-    
-      * `"field_name`" = "string"
-    
-      * `"regions`" = "string"
-    
-      * `"max_refinement_level`" = "string"
-    
-      * `"start_time`" = "exponential"
-    
-      * `"end_time`" = "exponential"
-      
-      * The user may also specify exactly 1 of the follwing
-      
-        * `"value_greater`" = "exponential"
-      
-        * `"value_less`" = "exponential"
-      
-        * `"adjacent_difference_greater`" = "exponential"
-      
-        * `"inside_region`" = "bool"
 
 Mesh
 ====
@@ -862,36 +712,31 @@ The `"initial_conditions`" section contains at least 1 and up to an unbounded nu
 
 Here is more info on the `"liquid_phase`" elements:
 
-    * `"liquid_component`" is an element with the possible subelements: `"uniform_pressure`", `"linear_pressure`", `"uniform_saturation`", `"linear_saturation`", and `"velocity`".  They would like the following: 
+    * `"liquid_component`" is an element with the following subelement: 
+
+        * `"uniform_pressure`" is an element with the following attributes: 
 
 .. code-block:: xml
 
-    <uniform_pressure name="some name" value="exponential" />
+     <uniform_pressure name="some name" value="exponential" />
+
+        * `"linear_pressure`" is an element with the following attributes: 
 
 .. code-block:: xml
 
-            <linear_pressure name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
+     linear_pressure name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
+
+        * `"velocity`" is an element with the following attributes: 
 
 .. code-block:: xml
 
-            <uniform_saturation name="some name" value="exponential" />
+     <velocity name="some name" x="exponential" y="exponential" z="exponential"/>
 
-.. code-block:: xml
-
-            <linear_saturation name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
-
-.. code-block:: xml
-
-            <velocity name="some name" x="exponential" y="exponential" z="exponential"/>
-
-.
     * `"solute_component`" is an element with the following attributes: 
 
 .. code-block:: xml
 
-     <solute_component name="some name" value="exponential" function="uniform" />
-
-..     <solute_component name="some name" (filename="filename" SKIPPED) value="exponential" function="uniform (|linear SKIPPED) " (reference_coord="coordinate" gradient="coordinate" - linear skipped) />
+     <solute_component name="some name" (filename="filename" SKIPPED) value="exponential" function="uniform (|linear SKIPPED) " (reference_coord="coordinate" gradient="coordinate" - linear skipped) />
 
 NOTE: Reading from a file is not yet implemeneted.  Also, the reference_coord and gradient attributes are only needed for the "linear" function type, which is also not yet implemeneted.
 
@@ -1006,13 +851,15 @@ Here is more info on the `"liquid_phase`" elements:
 Output
 ======
 
-Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", and `"Observations`".  Each of these is controlled in different ways, reflecting their intended use.
+Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", `"Observations`", and `"Walkabout Data`".  Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Vis`" is intended to represent snapshots of the solution at defined instances during the simulation to be visualized.  The ''vis'' element defines the naming and frequencing of saving the visualization files.  The visualizatoin files may include only a fraction of the state data, and may contiain auxiliary "derived" information (see *elsewhere* for more discussion).
 
 * `"Checkpoint`" is intended to represent all that is necesary to repeat or continue an Amanzi run.  The specific data contained in a Checkpoint Data dump is specific to the algorithm options and mesh framework selected.  Checkpoint is special in that no interpolation is perfomed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write Checkpoint at the discrete intervals of the simulation. The ''checkpoint'' element defines the naming and frequencing of saving the checkpoint files.
 
 * `"Observations`" is intended to represent diagnostic values to be returned to the calling routine from Amanzi's simulation driver.  Observations are typically generated at arbitrary times, and frequently involve various point samplings and volumetric reductions that are interpolated in time to the desired instant.  Observations may involve derived quantities (see discussion below) or state fields.  The ''observations'' element may define one or more specific ''observation''.
+
+* `"Walkabout Data`" is intended to be used as input to the particle tracking software Walkabout.
 
 *EIB NOTE* - All three of the above are REQUIRED!!
 For the obserservations I understand how to leave that empty.  But how do I execute without writing a checkpoint? If I'm running a dinky test am I really required to specify a checkpoint?  Will need to test this will validator.  Talk to Ellen about this.
@@ -1049,16 +896,16 @@ Example:
 Checkpoint
 ----------
 
-The ''checkpoint'' element deines the filenaming scheme and frequency for writing out the checkpoint files.  As mentioned above, the user does not influence what is written to the checkpoint files.  Thus, the ''checkpoint'' element has the following requiements
+The ''checkpoint'' element defines the filenaming scheme and frequency for writing out the checkpoint files.  As mentioned above, the user does not influence what is written to the checkpoint files.  Thus, the ''checkpoint'' element has the following requiements
 
 .. code-block:: xml
 
   <checkpoint>
-      Required Elements: base_filename, num_digits, time_macro
+      Required Elements: base_filename, num_digits, cycle_macro
       Optional Elements: NONE
   </checkpoint>
 
-The *base_filename* element contain the text component of the how the checkpoint files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the checkpoint files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or interation id)  Final the *time_macro* element indicates the previously defined time_macro to be used to determin the frequency at which to write the checkpoint files.
+The *base_filename* element contain the text component of the how the checkpoint files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the checkpoint files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or interation id)  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the checkpoint files.
 
 Example:
 
@@ -1067,7 +914,7 @@ Example:
   <checkpoint>
      <base_filename>chk</base_filename>
      <num_digits>5</num_digits>
-     <time_macro>Every_100_timesteps</time_macro>
+     <cycle_macro>Every_100_steps</cycle_macro>
   </checkpoint>
 
 
@@ -1101,7 +948,7 @@ The observation element identifies the field quantity to be observed.  Subelemen
 .. code-block :: xml
 
    <observation_type>
-     Required Elements: assigned_region, functional, time_macro 
+     Required Elements: assigned_region, functional, time_macro
      Optional Elements: NONE
    </observation_type>
 
@@ -1134,6 +981,30 @@ Example:
       </liquid_phase>
 
     </observations>
+
+Walkabout
+----------
+
+The ''walkabout'' element deines the filenaming scheme and frequency for writing out the walkabout files.  As mentioned above, the user does not influence what is written to the walkabout files only the writing frequency and naming scheme.  Thus, the ''walkabout'' element has the following requiements
+
+.. code-block:: xml
+
+  <walkabout>
+      Required Elements: base_filename, num_digits, cycle_macro
+      Optional Elements: NONE
+  </walkabout>
+
+The *base_filename* element contain the text component of the how the walkabout files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the walkabout files.  The *num_digits* elements indicates how many digits to use for the index.  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files.
+
+Example:
+
+.. code-block:: xml
+
+  <walkabout>
+     <base_filename>chk</base_filename>
+     <num_digits>5</num_digits>
+     <cycle_macro>Every_100_steps</cycle_macro>
+  </walkabout>
 
 
 
