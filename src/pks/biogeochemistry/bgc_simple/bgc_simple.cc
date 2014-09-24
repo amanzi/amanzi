@@ -69,8 +69,15 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
   pfts_old_.resize(ncols);
   pfts_.resize(ncols);
   for (unsigned int col=0; col!=ncols; ++col) {
-    ColIterator col_iter(*mesh_, surf_mesh_->entity_get_parent(AmanziMesh::CELL, col));
+    int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, col);
+    ColIterator col_iter(*mesh_, f);
     std::size_t ncol_cells = col_iter.size();
+
+    // unclear which this should be:
+    // -- col area is the true face area
+    double col_area = mesh_->face_area(f);
+    // -- col area is the projected face area
+    // double col_area = surf_mesh_->cell_volume(col);
 
     if (ncells_per_col_ < 0) {
       ncells_per_col_ = ncol_cells;
@@ -283,6 +290,8 @@ bool BGCSimple::advance(double dt) {
     ColIterator col_iter(*mesh_, surf_mesh_->entity_get_parent(AmanziMesh::CELL, col), ncells_per_col_);
     // -- serious cache thrash... --etc
     for (std::size_t i=0; i!=col_iter.size(); ++i) {
+      AmanziGeometry::Point centroid = mesh_->cell_centroid(col_iter[i]);
+      std::cout << "Col iter col=" << col << ", index i=" << i << ", cell=" << col_iter[i] << " at " << centroid << std::endl;
       for (int p=0; p!=soil_carbon_pools_[col][i]->nPools; ++p) {
         soil_carbon_pools_[col][i]->SOM[p] = sc_pools[p][col_iter[i]];
       }
