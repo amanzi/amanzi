@@ -51,6 +51,10 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-install-step.cmake.in
 	       @ONLY)
 set(ALQUIMIA_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${ALQUIMIA_cmake_install})	
 
+# Generate a replacement for Alquimia's Makefile.inc file.
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-Makefile.inc.in
+               ${ALQUIMIA_prefix_dir}/Makefile.inc)
+
 # --- Add external project build and tie to the ALQUIMIA build target
 ExternalProject_Add(${ALQUIMIA_BUILD_TARGET}
                     DEPENDS   ${ALQUIMIA_PACKAGE_DEPENDS}             # Package dependency target
