@@ -126,10 +126,10 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   Teuchos::RCP<VerboseObject> vo_;
 
   void UpdateChemistryStateStorage(void);
-  int InitializeSingleCell(int cellIndex, const std::string& condition);
+  int InitializeSingleCell(int cell_index, const std::string& condition);
   int AdvanceSingleCell(double delta_time, 
                         Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star,
-                        int cellIndex);
+                        int cell_index);
 
   void ParseChemicalConditionRegions(const Teuchos::ParameterList& param_list,
                                      std::map<std::string, std::string>& conditions);
@@ -147,8 +147,7 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
                                  const AlquimiaMaterialProperties& mat_props,
                                  const AlquimiaState& state,
                                  const AlquimiaAuxiliaryData& aux_data,
-                                 const AlquimiaAuxiliaryOutputData& aux_output,
-                                 Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
+                                 const AlquimiaAuxiliaryOutputData& aux_output);
 
 };
 

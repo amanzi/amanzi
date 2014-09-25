@@ -727,13 +727,8 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
   for (unsigned int c = 0; c < number_of_aqueous_components(); c++) 
   {
     double mobile = state.total_mobile.data[c];
-
-    // NOTE: We place our mobile concentrations into the chemistry state's
-    // NOTE: total component concentrations, not the aqueous concentrations.
-    // NOTE: I assume this has to do with our operator splitting technique.
-    double total = mobile;
     double* cell_components = (*aqueous_components)[c];
-    cell_components[cell_id] = total;
+    cell_components[cell_id] = mobile;
 
     if (using_sorption())
     {
