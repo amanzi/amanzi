@@ -48,6 +48,7 @@
 #   0.92.4       - update NetCDF to version 4.3.2 (builds correctly on Mac OS X 10.9)
 #   0.92.5       - Patched Alquimia to build properly with GFortran 4.9.x
 #   0.92.6       - update Boost to version 1.56.0 
+#   0.92.7       - update CCSE to version 1.2.8 
 #
 
 include(CMakeParseArguments)
@@ -162,12 +163,14 @@ set(METIS_MD5_SUM        5465e67079419a69e0116de24fce58fe)
 #
 set(CCSE_VERSION_MAJOR 1)
 set(CCSE_VERSION_MINOR 2)
-set(CCSE_VERSION_PATCH 7)
+set(CCSE_VERSION_PATCH 8)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
-set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(CCSE_URL_STRING     "https://dl.dropboxusercontent.com/u/17389654")
+#set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-set(CCSE_MD5_SUM        0118a98acc10743bd1998f4fdae2447c)
+#set(CCSE_MD5_SUM        0118a98acc10743bd1998f4fdae2447c)
+set(CCSE_MD5_SUM        dacee6cff1031bd92c9d1fad5a486077)
 #
 # TPL: UnitTest
 #

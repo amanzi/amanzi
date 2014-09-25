@@ -93,3 +93,14 @@ add_custom_command(TARGET ${CCSE_BUILD_TARGET}
                    COMMAND ${CMAKE_COMMAND} -E copy fsnapshot.so ${TPL_INSTALL_PREFIX}/lib
                    DEPENDS ${CCSE_BUILD_TARGET}
                    WORKING_DIRECTORY ${CCSE_source_dir}/Tools/Py_util)
+
+# --- This guy right here builds AMRDeriveTecplot, an executable program for 
+# --- producing Tecplot/ASCII output from CCSE's native AMR output.
+# --- Like the fsnapshot.so command above, it executes after the CCSE library 
+# --- is built, builds the module, and copies it into place.
+add_custom_command(TARGET ${CCSE_BUILD_TARGET}
+                   POST_BUILD
+                   COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir}
+                   COMMAND cp AmrDeriveTecplot*.ex ${TPL_INSTALL_PREFIX}/bin
+                   DEPENDS ${CCSE_BUILD_TARGET}
+                   WORKING_DIRECTORY ${CCSE_source_dir}/Tools/C_util/AmrDeriveTecplot)
