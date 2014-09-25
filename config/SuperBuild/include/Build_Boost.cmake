@@ -24,6 +24,10 @@ set(Boost_toolset)
 string(TOLOWER ${CMAKE_C_COMPILER_ID} compiler_id_lc)
 if (compiler_id_lc)
   if (APPLE)
+    # CMAKE_SYSTEM of the form Darwin-12.5.0
+    # CMAKE_SYSTEM_VERSION is 12.5.0 corresponds to OSX 10.8.5
+    STRING(REGEX REPLACE "\\..*" "" OS_VERSION_MAJOR ${CMAKE_SYSTEM_VERSION})
+    #
     if ( ${compiler_id_lc} STREQUAL "intel" )
       set(Boost_toolset intel-darwin)
     else()  
@@ -31,9 +35,14 @@ if (compiler_id_lc)
     endif()  
     # In the case that we're building using GCC on Macs, we have to give Boost 
     # some extra hints.
-    if (${compiler_id_lc} STREQUAL "gnu" )
-      set(Boost_bootstrap_args "cxxflags=\"-arch i386 -arch x86_84\" address-model=32_64")
-      set(Boost_bjam_args "cxxflags=\"-stdlib=libstdc++\" linkflags=\"-stdlib=libstdc++\"")
+    if (${compiler_id_lc} STREQUAL "gnu")
+      # JDM: It seems this only works on OSX 10.9 and above, needs more testing.
+      # OSX 10.9.x -> Darwin-13.x.y
+      if ( ${OS_VERSION_MAJOR} GREATER 12 )
+        message (STATUS "BOOST: build and linking with -stdlib=libstdc++ ")
+        set(Boost_bootstrap_args "cxxflags=\"-arch i386 -arch x86_84\" address-model=32_64")
+        set(Boost_bjam_args "cxxflags=\"-stdlib=libstdc++\" linkflags=\"-stdlib=libstdc++\"")
+      endif()
     endif()
   elseif(UNIX)
     if ( ${compiler_id_lc} STREQUAL "gnu" )

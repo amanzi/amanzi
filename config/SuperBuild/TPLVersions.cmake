@@ -99,7 +99,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 6)
+set (AMANZI_TPLS_VERSION_PATCH 7)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -166,10 +166,8 @@ set(CCSE_VERSION_MINOR 2)
 set(CCSE_VERSION_PATCH 8)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
-set(CCSE_URL_STRING     "https://dl.dropboxusercontent.com/u/17389654")
-#set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-#set(CCSE_MD5_SUM        0118a98acc10743bd1998f4fdae2447c)
 set(CCSE_MD5_SUM        dacee6cff1031bd92c9d1fad5a486077)
 #
 # TPL: UnitTest
