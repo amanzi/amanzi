@@ -33,15 +33,18 @@ if (compiler_id_lc)
     else()  
       set(Boost_toolset darwin)
     endif()  
-    # In the case that we're building using GCC on Macs, we have to give Boost 
     # some extra hints.
     if (${compiler_id_lc} STREQUAL "gnu")
-      # JDM: It seems this only works on OSX 10.9 and above, needs more testing.
-      # OSX 10.9.x -> Darwin-13.x.y
-      if ( ${OS_VERSION_MAJOR} GREATER 12 )
-        message (STATUS "BOOST: build and linking with -stdlib=libstdc++ ")
-        set(Boost_bootstrap_args "cxxflags=\"-arch i386 -arch x86_84\" address-model=32_64")
-        set(Boost_bjam_args "cxxflags=\"-stdlib=libstdc++\" linkflags=\"-stdlib=libstdc++\"")
+      # On Mac OS 10.9, Clang has switched from using libstdc++ to libc++, so 
+      # we need to tell it to do the opposite.
+      if ( ${OS_VERSION_MAJOR} GREATER 12 ) # OSX 10.9.x -> Darwin-13.x.y
+        execute_process(COMMAND g++ -v ERROR_VARIABLE GXX_IS_CLANG)
+        string(FIND ${GXX_IS_CLANG} "LLVM" LLVM_INDEX)
+        if (NOT ${LLVM_INDEX} EQUAL -1)
+          message (STATUS "BOOST: build and linking with Clang using -stdlib=libstdc++ ")
+          set(Boost_bootstrap_args "cxxflags=\"-arch i386 -arch x86_84\" address-model=32_64")
+          set(Boost_bjam_args "cxxflags=\"-stdlib=libstdc++\" linkflags=\"-stdlib=libstdc++\"")
+        endif()
       endif()
     endif()
   elseif(UNIX)
