@@ -35,6 +35,28 @@ def GetXY_Amanzi(path,root,time,comp):
     
     return (x_amanzi_alquimia, c_amanzi_alquimia)
 
+
+def GetXY_AmanziS(path,root,time,comp):
+    try:
+        import fsnapshot
+        fsnok = True
+    except:
+        fsnok = False
+
+    #import pdb; pdb.set_trace()
+
+    plotfile = os.path.join(path,root)
+    if os.path.isdir(plotfile) & fsnok:
+        (nx, ny, nz) = fsnapshot.fplotfile_get_size(plotfile)
+        x = np.zeros( (nx), dtype=np.float64)
+        y = np.zeros( (nx), dtype=np.float64)
+        (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x)
+    else:
+        x = np.zeros( (0), dtype=np.float64)
+        y = np.zeros( (0), dtype=np.float64)
+    
+    return (x, y)
+
 # ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 
 def GetXY_PFloTran(path,root,time,comp):
@@ -107,13 +129,51 @@ if __name__ == "__main__":
 
         alquim = False
 
-        # subplots
-        # fig, ax = plt.subplots()
+    try:
+
+        # Amanzi-Alquimia-Crunch
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
+        path_to_amanzi = "amanzi-alquimia-crunch-output"
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+"-crunch.in",root+".dbs",root+".dbsx"])
+        x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+
+        alquim_crunch = True
+
+    except:
+
+        alquim_crunch = False
+
+
+    # amanziS data
+    try:
+        path_to_amanziS = "run_data_pflo"
+        root_amanziS = "plt00102"
+        compS = "Tritium_Aqueous_Concentration"
+        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        struct = len(x_amanziS)
+    except:
+        struct = 0
+
+    try:
+        path_to_amanziS = "run_data_crunch"
+        root_amanziS = "plt00102"
+        compS = "Tritium_Aqueous_Concentration"
+        x_amanziS, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        struct = len(x_amanziS)
+    except:
+        struct = 0
+
+
 
     # lines on axes
     if alquim:
         alq = ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
-    ama = ax.plot(x_amanzi_native, c_amanzi_native,'ro',label='Amanzi Native Chemistry')
+    if alquim_crunch:
+        alq = ax.plot(x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch,'r|',label='Amanzi+Alquimia(CrunchFlow)',linewidth=2)
+    if (struct>0):
+        sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFloTran)',linewidth=2) 
+        sam_crunch = ax.plot(x_amanziS, c_amanziS_crunch,'g*',label='AmanziS+Alquimia(CrunchFlow)',linewidth=2) 
+    ama = ax.plot(x_amanzi_native, c_amanzi_native,'r_',label='Amanzi Native Chemistry')
     pfl = ax.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
 
     # axes
