@@ -20,6 +20,7 @@ project(PLATFORM_INTERFACE)
 
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) include directories

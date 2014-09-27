@@ -2,7 +2,7 @@
     <!-- 1USUnsFlow1a: Transient infiltration into dry SAND -->
     <!-- Vanderborght et al. 2005, A set of analytical benchmarks to test numerical -->
     <!-- models of flow and transport in soils, Vadose Zone Journal 4:206.221 -->
-    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
     <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
       <Parameter name="Author" type="string" value="Yabusaki"/>

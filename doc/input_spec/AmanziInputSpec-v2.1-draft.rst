@@ -26,7 +26,7 @@ An exmample root tag of an input file would look like the following.
 
 .. code-block:: xml
 
-  <amanzi_input version="2.0.0" type="unstructured"/>
+  <amanzi_input version="2.1.0" type="unstructured"/>
 
 
 Model Description
@@ -240,32 +240,9 @@ Numerical Controls
       Optional Elements: comments, common_controls, unstructured_controls, structured_controls
   </numerical_controls>
 
-Some discussion of the elements, what the minimum necessary for a simulation is goes here.  For now I have just listed the elements that are available.  
+This section allows the user to define control parameters associated with the underlying numerical implementation.  The list of available options is lengthy.  However, none are required for a valid input file.  The ``numerical_controls`` section is divided up into the subsections: ``common_controls``, ``unstructured_controls``, and ``structured_controls``.  The ``common_controls`` section is currently empty.  However, in future versions controls that are common between the unstructured and structured executions will be moved to this section and given common terminology.
 
-* `"comments`"="string" - SKIPPED 
-
-    * Note: In many cases extra elements, such as comments, are not accommodated in the current input parsing. Therefore, for the most part `"comment`" elements are ignored.
-
-.. code-block:: xml
-
-  <common_controls>
-      Required Elements: NONE
-      Optional Elements: steady-state_controls, linear_solver
-  </common_controls>
-
-`"common_controls`" contains options common to both the structured and unstructured modes.  It has the following structure and elements
-
-* `"common_controls`" 
- 
-  * `"steady-state_controls`"  has the following elements
- 
-    * `"min_iterations`"="integer" (min_iterations must be <= limit_iterations)
-
-    * `"limit_iterations`"="integer"
-  
-  * `"linear_solver`"  has the following elements
-
-    * `"cfl`"="exponential"
+The ``unstructured_controls`` sections is divided in the the subsections: ``unstr_steady-state_controls``, ``unstr_transient_controls``, ``unstr_linear_solver``, ``unstr_nonlinear_solver``, and ``unstr_chemistry_controls``.  The list of available options is as follows:
 
 .. code-block:: xml
 
@@ -281,6 +258,8 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
   * `"unstr_steady-state_controls`"  has the following elements
 
     * `"comments`"="string" - SKIPPED
+
+    * `"min_iterations`"="integer"
 
     * `"max_iterations`"="integer"
 
@@ -305,6 +284,8 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
         * `"convergence_tolerance`"="exponential"
 
         * `"initialize_with_darcy`"="boolean"
+
+    * `"limit_iterations`"="integer"
 
     * `"nonlinear_iteration_damping_factor`"="exponential"
 
@@ -416,10 +397,14 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
   * `"str_steady-state_controls`"  has the following elements
   
     * `"max_pseudo_time`" = "exponential"
-  
+
+    * `"limit_iterations`" = "integer"
+
+    * `"min_iterations`" = "integer"
+
     * `"min_iterations_2`" = "integer"
   
-    * `"time_step_increase_factor_`" = "exponential"
+    * `"time_step_increase_factor_2`" = "exponential"
   
     * `"max_consecutive_failures_1`" = "integer"
   
@@ -474,6 +459,8 @@ Some discussion of the elements, what the minimum necessary for a simulation is 
     * `"scale_solution_before_solve`" = "bool"
   
     * `"semi_analytic_J`" = "bool"
+
+    * `"cfl`" = "exponential"
 
   * `"str_amr_controls`"  has the following elements
   
@@ -570,13 +557,21 @@ Note that the `"format`" content is case-sensitive and compared against a set of
 Regions
 =======
 
-TODO: general description of what regions are
+Regions are geometrical constructs used in Amanzi to define subsets of the computational domain in order to specify the problem to be solved, and the output desired. Regions are commonly used to specify material properties, boundary conditions and observation domains. Regions may represent zero-, one-, two- or three-dimensional subsets of physical space. For a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional regions. If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.
+
+Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. Under the "Structured" option, Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain, using the following labels: "XLOBC", "XHIBC", "YLOBC", "YHIBC", "ZLOBC", "ZHIBC"
+
+The ``regions`` block is required.  Within the region block no regions are required to be defined.  The optional elements valid for both structured and unstructured include ``region``, ``box``, ``point``, and ``plane``.  As in other sections there is also an options ``comments`` element.
+
+The elements ``box``, ``point``, and ``plane`` allow for inline description of regions.  The ``region`` element uses a subelement to either define a ``box`` or ``plane`` region or specify a region file.  Below are further descriptions of these elements.
+
+Additional regions valid only for unstructured are ``polygonal_surface`` and ``logical``.  Additional regions valid only for structured include ``polygon`` and ``ellipse`` in 2D and ``rotated_polygon`` and ``swept_polygon`` in 3D.
 
 .. code-block:: xml
 
   <regions>
       Required Elements: NONE
-      Optional Elements: comments, box, point, region
+      Optional Elements: comments, box, point, region, (unstructured only - polygonal_surface, logical), (structured 2D only - polygon, ellipse), (structured 3D only - rotated_polygon, swept_polygon)
   </regions>
 
 The regions block is required.  Within the region block no regions are required to be defined.  
@@ -622,10 +617,92 @@ A region is define as describe above.  A file is define as follows.
 
 Currently color functions and labeled sets can only be read from Exodus II files.  This will likely be the same file specified in the `"mesh`" element.  PLEASE NOTE the values listed within [] for attributes above are CASE SENSITIVE.  For many attributes within the Amanzi Input Schema the value is tested against a limited set of specific strings.  Therefore an user generated input file may generate errors due to a mismatch in cases.  Note that all specified names within this schema use lower case.
 
+Polygon
+-------
+
+A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the unstructured algorithm.
+
+.. code-block:: xml
+
+    <polygon name="polygon name" num_points="3">
+      <point> (X, Y, Z) </point>
+      <point> (X, Y, Z) </point>
+      <point> (X, Y, Z) </point>
+    </polygon>
+
+
+Logical
+-------
+
+Logical regions are compound regions formed from other primitive type regions using boolean operations. Supported operators are union, intersection, subtraction and complement.  This region type is only valid for the unstructured algorithm.
+
+
+.. code-block:: xml
+
+    <logical  name="logical name" operation = "union | intersection | subtraction | complement" region_list = "region1, region2, region3"/>
+
+
+Polygon
+-------
+
+A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the structured algorithm in 2D.
+
+.. code-block:: xml
+
+    <polygon name="polygon name" num_points="3">
+      <point> (X, Y) </point>
+      <point> (X, Y) </point>
+      <point> (X, Y) </point>
+    </polygon>
+
+Ellipse
+-------
+
+An ellipse region is used to define a bounded planar region and is specified by a center and X and Y radii.  This region type is only valid for the structured algorithm in 2D.
+
+.. code-block:: xml
+
+    <ellipse name="polygon name" num_points="3">
+      <center> (X, Y) </center>
+      <radius> (radiusX, radiusY) </radius>
+    </ellipse>
+
+Rotated Polygon
+---------------
+
+A rotated_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the axis about which to rotate the polygon, and a reference point for the rotation axis.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
+
+.. code-block:: xml
+
+<rotated_polygon name="rotated_polygon name">
+<vertex> (X, Y, Z) </vertex>
+<vertex> (X, Y, Z) </vertex>
+<vertex> (X, Y, Z) </vertex>
+<xyz_plane> (XY | YZ | XZ) </xyz_plane>
+<axis> (X | Y | Z) </axis>
+<reference_point> (X, Y) </reference_point>
+</rotated_polygon>
+
+Swept Polygon
+---------------
+
+A swept_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the extents (min,max) to sweep the polygon normal to the plane.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
+
+.. code-block:: xml
+
+<swept_polygon name="swept_polygon name">
+<vertex> (X, Y, Z) </vertex>
+<vertex> (X, Y, Z) </vertex>
+<vertex> (X, Y, Z) </vertex>
+<xyz_plane> (XY | YZ | XZ) </xyz_plane>
+<extent_min> exponential </extent_min>
+<extent_max> exponential </extent_max>
+</swept_polygon>
+
 Geochemistry
 ============
 
-Geochemistry allows users to define a reaction network and constraints to be associated with solutes defined under the `"dissolved_components`" section of the `"phases`" block. 
+Geochemistry allows users to define a reaction network and constraints to be associated with solutes defined under the `"dissolved_components`" section of the `"phases`" block.
 
 .. code-block:: xml
 
@@ -790,7 +867,7 @@ Some general discussion of the `"Phases`" section goes here.
 
   <Phases>
       Required Elements: liquid_phase
-      Optional Elements: solid_phase (comments - skipped)
+      Optional Elements: solid_phase
   </Phases>
 
 * `"liquid_phase`" has the following elements
@@ -818,9 +895,11 @@ The subelement `"solutes`" can have an unbounded number of subelements `"solute`
   
     * `"solute`"="string", containing the name of the solute
 
-        * `"coefficient_of_diffusion`"="exponential", this is an optional attribute
+    * `"coefficient_of_diffusion`"="exponential", this is an optional attribute
 
-* `"solid_phase`" has the following elements 
+    * `"first_order_decay_constant`"="exponential", this is an optional attribute
+
+* `"solid_phase`" has the following elements
 
 .. code-block:: xml
 
@@ -972,7 +1051,7 @@ Here is more info on the `"liquid_phase`" elements:
      <uniform_pressure name="some name" value="exponential" function="uniform | constant" start="time" />
 
 .
-        * `"seepage_face`" is an element with the following attributes: 
+        * `"seepage_face`" is an element with the following attributes (unstructured ONLY):
 
 .. code-block:: xml
 

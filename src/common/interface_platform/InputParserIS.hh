@@ -6,7 +6,7 @@ namespace AmanziInput {
 
 #define AMANZI_OLD_INPUT_VERSION_MAJOR 1
 #define AMANZI_OLD_INPUT_VERSION_MINOR 2
-#define AMANZI_OLD_INPUT_VERSION_MICRO 1
+#define AMANZI_OLD_INPUT_VERSION_MICRO 2
 
 Teuchos::ParameterList Translate(Teuchos::ParameterList* plist, int numproc);
 

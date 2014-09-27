@@ -189,7 +189,11 @@ namespace Amanzi {
       std::string ec_str = "Execution Control";
       std::string tpc_str = "Time Period Control";
       std::string amr_str = "Adaptive Mesh Refinement Control";
-      std::string prob_str = "Basic Algorithm Control";
+      //EIB: this is the actual name of the list, is there a reason for a difference????
+      //std::string amr_str = "Adaptive Mesh Refinement";
+      //EIB: change due to 1.2.2 update
+      //std::string prob_str = "Basic Algorithm Control";
+      std::string prob_str = "Structured Algorithm";
       std::string io_str = "IO Control";
       std::string it_str = "Iterative Linear Solver Control";
       std::string cg_str = "Conjugate Gradient Algorithm";
@@ -1791,8 +1795,10 @@ namespace Amanzi {
         const ParameterList& ec_list = parameter_list.sublist("Execution Control");
         if (ec_list.isSublist("Numerical Control Parameters")) {
           const ParameterList& ncp_list = ec_list.sublist("Numerical Control Parameters");
-          if (ncp_list.isSublist("Basic Algorithm Control")) {
-            const ParameterList& bac_list = ncp_list.sublist("Basic Algorithm Control");
+          //if (ncp_list.isSublist("Basic Algorithm Control")) {
+            //const ParameterList& bac_list = ncp_list.sublist("Basic Algorithm Control");
+          if (ncp_list.isSublist("Structured Algorithm")) {
+            const ParameterList& bac_list = ncp_list.sublist("Structured Algorithm");
             if (bac_list.isSublist("Expert Settings")) {
               const ParameterList& es_list = bac_list.sublist("Expert Settings");
               if (es_list.isParameter("gravity")) {

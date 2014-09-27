@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <Parameter name="Petsc Options File" type="string" value=".petsc"/>
 
   <!-- Confined Aquifer Transient Drawdown (Theis 1935) -->

@@ -11,7 +11,7 @@ The present document describes how to specify the data required to execute Amanz
 
 The open-source, platform independent Akuna_ user environment can generate *Amanzi* models and generate corresponding valid, human-readable XML input files that can then be executed by *Amanzi*.  Example input files are available in the Amanzi source repository.
 
-XML Schema 2.0
+XML Schema 2.1
 ++++++++++++++
 
 Amanzi solves a set of parameterized models for multiphase flow in porous media. An Amanzi simulation is specified by providing:
@@ -43,7 +43,7 @@ For an unstructured simulations the root tag would looks as the following.
 
 .. code-block:: xml
 
-    <amanzi_input version="2.0.0" type="unstructured">
+    <amanzi_input version="2.1.0" type="unstructured">
     </amanzi_input>
 
 Model Description
@@ -129,9 +129,9 @@ Here is an overall example for the ``definition`` element.
    <definitions>
 	<constants>
 		<constant name="zero" type="none" value="0.000"/>
-		<constant name="start" type="time" value="1956.0;y"/>
+		<constant name="start" type="time" value="1956.0,y"/>
 		<constant name="future_recharge" type="area_mass_flux" value="1.48666E-6"/>
-		<time_constant name="start_time" value="1956.0;y"/>
+		<time_constant name="start_time" value="1956.0,y"/>
 		<numerical_constant name="zero" value="0.000"/>
 	</constants>
 	<macros>
@@ -152,7 +152,9 @@ Here is an overall example for the ``definition`` element.
 Execution Control
 -----------------
 
-The ``execution_controls`` section defines the general execution of the Amanzi simulation.  Amanzi can execute in three modes: steady state, transient or initialize to a steady state and then continue it transient.  Default values for execution are defined in the ``execution_control_defaults`` element.  These values are used for any time period during the simulation for which the controls were not specified.  Individual time periods of the simulation are defined using ``execution_control`` elements.  For a steady state simulation, only one ``execution_control`` element will be defined.  However, for a transient simulation a series of controls may be defined during which different control values will be used.  For a valid ``execution_controls`` section the ``execution_control_defaults`` element and at least one ``execution_control`` element must appear.
+The ``execution_controls`` section defines the general execution of the Amanzi simulation.  Amanzi can execute in four modes: steady state, transient, transient with static flow, or initialize to a steady state and then continue it transient.  The transient with static flow mode does not compute the flow solution at each time step.  During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity. At present this mode only supports the "Single Phase" flow model.
+
+Default values for execution are defined in the ``execution_control_defaults`` element.  These values are used for any time period during the simulation for which the controls were not specified.  Individual time periods of the simulation are defined using ``execution_control`` elements.  For a steady state simulation, only one ``execution_control`` element will be defined.  However, for a transient simulation a series of controls may be defined during which different control values will be used.  For a valid ``execution_controls`` section the ``execution_control_defaults`` element and at least one ``execution_control`` element must appear.
 
 The ``execution_control_defaults`` element has the following attributes.
 
@@ -164,9 +166,11 @@ The ``execution_control`` element has the following attributes.
 
 .. code-block:: xml
 
-  <execution_control  restart="string" start="string" end="string" init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="steady | transient" method=" bdf1 | picard" />
+  <execution_control  restart="string" start="string" end="string" init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="steady | transient" method=" bdf1 | picard" max_cycles="integer"/>
 
 Each ``execution_control`` is required to define a ``start`` time.  The final control period must define and ``end`` time.  It is assumed that the start time of the next control period is the end time of the previous period.  Therefore, it is not required that each ``execution_control`` element have an ``end`` time defined.
+
+The attribute ``max_cycles`` is only valid for transient and transient with static flow execution modes.
 
 The ``execution_control`` section also provides the elements ``comments`` and ``verbosity``.  Users may provide any text within the ``comment`` element to annotate this section.  ``verbosity`` takes the attribute level=`` extreme | high | medium | low | none``.  This triggers increasing levels of reporting from inside Amanzi.  For debugging purposes use the level extreme.
 
@@ -188,21 +192,23 @@ Here is an overall example for the ``execution_control`` element.
 Numerical Controls
 ------------------
 
-This section allows the user to define control parameters associated with the underlying numerical implementation.  The list of available options is lengthy.  However, none are required for a valid input file.  The ``numerical_controls`` section is divided up into the subsections: ``steady-state_controls``, ``transient_controls``, ``linear_solver``, ``nonlinear_solver``, and ``chemistry_controls``.  The list of available options is as follows:
+This section allows the user to define control parameters associated with the underlying numerical implementation.  The list of available options is lengthy.  However, none are required for a valid input file.  The ``numerical_controls`` section is divided up into the subsections: ``common_controls``, ``unstructured_controls``, and ``structured_controls``.  The ``common_controls`` section is currently empty.  However, in future versions controls that are common between the unstructured and structured executions will be moved to this section and given common terminology.
+
+The ``unstructured_controls`` sections is divided in the the subsections: ``unstr_steady-state_controls``, ``unstr_transient_controls``, ``unstr_linear_solver``, ``unstr_nonlinear_solver``, and ``unstr_chemistry_controls``.  The list of available options is as follows:
 
 .. code-block:: xml
 
-  <numerical_controls>
+  <unstructured_controls>
 
     <comments>Numerical controls comments here</comments>
 
-    <steady-state_controls>
+    <unstr_steady-state_controls>
       <comments>Comment text here</comments>
       <min_iterations>Value</min_iterations>
       <max_iterations>Value</max_iterations>
       <max_preconditioner_lag_iterations>Value</max_preconditioner_lag_iterations>
       <nonlinear_tolerance>Value</nonlinear_tolerance>
-      <pseudo_time_integrator>
+      <unstr_pseudo_time_integrator>
         <initialize_with_darcy>Value</initialize_with_darcy>
         <clipping_saturation>Value</clipping_saturation>
         <method>picard</method>
@@ -228,7 +234,7 @@ This section allows the user to define control parameters associated with the un
         <control_options>Value</control_options>
         <convergence_tolerance>Value</convergence_tolerance>
         <max_iterations>Value</max_iterations>
-      </pseudo_time_integrator>
+      </unstr_pseudo_time_integrator>
       <limit_iterations>Value</limit_iterations>
       <nonlinear_iteration_damping_factor>Value</nonlinear_iteration_damping_factor>
       <nonlinear_iteration_divergence_factor>Value</nonlinear_iteration_divergence_factor>
@@ -237,7 +243,7 @@ This section allows the user to define control parameters associated with the un
       <max_divergent_iterations>Value</max_divergent_iterations>
     </steady-state_controls>
 
-    <transient_controls>
+    <unstr_transient_controls>
       <comments>Comment text here</comments>
       <bdf1_integration_method min_iterations="Value" 
                                max_iterations="Value" 
@@ -248,7 +254,8 @@ This section allows the user to define control parameters associated with the un
                                max_divergent_iterations="Value"
                                nonlinear_iteration_divergence_factor="Value"
                                restart_tolerance_factor="Value"
-                               restart_tolerance_relaxation_factor="Value" />
+                               restart_tolerance_relaxation_factor="Value"
+                               initialize_with_darcy="boolean"/>
       <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
            <!-- if trilinos_ml -->
         <trilinos_smoother_type> jacobi | gauss_seidel | ilu </trilinos_smoother_type>
@@ -267,9 +274,9 @@ This section allows the user to define control parameters associated with the un
         <ilu_abs_threshold> Value </ilu_abs_threshold>
         <ilu_level_of_fill> Value </ilu_level_of_fill>
       </preconditioner>
-    </transient_controls>
+    </unstr_transient_controls>
 
-    <linear_solver>
+    <unstr_linear_solver>
       <comments>Comment text here</comments>
       <method> gmres </method>
       <max_iterations> Value </max_iterations>
@@ -292,37 +299,37 @@ This section allows the user to define control parameters associated with the un
         <ilu_abs_threshold> Value </ilu_abs_threshold>
         <ilu_level_of_fill> Value </ilu_level_of_fill>
       </preconditioner>
-    </linear_solver>
+    </unstr_linear_solver>
 
-    <nonlinear_solver name="nka | newton | inexact newton">
+    <unstr_nonlinear_solver name="nka | newton | inexact newton" />
 
-    <chemistry_controls>
+    <unstr_chemistry_controls>
       <chem_tolerance> Value </chem_tolerance>
       <chem_max_newton_iterations> Value </chem_max_newton_iterations>
-    </chemistry_controls>
+    </unstr_chemistry_controls>
 
-  </numerical_controls>
+  </unstructured_controls>
 
-Here is an overall example for the ``numerical_controls`` element.
+Here is an overall example for the ``unstructured_controls`` element.
 
 .. code-block:: xml
 
-	<numerical_controls>
+	<unstructured_controls>
 
 		<comments>Numerical controls comments here</comments>
 
-		<steady-state_controls>
+		<unstr_steady-state_controls>
 		        <comments>Note that this section contained data on timesteps, which was moved into the execution control section.</comments>
           		<min_iterations>10</min_iterations>
 		      	<max_iterations>15</max_iterations>
           		<max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
           		<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-		</steady-state_controls>
-		<transient_controls>
+		</unstr_steady-state_controls>
+		<unstr_transient_controls>
 			<comments>Proposed comments section.</comments>
 			<bdf1_integration_method min_iterations="10" max_iterations="15" max_preconditioner_lag_iterations="5" />
-		</transient_controls>
-		<linear_solver>
+		</unstr_transient_controls>
+		<unstr_linear_solver>
 			<comments>Proposed comment section.</comments>
 			<method>gmres</method>
 			<max_iterations>20</max_iterations>
@@ -333,9 +340,91 @@ Here is an overall example for the ``numerical_controls`` element.
 	                       	<hypre_tolerance>0.1</hypre_tolerance>
 	                       	<hypre_strong_threshold>0.4</hypre_strong_threshold>
 	                 </preconditioner>
- 		</linear_solver>
+ 		</unstr_linear_solver>
 
-	</numerical_controls>
+	</unstructured_controls>
+
+The ``structured_controls`` sections is divided in the the subsections: ``str_steady-state_controls``, ``str_transient_controls``, ``str_amr_controls``, and ``max_n_subcycle_transport``.  The list of available options is as follows:
+
+.. code-block:: xml
+
+  <structured_controls>
+
+    <comments>Numerical controls comments here</comments>
+
+    <str_steady-state_controls>
+      <max_pseudo_time> Value </max_pseudo_time>
+      <limit_iterations> Value </limit_iterations>
+      <min_iterations> Value </min_iterations>
+      <min_iterations_2> Value </min_iterations_2>
+      <time_step_increase_factor_2> Value </time_step_increase_factor_2>
+      <max_consecutive_failures_1> Value </max_consecutive_failures_1>
+      <time_step_retry_factor_1> Value </time_step_retry_factor_1>
+      <max_consecutive_failures_2> Value </max_consecutive_failures_2>
+      <time_step_retry_factor_2> Value </time_step_retry_factor_2>
+      <time_step_retry_factor_f> Value </time_step_retry_factor_f>
+      <max_num_consecutive_success> Value </max_num_consecutive_success>
+      <extra_time_step_increase_factor> Value </extra_time_step_increase_factor>
+      <abort_on_psuedo_timestep_failure> Value </abort_on_psuedo_timestep_failure>
+      <use_PETSc_snes> true | false </use_PETSc_snes>
+      <limit_function_evals> Value </limit_function_evals>
+      <do_grid_sequence> true | false </do_grid_sequence>
+      <grid_sequence_new_level_dt_factor>
+        <dt_factor> Value </dt_factor> <!-- one element for each AMR level -->
+      </grid_sequence_new_level_dt_factor>
+    </str_steady-state_controls>
+
+
+    <str_transient_controls>
+      <max_ls_iterations> Value </max_ls_iterations>
+      <ls_reduction_factor> Value </ls_reduction_factor>
+      <min_ls_factor> Value </min_ls_factor>
+      <ls_acceptance_factor> Value </ls_acceptance_factor>
+      <monitor_line_search> Value </monitor_line_search>
+      <monitor_linear_solve> Value </monitor_linear_solve>
+      <use_fd_jac> true | false </use_fd_jac>
+      <perturbation_scale_for_J> Value </perturbation_scale_for_J>
+      <use_dense_Jacobian> true | false </use_dense_Jacobian>
+      <upwind_krel> true | false </upwind_krel>
+      <pressure_maxorder> Value </pressure_maxorder>
+      <scale_solution_before_solve> true | false </scale_solution_before_solve>
+      <semi_analytic_J> true | false </semi_analytic_J>
+      <cfl> Value </cfl>
+    </str_transient_controls>
+
+    <str_transient_controls>
+      <amr_levels> Value </amr_levels>
+      <refinement_ratio>
+        <int> Value </int>  <!-- one element for each AMR level -->
+      </refinement_ratio>
+      <do_amr_cubcycling> true | false </do_amr_cubcycling>
+      <regrid_interval>
+        <int> Value </int>  <!-- one element for each AMR level -->
+      </regrid_interval>
+      <blocking_factor>
+        <int> Value </int>  <!-- one element for each AMR level -->
+      </blocking_factor>
+      <number_error_buffer_cells>
+        <int> Value </int>  <!-- one element for each AMR level -->
+      </number_error_buffer_cells>
+      <refinement_indicators> Value </max_grid_size>
+      <refinement_ratio>
+        <field_name> Value </field_name>
+        <regions> Value </regions>
+        <max_refinement_level> Value </max_refinement_level>
+        <start_time> Value </start_time>
+        <end_time> Value </end_time>
+        <!-- user may specify exactly 1 of the following -->
+        <value_greater> Value </value_greater>
+        <regions> Value </regions>
+        <value_less> Value </value_less>
+        <adjacent_difference_greater> Value </adjacent_difference_greater>
+        <inside_region> true | false </inside_region>
+      </refinement_indicators>
+    </str_transient_controls>
+
+    <max_n_subcycle_transport> Value </max_n_subcycle_transport>
+  </structured_controls>
 
 Mesh
 ----
@@ -348,7 +437,7 @@ The ``mesh`` section takes a ``dimension`` element which indicates if the mesh i
 
 This section also takes an element indicating if the mesh is to be internally generated (structured and unstructured) or read from an external file (unstructured only). If the mesh is to be generated internally, a ``generate`` element is specified with details about the number of cells in each direction and the low and high coordinates of the bounding box. If the mesh is to be read from a file, a ``read`` element is specified with the file name and file format. Currently only Exodus II files are supported.  Finally, as in other sections, a ``comments`` element is provide to include any comments or documentation the user wishes.
 
-Here is an example specification for a structured ``mesh`` element.
+Here is an example specification for internally generated ``mesh`` element for structured.
 
 .. code-block:: xml
 
@@ -361,8 +450,7 @@ Here is an example specification for a structured ``mesh`` element.
     </generate>
   </mesh>
 
-The following is an example specification for a generated unstructured
-mesh.
+The following is an example specification for a generated unstructured mesh.
 
 .. code-block:: xml
 
@@ -392,13 +480,15 @@ Finally, an example of reading an unstructured mesh from a file is given below.
 Regions
 -------
 
-Regions are geometrical constructs used in Amanzi to define subsets of the computational domain in order to specify the problem to be solved, and the output desired. Regions are commonly used to specify material properties, boundary conditions and obervation domains. Regions may represent zero-, one-, two- or three-dimensional subsets of physical space. For a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional regions. If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.
+Regions are geometrical constructs used in Amanzi to define subsets of the computational domain in order to specify the problem to be solved, and the output desired. Regions are commonly used to specify material properties, boundary conditions and observation domains. Regions may represent zero-, one-, two- or three-dimensional subsets of physical space. For a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional regions. If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.
 
 Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. Under the "Structured" option, Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain, using the following labels: "XLOBC", "XHIBC", "YLOBC", "YHIBC", "ZLOBC", "ZHIBC"
 
-The ``regions`` block is required.  Within the region block no regions are required to be defined.  The optional elements include ``region``, ``box``, ``point``, and ``plane``.  As in other sections there is also an options ``comments`` element.
+The ``regions`` block is required.  Within the region block no regions are required to be defined.  The optional elements valid for both structured and unstructured include ``region``, ``box``, ``point``, and ``plane``.  As in other sections there is also an options ``comments`` element.
 
 The elements ``box``, ``point``, and ``plane`` allow for inline description of regions.  The ``region`` element uses a subelement to either define a ``box`` or ``plane`` region or specify a region file.  Below are further descriptions of these elements.
+
+Additional regions valid only for unstructured are ``polygonal_surface`` and ``logical``.  Additional regions valid only for structured include ``polygon`` and ``ellipse`` in 2D and ``rotated_``polygon`` and ``swept_polygon`` in 3D.
 
 Box
 ---
@@ -452,18 +542,87 @@ A color function region defines a region based on a specified integer color in a
       <region_file label="integer label" name="filename" type="color" format="exodus ii"  entity=["cell"|"face"]/>
   </region>
 
-.. EIB:  The following are not exposed through the current XML Schema, only the OLD input spec.  I've commented out the text until a future date when they might be exposed.
 
-.. Polygon
-.. -------
+Polygonal_Surface
+-----------------
 
-.. A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points
+A polygonal_surface region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the unstructured algorithm.
 
-.. Logical
-.. -------
+.. code-block:: xml
 
-.. Logical regions are compound regions formed from other primitive type regions using boolean operations. Supported operators are union, intersection, subtraction and complement.
+    <polygonal_surface name="polygon name" num_points="3">
+      <point> (X, Y, Z) </point>
+      <point> (X, Y, Z) </point>
+      <point> (X, Y, Z) </point>
+    </polygonal_surface>
 
+
+Logical
+-------
+
+Logical regions are compound regions formed from other primitive type regions using boolean operations. Supported operators are union, intersection, subtraction and complement.  This region type is only valid for the unstructured algorithm.
+
+
+.. code-block:: xml
+
+    <logical  name="logical name" operation = "union | intersection | subtraction | complement" region_list = "region1, region2, region3"/>
+
+Polygon
+-------
+
+A polygon region is used to define a bounded planar region and is specified by the number of points and a list of points.  The points must be listed in order and this ordering is maintained during input translation.  This region type is only valid for the structured algorithm in 2D.
+
+.. code-block:: xml
+
+    <polygon name="polygon name" num_points="3">
+      <point> (X, Y) </point>
+      <point> (X, Y) </point>
+      <point> (X, Y) </point>
+    </polygon>
+
+Ellipse
+-------
+
+An ellipse region is used to define a bounded planar region and is specified by a center and X and Y radii.  This region type is only valid for the structured algorithm in 2D.
+
+.. code-block:: xml
+
+    <ellipse name="polygon name" num_points="3">
+      <center> (X, Y) </center>
+      <radius> (radiusX, radiusY) </radius>
+    </ellipse>
+
+Rotated Polygon
+---------------
+
+A rotated_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the axis about which to rotate the polygon, and a reference point for the rotation axis.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
+
+.. code-block:: xml
+
+    <rotated_polygon name="rotated_polygon name">
+      <vertex> (X, Y, Z) </vertex>
+      <vertex> (X, Y, Z) </vertex>
+      <vertex> (X, Y, Z) </vertex>
+      <xyz_plane> (XY | YZ | XZ) </xyz_plane>
+      <axis> (X | Y | Z) </axis>
+      <reference_point> (X, Y) </reference_point>
+    </rotated_polygon>
+
+Swept Polygon
+---------------
+
+A swept_polygon region is defined by a list of points defining the polygon, the plane in which the points exist, the extents (min,max) to sweep the polygon normal to the plane.  The points listed for the polygon must be in order and the ordering will be maintained during input translation. This region type is only valid for the structured algorithm in 3D.
+
+.. code-block:: xml
+
+    <swept_polygon name="swept_polygon name">
+      <vertex> (X, Y, Z) </vertex>
+      <vertex> (X, Y, Z) </vertex>
+      <vertex> (X, Y, Z) </vertex>
+      <xyz_plane> (XY | YZ | XZ) </xyz_plane>
+      <extent_min> exponential </extent_min>
+      <extent_max> exponential </extent_max>
+    </swept_polygon>
 
 .. Geochemistry
 .. ------------
@@ -581,7 +740,7 @@ In addition to solutes in the transported phases, there may be various immobile 
 
 This section specifies the phases present and specific properties about those phases.  The first grouping is by ``liquid_phase`` and ``solid_phase``.  The ``liquid_phase`` element is required to produce a valid input file.
 
-The ``liquid_phase`` element requires an attribute *name*.  This is used by other sections to identify this phase.  Subelements are used to define the ``viscosity``, ``density``, and ``dissolved_components``. While ``viscosity`` and ``density`` are required elements, ``dissolved_components`` is optional.  ``dissolved_components`` contains a subelement ``solutes`` under which individual ``solute`` elements are used to specify any solutes present in the liquid phase.  The text of the ``solute`` contains the name of the solute while an attributes specifies the value *coefficient_of_diffusion*.  
+The ``liquid_phase`` element requires an attribute *name*.  This is used by other sections to identify this phase.  Subelements are used to define the ``viscosity``, ``density``, and ``dissolved_components``. While ``viscosity`` and ``density`` are required elements, ``dissolved_components`` is optional.  ``dissolved_components`` contains a subelement ``solutes`` under which individual ``solute`` elements are used to specify any solutes present in the liquid phase.  The text of the ``solute`` contains the name of the solute while the optional attributes specifing the value *coefficient_of_diffusion* and *first_order_decay_constant*.
 
 The ``solid_phase`` element allows the user to define a ``minerals`` element under which a series of ``mineral`` elements can be listed to specify any minerals present in the solida phase.  The ``mineral`` elements contain the name of the mineral.
 
@@ -595,7 +754,7 @@ An example ``phases`` element looks like the following.
 	<density>998.2</density>
 	<dissolved_components> 
 	    <solutes>
-	       <solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
+	       <solute coefficient_of_diffusion="1.0e-9" first_order_decay_constant="1.0e-9">Tc-99</solute>
 	    </solutes> 
 	</dissolved_components>
     </liquid_phase>
@@ -627,15 +786,14 @@ The initial conditions are defined using a specific elements.  The element name 
 |                       | | y              | | double/constant               |
 |                       | | (z)            | | double/constant               |
 +-----------------------+------------------+---------------------------------+
-
-.. | uniform_saturation    | | name           | | string                        |
-.. |                       | | value          | | double/time_constant/constant |
-.. +-----------------------+------------------+---------------------------------+
-.. | linear_saturation     | | name           | | string                        |
-.. |                       | | value          | | double/time_constant/constant |
-.. |                       | | reference_coord| | coordinate                    |
-.. |                       | | gradient       | | coordinate                    |
-.. +-----------------------+------------------+---------------------------------+
+| uniform_saturation    | | name           | | string                        |
+|                       | | value          | | double/time_constant/constant |
++-----------------------+------------------+---------------------------------+
+| linear_saturation     | | name           | | string                        |
+|                       | | value          | | double/time_constant/constant |
+|                       | | reference_coord| | coordinate                    |
+|                       | | gradient       | | coordinate                    |
++-----------------------+------------------+---------------------------------+
 
 
 For the solute_component the attributes available are *name*, *value*, *function*, *reference_coord*, and *gradient*.  The function options available are *uniform* and *linear*.  The attributes *reference_coord*, and *gradient* are only necessary for the *linear* function type.
@@ -686,7 +844,7 @@ Under the ``liquid_component`` and ``solute_component`` elements a time series o
 |                         | | coordinate_system| | 'absolute','relative to mesh top'|
 +-------------------------+--------------------+------------------------------------+ 
 |seepage_face             | | name             | | string                           |
-|                         | | start            | | double/time_constant/constant    |
+|(unstructured only)      | | start            | | double/time_constant/constant    |
 |                         | | inward_mass_flux | | double/time_constant/constant    |
 |                         | | function         | | 'linear','uniform','constant'    |
 +-------------------------+--------------------+------------------------------------+

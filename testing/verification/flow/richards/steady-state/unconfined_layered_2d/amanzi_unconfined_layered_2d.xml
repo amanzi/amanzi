@@ -1,6 +1,6 @@
 <ParameterList name="Main">
 
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
 
   <!--
      Getting started on a simple 2D steady-state saturated test
