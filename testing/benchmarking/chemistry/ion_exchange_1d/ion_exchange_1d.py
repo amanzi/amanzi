@@ -75,6 +75,32 @@ def GetXY_PFloTran(path,root,time,comp):
 
     return (x_pflotran, c_pflotran)
 
+# ------------- CRUNCHFLOW ------------------------------------------------------------------
+def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
+
+    # read CrunchFlow data
+    filename = os.path.join(path,cf_file)
+    f = open(filename,'r')
+    lines = f.readlines()
+    f.close()
+
+    # ignore couple of lines
+    for i in range(ignore):
+      lines.pop(0)
+
+    # extract data x0, x1, ..., xN-1 per line, keep only two columns
+    xv=[]
+    yv=[] 
+    for line in lines:
+      xv = xv + [float(line.split()[0])]
+      yv = yv + [float(line.split()[comp+1])]
+    
+    xv = np.array(xv)
+    yv = np.array(yv)
+
+    return (xv, yv)
+#-------------------
+
 if __name__ == "__main__":
 
     import os
@@ -104,6 +130,30 @@ if __name__ == "__main__":
        for j, comp in enumerate(components):          
           x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,'Total_Sorbed_'+comp+' [mol_m^3]')
           v_pflotran[i][j] = c_pflotran
+
+    # crunchflow
+    path_to_crunchflow = "crunchflow"
+
+     # hardwired for 1d-tritium-crunch.in: time and comp
+    times_CF = ['totcon1.out','totcon5.out']
+    components = [0,1,2,3]
+    ignore = 4
+
+    u_crunchflow = [[[] for x in range(len(components))] for x in range(len(times_CF))]
+    for i, time in enumerate(times_CF):
+       for j, comp in enumerate(components):          
+          x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+          u_crunchflow[i][j] = c_crunchflow
+
+    times_CF = ['totexchange1.out','totexchange5.out']
+    components = [0,1,2,3]
+    ignore = 4
+    
+    v_crunchflow = [[[] for x in range(len(components))] for x in range(len(times_CF))]
+    for i, time in enumerate(times_CF):
+       for j, comp in enumerate(components):
+          x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+          v_crunchflow[i][j] = c_crunchflow
 
     CWD = os.getcwd()
     local_path = "" 
@@ -211,10 +261,11 @@ if __name__ == "__main__":
     except:
         struct = 0
 
-
+    components = ['Na+','Ca++','Mg++','Cl-']
     colors= ['r','b','m','g'] # components
     styles = ['-','*','+','x'] # codes
-    codes = ['Amanzi+Alquimia(PFloTran)','Amanzi+Alquimia(CrunchFlow)','Amanzi Native Chemistry','PFloTran'] + [None,]*12
+#    codes = ['Amanzi+Alquimia(PFloTran)','Amanzi+Alquimia(CrunchFlow)','Amanzi Native Chemistry','PFloTran'] + [None,]*12
+    codes = ['Amanzi+Alquimia(PFloTran)','Amanzi+Alquimia(CrunchFlow)','CrunchFlow','PFloTran'] + [None,]*12
 
     # lines on axes
     # for i, time in enumerate(times):
@@ -224,7 +275,8 @@ if __name__ == "__main__":
                ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2)
         if alq_crunch:
                ax[0].plot(x_amanzi_alquimia_crunch, u_amanzi_alquimia_crunch[i][j],color=colors[j],linestyle='None',marker=styles[1],linewidth=2)
-        ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],marker=styles[2],linestyle='None',linewidth=2,label=comp)
+        # ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],marker=styles[2],linestyle='None',linewidth=2,label=comp)
+        ax[0].plot(x_crunchflow, u_crunchflow[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=comp)
         ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[3],linewidth=2)
 
     # for i, time in enumerate(times):
@@ -234,7 +286,9 @@ if __name__ == "__main__":
                ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
         if alq_crunch:
                ax[1].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][j],color=colors[j],linestyle='None',marker=styles[1],linewidth=2,label=codes[j*len(styles)+1])
-        ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],marker=styles[2],linestyle='None',linewidth=2,label=codes[j*len(styles)+2])
+      #  ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],marker=styles[2],linestyle='None',linewidth=2,label=codes[j*len(styles)+2])
+      #  import pdb; pdb.set_trace()
+        ax[1].plot(x_crunchflow, v_crunchflow[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
         ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[3],linewidth=2,label=codes[j*len(styles)+3])
 
     if (struct>0):
@@ -245,6 +299,12 @@ if __name__ == "__main__":
     ax[1].set_xlabel("Distance (m)",fontsize=15)
     ax[0].set_ylabel("Total Concentration [mol/L]",fontsize=15)
     ax[1].set_ylabel("Total Sorbed Concent. [mol/m3]",fontsize=15)
+
+    # ax[0].set_xlim(47,70)
+    # ax[0].set_ylim(0.06,0.10)
+
+    # ax[1].set_xlim(47,70)
+    # ax[1].set_ylim(80,170)
 
     # plot adjustments
     plt.subplots_adjust(left=0.15,bottom=0.15,right=0.99,top=0.90)
