@@ -16,7 +16,7 @@ speciate_only   false
 database_sweep  false
 screen_output   10
 graphics        tecplot
-gimrt           true
+gimrt           false
 hindmarsh       false
 duan            false
 RunIsothermal   true

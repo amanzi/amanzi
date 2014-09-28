@@ -76,6 +76,33 @@ def GetXY_PFloTran(path,root,time,comp):
 
     return (x_pflotran, c_pflotran)
 
+
+# ------------- CRUNCHFLOW ------------------------------------------------------------------
+def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
+
+    # read CrunchFlow data
+    filename = os.path.join(path,cf_file)
+    f = open(filename,'r')
+    lines = f.readlines()
+    f.close()
+
+    # ignore couple of lines
+    for i in range(ignore):
+      lines.pop(0)
+
+    # extract data x0, x1, ..., xN-1 per line, keep only two columns
+    xv=[]
+    yv=[] 
+    for line in lines:
+      xv = xv + [float(line.split()[0])]
+      yv = yv + [float(line.split()[comp+1])]
+    
+    xv = np.array(xv)
+    yv = np.array(yv)
+
+    return (xv, yv)
+
+
 if __name__ == "__main__":
 
     import os
@@ -88,12 +115,22 @@ if __name__ == "__main__":
     # pflotran
     path_to_pflotran = "pflotran"
 
-     # hardwired for 1d-calcite: time and comp
+     # hardwired for 1d-tritium: time and comp
     time = 'Time:  5.00000E+01 y'
     comp = 'Total_'+root.title()+' [M]'
 
     x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)    
     
+    # crunchflow GIMRT
+    path_to_crunchflow = "crunchflow"
+
+     # hardwired for 1d-tritium-crunch.in: time and comp
+    times_CF = 'totcon5.out'
+    comp = 0
+    ignore = 4
+
+    x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,times_CF,comp,ignore)
+
     CWD = os.getcwd()
     local_path = ""
 
@@ -167,18 +204,23 @@ if __name__ == "__main__":
 
     # lines on axes
     if alquim:
-        alq = ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
+        alq = ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'rx',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
     if alquim_crunch:
         alq = ax.plot(x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch,'r|',label='Amanzi+Alquimia(CrunchFlow)',linewidth=2)
     if (struct>0):
         sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFloTran)',linewidth=2) 
         sam_crunch = ax.plot(x_amanziS, c_amanziS_crunch,'g*',label='AmanziS+Alquimia(CrunchFlow)',linewidth=2) 
-    ama = ax.plot(x_amanzi_native, c_amanzi_native,'r_',label='Amanzi Native Chemistry')
-    pfl = ax.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
+##    ama = ax.plot(x_amanzi_native, c_amanzi_native,'r_',label='Amanzi Native Chemistry')
+    pfl = ax.plot(x_pflotran, c_pflotran,'b--',label='PFloTran',linewidth=2)
+    crunch = ax.plot(x_crunchflow, c_crunchflow,'b.',label='CrunchFlow',linewidth=2)
 
     # axes
     ax.set_xlabel("Distance (m)",fontsize=20)
     ax.set_ylabel("Total "+root.title()+" concentration [mol/L]",fontsize=20)
+
+    #ax.set_xlim(43,57)
+    #ax.set_ylim(0,.0001)
+
 
     # plot adjustments
     plt.subplots_adjust(left=0.20,bottom=0.15,right=0.99,top=0.90)
