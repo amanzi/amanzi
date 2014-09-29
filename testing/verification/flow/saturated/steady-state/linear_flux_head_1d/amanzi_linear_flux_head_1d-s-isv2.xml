@@ -39,7 +39,7 @@
       <structured_controls>
       </structured_controls>
     </numerical_controls>
-    <mesh framework="mstk">
+    <mesh>
       <comments>Three-dimensional box 100m x 2m x 10m</comments>
       <dimension>2</dimension>
       <generate>
@@ -85,7 +85,7 @@
         <assigned_regions>Entire Domain</assigned_regions>
         <liquid_phase name="water">
           <liquid_component name="water">
-            <linear_pressure gradient="{-97.893474, -9789.3474}" reference_coord="{100, 4}" value="0"/>
+            <linear_pressure gradient="(-97.893474, -9789.3474)" reference_coord="(100, 4)" value="0"/>
           </liquid_component>
         </liquid_phase>
       </initial_condition>
