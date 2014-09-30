@@ -1157,7 +1157,7 @@ Teuchos::ParameterList CreateTransportList(Teuchos::ParameterList* plist) {
 
         // now write the dispersion lists if needed
         if (need_dispersion_) {
-          Teuchos::ParameterList &disp_list = trp_list.sublist("Dispersivity");
+          Teuchos::ParameterList &disp_list = trp_list.sublist("dispersivity");
 
           if (plist->isSublist("Material Properties")) {
             for (Teuchos::ParameterList::ConstIterator it = plist->sublist("Material Properties").begin();
