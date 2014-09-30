@@ -24,8 +24,9 @@ tree into files and letting *Amanzi* read each one in one processor
 (*Nemesis I* files are *Exodus II* files with extra information
 allowing them to be used in a parallel setting). To specify a
 prepartitioned file in the *Nemesis I* format, users must specify the
-filename with a *.par* extension. No processor or partition number
-needs to be specified even though the files on disk have a processor
-suffix. Thus, a serial mesh might be specified as *mymesh.exo* while a
-mesh partitioned into four parts, *mymesh.par.0*, *mymesh.par.1*,
-*mymesh.par.2*, *mymesh.par.2* would be specified as *mymesh.par*.
+filename with a *.exo* or *.par* extension. No processor or partition
+number needs to be specified even though the files on disk have a
+processor suffix. Thus, a serial mesh might be specified as
+*mymesh.exo* while a mesh partitioned into four parts, *mymesh.par.0*,
+*mymesh.par.1*, *mymesh.par.2*, *mymesh.par.2* would be specified as
+*mymesh.exo* or *mymesh.par*.
