@@ -85,6 +85,13 @@
         <Parameter name="High Coordinate" type="Array(double)" value="{100.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="Obs1">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{10.0,0.5,0.5}"/>
+      </ParameterList>
+    </ParameterList>
+
   </ParameterList> <!-- Regions -->
 
   <ParameterList name="Phase Definitions">
@@ -581,6 +588,27 @@
 <!--    <Parameter name="Time Macros" type="Array(string)" value="{Every_0.1_year}"/> -->
 <!-- 	<Parameter name="Time Macros" type="string" value="Every_0.05_year"/> -->
     </ParameterList>
+
+    <ParameterList name="Observation Data">
+
+      <Parameter name="Observation Output Filename" type="string" value="observation.out"/>
+
+      <ParameterList name="output01">
+        <Parameter name="Region" type="string" value="Obs1"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="H+ Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Every_year"/>
+      </ParameterList>
+
+      <ParameterList name="output02">
+        <Parameter name="Region" type="string" value="Obs1"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="UO2++ Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Every_year"/>
+      </ParameterList>
+
+    </ParameterList>
+
   </ParameterList> <!-- Output -->
 
   <ParameterList name="Chemistry">
