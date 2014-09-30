@@ -95,9 +95,10 @@
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
-        <Parameter name="strong threshold" type="double" value="0.5"/>
-        <Parameter name="relaxation type" type="int" value="6"/>
         <Parameter name="cycle type" type="int" value="1"/>
+        <Parameter name="strong threshold" type="double" value="0.5"/>
+        <Parameter name="relaxation type down" type="int" value="3"/>
+        <Parameter name="relaxation type up" type="int" value="4"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="verbosity" type="int" value="0"/>

@@ -86,6 +86,7 @@ PreconditionerFactory::Create(Teuchos::ParameterList& slist)
     Errors::Message msg("PreconditionerFactory: parameter `\"preconditioner type`\" is missing");
     Exceptions::amanzi_throw(msg);
   }
+  return Teuchos::null;
 }
 
 

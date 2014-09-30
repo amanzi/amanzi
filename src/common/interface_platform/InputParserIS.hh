@@ -58,6 +58,7 @@ static Teuchos::Array<std::string> sorption_site_names_;
 
 static double constant_density;
 static int spatial_dimension_;  
+static bool flow_single_phase(false);
 static bool need_dispersion_;
 
 static std::string verbosity_level("low");

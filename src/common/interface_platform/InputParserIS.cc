@@ -1481,6 +1481,7 @@ Teuchos::ParameterList CreateFlowList(Teuchos::ParameterList* plist) {
           darcy_problem.set<double>("atmospheric pressure", atm_pres);
 
           flow_list = &darcy_problem; // we use this below to insert sublists that are shared by Richards and Darcy
+          flow_single_phase = true;
         }
         else if (flow_model == "Richards") {
           Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
@@ -2323,10 +2324,15 @@ Teuchos::ParameterList CreateHypreAMG_List(Teuchos::ParameterList* plist)
   amg_list.set<int>("smoother sweeps", nsmooth);
   amg_list.set<int>("cycle applications", ncycles);
   amg_list.set<double>("strong threshold", strong_threshold);
-  amg_list.set<int>("relaxation type", 3);
   amg_list.set<int>("cycle type", 1);
   amg_list.set<int>("coarsen type", 0);
   amg_list.set<int>("verbosity", 0);
+  if (flow_single_phase) {
+    amg_list.set<int>("relaxation type down", 3);
+    amg_list.set<int>("relaxation type up", 4);
+  } else {
+    amg_list.set<int>("relaxation type", 3);
+  }
 
   return dpc_list;
 }
