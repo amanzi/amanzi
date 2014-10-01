@@ -72,6 +72,9 @@ public:
 
     static std::pair<Real,std::string> convert_time_units(Real t, const std::string& units);
 
+    void FlushObservations();
+    void FlushObservations(std::ostream& out);
+
 protected:
     void InitializeControlEvents();
 

@@ -8611,26 +8611,9 @@ PorousMedia::okToContinue ()
       }
             
       //
-      // Compute observations
+      // Dump observations
       //
-      Observation::setPMAmrPtr(PMParent());
-      PArray<Observation>& observations = PMParent()->TheObservations();
-      if (successfully_completed  &&  ParallelDescriptor::IOProcessor()) {
-        if (observations.size()) {
-          std::cout << "Computed observations:\n";
-          for (int i=0; i<observations.size(); ++i) {
-            const std::map<int,Real> vals = observations[i].vals;
-            for (std::map<int,Real>::const_iterator it=vals.begin();it!=vals.end(); ++it) {
-              int j = it->first;
-              std::string& name = AMR_to_Amanzi_label_map[observations[i].name];
-              std::cout << i << ", " << name << ", " 
-                        << j << ", " << observations[i].times[j] << ", "
-                        << it->second << std::endl;
-            }
-          }
-          std::cout << "\n";
-        }
-      }
+      PMParent()->FlushObservations();
     }
     
     if (!ret && verbose > 1 && ParallelDescriptor::IOProcessor()) {
