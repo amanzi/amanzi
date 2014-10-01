@@ -5,6 +5,7 @@
 #include <PMAmr.H>
 #include <PorousMedia.H>
 #include <Observation.H>
+#include "PMAMR_Labels.H"
 
 namespace
 {
@@ -1005,3 +1006,43 @@ void PMAmr::InitializeControlEvents()
 
 
 }
+
+void PMAmr::FlushObservations() {
+  if (observation_output_file != "") {
+    if (observations.size() && ParallelDescriptor::IOProcessor()) {
+      std::cout << "Writing observations to \"" << observation_output_file << "\"" << std::endl;
+      std::ofstream ofs;
+      ofs.open(observation_output_file.c_str(),std::ios::out);
+      FlushObservations(ofs);
+      ofs.close();
+    }
+  }
+}
+
+void PMAmr::FlushObservations(std::ostream& out)
+{
+  // print out observations
+  if (observations.size() && ParallelDescriptor::IOProcessor()) {
+
+    out.precision(16);
+    out.setf(std::ios::scientific);
+
+    out << "Observation Name, Region, Functional, Variable, Time, Value\n";
+    out << "===========================================================\n";
+
+    for (int i=0; i<observations.size(); ++i) {
+      const std::map<int,Real> vals = observations[i].vals;
+      for (std::map<int,Real>::const_iterator it=vals.begin();it!=vals.end(); ++it) {
+        int j = it->first;
+        out << Amanzi::AmanziInput::GlobalData::AMR_to_Amanzi_label_map[observations[i].name]
+            << ", " << Amanzi::AmanziInput::GlobalData::AMR_to_Amanzi_label_map[observations[i].region.name]
+            << ", " << observations[i].obs_type
+            << ", " << observations[i].field
+            << ", " << observations[i].times[j]
+            << ", " << it->second << std::endl;
+      }
+    }
+    std::cout << "\n";
+  }
+}
+
