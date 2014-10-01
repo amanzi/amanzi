@@ -36,6 +36,7 @@
 #include "TransportDefs.hh"
 #include "TransportSourceFactory.hh"
 #include "DispersionModel.hh"
+#include "DiffusionModel.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Chemistry_State.hh"
@@ -161,9 +162,17 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   const Teuchos::RCP<Epetra_IntVector>& upwind_cell() { return upwind_cell_; }
   const Teuchos::RCP<Epetra_IntVector>& downwind_cell() { return downwind_cell_; }  
 
-  // dispersion
+  // dispersion and diffusion
   void CalculateDispersionTensor_(
       const Epetra_MultiVector& darcy_flux, 
+      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+
+  void AddMolecularDiffusion_(
+      const std::string component_name,
+      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+
+  int CalculateDiffusionTensor_(
+      const std::string component_name,
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
   // I/O methods
@@ -230,6 +239,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<Epetra_Import> face_importer;
 
   std::vector<Teuchos::RCP<DispersionModel> > dispersion_models_;  // data for dispersion
+  Teuchos::RCP<DiffusionModel> diffusion_models_;  // data for molecular diffusion
+
   std::vector<WhetStone::Tensor> D;
   int dispersion_method;
   std::string dispersion_preconditioner;

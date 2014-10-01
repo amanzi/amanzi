@@ -209,11 +209,19 @@ void Tensor::SpectralBounds(double* lower, double* upper) const
 
 
 /* ******************************************************************
-* Multiplication by a constant.
+* Elementary operations with a constant. Since we use Voigt notation, 
+* the identity tensor equals the identity matrix.
 ****************************************************************** */
 Tensor& Tensor::operator*=(double c)
 {
   for (int i = 0; i < size_*size_; i++) data_[i] *= c;
+  return *this;
+}
+
+
+Tensor& Tensor::operator+=(double c)
+{
+  for (int i = 0; i < size_; i += size_ + 1) data_[i] += c;
   return *this;
 }
 

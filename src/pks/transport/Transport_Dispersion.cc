@@ -26,11 +26,10 @@
 namespace Amanzi {
 namespace Transport {
 
-
 /* *******************************************************************
- * Calculate a dispersive tensor the from Darcy fluxes. The flux is
- * assumed to be scaled by face area.
- ****************************************************************** */
+* Calculate a dispersive tensor the from Darcy fluxes. The flux is
+* assumed to be scaled by face area.
+******************************************************************* */
 void Transport_PK::CalculateDispersionTensor_(
     const Epetra_MultiVector& darcy_flux, 
     const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
@@ -82,6 +81,55 @@ void Transport_PK::CalculateDispersionTensor_(
 
           D[*c] *= porosity[0][*c] * saturation[0][*c];
         }
+      }
+    }
+  }
+}
+
+
+/* *******************************************************************
+* Calculate diffusion tensor if no dispersion is given.
+******************************************************************* */
+int Transport_PK::CalculateDiffusionTensor_(
+    const std::string component_name,
+    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
+{
+  if (diffusion_models_ == Teuchos::null) return -1;
+
+  double md = diffusion_models_->FindComponentValue(component_name);
+  if (md == 0.0) return -1;
+
+  D.resize(ncells_owned);
+  for (int c = 0; c < ncells_owned; c++) { 
+    D[c].init(dim, 1);
+    D[c](0, 0) = md * porosity[0][c] * saturation[0][c];
+  }
+}
+
+
+/* *******************************************************************
+* Add molecular diffusion to the existing dispersive tensor.
+******************************************************************* */
+void Transport_PK::AddMolecularDiffusion_(
+    const std::string component_name,
+    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
+{
+  if (diffusion_models_ == Teuchos::null) return;
+
+  double md = diffusion_models_->FindComponentValue(component_name);
+  if (md == 0.0) return;
+
+  for (int mb = 0; mb < dispersion_models_.size(); mb++) {
+    Teuchos::RCP<DispersionModel> spec = dispersion_models_[mb]; 
+
+    std::vector<AmanziMesh::Entity_ID> block;
+    for (int r = 0; r < (spec->regions).size(); r++) {
+      std::string region = (spec->regions)[r];
+      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+
+      AmanziMesh::Entity_ID_List::iterator c;
+      for (c = block.begin(); c != block.end(); c++) {
+        D[*c] += md * spec->tau * porosity[0][*c] * saturation[0][*c];
       }
     }
   }

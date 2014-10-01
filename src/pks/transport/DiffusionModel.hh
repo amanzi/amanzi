@@ -10,8 +10,8 @@
   Usage: 
 */
 
-#ifndef AMANZI_DISPERSION_MODEL_HH_
-#define AMANZI_DISPERSION_MODEL_HH_
+#ifndef AMANZI_DIFFUSION_MODEL_HH_
+#define AMANZI_DIFFUSION_MODEL_HH_
 
 #include <vector>
 #include <string>
@@ -21,21 +21,26 @@
 namespace Amanzi {
 namespace Transport {
 
-class DispersionModel {
+class DiffusionModel {
  public:
-  DispersionModel() {
-    model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
-    alphaL = 0.0;
-    alphaT = 0.0;
-    D = 0.0;
-    tau = 0.0;
-  }
-  ~DispersionModel() {};
+  DiffusionModel() {};
+  ~DiffusionModel() {};
 
- public:
-  int model;
-  double alphaL, alphaT, D, tau;
-  std::vector<std::string> regions;
+  double FindComponentValue(const std::string tcc_name) {
+    int nnames = names_.size();
+    for (int i = 0; i < nnames; ++i) {
+      if (names_[i] == tcc_name) return values_[i];
+    }
+    return 0.0;
+  }
+
+  // access
+  std::vector<std::string>& names() { return names_; }
+  std::vector<double>& values() { return values_; }
+
+ private:
+  std::vector<std::string> names_;
+  std::vector<double> values_;
 };
 
 }  // namespace Transport

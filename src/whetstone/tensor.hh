@@ -45,6 +45,7 @@ class Tensor {
 
   // elementary operators
   Tensor& operator*=(double c);
+  Tensor& operator+=(double c);
   Tensor& operator=(const Tensor& T);
   friend AmanziGeometry::Point operator*(const Tensor& T, const AmanziGeometry::Point& p);
   friend Tensor operator*(const Tensor& T1, const Tensor& T2);

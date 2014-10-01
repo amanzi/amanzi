@@ -50,8 +50,8 @@ void Transport_PK::ProcessParameterList()
   ProcessStringAdvectionLimiter(advection_limiter_name, &advection_limiter);
 
   // transport dispersion (default is none)
-  if (transport_list.isSublist("Dispersivity")) {
-    Teuchos::ParameterList& dlist = transport_list.sublist("Dispersivity");
+  if (transport_list.isSublist("dispersivity")) {
+    Teuchos::ParameterList& dlist = transport_list.sublist("dispersivity");
 
     dispersion_solver = dlist.get<std::string>("solver", "missing");
     if (solvers_list.isSublist(dispersion_solver)) {
@@ -113,6 +113,17 @@ void Transport_PK::ProcessParameterList()
       msg << "Transport PK: Zero dispersion tensor is not supported.\n";
       Exceptions::amanzi_throw(msg);  
     }
+  }
+
+  // transport diffusion (default is none)
+  if (transport_list.isSublist("molecular diffusion")) {
+    diffusion_models_ = Teuchos::rcp(new DiffusionModel());
+
+    Teuchos::ParameterList& dlist = transport_list.sublist("molecular diffusion");
+    diffusion_models_->names() = dlist.get<Teuchos::Array<std::string> >("solute names").toVector();
+    diffusion_models_->values() = dlist.get<Teuchos::Array<double> >("solute values").toVector();
+  } else {
+    diffusion_models_ = Teuchos::null;
   }
 
   // control parameter

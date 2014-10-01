@@ -63,6 +63,7 @@ generate_evaluators_registration_header(
 #
 set(transport_inc_files
   DispersionModel.hh
+  DiffusionModel.hh
   Reconstruction.hh
   TransportBCFactory.hh
   TransportBoundaryFunction.hh
