@@ -61,7 +61,7 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
                             std::inserter(overlap, overlap.end()));
       if (overlap.size() != 0) {
         Errors::Message m;
-        m << "conflicting definition";
+        m << "Conflicting definitions (overlapping) of id sets.";
         Exceptions::amanzi_throw(m);
       }
     }

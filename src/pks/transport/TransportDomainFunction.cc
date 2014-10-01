@@ -20,9 +20,8 @@ namespace Transport {
 * Calculate pairs <list of cells, function>
 ****************************************************************** */
 void TransportDomainFunction::Define(const std::vector<std::string>& regions,
-				const Teuchos::RCP<const MultiFunction>& f,
-				int action,
-                                const std::string& name)
+                                     const Teuchos::RCP<const MultiFunction>& f,
+                                     int action, const std::string& name)
 {
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::CELL));
   
@@ -38,8 +37,7 @@ void TransportDomainFunction::Define(const std::vector<std::string>& regions,
 ****************************************************************** */
 void TransportDomainFunction::Define(const std::string region,
                                      const Teuchos::RCP<const MultiFunction>& f,
-                                     int action,
-                                     const std::string& name)
+                                     int action, const std::string& name)
 {
   RegionList regions(1,region);
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::CELL));
@@ -68,16 +66,16 @@ void TransportDomainFunction::Compute(double time)
   args[0] = time;
  
   for (SpecAndIDsList::const_iterator
-           spec_and_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
-           spec_and_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
+       spec_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
+       spec_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_ids) {
     
-    Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
-    for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-      AmanziGeometry::Point xc = mesh_->cell_centroid(*id);
+    Teuchos::RCP<SpecIDs> ids = (*spec_ids)->second;
+    for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+      AmanziGeometry::Point xc = mesh_->cell_centroid(*c);
       for (int i = 0; i != dim; ++i) args[i+1] = xc[i];
-      // Careful tracing of the typedefs is required here: spec_and_ids->first
-      //  is a RCP<Spec>, and the Spec's second is an RCP to the function.
-      value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
+      // Careful tracing of the typedefs is required here: spec_ids->first
+      // is a RCP<Spec>, and the Spec's second is an RCP to the function.
+      value_[*c] = (*(*spec_ids)->first->second)(args)[0];
     }
   }
 }
@@ -94,31 +92,31 @@ void TransportDomainFunction::ComputeDistribute(double time)
     Finalize();
   }
 
-  int dim = (*mesh_).space_dimension();
+  int dim = mesh_->space_dimension();
   std::vector<double> args(1+dim);
   args[0] = time;
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   for (SpecAndIDsList::const_iterator
-           spec_and_ids=specs_and_ids_[AmanziMesh::CELL]->begin();
-       spec_and_ids!=specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
+       spec_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
+       spec_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_ids) {
 
     double domain_volume = 0.0;
-    Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
+    Teuchos::RCP<SpecIDs> ids = (*spec_ids)->second;
 
-    for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-      if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
+    for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+      if (*c < ncells_owned) domain_volume += mesh_->cell_volume(*c);
     }
     double volume_tmp = domain_volume;
     mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
 
-    for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-      AmanziGeometry::Point xc = mesh_->cell_centroid(*id);
+    for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+      AmanziGeometry::Point xc = mesh_->cell_centroid(*c);
       for (int i = 0; i != dim; ++i) args[i+1] = xc[i];
-      // Careful tracing of the typedefs is required here: spec_and_ids->first
-      //  is a RCP<Spec>, and the Spec's second is an RCP to the function.
-      value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
+      // Careful tracing of the typedefs is required here: spec_ids->first
+      // is a RCP<Spec>, and the Spec's second is an RCP to the function.
+      value_[*c] = (*(*spec_ids)->first->second)(args)[0] / domain_volume;
     }
   }
 }
@@ -135,7 +133,7 @@ void TransportDomainFunction::ComputeDistribute(double t, double* weight)
     Finalize();
   }
 
-  int dim = (*mesh_).space_dimension();
+  int dim = mesh_->space_dimension();
   std::vector<double> args(1+dim);
   args[0] = t;
 
@@ -143,52 +141,48 @@ void TransportDomainFunction::ComputeDistribute(double t, double* weight)
   int i_action(0);
 
   for (SpecAndIDsList::const_iterator
-           spec_and_ids=specs_and_ids_[AmanziMesh::CELL]->begin();
-       spec_and_ids!=specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
+       spec_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
+       spec_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_ids) {
 
     int action = actions_[i_action];
     ++i_action;
 
     double domain_volume = 0.0;
-    Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
+    Teuchos::RCP<SpecIDs> ids = (*spec_ids)->second;
 
     if (action == TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
 
-      for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-	if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
+      for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+	if (*c < ncells_owned) domain_volume += mesh_->cell_volume(*c);
       }
       double volume_tmp = domain_volume;
       mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
 
-      for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-	AmanziGeometry::Point xc = mesh_->cell_centroid(*id);
+      for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+	AmanziGeometry::Point xc = mesh_->cell_centroid(*c);
 	for (int i = 0; i != dim; ++i) args[i+1] = xc[i];
-	// Careful tracing of the typedefs is required here: spec_and_ids->first
-	//  is a RCP<Spec>, and the Spec's second is an RCP to the function.
-	value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
+	// Careful tracing of the typedefs is required here: spec_ids->first
+	// is a RCP<Spec>, and the Spec's second is an RCP to the function.
+	value_[*c] = (*(*spec_ids)->first->second)(args)[0] / domain_volume;
       }      
     } else if (action == TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
 
-      for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
-	if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
+      for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+	if (*c < ncells_owned) domain_volume += mesh_->cell_volume(*c);
       }
       double volume_tmp = domain_volume;
       mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
 
-      for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-	AmanziGeometry::Point xc = mesh_->cell_centroid(*id);
+      for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+	AmanziGeometry::Point xc = mesh_->cell_centroid(*c);
 	for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
-	// Careful tracing of the typedefs is required here: spec_and_ids->first
-	//  is a RCP<Spec>, and the Spec's second is an RCP to the function.
-	value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] * weight[*id] / domain_volume;
+	value_[*c] = (*(*spec_ids)->first->second)(args)[0] * weight[*c] / domain_volume;
       }      
     } else {
-      for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-	AmanziGeometry::Point xc = mesh_->cell_centroid(*id);
+      for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+	AmanziGeometry::Point xc = mesh_->cell_centroid(*c);
 	for (int i = 0; i != dim; ++i) args[i+1] = xc[i];
-	// Careful tracing of the typedefs is required here: spec_and_ids->first
-	//  is a RCP<Spec>, and the Spec's second is an RCP to the function.
-	value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
+	value_[*c] = (*(*spec_ids)->first->second)(args)[0];
       }      
     }
   }
@@ -205,7 +199,7 @@ void TransportDomainFunction::ComputeDistributeMultiValue(double t, const std::s
     Finalize();
   }
 
-  int dim = (*mesh_).space_dimension();
+  int dim = mesh_->space_dimension();
   std::vector<double> args(1+dim);
   args[0] = t;
 
@@ -214,26 +208,26 @@ void TransportDomainFunction::ComputeDistributeMultiValue(double t, const std::s
   value_.clear();
 
   for (SpecAndIDsList::const_iterator
-           spec_and_ids=specs_and_ids_[AmanziMesh::CELL]->begin();
-       spec_and_ids!=specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
+       spec_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
+       spec_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_ids) {
     
     if (names_[i_name] == name) {
       double domain_volume = 0.0;
-      Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
+      Teuchos::RCP<SpecIDs> ids = (*spec_ids)->second;
 
-      for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-        if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
+      for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+        if (*c < ncells_owned) domain_volume += mesh_->cell_volume(*c);
       }
 
       double volume_tmp = domain_volume;
       mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
 
-      for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-        AmanziGeometry::Point xc = mesh_->cell_centroid(*id);
+      for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+        AmanziGeometry::Point xc = mesh_->cell_centroid(*c);
         for (int i = 0; i != dim; ++i) args[i+1] = xc[i];
-        // Careful tracing of the typedefs is required here: spec_and_ids->first
-        //  is a RCP<Spec>, and the Spec's second is an RCP to the function.
-        value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
+        // Careful tracing of the typedefs is required here: spec_ids->first
+        // is a RCP<Spec>, and the Spec's second is an RCP to the function.
+        value_[*c] = (*(*spec_ids)->first->second)(args)[0] / domain_volume;
       }
     }
     i_name++;
@@ -252,7 +246,7 @@ void TransportDomainFunction::ComputeDistributeMultiValue(
     Finalize();
   }
 
-  int dim = (*mesh_).space_dimension();
+  int dim = mesh_->space_dimension();
   std::vector<double> args(1+dim);
   args[0] = t;
 
@@ -261,49 +255,49 @@ void TransportDomainFunction::ComputeDistributeMultiValue(
   value_.clear();
 
   for (SpecAndIDsList::const_iterator
-           spec_and_ids=specs_and_ids_[AmanziMesh::CELL]->begin();
-       spec_and_ids!=specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
+       spec_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
+       spec_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_ids) {
 
     int action = actions_[i_action];
     ++i_action;
 
     if (names_[i_name] == name) {
       double domain_volume = 0.0;
-      Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
+      Teuchos::RCP<SpecIDs> ids = (*spec_ids)->second;
 
       if (action == TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
-        for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-          if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
+        for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+          if (*c < ncells_owned) domain_volume += mesh_->cell_volume(*c);
         }
 
         double volume_tmp = domain_volume;
         mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
 
-        for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-            AmanziGeometry::Point xc = mesh_->cell_centroid(*id);
+        for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+            AmanziGeometry::Point xc = mesh_->cell_centroid(*c);
 	  for (int i = 0; i != dim; ++i) args[i+1] = xc[i];
-	  // Careful tracing of the typedefs is required here: spec_and_ids->first
-	  //  is a RCP<Spec>, and the Spec's second is an RCP to the function.
-	  value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
+	  // Careful tracing of the typedefs is required here: spec_ids->first
+	  // is a RCP<Spec>, and the Spec's second is an RCP to the function.
+	  value_[*c] = (*(*spec_ids)->first->second)(args)[0] / domain_volume;
         }      
       } else if (action == TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-        for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-	  if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
+        for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+	  if (*c < ncells_owned) domain_volume += mesh_->cell_volume(*c);
         }
 
         double volume_tmp = domain_volume;
         mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
 
-        for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-            AmanziGeometry::Point xc = mesh_->cell_centroid(*id);
+        for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+            AmanziGeometry::Point xc = mesh_->cell_centroid(*c);
 	  for (int i = 0; i != dim; ++i) args[i+1] = xc[i];
-	  value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] * weight[*id] / domain_volume;
+	  value_[*c] = (*(*spec_ids)->first->second)(args)[0] * weight[*c] / domain_volume;
         }      
       } else {
-        for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-            AmanziGeometry::Point xc = mesh_->cell_centroid(*id);
+        for (SpecIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+            AmanziGeometry::Point xc = mesh_->cell_centroid(*c);
 	  for (int i = 0; i != dim; ++i) args[i+1] = xc[i];
-	  value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
+	  value_[*c] = (*(*spec_ids)->first->second)(args)[0];
         }        
       }
     }
