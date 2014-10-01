@@ -306,8 +306,8 @@ void TransportDomainFunction::ComputeDistributeMultiValue(
 	  value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
         }        
       }
-      i_name++;
     }
+    i_name++;
   }
 }
 
