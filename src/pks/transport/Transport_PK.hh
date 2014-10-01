@@ -167,13 +167,11 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
       const Epetra_MultiVector& darcy_flux, 
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
-  void AddMolecularDiffusion_(
-      const std::string component_name,
+  void CalculateDiffusionTensor_(
+      bool flag_dispersion, double md,
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
-  int CalculateDiffusionTensor_(
-      const std::string component_name,
-      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+  int FindDiffusionValue(const std::string tcc_name, double* md, int* phase);
 
   // I/O methods
   void ProcessParameterList();
@@ -238,8 +236,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
-  std::vector<Teuchos::RCP<DispersionModel> > dispersion_models_;  // data for dispersion
-  Teuchos::RCP<DiffusionModel> diffusion_models_;  // data for molecular diffusion
+  std::vector<Teuchos::RCP<DispersionModel> > dispersion_models_;  // dispersivity
+  std::vector<Teuchos::RCP<DiffusionModel> >  diffusion_models_;   // diffusivity
 
   std::vector<WhetStone::Tensor> D;
   int dispersion_method;

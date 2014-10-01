@@ -116,14 +116,21 @@ void Transport_PK::ProcessParameterList()
   }
 
   // transport diffusion (default is none)
-  if (transport_list.isSublist("molecular diffusion")) {
-    diffusion_models_ = Teuchos::rcp(new DiffusionModel());
+  diffusion_models_.resize(TRANSPORT_NUMBER_PHASES, Teuchos::null);
 
+  if (transport_list.isSublist("molecular diffusion")) {
     Teuchos::ParameterList& dlist = transport_list.sublist("molecular diffusion");
-    diffusion_models_->names() = dlist.get<Teuchos::Array<std::string> >("solute names").toVector();
-    diffusion_models_->values() = dlist.get<Teuchos::Array<double> >("solute values").toVector();
-  } else {
-    diffusion_models_ = Teuchos::null;
+    if (dlist.isParameter("aqueous names")) { 
+      diffusion_models_[0] = Teuchos::rcp(new DiffusionModel());
+      diffusion_models_[0]->names() = dlist.get<Teuchos::Array<std::string> >("aqueous names").toVector();
+      diffusion_models_[0]->values() = dlist.get<Teuchos::Array<double> >("aqueous values").toVector();
+    }
+
+    if (dlist.isParameter("gas names")) { 
+      diffusion_models_[1] = Teuchos::rcp(new DiffusionModel());
+      diffusion_models_[1]->names() = dlist.get<Teuchos::Array<std::string> >("gas names").toVector();
+      diffusion_models_[1]->values() = dlist.get<Teuchos::Array<double> >("gas values").toVector();
+    }
   }
 
   // control parameter

@@ -26,12 +26,16 @@ class DiffusionModel {
   DiffusionModel() {};
   ~DiffusionModel() {};
 
-  double FindComponentValue(const std::string tcc_name) {
-    int nnames = names_.size();
-    for (int i = 0; i < nnames; ++i) {
-      if (names_[i] == tcc_name) return values_[i];
+  int FindDiffusionValue(const std::string tcc_name, double* md) {
+    for (int i = 0; i < names_.size(); ++i) {
+      if (names_[i] == tcc_name) { 
+        *md = values_[i];
+        return 0;
+      }
     }
-    return 0.0;
+
+    *md = 0.0; 
+    return -1;
   }
 
   // access

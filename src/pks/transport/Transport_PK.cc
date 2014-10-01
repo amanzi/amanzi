@@ -406,7 +406,10 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
   int number_components = tcc_prev.NumVectors();
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", false);
 
-  if (dispersion_models_.size() != 0) {
+  bool flag_dispersion = (dispersion_models_.size() != 0);
+  bool flag_diffusion = (diffusion_models_[0] != Teuchos::null || diffusion_models_[1] != Teuchos::null);
+
+  if (flag_dispersion || flag_diffusion) {
     Teuchos::ParameterList op_list;
     op_list.set<std::string>("discretization secondary", "two point flux approximation");
 
@@ -433,45 +436,62 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
 
     Operators::OperatorDiffusionFactory opfactory;
     Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list, g);
-    op1->Init();
 
     const CompositeVectorSpace& cvs = op1->DomainMap();
     CompositeVector rhs(cvs), sol(cvs), factor(cvs);
     rhs.PutScalar(0.0);
   
-    // populate the diffusion operator
-    CalculateDispersionTensor_(*darcy_flux, *phi, *ws);
-    op1->InitOperator(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
-    op1->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-    // add accumulation
-    Epetra_MultiVector& fac = *factor.ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; c++) {
-      fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
-    }
-
-    op1->AddAccumulationTerm(rhs, factor, dT_MPC);
-    int schema_prec_dofs = op1->schema_prec_dofs();
-    op1->SymbolicAssembleMatrix(schema_prec_dofs);
-    op1->AssembleMatrix(schema_prec_dofs);
-    op1->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
-  
+    // instantiale solver
     AmanziSolvers::LinearOperatorFactory<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> sfactory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
        solver = sfactory.Create(dispersion_solver, solvers_list, op1);
 
-    solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
-
-    double residual = 0.0;
-    int num_itrs = 0;
-
-    Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
-    Epetra_MultiVector& sol_cell = *sol.ViewComponent("cell");
-    if (sol.HasComponent("face")) {
-      sol.ViewComponent("face")->PutScalar(0.0);
+    // populate the dispersion operator (if any)
+    if (flag_dispersion) {
+      CalculateDispersionTensor_(*darcy_flux, *phi, *ws);
     }
-    
+
+    int phase, num_itrs(0);
+    bool flag_op1;
+    double md_change, md_old(0.0), md_new, residual(0.0);
+
     for (int i = 0; i < number_components; i++) {
+      FindDiffusionValue(component_names_[i], &md_new, &phase);
+      md_change = md_new - md_old;
+      md_old = md_new;
+
+      flag_op1 = (i == 0);
+      if (md_change != 0.0) {
+        CalculateDiffusionTensor_(flag_dispersion, md_change, *phi, *ws);
+        flag_op1 = true;
+      }
+
+      if (flag_op1) {
+        op1->Init();
+        op1->InitOperator(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
+        op1->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+        // add accumulation
+        Epetra_MultiVector& fac = *factor.ViewComponent("cell");
+        for (int c = 0; c < ncells_owned; c++) {
+          fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
+        }
+
+        op1->AddAccumulationTerm(rhs, factor, dT_MPC);
+        int schema_prec_dofs = op1->schema_prec_dofs();
+        op1->SymbolicAssembleMatrix(schema_prec_dofs);
+        op1->AssembleMatrix(schema_prec_dofs);
+        op1->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
+      }
+  
+      solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
+
+      Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
+      Epetra_MultiVector& sol_cell = *sol.ViewComponent("cell");
+      if (sol.HasComponent("face")) {
+        sol.ViewComponent("face")->PutScalar(0.0);
+      }
+    
       for (int c = 0; c < ncells_owned; c++) {
         double tmp = mesh_->cell_volume(c) * (*ws)[0][c] * (*phi)[0][c] / dT_MPC;
         rhs_cell[0][c] = tcc_next[i][c] * tmp;

@@ -1168,7 +1168,7 @@ The diffusion data are related to solutes.
        <Parameter name="model" type="string" value="Bear"/>
        <Parameter name="alphaL" type="double" value="1e-2"/>
        <Parameter name="alphaT" type="double" value="1e-5"/>
-       <Parameter name="tortuosity" type="double" value="1e-4"/>       
+       <Parameter name="tortuosity" type="double" value="1.0"/>       
      </ParameterList>  
      
      <ParameterList name="GREY SOIL">
@@ -1176,13 +1176,16 @@ The diffusion data are related to solutes.
        <Parameter name="model" type="string" value="Bear"/>
        <Parameter name="alphaL" type="double" value="1e-2"/>
        <Parameter name="alphaT" type="double" value="1e-5"/>
-       <Parameter name="tortuosity" type="double" value="1e-4"/>
+       <Parameter name="tortuosity" type="double" value="0.5"/>
      </ParameterList>  
    </ParameterList>  
 
    <ParameterList name="molecular diffusion">
-     <Parameter name="solute names" type=Array(string)" value="{Tc-98,Tc-99}"/>
-     <Parameter name="solute values" type=Array(double)" value="{1e-8,1e-9}"/>
+     <Parameter name="aqueous names" type=Array(string)" value="{Tc-98,Tc-99}"/>
+     <Parameter name="aqueous values" type=Array(double)" value="{1e-8,1e-9}"/>
+
+     <Parameter name="gas names" type=Array(string)" value="{C02}"/>
+     <Parameter name="gas values" type=Array(double)" value="{1e-8}"/>
    </ParameterList>  
 
 

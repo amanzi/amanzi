@@ -57,8 +57,8 @@
     </ParameterList>
 
     <ParameterList name="molecular diffusion">
-      <Parameter name="solute names" type="Array(string)" value="{Component 0}"/>
-      <Parameter name="solute values" type="Array(double)" value="{0.0}"/>
+      <Parameter name="aqueous names" type="Array(string)" value="{Component 0}"/>
+      <Parameter name="aqueous values" type="Array(double)" value="{0.0}"/>
     </ParameterList>
 
     <Parameter name="advection limiter" type="string" value="Tensorial"/>

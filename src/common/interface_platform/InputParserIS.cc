@@ -1207,8 +1207,8 @@ Teuchos::ParameterList CreateTransportList(Teuchos::ParameterList* plist) {
                   }
                 }
                 // TODO: there is now a D for every solute, this needs to updated here and in PK
-                disp_sublist.set<double>("D", mat_sublist.sublist("Molecular Diffusivity: Uniform").get<double>("Value"));
                 /*
+                disp_sublist.set<double>("D", mat_sublist.sublist("Molecular Diffusivity: Uniform").get<double>("Value"));
                 // get the list of solutes in comp_names
                 Teuchos::Array<double> molecular_diffusivity;
                 bool missing_D(false);

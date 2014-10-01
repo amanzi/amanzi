@@ -88,48 +88,32 @@ void Transport_PK::CalculateDispersionTensor_(
 
 
 /* *******************************************************************
-* Calculate diffusion tensor if no dispersion is given.
+* Calculate diffusion tensor and add it to the dispersion tensor.
 ******************************************************************* */
-int Transport_PK::CalculateDiffusionTensor_(
-    const std::string component_name,
+void Transport_PK::CalculateDiffusionTensor_(
+    bool flag_dispersion, double md,
     const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
 {
-  if (diffusion_models_ == Teuchos::null) return -1;
+  if (!flag_dispersion) { 
+    D.resize(ncells_owned);
 
-  double md = diffusion_models_->FindComponentValue(component_name);
-  if (md == 0.0) return -1;
+    for (int c = 0; c < ncells_owned; c++) {
+      D[c].init(dim, 1);
+      D[c](0, 0) = md * porosity[0][c] * saturation[0][c];
+    }
+  } else {
+    for (int mb = 0; mb < dispersion_models_.size(); mb++) {
+      Teuchos::RCP<DispersionModel> spec = dispersion_models_[mb]; 
 
-  D.resize(ncells_owned);
-  for (int c = 0; c < ncells_owned; c++) { 
-    D[c].init(dim, 1);
-    D[c](0, 0) = md * porosity[0][c] * saturation[0][c];
-  }
-}
+      std::vector<AmanziMesh::Entity_ID> block;
+      for (int r = 0; r < (spec->regions).size(); r++) {
+        std::string region = (spec->regions)[r];
+        mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
-
-/* *******************************************************************
-* Add molecular diffusion to the existing dispersive tensor.
-******************************************************************* */
-void Transport_PK::AddMolecularDiffusion_(
-    const std::string component_name,
-    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
-{
-  if (diffusion_models_ == Teuchos::null) return;
-
-  double md = diffusion_models_->FindComponentValue(component_name);
-  if (md == 0.0) return;
-
-  for (int mb = 0; mb < dispersion_models_.size(); mb++) {
-    Teuchos::RCP<DispersionModel> spec = dispersion_models_[mb]; 
-
-    std::vector<AmanziMesh::Entity_ID> block;
-    for (int r = 0; r < (spec->regions).size(); r++) {
-      std::string region = (spec->regions)[r];
-      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-
-      AmanziMesh::Entity_ID_List::iterator c;
-      for (c = block.begin(); c != block.end(); c++) {
-        D[*c] += md * spec->tau * porosity[0][*c] * saturation[0][*c];
+        AmanziMesh::Entity_ID_List::iterator c;
+        for (c = block.begin(); c != block.end(); c++) {
+          D[*c] += md * spec->tau * porosity[0][*c] * saturation[0][*c];
+        }
       }
     }
   }
@@ -137,24 +121,23 @@ void Transport_PK::AddMolecularDiffusion_(
 
 
 /* ******************************************************************
-* Adds time derivative to the cell-based part of MFD algebraic system.
+* Check all phases for the given name.
 ****************************************************************** */
-/*
-void Dispersion::AddTimeDerivative(
-    double dT, const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
+int Transport_PK::FindDiffusionValue(const std::string tcc_name, double* md, int* phase)
 {
-  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-
-  for (int c = 0; c < ncells_owned; c++) {
-    double volume = mesh_->cell_volume(c);
-    double factor = volume * porosity[0][c] * saturation[0][c] / dT;
-
-    int c_GID = cmap_wghost.GID(c);
-    App_->SumIntoGlobalValues(1, &c_GID, &factor);
+  for (int i = 0; i < TRANSPORT_NUMBER_PHASES; i++) {
+    if (diffusion_models_[i] == Teuchos::null) continue;
+    int ok = diffusion_models_[i]->FindDiffusionValue(tcc_name, md);
+    if (ok == 0) {
+      *phase = i;
+      return 0;
+    }
   }
-}
-*/
 
+  *md = 0.0;
+  *phase = -1;
+  return -1;
+}
 
 }  // namespace Transport
 }  // namespace Amanzi

@@ -110,7 +110,6 @@ void FlowDomainFunction::ComputeDistribute(double time)
       //  is a RCP<Spec>, and the Spec's second is an RCP to the function.
       value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
     }
-
   }
 }
 
