@@ -693,7 +693,9 @@ void Chemistry_State::CopyToAlquimia(const int cell_id,
     }
   }
 
-  mat_props.volume = (*this->volume())[cell_id];
+  // FIXME: For some reason, Alquimia seems to need a fudge factor in the 
+  // FIXME: cell volume, to the tune of 1000.
+  mat_props.volume = 1000.0 * (*this->volume())[cell_id];
   mat_props.saturation = (*this->water_saturation())[cell_id];
 
   // sorption isotherms
