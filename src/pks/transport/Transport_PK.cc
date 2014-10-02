@@ -144,6 +144,7 @@ Transport_PK::~Transport_PK()
     delete vo_;
   }
   for (int i=0; i<bcs.size(); i++) delete bcs[i]; 
+  for (int i=0; i<srcs.size(); i++) delete srcs[i]; 
 }
 
 
@@ -222,8 +223,12 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   CheckInfluxBC();
 
   // source term initialization
-  if (src_sink_distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  for (int i =0; i < srcs.size(); i++) {
+    int distribution = srcs[i]->CollectActionsList();
+    if (distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+      Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+      break;
+    }
   }
 }
 
@@ -646,9 +651,9 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   }
 
   // process external sources
-  if (src_sink != NULL) {
+  if (srcs.size() != 0) {
     double time = T_physics;
-    ComputeAddSourceTerms(time, dT, src_sink, tcc_next);
+    ComputeAddSourceTerms(time, dT, srcs, tcc_next);
   }
 
   // recover concentration from new conservative state
@@ -818,24 +823,24 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
 * Return mass rate for the tracer.
 ****************************************************************** */
 void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp, 
-                                         TransportDomainFunction* src_sink, 
+                                         std::vector<TransportDomainFunction*>& srcs, 
                                          Epetra_MultiVector& tcc)
 {
-  int ncomponents = tcc.NumVectors();
-  for (int i = 0; i < ncomponents; i++) {
-    std::string name(component_names_[i]);
-    
-    if (src_sink_distribution & 
-        TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistributeMultiValue(Tp, name, Kxy->Values()); 
+  int nsrcs = srcs.size();
+  for (int m = 0; m < nsrcs; m++) {
+    int distribution = srcs[m]->CollectActionsList();
+    if (distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+      srcs[m]->ComputeDistributeMultiValue(Tp, Kxy->Values()); 
     } else {
-      src_sink->ComputeDistributeMultiValue(Tp, name, NULL);
+      srcs[m]->ComputeDistributeMultiValue(Tp, NULL);
     }
 
-    TransportDomainFunction::Iterator src;
-    for (src = src_sink->begin(); src != src_sink->end(); ++src) {
-      int c = src->first;
-      double value = mesh_->cell_volume(c) * src->second;
+    int i = srcs[m]->tcc_index();
+    TransportDomainFunction::Iterator it;
+
+    for (it = srcs[m]->begin(); it != srcs[m]->end(); ++it) {
+      int c = it->first;
+      double value = mesh_->cell_volume(c) * it->second;
 
       tcc[i][c] += dTp * value;
       if (i == 0) mass_tracer_source += value;

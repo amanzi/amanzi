@@ -12,6 +12,8 @@
 #ifndef AMANZI_TRANSPORT_SOURCE_FACTORY_HH_
 #define AMANZI_TRANSPORT_SOURCE_FACTORY_HH_
 
+#include <vector>
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -29,7 +31,7 @@ class TransportSourceFactory {
      : mesh_(mesh), plist_(plist) {};
   ~TransportSourceFactory() {};
   
-  TransportDomainFunction* CreateSource();
+  void CreateSource(std::vector<TransportDomainFunction*>& srcs);
 
  private:
   void ProcessSourceSpec(Teuchos::ParameterList& list, 

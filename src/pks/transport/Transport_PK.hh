@@ -110,7 +110,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   // sources and sinks
   void ComputeAddSourceTerms(double Tp, double dTp, 
-                             TransportDomainFunction* src_sink, 
+                             std::vector<TransportDomainFunction*>& src_sink, 
                              Epetra_MultiVector& tcc);
 
   // limiters 
@@ -229,8 +229,9 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   std::vector<double> component_local_min_;
   std::vector<double> component_local_max_;
 
-  TransportDomainFunction* src_sink;  // Source and sink terms
-  int src_sink_distribution; 
+  std::vector<TransportDomainFunction*> srcs;  // Source or sink for components
+  std::vector<TransportBoundaryFunction*> bcs;  // influx BC for components
+  double bc_scaling;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
@@ -245,9 +246,6 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   std::string dispersion_solver;
 
   double cfl_, dT, dT_debug, T_physics;  
-
-  std::vector<TransportBoundaryFunction*> bcs;  // influx BCs for each components
-  double bc_scaling;
 
   double mass_tracer_exact, mass_tracer_source;  // statistics for tracer
 

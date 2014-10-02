@@ -84,6 +84,17 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
+        <ParameterList name="Component 1">
+          <ParameterList name="SRC 0">
+            <Parameter name="regions" type="Array(string)" value="{Well}"/>
+            <Parameter name="spatial distribution method" type="string" value="volume"/>
+            <ParameterList name="sink">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.1"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>

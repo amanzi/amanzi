@@ -166,21 +166,23 @@ void Transport_PK::ProcessParameterList()
   }
 
   // Create the source object if any
+  srcs.clear();
+
   if (transport_list.isSublist("source terms")) {
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(transport_list.sublist("source terms", true));
     TransportSourceFactory src_factory(mesh_, src_list);
-    src_sink = src_factory.CreateSource();
+    src_factory.CreateSource(srcs);
+
+    for (int m = 0; m < srcs.size(); m++) {
+      srcs[m]->set_tcc_index(FindComponentNumber(srcs[m]->tcc_name()));
     
-    // revisit the code below (lipnikov@lanl.gov)
-    src_sink_distribution = src_sink->CollectActionsList();
-    if (src_sink_distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      Errors::Message msg;
-      msg << "Transport PK: support of permeability weighted source distribution is pending.\n";
-      Exceptions::amanzi_throw(msg);  
+      int distribution = srcs[m]->CollectActionsList();
+      if (distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+        Errors::Message msg;
+        msg << "Transport PK: support of permeability weighted source distribution is pending.\n";
+        Exceptions::amanzi_throw(msg);  
+      }
     }
-  } else {
-    src_sink = NULL;
-    src_sink_distribution = 0;
   }
 }
 

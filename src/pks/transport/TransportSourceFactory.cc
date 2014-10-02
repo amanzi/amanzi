@@ -22,10 +22,9 @@ namespace Transport {
 /* ******************************************************************
 * Process source, step 1.
 ****************************************************************** */
-TransportDomainFunction* TransportSourceFactory::CreateSource() 
+void TransportSourceFactory::CreateSource(std::vector<TransportDomainFunction*>& srcs) 
 {
   Errors::Message msg;
-  TransportDomainFunction* src = new TransportDomainFunction(mesh_);
 
   if (plist_->isSublist("concentration")) {
     Teuchos::ParameterList& clist = plist_->get<Teuchos::ParameterList>("concentration");
@@ -42,7 +41,9 @@ TransportDomainFunction* TransportSourceFactory::CreateSource()
 	  if (srclist.isSublist(specname)) {
 	    Teuchos::ParameterList& spec = srclist.sublist(specname);
             try {
+              TransportDomainFunction* src = new TransportDomainFunction(mesh_);
               ProcessSourceSpec(spec, name, src);
+              srcs.push_back(src);
             } catch (Errors::Message& m) {
               msg << "in sublist \"" << specname.c_str() << "\": " << m.what();
               Exceptions::amanzi_throw(msg);
@@ -61,8 +62,6 @@ TransportDomainFunction* TransportSourceFactory::CreateSource()
     msg << "Transport PK: \"source terms\" has no sublist \"concentration\".\n";
     Exceptions::amanzi_throw(msg);  
   }
-
-  return src;
 }
 
 

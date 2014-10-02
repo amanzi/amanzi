@@ -48,8 +48,8 @@ class TransportDomainFunction : public Functions::UniqueMeshFunction {
   void Compute(double time);
   void ComputeDistribute(double T);
   void ComputeDistribute(double T, double* weight);
-  void ComputeDistributeMultiValue(double T, const std::string& name);
-  void ComputeDistributeMultiValue(double T, const std::string& name, double* weight);
+  void ComputeDistributeMultiValue(double T);
+  void ComputeDistributeMultiValue(double T, double* weight);
   
   void Finalize() {}
  
@@ -62,9 +62,15 @@ class TransportDomainFunction : public Functions::UniqueMeshFunction {
   Iterator end() const  { return value_.end(); }
   Iterator find(const int j) const { return value_.find(j); }
 
+  // access
+  const std::string& tcc_name() { return tcc_name_; }
+  int tcc_index() { return tcc_index_; }
+  void set_tcc_index(int i) { tcc_index_ = i; }
+
  private:
   std::vector<int> actions_;
-  std::vector<std::string> names_;
+  std::string tcc_name_;
+  int tcc_index_; // index the global list of components
 
  protected:
   std::map<int,double> value_;
