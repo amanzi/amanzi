@@ -1534,7 +1534,7 @@ PorousMedia::richard_init_to_steady()
     std::string tag = "Steady Flow Solve";
     if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
       std::cout << tag << std::endl;
-    }        
+    }
     
     if (level == 0) {
       int old_richard_solver_verbose = richard_solver_verbose;
@@ -1876,9 +1876,16 @@ PorousMedia::richard_init_to_steady()
       }
 
       ParallelDescriptor::Barrier();
-      Real time_after_init = p->startTime();
+      Real time_after_init = p->StopTime();
       for (int lev = 0; lev <= finest_level; lev++) {
         getLevel(lev).setTimeLevel(time_after_init,dt_save[lev],dt_save[lev]);
+      }
+
+      Observation::setPMAmrPtr(PMParent());
+      prev_time = state[State_Type].prevTime();
+      PArray<Observation>& observations = PMParent()->TheObservations();
+      for (int i=0; i<observations.size(); ++i) {
+        observations[i].process(prev_time, time_after_init, parent->levelSteps(0));
       }
 	
       richard_solver_verbose = old_richard_solver_verbose;
@@ -2280,12 +2287,14 @@ PorousMedia::ml_step_driver(Real  time,
     if (execution_mode == STEADY) {
         advect_tracers = react_tracers = false;
         richard_init_to_steady();
-        dt_taken = -1;
-        dt_suggest = -1;
+
+        Real start_time = PMParent()->startTime();
+        Real stop_time = PMParent()->StopTime();
+        dt_taken = stop_time - start_time;
+        dt_suggest = dt_taken;
 
         // Velocity currently in u_mac_curr, form u_macG_curr
         int finest_level = parent->finestLevel();
-        Real start_time = PMParent()->startTime();
         for (int lev = 0; lev <= finest_level; lev++) {
           PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
           BL_ASSERT(pm);
