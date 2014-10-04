@@ -2416,7 +2416,8 @@ This list contains data collected by the input parser of a higher-level spec.
 .. code-block:: xml
 
   <ParameterList name="Analysis">
-    <Parameter name="used regions" type="Array(string)" value="{region1,region2}"/>
+    <Parameter name="used boundary condition regions" type="Array(string)" value="{region1,region2}"/>
+    <Parameter name="used source and sink regions" type="Array(string)" value="{region3,region4}"/>
   </ParameterList>
   
 

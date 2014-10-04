@@ -201,7 +201,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
               // read the assigned regions
               const std::string name(i->first);
               Teuchos::Array<std::string> regs = bc_list.sublist(name).get<Teuchos::Array<std::string> >("Assigned Regions");
-              vv_regions.insert(vv_regions.end(), regs.size(), regs[0]);
+              vv_bc_regions.insert(vv_bc_regions.end(), regs.size(), regs[0]);
 
               // only count sublists
               if (bc_list.isSublist(name)) {

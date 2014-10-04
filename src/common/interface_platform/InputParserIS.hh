@@ -105,7 +105,7 @@ class InputParserIS {
   int numproc_;
 
  private:
-  std::vector<std::string> vv_regions;  // XML verification
+  std::vector<std::string> vv_bc_regions;  // XML verification
 };
 
 }  // namespace AmanziInput

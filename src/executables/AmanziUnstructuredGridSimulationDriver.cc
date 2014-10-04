@@ -79,10 +79,14 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     new_list = input_parameter_list;
   }
   
+  // Print debug information about boundary conditions.
   if ((comm->MyPID() == 0) && (includesVerbLevel(verbLevel, Teuchos::VERB_EXTREME, true)))
       Amanzi::AmanziInput::InputParserIS_OutputBCs(&new_list);
   
-  if (! native && includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) { 
+  // A hack: print floating-point numbers with a given precision.
+  int precision = input_parameter_list.get<int>("output precision", 0);
+
+  if (!native && includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) { 
     std::string xmlFileName = new_list.get<std::string>("input file name");
     std::string new_extension("_native_v5.xml");
     size_t pos = xmlFileName.find(".xml");
@@ -91,13 +95,13 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       printf("Amanzi: writing the translated parameter list to file %s...\n", xmlFileName.c_str());
 
       Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
+      if (precision > 0) XMLWriter.set_precision(precision);
       Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_list);
 
       std::ofstream xmlfile;
       xmlfile.open(xmlFileName.c_str());
       xmlfile << XMLobj;
     }
-    // Teuchos::writeParameterListToXmlFile(new_list, xmlFileName);
   }
 
 

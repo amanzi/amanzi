@@ -554,7 +554,7 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
 
       // get the regions
       Teuchos::Array<std::string> regions = bc.get<Teuchos::Array<std::string> >("Assigned Regions");
-      vv_regions.insert(vv_regions.end(), regions.size(), regions[0]);
+      vv_bc_regions.insert(vv_bc_regions.end(), regions.size(), regions[0]);
 
       if (bc.isSublist("BC:Zero Flow")) {
         // this is the natural BC for flow and we need not list it explicitly

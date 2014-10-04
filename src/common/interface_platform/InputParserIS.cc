@@ -317,7 +317,7 @@ Teuchos::ParameterList InputParserIS::CreateVerbosityList_(const std::string& vl
 Teuchos::ParameterList InputParserIS::CreateAnalysisList_()
 {
   Teuchos::ParameterList alist;
-  alist.set<Teuchos::Array<std::string> >("used regions", vv_regions);
+  alist.set<Teuchos::Array<std::string> >("used boundary condition regions", vv_bc_regions);
   return alist;
 }
 
