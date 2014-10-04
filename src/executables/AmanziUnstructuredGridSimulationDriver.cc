@@ -57,9 +57,10 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Teuchos::ParameterList sub_list;
   
   if (! native) {
-    new_list = Amanzi::AmanziInput::Translate(&input_parameter_list, comm->NumProc());
+    Amanzi::AmanziInput::InputParserIS parser;
+    new_list = parser.Translate(&input_parameter_list, comm->NumProc());
 
-    std::string verbosity = input_parameter_list.sublist("Execution Control").get<std::string>("Verbosity","Low");
+    std::string verbosity = input_parameter_list.sublist("Execution Control").get<std::string>("Verbosity", "Low");
     
     if (verbosity == "None") {
       verbLevel = Teuchos::VERB_NONE;
@@ -78,10 +79,10 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     new_list = input_parameter_list;
   }
   
-  if ((comm->MyPID() == 0) && (includesVerbLevel(verbLevel,Teuchos::VERB_EXTREME,true)))
-       Amanzi::AmanziInput::output_boundary_conditions(&new_list);
+  if ((comm->MyPID() == 0) && (includesVerbLevel(verbLevel, Teuchos::VERB_EXTREME, true)))
+      Amanzi::AmanziInput::InputParserIS_OutputBCs(&new_list);
   
-  if (! native && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) { 
+  if (! native && includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) { 
     std::string xmlFileName = new_list.get<std::string>("input file name");
     std::string new_extension("_native_v5.xml");
     size_t pos = xmlFileName.find(".xml");
