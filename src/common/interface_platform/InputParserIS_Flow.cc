@@ -491,6 +491,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowSrcList_(Teuchos::ParameterList*
       // get the regions
       Teuchos::Array<std::string> regions = src.get<Teuchos::Array<std::string> >("Assigned Regions");
       src_sub_out.set<Teuchos::Array<std::string> >("regions", regions);
+      vv_src_regions.insert(vv_src_regions.end(), regions.size(), regions[0]);
 
       // create time function
       Teuchos::ParameterList& src_sub_out_fn = src_sub_out.sublist("sink");
@@ -542,6 +543,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowSrcList_(Teuchos::ParameterList*
 ****************************************************************** */
 Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterList* plist)
 {
+  Errors::Message msg;
   Teuchos::ParameterList ssf_list;
   Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
 
@@ -607,14 +609,14 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
             } else if (time_fns[i] == "Constant") {
               forms_[i] = "constant";
             } else {
-              Exceptions::amanzi_throw(Errors::Message("In the definition of BCs: tabular function can only be Linear or Constant"));
+              msg << "In the definition of BCs: tabular function can only be Linear or Constant";
+              Exceptions::amanzi_throw(msg);
             }
           }
 
           Teuchos::Array<std::string> forms = forms_;
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
         }
-
       }
       else if (bc.isSublist("BC: Uniform Pressure")) {
         Teuchos::ParameterList& bc_dir = bc.sublist("BC: Uniform Pressure");
@@ -735,7 +737,9 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
         } else {
           // we have a default for this value... "Absolute", if for some reason this does not
           // get read, then we must bail
-          Exceptions::amanzi_throw(Errors::Message("In 'BC: Hydrostatic': must specify a value for parameter 'Coordinate System', valid values are 'Absolute' and 'Relative'"));
+          msg << "In 'BC: Hydrostatic': must specify a value for parameter 'Coordinate System',"
+              << " valid values are 'Absolute' and 'Relative'";
+          Exceptions::amanzi_throw(msg);
         }
 
         if (times.size() == 1) {
@@ -764,7 +768,9 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
         if (submodel == "No Flow Above Water Table") {
           tbc.set<bool>("no flow above water table", true);
         } else if (submodel != "None") {
-          Exceptions::amanzi_throw(Errors::Message("In 'BC: Hydrostatic': optional parameter 'Submodel': valid values are 'No Flow Above Water Table' or 'None'"));
+          msg << "In 'BC: Hydrostatic': optional parameter 'Submodel': valid values are 'No Flow Above"
+              << " Water Table' or 'None'";
+          Exceptions::amanzi_throw(msg);
         } 
       }
       else if (bc.isSublist("BC: Seepage")) {
@@ -781,7 +787,8 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
         } else if (bc_flux.isParameter("Inward Volumetric Flux")) {
           for (int i = 0; i < flux.size(); i++) flux[i] *= -constant_density;
         } else {
-          Exceptions::amanzi_throw(Errors::Message("In \"BC: Seepage\" we can only handle \"Inward Mass Flux\" or \"Inward Volumetric Flux\""));
+          msg << "In \"BC: Seepage\" we can only handle \"Inward Mass Flux\" or \"Inward Volumetric Flux\"";
+          Exceptions::amanzi_throw(msg);
         }
 
         std::stringstream ss;
@@ -802,20 +809,21 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
 
           std::vector<std::string> forms_(time_fns.size());
 
-          for (int i = 0; i < time_fns.size(); i++)
+          for (int i = 0; i < time_fns.size(); i++) {
             if (time_fns[i] == "Linear") {
               forms_[i] = "linear";
             } else if (time_fns[i] == "Constant") {
               forms_[i] = "constant";
             } else {
-              Exceptions::amanzi_throw(Errors::Message("In the definition of BCs: tabular function can only be Linear or Constant"));
+              msg << "In the definition of BCs: tabular function can only be Linear or Constant";
+              Exceptions::amanzi_throw(msg);
             }
+          }
 
           Teuchos::Array<std::string> forms = forms_;
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
         }
       }
-
       // TODO...
       // add the rest of the boundary conditions
     }

@@ -14,7 +14,7 @@ Changes V4 -> V5
 ================
 
 * Molecular diffusion is defined for solutes instead of materials. 
-  The "Dispersivity" transport sublist was split into two sublists.
+  The "Dispersivity" transport sublist was replaced by "matrial properties" sublist.
 
 * Enforcement of lower-case names in transport, flow, and energy PKs (e.g. cfl) 
   except for proper names (e.g. Moulton).
@@ -1132,6 +1132,8 @@ and temporal accuracy, and verbosity:
 * `"temporal discretization order`" [int] the order of temporal discretization, either
   1 or 2. The default is 1.
 
+* `"solver`" [string] specifies the dispersion/diffusion solver.
+   
 * `"VerboseObject`" [list] defines default verbosity level for the process kernel.
   If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
   See an example under `"Flow`".
@@ -1144,14 +1146,18 @@ and temporal accuracy, and verbosity:
      <Parameter name="temporal discretization order" type="int" value="1"/>
      <Parameter name="advection limiter" type="string" value="Tensorial"/>
 
+     <Parameter name="solver" type="string" value="DISPERSIVE SOLVER"/>
+
      <ParameterList name="VerboseObject">
        <Parameter name="Verbosity Level" type="string" value="high"/>
      </ParameterList>
    </ParameterList>  
 
 
-Dispersivity and diffusion models
----------------------------------
+Material properties
+-------------------
+The material properties includes dispersivity model and diffusion parameters 
+for aqueous sand gaseous phases.
 Two dispersivity models have been implemented: `"isotropic`" and `"Bear`". 
 The anisotropic model `"Lichtner`" is pending for a more detailed 
 description in the Process Models document.
@@ -1160,15 +1166,14 @@ The diffusion data are related to solutes.
 
 .. code-block:: xml
 
-   <ParameterList name="dispersivity">
-     <Parameter name="solver" type="string" value="Dispersive Solver"/>
-
+   <ParameterList name="material properties">
      <ParameterList name="WHITE SOIL">
        <Parameter name="regions" type="Array(string)" value="{top region, bottom region}"/>
        <Parameter name="model" type="string" value="Bear"/>
        <Parameter name="alphaL" type="double" value="1e-2"/>
        <Parameter name="alphaT" type="double" value="1e-5"/>
-       <Parameter name="tortuosity" type="double" value="1.0"/>       
+       <Parameter name="aqueous tortuosity" type="double" value="1.0"/>       
+       <Parameter name="gaseous tortuosity" type="double" value="1.0"/>       
      </ParameterList>  
      
      <ParameterList name="GREY SOIL">
@@ -1176,7 +1181,8 @@ The diffusion data are related to solutes.
        <Parameter name="model" type="string" value="Bear"/>
        <Parameter name="alphaL" type="double" value="1e-2"/>
        <Parameter name="alphaT" type="double" value="1e-5"/>
-       <Parameter name="tortuosity" type="double" value="0.5"/>
+       <Parameter name="aqueous tortuosity" type="double" value="0.5"/>
+       <Parameter name="gaseous tortuosity" type="double" value="1.0"/>       
      </ParameterList>  
    </ParameterList>  
 
@@ -1184,8 +1190,8 @@ The diffusion data are related to solutes.
      <Parameter name="aqueous names" type=Array(string)" value="{Tc-98,Tc-99}"/>
      <Parameter name="aqueous values" type=Array(double)" value="{1e-8,1e-9}"/>
 
-     <Parameter name="gas names" type=Array(string)" value="{C02}"/>
-     <Parameter name="gas values" type=Array(double)" value="{1e-8}"/>
+     <Parameter name="gaseous names" type=Array(string)" value="{C02}"/>
+     <Parameter name="gaseous values" type=Array(double)" value="{1e-8}"/>
    </ParameterList>  
 
 

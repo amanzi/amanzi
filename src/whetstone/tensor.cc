@@ -221,7 +221,7 @@ Tensor& Tensor::operator*=(double c)
 
 Tensor& Tensor::operator+=(double c)
 {
-  for (int i = 0; i < size_; i += size_ + 1) data_[i] += c;
+  for (int i = 0; i < size_*size_; i += size_ + 1) data_[i] += c;
   return *this;
 }
 

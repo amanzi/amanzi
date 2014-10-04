@@ -50,10 +50,11 @@ void Transport_PK::ProcessParameterList()
   ProcessStringAdvectionLimiter(advection_limiter_name, &advection_limiter);
 
   // transport dispersion (default is none)
-  if (transport_list.isSublist("dispersivity")) {
-    Teuchos::ParameterList& dlist = transport_list.sublist("dispersivity");
+  dispersion_solver = transport_list.get<std::string>("solver", "missing");
 
-    dispersion_solver = dlist.get<std::string>("solver", "missing");
+  if (transport_list.isSublist("material properties")) {
+    Teuchos::ParameterList& dlist = transport_list.sublist("material properties");
+
     if (solvers_list.isSublist(dispersion_solver)) {
       Teuchos::ParameterList& slist = solvers_list.sublist(dispersion_solver);
       dispersion_preconditioner = slist.get<std::string>("preconditioner", "identity");
@@ -64,36 +65,36 @@ void Transport_PK::ProcessParameterList()
     }
 
     std::string method_name = dlist.get<std::string>("numerical method", "none");
-    ProcessStringDispersionMethod(method_name, &dispersion_method);
+    // ProcessStringDispersionMethod(method_name, &dispersion_method);
 
     int nblocks = 0; 
     for (Teuchos::ParameterList::ConstIterator i = dlist.begin(); i != dlist.end(); i++) {
       if (dlist.isSublist(dlist.name(i))) nblocks++;
     }
 
-    dispersion_models_.resize(nblocks);
+    material_properties_.resize(nblocks);
+    dispersion_models_ = TRANSPORT_DISPERSIVITY_MODEL_NULL;
 
     int iblock = 0, iblock0 = 0;
     for (Teuchos::ParameterList::ConstIterator i = dlist.begin(); i != dlist.end(); i++) {
       if (dlist.isSublist(dlist.name(i))) {
-        dispersion_models_[iblock] = Teuchos::rcp(new DispersionModel());
+        material_properties_[iblock] = Teuchos::rcp(new MaterialProperties());
 
         Teuchos::ParameterList& model_list = dlist.sublist(dlist.name(i));
 
         std::string model_name = model_list.get<std::string>("model", "none");
-        ProcessStringDispersionModel(model_name, &(dispersion_models_[iblock]->model));
+        ProcessStringDispersionModel(model_name, &(material_properties_[iblock]->model));
+        dispersion_models_ |= material_properties_[iblock]->model;
 
-        dispersion_models_[iblock]->alphaL = model_list.get<double>("alphaL", 0.0);
-        dispersion_models_[iblock]->alphaT = model_list.get<double>("alphaT", 0.0);
-        dispersion_models_[iblock]->D = model_list.get<double>("D", 0.0);
-        dispersion_models_[iblock]->tau = model_list.get<double>("tortuosity", 0.0);
-        dispersion_models_[iblock]->regions = model_list.get<Teuchos::Array<std::string> >("regions").toVector();
+        material_properties_[iblock]->alphaL = model_list.get<double>("alphaL", 0.0);
+        material_properties_[iblock]->alphaT = model_list.get<double>("alphaT", 0.0);
+        material_properties_[iblock]->tau[0] = model_list.get<double>("aqueous tortuosity", 0.0);
+        material_properties_[iblock]->tau[1] = model_list.get<double>("gaseous tortuosity", 0.0);
+        material_properties_[iblock]->regions = model_list.get<Teuchos::Array<std::string> >("regions").toVector();
 
         // run-time verification
-        if (dispersion_models_[iblock]->alphaL == 0.0 && 
-            dispersion_models_[iblock]->alphaT == 0.0 && 
-            dispersion_models_[iblock]->D == 0.0 && 
-            dispersion_models_[iblock]->tau == 0.0) {
+        if (material_properties_[iblock]->alphaL == 0.0 && 
+            material_properties_[iblock]->alphaT == 0.0) {
           if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
             Teuchos::OSTab tab = vo_->getOSTab();
             *vo_->os() << vo_->color("yellow") << "Zero dispersion for sublist \"" 
@@ -101,35 +102,27 @@ void Transport_PK::ProcessParameterList()
           }
           iblock0++;
         }
-
         iblock++;
       }
     }
-
-    if (iblock0 == iblock) {
-      dispersion_models_.clear();
-    } else if (iblock0 > 0) {
-      Errors::Message msg;
-      msg << "Transport PK: Zero dispersion tensor is not supported.\n";
-      Exceptions::amanzi_throw(msg);  
-    }
+    if (iblock0 == iblock) dispersion_models_ = TRANSPORT_DISPERSIVITY_MODEL_NULL;
   }
 
   // transport diffusion (default is none)
-  diffusion_models_.resize(TRANSPORT_NUMBER_PHASES, Teuchos::null);
+  diffusion_phase_.resize(TRANSPORT_NUMBER_PHASES, Teuchos::null);
 
   if (transport_list.isSublist("molecular diffusion")) {
     Teuchos::ParameterList& dlist = transport_list.sublist("molecular diffusion");
     if (dlist.isParameter("aqueous names")) { 
-      diffusion_models_[0] = Teuchos::rcp(new DiffusionModel());
-      diffusion_models_[0]->names() = dlist.get<Teuchos::Array<std::string> >("aqueous names").toVector();
-      diffusion_models_[0]->values() = dlist.get<Teuchos::Array<double> >("aqueous values").toVector();
+      diffusion_phase_[0] = Teuchos::rcp(new DiffusionPhase());
+      diffusion_phase_[0]->names() = dlist.get<Teuchos::Array<std::string> >("aqueous names").toVector();
+      diffusion_phase_[0]->values() = dlist.get<Teuchos::Array<double> >("aqueous values").toVector();
     }
 
     if (dlist.isParameter("gas names")) { 
-      diffusion_models_[1] = Teuchos::rcp(new DiffusionModel());
-      diffusion_models_[1]->names() = dlist.get<Teuchos::Array<std::string> >("gas names").toVector();
-      diffusion_models_[1]->values() = dlist.get<Teuchos::Array<double> >("gas values").toVector();
+      diffusion_phase_[1] = Teuchos::rcp(new DiffusionPhase());
+      diffusion_phase_[1]->names() = dlist.get<Teuchos::Array<std::string> >("gas names").toVector();
+      diffusion_phase_[1]->values() = dlist.get<Teuchos::Array<double> >("gas values").toVector();
     }
   }
 

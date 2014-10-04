@@ -37,8 +37,8 @@ void Transport_PK::CalculateDispersionTensor_(
   D.resize(ncells_owned);
   for (int c = 0; c < ncells_owned; c++) D[c].init(dim, 2);
 
-  for (int mb = 0; mb < dispersion_models_.size(); mb++) {
-    Teuchos::RCP<DispersionModel> spec = dispersion_models_[mb]; 
+  for (int mb = 0; mb < material_properties_.size(); mb++) {
+    Teuchos::RCP<MaterialProperties> spec = material_properties_[mb]; 
 
     std::vector<AmanziMesh::Entity_ID> block;
     for (int r = 0; r < (spec->regions).size(); r++) {
@@ -50,7 +50,7 @@ void Transport_PK::CalculateDispersionTensor_(
         D[*c].PutScalar(0.0); 
         if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
           for (int i = 0; i < dim; i++) {
-            D[*c](i, i) = spec->alphaL + spec->D * spec->tau;
+            D[*c](i, i) = spec->alphaL;
           }
           D[*c] *= porosity[0][*c] * saturation[0][*c];
         } else {
@@ -71,7 +71,7 @@ void Transport_PK::CalculateDispersionTensor_(
           double anisotropy = spec->alphaL - spec->alphaT;
 
           for (int i = 0; i < dim; i++) {
-            D[*c](i, i) = spec->D * spec->tau + spec->alphaT * velocity_value;
+            D[*c](i, i) = spec->alphaT * velocity_value;
             for (int j = i; j < dim; j++) {
               double s = anisotropy * velocity[i] * velocity[j];
               if (velocity_value) s /= velocity_value;
@@ -91,29 +91,25 @@ void Transport_PK::CalculateDispersionTensor_(
 * Calculate diffusion tensor and add it to the dispersion tensor.
 ******************************************************************* */
 void Transport_PK::CalculateDiffusionTensor_(
-    bool flag_dispersion, double md,
+    double md, int phase, 
     const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
 {
-  if (!flag_dispersion) { 
+  if (D.size() == 0) {
     D.resize(ncells_owned);
+    for (int c = 0; c < ncells_owned; c++) D[c].init(dim, 1);
+  }
 
-    for (int c = 0; c < ncells_owned; c++) {
-      D[c].init(dim, 1);
-      D[c](0, 0) = md * porosity[0][c] * saturation[0][c];
-    }
-  } else {
-    for (int mb = 0; mb < dispersion_models_.size(); mb++) {
-      Teuchos::RCP<DispersionModel> spec = dispersion_models_[mb]; 
+  for (int mb = 0; mb < material_properties_.size(); mb++) {
+    Teuchos::RCP<MaterialProperties> spec = material_properties_[mb]; 
 
-      std::vector<AmanziMesh::Entity_ID> block;
-      for (int r = 0; r < (spec->regions).size(); r++) {
-        std::string region = (spec->regions)[r];
-        mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+    std::vector<AmanziMesh::Entity_ID> block;
+    for (int r = 0; r < (spec->regions).size(); r++) {
+      std::string region = (spec->regions)[r];
+      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
-        AmanziMesh::Entity_ID_List::iterator c;
-        for (c = block.begin(); c != block.end(); c++) {
-          D[*c] += md * spec->tau * porosity[0][*c] * saturation[0][*c];
-        }
+      AmanziMesh::Entity_ID_List::iterator c;
+      for (c = block.begin(); c != block.end(); c++) {
+        D[*c] += md * spec->tau[phase] * porosity[0][*c] * saturation[0][*c];
       }
     }
   }
@@ -126,8 +122,8 @@ void Transport_PK::CalculateDiffusionTensor_(
 int Transport_PK::FindDiffusionValue(const std::string tcc_name, double* md, int* phase)
 {
   for (int i = 0; i < TRANSPORT_NUMBER_PHASES; i++) {
-    if (diffusion_models_[i] == Teuchos::null) continue;
-    int ok = diffusion_models_[i]->FindDiffusionValue(tcc_name, md);
+    if (diffusion_phase_[i] == Teuchos::null) continue;
+    int ok = diffusion_phase_[i]->FindDiffusionValue(tcc_name, md);
     if (ok == 0) {
       *phase = i;
       return 0;

@@ -18,7 +18,7 @@ namespace AmanziInput {
 
 #define AMANZI_OLD_INPUT_VERSION_MAJOR 1
 #define AMANZI_OLD_INPUT_VERSION_MINOR 2
-#define AMANZI_OLD_INPUT_VERSION_MICRO 2
+#define AMANZI_OLD_INPUT_VERSION_MICRO 3
 
 void InputParserIS_OutputBCs(Teuchos::ParameterList* plist);
 
@@ -106,6 +106,7 @@ class InputParserIS {
 
  private:
   std::vector<std::string> vv_bc_regions;  // XML verification
+  std::vector<std::string> vv_src_regions;
 };
 
 }  // namespace AmanziInput

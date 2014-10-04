@@ -254,8 +254,7 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
           if ((jt->second).isList()) {
             const std::string pname = jt->first;
             if (pname.find("Dispersion Tensor") == 0 ||
-                 pname.find("Molecular Diffusivity") == 0 ||
-                 pname.find("Tortuosity") == 0) {
+                pname.find("Tortuosity") == 0) {
               need_dispersion_ = true;
             }
           }
@@ -318,6 +317,7 @@ Teuchos::ParameterList InputParserIS::CreateAnalysisList_()
 {
   Teuchos::ParameterList alist;
   alist.set<Teuchos::Array<std::string> >("used boundary condition regions", vv_bc_regions);
+  alist.set<Teuchos::Array<std::string> >("used source regions", vv_src_regions);
   return alist;
 }
 

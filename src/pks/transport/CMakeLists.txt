@@ -62,8 +62,8 @@ generate_evaluators_registration_header(
 # Library: transport
 #
 set(transport_inc_files
-  DispersionModel.hh
-  DiffusionModel.hh
+  MaterialProperties.hh
+  DiffusionPhase.hh
   Reconstruction.hh
   TransportBCFactory.hh
   TransportBoundaryFunction.hh

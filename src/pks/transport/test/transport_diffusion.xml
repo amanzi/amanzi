@@ -9,14 +9,14 @@
   <ParameterList name="Regions">
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{5.0,1.0,1.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0,0.0}"/>
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{0.0,0.5}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -41,7 +41,7 @@
 
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
-    <Parameter name="spatial discretization order" type="int" value="1"/>   
+    <Parameter name="spatial discretization order" type="int" value="2"/>   
     <Parameter name="temporal discretization order" type="int" value="1"/>   
     <Parameter name="solver" type="string" value="Dispersion Solver"/>
 
@@ -49,16 +49,13 @@
       <Parameter name="numerical method" type="string" value="two point flux approximation"/>
       <ParameterList name="Brown soil">
         <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
-        <Parameter name="model" type="string" value="Bear"/>
-        <Parameter name="alphaL" type="double" value="0.1"/>
-        <Parameter name="alphaT" type="double" value="0.01"/>
-        <Parameter name="tortuosity" type="double" value="0.0"/>
+        <Parameter name="aqueous tortuosity" type="double" value="0.5"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="molecular diffusion">
       <Parameter name="aqueous names" type="Array(string)" value="{Component 0}"/>
-      <Parameter name="aqueous values" type="Array(double)" value="{0.0}"/>
+      <Parameter name="aqueous values" type="Array(double)" value="{1e-3}"/>
     </ParameterList>
 
     <Parameter name="advection limiter" type="string" value="Tensorial"/>

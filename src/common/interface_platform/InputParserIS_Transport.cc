@@ -42,11 +42,13 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
         // transport is on, set some defaults
         trp_list.set<int>("spatial discretization order", 1);
         trp_list.set<int>("temporal discretization order", 1);
-        trp_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
-        trp_list.set<std::string>("enable internal tests", "no");
         trp_list.set<double>("CFL", CFL);
         trp_list.set<std::string>("flow mode", "transient");
         trp_list.set<std::string>("advection limiter", "Tensorial");
+
+        trp_list.set<std::string>("solver", "PCG with Hypre AMG");
+        trp_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
+        trp_list.set<std::string>("enable internal tests", "no");
 
         if (exe_list.isSublist("Numerical Control Parameters")) {
           Teuchos::ParameterList& ncp_list = exe_list.sublist("Numerical Control Parameters");
@@ -71,13 +73,12 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
 
         // now write the dispersion lists if needed
         if (need_dispersion_) {
-          Teuchos::ParameterList& d_list = trp_list.sublist("dispersivity");
+          Teuchos::ParameterList& d_list = trp_list.sublist("material properties");
 
           if (plist->isSublist("Material Properties")) {
             Teuchos::ParameterList& mp_list = plist->sublist("Material Properties");
             for (Teuchos::ParameterList::ConstIterator it = mp_list.begin(); it != mp_list.end(); ++it) {
               d_list.set<std::string>("numerical method", "two point flux approximation");
-              d_list.set<std::string>("solver", "PCG with Hypre AMG");
 
               if ((it->second).isList()) {
                 std::string mat_name(it->first);
@@ -100,73 +101,65 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
                 disp_list.set<double>("alphaT",
                     mat_list.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaT"));
 
-                /* EIB: proposed 1.2.2 update - now have value per solute in the Phases list */
-                if (!mat_list.isSublist("Molecular Diffusivity: Uniform")) {
-                  // EIB: check in phases->solutes list
-                  if (plist->isSublist("Phase Definitions")) {
-                    Teuchos::ParameterList& pd_list = plist->sublist("Phase Definitions").sublist("Aqueous");
-                    if (pd_list.isSublist("Phase Components")) {
-                      Teuchos::ParameterList& pc_list = pd_list.sublist("Phase Components").sublist("water");
-
-                      for (Teuchos::ParameterList::ConstIterator it = pc_list.begin(); it != pc_list.end(); ++it) {
-                        if ((it->second).isList()) {
-                          std::string sol_name(it->first);
-                          Teuchos::ParameterList& pc_sublist = pc_list.sublist(sol_name);
-                          if (pc_sublist.isParameter("Molecular Diffusivity: Uniform")) {
-                            Teuchos::ParameterList  md_list;
-                            md_list.set<double>("Value", pc_sublist.get<double>("Molecular Diffusivity: Uniform"));
-                            mat_list.sublist("Molecular Diffusivity: Uniform") = md_list;
-                          }
-                        }
-                      }
-                    }
-                  }
-                  else {
-                    msg << "Dispersion is enabled, you must specify Molecular Diffusivity: Uniform"
-                        << " for all materials. Disable it by purging all Material Property sublists"
-                        << " of the Dispersion Tensor:, Molecular Diffusivity:, and Tortuosity: sublists.";
-                    Exceptions::amanzi_throw(msg);
-                  }
+                if (mat_list.isSublist("Tortuosity Aqueous: Uniform")) {
+                  disp_list.set<double>("aqueous tortuosity", 
+                     mat_list.sublist("Tortuosity Aqueous: Uniform").get<double>("Value", 0.0));
                 }
-
-                // TODO: there is now a D for every solute, this needs to updated here and in PK
-                /*
-                disp_list.set<double>("D", mat_list.sublist("Molecular Diffusivity: Uniform").get<double>("Value"));
-                // get the list of solutes in comp_names
-                Teuchos::Array<double> molecular_diffusivity;
-                bool missing_D(false);
-                Teuchos::ParameterList &sol_list;
-                // TODO: change Water when have more options
-                if (plist->sublist("Phase Definitions")->sublist("Aqueous")->sublist("Phase Components")->isSublist("Water")) {
-                  sol_list = plist->sublist("Phase Definitions")->sublist("Aqueous")->sublist("Phase Components")->sublist("Water");
-                  // loop over solute sublists to get molecular_diffusivity values
-                  for (Teuchos::Array<std::string>::const_iterator i = comp_names.begin(); i != comp_names.end(); i++) {
-                    if (sol_list->isSublist(i)) {
-                      Teuchos::ParameterList &solute_list = sol_list->sublist(i);
-                      molecular_diffusivity.append(solute_list.get<double>("Molecular Diffusivity"));
-                    }
-                    else {
-                      Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Molecular Diffusivity for all solutes listed in Component Solutes.  Disable it by purging all Material Property sublists of the Dispersion Tensor: and Tortuosity: sublists and puring Molecular Diffusivity from all solutes."));
-                    }
-                  }
-                  // TODO: go to array version once solvers can handle
-                  //disp_list.set<Teuchos::Array<double> >("D", molecular_diffusivity);
-                  disp_list.set<double>("D",molecular_diffusivity[0]);
+                if (mat_list.isSublist("Tortuosity Gaseous: Uniform")) {
+                  disp_list.set<double>("gaseous tortuosity", 
+                     mat_list.sublist("Tortuosity Gaseous: Uniform").get<double>("Value", 0.0));
                 }
-                else{
-                  Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Molecular Diffusivity for all solutes listed in Component Solutes.  Disable it by purging all Material Property sublists of the Dispersion Tensor: and Tortuosity: sublists and puring Molecular Diffusivity from all solutes."));
-                }
-                */
-                if (!mat_list.isSublist("Tortuosity: Uniform")) {
-                  msg << "Dispersion is enabled, you must specify Tortuosity: Uniform for all materials."
-                      << " Disable it by purging all Material Property sublists of the Dispersion"
-                      << " Tensor:, Molecular Diffusivity: and Tortuosity: sublists and purging all"
-                      << " Phase Definition sublist of Molecular Diffusivity sublist.";
-                  Exceptions::amanzi_throw(msg);
-                }
-                disp_list.set<double>("tortuosity", mat_list.sublist("Tortuosity: Uniform").get<double>("Value"));
               }
             }
+          }
+        }
+
+        // check for molecular diffusion in phases->water list (other solutes are ignored)
+        Teuchos::ParameterList& diff_list = trp_list.sublist("molecular diffusion");
+        std::vector<std::string> aqueous_names;
+        std::vector<double> aqueous_values;
+
+        if (plist->isSublist("Phase Definitions")) {
+          Teuchos::ParameterList& pd_list = plist->sublist("Phase Definitions").sublist("Aqueous");
+          if (pd_list.isSublist("Phase Components")) {
+            Teuchos::ParameterList& pc_list = pd_list.sublist("Phase Components").sublist("Water");
+
+            for (Teuchos::ParameterList::ConstIterator it = pc_list.begin(); it != pc_list.end(); ++it) {
+              if ((it->second).isList()) {
+                std::string sol_name(it->first);
+                Teuchos::ParameterList& pc_sublist = pc_list.sublist(sol_name);
+                if (pc_sublist.isParameter("Molecular Diffusivity: Uniform")) {
+                  aqueous_names.push_back(sol_name);
+                  aqueous_values.push_back(pc_sublist.get<double>("Molecular Diffusivity: Uniform"));
+                }
+              }
+            }
+            diff_list.set<Teuchos::Array<std::string> >("aqueous names", aqueous_names);
+            diff_list.set<Teuchos::Array<double> >("aqueous values", aqueous_values);
+          }
+        }
+
+        // check for molecular diffusion in phases->air list
+        std::vector<std::string> gaseous_names;
+        std::vector<double> gaseous_values;
+
+        if (plist->isSublist("Phase Definitions")) {
+          Teuchos::ParameterList& pd_list = plist->sublist("Phase Definitions").sublist("Gaseous");
+          if (pd_list.isSublist("Phase Components")) {
+            Teuchos::ParameterList& pc_list = pd_list.sublist("Phase Components").sublist("Air");
+
+            for (Teuchos::ParameterList::ConstIterator it = pc_list.begin(); it != pc_list.end(); ++it) {
+              if ((it->second).isList()) {
+                std::string sol_name(it->first);
+                Teuchos::ParameterList& pc_sublist = pc_list.sublist(sol_name);
+                if (pc_sublist.isParameter("Molecular Diffusivity: Uniform")) {
+                  gaseous_names.push_back(sol_name);
+                  gaseous_values.push_back(pc_sublist.get<double>("Molecular Diffusivity: Uniform"));
+                }
+              }
+            }
+            diff_list.set<Teuchos::Array<std::string> >("gaseous names", gaseous_names);
+            diff_list.set<Teuchos::Array<double> >("gaseous values", gaseous_values);
           }
         }
 
@@ -272,6 +265,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportSrcList_(Teuchos::Parameter
 
       // get the regions
       Teuchos::Array<std::string> regions = src.get<Teuchos::Array<std::string> >("Assigned Regions");
+      vv_src_regions.insert(vv_src_regions.end(), regions.size(), regions[0]);
 
       std::string dist_method("none");
       if (src.isSublist("Source: Volume Weighted")) {

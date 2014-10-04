@@ -86,7 +86,7 @@ void Transport_PK::Construct_(Teuchos::ParameterList& glist,
   double time = S->time();
   if (time >= 0.0) T_physics = time;
 
-  dispersion_method = TRANSPORT_DISPERSION_METHOD_TPFA; 
+  dispersion_models_ = 0; 
   dispersion_preconditioner = "identity";
 
   internal_tests = 0;
@@ -411,8 +411,13 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
   int number_components = tcc_prev.NumVectors();
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", false);
 
-  bool flag_dispersion = (dispersion_models_.size() != 0);
-  bool flag_diffusion = (diffusion_models_[0] != Teuchos::null || diffusion_models_[1] != Teuchos::null);
+  bool flag_dispersion = (dispersion_models_ != TRANSPORT_DISPERSIVITY_MODEL_NULL);
+  bool flag_diffusion(false);
+  for (int i = 0; i < 2; i++) {
+    if (diffusion_phase_[i] != Teuchos::null) {
+      if (diffusion_phase_[i]->values().size() != 0) flag_diffusion = true;
+    }
+  }
 
   if (flag_dispersion || flag_diffusion) {
     Teuchos::ParameterList op_list;
@@ -467,7 +472,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
 
       flag_op1 = (i == 0);
       if (md_change != 0.0) {
-        CalculateDiffusionTensor_(flag_dispersion, md_change, *phi, *ws);
+        CalculateDiffusionTensor_(md_change, phase, *phi, *ws);
         flag_op1 = true;
       }
 

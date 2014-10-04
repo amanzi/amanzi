@@ -10,8 +10,8 @@
   Usage: 
 */
 
-#ifndef AMANZI_DISPERSION_MODEL_HH_
-#define AMANZI_DISPERSION_MODEL_HH_
+#ifndef AMANZI_MATERIAL_PROPERTIES_HH_
+#define AMANZI_MATERIAL_PROPERTIES_HH_
 
 #include <vector>
 #include <string>
@@ -21,20 +21,20 @@
 namespace Amanzi {
 namespace Transport {
 
-class DispersionModel {
+class MaterialProperties {
  public:
-  DispersionModel() {
+  MaterialProperties() {
     model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
     alphaL = 0.0;
     alphaT = 0.0;
-    D = 0.0;
-    tau = 0.0;
+    tau.resize(TRANSPORT_NUMBER_PHASES, 0.0);
   }
-  ~DispersionModel() {};
+  ~MaterialProperties() {};
 
  public:
   int model;
-  double alphaL, alphaT, D, tau;
+  double alphaL, alphaT;
+  std::vector<double> tau;
   std::vector<std::string> regions;
 };
 

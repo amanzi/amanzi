@@ -33,10 +33,10 @@
 #include "Reconstruction.hh"
 #include "State.hh"
 
+#include "DiffusionPhase.hh"
+#include "MaterialProperties.hh"
 #include "TransportDefs.hh"
 #include "TransportSourceFactory.hh"
-#include "DispersionModel.hh"
-#include "DiffusionModel.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Chemistry_State.hh"
@@ -168,7 +168,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
   void CalculateDiffusionTensor_(
-      bool flag_dispersion, double md,
+      double md, int phase,
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
   int FindDiffusionValue(const std::string tcc_name, double* md, int* phase);
@@ -237,11 +237,11 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
-  std::vector<Teuchos::RCP<DispersionModel> > dispersion_models_;  // dispersivity
-  std::vector<Teuchos::RCP<DiffusionModel> >  diffusion_models_;   // diffusivity
+  std::vector<Teuchos::RCP<MaterialProperties> > material_properties_;  // vector of materials
+  std::vector<Teuchos::RCP<DiffusionPhase> >  diffusion_phase_;   // vector of phases
 
   std::vector<WhetStone::Tensor> D;
-  int dispersion_method;
+  int dispersion_models_;
   std::string dispersion_preconditioner;
   std::string dispersion_solver;
 

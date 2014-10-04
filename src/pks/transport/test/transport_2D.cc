@@ -15,10 +15,9 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
+#include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
-#include "GMVMesh.hh"
-
 #include "State.hh"
 #include "Transport_PK.hh"
 
