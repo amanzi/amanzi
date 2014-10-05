@@ -126,6 +126,8 @@ void InputParserIS::CheckAmanziInputVersion_(Teuchos::ParameterList* plist)
 ****************************************************************** */
 void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
 {
+  Errors::Message msg;
+
   // spatial dimension
   if (plist->isSublist("Domain")) {
     spatial_dimension_ = plist->sublist("Domain").get<int>("Spatial Dimension",0);
@@ -184,7 +186,9 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
           }
           pcit = phase_components.begin();
           if (!pcit->second.isList()) {
-            Exceptions::amanzi_throw(Errors::Message("The Phase Components list must only have one sublist, but you have specified a parameter instead."));
+            msg << "The Phase Components list must only have one sublist, but you have specified"
+                << " a parameter instead.";
+            Exceptions::amanzi_throw(msg);
           }
           phase_comp_name = pcit->first;
           Teuchos::ParameterList& water_components = phase_components.sublist(phase_comp_name);
@@ -206,7 +210,9 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
         }
       }  // end Solid phase
     }
-    if ((phase_list.name(item) != "Aqueous" ) && (phase_list.name(item) != "Solid")) {
+    if ((phase_list.name(item) != "Aqueous" ) && 
+        (phase_list.name(item) != "Solid") && 
+        (phase_list.name(item) != "Gaseous")) {
       std::stringstream message;
       message << "Error: InputParserIS::InitGlobalInfo_(): "
               << "The only phases supported on unstructured meshes at this time are '"
@@ -224,8 +230,7 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
   }
 
   if (plist->isSublist("Execution Control")) {
-
-    std::string verbosity = plist->sublist("Execution Control").get<std::string>("Verbosity",VERBOSITY_DEFAULT);
+    std::string verbosity = plist->sublist("Execution Control").get<std::string>("Verbosity", VERBOSITY_DEFAULT);
 
     if (verbosity == "None" || verbosity == "none") {
       verbosity_level = "none";

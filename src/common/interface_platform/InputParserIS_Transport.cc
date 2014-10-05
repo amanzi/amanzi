@@ -85,21 +85,16 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
                 Teuchos::ParameterList& mat_list = mp_list.sublist(mat_name);
                 Teuchos::ParameterList& disp_list = d_list.sublist(mat_name);
 
-                disp_list.set<std::string>("model","Bear");  // default
+                disp_list.set<std::string>("model", "Bear");  // default
                 disp_list.set<Teuchos::Array<std::string> >("regions",
                     mat_list.get<Teuchos::Array<std::string> >("Assigned Regions"));
 
-                if (!mat_list.isSublist("Dispersion Tensor: Uniform Isotropic")) {
-                  msg << "Dispersion is enabled, you must specify Dispersion Tensor: Uniform Isotropic"
-                      << " for all materials. Disable it by purging all Material Property sublists of"
-                      << " the Dispersion Tensor: and Tortuosity: sublists and purging all Phase"
-                      << " Definition sublist of Molecular Diffusivity sublist.";
-                  Exceptions::amanzi_throw(msg);
+                if (mat_list.isSublist("Dispersion Tensor: Uniform Isotropic")) {
+                  disp_list.set<double>("alphaL", 
+                      mat_list.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaL"));
+                  disp_list.set<double>("alphaT",
+                      mat_list.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaT"));
                 }
-                disp_list.set<double>("alphaL", 
-                    mat_list.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaL"));
-                disp_list.set<double>("alphaT",
-                    mat_list.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaT"));
 
                 if (mat_list.isSublist("Tortuosity Aqueous: Uniform")) {
                   disp_list.set<double>("aqueous tortuosity", 
