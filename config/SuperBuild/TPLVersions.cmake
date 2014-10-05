@@ -49,6 +49,7 @@
 #   0.92.5       - Patched Alquimia to build properly with GFortran 4.9.x
 #   0.92.6       - update Boost to version 1.56.0 
 #   0.92.7       - update CCSE to version 1.2.8 
+#   0.92.8       - update ExodussII 5.22 -> 6.06
 #
 
 include(CMakeParseArguments)
@@ -99,7 +100,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 7)
+set (AMANZI_TPLS_VERSION_PATCH 8)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -248,19 +249,12 @@ set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
 #
 # TPL: ExodusII
 #
-option(ENABLE_EXODUS498 "Use the 4.98 version of ExodusII" OFF)
-if ( ENABLE_EXODUS498 )
-  set(ExodusII_VERSION_MAJOR 4)
-  set(ExodusII_VERSION_MINOR 98)
-  set(ExodusII_MD5_SUM        4480e641d6ada58f5d8ecb7172e76791) 
-else()
-  set(ExodusII_VERSION_MAJOR 5)
-  set(ExodusII_VERSION_MINOR 22)
-  set(ExodusII_MD5_SUM        b5f537d7028f2c8cf6b4ba3e8a469dbe) 
-endif()
+set(ExodusII_VERSION_MAJOR 6)
+set(ExodusII_VERSION_MINOR 06)
 set(ExodusII_VERSION ${ExodusII_VERSION_MAJOR}.${ExodusII_VERSION_MINOR})
-set(ExodusII_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
+set(ExodusII_URL_STRING    "http://software.lanl.gov/ascem/tpls")
+set(ExodusII_ARCHIVE_FILE  exodus-${ExodusII_VERSION}.tar.gz)
+set(ExodusII_MD5_SUM       cfd240dbc1251b08fb1d0ee2de40a44c)
 
 #
 # TPL: MSTK

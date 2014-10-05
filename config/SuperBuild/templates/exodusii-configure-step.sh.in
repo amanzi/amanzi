@@ -4,8 +4,7 @@
 # Replaces each @VAR@ with value of ${VAR}
 
 # Source and build locations
-#Exodus-5.xexodusii_src_dir=@ExodusII_source_dir@/exodus
-exodusii_src_dir=@ExodusII_source_dir@
+exodusii_src_dir=@ExodusII_source_dir@/exodus
 exodusii_build_dir=@ExodusII_build_dir@
 
 # NETCDF
@@ -35,5 +34,6 @@ cd ${exodusii_build_dir}
       -D HDF5_LIBRARY=${hdf5_library} \
       -D HDF5HL_LIBRARY=${hdf5hl_library} \
       -D BUILD_TESTING:BOOL=OFF \
+      -D PYTHON_INSTALL=@TPL_INSTALL_PREFIX@/bin \
       ${exodusii_src_dir}
 exit $?
