@@ -25,9 +25,11 @@ cd ${exodusii_build_dir}
       -D CMAKE_INSTALL_PREFIX=@TPL_INSTALL_PREFIX@ \
       -D CMAKE_C_COMPILER=@CMAKE_C_COMPILER_USE@ \
       -D CMAKE_CXX_COMPILER=@CMAKE_CXX_COMPILER_USE@ \
+      -D CMAKE_Fortran_COMPILER=@CMAKE_Fortran_COMPILER_USE@ \
       -D CMAKE_BUILD_TYPE=@CMAKE_BUILD_TYPE@ \
       -D CMAKE_C_FLAGS='@Amanzi_COMMON_CFLAGS@' \
       -D CMAKE_CXX_FLAGS='@Amanzi_COMMON_CXXFLAGS@' \
+      -D CMAKE_Fortran_FLAGS='@Amanzi_COMMON_CXXFLAGS@' \
       -D NETCDF_INCLUDE_DIR=@TPL_INSTALL_PREFIX@/include \
       -D NETCDF_LIBRARY=@TPL_INSTALL_PREFIX@/lib/${netcdf_library} \
       -D NETCDF_NCDUMP=${netcdf_ncdump} \
