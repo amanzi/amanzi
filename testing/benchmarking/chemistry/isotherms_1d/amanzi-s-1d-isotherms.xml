@@ -61,8 +61,6 @@
   <ParameterList name="Regions">
   </ParameterList>
   <ParameterList name="Material Properties">
-    <Parameter name="Permeability Output File" type="string" value="run_data/kp"/>
-    <Parameter name="Porosity Output File" type="string" value="run_data/pp"/>
     <ParameterList name="Soil">
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="Porosity: Uniform">
