@@ -72,6 +72,6 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
 };
 
 
-} //namespace
-} //namespace
+} // namespace Functions
+} // namespace Amanzi
 

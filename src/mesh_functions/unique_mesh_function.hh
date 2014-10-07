@@ -39,7 +39,6 @@ protected:
   typedef std::vector<Teuchos::RCP<SpecAndIDs> > SpecAndIDsList;
 
   std::map<AmanziMesh::Entity_kind, Teuchos::RCP<SpecAndIDsList> > specs_and_ids_;
-
 };
 
 } //namespace

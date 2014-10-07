@@ -55,7 +55,6 @@ public:
 protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   SpecList spec_list_;
-
 };
 
 } // namespace
