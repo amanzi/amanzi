@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="TBD"/>
     <Parameter name="Author" type="string" value="Chandrika"/>
@@ -41,7 +41,7 @@
 
     <ParameterList name="Numerical Control Parameters">
 
-      <ParameterList name="Basic Algorithm Control">
+      <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
 
           <Parameter name="max_n_subcycle_transport" type="int" value="20"/>

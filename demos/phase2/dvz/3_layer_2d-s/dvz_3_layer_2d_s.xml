@@ -68,7 +68,7 @@
 
     <ParameterList name="Numerical Control Parameters">
 
-      <ParameterList name="Basic Algorithm Control">
+      <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
           <Parameter name="max_n_subcycle_transport" type="int" value="20"/>
           <Parameter name="steady_limit_iterations" type="int" value="20"/>

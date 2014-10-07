@@ -26,7 +26,7 @@
     <Parameter name="Verbosity" type="string" value="Extreme"/>
 
     <ParameterList name="Numerical Control Parameters">
-      <ParameterList name="Basic Algorithm Control">
+      <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
           <Parameter name="do_richard_init_to_steady" type="int" value="0"/> 
           <Parameter name="gravity_dir" type="int" value="2"/> 

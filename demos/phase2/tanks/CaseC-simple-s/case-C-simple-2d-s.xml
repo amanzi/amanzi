@@ -1,7 +1,7 @@
 <ParameterList name="Main">
   <!--Test problem 01 for Waste Tank PA working group-->
 
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.0.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <Parameter name="Dump ParmParse Table" type="string" value="case-C-simple-2d-s/ppfile"/>
 
   <ParameterList name="General Description">
@@ -48,7 +48,7 @@
 
     <ParameterList name="Numerical Control Parameters">
 
-      <ParameterList name="Basic Algorithm Control">
+      <ParameterList name="Structured Algorithm">
         <ParameterList name="Expert Settings">
 
           <Parameter name="do_multilevel_full" type="int" value="1"/>
