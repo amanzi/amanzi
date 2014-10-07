@@ -92,6 +92,7 @@ no_color=$FALSE
 # Amanzi build configuration
 structured=$TRUE
 unstructured=$TRUE
+ccse_tools=$FALSE
 stk_mesh=$TRUE
 mstk_mesh=$TRUE
 moab_mesh=$FALSE
@@ -269,15 +270,20 @@ Build features:
 Each feature listed here can be enabled/disabled with --[enable|disable]-[feature]
 Value in brackets indicates default setting.
 
-  structured              build structured mesh capability ['"${structured}"']    
+  structured              build structured AMR mesh capability ['"${structured}"']
+  ccse_tools              build structured AMR tools for post processing and tecplot ['"${ccse_tools}"']
+
   unstructured            build unstructured mesh capability ['"${unstructured}"']
   stk_mesh                build the STK Mesh Toolkit ['"${stk_mesh}"']
   mstk_mesh               build the MSTK Mesh Toolkit ['"${mstk_mesh}"']
   moab_mesh               build the MOAB Mesh Toolkit ['"${moab_mesh}"']
+
   hypre                   build the HYPRE solver APIs ['"${hypre}"']
   petsc                   build the PETSc solver APIs ['"${petsc}"']
+
   pflotran                build the PFlotran geochemistry backend ['"${pflotran}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
+
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   shared                  build Amanzi and tpls using shared libraries ['"${test_suite}"']
 
@@ -359,6 +365,7 @@ Build configuration:
 Build Features:   
     structured          ='"${structured}"'
     unstructured        ='"${unstructured}"'
+    ccse_tools          ='"${ccse_tools}"'
     stk_mesh            ='"${stk_mesh}"'
     mstk_mesh           ='"${mstk_mesh}"'
     moab_mesh           ='"${moab_mesh}"'
@@ -1079,6 +1086,7 @@ if [ -z "${tpl_config_file}" ]; then
                 -DTPL_INSTALL_PREFIX:STRING=${tpl_install_prefix} \
                 -DENABLE_Structured:BOOL=${structured} \
                 -DENABLE_Unstructured:BOOL=${unstructured} \
+                -DENABLE_CCSE_TOOLS:BOOL=${ccse_tools} \
                 -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
                 -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
                 -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
@@ -1173,6 +1181,7 @@ ${cmake_binary} \
               -DBUILD_SHARED_LIBS:BOOL=${shared} \
               -DCCSE_BL_SPACEDIM:INT=${spacedim} \
               ${amanzi_source_dir}
+
 
 if [ $? -ne 0 ]; then
   error_message "Failed to configure Amanzi"
