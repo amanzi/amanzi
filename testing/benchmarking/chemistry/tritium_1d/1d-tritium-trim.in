@@ -17,6 +17,7 @@ CHEMISTRY
   OUTPUT
     All
   /
+  MAX_RESIDUAL_TOLERANCE 1.d-40
 END
 
 :=========================== constraints ======================================
