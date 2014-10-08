@@ -198,7 +198,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
                   Teuchos::ParameterList& solbc = bc_list.sublist(name).sublist("Solute BC");
                   Teuchos::ParameterList& comps = solbc.sublist(phases_[0].name).sublist(phases_[0].solute_name);
 
-                  for (Teuchos::Array<std::string>::const_iterator i = comp_names.begin(); i != comp_names.end(); i++) {
+                  for (std::vector<std::string>::iterator i = comp_names_.begin(); i != comp_names_.end(); i++) {
                     if (comps.isSublist(*i)) {
                       std::stringstream compss;
                       compss << *i;

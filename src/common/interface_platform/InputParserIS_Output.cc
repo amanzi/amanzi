@@ -388,7 +388,7 @@ Teuchos::Array<std::string> InputParserIS::CreateVariableMacro_(
       if (macro_list.isParameter("Solute")) {
         std::string macro_solute = macro_list.get<std::string>("Solute");
         if (macro_solute == "All") {
-          for (int i = 0; i<comp_names.size(); i++) vars.push_back(comp_names[i]);
+          for (int i = 0; i<comp_names_.size(); i++) vars.push_back(comp_names_[i]);
         } else {
           vars.push_back(macro_solute);
         }

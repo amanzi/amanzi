@@ -390,46 +390,49 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
 
         if (plist->sublist("Execution Control").get<std::string>("Transport Model") != std::string("Off")  ||
             plist->sublist("Execution Control").get<std::string>("Chemistry Model") != std::string("Off")) {
-          // write the initial conditions for the solutes, note that we hardcode for there only being one phase, with one phase component
+          // write the initial conditions for the solutes, note that we hardcode for there 
+          // only being one phase, with one phase component.
 
           Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str)
               .set<Teuchos::Array<std::string> >("regions",regions)
               .set<std::string>("component","cell")
               .sublist("function")
-              .set<int>("Number of DoFs", comp_names.size())
+              .set<int>("Number of DoFs", comp_names_all_.size())
               .set<std::string>("Function type", "composite function");
 
-          for (int ii = 0; ii < comp_names.size(); ii++) {
-            if (ic_for_region->sublist("Solute IC").sublist(phases_[0].name).sublist(phases_[0].solute_name).isSublist(comp_names[ii])) {
-              Teuchos::ParameterList& conc_ic = ic_for_region->sublist("Solute IC")
-                  .sublist(phases_[0].name).sublist(phases_[0].solute_name)
-                  .sublist(comp_names[ii]).sublist("IC: Uniform Concentration");
+          int ii = 0;
+          for (int n = 0; n < 2; n++) { 
+            Teuchos::ParameterList& phase_list = ic_for_region->sublist("Solute IC")
+                .sublist(phases_[n].name).sublist(phases_[n].solute_name);
+            int ncomp = phases_[n].solute_comp_names.size();
 
-              if (conc_ic.isParameter("Geochemical Condition")) { // Geochemical condition?
-                // Add an entry to State->initial conditions->geochemical conditions.
-                Teuchos::ParameterList& geochem_cond_list = stt_ic.sublist("geochemical conditions");
-                std::string geochem_cond_name = conc_ic.get<std::string>("Geochemical Condition");
-                Teuchos::ParameterList& geochem_cond = geochem_cond_list.sublist(geochem_cond_name);
-                geochem_cond.set<Teuchos::Array<std::string> >("regions", regions);
+            for (int k = 0; k < ncomp; k++, ii++) {
+              std::string name = phases_[n].solute_comp_names[k];
+              if (phase_list.isSublist(name)) {
+                Teuchos::ParameterList& conc_ic = phase_list.sublist(name).sublist("IC: Uniform Concentration");
 
-                // Now add fake initial concentrations, since the State requires entries 
-                // of this sort to initialize fields. The chemistry PK will simply 
-                // overwrite these values when it initializes its data.
-                std::stringstream dof_str;
-                dof_str << "DoF " << ii + 1 << " Function";
-                dof_list.sublist(dof_str.str())
-                    .sublist("function-constant")
-                    .set<double>("value", 0.0);
-              }
-              else { // ordinary initial concentration value.
-                double conc = conc_ic.get<double>("Value");
+                if (conc_ic.isParameter("Geochemical Condition")) { // Geochemical condition?
+                  // Add an entry to State->initial conditions->geochemical conditions.
+                  Teuchos::ParameterList& geochem_cond_list = stt_ic.sublist("geochemical conditions");
+                  std::string geochem_cond_name = conc_ic.get<std::string>("Geochemical Condition");
+                  Teuchos::ParameterList& geochem_cond = geochem_cond_list.sublist(geochem_cond_name);
+                  geochem_cond.set<Teuchos::Array<std::string> >("regions", regions);
 
-                std::stringstream dof_str;
-                dof_str << "DoF " << ii + 1 << " Function";
+                  // Now add fake initial concentrations, since the State requires entries 
+                  // of this sort to initialize fields. The chemistry PK will simply 
+                  // overwrite these values when it initializes its data.
+                  std::stringstream dof_str;
+                  dof_str << "DoF " << ii + 1 << " Function";
 
-                dof_list.sublist(dof_str.str())
-                    .sublist("function-constant")
-                    .set<double>("value", conc);
+                  dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", 0.0);
+                }   
+                else {  // ordinary initial concentration value.
+                  double conc = conc_ic.get<double>("Value");
+                  std::stringstream dof_str;
+
+                  dof_str << "DoF " << ii + 1 << " Function";
+                  dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", conc);
+                }
               }
             }
           }

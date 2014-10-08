@@ -1291,9 +1291,9 @@ In order to support the rather general specification requirements (involving com
 
   * [SU] `"Phase Components`" can accept COMP [list] named after a user-defined phase component. We probably do not need more than one phase component in the gasesous phase, but will keep this sublist for a moment.
 
-   * [SU] COMP [list] can accept a list of gases carried by the component, e.g. Air.
+   * [SU] COMP [list] can accept a list of solutes carried by the component, e.g. Air.
 
-    * [SU] `"Component Air`" [Array(string)] List of primary or basis species for the air in the system. The order of this list must be the same as the order in the chemistry database file.
+    * [SU] `"Component Solutes`" [Array(string)] List of primary or basis species for the air in the system. The order of this list must be the same as the order in the chemistry database file.
 
     * [SU] GAS [list] can accept a gas name from the above list. 
 

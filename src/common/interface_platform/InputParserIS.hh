@@ -33,7 +33,6 @@ class Phase {
   std::string name;
   std::string solute_name;  // We assume only one component
   std::vector<std::string> solute_comp_names;
-  std::map<std::string, int> solute_comp_names_map;  // global map
 };
 
 
@@ -106,8 +105,8 @@ class InputParserIS {
  private:
   std::vector<Phase> phases_;
 
-  Teuchos::Array<std::string> comp_names;  // all components from aqueous and gaseous phases
-  std::map<std::string, int> comp_names_map;
+  std::vector<std::string> comp_names_;  // aqueous components 
+  std::vector<std::string> comp_names_all_;  // all components from aqueous and gaseous phases
 
   Teuchos::Array<std::string> mineral_names_;
   Teuchos::Array<std::string> sorption_site_names_;

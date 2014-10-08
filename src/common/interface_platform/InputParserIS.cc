@@ -185,47 +185,52 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
   std::string transport_model = plist->sublist("Execution Control").get<std::string>("Transport Model");
   std::string chemistry_model = plist->sublist("Execution Control").get<std::string>("Chemistry Model");
 
-  phases_.resize(1);
+  phases_.resize(3);
   phases_[0].name = "Aqueous";
 
   // don't know the history of these variables, clear them just to be safe.
-  comp_names.clear();
+  comp_names_.clear();
   mineral_names_.clear();
   sorption_site_names_.clear();
 
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
   Teuchos::ParameterList::ConstIterator item;
+
   for (item = phase_list.begin(); item != phase_list.end(); ++item) {
-    if (transport_model != "Off"  || chemistry_model != "Off") {
-      if (phase_list.name(item) == "Aqueous") {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-          *vo_->os() << "Found phase: " << phase_list.name(item) << std::endl;
+    std::string phase_name = phase_list.name(item);
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+      *vo_->os() << "Found phase: " << phase_name << std::endl;
+    }
+
+    if (transport_model != "Off" || chemistry_model != "Off") {
+      int i(0);
+      if (phase_name == "Gaseous") i = 1;
+      if (phase_name == "Solid") i = 2;
+      phases_[i].name = phase_name;
+
+      Teuchos::ParameterList& phase_sublist = phase_list.sublist(phase_name);
+
+      if (phase_sublist.isSublist("Phase Components")) {
+        Teuchos::ParameterList& phase_components = phase_sublist.sublist("Phase Components");
+        // for now there should only be one sublist here, we allow it to be named something
+        // the user chooses, e.g. Water
+        Teuchos::ParameterList::ConstIterator pcit = phase_components.begin();
+        ++pcit;
+        if (pcit != phase_components.end()) {
+          Exceptions::amanzi_throw(Errors::Message("Currently Amanzi only supports one phase component, e.g. Water"));
         }
-
-        Teuchos::ParameterList& aqueous_list = phase_list.sublist("Aqueous");
-
-        if (aqueous_list.isSublist("Phase Components")) {
-          Teuchos::ParameterList phase_components = aqueous_list.sublist("Phase Components");
-          // for now there should only be one sublist here, we allow it to be named something
-          // the user chooses, e.g. Water
-          Teuchos::ParameterList::ConstIterator pcit = phase_components.begin();
-          ++pcit;
-          if (pcit != phase_components.end()) {
-            Exceptions::amanzi_throw(Errors::Message("Currently Amanzi only supports one phase component, e.g. Water"));
-          }
-          pcit = phase_components.begin();
-          if (!pcit->second.isList()) {
-            msg << "The Phase Components list must only have one sublist, but you have specified"
-                << " a parameter instead.";
-            Exceptions::amanzi_throw(msg);
-          }
-          phases_[0].solute_name = pcit->first;
-          Teuchos::ParameterList& water_components = phase_components.sublist(phases_[0].solute_name);
-          if (water_components.isParameter("Component Solutes")) {
-            comp_names = water_components.get<Teuchos::Array<std::string> >("Component Solutes");
-          }
-        }  // end phase components
-      }  // end Aqueous phase
+        pcit = phase_components.begin();
+        if (!pcit->second.isList()) {
+          msg << "The Phase Components list must only have one sublist, but you have specified"
+              << " a parameter instead.";
+          Exceptions::amanzi_throw(msg);
+        }
+        phases_[i].solute_name = pcit->first;
+        Teuchos::ParameterList& components = phase_components.sublist(phases_[i].solute_name);
+        if (components.isParameter("Component Solutes")) {
+          phases_[i].solute_comp_names = components.get<Teuchos::Array<std::string> >("Component Solutes").toVector();
+        }
+      }
     }
 
     if (chemistry_model != "Off") {
@@ -240,24 +245,21 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
         }
       }  // end Solid phase
     }
+
     if ((phase_list.name(item) != "Aqueous" ) && 
         (phase_list.name(item) != "Solid") && 
         (phase_list.name(item) != "Gaseous")) {
       std::stringstream message;
-      message << "Error: InputParserIS::InitGlobalInfo_(): "
-              << "The only phases supported on unstructured meshes at this time are '"
-              << phases_[0].name << "' and 'Solid'!\n"
-              << phase_list << std::endl;
-      Exceptions::amanzi_throw(Errors::Message(message.str()));
+      msg << "Error: InputParserIS: The only phases supported on unstructured"
+          << " meshes at this time are 'Aqueous', 'Gaseous', and and 'Solid'.\n";
+      Exceptions::amanzi_throw(msg);
     }
   }
 
-  if (comp_names.size() > 0) {
-    // create a map for the components
-    for (int i = 0; i < comp_names.size(); i++) {
-      comp_names_map[comp_names[i]] = i;
-    }
-  }
+  // create lists of components
+  comp_names_ = phases_[0].solute_comp_names;
+  comp_names_all_ = phases_[0].solute_comp_names;
+  comp_names_all_.insert(comp_names_all_.end(), phases_[1].solute_comp_names.size(), phases_[1].solute_comp_names[0]);
 
   // dispersion (this is going to be used to translate to the transport list as well as the state list)
   // check if we need to write a dispersivity sublist

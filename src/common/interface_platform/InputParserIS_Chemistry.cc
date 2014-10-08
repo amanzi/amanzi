@@ -37,7 +37,7 @@ Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::ParameterLis
       chem_list.set<Teuchos::Array<std::string> >("Sorption Sites", sorption_site_names_);
     }
 
-    chem_list.set<int>("Number of component concentrations", comp_names.size());
+    chem_list.set<int>("Number of component concentrations", comp_names_all_.size());
 
     //
     // --- region specific initial conditions
@@ -170,17 +170,17 @@ Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::ParameterLis
                 .set<std::string>("component","cell")
                 .sublist("function");
 
-            aux1_list.set<int>("Number of DoFs", comp_names.size())
+            aux1_list.set<int>("Number of DoFs", comp_names_.size())
                 .set("Function type", "composite function");
 
-            for ( int ic = 0; ic != comp_names.size(); ++ic) {
+            for ( int ic = 0; ic != comp_names_.size(); ++ic) {
 
               std::stringstream ss;
               ss << "DoF " << ic + 1 << " Function";
 
               double kd(0.0);
-              if (sorption_isotherms_list.isSublist(comp_names[ic])) {
-                kd = sorption_isotherms_list.sublist(comp_names[ic]).get<double>("Kd",0.0);
+              if (sorption_isotherms_list.isSublist(comp_names_[ic])) {
+                kd = sorption_isotherms_list.sublist(comp_names_[ic]).get<double>("Kd",0.0);
               }
 
               aux1_list.sublist(ss.str()).sublist("function-constant")
@@ -197,17 +197,17 @@ Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::ParameterLis
                 .set<std::string>("component","cell")
                 .sublist("function");
 
-            aux2_list.set<int>("Number of DoFs", comp_names.size())
+            aux2_list.set<int>("Number of DoFs", comp_names_.size())
                 .set("Function type", "composite function");
 
-            for ( int ic = 0; ic != comp_names.size(); ++ic) {
+            for ( int ic = 0; ic != comp_names_.size(); ++ic) {
 
               std::stringstream ss;
               ss << "DoF " << ic + 1 << " Function";
 
               double langmuir_b(1.0);
-              if (sorption_isotherms_list.isSublist(comp_names[ic])) {
-                langmuir_b = sorption_isotherms_list.sublist(comp_names[ic]).get<double>("Langmuir b",1.0);
+              if (sorption_isotherms_list.isSublist(comp_names_[ic])) {
+                langmuir_b = sorption_isotherms_list.sublist(comp_names_[ic]).get<double>("Langmuir b",1.0);
               }
 
               aux2_list.sublist(ss.str()).sublist("function-constant")
@@ -224,17 +224,17 @@ Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::ParameterLis
                 .set<std::string>("component","cell")
                 .sublist("function");
 
-            aux3_list.set<int>("Number of DoFs", comp_names.size())
+            aux3_list.set<int>("Number of DoFs", comp_names_.size())
                 .set("Function type", "composite function");
 
-            for ( int ic = 0; ic != comp_names.size(); ++ic) {
+            for ( int ic = 0; ic != comp_names_.size(); ++ic) {
 
               std::stringstream ss;
               ss << "DoF " << ic + 1 << " Function";
 
               double freundlich_n(1.0);
-              if (sorption_isotherms_list.isSublist(comp_names[ic])) {
-                freundlich_n = sorption_isotherms_list.sublist(comp_names[ic]).get<double>("Freundlich n",1.0);
+              if (sorption_isotherms_list.isSublist(comp_names_[ic])) {
+                freundlich_n = sorption_isotherms_list.sublist(comp_names_[ic]).get<double>("Freundlich n",1.0);
               }
 
               aux3_list.sublist(ss.str()).sublist("function-constant")
@@ -296,16 +296,16 @@ Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::ParameterLis
               .set<std::string>("component","cell")
               .sublist("function");
 
-          aux1_list.set<int>("Number of DoFs", comp_names.size())
+          aux1_list.set<int>("Number of DoFs", comp_names_.size())
               .set("Function type", "composite function");
 
-          for (int j = 0; j<comp_names.size(); ++j) {
+          for (int j = 0; j<comp_names_.size(); ++j) {
             std::stringstream ss;
             ss << "DoF " << j + 1 << " Function";
 
             double value(1.0e-9);
             value = ics.sublist("Solute IC").sublist(phases_[0].name)
-                .sublist(phases_[0].solute_name).sublist(comp_names[j])
+                .sublist(phases_[0].solute_name).sublist(comp_names_[j])
                 .sublist("IC: Uniform Concentration").get<double>("Free Ion Guess",1.0e-9);
 
             aux1_list.sublist(ss.str()).sublist("function-constant")

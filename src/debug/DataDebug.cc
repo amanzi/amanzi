@@ -7,9 +7,9 @@ DataDebug::DataDebug(Teuchos::RCP<AmanziMesh::Mesh> mesh) :
 {
 }
 
-void DataDebug::write_region_data(std::string region_name, 
+void DataDebug::write_region_data(std::string& region_name, 
                                   const Epetra_Vector& data, 
-                                  std::string description) {
+                                  std::string& description) {
 
   if (!mesh_->valid_set_name(region_name, AmanziMesh::CELL)) {
     throw std::exception();
@@ -28,9 +28,9 @@ void DataDebug::write_region_data(std::string region_name,
   }
 }
 
-void DataDebug::write_region_statistics(std::string region_name, 
+void DataDebug::write_region_statistics(std::string& region_name, 
                                         const Epetra_Vector& data, 
-                                        std::string description) {
+                                        std::string& description) {
 
   if (!mesh_->valid_set_name(region_name, AmanziMesh::CELL)) {
     throw std::exception();

@@ -272,7 +272,7 @@ Teuchos::ParameterList InputParserIS::CreateMPC_List_(Teuchos::ParameterList* pl
     }
 
     if (transport_on || chemistry_on) {
-      mpc_list.set<Teuchos::Array<std::string> >("component names", comp_names);
+      mpc_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
     }
 
     if (exe_sublist.isParameter("Flow Model")) {
