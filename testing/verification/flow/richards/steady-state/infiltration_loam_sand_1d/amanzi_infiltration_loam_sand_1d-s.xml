@@ -1,6 +1,6 @@
 <ParameterList name="Main">
-    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
-     <Parameter name="Petsc Options File" type="string" value=".petsc"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
+    <Parameter name="Petsc Options File" type="string" value=".petsc"/>
 
    <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
@@ -15,7 +15,7 @@
           <Parameter name="Start" type="double" value="0.0"/>
           <Parameter name="End" type="double" value="3.16E11"/>
 	  <!-- want steady state so run to 10,000 years = 3.16E11 seconds -->
-          <Parameter name="Initial Time Step" type="double" value="2.0"/>
+          <Parameter name="Initial Time Step" type="double" value="1.e7"/>
         </ParameterList>
       </ParameterList>
       <Parameter name="Verbosity" type="string" value="High"/>

@@ -147,7 +147,7 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
                                           AlquimiaAuxiliaryData&       aux_input,
                                           AlquimiaAuxiliaryOutputData& aux_output)
 {
-  mat_props.volume = 1000*volume(iv,sVol);
+  mat_props.volume = volume(iv,sVol);
   mat_props.saturation = aqueous_saturation(iv,sSat);
 
   chem_state.water_density = water_density;
