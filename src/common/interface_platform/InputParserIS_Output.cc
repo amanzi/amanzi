@@ -365,16 +365,16 @@ Teuchos::Array<std::string> InputParserIS::CreateVariableMacro_(
       if (macro_list.isParameter("Phase")) {
         std::string macro_phase = macro_list.get<std::string>("Phase");
         if (macro_phase == "All") {
-          vars.push_back(phase_comp_name);
+          vars.push_back(phases_[0].solute_name);
         }
         else {  // not All, must equal phase_comp_name
           if (macro_list.isParameter("Component")) {
             std::string macro_comp = macro_list.get<std::string>("Component");
             if (macro_comp == "All") {
-              vars.push_back(phase_comp_name);
+              vars.push_back(phases_[0].solute_name);
             }
             else { // not All, must equal
-              if (macro_comp != phase_comp_name) {
+              if (macro_comp != phases_[0].solute_name) {
                 std::stringstream ss;
                 ss << "The phase component name " << macro_comp << " is refered to in a variable macro but is not defined";
                 Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));

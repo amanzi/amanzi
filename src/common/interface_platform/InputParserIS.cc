@@ -158,11 +158,35 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
     allreg.set<Teuchos::Array<double> >("High Coordinate", high);
   }
 
+  // define verbosity
+  if (plist->isSublist("Execution Control")) {
+    std::string verbosity = plist->sublist("Execution Control").get<std::string>("Verbosity", VERBOSITY_DEFAULT);
+
+    if (verbosity == "None" || verbosity == "none") {
+      verbosity_level = "none";
+    } else if (verbosity == "Low" || verbosity == "low") {
+      verbosity_level = "low";
+    } else if (verbosity == "Medium" ||verbosity == "medium") {
+      verbosity_level = "medium";
+    } else if (verbosity == "High" || verbosity == "high") {
+      verbosity_level = "high";
+    } else if (verbosity == "Extreme" || verbosity == "extreme") {
+      verbosity_level = "extreme";
+    } else {
+      Exceptions::amanzi_throw(Errors::Message("Verbosity must be one of None, Low, Medium, High, or Extreme."));
+    }
+  }
+
+  Teuchos::ParameterList vo_list = CreateVerbosityList_(verbosity_level);
+  vo_ = new VerboseObject("InputParser1.2.3", vo_list); 
+  Teuchos::OSTab tab = vo_->getOSTab();
+
   // check if Transport is Off
   std::string transport_model = plist->sublist("Execution Control").get<std::string>("Transport Model");
   std::string chemistry_model = plist->sublist("Execution Control").get<std::string>("Chemistry Model");
 
-  phase_name = "Aqueous";
+  phases_.resize(1);
+  phases_[0].name = "Aqueous";
 
   // don't know the history of these variables, clear them just to be safe.
   comp_names.clear();
@@ -174,7 +198,12 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
   for (item = phase_list.begin(); item != phase_list.end(); ++item) {
     if (transport_model != "Off"  || chemistry_model != "Off") {
       if (phase_list.name(item) == "Aqueous") {
-        Teuchos::ParameterList aqueous_list = phase_list.sublist("Aqueous");
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+          *vo_->os() << "Found phase: " << phase_list.name(item) << std::endl;
+        }
+
+        Teuchos::ParameterList& aqueous_list = phase_list.sublist("Aqueous");
+
         if (aqueous_list.isSublist("Phase Components")) {
           Teuchos::ParameterList phase_components = aqueous_list.sublist("Phase Components");
           // for now there should only be one sublist here, we allow it to be named something
@@ -190,14 +219,15 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
                 << " a parameter instead.";
             Exceptions::amanzi_throw(msg);
           }
-          phase_comp_name = pcit->first;
-          Teuchos::ParameterList& water_components = phase_components.sublist(phase_comp_name);
+          phases_[0].solute_name = pcit->first;
+          Teuchos::ParameterList& water_components = phase_components.sublist(phases_[0].solute_name);
           if (water_components.isParameter("Component Solutes")) {
             comp_names = water_components.get<Teuchos::Array<std::string> >("Component Solutes");
           }
         }  // end phase components
       }  // end Aqueous phase
     }
+
     if (chemistry_model != "Off") {
       if (phase_list.name(item) == "Solid") {
         Teuchos::ParameterList solid_list = phase_list.sublist("Solid");
@@ -216,7 +246,7 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
       std::stringstream message;
       message << "Error: InputParserIS::InitGlobalInfo_(): "
               << "The only phases supported on unstructured meshes at this time are '"
-              << phase_name << "' and 'Solid'!\n"
+              << phases_[0].name << "' and 'Solid'!\n"
               << phase_list << std::endl;
       Exceptions::amanzi_throw(Errors::Message(message.str()));
     }
@@ -226,24 +256,6 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
     // create a map for the components
     for (int i = 0; i < comp_names.size(); i++) {
       comp_names_map[comp_names[i]] = i;
-    }
-  }
-
-  if (plist->isSublist("Execution Control")) {
-    std::string verbosity = plist->sublist("Execution Control").get<std::string>("Verbosity", VERBOSITY_DEFAULT);
-
-    if (verbosity == "None" || verbosity == "none") {
-      verbosity_level = "none";
-    } else if (verbosity == "Low" || verbosity == "low") {
-      verbosity_level = "low";
-    } else if (verbosity == "Medium" ||verbosity == "medium") {
-      verbosity_level = "medium";
-    } else if (verbosity == "High" || verbosity == "high") {
-      verbosity_level = "high";
-    } else if (verbosity == "Extreme" || verbosity == "extreme") {
-      verbosity_level = "extreme";
-    } else {
-      Exceptions::amanzi_throw(Errors::Message("Verbosity must be one of None, Low, Medium, High, or Extreme."));
     }
   }
 

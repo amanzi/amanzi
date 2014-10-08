@@ -304,7 +304,9 @@ Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::ParameterLis
             ss << "DoF " << j + 1 << " Function";
 
             double value(1.0e-9);
-            value = ics.sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[j]).sublist("IC: Uniform Concentration").get<double>("Free Ion Guess",1.0e-9);
+            value = ics.sublist("Solute IC").sublist(phases_[0].name)
+                .sublist(phases_[0].solute_name).sublist(comp_names[j])
+                .sublist("IC: Uniform Concentration").get<double>("Free Ion Guess",1.0e-9);
 
             aux1_list.sublist(ss.str()).sublist("function-constant")
                 .set<double>("value", value);

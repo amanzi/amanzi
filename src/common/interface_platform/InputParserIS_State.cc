@@ -31,12 +31,12 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
   // --- viscosity
   //
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
-  double viscosity = phase_list.sublist(phase_name).sublist("Phase Properties").sublist("Viscosity: Uniform").get<double>("Viscosity");
+  double viscosity = phase_list.sublist(phases_[0].name).sublist("Phase Properties").sublist("Viscosity: Uniform").get<double>("Viscosity");
   stt_ic.sublist("fluid_viscosity").set<double>("value", viscosity);
   //
   // --- density
   //
-  double density = phase_list.sublist(phase_name).sublist("Phase Properties").sublist("Density: Uniform").get<double>("Density");
+  double density = phase_list.sublist(phases_[0].name).sublist("Phase Properties").sublist("Density: Uniform").get<double>("Density");
   stt_ic.sublist("fluid_density").set<double>("value", density);
   // this is stupid, but for some reason we also have an array for water density, so here it goes...
   stt_ic.sublist("water_density").sublist("function").sublist("All")
@@ -263,9 +263,7 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
     // only process initial conditions if we are not initializing from
     // a checkpoint file
     for (Teuchos::ParameterList::ConstIterator iic = ic_list.begin(); iic != ic_list.end(); ++iic) {
-      // get the regions
       Teuchos::Array<std::string> regions = ic_list.sublist(ic_list.name(iic)).get<Teuchos::Array<std::string> >("Assigned Regions");
-
       Teuchos::ParameterList* ic_for_region = &ic_list.sublist(ic_list.name(iic));
 
       // create regions string
@@ -276,8 +274,8 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
 
       // pressure...
       if (ic_for_region->isSublist("IC: Uniform Pressure") || ic_for_region->isSublist("IC: Linear Pressure")) {
-
         Teuchos::ParameterList& pressure_ic = stt_ic.sublist("pressure");
+
         if (ic_for_region->isSublist("IC: Uniform Pressure")) {
           double p = ic_for_region->sublist("IC: Uniform Pressure").get<double>("Value");
 
@@ -320,6 +318,7 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
       // saturation...
       if (ic_for_region->isSublist("IC: Uniform Saturation") || ic_for_region->isSublist("IC: Linear Saturation")) {
         Teuchos::ParameterList& saturation_ic = stt_ic.sublist("water_saturation");
+
         if (ic_for_region->isSublist("IC: Uniform Saturation")) {
           double s = ic_for_region->sublist("IC: Uniform Saturation").get<double>("Value");
           saturation_ic.sublist("function").sublist(reg_str)
@@ -387,23 +386,24 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
 
       // total_component_concentration...
       if (ic_for_region->isSublist("Solute IC")) {
+        Teuchos::ParameterList& tcc_ic = stt_ic.sublist("total_component_concentration");
 
-        Teuchos::ParameterList &concentration_ic = stt_ic.sublist("total_component_concentration");
         if (plist->sublist("Execution Control").get<std::string>("Transport Model") != std::string("Off")  ||
             plist->sublist("Execution Control").get<std::string>("Chemistry Model") != std::string("Off")) {
           // write the initial conditions for the solutes, note that we hardcode for there only being one phase, with one phase component
 
-          Teuchos::ParameterList& dof_list = concentration_ic.sublist("function").sublist(reg_str)
+          Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str)
               .set<Teuchos::Array<std::string> >("regions",regions)
               .set<std::string>("component","cell")
               .sublist("function")
               .set<int>("Number of DoFs", comp_names.size())
               .set<std::string>("Function type", "composite function");
 
-
           for (int ii = 0; ii < comp_names.size(); ii++) {
-            if (ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).isSublist(comp_names[ii])) {
-              Teuchos::ParameterList& conc_ic = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration");
+            if (ic_for_region->sublist("Solute IC").sublist(phases_[0].name).sublist(phases_[0].solute_name).isSublist(comp_names[ii])) {
+              Teuchos::ParameterList& conc_ic = ic_for_region->sublist("Solute IC")
+                  .sublist(phases_[0].name).sublist(phases_[0].solute_name)
+                  .sublist(comp_names[ii]).sublist("IC: Uniform Concentration");
 
               if (conc_ic.isParameter("Geochemical Condition")) { // Geochemical condition?
                 // Add an entry to State->initial conditions->geochemical conditions.
@@ -416,20 +416,20 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
                 // of this sort to initialize fields. The chemistry PK will simply 
                 // overwrite these values when it initializes its data.
                 std::stringstream dof_str;
-                dof_str << "DoF " << ii+1 << " Function";
+                dof_str << "DoF " << ii + 1 << " Function";
                 dof_list.sublist(dof_str.str())
-                  .sublist("function-constant")
-                  .set<double>("value",0.0);
+                    .sublist("function-constant")
+                    .set<double>("value", 0.0);
               }
               else { // ordinary initial concentration value.
                 double conc = conc_ic.get<double>("Value");
 
                 std::stringstream dof_str;
-                dof_str << "DoF " << ii+1 << " Function";
+                dof_str << "DoF " << ii + 1 << " Function";
 
                 dof_list.sublist(dof_str.str())
-                  .sublist("function-constant")
-                  .set<double>("value",conc);
+                    .sublist("function-constant")
+                    .set<double>("value", conc);
               }
             }
           }

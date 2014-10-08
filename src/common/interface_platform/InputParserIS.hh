@@ -13,6 +13,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
+#include "VerboseObject.hh"
+
 namespace Amanzi {
 namespace AmanziInput {
 
@@ -22,13 +24,26 @@ namespace AmanziInput {
 
 void InputParserIS_OutputBCs(Teuchos::ParameterList* plist);
 
+class Phase {
+ public:
+  Phase() {};
+  ~Phase() {};
+
+ public:
+  std::string name;
+  std::string solute_name;  // We assume only one component
+  std::vector<std::string> solute_comp_names;
+  std::map<std::string, int> solute_comp_names_map;  // global map
+};
+
+
 class InputParserIS {
  public:
-  InputParserIS() {
+  InputParserIS() : vo_(NULL) {
     flow_single_phase = false;
     verbosity_level = "low";
   };
-  ~InputParserIS() {};
+  ~InputParserIS() { };
 
   // main members
   Teuchos::ParameterList Translate(Teuchos::ParameterList* plist, int numproc);
@@ -89,10 +104,11 @@ class InputParserIS {
   Teuchos::Array<std::string> TranslateForms_(Teuchos::Array<std::string>& forms);
 
  private:
-  std::string phase_name;
-  std::string phase_comp_name;
-  Teuchos::Array<std::string> comp_names;
+  std::vector<Phase> phases_;
+
+  Teuchos::Array<std::string> comp_names;  // all components from aqueous and gaseous phases
   std::map<std::string, int> comp_names_map;
+
   Teuchos::Array<std::string> mineral_names_;
   Teuchos::Array<std::string> sorption_site_names_;
 
@@ -107,6 +123,9 @@ class InputParserIS {
  private:
   std::vector<std::string> vv_bc_regions;  // XML verification
   std::vector<std::string> vv_src_regions;
+
+ protected:
+  VerboseObject* vo_;
 };
 
 }  // namespace AmanziInput

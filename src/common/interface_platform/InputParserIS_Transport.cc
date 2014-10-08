@@ -196,7 +196,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
                 if (bc_list.sublist(name).isSublist("Solute BC")) {
                   // read the solute bc stuff
                   Teuchos::ParameterList& solbc = bc_list.sublist(name).sublist("Solute BC");
-                  Teuchos::ParameterList& comps = solbc.sublist(phase_name).sublist(phase_comp_name);
+                  Teuchos::ParameterList& comps = solbc.sublist(phases_[0].name).sublist(phases_[0].solute_name);
 
                   for (Teuchos::Array<std::string>::const_iterator i = comp_names.begin(); i != comp_names.end(); i++) {
                     if (comps.isSublist(*i)) {
@@ -273,8 +273,8 @@ Teuchos::ParameterList InputParserIS::CreateTransportSrcList_(Teuchos::Parameter
       // go to the phase list
       if (src.isSublist("Solute SOURCE")) {
         if (src.sublist("Solute SOURCE").isSublist("Aqueous")) {
-          if (src.sublist("Solute SOURCE").sublist("Aqueous").isSublist(phase_comp_name)) {
-            Teuchos::ParameterList& pc_list = src.sublist("Solute SOURCE").sublist("Aqueous").sublist(phase_comp_name);
+          if (src.sublist("Solute SOURCE").sublist("Aqueous").isSublist(phases_[0].solute_name)) {
+            Teuchos::ParameterList& pc_list = src.sublist("Solute SOURCE").sublist("Aqueous").sublist(phases_[0].solute_name);
 
             // loop over all the source definitions
             for (Teuchos::ParameterList::ConstIterator ibc = pc_list.begin(); ibc != pc_list.end(); ibc++) {
