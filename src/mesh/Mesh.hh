@@ -35,6 +35,8 @@ class Mesh
   mutable std::vector<AmanziGeometry::Point> cell_centroids,
     face_centroids, face_normal0, face_normal1;
   mutable Entity_ID_List cell_cellabove, cell_cellbelow, node_nodeabove;
+  mutable std::map<int,Entity_ID_List> columns;
+  mutable Entity_ID_List column_indices;
   mutable std::vector<Entity_ID_List> cell_face_ids;
   mutable std::vector< std::vector<int> > cell_face_dirs;
   mutable std::vector<Entity_ID_List > face_cell_ids;
@@ -337,7 +339,9 @@ class Mesh
   // if these operators are never called. The above and below cells
   // are computed for all cells the first time one of these routines
   // is called and then cached
-
+  const Entity_ID_List& cell_column(Entity_ID cellid) const;
+  const Entity_ID_List& cell_column_indices() const;
+  
   Entity_ID cell_get_cell_above(const Entity_ID cellid) const;
 
   Entity_ID cell_get_cell_below(const Entity_ID cellid) const;

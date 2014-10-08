@@ -1218,8 +1218,43 @@ int Mesh::build_columns() const {
 
   }
 
+  // now build the columns
+  for (int i = 0; i < nc; i++) {
+    if (cell_cellabove[i] == -1) {
+      // calculate the size
+      Entity_ID_List& col = columns[i];
+      int ncells_in_col = 1;
+      int j = cell_cellbelow[i];
+      while (j >= 0) {
+        ncells_in_col++;
+        j = cell_cellbelow[j];
+      }
+
+      col.resize(ncells_in_col);
+      int index = 0;
+      col[index] = i;
+      j = cell_cellbelow[i];
+      while (j >= 0) {
+        index++;
+        col[index] = j;
+        j = cell_cellbelow[j];
+      }
+    }
+  }
+  
   columns_built = true;
   return status;
+}
+
+
+const Entity_ID_List&
+Mesh::cell_column(Entity_ID cellid) const {
+  return columns[cellid];
+}
+
+const Entity_ID_List&
+Mesh::cell_column_indices() const {
+  return column_indices;
 }
 
 
