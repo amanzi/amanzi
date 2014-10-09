@@ -1,6 +1,5 @@
-
-#ifndef FLOW_FLUX_TPFA_BC_FUNC
-#define FLOW_FLUX_TPFA_BC_FUNC
+#ifndef AMANZI_FLUX_TPFA_BC_FUNC
+#define AMANZI_FLUX_TPFA_BC_FUNC
 
 #include <../pks/flow/WaterRetentionModel.hh>
 
