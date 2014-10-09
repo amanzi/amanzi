@@ -259,7 +259,8 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
   // create lists of components
   comp_names_ = phases_[0].solute_comp_names;
   comp_names_all_ = phases_[0].solute_comp_names;
-  comp_names_all_.insert(comp_names_all_.end(), phases_[1].solute_comp_names.size(), phases_[1].solute_comp_names[0]);
+  comp_names_all_.insert(comp_names_all_.end(),
+      phases_[1].solute_comp_names.begin(), phases_[1].solute_comp_names.end());
 
   // dispersion (this is going to be used to translate to the transport list as well as the state list)
   // check if we need to write a dispersivity sublist

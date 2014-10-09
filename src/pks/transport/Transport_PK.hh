@@ -253,7 +253,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   int nfaces_owned, nfaces_wghost;
   int nnodes_wghost;
  
-  std::vector<std::string> component_names_;
+  std::vector<std::string> component_names_;  // details of components
+  int num_aqueous, num_gaseous;
 
   // Forbidden.
   Transport_PK(const Transport_PK&);

@@ -1133,6 +1133,12 @@ and temporal accuracy, and verbosity:
   1 or 2. The default is 1.
 
 * `"solver`" [string] specifies the dispersion/diffusion solver.
+
+* `"number of aqueous components`" [int] the total number of aqueous components. 
+  Default is the total number of components.
+
+* `"number of gaseous components`" [int] the total number of gaseous components. 
+  Default is zero.
    
 * `"VerboseObject`" [list] defines default verbosity level for the process kernel.
   If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".

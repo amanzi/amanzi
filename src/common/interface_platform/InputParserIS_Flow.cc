@@ -491,7 +491,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowSrcList_(Teuchos::ParameterList*
       // get the regions
       Teuchos::Array<std::string> regions = src.get<Teuchos::Array<std::string> >("Assigned Regions");
       src_sub_out.set<Teuchos::Array<std::string> >("regions", regions);
-      vv_src_regions.insert(vv_src_regions.end(), regions.size(), regions[0]);
+      vv_src_regions.insert(vv_src_regions.end(), regions.begin(), regions.end());
 
       // create time function
       Teuchos::ParameterList& src_sub_out_fn = src_sub_out.sublist("sink");
@@ -556,7 +556,7 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
 
       // get the regions
       Teuchos::Array<std::string> regions = bc.get<Teuchos::Array<std::string> >("Assigned Regions");
-      vv_bc_regions.insert(vv_bc_regions.end(), regions.size(), regions[0]);
+      vv_bc_regions.insert(vv_bc_regions.end(), regions.begin(), regions.end());
 
       if (bc.isSublist("BC:Zero Flow")) {
         // this is the natural BC for flow and we need not list it explicitly
