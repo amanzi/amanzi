@@ -37,7 +37,7 @@ void Richards::Functional(double t_old,
   ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
   // pointer-copy temperature into state and update any auxilary data
-  solution_to_state(u_new, S_next_);
+  solution_to_state(*u_new, S_next_);
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
   if (dynamic_mesh_) matrix_->CreateMFDmassMatrices(K_.ptr());
@@ -168,7 +168,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
-  PKDefaultBase::solution_to_state(up, S_next_);
+  PKDefaultBase::solution_to_state(*up, S_next_);
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());

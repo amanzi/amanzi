@@ -37,7 +37,6 @@ int PermafrostDepthIndex(const Epetra_SerialDenseVector& SoilTArr,
 // This function calculate the effect of temperature on biological process.
 double TEffectsQ10(double Q10, double T, double refT);
 
-
 } // namespace
 } // namespace
 

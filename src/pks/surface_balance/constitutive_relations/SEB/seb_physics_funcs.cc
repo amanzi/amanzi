@@ -2,6 +2,7 @@
   Functions for calculating the snow / surface energy balance.
 */
 
+#include <iostream>
 #include <cmath>
 #include <algorithm>
 #include <boost/math/tools/roots.hpp>
