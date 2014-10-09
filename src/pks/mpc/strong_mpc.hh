@@ -161,7 +161,7 @@ void StrongMPC<PK_t>::initialize(const Teuchos::Ptr<State>& S) {
 template<class PK_t>
 void StrongMPC<PK_t>::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
-  solution_to_state(u_new, S_next_);
+  solution_to_state(*u_new, S_next_);
 
   // loop over sub-PKs
   for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
@@ -264,7 +264,7 @@ double StrongMPC<PK_t>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 // -----------------------------------------------------------------------------
 template<class PK_t>
 void StrongMPC<PK_t>::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
-  PKDefaultBase::solution_to_state(up, S_next_);
+  PKDefaultBase::solution_to_state(*up, S_next_);
 
   // loop over sub-PKs
   for (unsigned int i=0; i!=sub_pks_.size(); ++i) {

@@ -51,6 +51,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
   double wp_max = -1.e-6; //MPa wp = p - p_atm
   double wp_min = -10.; //MPa
   int max_leaf_layers = 10;
+  int ncells = SoilTArr.Length();
 
   // calculate fractional day length
   int doy = std::floor(std::fmod(t_days, 365.25));
@@ -220,7 +221,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
         stemresp = leafresptotal*pft.Bstem / pft.Bleaf*pft.stem2leafrespratio;
         rootresp = 0.0;
         double refTFactor = TEffectsQ10(2.0, tleaf, 25.0);
-        for (int k=0; k!=soilcarr.size(); ++k){
+        for (int k=0; k!=ncells; ++k){
           double TFactor = TEffectsQ10(2.0, SoilTArr[k] - 273.15, 25.0);
           rootresp += leafresptotal*pft.BRootSoil[k] / pft.Bleaf * TFactor / refTFactor
               * pft.root2leafrespratio;
@@ -237,7 +238,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
         stemresp = leafresptotal*pft.Bstem / bleaf0*pft.stem2leafrespratio;
         rootresp = 0.0;
         double refTFactor = TEffectsQ10(2.0, tleaf, 25.0);
-        for (int k=0; k!=soilcarr.size(); ++k) {
+        for (int k=0; k!=ncells; ++k) {
           double TFactor = TEffectsQ10(2.0, SoilTArr[k] - 273.15, 25.0);
           rootresp += leafresptotal*pft.BRootSoil[k] / bleaf0 * TFactor / refTFactor
               * pft.root2leafrespratio;
@@ -356,7 +357,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
           double totalweights = 0.0;
           bool findflag = false;
 
-          for (int k=0; k!=soilcarr.size() && !findflag; ++k) {
+          for (int k=0; k!=ncells && !findflag; ++k) {
             totalweights += pft.BRootSoil[k] / pft.Broot;
             if (totalweights >= 0.85) {
               pft.rootD = SoilDArr[k];
@@ -371,9 +372,9 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
           // currrent root biomass
 
           totalweights = 0.0;
-          std::vector<double> weightArr(soilcarr.size(), 0.);
+          std::vector<double> weightArr(ncells, 0.);
 
-          for (int k=0; k!=soilcarr.size(); ++k) {
+          for (int k=0; k!=ncells; ++k) {
             double TFactor = SoilTArr[k] < 273.15 ? 0. :
                 TEffectsQ10(2.0, SoilTArr[k] - 273.15, 25.0) * HighTLim(SoilTArr[k]-273.15);
             double soil_wp = std::max(std::min( (SoilWPArr[k] - p_atm) / 1.e6, wp_max), wp_min);
@@ -384,12 +385,12 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
 
           if (totalweights <= 0.0){ //completely frozen
             totalweights = pft.Broot;
-            for (int k=0; k!=soilcarr.size(); ++k) {
+            for (int k=0; k!=ncells; ++k) {
               weightArr[k] = pft.BRootSoil[k];
             }
           }
 
-          for (int k=0; k!=soilcarr.size(); ++k) {
+          for (int k=0; k!=ncells; ++k) {
             weightArr[k] /= totalweights;
           }
 
@@ -400,19 +401,19 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
           // determine the growth direction depending on the rooting depth
           // grow downwards
           if (pft.rootD < thawD && pft.rootD < pft.maxRootD) {
-            for (int k=0; k!=(soilcarr.size() - 1); ++k) {
+            for (int k=0; k!=(ncells - 1); ++k) {
               if (SoilDArr[k] <= thawD) {
                 pft.BRootSoil[k+1] = pft.BRootSoil[k+1] + grwBroot*weightArr[k];
               }
             }
 
-            if (SoilDArr[soilcarr.size()-1] <= thawD) {
+            if (SoilDArr[ncells-1] <= thawD) {
               //bottom soil layer, stay put
-              pft.BRootSoil[soilcarr.size()-1] += grwBroot*weightArr[soilcarr.size()-1];
+              pft.BRootSoil[ncells-1] += grwBroot*weightArr[ncells-1];
             }
           } else {
             // grow horizontally
-            for (int k=0; k!=soilcarr.size(); ++k) {
+            for (int k=0; k!=ncells; ++k) {
               pft.BRootSoil[k] += grwBroot*weightArr[k];
             }
           }
@@ -461,7 +462,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
         }
 
         // root litter transfer
-        for (int k=0; k!=soilcarr.size(); ++k) {
+        for (int k=0; k!=ncells; ++k) {
           double carbondrawn = mort*pft.BRootSoil[k];
           soilcarr[k]->SOM[0] += carbondrawn*rootstoragecratio;
           //pft.Bstore = pft.Bstore - carbondrawn*rootstoragecratio;
@@ -549,7 +550,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
         pft.AssertRootBalance_or_die();
 
         // root litter transfer
-        for (int k=0; k!=soilcarr.size(); ++k) {
+        for (int k=0; k!=ncells; ++k) {
           double carbondrawn = turnoverRoot *pft.BRootSoil[k];
           storagecdrawn = carbondrawn*rootstoragecratio*(1.0 - pft.storagecRspFrc);
           soilcarr[k]->SOM[0] += storagecdrawn;
@@ -607,7 +608,7 @@ void BGCAdvance(double t, double dt, double gridarea, double cryoturbation_coef,
 
   //=========================================================================
   // do soil decomposition
-  for (int k=0; k!=soilcarr.size(); ++k) {
+  for (int k=0; k!=ncells; ++k) {
     double TFactor = TEffectsQ10(2.0, SoilTArr[k] - 273.15, 25.0);
     SoilCO2Arr[k] = 0.0;
     double WFactor;
@@ -675,6 +676,7 @@ void Cryoturbate(double dt,
 		 const Epetra_SerialDenseVector& SoilThicknessArr,
 		 std::vector<Teuchos::RCP<SoilCarbon> >& soilcarr,
 		 std::vector<double>& diffusion_coefs) {
+  int ncells = SoilTArr.Length();
   // only cryoturbate unfrozen soil
   int k_frozen = PermafrostDepthIndex(SoilTArr, 273.15);
 
@@ -700,7 +702,7 @@ void Cryoturbate(double dt,
     }
 
     // dC/dz on the face below
-    if ((k == soilcarr.size()-1) || k+1 >= k_frozen) {
+    if ((k == ncells-1) || k+1 >= k_frozen) {
       // boundary case
       for (int l=0; l!=npools; ++l) {
 	dC_dn[l] = 0;

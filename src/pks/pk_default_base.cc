@@ -32,10 +32,10 @@ void PKDefaultBase::set_states(const Teuchos::RCP<const State>& S,
 }
 
 
-void PKDefaultBase::solution_to_state(const Teuchos::RCP<const TreeVector>& soln,
+void PKDefaultBase::solution_to_state(const TreeVector& soln,
         const Teuchos::RCP<State>& S) {
-  Teuchos::RCP<TreeVector> nc_soln = Teuchos::rcp_const_cast<TreeVector>(soln);
-  solution_to_state(nc_soln, S);
+  TreeVector* soln_nc_ptr = const_cast<TreeVector*>(&soln);
+  solution_to_state(*soln_nc_ptr, S);
 }
 
 } // namespace

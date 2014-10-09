@@ -67,17 +67,17 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
 // Transfer operators -- ONLY COPIES POINTERS
 // -----------------------------------------------------------------------------
 void PKPhysicalBase::state_to_solution(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<TreeVector>& solution) {
-  solution->SetData(S->GetFieldData(key_, name_));
+        TreeVector& solution) {
+  solution.SetData(S->GetFieldData(key_, name_));
 };
 
 
 // -----------------------------------------------------------------------------
 // Transfer operators -- ONLY COPIES POINTERS
 // -----------------------------------------------------------------------------
-void PKPhysicalBase::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
+void PKPhysicalBase::solution_to_state(TreeVector& solution,
         const Teuchos::RCP<State>& S) {
-  ASSERT(solution->Data() == S->GetFieldData(key_));
+  ASSERT(solution.Data() == S->GetFieldData(key_));
   //  S->SetData(key_, name_, solution->Data());
   //  solution_evaluator_->SetFieldAsChanged();
 };
