@@ -165,81 +165,77 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
         }
 
         // now generate the boundary conditions
-        // loop over the boundary condition sublists and extract the relevant data
-        int n_transport_bcs = 0;
+        Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
         Teuchos::ParameterList& bc_list = plist->sublist("Boundary Conditions");
 
         for (Teuchos::ParameterList::ConstIterator i = bc_list.begin(); i != bc_list.end(); i++) {
+          // read the assigned regions
+          const std::string name(i->first);
+          Teuchos::Array<std::string> regs = bc_list.sublist(name).get<Teuchos::Array<std::string> >("Assigned Regions");
+          vv_bc_regions.insert(vv_bc_regions.end(), regs.begin(), regs.end());
+
           // only count sublists
-          if (bc_list.isSublist(bc_list.name(i))) {
-            if (bc_list.sublist((bc_list.name(i))).isSublist("Solute BC"))
-              n_transport_bcs++;
-          }
-        }
+          if (bc_list.isSublist(name)) {
+            if (bc_list.sublist(name).isSublist("Solute BC")) {
+              // read the solute bc stuff
+              Teuchos::ParameterList& solbc = bc_list.sublist(name).sublist("Solute BC");
+              for (Teuchos::ParameterList::ConstIterator ph = solbc.begin(); ph != solbc.end(); ph++) {
+                std::string phase_name = ph->first; 
+                int n;
+                if (phase_name == "Aqueous") { 
+                  n = 0;
+                } else if (phase_name == "Gaseous") {
+                  n = 1;
+                } else {
+                  msg << "Boundary condition have unsupported phase " << phase_name;
+                  Exceptions::amanzi_throw(msg);
+                }
+                Teuchos::ParameterList& comps = solbc.sublist(phase_name).sublist(phases_[n].solute_name);
 
-        if (n_transport_bcs >= 0) {
-          Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
+                for (std::vector<std::string>::iterator i = comp_names_all_.begin(); i != comp_names_all_.end(); i++) {
+                  if (comps.isSublist(*i)) {
+                    std::stringstream compss;
+                    compss << *i;
+                    if (comps.sublist(*i).isSublist("BC: Uniform Concentration")) {
+                      Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Uniform Concentration");
 
-          // TODO: these simple checks for one transported phase will not
-          // work with the addition of the solid phase
+                      if (bcsub.isParameter("Geochemical Condition")) { 
+                        // Add an entry to Transport->boundary conditions->geochemical conditions.
+                        Teuchos::ParameterList& gc_list = trp_list.sublist("boundary conditions")
+                            .sublist("geochemical conditions");
+                        std::string geochem_cond_name = bcsub.get<std::string>("Geochemical Condition");
+                        Teuchos::ParameterList& geochem_cond = gc_list.sublist(geochem_cond_name);
+                        geochem_cond.set<Teuchos::Array<std::string> >("regions", regs);
+                      }
+                      else { // ordinary Transport BCs.
+                        Teuchos::ParameterList& tbc_list = trp_list.sublist("boundary conditions").sublist("concentration");
+                        Teuchos::ParameterList& bc = tbc_list.sublist(compss.str()).sublist(name);
+                        bc.set<Teuchos::Array<std::string> >("regions",regs);
 
-          //if ((++ phase_list.begin()) == phase_list.end()) {
-          if (true) {
-            for (Teuchos::ParameterList::ConstIterator i = bc_list.begin(); i != bc_list.end(); i++) {
-              // read the assigned regions
-              const std::string name(i->first);
-              Teuchos::Array<std::string> regs = bc_list.sublist(name).get<Teuchos::Array<std::string> >("Assigned Regions");
-              vv_bc_regions.insert(vv_bc_regions.end(), regs.size(), regs[0]);
+                        Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
+                        Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
+                        Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
 
-              // only count sublists
-              if (bc_list.isSublist(name)) {
-                if (bc_list.sublist(name).isSublist("Solute BC")) {
-                  // read the solute bc stuff
-                  Teuchos::ParameterList& solbc = bc_list.sublist(name).sublist("Solute BC");
-                  Teuchos::ParameterList& comps = solbc.sublist(phases_[0].name).sublist(phases_[0].solute_name);
-
-                  for (std::vector<std::string>::iterator i = comp_names_.begin(); i != comp_names_.end(); i++) {
-                    if (comps.isSublist(*i)) {
-                      std::stringstream compss;
-                      compss << *i;
-                      if (comps.sublist(*i).isSublist("BC: Uniform Concentration")) {
-                        Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Uniform Concentration");
-
-                        if (bcsub.isParameter("Geochemical Condition")) { 
-                          // Add an entry to Transport->boundary conditions->geochemical conditions.
-                          Teuchos::ParameterList& gc_list = trp_list.sublist("boundary conditions").sublist("geochemical conditions");
-                          std::string geochem_cond_name = bcsub.get<std::string>("Geochemical Condition");
-                          Teuchos::ParameterList& geochem_cond = gc_list.sublist(geochem_cond_name);
-                          geochem_cond.set<Teuchos::Array<std::string> >("regions", regs);
-                        }
-                        else { // ordinary Transport BCs.
-                          Teuchos::ParameterList& tbc_list = trp_list.sublist("boundary conditions").sublist("concentration");
-                          Teuchos::ParameterList& bc = tbc_list.sublist(compss.str()).sublist(name);
-                          bc.set<Teuchos::Array<std::string> >("regions",regs);
-
-                          Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
-                          Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
-                          Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
-
-                          Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
-                          bcfn.set<Teuchos::Array<double> >("y values", values);
-                          bcfn.set<Teuchos::Array<double> >("x values", times);
-                          bcfn.set<Teuchos::Array<std::string> >("forms", TranslateForms_(time_fns));
-                        }
+                        Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
+                        bcfn.set<Teuchos::Array<double> >("y values", values);
+                        bcfn.set<Teuchos::Array<double> >("x values", times);
+                        bcfn.set<Teuchos::Array<std::string> >("forms", TranslateForms_(time_fns));
                       }
                     }
                   }
                 }
               }
             }
-          } else {
-            msg << "Unstructured Amanzi can only have one phase, but the input file specifies more than one.";
-            Exceptions::amanzi_throw(msg);
           }
         }
       }
+
+      // remaining global parameters
+      trp_list.set<int>("number of aqueous components", phases_[0].solute_comp_names.size());
+      trp_list.set<int>("number of gaseous components", phases_[1].solute_comp_names.size());
     }
   }
+
   return trp_list;
 }
 
@@ -260,7 +256,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportSrcList_(Teuchos::Parameter
 
       // get the regions
       Teuchos::Array<std::string> regions = src.get<Teuchos::Array<std::string> >("Assigned Regions");
-      vv_src_regions.insert(vv_src_regions.end(), regions.size(), regions[0]);
+      vv_src_regions.insert(vv_src_regions.end(), regions.begin(), regions.end());
 
       std::string dist_method("none");
       if (src.isSublist("Source: Volume Weighted")) {

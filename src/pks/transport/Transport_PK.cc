@@ -596,7 +596,10 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
 
   // prepare conservative state in master and slave cells
   double vol_phi_ws, tcc_flux;
-  int ncomponents = tcc_next.NumVectors();
+
+  // We advect only aqueous components.
+  // int ncomponents = tcc_next.NumVectors();
+  int ncomponents = num_aqueous;
 
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c];
@@ -633,6 +636,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
     }
   }
 
+  // We need to check that tcc_index[i] < num_aquesous  (lipnikov@lanl.gov).
   // loop over exterior boundary sets
   for (int m = 0; m < bcs.size(); m++) {
     std::vector<int>& tcc_index = bcs[m]->tcc_index();
@@ -696,7 +700,10 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
-  int ncomponents = tcc_next.NumVectors();
+  // We advect only aqueous components.
+  // int ncomponents = tcc_next.NumVectors();
+  int ncomponents = num_aqueous;
+
   for (int i = 0; i < ncomponents; i++) {
     current_component_ = i;  // needed by BJ 
 
@@ -742,8 +749,12 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
   Epetra_Vector ws_ratio(Copy, *ws_start, 0);
   for (int c = 0; c < ncells_owned; c++) ws_ratio[c] /= (*ws_end)[0][c];
 
+  // We advect only aqueous components.
+  // int ncomponents = tcc_next.NumVectors();
+  int ncomponents = num_aqueous;
+
   // predictor step
-  for (int i = 0; i < tcc_next.NumVectors(); i++) {
+  for (int i = 0; i < ncomponents; i++) {
     current_component_ = i;  // needed by BJ 
 
     double T = T_physics;
@@ -758,7 +769,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
   tcc_tmp->ScatterMasterToGhosted("cell");
 
   // corrector step
-  for (int i = 0; i < tcc_next.NumVectors(); i++) {
+  for (int i = 0; i < ncomponents; i++) {
     current_component_ = i;  // needed by BJ 
 
     double T = T_physics;
@@ -803,7 +814,10 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
   }
   Explicit_TI::RK TVD_RK(*this, ti_method, *component_);
 
-  int ncomponents = tcc->NumVectors();
+  // We advect only aqueous components.
+  // int ncomponents = tcc_next.NumVectors();
+  int ncomponents = num_aqueous;
+
   for (int i = 0; i < ncomponents; i++) {
     current_component_ = i;  // it is needed in BJ called inside RK:fun
 
@@ -855,9 +869,9 @@ void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp,
 
 
 /* *******************************************************************
- * Identify flux direction based on orientation of the face normal 
- * and sign of the  Darcy velocity.                               
- ****************************************************************** */
+* Identify flux direction based on orientation of the face normal 
+* and sign of the  Darcy velocity.                               
+******************************************************************* */
 void Transport_PK::IdentifyUpwindCells()
 {
   for (int f = 0; f < nfaces_wghost; f++) {
