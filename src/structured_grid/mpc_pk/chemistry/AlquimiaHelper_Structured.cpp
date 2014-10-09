@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <Utility.H>
+#include <ParallelDescriptor.H>
 
 AlquimiaHelper_Structured::AlquimiaHelper_Structured(Amanzi::AmanziChemistry::ChemistryEngine* _engine)
   : engine(_engine),   alq_sizes(engine->Sizes())
@@ -78,7 +79,7 @@ AlquimiaHelper_Structured::AlquimiaHelper_Structured(Amanzi::AmanziChemistry::Ch
                       alquimia_aux_out[ithread]);
   }
 
-  bool dump = true;
+  bool dump = ParallelDescriptor::IOProcessor();
   if (dump) {
     std::cout << "AlquimiaHelper_Structured:" << std::endl;
     std::cout << "  Primary Species Names: " << std::endl;

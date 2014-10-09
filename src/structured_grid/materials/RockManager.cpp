@@ -1018,7 +1018,7 @@ static Real vgBKr(Real seff, Real m, Real mI, Real ell) {
 }
 
 static Real vgPc(Real seff, Real mI, Real nI, Real alphaI) {
-  return alphaI * std::pow( std::pow(seff,-mI) - 1, nI);
+  return alphaI * std::pow( (seff==0 ? 1 : std::pow(seff,-mI)) - 1, nI);
 }
 
 static Real vgPcInv(Real pc, Real m, Real n, Real alpha) {
@@ -1078,7 +1078,7 @@ RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Re
         for (int i=0; i<N; ++i) {
           int idx = mat_pts[j][i];
           Real s = std::min(1.0, std::max(0.0, saturation[idx]));        
-          Real seff = (s - Sr)*omSrI;
+          Real seff = std::max(0.,std::min(1.,(s - Sr)*omSrI));
           capillaryPressure[idx] = vgPc(seff,mI,nI,alphaI);
         }
       }
@@ -1094,7 +1094,7 @@ RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Re
         for (int i=0; i<N; ++i) {
           int idx = mat_pts[j][i];
           Real s = std::min(1.0, std::max(0.0, saturation[idx]));        
-          Real seff = (s - Sr)*omSrI;
+          Real seff = std::max(0.,std::min(1.,(s - Sr)*omSrI));
           capillaryPressure[idx] = bcPc(seff,lambdaI,alphaI);
         }
       }
@@ -1172,6 +1172,7 @@ RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID,
         int idx = mat_pts[j][i];
         Real seff = (capillaryPressure[idx] <= 0  ? 1 : 
                      std::pow( std::pow(alpha*capillaryPressure[idx],n) + 1, -m));
+        seff = std::max(0.,std::min(1.,seff));
         saturation[idx] = seff*(1 - Sr) + Sr;
       }
     }
@@ -1184,6 +1185,7 @@ RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID,
         int idx = mat_pts[j][i];
         Real seff = (capillaryPressure[idx] <= 0  ? 1 : 
                      std::pow(alpha*capillaryPressure[idx],mLambda));
+        seff = std::max(0.,std::min(1.,seff));
         saturation[idx] = seff*(1 - Sr) + Sr;
       }
     }
@@ -1252,7 +1254,7 @@ RockManager::DInverseCapillaryPressure(const Real* saturation, int* matID, Real 
 
       for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
         int idx = mat_pts[j][i];
-        Real seff = (saturation[idx] - Sr)*omSrI;
+        Real seff = std::max(0.,std::min(1.,(saturation[idx] - Sr)*omSrI));
         Real sb = std::pow(seff,b);
         DsaturationDpressure[idx] = fac*std::pow(sb-1,m)*seff/sb;
       }
@@ -1267,7 +1269,7 @@ RockManager::DInverseCapillaryPressure(const Real* saturation, int* matID, Real 
 
       for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
         int idx = mat_pts[j][i];
-        Real seff = (saturation[idx] - Sr)*omSrI;
+        Real seff = std::max(0.,std::min(1.,(saturation[idx] - Sr)*omSrI));
         DsaturationDpressure[idx] = fac*std::pow(seff,oplI);
       }
     }
@@ -1366,7 +1368,7 @@ RockManager::RelativePermeability(const Real* saturation, int* matID, Real time,
 
         for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
           int idx = mat_pts[j][i];
-          Real seff = (saturation[idx] - Sr)*omSrI;
+          Real seff = std::max(0.,std::min(1.,(saturation[idx] - Sr)*omSrI));
           if (seff > Kr_min_seff.second && seff < 1) {
             kappa[idx] = KrInterp(seff, Kr_min_seff.second, Kr_slope_thresh, Kr_slope_interval);
           }
@@ -1388,7 +1390,7 @@ RockManager::RelativePermeability(const Real* saturation, int* matID, Real time,
 
         for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
           int idx = mat_pts[j][i];
-          Real seff = (saturation[idx] - Sr)*omSrI;
+          Real seff = std::max(0.,std::min(1.,(saturation[idx] - Sr)*omSrI));
           if (seff > Kr_min_seff.second && seff < 1) {
             kappa[idx] = KrInterp(seff, Kr_min_seff.second, Kr_slope_thresh, Kr_slope_interval);
           }
@@ -1414,7 +1416,7 @@ RockManager::RelativePermeability(const Real* saturation, int* matID, Real time,
 
       for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
         int idx = mat_pts[j][i];
-        Real seff = (saturation[idx] - Sr)*omSrI;
+        Real seff = std::max(0.,std::min(1.,(saturation[idx] - Sr)*omSrI));
         kappa[idx] = std::pow(seff,f);
       }
 
