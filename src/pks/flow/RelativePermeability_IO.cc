@@ -91,7 +91,7 @@ void RelativePermeability::ProcessParameterList_(Teuchos::ParameterList& plist)
   }
 
   // optional debug output
-  PlotWRMcurves();
+  PlotWRMcurves(plist);
 }
 
 
@@ -151,10 +151,8 @@ void RelativePermeability::ProcessStringRelativePermeability(const std::string n
 /* ****************************************************************
 * Plot water retention curves.
 **************************************************************** */
-void RelativePermeability::PlotWRMcurves()
+void RelativePermeability::PlotWRMcurves(Teuchos::ParameterList& plist)
 {
-  Teuchos::ParameterList plist;
-
   int MyPID = mesh_->cell_map(false).Comm().MyPID();
   if (MyPID == 0) {
     int mb(0); 

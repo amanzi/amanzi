@@ -36,7 +36,7 @@ void Richards_PK::Functional(double Told, double Tnew,
 
   // update coefficients
   darcy_flux_copy->ScatterMasterToGhosted("face");
-  rel_perm_->Compute(*u_new);
+  rel_perm_->Compute(*u_new); 
   upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), "k_relative");
   upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), "dkdpc");
   UpdateSourceBoundaryData(Tp, *u_new);
@@ -157,16 +157,14 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
 bool Richards_PK::ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector> u0,
                                   Teuchos::RCP<CompositeVector> u)
 {
- /*
- Teuchos::RCP<CompositeVector> du = Teuchos::rcp(new CompositeVector(*u));
- du->Update(-1.0, *u0, 1.0);
+  Teuchos::RCP<CompositeVector> du = Teuchos::rcp(new CompositeVector(*u));
+  du->Update(-1.0, *u0, 1.0);
  
- ModifyCorrection(dT, Teuchos::null, u0, du);
+  ModifyCorrection(dT, Teuchos::null, u0, du);
 
- *u = *u0;
- u->Update(1.0, *du, 1.0);
- */
- return false;
+  *u = *u0;
+  u->Update(1.0, *du, 1.0);
+  return false;
 }
 
 
