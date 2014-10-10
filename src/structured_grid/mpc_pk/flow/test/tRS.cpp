@@ -180,7 +180,7 @@ main (int   argc,
 
   pp.query("inflow_velocity",inputs.inflow_velocity);
 
-  RegionManager rm;
+  RegionManager rm(problo,probhi);
 
 #if 0
   if (ParallelDescriptor::IOProcessor()) {
