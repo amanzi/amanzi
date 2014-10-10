@@ -8153,11 +8153,26 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
   MultiFab RhoSat(grids,ncomps,nGrowEIGEST);
   get_fillpatched_rhosat(t_eval,RhoSat,nGrowEIGEST);
 
-  int Ung = 1;
+  int Ung = -1;
   int Uidx = 0;
 
   for (MFIter mfi(RhoSat); mfi.isValid(); ++mfi) {
     const int i = mfi.index();
+
+    int ngmax=5;
+    const Box& ebox = u_macG[0][i].box();
+    const Box& cbox = mfi.validbox();
+    for (int j=0; j<ngmax; ++j) {
+      if (BoxLib::surroundingNodes(Box(cbox).grow(j),0) == ebox) {
+	Ung = j;
+      }
+    }
+
+    for (int d=1; d<BL_SPACEDIM; ++d) {
+      if (Ung<0 || BoxLib::surroundingNodes(Box(cbox).grow(Ung),d) != u_macG[d][i].box()) {
+	BoxLib::Abort("Incompatible box size for velocity in predictDT");
+      }
+    }
 
     Array<int> state_bc;
     state_bc = getBCArray(State_Type,i,0,1);
