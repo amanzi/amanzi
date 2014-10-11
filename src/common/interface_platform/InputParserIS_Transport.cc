@@ -25,7 +25,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
       if (exe_list.get<std::string>("Transport Model") == "On") {
 
         // get the expert parameters
-        double CFL(1.0);
+        double cfl(1.0);
         if (exe_list.isSublist("Numerical Control Parameters")) {
           Teuchos::ParameterList& ncp_list = exe_list.sublist("Numerical Control Parameters");
           if (ncp_list.isSublist("Unstructured Algorithm")) {
@@ -33,7 +33,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
               Teuchos::ParameterList& tpk_list = ncp_list.sublist("Unstructured Algorithm")
                                                          .sublist("Transport Process Kernel");
               if (tpk_list.isParameter("CFL")) {
-                CFL = tpk_list.get<double>("CFL");
+                cfl = tpk_list.get<double>("CFL");
               }
             }
           }
@@ -42,7 +42,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
         // transport is on, set some defaults
         trp_list.set<int>("spatial discretization order", 1);
         trp_list.set<int>("temporal discretization order", 1);
-        trp_list.set<double>("CFL", CFL);
+        trp_list.set<double>("cfl", cfl);
         trp_list.set<std::string>("flow mode", "transient");
         trp_list.set<std::string>("advection limiter", "Tensorial");
 

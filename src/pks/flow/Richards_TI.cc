@@ -265,11 +265,10 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   double damping_factor = 0.5;
   double reference_pressure = 101325.0;
   
-
   if (rp_list_.isSublist("clipping parameters")){
-    Teuchos::ParameterList clip_list = rp_list_.sublist("clipping parameters");
-    max_sat_pert = clip_list.get<double>("max sat change", 0.25);
-    damping_factor = clip_list.get<double>("damping factor", 0.5);
+    Teuchos::ParameterList& clip_list = rp_list_.sublist("clipping parameters");
+    max_sat_pert = clip_list.get<double>("maximum saturation change", 0.25);
+    damping_factor = clip_list.get<double>("pressure damping factor", 0.5);
   }
 
   int nsat_clipped(0), npre_clipped(0);
@@ -287,7 +286,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     
     double press_pert = atm_pressure_ - WRM[mb]->capillaryPressure(sat_pert);
     double du_pert_max = fabs(uc[0][c] - press_pert); 
-    double tmp =  duc[0][c];
+    double tmp = duc[0][c];
 
     if ((fabs(duc[0][c]) > du_pert_max) && (1 - sat > 1e-5)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {

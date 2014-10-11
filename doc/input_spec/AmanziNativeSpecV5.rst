@@ -46,11 +46,11 @@ Array data is specified as a single comma-deliminated string bounded by {}'s (e.
 .. code-block:: xml
 
   <ParameterList name="Main">
-    <Parameter name="CFL" type="double" value="0.9"/>
+    <Parameter name="cfl" type="double" value="0.9"/>
     <Parameter name="ratio" type="Array(int)" value="{2, 1, 4}"/>
   </ParameterList>
 
-In this example, the sublist "Main" has a parameter named "CFL" that is a "double" and has 
+In this example, the sublist "Main" has a parameter named "cfl" that is a "double" and has 
 the value of 0.9, and a Array<int> parameter named "ratio" such that ratio[0] = 2, 
 ratio[1]=1, and ratio[2]=4.
 
@@ -1092,9 +1092,11 @@ The remaining `"Flow`" parameters are
 
 .. code-block:: xml
 
-   <ParameterList name="clipping parameters">
-      <Parameter name="max sat change" type="double" value="0.25"/>
-      <Parameter name="damping factor" type="double" value="0.5"/>
+   <ParameterList name="Richards problem">
+     <ParameterList name="clipping parameters">
+        <Parameter name="maximum saturation change" type="double" value="0.25"/>
+        <Parameter name="pressure damping factor" type="double" value="0.5"/>
+     </ParameterList>	
    </ParameterList>	
 
 * `"plot time history`" [bool] produces an ASCII file with time history when exists.
@@ -1124,7 +1126,7 @@ Transport
 The main parameters control temporal stability, spatial 
 and temporal accuracy, and verbosity:
 
-* `"CFL`" [double] time step limiter, a number less than 1 with default of 1.
+* `"cfl`" [double] time step limiter, a number less than 1 with default of 1.
    
 * `"spatial discretization order`" [int] the order of the spatial discretization, either
   1 or 2. The default is 1. 
@@ -1147,7 +1149,7 @@ and temporal accuracy, and verbosity:
 .. code-block:: xml
 
    <ParameterList name="Transport">
-     <Parameter name="CFL" type="double" value="1.0"/>
+     <Parameter name="cfl" type="double" value="1.0"/>
      <Parameter name="spatial discretization order" type="int" value="1"/>
      <Parameter name="temporal discretization order" type="int" value="1"/>
      <Parameter name="advection limiter" type="string" value="Tensorial"/>

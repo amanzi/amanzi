@@ -714,13 +714,13 @@
 
   <!--  TRANSPORT:  -->
   <ParameterList name="Transport">
-    <Parameter name="CFL" type="double" value="1"/>
+    <Parameter name="cfl" type="double" value="1.0"/>
     <ParameterList name="Transport BCs">
       <ParameterList name="BC 0">
-        <Parameter name="Component 0" type="Array(double)" value="{0, 0}"/>
+        <Parameter name="Component 0" type="Array(double)" value="{0.0, 0.0}"/>
         <Parameter name="Regions" type="Array(string)" value="{Top Surface Region}"/>
         <Parameter name="Time functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Times" type="Array(double)" value="{0, 1}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
       </ParameterList>
       <Parameter name="number of BCs" type="int" value="1"/>
     </ParameterList>

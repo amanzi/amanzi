@@ -39,7 +39,7 @@ void Transport_PK::ProcessParameterList()
   vo_ = new VerboseObject("TransportPK", transport_list); 
 
   // global transport parameters
-  cfl_ = transport_list.get<double>("CFL", 1.0);
+  cfl_ = transport_list.get<double>("cfl", 1.0);
 
   spatial_disc_order = transport_list.get<int>("spatial discretization order", 1);
   if (spatial_disc_order < 1 || spatial_disc_order > 2) spatial_disc_order = 1;

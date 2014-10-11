@@ -177,9 +177,16 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
     }
   }
 
-  Teuchos::ParameterList vo_list = CreateVerbosityList_(verbosity_level);
+  Teuchos::ParameterList vo_list;
+  vo_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
   vo_ = new VerboseObject("InputParser1.2.3", vo_list); 
+
   Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    *vo_->os() << "verbosity level=" <<  vo_->getVerbLevel()
+               << " (low=" << Teuchos::VERB_LOW 
+               << ", ..., extreme=" << Teuchos::VERB_EXTREME << ")" << std::endl;
+  }
 
   // check if Transport is Off
   std::string transport_model = plist->sublist("Execution Control").get<std::string>("Transport Model");
