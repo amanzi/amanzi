@@ -42,7 +42,9 @@ class InputParserIS {
     flow_single_phase = false;
     verbosity_level = "low";
   };
-  ~InputParserIS() { };
+  ~InputParserIS() {
+    if (vo_ != NULL) delete vo_;
+  };
 
   // main members
   Teuchos::ParameterList Translate(Teuchos::ParameterList* plist, int numproc);
