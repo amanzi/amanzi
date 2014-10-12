@@ -49,8 +49,8 @@ void Transport_PK::ProcessParameterList()
   std::string advection_limiter_name = transport_list.get<std::string>("advection limiter");
   ProcessStringAdvectionLimiter(advection_limiter_name, &advection_limiter);
 
-  num_aqueous = transport_list.get<int>("number aqueous components", component_names_.size());
-  num_gaseous = transport_list.get<int>("number gaseous components", 0);
+  num_aqueous = transport_list.get<int>("number of aqueous components", component_names_.size());
+  num_gaseous = transport_list.get<int>("number of gaseous components", 0);
 
   // transport dispersion (default is none)
   dispersion_solver = transport_list.get<std::string>("solver", "missing");

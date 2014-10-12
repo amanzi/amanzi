@@ -520,6 +520,9 @@ void Operator::AssembleMatrix(int schema)
 ****************************************************************** */
 void Operator::ApplyBCs()
 {
+  Errors::Message msg;
+  bool applied_bc(false);
+
   const std::vector<int>& bc_model = bc_->bc_model();
   const std::vector<double>& bc_value = bc_->bc_value();
 
@@ -544,6 +547,7 @@ void Operator::ApplyBCs()
 
     if (schema & OPERATOR_SCHEMA_BASE_CELL) {
       if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
+        applied_bc = true;
         Epetra_MultiVector& rhs_face = *rhs_->ViewComponent("face", true);
         Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
         Epetra_MultiVector& diag = *diagonal_->ViewComponent("face");
@@ -580,6 +584,7 @@ void Operator::ApplyBCs()
           }
         }
       } else if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
+        applied_bc = true;
         Epetra_MultiVector& rhs_node = *rhs_->ViewComponent("node", true);
         Epetra_MultiVector& diag = *diagonal_->ViewComponent("node", true);
 
@@ -610,6 +615,11 @@ void Operator::ApplyBCs()
         }
       }
     }
+  }
+
+  if (!applied_bc) {
+    msg << "Operator boundary conditions: The only supported schema is CELL.";
+    Exceptions::amanzi_throw(msg);
   }
 
   // Account for the ghosted values

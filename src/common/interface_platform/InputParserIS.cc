@@ -194,6 +194,7 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
 
   phases_.resize(3);
   phases_[0].name = "Aqueous";
+  phases_[1].name = "Gaseous";
 
   // don't know the history of these variables, clear them just to be safe.
   comp_names_.clear();

@@ -38,8 +38,8 @@ The value in the "name" can be anything ("Main" in this example).
 A ParameterList consists of just two types of entries: Parameter and ParameterList.  
 ParameterLists are labeled with a `"name`" [string], while Parameters have a separate 
 fields for `"name`" [string], `"type`" [string] and `"value`" [TYPE], where "TYPE" can 
-be any of the following: double, float, short, int, bool, string, Array(double), Array(float), 
-Array(short), Array(int), Array(bool), Array(string).  
+be any of the following: double, int, bool, string, Array(double), Array(int), 
+Array(bool), Array(string).  
 The value of the parameter is given in quotes (e.g. "2.7e3").  
 Array data is specified as a single comma-deliminated string bounded by {}'s (e.g. "{2.4, 2.1, 5.7}").
 
@@ -51,63 +51,67 @@ Array data is specified as a single comma-deliminated string bounded by {}'s (e.
   </ParameterList>
 
 In this example, the sublist "Main" has a parameter named "cfl" that is a "double" and has 
-the value of 0.9, and a Array<int> parameter named "ratio" such that ratio[0] = 2, 
+the value of 0.9, and a Array(int) parameter named "ratio" such that ratio[0] = 2, 
 ratio[1]=1, and ratio[2]=4.
 
 
 Syntax of the Specification
 ===========================
 
-* Input specification for each ParameterList entry consists of two parts.  
-  First, a bulleted list defines the usage syntax and available options.  
-  This is followed by example snippets of XML code to demonstrate usage.
+Input specification for each ParameterList entry consists of two parts.  
+First, a bulleted list defines the usage syntax and available options.  
+This is followed by example snippets of XML code to demonstrate usage.
 
-* In many cases, the input specifies data for a particular parameterized model, and Amanzi 
-  supports a number of parameterizations.  
-  For example, initial data might be uniform (the value is required), or linear in y (the value 
-  and its gradient are required).  
-  Where Amanzi supports a number of parameterized models for quantity Z, the available 
-  models will be listed by name, and then will be described in the subsequent section.  
-  For example, the specification might begin with the following:
+In many cases, the input specifies data for a particular parameterized model, and Amanzi 
+supports a number of parameterizations.  
+For example, initial data might be uniform (the value is required), or linear in y (the value 
+and its gradient are required).  
+Where Amanzi supports a number of parameterized models for quantity `"model`", the available 
+models will be listed by name, and then will be described in the subsequent section.  
+In the manufactured example below, the specification looks as follows:
 
-  * `"X`" [list] 
+  * SOIL [list] 
 
-  * `"Y`" [string]
+    * `"region`" [string]
 
-  * Z [list] Model for Z, choose exactly one of the following: (1) `"Z: z1`", or (2) `"Z: z2`" (see below) 
+    * `"model`" [list] Model for soil, choose exactly one of the following: (1) `"van Genuchten`" or (2) `"Brooks-Corey`" (see below) 
 
-Let an `"X`" is defined by a `"Y`" and a `"Z`".  
-The `"Y`" is a string parameter but the `"Z`" is given by a model (which will require its own set of parameters).
-The options for `"Z`" will then be described:
+Here SOIL is defined by a `"region`" and a `"model`".  
+The `"region`" is a string parameter but the `"model`" is given by a model (which will 
+require its own set of parameters).
+The options for `"model`" will then be described:
 
- * `"Z: z1`" applies model z1.  Requires `"z1a`" [string]
+ * `"van Genuchten`" applies van Genuchten model. Requires `"m`" [double]
 
- * `"Z: z2`" applies model z2.  Requires `"z2a`" [double] and `"z2b`" [int]
+ * `"Brooks-Corey`" applies Brooks-Corey model.  Requires `"lambda`" [double] and `"alpha`" [double]
 
 An example of using such a specification:
 
 .. code-block:: xml
 
-    <ParameterList name="X">
-      <Parameter name="Y" type="string" value="hello"/>
-      <ParameterList name="Z: z2">
-        <Parameter name="z2a" type="double" value="0.7"/>
-        <Parameter name="z2b" type="int" value="3"/>
+    <ParameterList name="SOIL">
+      <Parameter name="region" type="string" value="TOP_DOMAIN"/>
+      <ParameterList name="Brooks-Corey">
+        <Parameter name="lambda" type="double" value="0.7"/>
+        <Parameter name="alpha" type="double" value="1e-3"/>
       </ParameterList>   
     </ParameterList>   
  
-Here, the user is defining X with Y="hello", and Z will be a z2 constructed with z2a=0.7 and z2b=3.
+Here, the user defines soil properties in region TOP_DOMAIN usign
+Brocks-Corey model with parameters `"lambda=0.7`" and `"alpha=1e-3`".
 
 Conventions:
 
-* Reserved keywords and labels are `"quoted and italicized`" -- these labels or values of parameters in user-generated input files must match (using XML matching rules) the specified or allowable values.  User-defined labels are indicated with ALL-CAPS, and are meant to represent a typical name given by a user - these can be names or numbers or whatever serves best the organization of the user input data.
+* Reserved keywords and labels are `"quoted and italicized`" -- these labels or values of parameters 
+  in user-generated input files must match (using XML matching rules) the specified or allowable values.
 
-* Where applicable, the relevant section of the MRD is referred to by section or chapter number in parentheses.
+* User-defined labels are indicated with ALL_CAPS, and are meant to represent a typical name given by 
+  a user - these can be names or numbers or whatever serves best the organization of the user input data.
 
 
 
-MPC
-===
+MultiProcess Coordinator
+========================
 
 The MPC stands for MultiProcess Coordinators.
 In the MPC sublist the user specifies which process kernels are on or off, which 
@@ -115,31 +119,32 @@ flow model is active, and the time integration mode that the MPC should run in.
 
 To turn a particular process kernel on or off use these options:
 
- * `"disable Transport_PK`" [string], valid options are `"yes`" or `"no`".
+ * `"disable Transport_PK`" [string] Valid options are `"yes`" or `"no`".
 
- * `"disable Flow_PK`" [string], valid options are `"yes`" or `"no`".
+ * `"disable Flow_PK`" [string]  Valid options are `"yes`" or `"no`".
 
- * `"Chemistry Model`" [string], valid options are `"On`", `"Off`", or `"Alquimia`".
+ * `"Chemistry Model`" [string] Valid options are `"On`", `"Off`", or `"Alquimia`".
 
 To select a particular flow model, use this option:
 
- * `"Flow model`" [string], valid options are `"Darcy`", `"Steady State Saturated`" 
+ * `"Flow model`" [string] Valid options are `"Darcy`", `"Steady State Saturated`" 
    (both will cause the instantiation of a Darcy_PK process kernel), `"Richards`", 
    `"Steady State Richards`" (both will cause the instantiation of a Richards_PK 
    process kernel.
 
 The following parameters control MPC options related to particular process kernels:
 
- * `"transport subcycling`" [bool], default is `"false`".
+ * `"transport subcycling`" [bool]  Default value is `"false`".
 
- * `"max chemistry to transport time step ratio`" [double], default is 1.0.
+ * `"max chemistry to transport time step ratio`" [double]  Default value is 1.0.
 
- * `"time integration rescue reduction factor`" [double], default is 0.5.
+ * `"time integration rescue reduction factor`" [double]  Default value is 0.5.
 
-Time Integration Mode
+
+Time integration mode
 ---------------------
 
-The MPC list must have a sublist `"Time Integration Mode`" if flow is enabled.
+The list `"MPC`" must have a sublist `"Time Integration Mode`" if flow is enabled.
 This sublist must have exactly one of the following three sublists: `"Steady`",
 `"Initialize To Steady`", `"Transient with Static Flow`", or `"Transient`". 
 The first one is used to find a steady-state solution and terminate the simulation. 
@@ -196,7 +201,7 @@ During initialization the flow field is set in one of two ways:
 (1) A constant Darcy velocity is specified in the initial condition; 
 (2) Boundary conditions for the flow (e.g., pressure), along with the 
 initial condition for the pressure field are used to solve for the Darcy velocity. 
-At present this mode only supports the "Single Phase" flow model.
+At present this mode only supports the `"Single Phase`" flow model.
 
 .. code-block:: xml
 
@@ -204,14 +209,17 @@ At present this mode only supports the "Single Phase" flow model.
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Transient With Static Flow">
         <Parameter name="Start" type="double" value="0.0"/>
-        <Parameter name="End" type="double" value="5.0"/>
+        <Parameter name="End" type="double" value="1e+8"/>
         <Parameter name="Initial Time Step" type="double" value="0.1"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
+Here, we start simulation at time `"Start=0`" and run it for 100 million seconds.
+The initial time step is 0.1 seconds.
 
-Restart from Checkpoint Data File
+
+Restart from checkpoint data file
 ---------------------------------
 
 A user may request a restart from a Checkpoint Data file by including the MPC sublist 
@@ -223,25 +231,27 @@ terminated because its allocation of time ran out.
 
 * `"Restart from Checkpoint Data File`" [list]
 
-  * `"Checkpoint Data File Name`" [string] file name of the specific Checkpoint Data file to restart from
+  * `"Checkpoint Data File Name`" [string] File name of the specific checkpoint data file to restart from.
 
-  * `"initialize from checkpoint data file and do not restart`" [bool] (optional) If this is set to false (default), then a restart is performed, if it is set to true, then all fields are initialized from the checkpoint data file.
+  * `"initialize from checkpoint data file and do not restart`" [bool] (optional) If this is set to false 
+    (default), then a restart is performed, if it is set to true, then all fields are initialized from 
+    the checkpoint data file.
 
 .. code-block:: xml
   
   <ParameterList name="MPC">
     ...
     <ParameterList name="Restart from Checkpoint Data File">
-      <Parameter name="Checkpoint Data File Name" type="string" value="chk00123.h5"/>
+      <Parameter name="Checkpoint Data File Name" type="string" value="CHECK00123.h5"/>
     </ParameterList>
     ...
   </ParameterList>
 
 
-In this example, Amanzi is restarted with all state data initialized from the Checkpoint 
-Data file named chk00123.h5. All other initialization of field variables that might be called 
+In this example, Amanzi is restarted with all state data initialized from file
+CHECK00123.h5. All other initialization of field variables that might be called 
 out in the input file is ignored.  Recall that the value for the current time and current cycle
-is read from the checkpoint. 
+is read from the checkpoint file.
 
 
 Example for a complete MPC list
@@ -255,9 +265,9 @@ The following is an example of a complete MPC list:
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
-        <Parameter name="Switch" type="double" value="0.5"/>
-        <Parameter name="End" type="double" value="5.0"/>
-        <Parameter name="Steady Initial Time Step" type="double" value="0.1"/>
+        <Parameter name="Switch" type="double" value="1e+8"/>
+        <Parameter name="End" type="double" value="1e+10"/>
+        <Parameter name="Steady Initial Time Step" type="double" value="1.0"/>
         <Parameter name="Transient Initial Time Step" type="double" value="0.1"/>
       </ParameterList>
     </ParameterList>
@@ -282,8 +292,7 @@ Such a sublist can be added safely to various sublists of an XML file.
 State
 =====
 
-Sublist `"State`" allows the user to initialize physical fields using a variety of 
-tools. 
+List `"State`" allows the user to initialize physical fields using a variety of tools. 
 
 .. code-block:: xml
 
@@ -1120,31 +1129,32 @@ The remaining `"Flow`" parameters are
 
 
 
-Transport
-=========
+Transport PK
+============
 
+The transport component of Amanzi performs advection of aqueous and gaseous
+components and their dispersion and diffusion. 
 The main parameters control temporal stability, spatial 
 and temporal accuracy, and verbosity:
 
-* `"cfl`" [double] time step limiter, a number less than 1 with default of 1.
+* `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
    
-* `"spatial discretization order`" [int] the order of the spatial discretization, either
-  1 or 2. The default is 1. 
+* `"spatial discretization order`" [int] Defines accuracy of spartial dscretization.
+  It allows values 1 or 2. Default value is 1. 
   
-* `"temporal discretization order`" [int] the order of temporal discretization, either
-  1 or 2. The default is 1.
+* `"temporal discretization order`" [int] Defines accuracy of temporal discretization.
+  It allows values 1 or 2. Default value is 1.
 
-* `"solver`" [string] specifies the dispersion/diffusion solver.
+* `"solver`" [string] Specifies the dispersion/diffusion solver.
 
-* `"number of aqueous components`" [int] the total number of aqueous components. 
-  Default is the total number of components.
+* `"number of aqueous components`" [int] Define the total number of aqueous components. 
+  Default value is the total number of components.
 
-* `"number of gaseous components`" [int] the total number of gaseous components. 
-  Default is zero.
+* `"number of gaseous components`" [int] Define the total number of gaseous components. 
+  Default value is 0.
    
-* `"VerboseObject`" [list] defines default verbosity level for the process kernel.
-  If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
-  See an example under `"Flow`".
+* `"VerboseObject`" [list] Defines verbosity level for the process kernel.
+  Default value is `"medium`".
 
 .. code-block:: xml
 
@@ -1154,7 +1164,7 @@ and temporal accuracy, and verbosity:
      <Parameter name="temporal discretization order" type="int" value="1"/>
      <Parameter name="advection limiter" type="string" value="Tensorial"/>
 
-     <Parameter name="solver" type="string" value="DISPERSIVE SOLVER"/>
+     <Parameter name="solver" type="string" value="PCG_SOLVER"/>
 
      <ParameterList name="VerboseObject">
        <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -1164,19 +1174,28 @@ and temporal accuracy, and verbosity:
 
 Material properties
 -------------------
-The material properties includes dispersivity model and diffusion parameters 
-for aqueous sand gaseous phases.
+The material properties include dispersivity model and diffusion parameters 
+for aqueous and gaseous phases.
 Two dispersivity models have been implemented: `"isotropic`" and `"Bear`". 
-The anisotropic model `"Lichtner`" is pending for a more detailed 
-description in the Process Models document.
-The dispersivity data live of materials. 
-The diffusion data are related to solutes.
+The dispersivity is defined as a soil property. 
+The diffusivity is defined independently for each solute.
+
+* SOIL [list] Defines material properties.
+  
+  * `"region`" [Array(string)] Defines geometric regions for material SOIL.
+  * `"model`" [string] Defines dispersivity model, choose eactly one of the following `"isotropic`" or `"Bear`".
+  * `"alphaL`" [double] Defines dispersion in the direction of Darcy velocity.
+  * `"alphaT`" [double] Defines dispersion in the orthogonal directions.
+  * `"aqueous tortuosity`" [double] Defines tortuosity for calculating diffusivity of liquid solutes.
+  * `"gaseous tortuosity`" [double] Defines tortuosity for calculating diffusivity of gas solutes.
+ 
+Three examples are below:
 
 .. code-block:: xml
 
    <ParameterList name="material properties">
      <ParameterList name="WHITE SOIL">
-       <Parameter name="regions" type="Array(string)" value="{top region, bottom region}"/>
+       <Parameter name="regions" type="Array(string)" value="{TOP_REGION, BOTTOM_REGION}"/>
        <Parameter name="model" type="string" value="Bear"/>
        <Parameter name="alphaL" type="double" value="1e-2"/>
        <Parameter name="alphaT" type="double" value="1e-5"/>
@@ -1185,7 +1204,7 @@ The diffusion data are related to solutes.
      </ParameterList>  
      
      <ParameterList name="GREY SOIL">
-       <Parameter name="regions" type="Array(string)" value="{middle region}"/>
+       <Parameter name="regions" type="Array(string)" value="{MIDDLE_REGION}"/>
        <Parameter name="model" type="string" value="Bear"/>
        <Parameter name="alphaL" type="double" value="1e-2"/>
        <Parameter name="alphaT" type="double" value="1e-5"/>
@@ -1193,6 +1212,12 @@ The diffusion data are related to solutes.
        <Parameter name="gaseous tortuosity" type="double" value="1.0"/>       
      </ParameterList>  
    </ParameterList>  
+
+
+* `"molecular diffusion`" [list] Defines names of solutes in aqueous and gaseous phases and related
+  diffusivity values.
+
+.. code-block:: xml
 
    <ParameterList name="molecular diffusion">
      <Parameter name="aqueous names" type=Array(string)" value="{Tc-98,Tc-99}"/>
@@ -1212,17 +1237,32 @@ is used. Note that the boundary condition is set up separately for each componen
 The structure of boundary conditions is aligned with that used for Flow and
 allows us to define spatially variable boundary conditions. 
 
+* `"boundary conditions`" [list]
+
+ * `"concentration`" [list] This is a reserved keyword.
+   
+  * "COMP" [list] Contains a few sublists (e.g. BC_1, BC_2) for boundary conditions.
+ 
+    * "BC_1" [list] Defines boundary conditions using arrays of boundary regions and attached
+      functions.
+   
+     * `"regions`" [Array(string)] Defines a list of boundary regions where a boundary condition
+       must be applied.
+     * `"boundary concentration`" [list] Define a function for calculating boundary conditions.
+       The function specification is described in subsection Functions.
+
+The example below sets constant boundary condtion 1e-5 for the duration of transient simulation.
+
 .. code-block:: xml
 
    <ParameterList name="boundary conditions">
      <ParameterList name="concentration">
        <ParameterList name="H+"> 
          <ParameterList name="EAST CRIB">   <!-- user defined name -->
-           <Parameter name="regions" type="Array(string)" value="{Top, Bottom}"/>
-             <ParameterList name="boundary concentration">
-               <ParameterList name="function-constant">  <!-- any time function -->
-                 <Parameter name="value" type="double" value="0.0"/>
-               </ParameterList>
+           <Parameter name="regions" type="Array(string)" value="{TOP, LEFT}"/>
+           <ParameterList name="boundary concentration">
+             <ParameterList name="function-constant">  <!-- any time function -->
+               <Parameter name="value" type="double" value="1e-5"/>
              </ParameterList>
            </ParameterList>
          </ParameterList>
@@ -1246,38 +1286,54 @@ but require special treatment.
    <ParameterList name="boundary conditions">
      <ParameterList name="geochemical conditions">
        <ParameterList name="EAST CRIB">   <!-- user defined name -->
-         <Parameter name="regions" type="Array(string)" value="{Crib1}"/>
+         <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
 
 
-Sources and Sinks
+Sources and sinks
 -----------------
 
 The external sources are typically located at pumping wells. The structure
-of sublist `"source terms`" includes only sublists named after components. 
+of list `"source terms`" includes only sublists named after components. 
 Again, constant functions can be replaced by any available time-function.
 Note that the source values are set up separately for each component.
 
-* `"spatial distribution method`" [string] identifies a method for distributing
-  source Q over the specified regions. The available options are `"volume`",
-  `"none`", and `"permeability`". For option `"none`" the source term Q is measured
-  in [mol/m^3/s]. For the other options, it is measured in [mol/s]. When the source function
-  is defined over a few regions, Q will be distributed independently over each region.
-  Default is `"none`".
+* `"concentration`" [list] This is a reserved keyword.
+
+ * "COMP" [list] Contains a few sublists (e.g. SRC_1, SRC_2) for multile sources and sinks.
+
+  * "SRC_1" [list] Defines a source using arrays of domain regions, a function, and 
+    a distribution method.
+   
+   * `"regions`" [Array(string)] Defines a list of domain regions where a source term
+     must be applied.
+
+   * `"sink`" [list] Define a function for calculating a source term.
+     The function specification is described in subsection Functions.
+
+    * `"spatial distribution method`" [string] identifies a method for distributing
+      source Q over the specified regions. The available options are `"volume`",
+      `"none`", and `"permeability`". For option `"none`" the source term Q is measured
+      in [mol/m^3/s]. For the other options, it is measured in [mol/s]. When the source function
+      is defined over a few regions, Q will be distributed independently over each region.
+      Default value is `"none`".
+
+This example defines one well and one sink.
 
 .. code-block:: xml
 
      <ParameterList name="source terms">
        <ParameterList name="concentration">
          <ParameterList name="H+"> 
-           <ParameterList name="source for east well">   <!-- user defined name -->
-	     <Parameter name="regions" type="Array(string)" value="{Well east}"/>
+           <ParameterList name="SOURCE: EAST WELL">   <!-- user defined name -->
+	     <Parameter name="regions" type="Array(string)" value="{EAST_WELL}"/>
              <Parameter name="spatial distribution method" type="string" value="volume"/>
              <ParameterList name="sink">   <!-- keyword, do not change -->
-             <ParameterList name="function-constant">
-               <Parameter name="value" type="double" value="-0.01"/>
+               <ParameterList name="function-constant">
+                 <Parameter name="value" type="double" value="-0.01"/>
+               </ParameterList>
              </ParameterList>
            </ParameterList>
            <ParameterList name="source for west well">
@@ -1285,13 +1341,14 @@ Note that the source values are set up separately for each component.
            </ParameterList>
          </ParameterList>
      
-         <ParameterList name="Sugar syrop">   <!-- next component name -->
-           <ParameterList name="source for west well">   <!-- user defined name -->
-             <Parameter name="regions" type="Array(string)" value="{Well west}"/>
+         <ParameterList name="CO2(g)">   <!-- next component, a gas -->
+           <ParameterList name="SOURCE: WEST WELL">   <!-- user defined name -->
+             <Parameter name="regions" type="Array(string)" value="{WEST_WELL}"/>
              <Parameter name="spatial distribution method" type="string" value="permeability"/>
              <ParameterList name="sink">  
                <ParameterList name="function-constant">
-               <Parameter name="value" type="double" value="-0.02"/>
+                 <Parameter name="value" type="double" value="0.02"/>
+               </ParameterList>
              </ParameterList>
            </ParameterList>
          </ParameterList>
@@ -1302,7 +1359,7 @@ Note that the source values are set up separately for each component.
 Other parameters
 -----------------
 
-The other parameters useful for developers are:
+The other parameters that can be used by developers include
 
 * `"enable internal tests`" [string] various internal tests will be executed during
   the run time. The default value is `"no`".
@@ -1431,7 +1488,7 @@ Each function is defined by a list:
     function-specification
   </ParameterList>
 
-The parameter list name string `"NAME`" is arbitrary and meaningful only to the
+The parameter list name string NAME is arbitrary and meaningful only to the
 parent parameter list.
 This list is given as input to the Amanzi::FunctionFactory::Create
 method which instantiates a new Amanzi::Function object.
