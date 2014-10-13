@@ -225,7 +225,7 @@ Usage:
 
    * [SU] `"Maximum Cycle Number`" [int]: (Optional) The maximum allowed cycle number.
 
-  * [U] `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
+  * [SU] `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
 
    * [SU] `"Start`" [double]: Initial value for time to generate a steady solution
 
@@ -761,7 +761,7 @@ using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`
 
 User-defined regions are constructed using the following syntax
 
- * [U][S] "Regions" [list] can accept a number of lists for named regions (REGION)
+ * [SU] "Regions" [list] can accept a number of lists for named regions (REGION)
 
    * Shape [list] Geometric model primitive, choose exactly one of the
      following [see table below]: `"Region: Point`", `"Region: Box`",
@@ -769,43 +769,43 @@ User-defined regions are constructed using the following syntax
 
 Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex definitions based on triangulated surface files.  
 
-+----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-|  shape functional name           | parameters                              | type(s)                      | Comment                                                                |
-+==================================+=========================================+==============================+========================================================================+
-| `"Region: Point"`  [SU]          | `"Coordinate`"                          | Array(double)                | Location of point in space                                             |
-+----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Box"` [SU]             | `"Low Coordinate`", `"High Coordinate`" | Array(double), Array(double) | Location of boundary points of box                                     |
-+----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Plane"`  [SU]          | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
-+----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Polygonal Surface"` [U]| `"Number of points`", `"Points`"        | int, Array(double)           | Number of polygon points and point coordinates in linear array. This   |
-|                                  |                                         |                              | provides a set of faces with a normal for computing flux               |    
-+----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Polygon"`  [S]         |                                         | Array(double), Array(double) | V1=(x1,x2,...) and V2=(y1,y2,...) coordinates of an ordered sequence of|
-|       (2D-only)                  | `"VerticesV1`", `"VerticesV2`"          |                              | points (x1,y1), (x2,y2),... defining a polygon.                        |
-|                                  |                                         |                              | The first and last points are connected.                               |    
-+----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Ellipse"`  [S]         | `"Center`", `"Radius`"                  | Array(double), Array(double) | Coordinate (x,y,z), of center, and radii (rx, ry) of an ellipse        |
-|       (2D-only)                  |                                         |                              | in the plane.                                                          |    
-+----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Rotated Polygon"`  [S] |                                         | Array(double), Array(double),| V1=(x1,x2,...) and V2=(y1,y2,...) coordinates of an ordered sequence of|
-|  (3D-only)                       | `"VerticesV1`", `"VerticesV2`",         | string, string, Array(double)| points (x1,y1), (x2,y2),... defining a polygon in the specified plane  |
-|                                  | `"Plane`", `"Axis`", `"Reference Point`"|                              | (`"XY`", `"YZ`", `"XZ`"), rotated about the                            |
-|                                  |                                         |                              | given axis (`"X`", `"Y`", `"Z`") that is located at the given          |
-|                                  |                                         |                              | reference point, (x,y,z).                                              |
-+----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Swept Polygon"`  [S]   | `"VerticesV1`", `"VerticesV2`",         | Array(double), Array(double),| V1=(x1,x2,...) and V2=(y1,y2,...) coordinates of an ordered sequence of|
-|  (3D-only)                       | `"Plane`", `"Extent`"                   | string, Array(double)        | points (x1,y1), (x2,y2),... defining a polygon in the specified plane  |
-|                                  |                                         |                              | (`"XY`", `"YZ`", `"XZ`"), and swept over the extent, (min, max) in the |
-|                                  |                                         |                              | direction normal to the plane                                          |
-+----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Logical"` [U]          | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
-+----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Labeled Set"` [U]      | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
-|                                  | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
-+----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Color Function"` [SU]  | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
-+----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
++-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+|  shape functional name            | parameters                              | type(s)                      | Comment                                                                |
++===================================+=========================================+==============================+========================================================================+
+| `"Region: Point"`  [SU]           | `"Coordinate`"                          | Array(double)                | Location of point in space                                             |
++-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Box"` [SU]              | `"Low Coordinate`", `"High Coordinate`" | Array(double), Array(double) | Location of boundary points of box                                     |
++-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Plane"`  [SU]           | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
++-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Polygonal Surface"` [SU]| `"Number of points`", `"Points`"        | int, Array(double)           | Number of polygon points and point coordinates in linear array. This   |
+|                                   |                                         |                              | provides a set of faces with a normal for computing flux               |    
++-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Polygon"`  [S]          |                                         | Array(double), Array(double) | V1=(x1,x2,...) and V2=(y1,y2,...) coordinates of an ordered sequence of|
+|       (2D-only)                   | `"VerticesV1`", `"VerticesV2`"          |                              | points (x1,y1), (x2,y2),... defining a polygon.                        |
+|                                   |                                         |                              | The first and last points are connected.                               |    
++-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Ellipse"`  [S]          | `"Center`", `"Radius`"                  | Array(double), Array(double) | Coordinate (x,y,z), of center, and radii (rx, ry) of an ellipse        |
+|       (2D-only)                   |                                         |                              | in the plane.                                                          |    
++-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Rotated Polygon"`  [S]  |                                         | Array(double), Array(double),| V1=(x1,x2,...) and V2=(y1,y2,...) coordinates of an ordered sequence of|
+|  (3D-only)                        | `"VerticesV1`", `"VerticesV2`",         | string, string, Array(double)| points (x1,y1), (x2,y2),... defining a polygon in the specified plane  |
+|                                   | `"Plane`", `"Axis`", `"Reference Point`"|                              | (`"XY`", `"YZ`", `"XZ`"), rotated about the                            |
+|                                   |                                         |                              | given axis (`"X`", `"Y`", `"Z`") that is located at the given          |
+|                                   |                                         |                              | reference point, (x,y,z).                                              |
++-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Swept Polygon"`  [S]    | `"VerticesV1`", `"VerticesV2`",         | Array(double), Array(double),| V1=(x1,x2,...) and V2=(y1,y2,...) coordinates of an ordered sequence of|
+|  (3D-only)                        | `"Plane`", `"Extent`"                   | string, Array(double)        | points (x1,y1), (x2,y2),... defining a polygon in the specified plane  |
+|                                   |                                         |                              | (`"XY`", `"YZ`", `"XZ`"), and swept over the extent, (min, max) in the |
+|                                   |                                         |                              | direction normal to the plane                                          |
++-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Logical"` [SU]          | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
++-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Labeled Set"` [U]       | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
+|                                   | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
++-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Color Function"` [SU]   | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
++-----------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 
 Notes
 
@@ -963,7 +963,7 @@ the following set of physical properties using the supported models described be
 
  * [SU] MATERIAL [list] can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
 
-  The flow related matrial properties *Intrinsic Permeability* or *Hydraulic Conductivity* must be specified, but not both:  
+  The flow related material properties *Intrinsic Permeability* or *Hydraulic Conductivity* must be specified, but not both:  
 
   * [SU] Intrinsic Permeability [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`" (see below)
 
@@ -973,13 +973,13 @@ the following set of physical properties using the supported models described be
 
   * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" (see below)
 
-  * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or [U only] `"Brooks Corey`" (see below)
+  * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or `"Brooks Corey`"
 
-  * [U] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
+  * [SU] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
 
-  * [U] Specific Storage [list] Parameterized model for Specific Storage [L^-1]. Choose exactly one of the following: `"Specific Storage: Uniform`".
+  * [SU] Specific Storage [list] Parameterized model for Specific Storage [L^-1]. Choose exactly one of the following: `"Specific Storage: Uniform`".
 
-  * [U] Specific Yield [list] Parameterized model for Specific Yield [-]. Choose exactly one of the following: `"Specific Yield: Uniform`".
+  * [SU] Specific Yield [list] Parameterized model for Specific Yield [-]. Choose exactly one of the following: `"Specific Yield: Uniform`".
 
   Material properties related to transport (dispersion and diffusion):
 
@@ -1080,49 +1080,49 @@ The following models are currently supported for capillary pressure (Section 3.3
 
  * [SU] `"m`" [double] to specify m in Equation 3.7.
 
- * [U] `"ell`" [double] ''l'' in Equation 3.11 (default = 0.5)
+ * [SU] `"ell`" [double] ''l'' in Equation 3.11 (default = 0.5)
 
  * [SU] `"Relative Permeability`" [string] (either (0) [U] `"Burdine`", or (2) [SU] `"Mualem`") determines n
    in Equation 3.10, and the form of relative permeability (either Equation 3.12, or Equation 3.11, respectively).
 
- * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing.  
+ * [SU] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing.  
 
- * [] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
+ * [S] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
 
- * [] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
+ * [S] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
 
-* [U] `"Capillary Pressure: Brooks Corey`" [list] requires
+* [SU] `"Capillary Pressure: Brooks Corey`" [list] requires
 
- * [U] `"lambda`" [double] to specify lambda in Equation 3.9
+ * [SU] `"lambda`" [double] to specify lambda in Equation 3.9
 
- * [U] `"alpha`" [double]  to specify alpha in Equation 3.9 
+ * [SU] `"alpha`" [double]  to specify alpha in Equation 3.9 
 
- * [U] `"ell`" [double] to specify ''l'' in Equation 3.12 (default is 2.0)
+ * [SU] `"ell`" [double] to specify ''l'' in Equation 3.12 (default is 2.0)
 
- * [U] `"Sr`" [double] to specify residual saturation, s^r_l, in Equation 3.5
+ * [SU] `"Sr`" [double] to specify residual saturation, s^r_l, in Equation 3.5
 
- * [U] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") chooses the form of the
+ * [SU] `"Relative Permeability`" [string] (either (0) `"Burdine`", or (2) `"Mualem`") chooses the form of the
    relative permeability (either Equation 3.15, or Equation 3.14, respectively)
 
- * [U] `"krel smoothing interval`" [double] (default value gives no relative permeability smoothing).
+ * [SU] `"krel smoothing interval`" [double] (default value gives no relative permeability smoothing).
 
- * [] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
+ * [S] `"WRM Plot File`" [string] (Optional) name of ASCII text file to write 3-column, space-delimited data for water saturation, capillary pressure and relative permeability.  If not give, no file is created.  Also, if file exists, it will be overwritten.
 
- * [] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
+ * [S] `"WRM Plot File Number Of Points`" [int] (Optional, defaults to 1000) Number of evaluation points used to create the WRM Plot File, spaced uniformly in saturation between Sr+epsilon and 1.
 
 
 The following models can be specified for particle density (only `"Particle Density: Uniform`" is supported at the moment):
 
-* [U] `"Particle Density: Uniform`" [list] requires 
+* [SU] `"Particle Density: Uniform`" [list] requires 
  
- * [U] `"Value`" [double] to specify the constant value of rock density.
+ * [SU] `"Value`" [double] to specify the constant value of rock density.
 
 
 The following models are currently supported for Specific Yield.
 
-* [U] `"Specific Yield: Uniform`" [list] requires
+* [SU] `"Specific Yield: Uniform`" [list] requires
 
- * [U] `"Value`" [double] to specify specific yield.
+ * [SU] `"Value`" [double] to specify specific yield.
 
 
 The following models are currently supported for Specific Storage.
@@ -1273,9 +1273,9 @@ In order to support the rather general specification requirements (involving com
 
   * [SU] `"Phase Properties`" can accept models for viscosity and density
 
-   * [SU only uniform] Density [list] Parameterized model for phase mass density.  Choose exactly one of the following: `"Density: Uniform`", `"Density: File`" (see below)
+   * [SU] Density [list] Parameterized model for phase mass density.  Choose exactly one of the following: `"Density: Uniform`", `"Density: File`" (see below)
 
-   * [SU only uniform] Viscosity [list] Parameterized model for phase viscosity.  Choose exactly one of the following: `"Viscosity: Uniform`", `"Viscosity: File`" (see below)
+   * [SU] Viscosity [list] Parameterized model for phase viscosity.  Choose exactly one of the following: `"Viscosity: Uniform`", `"Viscosity: File`" (see below)
 
   * [SU] `"Phase Components`" can accept COMP [list] named after a user-defined phase component (e.g., Water).
 
@@ -1321,7 +1321,7 @@ Next, we specify boundary conditions.  Again, support is provided for specifying
 
  * [SU] BC [list] label for a boundary condition, accepts boundary condition function names, and parameters to specify assigned regions and solute boundary conditions
 
-  * [SU see below] Function [list] Parameterized model to specify boundary conditions.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Linear Pressure`", `"BC: Uniform Saturation`", `"BC: Hydrostatic`", `"BC: Linear Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
+  * [SU see below] Function [list] Parameterized model to specify boundary conditions.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Linear Pressure`", `"BC: Hydrostatic`", `"BC: Linear Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
 
   * [SU] `"Assigned Regions`" [Array(string)] list of regions to which this condition is assigned
 
@@ -1335,13 +1335,13 @@ Next, we specify boundary conditions.  Again, support is provided for specifying
 
 Finally, we specify sources.  Support is provided for specifying sources on the aqueous phase (flow), and for the solutes (total component concentration of primary species in reactive transport).
 
-* [U] `"Sources"` [list] accepts labels, SOURCE, of named source specifications
+* [SU] `"Sources"` [list] accepts labels, SOURCE, of named source specifications
 
- * [U] SOURCE [list] label for a source term, accepts source function names, and parameters to specify assigned regions and solute source conditions.
+ * [SU] SOURCE [list] label for a source term, accepts source function names, and parameters to specify assigned regions and solute source conditions.
 
-  * [U] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Uniform`", `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
+  * [SU] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Uniform`", `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
   
-  * [U] `"Assigned Regions`" [Array(string)] list of regions to which this condition is assigned
+  * [SU] `"Assigned Regions`" [Array(string)] list of regions to which this condition is assigned
 
   * `"Solute SOURCE`" can accept PHASE (labels of phases defined above)
 
@@ -1353,15 +1353,15 @@ Finally, we specify sources.  Support is provided for specifying sources on the 
 
 The following initial condition parameterizations are supported:
 
-* [SU] `"IC: Uniform Saturation`" requires `"Value`" [double] OR `"Geochemical Condition`" [string] if Alquimia is providing initial conditions.
+* [U] `"IC: Uniform Saturation`" requires `"Value`" [double] OR `"Geochemical Condition`" [string] if Alquimia is providing initial conditions.
 
 * [U] `"IC: Linear Saturation`" requires `"Reference Point`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
 
-* [U] `"IC: Uniform Pressure`" requires `"Value`" [double]
+* [SU] `"IC: Uniform Pressure`" requires `"Value`" [double]
 
 * [SU] `"IC: Linear Pressure`" requires `"Reference Point`" (Array(double)), `"Reference Value`" [double], and  `"Gradient Value`" (Array(double)) 
 
-* [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array(double)).
+* [SU] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array(double)).
 
 * [SU] `"IC: Uniform Concentration`" [list] requires `"Value`" and `"Free Ion Guess`", OR `"Geochemical Condition`"
 
@@ -1374,11 +1374,11 @@ The following boundary condition parameterizations are supported:
 * [SU] `"BC: Flux`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] 
   (see the note below) and one of the following: 
 
-    * [U]  `"Inward Volumetric Flux`" [Array(double)], 
+    * [SU]  `"Inward Volumetric Flux`" [Array(double)], 
 
     * [SU] `"Inward Mass Flux`" [Array(double)], 
 
-    * [U]  `"Outward Volumetric Flux`" [Array(double)], or
+    * [SU]  `"Outward Volumetric Flux`" [Array(double)], or
 
     * [SU] `"Outward Mass Flux`" [Array(double)]. 
 
@@ -1396,10 +1396,6 @@ The following boundary condition parameterizations are supported:
 * [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
 * [SU] `"BC: Linear Pressure`" [list] requires `"Reference Value`" [double] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
-
-* [S] `"BC: Uniform Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
-
-* `"BC: Linear Saturation`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Reference Values`" [Array(double)] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
 
 * [U] `"BC: Seepage`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and one of `"Inward Mass Flux`" [Array(double)] or `"Inward Volumetric Flux`" [Array(double)].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
     * [U] "rainfall" [bool] indicates that the mass flux is defined with respect
@@ -1425,13 +1421,13 @@ The following boundary condition parameterizations are supported:
 
 The following source parameterizations are supported.
 
-* [U] `"Source: Uniform`" [kg/s/m^3] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [SU] `"Source: Uniform`" [kg/s/m^3] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [U] `"Source: Volume Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [SU] `"Source: Volume Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [U] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [SU] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
 
-* [U] `"Source: Uniform Concentration`" [mol/s/m^3] uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
+* [SU] `"Source: Uniform Concentration`" [mol/s/m^3] uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
 
   * `"Times`" [Array(double)], list of times used by the time function.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
@@ -1665,7 +1661,7 @@ by machine round errors and randomness due to execution in a parallel computing 
 
 Notes:
 
-[U] if only `"File Name Base`" and optionally `"File Name Digits`" are specified then only one checkpoint is
+[SU] if only `"File Name Base`" and optionally `"File Name Digits`" are specified then only one checkpoint is
 written at the end of the simulation.
 
 
@@ -1713,7 +1709,7 @@ at intervals corresponding to the numerical time step values; writes are control
 
 Notes:
 
-[U] If only `"File Name Base`" is specified, an initial and a final visualization dump are written.
+[SU] If only `"File Name Base`" is specified, an initial and a final visualization dump are written.
 
 
 
