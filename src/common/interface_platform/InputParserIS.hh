@@ -124,6 +124,7 @@ class InputParserIS {
  private:
   std::vector<std::string> vv_bc_regions;  // XML verification
   std::vector<std::string> vv_src_regions;
+  std::vector<std::string> vv_obs_regions;
 
  protected:
   VerboseObject* vo_;

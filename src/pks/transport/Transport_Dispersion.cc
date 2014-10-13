@@ -119,7 +119,7 @@ void Transport_PK::CalculateDiffusionTensor_(
 /* ******************************************************************
 * Check all phases for the given name.
 ****************************************************************** */
-int Transport_PK::FindDiffusionValue(const std::string tcc_name, double* md, int* phase)
+int Transport_PK::FindDiffusionValue(const std::string& tcc_name, double* md, int* phase)
 {
   for (int i = 0; i < TRANSPORT_NUMBER_PHASES; i++) {
     if (diffusion_phase_[i] == Teuchos::null) continue;

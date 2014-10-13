@@ -174,7 +174,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
       double md, int phase,
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
-  int FindDiffusionValue(const std::string tcc_name, double* md, int* phase);
+  int FindDiffusionValue(const std::string& tcc_name, double* md, int* phase);
 
   // I/O methods
   void ProcessParameterList();

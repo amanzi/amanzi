@@ -122,10 +122,10 @@ void Transport_PK::ProcessParameterList()
       diffusion_phase_[0]->values() = dlist.get<Teuchos::Array<double> >("aqueous values").toVector();
     }
 
-    if (dlist.isParameter("gas names")) { 
+    if (dlist.isParameter("gaseous names")) { 
       diffusion_phase_[1] = Teuchos::rcp(new DiffusionPhase());
-      diffusion_phase_[1]->names() = dlist.get<Teuchos::Array<std::string> >("gas names").toVector();
-      diffusion_phase_[1]->values() = dlist.get<Teuchos::Array<double> >("gas values").toVector();
+      diffusion_phase_[1]->names() = dlist.get<Teuchos::Array<std::string> >("gaseous names").toVector();
+      diffusion_phase_[1]->values() = dlist.get<Teuchos::Array<double> >("gaseous values").toVector();
     }
   }
 

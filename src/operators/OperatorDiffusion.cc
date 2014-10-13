@@ -337,7 +337,8 @@ void OperatorDiffusion::UpdateMatricesTPFA_()
       Aface(0, 1) = -coef;
       Aface(1, 0) = -coef;
     } else {
-      Aface(0, 0) = 0.0;
+      double coef = 1.0 / Ttmp[0][f];
+      Aface(0, 0) = coef;
     }
 
     if (flag) {

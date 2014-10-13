@@ -437,9 +437,11 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
       op_list.set<Teuchos::Array<std::string> >("schema", stensil);
     }
 
-    // default parameters
+    // default boundary conditions (none inside domain and Neumann on its boundary)
     std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
     std::vector<double> bc_value(nfaces_wghost, 0.0);
+    PopulateBoundaryData(bc_model, bc_value, -1);
+
     Teuchos::RCP<Operators::BCs> bc_dummy = Teuchos::rcp(new Operators::BCs(bc_model, bc_value));
     AmanziGeometry::Point g;
 
@@ -484,12 +486,12 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
         // add boundary conditions and sources for gaseous components
         if (i >= num_aqueous) { 
           PopulateBoundaryData(bc_model, bc_value, i);
-          // op1->ApplyBCs();
 
           Epetra_MultiVector& rhs_cell = *op1->rhs()->ViewComponent("cell");
           double time = T_physics + dT_MPC;
           ComputeAddSourceTerms(time, 1.0, srcs, rhs_cell, i, i);
         }
+        op1->ApplyBCs();
 
         // add accumulation term
         Epetra_MultiVector& fac = *factor.ViewComponent("cell");
@@ -896,6 +898,12 @@ bool Transport_PK::PopulateBoundaryData(
   for (int i = 0; i < bc_model.size(); i++) {
     bc_model[i] = Operators::OPERATOR_BC_NONE;
     bc_value[i] = 0.0;
+  }
+
+  AmanziMesh::Entity_ID_List cells;
+  for (int f = 0; f < nfaces_wghost; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    if (cells.size() == 1) bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
   }
 
   for (int m = 0; m < bcs.size(); m++) {

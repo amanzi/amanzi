@@ -122,7 +122,6 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
 
   UpdateSourceBoundaryData(Tp, *u);
 
-
   // create diffusion operators
   op_preconditioner_->Init();
   op_preconditioner_->UpdateMatrices(darcy_flux_copy, solution);

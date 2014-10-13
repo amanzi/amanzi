@@ -537,7 +537,7 @@ void Operator::ApplyBCs()
     for (int i = n0; i < n1; i++) diag_g[0][i] = 0.0;
   }
 
-  AmanziMesh::Entity_ID_List faces, nodes;
+  AmanziMesh::Entity_ID_List cells, faces, nodes;
 
   int nblocks = blocks_.size();
   for (int nb = 0; nb < nblocks; nb++) {
@@ -611,6 +611,27 @@ void Operator::ApplyBCs()
               rhs_node[0][v] = value;
               diag[0][v] = 1.0;
             }
+          }
+        }
+      }
+    } else if (schema & OPERATOR_SCHEMA_BASE_FACE) {
+      if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
+        applied_bc = true;
+        Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
+
+        for (int f = 0; f < nfaces_owned; f++) {
+          WhetStone::DenseMatrix& Aface = matrix[f];
+
+
+          if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
+            mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+            rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
+          }
+          else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) {
+            mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+            rhs_cell[0][cells[0]] -= bc_value[f] * mesh_->face_area(f);
+            Aface *= 0.0;
+            matrix_shadow[f] = Aface;
           }
         }
       }

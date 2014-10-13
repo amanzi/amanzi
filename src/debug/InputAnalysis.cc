@@ -49,7 +49,7 @@ void InputAnalysis::RegionAnalysis()
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
         name.resize(std::min(40, (int)name.size()));
-        *vo_->os() << "region: \"" << name << "\" with " << nblock << " cells" << std::endl;
+        *vo_->os() << "src region: \"" << name << "\" with " << nblock << " cells" << std::endl;
       }
 
       if (nblock == 0) {
@@ -75,15 +75,48 @@ void InputAnalysis::RegionAnalysis()
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
         name.resize(std::min(40, (int)name.size()));
-        *vo_->os() << "region: \"" << name << "\" with " << nblock << " faces" << std::endl;
+        *vo_->os() << "bc region: \"" << name << "\" with " << nblock << " faces" << std::endl;
       }
 
       if (nblock == 0) {
         msg << "Used boundary condition region is empty.";
         Exceptions::amanzi_throw(msg);
       } 
-      // AmanziMesh::Entity_ID_List::iterator i;
-      // for (i = block.begin(); i != block.end(); i++) {};
+    }
+  }
+
+  if (alist.isParameter("used observation regions")) {
+    std::vector<std::string> regions = alist.get<Teuchos::Array<std::string> >("used observation regions").toVector();
+
+    for (int i = 0; i < regions.size(); i++) {
+      AmanziMesh::Entity_ID_List block;
+      if (mesh_->valid_set_name(regions[i], AmanziMesh::FACE)) {
+        mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &block);
+      } 
+      else if (mesh_->valid_set_name(regions[i], AmanziMesh::CELL)) {
+        mesh_->get_set_entities(regions[i], AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+      } 
+      else {
+        std::string name(regions[i]);
+        name.resize(std::min(40, (int)name.size()));
+        *vo_->os() << "obs region: \"" << name << "\" has unknown type." << std::endl;
+      }
+      int nblock = block.size();
+#ifdef HAVE_MPI
+      int nblock_tmp = nblock;
+      mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
+#endif
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+        std::string name(regions[i]);
+        name.resize(std::min(40, (int)name.size()));
+        *vo_->os() << "obs region: \"" << name << "\" with " << nblock << " cells" << std::endl;
+      }
+
+      if (nblock == 0) {
+        msg << "Used observation region is empty.";
+        Exceptions::amanzi_throw(msg);
+      } 
     }
   }
 }

@@ -262,6 +262,7 @@ Teuchos::ParameterList InputParserIS::CreateObservationDataList_(Teuchos::Parame
             std::string name = obs_list.sublist(i->first).get<std::string>("Region");
             obs_list.sublist(i->first).set<std::string>("region", name);
             obs_list.sublist(i->first).remove("Region");
+            vv_obs_regions.push_back(name);
           }
           if (obs_list.sublist(i->first).isParameter("Variable")) {
             std::string name = obs_list.sublist(i->first).get<std::string>("Variable");
