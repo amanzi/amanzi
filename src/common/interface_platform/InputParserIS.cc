@@ -177,9 +177,16 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
     }
   }
 
-  Teuchos::ParameterList vo_list = CreateVerbosityList_(verbosity_level);
+  Teuchos::ParameterList vo_list;
+  vo_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
   vo_ = new VerboseObject("InputParser1.2.3", vo_list); 
+
   Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    *vo_->os() << "verbosity level=" <<  vo_->getVerbLevel()
+               << " (low=" << Teuchos::VERB_LOW 
+               << ", ..., extreme=" << Teuchos::VERB_EXTREME << ")" << std::endl;
+  }
 
   // check if Transport is Off
   std::string transport_model = plist->sublist("Execution Control").get<std::string>("Transport Model");
@@ -187,6 +194,7 @@ void InputParserIS::InitGlobalInfo_(Teuchos::ParameterList* plist)
 
   phases_.resize(3);
   phases_[0].name = "Aqueous";
+  phases_[1].name = "Gaseous";
 
   // don't know the history of these variables, clear them just to be safe.
   comp_names_.clear();
@@ -338,6 +346,9 @@ Teuchos::ParameterList InputParserIS::CreateAnalysisList_()
   Teuchos::ParameterList alist;
   alist.set<Teuchos::Array<std::string> >("used boundary condition regions", vv_bc_regions);
   alist.set<Teuchos::Array<std::string> >("used source regions", vv_src_regions);
+  alist.set<Teuchos::Array<std::string> >("used observation regions", vv_obs_regions);
+
+  alist.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
   return alist;
 }
 

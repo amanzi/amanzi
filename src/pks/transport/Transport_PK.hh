@@ -108,10 +108,13 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
 
-  // sources and sinks
+  // sources and sinks for components from n0 to n1 including
   void ComputeAddSourceTerms(double Tp, double dTp, 
                              std::vector<TransportDomainFunction*>& src_sink, 
-                             Epetra_MultiVector& tcc);
+                             Epetra_MultiVector& tcc, int n0, int n1);
+
+  bool PopulateBoundaryData(std::vector<int>& bc_model,
+                            std::vector<double>& bc_value, int component);
 
   // limiters 
   void LimiterBarthJespersen(const int component,
@@ -171,7 +174,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
       double md, int phase,
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
-  int FindDiffusionValue(const std::string tcc_name, double* md, int* phase);
+  int FindDiffusionValue(const std::string& tcc_name, double* md, int* phase);
 
   // I/O methods
   void ProcessParameterList();

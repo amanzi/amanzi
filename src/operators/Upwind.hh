@@ -42,7 +42,7 @@ class Upwind {
   void Compute(const CompositeVector& flux,
                const std::vector<int>& bc_model, const std::vector<double>& bc_value,
                const CompositeVector& field, CompositeVector& field_upwind,
-	       const std::string name);
+	       const std::string& name);
 
  protected:
   Teuchos::RCP<VerboseObject> vo_;
@@ -84,7 +84,7 @@ void Upwind<Model>::Compute(
     const CompositeVector& flux,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
     const CompositeVector& field, CompositeVector& field_upwind,
-    const std::string name)
+    const std::string& name)
 {
   ASSERT(field.HasComponent("cell"));
   ASSERT(field_upwind.HasComponent("face"));

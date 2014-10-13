@@ -1263,7 +1263,7 @@ For simplicity here, any boundary conditions not explicitly set in the input are
 Volumetric source terms, used to model infiltration (Section 3.7) and a wide variety of production and loss processes, are defined for each phase component, if applicable, and include the distribution of any solutes that are carried into the domain with the phase component.  However, sources are not currently supported in Amanzi.
 
 In order to support the rather general specification requirements (involving combinations of phase pressures and component saturations), we must first define the composition of the "state" of the simulations by identifying all phases, components and solutes that will be present in the system.  We do this hierarchically, first by phase then by component:
-/
+
 * [SU] `"Phase Definitions`" [list] can accept lists of named phases (currently PHASE can be `"Aqueous`" or `"Gaseous`" or `"Solid`").
 
  * [SU] `"Aqueous`" phase [list] can accept the following lists: `"Phase Properties`", `"Phase Components`"

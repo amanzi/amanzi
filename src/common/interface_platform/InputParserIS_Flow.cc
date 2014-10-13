@@ -838,6 +838,9 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
 ****************************************************************** */
 Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* plist)
 {
+  Errors::Message msg;
+  Teuchos::OSTab tab = vo_->getOSTab();
+
   Teuchos::ParameterList wrm_list;
 
   // loop through the material properties list and extract the water retention model info
@@ -847,6 +850,7 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
   for (Teuchos::ParameterList::ConstIterator i = matprop_list.begin(); i != matprop_list.end(); i++) {
     // get the wrm parameters
     Teuchos::ParameterList& cp_list = matprop_list.sublist(i->first);
+
     // we can have either van Genuchten or Brooks Corey
     if (cp_list.isSublist("Capillary Pressure: van Genuchten")) {
       Teuchos::ParameterList vG_list = cp_list.sublist("Capillary Pressure: van Genuchten");
@@ -874,10 +878,9 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
       // now get the assigned regions
       Teuchos::Array<std::string> regions = cp_list.get<Teuchos::Array<std::string> >("Assigned Regions");
 
-      for (Teuchos::Array<std::string>::const_iterator i = regions.begin();
-           i != regions.end(); i++) {
+      for (Teuchos::Array<std::string>::const_iterator i = regions.begin(); i != regions.end(); i++) {
         std::stringstream ss;
-        ss << "Water Retention Model for " << *i;
+        ss << "WRM for " << *i;
 
         Teuchos::ParameterList& wrm_sublist = wrm_list.sublist(ss.str());
 
@@ -889,6 +892,16 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
         wrm_sublist.set<double>("residual saturation", Sr);
         wrm_sublist.set<double>("regularization interval", krel_smooth);
         wrm_sublist.set<std::string>("relative permeability model", rel_perm);
+      
+        if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+          Teuchos::ParameterList& file_list = wrm_sublist.sublist("Output");
+          std::stringstream name;
+          name << *i << ".txt";
+          file_list.set<std::string>("file", name.str());
+          file_list.set<int>("number of points", 1000);
+
+          *vo_->os() << "water retention curve file:" << name.str() << std::endl;
+        }
       }
     } else if (cp_list.isSublist("Capillary Pressure: Brooks Corey")) {
       Teuchos::ParameterList& BC_list = cp_list.sublist("Capillary Pressure: Brooks Corey");
@@ -921,7 +934,7 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
       for (Teuchos::Array<std::string>::const_iterator i = regions.begin();
            i != regions.end(); i++) {
         std::stringstream ss;
-        ss << "Water Retention Model for " << *i;
+        ss << "WRM for " << *i;
 
         Teuchos::ParameterList& wrm_sublist = wrm_list.sublist(ss.str());
 
@@ -933,10 +946,21 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
         wrm_sublist.set<double>("residual saturation", Sr);
         wrm_sublist.set<double>("regularization interval", krel_smooth);
         wrm_sublist.set<std::string>("relative permeability model", rel_perm);
+
+        if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+          Teuchos::ParameterList& file_list = wrm_sublist.sublist("Output");
+          std::stringstream name;
+          name << *i << ".txt";
+          file_list.set<std::string>("file", name.str());
+          file_list.set<int>("number of points", 1000);
+
+          *vo_->os() << "water retention curve file:" << name.str() << std::endl;
+        }
       }
     } else {
-      // not implemented error
-      Exceptions::amanzi_throw(Errors::Message("An unknown capillary pressure model was specified, must specify either van Genuchten or Brooks Corey"));
+      msg << "An unknown capillary pressure model was specified, must specify" 
+          << " either van Genuchten or Brooks Corey";
+      Exceptions::amanzi_throw(msg);
     }
   }
   return wrm_list;

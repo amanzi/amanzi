@@ -39,7 +39,7 @@ void Transport_PK::ProcessParameterList()
   vo_ = new VerboseObject("TransportPK", transport_list); 
 
   // global transport parameters
-  cfl_ = transport_list.get<double>("CFL", 1.0);
+  cfl_ = transport_list.get<double>("cfl", 1.0);
 
   spatial_disc_order = transport_list.get<int>("spatial discretization order", 1);
   if (spatial_disc_order < 1 || spatial_disc_order > 2) spatial_disc_order = 1;
@@ -49,8 +49,8 @@ void Transport_PK::ProcessParameterList()
   std::string advection_limiter_name = transport_list.get<std::string>("advection limiter");
   ProcessStringAdvectionLimiter(advection_limiter_name, &advection_limiter);
 
-  num_aqueous = transport_list.get<int>("number aqueous components", component_names_.size());
-  num_gaseous = transport_list.get<int>("number gaseous components", 0);
+  num_aqueous = transport_list.get<int>("number of aqueous components", component_names_.size());
+  num_gaseous = transport_list.get<int>("number of gaseous components", 0);
 
   // transport dispersion (default is none)
   dispersion_solver = transport_list.get<std::string>("solver", "missing");
@@ -122,10 +122,10 @@ void Transport_PK::ProcessParameterList()
       diffusion_phase_[0]->values() = dlist.get<Teuchos::Array<double> >("aqueous values").toVector();
     }
 
-    if (dlist.isParameter("gas names")) { 
+    if (dlist.isParameter("gaseous names")) { 
       diffusion_phase_[1] = Teuchos::rcp(new DiffusionPhase());
-      diffusion_phase_[1]->names() = dlist.get<Teuchos::Array<std::string> >("gas names").toVector();
-      diffusion_phase_[1]->values() = dlist.get<Teuchos::Array<double> >("gas values").toVector();
+      diffusion_phase_[1]->names() = dlist.get<Teuchos::Array<std::string> >("gaseous names").toVector();
+      diffusion_phase_[1]->values() = dlist.get<Teuchos::Array<double> >("gaseous values").toVector();
     }
   }
 
