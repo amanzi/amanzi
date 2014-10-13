@@ -786,8 +786,7 @@ PorousMedia::restart (Amr&          papa,
   is >> dt_eig;
 
   if (verbose>2 && ParallelDescriptor::IOProcessor()) {
-    Real dt_cfl = (cfl>0 ? cfl : 1)*dt_eig;
-    std::cout << "Estimated time step from level " << level << " = " << dt_cfl << '\n';
+    std::cout << "Estimated time step from level " << level << " = " << dt_eig << '\n';
   }
   //
   // Make room for ncomps+ntracers in aux_boundary_data_old.
@@ -3016,7 +3015,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 
     Real dt_cfl = dt;
     if (advect_tracers) {
-      dt_cfl = (cfl>0 ? cfl : 1)*dt_eig;
+      dt_cfl = dt_eig;
       Real t_eps = 1.e-6*dt_cfl;
       if (!do_subcycle && dt-dt_cfl > t_eps) {
 	dt_new = dt_cfl;
@@ -8039,11 +8038,7 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
 
       if (dt_eig != 0.0)
       {
-          if (cfl>0) {
-              estdt = cfl * dt_eig;
-          }
-          else
-              estdt = dt_eig;
+        estdt = dt_eig;
       } 
       else 
       {
@@ -8096,7 +8091,7 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
             dt_eig = std::min(dt_diff, dt_eig);
           }
           
-	  estdt = (cfl > 0  ?  cfl  :  1) *dt_eig;
+          estdt = dt_eig;
 
           if (making_new_umac)
               delete [] u_mac;
@@ -8232,6 +8227,9 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
       }
     }
   }
+
+  dt_eig *= (cfl>0 ? cfl : 1);
+
   ParallelDescriptor::ReduceRealMin(dt_eig);
 
   if (ParallelDescriptor::IOProcessor() && verbose>0) {
