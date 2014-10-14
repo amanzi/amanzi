@@ -1,5 +1,5 @@
-#ifndef _RICHARDSOLVER_F_H
-#define _RICHARDSOLVER_F_H
+#ifndef _RichardSolver_F_H
+#define _RichardSolver_F_H
 
 #ifdef BL_LANG_FORT
 #    define FORT_RS_GXPA       rsardgxpa
@@ -80,4 +80,4 @@ extern "C"
 }
 
 #endif
-#endif /*_RSARDSOLVER_F_H*/
+#endif /*_RichardSolver_F_H*/

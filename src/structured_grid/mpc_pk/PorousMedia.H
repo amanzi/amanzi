@@ -13,9 +13,6 @@
 #include <FluxRegister.H>
 #include <ViscBndry.H>
 #include <TensorDiffusionBndry.H>
-#include <Godunov.H>
-#include <Diffusion.H>
-#include <MacProj.H> 
 #include <AuxBoundaryData.H>
 #include <ParmParse.H>
 #include <Region.H>
@@ -124,8 +121,6 @@ class PorousMedia
   public AmrLevel 
 {
 public:
-  friend class MacProj;
-  friend class Diffusion;
   friend class Observation;
 
   enum ExecutionMode {INIT_TO_STEADY, STEADY, TRANSIENT, INVALID};
@@ -149,10 +144,6 @@ public:
 
   static void CleanupStatics ();
   void RegisterPhysicsBasedEvents();
-  //
-  // Read problem input file. 
-  //
-  void probDefine(char * filename);
   //
   // Define data descriptors.
   //
@@ -190,7 +181,7 @@ public:
 
   virtual void allocOldData ();
 
-  virtual void removeOldData ();
+  virtual void removeOldData () {}
   //
   // Error estimation for regridding.
   //
@@ -287,24 +278,13 @@ public:
   virtual Real advance (Real time,
 			Real dt,
 			int  iteration,
-			int  ncycle);
+			int  ncycle) {}
 
   bool multilevel_advance (Real  time,
 			   Real  dt,
 			   int   iteration,
 			   int   ncycle,
                            Real& dt_new);
-
-  void advance_incompressible  (Real time,
-				Real dt);
-
-  void advance_simple  (Real time,
-			Real dt);
-
-#ifdef MG_USE_FBOXLIB
-  void advance_richard  (Real time,
-			 Real dt); 
-#endif
 
   bool advance_multilevel_richards_flow (Real  time,
                                          Real  dt,
@@ -335,15 +315,8 @@ public:
 
   void set_saturated_velocity();
 
-  void advance_tracer  (Real time,
-			Real dt);
-
   MultiFab* AllocateUMacG() const;
 
-  //
-  // Public so MacProj can access it.
-  //
-  virtual void SetGodunov ();
   //
   // Returns the value of "gravity" for use in the projection outflow bcs.
   //
@@ -419,49 +392,7 @@ public:
   virtual void advance_setup (Real time,
 			      Real dt,
 			      int  iteration,
-			      int  ncycle);
-
-  void advance_cleanup (Real dt,
-			int  iteration,
-			int  ncycle,
-                        bool do_revert = false);
-  //
-  // Compute divergent mac velocities, estimate best timestep
-  // from t^n data, and compile cfl number.
-  //
-  Real predict_velocity (Real  dt,
-			 Real& comp_cfl);
-
-  //
-  // Create the coefficient for the MAC projection.
-  //
-  void create_lambda (Real time);
-
-  //
-  // Create the coefficient for the MAC projection.
-  //
-  void initialize_umac (MultiFab* u_mac, 
-			MultiFab& RhoG, 
-			MultiFab* RhoD, 
-			Real      time);
-
-  void compute_vel_phase(MultiFab* u_phase,
-			 MultiFab* u_mac,
-			 Real      time) ;
-
-  void compute_vel_phase(MultiFab* u_phase,
-                         int       nc,
-                         Real      time) ;  
-  //
-  // Impose divergence constraint on MAC velocities.
-  //
-  void mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time);
-
-
-  //
-  // Do an initial mac projection to get a good first dt.
-  //
-  void initial_mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time);
+			      int  ncycle) {}
   //
   // Grow by 1 and fillpatch the MAC-projected velocities: AT LEVEL 0.
   //
@@ -480,16 +411,6 @@ public:
   void GetCrsePressure(MultiFab& phi_crse,
 		       Real      time      ) const;
 
-  //
-  // Advect scalars.
-  //
-  void scalar_advection (MultiFab* u_mac,
-			 Real dt,
-			 int  first_scalar,
-			 int  last_scalar,
-			 bool reflux_on_this_call);
-
-
   void tracer_advection (MultiFab* u_mac,
 			 bool reflux_on_this_call,
                          bool use_cached_sat,
@@ -503,32 +424,6 @@ public:
   void reinstate_component_saturations();
   void get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow);
 
-  // Update scalars, (viscous solve in scalar_update).
-  //
-  void scalar_update (Real dt,
-		      int  first_scalar,
-		      int  last_scalar,
-		      int corrector,
-		      MultiFab* u_mac = 0);
-
-  void scalar_advection_update (Real dt,
-				int  first_scalar,
-				int  last_scalar,
-				int  corrector);
-
-  void scalar_diffusion_update (Real dt,
-				int  first_scalar,
-				int  last_scalar,
-				int  corrector);
-
-  void scalar_capillary_update (Real dt,
-				int  corrector,
-				MultiFab* u_mac = 0);
-
-  void diff_capillary_update   (Real dt,
-				int  corrector,
-				MultiFab* u_mac = 0);
-
   void SetTracerDiffusionBndryData(ViscBndry& bndry,
 				   Real       time);
 
@@ -541,27 +436,6 @@ public:
 			  PArray<MultiFab>& Dflux);
 
   void richard_init_to_steady();
-
-#ifdef MG_USE_FBOXLIB
-  void richard_eqb_update (MultiFab* u_mac = 0);
-
-  NLSstatus richard_scalar_update (Real      dt,
-				   int&      total_nwt_iter,
-				   MultiFab* u_mac = 0);
-
-  NLSstatus richard_composite_update (Real        dt,
-				      NLScontrol& nlsc);
-#endif
-
-  void scalar_adjust_constraint (int  first_scalar,
-				 int  last_scalar);
-
-  void diffuse_adjust_dominant(MultiFab&              Phi_new,
-			       int                    sigma,
-			       Real                   dt,	
-			       MultiFab**             fluxn,
-			       MultiFab**             fluxnp1=0);
-
 
   // Reaction-related functions
   void set_preferred_boundary_values (MultiFab& S,
@@ -609,35 +483,6 @@ public:
 		   int**          bc_orig_qty,
 		   SyncInterpType which_interp = CellCons_T,
 		   int            state_comp   = -1);
-  //
-  // Bilinear interpolate nodal pressures from coarse to fine.
-  //
-  void SyncProjInterp (MultiFab& phi,
-		       int       c_lev,
-		       MultiFab& P_new,
-		       MultiFab& P_old,
-		       int       f_lev,
-		       IntVect&  ratio,
-		       bool      first_crse_step_after_initial_iters,
-		       Real      cur_crse_pres_time,
-		       Real      prev_crse_pres_time);
-
-  //
-  // Average edge from fine to coarse
-  //
-  void SyncEAvgDown (PArray<MultiFab> u_mac_crse,
-		     PArray<MultiFab> u_mac_fine, 
-		     int c_lev); 
-
-  void SyncEAvgDown (MultiFab* u_mac,
-		     int f_lev,
-		     MultiFab* u_mac_crse, 
-		     int c_lev); 
-
-  void SyncEAvgDown (MultiFab* u_mac[],
-		     int f_lev,
-		     MultiFab* u_mac_crse[], 
-		     int c_lev); 
   //
   // Average a fine multifab down onto a coarse one.
   //
@@ -687,9 +532,6 @@ public:
   // Compute the mac sync correction.
   //
   virtual void mac_sync ();
-#ifdef MG_USE_FBOXLIB
-  virtual void richard_sync ();
-#endif
 
   //
   // Reflux function.
@@ -718,7 +560,7 @@ public:
   virtual void getViscTerms (MultiFab& visc_terms,
 			     int       src_comp, 
 			     int       num_comp,
-			     Real      time);
+			     Real      time) {}
   //
   // Get the forcing term.
   //
@@ -742,30 +584,7 @@ public:
 			const int  src_comp = 0,
 			const int  num_comp = 1,
                         MultiFab*  saturation = 0);
-  //
-  // Calculate diffusive term due to capillary pressure
-  //
-  void calcDiffusivity_CPL (MultiFab*  diffusivity[BL_SPACEDIM],
-			    const Real time);
-  void calcDiffusivity_CPL (MultiFab*  diffusivity[BL_SPACEDIM],
-			    const MultiFab* lbd);
-  //
-  // Calculate diffusive term due to capillary pressure in jacobian
-  //
-  void calcDiffusivity_CPL_dp (MultiFab*  diffusivity[BL_SPACEDIM],
-			       const MultiFab* lbd,
-			       const Real time,
-			       const int  num_comp = 1);
 #ifdef MG_USE_FBOXLIB
-  //
-  // Caclulate diffusive term in the richard's equation
-  //
-  void calc_richard_coef (MultiFab*  diffusivity[BL_SPACEDIM],
-			  const MultiFab* lbd,
-			  const MultiFab* u_mac,
-			  const int  nc = 0,
-			  const int do_upwind = 0,
-			  double time = 0.);
   //
   // Calculate the diffusive term in the jacobian of richard's equation
   //
@@ -800,18 +619,15 @@ public:
   //
   // Calculate capillary pressure
   //
-  void calcCapillary (Real time);
   void calcCapillary (MultiFab&       pc,
                       const MultiFab& N,
                       Real            time,
                       int             sComp,
                       int             dComp,
                       int             nGrow) const;
-  void smooth_pc (MultiFab* pc);
   //
   // Calculate inverse capillary pressure
   //
-  void calcInvCapillary (Real time);
   void calcInvCapillary (MultiFab&       N,
                          const MultiFab& pc,
                          Real            time,
@@ -883,11 +699,6 @@ public:
                            FArrayBox&         ccBndFab,
                            FArrayBox&         mask,
                            Real               t);
-  void get_inflow_density(const Orientation& face,
-                          const RegionData&  face_bc,
-                          FArrayBox&         fab,
-                          const Box&         ccBndBox,
-                          Real               t);
 
   Real AdjustBCevalTime(int  state_idx,
                         Real time,
@@ -902,12 +713,6 @@ public:
   PorousMedia& getLevel (int lev)
   {
     return *(PorousMedia*) &parent->getLevel(lev);
-  }
-
-  Diffusion& getDiffusion ()
-  {
-    BL_ASSERT(diffusion);
-    return *diffusion;
   }
 
   FluxRegister& getAdvFluxReg ()
@@ -951,7 +756,6 @@ public:
   void check_sum();
   void check_minmax();
   void check_minmax(int fscalar, int lscalar);
-  void compute_divu (MultiFab& soln, MultiFab* umac);
 
   // list
   static std::map<std::string, int> phase_list;
@@ -1114,16 +918,11 @@ protected:
 
   // Rock
   static std::map<std::string, int> rock_to_int; // hack to support user output
-  static MultiFab*   kappadata;
-  static MultiFab*   phidata;
-  static Real        saturation_threshold_for_vg_Kr;
-  static int         use_shifted_Kr_eval;
 
   // Phases and components
   static int nphases;
   static int ncomps; 
   static int ndiff;
-  static int idx_dominant;
   static Array<int> pType;
   static Array<std::string> pNames;
   static Array<std::string> cNames;
@@ -1169,9 +968,6 @@ protected:
   static Array<int>  inflow_bc_hi;
 
   // Richard boundary conditions		
-#ifdef MG_USE_FBOXLIB
-  static int richard_iter;
-#endif
   static Array<int>  rinflow_bc_lo;
   static Array<int>  rinflow_bc_hi;
 
@@ -1239,15 +1035,9 @@ protected:
   //
   MultiFab* source;
   //
-  // RHS for the MAC projection.
-  //
-  MultiFab* rhs_RhoD;
-  //
   //Diffusion and capillary pressure
   //
-  Diffusion* diffusion;
   MultiFab *diffn_cc, *diffnp1_cc;
-  MultiFab *pcn_cc,   *pcnp1_cc;
   //
   // Volume and area fractions.
   //
@@ -1275,11 +1065,9 @@ protected:
   //
   // Static objects.
   //
-  static Godunov*    godunov;
   static ErrorList   err_list;
   static BCRec       phys_bc;
   static BCRec       pres_bc;
-  static MacProj*    mac_projector;
   static RegionManager* region_manager;
   static RockManager* rock_manager;
   //
@@ -1312,12 +1100,6 @@ protected:
   static int        gravity_dir;
   static int        NUM_SCALARS;      // number of non-velocity components
   static int        NUM_STATE;        // total number of state variables
-  //
-  // Controls over how the convective and diffusive terms are calculated
-  // for each state variable.
-  //
-  static Array<AdvectionForm> advectionType;
-  static Array<DiffusionForm> diffusionType;
   //
   // Viscosity parameters.
   //
@@ -1353,8 +1135,6 @@ protected:
   //
   static int  do_simple;
   static int  do_sync_proj;
-  static int  do_multilevel_full;
-  static bool use_PETSc_snes_for_evolution;
   static int  do_reflux;
   static int  do_correct;
   static int  no_corrector;
@@ -1404,7 +1184,6 @@ protected:
   static int  steady_max_num_consecutive_increases;
   static Real steady_consecutive_increase_reduction_factor;
   static Real steady_max_psuedo_time;
-  static bool flow_use_PETSc;
   static bool steady_abort_on_psuedo_timestep_failure;
   static int  steady_limit_function_evals;
   static Real steady_abs_tolerance;

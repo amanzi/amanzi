@@ -1,6 +1,6 @@
 #include <RichardSolver.H>
-#include <RICHARDSOLVER_F.H>
-#include <POROUSMEDIA_F.H>
+#include <RichardSolver_F.H>
+#include <PorousMedia_F.H>
 
 #include <Utility.H>
 

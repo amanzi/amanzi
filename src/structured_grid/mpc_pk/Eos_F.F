@@ -7,7 +7,7 @@
 #include "CONSTANTS.H"
 #include "BC_TYPES.H"
 #include "BC_TYPES_PM.H"
-#include "PROB_PM_F.H" 
+#include "Prob_PM_F.H" 
 #include "ArrayLim.H"
 
 #include "RockManager_F.H"

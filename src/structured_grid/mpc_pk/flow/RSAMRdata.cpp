@@ -1,5 +1,5 @@
 #include <RSAMRdata.H>
-#include <POROUSMEDIA_F.H> // For FORT_RICHARD_ALPHA
+#include <PorousMedia_F.H> // For FORT_RICHARD_ALPHA
 
 RSAMRdata::RSAMRdata(int slev, int nlevs, Layout& _layout, PMAmr* amrp, NLScontrol& nlsc, const RockManager* rm)
 : RSdata(slev,nlevs,_layout,nlsc,rm), pm_amr(amrp), eval_time_for_source(-1)

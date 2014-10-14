@@ -38,11 +38,11 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 
 include_directories(${PMAMR_INCLUDE_DIRS})
 
-set(CXX_header_files RichardSolver.H RICHARDSOLVER_F.H NLScontrol.H NLSstatus.H RSdata.H RSAMRdata.H)
+set(CXX_header_files RichardSolver.H RichardSolver_F.H NLScontrol.H NLSstatus.H RSdata.H RSAMRdata.H)
 set(CXX_source_files RichardSolver.cpp NLScontrol.cpp RSdata.cpp RSAMRdata.cpp)
 set(F90_source_files )
 set(F77_source_files )
-set(FPP_source_files RICHARDSOLVER_${AMANZI_SPACEDIM}D.F)
+set(FPP_source_files RichardSolver_${AMANZI_SPACEDIM}D.F)
 
 preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 

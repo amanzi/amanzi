@@ -21,7 +21,7 @@ include_directories(${PMAMR_INCLUDE_DIRS})
 set(CXX_source_files)
 set(F90_source_files)
 set(F77_source_files)
-set(FPP_source_files PROB_${AMANZI_SPACEDIM}D.F)
+set(FPP_source_files Prob_${AMANZI_SPACEDIM}D.F)
 
 preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 

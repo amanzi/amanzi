@@ -5,7 +5,7 @@
 
 #include "REAL.H"
 #include "CONSTANTS.H"
-#include "RICHARDSOLVER_F.H"
+#include "RichardSolver_F.H"
 #include "ArrayLim.H"
 #include "RockManager_F.H"
 
