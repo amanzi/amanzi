@@ -457,40 +457,41 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
        solver = sfactory.Create(dispersion_solver, solvers_list, op1);
 
+    solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
+
     // populate the dispersion operator (if any)
     if (flag_dispersion) {
       CalculateDispersionTensor_(*darcy_flux, *phi, *ws);
     }
 
     int phase, num_itrs(0);
-    bool flag_op1;
+    bool flag_op1(true);
     double md_change, md_old(0.0), md_new, residual(0.0);
 
-    for (int i = 0; i < num_components; i++) {
+    // disperse and diffuse aqueous componetns
+    for (int i = 0; i < num_aqueous; i++) {
       FindDiffusionValue(component_names_[i], &md_new, &phase);
       md_change = md_new - md_old;
       md_old = md_new;
 
-      flag_op1 = (i == 0);  // check if we need to reset matrix
       if (md_change != 0.0) {
         CalculateDiffusionTensor_(md_change, phase, *phi, *ws);
         flag_op1 = true;
       }
-      if (i >= num_aqueous) flag_op1 = true;
+
+      // set initial guess
+      Epetra_MultiVector& sol_cell = *sol.ViewComponent("cell");
+      for (int c = 0; c < ncells_owned; c++) {
+        sol_cell[0][c] = tcc_next[i][c];
+      }
+      if (sol.HasComponent("face")) {
+        sol.ViewComponent("face")->PutScalar(0.0);
+      }
 
       if (flag_op1) {
         op1->Init();
         op1->InitOperator(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
         op1->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-        // add boundary conditions and sources for gaseous components
-        if (i >= num_aqueous) { 
-          PopulateBoundaryData(bc_model, bc_value, i);
-
-          Epetra_MultiVector& rhs_cell = *op1->rhs()->ViewComponent("cell");
-          double time = T_physics + dT_MPC;
-          ComputeAddSourceTerms(time, 1.0, srcs, rhs_cell, i, i);
-        }
         op1->ApplyBCs();
 
         // add accumulation term
@@ -498,31 +499,81 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
         for (int c = 0; c < ncells_owned; c++) {
           fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
         }
-        op1->AddAccumulationTerm(zero, factor, dT_MPC);
+        op1->AddAccumulationTerm(sol, factor, dT_MPC);
  
         int schema_prec_dofs = op1->schema_prec_dofs();
         op1->SymbolicAssembleMatrix(schema_prec_dofs);
         op1->AssembleMatrix(schema_prec_dofs);
         op1->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
       } else {
-        op1->rhs()->PutScalar(0.0);
+        Epetra_MultiVector& rhs_cell = *op1->rhs()->ViewComponent("cell");
+        for (int c = 0; c < ncells_owned; c++) {
+          double tmp = mesh_->cell_volume(c) * (*ws)[0][c] * (*phi)[0][c] / dT_MPC;
+          rhs_cell[0][c] = tcc_next[i][c] * tmp;
+        }
       }
   
-      solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
+      CompositeVector& rhs = *op1->rhs();
+      int ierr = solver->ApplyInverse(rhs, sol);
 
+      if (ierr != 0) {
+        Errors::Message msg;
+        msg << "\nLinear solver returned an unrecoverable error code.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+
+      residual += solver->residual();
+      num_itrs += solver->num_itrs();
+
+      for (int c = 0; c < ncells_owned; c++) {
+        tcc_next[i][c] = sol_cell[0][c];
+      }
+    }
+
+    // disperse and diffuse gaseous componetns
+    for (int i = num_aqueous; i < num_components; i++) {
+      FindDiffusionValue(component_names_[i], &md_new, &phase);
+      md_change = md_new - md_old;
+      md_old = md_new;
+
+      if (md_change != 0.0) {
+        CalculateDiffusionTensor_(md_change, phase, *phi, *ws);
+      }
+
+      // set initial guess
       Epetra_MultiVector& sol_cell = *sol.ViewComponent("cell");
+      for (int c = 0; c < ncells_owned; c++) {
+        sol_cell[0][c] = tcc_next[i][c];
+      }
       if (sol.HasComponent("face")) {
         sol.ViewComponent("face")->PutScalar(0.0);
       }
-    
-      CompositeVector& rhs = *op1->rhs();
-      Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
-      for (int c = 0; c < ncells_owned; c++) {
-        double tmp = mesh_->cell_volume(c) * (*ws)[0][c] * (*phi)[0][c] / dT_MPC;
-        rhs_cell[0][c] += tcc_next[i][c] * tmp;
-        sol_cell[0][c] = tcc_next[i][c];
-      }
 
+      op1->Init();
+      op1->InitOperator(D, Teuchos::null, Teuchos::null, 1.0, 1.0);
+      op1->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+      // add boundary conditions and sources for gaseous components
+      PopulateBoundaryData(bc_model, bc_value, i);
+
+      Epetra_MultiVector& rhs_cell = *op1->rhs()->ViewComponent("cell");
+      double time = T_physics + dT_MPC;
+      ComputeAddSourceTerms(time, 1.0, srcs, rhs_cell, i, i);
+      op1->ApplyBCs();
+
+      // add accumulation term
+      Epetra_MultiVector& fac = *factor.ViewComponent("cell");
+      for (int c = 0; c < ncells_owned; c++) {
+        fac[0][c] = (*phi)[0][c] * (1.0 - (*ws)[0][c]);
+      }
+      op1->AddAccumulationTerm(sol, factor, dT_MPC);
+ 
+      int schema_prec_dofs = op1->schema_prec_dofs();
+      op1->SymbolicAssembleMatrix(schema_prec_dofs);
+      op1->AssembleMatrix(schema_prec_dofs);
+      op1->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
+  
+      CompositeVector& rhs = *op1->rhs();
       int ierr = solver->ApplyInverse(rhs, sol);
 
       if (ierr != 0) {
