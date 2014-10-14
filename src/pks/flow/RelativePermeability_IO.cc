@@ -160,8 +160,8 @@ void RelativePermeability::PlotWRMcurves(Teuchos::ParameterList& plist)
       if (plist.isSublist(plist.name(i))) {
         Teuchos::ParameterList& wrm_list = plist.sublist(plist.name(i));
 
-        if (wrm_list.isSublist("Output")) {
-          Teuchos::ParameterList& out_list = wrm_list.sublist("Output");
+        if (wrm_list.isSublist("output")) {
+          Teuchos::ParameterList& out_list = wrm_list.sublist("output");
 
           std::string fname = out_list.get<std::string>("file");
           Teuchos::OSTab tab = vo_->getOSTab();

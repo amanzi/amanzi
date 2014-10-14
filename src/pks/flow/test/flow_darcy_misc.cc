@@ -99,7 +99,7 @@ class DarcyProblem {
     S->CheckAllFieldsInitialized();
 
     Teuchos::ParameterList& flow_list = plist.get<Teuchos::ParameterList>("Flow");
-    dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");
+    dp_list = flow_list.get<Teuchos::ParameterList>("Darcy problem");
     return 0;
   }
 

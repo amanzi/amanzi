@@ -51,7 +51,7 @@
 
   <!--  FLOW  -->
   <ParameterList name="Flow">
-    <ParameterList name="Darcy Problem">
+    <ParameterList name="Darcy problem">
       <Parameter name="atmospheric pressure" type="double" value="0.0"/>
       <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
 

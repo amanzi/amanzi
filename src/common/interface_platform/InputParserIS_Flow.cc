@@ -70,7 +70,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 
       if (flow_model == "Single Phase" || flow_model == "Richards") {
         if (flow_model == "Single Phase") {
-          Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem");
+          Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy problem");
           darcy_problem.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
           darcy_problem.set<double>("atmospheric pressure", atm_pres);
 
@@ -78,7 +78,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           flow_single_phase = true;
         }
         else if (flow_model == "Richards") {
-          Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
+          Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards problem");
           richards_problem.set<std::string>("relative permeability", rel_perm);
           richards_problem.set<std::string>("upwind update", update_upwind);
           // this one should come from the input file...
@@ -89,7 +89,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           flow_list = &richards_problem; // we use this below to insert sublists that are shared by Richards and Darcy
 
           // insert the water retention models sublist (these are only relevant for Richards)
-          Teuchos::ParameterList& water_retention_models = richards_problem.sublist("Water retention models");
+          Teuchos::ParameterList& water_retention_models = richards_problem.sublist("water retention models");
           water_retention_models = CreateWRM_List_(plist);
         }
 
@@ -894,7 +894,7 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
         wrm_sublist.set<std::string>("relative permeability model", rel_perm);
       
         if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-          Teuchos::ParameterList& file_list = wrm_sublist.sublist("Output");
+          Teuchos::ParameterList& file_list = wrm_sublist.sublist("output");
           std::stringstream name;
           name << *i << ".txt";
           file_list.set<std::string>("file", name.str());
@@ -948,7 +948,7 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
         wrm_sublist.set<std::string>("relative permeability model", rel_perm);
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-          Teuchos::ParameterList& file_list = wrm_sublist.sublist("Output");
+          Teuchos::ParameterList& file_list = wrm_sublist.sublist("output");
           std::stringstream name;
           name << *i << ".txt";
           file_list.set<std::string>("file", name.str());

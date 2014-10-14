@@ -18,6 +18,7 @@
 
 #include <vector>
 
+#include "boost/math/tools/roots.hpp"
 #include "Epetra_IntVector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -33,7 +34,6 @@
 #include "Flow_BC_Factory.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "Richards_PK.hh"
-#include <boost/math/tools/roots.hpp>
 
 namespace Amanzi {
 namespace Flow {
@@ -57,10 +57,10 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) :
     Exceptions::amanzi_throw(msg);
   }
 
-  if (flow_list.isSublist("Richards Problem")) {
-    rp_list_ = flow_list.sublist("Richards Problem");
+  if (flow_list.isSublist("Richards problem")) {
+    rp_list_ = flow_list.sublist("Richards problem");
   } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Richards Problem> sublist.");
+    Errors::Message msg("Flow PK: input parameter list does not have \"Richards oroblem\" sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -205,7 +205,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   ProcessParameterList(rp_list_);
 
   // Create water retention models.
-  Teuchos::ParameterList& wrm_list = rp_list_.sublist("Water retention models");
+  Teuchos::ParameterList& wrm_list = rp_list_.sublist("water retention models");
   rel_perm_ = Teuchos::rcp(new RelativePermeability(mesh_));
   rel_perm_->Init(atm_pressure_, wrm_list);
 

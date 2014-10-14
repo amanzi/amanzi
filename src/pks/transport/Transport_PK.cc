@@ -100,23 +100,23 @@ void Transport_PK::Construct_(Teuchos::ParameterList& glist,
   bc_scaling = 0.0;
   mass_tracer_exact = 0.0;  // Tracer is defined as species #0.
 
-  name_ = "state";  //  state password
+  passwd_ = "state";  //  state password
 
   // require state variables when Flow is off
   if (!S->HasField("porosity")) {
-    S->RequireField("porosity", name_)->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
   if (!S->HasField("darcy_flux")) {
-    S->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
   if (!S->HasField("water_saturation")) {
-    S->RequireField("water_saturation", name_)->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField("water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
   if (!S->HasField("prev_water_saturation")) {
-    S->RequireField("prev_water_saturation", name_)->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField("prev_water_saturation", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -128,7 +128,7 @@ void Transport_PK::Construct_(Teuchos::ParameterList& glist,
       subfield_names[0].push_back(component_names_[i]);
     }
 
-    S->RequireField("total_component_concentration", name_, subfield_names)->SetMesh(mesh_)
+    S->RequireField("total_component_concentration", passwd_, subfield_names)->SetMesh(mesh_)
       ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 }
@@ -172,8 +172,8 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // state pre-prosessing
   Teuchos::RCP<CompositeVector> cv1;
-  S->GetFieldData("darcy_flux", name_)->ScatterMasterToGhosted("face");
-  cv1 = S->GetFieldData("darcy_flux", name_);
+  S->GetFieldData("darcy_flux", passwd_)->ScatterMasterToGhosted("face");
+  cv1 = S->GetFieldData("darcy_flux", passwd_);
   darcy_flux = cv1->ViewComponent("face", true);
 
   Teuchos::RCP<const CompositeVector> cv2;
@@ -186,7 +186,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   cv2 = S->GetFieldData("porosity");
   phi = cv2->ViewComponent("cell", false);
 
-  tcc = S->GetFieldData("total_component_concentration", name_);
+  tcc = S->GetFieldData("total_component_concentration", passwd_);
 
   // memory for new components
   tcc_tmp = Teuchos::rcp(new CompositeVector(*(S->GetFieldData("total_component_concentration"))));
@@ -245,7 +245,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 * ***************************************************************** */
 double Transport_PK::CalculateTransportDt()
 {
-  S_->GetFieldData("darcy_flux", name_)->ScatterMasterToGhosted("face");
+  S_->GetFieldData("darcy_flux", passwd_)->ScatterMasterToGhosted("face");
 
   IdentifyUpwindCells();
 
@@ -324,7 +324,7 @@ double Transport_PK::get_dt()
 int Transport_PK::Advance(double dT_MPC, double& dT_actual)
 { 
   // We use original tcc and make a copy of it later if needed.
-  tcc = S_->GetFieldData("total_component_concentration", name_);
+  tcc = S_->GetFieldData("total_component_concentration", passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
   // calculate stable time step dT
@@ -591,7 +591,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
 void Transport_PK::CommitState(double dummy_dT, const Teuchos::Ptr<State>& S) 
 {
   Teuchos::RCP<CompositeVector> cv;
-  cv = S->GetFieldData("total_component_concentration", name_);
+  cv = S->GetFieldData("total_component_concentration", passwd_);
   *cv = *tcc_tmp;
 }
 

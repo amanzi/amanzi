@@ -16,7 +16,7 @@
 
   <!--  FLOW:  -->
   <ParameterList name="Flow">
-    <ParameterList name="Richards Problem">
+    <ParameterList name="Richards problem">
       <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="101325"/>
       <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
@@ -65,7 +65,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="Water retention models">
+      <ParameterList name="water retention models">
         <ParameterList name="WRM for Bfr">
           <Parameter name="region" type="string" value="Bfr"/>
           <Parameter name="water retention model" type="string" value="van Genuchten"/>

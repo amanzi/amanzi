@@ -135,8 +135,8 @@ void InputAnalysis::OutputBCs()
     Teuchos::ParameterList& flow_list = plist_->sublist("Flow");
 
     Teuchos::ParameterList richards_list;
-    if (flow_list.isSublist("Richards Problem")) {
-      richards_list = flow_list.sublist("Richards Problem");
+    if (flow_list.isSublist("Richards problem")) {
+      richards_list = flow_list.sublist("Richards problem");
 
       Teuchos::ParameterList bc_list;
       if (richards_list.isSublist("boundary conditions")) {

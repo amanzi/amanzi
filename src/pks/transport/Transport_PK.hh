@@ -73,13 +73,13 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   ~Transport_PK();
 
   // main PK members
-  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
-
   void Initialize(const Teuchos::Ptr<State>& S);
-  double get_dt();
   int Advance(double dT, double &dT_actual); 
   void CommitState(double dummy_dT, const Teuchos::Ptr<State>& S);
-  std::string name() { return name_; }
+
+  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
+  double get_dt();
+  std::string name() { return passwd_; }
 
   // main transport members
   void InitializeFields();
@@ -207,7 +207,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   int dim;
 
   Teuchos::RCP<State> S_;  // state info
-  std::string name_;
+  std::string passwd_;
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 

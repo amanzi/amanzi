@@ -537,16 +537,16 @@ The complete example of a state initialization is below. Note that
 Flow
 ====
 
-Flow sublist includes exactly one sublist, either `"Darcy Problem`" or `"Richards Problem`".
+Flow sublist includes exactly one sublist, either `"Darcy Problem`" or `"Richards problem`".
 Structure of both sublists is quite similar. We make necessary comments on their differences.
 
 Water retention models
 -----------------------
 
-User defines water retention models in sublist `"Water retention models`". 
+User defines water retention models in sublist `"water retention models`". 
 It contains as many sublists, 
-e.g. `"Soil 1`", `"Soil 2`", etc, as there are different soils. 
-This list is required for `"Richards Problem`" only.
+e.g. `"SOIL_1`", `"SOIL_2`", etc, as there are different soils. 
+This list is required for `"Richards problem`" only.
  
 The water retention models are associated with non-overlapping regions. Each of the sublists (e.g. `"Soil 1`") 
 includes a few mandatory parameters: region name, model name, and parameters for the selected model.
@@ -556,7 +556,7 @@ The available models for the relative permeability are `"Mualem`" (default) and 
 
 Amanzi performs rudimentary checks of validity of the provided parameters. 
 The relative permeability curves can be calculated and saved in an ASCI file 
-if the list `"Output`" is provided. This list has two mandatory parameters:
+if the list `"output`" is provided. This list has two mandatory parameters:
 
 * `"file`" [string] A user defined file name. It should be different for 
   each soil. 
@@ -568,23 +568,23 @@ if the list `"Output`" is provided. This list has two mandatory parameters:
 
 .. code-block:: xml
 
-  <ParameterList name="Water retention models">
-    <ParameterList name="Soil 1">
-      <Parameter name="region" type="string" value="Top Half"/>
+  <ParameterList name="water retention models">
+    <ParameterList name="SOIL_1">
+      <Parameter name="region" type="string" value="TOP HALF"/>
       <Parameter name="water retention model" type="string" value="van Genuchten"/>
       <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
       <Parameter name="van Genuchten m" type="double" value="0.28571"/>
       <Parameter name="van Genuchten l" type="double" value="0.5"/>
       <Parameter name="residual saturation" type="double" value="0.103"/>
       <Parameter name="relative permeability model" type="string" value="Mualem"/>
-      <ParameterList name="Output">
+      <ParameterList name="output">
         <Parameter name="file" type="string" value="soil1.txt"/>
         <Parameter name="number of points" type="int" value="1000"/>
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Soil 2">
-      <Parameter name="region" type="string" value="Bottom Half"/>
+    <ParameterList name="SOIL_2">
+      <Parameter name="region" type="string" value="BOTTOM HALF"/>
       <Parameter name="water retention model" type="string" value="Brooks Corey"/>
       <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
       <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>
@@ -682,7 +682,7 @@ conditions are supported:
      <ParameterList name="boundary conditions">
        <ParameterList name="pressure">
          <ParameterList name="BC 0">
-           <Parameter name="regions" type="Array(string)" value="{West side Top, East side Top}"/>
+           <Parameter name="regions" type="Array(string)" value="{WEST_SIDE}"/>
            <ParameterList name="boundary pressure">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="101325.0"/>
@@ -693,7 +693,7 @@ conditions are supported:
 
        <ParameterList name="mass flux">
          <ParameterList name="BC 1">
-           <Parameter name="regions" type="Array(string)" value="{North side, South side}"/>
+           <Parameter name="regions" type="Array(string)" value="{NORTH_SIDE, SOUTH_SIDE}"/>
            <Parameter name="rainfall" type="bool" value="false"/>
            <ParameterList name="outward mass flux">
              <ParameterList name="function-constant">
@@ -705,7 +705,7 @@ conditions are supported:
 
        <ParameterList name="static head">
          <ParameterList name="BC 2">
-           <Parameter name="regions" type="Array(string)" value="{West side Bottom}"/>
+           <Parameter name="regions" type="Array(string)" value="{EAST_SIDE}"/>
            <Parameter name="relative to top" type="bool" value="true"/>
            <ParameterList name="water table elevation">
              <ParameterList name="function-constant">
@@ -718,7 +718,7 @@ conditions are supported:
        <ParameterList name="seepage face">
          <Parameter name="reference pressure" type="double" value="101325.0"/>
          <ParameterList name="BC 3">
-           <Parameter name="regions" type="Array(string)" value="{East side Bottom}"/>
+           <Parameter name="regions" type="Array(string)" value="{EAST_SIDE_BOTTOM}"/>
            <ParameterList name="outward mass flux">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="1.0"/>
@@ -760,7 +760,7 @@ parameters described below. Mix and match of parameters is allowed.
 
        <ParameterList name="seepage face">
          <ParameterList name="BC 3">
-           <Parameter name="regions" type="Array(string)" value="{California}"/>
+           <Parameter name="regions" type="Array(string)" value="{CALIFORNIA}"/>
            <Parameter name="rainfall" type="bool" value="true"/>
            <Parameter name="submodel" type="string" value="pflotran"/>
            <ParameterList name="outward mass flux">
@@ -772,10 +772,9 @@ parameters described below. Mix and match of parameters is allowed.
        </ParameterList>
 
 
-Sources and Sinks
+Sources and sinks
 -----------------
-
-The external sources are typically pumping wells. The structure
+The external sources and sinks are typically pumping wells. The structure
 of sublist `"source terms`" mimics that of boundary conditions. 
 Again, constant functions can be replaced by any of the available time-functions.
 
@@ -790,7 +789,7 @@ Again, constant functions can be replaced by any of the available time-functions
 
      <ParameterList name="source terms">
        <ParameterList name="SRC 0">
-         <Parameter name="regions" type="Array(string)" value="{Well east}"/>
+         <Parameter name="regions" type="Array(string)" value="{WELL_EAST}"/>
          <Parameter name="spatial distribution method" type="string" value="volume"/>
          <ParameterList name="sink">
            <ParameterList name="function-constant">
@@ -800,7 +799,7 @@ Again, constant functions can be replaced by any of the available time-functions
        </ParameterList>
 
        <ParameterList name="SRC 1">
-         <Parameter name="regions" type="Array(string)" value="{Well west}"/>
+         <Parameter name="regions" type="Array(string)" value="{WELL_WEST}"/>
          <Parameter name="spatial distribution method" type="string" value="permeability"/>
          <ParameterList name="sink">
            <ParameterList name="function-constant">
@@ -811,8 +810,8 @@ Again, constant functions can be replaced by any of the available time-functions
      </ParameterList>
 
 
-Initial Guess Pseudo Time Integrator
--------------------------------------
+Initial guess pseudo time integrator (obsolete)
+-----------------------------------------------
 
 The sublist `"initial guess pseudo time integrator`" defines parameters controlling linear and 
 nonlinear solvers during calculation of an initial guess.
@@ -824,18 +823,18 @@ Detailed description of parameters is in the next two subsections.
    <ParameterList name="initial guess pseudo time integrator">
      <Parameter name="time integration method" type="string" value="Picard"/>
      <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
-     <Parameter name="linear solver" type="string" value="GMRES with TrilinosML"/>
+     <Parameter name="linear solver" type="string" value="GMRES_with_ML"/>
 
      <ParameterList name="initialization">
        <Parameter name="method" type="string" value="saturated solver"/>
-       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+       <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
        <Parameter name="clipping saturation value" type="double" value="0.9"/>
      </ParameterList>
 
      <ParameterList name="pressure-lambda constraints">
        <Parameter name="method" type="string" value="projection"/>
        <Parameter name="inflow krel correction" type="bool" value="false"/>
-       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+       <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
      </ParameterList>
 
      <ParameterList name="Picard">
@@ -847,10 +846,8 @@ Detailed description of parameters is in the next two subsections.
    </ParameterList>
 
 
-
-Steady State Time Integrator
+Steady state time integrator
 ----------------------------
-
 The sublist `"steady state time integrator`" defines parameters controlling linear and 
 nonlinear solvers during steady state time integration. 
 We break this long sublist into smaller parts. 
@@ -901,19 +898,19 @@ The first part controls preliminary steps in the time integrator.
 
    <ParameterList name="steady state time integrator">
      <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
-     <Parameter name="linear solver" type="string" value="GMRES with HypreAMG"/>
-     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+     <Parameter name="linear solver" type="string" value="GMRES_with_AMG"/>
+     <Parameter name="preconditioner" type="string" value="HYPRE_AMG"/>
 
      <ParameterList name="initialization">
        <Parameter name="method" type="string" value="saturated solver"/>
-       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+       <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
        <Parameter name="clipping pressure value" type="double" value="50000.0"/>
      </ParameterList>
 
      <ParameterList name="pressure-lambda constraints">
        <Parameter name="method" type="string" value="projection"/>
        <Parameter name="inflow krel correction" type="bool" value="false"/>
-       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+       <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
      </ParameterList>
    </ParameterList>
 
@@ -1046,7 +1043,7 @@ those needed for unit tests, and future code development.
    </ParameterList>
 
 
-Transient Time Integrator
+Transient time integrator
 -------------------------
 
 The sublist `"transient time integrator`" defines parameters controlling linear and 
@@ -1063,12 +1060,12 @@ If a non-empty `"initialization`" list is specified, it will be executed only on
    <ParameterList name="transient time integrator">
      <Parameter name="time integration method" type="string" value="BDF1"/>
      <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
-     <Parameter name="linear solver" type="string" value="GMRES with HypreAMG"/>
+     <Parameter name="linear solver" type="string" value="GMRES_with_AMG"/>
      <Parameter name="time stepping strategy" type="string" value="adaptive"/>
 
      <ParameterList name="pressure-lambda constraints">
        <Parameter name="method" type="string" value="projection"/>
-       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+       <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
      </ParameterList>
 
      <ParameterList name="BDF1">
@@ -1078,7 +1075,7 @@ If a non-empty `"initialization`" list is specified, it will be executed only on
 
 
 
-Other Parameters
+Other parameters
 ----------------
 
 The remaining `"Flow`" parameters are
@@ -1116,7 +1113,7 @@ The remaining `"Flow`" parameters are
 .. code-block:: xml
 
   <ParameterList name="Flow">
-    <ParameterList name="Richards Problem">
+    <ParameterList name="Richards problem">
       <Parameter name="atmospheric pressure" type="double" value="101325.0"/>
       <Parameter name="relative permeability" type="string" value="upwind with Darcy flux"/>
       <Parameter name="upwind update" type="string" value="every timestep"/>
