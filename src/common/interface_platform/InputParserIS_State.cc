@@ -327,10 +327,10 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
               .sublist("function").sublist("function-constant")
               .set<double>("value", s);
         } else if (ic_for_region->isSublist("IC: Linear Saturation")) {
-          Teuchos::ParameterList& saturation_ic = ic_for_region->sublist("IC: Linear Saturation");
-          Teuchos::Array<double> grad = saturation_ic.get<Teuchos::Array<double> >("Gradient Value");
-          Teuchos::Array<double> refcoord = saturation_ic.get<Teuchos::Array<double> >("Reference Point");
-          double refval = saturation_ic.get<double>("Reference Value");
+          Teuchos::ParameterList& inp_ic = ic_for_region->sublist("IC: Linear Saturation");
+          Teuchos::Array<double> grad = inp_ic.get<Teuchos::Array<double> >("Gradient Value");
+          Teuchos::Array<double> refcoord = inp_ic.get<Teuchos::Array<double> >("Reference Point");
+          double refval = inp_ic.get<double>("Reference Value");
 
           Teuchos::Array<double> grad_with_time(grad.size() + 1);
           grad_with_time[0] = 0.0;

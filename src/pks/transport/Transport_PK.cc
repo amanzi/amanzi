@@ -530,7 +530,11 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
       }
     }
 
-    // disperse and diffuse gaseous componetns
+    // Disperse and diffuse gaseous components. We ignore dispersion 
+    // tensor (D is reset). Inactive cells (s[c] = 1 and D[c] = 0) 
+    // are treated with a hack of the accumulation term.
+    D.clear();
+    md_old = 0.0;
     for (int i = num_aqueous; i < num_components; i++) {
       FindDiffusionValue(component_names_[i], &md_new, &phase);
       md_change = md_new - md_old;
@@ -565,6 +569,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
       Epetra_MultiVector& fac = *factor.ViewComponent("cell");
       for (int c = 0; c < ncells_owned; c++) {
         fac[0][c] = (*phi)[0][c] * (1.0 - (*ws)[0][c]);
+        if ((*ws)[0][c] == 1.0) fac[0][c] = 1.0;  // hack so far
       }
       op1->AddAccumulationTerm(sol, factor, dT_MPC);
  
