@@ -17,8 +17,6 @@ static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::Aman
 #include <Prob_PM_F.H>
 #include <PorousMedia_F.H>
 #include <RSAMRdata.H>
-//include <RockUtil_F.H>  // FIXME: Should functions in this file be called from here?
-
 #include <Advection.H>
 #include <AmanziChemHelper_Structured.H>
 
@@ -3208,8 +3206,6 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
     }
 
     int NGROWHYP = Advection::nGrowHyp();
-    //int NGROWHYP = nGrowHyp;
-
     MultiFab sat_old(grids,ncomps,NGROWHYP);
     MultiFab sat_new(grids,ncomps,NGROWHYP);
 
