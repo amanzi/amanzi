@@ -645,8 +645,8 @@ void OperatorDiffusionTPFA::ComputeTransmissibilities_()
       beta[i] = fabs(perm[i] / dxn);
     }
 
-    // double grav = (gravity * normal) / area;
-    double grav = gravity * a_dist;
+    double grav = (gravity * normal) / area;
+    //double grav = gravity * a_dist;
     trans_f = 0.0;
 
     if (ncells == 2) {
