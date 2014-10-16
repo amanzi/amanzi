@@ -15,6 +15,7 @@
 #    define FORT_SGSIM_DEALLOC   sgsim_dealloc
 #    define FORT_INTERP_LAYER    interp_layer
 #    define FORT_ASSIGN_LAYER    assign_layer
+#    define FORT_PHIRAND         phi_rand
 #else
 #  if defined(BL_FORT_USE_UPPERCASE)
 #    define FORT_INIT_GSLIB      INIT_GSLIB
@@ -30,6 +31,7 @@
 #    define FORT_SGSIM_DEALLOC   SGSIM_DEALLOC
 #    define FORT_INTERP_LAYER    INTERP_LAYER
 #    define FORT_ASSIGN_LAYER    ASSIGN_LAYER
+#    define FORT_PHIRAND         PHI_RAND
 #  elif defined(BL_FORT_USE_LOWERCASE)
 #    define FORT_INIT_GSLIB      init_gslib
 #    define FORT_INIT_GSLIB2     init_gslib2
@@ -44,6 +46,7 @@
 #    define FORT_SGSIM_DEALLOC   sgsim_dealloc
 #    define FORT_INTERP_LAYER    interp_layer
 #    define FORT_ASSIGN_LAYER    assign_layer
+#    define FORT_PHIRAND         phi_rand
 #  elif defined(BL_FORT_USE_UNDERSCORE)
 #    define FORT_INIT_GSLIB      init_gslib_
 #    define FORT_INIT_GSLIB2     init_gslib2_
@@ -58,6 +61,7 @@
 #    define FORT_SGSIM_DEALLOC   sgsim_dealloc_
 #    define FORT_INTERP_LAYER    interp_layer_
 #    define FORT_ASSIGN_LAYER    assign_layer_
+#    define FORT_PHIRAND         phi_rand_
 #  endif
 
 #include "ArrayLim.H"
@@ -133,6 +137,9 @@
 			    const Real* kappaval, const int* nkpval, const Real* dkappa,
 			    const Real* dx, const Real* problo, const Real* probhi);
 
+  void FORT_PHIRAND (const Real* kp_dat,   ARLIM_P(kp_lo), ARLIM_P(kp_hi), 
+		     const Real* kappaval, const int* nkpval, const Real* dkappa,
+		     const int*  domlo,    const int* domhi, const int* iuc);
 
   }
 #endif

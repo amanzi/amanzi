@@ -8,6 +8,8 @@
 #include <chemistry_exception.hh>
 
 static bool abort_on_chem_fail = true;
+//#define DEBUG_NO_CHEM 
+#undef DEBUG_NO_CHEM 
 
 AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::string>& _primarySpeciesNames,
                                                          const std::vector<std::string>& _sorbedPrimarySpeciesNames,
@@ -292,9 +294,10 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
 
       Amanzi::AmanziChemistry::Beaker::SolverStatus stat;
       try
-      {  
+      { 
+#ifndef DEBUG_NO_CHEM 
         TheChemSolve.ReactionStep(&TheComponent,TheParameter,dt);
-
+#endif
         stat = TheChemSolve.status();
         fcnCnt(iv,sFunc) = stat.num_rhs_evaluations;        
       }
@@ -507,14 +510,14 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
       Amanzi::AmanziChemistry::Beaker::SolverStatus stat;
       try
       {  
+#ifndef DEBUG_NO_CHEM 
         TheChemSolve.Speciate(&TheComponent,TheParameter);
-
+#endif
         stat = TheChemSolve.status();
         fcnCnt(iv,sFunc) = stat.num_rhs_evaluations;        
       }
       catch (const Amanzi::AmanziChemistry::ChemistryException& geochem_error)
       {
-        std::cout << "Hello" << iv << std::endl;;
         if (verbose>-1) {
           std::cout << "CHEMISTRY SPECIATION FAILED on level at " << iv << " : ";
           TheComponent.Display("components: ");

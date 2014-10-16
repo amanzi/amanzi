@@ -8,8 +8,8 @@
 #include "CONSTANTS.H"
 #include "BC_TYPES.H"
 #include "BC_TYPES_PM.H"
-#include "PROB_PM_F.H"
-#include "POROUSMEDIA_F.H"
+#include "Prob_PM_F.H"
+#include "PorousMedia_F.H"
 #include "ArrayLim.H"
 
 #define SDIM 2
@@ -99,97 +99,26 @@ c :::  lo,hi     => index limits of grid interior
 c :::  dx	 => cell size
 c :::  mass     <=  total mass
 c ::: ---------------------------------------------------------
-       subroutine FORT_SUMMASS(rho,DIMS(rho),DIMS(grid),dx,mass)
+      subroutine FORT_SUMMASS(rho,DIMS(rho),DIMS(grid),dx,mass)
 
-       integer DIMDEC(rho)
-       integer DIMDEC(grid)
-       REAL_T  mass, dx(2)
-       REAL_T  rho(DIMV(rho))
+      integer DIMDEC(rho)
+      integer DIMDEC(grid)
+      REAL_T  mass, dx(2)
+      REAL_T  rho(DIMV(rho))
 
-       integer i, j
-       REAL_T  vol
+      integer i, j
+      REAL_T  vol
 
-       vol = dx(1)*dx(2)
+      vol = dx(1)*dx(2)
 
-       mass = zero
-       do i = ARG_L1(grid), ARG_H1(grid)
-          do j = ARG_L2(grid), ARG_H2(grid)
-	     mass = mass + vol*rho(i,j)
-	  end do
-       end do
+      mass = zero
+      do i = ARG_L1(grid), ARG_H1(grid)
+         do j = ARG_L2(grid), ARG_H2(grid)
+            mass = mass + vol*rho(i,j)
+         end do
+      end do
 
-       end
-
-c ::: ----------------------------------------------------------
-c ::: SUMMASSSQ
-c :::             MASS = sum{ vol(i,j)*rho(i,j)*rho(i,j) }
-c :::
-c ::: INPUTS / OUTPUTS:
-c :::  rho        => density field
-c :::  DIMS(rho)  => index limits of rho aray
-c :::  lo,hi      => index limits of grid interior
-c :::  ds   	 => cell size
-c :::  mass      <=  total mass
-c ::: ----------------------------------------------------------
-       subroutine FORT_SUMMASSSQ(rho,DIMS(rho),DIMS(grid),dx,mass)
-
-       integer DIMDEC(rho)
-       integer DIMDEC(grid)
-       REAL_T  mass, dx(SDIM)
-       REAL_T  rho(DIMV(rho))
-
-       integer i, j
-       REAL_T  vol
-
-       vol = dx(1)*dx(2)
-
-       mass = zero
-       do i = ARG_L1(grid), ARG_H1(grid)
-          do j = ARG_L2(grid), ARG_H2(grid)
-             mass = mass + vol*rho(i,j)*rho(i,j)
-          end do
-       end do
-
-       end
-
-c ::: ----------------------------------------------------------
-c ::: SUMPRESS
-c :::             SUM = sum{ press(i,j) * surroundingVolume(i,j) }
-c :::
-c ::: INPUTS / OUTPUTS:
-c :::  press      => pressure field on nodes
-c :::  DIMS(press)=> index limits of press aray
-c :::  vol        => volume field (zero-ed out under finer grids)
-c :::  DIMS(vol)  => index limits of vol aray
-c :::  lo,hi      => index limits of grid interior in nodal space
-c :::  total_press<= sum of volume-weighted nodal pressures
-c :::  total_vol  <= sum of volumes
-c ::: ----------------------------------------------------------
-
-       subroutine FORT_SUMPRESS(press,DIMS(press),vol,DIMS(vol),lo,hi,
-     &                          total_press,total_vol)
-
-       integer lo(2),hi(2)
-       integer DIMDEC(press)
-       integer DIMDEC(vol)
-       REAL_T  press(DIMV(press))
-       REAL_T  vol(DIMV(vol))
-       REAL_T  total_press,total_vol
-
-       integer i, j
-       REAL_T  surroundingVolume
-
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-
-             surroundingVolume = vol(i,j) + vol(i-1,j) + vol(i,j-1) + vol(i-1,j-1)
-             total_press = total_press + press(i,j) * surroundingVolume
-             total_vol   = total_vol   +              surroundingVolume
-
-          end do
-       end do
-
-       end
+      end
 
 c ::: ----------------------------------------------------------
 c ::: This routine fills an edge-centered fab from a cell-centered
@@ -359,189 +288,7 @@ c ::: ----------------------------------------------------------------
 
       end
 
-c ::: ---------------------------------------------------------------
-c ::: For edge-based data, fill fine values with gradient-interpolated 
-c ::: coarse data.
-c ::: Operate only on faces that overlap--ie, only fill the fine faces  
-c ::: that make up each coarse face, leave the in-between faces alone.
-c ::: ----------------------------------------------------------------
 
-      subroutine CV_EDGE_INTERP(lo, hi, domlo, domhi,
-     &     nc, ratio, dir, dx,
-     &     crse, crse_l0, crse_l1, crse_h0, crse_h1,
-     &     fine, fine_l0, fine_l1, fine_h0, fine_h1)
-
-      implicit none
-      integer lo(2),hi(2), domlo(2),domhi(2)
-      integer nc, ratio(0:2-1), dir
-      integer crse_l0, crse_l1, crse_h0, crse_h1
-      integer fine_l0, fine_l1, fine_h0, fine_h1
-      DOUBLE PRECISION dx(0:2-1)
-      DOUBLE PRECISION crse(crse_l0:crse_h0,crse_l1:crse_h1,nc)
-      DOUBLE PRECISION fine(fine_l0:fine_h0,fine_l1:fine_h1,nc)
-
-      integer i,j,ii,jj,n,L,idx
-      DOUBLE PRECISION grad
-
-      if (dir.eq.0) then
-         do n=1,nc
-            do j=lo(2)+1,hi(2)-1
-               jj = ratio(1)*j
-               do i=lo(1)+1,hi(1)-1
-                  ii = ratio(0)*i
-                  
-c                 approximate d/dy
-                  if (j .eq. domlo(2)) then
-                     grad = (crse(i,j+1,n) - crse(i,j,n))
-                  elseif (j .eq. domhi(2)) then
-                     grad = (crse(i,j,n) - crse(i,j-1,n))
-                  else
-                     grad = (crse(i,j+1,n)-crse(i,j-1,n))/(2.0)
-                  endif
-                  do L=0,ratio(1)/2-1
-                     idx = -ratio(1)/2 + L 
-                     fine(ii,jj+L,n)=(crse(i,j,n)+0.25*dble(idx)*grad)
-                     idx = ratio(1)/2 + L
-                     fine(ii,jj+idx,n)=(crse(i,j,n)+0.25*dble(L+1)*grad)
-                  enddo
-               enddo
-            enddo
-         enddo
-      else
-         do n=1,nc
-            do j=lo(2)+1,hi(2)-1
-               jj = ratio(1)*j
-               do i=lo(1)+1,hi(1)-1
-                  ii = ratio(0)*i
-
-c                 approximate d/dx
-                  if (i .eq. domlo(1)) then
-                     grad = (crse(i+1,j,n) - crse(i,j,n))
-                  elseif (i .eq. domhi(1)) then
-                     grad = (crse(i,j,n) - crse(i-1,j,n))
-                  else
-                     grad = (crse(i+1,j,n)-crse(i-1,j,n))/(2.0)
-                  endif
-                  do L=0,ratio(0)/2-1
-                     idx = -ratio(0)/2 + L 
-                     fine(ii+L,jj,n) = (crse(i,j,n)+0.25*dble(idx)*grad)
-                     idx = ratio(0)/2 + L
-                     fine(ii+idx,jj,n)= (crse(i,j,n)+0.25*dble(L+1)*grad)
-                  enddo
-               enddo
-            enddo
-         enddo
-      endif
-
-      end
-
-
-c ::: -------------------------------------------------------------------
-c ::: Do linear in dir, pc transverse to dir, leave alone the fine values
-c ::: lining up with coarse edges--assume these have been set to hold the 
-c ::: values you want to interpolate to the rest.
-c ::: -------------------------------------------------------------------
-
-      subroutine CVF_EDGE_INTERP(clo, chi, 
-     &     nc, ratio, cdx, fdx,
-     &     crsex, crsex_l0, crsex_l1, crsex_h0, crsex_h1,
-     &     crsey, crsey_l0, crsey_l1, crsey_h0, crsey_h1,
-     &     finex, finex_l0, finex_l1, finex_h0, finex_h1,
-     &     finey, finey_l0, finey_l1, finey_h0, finey_h1)
-
-      implicit none
-      integer clo(0:2-1), chi(0:2-1), nc, ratio(0:2-1)
-      integer crsex_l0, crsex_l1, crsex_h0, crsex_h1
-      integer crsey_l0, crsey_l1, crsey_h0, crsey_h1
-      integer finex_l0, finex_l1, finex_h0, finex_h1
-      integer finey_l0, finey_l1, finey_h0, finey_h1
-      DOUBLE PRECISION cdx(0:2-1), fdx(0:2-1)
-      DOUBLE PRECISION crsex(crsex_l0:crsex_h0,crsex_l1:crsex_h1,nc)
-      DOUBLE PRECISION crsey(crsey_l0:crsey_h0,crsey_l1:crsey_h1,nc)
-      DOUBLE PRECISION finex(finex_l0:finex_h0,finex_l1:finex_h1,nc)
-      DOUBLE PRECISION finey(finey_l0:finey_h0,finey_l1:finey_h1,nc)
-      integer i,j,n,ii,jj
-      DOUBLE PRECISION df, r(3), s(3)
-
-      do n=1,nc
-         do j=clo(1),chi(1)
-            jj = ratio(1)*j
-            do i=clo(0),chi(0)
-               ii = ratio(0)*i
-
-               df = (crsex(i+1,j,n)-crsex(i,j,n))/cdx(0)+
-     &              (crsey(i,j+1,n)-crsey(i,j,n))/cdx(1)
-               
-               r(1) = (finex(ii+1,jj,n)-finex(ii,jj,n))/fdx(0) + 
-     &                (finey(ii,jj+1,n)-finey(ii,jj,n))/fdx(1) - 0.25*df
-               r(2) = (finex(ii+2,jj,n)-finex(ii+1,jj,n))/fdx(0)  + 
-     &                (finey(ii+1,jj+1,n)-finey(ii+1,jj,n))/fdx(1)- 0.25*df
-               r(3) = (finex(ii+1,jj+1,n)-finex(ii,jj+1,n))/fdx(0)+ 
-     &                (finey(ii,jj+2,n)-finey(ii,jj+1,n))/fdx(1)  - 0.25*df
-
-               r = r*fdx(0)*fdx(0)
-
-               s(1) = (-0.5*r(2)-r(1)-0.5*r(3))
-               s(2) = (-0.75*r(2)-0.5*r(1)-0.25*r(3))
-               s(3) = (-0.25*r(2)-0.5*r(1)-0.75*r(3))
-               
-               finex(ii+1,jj,n) = finex(ii+1,jj,n) - (s(2)-s(1))/fdx(0)
-               finex(ii+1,jj+1,n) = finex(ii+1,jj+1,n) - (0.-s(3))/fdx(0)
-               finey(ii,jj+1,n) = finey(ii,jj+1,n) - (s(3)-s(1))/fdx(1)
-               finey(ii+1,jj+1,n) = finey(ii+1,jj+1,n) - (0.-s(2))/fdx(1)
-            enddo
-         enddo
-      enddo
-
-      end
-
-
-c ::: ---------------------------------------------------------------
-c ::: For edge-based data, fill coarse values with average of fine data 
-c ::: one the same edge
-c ::: ----------------------------------------------------------------
-
-      subroutine EDGE_AVGDOWN(lo, hi, nc, ratio, dir,
-     &     crse, crse_l0, crse_l1, crse_h0, crse_h1,
-     &     fine, fine_l0, fine_l1, fine_h0, fine_h1)
-      implicit none
-      integer lo(2),hi(2), nc, ratio(0:2-1), dir
-      integer crse_l0, crse_l1, crse_h0, crse_h1
-      integer fine_l0, fine_l1, fine_h0, fine_h1
-      DOUBLE PRECISION crse(crse_l0:crse_h0,crse_l1:crse_h1,nc)
-      DOUBLE PRECISION fine(fine_l0:fine_h0,fine_l1:fine_h1,nc)
-      integer i,j,ii,jj,n,L
-
-      if (dir.eq.0) then
-         do n=1,nc
-            do j=lo(2),hi(2)
-               jj = ratio(1)*j
-               do i=lo(1),hi(1)
-                  ii = ratio(0)*i
-                  crse(i,j,n) = zero
-                  do L=0,ratio(1)-1
-                     crse(i,j,n) = crse(i,j,n) + fine(ii,jj+L,n) 
-                  enddo
-                  crse(i,j,n) = crse(i,j,n)/ratio(1)
-               enddo
-            enddo
-         enddo
-      else
-         do n=1,nc
-            do i=lo(1),hi(1)
-               ii = ratio(0)*i            
-               do j=lo(2),hi(2)
-                  jj = ratio(1)*j
-                  crse(i,j,n) = zero
-                  do L=0,ratio(0)-1
-                     crse(i,j,n) = crse(i,j,n) + fine(ii+L,jj,n) 
-                  enddo
-                   crse(i,j,n) = crse(i,j,n)/ratio(0)
-               enddo
-            enddo
-         enddo
-      endif
-      end
 
       subroutine FORT_MAX_TRACDIFF_DT(lo, hi, psv, DIMS(psv),
      &     psadx, DIMS(psadx), psady, DIMS(psady),
@@ -569,138 +316,6 @@ c ::: ----------------------------------------------------------------
             max_dt = MIN(max_dt, vol*psv(i,j)/denom)
          enddo
       enddo
-      end
-
-c ::: ----------------------------------------------------------
-c ::: SPECTEMPVISC
-c :::    compute variable diffusivity constant
-c ::: ----------------------------------------------------------
-
-      subroutine FORT_SPECTEMPVISC(lo,hi,
-     &     S, DIMS(S),
-     &     B, DIMS(B),
-     &     phi, DIMS(phi),
-     &     visc_coef,
-     &     ncomp)
-
-      implicit none
-
-      integer lo(SDIM),hi(SDIM)
-      integer DIMDEC(S)
-      integer DIMDEC(B)
-      integer DIMDEC(phi)
-      integer ncomp
-      REAL_T  S(DIMV(S))
-      REAL_T  B(DIMV(B),ncomp)
-      REAL_T  phi(DIMV(phi))
-      REAL_T  visc_coef(ncomp)
-
-      integer i, j, n
-
-      do n = 1,ncomp
-         do j=lo(2), hi(2)
-            do i=lo(1), hi(1)
-               B(i,j,n) = S(i,j)*phi(i,j)*visc_coef(n) 
-            end do
-         end do
-      end do
-
-      end
-
-c ::: ----------------------------------------------------------
-c ::: CALCEOS
-c :::   compute \phi * (1-U(t)) / dt
-c ::: ----------------------------------------------------------
-
-      subroutine FORT_CALCEOS(coef,DIMS(coef),
-     &     s, DIMS(s), rho, DIMS(rho), phi, DIMS(phi),
-     &     ncomp,lo,hi,dt)
-
-      implicit none
-
-      integer DIMDEC(coef)
-      integer DIMDEC(s)
-      integer DIMDEC(rho)
-      integer DIMDEC(phi)
-      integer lo(SDIM),hi(SDIM)
-      integer ncomp
-      REAL_T  coef(DIMV(coef))
-      REAL_T  s(DIMV(s),ncomp)
-      REAL_T  rho(DIMV(rho),ncomp)
-      REAL_T  phi(DIMV(phi))
-      REAL_T  dt
-
-      integer i, j, n
-      REAL_T  s_sum
-
-      do j=lo(2), hi(2)
-         do i=lo(1), hi(1)
-            s_sum = zero
-            do n = 1,ncomp
-               s_sum = s_sum +s(i,j,n)/rho(i,j,n)
-            end do
-            
-            coef(i,j) = -phi(i,j)*(one-s_sum)/dt
-         end do
-      end do
-
-      end
-
-      subroutine  FORT_RECOMP_UPDATE(lo, hi,
-     &                               update, DIMS(update),
-     &                               phi,    DIMS(phi),
-     &                               xflux,  DIMS(xflux),
-     &                               yflux,  DIMS(yflux),
-     &                               vol,    DIMS(vol),
-     &                               nc)
-      implicit none
-      integer lo(SDIM), hi(SDIM), nc
-      integer DIMDEC(update)
-      integer DIMDEC(phi)
-      integer DIMDEC(xflux)
-      integer DIMDEC(yflux)
-      integer DIMDEC(vol)
-      REAL_T update(DIMV(update),nc)
-      REAL_T phi(DIMV(phi))
-      REAL_T xflux(DIMV(xflux),nc)
-      REAL_T yflux(DIMV(yflux),nc)
-      REAL_T vol(DIMV(vol))
-
-      integer i, j, n
-      do j=lo(2),hi(2)
-         do i=lo(1),hi(1)
-            do n=1,nc
-               update(i,j,n)=-((xflux(i+1,j,n)-xflux(i,j,n))
-     &              + (yflux(i,j+1,n)-yflux(i,j,n)))/vol(i,j)/phi(i,j)
-            end do
-         end do
-      end do
-      end
-
-c :: ----------------------------------------------------------
-c :: CHEM_DUMMY
-c ::    a dummy chemical reaction.
-c :: ----------------------------------------------------------
-      subroutine FORT_CHEM_DUMMY(s,DIMS(s),dt,nc)
-      implicit none
-      integer nc
-      integer DIMDEC(s)
-      REAL_T  s(DIMV(s),nc), dt
-
-      integer i,j,r
-      REAL_T  deltan,rate
-
-      rate = 1.d-8
-      do i = ARG_L1(s),ARG_H1(s)
-         do j =  ARG_L2(s),ARG_H2(s)
-            deltan = rate*dt*s(i,j,1)*s(i,j,2)
-            r = s(i,j,1)/(s(i,j,1)+s(i,j,2))
-            s(i,j,1) = s(i,j,1) - deltan
-            s(i,j,2) = s(i,j,2) - deltan
-            s(i,j,3) = 1000 - s(i,j,1) - s(i,j,2)
-         end do 
-      end do
-
       end
 
 c ::: -----------------------------------------------------------
@@ -817,49 +432,6 @@ c ::: -----------------------------------------------------------
       end do
       end
 
-c ::: -----------------------------------------------------------
-c ::: Smooth the capillary pressure, p_c.
-c ::: -----------------------------------------------------------
-
-      subroutine FORT_SMOOTH_CPL(pc,DIMS(pc),
-     &     coef,DIMS(coef),n_coef,lo,hi)
-
-      implicit none
-
-#include "probdata.H"
-
-      integer DIMDEC(pc)
-      integer DIMDEC(coef)
-      integer n_coef
-      integer lo(SDIM),hi(SDIM)
-      REAL_T  pc(DIMV(pc))
-      REAL_T  coef(DIMV(coef),n_coef)
-
-      integer i,j
-      integer l_cpl_type
-      REAL_T  l_cpl_coef, l_sigma, l_sat_res
-      REAL_T, allocatable :: pctmp(:,:)
-      
-      allocate(pctmp(DIMV(pc)))
-      pctmp = pc
-
-      do j = lo(2),hi(2)
-         do i = lo(1),hi(1)
-            l_cpl_type = nint(coef(i,j,1))
-            l_cpl_coef = coef(i,j,2)
-            l_sigma    = coef(i,j,3)
-            l_sat_res  = coef(i,j,4)
-
-            pc(i,j) = pctmp(i,j)+pctmp(i-1,j)+pctmp(i+1,j)+pctmp(i,j-1)+pctmp(i,j+1)
-            pc(i,j) = pc(i,j)/5.d0
-            
-         end do 
-      end do
-
-      deallocate(pctmp)
-
-      end
-
 
 c ::: -----------------------------------------------------------
 c ::: Compute the lambda = kr/mu for all components
@@ -937,286 +509,6 @@ c ::: -----------------------------------------------------------
             lbd(i,j,:) = ld_tmp
 
          end do 
-      end do
-
-      end
-
-c ::: ----------------------------------------------------------
-c ::: GETDIFFUSE_CPL
-c       Compute the diffusive coefficient for the capillary solve.
-c       - Only solve for water ( the first component)
-c ::: ----------------------------------------------------------         
-      subroutine FORT_GETDIFFUSE_CPL(lbd, DIMS(lbd), 
-     &     dfx, DIMS(dfx), dfy, DIMS(dfy),
-     &     lo, hi, domlo, domhi, bc, ncomp)
-
-      implicit none
-
-#include "probdata.H"
-
-      integer lo(SDIM),hi(SDIM)
-      integer domlo(SDIM),domhi(SDIM)
-      integer DIMDEC(lbd)
-      integer DIMDEC(dfx)
-      integer DIMDEC(dfy)
-      integer ncomp
-      integer bc(SDIM,2)
-      REAL_T  lbd(DIMV(lbd),ncomps)
-      REAL_T  dfx(DIMV(dfx),ncomp)
-      REAL_T  dfy(DIMV(dfy),ncomp)
-
-      integer i, j
-      REAL_T  lambda(ncomps),H_coef,tmp(2)
-
-c ::: diffusion coefficient in x-dir
-      do i=lo(1), hi(1)+1
-         do j=lo(2), hi(2)
-            lambda = lbd(i-1,j,:)
-            tmp(1) = lambda(1)*lambda(2)/(lambda(1)+lambda(2))
-            lambda = lbd(i,j,:)
-            tmp(2) = lambda(1)*lambda(2)/(lambda(1)+lambda(2))
-            H_coef = half*(tmp(1)+tmp(2))
-c            H_coef = one/tmp(1) + one/tmp(2)
-c            H_coef = two/H_coef
-            if (i .eq. domlo(1)) then
-               if (bc(1,1) .eq. EXT_DIR) then
-                  lambda = lbd(i-1,j,:)
-               elseif (bc(1,1) .eq. SEEPAGE) then
-                  lambda = lbd(i-1,j,:)
-               end if
-               H_coef  = lambda(1)*lambda(2)/(lambda(1)+lambda(2))
-            elseif (i .eq. domhi(1)+1) then
-               if (bc(1,2) .eq. EXT_DIR) then
-                  lambda = lbd(i,j,:)
-               elseif (bc(1,2) .eq. SEEPAGE) then
-                  lambda = lbd(i,j,:)
-               end if       
-               H_coef  = lambda(1)*lambda(2)/(lambda(1)+lambda(2))
-            endif
-
-            dfx(i,j,1) = H_coef*rhoval(1)
-         end do
-      end do
-
-
-c ::: diffusion coefficient in y-dir
-      do j=lo(2), hi(2)+1
-         do i=lo(1), hi(1)
-            lambda = lbd(i,j-1,:)
-            tmp(1) = lambda(1)*lambda(2)/(lambda(1)+lambda(2))
-            lambda = lbd(i,j,:)
-            tmp(2) = lambda(1)*lambda(2)/(lambda(1)+lambda(2))
-            H_coef = half*(tmp(1)+tmp(2))
-c            H_coef = one/tmp(1) + one/tmp(2)
-c            H_coef = two/H_coef
-            if (j .eq. domlo(2)) then
-               if (bc(2,1) .eq. EXT_DIR) then
-                  lambda = lbd(i,j-1,:)
-               elseif (bc(2,1) .eq. SEEPAGE) then
-                  lambda = lbd(i,j-1,:)
-               end if
-               H_coef = lambda(1)*lambda(2)/(lambda(1)+lambda(2))
-            elseif (j .eq. domhi(2)+1) then
-               if (bc(2,2) .eq. EXT_DIR) then
-                  lambda = lbd(i,j,:)
-               elseif (bc(2,2) .eq. SEEPAGE) then
-                  lambda = lbd(i,j,:)
-               end if       
-               H_coef = lambda(1)*lambda(2)/(lambda(1)+lambda(2))
-            end if
-
-            dfy(i,j,1) = H_coef*rhoval(1)
-         end do
-      end do
-
-      end
-
-c :: ----------------------------------------------------------
-c :: GETDIFFUSE_CPL_dp
-c      Compute the diffusive coefficient for the jacobian in 
-c      capillary solve.  
-c      - Only valid for water (the first component)
-c :: ----------------------------------------------------------         
-      subroutine FORT_GETDIFFUSE_CPL_dp(s, h_cc, DIMS(s), 
-     &     lbd, DIMS(lbd), dfx, DIMS(dfx), dfy, DIMS(dfy), 
-     &     phi, DIMS(phi), kappa, DIMS(kappa),
-     &     coef,DIMS(coef),n_coef,
-     &     lo, hi, domlo, domhi, bc, ncomp)
-
-      implicit none
-
-#include "probdata.H"
-
-      integer DIMDEC(s)
-      integer DIMDEC(lbd)
-      integer DIMDEC(dfx)
-      integer DIMDEC(dfy)
-      integer DIMDEC(phi)
-      integer DIMDEC(kappa)
-      integer DIMDEC(coef)
-      integer n_coef
-      integer lo(SDIM),hi(SDIM)
-      integer domlo(SDIM),domhi(SDIM)
-      integer bc(SDIM,2)
-      integer ncomp
-      REAL_T  s(DIMV(s),ncomps)
-      REAL_T  h_cc(DIMV(s))
-      REAL_T  lbd(DIMV(lbd),ncomps)
-      REAL_T  dfx(DIMV(dfx),ncomp)
-      REAL_T  dfy(DIMV(dfy),ncomp)
-      REAL_T  phi(DIMV(phi))
-      REAL_T  kappa(DIMV(kappa))
-      REAL_T  coef(DIMV(coef),n_coef)
-
-      integer i, j
-      REAL_T  lambda(ncomps),H_coef,dpcds
-      integer l_cpl_type
-      REAL_T  l_cpl_coef, l_sigma, l_sat_res
-
-      do i = ARG_L1(s),ARG_H1(s)
-         do j = ARG_L2(s),ARG_H2(s)
-            lambda = lbd(i,j,1:2)
-            h_cc(i,j) = lambda(1)*lambda(2)/(lambda(1)+lambda(2))
-            if (h_cc(i,j) .gt. 1.d-12) then
-               l_cpl_type = nint(coef(i,j,1))
-               l_cpl_coef = coef(i,j,2)
-               l_sigma    = coef(i,j,3)
-               l_sat_res  = coef(i,j,4)
-               call get_dcplds(dpcds,s(i,j,:),rhoval,phi(i,j),
-     &              kappa(i,j),l_sigma,ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
-               h_cc(i,j) = h_cc(i,j)*dpcds*rhoval(1)
-            else
-               h_cc(i,j) = zero
-            end if
-         end do
-      end do
-
-c ::: diffusion coefficient in x-dir
-      do i=lo(1), hi(1)+1
-         do j=lo(2), hi(2)
-
-            H_coef = half*(h_cc(i-1,j)+h_cc(i,j))
-c            H_coef = one/h_cc(i-1,j) + one/h_cc(i,j)
-c            H_coef = two/H_coef
-            if (i .eq. domlo(1)) then
-               if (bc(1,1) .eq. EXT_DIR) then
-                  H_coef = h_cc(i,j)
-               elseif (bc(1,1) .eq. SEEPAGE) then
-                  H_coef = h_cc(i,j)
-               end if
-            elseif (i .eq. domhi(1)+1) then
-               if (bc(1,2) .eq. EXT_DIR) then
-                  H_coef = h_cc(i,j)
-               elseif (bc(1,2) .eq. SEEPAGE) then
-                  H_coef = h_cc(i,j)
-               end if  
-            end if
-            dfx(i,j,1) = H_coef
-         end do
-      end do
-
-
-c ::: diffusion coefficient in y-dir
-      do j=lo(2), hi(2)+1
-         do i=lo(1), hi(1)
-
-            H_coef = half*(h_cc(i,j-1)+h_cc(i,j))
-c            H_coef = one/h_cc(i,j-1) + one/h_cc(i,j)
-c            H_coef = two/H_coef
-            if (j .eq. domlo(2)) then
-               if (bc(2,1) .eq. EXT_DIR) then
-                  H_coef = h_cc(i,j)
-               elseif (bc(2,1) .eq. SEEPAGE) then
-                  H_coef = h_cc(i,j)
-               end if
-               
-            elseif (j .eq. domhi(2)+1) then
-               if (bc(2,2) .eq. EXT_DIR) then
-                  H_coef = h_cc(i,j)
-               elseif (bc(2,2) .eq. SEEPAGE) then
-                  H_coef = h_cc(i,j)
-               end if 
-            end if
-            dfy(i,j,1) = H_coef
-         end do
-      end do
-
-      end
-
-c ::: ---------------------------------------------------------------
-c ::: RICHARD_COEF
-c       Compute the diffusive coefficient for the richard equation.
-c       - Only solve for water ( the first component)
-c ::: ---------------------------------------------------------------    
-      subroutine FORT_RICHARD_COEF(lbd, DIMS(lbd), 
-     &     dfx, DIMS(dfx), dfy, DIMS(dfy),
-     &     umac, DIMS(umac), vmac, DIMS(vmac),
-     &     lo, hi, domlo, domhi, bc, nc, do_upwind)
-
-      implicit none
-
-#include "probdata.H"
-
-      integer lo(SDIM),hi(SDIM)
-      integer domlo(SDIM),domhi(SDIM)
-      integer DIMDEC(lbd)
-      integer DIMDEC(dfx)
-      integer DIMDEC(dfy)
-      integer DIMDEC(umac)
-      integer DIMDEC(vmac)
-      integer nc
-      integer bc(SDIM,2)
-      REAL_T  lbd(DIMV(lbd),ncomps)
-      REAL_T  dfx(DIMV(dfx))
-      REAL_T  dfy(DIMV(dfy))
-      REAL_T  umac(DIMV(umac))
-      REAL_T  vmac(DIMV(vmac))
-      integer do_upwind
-
-      integer i, j
-      REAL_T  H_coef
-
-c ::: diffusion coefficient in x-dir
-      do i=lo(1), hi(1)+1
-         do j=lo(2), hi(2)
-            if (do_upwind.eq.1) then
-               H_coef = merge(lbd(i-1,j,nc),lbd(i,j,nc),umac(i,j)>=zero)
-            else
-               H_coef = half*(lbd(i-1,j,nc)+lbd(i,j,nc))
-            end if
-            if (i .eq. domlo(1)) then
-               if (bc(1,1) .eq. EXT_DIR) then
-                  H_coef = lbd(i-1,j,nc)
-               end if
-            elseif (i .eq. domhi(1)+1) then
-               if (bc(1,2) .eq. EXT_DIR) then
-                  H_coef = lbd(i,j,nc)
-               end if    
-            endif
-            dfx(i,j) = H_coef 
-         end do
-      end do
-
-
-c ::: diffusion coefficient in y-dir
-      do j=lo(2), hi(2)+1
-         do i=lo(1), hi(1)
-            if (do_upwind.eq.1) then
-               H_coef = merge(lbd(i,j-1,nc),lbd(i,j,nc),vmac(i,j)>=zero)
-            else
-               H_coef = half*(lbd(i,j-1,nc)+lbd(i,j,nc))
-            end if
-            if (j .eq. domlo(2)) then
-               if (bc(2,1) .eq. EXT_DIR) then
-                  H_coef = lbd(i,j-1,nc) 
-               end if    
-            elseif (j .eq. domhi(2)+1) then
-               if (bc(2,2) .eq. EXT_DIR) then
-                  H_coef = lbd(i,j,nc) 
-               end if    
-            endif
-            dfy(i,j) = H_coef
-         end do
       end do
 
       end
@@ -2045,230 +1337,6 @@ c
       end     
 
 c ::: ----------------------------------------------------------
-c ::: compute divergence of velocity
-c ::: ----------------------------------------------------------
-      subroutine FORT_DIV_UMAC(s,DIMS(s),
-     &     ux,DIMS(ux),uy,DIMS(uy),lo,hi,dx)
-      
-      integer lo(2), hi(2)
-      integer DIMDEC(ux)
-      integer DIMDEC(uy)
-      integer DIMDEC(s)
-      REAL_T  ux(DIMV(ux))
-      REAL_T  uy(DIMV(uy))
-      REAL_T  s(DIMV(s))
-      REAL_T  dx(2)
-
-      integer i,j
-
-      do j = lo(2), hi(2)
-         do i = lo(1), hi(1)
-            s(i,j) = s(i,j) + (ux(i+1,j)-ux(i,j))/dx(1) +
-     &              (uy(i,j+1)-uy(i,j))/dx(2)
-         end do
-      end do
-
-      end
-
-
-c ::: -----------------------------------------------------------
-c ::: This routine compute the phase velocity of component 1
-c ::: -----------------------------------------------------------
-      subroutine FORT_UPHASE(uphase,DIMS(uphase),vphase,DIMS(vphase),
-     &     umac,DIMS(umac),vmac,DIMS(vmac),
-     &     pc,DIMS(pc),lbd,DIMS(lbd),
-     &     kpx,DIMS(kpx),kpy,DIMS(kpy),
-     &     sbc,dom_lo,dom_hi,dx,lo,hi)
-
-      implicit none
-
-#include "probdata.H"
-
-      integer DIMDEC(uphase), DIMDEC(vphase)
-      integer DIMDEC(umac), DIMDEC(vmac)
-      integer DIMDEC(kpx), DIMDEC(kpy)
-      integer DIMDEC(pc)
-      integer DIMDEC(lbd)
-      integer lo(SDIM),hi(SDIM)
-      integer dom_lo(SDIM),dom_hi(SDIM)
-      integer sbc(SDIM,2)
-      REAL_T  dx(SDIM)
-      REAL_T  uphase(DIMV(uphase))
-      REAL_T  vphase(DIMV(vphase))
-      REAL_T  umac(DIMV(umac))
-      REAL_T  vmac(DIMV(vmac))
-      REAL_T  kpx(DIMV(kpx)),kpy(DIMV(kpy))  
-      REAL_T  pc(DIMV(pc))
-      REAL_T  lbd(DIMV(lbd),ncomps)
-
-      integer i,j
-      REAL_T  dpc
-      REAL_T  ld(ncomps),le(ncomps)
-
-c     phase velocity in the x-direction
-      do i = lo(1),hi(1)+1
-         do j = lo(2),hi(2)
-            if (model .eq. 2) then
-               dpc = (pc(i,j) - pc(i-1,j))/dx(1)
-               ld = lbd(i,j,:)
-               le = lbd(i-1,j,:)
-               ld(1) = half*(ld(1) + le(1))
-               ld(2) = half*(ld(2) + le(2))
-
-               if (i .eq. dom_lo(1)) then
-                  if (sbc(1,1) .eq. EXT_DIR .or. sbc(1,1) .eq. SEEPAGE) then
-                     dpc = dpc/2d0
-                     ld = lbd(i-1,j,:)
-                  endif
-               else if (i .eq. dom_hi(1)+1) then
-                  if (sbc(1,2) .eq. EXT_DIR .or. sbc(1,2) .eq. SEEPAGE) then
-                     dpc = dpc/2d0
-                     ld = lbd(i,j,:)
-                  endif
-               end if
-               uphase(i,j) = ld(1)/(ld(1)+ld(2))*(umac(i,j) + kpx(i,j)*ld(2)*dpc)
-            end if
-         end do
-      end do
-
-      do j = lo(2),hi(2)+1
-         do i = lo(1),hi(1)
-               
-            if (model .eq. 2) then  
-               dpc = (pc(i,j) - pc(i,j-1))/dx(2)
-               ld = lbd(i,j,:)
-               le = lbd(i,j-1,:)
-               ld(1) = half*(ld(1)+le(1))
-               ld(2) = half*(ld(2)+le(2))
-
-               if (j .eq. dom_lo(2)) then
-                  if (sbc(2,1) .eq. EXT_DIR .or. sbc(2,1) .eq. SEEPAGE) then 
-                     dpc = dpc/2.d0
-                     ld = lbd(i,j-1,:)
-                  endif
-               elseif (j .eq. dom_hi(2)+1) then
-                  if (sbc(2,2) .eq. EXT_DIR .or. sbc(2,2) .eq. SEEPAGE) then
-                     dpc = dpc/2.d0
-                     ld = lbd(i,j,:)
-                  endif
-               end if
-               vphase(i,j) = ld(1)/(ld(1)+ld(2))*(vmac(i,j) 
-     &              + kpy(i,j)*ld(2)*dpc)
-            end if
-         end do
-      end do
-
-      end
-
-c :: ------------------------------------------------------------
-c :: UPHASE_P
-c      Compute the phase velocity based on the phase pressure  
-c
-c :: ------------------------------------------------------------    
-      subroutine FORT_UPHASE_P(ux,DIMS(ux),uy,DIMS(uy),
-     &     lbd,DIMS(lbd),p,DIMS(p),
-     &     kpx,DIMS(kpx),kpy,DIMS(kpy),
-     &     lo,hi,domlo,domhi,dx,bc)
-
-      implicit none
-
-#include "probdata.H"
-
-      integer DIMDEC(ux)
-      integer DIMDEC(uy)
-      integer DIMDEC(p)
-      integer DIMDEC(kpx), DIMDEC(kpy)
-      integer DIMDEC(lbd)
-      integer lo(SDIM),hi(SDIM)
-      integer domlo(SDIM), domhi(SDIM)
-      integer bc(SDIM,2)
-      REAL_T  dx(SDIM)
-      REAL_T  ux(DIMV(ux))
-      REAL_T  uy(DIMV(uy))
-      REAL_T  p(DIMV(p))
-      REAL_T  lbd(DIMV(lbd),ncomps)
-      REAL_T  kpx(DIMV(kpx)),kpy(DIMV(kpy)) 
-      integer do_upwind
-      integer i, j
-      REAL_T  gravx, gravy, mult, ld, dp
-
-      if (gravity_dir.eq.0) then
-         gravx = -rhoval(1)*gravity
-         gravy = 0.d0
-      else if (gravity_dir.eq.1) then
-         gravx = 0.d0
-         gravy = -rhoval(1)*gravity
-      endif
-      ux = zero
-      uy = zero
-      do_upwind = 1
-      do j=lo(2), hi(2)
-         do i=lo(1), hi(1)+1
-            dp = - ((p(i,j)-p(i-1,j))/dx(1) - gravx)
-            mult = one
-            if (do_upwind.eq.1) then
-               ld   = merge(lbd(i-1,j,1),lbd(i,j,1),dp>=zero)
-            else
-               ld   = half*(lbd(i,j,1)+lbd(i-1,j,1))
-            end if
-            if (i .eq. domlo(1)) then
-               if (bc(1,1) .eq. EXT_DIR) then
-                  mult = two 
-                  ld   = lbd(i-1,j,1)
-               elseif (bc(1,1) .eq. FOEXTRAP) then
-                  mult = zero
-               end if
-            end if
-            if (i .eq. domhi(1)+1) then
-               if (bc(1,2) .eq. EXT_DIR) then
-                  mult = two
-                  ld   = lbd(i,j,1)
-               elseif (bc(1,2) .eq. FOEXTRAP) then
-                  mult = zero
-               end if
-            end if
-
-            ux(i,j) = ux(i,j) - kpx(i,j)*ld*(mult*(p(i,j)-p(i-1,j))/dx(1) - gravx)  
-
-         end do
-      end do
-            
-      do j=lo(2), hi(2)+1
-         do i=lo(1), hi(1)
-            dp = - ((p(i,j)-p(i,j-1))/dx(2) - gravy)
-            mult = one
-            if (do_upwind.eq.1) then
-               ld   = merge(lbd(i,j-1,1),lbd(i,j,1),dp>=zero)
-            else
-               ld   = half*(lbd(i,j,1)+lbd(i,j-1,1))
-            end if
-            if (j .eq. domlo(2)) then
-               if (bc(2,1) .eq. EXT_DIR) then
-                  mult = two
-                  ld = lbd(i,j-1,1)
-               elseif (bc(2,1) .eq. FOEXTRAP) then
-                  mult = zero
-               end if
-            end if
-            if (j .eq. domhi(2)+1) then
-               if (bc(2,2) .eq. EXT_DIR) then
-                  mult = two 
-                  ld = lbd(i,j,1)
-               elseif (bc(2,2) .eq. FOEXTRAP) then
-                  mult = zero
-               end if
-            end if
-
-            uy(i,j) = uy(i,j) - kpy(i,j)*ld*(mult*(p(i,j)-p(i,j-1))/dx(2) - gravy)  
-
-         end do
-      end do
-      
-      end   
-
-
-
-c ::: ----------------------------------------------------------
 c ::: Average the edge-centered velocities to a cell-centered quantity.
 c ::: ----------------------------------------------------------
       subroutine FORT_AVG_UMAC(umac,DIMS(umac),vmac,DIMS(vmac),
@@ -2432,71 +1500,6 @@ c ::: ------------------------------------------------------------------
 c ::: Define approximate steady state condition based on inflow velocity
 c ::: ------------------------------------------------------------------
       
-      subroutine FORT_STEADYSTATE_FAB(rho,DIMS(rho),rhoval,muval,ncomps,
-     &     kappa,DIMS(kappa),krcoef,DIMS(krcoef),nkrcoef,vel,DIMS(vel),
-     &     mask,DIMS(mask),dx,nc,grav,lo,hi)
-
-      implicit none
-
-      integer nc
-      integer DIMDEC(rho)
-      integer DIMDEC(kappa)
-      integer DIMDEC(krcoef)
-      integer DIMDEC(vel)
-      integer DIMDEC(mask)
-      integer ncomps, nkrcoef
-      REAL_T  rho(DIMV(rho),ncomps)
-      REAL_T  kappa(DIMV(kappa))
-      REAL_T  krcoef(DIMV(krcoef),nkrcoef)
-      REAL_T  rhoval(ncomps)
-      REAL_T  muval(ncomps)
-      REAL_T  dx(SDIM)
-      REAL_T  vel(DIMV(vel))
-      REAL_T  mask(DIMV(mask))
-      REAL_T  grav
-      integer lo(SDIM),hi(SDIM)
-      
-      integer i,j,l_kr_type
-      REAL_T  l_kr_coef, l_sat_res
-      REAL_T  vtot, gstar, sol
-
-      vtot  = zero
-      do j = lo(2), hi(2)
-         do i = lo(1), hi(1)
-            if (mask(i,j).gt.0) then
-
-               l_kr_type = nint(krcoef(i,j,1))
-               l_kr_coef = krcoef(i,j,2)
-               l_sat_res = krcoef(i,j,3)
-               
-               if (ncomps == 1) then
-                  gstar = -kappa(i,j)*rhoval(1)*grav
-                  call FORT_FIND_INV_RFLUX(sol,vel(i,j),gstar,muval,
-     &                 ncomps,l_kr_type,l_kr_coef)
-               else
-                  gstar = -kappa(i,j)*(rhoval(1)-rhoval(2))*grav
-                  call FORT_FIND_INV_FLUX(sol,vel(i,j),nc,vtot,gstar,muval,
-     &                 ncomps,l_kr_type,l_kr_coef)
-               end if
-               
-               sol = sol*(1.0-l_sat_res)+l_sat_res
-            
-               rho(i,j,1) = rhoval(1)*sol
-               
-               if (ncomps > 1) then
-                  rho(i,j,2) = rhoval(2)*(1.0-sol)
-               endif
-               
-            endif
-         end do
-      end do 
-
-      end
-
-c ::: ------------------------------------------------------------------
-c ::: Define approximate steady state condition based on inflow velocity
-c ::: ------------------------------------------------------------------
-      
       subroutine FORT_STEADYSTATE(rho,DIMS(rho),rhoval,muval,ncomps,
      &     kappa,DIMS(kappa),matID,DIMS(matID),rmID,time,inflow_vel,
      &     nc,grav,lo,hi)
@@ -2544,71 +1547,6 @@ c ::: ------------------------------------------------------------------
       end do 
 
       end
-
-
-c :::
-c ::: Fill ghost cells if nghost > 1 
-c :::
-      subroutine FORT_PATCH_GHOST(p,DIMS(p),ncomp,face,domlo,domhi)
-
-      implicit none
-
-      integer DIMDEC(p)
-      integer face
-      integer ncomp
-      integer domlo(SDIM)
-      integer domhi(SDIM)
-      REAL_T  p(DIMV(p),ncomp)
-
-c     Local variables
-      integer i,j,n
-
-#define XLO 0
-#define YLO 1
-#define XHI 2
-#define YHI 3
-
-c     y-faces
-      if (face .eq. YLO) then
-         do j = ARG_L2(p),domlo(2)-2
-            do n = 1,ncomp
-               p(:,j,n) = p(:,domlo(2)-1,n)
-            end do
-         end do
-
-      elseif (face .eq. YHI) then
-         do j = domhi(2)+2,ARG_H2(p)
-            do n = 1,ncomp
-               p(:,j,n) = p(:,domhi(2)+1,n)
-            end do
-         end do
-      end if
-
-      
-c     x-faces
-      if (face .eq. XLO) then
-         do i = ARG_L1(p),domlo(1)-2
-            do n = 1,ncomp
-               p(i,:,n) = p(domlo(1)-1,:,n)
-            end do
-         end do
-
-      elseif (face .eq. XHI) then
-         do i = domhi(1)+2,ARG_H1(p)
-            do n = 1,ncomp
-               p(i,:,n) = p(domhi(1)+1,:,n)
-            end do
-         end do
-      end if
-
-#undef XLO
-#undef YLO
-#undef XHI
-#undef YHI
-
-      end
-
-
 
 #define NCROSS 1
 #define DXY 1
@@ -2709,4 +1647,104 @@ c     x-faces
       enddo
       end
 
+c :: ----------------------------------------------------------
+c :: VISCEXTRAP
+c ::             extrapolate viscous terms to ghost zones
+c ::
+c :: INPUTS / OUTPUTS:
+c ::  visc        <=> array containing visc terms
+c ::  DIMS(visc)   => index limits for visc
+c ::  lo,hi        => index limits for grid interior
+c ::  ncomp        => number of components
+c :: ----------------------------------------------------------
+c ::
+      subroutine FORT_VISCEXTRAP (visc,DIMS(visc),lo,hi,ncomp)
+
+      integer DIMDEC(visc)
+      integer lo(SDIM), hi(SDIM)
+      integer ncomp
+      REAL_T  visc(DIMV(visc),ncomp)
+
+      integer i, j, n
+
+      do n = 1, ncomp
+c        ::::: left side
+         i = lo(1)-1
+         do j = lo(2), hi(2)
+c           visc(i,j,n) = two*visc(i+1,j,n) - visc(i+2,j,n)
+            visc(i,j,n) = visc(i+1,j,n)
+         end do
+
+c        ::::: right side
+         i = hi(1)+1
+         do j = lo(2), hi(2)
+c           visc(i,j,n) = two*visc(i-1,j,n) - visc(i-2,j,n)
+            visc(i,j,n) = visc(i-1,j,n)
+         end do
+
+c        ::::: bottom side
+         j = lo(2)-1
+         do i = lo(1), hi(1)
+c           visc(i,j,n) = two*visc(i,j+1,n) - visc(i,j+2,n)
+            visc(i,j,n) = visc(i,j+1,n)
+         end do
+
+c        ::::: top side
+         j = hi(2)+1
+         do i = lo(1), hi(1)
+c           visc(i,j,n) = two*visc(i,j-1,n) - visc(i,j-2,n)
+            visc(i,j,n) = visc(i,j-1,n)
+         end do
+
+c        ::::: corners
+         i = lo(1)-1
+         j = lo(2)-1
+c        visc(i,j,n) = two*visc(i+1,j+2,n) - visc(i+2,j+2,n)
+         visc(i,j,n) = visc(i+1,j+1,n)
+
+         j = hi(2)+1
+c        visc(i,j,n) = two*visc(i+1,j-1,n) - visc(i+2,j-2,n)
+         visc(i,j,n) = visc(i+1,j-1,n)
+
+         i = hi(1)+1
+c        visc(i,j,n) = two*visc(i-1,j-1,n) - visc(i-2,j-2,n) 
+         visc(i,j,n) = visc(i-1,j-1,n)
+
+         j = lo(2)-1
+c        visc(i,j,n) = two*visc(i-1,j+1,n) - visc(i-2,j+2,n)
+         visc(i,j,n) = visc(i-1,j+1,n)
+      end do
+       
+      end
+
+      subroutine FORT_INITKEDGE (cdat, DIMS(cdat), edat, DIMS(edat), 
+     &     lo, hi, dir)
+      implicit none
+      integer DIMDEC(cdat)
+      integer DIMDEC(edat)
+      integer lo(SDIM), hi(SDIM)
+      integer dir
+c     FIXME: add support for vector kappa
+      REAL_T  cdat(DIMV(cdat),SDIM)
+      REAL_T  edat(DIMV(edat))
+
+      integer i,j,nc
+
+      nc = dir+1
+      if (dir .eq. 0) then
+         do j = lo(2), hi(2)
+            do i = lo(1), hi(1)+1
+               edat(i,j) = 2.d0 / 
+     &              (1.d0/cdat(i,j,nc) + 1.d0/cdat(i-1,j,nc))
+            enddo
+         enddo
+      else
+         do j = lo(2), hi(2)+1
+            do i = lo(1), hi(1)
+               edat(i,j) = 2.d0 / 
+     &              (1.d0/cdat(i,j,nc) + 1.d0/cdat(i,j-1,nc))
+            enddo
+         enddo
+      endif
+      end
 

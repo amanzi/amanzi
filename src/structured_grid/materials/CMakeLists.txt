@@ -15,8 +15,7 @@ set(CXX_header_files Property.H
                      RockManager.H
                      RockManager_F.H
                      GSLibInt.H
-                     GSLibInt_F.H
-                     RockUtil.H)
+                     GSLibInt_F.H)
 
 set(CXX_source_files Property.cpp
                      Material.cpp
@@ -33,7 +32,6 @@ endif()
 
 set(FPP_source_files MatFiller_${AMANZI_SPACEDIM}D.F
                      GSLibInt_${AMANZI_SPACEDIM}D.F
-                     RockUtil_${AMANZI_SPACEDIM}D.F
                      RockManager_${AMANZI_SPACEDIM}D.F)
 
 include_directories(${SREGION_SOURCE_DIR})  

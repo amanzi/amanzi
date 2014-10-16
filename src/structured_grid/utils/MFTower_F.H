@@ -1,5 +1,5 @@
-#ifndef _MFTOWER_F_H
-#define _MFTOWER_F_H
+#ifndef _MFTower_F_H
+#define _MFTower_F_H
 
 #ifdef BL_LANG_FORT
 #    define FORT_CC_TO_EC_GRAD    cctoecgrad
@@ -53,4 +53,4 @@ extern "C"
 }
 
 #endif
-#endif /*_MFTOWER_F_H*/
+#endif /*_MFTower_F_H*/

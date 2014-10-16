@@ -13,7 +13,7 @@
 #include <PorousMedia.H>
 #include <PMAMR_Labels.H>
 #include <RegType.H> 
-#include <PROB_PM_F.H>
+#include <Prob_PM_F.H>
 #include <PMAMR_Labels.H>
 #include <PMAmr.H> 
 
@@ -95,13 +95,6 @@ int PorousMedia::num_state_type;
 //
 std::string      PorousMedia::surf_file;
 //
-// Rock
-//
-MultiFab*   PorousMedia::kappadata;
-MultiFab*   PorousMedia::phidata;
-Real        PorousMedia::saturation_threshold_for_vg_Kr;
-int         PorousMedia::use_shifted_Kr_eval;
-//
 // Source.
 //
 bool          PorousMedia::do_source_term;
@@ -119,7 +112,6 @@ Array<Real>         PorousMedia::muval;
 int                 PorousMedia::nphases;
 int                 PorousMedia::ncomps;
 int                 PorousMedia::ndiff;
-int                 PorousMedia::idx_dominant;
 //
 // Tracers.
 //
@@ -149,9 +141,6 @@ bool               PorousMedia::using_sorption;
 
 // Pressure.
 //
-#ifdef MG_USE_FBOXLIB
-int         PorousMedia::richard_iter;
-#endif
 Real        PorousMedia::wt_lo;
 Real        PorousMedia::wt_hi;
 Array<Real> PorousMedia::press_lo;
@@ -192,8 +181,6 @@ int  PorousMedia::verbose_chemistry;
 bool PorousMedia::abort_on_chem_fail;
 int  PorousMedia::show_selected_runtimes;
 
-Array<AdvectionForm> PorousMedia::advectionType;
-Array<DiffusionForm> PorousMedia::diffusionType;
 //
 // Viscosity parameters.
 //
@@ -269,8 +256,6 @@ std::string PorousMedia::amanzi_activity_model;
 // Internal switches.
 //
 int  PorousMedia::do_simple;
-int  PorousMedia::do_multilevel_full;
-bool PorousMedia::use_PETSc_snes_for_evolution;
 int  PorousMedia::do_reflux;
 int  PorousMedia::do_correct;
 int  PorousMedia::no_corrector;
@@ -316,7 +301,6 @@ int  PorousMedia::steady_max_num_consecutive_success;
 Real PorousMedia::steady_extra_time_step_increase_factor;
 int  PorousMedia::steady_max_num_consecutive_increases;
 Real PorousMedia::steady_consecutive_increase_reduction_factor;
-bool PorousMedia::flow_use_PETSc;
 bool PorousMedia::steady_abort_on_psuedo_timestep_failure;
 int  PorousMedia::steady_limit_function_evals;
 Real PorousMedia::steady_abs_tolerance;
@@ -524,17 +508,12 @@ PorousMedia::InitializeStaticVariables ()
   // Set all default values for static variables here!!!
   //
   PorousMedia::num_state_type = -1;
-
-  PorousMedia::kappadata = 0;
-  PorousMedia::phidata   = 0;
-
   PorousMedia::do_source_term = false;
 
   PorousMedia::model        = PorousMedia::PM_INVALID;
   PorousMedia::nphases      = 0;
   PorousMedia::ncomps       = 0; 
   PorousMedia::ndiff        = 0;
-  PorousMedia::idx_dominant = -1;
 
   PorousMedia::ntracers = 0; 
   PorousMedia::uninitialized_data = 1.0e30;
@@ -546,9 +525,6 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::nsorption_isotherms = 0;
   PorousMedia::using_sorption = false;
   
-#ifdef MG_USE_FBOXLIB
-  PorousMedia::richard_iter = 100;
-#endif
   PorousMedia::wt_lo = 0;
   PorousMedia::wt_hi = 0;
 
@@ -581,8 +557,6 @@ PorousMedia::InitializeStaticVariables ()
 
   PorousMedia::have_capillary = 0;
   PorousMedia::atmospheric_pressure_atm = 1;
-  PorousMedia::saturation_threshold_for_vg_Kr = -1; // <0 bypasses smoothing
-  PorousMedia::use_shifted_Kr_eval = 0; //
 
   PorousMedia::variable_scal_diff = 1; 
 
@@ -603,8 +577,6 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::max_chemistry_time_step = -1;
 
   PorousMedia::do_simple           = 0;
-  PorousMedia::do_multilevel_full  = 1;
-  PorousMedia::use_PETSc_snes_for_evolution = true;
   PorousMedia::do_reflux           = 1;
   PorousMedia::do_correct          = 0;
   PorousMedia::no_corrector        = 0;
@@ -657,7 +629,6 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_extra_time_step_increase_factor = 10.;
   PorousMedia::steady_max_num_consecutive_increases = 3;
   PorousMedia::steady_consecutive_increase_reduction_factor = 0.4;
-  PorousMedia::flow_use_PETSc = true;
   PorousMedia::steady_abort_on_psuedo_timestep_failure = false;
   PorousMedia::steady_limit_function_evals = 1e8;
   PorousMedia::steady_abs_tolerance = 1.e-10;
@@ -859,37 +830,6 @@ PorousMedia::variableSetUp ()
 			  bc,BndryFunc(FORT_ONE_N_FILL));
   }
 
-  is_diffusive.resize(NUM_SCALARS,false);
-  advectionType.resize(NUM_SCALARS,Conservative);
-  diffusionType.resize(NUM_SCALARS,Laplacian_S);
-
-  // For components.
-  for (int i=0; i<ncomps; i++) 
-    {
-      advectionType[i] = Conservative;
-      diffusionType[i] = Laplacian_S;
-      is_diffusive[i] = false;
-      if (visc_coef[i] > 0.0 && solid.compare(pNames[pType[i]])!=0)
-	is_diffusive[i] = true;
-    }
-
-  // For tracers
-  for (int i=0; i<ntracers; i++) 
-    {
-      advectionType[ncomps+i] = NonConservative;
-      diffusionType[ncomps+i] = Laplacian_S;
-      is_diffusive[ncomps+i] = false;
-      if (diffuse_tracers)
-	is_diffusive[ncomps+i] = true;
-    }
-
-  for (int i = ncomps+ntracers; i < NUM_SCALARS; i++)
-    {
-      advectionType[i] = NonConservative;
-      diffusionType[i] = Laplacian_S;
-      is_diffusive[i] = false;
-    }
-
   if (chemistry_helper != 0) {
     const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
     int num_aux_chem_variables = aux_chem_variables_map.size();
@@ -1065,9 +1005,7 @@ void PorousMedia::read_prob()
 
   if (model_name=="steady-saturated") {
       solute_transport_limits_dt = true;
-      do_multilevel_full = true;
       do_richard_init_to_steady = true;
-      use_PETSc_snes_for_evolution = true;
   }
 
   pb.query("do_tracer_advection",do_tracer_advection);
@@ -1132,7 +1070,6 @@ void PorousMedia::read_prob()
   pb.query("steady_extra_time_step_increase_factor",steady_extra_time_step_increase_factor);
   pb.query("steady_max_num_consecutive_increases",steady_max_num_consecutive_increases);
   pb.query("steady_consecutive_increase_reduction_factor",steady_consecutive_increase_reduction_factor);
-  pb.query("flow_use_PETSc",flow_use_PETSc);
   pb.query("steady_abort_on_psuedo_timestep_failure",steady_abort_on_psuedo_timestep_failure);
   pb.query("steady_limit_function_evals",steady_limit_function_evals);
   pb.query("steady_abs_tolerance",steady_abs_tolerance);
@@ -1182,9 +1119,6 @@ void PorousMedia::read_prob()
   // Get algorithmic flags and options
   pb.query("full_cycle", full_cycle);
   //pb.query("algorithm", algorithm);
-  pb.query("do_multilevel_full",  do_multilevel_full );
-  use_PETSc_snes_for_evolution = do_multilevel_full;
-  pb.query("use_PETSc_snes_for_evolution", use_PETSc_snes_for_evolution);
   pb.query("do_simple",  do_simple );
   pb.query("do_reflux",  do_reflux );
   pb.query("do_correct", do_correct);
@@ -1301,77 +1235,8 @@ void  PorousMedia::read_comp()
 
   ParmParse cp("comp");
   for (int i = 0; i<ncomps; i++) comp_list[cNames[i]] = i;
-#if 0
 
-  // Get the dominant component
-  std::string domName;
-  cp.query("dominant",domName);
-  if (!domName.empty())
-    idx_dominant = comp_list[domName];
-
-  // Get the boundary conditions for the components
-  Array<int> lo_bc(BL_SPACEDIM), hi_bc(BL_SPACEDIM);
-  cp.getarr("lo_bc",lo_bc,0,BL_SPACEDIM);
-  cp.getarr("hi_bc",hi_bc,0,BL_SPACEDIM);
-  for (int i = 0; i < BL_SPACEDIM; i++)
-    {
-      phys_bc.setLo(i,lo_bc[i]);
-      phys_bc.setHi(i,hi_bc[i]);
-    }
-
-  // Check phys_bc against possible periodic geometry: 
-  //  if periodic, that boundary must be internal BC.
-  if (Geometry::isAnyPeriodic())
-    {      
-      // Do idiot check.  Periodic means interior in those directions.
-      for (int dir = 0; dir < BL_SPACEDIM; dir++)
-        {
-	  if (Geometry::isPeriodic(dir))
-	    {
-	      if (lo_bc[dir] != Interior)
-		{
-		  std::cerr << "PorousMedia::variableSetUp:periodic in direction "
-			    << dir
-			    << " but low BC is not Interior\n";
-		  BoxLib::Abort("PorousMedia::read_comp()");
-		}
-	      if (hi_bc[dir] != Interior)
-		{
-		  std::cerr << "PorousMedia::variableSetUp:periodic in direction "
-			    << dir
-			    << " but high BC is not Interior\n";
-		  BoxLib::Abort("PorousMedia::read_comp()");
-		}
-	    } 
-        }
-    }
-  else
-    {
-      
-      // Do idiot check.  If not periodic, should be no interior.
-      for (int dir = 0; dir < BL_SPACEDIM; dir++)
-        {
-	  if (!Geometry::isPeriodic(dir))
-	    {
-	      if (lo_bc[dir] == Interior)
-		{
-		  std::cerr << "PorousMedia::variableSetUp:Interior bc in direction "
-			    << dir
-			    << " but not defined as periodic\n";
-		  BoxLib::Abort("PorousMedia::read_comp()");
-		}
-	      if (hi_bc[dir] == Interior)
-		{
-		  std::cerr << "PorousMedia::variableSetUp:Interior bc in direction "
-			    << dir
-			    << " but not defined as periodic\n";
-		  BoxLib::Abort("PorousMedia::read_comp()");
-		}
-	    }
-        }
-    }
-#endif
-
+  //
   // Initial condition and boundary condition
   //
   // Component ics, bcs will be set all at once
