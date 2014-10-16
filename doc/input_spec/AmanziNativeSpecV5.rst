@@ -537,7 +537,7 @@ The complete example of a state initialization is below. Note that
 Flow
 ====
 
-Flow sublist includes exactly one sublist, either `"Darcy Problem`" or `"Richards problem`".
+Flow sublist includes exactly one sublist, either `"Darcy problem`" or `"Richards problem`".
 Structure of both sublists is quite similar. We make necessary comments on their differences.
 
 Water retention models
@@ -1395,6 +1395,29 @@ The rest are only used by the native chemistry kernel.
     <Parameter name="Max Time Step (s)" type="double" value="1.5778463e+07"/>
     <Parameter name="Number of component concentrations" type="int" value="1"/>
   </ParameterList>
+
+
+Format of chemistry database (.bgd) file
+........................................
+
+A section header starts with token `"<`". 
+A comment line starts with token `"#`". 
+Data are separated by semicolumns.
+
+ * Section `"Primary Species`". Each like has four data: name of a primary component,
+   ion size parameter, charge, and molecular weight.
+
+ * Section `"General Kinetics`".
+
+The simplest example is below.
+
+.. code-block:: text
+
+  <Primary Species
+  Tritium  ;   9.00 ;   0.00 ;   1.01
+
+  <General Kinetics
+    1.00 Tritium <->  ;   1.00 Tritium ;  1.78577E-09 ; ; 
 
 
 Initial conditions
