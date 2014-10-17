@@ -2015,7 +2015,7 @@ PorousMedia::multilevel_advance (Real  time,
 
     if (advect_tracers > 0  ||  react_tracers > 0) {
       bool use_cached_sat = false;
-      bool do_subcycle_tc = false;
+      bool do_subcycle_tc = true;
       bool do_recursive = true;
       advance_saturated_transport_dt(time);
       bool step_ok_tc = advance_richards_transport_chemistry(time,dt,iteration,dt_suggest_tc,
@@ -2391,6 +2391,23 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
         std::cout.flags(oldflags);
       }
       n_subtr++;
+      if (n_subtr > max_n_subcycle_transport) {
+	if (ParallelDescriptor::IOProcessor()) {
+	  std::cout << "TRANSPORT: Level: "
+		    << level
+		    << " time stepping bust!!  # substeps required for dt interval surpassed max_n_subcycle_transport (= "
+		    << max_n_subcycle_transport
+		    << ")."
+		    << std::endl;
+	}
+	if (PMParent()->levelSteps(level)==0  && ParallelDescriptor::IOProcessor()) {
+	  std::cout << "TRANSPORT: Level: "
+		    << level
+		    << ". Either reduce the initial time step or increase max_n_subcycle_transport and re-run"
+		    << std::endl;
+	}
+	BoxLib::Abort();
+      }
 
       // Set time interval for this advection step
       state[State_Type].setNewTimeLevel(t_subtr+dt_subtr);
