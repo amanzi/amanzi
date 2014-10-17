@@ -1402,12 +1402,92 @@ Format of chemistry database (.bgd) file
 
 A section header starts with token `"<`". 
 A comment line starts with token `"#`". 
-Data are separated by semicolumns.
+Data fields are separated by semicolumns.
 
- * Section `"Primary Species`". Each like has four data: name of a primary component,
-   ion size parameter, charge, and molecular weight.
+ * Section `"Primary Species`". Each line in this section has four data fields: 
+   name of a primary component, ion size parameter, charge, and atomic mass [u].
 
- * Section `"General Kinetics`".
+   .. code-block:: txt
+
+    <Primary Species
+    H+  ;   9.00 ;   1.00 ;   1.01
+    Al+++  ;   9.00 ;   3.00 ;  26.98
+    Ca++  ;   6.00 ;   2.00 ;  40.08
+
+ * Section `"General Kinetics`". Each line in this section has five data fields.
+   The first field is the reaction string that has format 
+   "30 A(aq) + 2 B(aq) <-> C(aq) + .3 D(aq) +- 4 E(aq)"
+   where number (stoichiometires) is followed by species name. 
+   The second and fourth fields contain information about reactanct and products.
+   The fouth and fifth columns contain rate constants.
+
+   .. code-block:: txt
+
+    <General Kinetics
+    1.00 Tritium <->  ;   1.00 Tritium ;  1.78577E-09 ; ; 
+
+ * Section `"Ion Exchange Sites`". Each line in this section has three fields: 
+   exchanger name, exchanger change, and exchanger location. 
+   The location is the mineral where the exchanger is located, i.e. kaolinite.
+
+   .. code-block:: txt
+
+    <Ion Exchange Sites
+    X- ; -1.0 ; Bulk
+
+ * Section `"Aqueous Equilibrium Complexes`". Each line in this section has five 
+   fields for secondary species: name = coeff reactant, log Keq, size parameter, charge, and 
+   gram molecular weight.
+
+   .. code-block:: txt
+
+    <Aqueous Equilibrium Complexes
+    OH- =   1.00 H2O  -1.00 H+  ;   13.99510 ;    3.50000 ;   -1.00000 ;   17.00730
+    HCO3- =   1.00 H2O  -1.00 H+   1.00 CO2(aq)  ;    6.34470 ;    4.00000 ;   -1.00000 ;   61.01710
+
+ * Section `"Minerals`". Each line in this section has five fields for secondary species:
+   Name = coeff reactant, log Keq, gram molecular weight [g/mole], molar volume [cm^3/mole],
+   and specific surface area [cm^2 mineral / cm^3 bulk].
+
+   .. code-block:: txt
+
+    <Minerals
+    Quartz = 1.00 SiO2(aq) ; -3.75010E+00 ; 6.00843E+01 ;  2.26880E+01 ;  1.00000E+00
+    Kaolinite =  5.00 H2O  -6.00 H+  2.00 Al+++  2.00 SiO2(aq)  ; 7.57000E+00 ; 2.58160E+02 ; 9.95200E+01 ; 1.0
+
+
+ * Section `"Mineral Kinetics`". Each line in this section has four fields.
+   The first field contains mineral name that is assumed to have the same stoichiometry 
+   as the mineral definition.
+   The second field is the rate name.
+
+ * Section `"Ion Exchange Complexes`". Each line in this section has two fields.
+   The first field has format "name = coeffient and primary name followed by coefficient 
+   and exchanger name. the second field is Keq.
+   The following assumptions are made:
+
+   - The coefficient of the ion exchange complex is one.
+   - Each complexation reaction is written between a single
+     primary species and a single exchange site.
+
+ * Section `"Surface Complex Sites`". Each line in this section has two fields:
+   species name and density.
+
+ * Section `"Surface Complexes`". Each line in this section has three fields
+   for secondary species. The first field has format "name = coefficient primary_name coeffiient exchanger site".
+   The second field is Keq. The third field is charge.
+
+ * Section `"Isotherms`". Each line in this section has three fields: primary species name, 
+   type, and parameters. The type is one of: linear, langmuir, or freundlich.
+   The parameters is a space delimited list of numbers. The number of  parameters and 
+   their meaning depends on the isotherm type.
+
+ * Section `"Radiactive Decay`". Each line in this section has two fields.
+   The first field has format "parent name --> stoichiometric coefficient and species name.
+   The second fields is half-life time with units.
+   The stoichiometric coefficient of the parent should always be one.
+   The units is one of the following: years, days, hours, minutes, or seconds.
+
 
 The simplest example is below.
 
