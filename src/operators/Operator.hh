@@ -90,6 +90,8 @@ class Operator {
   void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss, double dT);
   void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss);
 
+  int FindMatrixBlock(int schema_dofs, int matching_rule, bool action) const;
+
   // preconditioners
   virtual void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
 

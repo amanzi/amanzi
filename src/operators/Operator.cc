@@ -943,6 +943,31 @@ void Operator::RestoreCheckPoint()
 
 
 /* ******************************************************************
+* Find a matrix block matching the given pattern.
+****************************************************************** */
+int Operator::FindMatrixBlock(int schema_dofs, int matching_rule, bool action) const
+{
+  int nblocks = blocks_.size();
+  for (int nb = 0; nb < nblocks; nb++) {
+    int schema = blocks_schema_[nb];
+    if (matching_rule == OPERATOR_SCHEMA_RULE_EXACT) {
+      if ((schema & schema_dofs) == schema_dofs) return nb;
+    } else if (matching_rule == OPERATOR_SCHEMA_RULE_SUBSET) {
+      if (schema & schema_dofs) return nb;
+    }
+  }
+
+  if (action) {
+    Errors::Message msg;
+    msg << "Operators: Matching rule " << matching_rule << " not found.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return -1;
+}
+
+
+/* ******************************************************************
 * Extension of Mesh API. 
 ****************************************************************** */
 /*

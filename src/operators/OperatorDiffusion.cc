@@ -97,20 +97,11 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
 {
   // find location of matrix blocks
   int schema_dofs = OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE;
-  int m(0), nblocks = blocks_.size();
-  bool flag(false);
-
-  for (int n = 0; n < nblocks; n++) {
-    int schema = blocks_schema_[n];
-    if ((schema & schema_dofs) == schema_dofs) {
-      m = n;
-      flag = true;
-      break;
-    }
-  }
+  int m = FindMatrixBlock(schema_dofs, OPERATOR_SCHEMA_RULE_EXACT, false);
+  bool flag = (m >= 0); 
 
   if (flag == false) { 
-    m = nblocks++;
+    m = blocks_.size();
     blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL);
     blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
     blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
@@ -202,20 +193,12 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
 void OperatorDiffusion::UpdateMatricesNodal_()
 {
   // find location of matrix blocks
-  int m(0), nblocks = blocks_.size();
-  bool flag(false);
-
-  for (int nb = 0; nb < nblocks; nb++) {
-    int schema = blocks_schema_[nb];
-    if (schema == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_NODE) {
-      m = nb;
-      flag = true;
-      break;
-    }
-  }
+  int schema_dofs = OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_NODE;
+  int m = FindMatrixBlock(schema_dofs, OPERATOR_SCHEMA_RULE_EXACT, false);
+  bool flag = (m >= 0);
 
   if (flag == false) { 
-    m = nblocks++;
+    m = blocks_.size();
     blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_NODE);
     blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
     blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
@@ -275,20 +258,12 @@ void OperatorDiffusion::UpdateMatricesNodal_()
 void OperatorDiffusion::UpdateMatricesTPFA_()
 {
   // find location of matrix blocks
-  int m(0), nblocks = blocks_.size();
-  bool flag(false);
-
-  for (int nb = 0; nb < nblocks; nb++) {
-    int schema = blocks_schema_[nb];
-    if (schema == OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
-      m = nb;
-      flag = true;
-      break;
-    }
-  }
+  int schema_dofs = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
+  int m = FindMatrixBlock(schema_dofs, OPERATOR_SCHEMA_RULE_EXACT, false);
+  bool flag = (m >= 0);
 
   if (flag == false) { 
-    m = nblocks++;
+    m = blocks_.size();
     blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL);
     blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
     blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
@@ -383,13 +358,7 @@ void OperatorDiffusion::ModifyMatrices(const CompositeVector& u)
   }
 
   // find location of face-based matrices
-  int m(0), nblocks = blocks_.size();
-  for (int nb = 0; nb < nblocks; nb++) {
-    if (blocks_schema_[nb] == schema_) {
-      m = nb;
-      break;
-    }
-  }
+  int m = FindMatrixBlock(schema_, OPERATOR_SCHEMA_RULE_EXACT, true);
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
 
   // populate the matrix
@@ -446,14 +415,8 @@ int OperatorDiffusion::ApplyInverseSpecialSff_(const CompositeVector& X, Composi
   // return 0;
 
   // find the block of matrices
-  int m, nblocks = blocks_.size();
-  for (int nb = 0; nb < nblocks; nb++) {
-    int schema = blocks_schema_[nb];
-    if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
-      m = nb;
-      break;
-    }
-  }
+  int schema_dofs = OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL;
+  int m = FindMatrixBlock(schema_dofs, OPERATOR_SCHEMA_RULE_SUBSET, true);
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
 
   // apply preconditioner inversion
@@ -527,14 +490,8 @@ int OperatorDiffusion::ApplyInverseSpecialScc_(const CompositeVector& X, Composi
   // return 0;
 
   // find the block of matrices
-  int m, nblocks = blocks_.size();
-  for (int nb = 0; nb < nblocks; nb++) {
-    int schema = blocks_schema_[nb];
-    if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
-      m = nb;
-      break;
-    }
-  }
+  int schema_dofs = OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL;
+  int m = FindMatrixBlock(schema_dofs, OPERATOR_SCHEMA_RULE_SUBSET, true);
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
 
   // apply preconditioner inversion
@@ -645,14 +602,8 @@ void OperatorDiffusion::InitPreconditionerSpecialSff_(
 
   // find the block of matrices
   int schema_dofs = OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL;
-  int m(0), nblocks = blocks_schema_.size();
-  for (int nb = 0; nb < nblocks; nb++) {
-    int schema = blocks_schema_[nb];
-    if (schema & schema_dofs) {
-      m = nb;
-      break;
-    }
-  }
+  int m = FindMatrixBlock(schema_dofs, OPERATOR_SCHEMA_RULE_SUBSET, true);
+
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
 
   // create a face-based stiffness matrix from A.
@@ -732,14 +683,7 @@ void OperatorDiffusion::InitPreconditionerSpecialScc_(
 
   // find location of matrix blocks
   int schema_dofs = OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL;
-  int m(0), nblocks = blocks_.size();
-  for (int nb = 0; nb < nblocks; nb++) {
-    int schema = blocks_schema_[nb];
-    if (schema & schema_dofs) {
-      m = nb;
-      break;
-    }
-  }
+  int m = FindMatrixBlock(schema_dofs, OPERATOR_SCHEMA_RULE_SUBSET, true);
 
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
 
@@ -863,13 +807,8 @@ void OperatorDiffusion::UpdateFlux(const CompositeVector& u, CompositeVector& fl
 {
   // find location of face-based matrices
   int schema_dofs = OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE;
-  int m(0), nblocks = blocks_.size();
-  for (int nb = 0; nb < nblocks; nb++) {
-    if (blocks_schema_[nb] & schema_dofs) {
-      m = nb;
-      break;
-    }
-  }
+  int m = FindMatrixBlock(schema_dofs, OPERATOR_SCHEMA_RULE_SUBSET, true);
+
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
 

@@ -163,7 +163,7 @@ bool Richards_PK::ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector>
 
   *u = *u0;
   u->Update(1.0, *du, 1.0);
-  return false;
+  return true;
 }
 
 
@@ -323,7 +323,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 
     if (nsat_clipped > 0 || npre_clipped > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << vo_->color("red") << "saturation/pressure clipped in " 
+      *vo_->os() << vo_->color("green") << "saturation/pressure clipped in " 
                  << nsat_clipped << "/" << npre_clipped << " cells" << vo_->reset() << std::endl;
     }
   }
