@@ -28,7 +28,7 @@ namespace Transport {
 **************************************************************** */
 void Transport_PK::InitializeFields()
 {
-  // set popular default values whne Flow is off
+  // set popular default values when Flow is off
   if (S_->HasField("water_saturation")) {
     if (!S_->GetField("water_saturation", passwd_)->initialized()) {
       S_->GetFieldData("water_saturation", passwd_)->PutScalar(1.0);
@@ -38,7 +38,7 @@ void Transport_PK::InitializeFields()
 
   if (S_->HasField("prev_water_saturation")) {
     if (!S_->GetField("prev_water_saturation", passwd_)->initialized()) {
-      S_->GetFieldData("prev_water_saturation", passwd_)->PutScalar(1.0);
+      *S_->GetFieldData("prev_water_saturation", passwd_) = *S_->GetFieldData("water_saturation", passwd_);
       S_->GetField("prev_water_saturation", passwd_)->set_initialized();
     }
   }

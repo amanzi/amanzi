@@ -134,6 +134,55 @@ void Tensor::Inverse()
 
 
 /* ******************************************************************
+* Pseudo-inverse operation with tensors of rank 1 and 2
+* The algorithm is based on eigenvector decomposition. All eigenvalues
+* below the tolerance times the largest eigenvale value are neglected.
+****************************************************************** */
+void Tensor::PseudoInverse()
+{
+  if (size_ == 1) {
+    if (data_[0] != 0.0) data_[0] = 1.0 / data_[0];
+
+  } else {
+    int n = size_; 
+    int ipiv[n], lwork(3 * n), info;
+    double S[n], work[lwork];
+
+    Tensor T(*this);
+    DSYEV_F77("V", "U", &n, T.data(), &n, S, work, &lwork, &info);
+
+    // pseudo-invert diagonal matrix S
+    double norm_inf(fabs(S[0]));
+    for (int i = 1; i < n; i++) {
+      norm_inf = std::max(norm_inf, fabs(S[i]));
+    } 
+
+    double eps = norm_inf * 1e-15;
+    for (int i = 0; i < n; i++) {
+      double tmp(fabs(S[i]));
+      if (tmp > eps) { 
+        S[i] = 1.0 / S[i];
+      } else {
+        S[i] = 0.0;
+      }
+    }
+
+    // calculate pseudo inverse pinv(A) = V * pinv(S) * V^t
+    for (int i = 0; i < n; i++) {
+      for (int j = i; j < n; j++) {
+        double tmp(0.0);
+        for (int k = 0; k < n; k++) {
+          tmp += T(i, k) * S[k] * T(j, k);
+        }
+        (*this)(i, j) = tmp;
+        (*this)(j, i) = tmp;
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Transpose operator for non-symmetric tensors.
 ****************************************************************** */
 void Tensor::Transpose()
@@ -175,6 +224,18 @@ double Tensor::Det()
         - data_[0] * data_[5] * data_[7]; 
   }
   return det;
+}
+
+
+/* ******************************************************************
+* Check that matrix is zero.
+****************************************************************** */
+bool Tensor::isZero()
+{
+  for (int i = 0; i < size_ * size_; i++) {
+    if (data_[i] != 0.0) return false;
+  }
+  return true;
 }
 
 

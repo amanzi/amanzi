@@ -311,6 +311,8 @@ void OperatorDiffusion::UpdateMatricesTPFA_()
   AmanziMesh::Entity_ID_List cells, faces;
   Ttmp.PutScalar(0.0);
   for (int c = 0; c < ncells_owned; c++) {
+    if ((*K_)[c].isZero()) continue;  // We skip zero matrices
+
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
@@ -329,6 +331,11 @@ void OperatorDiffusion::UpdateMatricesTPFA_()
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
+
+    if (Ttmp[0][f] == 0.0) {
+      Aface = 0.0;
+      continue;  // We skip zero transmissibilities
+    }
 
     if (ncells == 2) {
       double coef = 1.0 / Ttmp[0][f];
@@ -670,6 +677,8 @@ void OperatorDiffusion::InitPreconditionerSpecialSff_(
     WhetStone::DenseMatrix& Acell = matrix[c];
 
     double tmp = Acell(nfaces, nfaces) + diag[0][c];
+    if (tmp == 0.0 && (*K_)[c].isZero()) continue;  // We skip zero matrices
+
     for (int n = 0; n < nfaces; n++) {
       for (int m = 0; m < nfaces; m++) {
         Scell(n, m) = Acell(n, m) - Acell(n, nfaces) * Acell(nfaces, m) / tmp;
