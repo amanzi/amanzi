@@ -110,26 +110,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           flow_list->sublist("source terms") = flow_src;
         }
 
-        bool use_picard(USE_PICARD);
-        Teuchos::ParameterList& ti_mode_list = exe_list.sublist("Time Integration Mode");
-        /* EIB - changed with updates to 1.2.2 */
-        /*
-        if (ti_mode_list.isSublist("Steady")) {
-          use_picard = ti_mode_list.sublist("Steady").get<bool>("Use Picard",USE_PICARD);
-        } else if (ti_mode_list.isSublist("Initialize To Steady")) {
-          use_picard = ti_mode_list.sublist("Initialize To Steady").get<bool>("Use Picard",USE_PICARD);
-        }
-         */
-        if (exe_list.sublist("Numerical Control Parameters").sublist("Unstructured Algorithm")
-                    .isSublist("Flow Process Kernel")) {
-          Teuchos::ParameterList fpk_params = exe_list.sublist("Numerical Control Parameters")
-                                                      .sublist("Unstructured Algorithm")
-                                                      .sublist("Flow Process Kernel");
-          if (fpk_params.isParameter("Use Picard")) {
-            use_picard = fpk_params.get<bool>("Use Picard",USE_PICARD);
-          }
-        }
-        if (use_picard) {
+        if (use_picard_) {
           bool have_picard_params(false);
           Teuchos::ParameterList picard_params;
           if (exe_list.isSublist("Numerical Control Parameters")) {
@@ -191,6 +172,8 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
         }
 
         // only include a steady state time integrator list if not transient
+        Teuchos::ParameterList& ti_mode_list = exe_list.sublist("Time Integration Mode");
+
         if (! ti_mode_list.isSublist("Transient")) {
           // create sublists for the steady state time integrator
           Teuchos::ParameterList& sti_list = flow_list->sublist("steady state time integrator");
@@ -299,7 +282,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                       num_list.get<double>("steady time step increase factor",ST_SP_DT_INCR_FACTOR));
                 }
 		// initialization
-		if (!use_picard && num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL)) {
+		if (!use_picard_ && num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL)) {
 		  Teuchos::ParameterList& sti_init = sti_list.sublist("initialization");
 		  sti_init.set<std::string>("method", "saturated solver");
 		  sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);

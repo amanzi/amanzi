@@ -115,7 +115,7 @@ class InputParserIS {
 
   double constant_density;
   int spatial_dimension_;  
-  bool flow_single_phase;
+  bool flow_single_phase, use_picard_;
   bool need_dispersion_;
 
   std::string verbosity_level;
