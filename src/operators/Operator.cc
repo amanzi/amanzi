@@ -520,6 +520,9 @@ void Operator::AssembleMatrix(int schema)
 ****************************************************************** */
 void Operator::ApplyBCs()
 {
+  Errors::Message msg;
+  bool applied_bc(false);
+
   const std::vector<int>& bc_model = bc_->bc_model();
   const std::vector<double>& bc_value = bc_->bc_value();
 
@@ -534,7 +537,7 @@ void Operator::ApplyBCs()
     for (int i = n0; i < n1; i++) diag_g[0][i] = 0.0;
   }
 
-  AmanziMesh::Entity_ID_List faces, nodes;
+  AmanziMesh::Entity_ID_List cells, faces, nodes;
 
   int nblocks = blocks_.size();
   for (int nb = 0; nb < nblocks; nb++) {
@@ -544,6 +547,7 @@ void Operator::ApplyBCs()
 
     if (schema & OPERATOR_SCHEMA_BASE_CELL) {
       if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
+        applied_bc = true;
         Epetra_MultiVector& rhs_face = *rhs_->ViewComponent("face", true);
         Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
         Epetra_MultiVector& diag = *diagonal_->ViewComponent("face");
@@ -580,6 +584,7 @@ void Operator::ApplyBCs()
           }
         }
       } else if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
+        applied_bc = true;
         Epetra_MultiVector& rhs_node = *rhs_->ViewComponent("node", true);
         Epetra_MultiVector& diag = *diagonal_->ViewComponent("node", true);
 
@@ -609,7 +614,33 @@ void Operator::ApplyBCs()
           }
         }
       }
+    } else if (schema & OPERATOR_SCHEMA_BASE_FACE) {
+      if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
+        applied_bc = true;
+        Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
+
+        for (int f = 0; f < nfaces_owned; f++) {
+          WhetStone::DenseMatrix& Aface = matrix[f];
+
+
+          if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
+            mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+            rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
+          }
+          else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) {
+            mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+            rhs_cell[0][cells[0]] -= bc_value[f] * mesh_->face_area(f);
+            Aface *= 0.0;
+            matrix_shadow[f] = Aface;
+          }
+        }
+      }
     }
+  }
+
+  if (!applied_bc) {
+    msg << "Operator boundary conditions: The only supported schema is CELL.";
+    Exceptions::amanzi_throw(msg);
   }
 
   // Account for the ghosted values
@@ -908,6 +939,31 @@ void Operator::RestoreCheckPoint()
       }
     }
   }
+}
+
+
+/* ******************************************************************
+* Find a matrix block matching the given pattern.
+****************************************************************** */
+int Operator::FindMatrixBlock(int schema_dofs, int matching_rule, bool action) const
+{
+  int nblocks = blocks_.size();
+  for (int nb = 0; nb < nblocks; nb++) {
+    int schema = blocks_schema_[nb];
+    if (matching_rule == OPERATOR_SCHEMA_RULE_EXACT) {
+      if ((schema & schema_dofs) == schema_dofs) return nb;
+    } else if (matching_rule == OPERATOR_SCHEMA_RULE_SUBSET) {
+      if (schema & schema_dofs) return nb;
+    }
+  }
+
+  if (action) {
+    Errors::Message msg;
+    msg << "Operators: Matching rule " << matching_rule << " not found.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return -1;
 }
 
 

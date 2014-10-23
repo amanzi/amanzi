@@ -73,13 +73,13 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   ~Transport_PK();
 
   // main PK members
-  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
-
   void Initialize(const Teuchos::Ptr<State>& S);
-  double get_dt();
   int Advance(double dT, double &dT_actual); 
   void CommitState(double dummy_dT, const Teuchos::Ptr<State>& S);
-  std::string name() { return name_; }
+
+  void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
+  double get_dt();
+  std::string name() { return passwd_; }
 
   // main transport members
   void InitializeFields();
@@ -108,10 +108,13 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
 
-  // sources and sinks
+  // sources and sinks for components from n0 to n1 including
   void ComputeAddSourceTerms(double Tp, double dTp, 
                              std::vector<TransportDomainFunction*>& src_sink, 
-                             Epetra_MultiVector& tcc);
+                             Epetra_MultiVector& tcc, int n0, int n1);
+
+  bool PopulateBoundaryData(std::vector<int>& bc_model,
+                            std::vector<double>& bc_value, int component);
 
   // limiters 
   void LimiterBarthJespersen(const int component,
@@ -171,7 +174,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
       double md, int phase,
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
-  int FindDiffusionValue(const std::string tcc_name, double* md, int* phase);
+  int FindDiffusionValue(const std::string& tcc_name, double* md, int* phase);
 
   // I/O methods
   void ProcessParameterList();
@@ -204,7 +207,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   int dim;
 
   Teuchos::RCP<State> S_;  // state info
-  std::string name_;
+  std::string passwd_;
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 

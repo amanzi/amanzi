@@ -23,6 +23,7 @@
 #include "exceptions.hh"
 
 #include "InputParserIS.hh"
+#include "InputAnalysis.hh"
 
 #include "TimerManager.hh"
 
@@ -78,10 +79,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     verbLevel = Teuchos::VERB_NONE;
     new_list = input_parameter_list;
   }
-  
-  // Print debug information about boundary conditions.
-  if ((comm->MyPID() == 0) && (includesVerbLevel(verbLevel, Teuchos::VERB_EXTREME, true)))
-      Amanzi::AmanziInput::InputParserIS_OutputBCs(&new_list);
   
   // A hack: print floating-point numbers with a given precision.
   int precision = input_parameter_list.get<int>("output precision", 0);
@@ -348,7 +345,13 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     }  // if verify_mesh_param
   }  // If expert_params_specified
 
-  // -------------- MULTI-PROCESS COORDINATOR------- --------------------
+  // -------------- ANALYSIS --------------------------------------------
+  Amanzi::InputAnalysis analysis(mesh);
+  analysis.Init(new_list);
+  analysis.RegionAnalysis();
+  analysis.OutputBCs();
+  
+  // -------------- MULTI-PROCESS COORDINATOR----------------------------
 
   Amanzi::MPC mpc(new_list, mesh, comm, output_observations);
 
@@ -356,7 +359,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   mpc.cycle_driver();
 
-  //-----------------------------------------------------
+  //---------------------------------------------------------------------
   
 
   // Clean up

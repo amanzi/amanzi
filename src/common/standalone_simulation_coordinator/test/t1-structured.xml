@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.0.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <Parameter name="Petsc Options File" type="string" value="test/t1-petscParams.dat"/>
 
   <ParameterList name="General Description">
@@ -296,7 +296,7 @@
       <ParameterList name="IC: Linear Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Reference Value" type="double" value="0"/>
-        <Parameter name="Reference Coordinate" type="Array(double)" value="{0,0}"/>
+        <Parameter name="Reference Point" type="Array(double)" value="{0,0}"/>
         <Parameter name="Gradient Value" type="Array(double)" value="{0,-9789.3474 }"/>
       </ParameterList>
       <ParameterList name="Solute IC">
@@ -306,7 +306,6 @@
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="0"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -325,7 +324,6 @@
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tracer">
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
             </ParameterList>
@@ -343,7 +341,6 @@
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tracer">
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
             </ParameterList>

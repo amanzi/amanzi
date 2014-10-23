@@ -91,7 +91,7 @@ void RelativePermeability::ProcessParameterList_(Teuchos::ParameterList& plist)
   }
 
   // optional debug output
-  PlotWRMcurves();
+  PlotWRMcurves(plist);
 }
 
 
@@ -151,10 +151,8 @@ void RelativePermeability::ProcessStringRelativePermeability(const std::string n
 /* ****************************************************************
 * Plot water retention curves.
 **************************************************************** */
-void RelativePermeability::PlotWRMcurves()
+void RelativePermeability::PlotWRMcurves(Teuchos::ParameterList& plist)
 {
-  Teuchos::ParameterList plist;
-
   int MyPID = mesh_->cell_map(false).Comm().MyPID();
   if (MyPID == 0) {
     int mb(0); 
@@ -162,8 +160,8 @@ void RelativePermeability::PlotWRMcurves()
       if (plist.isSublist(plist.name(i))) {
         Teuchos::ParameterList& wrm_list = plist.sublist(plist.name(i));
 
-        if (wrm_list.isSublist("Output")) {
-          Teuchos::ParameterList& out_list = wrm_list.sublist("Output");
+        if (wrm_list.isSublist("output")) {
+          Teuchos::ParameterList& out_list = wrm_list.sublist("output");
 
           std::string fname = out_list.get<std::string>("file");
           Teuchos::OSTab tab = vo_->getOSTab();

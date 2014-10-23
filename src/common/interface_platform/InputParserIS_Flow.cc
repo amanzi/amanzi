@@ -70,7 +70,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 
       if (flow_model == "Single Phase" || flow_model == "Richards") {
         if (flow_model == "Single Phase") {
-          Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem");
+          Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy problem");
           darcy_problem.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
           darcy_problem.set<double>("atmospheric pressure", atm_pres);
 
@@ -78,7 +78,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           flow_single_phase = true;
         }
         else if (flow_model == "Richards") {
-          Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
+          Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards problem");
           richards_problem.set<std::string>("relative permeability", rel_perm);
           richards_problem.set<std::string>("upwind update", update_upwind);
           // this one should come from the input file...
@@ -89,7 +89,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           flow_list = &richards_problem; // we use this below to insert sublists that are shared by Richards and Darcy
 
           // insert the water retention models sublist (these are only relevant for Richards)
-          Teuchos::ParameterList& water_retention_models = richards_problem.sublist("Water retention models");
+          Teuchos::ParameterList& water_retention_models = richards_problem.sublist("water retention models");
           water_retention_models = CreateWRM_List_(plist);
         }
 
@@ -110,26 +110,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           flow_list->sublist("source terms") = flow_src;
         }
 
-        bool use_picard(USE_PICARD);
-        Teuchos::ParameterList& ti_mode_list = exe_list.sublist("Time Integration Mode");
-        /* EIB - changed with updates to 1.2.2 */
-        /*
-        if (ti_mode_list.isSublist("Steady")) {
-          use_picard = ti_mode_list.sublist("Steady").get<bool>("Use Picard",USE_PICARD);
-        } else if (ti_mode_list.isSublist("Initialize To Steady")) {
-          use_picard = ti_mode_list.sublist("Initialize To Steady").get<bool>("Use Picard",USE_PICARD);
-        }
-         */
-        if (exe_list.sublist("Numerical Control Parameters").sublist("Unstructured Algorithm")
-                    .isSublist("Flow Process Kernel")) {
-          Teuchos::ParameterList fpk_params = exe_list.sublist("Numerical Control Parameters")
-                                                      .sublist("Unstructured Algorithm")
-                                                      .sublist("Flow Process Kernel");
-          if (fpk_params.isParameter("Use Picard")) {
-            use_picard = fpk_params.get<bool>("Use Picard",USE_PICARD);
-          }
-        }
-        if (use_picard) {
+        if (use_picard_) {
           bool have_picard_params(false);
           Teuchos::ParameterList picard_params;
           if (exe_list.isSublist("Numerical Control Parameters")) {
@@ -191,6 +172,8 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
         }
 
         // only include a steady state time integrator list if not transient
+        Teuchos::ParameterList& ti_mode_list = exe_list.sublist("Time Integration Mode");
+
         if (! ti_mode_list.isSublist("Transient")) {
           // create sublists for the steady state time integrator
           Teuchos::ParameterList& sti_list = flow_list->sublist("steady state time integrator");
@@ -299,7 +282,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                       num_list.get<double>("steady time step increase factor",ST_SP_DT_INCR_FACTOR));
                 }
 		// initialization
-		if (!use_picard && num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL)) {
+		if (!use_picard_ && num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL)) {
 		  Teuchos::ParameterList& sti_init = sti_list.sublist("initialization");
 		  sti_init.set<std::string>("method", "saturated solver");
 		  sti_init.set<std::string>("linear solver", ST_INIT_SOLVER);
@@ -838,6 +821,9 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
 ****************************************************************** */
 Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* plist)
 {
+  Errors::Message msg;
+  Teuchos::OSTab tab = vo_->getOSTab();
+
   Teuchos::ParameterList wrm_list;
 
   // loop through the material properties list and extract the water retention model info
@@ -847,6 +833,7 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
   for (Teuchos::ParameterList::ConstIterator i = matprop_list.begin(); i != matprop_list.end(); i++) {
     // get the wrm parameters
     Teuchos::ParameterList& cp_list = matprop_list.sublist(i->first);
+
     // we can have either van Genuchten or Brooks Corey
     if (cp_list.isSublist("Capillary Pressure: van Genuchten")) {
       Teuchos::ParameterList vG_list = cp_list.sublist("Capillary Pressure: van Genuchten");
@@ -874,10 +861,9 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
       // now get the assigned regions
       Teuchos::Array<std::string> regions = cp_list.get<Teuchos::Array<std::string> >("Assigned Regions");
 
-      for (Teuchos::Array<std::string>::const_iterator i = regions.begin();
-           i != regions.end(); i++) {
+      for (Teuchos::Array<std::string>::const_iterator i = regions.begin(); i != regions.end(); i++) {
         std::stringstream ss;
-        ss << "Water Retention Model for " << *i;
+        ss << "WRM for " << *i;
 
         Teuchos::ParameterList& wrm_sublist = wrm_list.sublist(ss.str());
 
@@ -889,6 +875,16 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
         wrm_sublist.set<double>("residual saturation", Sr);
         wrm_sublist.set<double>("regularization interval", krel_smooth);
         wrm_sublist.set<std::string>("relative permeability model", rel_perm);
+      
+        if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+          Teuchos::ParameterList& file_list = wrm_sublist.sublist("output");
+          std::stringstream name;
+          name << *i << ".txt";
+          file_list.set<std::string>("file", name.str());
+          file_list.set<int>("number of points", 1000);
+
+          *vo_->os() << "water retention curve file:" << name.str() << std::endl;
+        }
       }
     } else if (cp_list.isSublist("Capillary Pressure: Brooks Corey")) {
       Teuchos::ParameterList& BC_list = cp_list.sublist("Capillary Pressure: Brooks Corey");
@@ -921,7 +917,7 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
       for (Teuchos::Array<std::string>::const_iterator i = regions.begin();
            i != regions.end(); i++) {
         std::stringstream ss;
-        ss << "Water Retention Model for " << *i;
+        ss << "WRM for " << *i;
 
         Teuchos::ParameterList& wrm_sublist = wrm_list.sublist(ss.str());
 
@@ -933,10 +929,21 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
         wrm_sublist.set<double>("residual saturation", Sr);
         wrm_sublist.set<double>("regularization interval", krel_smooth);
         wrm_sublist.set<std::string>("relative permeability model", rel_perm);
+
+        if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+          Teuchos::ParameterList& file_list = wrm_sublist.sublist("output");
+          std::stringstream name;
+          name << *i << ".txt";
+          file_list.set<std::string>("file", name.str());
+          file_list.set<int>("number of points", 1000);
+
+          *vo_->os() << "water retention curve file:" << name.str() << std::endl;
+        }
       }
     } else {
-      // not implemented error
-      Exceptions::amanzi_throw(Errors::Message("An unknown capillary pressure model was specified, must specify either van Genuchten or Brooks Corey"));
+      msg << "An unknown capillary pressure model was specified, must specify" 
+          << " either van Genuchten or Brooks Corey";
+      Exceptions::amanzi_throw(msg);
     }
   }
   return wrm_list;

@@ -108,8 +108,14 @@ void Transport_PK::CalculateDiffusionTensor_(
       mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
       AmanziMesh::Entity_ID_List::iterator c;
-      for (c = block.begin(); c != block.end(); c++) {
-        D[*c] += md * spec->tau[phase] * porosity[0][*c] * saturation[0][*c];
+      if (phase == TRANSPORT_PHASE_LIQUID) {
+        for (c = block.begin(); c != block.end(); c++) {
+          D[*c] += md * spec->tau[phase] * porosity[0][*c] * saturation[0][*c];
+        }
+      } else if (phase == TRANSPORT_PHASE_GAS) {
+        for (c = block.begin(); c != block.end(); c++) {
+          D[*c] += md * spec->tau[phase] * porosity[0][*c] * (1.0 - saturation[0][*c]);
+        }
       }
     }
   }
@@ -119,7 +125,7 @@ void Transport_PK::CalculateDiffusionTensor_(
 /* ******************************************************************
 * Check all phases for the given name.
 ****************************************************************** */
-int Transport_PK::FindDiffusionValue(const std::string tcc_name, double* md, int* phase)
+int Transport_PK::FindDiffusionValue(const std::string& tcc_name, double* md, int* phase)
 {
   for (int i = 0; i < TRANSPORT_NUMBER_PHASES; i++) {
     if (diffusion_phase_[i] == Teuchos::null) continue;

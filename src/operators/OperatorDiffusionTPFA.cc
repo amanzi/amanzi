@@ -63,19 +63,11 @@ void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> f
 
   // find location of matrix blocks
   int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
-  int m(0), nblocks = blocks_.size();
-  bool flag(false);
-
-  for (int n = 0; n < nblocks; n++) {
-    if (blocks_schema_[n] == schema_my) {
-      m = n;
-      flag = true;
-      break;
-    }
-  }
+  int m = FindMatrixBlock(schema_my, OPERATOR_SCHEMA_RULE_EXACT, false);
+  bool flag = (m >= 0);
 
   if (flag == false) { 
-    m = nblocks++;
+    m = blocks_.size();
     blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL);
     blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
     blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
@@ -228,19 +220,11 @@ void OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, Co
 
   // find location of matrix blocks
   int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
-  int m(0), nblocks = blocks_.size();
-  bool flag(false);
-
-  for (int n = 0; n < nblocks; n++) {
-    if (blocks_schema_[n] == schema_my) {
-      m = n;
-      flag = true;
-      break;
-    }
-  }
+  int m = FindMatrixBlock(schema_my, OPERATOR_SCHEMA_RULE_EXACT, false);
+  bool flag = (m >= 0);
 
   if (flag == false) { 
-    m = nblocks++;
+    m = blocks_.size();
     blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL);
     blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
     blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
@@ -472,14 +456,7 @@ void OperatorDiffusionTPFA::AnalyticJacobian_(const CompositeVector& u)
 
   // find location of matrix blocks
   int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
-  int m(0), nblocks = blocks_.size();
-
-  for (int n = 0; n < nblocks; n++) {
-    if (blocks_schema_[n] == schema_my) {
-      m = n;
-      break;
-    }
-  }
+  int m = FindMatrixBlock(schema_my, OPERATOR_SCHEMA_RULE_EXACT, true);
 
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
@@ -645,8 +622,8 @@ void OperatorDiffusionTPFA::ComputeTransmissibilities_()
       beta[i] = fabs(perm[i] / dxn);
     }
 
-    // double grav = (gravity * normal) / area;
-    double grav = gravity * a_dist;
+    double grav = (gravity * normal) / area;
+    //double grav = gravity * a_dist;
     trans_f = 0.0;
 
     if (ncells == 2) {

@@ -44,7 +44,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: energy
 #
-set(energy_src_files Energy_PK.cc)
+set(energy_src_files Energy_PK.cc Energy_VandV.cc)
 set(energy_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
   list(APPEND energy_tpl_libs ${Ifpack_LIBRARIES})
@@ -79,9 +79,9 @@ if (BUILD_TESTS)
     set(amanzi_libs geometry mesh mesh_audit mesh_factory state energy operators whetstone data_structures)
 
     # Test: 1
-    #add_amanzi_test(energy_test energy_test
-    #                KIND int
-    #                SOURCE test/Main.cc test/energy_test.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(energy_matrix_2D energy_matrix_2D
+                    KIND int
+                    SOURCE test/Main.cc test/energy_matrix_2D.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

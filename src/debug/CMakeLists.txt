@@ -26,8 +26,8 @@ include_directories(${ATK_SOURCE_DIR})
 
 
 add_amanzi_library(dbg
-                   SOURCE DataDebug.cc
-                   HEADERS DataDebug.hh
+                   SOURCE DataDebug.cc InputAnalysis.cc
+                   HEADERS DataDebug.hh InputAnalysis.hh
 		   LINK_LIBS mesh geometry error_handling ${Teuchos_LIBRARIES}  
                    )
 if (BUILD_TESTS)

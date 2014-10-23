@@ -40,7 +40,9 @@ class Tensor {
   double Trace() const;
   double Det();
   void Inverse();
+  void PseudoInverse();
   void Transpose();
+  bool isZero();
   void SpectralBounds(double* lower, double* upper) const;
 
   // elementary operators

@@ -57,7 +57,7 @@ void Visualization::ReadParameters_() {
 
   Teuchos::Array<std::string>  default_no_regions(0);
   regions_ = plist_.get<Teuchos::Array<std::string> >("Write Regions", default_no_regions);
-  write_partition_ = plist_.get<bool>("Write Partitions",false);
+  write_partition_ = plist_.get<bool>("Write Partitions", false);
 }
 
 

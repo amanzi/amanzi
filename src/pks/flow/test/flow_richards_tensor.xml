@@ -54,7 +54,7 @@
 
   <!--  FLOW  -->
   <ParameterList name="Flow">
-    <ParameterList name="Richards Problem">
+    <ParameterList name="Richards problem">
       <Parameter name="relative permeability" type="string" value="cell centered"/>
       <Parameter name="atmospheric pressure" type="double" value="-1.e+10"/>
 
@@ -121,7 +121,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="Water retention models">
+      <ParameterList name="water retention models">
         <ParameterList name="WRM for Computational domain">
           <Parameter name="region" type="string" value="Computational domain"/>
           <Parameter name="water retention model" type="string" value="van Genuchten"/>

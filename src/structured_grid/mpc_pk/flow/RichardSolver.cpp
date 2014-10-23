@@ -1,6 +1,6 @@
 #include <RichardSolver.H>
-#include <RICHARDSOLVER_F.H>
-#include <POROUSMEDIA_F.H>
+#include <RichardSolver_F.H>
+#include <PorousMedia_F.H>
 
 #include <Utility.H>
 
@@ -1998,7 +1998,7 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
     }
     if (die_after_dumping_Jacobian) {
       ParallelDescriptor::Barrier();
-      std::string str = "Jacobian written in ASCII to " + viewer_filename + " and run killed from RichardSolver.cpp";
+      std::string str = "Jacobian written in ASCII to " + viewer_filename + " and run killed from RichardMatFDColoringApply";
       BoxLib::Abort(str.c_str());
     }
   }
@@ -2247,7 +2247,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
     }
     if (die_after_dumping_Jacobian) {
       ParallelDescriptor::Barrier();
-      std::string str = "Jacobian written in ASCII to " + viewer_filename + " and run killed from RichardSolver.cpp";
+      std::string str = "Jacobian written in ASCII to " + viewer_filename + " and run killed from SemiAnalyticMatFDColoringApply";
       BoxLib::Abort(str.c_str());
     }
   }

@@ -16,7 +16,7 @@
 namespace Amanzi {
 namespace Transport {
 
-const int TRANSPORT_PHASE_AQUEOUS = 0;  // phases from 0 to 1
+const int TRANSPORT_PHASE_LIQUID = 0;  // phases from 0 to 1
 const int TRANSPORT_PHASE_GAS = 1;
 const int TRANSPORT_NUMBER_PHASES = 2;
 

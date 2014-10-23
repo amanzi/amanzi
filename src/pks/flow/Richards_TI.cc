@@ -36,7 +36,7 @@ void Richards_PK::Functional(double Told, double Tnew,
 
   // update coefficients
   darcy_flux_copy->ScatterMasterToGhosted("face");
-  rel_perm_->Compute(*u_new);
+  rel_perm_->Compute(*u_new); 
   upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), "k_relative");
   upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), "dkdpc");
   UpdateSourceBoundaryData(Tp, *u_new);
@@ -122,7 +122,6 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
 
   UpdateSourceBoundaryData(Tp, *u);
 
-
   // create diffusion operators
   op_preconditioner_->Init();
   op_preconditioner_->UpdateMatrices(darcy_flux_copy, solution);
@@ -157,16 +156,14 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
 bool Richards_PK::ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector> u0,
                                   Teuchos::RCP<CompositeVector> u)
 {
- /*
- Teuchos::RCP<CompositeVector> du = Teuchos::rcp(new CompositeVector(*u));
- du->Update(-1.0, *u0, 1.0);
+  Teuchos::RCP<CompositeVector> du = Teuchos::rcp(new CompositeVector(*u));
+  du->Update(-1.0, *u0, 1.0);
  
- ModifyCorrection(dT, Teuchos::null, u0, du);
+  ModifyCorrection(dT, Teuchos::null, u0, du);
 
- *u = *u0;
- u->Update(1.0, *du, 1.0);
- */
- return false;
+  *u = *u0;
+  u->Update(1.0, *du, 1.0);
+  return true;
 }
 
 
@@ -267,11 +264,10 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   double damping_factor = 0.5;
   double reference_pressure = 101325.0;
   
-
   if (rp_list_.isSublist("clipping parameters")){
-    Teuchos::ParameterList clip_list = rp_list_.sublist("clipping parameters");
-    max_sat_pert = clip_list.get<double>("max sat change", 0.25);
-    damping_factor = clip_list.get<double>("damping factor", 0.5);
+    Teuchos::ParameterList& clip_list = rp_list_.sublist("clipping parameters");
+    max_sat_pert = clip_list.get<double>("maximum saturation change", 0.25);
+    damping_factor = clip_list.get<double>("pressure damping factor", 0.5);
   }
 
   int nsat_clipped(0), npre_clipped(0);
@@ -289,7 +285,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     
     double press_pert = atm_pressure_ - WRM[mb]->capillaryPressure(sat_pert);
     double du_pert_max = fabs(uc[0][c] - press_pert); 
-    double tmp =  duc[0][c];
+    double tmp = duc[0][c];
 
     if ((fabs(duc[0][c]) > du_pert_max) && (1 - sat > 1e-5)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
@@ -327,7 +323,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 
     if (nsat_clipped > 0 || npre_clipped > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << vo_->color("red") << "saturation/pressure clipped in " 
+      *vo_->os() << vo_->color("green") << "saturation/pressure clipped in " 
                  << nsat_clipped << "/" << npre_clipped << " cells" << vo_->reset() << std::endl;
     }
   }

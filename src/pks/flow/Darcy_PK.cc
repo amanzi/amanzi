@@ -50,10 +50,10 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S) : Flow_
     Exceptions::amanzi_throw(msg);
   }
 
-  if (flow_list.isSublist("Darcy Problem")) {
-    dp_list_ = flow_list.sublist("Darcy Problem");
+  if (flow_list.isSublist("Darcy problem")) {
+    dp_list_ = flow_list.sublist("Darcy problem");
   } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Darcy Problem> sublist.");
+    Errors::Message msg("Flow PK: input parameter list does not have \"Darcy problem\" sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -173,7 +173,7 @@ Darcy_PK::~Darcy_PK()
 
 
 /* ******************************************************************
-* Extract information from Diffusion Problem parameter list.
+* Extract information from Diffusion problem parameter list.
 ****************************************************************** */
 void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 {

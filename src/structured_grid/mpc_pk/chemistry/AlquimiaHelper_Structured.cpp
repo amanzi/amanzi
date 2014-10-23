@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <Utility.H>
+#include <ParallelDescriptor.H>
 
 AlquimiaHelper_Structured::AlquimiaHelper_Structured(Amanzi::AmanziChemistry::ChemistryEngine* _engine)
   : engine(_engine),   alq_sizes(engine->Sizes())
@@ -78,7 +79,7 @@ AlquimiaHelper_Structured::AlquimiaHelper_Structured(Amanzi::AmanziChemistry::Ch
                       alquimia_aux_out[ithread]);
   }
 
-  bool dump = true;
+  bool dump = ParallelDescriptor::IOProcessor();
   if (dump) {
     std::cout << "AlquimiaHelper_Structured:" << std::endl;
     std::cout << "  Primary Species Names: " << std::endl;
@@ -200,12 +201,18 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
   for (int i=0; i<primarySpeciesNames.size(); ++i) {
     const std::string label=primarySpeciesNames[i] + "_Activity_Coefficient"; 
     aux_output.primary_activity_coeff.data[i] = aux_data(iv,aux_chem_variables[label]);
+
+    aux_output.primary_activity_coeff.data[i] = 0;
+
   }
 
   if (NfreeIonSpecies > 0) {
     for (int i=0; i<primarySpeciesNames.size(); ++i) {
       const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
       aux_output.primary_free_ion_concentration.data[i] = aux_data(iv,aux_chem_variables[label]);
+
+      aux_output.primary_free_ion_concentration.data[i] = 0;
+
     }
   }
 
@@ -373,7 +380,6 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
     }
   }
 
-#if 0
   for (int i=0; i<primarySpeciesNames.size(); ++i) {
     const std::string label=primarySpeciesNames[i] + "_Activity_Coefficient"; 
     aux_data(iv,aux_chem_variables[label]) = aux_output.primary_activity_coeff.data[i];
@@ -385,7 +391,7 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
       aux_data(iv,aux_chem_variables[label]) = aux_output.primary_free_ion_concentration.data[i];
     }
   }
-#endif
+
   if (Nminerals > 0) {
     for (int i=0; i<Nminerals; ++i) {
       const std::string label=mineralNames[i] + "_Volume_Fraction"; 

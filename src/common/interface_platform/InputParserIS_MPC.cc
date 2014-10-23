@@ -297,16 +297,38 @@ Teuchos::ParameterList InputParserIS::CreateMPC_List_(Teuchos::ParameterList* pl
 
     if (flow_on) {
       double ti_rescue(TI_RESCUE_REDUCTION_FACTOR);
+      Teuchos::ParameterList& exe_list = plist->sublist("Execution Control");
 
-      if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
-        if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
-          Teuchos::ParameterList& ncpu_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+      if (exe_list.isSublist("Numerical Control Parameters")) {
+        if (exe_list.sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+          Teuchos::ParameterList& ncpu_list = exe_list.sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
           if (ncpu_list.isSublist("MPC")) {
-            ti_rescue = ncpu_list.sublist("MPC").get<double>("time integration rescue reduction factor",TI_RESCUE_REDUCTION_FACTOR);
+            ti_rescue = ncpu_list.sublist("MPC").get<double>("time integration rescue reduction factor", TI_RESCUE_REDUCTION_FACTOR);
           }
         }
       }
-      mpc_list.set<double>("time integration rescue reduction factor",TI_RESCUE_REDUCTION_FACTOR);
+      mpc_list.set<double>("time integration rescue reduction factor", TI_RESCUE_REDUCTION_FACTOR);
+
+      // Add Picard option
+      use_picard_ = USE_PICARD;
+      if (exe_list.sublist("Numerical Control Parameters").sublist("Unstructured Algorithm")
+          .isSublist("Flow Process Kernel")) {
+        Teuchos::ParameterList fpk_params = exe_list.sublist("Numerical Control Parameters")
+                                                    .sublist("Unstructured Algorithm")
+                                                    .sublist("Flow Process Kernel");
+        if (fpk_params.isParameter("Use Picard")) {
+          use_picard_ = fpk_params.get<bool>("Use Picard", USE_PICARD);
+        }
+      }
+
+      if (use_picard_) {
+        Teuchos::ParameterList& tim_list = mpc_list.sublist("Time Integration Mode");
+        if (tim_list.isSublist("Initialize To Steady")) {
+          tim_list.sublist("Initialize To Steady").set<bool>("Use Picard", use_picard_);
+        } else if (tim_list.isSublist("Steady")) {
+          tim_list.sublist("Steady").set<bool>("Use Picard", use_picard_);
+        }
+      }
     }
 
     /* EIB: proposed v1.2.2 update - Change Restart name */

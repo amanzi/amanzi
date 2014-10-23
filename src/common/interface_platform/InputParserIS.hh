@@ -42,7 +42,9 @@ class InputParserIS {
     flow_single_phase = false;
     verbosity_level = "low";
   };
-  ~InputParserIS() { };
+  ~InputParserIS() {
+    if (vo_ != NULL) delete vo_;
+  };
 
   // main members
   Teuchos::ParameterList Translate(Teuchos::ParameterList* plist, int numproc);
@@ -113,7 +115,7 @@ class InputParserIS {
 
   double constant_density;
   int spatial_dimension_;  
-  bool flow_single_phase;
+  bool flow_single_phase, use_picard_;
   bool need_dispersion_;
 
   std::string verbosity_level;
@@ -122,6 +124,7 @@ class InputParserIS {
  private:
   std::vector<std::string> vv_bc_regions;  // XML verification
   std::vector<std::string> vv_src_regions;
+  std::vector<std::string> vv_obs_regions;
 
  protected:
   VerboseObject* vo_;

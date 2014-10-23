@@ -303,8 +303,8 @@ namespace Amanzi {
         if (thermoDB_reqd) {
           reqL.push_back(ThermoDB_str);
         }
-        reqP.push_back(Chemistry_Engine_str);
         if (chem_mode == "Alquimia") {
+          reqP.push_back(Chemistry_Engine_str);
           reqP.push_back(Chemistry_Engine_Input_str);
         }
         reqP.push_back(Chemistry_Tol_str);
@@ -324,8 +324,8 @@ namespace Amanzi {
           chem_out_list.set<std::string>(underscore(ThermoDB_str)+"_"+underscore(ThermoDB_File_str), thermoPL.get<std::string>(ThermoDB_File_str));
         }
 
-        chem_out_list.set<std::string>(underscore(Chemistry_Engine_str), underscore(chem_list.get<std::string>(Chemistry_Engine_str)));
         if (chem_mode=="Alquimia") {
+          chem_out_list.set<std::string>(underscore(Chemistry_Engine_str), underscore(chem_list.get<std::string>(Chemistry_Engine_str)));
           chem_out_list.set<std::string>(underscore(Chemistry_Engine_Input_str), underscore(chem_list.get<std::string>(Chemistry_Engine_Input_str)));
         }
         for (int i=0; i<CHoptP.size(); ++i) {

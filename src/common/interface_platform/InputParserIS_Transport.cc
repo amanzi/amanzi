@@ -25,7 +25,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
       if (exe_list.get<std::string>("Transport Model") == "On") {
 
         // get the expert parameters
-        double CFL(1.0);
+        double cfl(1.0);
         if (exe_list.isSublist("Numerical Control Parameters")) {
           Teuchos::ParameterList& ncp_list = exe_list.sublist("Numerical Control Parameters");
           if (ncp_list.isSublist("Unstructured Algorithm")) {
@@ -33,7 +33,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
               Teuchos::ParameterList& tpk_list = ncp_list.sublist("Unstructured Algorithm")
                                                          .sublist("Transport Process Kernel");
               if (tpk_list.isParameter("CFL")) {
-                CFL = tpk_list.get<double>("CFL");
+                cfl = tpk_list.get<double>("CFL");
               }
             }
           }
@@ -42,7 +42,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
         // transport is on, set some defaults
         trp_list.set<int>("spatial discretization order", 1);
         trp_list.set<int>("temporal discretization order", 1);
-        trp_list.set<double>("CFL", CFL);
+        trp_list.set<double>("cfl", cfl);
         trp_list.set<std::string>("flow mode", "transient");
         trp_list.set<std::string>("advection limiter", "Tensorial");
 
@@ -247,12 +247,12 @@ Teuchos::ParameterList InputParserIS::CreateTransportSrcList_(Teuchos::Parameter
 {
   Errors::Message msg;
   Teuchos::ParameterList src_list;
-  Teuchos::ParameterList& src_sublist = plist->sublist("Sources");
+  Teuchos::ParameterList& inp_list = plist->sublist("Sources");
 
-  for (Teuchos::ParameterList::ConstIterator i = src_sublist.begin(); i != src_sublist.end(); i++) {
+  for (Teuchos::ParameterList::ConstIterator i = inp_list.begin(); i != inp_list.end(); i++) {
     const std::string name(i->first);
-    if (src_sublist.isSublist(name)) {
-      Teuchos::ParameterList& src = src_sublist.sublist(name);
+    if (inp_list.isSublist(name)) {
+      Teuchos::ParameterList& src = inp_list.sublist(name);
 
       // get the regions
       Teuchos::Array<std::string> regions = src.get<Teuchos::Array<std::string> >("Assigned Regions");
@@ -267,66 +267,71 @@ Teuchos::ParameterList InputParserIS::CreateTransportSrcList_(Teuchos::Parameter
       }
 
       // go to the phase list
-      if (src.isSublist("Solute SOURCE")) {
-        if (src.sublist("Solute SOURCE").isSublist("Aqueous")) {
-          if (src.sublist("Solute SOURCE").sublist("Aqueous").isSublist(phases_[0].solute_name)) {
-            Teuchos::ParameterList& pc_list = src.sublist("Solute SOURCE").sublist("Aqueous").sublist(phases_[0].solute_name);
+      for (int n = 0; n < 2; n++) {
+        if (src.isSublist("Solute SOURCE")) {
+          std::string phase(phases_[n].name);
+          if (src.sublist("Solute SOURCE").isSublist(phase)) {
+            if (src.sublist("Solute SOURCE").sublist(phase).isSublist(phases_[n].solute_name)) {
+              Teuchos::ParameterList& pc_list = src.sublist("Solute SOURCE")
+                                                   .sublist(phase)
+                                                   .sublist(phases_[n].solute_name);
 
-            // loop over all the source definitions
-            for (Teuchos::ParameterList::ConstIterator ibc = pc_list.begin(); ibc != pc_list.end(); ibc++) {
-              const std::string pc_name(ibc->first);
-              Teuchos::ParameterList& solute_src = pc_list.sublist(pc_name);
+              // loop over all the source definitions
+              for (Teuchos::ParameterList::ConstIterator ibc = pc_list.begin(); ibc != pc_list.end(); ibc++) {
+                const std::string pc_name(ibc->first);
+                Teuchos::ParameterList& solute_src = pc_list.sublist(pc_name);
 
-              // create src sublist
-              Teuchos::ParameterList& src_out = src_list.sublist("concentration").sublist(pc_name).sublist("source for " + name);
-              src_out.set<Teuchos::Array<std::string> >("regions",regions);
+                // create src sublist
+                Teuchos::ParameterList& src_out = src_list.sublist("concentration").sublist(pc_name).sublist(name);
+                src_out.set<Teuchos::Array<std::string> >("regions",regions);
 
-              // get source function
-              Teuchos::ParameterList src_fn;
-              if (solute_src.isSublist("Source: Uniform Concentration")) {
-                src_out.set<std::string>("spatial distribution method","none");
-                src_fn = solute_src.sublist("Source: Uniform Concentration");
-              }
-              else if (solute_src.isSublist("Source: Flow Weighted Concentration")) {
-                src_out.set<std::string>("spatial distribution method", dist_method);
-                src_fn = solute_src.sublist("Source: Flow Weighted Concentration");
-              }
-              else {
-                msg << "In the definition of Sources: you must either specify 'Source: Uniform"
-                    << " Concentration' or 'Source: Flow Weighted Concentration'.";
-                Exceptions::amanzi_throw(msg);
-              }
-
-              // create time function
-              Teuchos::ParameterList& src_out_fn = src_out.sublist("sink");
-              Teuchos::Array<double> values = src_fn.get<Teuchos::Array<double> >("Values");
-              // write the native time function
-              if (values.size() == 1) {
-                src_out_fn.sublist("function-constant").set<double>("value", values[0]);
-              } else if (values.size() > 1) {
-                Teuchos::Array<double> times = src_fn.get<Teuchos::Array<double> >("Times");
-                Teuchos::Array<std::string> time_fns = src_fn.get<Teuchos::Array<std::string> >("Time Functions");
-
-                Teuchos::ParameterList& ssofn = src_out_fn.sublist("function-tabular");
-
-                ssofn.set<Teuchos::Array<double> >("x values", times);
-                ssofn.set<Teuchos::Array<double> >("y values", values);
-
-                Teuchos::Array<std::string> forms_(time_fns.size());
-                for (int i = 0; i < time_fns.size(); i++) {
-                  if (time_fns[i] == "Linear") {
-                    forms_[i] = "linear";
-                  } else if (time_fns[i] == "Constant") {
-                    forms_[i] = "constant";
-                  } else {
-                    msg << "In the definition of Sources: time function can only be 'Linear' or 'Constant'";
-                    Exceptions::amanzi_throw(msg);
-                  }
+                // get source function
+                Teuchos::ParameterList src_fn;
+                if (solute_src.isSublist("Source: Uniform Concentration")) {
+                  src_out.set<std::string>("spatial distribution method","none");
+                  src_fn = solute_src.sublist("Source: Uniform Concentration");
                 }
-                ssofn.set<Teuchos::Array<std::string> >("forms", forms_);
-              } else {
-                msg << "In the definition of Sources: something is wrong with the input";
-                Exceptions::amanzi_throw(msg);
+                else if (solute_src.isSublist("Source: Flow Weighted Concentration")) {
+                  src_out.set<std::string>("spatial distribution method", dist_method);
+                  src_fn = solute_src.sublist("Source: Flow Weighted Concentration");
+                }
+                else {
+                  msg << "In the definition of Sources: you must either specify 'Source: Uniform"
+                      << " Concentration' or 'Source: Flow Weighted Concentration'.";
+                  Exceptions::amanzi_throw(msg);
+                }
+
+                // create time function
+                Teuchos::ParameterList& src_out_fn = src_out.sublist("sink");
+                Teuchos::Array<double> values = src_fn.get<Teuchos::Array<double> >("Values");
+                // write the native time function
+                if (values.size() == 1) {
+                  src_out_fn.sublist("function-constant").set<double>("value", values[0]);
+                } else if (values.size() > 1) {
+                  Teuchos::Array<double> times = src_fn.get<Teuchos::Array<double> >("Times");
+                  Teuchos::Array<std::string> time_fns = src_fn.get<Teuchos::Array<std::string> >("Time Functions");
+
+                  Teuchos::ParameterList& ssofn = src_out_fn.sublist("function-tabular");
+
+                  ssofn.set<Teuchos::Array<double> >("x values", times);
+                  ssofn.set<Teuchos::Array<double> >("y values", values);
+
+                  Teuchos::Array<std::string> forms_(time_fns.size());
+                  for (int i = 0; i < time_fns.size(); i++) {
+                    if (time_fns[i] == "Linear") {
+                      forms_[i] = "linear";
+                    } else if (time_fns[i] == "Constant") {
+                      forms_[i] = "constant";
+                    } else {
+                      msg << "In the definition of Sources: time function can only be 'Linear' or 'Constant'";
+                      Exceptions::amanzi_throw(msg);
+                    }
+                  }
+                  ssofn.set<Teuchos::Array<std::string> >("forms", forms_);
+                } else {
+                  msg << "In the definition of Sources: something is wrong with the input";
+                  Exceptions::amanzi_throw(msg);
+                }
               }
             }
           }
