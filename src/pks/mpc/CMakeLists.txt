@@ -20,6 +20,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland_head)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
+include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
