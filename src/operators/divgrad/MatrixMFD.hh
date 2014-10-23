@@ -53,7 +53,8 @@ class MatrixMFD : public CompositeMatrix {
 
   MatrixMFD(const MatrixMFD& other);
 
-
+  MatrixMFD& operator=(const MatrixMFD& other);
+  
   // Virtual destructor
   virtual ~MatrixMFD() {};
 
