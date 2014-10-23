@@ -405,14 +405,14 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
               if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
                 *dcvo->os() << "  sufficient change" << std::endl;
               } else {
-                *dcvo->os() << "  insufficient change" << std::endl;
+                *dcvo->os() << "  insufficient change, trying anyway" << std::endl;
               }
             }
 
-            if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
+            //            if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
               dT_std[0][c] = dT_ewc;
               dp_std[0][c] = dp_ewc;
-            }
+              //            }
           }
         }
 
@@ -469,12 +469,12 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
               } else if ((std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min)) {
                 *dcvo->os() << "  increased dT (and so on the middle branch), using std" << std::endl;
               } else {
-                *dcvo->os() << "  insufficient change" << std::endl;
+                *dcvo->os() << "  insufficient change, trying anyway" << std::endl;
               }
             }
 
-            if ((std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) &&
-                (std::abs(dT_ewc) < std::abs(dT_std[0][c]))) {
+            //            if ((std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) &&
+            if (std::abs(dT_ewc) < std::abs(dT_std[0][c])) {
               dT_std[0][c] = dT_ewc;
               dp_std[0][c] = dp_ewc;
             }
@@ -540,14 +540,14 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
                 if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
                   *dcvo->os() << "  sufficient change" << std::endl;
                 } else {
-                  *dcvo->os() << "  insufficient change" << std::endl;
+                  *dcvo->os() << "  insufficient change, taking anyway" << std::endl;
                 }
               }
 
-              if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
+              //              if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
                 dT_std[0][c] = dT_ewc;
                 dp_std[0][c] = dp_ewc;
-              }
+                //              }
             }
           }
 
@@ -604,12 +604,12 @@ void MPCDelegateEWCSubsurface::precon_ewc_(Teuchos::RCP<const TreeVector> u,
                 } else if ((std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min)) {
                   *dcvo->os() << "  increased dp (and so on the middle branch), using std" << std::endl;
                 } else {
-                  *dcvo->os() << "  insufficient change" << std::endl;
+                  *dcvo->os() << "  insufficient change, taking anyway" << std::endl;
                 }
               }
 
-              if ((std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) &&
-                  (std::abs(dp_ewc) < std::abs(dp_std[0][c]))) {
+              //              if ((std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) &&
+              if (std::abs(dp_ewc) < std::abs(dp_std[0][c])) {
                 ewc_completed = true;
                 dT_std[0][c] = dT_ewc;
                 dp_std[0][c] = dp_ewc;
