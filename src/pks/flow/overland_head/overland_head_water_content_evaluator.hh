@@ -40,7 +40,8 @@ class OverlandHeadWaterContentEvaluator : public SecondaryVariableFieldEvaluator
   double M_;
   bool bar_;  // bar'd variable indicates this is potentially negative for
               // pressures less than atmospheric
-
+  double rollover_;
+  
  private:
   static Utils::RegisteredFactory<FieldEvaluator,OverlandHeadWaterContentEvaluator> factory_;
 
