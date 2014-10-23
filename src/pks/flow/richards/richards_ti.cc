@@ -201,7 +201,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
     min_kr_struct.value = min_kr;
     min_kr_struct.gid = kr.Map().GID(min_kr_lid);
 
-    MPI_Allreduce(&min_kr, &global_min_kr, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
+    MPI_Allreduce(&global_min_kr, &min_kr, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
 #else
     ENorm_t global_min_kr;
     global_min_kr.value = min_kr;
@@ -316,7 +316,7 @@ double Richards::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     for (unsigned int f=0; f!=nfaces; ++f) {
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
-      double tmp = std::abs(h*res_f[0][f])  / (atol_ * .5*.5*55000.*cv[0][cells[0]] + rtol_*std::abs(wc[0][cells[0]]));
+      double tmp = flux_tol_ * std::abs(h*res_f[0][f])  / (atol_ * .5*.5*55000.*cv[0][cells[0]] + rtol_*std::abs(wc[0][cells[0]]));
       if (tmp > enorm_face) {
         enorm_face = tmp;
         bad_face = f;
