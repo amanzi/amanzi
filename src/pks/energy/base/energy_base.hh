@@ -86,6 +86,9 @@ public:
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
 
+  Teuchos::RCP<Operators::Advection>& advection() { return advection_; }
+
+  
 protected:
   // These must be provided by the deriving PK.
   // -- setup the evaluators
