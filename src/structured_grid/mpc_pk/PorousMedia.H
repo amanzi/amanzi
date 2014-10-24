@@ -424,33 +424,8 @@ public:
   void reinstate_component_saturations();
   void get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow);
 
-  void SetTracerDiffusionBndryData(ViscBndry& bndry,
-				   Real       time);
-
-  void SetTracerDiffusionBndryData(TensorDiffusionBndry& bndry,
-				   Real                  time);
-
-  void getTracerViscTerms(MultiFab&  D,
-			  Real       time,
-			  int        nGrow,
-			  PArray<MultiFab>& Dflux);
-
   void richard_init_to_steady();
 
-  // Reaction-related functions
-  void set_preferred_boundary_values (MultiFab& S,
-				      int       state_index,
-				      int       src_comp,
-				      int       dst_comp,
-				      int       num_comp,
-				      Real      time) const;
-  void set_overdetermined_boundary_cells (Real time);
-
-  //
-  // ngrow == 0 -> we're working on the valid region of state.
-  //
-  // ngrow > 0  -> we're working on aux_boundary_data_old with that many grow cells.
-  //
   bool advance_chemistry (Real time,
 			  Real dt,
 			  int  ngrow=0);
@@ -908,10 +883,6 @@ protected:
   static RichardSolver* richard_solver;
   static NLScontrol* richard_solver_control;
   static RSdata* richard_solver_data;
-
-  // Deals with the ghost cells 
-  AuxBoundaryData aux_boundary_data_old;
-  bool            FillPatchedOldState_ok;
 
   static Real geometry_eps;
   static std::string surf_file;
