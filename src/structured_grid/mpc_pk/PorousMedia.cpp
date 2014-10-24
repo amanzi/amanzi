@@ -360,14 +360,7 @@ PorousMedia::PorousMedia (Amr&            papa,
                           const BoxArray& bl,
                           Real            time)
   :
-  AmrLevel(papa,lev,level_geom,bl,time),
-  //
-  // Make room for ncomps+ntracers in aux_boundary_data_old.
-  // With AMANZI we only use the ntracers parts.  But by using ncomps+ntracers
-  // we don't need to worry about the case when ntracers==0.
-  //
-  aux_boundary_data_old(bl,nGrowHYP,ncomps+ntracers,level_geom),
-  FillPatchedOldState_ok(true)
+  AmrLevel(papa,lev,level_geom,bl,time)
 {
   if (!initialized) {
     BoxLib::ExecOnFinalize(CleanupStatics);
@@ -608,16 +601,6 @@ PorousMedia::restart (Amr&          papa,
   if (verbose>2 && ParallelDescriptor::IOProcessor()) {
     std::cout << "Estimated time step from level " << level << " = " << dt_eig << '\n';
   }
-  //
-  // Make room for ncomps+ntracers in aux_boundary_data_old.
-  // With AMANZI we only use the ntracers parts.  But by using ncomps+ntracers
-  // we don't need to worry about the case when ntracers==0.
-  //
-  aux_boundary_data_old.initialize(grids,nGrowHYP,ncomps+ntracers,Geom());
-
-  FillPatchedOldState_ok = true;
-
-  set_overdetermined_boundary_cells(state[State_Type].curTime());
 
   aofs = new MultiFab(grids,NUM_SCALARS,0);
 
@@ -2361,12 +2344,9 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
           std::cout.flags(oldflags);
 	}
 	int nGrow_chem = 0;
-	//int nGrow_chem = nGrowHYP;
+	//int nGrow_chem = nGrowHYP; // FIXME: Have no code for chem-advancing grow cells
 	bool chem_ok = advance_chemistry(t_subtr,dt_subtr/2,nGrow_chem);
 	BL_ASSERT(chem_ok);
-	// FIXME: Have no code for chem-advancing grow cells
-	//FillPatchedOldState_ok = false;
-
 	run_time_chem = run_time_chem + ParallelDescriptor::second() - strt_time_chem;
       }
 
@@ -2489,7 +2469,6 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	      }
 	      step_ok_chem = advance_chemistry(t_subtr,dt_chem,0);      
 	      BL_ASSERT(step_ok_chem);
-	      FillPatchedOldState_ok = true; // FIXME: Is this out of place?
 	      it_chem = 0;
 	      dt_chem = 0;
 	    }
@@ -3335,169 +3314,6 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
   }
 }
 
-void 
-PorousMedia::SetTracerDiffusionBndryData(ViscBndry& bndry,
-					 Real       time)
-{
-  int state_type = State_Type;
-  int nGrowDiff = 1;
-  int first_tracer = ncomps;
-  MultiFab S(grids,ntracers,nGrowDiff);
-
-  for (FillPatchIterator fpi(*this,S,nGrowDiff,time,state_type,
-			     first_tracer,ntracers);fpi.isValid(); ++fpi) {
-    S[fpi].copy(fpi(),0,0,ntracers);
-  }
-
-  const BCRec& tracer_bc = get_desc_lst()[State_Type].getBC(first_tracer);
-  if (level == 0) {
-    bndry.setBndryValues(S,0,0,ntracers,tracer_bc);
-  } else {
-    BoxArray cgrids = BoxArray(grids).coarsen(crse_ratio);
-    PorousMedia& pmc = getLevel(level-1);
-    int nGrowDiffC = 2; // To accomodate sliding stencil (if max_order==3)
-    MultiFab Sc(pmc.boxArray(),ntracers,nGrowDiffC);
-    for (FillPatchIterator fpi(pmc,Sc,nGrowDiffC,time,state_type,
-			       first_tracer,ntracers);fpi.isValid(); ++fpi) {
-      Sc[fpi].copy(fpi(),0,0,ntracers);
-    }
-    BndryRegister crse_br(cgrids,0,1,2,ntracers);
-    crse_br.copyFrom(Sc,nGrowDiff,0,0,ntracers);
-    bndry.setBndryValues(crse_br,0,S,0,0,ntracers,crse_ratio,tracer_bc);
-  }
-}
-
-void
-PorousMedia::getTracerViscTerms(MultiFab&  D,
-				Real       time,
-				int        nGrow,
-				PArray<MultiFab>& Dflux)
-{
-  int first_tracer = ncomps;
-  
-  TensorDiffusionBndry bd(grids,1,geom);
-  MultiFab *beta[BL_SPACEDIM], *beta1[BL_SPACEDIM];
-  for (int d = 0; d < BL_SPACEDIM; d++) {
-    const BoxArray eba = BoxArray(grids).surroundingNodes(d);
-    beta[d] = new MultiFab(eba,1,0);
-    beta1[d] = new MultiFab(eba,1,0);
-  }
-  
-  calcDiffusivity(time,first_tracer,1);
-  if (tensor_tracer_diffusion) {
-    getTensorDiffusivity(beta,beta1,time);
-  } else {
-    getDiffusivity(beta,time,first_tracer,0,1);
-  }
-  FillStateBndry(time,State_Type,first_tracer,ntracers);
-
-  MultiFab Sc;
-  BoxArray cgrids;
-  MultiFab& S = get_data(State_Type,time);
-  if (level > 0) {
-    cgrids = BoxArray(grids).coarsen(crse_ratio);
-    PorousMedia& pmc = getLevel(level-1);
-    int nGrowDiffC = 2; // To accomodate sliding stencil (if max_order==3)
-    Sc.define(pmc.boxArray(),ntracers,nGrowDiffC,Fab_allocate);
-    for (FillPatchIterator fpi(pmc,Sc,nGrowDiffC,time,State_Type,
-                               first_tracer,ntracers); fpi.isValid(); ++fpi) {
-      Sc[fpi].copy(fpi(),0,0,ntracers);
-    }
-  }
-
-  int nBndComp = MCLinOp::bcComponentsNeeded(1);
-  Array<BCRec> tracer_bc(nBndComp,defaultBC());
-  
-  int Wflag = 2;
-  MultiFab* Whalf = 0;
-  MultiFab* alpha = 0;
-  int op_maxOrder = 3;
-  
-  Real a = 0;
-  Real b = -1;
-
-  Diffuser<MFVector,ABecHelper>* scalar_diffuser = 0;
-  Diffuser<MFVector,TensorOp>* tensor_diffuser = 0;
-  ABecHelper *scalar_linop; scalar_linop = 0;
-  TensorOp *tensor_linop; tensor_linop = 0;
-
-  MultiFab volInv(grids,1,0);
-  MultiFab::Copy(volInv,volume,0,0,1,0);
-  volInv.invert(1,0);
-
-  for (int n=0; n<ntracers; ++n) {
-    tracer_bc[0] = get_desc_lst()[State_Type].getBC(first_tracer+n);
-
-    TensorDiffusionBndry *tbd = 0;
-    ViscBndry *vbd = 0;
-    if (tensor_tracer_diffusion) {  
-      tbd = new TensorDiffusionBndry(grids,1,geom);
-    } else {
-      vbd = new ViscBndry(grids,1,geom);
-    }
-
-    if (level == 0) {
-      if (tensor_tracer_diffusion) {  
-        tbd->setBndryValues(S,first_tracer+n,0,1,tracer_bc);
-      } else {
-        vbd->setBndryValues(S,first_tracer+n,0,1,tracer_bc[0]);
-      }
-    } else {
-      BndryRegister crse_br(cgrids,0,1,2,1);
-      crse_br.copyFrom(Sc,Sc.nGrow(),n,0,1);
-      if (tensor_tracer_diffusion) {  
-        tbd->setBndryValues(crse_br,0,S,first_tracer+n,0,1,crse_ratio[0],tracer_bc);
-      } else {
-        vbd->setBndryValues(crse_br,0,S,first_tracer+n,0,1,crse_ratio[0],tracer_bc[0]);
-      }
-    }
-
-    if (tensor_tracer_diffusion) {  
-      tensor_linop = getOp(a,b,*tbd,0,1,0,0,0,Whalf,0,Wflag,beta,0,1,beta1,0,1,volume,area,alpha,0);
-      tensor_linop->maxOrder(op_maxOrder);
-      tensor_linop->apply(D,S,0,MCInhomogeneous_BC,true,first_tracer+n,n,1,0);
-    } else {
-      scalar_linop = getOp(a,b,*vbd,0,0,0,0,Whalf,0,Wflag,beta,0,1,volume,area,alpha,0,1);
-      scalar_linop->maxOrder(op_maxOrder);
-      scalar_linop->apply(D,S,0,LinOp::Inhomogeneous_BC,true,first_tracer+n,n,1,0);
-    }
-    MultiFab::Multiply(D,volInv,0,n,1,0);
-    delete scalar_linop;
-    delete tensor_linop;
-  }
-  for (int d = 0; d < BL_SPACEDIM; d++) {
-    delete beta[d];
-    if (tensor_tracer_diffusion) {
-      delete beta1[d];
-    }
-  }
-  //
-  // Ensure consistent grow cells
-  //    
-  if (nGrow > 0) {
-    for (MFIter mfi(D); mfi.isValid(); ++mfi) {
-      FArrayBox& vt  = D[mfi];
-      const Box& box = mfi.validbox();
-      FORT_VISCEXTRAP(vt.dataPtr(),ARLIM(vt.loVect()),ARLIM(vt.hiVect()),
-		      box.loVect(),box.hiVect(),&ntracers);
-    }
-    bool local = false;
-    bool do_corners = true;
-    bool cross = false;
-    D.FillBoundary(0,ntracers,local,cross);
-    geom.FillPeriodicBoundary(D,0,ntracers,do_corners,local);
-  }
-#ifndef NDEBUG
-  if (D.contains_nan(0,ntracers,D.nGrow())) {
-    BoxLib::Abort("D has nans");
-  }
-#endif
-
-  for (int d=0; d<BL_SPACEDIM; ++d) {
-    Dflux[d].setVal(0);
-  }
-}
-
 DistributionMapping
 PorousMedia::getFuncCountDM (const BoxArray& bxba, int ngrow)
 {
@@ -3884,15 +3700,6 @@ PorousMedia::advance_chemistry (Real time,
   return chem_ok;
 }
     
-void
-PorousMedia::set_preferred_boundary_values (MultiFab& S,
-					    int       state_index,
-					    int       src_comp,
-					    int       dst_comp,
-					    int       num_comp,
-					    Real      time) const
-{
-}
 
 void
 coarsenMask(FArrayBox& crse, const FArrayBox& fine, const IntVect& ratio)
@@ -6805,14 +6612,6 @@ PorousMedia::calcDLambda (const Real time, MultiFab* dlbd_cc)
   (*dlcc).FillBoundary();
     
 }
-
-void
-PorousMedia::set_overdetermined_boundary_cells (Real time)
-{
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::set_overdetermined_boundary_cells()");
-  BoxLib::Abort("set_overdetermined_boundary_cells");
-}
-
 
 void
 PorousMedia::center_to_edge_plain (const FArrayBox& ccfab,
