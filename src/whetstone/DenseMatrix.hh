@@ -25,7 +25,7 @@
 namespace Amanzi {
 namespace WhetStone {
 
-const int WHETSTONE_DATA_ACCESS_COPY = 1;
+const int WHETSTONE_DATA_ACCESS_COPY = 2;
 const int WHETSTONE_DATA_ACCESS_VIEW = 2;
 
 class DenseMatrix {

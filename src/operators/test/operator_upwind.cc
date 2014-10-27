@@ -48,8 +48,8 @@ class Model {
 
 
 /* *****************************************************************
-* This test replaves tensor and boundary conditions by continuous
-* functions. This is a prototype forheat conduction solvers.
+* This test replaces diffusion tensor and boundary conditions by
+* continuous functions.
 * **************************************************************** */
 TEST(UPWIND) {
   using namespace Teuchos;

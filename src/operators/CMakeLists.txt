@@ -136,6 +136,12 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_convergence_2pe operators_convergence NPROCS 2 KIND unit)
+
+    # reconstruction tests
+    add_amanzi_test(operators_reconstruction operators_reconstruction
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_reconstruction.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
 
