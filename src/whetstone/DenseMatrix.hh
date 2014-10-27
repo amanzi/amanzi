@@ -125,9 +125,16 @@ class DenseMatrix {
   } 
   void MaxRowMagnitude(int irow, int jmin, int jmax, int* j, double* value); 
 
+  double NormInf() {
+    double a = 0.0;
+    for (int i = 0; i < m_ * n_; i++) a = std::max(a, data_[i]);
+    return a;
+  }
+
   // second level routines
   int Inverse();
   int NullSpace(DenseMatrix& D);
+  double Det();  // limited capabilities
 
  private:
   int m_, n_, access_;

@@ -51,6 +51,9 @@ const int OPERATOR_ARITHMETIC_MEAN = 5;
 const int OPERATOR_UPWIND_AMANZI = 6;
 const double OPERATOR_UPWIND_RELATIVE_TOLERANCE = 1e-12;
 
+// reconstruction options
+const double OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION = 1e-15;
+
 }  // namespace Operators
 }  // namespace Amanzi
 

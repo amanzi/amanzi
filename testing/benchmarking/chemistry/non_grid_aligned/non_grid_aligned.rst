@@ -18,9 +18,17 @@ For details on this test, see :ref:`about_non_grid_aligned`.
 Background
 ----------
 
-Mixing-induced precipitation is a problem that has recently received some attention in the literature, especially in pore scale studies [Yoon2012]_, [Tartakovsky2008]_. To accurately predict precipitation along mixing interfaces, accurate prediction of diffusive-dispersive transport. This is especially true, when these transport processes are not aligned with the grid that is used to discretize the domain. Amanzi uses numerical schemes that are capable to simulate accurately non-grid-aligned processes such as advective and dispersive transport when a rectangular grid is used.
+Mixing-induced precipitation is a problem that has recently received some attention in the literature, especially in pore scale studies [Yoon2012]_, [Tartakovsky2008]_. To accurately predict precipitation along mixing interfaces, accurate prediction of diffusive-dispersive transport is required. This is especially true, when these transport processes are not aligned with the grid that is used to discretize the domain. Amanzi uses numerical schemes that are capable to simulate accurately non-grid-aligned processes such as advective and dispersive transport when a rectangular grid is used.
 
-[Add description here of Konstantin's and Marc's numerical schemes].
+The first transport scheme uses a flexible framework of unstructured meshes even in the case of rectangular meshes.
+In this release, the advection-dispersion equation is solved using an operator splitting framework with an explicit scheme for the advection operator and an implicit scheme for the dispersive operator.
+A control of the operator-splitting error will be added in the subsequent releases of the product.  
+The second-order approximation of advective fluxes is achieved with the MUSCL-type (Monotonic Upstream-Centered Scheme for Conservation Laws) scheme [Barth1994]_ that combines local linear reconstruction of solute concentrations with a tensorial slope limiter. 
+The tensorial slope limiter adds robustness to the scheme and reduces numerical diffusion compared to the more conventional (scalar) Barth-Jesperson limiter.
+The second-order approximation of the dispersive fluxes is achived with the MFD (Mimetic Finite Difference) method [Lipnikov2014]_ optimized to guarantee solution monotonicity. 
+
+
+[Add description here of Marc's numerical schemes].
 
 Model
 -----
@@ -131,8 +139,10 @@ Simulation results show a good agreement with expected results. Precipitation of
 References
 ----------
 
-.. [Yoon2012] Hongkyu Yoon, Albert J. Valocchi, Charles J. Werth, and Thomas Dewers (2012) Pore-scale simulation of mixing-induced calcium carbonate precipitation and dissolution in a microfluidic pore network, Water Resour. Res., 48, W02524, doi:10.1029/2011WR011192.
-.. [Tartakovsky2008] A. M. Tartakovsky, G. Redden, P. C. Lichtner, T. D. Scheibe, and P. Meakin (2008) Mixing-induced precipitation: Experimental study and multiscale numerical analysis, Water Resour. Res., 44, W06S04, doi:10.1029/2006WR005725.
+.. [Yoon2012] H. Yoon, A.J. Valocchi, C.J. Werth, and T. Dewers (2012) Pore-scale simulation of mixing-induced calcium carbonate precipitation and dissolution in a microfluidic pore network, Water Resour. Res., 48, W02524, doi:10.1029/2011WR011192.
+.. [Tartakovsky2008] A.M. Tartakovsky, G. Redden, P.C. Lichtner, T.D. Scheibe, and P. Meakin (2008) Mixing-induced precipitation: Experimental study and multiscale numerical analysis, Water Resour. Res., 44, W06S04, doi:10.1029/2006WR005725.
+.. [Barth1994] T.Barth. Aspects of unstructured grids and finite-volume solvers for the Euler and Navier-Stokes equations. Lecture Notes presented at VKI Lecture Series, 1994-05.
+.. [Lipnikov2014] L. Beirao da Veiga, K. Lipnikov, and G. Manzini. The Mimetic Finite Difference Method for Elliptic PDEs. Springer, 2014, 408p.
 
 .. _about_non_grid_aligned:
 

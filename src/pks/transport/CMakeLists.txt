@@ -64,7 +64,6 @@ generate_evaluators_registration_header(
 set(transport_inc_files
   MaterialProperties.hh
   DiffusionPhase.hh
-  Reconstruction.hh
   TransportBCFactory.hh
   TransportBoundaryFunction.hh
   TransportBoundaryFunction_Tracer.hh
@@ -78,7 +77,6 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
                         Transport_Limiters.cc Transport_VandV.cc Transport_IO.cc 
                         Transport_Dispersion.cc 
                         Transport_PK_Wrapper.cc
-                        Reconstruction.cc 
                         TransportBCFactory.cc TransportSourceFactory.cc
                         TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
                         TransportDomainFunction.cc)
