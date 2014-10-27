@@ -83,6 +83,7 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
 }  // namespace Operators
 }  // namespace Amanzi
 
+// Description of templated function DeriveBoundaryFaceValue
 #include "FluxTPFABCfunc.hh"
 
 #endif
