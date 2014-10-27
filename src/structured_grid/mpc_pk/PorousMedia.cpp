@@ -1331,8 +1331,8 @@ PorousMedia::richard_init_to_steady()
         BuildNLScontrolData(nlsc, rs_data, "InitGridSequence");
         RichardSolver* rs = new RichardSolver(rs_data,nlsc);
 
-        while (continue_iterations) {
-
+        while (continue_iterations)
+        {
           rs->SetCurrentTimestep(k);
 
           // Advance the state data structures
@@ -1348,11 +1348,9 @@ PorousMedia::richard_init_to_steady()
           cur_time = state[Press_Type].curTime();
           prev_time = state[Press_Type].prevTime();
 
-          for (int lev=0;lev<finest_level+1;lev++)
-          {
+          for (int lev=0;lev<finest_level+1;lev++) {
             PorousMedia& pm = getLevel(lev);
-            for (int i = 0; i < num_state_type; i++)
-            {
+            for (int i = 0; i < num_state_type; i++) {
               MultiFab& od = pm.get_old_data(i);
               MultiFab& nd = pm.get_new_data(i);
               MultiFab::Copy(nd,od,0,0,od.nComp(),0);  // Guess for next time step
@@ -1370,65 +1368,53 @@ PorousMedia::richard_init_to_steady()
                       << ", n=" << k << ", dt=" << dt << '\n';
           }
 
-            nlsc.ResetCounters();
-            rs_data.ResetJacobianCounter();
+          nlsc.ResetCounters();
+          rs_data.ResetJacobianCounter();
 
-            // Save the initial state so we can recover on failure
-            for (int lev=0;lev<num_active_levels;lev++)
-            {
-              PorousMedia&    fine_lev   = getLevel(lev);
-              if (do_richard_sat_solve)
-              {
-                MultiFab& S_lev = fine_lev.get_new_data(State_Type);
-                MFTower& IC = *(rs_data.InitialState);
-                MultiFab::Copy(IC[lev],S_lev,0,0,1,1);
-              }
-              else
-              {
-                MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
-                MFTower& IC = *(rs_data.InitialState);
-                MultiFab::Copy(IC[lev],P_lev,0,0,1,1);
-              }
+          // Save the initial state so we can recover on failure
+          for (int lev=0;lev<num_active_levels;lev++) {
+            PorousMedia&    fine_lev   = getLevel(lev);
+            MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+            MFTower& IC = *(rs_data.InitialState);
+            MultiFab::Copy(IC[lev],P_lev,0,0,1,1);
+          }
+
+          if (!tmp_record_file.empty()) {
+            rs->SetRecordFile(tmp_record_file);
+          }
+
+          attempting_pure_steady = dt_thresh_pure_steady>0 && dt>dt_thresh_pure_steady;
+          Real dt_solve = attempting_pure_steady ? -1 : dt;
+          if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
+            std::cout << "     **************** Attempting pure steady solve" << '\n';
+          int retCode = rs->Solve(t, t+dt_solve, k, nlsc);
+
+          if (retCode < 0 && attempting_pure_steady) {
+            dt_thresh_pure_steady *= 10;
+            if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
+              std::cout << "     **************** Steady solve failed, resuming transient..." << '\n';
+            attempting_pure_steady = false;
+            retCode = rs->Solve(t, t+dt, k, nlsc);
+          }
+
+          if (retCode >= 0) {
+            ret = NLSstatus::NLS_SUCCESS;
+            rs->ComputeDarcyVelocity(rs->GetPressureNp1(),t+dt);
+          } 
+          else {
+            if (retCode == -3) {
+              ret = NLSstatus::NLS_LINEAR_FAIL;
             }
-
-	      if (!tmp_record_file.empty()) {
-		rs->SetRecordFile(tmp_record_file);
-	      }
-
-              attempting_pure_steady = dt_thresh_pure_steady>0 && dt>dt_thresh_pure_steady;
-              Real dt_solve = attempting_pure_steady ? -1 : dt;
-              if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
-                std::cout << "     **************** Attempting pure steady solve" << '\n';
-              int retCode = rs->Solve(t, t+dt_solve, k, nlsc);
-
-              if (retCode < 0 && attempting_pure_steady) {
-                dt_thresh_pure_steady *= 10;
-                if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
-                  std::cout << "     **************** Steady solve failed, resuming transient..." << '\n';
-                attempting_pure_steady = false;
-                retCode = rs->Solve(t, t+dt, k, nlsc);
-              }
-
-              if (retCode >= 0) {
-                ret = NLSstatus::NLS_SUCCESS;
-                rs->ComputeDarcyVelocity(rs->GetPressureNp1(),t+dt);
-              } 
-              else {
-
-                if (retCode == -3) {
-                  ret = NLSstatus::NLS_LINEAR_FAIL;
-                }
-                else if (retCode == -9) {
-                  ret = NLSstatus::NLS_CATASTROPHIC_FAIL;
-                }
-                else {
-                  ret = NLSstatus::NLS_NONLINEAR_FAIL;
-                  if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
-                    std::cout << "     **************** Newton failed: " << GetPETScReason(retCode) << '\n';
-                }
-              }
-            total_num_Newton_iterations += nlsc.NLIterationsTaken();
-
+            else if (retCode == -9) {
+              ret = NLSstatus::NLS_CATASTROPHIC_FAIL;
+            }
+            else {
+              ret = NLSstatus::NLS_NONLINEAR_FAIL;
+              if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
+                std::cout << "     **************** Newton failed: " << GetPETScReason(retCode) << '\n';
+            }
+          }
+          total_num_Newton_iterations += nlsc.NLIterationsTaken();
 
           if (ret == NLSstatus::NLS_SUCCESS) {
             prev_abs_err = abs_err;
@@ -1457,17 +1443,9 @@ PorousMedia::richard_init_to_steady()
               for (int k = 0; k < num_state_type; k++) {
                 fine_lev.state[k].reset();
               }
-
-              if (do_richard_sat_solve) {
-                MultiFab& S_lev = fine_lev.get_new_data(State_Type);
-                MFTower& IC = *(rs_data.InitialState);
-                MultiFab::Copy(S_lev,IC[lev],0,0,1,1);
-              }
-              else {
-                MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
-                MFTower& IC = *(rs_data.InitialState);
-                MultiFab::Copy(P_lev,IC[lev],0,0,1,1);
-              }
+              MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+              MFTower& IC = *(rs_data.InitialState);
+              MultiFab::Copy(P_lev,IC[lev],0,0,1,1);
             }
           } // Newton fail
 
@@ -2633,18 +2611,9 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
   for (int lev=0;lev<nlevs;lev++)
   {
     PorousMedia&    fine_lev   = getLevel(lev);
-    if (!do_richard_sat_solve)
-    {
-      MultiFab& P_lev = fine_lev.get_old_data(Press_Type);
-      MFTower& IC = *(richard_solver->GetRSdata().InitialState);
-      MultiFab::Copy(IC[lev],P_lev,0,0,1,1);
-    }
-    else
-    {
-      MultiFab& S_lev = fine_lev.get_old_data(State_Type);
-      MFTower& IC = *(richard_solver->GetRSdata().InitialState);
-      MultiFab::Copy(IC[lev],S_lev,0,0,1,1);
-    }
+    MultiFab& P_lev = fine_lev.get_old_data(Press_Type);
+    MFTower& IC = *(richard_solver->GetRSdata().InitialState);
+    MultiFab::Copy(IC[lev],P_lev,0,0,1,1);
   }
 
   richard_solver_control->ResetCounters();
@@ -6384,22 +6353,6 @@ PorousMedia::getTensorDiffusivity (MultiFab*  diagonal_diffusivity[BL_SPACEDIM],
   }
 }
 
-#ifdef MG_USE_FBOXLIB
-void 
-PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
-                               MultiFab*       dalpha,
-			       const MultiFab* lbd_cc,                                
-			       const MultiFab* umac,
-			       Real            time,
-			       Real            dt,
-			       int             nc,
-			       int             do_upwind,
-			       bool            do_richard_sat_solve)
-{
-  BoxLib::Abort("calc_richard_jac");
-}
-
-
 void 
 PorousMedia::calc_richard_alpha (MultiFab&       alpha,
                                  const MultiFab& N,
@@ -6464,7 +6417,6 @@ PorousMedia::calc_richard_velbc (MultiFab& res,
 			  &dt);
     }
 }
-#endif
 
 void 
 PorousMedia::calcCapillary (MultiFab&       pc,
@@ -6567,10 +6519,6 @@ PorousMedia::calcLambda (const Real time)
 void 
 PorousMedia::calcDLambda (const Real time, MultiFab* dlbd_cc)
 {
-  //
-  // Calculate the lambda values at cell-center. 
-  //
-
   MultiFab& S = get_data(State_Type,time);
 
   MultiFab* dlcc;
@@ -6871,128 +6819,79 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
       Box subbox = bndBox & fab.box();
       if (subbox.ok()) {
 
-        // Set the pressure boundary condition based on the saturation
-        if (model==PM_RICHARDS && do_richard_sat_solve) {
-          //
-          // NOTE: This has been disabled
-          //
-          // If the boundary condition is specified as a Dirichlet condition
-          // on saturation, then the material properties are required in order
-          // to compute the corresponding capillary pressure.  One would like to
-          // use the level-stored materialID iMultiFab to inform this function 
-          // about which material properties to use, but the iMultiFab is a 
-          // parallel data structure, and so is not generally available for 
-          // arbitrary boxes in space.  Alternatively, we can use the RockManager
-          // directly, however that too fills material ids in parallel.  So
-          // some new functionality is required either way.
-          //
-          if (ParallelDescriptor::IOProcessor()) {
-            std::cout << "do_richard_sat_solve=true not currently supported" << std::endl;
-          }
-          BoxLib::Abort();
+        prdat.resize(subbox,ncomps); prdat.setVal(0);
+        mask.resize(subbox,1);
 
-          sdat.resize(subbox,ncomps); 
-          prdat.resize(subbox,ncomps); prdat.setVal(0);
+        for (int i=0; i<face_bc_idxs.size(); ++i) {
+          const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
+          mask.setVal(0);
+          const Array<const Region*>& regions = face_bc.Regions();
 
-          for (int i=0; i<face_bc_idxs.size(); ++i) {
-            const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
-
-            sdat.setVal(0);
-            face_bc.apply(sdat,dx,0,ncomps,t_eval);
-            mask.resize(subbox,1); mask.setVal(-1);
-            const Array<const Region*>& regions = face_bc.Regions();
-            for (int j=0; j<regions.size(); ++j)
-            { 
+          if (face_bc.Type() == "pressure") {
+            for (int j=0; j<regions.size(); ++j) {
               regions[j]->setVal(mask,1,0,dx,0);
             }
-            IArrayBox matID; // FIXME: THIS IS NOT YET PROPERLY FILLED SO THE NEXT CALL WILL FAIL!!!
-            rock_manager->CapillaryPressure(sdat.dataPtr(),matID.dataPtr(),time,prdat.dataPtr(),subbox.numPts());
-
-            for (IntVect iv=subbox.smallEnd(); iv<=subbox.bigEnd(); subbox.next(iv)) {
-              if (mask(iv,0) > 0) {
-                for (int n=0; n<ncomps; ++n) {
-                  fab(iv,n) = - prdat(iv,n);
-                }
-              }
-            }
+            face_bc.apply(prdat,dx,0,ncomps,t_eval);
           }
-        }
-        else {
-
-          prdat.resize(subbox,ncomps); prdat.setVal(0);
-          mask.resize(subbox,1);
-
-          for (int i=0; i<face_bc_idxs.size(); ++i) {
-            const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
-            mask.setVal(0);
-            const Array<const Region*>& regions = face_bc.Regions();
-
-            if (face_bc.Type() == "pressure") {
-              for (int j=0; j<regions.size(); ++j) {
-                regions[j]->setVal(mask,1,0,dx,0);
-              }
-              face_bc.apply(prdat,dx,0,ncomps,t_eval);
+          else if (face_bc.Type() == "pressure_head") {
+            for (int j=0; j<regions.size(); ++j) {
+              regions[j]->setVal(mask,1,0,dx,0);
             }
-            else if (face_bc.Type() == "pressure_head") {
-              for (int j=0; j<regions.size(); ++j) {
-                regions[j]->setVal(mask,1,0,dx,0);
-              }
-              Real head_val = face_bc(t_eval)[0];
-	      if (BL_SPACEDIM<3 && gravity_dir>BL_SPACEDIM-1) {
-		head_val -= z_location;
-	      }
-	      head_val = head_val * density[0] * gravity + atmospheric_pressure_atm; // gravity=g/101325
-
-              Array<Real> gradp(3,0);
-              gradp[gravity_dir] = - density[0] * gravity;// gravity=g/101325
-              const Real* problo = geom.ProbLo();
-              const Real* probhi = geom.ProbHi();
-
-              Array<Real> glo(BL_SPACEDIM), ghi(BL_SPACEDIM);
-              if (use_gauge_pressure[face_bc.Label()]) {
-                glo.resize(BL_SPACEDIM,0);
-                for (int j=0; j<BL_SPACEDIM; ++j) {
-                  ghi[j] = probhi[j] - problo[j];
-                }
-              }
-              else {
-                for (int j=0; j<BL_SPACEDIM; ++j) {
-                  glo[j] = problo[j];
-                  ghi[j] = probhi[j];
-                }
-              }
-
-              const Real* ref_loc = problo;
-              Real ref_val = head_val;
-              Real* p_ptr = prdat.dataPtr();
-              const int* p_lo = prdat.loVect();
-              const int* p_hi = prdat.hiVect();
-              FORT_LINEAR_PRESSURE(p_lo, p_hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
-                                   dx, glo.dataPtr(), ghi.dataPtr(), &ref_val, ref_loc, gradp.dataPtr());
-
+            Real head_val = face_bc(t_eval)[0];
+            if (BL_SPACEDIM<3 && gravity_dir>BL_SPACEDIM-1) {
+              head_val -= z_location;
             }
-            else if (face_bc.Type() == "linear_pressure") {
-              for (int j=0; j<regions.size(); ++j) {
-                regions[j]->setVal(mask,1,0,dx,0);
+            head_val = head_val * density[0] * gravity + atmospheric_pressure_atm; // gravity=g/101325
+
+            Array<Real> gradp(3,0);
+            gradp[gravity_dir] = - density[0] * gravity;// gravity=g/101325
+            const Real* problo = geom.ProbLo();
+            const Real* probhi = geom.ProbHi();
+
+            Array<Real> glo(BL_SPACEDIM), ghi(BL_SPACEDIM);
+            if (use_gauge_pressure[face_bc.Label()]) {
+              glo.resize(BL_SPACEDIM,0);
+              for (int j=0; j<BL_SPACEDIM; ++j) {
+                ghi[j] = probhi[j] - problo[j];
               }
-	      Array<Real> vals = face_bc(t_eval);
-	      BL_ASSERT(vals.size()>=2*BL_SPACEDIM+1);
-	      const Real* gradp = &(vals[1]);
-	      const Real* loc = &(vals[1+BL_SPACEDIM]);
-              Real* p_ptr = prdat.dataPtr();
-              const int* p_lo = prdat.loVect();
-              const int* p_hi = prdat.hiVect();
-              const Real* problo = geom.ProbLo();
-              const Real* probhi = geom.ProbHi();
-              FORT_LINEAR_PRESSURE(p_lo, p_hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
-                                   dx, problo, probhi, &(vals[0]), loc, gradp);
+            }
+            else {
+              for (int j=0; j<BL_SPACEDIM; ++j) {
+                glo[j] = problo[j];
+                ghi[j] = probhi[j];
+              }
             }
 
-            for (IntVect iv=subbox.smallEnd(); iv<=subbox.bigEnd(); subbox.next(iv)) {
-              if (mask(iv,0) > 0) {
-                for (int n=0; n<ncomps; ++n) {
-                  fab(iv,n) = prdat(iv,n);
-                }
+            const Real* ref_loc = problo;
+            Real ref_val = head_val;
+            Real* p_ptr = prdat.dataPtr();
+            const int* p_lo = prdat.loVect();
+            const int* p_hi = prdat.hiVect();
+            FORT_LINEAR_PRESSURE(p_lo, p_hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
+                                 dx, glo.dataPtr(), ghi.dataPtr(), &ref_val, ref_loc, gradp.dataPtr());
+
+          }
+          else if (face_bc.Type() == "linear_pressure") {
+            for (int j=0; j<regions.size(); ++j) {
+              regions[j]->setVal(mask,1,0,dx,0);
+            }
+            Array<Real> vals = face_bc(t_eval);
+            BL_ASSERT(vals.size()>=2*BL_SPACEDIM+1);
+            const Real* gradp = &(vals[1]);
+            const Real* loc = &(vals[1+BL_SPACEDIM]);
+            Real* p_ptr = prdat.dataPtr();
+            const int* p_lo = prdat.loVect();
+            const int* p_hi = prdat.hiVect();
+            const Real* problo = geom.ProbLo();
+            const Real* probhi = geom.ProbHi();
+            FORT_LINEAR_PRESSURE(p_lo, p_hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
+                                 dx, problo, probhi, &(vals[0]), loc, gradp);
+          }
+
+          for (IntVect iv=subbox.smallEnd(); iv<=subbox.bigEnd(); subbox.next(iv)) {
+            if (mask(iv,0) > 0) {
+              for (int n=0; n<ncomps; ++n) {
+                fab(iv,n) = prdat(iv,n);
               }
             }
           }

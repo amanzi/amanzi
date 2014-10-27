@@ -559,20 +559,6 @@ public:
 			const int  src_comp = 0,
 			const int  num_comp = 1,
                         MultiFab*  saturation = 0);
-#ifdef MG_USE_FBOXLIB
-  //
-  // Calculate the diffusive term in the jacobian of richard's equation
-  //
-  void calc_richard_jac (MultiFab*  diffusivity[BL_SPACEDIM],
-                         MultiFab*  dalpha,
-			 const MultiFab* lbd,
-			 const MultiFab* umac,
-			 Real time,
-                         Real dt,
-			 int  nc,
-			 int do_upwind,
-			 bool do_n);
-
   //
   // Calculate the dt term in the jacobian for p-formulation
   //  (alpha = dN /dPc)
@@ -589,8 +575,6 @@ public:
   void calc_richard_velbc(MultiFab& res,
 			  MultiFab* uphase,
 			  const Real dt = 1.0);
-#endif
-
   //
   // Calculate capillary pressure
   //
@@ -1114,7 +1098,6 @@ protected:
   static int  it_pressure;
   static bool do_any_diffuse;
   static int  do_cpl_advect;
-  static bool do_richard_sat_solve;
   static ExecutionMode execution_mode;
   static Real switch_time;
   static Real ic_chem_relax_dt;
