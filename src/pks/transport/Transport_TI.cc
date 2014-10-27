@@ -1,16 +1,17 @@
 /*
-This is the transport component of the Amanzi code. 
+  This is the transport component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <algorithm>
 
+#include "ReconstructionCell.hh"
 #include "Transport_PK.hh"
 
 namespace Amanzi {
@@ -25,13 +26,13 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
   // transport routines need an RCP pointer
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
 
-  lifting.ResetField(mesh_, component_rcp);
-  lifting.CalculateCellGradient();
-  Teuchos::RCP<CompositeVector> gradient = lifting.gradient();
+  lifting_->Init(component_rcp);
+  lifting_->Compute();
+  Teuchos::RCP<CompositeVector> gradient = lifting_->gradient();
 
   if (advection_limiter == TRANSPORT_LIMITER_BARTH_JESPERSEN) {
     LimiterBarthJespersen(current_component_, component_rcp, gradient, limiter_);
-    lifting.ApplyLimiter(limiter_);
+    lifting_->ApplyLimiter(limiter_);
   } else if (advection_limiter == TRANSPORT_LIMITER_TENSORIAL) {
     LimiterTensorial(current_component_, component_rcp, gradient);
   } else if (advection_limiter == TRANSPORT_LIMITER_KUZMIN) {
@@ -64,7 +65,7 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
     if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = lifting.getValue(c1, xf);
+      upwind_tcc = lifting_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
@@ -72,14 +73,14 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
       f_component[c1] -= tcc_flux;
       f_component[c2] += tcc_flux;
     } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
-      upwind_tcc = lifting.getValue(c1, xf);
+      upwind_tcc = lifting_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = lifting.getValue(c1, xf);
+      upwind_tcc = lifting_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 

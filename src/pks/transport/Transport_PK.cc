@@ -18,21 +18,18 @@
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
-#include "errors.hh"
-#include "TabularFunction.hh"
-#include "GMVMesh.hh"
-
-#include "Explicit_TI_RK.hh"
-
 #include "BCs.hh"
+#include "errors.hh"
+#include "Explicit_TI_RK.hh"
+#include "GMVMesh.hh"
+#include "LinearOperatorFactory.hh"
+#include "Mesh.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
-#include "LinearOperatorFactory.hh"
+#include "TabularFunction.hh"
 
 #include "Transport_PK.hh"
-#include "Reconstruction.hh"
 
 
 namespace Amanzi {
@@ -211,8 +208,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   // reconstruction initialization
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   limiter_ = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
-  lifting.ResetField(mesh_, Teuchos::null);
-  lifting.Init();
+  lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
   // boundary conditions initialization
   double time = T_physics;
