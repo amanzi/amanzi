@@ -117,6 +117,8 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     dirichlet_bc_faces_++;
   }
 
+
+
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
     int f = bc->first;
     if (bc_submodel[f] & FLOW_BC_SUBMODEL_NOFLOW_ABOVE_WATER_TABLE) {
@@ -137,6 +139,8 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
     bc_value[f] = bc->second * rainfall_factor[f];
   }
+
+
 
   // Seepage face BC is implemented for p-lambda discretization only.
   int nseepage = 0;
