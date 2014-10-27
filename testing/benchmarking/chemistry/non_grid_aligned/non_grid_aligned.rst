@@ -18,17 +18,10 @@ For details on this test, see :ref:`about_non_grid_aligned`.
 Background
 ----------
 
-Mixing-induced precipitation is a problem that has recently received some attention in the literature, especially in pore scale studies [Yoon2012]_, [Tartakovsky2008]_. To accurately predict precipitation along mixing interfaces, accurate prediction of diffusive-dispersive transport is required. This is especially true, when these transport processes are not aligned with the grid that is used to discretize the domain. Amanzi uses numerical schemes that are capable to simulate accurately non-grid-aligned processes such as advective and dispersive transport when a rectangular grid is used.
+Mixing-induced precipitation is a problem that has recently received some attention in the literature, especially in pore scale studies [Yoon2012]_, [Tartakovsky2008]_. To accurately predict precipitation along mixing interfaces, accurate prediction of diffusive transport is required. This is especially true, when these transport processes are not aligned with the grid that is used to discretize the domain. Amanzi uses numerical schemes that accurately simulate non-grid-aligned advective and diffusive transport.  In this release, the advection-diffusion equation is solved using an operator splitting framework with an explicit scheme for the advection operator and an implicit scheme for diffusion. A simple operator-split approach is used; future releases will include options for higher-order schemes to couple the processes temporally.
 
-The first transport scheme uses a flexible framework of unstructured meshes even in the case of rectangular meshes.
-In this release, the advection-dispersion equation is solved using an operator splitting framework with an explicit scheme for the advection operator and an implicit scheme for the dispersive operator.
-A control of the operator-splitting error will be added in the subsequent releases of the product.  
-The second-order approximation of advective fluxes is achieved with the MUSCL-type (Monotonic Upstream-Centered Scheme for Conservation Laws) scheme [Barth1994]_ that combines local linear reconstruction of solute concentrations with a tensorial slope limiter. 
-The tensorial slope limiter adds robustness to the scheme and reduces numerical diffusion compared to the more conventional (scalar) Barth-Jesperson limiter.
-The second-order approximation of the dispersive fluxes is achived with the MFD (Mimetic Finite Difference) method [Lipnikov2014]_ optimized to guarantee solution monotonicity. 
+The spatial discretization schemes available in Amanzi for advective and diffusive processes are optimized for the selected mesh framework (structured AMR or unstructured).  For unstructured meshes, Amanzi provides a second-order approximation of advective fluxes with a MUSCL-type (Monotonic Upstream-Centered Scheme for Conservation Laws) scheme [Barth1994]_ that combines local linear reconstruction of solute concentrations with a tensorial slope limiter.  The tensorial slope limiter adds robustness to the scheme and reduces numerical diffusion compared to the more conventional (scalar) Barth-Jesperson limiter.  The tensor diffusion fluxes are computed with either standard central differencing or a second-order MFD (Mimetic Finite Difference) method [Lipnikov2014]_ optimized to guarantee solution monotonicity.  For structured AMR meshes, Amanzi implements an unsplit Godunov scheme [BDS1988]_, [Nonaka2011]_ for advection, and a standard 9-point (2D) or 27-point (3D) tensor diffusion scheme.  The Godunov scheme robustly guarantees monontonicity for non-grid-aligned advection.
 
-
-[Add description here of Marc's numerical schemes].
 
 Model
 -----
@@ -36,14 +29,17 @@ Model
 Flow and transport 
 ~~~~~~~~~~~~~~~~~~
 
-Flow is solved with the single-phase saturated flow equation
+For this test, the domain is fully saturated.  The velocity field satisfies the
+mass conservation equation with a Darcy approximation for volumetric fluxes:
 
 .. math::
   \left(\frac{S_s}{g} + \frac{S_y}{Lg}\right)
     \frac{\partial p}{\partial t} 
   + \boldsymbol{\nabla}\cdot(\rho \boldsymbol{q}) = Q
 
-Transport is solved with the advection-dispersion equation
+Solutes are advected with the velocity field given above, and are subject to diffusion fluxes arising 
+from the properties of the solutes in the fluid medium, as well as dispersion terms due to the 
+fluid flow field.  The following expresses conservation of the molar density of the ith solute 
 
 .. math::
   \frac{\partial (\phi s_l C_i)}{\partial t} 
@@ -51,7 +47,7 @@ Transport is solved with the advection-dispersion equation
   = Q_i 
   - \nabla \cdot \boldsymbol{J}_i^{\text{disp}}
 
-where the dispersive flux has the form
+where the transport flux has the form
 
 .. math::
   \boldsymbol{J}_i^\text{disp} = - \phi s_l \boldsymbol{D} \nabla C_i
@@ -93,16 +89,18 @@ The inlet face is divided in two equal halves. The top half is subject to the fo
 * flow rate = 0.50 cm/s
 * :math:`[Ca^{2+}] = 0.05 M`
 
-While the bottom half is subject to the following conditions:
+The bottom half is subject to the following conditions:
 
 * flow rate = 0.26 cm/s
 * :math:`[CO_3^{2-}] = 0.05 M`
 
-Initially, the concentration of all species in the domain is :math:`10^{-10} M`
+The initial concentration of all species in the domain is :math:`10^{-10} M`
 
-The dispersion coefficients for longitudinal and transverse component are:
+The dispersion coefficients for longitudinal and transverse component (relative to the local velocity vector) are:
 
 * :math:`\alpha_{L} = \alpha_{T} = 0.0001 m`
+
+The molecular diffusivities all all species are zero.
 
 Geochemistry
 ~~~~~~~~~~~~
@@ -125,12 +123,12 @@ Results and Comparison
 Expected results
 ~~~~~~~~~~~~~~~~
 
-Precipitation of calcite is expected to occur in the zone where the two solutions mix. Because the flow rate in the top half is faster, the mixing zone curves downwards and is located in the bottom half of the domain. Because the precipitation of calcite is relatively fast relative to transport, the mixing zone is relatively narrow with the effective reaction rate being mostly transport-limited.
+Precipitation of calcite is expected to occur in the zone where the two solutions mix. Because the flow rate in the top half is faster, the mixing zone curves downwards, into the bottom half of the domain. Since the precipitation of calcite is fast relative to transport, the mixing zone is narrow; the effective reaction rate is transport-limited.  We do not have an analytic solution for this problem. Due to the discontinuous boundary condition, we cannot expect formal convergence of either the structured AMR or unstructured algorithms to their second-order design rate.  However, we anticipate a robust, monotonic solution with minimal cross-stream diffusion/dispersion.
 
 Simulation results
 ~~~~~~~~~~~~~~~~~~
 
-Simulation results show a good agreement with expected results. Precipitation of calcite is indicated by its volume fraction at time 72 seconds (see Figure). This result demonstrates that the handling of dispersion in Amanzi is capable of capturing non-grid-aligned processes correctly.
+Simulation results show a good agreement with expected results. Precipitation of calcite is indicated by its volume fraction at time 72 seconds (see Figure). For the structured and unstructured discretizations, the solution profiles for the precipitated calcite are similar narrow bands between the inflowing solutes.  In both case, the solute profiles are monotonic and well-behaved at all mesh resolutions.  With additional refinement (not shown), the magnitude of the peak calcite volume fraction increases (due the increased vertical gradients of precipitating solutes at the inflow boundary condition), but its concentration stays properly confined to a narrow zone at the interface. These results demonstrate that Amanzi is capable of robustly capturing non-grid-aligned processes in both the structured and unstructured mesh frameworks.
 
 .. plot:: prototype/chemistry/non_grid_aligned/plot_non_grid_aligned.py
 
@@ -143,8 +141,8 @@ References
 .. [Tartakovsky2008] A.M. Tartakovsky, G. Redden, P.C. Lichtner, T.D. Scheibe, and P. Meakin (2008) Mixing-induced precipitation: Experimental study and multiscale numerical analysis, Water Resour. Res., 44, W06S04, doi:10.1029/2006WR005725.
 .. [Barth1994] T.Barth. Aspects of unstructured grids and finite-volume solvers for the Euler and Navier-Stokes equations. Lecture Notes presented at VKI Lecture Series, 1994-05.
 .. [Lipnikov2014] L. Beirao da Veiga, K. Lipnikov, and G. Manzini. The Mimetic Finite Difference Method for Elliptic PDEs. Springer, 2014, 408p.
-
-.. _about_non_grid_aligned:
+.. [BDS1988] J.B. Bell, C.N. Dawson, and G.R. Shubin (1988) An unsplit higher order Godunov method for scalar conservation laws in multiple dimensions, J. Comput. Physics, 74, p. 1-24
+.. [Nonaka2011] A. Nonaka, S. May, A.S. Almgren, and J.B. Bell (2011) A three-dimensional, unsplit Godunov method ofr scalar conservation laws, SIAM J. Sci. Comput, 33(4), 2039-2062
 
 About
 -----
