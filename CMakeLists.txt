@@ -116,5 +116,25 @@ if (ENABLE_Config_Report)
 
 endif() 
 
- 
+#
+#  Create source package
+# 
+#  - use the TGZ generator
+#  - use our existing CMake / Mercurial hooks to get version information
+#  - include the generated amanzi_version.hh in the package
+#
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Amanzi flow and reactive transport simulator.")
+SET(CPACK_PACKAGE_VENDOR "Amanzi Development Team (LANL, LBNL, PNNL)")
+SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
+SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYRIGHT")
+SET(CPACK_PACKAGE_VERSION_MAJOR ${AMANZI_VERSION_MAJOR})
+SET(CPACK_PACKAGE_VERSION_MINOR ${AMANZI_VERSION_MINOR})
+SET(CPACK_PACKAGE_VERSION_PATCH ${AMANZI_VERSION_PATCH}_${AMANZI_VERSION_HASH})
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME "amanzi-${AMANZI_VERSION}")
+SET(CPACK_SOURCE_GENERATOR "TGZ")
+SET(CPACK_SOURCE_IGNORE_FILES ".hg;.hgtags")
+SET(CPACK_SOURCE_INSTALLED_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR};/") 
+# Copy over extra files: stash them first and then they are copied as part of "make package_source"
+LIST(APPEND CPACK_SOURCE_INSTALLED_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/extras .)
 
+INCLUDE(CPack)
