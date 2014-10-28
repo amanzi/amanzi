@@ -66,7 +66,6 @@
 
           <Parameter name="do_multilevel_full" type="int" value="1"/>
           <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
-          <Parameter name="do_richard_sat_solve" type="int" value="0"/>
 
           <Parameter name="richard_init_to_steady_verbose" type="int" value="3"/>
           <Parameter name="steady_limit_iterations" type="int" value="30"/>

@@ -19,15 +19,23 @@ conducting systematic uncertainty quantification.
 
 Amanzi, the Multi-Process HPC Simulator is a critical component of
 this approach and tool.  Amanzi will be a highly modular and
-extensible computational engine for simulations of multi-phase
-multi-component flow, and reactive transport.  In the future it
-will include non-isothermal, geo-mechanical, and surface water
-models. To achive this ambitious goal we are building Amanzi as a
-grass-roots collaboration of an emerging broader community of
-geoscienists, computational and computer scientists, and applied
-mathematicians.  This broader community is leveraging its extensive
-experience, existing capabilities, and untapped advances from their
-areas of expertise to develop Amanzi.
+extensible computational engine for simulations of flow and reactive
+transport. Currently, it is capable of simulating transient saturated
+and variably saturated (Richards) flows, transport with
+non-grid-aligned dispersion and a variety of reactions. In the future
+it will include non-isothermal, multi-phase multi-component,
+geo-mechanical, and surface water models. To achive this ambitious
+goal we are building Amanzi as a grass-roots collaboration of an
+emerging broader community of geoscienists, computational and computer
+scientists, and applied mathematicians.  This broader community is
+leveraging its extensive experience, existing capabilities, and
+untapped advances from their areas of expertise to develop Amanzi.
+
+-----------------------------------------------
+BUILDING/INSTALLING AND RUNNING AMANZI
+-----------------------------------------------
+
+See the INSTALL file in this directory.
 
 -----------------------------------------------
 COPYRIGHT AND LICENSE (getting write access):

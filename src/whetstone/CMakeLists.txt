@@ -57,7 +57,7 @@ if ( BUILD_TESTS )
           copy_directory ${WHETSTONE_SOURCE_DIR}/test ${WHETSTONE_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs geometry mesh mesh_audit mesh_factory state whetstone)
+    set(amanzi_libs geometry mesh mesh_audit mesh_factory whetstone)
 
     # Test: matrices for diffusion
     add_amanzi_test(whetstone_darcy whetstone_darcy

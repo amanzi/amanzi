@@ -297,7 +297,6 @@
       <Parameter name="Format" type="string" value="simple" />
       <Parameter name="File" type="string" value="calcite_dbs.bgd" />
     </ParameterList>
-    <Parameter name="Engine" type="string" value="Amanzi" />
     <Parameter name="Verbosity" type="string" value="verbose" />
     <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>

@@ -23,7 +23,7 @@
 #include "DenseMatrix.hh"
 #include "Preconditioner.hh"
 #include "OperatorDiffusion.hh"
-#include "../pks/flow/WaterRetentionModel.hh"
+
 
 namespace Amanzi {
 namespace Operators {
@@ -55,7 +55,8 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
 
   void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
 
-  virtual double DeriveBoundaryFaceValue(int f, const CompositeVector& u, Teuchos::RCP<Flow::WaterRetentionModel>);
+  template <class WRM> 
+  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const WRM&);
 
   //access function
   const Epetra_Vector transmissibilities() { return *transmissibility_;}
@@ -81,5 +82,8 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
 
 }  // namespace Operators
 }  // namespace Amanzi
+
+// Description of templated function DeriveBoundaryFaceValue
+#include "FluxTPFABCfunc.hh"
 
 #endif

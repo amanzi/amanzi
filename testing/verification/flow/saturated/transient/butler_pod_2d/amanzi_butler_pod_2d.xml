@@ -1,4 +1,4 @@
-<amanzi_input version="2.0.0" type="unstructured">
+<amanzi_input version="2.1.0" type="unstructured">
    <model_description name="SR Test Problem">
       <comments>Confind aquifer transient drawdown (Theis 1935)</comments>
       <model_id>Theis</model_id>
@@ -68,10 +68,12 @@
     Numerical Control Parameters
    -->
     <numerical_controls>
+      <unstructured_controls>
         <linear_solver>
-            <max_iterations>1000</max_iterations>
-            <tolerance>1.0e-16</tolerance>
+          <max_iterations>1000</max_iterations>
+          <tolerance>1.0e-16</tolerance>
         </linear_solver>
+      </unstructured_controls>
     </numerical_controls>
 
 <!-- 

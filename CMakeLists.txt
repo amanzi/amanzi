@@ -13,6 +13,11 @@ if ("${CMAKE_PATCH_VERSION}" GREATER 11)
   cmake_policy(SET CMP0022 NEW)
 endif()
 
+if ("${CMAKE_MAJOR_VERSION}" GREATER 2)
+  cmake_policy(SET CMP0037 OLD)
+  cmake_policy(SET CMP0048 OLD)
+endif()
+
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
 enable_testing()

@@ -13,10 +13,9 @@ requirements documented here https://software.lanl.gov/ascem/trac/wiki/Amanzi/Bu
 Users are required to provide the following to build:
 
     * A recent and stable GCC or Intel compiler. We have successfully built with
-      GNU versions 4.4, 4.5 and 4.6, and Intel versions 11 and 12. There
-      are known issues with GCC 4.7.
-    * Mercurial version 0.98 or higher.
-    * CMake version 2.8.8 or higher.
+      GNU versions 4.7, 4.8, 4.9 and Intel versions 11 through 14. 
+    * Mercurial version 1.8 or higher.
+    * CMake version 2.8.8 or higher (including CMake 3.0.x).
     * MPI installation with compiler wrappers. (mpicc, mpicxx, etc.)
     * OpenSSL (required to build CURL) installation. This is available on
       most UNIX flavored systems and Macs.
@@ -295,8 +294,8 @@ or set ENABLE_NetCDF4:BOOL=FALSE while configuring SuperBuild from the command l
 TPL build fails with any PGI compiler
 +++++++++++++++++++++++++++++++++++++
 We have not found a PGI C++ compiler that builds our Boost configuration
-successfully. TPL build system has successfully built with GCC 4.4, 4.5 and
-4.6 and Intel 11.* and Intel 12.*.
+successfully. TPL build system has successfully built with GCC 4.7, 4.8, 4.9 and
+and Intel 11.* through Intel 14.*.
 
 Library parallelio (ASCEM-IO) missing archive index (MacOSX)
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
