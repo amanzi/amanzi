@@ -140,9 +140,15 @@
       </mechanical_properties>
       <!-- Begin proposed isotherm section using Amanzi native chemistry -->
       <sorption_isotherms>
-        <solute name = "A" model = "linear" kd = "10.0"/>
-        <solute name = "B" model = "langmuir" kd = "30.0" b = "0.1"/>
-        <solute name = "C" model = "freundlich" kd = "1.5" n = "1.25"/>
+        <solute name = "A">
+          <kd_model model = "linear" kd = "10.0"/>
+        </solute>
+        <solute name = "B">
+          <kd_model model = "langmuir" kd = "30.0" b = "0.1"/>
+        </solute>
+        <solute name = "C">
+          <kd_model model = "freundlich" kd = "1.5" n = "1.25"/>
+        </solute>
       </sorption_isotherms>
       <!-- End proposed isotherm section -->
       <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
