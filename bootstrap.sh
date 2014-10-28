@@ -30,7 +30,7 @@ known_fortran_compilers="mpif90 ftn gfortran ifort"
 
 # Directory information
 start_directory=$PWD
-amanzi_source_dir=$(cd $(dirname "$0")/..;pwd)
+amanzi_source_dir=$(cd $(dirname "$0")/;pwd)
 
 # ASCEM Web address
 ascem_protocol=https

@@ -1708,14 +1708,14 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
   // have unstructured framework and found unstructured_controls
   if (isUnstr_ && found) {
     for (int i=0; i<algoList->getLength(); i++) {
-    DOMNode* ncNode = algoList->item(i);
-    if (DOMNode::ELEMENT_NODE == ncNode->getNodeType()) {
-      DOMNodeList* childList = ncNode->getChildNodes();
-      for(int j=0; j<childList->getLength(); j++) {
-        DOMNode* tmpNode = childList->item(j) ;
-        if (DOMNode::ELEMENT_NODE == tmpNode->getNodeType()) {
-          char* nodeName = XMLString::transcode(tmpNode->getNodeName());
-          if (strcmp(nodeName,"unstr_steady-state_controls")==0) {
+      DOMNode* ncNode = algoList->item(i);
+      if (DOMNode::ELEMENT_NODE == ncNode->getNodeType()) {
+        DOMNodeList* childList = ncNode->getChildNodes();
+        for(int j=0; j<childList->getLength(); j++) {
+          DOMNode* tmpNode = childList->item(j) ;
+          if (DOMNode::ELEMENT_NODE == tmpNode->getNodeType()) {
+            char* nodeName = XMLString::transcode(tmpNode->getNodeName());
+            if (strcmp(nodeName,"unstr_steady-state_controls")==0) {
             // loop through children and deal with them
             DOMNodeList* children = tmpNode->getChildNodes();
             for (int k=0; k<children->getLength(); k++) {
@@ -1858,7 +1858,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 
             //list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration") = ssPL;
 	  }
-          else if (strcmp(nodeName,"unstr_transient_controls")==0) {
+            else if (strcmp(nodeName,"unstr_transient_controls")==0) {
 	    // check for incr/red factors from execution_controls first
 	    // grab integration method, then loop through it's attributes
             DOMElement* tcElement = static_cast<DOMElement*>(tmpNode);
@@ -2061,7 +2061,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             }
             //list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transient Implicit Time Integration") = tcPL;
           }
-          else if (strcmp(nodeName,"unstr_nonlinear_solver")==0) {
+            else if (strcmp(nodeName,"unstr_nonlinear_solver")==0) {
             Teuchos::ParameterList nlPL;
             attrMap = tmpNode->getAttributes();
             nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
@@ -2084,7 +2084,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             XMLString::release(&textContent);
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
           }
-          else if (strcmp(nodeName,"unstr_linear_solver")==0) {
+            else if (strcmp(nodeName,"unstr_linear_solver")==0) {
             Teuchos::ParameterList lsPL;
             Teuchos::ParameterList pcPL;
             bool usePCPL=false;
@@ -2252,7 +2252,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Chemistry Process Kernel") = cpkPL;
             list.sublist("Numerical Control Parameters").sublist("Common Controls") = commonPL;
           }
-          else if (strcmp(nodeName,"nonlinear_solver")==0) {
+            else if (strcmp(nodeName,"nonlinear_solver")==0) {
             // EIB: creating sub for section that doesn't actually exist yet in the New Schema, but does in the Input Spec
             Teuchos::ParameterList nlsPL;
             DOMNodeList* children = tmpNode->getChildNodes();
@@ -2269,7 +2269,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
 	      }
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlsPL;
           }
-          else if (strcmp(nodeName,"unstr_chemistry_controls")==0) {
+            else if (strcmp(nodeName,"unstr_chemistry_controls")==0) {
             Teuchos::ParameterList chemistryPL;
             // go ahead and add bdg file to PL
             // build bgd filename
@@ -2365,10 +2365,10 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             }
             def_list->sublist("Chemistry") = chemistryPL;
           }
+          }
         }
       }
-    }      
-  }
+    }
     list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration") = ssPL;
     list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transient Implicit Time Integration") = tcPL;
   }
