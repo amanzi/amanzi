@@ -25,7 +25,7 @@
 namespace Amanzi {
 namespace WhetStone {
 
-const int WHETSTONE_DATA_ACCESS_COPY = 2;
+const int WHETSTONE_DATA_ACCESS_COPY = 1;
 const int WHETSTONE_DATA_ACCESS_VIEW = 2;
 
 class DenseMatrix {
@@ -34,7 +34,7 @@ class DenseMatrix {
   DenseMatrix(int mrow, int ncol);
   DenseMatrix(int mrow, int ncol, double* data, int data_access = WHETSTONE_DATA_ACCESS_COPY);
   DenseMatrix(const DenseMatrix& B);
-  ~DenseMatrix() { if (data_ != NULL) { delete[] data_; } }
+  ~DenseMatrix() { if (data_ != NULL && access_ == WHETSTONE_DATA_ACCESS_COPY) { delete[] data_; } }
   
   // primary members 
   void clear() { for (int i = 0; i < m_ * n_; i++) data_[i] = 0.0; } 
