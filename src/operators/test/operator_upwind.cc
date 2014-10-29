@@ -38,11 +38,17 @@ class Model {
     return analytic(pc); 
   }
 
+  double Value(int c, double pc) const { 
+    return analytic(pc); 
+  }
+
   double analytic(double pc) const { return 1e-5 + pc; }
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
+
+typedef double(Model::*ModelUpwindFn)(int c, double pc) const; 
 
 }  // namespace Amanzi
 
@@ -144,7 +150,9 @@ TEST(UPWIND) {
 
     ParameterList& ulist = plist.sublist("upwind");
     upwind.Init(ulist);
-    upwind.Compute(flux, bc_model, bc_value, field, upw_field, " ");
+    // upwind.Compute(flux, bc_model, bc_value, field, upw_field, " ");
+    ModelUpwindFn func = &Model::Value;
+    upwind.Compute(flux, bc_model, bc_value, field, upw_field, func);
 
     // calculate error
     Epetra_MultiVector& upw = *upw_field.ViewComponent("face");

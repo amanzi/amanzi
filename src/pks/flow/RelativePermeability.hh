@@ -92,6 +92,8 @@ class RelativePermeability {
   VerboseObject* vo_;
 };
 
+typedef double(RelativePermeability::*RelativePermeabilityUpwindFn)(int c, double pc) const; 
+
 }  // namespace Flow
 }  // namespace Amanzi
 
