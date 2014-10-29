@@ -1,0 +1,23 @@
+<Primary Species
+# Debye-Huckel a_i (ionic radius) ; charge ; molecular mass (weight) [g]
+Tracer ;   0.0 ;   0.0 ;   0.0
+Sr90   ;   5.0 ;   2.0 ;   87.6200
+Cs137  ;   2.5 ;   1.0 ;   132.9054
+
+#<General Kinetics
+#      ?       ;     ?      ; decay constant [s]
+#1.00 Sr90  <-> ; 1.00 Sr90  ; 7.63e-10 ; 1.00 Sr90  ; 0
+#1.00 Cs137 <-> ; 1.00 Cs137 ; 7.27e-10 ; 1.00 Cs137 ; 0
+
+<Radioactive Decay
+# <parent> --> <coeff> <species> ; half_life <lambda> <units>
+Sr90  --> 1.00 Sr90  ; half_life 28.8 years
+Cs137 --> 1.00 Cs137 ; half_life 30.2 years
+
+<Isotherms
+# should be overwritten by XML input file
+#      ;           ;  Amanzi "Kd"
+Tracer ;  linear   ;  1.2e8
+Sr90   ;  linear   ;  1.2e8
+Cs137  ;  linear   ;  1.2e8
+
