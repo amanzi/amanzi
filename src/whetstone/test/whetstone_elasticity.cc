@@ -59,12 +59,12 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     Tensor T;
     double lambda(1.0), mu(0.0);
     if (method == 0) {
-      T.init(2, 1);
+      T.Init(2, 1);
       T(0, 0) = 1.0;
     } else if (method == 1) {
       mu = 3.0;
       lambda = 0.0;
-      T.init(2, 4);
+      T.Init(2, 4);
       T(0, 0) = T(1, 1) = lambda + 2 * mu;
       T(0, 1) = T(1, 0) = lambda;
       T(2, 2) = mu;

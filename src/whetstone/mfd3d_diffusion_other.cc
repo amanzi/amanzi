@@ -120,7 +120,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
 
     for (int i = 0; i < d; i++) {
       int f = corner_faces[i];
-      N.AddColumn(i, mesh_->face_normal(f));
+      N.SetColumn(i, mesh_->face_normal(f));
     }
     double cwgt_tmp = fabs(N.Det());
 

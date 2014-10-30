@@ -1082,9 +1082,13 @@ The remaining `"Flow`" parameters are
 
 * `"atmospheric pressure`" [double] defines the atmospheric pressure, [Pa].
 
+* `"absolute permeability coordinate system`" [string] defines coordinate system
+  for calculating absolute permeability. The available options are `"cartesian`"
+  and `"layer`".
+
 * `"relative permeability`" [string] defines a method for calculating relative
-  permeability. The available self-explanatory options `"upwind with gravity`",
-  are `"upwind with Darcy flux`", `"arithmetic mean`" and `"cell centered`". 
+  permeability. The available self-explanatory options are `"upwind with gravity`",
+  `"upwind with Darcy flux`", `"arithmetic mean`" and `"cell centered`". 
   The first three calculate the relative permeability on mesh interfaces.
 
 * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside

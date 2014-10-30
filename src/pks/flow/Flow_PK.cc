@@ -362,25 +362,46 @@ void Flow_PK::SetAbsolutePermeabilityTensor()
   const CompositeVector& cv = *S_->GetFieldData("permeability");
   cv.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
+ 
+  // For permeabilities given in local (layer-based) coordinates
+  AmanziGeometry::Point n1(dim), n2(dim), normal(dim), tau(dim);
+  WhetStone::Tensor N(dim, 2), Ninv(dim, 2), D(dim, 2);
 
   if (dim == 2) {
     for (int c = 0; c < K.size(); c++) {
       if (perm[0][c] == perm[1][c]) {
-	K[c].init(dim, 1);
+	K[c].Init(dim, 1);
 	K[c](0, 0) = perm[0][c];
-      } else {
-	K[c].init(dim, 2);
+      } else if (coordinate_system == "cartesian") {
+	K[c].Init(dim, 2);
 	K[c](0, 0) = perm[0][c];
 	K[c](1, 1) = perm[1][c];
+      } else {
+        VerticalNormals(c, n1, n2);
+        normal = (n1 - n2) / 2;
+        normal /= norm(normal);
+
+        tau[0] = normal[1];
+        tau[1] = -normal[0];
+        
+        N.SetColumn(0, tau); 
+        N.SetColumn(1, normal); 
+
+        Ninv = N;
+        Ninv.Inverse();
+
+        D(0, 0) = perm[0][c];
+        D(1, 1) = perm[1][c];
+        K[c] = N * D * Ninv;
       }
     }    
   } else if (dim == 3) {
     for (int c = 0; c < K.size(); c++) {
       if (perm[0][c] == perm[1][c] && perm[0][c] == perm[2][c]) {
-	K[c].init(dim, 1);
+	K[c].Init(dim, 1);
 	K[c](0, 0) = perm[0][c];
       } else {
-	K[c].init(dim, 2);
+	K[c].Init(dim, 2);
 	K[c](0, 0) = perm[0][c];
 	K[c](1, 1) = perm[1][c];
 	K[c](2, 2) = perm[2][c];
@@ -482,16 +503,51 @@ int Flow_PK::BoundaryFaceGetCell(int f)
   return cells[0];
 }
 
+
 /* ******************************************************************
 * Returns approximation of a solution on a boundary face   
 ****************************************************************** */
-
 double Flow_PK::BoundaryFaceValue(int f, const CompositeVector& pressure){
 
   const Epetra_MultiVector& u_cell = *pressure.ViewComponent("cell");
   int c = BoundaryFaceGetCell(f);
   return u_cell[0][c];
 
+}
+
+
+/* ******************************************************************
+* Find cell normals that have direction close to gravity (n1) and
+* anti-gravity (n2).
+****************************************************************** */
+void Flow_PK::VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2)
+{
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  int i1, i2;
+  double amax(-1e+50), amin(1e+50), a;
+  for (int i = 0; i < nfaces; i++) {
+    int f = faces[i];
+    double area = mesh_->face_area(f);
+    const AmanziGeometry::Point normal = mesh_->face_normal(f);
+
+    a = normal[dim - 1] * dirs[i] / area;
+    if (a > amax) { 
+      i1 = i;
+      amax = a;
+    } 
+    if (a < amin) { 
+      i2 = i;
+      amin = a;
+    } 
+  }
+
+  n1 = mesh_->face_normal(faces[i1]) * dirs[i1];
+  n2 = mesh_->face_normal(faces[i2]) * dirs[i2];
 }
 
 

@@ -92,7 +92,7 @@ void Energy_PK::Initialize()
   // ProcessParameterList(plist_);
   K.resize(ncells_wghost);
   for (int c = 0; c < ncells_wghost; c++) {
-    K[c].init(dim, 1);
+    K[c].Init(dim, 1);
     K[c](0, 0) = 1.0;
   }
   

@@ -117,6 +117,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
 
   // extensions 
   int BoundaryFaceGetCell(int f);  // of AmanziMesh
+  void VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2);
   virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
 
   void set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1,  // of std
@@ -156,6 +157,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   double g_, rho_, mu_, atm_pressure_;
 
   Teuchos::RCP<Epetra_Vector> Kxy;
+  std::string coordinate_system;
 
   // boundary conditons
   Functions::FlowBoundaryFunction* bc_pressure; 
