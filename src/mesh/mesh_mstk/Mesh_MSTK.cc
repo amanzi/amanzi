@@ -2818,13 +2818,17 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
 
       mset1 = MESH_MSetByName(mesh,internal_name.c_str());
       
-      if (!mset1)
-        {
+      /// Due to the parallel partitioning its possible that this set
+      /// is not on this processor
+      
+      if (mset1 == NULL) {
+        if (epcomm->NumProc() == 1) {
           std::stringstream mesg_stream;
           mesg_stream << "Mesh set " << setname << " should have been read in as set " << label << " from the mesh file.";
           Errors::Message mesg(mesg_stream.str());
           amanzi_throw(mesg);
         }
+      }
     }
   else
     {
@@ -2876,13 +2880,13 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
 
   // All attempts to find the set failed so it must not exist - build it
 
-  if (mset1 == NULL) 
+  if (mset1 == NULL && rgn->type() != AmanziGeometry::LABELEDSET) 
     mset1 = build_set(rgn, kind);
-
 
   /* Check if no processor got any mesh entities */
 
-  int nent_loc = MSet_Num_Entries(mset1);
+  int nent_loc = (mset1 == NULL) ? 0 : MSet_Num_Entries(mset1);
+
 
 #ifdef DEBUG
   int nent_glob;
@@ -2950,6 +2954,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
   }
 #endif
     
+
 } // Mesh_MSTK::get_set_entities (by set name) 
 
 
@@ -3794,8 +3799,10 @@ void Mesh_MSTK::init_set_info() {
       mset = MESH_MSetByName(mesh,internal_name.c_str());
    
       if (!mset) {
-	Errors::Message mesg("Missing labeled set \"" + label + "\" or error in input");
-	amanzi_throw(mesg);
+        continue;  // Its possible some sets won't exist on some partitions
+
+        //	Errors::Message mesg("Missing labeled set \"" + label + "\" or error in input");
+        //	amanzi_throw(mesg);
       }
 
       entdim = MSet_EntDim(mset);
