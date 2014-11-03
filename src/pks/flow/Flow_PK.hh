@@ -72,6 +72,9 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   // boundary and source teerms
   void ProcessBCs();
   void ComputeBCs(const CompositeVector& pressure);
+  bool SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage);
+  bool SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_seepage);
+  bool SeepageFaceAmanzi(const CompositeVector& u, int* nseepage, double* area_seepage);
 
   void AddSourceTerms(CompositeVector& rhs);
 
@@ -167,7 +170,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int nseepage_prev;
 
   std::vector<int> bc_model, bc_submodel; 
-  std::vector<double> bc_value, bc_coef;
+  std::vector<double> bc_value, bc_mixed;
 
   std::vector<double> rainfall_factor;
   Teuchos::RCP<Epetra_Vector> shift_water_table_;

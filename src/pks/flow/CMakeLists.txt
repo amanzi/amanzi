@@ -59,7 +59,8 @@ generate_evaluators_registration_header(
 # Library: flow
 #
 set(flow_src_files Flow_PK.cc Flow_IO.cc
-                   Flow_BC_Factory.cc Flow_BC_Actions.cc Flow_SourceFactory.cc Flow_VandV.cc 
+                   Flow_BC_Factory.cc Flow_BC_Actions.cc Flow_SeepageFace.cc
+                   Flow_SourceFactory.cc Flow_VandV.cc 
                    Flow_Utilities.cc Flow_AuxData.cc
                    FlowDomainFunction.cc FlowBoundaryFunction.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc

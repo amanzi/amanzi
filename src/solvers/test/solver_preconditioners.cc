@@ -1,12 +1,13 @@
 #include <iostream>
 #include <string>
 
-#include "UnitTest++.h"
+#include "omp.h"
 
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
+#include "UnitTest++.h"
 
 #include "exceptions.hh"
 #include "LinearOperatorPCG.hh"
@@ -39,7 +40,7 @@ class Matrix {
     } else if (name == "ml") {
       PreconditionerFactory factory;
       tmp.set<int>("coarse: max size", 5);
-      tmp.set<int>("cycle applications", 1);
+      tmp.set<int>("cycle applications", 2);
       tmp.set<int>("ML output", 0);
       preconditioner_ = factory.Create(plist);
     } else {
@@ -76,8 +77,9 @@ class Matrix {
   Teuchos::RCP<Preconditioner> preconditioner_;
 };
 
+
 TEST(DIAGONAL_PRECONDITIONER) {
-  std::cout << "Comparison of preconditioners for N=125" << std::endl;
+  std::cout << "\nComparison of preconditioners for N=125" << std::endl;
 
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(N, 0, *comm));
@@ -112,6 +114,67 @@ TEST(DIAGONAL_PRECONDITIONER) {
   delete comm;
 };
 
+
+TEST(DIAGONAL_PRECONDITIONER_OPENMP) {
+  std::cout << "\nComparison of preconditioners for N=125 using OpenMP directives" << std::endl;
+
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(N, 0, *comm));
+
+  Teuchos::ParameterList plist;
+  plist.sublist("VerboseObject").set<std::string>("Verbosity Level", "low");
+
+  // solving with identity preconditioner
+  std::string prec_names[4];
+  prec_names[0] = "identity";
+  prec_names[1] = "diagonal";
+
+  // parallel run
+  double cpu0 = omp_get_wtime();
+
+#pragma omp parallel for
+  for (int n = 0; n < 2; n++) {
+    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+    m->Init(prec_names[n], *map);
+
+    AmanziSolvers::LinearOperatorPCG<Matrix, Epetra_Vector, Epetra_Map> pcg(m, m);
+    pcg.Init(plist);
+    pcg.set_tolerance(1e-12);
+    pcg.set_max_itrs(200);
+
+    Epetra_Vector u(*map), v(*map);
+    for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
+
+    pcg.ApplyInverse(u, v);
+  }
+
+  int nthreads = omp_get_max_threads();
+  double cpu1 = omp_get_wtime();
+  std::cout << "CPU (parallel): " << cpu1 - cpu0 << " [sec]  threads=" << nthreads << std::endl;
+
+  // serial run
+  cpu0 = omp_get_wtime();
+
+  for (int n = 0; n < 2; n++) {
+    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+    m->Init(prec_names[n], *map);
+
+    AmanziSolvers::LinearOperatorPCG<Matrix, Epetra_Vector, Epetra_Map> pcg(m, m);
+    pcg.Init(plist);
+    pcg.set_tolerance(1e-12);
+    pcg.set_max_itrs(200);
+
+    Epetra_Vector u(*map), v(*map);
+    for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
+
+    pcg.ApplyInverse(u, v);
+  }
+
+  cpu1 = omp_get_wtime();
+  std::cout << "CPU (serial):   " << cpu1 - cpu0 << " [sec] " << std::endl;
+
+  delete comm;
+};
 }
 
 

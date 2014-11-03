@@ -199,8 +199,8 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   bc_model.resize(nfaces_wghost, 0);
   bc_submodel.resize(nfaces_wghost, 0);
   bc_value.resize(nfaces_wghost, 0.0);
-  bc_coef.resize(nfaces_wghost, 0.0);
-  op_bc_ = Teuchos::rcp(new Operators::BCs(bc_model, bc_value));
+  bc_mixed.resize(nfaces_wghost, 0.0);
+  op_bc_ = Teuchos::rcp(new Operators::BCs(bc_model, bc_value, bc_mixed));
 
   rainfall_factor.resize(nfaces_wghost, 1.0);
 

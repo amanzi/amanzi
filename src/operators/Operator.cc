@@ -525,6 +525,7 @@ void Operator::ApplyBCs()
 
   const std::vector<int>& bc_model = bc_->bc_model();
   const std::vector<double>& bc_value = bc_->bc_value();
+  const std::vector<double>& bc_mixed = bc_->bc_mixed();
 
   // clean ghosted values
   for (CompositeVector::name_iterator name = rhs_->begin(); name != rhs_->end(); ++name) {
@@ -580,6 +581,10 @@ void Operator::ApplyBCs()
               Acell(n, nfaces) = 0.0;
             } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) {
               rhs_face[0][f] -= value * mesh_->face_area(f);
+            } else if (bc_model[f] == OPERATOR_BC_FACE_MIXED) {
+              double area = mesh_->face_area(f);
+              rhs_face[0][f] -= value * area;
+              Acell(n, n) += bc_mixed[f] * area;
             }
           }
         }
@@ -610,6 +615,13 @@ void Operator::ApplyBCs()
               }
               rhs_node[0][v] = value;
               diag[0][v] = 1.0;
+            } else if (bc_model[v] == OPERATOR_BC_FACE_NEUMANN) {
+              double area = ComputeBoundaryVertexArea(c, v);
+              rhs_node[0][v] -= value * area;
+            } else if (bc_model[v] == OPERATOR_BC_FACE_MIXED) {
+              double area = ComputeBoundaryVertexArea(c, v);
+              rhs_node[0][v] -= value * area;
+              Acell(n, n) += bc_mixed[v] * area;
             }
           }
         }
@@ -964,6 +976,33 @@ int Operator::FindMatrixBlock(int schema_dofs, int matching_rule, bool action) c
   }
 
   return -1;
+}
+
+
+/* ******************************************************************
+* Computes area associated with the boundary vertex v. This area is
+* defined by edges of a co-volume cell of vertex v restricted to the
+* given cell.
+****************************************************************** */
+double Operator::ComputeBoundaryVertexArea(int c, int v)
+{
+  AmanziMesh::Entity_ID_List cells, faces, nodes;
+
+  mesh_->cell_get_faces(c, &faces);
+  int nfaces = faces.size();
+
+  double area(0.0);
+  for (int i = 0; i < nfaces; i++) {
+    int f = faces[i];
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    if (cells.size() == 1) {
+      mesh_->face_get_nodes(f, &nodes);
+      int nnodes = nodes.size();
+      area += mesh_->face_area(f) / nnodes;
+    }
+  }
+
+  return area;
 }
 
 
