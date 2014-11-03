@@ -1,7 +1,9 @@
 #include <iostream>
 #include <string>
 
+#ifdef _OPENMP
 #include "omp.h"
+#endif
 
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MpiComm.h"
@@ -115,6 +117,7 @@ TEST(DIAGONAL_PRECONDITIONER) {
 };
 
 
+#ifdef _OPENMP
 TEST(DIAGONAL_PRECONDITIONER_OPENMP) {
   std::cout << "\nComparison of preconditioners for N=125 using OpenMP directives" << std::endl;
 
@@ -132,7 +135,7 @@ TEST(DIAGONAL_PRECONDITIONER_OPENMP) {
   // parallel run
   double cpu0 = omp_get_wtime();
 
-#pragma omp parallel for
+#pragma omp parallel for shared(map) num_threads(2)
   for (int n = 0; n < 2; n++) {
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
     m->Init(prec_names[n], *map);
@@ -175,6 +178,8 @@ TEST(DIAGONAL_PRECONDITIONER_OPENMP) {
 
   delete comm;
 };
+#endif
+
 }
 
 
