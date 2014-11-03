@@ -31,9 +31,7 @@ namespace Flow {
 ****************************************************************** */
 bool Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage)
 {
-  const Epetra_MultiVector& u_face = *u.ViewComponent("face");
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-
   double ref_pressure = bc_seepage->reference_pressure();
   double tol = ref_pressure * 1e-14;
 
@@ -46,12 +44,14 @@ bool Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
     int f = bc->first;
 
     if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {
-      if (u_face[0][f] < ref_pressure - tol) {
+      double face_value = BoundaryFaceValue(f, u);
+
+      if (face_value < ref_pressure - tol) {
         bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
         bc_value[f] = bc->second * rainfall_factor[f];
       } else {
         int c = BoundaryFaceGetCell(f);
-        if (u_cell[0][c] < u_face[0][f]) {
+        if (u_cell[0][c] < face_value) {
           bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
           bc_value[f] = bc->second * rainfall_factor[f];
         } else {
@@ -74,9 +74,7 @@ bool Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
 ****************************************************************** */
 bool Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_seepage)
 {
-  const Epetra_MultiVector& u_face = *u.ViewComponent("face");
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-
   double ref_pressure = bc_seepage->reference_pressure();
 
   *nseepage = 0;
@@ -86,14 +84,17 @@ bool Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* a
   Functions::FlowBoundaryFunction::Iterator bc;
   for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
     int f = bc->first;
+
     if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_FACT) {
-      double pcreg = -2000.0;
+      double face_value = BoundaryFaceValue(f, u);
+
+      double I = FLOW_BC_SEEPAGE_FACE_IMPEDANCE;
       double influx = bc->second * rainfall_factor[f];
-      double I = influx / pcreg;
+      double pcreg = influx / I;
       double pcmin = 3 * pcreg / 2;
       double pcmax = pcreg / 2;
 
-      double pc = u_face[0][f] - ref_pressure;
+      double pc = face_value - ref_pressure;
       if (pc < pcmin) {
         bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
         bc_value[f] = influx;
@@ -127,9 +128,7 @@ bool Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* a
 ****************************************************************** */
 bool Flow_PK::SeepageFaceAmanzi(const CompositeVector& u, int* nseepage, double* area_seepage)
 {
-  const Epetra_MultiVector& u_face = *u.ViewComponent("face");
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-
   double ref_pressure = bc_seepage->reference_pressure();
 
   *nseepage = 0;
@@ -139,17 +138,20 @@ bool Flow_PK::SeepageFaceAmanzi(const CompositeVector& u, int* nseepage, double*
   Functions::FlowBoundaryFunction::Iterator bc;
   for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
     int f = bc->first;
+
     if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_AMANZI) {
+      double face_value = BoundaryFaceValue(f, u);
+
       double influx = bc->second * rainfall_factor[f];
       double pcreg = -FLOW_BC_SEEPAGE_FACE_REGULARIZATION * 10;
 
-      double pc = u_face[0][f] - ref_pressure;
+      double pc = face_value - ref_pressure;
       if (pc < pcreg) {
         bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
         bc_value[f] = influx;
       } else if (pc >= 0.0) {
         int c = BoundaryFaceGetCell(f);
-        if (u_cell[0][c] < u_face[0][f]) {
+        if (u_cell[0][c] < face_value) {
           bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
           bc_value[f] = influx;
         } else {

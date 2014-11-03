@@ -81,7 +81,7 @@ class Richards_PK : public Flow_PK {
 
   // other main methods
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void UpdateSourceBoundaryData(double Tp, const CompositeVector& pressure);
+  void UpdateSourceBoundaryData(double Tp, const CompositeVector& u);
 
   // linear problems and solvers
   void SolveFullySaturatedProblem(double T, CompositeVector& u, const std::string& solver_name);

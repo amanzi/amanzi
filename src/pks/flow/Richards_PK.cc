@@ -767,23 +767,27 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epet
 /* ******************************************************************
 * 
 ****************************************************************** */
-double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u) {
-
-
-
+double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
+{
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-  Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face");
-  Epetra_MultiVector& dk_face = *rel_perm_->dKdP()->ViewComponent("face");
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();
-  const Epetra_IntVector& map_c2mb = rel_perm_->map_c2mb();
-  //const Epetra_Vector
-  int c = BoundaryFaceGetCell(f);
-  double face_val = op_matrix_ -> DeriveBoundaryFaceValue(f, u, WRM[map_c2mb[c]]);
- 
-  // k_face[0][f] =  WRM[map_c2mb[c]]->k_relative (atm_pressure_ - face_val);
-  // dk_face[0][f] = -WRM[map_c2mb[c]]->dKdPc (atm_pressure_ - face_val);
+  double face_value;
 
-  return face_val;
+  if (u.HasComponent("face")) {
+    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
+    face_value = u_face[0][f];
+  } else {
+    Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face");
+    Epetra_MultiVector& dk_face = *rel_perm_->dKdP()->ViewComponent("face");
+
+    std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();
+    const Epetra_IntVector& map_c2mb = rel_perm_->map_c2mb();
+
+    int c = BoundaryFaceGetCell(f);
+    face_value = op_matrix_->DeriveBoundaryFaceValue(f, u, WRM[map_c2mb[c]]);
+    // k_face[0][f] =  WRM[map_c2mb[c]]->k_relative (atm_pressure_ - face_val);
+    // dk_face[0][f] = -WRM[map_c2mb[c]]->dKdPc (atm_pressure_ - face_val);
+  }
+  return face_value;
 }
 
 }  // namespace Flow
