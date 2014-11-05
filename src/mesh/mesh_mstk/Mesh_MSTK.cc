@@ -2824,7 +2824,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
       if (mset1 == NULL) {
         if (epcomm->NumProc() == 1) {
           std::stringstream mesg_stream;
-          mesg_stream << "Mesh set " << setname << " should have been read in as set " << label << " from the mesh file.";
+          mesg_stream << "Could not find labeled set " << label << " in mesh file in order to initialize mesh set " << setname << ". Verify mesh file.";
           Errors::Message mesg(mesg_stream.str());
           amanzi_throw(mesg);
         }
