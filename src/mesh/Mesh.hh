@@ -416,8 +416,12 @@ class Mesh
   // side. In general surfaces meshes, this will not be true at C1
   // discontinuities
 
+  // if cellid is specified, then orientation returns the direction of
+  // the natural normal of the face with respect to the cell (1 is
+  // pointing out of the cell and -1 pointing in)
 
-  AmanziGeometry::Point face_normal (const Entity_ID faceid, const bool recompute=false, const Entity_ID cellid=-1) const;
+
+  AmanziGeometry::Point face_normal (const Entity_ID faceid, const bool recompute=false, const Entity_ID cellid=-1, int *orientation=NULL) const;
 
   // Point in cell
 
