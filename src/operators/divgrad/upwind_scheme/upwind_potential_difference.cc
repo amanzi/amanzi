@@ -51,6 +51,8 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
         const CompositeVector& overlap,
         const Teuchos::Ptr<CompositeVector>& face_coef) {
 
+  ASSERT(cell_coef.Ghosted());
+  
   // initialize the cell coefficients
   if (face_coef->HasComponent("cell")) {
     face_coef->ViewComponent("cell",true)->PutScalar(1.0);
@@ -77,8 +79,12 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
   for (unsigned int f=0; f!=nfaces; ++f) {
     mesh->face_get_cells(f, AmanziMesh::USED, &cells);
 
-    if (cells.size() == 1 && potential_f != Teuchos::null) {      
-      if (potential_c[0][cells[0]] >= (*potential_f)[0][f]) {
+    if (cells.size() == 1) {
+      if (potential_f != Teuchos::null) {
+        if (potential_c[0][cells[0]] >= (*potential_f)[0][f]) {
+          face_coef_f[0][f] = cell_coef_c[0][cells[0]];
+        }
+      } else {
         face_coef_f[0][f] = cell_coef_c[0][cells[0]];
       }
     } else {
@@ -130,7 +136,9 @@ UpwindPotentialDifference::UpdateDerivatives(const Teuchos::Ptr<State>& S,
   // Grab derivatives
   dconductivity.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& dcell_v = *dconductivity.ViewComponent("cell",true);
-
+  
+  ASSERT(dconductivity.Ghosted());
+  
   // Grab potential
   ASSERT(potential_key == potential_);
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(potential_key);
