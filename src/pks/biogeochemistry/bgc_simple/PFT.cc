@@ -21,7 +21,7 @@ PFT::PFT(std::string pft_type_, int ncells, double* brootcells_) :
     pft_type(pft_type_),
     BRootSoil(View, brootcells_, ncells) {}
 
-void PFT::Init()
+void PFT::Init(double col_area)
 {
   
   SLA = 20;
@@ -32,7 +32,7 @@ void PFT::Init()
   GDDleafon = 100;
   GDDbase = 0.0;
   GDD = 0.0;
-  Bleaf = 1.0/SLA;//es note that all the following B vals are perm^2, so that elsewhere they should be *gridarea to account for varying grid areas.
+  Bleaf = 1.0/SLA * col_area;//es note that all the following B vals are perm^2, so that elsewhere they should be *gridarea to account for varying grid areas.
   Bstore = 2* Bleaf;
   Bleafmemory = Bleaf;
   Bstem = Bleaf/leaf2stemratio;
@@ -80,10 +80,10 @@ void PFT::Init()
   }
 }
 
-void PFT::Init(Teuchos::ParameterList& plist)
+void PFT::Init(Teuchos::ParameterList& plist,double col_area)
 {
-  Init();
-  // ex:
+  Init(col_area);
+  // ex
   // rootlongevity = plist.get<double>("root longevity", 4.0);
 }
 

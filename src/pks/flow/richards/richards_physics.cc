@@ -405,6 +405,7 @@ void Richards::AddGravityFluxes_FV_(const Teuchos::Ptr<const Epetra_Vector>& g_v
 
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell", true);
     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
+    const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
     unsigned int ncells = rho->size("cell",false);
     //Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell",false);
 
@@ -414,6 +415,7 @@ void Richards::AddGravityFluxes_FV_(const Teuchos::Ptr<const Epetra_Vector>& g_v
       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
       Fc_cell[c] = 0.;
 
+      ASSERT(std::abs(krel_cells[0][c] - 1.) < 1.e-10);
 
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];

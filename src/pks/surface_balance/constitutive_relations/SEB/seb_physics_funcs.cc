@@ -150,7 +150,14 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
   mb.Mm = eb.fQm / (seb.in.vp_ground.density_w * seb.params.Hf);
 
   // Condensation rate
-  mb.Me = eb.fQe / (seb.in.vp_ground.density_w * seb.params.Ls);
+  // Calculate latent heat flux
+  double LatenHeatOf = 0.0; 
+  if (seb.in.snow_old.ht > 0.){
+    LatenHeatOf = seb.params.Ls;
+   } else {
+    LatenHeatOf = seb.params.Le;
+  } 
+  mb.Me = eb.fQe / (seb.in.vp_ground.density_w * LatenHeatOf);
 
   // Snow balance
   if (seb.in.snow_old.ht > 0.) {

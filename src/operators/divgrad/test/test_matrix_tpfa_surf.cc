@@ -69,21 +69,25 @@ struct mfd {
       plist.set("FV", true);
     }
     plist.set("dump Schur complement", true);
-    plist.sublist("preconditioner").set("preconditioner type", "boomer amg");
-    plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("cycle applications", 100);
-    plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("tolerance", 1.e-14);
-    plist.sublist("preconditioner").sublist("boomer amg parameters")
-      .set("verbosity", 0);
-    plist.sublist("consistent face solver")
-      .set("iterative method", "nka");
-    plist.sublist("consistent face solver").sublist("nka parameters")
-      .set("error tolerance", 1.e-14);
-    plist.sublist("consistent face solver").sublist("nka parameters")
-      .set("maximum number of iterations", 100);
-    plist.sublist("consistent face solver").sublist("preconditioner")
-      .set("preconditioner type", "block ilu");
+    // plist.sublist("preconditioner").set("preconditioner type", "boomer amg");
+    // plist.sublist("preconditioner").sublist("boomer amg parameters")
+    //   .set("cycle applications", 100);
+    // plist.sublist("preconditioner").sublist("boomer amg parameters")
+    //   .set("tolerance", 1.e-14);
+    // plist.sublist("preconditioner").sublist("boomer amg parameters")
+    //   .set("verbosity", 0);
+    // plist.sublist("consistent face solver")
+    //   .set("iterative method", "nka");
+    // plist.sublist("consistent face solver").sublist("nka parameters")
+    //   .set("error tolerance", 1.e-14);
+    // plist.sublist("consistent face solver").sublist("nka parameters")
+    //   .set("maximum number of iterations", 100);
+    // plist.sublist("consistent face solver").sublist("preconditioner")
+    //   .set("preconditioner type", "block ilu");
+    plist.sublist("preconditioner").set("preconditioner type", "ml");
+    plist.sublist("preconditioner").sublist("ml parameters")
+      .set("cycle applications", 5);
+
 
     Teuchos::ParameterList plist_surf;
     plist_surf.set("MFD method", "two point flux approximation");
@@ -256,6 +260,10 @@ TEST_FIXTURE(mfd, ApplyConstantTwoPoint) {
 
   double norm;
   b->NormInf(&norm);
+  //Epetra_MultiVector& b_cell = *b->ViewComponent("cell", false);
+  //Epetra_MultiVector& b_bf = *b->ViewComponent("boundary_face", false);
+  //std::cout << b_cell<<"\n";
+  //std::cout << b_bf<<"\n";
   std::cout << "norm = " <<  norm << std::endl;
   CHECK_CLOSE(0., norm, 1.e-8);
 }
@@ -293,14 +301,14 @@ TEST_FIXTURE(mfd, ApplyLinearTwoPointKr) {
   setSolutionSurf(xs.ptr());
 
   // test As * x - b == 0
-  As->ComputeResidual(*xs, bs.ptr());
+  As->ComputeNegativeResidual(*xs, bs.ptr());
   double norm_surf;
   bs->NormInf(&norm_surf);
   std::cout << "norm surf = " << norm_surf << std::endl;
   CHECK_CLOSE(0., norm_surf, 1.e-8);
 
   // test Ax - b == 0
-  A->ComputeResidual(*x, b.ptr());
+  A->ComputeNegativeResidual(*x, b.ptr());
   double norm;
   b->NormInf(&norm);
   std::cout << "norm = " <<  norm << std::endl;

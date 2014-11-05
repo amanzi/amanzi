@@ -102,6 +102,8 @@ void MatrixMFD::InitializeFromPList_() {
     Teuchos::ParameterList pc_list = plist_.sublist("preconditioner");
     AmanziPreconditioners::PreconditionerFactory pc_fac;
     S_pc_ = pc_fac.Create(pc_list);
+    AmanziPreconditioners::PreconditionerFactory pc_fac2;
+    Aff_pc_ = pc_fac2.Create(pc_list);
   }
 
   // verbose object
@@ -178,7 +180,8 @@ void MatrixMFD::CreateMFDmassMatrices(
     }
     
     Mff_cells_[c] = Mff;
-    
+
+  
     if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
       Errors::Message msg("Matrix_MFD: unexpected failure of LAPACK in WhetStone.");
       Exceptions::amanzi_throw(msg);

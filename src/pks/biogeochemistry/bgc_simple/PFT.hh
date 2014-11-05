@@ -35,8 +35,8 @@ class PFT {
   // Default copy constructor does the right thing.
   // Default operator= does the right thing.
 
-  virtual void Init();
-  void Init(Teuchos::ParameterList& plist);
+  virtual void Init(double col_area);
+  void Init(Teuchos::ParameterList& plist, double col_area);
 
   void InitRoots(const Epetra_SerialDenseVector& SoilTArr,
                  const Epetra_SerialDenseVector& SoilDArr,
