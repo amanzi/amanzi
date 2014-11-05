@@ -666,23 +666,10 @@ void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
   // ImproveAlgebraicConsistency(ws_prev, ws);
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    Epetra_MultiVector& phi = *S->GetFieldData("porosity", passwd_)->ViewComponent("cell", false);
-    double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dT;
-
-    mass_amanzi = 0.0;
-    for (int c = 0; c < ncells_owned; c++) {
-      mass_amanzi += ws[0][c] * rho_ * phi[0][c] * mesh_->cell_volume(c);
-    }
-
-    double mass_amanzi_tmp = mass_amanzi, mass_bc_tmp = mass_bc_dT;
-    mesh_->get_comm()->SumAll(&mass_amanzi_tmp, &mass_amanzi, 1);
-    mesh_->get_comm()->SumAll(&mass_bc_tmp, &mass_bc_dT, 1);
-
-    mass_bc += mass_bc_dT;
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "reservoir water mass=" << mass_amanzi 
-                 << " [kg], total influx=" << mass_bc << " [kg]" << std::endl;
+    VV_ReportWaterBalance(S);
+  }
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    VV_ReportSeepageOutflow(S);
   }
 
   dT = dTnext;

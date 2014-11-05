@@ -137,8 +137,6 @@ class Richards_PK : public Flow_PK {
   int update_upwind;
   Teuchos::RCP<CompositeVector> darcy_flux_upwind;  // used in  
 
-  double mass_bc, mass_amanzi;
-
  private:
   void operator=(const Richards_PK& RPK);
 };

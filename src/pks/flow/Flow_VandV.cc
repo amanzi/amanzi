@@ -173,6 +173,59 @@ void Flow_PK::VV_ValidateBCs() const
 
 
 /* *******************************************************************
+* Reports water balance.
+******************************************************************* */
+void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
+{
+  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", false);
+  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
+  const Epetra_MultiVector& ws = *S->GetFieldData("water_saturation")->ViewComponent("cell", false);
+
+  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dT;
+
+  double mass_amanzi = 0.0;
+  for (int c = 0; c < ncells_owned; c++) {
+    mass_amanzi += ws[0][c] * rho_ * phi[0][c] * mesh_->cell_volume(c);
+  }
+
+  double mass_amanzi_tmp = mass_amanzi, mass_bc_tmp = mass_bc_dT;
+  mesh_->get_comm()->SumAll(&mass_amanzi_tmp, &mass_amanzi, 1);
+  mesh_->get_comm()->SumAll(&mass_bc_tmp, &mass_bc_dT, 1);
+
+  mass_bc += mass_bc_dT;
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  *vo_->os() << "reservoir water mass=" << mass_amanzi 
+             << " [kg], total influx=" << mass_bc << " [kg]" << std::endl;
+}
+
+ 
+/* *******************************************************************
+* Calculate flow out of the current seepage face.
+******************************************************************* */
+void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
+{
+  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face");
+
+  double outflow(0.0);
+  Functions::FlowBoundaryFunction::Iterator bc;
+
+  for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
+    int f = bc->first;
+    if (flux[0][f] < 0.0) outflow += flux[0][f];
+  }
+
+  double tmp = outflow;
+  mesh_->get_comm()->SumAll(&tmp, &outflow, 1);
+
+  seepage_mass_ += outflow * rho_ * dT;
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  *vo_->os() << "seepage outflow=" << seepage_mass_ << " [kg]" << std::endl;
+}
+
+
+/* *******************************************************************
 * Calculates best least square fit for data (h[i], error[i]).                       
 ******************************************************************* */
 void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const

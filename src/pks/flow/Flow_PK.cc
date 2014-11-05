@@ -319,8 +319,8 @@ void Flow_PK::DeriveFaceValuesFromCellValues(
 /* ******************************************************************
 * Calculate change of water volume per second due to boundary flux.                                          
 ****************************************************************** */
-double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_model,
-                                           Epetra_MultiVector& darcy_flux)
+double Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
+                                           const Epetra_MultiVector& darcy_flux) const
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;

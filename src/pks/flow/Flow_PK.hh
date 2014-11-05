@@ -104,7 +104,8 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 
   // utilities
-  double WaterVolumeChangePerSecond(std::vector<int>& bc_model, Epetra_MultiVector& darcy_flux);
+  double WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
+                                    const Epetra_MultiVector& darcy_flux) const;
 
   void CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz, 
                               std::vector<AmanziGeometry::Point>& velocity);
@@ -116,6 +117,8 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
 
   // V&V
   void VV_ValidateBCs() const;
+  void VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const;
+  void VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const;
   void VV_PrintHeadExtrema(const CompositeVector& pressure) const;
 
   // extensions 
@@ -175,9 +178,10 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   std::vector<double> rainfall_factor;
   Teuchos::RCP<Epetra_Vector> shift_water_table_;
 
-  // source and sink terms
+  // water balance
   Functions::FlowDomainFunction* src_sink;
   int src_sink_distribution; 
+  mutable double mass_bc, seepage_mass_;
 
   // time integration phases
   TI_Specs ti_specs_igs_;
