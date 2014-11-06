@@ -398,10 +398,9 @@ void OperatorDiffusionTPFA::AnalyticJacobian_(const CompositeVector& u)
 
 	if (mcells == 1) {
 	  dkdp[0] = dKdP_face[0][f];
-	  //std::cout<<"cell "<<c<<" face "<<f<<" "<<dKdP_face[0][f]<<"\n";
 	}
 
-	const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0]);
+	// const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0], &dir);
 	ComputeJacobianLocal_(mcells, f, face_dir, upwind_, bc_model[f], bc_value[f], pres, dkdp, Aface);
 
         matrix[f] += Aface;
@@ -493,7 +492,7 @@ void OperatorDiffusionTPFA::ComputeTransmissibilities_()
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 

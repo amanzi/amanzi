@@ -154,13 +154,6 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     area_seepage += area_add;
   }
 
-  if (!done) {
-    done = SeepageFaceAmanzi(u, &nseepage_add, &area_add);
-    if (nseepage_add > 0) flag_essential_bc = 1;
-    nseepage += nseepage_add;
-    area_seepage += area_add;
-  }
-
   // mark missing boundary conditions as zero flux conditions
   AmanziMesh::Entity_ID_List cells;
   missed_bc_faces_ = 0;

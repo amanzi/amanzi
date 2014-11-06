@@ -74,7 +74,6 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   void ComputeBCs(const CompositeVector& pressure);
   bool SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage);
   bool SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_seepage);
-  bool SeepageFaceAmanzi(const CompositeVector& u, int* nseepage, double* area_seepage);
 
   void AddSourceTerms(CompositeVector& rhs);
 

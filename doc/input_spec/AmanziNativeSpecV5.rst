@@ -748,13 +748,11 @@ parameters described below. Mix and match of parameters is allowed.
   centroid. Default is `"false`".
 
 * `"submodel`" [string] indicates different models for the seepage face boundary condition.
-  It can take values `"PFloTran`", `"FACT`", and `"Amanzi`". The first option leads to a 
+  It can take values `"PFloTran`" and `"FACT`". The first option leads to a 
   discontinuous change of the boundary condition type from the infiltration to pressure. 
   The second option is described
   in the document on mathematical models. It employs a smooth transition from the infiltration 
-  to mixed boundary condition. The third option combines the above two. Is uses a smooth transition
-  from the infiltration to pressure boundary condition. 
-  Default value is `"Amanzi`".
+  to mixed boundary condition. Default is `"PFloTran`".
 
 .. code-block:: xml
 
@@ -762,7 +760,7 @@ parameters described below. Mix and match of parameters is allowed.
          <ParameterList name="BC 3">
            <Parameter name="regions" type="Array(string)" value="{CALIFORNIA}"/>
            <Parameter name="rainfall" type="bool" value="true"/>
-           <Parameter name="submodel" type="string" value="pflotran"/>
+           <Parameter name="submodel" type="string" value="PFloTran"/>
            <ParameterList name="outward mass flux">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="1.0"/>

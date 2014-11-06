@@ -450,8 +450,6 @@ void FlowBCFactory::ProcessSeepageFaceSpec(
     PopulateSubmodelFlag(regions, FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN, submodel);
   } else if (submodel_name == "FACT") {
     PopulateSubmodelFlag(regions, FLOW_BC_SUBMODEL_SEEPAGE_FACT, submodel);
-  } else {
-    PopulateSubmodelFlag(regions, FLOW_BC_SUBMODEL_SEEPAGE_AMANZI, submodel);
   }
 }
 

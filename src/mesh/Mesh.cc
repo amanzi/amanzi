@@ -582,9 +582,7 @@ AmanziGeometry::Point Mesh::face_centroid (const Entity_ID faceid, const bool re
 // pointing out of the cell and -1 pointing in)
 
 
-
-  AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool recompute, const Entity_ID cellid, int *orientation=NULL) const {
-
+AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool recompute, const Entity_ID cellid, int *orientation) const {
 
   AmanziGeometry::Point normal0(spacedim);
   AmanziGeometry::Point normal1(spacedim);
