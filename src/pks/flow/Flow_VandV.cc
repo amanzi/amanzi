@@ -218,10 +218,12 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
   double tmp = outflow;
   mesh_->get_comm()->SumAll(&tmp, &outflow, 1);
 
-  seepage_mass_ += outflow * rho_ * dT;
+  outflow *= rho_;
+  seepage_mass_ += outflow * dT;
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  *vo_->os() << "seepage outflow=" << seepage_mass_ << " [kg]" << std::endl;
+  *vo_->os() << "seepage face: flow=" << outflow << " [kg/s]," 
+             << " total=" << seepage_mass_ << " [kg]" << std::endl;
 }
 
 
