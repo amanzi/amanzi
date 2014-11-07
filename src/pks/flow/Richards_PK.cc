@@ -253,7 +253,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
   std::string name = rp_list_.get<std::string>("relative permeability");
-  if (name == "upwind with Darcy flux" || name == "upwind with gravity") {
+  if (name == "upwind: darcy velocity" || name == "upwind: gravity") {
     oplist_matrix.set<std::string>("upwind", "with flux");
     oplist_pc.set<std::string>("upwind", "with flux");
   } else if (name == "upwind amanzi") {

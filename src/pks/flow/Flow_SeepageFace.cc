@@ -90,7 +90,6 @@ bool Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* a
 
       double pcreg = -FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
       double influx = bc->second * rainfall_factor[f];
-      double I = influx / pcreg;
       double pcmin = 3 * pcreg / 2;
       double pcmax = pcreg / 2;
 
@@ -104,6 +103,7 @@ bool Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* a
         double q = (7 - 2 * f - f * f) / 8;
         bc_value[f] = q * influx; 
       } else {
+        double I = influx / pcreg;
         bc_model[f] = Operators::OPERATOR_BC_FACE_MIXED;
         bc_value[f] = -I * ref_pressure;
         bc_mixed[f] = I;  // Impedance I should be positive.

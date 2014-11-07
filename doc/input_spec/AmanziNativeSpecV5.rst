@@ -1084,10 +1084,10 @@ The remaining `"Flow`" parameters are
   for calculating absolute permeability. The available options are `"cartesian`"
   and `"layer`".
 
-* `"relative permeability`" [string] defines a method for calculating relative
-  permeability. The available self-explanatory options are `"upwind with gravity`",
-  `"upwind with Darcy flux`", `"arithmetic mean`" and `"cell centered`". 
-  The first three calculate the relative permeability on mesh interfaces.
+* `"relative permeability`" [string] defines a method for calculating the *upwinded* 
+  relative permeability. The available options are: `"upwind: gravity`", 
+  `"upwind: darcy velocity`" (default), `"upwind: amanzi`" (experimental), 
+  `"other: harmonic average`", and `"other: arithmetic average`".
 
 * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
   nonlinear solver. The available options are `"every time step`" and `"every nonlinear iteration`".

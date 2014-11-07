@@ -47,7 +47,7 @@
   <ParameterList name="Flow">
     <ParameterList name="Darcy problem">
       <Parameter name="atmospheric pressure" type="double" value="0.0"/>
-      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
+      <Parameter name="relative permeability" type="string" value="upwind: gravity"/>
 
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="medium"/>

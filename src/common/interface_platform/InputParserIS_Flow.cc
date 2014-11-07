@@ -31,7 +31,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 
       // get the expert parameters
       std::string disc_method("MFD: Optimized for Sparsity");
-      std::string rel_perm("upwind with Darcy flux");
+      std::string rel_perm("Upwind: Darcy Velocity");
       std::string update_upwind("every timestep");
       double atm_pres(ATMOSPHERIC_PRESSURE);
       std::string nonlinear_solver("NKA");
@@ -81,7 +81,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
         }
         else if (flow_model == "Richards") {
           Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards problem");
-          richards_problem.set<std::string>("relative permeability", rel_perm);
+          richards_problem.set<std::string>("relative permeability", boost::to_lower_copy(rel_perm));
           richards_problem.set<std::string>("upwind update", update_upwind);
           // this one should come from the input file...
           richards_problem.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);

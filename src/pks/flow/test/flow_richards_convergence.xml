@@ -67,7 +67,7 @@
   <!--  FLOW  -->
   <ParameterList name="Flow">
     <ParameterList name="Richards problem">
-      <Parameter name="relative permeability" type="string" value="cell centered"/>
+      <Parameter name="relative permeability" type="string" value="other: harmonic average"/>
       <Parameter name="atmospheric pressure" type="double" value="1e-10"/>
 
       <ParameterList name="VerboseObject">

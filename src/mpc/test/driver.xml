@@ -418,7 +418,7 @@
 
   <ParameterList name="Flow">
     <ParameterList name="Darcy problem">
-      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
+      <Parameter name="relative permeability" type="string" value="upwind: gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="0.0"/>
       
       <ParameterList name="operators">

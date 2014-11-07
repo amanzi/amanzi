@@ -280,9 +280,8 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
        falls back to `"MFD: Optimized for Sparsity`".
 
      * [U] `"Relative Permeability`" [string]: Defines a method for calculating the *upwinded*
-       relative permeability. The available options are: `"upwind with gravity`", 
-       `"upwind with Darcy flux`" (default), `"cell centered"`, and `"upwind amanzi`"
-       (experimental).  The first three calculate the relative permeability on mesh interfaces.
+       relative permeability. The available options are: `"Upwind: Gravity`", `"Upwind: Darcy Velocity`" (default),
+       `"Upwind: Amanzi`" (experimental), `"Other: Arithmetic Average`", and `"Other: Harmonic Average`". 
 
      * [U] `"atmospheric pressure`" [double]: Defines the atmospheric pressure, [Pa].   
 

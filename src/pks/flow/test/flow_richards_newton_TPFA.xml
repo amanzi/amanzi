@@ -51,7 +51,7 @@
   <!--  FLOW  -->
   <ParameterList name="Flow">
     <ParameterList name="Richards problem">
-      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
+      <Parameter name="relative permeability" type="string" value="upwind: gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="10.0"/>
       <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
