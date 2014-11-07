@@ -13,7 +13,8 @@ namespace AmanziNewInput {
 
 
 
-Teuchos::ParameterList translate (const std::string& xmlfilename, const std::string& xmlSchemafile);
+//Teuchos::ParameterList translate (const std::string& xmlfilename, const std::string& xmlSchemafile);
+Teuchos::ParameterList translate (const std::string& xmlfilename);
 
 Teuchos::ParameterList get_verbosity(xercesc::DOMDocument* xmlDoc);
 Teuchos::ParameterList get_constants(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);

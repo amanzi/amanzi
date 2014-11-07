@@ -44,7 +44,8 @@ namespace AmanziNewInput {
  * Empty
  ******************************************************************
  */
-Teuchos::ParameterList translate(const std::string& xmlfilename, const std::string& xmlSchemafile) {
+//Teuchos::ParameterList translate(const std::string& xmlfilename, const std::string& xmlSchemafile) {
+Teuchos::ParameterList translate(const std::string& xmlfilename) {
 
   Teuchos::ParameterList new_list;
   Teuchos::ParameterList def_list;
@@ -60,7 +61,7 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
   // which creates tons of clutter)
   // TODO: error handler
   XMLPlatformUtils::Initialize();
-  const char* schemaFile(xmlSchemafile.c_str());
+  //const char* schemaFile(xmlSchemafile.c_str());
   const char* xmlFile(xmlfilename.c_str());
 
   XercesDOMParser *parser = new XercesDOMParser();
@@ -68,7 +69,7 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
   parser->setValidationConstraintFatal(true);
   parser->setValidationScheme(XercesDOMParser::Val_Never);
   parser->setDoNamespaces(true);
-  parser->setDoSchema(true);
+  //parser->setDoSchema(true);
   AmanziErrorHandler* errorHandler = new AmanziErrorHandler();
   parser->setErrorHandler(errorHandler); //EIB - commented out until Xerces update to handle XSD 1.1
   //parser->setExternalNoNamespaceSchemaLocation(schemaFile);
@@ -866,13 +867,57 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         // EIB: stubbing in for feature in spec, but not yet in schema
         if (flowElement->hasAttribute((XMLString::transcode("discretization_method")))) {
           textContent = XMLString::transcode(flowElement->getAttribute(XMLString::transcode("discretization_method")));
-          fpkPL.set<std::string>("Discretization Method",textContent);
+          std::string discr_method;
+          if (strcmp(textContent,"fv-default")==0) {
+            discr_method.append("FV: Default");
+          }
+          else if (strcmp(textContent,"fv-monotone")==0) {
+            discr_method.append("FV: Monotone");
+          }
+          else if (strcmp(textContent,"fv-multi_point_flux_approximation")==0) {
+            discr_method.append("FV: Multi-Point Flux Approximation");
+          }
+          else if (strcmp(textContent,"fv-extended_to_boundary_edges")==0) {
+            discr_method.append("FV: Extended to Boundary Edges");
+          }
+          else if (strcmp(textContent,"mfd-default")==0) {
+            discr_method.append("MFD: Default");
+          }
+          else if (strcmp(textContent,"mfd-optimized_for_sparsity")==0) {
+            discr_method.append("MFD: Optimized for Sparsity");
+          }
+          else if (strcmp(textContent,"mfd-support_operator")==0) {
+            discr_method.append("MFD: Support Operator");
+          }
+          else if (strcmp(textContent,"mfd-optimized_for_monotonicity")==0) {
+            discr_method.append("MFD: Optimized for Monotonicity");
+          }
+          else if (strcmp(textContent,"mfd-two_point_flux_approximation")==0) {
+            discr_method.append("MFD: Two-Point Flux Approximation");
+          }
+          fpkPL.set<std::string>("Discretization Method",discr_method.c_str());
           XMLString::release(&textContent);
         }
         // EIB: stubbing in for feature in spec, but not yet in schema
-        if (flowElement->hasAttribute((XMLString::transcode("relative_permeability")))) {
-          textContent = XMLString::transcode(flowElement->getAttribute(XMLString::transcode("relative_permeability")));
-          fpkPL.set<std::string>("Relative Permeability",textContent);
+        if (flowElement->hasAttribute((XMLString::transcode("rel_perm_method")))) {
+          textContent = XMLString::transcode(flowElement->getAttribute(XMLString::transcode("rel_perm_method")));
+          std::string rel_perm_method;
+          if (strcmp(textContent,"upwind-gravity")==0) {
+            rel_perm_method.append("Upwind: Gravity");
+          }
+          else if (strcmp(textContent,"upwind-darcy_velocity")==0) {
+            rel_perm_method.append("Upwind: Darcy Velocity");
+          }
+          else if (strcmp(textContent,"upwind-amanzi")==0) {
+            rel_perm_method.append("Upwind: Amanzi");
+          }
+          else if (strcmp(textContent,"other-arithmetic_average")==0) {
+            rel_perm_method.append("Other: Arithmetic Average");
+          }
+          else if (strcmp(textContent,"other-harmonic_average")==0) {
+            rel_perm_method.append("Other: Harmonic Average");
+          }
+          fpkPL.set<std::string>("Relative Permeability",rel_perm_method.c_str());
           XMLString::release(&textContent);
         }
         // EIB: stubbing in for feature in spec, but not yet in schema
@@ -2874,9 +2919,15 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
     nodeTmp = nodeList->item(0);
     attrMap = nodeTmp->getAttributes();
     nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-    char* phaseName = XMLString::transcode(nodeAttr->getNodeValue());
+    char* phaseName;
+    bool releasePhaseName=true;
     if (nodeAttr) {
       phaseName = XMLString::transcode(nodeAttr->getNodeValue());
+      if (!isUnstr_ && strcmp(phaseName,"water")==0 ) {
+	XMLString::release(&phaseName);
+	phaseName="Water";
+	releasePhaseName = false;
+      }
     }
     else {
       throw_error_missattr("phases","attribute","name","liquid_phase");
@@ -2922,7 +2973,12 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
                   nodeAttr = attrMap->getNamedItem(XMLString::transcode("coefficient_of_diffusion"));
 		  if (nodeAttr) {
                     textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
-                    solPL.set<double>("Molecular Diffusivity: Uniform",get_double_constant(textContent2,def_list));
+		    if (isUnstr_) {
+                      solPL.set<double>("Molecular Diffusivity: Uniform",get_double_constant(textContent2,def_list));
+		    }
+		    else {
+                      solPL.set<double>("Molecular Diffusivity",get_double_constant(textContent2,def_list));
+		    }
                     XMLString::release(&textContent2);
 	          }
                   else {
@@ -2948,7 +3004,7 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
             foundPC = true;
           }
 	}
-        XMLString::release(&textContent);
+        if(releasePhaseName) XMLString::release(&textContent);
       }
     }
     if (!isUnstr_ && !foundPC) {
@@ -4191,6 +4247,7 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
   char* attrName;
   char* attrValue;
   char* phaseName;
+  bool  releasePhaseName=true;
 
   if (voI_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       *voI_->os() << "Getting Initial Conditions" << std::endl;
@@ -4245,6 +4302,11 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
           nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
 	  if (nodeAttr) {
             phaseName = XMLString::transcode(nodeAttr->getNodeValue());
+            if (!isUnstr_ && strcmp(phaseName,"water")==0 ) {
+	      XMLString::release(&phaseName);
+	      phaseName="Water";
+	      releasePhaseName = false;
+	    }
 	  }
           else {
             throw_error_missattr("initial_conditions", "attribute", "name", "liquid_phase");
@@ -4406,7 +4468,7 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
               //TODO: EIB - deal with geochemisty later
 	    }
 	  }
-	  XMLString::release(&phaseName);
+	  if(releasePhaseName) XMLString::release(&phaseName);
         }
         else if (strcmp(tagName,"solid_phase")==0) {
           //TODO: EIB - deal with solid phase -> mineral, geochemisty
@@ -4444,6 +4506,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
   char* char_array;
   char* attrName;
   char* attrValue;
+  bool releasePhaseName=true;
 
 
   if (voI_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -4502,6 +4565,11 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
             nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
 	    if (nodeAttr) {
               phaseName = XMLString::transcode(nodeAttr->getNodeValue());
+              if (!isUnstr_ && strcmp(phaseName,"water")==0 ) {
+	        XMLString::release(&phaseName);
+	        phaseName="Water";
+	        releasePhaseName = false;
+	      }
 	    }
             else {
               throw_error_missattr("boundary_conditions", "attribute", "name", "liquid_phase");
@@ -5100,7 +5168,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                 //TODO: EIB - deal with geochemisty later
 	      }
 	    }
-            XMLString::release(&phaseName);
+            if(releasePhaseName) XMLString::release(&phaseName);
         
           } else if (strcmp(tagName,"solid_phase")==0) {
             //TODO: EIB - deal with solid phase -> mineral, geochemisty
@@ -5180,8 +5248,14 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
             attrMap = SCNode->getAttributes();
             nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
             char* phaseName;
+	    bool releasePhaseName=true;
 	    if (nodeAttr) {
               phaseName = XMLString::transcode(nodeAttr->getNodeValue());
+              if (!isUnstr_ && strcmp(phaseName,"water")==0 ) {
+	        XMLString::release(&phaseName);
+	        phaseName="Water";
+	        releasePhaseName = false;
+	      }
             }
             else {
               throw_error_missattr("sources", "attribute", "name", "liquid_phase");
@@ -5338,7 +5412,7 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 	        sclist.sublist("Solute SOURCE").sublist(phase).sublist(component).sublist(soluteName).sublist(scname) = newsclist;
 	      }
 	    }
-            XMLString::release(&phaseName);
+            if(releasePhaseName) XMLString::release(&phaseName);
 	  }
 	}
       }
@@ -5639,8 +5713,14 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
                 DOMNamedNodeMap* attrMap = curNode->getAttributes();
                 DOMNode* nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
 	        char* phaseName;
+		bool releasePhaseName=true;
 		if (nodeAttr) {
                   phaseName = XMLString::transcode(nodeAttr->getNodeValue());
+                  if (!isUnstr_ && strcmp(phaseName,"water")==0 ) {
+	            XMLString::release(&phaseName);
+	            phaseName="Water";
+	            releasePhaseName = false;
+	          }
 	        }
                 else {
                   throw_error_missattr("observations", "attribute", "name", "liquid_phase");
@@ -5820,7 +5900,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	            obsPL.sublist(listName.str()) = obPL;
 	          }
 	        }
-	        XMLString::release(&phaseName);
+	        if(releasePhaseName) XMLString::release(&phaseName);
               }
               XMLString::release(&textContent);
               list.sublist("Observation Data") = obsPL;
