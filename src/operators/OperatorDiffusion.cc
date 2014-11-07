@@ -970,27 +970,27 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   std::string secondary = plist.get<std::string>("discretization secondary");
 
   schema_base_ = OPERATOR_SCHEMA_BASE_CELL;
-  if (primary == "finite volume") {
+  if (primary == "fv: default") {
     schema_base_ = OPERATOR_SCHEMA_BASE_FACE;
   }
-  if (primary == "two point flux approximation" && schema_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
+  if (primary == "mfd: two point flux approximation" && schema_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
     schema_base_ = OPERATOR_SCHEMA_BASE_FACE;
   }
 
   // Primary discretization methods
-  if (primary == "monotone mfd hex") {
+  if (primary == "mfd: monotone for hex") {
     mfd_primary_ = WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE;
-  } else if (primary == "monotone mfd") {
+  } else if (primary == "mfd: optimized for monotonicity") {
     mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_MONOTONE;
-  } else if (primary == "two point flux approximation") {
+  } else if (primary == "mfd: two point flux approximation") {
     mfd_primary_ = WhetStone::DIFFUSION_TPFA;
-  } else if (primary == "optimized mfd scaled") {
+  } else if (primary == "mfd: optimized for sparsity") {
     mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_SCALED;
-  } else if (primary == "support operator") {
+  } else if (primary == "mfd: support operator") {
     mfd_primary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
-  } else if (primary == "mfd scaled") {
+  } else if (primary == "mfd: default") {
     mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
-  } else if (primary == "finite volume") {
+  } else if (primary == "fv: default") {
     mfd_primary_ = -1;  // not a mfd scheme
   } else {
     Errors::Message msg("OperatorDiffusion: primary discretization method is not supported.");
@@ -998,15 +998,15 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   }
 
   // Secondary discretization methods
-  if (secondary == "two point flux approximation") {
+  if (secondary == "mfd: two point flux approximation") {
     mfd_secondary_ = WhetStone::DIFFUSION_TPFA;
-  } else if (secondary == "optimized mfd scaled") {
+  } else if (secondary == "mfd: optimized for sparsity") {
     mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_SCALED;
-  } else if (secondary == "support operator") {
+  } else if (secondary == "mfd: support operator") {
     mfd_secondary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
-  } else if (primary == "mfd scaled") {
+  } else if (primary == "mfd: default") {
     mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
-  } else if (primary == "finite volume") {
+  } else if (primary == "fv: default") {
     mfd_primary_ = -1;  // not a mfd schems
   } else {
     Errors::Message msg("OperatorDiffusion: secondary discretization method is not supported.");

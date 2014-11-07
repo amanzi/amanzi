@@ -606,15 +606,15 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 
 * `"discretization primary`" [string] specifies an advanced discretization method that
   has useful properties under some a priori conditions on the mesh and/or permeability tensor.
-  The available options are `"mfd scaled`", `"optimized mfd scaled`",
-  `"finite volume`" and `"support operator`". 
-  The last option reproduces discretization method implemented in RC1. 
-  The second option is recommended for general meshes.
-  The third option is recommended for orthogonal meshes and diagonal absolute 
+  The available options are `"mfd: optimized for sparsity`", `"mfd: optimized for monotonicity`",
+  `"mfd: default`", `"mfd: support operator`", `"mfd: two point flux approximation`",
+  and `"fv: default`". 
+  The first option is recommended for general meshes.
+  The second option is recommended for orthogonal meshes and diagonal absolute 
   permeability tensor. 
 
 * `"discretization secondary`" [string] specifies the most robust discretization method
-  that is used when the primary selection fails to satisfy the a priori conditions.
+  that is used when the primary selection fails to satisfy all a priori conditions.
 
 * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
   geometric objects.

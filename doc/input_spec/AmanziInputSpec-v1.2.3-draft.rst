@@ -270,10 +270,14 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
    * [U] `"Flow Process Kernel`" [list]: Control parameters for the flow methods
 
-     * [U] `"Discretization Method`" [string]: Specifies the spatial discretization 
-       method. The Available options are: `"mfd scaled`", `"optimized mfd scaled`"
-       (default), `"two point flux approximation`", and `"support operator`".
-       The second option is recommended for orthogonal meshes and diagonal absolute permeability.
+     * [U] `"Discretization Method`" [string] specifies the spatial discretization
+       method. The available options options for the finite volume method: `"FV: Default`", 
+       `"FV: Monotone`", `"FV: Multi-Point Flux Approximation`", and `"FV: Extended to Boundary Edges`". 
+       The available option for the mimetic finite difference method are `"MFD: Default`", 
+       `"MFD: Optimized for Sparsity`", `"MFD: Support Operator`", `"MFD: Optimized for Monotonicity`", 
+       and `"MFD: Two-Point Flux Approximation`". The option `"MFD: Optimized for Monotonicity`" 
+       cannot be applied to all meshes. When it is not acceptable, the discretization method 
+       falls back to `"MFD: Optimized for Sparsity`".
 
      * [U] `"Relative Permeability`" [string]: Defines a method for calculating the *upwinded*
        relative permeability. The available options are: `"upwind with gravity`", 

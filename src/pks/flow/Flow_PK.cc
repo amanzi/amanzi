@@ -340,7 +340,7 @@ double Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
 /* ******************************************************************
 * Returns the first cell attached to a boundary face.   
 ****************************************************************** */
-int Flow_PK::BoundaryFaceGetCell(int f)
+int Flow_PK::BoundaryFaceGetCell(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);

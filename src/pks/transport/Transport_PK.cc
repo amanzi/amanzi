@@ -416,10 +416,10 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
 
   if (flag_dispersion || flag_diffusion) {
     Teuchos::ParameterList op_list;
-    op_list.set<std::string>("discretization secondary", "two point flux approximation");
+    op_list.set<std::string>("discretization secondary", "mfd: two point flux approximation");
 
     if (mesh_->mesh_type() == AmanziMesh::RECTANGULAR) {
-      op_list.set<std::string>("discretization primary", "monotone mfd hex");
+      op_list.set<std::string>("discretization primary", "mfd: monotone for hex");
       Teuchos::Array<std::string> stensil(2);
       stensil[0] = "face";
       stensil[1] = "cell";
@@ -427,7 +427,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
       stensil.remove(1);
       op_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
     } else {
-      op_list.set<std::string>("discretization primary", "two point flux approximation");
+      op_list.set<std::string>("discretization primary", "mfd: two point flux approximation");
       Teuchos::Array<std::string> stensil(1);
       stensil[0] = "cell";
       op_list.set<Teuchos::Array<std::string> >("schema", stensil);

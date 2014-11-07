@@ -121,7 +121,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   void VV_PrintHeadExtrema(const CompositeVector& pressure) const;
 
   // extensions 
-  int BoundaryFaceGetCell(int f);  // of AmanziMesh
+  int BoundaryFaceGetCell(int f) const;  // of AmanziMesh
   void VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2);
   virtual double BoundaryFaceValue(int f, const CompositeVector& u);
 

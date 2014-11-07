@@ -67,15 +67,15 @@
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
-            <Parameter name="discretization primary" type="string" value="finite volume"/>
-            <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+            <Parameter name="discretization primary" type="string" value="fv: default"/>
+            <Parameter name="discretization secondary" type="string" value="fv: default"/>
             <Parameter name="schema" type="Array(string)" value="{cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>
           </ParameterList>
           <ParameterList name="preconditioner">
-            <Parameter name="discretization primary" type="string" value="finite volume"/>
-            <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+            <Parameter name="discretization primary" type="string" value="fv: default"/>
+            <Parameter name="discretization secondary" type="string" value="fv: default"/>
             <Parameter name="schema" type="Array(string)" value="{cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
             <Parameter name="gravity" type="bool" value="true"/>

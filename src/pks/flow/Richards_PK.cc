@@ -291,6 +291,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Other quantatities: injected water mass
   mass_bc = 0.0;
+  seepage_mass_ = 0.0;
 }
 
 
@@ -400,6 +401,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
 
   // reset some quantities
   mass_bc = 0.0;
+  seepage_mass_ = 0.0;
 }
 
 

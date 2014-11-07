@@ -207,15 +207,19 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
 {
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face");
 
-  double outflow(0.0);
+  int dir, f, c;
+  double tmp, outflow(0.0);
   Functions::FlowBoundaryFunction::Iterator bc;
 
   for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
-    int f = bc->first;
-    if (flux[0][f] < 0.0) outflow += flux[0][f];
+    f = bc->first;
+    c = BoundaryFaceGetCell(f);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+    tmp = flux[0][f] * dir;
+    if (tmp > 0.0) outflow += tmp;
   }
 
-  double tmp = outflow;
+  tmp = outflow;
   mesh_->get_comm()->SumAll(&tmp, &outflow, 1);
 
   outflow *= rho_;
