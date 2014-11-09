@@ -4,13 +4,11 @@
 
   Temporary wrapper converting the Transport_PK, which inherits from 
   BDFFnBase<CompositeVector>, to use TreeVectors.
-
 */
 
 
 #include "Transport_PK.hh"
 #include "Transport_PK.hh"
-
 #include "Transport_PK_Wrapper.hh"
 
 namespace Amanzi {
@@ -36,8 +34,10 @@ Transport_PK_Wrapper::Transport_PK_Wrapper(Teuchos::ParameterList& pk_tree,
 }
 
 
-bool
-Transport_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
+/* ******************************************************************
+* Wrapper for new MPC policy.
+****************************************************************** */
+bool Transport_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   bool failed = false;
   double dt = t_new - t_old;
   double dt_actual(dt);
@@ -48,6 +48,6 @@ Transport_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   return failed;
 }
 
-} // namespace Transport
-} // namespace Amanzi
+}  // namespace Transport
+}  // namespace Amanzi
 

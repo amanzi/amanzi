@@ -31,6 +31,7 @@ namespace Flow {
 ****************************************************************** */
 bool Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage)
 {
+  const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
   double ref_pressure = bc_seepage->reference_pressure();
   double tol = ref_pressure * 1e-14;
@@ -60,6 +61,10 @@ bool Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
           (*nseepage)++;
           (*area_seepage) += mesh_->face_area(f);
         }
+      }
+      if (flux[0][f] < 0.0) {
+        bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+        bc_value[f] = bc->second * rainfall_factor[f];
       }
     } else {
       flag = false;

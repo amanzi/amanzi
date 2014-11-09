@@ -4,7 +4,6 @@
 
   Temporary wrapper converting the Richards_PK, which inherits from
   BDFFnBase<CompositeVector>, to use TreeVectors.
-
 */
 
 #ifndef AMANZI_RICHARDS_PK_WRAPPER_HH_
@@ -24,7 +23,6 @@ class State;
 namespace Flow {
 
 class Richards_PK_Wrapper : public FnTimeIntegratorPK {
-
  public:
   Richards_PK_Wrapper(Teuchos::ParameterList& pk_tree,
                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -32,7 +30,7 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
                       const Teuchos::RCP<TreeVector>& soln);
 
   // Setup
-  virtual void Setup() {}
+  virtual void Setup() {};
 
   // Initialize owned (dependent) variables.
   virtual void Initialize() {
@@ -131,10 +129,9 @@ class Richards_PK_Wrapper : public FnTimeIntegratorPK {
  private:
   // factory registration
   static RegisteredPKFactory<Richards_PK_Wrapper> reg_;
-
 };
 
-} // namespace
-} // namespace
+}  // namespace Flow
+}  // namespace Amanzi
 
 #endif

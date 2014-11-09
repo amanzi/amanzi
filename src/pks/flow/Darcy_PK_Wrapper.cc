@@ -4,13 +4,11 @@
 
   Temporary wrapper converting the Darcy_PK, which inherits from 
   BDFFnBase<CompositeVector>, to use TreeVectors.
-
 */
 
 
 #include "Darcy_PK.hh"
 #include "Darcy_PK.hh"
-
 #include "Darcy_PK_Wrapper.hh"
 
 namespace Amanzi {
@@ -32,8 +30,10 @@ Darcy_PK_Wrapper::Darcy_PK_Wrapper(Teuchos::ParameterList& pk_tree,
 }
 
 
-bool
-Darcy_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
+/* ******************************************************************
+* Wrapper for new MPC policy.
+****************************************************************** */
+bool Darcy_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   bool failed = false;
   double dt = t_new - t_old;
   double dt_actual(dt);
@@ -44,6 +44,6 @@ Darcy_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   return failed;
 }
 
-} // namespace Flow
-} // namespace Amanzi
+}  // namespace Flow
+}  // namespace Amanzi
 

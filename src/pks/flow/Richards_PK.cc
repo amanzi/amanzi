@@ -553,9 +553,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     VV_PrintHeadExtrema(*solution);
   }
-
-  
-  //exit(0);
 }
 
 
@@ -572,19 +569,17 @@ double Richards_PK::get_dt()
 /* ******************************************************************* 
 * Performs one time step of size dT_MPC either for steady-state or 
 * transient calculations.
-* Warning: BDF2 and BDF1 will merge eventually.
 *
-* WARNING: This might require refactor for working in a more general process
-*          tree.  Semantic of Advance() is that it must take step of size
-*          dT_MPC, otherwise return true (for failed).  Steps should not be
-*          taken internally in case coupling fails at a higher level.
+* NOTE: This might require refactor for working in a more general process
+*       tree. Semantic of Advance() is that it must take step of size
+*       dT_MPC, otherwise return true (for failed). Steps should not be
+*       taken internally in case coupling fails at a higher level.
 ******************************************************************* */
 int Richards_PK::Advance(double dT_MPC, double& dT_actual)
 {
   dT = dT_MPC;
   double time = S_->time();
   if (time >= 0.0) T_physics = time;
-
 
   // predict water mass change during time step
   time = T_physics;
@@ -603,8 +598,6 @@ int Richards_PK::Advance(double dT_MPC, double& dT_actual)
     UpdatePreconditioner(time, solution, dT);
     ti_specs->num_itrs++;
   }
-
-
 
   if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
     while (bdf1_dae->TimeStep(dT, dTnext, solution)) {
@@ -660,7 +653,7 @@ void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
   *darcy_flux_copy->ViewComponent("face", true) = flux;
-  
+
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
 
@@ -700,7 +693,6 @@ void Richards_PK::UpdateSourceBoundaryData(double Tp, const CompositeVector& u)
     bc_head->ComputeShift(Tp, shift_water_table_->Values());
 
   ComputeBCs(u);
-  
 }
 
 
@@ -773,7 +765,7 @@ double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
 
     int c = BoundaryFaceGetCell(f);
     face_value = op_matrix_->DeriveBoundaryFaceValue(f, u, WRM[map_c2mb[c]]);
-    // k_face[0][f] =  WRM[map_c2mb[c]]->k_relative (atm_pressure_ - face_val);
+    // k_face[0][f] = WRM[map_c2mb[c]]->k_relative (atm_pressure_ - face_val);
     // dk_face[0][f] = -WRM[map_c2mb[c]]->dKdPc (atm_pressure_ - face_val);
   }
   return face_value;
