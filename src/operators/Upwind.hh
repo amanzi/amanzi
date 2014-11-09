@@ -61,7 +61,7 @@ class Upwind {
 
 
 /* ******************************************************************
-* Public Init method.
+* Public init method. It is not yet used.
 ****************************************************************** */
 template<class Model>
 void Upwind<Model>::Init(Teuchos::ParameterList& plist)
@@ -128,10 +128,10 @@ void Upwind<Model>::Compute(
       } else if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET && flag) {
         upw[0][f] = model_->Value(c, bc_value[f], name);
       } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN && flag) {
-        // upw[0][f] = model_->Value(c, ffaces[0][f]);
+        // upw[0][f] = model_->Value(c, ffaces[0][f], name);
         upw[0][f] = fcells[0][c];
       } else if (bc_model[f] == OPERATOR_BC_FACE_MIXED && flag) {
-        // upw[0][f] = model_->Value(c, ffaces[0][f]);
+        // upw[0][f] = model_->Value(c, ffaces[0][f], name);
         upw[0][f] = fcells[0][c];
       } else if (!flag) {
         upw[0][f] = fcells[0][c];
@@ -188,10 +188,10 @@ void Upwind<Model>::Compute(
       } else if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET && flag) {
         upw[0][f] = ((*model_).*Value)(c, bc_value[f]);
       } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN && flag) {
-        // upw[0][f] = model_->Value(c, ffaces[0][f]);
+        // upw[0][f] = ((*model_).*Value)(c, ffaces[0][f]);
         upw[0][f] = fcells[0][c];
       } else if (bc_model[f] == OPERATOR_BC_FACE_MIXED && flag) {
-        // upw[0][f] = model_->Value(c, ffaces[0][f]);
+        // upw[0][f] = ((*model_).*Value)(c, ffaces[0][f]);
         upw[0][f] = fcells[0][c];
       } else if (!flag) {
         upw[0][f] = fcells[0][c];

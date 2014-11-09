@@ -122,12 +122,16 @@ void Operator::Init()
   diagonal_->PutScalarMasterAndGhosted(0.0);
   rhs_->PutScalarMasterAndGhosted(0.0);
 
+  WhetStone::DenseMatrix null_matrix;
+
   int n = blocks_.size();
   for (int i = 0; i < n; i++) { 
     std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[i];
+    std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[i];
     int m = matrix.size();
     for (int k = 0; k < m; k++) {
       matrix[k] = 0.0;
+      matrix_shadow[k] = null_matrix;
     }
   }
 }
@@ -582,6 +586,10 @@ void Operator::ApplyBCs()
             } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) {
               rhs_face[0][f] -= value * mesh_->face_area(f);
             } else if (bc_model[f] == OPERATOR_BC_FACE_MIXED) {
+              if (flag) {  // make a copy of elemental matrix
+                matrix_shadow[c] = Acell;
+                flag = false;
+              }
               double area = mesh_->face_area(f);
               rhs_face[0][f] -= value * area;
               Acell(n, n) += bc_mixed[f] * area;
@@ -619,6 +627,10 @@ void Operator::ApplyBCs()
               double area = ComputeBoundaryVertexArea(c, v);
               rhs_node[0][v] -= value * area;
             } else if (bc_model[v] == OPERATOR_BC_FACE_MIXED) {
+              if (flag) {  // make a copy of cell-based matrix
+                matrix_shadow[c] = Acell;
+                flag = false;
+              }
               double area = ComputeBoundaryVertexArea(c, v);
               rhs_node[0][v] -= value * area;
               Acell(n, n) += bc_mixed[v] * area;

@@ -62,11 +62,18 @@
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
-    <ParameterList name="diffusion operator">
+    <ParameterList name="diffusion operator nodal">
       <Parameter name="discretization primary" type="string" value="mfd: default"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{node}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{node}"/>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator mixed">
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
     </ParameterList>
   </ParameterList>
 
