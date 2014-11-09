@@ -213,10 +213,12 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
 
   for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
     f = bc->first;
-    c = BoundaryFaceGetCell(f);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
-    tmp = flux[0][f] * dir;
-    if (tmp > 0.0) outflow += tmp;
+    if (f < nfaces_owned) {
+      c = BoundaryFaceGetCell(f);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+      tmp = flux[0][f] * dir;
+      if (tmp > 0.0) outflow += tmp;
+    }
   }
 
   tmp = outflow;
@@ -225,9 +227,11 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
   outflow *= rho_;
   seepage_mass_ += outflow * dT;
 
-  Teuchos::OSTab tab = vo_->getOSTab();
-  *vo_->os() << "seepage face: flow=" << outflow << " [kg/s]," 
-             << " total=" << seepage_mass_ << " [kg]" << std::endl;
+  if (MyPID == 0 && bc_seepage->global_size() > 0) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "seepage face: flow=" << outflow << " [kg/s]," 
+               << " total=" << seepage_mass_ << " [kg]" << std::endl;
+  }
 }
 
 

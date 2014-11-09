@@ -39,7 +39,8 @@ class FlowBoundaryFunction : public UniqueMeshFunction {
  public:
   FlowBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :
       UniqueMeshFunction(mesh),
-      finalized_(false) {}
+      finalized_(false), 
+      global_size_(0) {};
   
   void Define(const std::vector<std::string> &regions,
               const Teuchos::RCP<const MultiFunction> &f, 
@@ -56,6 +57,7 @@ class FlowBoundaryFunction : public UniqueMeshFunction {
   // access / set
   const std::vector<Action>& actions() { return actions_; } 
   double reference_pressure() { return reference_pressure_; }
+  int global_size() { return global_size_; }
   void set_reference_pressure(double p0) { reference_pressure_ = p0; }
 
   // iterator methods
@@ -72,6 +74,7 @@ class FlowBoundaryFunction : public UniqueMeshFunction {
  private:
   std::vector<Action> actions_;
   double reference_pressure_;
+  int global_size_;  // number of data stored on all processors
 };
 
 }  // namespace Functions
