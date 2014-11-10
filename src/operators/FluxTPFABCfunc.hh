@@ -1,74 +1,78 @@
+/*
+  This is the operators component of the Amanzi code. 
+
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Daniil Svyatskiy (dasvyat@lanl.gov)
+*/
+
 #ifndef AMANZI_FLUX_TPFA_BC_FUNC
 #define AMANZI_FLUX_TPFA_BC_FUNC
 
-
-
 #include <boost/math/tools/roots.hpp>
-
 
 namespace Amanzi {
 namespace Operators {
 
-
 template <class Nonlin_rcp_ptr>
 class FlowFluxTPFA_BCFunc {
-   public:
-    FlowFluxTPFA_BCFunc(const double trans_f,
-                  const double lambda,
-                  int face_index,
-                  double cell_p,
-                  double bc_flux,
-                  double g_flux,
-                  int dir,
-                  double patm,
-		  const Nonlin_rcp_ptr& nln) :
-        trans_f_(trans_f), lambda_(lambda), face_index_(face_index),
-        cell_p_(cell_p), bc_flux_(bc_flux), g_flux_(g_flux),
-        dir_(dir), patm_(patm) {
-      nln_rcp_ptr = nln;
-    }
+ public:
+  FlowFluxTPFA_BCFunc(const double trans_f,
+                      const double lambda,
+                      int face_index,
+                      double cell_p,
+                      double bc_flux,
+                      double g_flux,
+                      int dir,
+                      double patm,
+		      const Nonlin_rcp_ptr& nln) :
+      trans_f_(trans_f), lambda_(lambda), face_index_(face_index),
+      cell_p_(cell_p), bc_flux_(bc_flux), g_flux_(g_flux),
+      dir_(dir), patm_(patm) {
+    nln_rcp_ptr = nln;
+  }
 
-    double operator()(double face_p) {
-      lambda_ = face_p;
-      double Krel = nln_rcp_ptr->k_relative(patm_ - lambda_);
-      //std::cout << "Fluxes: " << std::endl;
-      double q = flux_();
-      //std::cout << "  K grad p = " << q << ", K grad gz = " << g_flux_*Krel << ", bc = " << bc_flux_ << std::endl;
-      return flux_() + g_flux_*Krel - bc_flux_;
-    }
+  double operator()(double face_p) {
+    lambda_ = face_p;
+    double Krel = nln_rcp_ptr->k_relative(patm_ - lambda_);
+    //std::cout << "Fluxes: " << std::endl;
+    double q = flux_();
+    //std::cout << "  K grad p = " << q << ", K grad gz = " << g_flux_*Krel << ", bc = " << bc_flux_ << std::endl;
+    return flux_() + g_flux_*Krel - bc_flux_;
+  }
 
-   protected:
+ protected:
+  double flux_() {
+    double s = 0.;
+    double Krel = nln_rcp_ptr->k_relative(patm_ - lambda_);
 
-    double flux_() {
-      double s = 0.;
-      double Krel = nln_rcp_ptr->k_relative(patm_ - lambda_);
+    s = dir_ * trans_f_ * Krel * (cell_p_ - lambda_);
+    return s;
+  }
 
-      //      std::cout << "  Krel = " << Krel << std::endl;
-      //      std::cout << "  lambda_bc = " << (*lambda_)[face_index_] << std::endl;
-      s = dir_ * trans_f_ * Krel * (cell_p_ - lambda_);
-      return s;
-    }
+ protected:
+  double trans_f_;
+  double lambda_;
+  int face_index_;
+  double face_Mff_;
+  double cell_p_;
+  double bc_flux_;
+  double g_flux_;
+  int dir_;
+  double patm_;
+  Nonlin_rcp_ptr nln_rcp_ptr;
+};
 
-   protected:
-    double trans_f_;
-    double lambda_;
-    int face_index_;
-    double face_Mff_;
-    double cell_p_;
-    double bc_flux_;
-    double g_flux_;
-    int dir_;
-    double patm_;
-    Nonlin_rcp_ptr nln_rcp_ptr;
-  };
-
-  struct Tol_ {
-    Tol_(double eps) : eps_(eps) {}
-    bool operator()(const double& a, const double& b) const {
-      return std::abs(a - b) <= eps_;
-    }
-    double eps_;
-  };
+struct Tol_ {
+  Tol_(double eps) : eps_(eps) {};
+  bool operator()(const double& a, const double& b) const {
+    return std::abs(a - b) <= eps_;
+  }
+  double eps_;
+};
 
 
 template <class WRM>
@@ -81,9 +85,9 @@ double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(
   } else {
     const std::vector<int>& bc_model = bc_->bc_model();
     const std::vector<double>& bc_value = bc_->bc_value();
-    if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET){
+    if (bc_model[f] == OPERATOR_BC_DIRICHLET){
       return bc_value[f];
-    } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN){
+    } else if (bc_model[f] == OPERATOR_BC_NEUMANN){
       AmanziMesh::Entity_ID_List cells, faces;
       std::vector<int> dirs;
       const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");      
@@ -105,7 +109,7 @@ double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(
 
 	  FlowFluxTPFA_BCFunc<WRM> func(trans, face_val, i, u_cell[0][c],
 					bc_flux, gflux, dirs[i], atm_pressure_, wrm);
-  // -- convergence criteria
+          // -- convergence criteria
 	  double eps = std::max(1.e-4 * std::abs(bc_flux), 1.e-8);
 	  Tol_ tol(eps);
 	  boost::uintmax_t max_it = 100;
@@ -159,9 +163,8 @@ double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(
 #if DEBUG_FLAG
 	  std::cout << "face_val = "<<face_val<<"\n";
 #endif
-	  //exit(0);
-	  return face_val;
-      	}
+        return face_val;
+        }
       }
 
     } else {
@@ -174,11 +177,7 @@ double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(
   }
 }
 
-
-
-
-
-}
-}
+}  // namespace Operators
+}  // namespace Amanzi
 
 #endif

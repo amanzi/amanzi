@@ -243,7 +243,7 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
   double hmin(1.4e+9), hmax(-1.4e+9);  // diameter of the Sun
   double rho_g = rho_ * fabs(gravity_[dim - 1]);
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_model[f] == Operators::OPERATOR_BC_FACE_DIRICHLET) {
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       double z = mesh_->face_centroid(f)[dim - 1]; 
       double h = z + (bc_value[f] - atm_pressure_) / rho_g;
       hmax = std::max(hmax, h);

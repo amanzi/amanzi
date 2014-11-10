@@ -568,7 +568,7 @@ void Operator::ApplyBCs()
             int f = faces[n];
             double value = bc_value[f];
 
-            if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
+            if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
               if (flag) {  // make a copy of elemental matrix
                 matrix_shadow[c] = Acell;
                 flag = false;
@@ -583,9 +583,9 @@ void Operator::ApplyBCs()
               rhs_cell[0][c] -= Acell(nfaces, n) * value;
               Acell(nfaces, n) = 0.0;
               Acell(n, nfaces) = 0.0;
-            } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) {
+            } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
               rhs_face[0][f] -= value * mesh_->face_area(f);
-            } else if (bc_model[f] == OPERATOR_BC_FACE_MIXED) {
+            } else if (bc_model[f] == OPERATOR_BC_MIXED) {
               if (flag) {  // make a copy of elemental matrix
                 matrix_shadow[c] = Acell;
                 flag = false;
@@ -612,7 +612,7 @@ void Operator::ApplyBCs()
             int v = nodes[n];
             double value = bc_value[v];
 
-            if (bc_model[v] == OPERATOR_BC_FACE_DIRICHLET) {
+            if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
               if (flag) {  // make a copy of cell-based matrix
                 matrix_shadow[c] = Acell;
                 flag = false;
@@ -623,10 +623,10 @@ void Operator::ApplyBCs()
               }
               rhs_node[0][v] = value;
               diag[0][v] = 1.0;
-            } else if (bc_model[v] == OPERATOR_BC_FACE_NEUMANN) {
+            } else if (bc_model[v] == OPERATOR_BC_NEUMANN) {
               double area = ComputeBoundaryVertexArea(c, v);
               rhs_node[0][v] -= value * area;
-            } else if (bc_model[v] == OPERATOR_BC_FACE_MIXED) {
+            } else if (bc_model[v] == OPERATOR_BC_MIXED) {
               if (flag) {  // make a copy of cell-based matrix
                 matrix_shadow[c] = Acell;
                 flag = false;
@@ -647,11 +647,11 @@ void Operator::ApplyBCs()
           WhetStone::DenseMatrix& Aface = matrix[f];
 
 
-          if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
+          if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
             mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
             rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
           }
-          else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) {
+          else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
             mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
             rhs_cell[0][cells[0]] -= bc_value[f] * mesh_->face_area(f);
             Aface *= 0.0;
@@ -993,8 +993,7 @@ int Operator::FindMatrixBlock(int schema_dofs, int matching_rule, bool action) c
 
 /* ******************************************************************
 * Computes area associated with the boundary vertex v. This area is
-* defined by edges of a co-volume cell of vertex v restricted to the
-* given cell.
+* defined by edges of a co-volume cell of vertex v.
 ****************************************************************** */
 double Operator::ComputeBoundaryVertexArea(int c, int v)
 {
@@ -1010,7 +1009,12 @@ double Operator::ComputeBoundaryVertexArea(int c, int v)
     if (cells.size() == 1) {
       mesh_->face_get_nodes(f, &nodes);
       int nnodes = nodes.size();
-      area += mesh_->face_area(f) / nnodes;
+      for (int n = 0; n < nnodes; n++) {
+        if (nodes[n] == v) {
+          area += mesh_->face_area(f) / nnodes;
+          break;
+        }
+      }
     }
   }
 

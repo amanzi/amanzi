@@ -125,12 +125,12 @@ void Upwind<Model>::Compute(
       
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
         upw[0][f] += fcells[0][c] / 2;  // Almost vertical face.
-      } else if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET && flag) {
+      } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         upw[0][f] = model_->Value(c, bc_value[f], name);
-      } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN && flag) {
+      } else if (bc_model[f] == OPERATOR_BC_NEUMANN && flag) {
         // upw[0][f] = model_->Value(c, ffaces[0][f], name);
         upw[0][f] = fcells[0][c];
-      } else if (bc_model[f] == OPERATOR_BC_FACE_MIXED && flag) {
+      } else if (bc_model[f] == OPERATOR_BC_MIXED && flag) {
         // upw[0][f] = model_->Value(c, ffaces[0][f], name);
         upw[0][f] = fcells[0][c];
       } else if (!flag) {
@@ -185,12 +185,12 @@ void Upwind<Model>::Compute(
       
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
         upw[0][f] += fcells[0][c] / 2;  // Almost vertical face.
-      } else if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET && flag) {
+      } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         upw[0][f] = ((*model_).*Value)(c, bc_value[f]);
-      } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN && flag) {
+      } else if (bc_model[f] == OPERATOR_BC_NEUMANN && flag) {
         // upw[0][f] = ((*model_).*Value)(c, ffaces[0][f]);
         upw[0][f] = fcells[0][c];
-      } else if (bc_model[f] == OPERATOR_BC_FACE_MIXED && flag) {
+      } else if (bc_model[f] == OPERATOR_BC_MIXED && flag) {
         // upw[0][f] = ((*model_).*Value)(c, ffaces[0][f]);
         upw[0][f] = fcells[0][c];
       } else if (!flag) {

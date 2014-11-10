@@ -90,7 +90,7 @@ void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> f
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface = 0.;
 
-    if (bc_model[f] != OPERATOR_BC_FACE_NEUMANN){
+    if (bc_model[f] != OPERATOR_BC_NEUMANN){
       double tij = (*transmissibility_)[f] * k_face[0][f];
       for (int i = 0; i < ncells; i++) {
 	Aface(i, i) = tij;
@@ -119,7 +119,7 @@ void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> f
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) continue;
+      if (bc_model[f] == OPERATOR_BC_NEUMANN) continue;
       rhs_cell[0][c] -= dirs[n] * (*gravity_term_)[f] * k_face[0][f];  
     }
   }
@@ -147,9 +147,9 @@ void OperatorDiffusionTPFA::ApplyBCs()
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int c = cells[0];
 
-      if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         rhs_cell[0][c] += bc_value[f] * (*transmissibility_)[f] * k_face[0][f];
-      } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) {
+      } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         rhs_cell[0][c] -= bc_value[f] * mesh_->face_area(f);
         //(*transmissibility_)[f] = 0.0;
         (*gravity_term_)[f] = 0.0;
@@ -258,7 +258,7 @@ void OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, Co
       int c = cells[0];
       double tmp = 0;
 
-      if (bc_model[f] != Operators::OPERATOR_BC_FACE_NEUMANN){
+      if (bc_model[f] != Operators::OPERATOR_BC_NEUMANN) {
 	tmp = k_face[0][f] * (*transmissibility_)[f] * uc[0][c];    
       }
       //double tmp = matrix[f](0,0) * uc[0][c];
@@ -304,12 +304,12 @@ void OperatorDiffusionTPFA::UpdateFlux(
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
 
-      if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
 	double value = bc_value[f];
 	flux[0][f] = dirs[n] * (*transmissibility_)[f] * (p[0][c] - value) + (*gravity_term_)[f];
 	flux[0][f] *= Krel_face[0][f];
 
-      } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) {
+      } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
 	double value = bc_value[f];
 	double area = mesh_->face_area(f);
 	flux[0][f] = value*area;
@@ -462,7 +462,7 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
     Jpp(1, 1) = -Jpp(0, 1);
 
   } else if (mcells == 1) {
-    if (bc_model_f == OPERATOR_BC_FACE_DIRICHLET) {                   
+    if (bc_model_f == OPERATOR_BC_DIRICHLET) {                   
       pres[1] = bc_value_f;
       dpres = pres[0] - pres[1];  // + grn;
       Jpp(0, 0) = ((*transmissibility_)[f] * dpres + face_dir * (*gravity_term_)[f]) * dkdp_cell[0];

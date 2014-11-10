@@ -98,8 +98,8 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
     AmanziMesh::Entity_ID_List cells;
 
     for (int f = 0; f < nfaces_wghost; f++) {
-      if ((bc_model[f] == Operators::OPERATOR_BC_FACE_NEUMANN || 
-           bc_model[f] == Operators::OPERATOR_BC_FACE_MIXED) && bc_value[f] < 0.0) {
+      if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
+           bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
 
         const AmanziGeometry::Point& normal = mesh_->face_normal(f);

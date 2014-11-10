@@ -638,7 +638,7 @@ void OperatorDiffusion::InitPreconditionerSpecialSff_(
 
     for (int n = 0; n < nfaces; n++) {  // Symbolic boundary conditions
       int f = faces[n];
-      if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         for (int m = 0; m < nfaces; m++) Scell(n, m) = Scell(m, n) = 0.0;
         Scell(n, n) = 1.0;
       }

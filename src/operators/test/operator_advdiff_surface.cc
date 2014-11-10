@@ -94,11 +94,11 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
     const Point& xf = surfmesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-      bc_model[f] = OPERATOR_BC_FACE_DIRICHLET;
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value));
 
   // create operator map 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());

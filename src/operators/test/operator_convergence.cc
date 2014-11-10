@@ -205,10 +205,10 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_value[f] = pressure_exact(xf, 0.0);
-      bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
+      bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value));
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -396,10 +396,10 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
         fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
       bc_value[v] = pressure_exact(xv, 0.0);
-      bc_model[v] = Operators::OPERATOR_BC_FACE_DIRICHLET;
+      bc_model[v] = Operators::OPERATOR_BC_DIRICHLET;
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value));
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());

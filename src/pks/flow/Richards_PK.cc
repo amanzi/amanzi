@@ -194,7 +194,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   bc_submodel.resize(nfaces_wghost, 0);
   bc_value.resize(nfaces_wghost, 0.0);
   bc_mixed.resize(nfaces_wghost, 0.0);
-  op_bc_ = Teuchos::rcp(new Operators:: BCs(bc_model, bc_value, bc_mixed));
+  op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   rainfall_factor.resize(nfaces_wghost, 1.0);
 
@@ -529,8 +529,8 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
       AmanziMesh::Entity_ID_List cells;
 	
       for (int f = 0; f < nfaces_wghost; f++) {
-        if ((bc_model[f] == Operators::OPERATOR_BC_FACE_NEUMANN || 
-             bc_model[f] == Operators::OPERATOR_BC_FACE_MIXED) && bc_value[f] < 0.0) {
+        if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
+             bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
           mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
 
           const AmanziGeometry::Point& normal = mesh_->face_normal(f);

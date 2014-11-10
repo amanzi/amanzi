@@ -105,7 +105,7 @@ TEST(UPWIND) {
           fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
           fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) 
 
-      bc_model[f] = OPERATOR_BC_FACE_DIRICHLET;
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = model->analytic(xf[0]);
     }
 

@@ -438,7 +438,8 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
     std::vector<double> bc_value(nfaces_wghost, 0.0);
     PopulateBoundaryData(bc_model, bc_value, -1);
 
-    Teuchos::RCP<Operators::BCs> bc_dummy = Teuchos::rcp(new Operators::BCs(bc_model, bc_value));
+    Teuchos::RCP<Operators::BCs> bc_dummy = 
+        Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value));
     AmanziGeometry::Point g;
 
     Operators::OperatorDiffusionFactory opfactory;
@@ -955,7 +956,7 @@ bool Transport_PK::PopulateBoundaryData(
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f < nfaces_wghost; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    if (cells.size() == 1) bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+    if (cells.size() == 1) bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
   }
 
   for (int m = 0; m < bcs.size(); m++) {
@@ -971,7 +972,7 @@ bool Transport_PK::PopulateBoundaryData(
       for (int i = 0; i < ncomp; i++) {
         int k = tcc_index[i];
         if (k == component) {
-          bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
+          bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
           bc_value[f] = values[n][i];
           flag = true;
         }

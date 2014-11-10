@@ -111,7 +111,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
   Functions::FlowBoundaryFunction::Iterator bc;
   for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) {
     int f = bc->first;
-    bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
+    bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     bc_value[f] = bc->second;
     flag_essential_bc = 1;
     dirichlet_bc_faces_++;
@@ -121,12 +121,12 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     int f = bc->first;
     if (bc_submodel[f] & FLOW_BC_SUBMODEL_NOFLOW_ABOVE_WATER_TABLE) {
       if (bc->second < FLOW_PRESSURE_ATMOSPHERIC) {
-        bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+        bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value[f] = 0.0;
         continue;
       }
     }
-    bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
+    bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     bc_value[f] = bc->second;
     flag_essential_bc = 1;
     dirichlet_bc_faces_++;
@@ -134,7 +134,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
 
   for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
     int f = bc->first;
-    bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+    bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
     bc_value[f] = bc->second * rainfall_factor[f];
   }
 
@@ -164,7 +164,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
       int ncells = cells.size();
 
       if (ncells == 1) {
-        bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+        bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value[f] = 0.0;
         missed_bc_faces_++;
       }
