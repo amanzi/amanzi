@@ -597,8 +597,8 @@ void OperatorDiffusion::InitPreconditioner(
 void OperatorDiffusion::InitPreconditionerSpecialSff_(
     const std::string& prec_name, const Teuchos::ParameterList& plist)
 {
-  const std::vector<int>& bc_model = bc_->bc_model();
-  const std::vector<double>& bc_value = bc_->bc_value();
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
 
   // find the block of matrices
   int schema_dofs = OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL;
@@ -679,7 +679,7 @@ void OperatorDiffusion::InitPreconditionerSpecialSff_(
 void OperatorDiffusion::InitPreconditionerSpecialScc_(
     const std::string& prec_name, const Teuchos::ParameterList& plist)
 {
-  const std::vector<int>& bc_model = bc_->bc_model();
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
 
   // find location of matrix blocks
   int schema_dofs = OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL;
@@ -924,7 +924,7 @@ void OperatorDiffusion::CreateMassMatrices_()
 ****************************************************************** */
 void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterList& plist)
 {
-  bc_ = bc;
+  bc_.push_back(bc);
 
   // Define stencil for the MFD diffusion method.
   std::vector<std::string> names;

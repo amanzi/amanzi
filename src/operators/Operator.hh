@@ -70,7 +70,8 @@ class Operator {
   // main members
   void Init();
   void Clone(const Operator& op);
-
+  void AddBCs(Teuchos::RCP<BCs> bc);
+  
   virtual int Apply(const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
@@ -95,11 +96,16 @@ class Operator {
 
   // supporting members
   int FindMatrixBlock(int schema_dofs, int matching_rule, bool action) const;
-  double ComputeBoundaryVertexArea(int c, int v);
 
   // access
   Teuchos::RCP<CompositeVector>& rhs() { return rhs_; }
+  const Teuchos::RCP<BCs> GetBCofType(int type) const;
   bool data_validity() { return data_validity_; }
+
+ protected:
+  bool ApplyBC_Cell_Mixed_(int nb);
+  bool ApplyBC_Cell_Nodal_(int nb);
+  bool ApplyBC_Face_(int nb);
 
  public:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -112,7 +118,7 @@ class Operator {
   Teuchos::RCP<CompositeVector> diagonal_, diagonal_checkpoint_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
 
-  Teuchos::RCP<BCs> bc_;
+  std::vector<Teuchos::RCP<BCs> > bc_;
 
  public:
   int ncells_owned, nfaces_owned, nnodes_owned;

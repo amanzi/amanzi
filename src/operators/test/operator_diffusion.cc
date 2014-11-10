@@ -215,11 +215,11 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
     mesh->node_get_coordinates(v, &xv);
     if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
         fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
-      bc_model[v] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_model[v] = OPERATOR_BC_DIRICHLET;
       bc_value[v] = pressure_exact(xv, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_NODE, bc_model, bc_value));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_NODE, bc_model, bc_value));
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
@@ -547,29 +547,44 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   double rho(1.0), mu(1.0);
   AmanziGeometry::Point g(0.0, -1.0);
 
-  // create boundary data: Dirichlet bc must go last.
+  // create boundary data.
   Point xv(2);
-  std::vector<int> bc_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nnodes_wghost, 0.0), bc_mixed(nnodes_wghost, 0.0);
+  std::vector<int> bc_model_v(nnodes_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value_v(nnodes_wghost, 0.0);
 
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
-    if (fabs(xv[0]) < 1e-6) {
-      bc_model[v] = Operators::OPERATOR_BC_NEUMANN;
-      bc_value[v] = -(velocity_exact_linear(xv, 0.0))[0];  // We assume exterior normal.
-    }
-    if(fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
-      bc_model[v] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value[v] = pressure_exact_linear(xv, 0.0);
+    if(fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
+      bc_model_v[v] = OPERATOR_BC_DIRICHLET;
+      bc_value_v[v] = pressure_exact_linear(xv, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_NODE, bc_model, bc_value, bc_mixed));
+  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_NODE, bc_model_v, bc_value_v));
+
+  std::vector<int> bc_model_f(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value_f(nfaces_wghost, 0.0), bc_mixed_f(nfaces_wghost, 0.0);
+
+  for (int f = 0; f < nfaces_wghost; f++) {
+    const Point& xf = mesh->face_centroid(f);
+    if (fabs(xf[0]) < 1e-6) {
+      bc_model_f[f] = OPERATOR_BC_NEUMANN;
+      bc_value_f[f] = -(velocity_exact_linear(xf, 0.0))[0];  // We assume exterior normal.
+    } else if (fabs(xf[1]) < 1e-6) {
+      bc_model_f[f] = OPERATOR_BC_MIXED;
+      bc_value_f[f] = -(velocity_exact_linear(xf, 0.0))[1];  // We assume exterior normal.
+
+      double tmp = pressure_exact_linear(xf, 0.0);
+      bc_mixed_f[f] = 1.0;
+      bc_value_f[f] -= bc_mixed_f[f] * tmp;
+    }
+  }
+  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model_f, bc_value_f, bc_mixed_f));
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g);
-  const CompositeVectorSpace& cvs = op->DomainMap();
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_v, op_list, g);
+  op->AddBCs(bc_f);
   
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_NODE;
@@ -627,7 +642,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
     p_error = pow(p_error / p_norm, 0.5);
     printf("Err(p) = %9.6f itr=%3d\n", p_error, solver->num_itrs());
 
-    CHECK(p_error < 1e-12);
+    CHECK(p_error < 1e-5);
     CHECK(solver->num_itrs() < 10);
   }
 }

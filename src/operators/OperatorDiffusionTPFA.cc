@@ -59,7 +59,7 @@ void OperatorDiffusionTPFA::InitOperator(
 void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, 
                                            Teuchos::RCP<const CompositeVector> p)
 {
-  const std::vector<int>& bc_model = bc_->bc_model();
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
 
   // find location of matrix blocks
   int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
@@ -134,8 +134,8 @@ void OperatorDiffusionTPFA::UpdateMatrices(Teuchos::RCP<const CompositeVector> f
 ****************************************************************** */
 void OperatorDiffusionTPFA::ApplyBCs()
 {
-  const std::vector<int>& bc_model = bc_->bc_model();
-  const std::vector<double>& bc_value = bc_->bc_value();
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
 
   const Epetra_MultiVector& k_face = *k_->ViewComponent("face", true);
   Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
@@ -217,7 +217,6 @@ void OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, Co
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
   Epetra_MultiVector& rc = *r.ViewComponent("cell");
 
-
   // find location of matrix blocks
   int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;
   int m = FindMatrixBlock(schema_my, OPERATOR_SCHEMA_RULE_EXACT, false);
@@ -231,11 +230,11 @@ void OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, Co
   }
   std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
-  const std::vector<int>& bc_model = bc_->bc_model();
-  const std::vector<double>& bc_value = bc_->bc_value();
+
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
 
   AmanziMesh::Entity_ID_List cells;
-
 
   // matvec product A*u
   u.ScatterMasterToGhosted("cell");
@@ -283,8 +282,8 @@ void OperatorDiffusionTPFA::ComputeNegativeResidual(const CompositeVector& u, Co
 void OperatorDiffusionTPFA::UpdateFlux(
     const CompositeVector& solution, CompositeVector& darcy_mass_flux)
 {
-  const std::vector<int>& bc_model = bc_->bc_model();
-  const std::vector<double>& bc_value = bc_->bc_value();
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
 
   solution.ScatterMasterToGhosted("cell");
 
@@ -345,8 +344,8 @@ void OperatorDiffusionTPFA::UpdateFlux(
 ****************************************************************** */
 void OperatorDiffusionTPFA::AnalyticJacobian_(const CompositeVector& u)
 {
-  const std::vector<int>& bc_model = bc_->bc_model();
-  const std::vector<double>& bc_value = bc_->bc_value();
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
 
   // find location of matrix blocks
   int schema_my = OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_DOFS_CELL;

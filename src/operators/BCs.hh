@@ -77,6 +77,7 @@ class BCs {
   const std::vector<int>& bc_model() { return *bc_model_; }
   const std::vector<double>& bc_value() { return *bc_value_; }
   const std::vector<double>& bc_mixed() { return *bc_mixed_; }
+  int type() { return type_; }
 
  private:
   int type_;
