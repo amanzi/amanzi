@@ -2919,15 +2919,14 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
     nodeTmp = nodeList->item(0);
     attrMap = nodeTmp->getAttributes();
     nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-    char* phaseName;
-    bool releasePhaseName=true;
+    std::string phaseName;
     if (nodeAttr) {
-      phaseName = XMLString::transcode(nodeAttr->getNodeValue());
-      if (!isUnstr_ && strcmp(phaseName,"water")==0 ) {
-	XMLString::release(&phaseName);
+      textContent = XMLString::transcode(nodeAttr->getNodeValue());
+      phaseName = std::string(textContent);
+      if (!isUnstr_ && phaseName=="water") {
 	phaseName="Water";
-	releasePhaseName = false;
       }
+      XMLString::release(&textContent);
     }
     else {
       throw_error_missattr("phases","attribute","name","liquid_phase");
@@ -3004,7 +3003,7 @@ Teuchos::ParameterList get_phases(DOMDocument* xmlDoc, Teuchos::ParameterList de
             foundPC = true;
           }
 	}
-        if(releasePhaseName) XMLString::release(&textContent);
+        XMLString::release(&textContent);
       }
     }
     if (!isUnstr_ && !foundPC) {
@@ -4246,8 +4245,7 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
   char* char_array;
   char* attrName;
   char* attrValue;
-  char* phaseName;
-  bool  releasePhaseName=true;
+  std::string phaseName;
 
   if (voI_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       *voI_->os() << "Getting Initial Conditions" << std::endl;
@@ -4301,12 +4299,12 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
           attrMap = ICNode->getAttributes();
           nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
 	  if (nodeAttr) {
-            phaseName = XMLString::transcode(nodeAttr->getNodeValue());
-            if (!isUnstr_ && strcmp(phaseName,"water")==0 ) {
-	      XMLString::release(&phaseName);
-	      phaseName="Water";
-	      releasePhaseName = false;
-	    }
+            textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
+            phaseName = std::string(textContent2);
+            if (!isUnstr_ && phaseName=="water") {
+              phaseName="Water";
+            }
+            XMLString::release(&textContent2);
 	  }
           else {
             throw_error_missattr("initial_conditions", "attribute", "name", "liquid_phase");
@@ -4468,7 +4466,6 @@ Teuchos::ParameterList get_initial_conditions(DOMDocument* xmlDoc, Teuchos::Para
               //TODO: EIB - deal with geochemisty later
 	    }
 	  }
-	  if(releasePhaseName) XMLString::release(&phaseName);
         }
         else if (strcmp(tagName,"solid_phase")==0) {
           //TODO: EIB - deal with solid phase -> mineral, geochemisty
@@ -4500,13 +4497,12 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
   DOMNamedNodeMap* attrMap;
   char* tagName;
   char* propName;
-  char* phaseName;
+  std::string phaseName;
   char* textContent;
   char* textContent2;
   char* char_array;
   char* attrName;
   char* attrValue;
-  bool releasePhaseName=true;
 
 
   if (voI_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -4564,12 +4560,12 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
             attrMap = BCNode->getAttributes();
             nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
 	    if (nodeAttr) {
-              phaseName = XMLString::transcode(nodeAttr->getNodeValue());
-              if (!isUnstr_ && strcmp(phaseName,"water")==0 ) {
-	        XMLString::release(&phaseName);
-	        phaseName="Water";
-	        releasePhaseName = false;
-	      }
+              textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
+              phaseName = std::string(textContent2);
+              if (!isUnstr_ && phaseName=="water") {
+                phaseName="Water";
+              }
+              XMLString::release(&textContent2);
 	    }
             else {
               throw_error_missattr("boundary_conditions", "attribute", "name", "liquid_phase");
@@ -5168,8 +5164,6 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                 //TODO: EIB - deal with geochemisty later
 	      }
 	    }
-            if(releasePhaseName) XMLString::release(&phaseName);
-        
           } else if (strcmp(tagName,"solid_phase")==0) {
             //TODO: EIB - deal with solid phase -> mineral, geochemisty
           }
@@ -5247,15 +5241,14 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
           else if (strcmp(tagName,"liquid_phase")==0) {
             attrMap = SCNode->getAttributes();
             nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-            char* phaseName;
-	    bool releasePhaseName=true;
+            std::string phaseName;
 	    if (nodeAttr) {
-              phaseName = XMLString::transcode(nodeAttr->getNodeValue());
-              if (!isUnstr_ && strcmp(phaseName,"water")==0 ) {
-	        XMLString::release(&phaseName);
-	        phaseName="Water";
-	        releasePhaseName = false;
-	      }
+              char* textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
+              phaseName = std::string(textContent2);
+              if (!isUnstr_ && phaseName=="water") {
+                phaseName="Water";
+              }
+              XMLString::release(&textContent2);
             }
             else {
               throw_error_missattr("sources", "attribute", "name", "liquid_phase");
@@ -5412,7 +5405,6 @@ Teuchos::ParameterList get_sources(DOMDocument* xmlDoc, Teuchos::ParameterList d
 	        sclist.sublist("Solute SOURCE").sublist(phase).sublist(component).sublist(soluteName).sublist(scname) = newsclist;
 	      }
 	    }
-            if(releasePhaseName) XMLString::release(&phaseName);
 	  }
 	}
       }
@@ -5712,15 +5704,14 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
               else if (strcmp(textContent,"liquid_phase")==0) {
                 DOMNamedNodeMap* attrMap = curNode->getAttributes();
                 DOMNode* nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-	        char* phaseName;
-		bool releasePhaseName=true;
+                std::string phaseName;
 		if (nodeAttr) {
-                  phaseName = XMLString::transcode(nodeAttr->getNodeValue());
-                  if (!isUnstr_ && strcmp(phaseName,"water")==0 ) {
-	            XMLString::release(&phaseName);
-	            phaseName="Water";
-	            releasePhaseName = false;
-	          }
+                  textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
+                  phaseName = std::string(textContent2);
+                  if (!isUnstr_ && phaseName=="water") {
+                    phaseName="Water";
+                  }
+                  XMLString::release(&textContent2);
 	        }
                 else {
                   throw_error_missattr("observations", "attribute", "name", "liquid_phase");
@@ -5900,7 +5891,6 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	            obsPL.sublist(listName.str()) = obPL;
 	          }
 	        }
-	        if(releasePhaseName) XMLString::release(&phaseName);
               }
               XMLString::release(&textContent);
               list.sublist("Observation Data") = obsPL;

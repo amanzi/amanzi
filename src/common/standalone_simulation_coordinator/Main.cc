@@ -88,6 +88,9 @@ int main(int argc, char *argv[]) {
     std::string xmlInFileName = "";
     CLP.setOption("xml_file", &xmlInFileName, "XML options file");
 
+    std::string xmlSchema = ""; 
+    CLP.setOption("xml_schema", &xmlSchema, "XML Schema File"); 
+
     bool print_version(false);
     CLP.setOption("print_version", "no_print_version", &print_version, "Print version number and exit.");
 
