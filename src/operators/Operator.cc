@@ -521,6 +521,8 @@ void Operator::AssembleMatrix(int schema)
 /* ******************************************************************
 * Applies boundary conditions to matrix_blocks and update the
 * right-hand side and the diagonal block.                                           
+* NOTE. It will take to implement a few other PKs to realize the level
+*       of abstraction of the default implementation below.
 ****************************************************************** */
 void Operator::ApplyBCs()
 {
@@ -757,8 +759,10 @@ bool Operator::ApplyBC_Face_(int nb)
 
   AmanziMesh::Entity_ID_List cells, nodes;
 
-  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
-  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
+  Teuchos::RCP<BCs> bc_f = GetBCofType(OPERATOR_BC_TYPE_FACE);
+  const std::vector<int>& bc_model = bc_f->bc_model();
+  const std::vector<double>& bc_value = bc_f->bc_value();
+  const std::vector<double>& bc_mixed = bc_f->bc_mixed();
 
   if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
     applied_bc = true;
@@ -772,10 +776,21 @@ bool Operator::ApplyBC_Face_(int nb)
         rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
       }
       else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        matrix_shadow[f] = Aface;
+
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
         rhs_cell[0][cells[0]] -= bc_value[f] * mesh_->face_area(f);
         Aface *= 0.0;
+      }
+      // solve system of two equations in three unknowns
+      else if (bc_model[f] == OPERATOR_BC_MIXED) {
         matrix_shadow[f] = Aface;
+
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        double area = mesh_->face_area(f);
+        double factor = area / (1.0 + bc_mixed[f] * area / Aface(0, 0));
+        rhs_cell[0][cells[0]] -= bc_value[f] * factor;
+        Aface(0, 0) = bc_mixed[f] * factor;
       }
     }
   }

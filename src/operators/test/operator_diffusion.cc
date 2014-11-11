@@ -494,6 +494,8 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
+* NOTE. Mixed boundary condition requires to use mass matrix. We
+*       lump it which leads to a small error.
 * **************************************************************** */
 TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   using namespace Teuchos;
@@ -636,6 +638,143 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
       p_error += std::pow(tmp - p[0][v], 2.0) * volume / nnodes;
       p_norm += std::pow(tmp, 2.0) * volume / nnodes;
     }
+  }
+
+  if (MyPID == 0) {
+    p_error = pow(p_error / p_norm, 0.5);
+    printf("Err(p) = %9.6f itr=%3d\n", p_error, solver->num_itrs());
+
+    CHECK(p_error < 1e-5);
+    CHECK(solver->num_itrs() < 10);
+  }
+}
+
+
+/* *****************************************************************
+* Exactness test for cell-based diffusion solver.
+* **************************************************************** */
+TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
+  using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Operators;
+
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+
+  if (MyPID == 0) std::cout << "\nTest: 2D steady-state elliptic solver," 
+                            << " exactness test for cell-based discretization" << std::endl;
+
+  // read parameter list
+  std::string xmlFileName = "test/operator_diffusion.xml";
+  ParameterXMLFileReader xmlreader(xmlFileName);
+  ParameterList plist = xmlreader.getParameters();
+
+  // create an SIMPLE mesh framework
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+  pref.push_back(STKMESH);
+
+  MeshFactory meshfactory(&comm);
+  meshfactory.preference(pref);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 8, gm);
+
+  /* modify diffusion coefficient */
+  std::vector<WhetStone::Tensor> K;
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+
+  for (int c = 0; c < ncells; c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    WhetStone::Tensor Kc(2, 2);
+
+    Kc(0, 0) = 3.0;
+    Kc(1, 1) = 1.0;
+    Kc(0, 1) = 0.0;
+    Kc(1, 0) = 0.0;
+
+    K.push_back(Kc);
+  }
+  double rho(1.0), mu(1.0);
+  AmanziGeometry::Point g(0.0, -1.0);
+
+  // create boundary data.
+  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
+
+  for (int f = 0; f < nfaces_wghost; f++) {
+    const Point& xf = mesh->face_centroid(f);
+    double area = mesh->face_area(f);
+
+    if (fabs(xf[0]) < 1e-6) {
+      bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_value[f] = 3.0;
+    } else if(fabs(xf[1]) < 1e-6) {
+      bc_model[f] = Operators::OPERATOR_BC_MIXED;
+      bc_value[f] = 2.0;
+
+      double tmp = pressure_exact_linear(xf, 0.0);
+      bc_mixed[f] = 1.0;
+      bc_value[f] -= bc_mixed[f] * tmp;
+    } else if(fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+      bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_value[f] = pressure_exact_linear(xf, 0.0);
+    }
+  }
+  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
+
+  // create diffusion operator 
+  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator cell");
+  OperatorDiffusionFactory opfactory;
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_f, op_list, g);
+  
+  // populate the diffusion operator
+  int schema = Operators::OPERATOR_SCHEMA_DOFS_CELL;
+  op->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
+  op->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op->ApplyBCs();
+  op->SymbolicAssembleMatrix(schema);
+  op->AssembleMatrix(schema);
+
+  // create preconditoner using the base operator class
+  ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+  op->InitPreconditioner("Hypre AMG", slist);
+
+  // solve the problem
+  ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
+     solver = factory.Create("AztecOO CG", lop_list, op);
+
+  CompositeVector rhs = *op->rhs();
+  CompositeVector solution(rhs);
+  solution.PutScalar(0.0);
+
+  int ierr = solver->ApplyInverse(rhs, solution);
+
+  if (MyPID == 0) {
+    std::cout << "pressure solver (" << solver->name() 
+              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+              << " code=" << solver->returned_code() << std::endl;
+  }
+
+  // compute pressure error
+  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+
+  double p_norm(0.0), p_error(0.0);
+  for (int c = 0; c < ncells; c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    double tmp = pressure_exact_linear(xc, 0.0);
+    double volume = mesh->cell_volume(c);
+
+    // std::cout << c << " " << tmp << " " << p[0][c] << std::endl;
+    p_error += std::pow(tmp - p[0][c], 2.0) * volume;
+    p_norm += std::pow(tmp, 2.0) * volume;
   }
 
   if (MyPID == 0) {
