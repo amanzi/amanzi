@@ -36,8 +36,8 @@ public:
 
   // -- transfer operators
   virtual void state_to_solution(const Teuchos::RCP<State>& S,
-                                 const Teuchos::RCP<TreeVector>& soln) = 0;
-  virtual void solution_to_state(const Teuchos::RCP<TreeVector>& soln,
+                                 TreeVector& soln) = 0;
+  virtual void solution_to_state(TreeVector& soln,
                                  const Teuchos::RCP<State>& S) = 0;
 
   // -- Choose a time step compatible with physics.

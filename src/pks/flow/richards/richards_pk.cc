@@ -74,7 +74,7 @@ void Richards::setup(const Teuchos::Ptr<State>& S) {
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
 
-  flux_tol_ = plist_->get<double>("flux tolerance", 1.e-4);
+  flux_tol_ = plist_->get<double>("flux tolerance", 1.);
 };
 
 

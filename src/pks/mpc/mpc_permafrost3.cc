@@ -6,6 +6,8 @@
 #include "mpc_surface_subsurface_helpers.hh"
 #include "permafrost_model.hh"
 #include "surface_ice_model.hh"
+#include "energy_base.hh"
+#include "advection.hh"
 
 #include "mpc_permafrost3.hh"
 
@@ -112,6 +114,18 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   precon_->SymbolicAssembleGlobalMatrices();
   precon_->InitPreconditioner();
 
+  // set up the advective term
+  // -- clone the surface flow operator
+  Teuchos::RCP<CompositeMatrix> pcAdv_mat = sub_pks_[0]->preconditioner()->Clone();
+  pcAdv_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(pcAdv_mat);
+  ASSERT(pcAdv_ != Teuchos::null);
+  precon_->SetAdvectiveBlock(pcAdv_);
+  // -- get the field -- this is very hackish and demonstrates why coupled PKs should be redesigned --etc
+  Teuchos::RCP<Energy::EnergyBase> pk_as_energy = Teuchos::rcp_dynamic_cast<Energy::EnergyBase>(domain_energy_pk_);
+  ASSERT(pk_as_energy != Teuchos::null);
+  adv_field_ = pk_as_energy->advection()->field();
+  adv_flux_ = pk_as_energy->advection()->flux();
+  
   // Potential create the solver
   if (plist_->isSublist("Coupled Solver")) {
     Teuchos::ParameterList linsolve_sublist = plist_->sublist("Coupled Solver");
@@ -190,6 +204,9 @@ MPCPermafrost3::initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize my timestepper.
   PKBDFBase::initialize(S);
+
+  // advection mass matrices
+  *pcAdv_ = *pc_flow_;
 }
 
 void
@@ -217,7 +234,7 @@ void
 MPCPermafrost3::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // propagate updated info into state
-  solution_to_state(u_new, S_next_);
+  solution_to_state(*u_new, S_next_);
 
   // Evaluate the surface flow residual
   surf_flow_pk_->Functional(t_old, t_new, u_old->SubVector(2),
@@ -434,6 +451,40 @@ MPCPermafrost3::UpdatePreconditioner(double t,
                            dEdp_surf->ViewComponent("cell",false),
                            1./h);
 
+  // update advective components
+  if (adv_flux_ == Teuchos::null) {
+    Teuchos::RCP<Energy::EnergyBase> pk_as_energy = Teuchos::rcp_dynamic_cast<Energy::EnergyBase>(domain_energy_pk_);
+    ASSERT(pk_as_energy != Teuchos::null);
+    adv_flux_ = pk_as_energy->advection()->flux();
+  }
+
+  //     if (dynamic_mesh_) *pcAdv_ = *sub_pks_[0]->preconditioner();
+  Teuchos::RCP<const CompositeVector> rel_perm =
+      S_next_->GetFieldData("numerical_rel_perm");
+  Teuchos::RCP<CompositeVector> rel_perm_times_enthalpy =
+      Teuchos::rcp(new CompositeVector(*rel_perm));
+  *rel_perm_times_enthalpy = *rel_perm;
+  {
+    Epetra_MultiVector& kr_f = *rel_perm_times_enthalpy->ViewComponent("face",false);
+    const Epetra_MultiVector& enth_u = *adv_field_->ViewComponent("face",false);
+    const Epetra_MultiVector& enth_c = *adv_field_->ViewComponent("cell",true);
+    const Epetra_MultiVector& flux = *adv_flux_->ViewComponent("face",false);
+    for (int f=0; f!=kr_f.MyLength(); ++f) {
+      if (std::abs(flux[0][f]) > 1.e-12) {
+        kr_f[0][f] *= enth_u[0][f] / std::abs(flux[0][f]);
+      } else {
+        AmanziMesh::Entity_ID_List cells;
+        domain_mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        if (cells.size() == 1) {
+          kr_f[0][f] *= enth_c[0][cells[0]];
+        } else {
+          kr_f[0][f] *= (enth_c[0][cells[0]] + enth_c[0][cells[1]])/2.;
+        }
+      }
+    }
+  }
+  pcAdv_->CreateMFDstiffnessMatrices(rel_perm_times_enthalpy.ptr());
+  
   // update ewc Precons if needed
   sub_ewc_->UpdatePreconditioner(t, up, h);
   surf_ewc_->UpdatePreconditioner(t, up, h);

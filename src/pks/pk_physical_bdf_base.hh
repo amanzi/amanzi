@@ -43,11 +43,6 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
 
-  // new virtual set_states() to also get the primary field evaulator.
-  virtual void set_states(const Teuchos::RCP<const State>& S,
-          const Teuchos::RCP<State>& S_inter,
-          const Teuchos::RCP<State>& S_next);
-
   // -- Experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in
   //    state.

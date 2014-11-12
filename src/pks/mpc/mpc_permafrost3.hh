@@ -98,6 +98,11 @@ class MPCPermafrost3 : public StrongMPC<PKPhysicalBDFBase> {
   Teuchos::RCP<Operators::MatrixMFD_TPFA> pc_surf_flow_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> pc_surf_energy_;
 
+  // operator for advection in PC
+  Teuchos::RCP<Operators::MatrixMFD> pcAdv_;
+  Teuchos::RCP<const CompositeVector> adv_field_;
+  Teuchos::RCP<const CompositeVector> adv_flux_;
+
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWC> surf_ewc_;
   Teuchos::RCP<MPCDelegateEWC> sub_ewc_;

@@ -21,8 +21,8 @@ void AdvectionDiffusion::Functional(double t_old, double t_new, Teuchos::RCP<Tre
   S_next_->set_time(t_new);
 
   // pointer-copy temperature into states and update any auxilary data
-  solution_to_state(u_old, S_inter_);
-  solution_to_state(u_new, S_next_);
+  solution_to_state(*u_old, S_inter_);
+  solution_to_state(*u_new, S_next_);
 
   bc_temperature_->Compute(t_new);
   bc_flux_->Compute(t_new);
@@ -66,7 +66,7 @@ void AdvectionDiffusion::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, T
 // updates the preconditioner
 void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
   S_next_->set_time(t);
-  PKDefaultBase::solution_to_state(up, S_next_);
+  PKDefaultBase::solution_to_state(*up, S_next_);
 
   // div K_e grad u
   Teuchos::RCP<const CompositeVector> thermal_conductivity =

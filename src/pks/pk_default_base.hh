@@ -39,9 +39,9 @@ class PKDefaultBase : public PK {
                           const Teuchos::RCP<State>& S_next);
 
 
-  virtual void solution_to_state(const Teuchos::RCP<TreeVector>& soln,
+  virtual void solution_to_state(TreeVector& soln,
           const Teuchos::RCP<State>& S) = 0; // this is here to pass the buck virtually
-  virtual void solution_to_state(const Teuchos::RCP<const TreeVector>& soln,
+  virtual void solution_to_state(const TreeVector& soln,
           const Teuchos::RCP<State>& S);
 
 

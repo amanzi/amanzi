@@ -88,18 +88,21 @@ void MatrixMFD_Coupled::InitializeFromPList_() {
 
 
 void MatrixMFD_Coupled::SetSubBlocks(const Teuchos::RCP<MatrixMFD>& blockA,
-				     const Teuchos::RCP<MatrixMFD>& blockB) {
+        const Teuchos::RCP<MatrixMFD>& blockB) {
+
   blockA_ = blockA;
   blockB_ = blockB;
 
   // set up the space
-  Teuchos::RCP<const CompositeVectorSpace> spaceA = Teuchos::rcpFromRef(blockA->DomainMap());
-  Teuchos::RCP<const CompositeVectorSpace> spaceB = Teuchos::rcpFromRef(blockB->DomainMap());
-  Teuchos::RCP<const TreeVectorSpace> spaceA_TV = Teuchos::rcp(new TreeVectorSpace(spaceA));
-  Teuchos::RCP<const TreeVectorSpace> spaceB_TV = Teuchos::rcp(new TreeVectorSpace(spaceB));
-  space_ = Teuchos::rcp(new TreeVectorSpace());
-  space_->PushBack(spaceA_TV);
-  space_->PushBack(spaceB_TV);    
+  if (space_ == Teuchos::null) {
+    Teuchos::RCP<const CompositeVectorSpace> spaceA = Teuchos::rcpFromRef(blockA->DomainMap());
+    Teuchos::RCP<const CompositeVectorSpace> spaceB = Teuchos::rcpFromRef(blockB->DomainMap());
+    Teuchos::RCP<const TreeVectorSpace> spaceA_TV = Teuchos::rcp(new TreeVectorSpace(spaceA));
+    Teuchos::RCP<const TreeVectorSpace> spaceB_TV = Teuchos::rcp(new TreeVectorSpace(spaceB));
+    space_ = Teuchos::rcp(new TreeVectorSpace());
+    space_->PushBack(spaceA_TV);
+    space_->PushBack(spaceB_TV);    
+  }
 
   MarkLocalMatricesAsChanged_();
 }
@@ -190,7 +193,9 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
   // Backward Substitution, Yc = inv( A2c2c) [  (x_Ac,x_Bc)^T - A2c2f * Yf ]
   // Yc <-- A2c2f * Yf
   ierr |= blockA_->ApplyAcf(*YA,*YA,0.);
-  ierr |= blockB_->ApplyAcf(*YB,*YB,0.);
+  ierr |= adv_block_->ApplyAcf(*YA,*YB,0.);
+  ierr |= blockB_->ApplyAcf(*YB,*YB,1.);
+  //  ierr |= blockB_->ApplyAcf(*YB,*YB,0.);
   ASSERT(!ierr);
 
   // Yc -= (x_Ac,x_Bc)^T
@@ -215,6 +220,8 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
  ****************************************************************** */
 int MatrixMFD_Coupled::Apply(const TreeVector& X,
         TreeVector& Y) const {
+  ASSERT(0); // this is currently screwed up with the inclusion of advective terms
+
   Teuchos::RCP<const CompositeVector> XA = X.SubVector(0)->Data();
   Teuchos::RCP<const CompositeVector> XB = X.SubVector(1)->Data();
   Teuchos::RCP<CompositeVector> YA = Y.SubVector(0)->Data();
@@ -332,6 +339,9 @@ void MatrixMFD_Coupled::AssembleSchur_() const {
   std::vector<Epetra_SerialDenseVector>& Bfc = blockB_->Afc_cells();
   std::vector<Epetra_SerialDenseVector>& Bcf = blockB_->Acf_cells();
 
+  std::vector<double>& Gcc = adv_block_->Acc_cells();
+  std::vector<Epetra_SerialDenseVector>& Gcf = adv_block_->Acf_cells();
+  
   // workspace
   Teuchos::SerialDenseMatrix<int, double> cell_inv(2, 2);
   Epetra_SerialDenseMatrix values(2, 2);
@@ -364,12 +374,14 @@ void MatrixMFD_Coupled::AssembleSchur_() const {
     }
 
     // Invert the cell block
-    double det_cell = Acc[c] * Bcc[c] - (*Ccc_)[0][c] * (*Dcc_)[0][c] * scaling_ * scaling_;
+    double Dcc = (*Dcc_)[0][c]*scaling_ + Gcc[c];
+    double Ccc = (*Ccc_)[0][c]*scaling_;
+    double det_cell = Acc[c] * Bcc[c] - Ccc * Dcc;
     if (std::abs(det_cell) > 1.e-30) {
-      cell_inv(0, 0) = Bcc[c]/det_cell;
-      cell_inv(1, 1) = Acc[c]/det_cell;
-      cell_inv(0, 1) = -(*Ccc_)[0][c] * scaling_ / det_cell;
-      cell_inv(1, 0) = -(*Dcc_)[0][c] * scaling_ / det_cell;
+      cell_inv(0, 0) = Bcc[c] / det_cell;
+      cell_inv(1, 1) = Acc[c] / det_cell;
+      cell_inv(0, 1) = -Ccc / det_cell;
+      cell_inv(1, 0) = -Dcc / det_cell;
     } else {
       std::cout << "MatrixMFD_Coupled: Division by zero: determinant of the cell block is zero" << std::endl;
       //      ASSERT(0);
@@ -383,10 +395,10 @@ void MatrixMFD_Coupled::AssembleSchur_() const {
       ASSERT(!ierr);
 
       for (int j=0; j!=nfaces; ++j){
-        values(0,0) = Aff[c](i, j) - Afc[c](i)*cell_inv(0, 0)*Acf[c](j);
-        values(0,1) = - Afc[c](i)*cell_inv(0, 1)*Bcf[c](j);
-        values(1,0) = - Bfc[c](i)*cell_inv(1, 0)*Acf[c](j);
-        values(1,1) = Bff[c](i, j) - Bfc[c](i)*cell_inv(1, 1)*Bcf[c](j);
+        values(0,0) = Aff[c](i, j) - Afc[c](i) * (cell_inv(0,0)*Acf[c](j) + cell_inv(0,1)*Gcf[c](j));
+        values(0,1) = - Afc[c](i)*cell_inv(0,1)*Bcf[c](j);
+        values(1,0) = - Bfc[c](i) * (cell_inv(1,0)*Acf[c](j) + cell_inv(1,1)*Gcf[c](j));
+        values(1,1) = Bff[c](i, j) - Bfc[c](i)*cell_inv(1,1)*Bcf[c](j);
         ierr = P2f2f_->SubmitBlockEntry(values.A(), values.LDA(),
                 values.M(), values.N());
         ASSERT(!ierr);

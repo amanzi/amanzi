@@ -55,8 +55,8 @@ public:
 
   // transfer operators
   virtual void state_to_solution(const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<TreeVector>& soln);
-  virtual void solution_to_state(const Teuchos::RCP<TreeVector>& soln,
+          TreeVector& soln);
+  virtual void solution_to_state(TreeVector& soln,
           const Teuchos::RCP<State>& S);
 
   // -- loops over sub-PKs
@@ -163,14 +163,14 @@ void MPC<PK_t>::initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 template <class PK_t>
 void MPC<PK_t>::state_to_solution(const Teuchos::RCP<State>& S,
-                            const Teuchos::RCP<TreeVector>& soln) {
+                            TreeVector& soln) {
   for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
-    Teuchos::RCP<TreeVector> pk_soln = soln->SubVector(i);
+    Teuchos::RCP<TreeVector> pk_soln = soln.SubVector(i);
     if (pk_soln == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
-    sub_pks_[i]->state_to_solution(S, pk_soln);
+    sub_pks_[i]->state_to_solution(S, *pk_soln);
   }
 };
 
@@ -179,15 +179,15 @@ void MPC<PK_t>::state_to_solution(const Teuchos::RCP<State>& S,
 // loop over sub-PKs, calling their solution_to_state method
 // -----------------------------------------------------------------------------
 template <class PK_t>
-void MPC<PK_t>::solution_to_state(const Teuchos::RCP<TreeVector>& soln,
+void MPC<PK_t>::solution_to_state(TreeVector& soln,
                             const Teuchos::RCP<State>& S) {
   for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
-    Teuchos::RCP<TreeVector> pk_soln = soln->SubVector(i);
+    Teuchos::RCP<TreeVector> pk_soln = soln.SubVector(i);
     if (pk_soln == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
-    sub_pks_[i]->solution_to_state(pk_soln, S);
+    sub_pks_[i]->solution_to_state(*pk_soln, S);
   }
 };
 
