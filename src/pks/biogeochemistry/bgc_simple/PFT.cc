@@ -85,6 +85,12 @@ void PFT::Init(Teuchos::ParameterList& plist,double col_area)
   Init(col_area);
   // ex
   // rootlongevity = plist.get<double>("root longevity", 4.0);
+  //note default vals below are those of sedge
+       maxRootD = plist.get<double>("max root depth", 0.5);
+       Vcmax25 = plist.get<double>("Vcmax25", 100.);
+       Emax25 = plist.get<double>("Emax25", 10.);
+       SLA = plist.get<double>("SLA", 16);
+
 }
 
 
