@@ -20,14 +20,24 @@ class Step(object):
         self.filename = filename
         self.full_filename = os.path.join(dirname, filename)
         self.new_filename = os.path.join(dirname, "combined_"+filename)
-        self._tree = self._loadTree()
-        self._grid = self._tree.getroot().find("Domain").find("Grid")
+
+        self._tree = None
+        self._grid = None
+        try:
+            self._tree = self._loadTree()
+        except:
+            pass
+        else:
+            self._grid = self._tree.getroot().find("Domain").find("Grid")
 
     def _loadTree(self):
         return etree.parse(self.full_filename)
 
     def time(self):
-        return self._grid.find("Time").get("Value")
+        if self._grid is not None:
+            return self._grid.find("Time").get("Value")
+        else:
+            return None
 
     def fixItem(self, item):
         di = item.find("DataItem")
@@ -37,11 +47,13 @@ class Step(object):
             di.text = di.text.replace(meshname, new_meshname)
 
     def fixStep(self):
-        for child in self._grid:
-            self.fixItem(child)
+        if self._grid is not None:
+            for child in self._grid:
+                self.fixItem(child)
 
     def write(self):
-        self._tree.write(self.new_filename)
+        if self._tree is not None:
+            self._tree.write(self.new_filename)
 
 class CombinedDirectory(object):
     def __init__(self, dirname, filename):
@@ -70,7 +82,7 @@ class CombinedDirectory(object):
 
     def clean(self, time, eps=1.e-16):
         epstime = time - eps
-        while float(self._steps[-1].time()) >= epstime:
+        while self._steps[-1].time() is not None and float(self._steps[-1].time()) >= epstime:
             self._grid.remove(self._grid.getchildren()[-1])
             self._steps.pop()
 
