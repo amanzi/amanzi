@@ -37,7 +37,7 @@ void Richards::Functional(double t_old,
   ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
   // pointer-copy temperature into state and update any auxilary data
-  solution_to_state(u_new, S_next_);
+  solution_to_state(*u_new, S_next_);
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
   if (dynamic_mesh_) matrix_->CreateMFDmassMatrices(K_.ptr());
@@ -168,7 +168,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
-  PKDefaultBase::solution_to_state(up, S_next_);
+  PKDefaultBase::solution_to_state(*up, S_next_);
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
@@ -201,7 +201,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
     min_kr_struct.value = min_kr;
     min_kr_struct.gid = kr.Map().GID(min_kr_lid);
 
-    MPI_Allreduce(&min_kr, &global_min_kr, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
+    MPI_Allreduce(&global_min_kr, &min_kr, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
 #else
     ENorm_t global_min_kr;
     global_min_kr.value = min_kr;
@@ -316,7 +316,7 @@ double Richards::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     for (unsigned int f=0; f!=nfaces; ++f) {
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
-      double tmp = std::abs(h*res_f[0][f])  / (atol_ * .5*.5*55000.*cv[0][cells[0]] + rtol_*std::abs(wc[0][cells[0]]));
+      double tmp = flux_tol_ * std::abs(h*res_f[0][f])  / (atol_ * .5*.5*55000.*cv[0][cells[0]] + rtol_*std::abs(wc[0][cells[0]]));
       if (tmp > enorm_face) {
         enorm_face = tmp;
         bad_face = f;

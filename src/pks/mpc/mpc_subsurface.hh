@@ -64,6 +64,11 @@ class MPCSubsurface : public MPCCoupledCells {
   // preconditioner methods
   PreconditionerType precon_type_;
 
+  // operator for advection in PC
+  Teuchos::RCP<Operators::MatrixMFD> pcAdv_;
+  Teuchos::RCP<const CompositeVector> adv_field_;
+  Teuchos::RCP<const CompositeVector> adv_flux_;
+
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWCSubsurface> ewc_;
 

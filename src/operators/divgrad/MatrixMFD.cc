@@ -51,6 +51,22 @@ MatrixMFD::MatrixMFD(const MatrixMFD& other) :
 
 
 /* ******************************************************************
+ * operator= copies local matrices
+ ****************************************************************** */
+MatrixMFD&
+MatrixMFD::operator=(const MatrixMFD& other) {
+  if (this != &other) {
+    Mff_cells_ = other.Mff_cells_;
+    Aff_cells_ = other.Aff_cells_;
+    Acf_cells_ = other.Acf_cells_;
+    Afc_cells_ = other.Afc_cells_;
+    Ff_cells_ = other.Ff_cells_;
+    Fc_cells_ = other.Fc_cells_;
+  }
+}
+
+
+/* ******************************************************************
  * Initialization of method, solver, etc.
  ****************************************************************** */
 void MatrixMFD::InitializeFromPList_() {

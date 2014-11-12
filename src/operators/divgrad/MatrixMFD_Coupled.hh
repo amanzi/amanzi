@@ -69,7 +69,11 @@ class MatrixMFD_Coupled : public TreeMatrix {
   void InitializeFromPList_();
 
   virtual void SetSubBlocks(const Teuchos::RCP<MatrixMFD>& blockA,
-                    const Teuchos::RCP<MatrixMFD>& blockB);
+                            const Teuchos::RCP<MatrixMFD>& blockB);
+
+  virtual void SetAdvectiveBlock(const Teuchos::RCP<MatrixMFD>& adv_block) {
+    adv_block_ = adv_block;
+  }
 
   virtual void SetOffDiagonals(const Teuchos::RCP<const Epetra_MultiVector>& Ccc,
                        const Teuchos::RCP<const Epetra_MultiVector>& Dcc,
@@ -135,6 +139,7 @@ class MatrixMFD_Coupled : public TreeMatrix {
   // sub-blocks
   Teuchos::RCP<MatrixMFD> blockA_;
   Teuchos::RCP<MatrixMFD> blockB_;
+  Teuchos::RCP<MatrixMFD> adv_block_;
 
   // off diagonal blocks
   Teuchos::RCP<const Epetra_MultiVector> Ccc_;

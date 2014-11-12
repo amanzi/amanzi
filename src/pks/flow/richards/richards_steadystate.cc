@@ -28,7 +28,7 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
     *vo_->os() << "Precon update at t = " << t << std::endl;
   }
 
-  PKDefaultBase::solution_to_state(up, S_next_);
+  PKDefaultBase::solution_to_state(*up, S_next_);
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
@@ -144,7 +144,7 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
   ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
   // pointer-copy temperature into state and update any auxilary data
-  solution_to_state(u_new, S_next_);
+  solution_to_state(*u_new, S_next_);
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
   if (dynamic_mesh_) matrix_->CreateMFDmassMatrices(K_.ptr());

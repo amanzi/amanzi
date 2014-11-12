@@ -17,7 +17,8 @@ OverlandHeadWaterContentEvaluator::OverlandHeadWaterContentEvaluator(Teuchos::Pa
     SecondaryVariableFieldEvaluator(plist) {
   M_ = plist_.get<double>("molar mass", 0.0180153);
   bar_ = plist_.get<bool>("water content bar", false);
-
+  rollover_ = plist_.get<double>("water content rollover", 0.);
+  
   my_key_ = "surface_water_content";
   if (bar_) my_key_ += std::string("_bar");
   my_key_ = plist_.get<std::string>("water content key", my_key_);
@@ -34,7 +35,9 @@ OverlandHeadWaterContentEvaluator::OverlandHeadWaterContentEvaluator(const Overl
     SecondaryVariableFieldEvaluator(other),
     pres_key_(other.pres_key_),
     M_(other.M_),
-    bar_(other.bar_) {}
+    bar_(other.bar_),
+    rollover_(other.rollover_)
+{}
 
 
 Teuchos::RCP<FieldEvaluator>
@@ -60,6 +63,15 @@ void OverlandHeadWaterContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>
   if (bar_) {
     for (int c=0; c!=ncells; ++c) {
       res[0][c] = cv[0][c] * (pres[0][c] - p_atm) / (gz * M_);
+    }
+  } else if (rollover_ > 0.) {
+    for (int c=0; c!=ncells; ++c) {
+      double dp = pres[0][c] - p_atm;
+      double dp_eff = dp < 0. ? 0. :
+          dp < rollover_ ?
+            dp*dp/(2*rollover_) :
+            dp - rollover_/2.;
+      res[0][c] = cv[0][c] * dp_eff / (gz * M_);
     }
   } else {
     for (int c=0; c!=ncells; ++c) {
@@ -88,6 +100,13 @@ void OverlandHeadWaterContentEvaluator::EvaluateFieldPartialDerivative_(const Te
   if (bar_) {
     for (int c=0; c!=ncells; ++c) {
       res[0][c] = cv[0][c] / (gz * M_);
+    }
+  } else if (rollover_ > 0.) {
+    for (int c=0; c!=ncells; ++c) {
+      double dp = pres[0][c] - p_atm;
+      double ddp_eff = dp < 0. ? 0. :
+          dp < rollover_ ? dp/rollover_ : 1.;
+      res[0][c] = cv[0][c] * ddp_eff / (gz * M_);
     }
   } else {
     for (int c=0; c!=ncells; ++c) {
