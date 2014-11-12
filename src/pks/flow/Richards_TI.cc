@@ -37,8 +37,12 @@ void Richards_PK::Functional(double Told, double Tnew,
   // update coefficients
   darcy_flux_copy->ScatterMasterToGhosted("face");
   rel_perm_->Compute(*u_new); 
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), "k_relative");
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), "dkdpc");
+
+  RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+
+  RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
   UpdateSourceBoundaryData(Tp, *u_new);
   
   // assemble residual for diffusion operator
@@ -102,23 +106,11 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
   darcy_flux_copy->ScatterMasterToGhosted("face");
   rel_perm_->Compute(*u);
 
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(),"k_relative");
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), "dkdpc");
+  RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
 
-  // Epetra_MultiVector& dk_face = *rel_perm_->dKdP()->ViewComponent("face");
-  // std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_->WRM();
-  // const Epetra_IntVector& map_c2mb = rel_perm_->map_c2mb();
-  // for (int f = 0; f < nfaces_wghost; f++) {
-  //   if (bc_model[f] == Operators::OPERATOR_BC_FACE_NEUMANN && bc_value[f] < 0.0) {
-  //     int c = BoundaryFaceGetCell(f);
-  //     double face_val = op_matrix_ -> DeriveBoundaryFaceValue(f, *solution, WRM[map_c2mb[c]]);
-  //     dk_face[0][f] = -WRM[map_c2mb[c]]->dKdPc (atm_pressure_ - face_val);
-  //   }
-  //   else if (bc_model[f] == Operators::OPERATOR_BC_FACE_DIRICHLET){
-  //     int c = BoundaryFaceGetCell(f);
-  //     dk_face[0][f] = -WRM[map_c2mb[c]]->dKdPc (atm_pressure_ - bc_value[f]);
-  //   }
-  // }
+  RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
 
   UpdateSourceBoundaryData(Tp, *u);
 

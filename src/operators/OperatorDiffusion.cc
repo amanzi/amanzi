@@ -224,7 +224,7 @@ void OperatorDiffusion::UpdateMatricesNodal_()
     int method = mfd_primary_;
     int ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
-    if (method == WhetStone::DIFFUSION_POLYHEDRA_MONOTONE) {
+    if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY) {
       ok = mfd.StiffnessMatrixMMatrix(c, (*K_)[c], Acell);
       method = mfd_secondary_;
     } else {
@@ -883,13 +883,13 @@ void OperatorDiffusion::CreateMassMatrices_()
       if (method == WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE) {
         ok = mfd.MassMatrixInverseMMatrixHex(c, Kc, Wff);
         method = mfd_secondary_;
-      } else if (method == WhetStone::DIFFUSION_POLYHEDRA_MONOTONE) {
+      } else if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY) {
         ok = mfd.MassMatrixInverseMMatrix(c, Kc, Wff);
         method = mfd_secondary_;
       }
 
       if (ok != WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) {
-        if (method == WhetStone::DIFFUSION_OPTIMIZED_SCALED) {
+        if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY) {
           ok = mfd.MassMatrixInverseOptimizedScaled(c, Kc, Wff);
         } else if(method == WhetStone::DIFFUSION_TPFA) {
           ok = mfd.MassMatrixInverseTPFA(c, Kc, Wff);
@@ -981,11 +981,11 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   if (primary == "mfd: monotone for hex") {
     mfd_primary_ = WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE;
   } else if (primary == "mfd: optimized for monotonicity") {
-    mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_MONOTONE;
+    mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY;
   } else if (primary == "mfd: two point flux approximation") {
     mfd_primary_ = WhetStone::DIFFUSION_TPFA;
   } else if (primary == "mfd: optimized for sparsity") {
-    mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_SCALED;
+    mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
   } else if (primary == "mfd: support operator") {
     mfd_primary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
   } else if (primary == "mfd: default") {
@@ -1001,7 +1001,7 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   if (secondary == "mfd: two point flux approximation") {
     mfd_secondary_ = WhetStone::DIFFUSION_TPFA;
   } else if (secondary == "mfd: optimized for sparsity") {
-    mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_SCALED;
+    mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
   } else if (secondary == "mfd: support operator") {
     mfd_secondary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
   } else if (primary == "mfd: default") {

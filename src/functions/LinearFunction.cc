@@ -3,16 +3,16 @@
 
 namespace Amanzi {
 
-LinearFunction::LinearFunction (double y0, const std::vector<double> &grad, const std::vector<double> &x0)
+LinearFunction::LinearFunction(double y0, const std::vector<double> &grad, const std::vector<double> &x0)
 {
   if (grad.size() < 1) {
     Errors::Message m;
-    m << "at least one value required for the gradient vector";
+    m << "At least one value required for the gradient vector";
     Exceptions::amanzi_throw(m);
   }
   if (x0.size() != grad.size()) {
     Errors::Message m;
-    m << "wrong number of values for the x0 vector";
+    m << "Mismatch of gradient and point dimensions.";
     Exceptions::amanzi_throw(m);
   }
   y0_ = y0;
@@ -20,7 +20,7 @@ LinearFunction::LinearFunction (double y0, const std::vector<double> &grad, cons
   x0_ = x0;
 }
 
-LinearFunction::LinearFunction (double y0, const std::vector<double> &grad)
+LinearFunction::LinearFunction(double y0, const std::vector<double> &grad)
 {
   if (grad.size() < 1) {
     Errors::Message m;
@@ -44,4 +44,4 @@ double LinearFunction::operator()(const std::vector<double>& x) const
   return y;
 }
 
-} // namespace Amanzi
+}  // namespace Amanzi

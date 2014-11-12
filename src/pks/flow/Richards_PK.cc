@@ -256,7 +256,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (name == "upwind: darcy velocity" || name == "upwind: gravity") {
     oplist_matrix.set<std::string>("upwind", "with flux");
     oplist_pc.set<std::string>("upwind", "with flux");
-  } else if (name == "upwind amanzi") {
+  } else if (name == "upwind: amanzi") {
     oplist_matrix.set<std::string>("upwind", "amanzi");
     oplist_pc.set<std::string>("upwind", "amanzi");
   }
@@ -521,8 +521,11 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     UpdateSourceBoundaryData(Tp, *solution);
     rel_perm_->Compute(pressure);
 
-    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), "k_relative");
-    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), "dkdpc");
+    RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
+    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+
+    RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
+    upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
 
     if (ti_specs.inflow_krel_correction) {
       Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face", true);
