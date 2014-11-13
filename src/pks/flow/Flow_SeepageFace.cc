@@ -36,9 +36,6 @@ bool Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
   double ref_pressure = bc_seepage->reference_pressure();
   double tol = ref_pressure * 1e-14;
 
-  *nseepage = 0;
-  *area_seepage = 0.0;
-
   bool flag(true);
   Functions::FlowBoundaryFunction::Iterator bc;
   for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
@@ -58,8 +55,6 @@ bool Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
         } else {
           bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
           bc_value[f] = ref_pressure;
-          (*nseepage)++;
-          (*area_seepage) += mesh_->face_area(f);
         }
       }
       if (flux[0][f] < 0.0) {
@@ -70,6 +65,19 @@ bool Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
       flag = false;
     }
   }
+
+  // calculate area of the seepage face
+  *nseepage = 0;
+  *area_seepage = 0.0;
+
+  for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
+    int f = bc->first;
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      (*nseepage)++;
+      (*area_seepage) += mesh_->face_area(f);
+    }
+  }
+
   return flag;
 }
 

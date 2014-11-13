@@ -64,7 +64,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           }
         }
       }
-      // discretization method must be two point flux approximation for if newton is used
+      // discretization method must be two-point flux approximation for if newton is used
       if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
         disc_method = std::string("FV: Default");
 	update_upwind = std::string("every nonlinear iteration");	

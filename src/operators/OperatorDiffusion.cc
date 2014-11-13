@@ -973,7 +973,7 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   if (primary == "fv: default") {
     schema_base_ = OPERATOR_SCHEMA_BASE_FACE;
   }
-  if (primary == "mfd: two point flux approximation" && schema_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
+  if (primary == "mfd: two-point flux approximation" && schema_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
     schema_base_ = OPERATOR_SCHEMA_BASE_FACE;
   }
 
@@ -982,7 +982,7 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
     mfd_primary_ = WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE;
   } else if (primary == "mfd: optimized for monotonicity") {
     mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY;
-  } else if (primary == "mfd: two point flux approximation") {
+  } else if (primary == "mfd: two-point flux approximation") {
     mfd_primary_ = WhetStone::DIFFUSION_TPFA;
   } else if (primary == "mfd: optimized for sparsity") {
     mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
@@ -998,7 +998,7 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   }
 
   // Secondary discretization methods
-  if (secondary == "mfd: two point flux approximation") {
+  if (secondary == "mfd: two-point flux approximation") {
     mfd_secondary_ = WhetStone::DIFFUSION_TPFA;
   } else if (secondary == "mfd: optimized for sparsity") {
     mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
