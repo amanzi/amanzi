@@ -92,7 +92,7 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
       std::string pft_name = pft_names[i];
       Teuchos::ParameterList& pft_plist = pft_params.sublist(pft_name);
       pfts_old_[col][i] = Teuchos::rcp(new PFT(pft_name, ncol_cells));
-      pfts_old_[col][i]->Init(pft_plist);
+      pfts_old_[col][i]->Init(pft_plist,col_area);
       pfts_[col][i] = Teuchos::rcp(new PFT(*pfts_old_[col][i]));
     }
   }
