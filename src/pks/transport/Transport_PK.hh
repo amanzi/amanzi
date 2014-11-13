@@ -176,7 +176,6 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   // I/O methods
   void ProcessParameterList();
   void ProcessStringDispersionModel(const std::string name, int* model);
-  void ProcessStringDispersionMethod(const std::string name, int* method);
   void ProcessStringAdvectionLimiter(const std::string name, int* method);
 
   // miscaleneous methods
