@@ -802,7 +802,7 @@ void Matrix_TPFA::ComputeTransmissibilities_(const Teuchos::Ptr<std::vector<Whet
 
   WhetStone::Tensor Kc;
   if (K == Teuchos::null) {
-    Kc.init(mesh_->space_dimension(), 1);
+    Kc.Init(mesh_->space_dimension(), 1);
     Kc(0,0) = 1.0;
   }
 

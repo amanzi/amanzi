@@ -63,6 +63,7 @@ MatrixMFD::operator=(const MatrixMFD& other) {
     Ff_cells_ = other.Ff_cells_;
     Fc_cells_ = other.Fc_cells_;
   }
+  return *this;
 }
 
 
@@ -152,7 +153,7 @@ void MatrixMFD::CreateMFDmassMatrices(
 
   WhetStone::Tensor Kc;
   if (K == Teuchos::null) {
-    Kc.init(mesh_->space_dimension(), 1);
+    Kc.Init(mesh_->space_dimension(), 1);
     Kc(0,0) = 1.0;
   }
 
