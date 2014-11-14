@@ -14,9 +14,9 @@ energy/water-content space instead of temperature/pressure space.
 #define EWC_SATURATION 1
 #define EWC_INCREASING_PRESSURE 1
 
-#define EWC_PC_THAWING 1
-#define EWC_PC_SATURATION 1
-#define EWC_PC_INCREASING_PRESSURE 1
+#define EWC_PC_THAWING 0
+#define EWC_PC_SATURATION 0
+#define EWC_PC_INCREASING_PRESSURE 0
 
 #include "ewc_model.hh"
 #include "FieldEvaluator.hh"

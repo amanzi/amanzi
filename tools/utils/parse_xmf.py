@@ -29,14 +29,21 @@ def get_times(directory='.', base='visdump_data.h5'):
     parser = ETreeParser(directory, base)
     return [parser.getTime(key) for key in keys]
 
-def readATS(directory='.', base='visdump_data.h5'):
+def readATS(directory='.', base='visdump_data.h5', inds=None):
     import h5py
     dat = h5py.File(os.path.join(directory,base),'r')
     keys = dat[dat.keys()[0]].keys()
     keys.sort(lambda a,b: int.__cmp__(int(a),int(b)))
+    print len(keys)
     parser = ETreeParser(directory,base)
-    times = [parser.getTime(key) for key in keys]
-    return keys, times, dat
+
+    if inds is None:
+        times = [parser.getTime(key) for key in keys]
+        return keys, times, dat
+    else:
+        times = [parser.getTime(keys[ind]) for ind in inds]
+        keys = [keys[ind] for ind in inds]
+        return keys, times, dat
 
 def getSurfaceData(keys, dat, name):
     return np.array([dat[name][key][0] for key in keys])
