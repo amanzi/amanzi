@@ -576,9 +576,13 @@ AmanziGeometry::Point Mesh::face_centroid (const Entity_ID faceid, const bool re
 // the cell on one side of the face is just the negative of the normal
 // with respect to the cell on the other side. In general surfaces meshes,
 // this will not be true at C1 discontinuities
+//
+// if cellid is specified, then orientation returns the direction of
+// the natural normal of the face with respect to the cell (1 is
+// pointing out of the cell and -1 pointing in)
 
 
-AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool recompute, const Entity_ID cellid) const {
+AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool recompute, const Entity_ID cellid, int *orientation) const {
 
   AmanziGeometry::Point normal0(spacedim);
   AmanziGeometry::Point normal1(spacedim);
@@ -608,6 +612,9 @@ AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool reco
     // to their respective cells, we can return normal0 as is but have
     // to negate normal1.
 
+    if (orientation)
+      *orientation = 1;
+ 
     if (L22(normal0) != 0.0)
       return normal0;
     else {
@@ -633,6 +640,7 @@ AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool reco
 
     ASSERT(found);
 
+    *orientation = dir;
     if (dir == 1) {
       ASSERT(L22(normal0) != 0.0);
       return normal0;              // Copy to output

@@ -67,9 +67,6 @@ void Transport_PK::ProcessParameterList()
       Exceptions::amanzi_throw(msg);  
     }
 
-    std::string method_name = dlist.get<std::string>("numerical method", "none");
-    // ProcessStringDispersionMethod(method_name, &dispersion_method);
-
     int nblocks = 0; 
     for (Teuchos::ParameterList::ConstIterator i = dlist.begin(); i != dlist.end(); i++) {
       if (dlist.isSublist(dlist.name(i))) nblocks++;
@@ -210,22 +207,6 @@ void Transport_PK::ProcessStringDispersionModel(const std::string name, int* mod
     *model = TRANSPORT_DISPERSIVITY_MODEL_LICHTNER;
   } else {
     *model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
-  }
-}
-
-
-/* ****************************************************************
-* Process string for the dispersion numerical approximation.
-**************************************************************** */
-void Transport_PK::ProcessStringDispersionMethod(const std::string name, int* method)
-{
-  Errors::Message msg;
-  if (name == "two point flux approximation") {
-    *method = TRANSPORT_DISPERSION_METHOD_TPFA;
-  } else if (name == "nonlinear finite volume") {
-    *method = TRANSPORT_DISPERSION_METHOD_NLFV;
-  } else {
-    *method = TRANSPORT_DISPERSION_METHOD_TPFA;
   }
 }
 

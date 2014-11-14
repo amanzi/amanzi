@@ -27,9 +27,12 @@ const int OPERATOR_SCHEMA_RULE_EXACT = 1;
 const int OPERATOR_SCHEMA_RULE_SUBSET = 2;
 
 const int OPERATOR_BC_NONE = 0;
-const int OPERATOR_BC_FACE_DIRICHLET = 1;
-const int OPERATOR_BC_FACE_NEUMANN = 2;
-const int OPERATOR_BC_FACE_MIXED = 4;
+const int OPERATOR_BC_DIRICHLET = 1;
+const int OPERATOR_BC_NEUMANN = 2;
+const int OPERATOR_BC_MIXED = 4;
+
+const int OPERATOR_BC_TYPE_NODE = 8;
+const int OPERATOR_BC_TYPE_FACE = 16;
 
 const int OPERATOR_HEX_FACES = 6;  // Hexahedron is the common element
 const int OPERATOR_HEX_NODES = 8;
@@ -50,6 +53,9 @@ const int OPERATOR_UPWIND_WITH_FLUX = 4;
 const int OPERATOR_ARITHMETIC_MEAN = 5;
 const int OPERATOR_UPWIND_AMANZI = 6;
 const double OPERATOR_UPWIND_RELATIVE_TOLERANCE = 1e-12;
+
+// reconstruction options
+const double OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION = 1e-15;
 
 }  // namespace Operators
 }  // namespace Amanzi

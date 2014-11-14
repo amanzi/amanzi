@@ -150,6 +150,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     }
 
+    double zc = mesh_->cell_centroid(c)[dim - 1];
     WhetStone::Tensor& Kc = (*K_)[c];
     AmanziGeometry::Point Kg(Kc * rho_g);
     for (int n = 0; n < nfaces; n++) {
@@ -169,8 +170,9 @@ void OperatorDiffusionWithGravity::UpdateFlux(
         if (upwind_ == OPERATOR_UPWIND_AMANZI) {
           double alpha = (*k_face)[0][f] - kc;
           if (alpha > 0) {
+            double zf = mesh_->face_centroid(f)[dim - 1];
             alpha *= Wff(n, n) * rho_ * norm(g_);
-            flux_data[0][f] -= alpha * (mesh_->face_centroid(f)[dim - 1] - mesh_->cell_centroid(c)[dim - 1]);
+            flux_data[0][f] -= alpha * (zf - zc);
           }
         }
 

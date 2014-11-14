@@ -1,4 +1,4 @@
-<amanzi_input version="2.0.0" type="unstructured">
+<amanzi_input version="2.1.0" type="unstructured">
 
   <model_description name="SR Test Problem">
 
@@ -82,10 +82,12 @@
 
   -->
   <numerical_controls>
-    <linear_solver>
-      <max_iterations>1000</max_iterations>
-      <tolerance>1.0e-16</tolerance>
-    </linear_solver>
+    <unstructured_controls>
+      <linear_solver>
+	<max_iterations>1000</max_iterations>
+	<tolerance>1.0e-16</tolerance>
+      </linear_solver>
+    </unstructured_controls>
   </numerical_controls>
   
   <!--
@@ -116,17 +118,17 @@
 
     <region name ="Zone_1">
       <comments>The left zone</comments>
-      <box  low_coordinates="-1202.0,-1202.0,0.0"  high_coordinates="-8.0,1202.0,1.0"/>
+      <box  low_coordinates="-1202.0,-1202.0,0.0"  high_coordinates="-10.0,1202.0,1.0"/>
     </region>
 
     <region name ="Zone_2">
       <comments>The strip</comments>
-      <box  low_coordinates="-8.0,-1202.0,0.0"  high_coordinates="8.0,1202.0,1.0"/>
+      <box  low_coordinates="-10.0,-1202.0,0.0"  high_coordinates="10.0,1202.0,1.0"/>
     </region>
 
     <region name ="Zone_3">
       <comments>The right zone</comments>
-      <box  low_coordinates="8.0,-1202.0,0.0"  high_coordinates="1202.0,1202.0,1.0"/>
+      <box  low_coordinates="10.0,-1202.0,0.0"  high_coordinates="1202.0,1202.0,1.0"/>
     </region>
 
     <region name ="Well">

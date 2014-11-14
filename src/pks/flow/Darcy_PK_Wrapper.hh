@@ -4,7 +4,6 @@
 
   Temporary wrapper converting the Darcy_PK, which inherits from 
   BDFFnBase<CompositeVector>, to use TreeVectors.
-
 */
 
 #ifndef AMANZI_DARCY_PK_WRAPPER_HH_
@@ -21,7 +20,6 @@ namespace Amanzi {
 namespace Flow {
 
 class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
-
  public:
   Darcy_PK_Wrapper(Teuchos::ParameterList& pk_tree,
                    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -29,7 +27,7 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
                    const Teuchos::RCP<TreeVector>& soln);
 
   // Setup
-  virtual void Setup() {}
+  virtual void Setup() {};
   
   // Initialize owned (dependent) variables.
   virtual void Initialize() {
@@ -125,10 +123,9 @@ class Darcy_PK_Wrapper : public FnTimeIntegratorPK {
  private:
   // factory registration
   static RegisteredPKFactory<Darcy_PK_Wrapper> reg_;
-    
 };
 
-} // namespace
-} // namespace
+}  // namespace Flow
+}  // namespace Amanzi
 
 #endif

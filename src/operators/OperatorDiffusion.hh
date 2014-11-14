@@ -20,7 +20,8 @@
 
 #include "Operator.hh"
 #include "OperatorTypeDefs.hh"
-#include "../pks/flow/WaterRetentionModel.hh"
+#include "OperatorDefs.hh"
+
 
 namespace Amanzi {
 namespace Operators {
@@ -45,7 +46,9 @@ class OperatorDiffusion : public Operator {
 
   virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
-  virtual double DeriveBoundaryFaceValue(int f, const CompositeVector& u, Teuchos::RCP<Flow::WaterRetentionModel>);
+
+  template <class WRM> 
+  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const WRM&);
 
   // re-implementation of basic operator virtual members
   void AssembleMatrix(int schema);
@@ -95,6 +98,33 @@ class OperatorDiffusion : public Operator {
   int nfailed_primary_;
   bool scalar_rho_mu_;
 };
+
+
+/* ******************************************************************
+* TBW
+****************************************************************** */
+template <class WRM> 
+double OperatorDiffusion::DeriveBoundaryFaceValue(
+    int f, const CompositeVector& u, const WRM&) 
+{
+  if (u.HasComponent("face")) {
+    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
+    return u_face[f][0];
+  } else {
+    const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+    const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
+
+    if (bc_model[f] == OPERATOR_BC_DIRICHLET){
+      return bc_value[f];
+    } else {
+      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+      return u_cell[0][c];
+    }
+  }
+}
 
 }  // namespace Operators
 }  // namespace Amanzi

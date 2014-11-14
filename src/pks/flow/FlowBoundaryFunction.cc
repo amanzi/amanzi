@@ -134,7 +134,7 @@ void FlowBoundaryFunction::ComputeShift(double time, double* shift)
 
 
 /* ****************************************************************
-* 
+* Allocates data for mesh function by touching them.
 **************************************************************** */
 void FlowBoundaryFunction::Finalize() {
   finalized_ = true;
@@ -150,6 +150,9 @@ void FlowBoundaryFunction::Finalize() {
       value_[*id];
     };
   }
+
+  int my_size = size();
+  mesh_->get_comm()->SumAll(&my_size, &global_size_, 1);
 
   //TODO: Verify that the faces in this_domain are all boundary faces.
 }

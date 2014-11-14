@@ -35,7 +35,7 @@ Tensor::Tensor(const Tensor& T)
 
   if (d && rank) {
     data_ = NULL;
-    int mem = init(d, rank);
+    int mem = Init(d, rank);
     for (int i = 0; i < mem; i++) data_[i] = data[i];
   } else {
     d_ = rank_ = size_ = 0;
@@ -64,7 +64,7 @@ Tensor::Tensor(int d, int rank, const double* data)
 /* ******************************************************************
 * Initialization of a tensor of rank 1, 2 or 4. 
 ****************************************************************** */
-int Tensor::init(int d, int rank)
+int Tensor::Init(int d, int rank)
 {
   size_ = WHETSTONE_TENSOR_SIZE[d - 1][rank - 1];
   int mem = size_ * size_;
@@ -296,7 +296,7 @@ Tensor& Tensor::operator=(const Tensor& T)
   int rank = T.rank();
   double* data = T.data();
 
-  int mem = init(d, rank);
+  int mem = Init(d, rank);
   for (int i = 0; i < mem; i++) data_[i] = data[i];
   return *this;
 }
@@ -350,23 +350,23 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
     b0 = T2(1, 1);
     c0 = T2(0, 1);
 
-    T3.init(d, rank2);
+    T3.Init(d, rank2);
     T3(0, 0) = T1(0, 0) * a0 + T1(0, 1) * b0 + T1(0, 2) * c0;
     T3(1, 1) = T1(1, 0) * a0 + T1(1, 1) * b0 + T1(1, 2) * c0;
     T3(1, 0) = T3(0, 1) = T1(2, 0) * a0 + T1(2, 1) * b0 + T1(2, 2) * c0;
 
   } else if (rank1 == 1) {
-    int mem = T3.init(d, rank2);
+    int mem = T3.Init(d, rank2);
     double *data3 = T3.data();
     for (int i = 0; i < mem; i++) data3[i] = data2[i] * data1[0];
 
   } else if (rank2 == 1) {
-    int mem = T3.init(d, rank1);
+    int mem = T3.Init(d, rank1);
     double *data3 = T3.data();
     for (int i = 0; i < mem; i++) data3[i] = data1[i] * data2[0];
 
   } else if (rank2 == 2) {
-    T3.init(d, 2);
+    T3.Init(d, 2);
     for (int i = 0; i < d; i++) {
       for (int j = 0; j < d; j++) {
         double& entry = T3(i, j);
@@ -382,7 +382,7 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
 /* ******************************************************************
 * Miscaleneous routines: populate tensors of rank 2
 ****************************************************************** */
-int Tensor::AddColumn(const int column, const AmanziGeometry::Point& p)
+int Tensor::SetColumn(int column, const AmanziGeometry::Point& p)
 {
   if (rank_ == 2) {
     for (int i = 0; i < d_; i++) (*this)(i, column) = p[i];
@@ -392,7 +392,7 @@ int Tensor::AddColumn(const int column, const AmanziGeometry::Point& p)
 }
 
 
-int Tensor::AddRow(const int row, const AmanziGeometry::Point& p)
+int Tensor::SetRow(int row, const AmanziGeometry::Point& p)
 {
   if (rank_ == 2) {
     for (int i = 0; i < d_; i++) (*this)(row, i) = p[i];

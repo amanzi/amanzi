@@ -138,7 +138,7 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
   // create boundary data
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
   std::vector<double> bc_value(nfaces_wghost);
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(bc_model, bc_value));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value));
 
   // create solution map.
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());

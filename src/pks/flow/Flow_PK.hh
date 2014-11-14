@@ -72,6 +72,8 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   // boundary and source teerms
   void ProcessBCs();
   void ComputeBCs(const CompositeVector& pressure);
+  bool SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage);
+  bool SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_seepage);
 
   void AddSourceTerms(CompositeVector& rhs);
 
@@ -101,7 +103,8 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 
   // utilities
-  double WaterVolumeChangePerSecond(std::vector<int>& bc_model, Epetra_MultiVector& darcy_flux);
+  double WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
+                                    const Epetra_MultiVector& darcy_flux) const;
 
   void CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz, 
                               std::vector<AmanziGeometry::Point>& velocity);
@@ -113,11 +116,14 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
 
   // V&V
   void VV_ValidateBCs() const;
+  void VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const;
+  void VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const;
   void VV_PrintHeadExtrema(const CompositeVector& pressure) const;
 
   // extensions 
-  int BoundaryFaceGetCell(int f);  // of AmanziMesh
-  virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
+  int BoundaryFaceGetCell(int f) const;  // of AmanziMesh
+  void VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2);
+  virtual double BoundaryFaceValue(int f, const CompositeVector& u);
 
   void set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1,  // of std
                         const std::vector<AmanziMesh::Entity_ID>& v2, 
@@ -156,6 +162,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   double g_, rho_, mu_, atm_pressure_;
 
   Teuchos::RCP<Epetra_Vector> Kxy;
+  std::string coordinate_system;
 
   // boundary conditons
   Functions::FlowBoundaryFunction* bc_pressure; 
@@ -165,14 +172,15 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   int nseepage_prev;
 
   std::vector<int> bc_model, bc_submodel; 
-  std::vector<double> bc_value, bc_coef;
+  std::vector<double> bc_value, bc_mixed;
 
   std::vector<double> rainfall_factor;
   Teuchos::RCP<Epetra_Vector> shift_water_table_;
 
-  // source and sink terms
+  // water balance
   Functions::FlowDomainFunction* src_sink;
   int src_sink_distribution; 
+  mutable double mass_bc, seepage_mass_;
 
   // time integration phases
   TI_Specs ti_specs_igs_;

@@ -7,7 +7,6 @@
 
 */
 
-
 #include "Richards_PK.hh"
 #include "Richards_PK_Wrapper.hh"
 
@@ -29,8 +28,11 @@ Richards_PK_Wrapper::Richards_PK_Wrapper(Teuchos::ParameterList& pk_tree,
   pk_ = Teuchos::rcp(new Richards_PK(*glist_, S_));
 }
 
-bool
-Richards_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
+
+/* ******************************************************************
+* Wrapper for new MPC policy.
+****************************************************************** */
+bool Richards_PK_Wrapper::AdvanceStep(double t_old, double t_new) {
   bool failed = false;
   double dt = t_new - t_old;
   double dt_actual(dt);

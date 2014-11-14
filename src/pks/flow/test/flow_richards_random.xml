@@ -68,7 +68,7 @@
   <!--  FLOW  -->
   <ParameterList name="Flow">
     <ParameterList name="Richards problem">
-      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
+      <Parameter name="relative permeability" type="string" value="upwind: gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="1e-10"/>
 
       <ParameterList name="VerboseObject">
@@ -78,15 +78,15 @@
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
           <ParameterList name="matrix">
-            <Parameter name="discretization primary" type="string" value="optimized mfd scaled"/>
-            <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
             <Parameter name="gravity" type="bool" value="true"/>
           </ParameterList>
           <ParameterList name="preconditioner">
-            <Parameter name="discretization primary" type="string" value="optimized mfd scaled"/>
-            <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
             <Parameter name="gravity" type="bool" value="true"/>

@@ -100,8 +100,8 @@ int NLFV::PositiveDecomposition(
     for (int i = 0; i < ntau; i++) {
       if (i == id1) continue;
 
-      T.AddRow(0, tau[id1]);
-      T.AddRow(1, tau[i]);
+      T.SetRow(0, tau[id1]);
+      T.SetRow(1, tau[i]);
 
       // We skip almost colinear pairs.
       c2 = norm(tau[i]);
@@ -131,9 +131,9 @@ int NLFV::PositiveDecomposition(
       for (int j = i + 1; j < ntau; j++) {
         if (j == id1) continue;
 
-        T.AddRow(0, tau[id1]);
-        T.AddRow(1, tau[i]);
-        T.AddRow(2, tau[j]);
+        T.SetRow(0, tau[id1]);
+        T.SetRow(1, tau[i]);
+        T.SetRow(2, tau[j]);
 
         // We skip almost colinear pairs.
         double c3 = norm(tau[j]);

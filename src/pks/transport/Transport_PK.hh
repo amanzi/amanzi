@@ -21,22 +21,19 @@
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
-#include "VerboseObject.hh"
-
 #include "CompositeVector.hh"
+#include "DiffusionPhase.hh"
 #include "Explicit_TI_FnBase.hh"
+#include "MaterialProperties.hh"
+#include "PK.hh"
+#include "ReconstructionCell.hh"
+#include "State.hh"
 #include "tensor.hh"
 #include "TransportBoundaryFunction.hh"
 #include "TransportDomainFunction.hh"
-
-#include "PK.hh"
-#include "Reconstruction.hh"
-#include "State.hh"
-
-#include "DiffusionPhase.hh"
-#include "MaterialProperties.hh"
 #include "TransportDefs.hh"
 #include "TransportSourceFactory.hh"
+#include "VerboseObject.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Chemistry_State.hh"
@@ -179,7 +176,6 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   // I/O methods
   void ProcessParameterList();
   void ProcessStringDispersionModel(const std::string name, int* model);
-  void ProcessStringDispersionMethod(const std::string name, int* method);
   void ProcessStringAdvectionLimiter(const std::string name, int* method);
 
   // miscaleneous methods
@@ -228,7 +224,7 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   int advection_limiter;  // data for limiters
   int current_component_;
   Teuchos::RCP<Epetra_Vector> limiter_;
-  Reconstruction lifting;
+  Teuchos::RCP<Operators::ReconstructionCell> lifting_;
   std::vector<double> component_local_min_;
   std::vector<double> component_local_max_;
 

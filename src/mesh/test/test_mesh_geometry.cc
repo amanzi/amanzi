@@ -165,28 +165,28 @@ TEST(MESH_GEOMETRY_PLANAR)
           mesh->face_get_cells(i,Amanzi::AmanziMesh::USED,&cellids);
           
           for (int k = 0; k < cellids.size(); k++) {
+            int dir;
             Amanzi::AmanziGeometry::Point normal_wrt_cell = 
-              mesh->face_normal(i,false,cellids[k]);
+              mesh->face_normal(i,false,cellids[k],&dir);
 
-            Amanzi::AmanziMesh::Entity_ID_List cellfaces;
-            std::vector<int> cellfacedirs;
-            mesh->cell_get_faces_and_dirs(cellids[k],&cellfaces,&cellfacedirs);
-
-            bool found2 = false;
-            int dir = 1;
-            for (int m = 0; m < cellfaces.size(); m++) {
-              if (cellfaces[m] == i) {
-                found2 = true;
-                dir = cellfacedirs[m];
-                break;
-              }
-            }
-
-            CHECK_EQUAL(found2,true);
+            //            Amanzi::AmanziMesh::Entity_ID_List cellfaces;
+            //            std::vector<int> cellfacedirs;
+            //            mesh->cell_get_faces_and_dirs(cellids[k],&cellfaces,&cellfacedirs);
+            //
+            //            bool found2 = false;
+            //            int dir = 1;
+            //            for (int m = 0; m < cellfaces.size(); m++) {
+            //              if (cellfaces[m] == i) {
+            //                found2 = true;
+            //                dir = cellfacedirs[m];
+            //                break;
+            //              }
+            //            }
+            //
+            //            CHECK_EQUAL(found2,true);
 
             Amanzi::AmanziGeometry::Point normal1(normal);
-            if (dir != 1) 
-              normal1 *= -1.0;
+            normal1 *= dir;
 
             CHECK_ARRAY_EQUAL(&(normal1[0]),&(normal_wrt_cell[0]),spacedim);
 
@@ -349,24 +349,25 @@ TEST(MESH_GEOMETRY_SURFACE)
           Amanzi::AmanziGeometry::Point facecentroid = mesh->face_centroid(i);
           
           for (int k = 0; k < cellids.size(); k++) {
+            int dir;
             Amanzi::AmanziGeometry::Point normal_wrt_cell = 
-              mesh->face_normal(i,false,cellids[k]);
+              mesh->face_normal(i,false,cellids[k],&dir);
 
-            Amanzi::AmanziMesh::Entity_ID_List cellfaces;
-            std::vector<int> cellfacedirs;
-            mesh->cell_get_faces_and_dirs(cellids[k],&cellfaces,&cellfacedirs);
+            //            Amanzi::AmanziMesh::Entity_ID_List cellfaces;
+            //            std::vector<int> cellfacedirs;
+            //            mesh->cell_get_faces_and_dirs(cellids[k],&cellfaces,&cellfacedirs);
 
-            bool found2 = false;
-            int dir = 1;
-            for (int m = 0; m < cellfaces.size(); m++) {
-              if (cellfaces[m] == i) {
-                found2 = true;
-                dir = cellfacedirs[m];
-                break;
-              }
-            }
+            //            bool found2 = false;
+            //            int dir = 1;
+            //            for (int m = 0; m < cellfaces.size(); m++) {
+            //              if (cellfaces[m] == i) {
+            //                found2 = true;
+            //                dir = cellfacedirs[m];
+            //                break;
+            //              }
+            //            }
 
-            CHECK_EQUAL(found2,true);
+            //            CHECK_EQUAL(found2,true);
 
 
             Amanzi::AmanziGeometry::Point cellcentroid = mesh->cell_centroid(cellids[k]);
@@ -386,7 +387,7 @@ TEST(MESH_GEOMETRY_SURFACE)
                (fabs(facecentroid[2]) < 1.0e-16))) {
 
             // An edge on the crease. The two normals should be different 
-            
+   
             Amanzi::AmanziGeometry::Point n0 = mesh->face_normal(i,false,cellids[0]);
             Amanzi::AmanziGeometry::Point n1 = mesh->face_normal(i,false,cellids[1]);
 
@@ -609,28 +610,28 @@ TEST(MESH_GEOMETRY_SOLID)
           mesh->face_get_cells(i,Amanzi::AmanziMesh::USED,&cellids);
           
           for (int k = 0; k < cellids.size(); k++) {
+            int dir;
             Amanzi::AmanziGeometry::Point normal_wrt_cell = 
-              mesh->face_normal(i,false,cellids[k]);
+              mesh->face_normal(i,false,cellids[k],&dir);
 
-            Amanzi::AmanziMesh::Entity_ID_List cellfaces;
-            std::vector<int> cellfacedirs;
-            mesh->cell_get_faces_and_dirs(cellids[k],&cellfaces,&cellfacedirs);
+            // Amanzi::AmanziMesh::Entity_ID_List cellfaces;
+            // std::vector<int> cellfacedirs;
+            // mesh->cell_get_faces_and_dirs(cellids[k],&cellfaces,&cellfacedirs);
 
-            bool found2 = false;
-            int dir = 1;
-            for (int m = 0; m < cellfaces.size(); m++) {
-              if (cellfaces[m] == i) {
-                found2 = true;
-                dir = cellfacedirs[m];
-                break;
-              }
-            }
+            // bool found2 = false;
+            // int dir = 1;
+            // for (int m = 0; m < cellfaces.size(); m++) {
+            //   if (cellfaces[m] == i) {
+            //     found2 = true;
+            //     dir = cellfacedirs[m];
+            //     break;
+            //   }
+            // }
 
-            CHECK_EQUAL(found2,true);
+            // CHECK_EQUAL(found2,true);
 
             Amanzi::AmanziGeometry::Point normal1(normal);
-            if (dir != 1) 
-              normal1 *= -1.0;
+            normal1 *= dir;
 
             CHECK_ARRAY_EQUAL(&(normal1[0]),&(normal_wrt_cell[0]),spacedim);
 

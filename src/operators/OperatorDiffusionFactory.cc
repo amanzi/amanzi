@@ -55,7 +55,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 
   // Let us try to identify a FV scheme.
   std::string name = oplist.get<std::string>("discretization primary");
-  if (name == "finite volume") {
+  if (name == "fv: default") {
     Teuchos::RCP<OperatorDiffusionTPFA> op = Teuchos::rcp(new OperatorDiffusionTPFA(cvs, oplist, bc));
     op->Init();
     op->SetGravity(g);

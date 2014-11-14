@@ -35,7 +35,7 @@ void Transport_PK::CalculateDispersionTensor_(
     const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
 {
   D.resize(ncells_owned);
-  for (int c = 0; c < ncells_owned; c++) D[c].init(dim, 2);
+  for (int c = 0; c < ncells_owned; c++) D[c].Init(dim, 2);
 
   for (int mb = 0; mb < material_properties_.size(); mb++) {
     Teuchos::RCP<MaterialProperties> spec = material_properties_[mb]; 
@@ -96,7 +96,7 @@ void Transport_PK::CalculateDiffusionTensor_(
 {
   if (D.size() == 0) {
     D.resize(ncells_owned);
-    for (int c = 0; c < ncells_owned; c++) D[c].init(dim, 1);
+    for (int c = 0; c < ncells_owned; c++) D[c].Init(dim, 1);
   }
 
   for (int mb = 0; mb < material_properties_.size(); mb++) {

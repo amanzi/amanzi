@@ -89,8 +89,12 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
   // update relative permeability coefficients
   darcy_flux_copy->ScatterMasterToGhosted("face");
   rel_perm_->Compute(u);
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), "k_relative");
-  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), "dkdpc");
+
+  RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->Krel(), *rel_perm_->Krel(), func1);
+
+  RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
+  upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
 
   // modify relative permeability coefficient for influx faces
   if (ti_specs->inflow_krel_correction) {
@@ -98,7 +102,8 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
     AmanziMesh::Entity_ID_List cells;
 
     for (int f = 0; f < nfaces_wghost; f++) {
-      if (bc_model[f] == Operators::OPERATOR_BC_FACE_NEUMANN && bc_value[f] < 0.0) {
+      if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
+           bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
 
         const AmanziGeometry::Point& normal = mesh_->face_normal(f);

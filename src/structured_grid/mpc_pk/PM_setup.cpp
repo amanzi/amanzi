@@ -226,7 +226,6 @@ Real PorousMedia::dt_chem;
 int  PorousMedia::max_grid_size_chem;
 bool PorousMedia::no_initial_values;
 bool PorousMedia::use_funccount;
-bool PorousMedia::do_richard_sat_solve;
 Real PorousMedia::max_chemistry_time_step;
 //
 // Lists.
@@ -585,7 +584,6 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::it_pressure         = 0;  
   PorousMedia::do_any_diffuse      = false;
   PorousMedia::do_cpl_advect       = 0;
-  PorousMedia::do_richard_sat_solve = false;
   PorousMedia::execution_mode      = PorousMedia::INVALID;
   PorousMedia::switch_time         = 0;
   PorousMedia::ic_chem_relax_dt    = -1; // < 0 implies not done
@@ -1027,7 +1025,6 @@ void PorousMedia::read_prob()
   // Verbosity
   pb.query("v",verbose);
   pb.query("richard_solver_verbose",richard_solver_verbose);
-  pb.query("do_richard_sat_solve",do_richard_sat_solve);
 
   // Get timestepping parameters.  Some will be used to default values for int-to-steady solver
   pb.get("cfl",cfl);
@@ -1458,16 +1455,7 @@ void  PorousMedia::read_comp()
                 component_bc = 1;
               }
               pressure_bc = 2;
-
-              if (model == PM_STEADY_SATURATED 
-		  || model == PM_SATURATED 
-		  || (model == PM_RICHARDS && !do_richard_sat_solve)) {
-                bc_array.set(ibc, new RegionData(bcname,bc_regions,bc_type,vals));
-              } else {
-                PressToRhoSat p_to_sat;
-                bc_array.set(ibc, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
-                                                            bc_type,ncomps,p_to_sat));
-              }
+              bc_array.set(ibc, new RegionData(bcname,bc_regions,bc_type,vals));
           }
           else if (bc_type == "pressure_head")
           {              

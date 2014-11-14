@@ -1,6 +1,8 @@
 #include <sstream>
 #include <string>
 
+#include <boost/algorithm/string.hpp>
+
 #include "errors.hh"
 #include "exceptions.hh"
 #include "dbc.hh"
@@ -28,8 +30,8 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
       Teuchos::ParameterList *flow_list;
 
       // get the expert parameters
-      std::string disc_method("optimized mfd scaled");
-      std::string rel_perm("upwind with Darcy flux");
+      std::string disc_method("MFD: Optimized for Sparsity");
+      std::string rel_perm("Upwind: Darcy Velocity");
       std::string update_upwind("every timestep");
       double atm_pres(ATMOSPHERIC_PRESSURE);
       std::string nonlinear_solver("NKA");
@@ -62,9 +64,9 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           }
         }
       }
-      // discretization method must be two point flux approximation for if newton is used
+      // discretization method must be two-point flux approximation for if newton is used
       if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
-        disc_method = std::string("finite volume");
+        disc_method = std::string("FV: Default");
 	update_upwind = std::string("every nonlinear iteration");	
       }
 
@@ -79,7 +81,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
         }
         else if (flow_model == "Richards") {
           Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards problem");
-          richards_problem.set<std::string>("relative permeability", rel_perm);
+          richards_problem.set<std::string>("relative permeability", boost::to_lower_copy(rel_perm));
           richards_problem.set<std::string>("upwind update", update_upwind);
           // this one should come from the input file...
           richards_problem.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
@@ -958,10 +960,10 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(const std::string&
   Teuchos::ParameterList op_list;
 
   Teuchos::ParameterList tmp_list;
-  tmp_list.set<std::string>("discretization primary", disc_method);
-  tmp_list.set<std::string>("discretization secondary", "optimized mfd scaled");
+  tmp_list.set<std::string>("discretization primary", boost::to_lower_copy(disc_method));
+  tmp_list.set<std::string>("discretization secondary", "mfd: optimized for sparsity");
 
-  if (disc_method != "finite volume"){
+  if (disc_method != "FV: Default"){
     Teuchos::Array<std::string> stensil(2);
     stensil[0] = "face";
     stensil[1] = "cell";

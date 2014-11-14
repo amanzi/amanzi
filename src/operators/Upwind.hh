@@ -44,6 +44,11 @@ class Upwind {
                const CompositeVector& field, CompositeVector& field_upwind,
 	       const std::string& name);
 
+  void Compute(const CompositeVector& flux,
+               const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+               const CompositeVector& field, CompositeVector& field_upwind,
+               double (Model::*Value)(int, double) const);
+
  protected:
   Teuchos::RCP<VerboseObject> vo_;
 
@@ -56,7 +61,7 @@ class Upwind {
 
 
 /* ******************************************************************
-* Public Init method.
+* Public init method. It is not yet used.
 ****************************************************************** */
 template<class Model>
 void Upwind<Model>::Init(Teuchos::ParameterList& plist)
@@ -120,10 +125,73 @@ void Upwind<Model>::Compute(
       
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
         upw[0][f] += fcells[0][c] / 2;  // Almost vertical face.
-      } else if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET && flag) {
+      } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         upw[0][f] = model_->Value(c, bc_value[f], name);
-      } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN && flag) {
-        // upw[0][f] = model_->Value(c, ffaces[0][f]);
+      } else if (bc_model[f] == OPERATOR_BC_NEUMANN && flag) {
+        // upw[0][f] = model_->Value(c, ffaces[0][f], name);
+        upw[0][f] = fcells[0][c];
+      } else if (bc_model[f] == OPERATOR_BC_MIXED && flag) {
+        // upw[0][f] = model_->Value(c, ffaces[0][f], name);
+        upw[0][f] = fcells[0][c];
+      } else if (!flag) {
+        upw[0][f] = fcells[0][c];
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Flux-based upwind.
+****************************************************************** */
+template<class Model>
+void Upwind<Model>::Compute(
+    const CompositeVector& flux,
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+    const CompositeVector& field, CompositeVector& field_upwind,
+    double (Model::*Value)(int, double) const)
+{
+  ASSERT(field.HasComponent("cell"));
+  ASSERT(field_upwind.HasComponent("face"));
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  field.ScatterMasterToGhosted("cell");
+  flux.ScatterMasterToGhosted("face");
+
+  const Epetra_MultiVector& u = *flux.ViewComponent("face", true);
+  const Epetra_MultiVector& fcells = *field.ViewComponent("cell", true);
+  const Epetra_MultiVector& ffaces = *field.ViewComponent("face", true);
+
+  Epetra_MultiVector& upw = *field_upwind.ViewComponent("face", true);
+  upw.PutScalar(0.0);
+
+  double umin, umax;
+  u.MinValue(&umin);
+  u.MaxValue(&umax);
+  double tol = OPERATOR_UPWIND_RELATIVE_TOLERANCE * std::max(fabs(umin), fabs(umax));
+
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  for (int c = 0; c < ncells_wghost; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+     int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      bool flag = (u[0][f] * dirs[n] < -tol);  // upwind flag
+      
+      if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
+        upw[0][f] += fcells[0][c] / 2;  // Almost vertical face.
+      } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
+        upw[0][f] = ((*model_).*Value)(c, bc_value[f]);
+      } else if (bc_model[f] == OPERATOR_BC_NEUMANN && flag) {
+        // upw[0][f] = ((*model_).*Value)(c, ffaces[0][f]);
+        upw[0][f] = fcells[0][c];
+      } else if (bc_model[f] == OPERATOR_BC_MIXED && flag) {
+        // upw[0][f] = ((*model_).*Value)(c, ffaces[0][f]);
         upw[0][f] = fcells[0][c];
       } else if (!flag) {
         upw[0][f] = fcells[0][c];

@@ -606,15 +606,15 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 
 * `"discretization primary`" [string] specifies an advanced discretization method that
   has useful properties under some a priori conditions on the mesh and/or permeability tensor.
-  The available options are `"mfd scaled`", `"optimized mfd scaled`",
-  `"finite volume`" and `"support operator`". 
-  The last option reproduces discretization method implemented in RC1. 
-  The second option is recommended for general meshes.
-  The third option is recommended for orthogonal meshes and diagonal absolute 
+  The available options are `"mfd: optimized for sparsity`", `"mfd: optimized for monotonicity`",
+  `"mfd: default`", `"mfd: support operator`", `"mfd: two-point flux approximation`",
+  and `"fv: default`". 
+  The first option is recommended for general meshes.
+  The second option is recommended for orthogonal meshes and diagonal absolute 
   permeability tensor. 
 
 * `"discretization secondary`" [string] specifies the most robust discretization method
-  that is used when the primary selection fails to satisfy the a priori conditions.
+  that is used when the primary selection fails to satisfy all a priori conditions.
 
 * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
   geometric objects.
@@ -748,13 +748,11 @@ parameters described below. Mix and match of parameters is allowed.
   centroid. Default is `"false`".
 
 * `"submodel`" [string] indicates different models for the seepage face boundary condition.
-  It can take values `"PFloTran`", `"FACT`", and `"Amanzi`". The first option leads to a 
+  It can take values `"PFloTran`" and `"FACT`". The first option leads to a 
   discontinuous change of the boundary condition type from the infiltration to pressure. 
   The second option is described
   in the document on mathematical models. It employs a smooth transition from the infiltration 
-  to mixed boundary condition. The third option combines the above two. Is uses a smooth transition
-  from the infiltration to pressure boundary condition. 
-  Default value is `"Amanzi`".
+  to mixed boundary condition. Default is `"PFloTran`".
 
 .. code-block:: xml
 
@@ -762,7 +760,7 @@ parameters described below. Mix and match of parameters is allowed.
          <ParameterList name="BC 3">
            <Parameter name="regions" type="Array(string)" value="{CALIFORNIA}"/>
            <Parameter name="rainfall" type="bool" value="true"/>
-           <Parameter name="submodel" type="string" value="pflotran"/>
+           <Parameter name="submodel" type="string" value="PFloTran"/>
            <ParameterList name="outward mass flux">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="1.0"/>
@@ -1082,10 +1080,14 @@ The remaining `"Flow`" parameters are
 
 * `"atmospheric pressure`" [double] defines the atmospheric pressure, [Pa].
 
-* `"relative permeability`" [string] defines a method for calculating relative
-  permeability. The available self-explanatory options `"upwind with gravity`",
-  are `"upwind with Darcy flux`", `"arithmetic mean`" and `"cell centered`". 
-  The first three calculate the relative permeability on mesh interfaces.
+* `"absolute permeability coordinate system`" [string] defines coordinate system
+  for calculating absolute permeability. The available options are `"cartesian`"
+  and `"layer`".
+
+* `"relative permeability`" [string] defines a method for calculating the *upwinded* 
+  relative permeability. The available options are: `"upwind: gravity`", 
+  `"upwind: darcy velocity`" (default), `"upwind: amanzi`" (experimental), 
+  `"other: harmonic average`", and `"other: arithmetic average`".
 
 * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
   nonlinear solver. The available options are `"every time step`" and `"every nonlinear iteration`".

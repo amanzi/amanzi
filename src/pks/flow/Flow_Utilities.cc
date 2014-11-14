@@ -125,7 +125,7 @@ void Flow_PK::CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz,
 
         for (int i = 0; i < d; i++) {
           int f = faces[i];
-          N.AddRow(i, mesh_->face_normal(f));
+          N.SetRow(i, mesh_->face_normal(f));
           tmp[i] = flux[0][f];
         }
         N.Inverse();

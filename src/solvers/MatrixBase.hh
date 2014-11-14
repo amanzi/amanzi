@@ -7,6 +7,7 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+template<class Vector, class VectorSpace>
 class MatrixBase {
  public:
   // NOTE that a default constructor MUST be allowed, even if it
@@ -24,10 +25,8 @@ class MatrixBase {
   const VectorSpace& RangeMap() const;
 
   // Apply matrix, b <-- Ax, returns ierr = 0 if success, !0 otherwise
-  int Apply(const Epetra_Vector& x,
-	    Epetra_Vector& b) const;
+  int Apply(const Vector& x, Vector& b) const;
 
   // Apply the inverse, x <-- A^-1 b, returns ierr = 0 if success, !0 otherwise
-  int ApplyInverse(const Epetra_Vector& b,
-		   Epetra_Vector& x) const;
+  int ApplyInverse(const Vector& b, Vector& x) const;
 };

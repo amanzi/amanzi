@@ -123,10 +123,10 @@ Teuchos::ParameterList InputParserIS::CreateDPC_List_(Teuchos::ParameterList* pl
 	nonlinear_solver = solver_list.get<std::string>("Nonlinear Solver Type");
       }
       if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
-	dpc_list.set<std::string>("discretization method", "finite volume");
+	dpc_list.set<std::string>("discretization method", "fv: default");
       }
       else{
-	dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
+	dpc_list.set<std::string>("discretization method", "mfd: optimized for sparsity");
       }
     }
   }
@@ -199,10 +199,10 @@ Teuchos::ParameterList InputParserIS::CreateBILU_List_(Teuchos::ParameterList* p
 	nonlinear_solver = solver_list.get<std::string>("Nonlinear Solver Type");
       }
       if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
-	bilu_list.set<std::string>("discretization method", "finite volume");
+	bilu_list.set<std::string>("discretization method", "fv: default");
       }
       else{
-	bilu_list.set<std::string>("discretization method", "optimized mfd scaled");
+	bilu_list.set<std::string>("discretization method", "mfd: optimized for sparsity");
       }
     }
   }
@@ -260,10 +260,10 @@ Teuchos::ParameterList InputParserIS::CreateHypreAMG_List_(Teuchos::ParameterLis
 	nonlinear_solver = solver_list.get<std::string>("Nonlinear Solver Type");
       }
       if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
-	dpc_list.set<std::string>("discretization method", "finite volume");
+	dpc_list.set<std::string>("discretization method", "fv: default");
       }
       else{
-	dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
+	dpc_list.set<std::string>("discretization method", "mfd: optimized for sparsity");
       }
     }
   }

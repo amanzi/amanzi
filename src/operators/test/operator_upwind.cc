@@ -38,18 +38,24 @@ class Model {
     return analytic(pc); 
   }
 
+  double Value(int c, double pc) const { 
+    return analytic(pc); 
+  }
+
   double analytic(double pc) const { return 1e-5 + pc; }
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
+typedef double(Model::*ModelUpwindFn)(int c, double pc) const; 
+
 }  // namespace Amanzi
 
 
 /* *****************************************************************
-* This test replaves tensor and boundary conditions by continuous
-* functions. This is a prototype forheat conduction solvers.
+* This test replaces diffusion tensor and boundary conditions by
+* continuous functions.
 * **************************************************************** */
 TEST(UPWIND) {
   using namespace Teuchos;
@@ -99,7 +105,7 @@ TEST(UPWIND) {
           fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
           fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) 
 
-      bc_model[f] = OPERATOR_BC_FACE_DIRICHLET;
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = model->analytic(xf[0]);
     }
 
@@ -144,7 +150,9 @@ TEST(UPWIND) {
 
     ParameterList& ulist = plist.sublist("upwind");
     upwind.Init(ulist);
-    upwind.Compute(flux, bc_model, bc_value, field, upw_field, " ");
+    // upwind.Compute(flux, bc_model, bc_value, field, upw_field, " ");
+    ModelUpwindFn func = &Model::Value;
+    upwind.Compute(flux, bc_model, bc_value, field, upw_field, func);
 
     // calculate error
     Epetra_MultiVector& upw = *upw_field.ViewComponent("face");

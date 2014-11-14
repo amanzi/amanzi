@@ -32,7 +32,8 @@ void Flow_PK::ProcessParameterList(Teuchos::ParameterList& plist)
 
   // Process main one-line options (not sublists)
   atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
- 
+  coordinate_system = plist.get<std::string>("absolute permeability coordinate system", "cartesian");
+
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList>
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));

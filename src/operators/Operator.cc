@@ -122,12 +122,16 @@ void Operator::Init()
   diagonal_->PutScalarMasterAndGhosted(0.0);
   rhs_->PutScalarMasterAndGhosted(0.0);
 
+  WhetStone::DenseMatrix null_matrix;
+
   int n = blocks_.size();
   for (int i = 0; i < n; i++) { 
     std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[i];
+    std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[i];
     int m = matrix.size();
     for (int k = 0; k < m; k++) {
       matrix[k] = 0.0;
+      matrix_shadow[k] = null_matrix;
     }
   }
 }
@@ -517,14 +521,17 @@ void Operator::AssembleMatrix(int schema)
 /* ******************************************************************
 * Applies boundary conditions to matrix_blocks and update the
 * right-hand side and the diagonal block.                                           
+* NOTE. It will take to implement a few other PKs to realize the level
+*       of abstraction of the default implementation below.
 ****************************************************************** */
 void Operator::ApplyBCs()
 {
   Errors::Message msg;
   bool applied_bc(false);
 
-  const std::vector<int>& bc_model = bc_->bc_model();
-  const std::vector<double>& bc_value = bc_->bc_value();
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
+  const std::vector<double>& bc_mixed = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_mixed();
 
   // clean ghosted values
   for (CompositeVector::name_iterator name = rhs_->begin(); name != rhs_->end(); ++name) {
@@ -537,104 +544,15 @@ void Operator::ApplyBCs()
     for (int i = n0; i < n1; i++) diag_g[0][i] = 0.0;
   }
 
-  AmanziMesh::Entity_ID_List cells, faces, nodes;
-
   int nblocks = blocks_.size();
   for (int nb = 0; nb < nblocks; nb++) {
     int schema = blocks_schema_[nb];
-    std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[nb];
-    std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[nb];
 
     if (schema & OPERATOR_SCHEMA_BASE_CELL) {
-      if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
-        applied_bc = true;
-        Epetra_MultiVector& rhs_face = *rhs_->ViewComponent("face", true);
-        Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
-        Epetra_MultiVector& diag = *diagonal_->ViewComponent("face");
-
-        for (int c = 0; c < ncells_owned; c++) {
-          mesh_->cell_get_faces(c, &faces);
-          int nfaces = faces.size();
-
-          WhetStone::DenseMatrix& Acell = matrix[c];
-
-          bool flag(true);
-          for (int n = 0; n < nfaces; n++) {
-            int f = faces[n];
-            double value = bc_value[f];
-
-            if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
-              if (flag) {  // make a copy of elemental matrix
-                matrix_shadow[c] = Acell;
-                flag = false;
-              }
-              for (int m = 0; m < nfaces; m++) {
-                rhs_face[0][faces[m]] -= Acell(m, n) * value;
-                Acell(n, m) = Acell(m, n) = 0.0;
-              }
-              rhs_face[0][f] = value;
-              diag[0][f] = 1.0;
-
-              rhs_cell[0][c] -= Acell(nfaces, n) * value;
-              Acell(nfaces, n) = 0.0;
-              Acell(n, nfaces) = 0.0;
-            } else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) {
-              rhs_face[0][f] -= value * mesh_->face_area(f);
-            }
-          }
-        }
-      } else if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
-        applied_bc = true;
-        Epetra_MultiVector& rhs_node = *rhs_->ViewComponent("node", true);
-        Epetra_MultiVector& diag = *diagonal_->ViewComponent("node", true);
-
-        for (int c = 0; c < ncells_owned; c++) {
-          mesh_->cell_get_nodes(c, &nodes);
-          int nnodes = nodes.size();
-
-          WhetStone::DenseMatrix& Acell = matrix[c];
-
-          bool flag(true);
-          for (int n = 0; n < nnodes; n++) {
-            int v = nodes[n];
-            double value = bc_value[v];
-
-            if (bc_model[v] == OPERATOR_BC_FACE_DIRICHLET) {
-              if (flag) {  // make a copy of cell-based matrix
-                matrix_shadow[c] = Acell;
-                flag = false;
-              }
-              for (int m = 0; m < nnodes; m++) {
-                rhs_node[0][nodes[m]] -= Acell(m, n) * value;
-                Acell(n, m) = Acell(m, n) = 0.0;
-              }
-              rhs_node[0][v] = value;
-              diag[0][v] = 1.0;
-            }
-          }
-        }
-      }
+      applied_bc  = ApplyBC_Cell_Mixed_(nb);
+      applied_bc |= ApplyBC_Cell_Nodal_(nb);
     } else if (schema & OPERATOR_SCHEMA_BASE_FACE) {
-      if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
-        applied_bc = true;
-        Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
-
-        for (int f = 0; f < nfaces_owned; f++) {
-          WhetStone::DenseMatrix& Aface = matrix[f];
-
-
-          if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
-            mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-            rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
-          }
-          else if (bc_model[f] == OPERATOR_BC_FACE_NEUMANN) {
-            mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-            rhs_cell[0][cells[0]] -= bc_value[f] * mesh_->face_area(f);
-            Aface *= 0.0;
-            matrix_shadow[f] = Aface;
-          }
-        }
-      }
+      applied_bc = ApplyBC_Face_(nb);
     }
   }
 
@@ -646,6 +564,238 @@ void Operator::ApplyBCs()
   // Account for the ghosted values
   diagonal_->GatherGhostedToMaster(Add);
   rhs_->GatherGhostedToMaster(Add);
+}
+
+
+/* ******************************************************************
+* Add additional set of boundary conditions.
+******************************************************************* */
+void Operator::AddBCs(Teuchos::RCP<BCs> bc)
+{
+  bc_.push_back(bc);
+}
+
+
+/* ******************************************************************
+* Process a cell-based schema.
+******************************************************************* */
+bool Operator::ApplyBC_Cell_Mixed_(int nb)
+{
+  Teuchos::RCP<BCs> bc_f = GetBCofType(OPERATOR_BC_TYPE_FACE);
+  if (bc_f == Teuchos::null) return false;
+
+  bool applied_bc(false);
+
+  int schema = blocks_schema_[nb];
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[nb];
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[nb];
+
+  AmanziMesh::Entity_ID_List faces;
+
+  const std::vector<int>& bc_model = bc_f->bc_model();
+  const std::vector<double>& bc_value = bc_f->bc_value();
+  const std::vector<double>& bc_mixed = bc_f->bc_mixed();
+
+  if ((schema & OPERATOR_SCHEMA_DOFS_FACE) && (schema & OPERATOR_SCHEMA_DOFS_CELL)) {
+    applied_bc = true;
+    Epetra_MultiVector& rhs_face = *rhs_->ViewComponent("face", true);
+    Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
+    Epetra_MultiVector& diag = *diagonal_->ViewComponent("face");
+
+    for (int c = 0; c < ncells_owned; c++) {
+      mesh_->cell_get_faces(c, &faces);
+      int nfaces = faces.size();
+
+      WhetStone::DenseMatrix& Acell = matrix[c];
+
+      bool flag(true);
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        double value = bc_value[f];
+
+        if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+          if (flag) {  // make a copy of elemental matrix
+            matrix_shadow[c] = Acell;
+            flag = false;
+          }
+          for (int m = 0; m < nfaces; m++) {
+            rhs_face[0][faces[m]] -= Acell(m, n) * value;
+            Acell(n, m) = Acell(m, n) = 0.0;
+          }
+          rhs_face[0][f] = value;
+          diag[0][f] = 1.0;
+
+          rhs_cell[0][c] -= Acell(nfaces, n) * value;
+          Acell(nfaces, n) = 0.0;
+          Acell(n, nfaces) = 0.0;
+        } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+          rhs_face[0][f] -= value * mesh_->face_area(f);
+        } else if (bc_model[f] == OPERATOR_BC_MIXED) {
+          if (flag) {  // make a copy of elemental matrix
+            matrix_shadow[c] = Acell;
+            flag = false;
+          }
+          double area = mesh_->face_area(f);
+          rhs_face[0][f] -= value * area;
+          Acell(n, n) += bc_mixed[f] * area;
+        }
+      }
+    }
+  }
+
+  return applied_bc;
+}
+
+
+/* ******************************************************************
+* Process a cell-based schema.
+******************************************************************* */
+bool Operator::ApplyBC_Cell_Nodal_(int nb)
+{
+  bool applied_bc(false);
+
+  int schema = blocks_schema_[nb];
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[nb];
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[nb];
+
+  AmanziMesh::Entity_ID_List faces, nodes;
+
+  Teuchos::RCP<BCs> bc_v = GetBCofType(OPERATOR_BC_TYPE_NODE);
+  Teuchos::RCP<BCs> bc_f = GetBCofType(OPERATOR_BC_TYPE_FACE);
+
+  if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
+    applied_bc = true;
+    Epetra_MultiVector& rhs_node = *rhs_->ViewComponent("node", true);
+    Epetra_MultiVector& diag = *diagonal_->ViewComponent("node", true);
+
+    for (int c = 0; c < ncells_owned; c++) {
+      bool flag(true);
+      WhetStone::DenseMatrix& Acell = matrix[c];
+
+      if (bc_f != Teuchos::null) {
+        const std::vector<int>& bc_model = bc_f->bc_model();
+        const std::vector<double>& bc_value = bc_f->bc_value();
+        const std::vector<double>& bc_mixed = bc_f->bc_mixed();
+
+        mesh_->cell_get_faces(c, &faces);
+        int nfaces = faces.size();
+
+        for (int n = 0; n < nfaces; n++) {
+          int f = faces[n];
+
+          if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+            double value = bc_value[f];
+            double area = mesh_->face_area(f);
+
+            mesh_->face_get_nodes(f, &nodes);
+            int nnodes = nodes.size();
+
+            for (int m = 0; m < nnodes; m++) {
+              int v = nodes[m];
+              rhs_node[0][v] -= value * area / nnodes;
+            }
+          } else if (bc_model[f] == OPERATOR_BC_MIXED) {
+            if (flag) {  // make a copy of cell-based matrix
+              matrix_shadow[c] = Acell;
+              flag = false;
+            }
+            double value = bc_value[f];
+            double area = mesh_->face_area(f);
+
+            mesh_->face_get_nodes(f, &nodes);
+            int nnodes = nodes.size();
+
+            for (int m = 0; m < nnodes; m++) {
+              int v = nodes[m];
+              rhs_node[0][v] -= value * area / nnodes;
+              Acell(n, n) += bc_mixed[f] * area / nnodes;
+            }
+          }
+        }
+      }
+
+      if (bc_v != Teuchos::null) {
+        const std::vector<int>& bc_model = bc_v->bc_model();
+        const std::vector<double>& bc_value = bc_v->bc_value();
+
+        mesh_->cell_get_nodes(c, &nodes);
+        int nnodes = nodes.size();
+
+        for (int n = 0; n < nnodes; n++) {
+          int v = nodes[n];
+          double value = bc_value[v];
+
+          if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
+            if (flag) {  // make a copy of cell-based matrix
+              matrix_shadow[c] = Acell;
+              flag = false;
+            }
+            for (int m = 0; m < nnodes; m++) {
+              rhs_node[0][nodes[m]] -= Acell(m, n) * value;
+              Acell(n, m) = Acell(m, n) = 0.0;
+            }
+            rhs_node[0][v] = value;
+            diag[0][v] = 1.0;
+          }
+        }
+      }
+    }
+  } 
+
+  return applied_bc;
+}
+
+
+/* ******************************************************************
+* Process a face-based schema.
+******************************************************************* */
+bool Operator::ApplyBC_Face_(int nb)
+{
+  bool applied_bc(false);
+
+  int schema = blocks_schema_[nb];
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[nb];
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[nb];
+
+  AmanziMesh::Entity_ID_List cells, nodes;
+
+  Teuchos::RCP<BCs> bc_f = GetBCofType(OPERATOR_BC_TYPE_FACE);
+  const std::vector<int>& bc_model = bc_f->bc_model();
+  const std::vector<double>& bc_value = bc_f->bc_value();
+  const std::vector<double>& bc_mixed = bc_f->bc_mixed();
+
+  if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
+    applied_bc = true;
+    Epetra_MultiVector& rhs_cell = *rhs_->ViewComponent("cell");
+
+    for (int f = 0; f < nfaces_owned; f++) {
+      WhetStone::DenseMatrix& Aface = matrix[f];
+
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
+      }
+      else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        matrix_shadow[f] = Aface;
+
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        rhs_cell[0][cells[0]] -= bc_value[f] * mesh_->face_area(f);
+        Aface *= 0.0;
+      }
+      // solve system of two equations in three unknowns
+      else if (bc_model[f] == OPERATOR_BC_MIXED) {
+        matrix_shadow[f] = Aface;
+
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        double area = mesh_->face_area(f);
+        double factor = area / (1.0 + bc_mixed[f] * area / Aface(0, 0));
+        rhs_cell[0][cells[0]] -= bc_value[f] * factor;
+        Aface(0, 0) = bc_mixed[f] * factor;
+      }
+    }
+  }
+
+  return applied_bc;
 }
 
 
@@ -964,6 +1114,19 @@ int Operator::FindMatrixBlock(int schema_dofs, int matching_rule, bool action) c
   }
 
   return -1;
+}
+
+
+/* ******************************************************************
+* Extension of Mesh API. 
+****************************************************************** */
+const Teuchos::RCP<BCs> Operator::GetBCofType(int type) const
+{
+  int nbc = bc_.size();
+  for (int i = 0; i < nbc; i++) {
+    if (bc_[i]->type() == type) return bc_[i];
+  }
+  return Teuchos::null;
 }
 
 

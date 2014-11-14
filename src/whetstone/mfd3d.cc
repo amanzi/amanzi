@@ -118,7 +118,7 @@ int MFD3D::StabilityOptimized(const Tensor& T, DenseMatrix& N,
 
   // find null space of N^T
   DenseMatrix U(nrows, nrows);
-  int info, ldv = 1, size = 5 * d + 3 * nrows;
+  int info, ldv = 1, size = 5 * ncols + 3 * nrows;
   double V, S[nrows], work[size];
 
   DGESVD_F77("A", "N", &nrows, &ncols, N.Values(), &nrows,  // N = u s v

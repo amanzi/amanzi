@@ -18,21 +18,18 @@
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
-#include "errors.hh"
-#include "TabularFunction.hh"
-#include "GMVMesh.hh"
-
-#include "Explicit_TI_RK.hh"
-
 #include "BCs.hh"
+#include "errors.hh"
+#include "Explicit_TI_RK.hh"
+#include "GMVMesh.hh"
+#include "LinearOperatorFactory.hh"
+#include "Mesh.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
-#include "LinearOperatorFactory.hh"
+#include "TabularFunction.hh"
 
 #include "Transport_PK.hh"
-#include "Reconstruction.hh"
 
 
 namespace Amanzi {
@@ -211,8 +208,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   // reconstruction initialization
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   limiter_ = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
-  lifting.ResetField(mesh_, Teuchos::null);
-  lifting.Init();
+  lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
   // boundary conditions initialization
   double time = T_physics;
@@ -420,10 +416,10 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
 
   if (flag_dispersion || flag_diffusion) {
     Teuchos::ParameterList op_list;
-    op_list.set<std::string>("discretization secondary", "two point flux approximation");
+    op_list.set<std::string>("discretization secondary", "mfd: two-point flux approximation");
 
     if (mesh_->mesh_type() == AmanziMesh::RECTANGULAR) {
-      op_list.set<std::string>("discretization primary", "monotone mfd hex");
+      op_list.set<std::string>("discretization primary", "mfd: monotone for hex");
       Teuchos::Array<std::string> stensil(2);
       stensil[0] = "face";
       stensil[1] = "cell";
@@ -431,7 +427,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
       stensil.remove(1);
       op_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
     } else {
-      op_list.set<std::string>("discretization primary", "two point flux approximation");
+      op_list.set<std::string>("discretization primary", "mfd: two-point flux approximation");
       Teuchos::Array<std::string> stensil(1);
       stensil[0] = "cell";
       op_list.set<Teuchos::Array<std::string> >("schema", stensil);
@@ -442,7 +438,8 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
     std::vector<double> bc_value(nfaces_wghost, 0.0);
     PopulateBoundaryData(bc_model, bc_value, -1);
 
-    Teuchos::RCP<Operators::BCs> bc_dummy = Teuchos::rcp(new Operators::BCs(bc_model, bc_value));
+    Teuchos::RCP<Operators::BCs> bc_dummy = 
+        Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value));
     AmanziGeometry::Point g;
 
     Operators::OperatorDiffusionFactory opfactory;
@@ -959,7 +956,7 @@ bool Transport_PK::PopulateBoundaryData(
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f < nfaces_wghost; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    if (cells.size() == 1) bc_model[f] = Operators::OPERATOR_BC_FACE_NEUMANN;
+    if (cells.size() == 1) bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
   }
 
   for (int m = 0; m < bcs.size(); m++) {
@@ -975,7 +972,7 @@ bool Transport_PK::PopulateBoundaryData(
       for (int i = 0; i < ncomp; i++) {
         int k = tcc_index[i];
         if (k == component) {
-          bc_model[f] = Operators::OPERATOR_BC_FACE_DIRICHLET;
+          bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
           bc_value[f] = values[n][i];
           flag = true;
         }

@@ -131,16 +131,16 @@ void RelativePermeability::VerifyStringMualemBurdine(const std::string name)
 void RelativePermeability::ProcessStringRelativePermeability(const std::string name)
 {
   Errors::Message msg;
-  if (name == "upwind with gravity") {
+  if (name == "upwind: gravity") {
     method_ = Flow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
-  } else if (name == "cell centered") {
-    method_ = Flow::FLOW_RELATIVE_PERM_CENTERED;
-  } else if (name == "upwind with Darcy flux") {
+  } else if (name == "upwind: darcy velocity") {
     method_ = Flow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
-  } else if (name == "arithmetic mean") {
-    method_ = Flow::FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
-  } else if (name == "upwind amanzi") {
+  } else if (name == "upwind: amanzi") {
     method_ = Flow::FLOW_RELATIVE_PERM_AMANZI;
+  } else if (name == "other: arithmetic average") {
+    method_ = Flow::FLOW_RELATIVE_PERM_ARITHMETIC_AVERAGE;
+  } else if (name == "other: harmonic average") {
+    method_ = Flow::FLOW_RELATIVE_PERM_HARMONIC_AVERAGE;
   } else {
     msg << "Flow PK: unknown relative permeability method has been specified.";
     Exceptions::amanzi_throw(msg);

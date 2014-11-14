@@ -1,0 +1,90 @@
+:Description: trimmed input for use with Alquimia interface to Amanzi
+:             for sorption isotherms
+
+:=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    Tracer
+    Sr90
+    Cs137
+  /
+
+  SORPTION
+    ISOTHERM_REACTIONS
+      Tracer
+        TYPE LINEAR
+        : Csorb = KD Caq
+        DISTRIBUTION_COEFFICIENT 1.e-6 ! kg water/m^3 bulk
+      /
+      Sr90
+        TYPE LINEAR
+        : Csorb = KD Caq
+        DISTRIBUTION_COEFFICIENT 0
+        LANGMUIR_B 0.1
+      /
+      Cs137
+        TYPE LINEAR
+        : Csorb = KD Caq
+        DISTRIBUTION_COEFFICIENT 0
+      /
+    /
+  /
+
+  DATABASE ./Tank_isotherms.dat
+  LOG_FORMULATION
+  ACTIVITY_COEFFICIENTS OFF
+  OUTPUT
+    All
+    TOTAL_SORBED
+  /
+END
+
+:=========================== constraints ======================================
+CONSTRAINT initial_nonsources
+  CONCENTRATIONS
+    Tracer  1.0e-20    T
+    Sr90    1.0e-20    T
+    Cs137   1.0e-20    T
+  /
+END
+
+CONSTRAINT initial_waste_floor
+  CONCENTRATIONS
+    Tracer  1.0e+00    T
+    Sr90    1.0e+01    T
+    Cs137   1.0e+02    T
+  /
+END
+
+CONSTRAINT initial_annulus_waste
+  CONCENTRATIONS
+    Tracer  2.0e+00    T
+    Sr90    2.0e+01    T
+    Cs137   2.0e+02    T
+  /
+END
+
+CONSTRAINT initial_primary_sand_pad
+  CONCENTRATIONS
+    Tracer  3.0e+00    T
+    Sr90    3.0e+01    T
+    Cs137   3.0e+02    T
+  /
+END
+
+CONSTRAINT initial_secondary_sand_pad
+  CONCENTRATIONS
+    Tracer  4.0e+00    T
+    Sr90    4.0e+01    T
+    Cs137   4.0e+02    T
+  /
+END
+
+CONSTRAINT west
+  CONCENTRATIONS
+    Tracer  1.0e-20    T
+    Sr90    1.0e-20    T
+    Cs137   1.0e-20    T
+  /
+END
+

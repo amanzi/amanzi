@@ -23,6 +23,10 @@ include(MercurialMacros)
 include(PrintVariable)
 include(InstallManager)
 
+message(STATUS ">>>>>>>> AmanziVersion.cmake")
+
+if ( EXISTS ${CMAKE_SOURCE_DIR}/.hg/ )
+
 find_package(Mercurial)
 if ( NOT MERCURIAL_FOUND ) 
 
@@ -32,13 +36,14 @@ if ( NOT MERCURIAL_FOUND )
   # Not sure what is best for static information.  
   #
   set(AMANZI_VERSION_MAJOR 0)
-  set(AMANZI_VERSION_MINOR 80-dev)
-  set(AMANZI_VERSION_PATCH )
+  set(AMANZI_VERSION_MINOR 83)
+  set(AMANZI_VERSION_PATCH dev)
+  set(AMANZI_VERSION_HASH )
 
   #
   # Amanzi version
   #
-  set(AMANZI_VERSION ${AMANZI_VERSION_MAJOR}.${AMANZI_VERSION_MINOR})
+  set(AMANZI_VERSION ${AMANZI_VERSION_MAJOR}.${AMANZI_VERSION_MINOR}-${AMANZI_VERSION_PATH})
 
 else()
 
@@ -62,30 +67,29 @@ else()
 
    STRING(REGEX REPLACE "amanzi-" "" AMANZI_HG_LATEST_TAG_VER ${AMANZI_HG_LATEST_TAG})	
    STRING(REGEX REPLACE "\\..*" "" AMANZI_HG_LATEST_TAG_MAJOR ${AMANZI_HG_LATEST_TAG_VER})	
-   STRING(REGEX REPLACE "[0-9]\\." "" AMANZI_HG_LATEST_TAG_MINOR ${AMANZI_HG_LATEST_TAG_VER})	
-
+   STRING(REGEX MATCH "\\.[0-9][0-9][\\.,-]" AMANZI_HG_LATEST_TAG_MINOR ${AMANZI_HG_LATEST_TAG_VER})	
+   STRING(REGEX REPLACE "[\\.,-]" "" AMANZI_HG_LATEST_TAG_MINOR ${AMANZI_HG_LATEST_TAG_MINOR} )	
 
    set(AMANZI_VERSION_MAJOR ${AMANZI_HG_LATEST_TAG_MAJOR})
    set(AMANZI_VERSION_MINOR ${AMANZI_HG_LATEST_TAG_MINOR})
-   set(AMANZI_VERSION_PATCH ${AMANZI_HG_GLOBAL_HASH})
-
-   message(STATUS "--- MAJOR VERSION ${AMANZI_HG_LATEST_TAG_MAJOR}")
-   message(STATUS "--- MINOR VERSION ${AMANZI_HG_LATEST_TAG_MINOR}")
-   message(STATUS "--- PATCH VERSION ${AMANZI_HG_GLOBAL_HASH}")
 
    #
    # Amanzi version
    #
    set(AMANZI_VERSION ${AMANZI_HG_LATEST_TAG_VER}_${AMANZI_HG_GLOBAL_HASH})
 
+   STRING(REGEX REPLACE ".*\\.[0-9][0-9][\\.,-]" "" AMANZI_VERSION_PATCH ${AMANZI_VERSION})
+   STRING(REGEX REPLACE ".*_" "" AMANZI_VERSION_HASH ${AMANZI_VERSION_PATCH})
+   STRING(REGEX REPLACE "_.*" "" AMANZI_VERSION_PATCH ${AMANZI_VERSION_PATCH})
+
 endif()
 
 # Status output
-message(STATUS "Amanzi Version:\t${AMANZI_VERSION}")
-message(STATUS "\tMercurial Branch:\t${AMANZI_HG_BRANCH}")
-message(STATUS "\tMercurial Global ID:\t${AMANZI_HG_GLOBAL_HASH}")
-message(STATUS "\tMercurial Local ID:\t${AMANZI_HG_LOCAL_ID}")
-message(STATUS "\tMercurial Tag Version:\t${AMANZI_HG_LATEST_TAG_VER}")
+#message(STATUS "Amanzi Version:\t${AMANZI_VERSION}")
+#message(STATUS "\tMercurial Branch:\t${AMANZI_HG_BRANCH}")
+#message(STATUS "\tMercurial Global ID:\t${AMANZI_HG_GLOBAL_HASH}")
+#message(STATUS "\tMercurial Local ID:\t${AMANZI_HG_LOCAL_ID}")
+#message(STATUS "\tMercurial Tag Version:\t${AMANZI_HG_LATEST_TAG_VER}")
 
 
 # Write the version header filed
@@ -93,7 +97,36 @@ set(version_template ${AMANZI_SOURCE_TOOLS_DIR}/cmake/amanzi_version.hh.in)
 configure_file(${version_template}
                ${CMAKE_CURRENT_BINARY_DIR}/amanzi_version.hh
                @ONLY)
+configure_file(${version_template}
+               ${CMAKE_CURRENT_BINARY_DIR}/extras/amanzi_version.hh
+               @ONLY)
 
 add_install_include_file(${CMAKE_CURRENT_BINARY_DIR}/amanzi_version.hh)             
 
+else()
+
+ configure_file(${CMAKE_SOURCE_DIR}/amanzi_version.hh
+                ${CMAKE_CURRENT_BINARY_DIR}/amanzi_version.hh
+                @ONLY)
+ add_install_include_file(${CMAKE_CURRENT_BINARY_DIR}/amanzi_version.hh) 
+
+ # extract the version from the include file
+ file (STRINGS "${CMAKE_SOURCE_DIR}/amanzi_version.hh" AMANZI_VERSION_HH REGEX "AMANZI_VERSION ")
+ STRING(REGEX REPLACE ".*AMANZI_VERSION " "" AMANZI_VERSION ${AMANZI_VERSION_HH})
+ STRING(STRIP ${AMANZI_VERSION} AMANZI_VERSION)
+
+ STRING(REGEX REPLACE "\\..*" "" AMANZI_VERSION_MAJOR ${AMANZI_VERSION})
+ STRING(REGEX MATCH "\\.[0-9][0-9]\\." AMANZI_VERSION_MINOR ${AMANZI_VERSION})
+ STRING(REGEX REPLACE "\\." "" AMANZI_VERSION_MINOR ${AMANZI_VERSION_MINOR})
+ STRING(REGEX REPLACE ".*\\..*\\." "" AMANZI_VERSION_PATCH ${AMANZI_VERSION})
+ STRING(REGEX REPLACE ".*_" "" AMANZI_VERSION_HASH ${AMANZI_VERSION_PATCH})
+ STRING(REGEX REPLACE "_.*" "" AMANZI_VERSION_PATCH ${AMANZI_VERSION_PATCH})
+
+endif()
+
+message(STATUS "\t >>>>>  Amanzi Version: ${AMANZI_VERSION}")
+message(STATUS "\t >>>>>  MAJOR ${AMANZI_VERSION_MAJOR}")
+message(STATUS "\t >>>>>  MINOR ${AMANZI_VERSION_MINOR}")
+message(STATUS "\t >>>>>  PATCH ${AMANZI_VERSION_PATCH}")
+message(STATUS "\t >>>>>  HASH  ${AMANZI_VERSION_HASH}")
 

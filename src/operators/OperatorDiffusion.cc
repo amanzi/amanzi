@@ -224,7 +224,7 @@ void OperatorDiffusion::UpdateMatricesNodal_()
     int method = mfd_primary_;
     int ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
-    if (method == WhetStone::DIFFUSION_POLYHEDRA_MONOTONE) {
+    if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY) {
       ok = mfd.StiffnessMatrixMMatrix(c, (*K_)[c], Acell);
       method = mfd_secondary_;
     } else {
@@ -597,8 +597,8 @@ void OperatorDiffusion::InitPreconditioner(
 void OperatorDiffusion::InitPreconditionerSpecialSff_(
     const std::string& prec_name, const Teuchos::ParameterList& plist)
 {
-  const std::vector<int>& bc_model = bc_->bc_model();
-  const std::vector<double>& bc_value = bc_->bc_value();
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
+  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
 
   // find the block of matrices
   int schema_dofs = OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL;
@@ -638,7 +638,7 @@ void OperatorDiffusion::InitPreconditionerSpecialSff_(
 
     for (int n = 0; n < nfaces; n++) {  // Symbolic boundary conditions
       int f = faces[n];
-      if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET) {
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         for (int m = 0; m < nfaces; m++) Scell(n, m) = Scell(m, n) = 0.0;
         Scell(n, n) = 1.0;
       }
@@ -679,7 +679,7 @@ void OperatorDiffusion::InitPreconditionerSpecialSff_(
 void OperatorDiffusion::InitPreconditionerSpecialScc_(
     const std::string& prec_name, const Teuchos::ParameterList& plist)
 {
-  const std::vector<int>& bc_model = bc_->bc_model();
+  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
 
   // find location of matrix blocks
   int schema_dofs = OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL;
@@ -883,13 +883,13 @@ void OperatorDiffusion::CreateMassMatrices_()
       if (method == WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE) {
         ok = mfd.MassMatrixInverseMMatrixHex(c, Kc, Wff);
         method = mfd_secondary_;
-      } else if (method == WhetStone::DIFFUSION_POLYHEDRA_MONOTONE) {
+      } else if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY) {
         ok = mfd.MassMatrixInverseMMatrix(c, Kc, Wff);
         method = mfd_secondary_;
       }
 
       if (ok != WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) {
-        if (method == WhetStone::DIFFUSION_OPTIMIZED_SCALED) {
+        if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY) {
           ok = mfd.MassMatrixInverseOptimizedScaled(c, Kc, Wff);
         } else if(method == WhetStone::DIFFUSION_TPFA) {
           ok = mfd.MassMatrixInverseTPFA(c, Kc, Wff);
@@ -924,7 +924,7 @@ void OperatorDiffusion::CreateMassMatrices_()
 ****************************************************************** */
 void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterList& plist)
 {
-  bc_ = bc;
+  bc_.push_back(bc);
 
   // Define stencil for the MFD diffusion method.
   std::vector<std::string> names;
@@ -970,27 +970,27 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   std::string secondary = plist.get<std::string>("discretization secondary");
 
   schema_base_ = OPERATOR_SCHEMA_BASE_CELL;
-  if (primary == "finite volume") {
+  if (primary == "fv: default") {
     schema_base_ = OPERATOR_SCHEMA_BASE_FACE;
   }
-  if (primary == "two point flux approximation" && schema_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
+  if (primary == "mfd: two-point flux approximation" && schema_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
     schema_base_ = OPERATOR_SCHEMA_BASE_FACE;
   }
 
   // Primary discretization methods
-  if (primary == "monotone mfd hex") {
+  if (primary == "mfd: monotone for hex") {
     mfd_primary_ = WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE;
-  } else if (primary == "monotone mfd") {
-    mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_MONOTONE;
-  } else if (primary == "two point flux approximation") {
+  } else if (primary == "mfd: optimized for monotonicity") {
+    mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY;
+  } else if (primary == "mfd: two-point flux approximation") {
     mfd_primary_ = WhetStone::DIFFUSION_TPFA;
-  } else if (primary == "optimized mfd scaled") {
-    mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_SCALED;
-  } else if (primary == "support operator") {
+  } else if (primary == "mfd: optimized for sparsity") {
+    mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
+  } else if (primary == "mfd: support operator") {
     mfd_primary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
-  } else if (primary == "mfd scaled") {
+  } else if (primary == "mfd: default") {
     mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
-  } else if (primary == "finite volume") {
+  } else if (primary == "fv: default") {
     mfd_primary_ = -1;  // not a mfd scheme
   } else {
     Errors::Message msg("OperatorDiffusion: primary discretization method is not supported.");
@@ -998,15 +998,15 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   }
 
   // Secondary discretization methods
-  if (secondary == "two point flux approximation") {
+  if (secondary == "mfd: two-point flux approximation") {
     mfd_secondary_ = WhetStone::DIFFUSION_TPFA;
-  } else if (secondary == "optimized mfd scaled") {
-    mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_SCALED;
-  } else if (secondary == "support operator") {
+  } else if (secondary == "mfd: optimized for sparsity") {
+    mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
+  } else if (secondary == "mfd: support operator") {
     mfd_secondary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
-  } else if (primary == "mfd scaled") {
+  } else if (primary == "mfd: default") {
     mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
-  } else if (primary == "finite volume") {
+  } else if (primary == "fv: default") {
     mfd_primary_ = -1;  // not a mfd schems
   } else {
     Errors::Message msg("OperatorDiffusion: secondary discretization method is not supported.");
@@ -1032,30 +1032,6 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
 }
 
 
-/* ******************************************************************
-* TBW.
-****************************************************************** */
-double OperatorDiffusion::DeriveBoundaryFaceValue(int f, 
-						  const CompositeVector& u, 
-						  Teuchos::RCP<Flow::WaterRetentionModel>)
-{
-  if (u.HasComponent("face")) {
-    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
-    return u_face[f][0];
-  } else {
-    const std::vector<int>& bc_model = bc_->bc_model();
-    const std::vector<double>& bc_value = bc_->bc_value();
-    if (bc_model[f] == OPERATOR_BC_FACE_DIRICHLET){
-      return bc_value[f];
-    } else {
-      const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int c = cells[0];
-      return u_cell[0][c];
-    }
-  }
-}
 
 }  // namespace Operators
 }  // namespace Amanzi

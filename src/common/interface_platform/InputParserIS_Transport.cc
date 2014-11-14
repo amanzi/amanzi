@@ -78,7 +78,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
           if (plist->isSublist("Material Properties")) {
             Teuchos::ParameterList& mp_list = plist->sublist("Material Properties");
             for (Teuchos::ParameterList::ConstIterator it = mp_list.begin(); it != mp_list.end(); ++it) {
-              d_list.set<std::string>("numerical method", "two point flux approximation");
+              d_list.set<std::string>("numerical method", "two-point flux approximation");
 
               if ((it->second).isList()) {
                 std::string mat_name(it->first);

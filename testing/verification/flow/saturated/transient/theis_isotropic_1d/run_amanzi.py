@@ -25,7 +25,13 @@ def run_amanzi(input_file, directory=None):
 
     try:
         stdout_file = open("stdout.out", "w")
-        ierr = subprocess.call([executable, "--xml_file="+input_file], stdout=stdout_file, stderr= subprocess.STDOUT)
+        if (os.environ['AMANZI_RUN_PARALLEL']):
+            mpi_nprocs=os.environ['AMANZI_MPI_MAXPROCS']
+            mpi_cmd = os.environ['AMANZI_MPI_EXEC'] + " " + os.environ['AMANZI_MPI_NUMPROCS_FLAG']+" "+mpi_nprocs+" "
+            ierr = subprocess.call([mpi_cmd + executable + " --xml_file="+input_file + " --xml_schema="+xmlschema_path], stdout=stdout_file, stderr= subprocess.STDOUT, shell=True)
+        else:
+            ierr = subprocess.call([executable, "--xml_file="+input_file, "--xml_schema="+xmlschema_path], stdout=stdout_file, stderr= subprocess.STDOUT)
+        #endif
         
     finally:
         os.chdir(CWD)

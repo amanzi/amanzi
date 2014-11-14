@@ -92,17 +92,16 @@ void Energy_PK::Initialize()
   // ProcessParameterList(plist_);
   K.resize(ncells_wghost);
   for (int c = 0; c < ncells_wghost; c++) {
-    K[c].init(dim, 1);
+    K[c].Init(dim, 1);
     K[c](0, 0) = 1.0;
   }
-  
 
   // Select a proper matrix class. 
   Teuchos::ParameterList& tmp_list = plist_.sublist("operators").sublist("diffusion operator");
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
-  op_bc_ = Teuchos::rcp(new Operators:: BCs(bc_model_, bc_value_));
+  op_bc_ = Teuchos::rcp(new Operators:: BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_));
   AmanziGeometry::Point g(dim);
 
   Operators::OperatorDiffusionFactory opfactory;
