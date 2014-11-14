@@ -41,7 +41,7 @@ void DivGradTest::setup(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp( new std::vector<WhetStone::Tensor>(c_owned));
   for (int c=0; c!=c_owned; ++c) {
-    (*K)[c].init(mesh_->space_dimension(),1);
+    (*K)[c].Init(mesh_->space_dimension(),1);
     (*K)[c](0,0) = 1.0;
   }
 
