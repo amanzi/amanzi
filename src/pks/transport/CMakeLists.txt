@@ -156,11 +156,11 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     if ( ENABLE_MSTK_Mesh )
-        add_amanzi_test(transport_parallel_mstk transport_parallel_mstk
-		       KIND int
+	add_amanzi_test(transport_parallel_mstk transport_parallel_mstk
+			       KIND int
 	               NPROCS 4 
-                       SOURCE test/Main.cc test/transport_parallel_mstk.cc
-                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+	               SOURCE test/Main.cc test/transport_parallel_mstk.cc
+	               LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         add_amanzi_test(transport_parallel_read_mstk transport_parallel_read_mstk
 		       KIND int

@@ -1,0 +1,24 @@
+Observation Name, Region, Functional, Variable, Time, Value
+===========================================================
+observation-2:water, Point0, Observation Data: Point, Hydraulic Head, 3.0000000000000000e+09, 1.2168639314712918e+01
+observation-4:water, Point10, Observation Data: Point, Hydraulic Head, 3.0000000000000000e+09, 1.1697315219863997e+01
+observation-6:water, Point20, Observation Data: Point, Hydraulic Head, 3.0000000000000000e+09, 1.1209718037917932e+01
+observation-8:water, Point30, Observation Data: Point, Hydraulic Head, 3.0000000000000000e+09, 1.0700482809100688e+01
+observation-10:water, Point40, Observation Data: Point, Hydraulic Head, 3.0000000000000000e+09, 1.0165783267056618e+01
+observation-12:water, Point50, Observation Data: Point, Hydraulic Head, 3.0000000000000000e+09, 9.6015465378777147e+00
+observation-14:water, Point60, Observation Data: Point, Hydraulic Head, 3.0000000000000000e+09, 9.0020392269345990e+00
+observation-16:water, Point70, Observation Data: Point, Hydraulic Head, 3.0000000000000000e+09, 8.3600173846413117e+00
+observation-18:water, Point80, Observation Data: Point, Hydraulic Head, 3.0000000000000000e+09, 7.6647799882278198e+00
+observation-20:water, Point90, Observation Data: Point, Hydraulic Head, 3.0000000000000000e+09, 6.9008440189129674e+00
+observation-22:water, Point100, Observation Data: Point, Hydraulic Head, 3.0000000000000000e+09, 6.1397856864605433e+00
+observation-24:water, Point0, Observation Data: Point, Aqueous pressure, 3.0000000000000000e+09, 2.1895194297973331e+05
+observation-26:water, Point10, Observation Data: Point, Aqueous pressure, 3.0000000000000000e+09, 2.1433815234376566e+05
+observation-28:water, Point20, Observation Data: Point, Aqueous pressure, 3.0000000000000000e+09, 2.0956506449026210e+05
+observation-30:water, Point30, Observation Data: Point, Aqueous pressure, 3.0000000000000000e+09, 2.0458016183856354e+05
+observation-32:water, Point40, Observation Data: Point, Aqueous pressure, 3.0000000000000000e+09, 1.9934598907485220e+05
+observation-34:water, Point50, Observation Data: Point, Aqueous pressure, 3.0000000000000000e+09, 1.9382267684446624e+05
+observation-36:water, Point60, Observation Data: Point, Aqueous pressure, 3.0000000000000000e+09, 1.8795410095867352e+05
+observation-38:water, Point70, Observation Data: Point, Aqueous pressure, 3.0000000000000000e+09, 1.8166935040924753e+05
+observation-40:water, Point80, Observation Data: Point, Aqueous pressure, 3.0000000000000000e+09, 1.7486367290537356e+05
+observation-42:water, Point90, Observation Data: Point, Aqueous pressure, 3.0000000000000000e+09, 1.6738550520670431e+05
+observation-44:water, Point100, Observation Data: Point, Aqueous pressure, 3.0000000000000000e+09, 1.5993550668961246e+05

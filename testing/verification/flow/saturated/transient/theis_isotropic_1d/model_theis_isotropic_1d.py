@@ -128,7 +128,7 @@ def getWellFunction(U):
     try:
         u < 0
     except KeyError:
-        raise RunTimeError("u cannot be negative check input times and radius!")
+        raise RuntimeError("u cannot be negative check input times and radius!")
     if u < 1:
         W = -math.log(u) + a_0 + a_1*u + a_2*u**2 + a_3*u**3 + a_4*u**4 + a_5*u**5
         return W
