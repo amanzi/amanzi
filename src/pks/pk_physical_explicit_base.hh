@@ -46,6 +46,7 @@ class PKPhysicalExplicitBase : public PKExplicitBase, public PKPhysicalBase {
   virtual bool advance(double dt) {
     PKExplicitBase::advance(dt);
     ChangedSolution();
+    return false;
   }
 
 

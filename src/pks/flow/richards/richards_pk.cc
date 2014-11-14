@@ -144,7 +144,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   unsigned int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
   for (unsigned int c=0; c!=c_owned; ++c) {
-    (*K_)[c].init(mesh_->space_dimension(),1);
+    (*K_)[c].Init(mesh_->space_dimension(),1);
   }
   // scaling for permeability
   perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
