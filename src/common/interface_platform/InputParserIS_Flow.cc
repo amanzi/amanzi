@@ -808,6 +808,9 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
           Teuchos::Array<std::string> forms = forms_;
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
         }
+
+        // hack: select one region for transport diagnostics
+        transport_diagnostics_.insert(transport_diagnostics_.end(), regions.begin(), regions.end());
       }
       // TODO...
       // add the rest of the boundary conditions
@@ -984,6 +987,10 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(const std::string&
 
   op_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
   op_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
+
+  op_list.sublist("diffusion operator").set<std::string>("upwind method", "standard");
+  op_list.sublist("diffusion operator")
+         .sublist("upwind standard parameter").set<std::string>("type", "upwind with flux");
 
   return op_list;
 }

@@ -24,7 +24,7 @@
 #include "GMVMesh.hh"
 
 #include "OperatorDefs.hh"
-#include "Upwind.hh"
+#include "UpwindStandard.hh"
 
 namespace Amanzi{
 
@@ -146,11 +146,10 @@ TEST(UPWIND) {
     }
 
     // Create upwind
-    Upwind<Model> upwind(mesh, model);
-
     ParameterList& ulist = plist.sublist("upwind");
+    UpwindStandard<Model> upwind(mesh, model);
     upwind.Init(ulist);
-    // upwind.Compute(flux, bc_model, bc_value, field, upw_field, " ");
+
     ModelUpwindFn func = &Model::Value;
     upwind.Compute(flux, bc_model, bc_value, field, upw_field, func);
 

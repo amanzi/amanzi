@@ -74,6 +74,9 @@ Teuchos::ParameterList InputParserIS::Translate(Teuchos::ParameterList* plist, i
   // analysis list
   new_list.sublist("Analysis") = CreateAnalysisList_();
 
+  // hack (additional transport diagnostics form flow)
+  new_list.sublist("Transport").set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
+
   return new_list;
 }
 

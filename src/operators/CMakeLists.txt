@@ -63,7 +63,10 @@ set(operators_inc_files
     OperatorSource.hh
     Reconstruction.hh
     ReconstructionCell.hh
-    Upwind.hh)
+    Upwind.hh
+    UpwindFactory.hh
+    UpwindStandard.hh
+    UpwindMFD.hh)
 
 add_amanzi_library(operators
                    SOURCE Operator.cc 

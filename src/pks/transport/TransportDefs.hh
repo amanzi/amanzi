@@ -58,7 +58,6 @@ const int TRANSPORT_LIMITER_TENSORIAL = 2;
 const int TRANSPORT_LIMITER_KUZMIN = 3;
 const double TRANSPORT_LIMITER_TOLERANCE = 1e-14;
 
-const int TRANSPORT_AMANZI_VERSION = 3;  
 const int TRANSPORT_INTERNAL_ERROR = 911;  // contact (lipnikov@lanl.gov)
 
 }  // namespace Transport

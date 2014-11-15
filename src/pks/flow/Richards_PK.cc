@@ -29,6 +29,7 @@
 #include "mfd3d_diffusion.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "Point.hh"
+#include "UpwindFactory.hh"
 
 #include "darcy_velocity_evaluator.hh"
 #include "Flow_BC_Factory.hh"
@@ -213,9 +214,9 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   rel_perm_->ProcessStringRelativePermeability(krel_method_name);
 
   // parameter which defines when update direction of update
-  Teuchos::ParameterList aux_list;
-  upwind_ = Teuchos::rcp(new Operators::Upwind<RelativePermeability>(mesh_, rel_perm_));
-  upwind_->Init(aux_list);
+  Teuchos::ParameterList upw_list = rp_list_.sublist("operators").sublist("diffusion operator");
+  Operators::UpwindFactory<RelativePermeability> upwind_factory;
+  upwind_ = upwind_factory.Create(mesh_, rel_perm_, upw_list);
 
   std::string upw_upd = rp_list_.get<std::string>("upwind update", "every timestep");
   if (upw_upd == "every nonlinear iteration") update_upwind = FLOW_UPWIND_UPDATE_ITERATION;

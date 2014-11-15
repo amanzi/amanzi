@@ -127,6 +127,15 @@ void Transport_PK::ProcessParameterList()
   }
 
   // control parameter
+  if (transport_list.isParameter("runtime diagnostics: solute names")) {
+    runtime_solutes_ = transport_list.get<Teuchos::Array<std::string> >("runtime diagnostics: solute names").toVector();
+  } else {
+    runtime_solutes_.push_back(component_names_[0]);
+  }
+  if (transport_list.isParameter("runtime diagnostics: regions")) {
+    runtime_regions_ = transport_list.get<Teuchos::Array<std::string> >("runtime diagnostics: regions").toVector();
+  }
+
   internal_tests = transport_list.get<std::string>("enable internal tests", "no") == "yes";
   tests_tolerance = transport_list.get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
   dT_debug = transport_list.get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);

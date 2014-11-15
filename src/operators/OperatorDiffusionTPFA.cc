@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  This is the operators component of the Amanzi code. 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -425,7 +425,7 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
   double dpres;
   if (mcells == 2) {
     dpres = pres[0] - pres[1];  // + grn;
-    if (Krel_method == OPERATOR_UPWIND_WITH_CONSTANT_VECTOR) {  // Define K 
+    if (Krel_method == OPERATOR_UPWIND_CONSTANT_VECTOR) {  // Define K 
       double cos_angle = face_dir * (*gravity_term_)[f] / (rho_ * mesh_->face_area(f));
       if (cos_angle > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dkdp_cell[0];
@@ -437,7 +437,7 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
         dKrel_dp[0] = 0.5 * dkdp_cell[0];
         dKrel_dp[1] = 0.5 * dkdp_cell[1];
       }
-    } else if (Krel_method == OPERATOR_UPWIND_WITH_FLUX) {
+    } else if (Krel_method == OPERATOR_UPWIND_FLUX) {
       double flux0to1;
       flux0to1 = (*transmissibility_)[f] * dpres + face_dir * (*gravity_term_)[f];
       if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
@@ -450,7 +450,7 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
         dKrel_dp[0] = 0.5 * dkdp_cell[0];
         dKrel_dp[1] = 0.5 * dkdp_cell[1];
       }
-    } else if (Krel_method == OPERATOR_ARITHMETIC_MEAN) {
+    } else if (Krel_method == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
       dKrel_dp[0] = 0.5 * dkdp_cell[0];
       dKrel_dp[1] = 0.5 * dkdp_cell[1];
     }

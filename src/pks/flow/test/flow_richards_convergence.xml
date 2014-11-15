@@ -90,6 +90,11 @@
             <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
             <Parameter name="gravity" type="bool" value="true"/>
           </ParameterList>
+
+          <Parameter name="upwind method" type="string" value="standard"/>
+          <ParameterList name="upwind standard parameter">
+            <Parameter name="type" type="string" value="upwind with flux"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
 

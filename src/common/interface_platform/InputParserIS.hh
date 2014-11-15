@@ -117,6 +117,7 @@ class InputParserIS {
   int spatial_dimension_;  
   bool flow_single_phase, use_picard_;
   bool need_dispersion_;
+  std::vector<std::string> transport_diagnostics_;
 
   std::string verbosity_level;
   int numproc_;

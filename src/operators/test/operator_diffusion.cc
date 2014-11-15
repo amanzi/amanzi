@@ -153,6 +153,13 @@ Amanzi::AmanziGeometry::Point velocity_exact_linear(const Amanzi::AmanziGeometry
   return v;
 }
 
+int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
+{
+  Amanzi::AmanziMesh::Entity_ID_List cells;
+  mesh.face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
+  return cells[0];
+}
+
 /* *****************************************************************
 * This test diffusion solver with full tensor and source term.
 * **************************************************************** */
@@ -374,8 +381,9 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
-    const Point& normal = mesh->face_normal(f);
     double area = mesh->face_area(f);
+    int dir, c = BoundaryFaceGetCell(*mesh, f);
+    const Point& normal = mesh->face_normal(f, false, c, &dir);
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;

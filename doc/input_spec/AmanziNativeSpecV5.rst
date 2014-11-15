@@ -604,30 +604,45 @@ Diffusion operators
 Operators sublist describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
 
-* `"discretization primary`" [string] specifies an advanced discretization method that
-  has useful properties under some a priori conditions on the mesh and/or permeability tensor.
-  The available options are `"mfd: optimized for sparsity`", `"mfd: optimized for monotonicity`",
-  `"mfd: default`", `"mfd: support operator`", `"mfd: two-point flux approximation`",
-  and `"fv: default`". 
-  The first option is recommended for general meshes.
-  The second option is recommended for orthogonal meshes and diagonal absolute 
-  permeability tensor. 
+* `"matrix`" [sublist] defines parameters for generating and assembling diffusion matrix.
 
-* `"discretization secondary`" [string] specifies the most robust discretization method
-  that is used when the primary selection fails to satisfy all a priori conditions.
+  * `"discretization primary`" [string] specifies an advanced discretization method that
+    has useful properties under some a priori conditions on the mesh and/or permeability tensor.
+    The available options are `"mfd: optimized for sparsity`", `"mfd: optimized for monotonicity`",
+    `"mfd: default`", `"mfd: support operator`", `"mfd: two-point flux approximation`",
+    and `"fv: default`". 
+    The first option is recommended for general meshes.
+    The second option is recommended for orthogonal meshes and diagonal absolute 
+    permeability tensor. 
 
-* `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
-  geometric objects.
+  * `"discretization secondary`" [string] specifies the most robust discretization method
+    that is used when the primary selection fails to satisfy all a priori conditions.
 
-* `"preconditioner schema`" [Array(string)] defines the preconditioner stencil.
-  It is needed only when the default assembling procedure is not desirable. If skipped,
-  the `"schema`" is used instead. 
+  * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
+    geometric objects.
 
-* `"gravity`" [bool] specifies if flow is driven also by the gravity.
+  * `"preconditioner schema`" [Array(string)] defines the preconditioner stencil.
+    It is needed only when the default assembling procedure is not desirable. If skipped,
+    the `"schema`" is used instead. 
 
-* `"nonstandard symbolic assembling`" [int] specifies a nonstandard treatment of schemas.
-  It is used for experiments with preconditioners.
-  Default is 0.
+  * `"gravity`" [bool] specifies if flow is driven also by the gravity.
+
+  * `"nonstandard symbolic assembling`" [int] specifies a nonstandard treatment of schemas.
+    It is used for experiments with preconditioners.
+    Default is 0.
+
+
+* `"preconditioner`" [sublist] defines parameters for generating and assembling diffusion 
+  matrix that is used to create preconditioner. Since update of preconditioner can be lag,
+  we need two objects called `"matrix`" and `"preconditioner`".
+
+* `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
+  Available options are `"standard`" (default) and `"mfd`" (experimental). 
+
+  * `"upwind standard parameters`" [sublist] defines parameters for this upwind method.
+
+    * `"type`" [string] refined standard upwinf method. Available options are `"upwind with flux`"
+      (default).
 
 .. code-block:: xml
 
@@ -646,6 +661,11 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
           <Parameter name="gravity" type="bool" value="true"/>
+        </ParameterList>
+
+        <Parameter name="upwind method" type="string" value="standard"/>
+        <ParameterList name="upwind standard parameters">
+           <Parameter name="type" type="string" value="upwind with flux"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -1355,16 +1375,24 @@ This example defines one well and one sink.
      </ParameterList>
     
 
-Other parameters
------------------
 
-The other parameters that can be used by developers include
+Developer parameters
+--------------------
+
+The remaining parameters that can be used by a developes include
 
 * `"enable internal tests`" [string] various internal tests will be executed during
   the run time. The default value is `"no`".
    
 * `"internal tests tolerance`" [double] tolerance for internal tests such as the 
   divergence-free condition. The default value is 1e-6.
+
+* `"runtime diagnostics: solute names`" [Array(string)] defines solutes that will be 
+  tracked closely each time step if verbosity `"high`". Default value is the first 
+  solute in the global list of `"aqueous names`".
+
+* `"runtime diagnostics: regions`" [Array(string)] defines a boundary region for 
+  tracking solutes. Default value is a seepage face boundary, see Flow PK.
 
 
 Chemistry

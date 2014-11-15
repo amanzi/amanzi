@@ -42,7 +42,7 @@ void OperatorDiffusion::InitOperator(
   scalar_rho_mu_ = true;
 
   // compatibility
-  if (upwind_ == OPERATOR_UPWIND_WITH_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) { 
+  if (upwind_ == OPERATOR_UPWIND_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) { 
     ASSERT(k->HasComponent("face"));
   }
 
@@ -114,7 +114,7 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
-  if (upwind_ == OPERATOR_UPWIND_WITH_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) {
+  if (upwind_ == OPERATOR_UPWIND_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) {
     k_face = k_->ViewComponent("face", true);
   }
 
@@ -138,7 +138,7 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
     } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
-    } else if (upwind_ == OPERATOR_UPWIND_WITH_FLUX) {
+    } else if (upwind_ == OPERATOR_UPWIND_FLUX) {
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     }
 
@@ -1020,7 +1020,7 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   // upwind options
   std::string name = plist.get<std::string>("upwind", "none");
   if (name == "with flux") {
-    upwind_ = OPERATOR_UPWIND_WITH_FLUX;
+    upwind_ = OPERATOR_UPWIND_FLUX;
   } else if (name == "amanzi") {  // New upwind for unstructured meshes.
     upwind_ = OPERATOR_UPWIND_AMANZI;
   } else {

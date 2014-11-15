@@ -111,7 +111,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
     }
   }
 
-  TPK.CheckTracerBounds(*tcc, 0, 0.0, 1.0, Transport::TRANSPORT_LIMITER_TOLERANCE);
+  TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, Transport::TRANSPORT_LIMITER_TOLERANCE);
  
   delete comm;
 }

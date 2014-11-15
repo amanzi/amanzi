@@ -37,7 +37,7 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
     Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
     Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
     if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
-    if (upwind_ == OPERATOR_UPWIND_WITH_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) {
+    if (upwind_ == OPERATOR_UPWIND_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) {
       k_face = k_->ViewComponent("face", true);
     }
 
@@ -60,11 +60,10 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
       if (upwind_ == OPERATOR_UPWIND_AMANZI) {
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = kc;
-        // for (int n = 0; n < nfaces; n++) kf[n] = std::max(kc, (*k_face)[0][faces[n]]);
       } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = kc;
-      } else if(upwind_ == OPERATOR_UPWIND_WITH_FLUX) {
+      } else if(upwind_ == OPERATOR_UPWIND_FLUX) {
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
       }
 
@@ -116,7 +115,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
-  if (upwind_ == OPERATOR_UPWIND_WITH_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) {
+  if (upwind_ == OPERATOR_UPWIND_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) {
     k_face = k_->ViewComponent("face", true);
   }
 
@@ -142,11 +141,10 @@ void OperatorDiffusionWithGravity::UpdateFlux(
     if (upwind_ == OPERATOR_UPWIND_AMANZI) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
-      // for (int n = 0; n < nfaces; n++) kf[n] = std::max(kc, (*k_face)[0][faces[n]]);
     } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
-    } else if(upwind_ == OPERATOR_UPWIND_WITH_FLUX) {
+    } else if(upwind_ == OPERATOR_UPWIND_FLUX) {
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     }
 

@@ -1569,7 +1569,7 @@ The user must specify when the various types of output are desired.  For Observa
  * Aqueous saturation [volume water / volume pore space]
  * Aqueous pressure [Pa]
  * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
- * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
+ * X-, Y-, Z- Aqueous volumetric flux [m/s]
  * MaterialID
  * Gravimetric water content [volumetric water content * water density / bulk density, in kg/m^3]
  * Hydraulic Head [ (aqueous pressure - atmospheric pressure)/(rho * gravity) + z ]

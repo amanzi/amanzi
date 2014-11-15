@@ -130,7 +130,7 @@ TEST(DISPERSION) {
     T += dT;
     iter++;
 
-    TPK.CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
+    TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
   }
  
   delete comm;
@@ -225,7 +225,7 @@ TEST(DIFFUSION) {
     T += dT;
     iter++;
 
-    TPK.CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
+    TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
   }
  
   GMV::open_data_file(*mesh, (std::string)"transport.gmv");

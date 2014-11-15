@@ -216,7 +216,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     bcs[i]->Compute(time);
   }
 
-  CheckInfluxBC();
+  VV_CheckInfluxBC();
 
   // source term initialization
   for (int i =0; i < srcs.size(); i++) {
@@ -607,31 +607,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
     *vo_->os() << ncycles << " sub-cycles, dT_stable=" << dT_original 
                << " [sec]  dT_MPC=" << dT_MPC << " [sec]" << std::endl;
 
-    double tccmin_vec[num_components];
-    double tccmax_vec[num_components];
-
-    tcc_next.MinValue(tccmin_vec);
-    tcc_next.MaxValue(tccmax_vec);
-
-    double tccmin, tccmax;
-    tcc_next.Comm().MinAll(tccmin_vec, &tccmin, 1);  // find the global extrema
-    tcc_next.Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
-
-    mass_tracer_exact += TracerVolumeChangePerSecond(0) * dT_MPC;
-    double mass_tracer = 0.0;
-    for (int c = 0; c < ncells_owned; c++) {
-      double vol = mesh_->cell_volume(c);
-      mass_tracer += (*ws)[0][c] * (*phi)[0][c] * tcc_next[0][c] * vol;
-    }
-
-    double mass_tracer_tmp = mass_tracer, mass_exact_tmp = mass_tracer_exact, mass_exact;
-    mesh_->get_comm()->SumAll(&mass_tracer_tmp, &mass_tracer, 1);
-    mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_exact, 1);
-
-    double mass_loss = mass_exact - mass_tracer;
-    *vo_->os() << "species #0: " << tccmin << " <= concentration <= " << tccmax << std::endl;
-    *vo_->os() << "species #0: reservoir mass=" << mass_tracer 
-               << " [kg], mass left=" << mass_loss << " [kg]" << std::endl;
+    VV_PrintSoluteExtrema(tcc_next, dT_MPC);
   }
 
   return 0;
@@ -744,7 +720,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   mass_tracer_exact += mass_tracer_source * dT;
 
   if (internal_tests) {
-    CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
+    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 }
 
@@ -790,7 +766,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
   mass_tracer_exact += mass_tracer_source * dT;
 
   if (internal_tests) {
-    CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
+    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 }
 
@@ -853,7 +829,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
   mass_tracer_exact += mass_tracer_source * dT / 2;
 
   if (internal_tests) {
-    CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
+    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 }
 
