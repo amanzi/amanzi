@@ -17,12 +17,14 @@ namespace AmanziInput {
 Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* plist)
 {
   Teuchos::ParameterList stt_list;
+  Errors::Message msg;
 
   // first we write initial conditions for scalars and vectors, not region-specific
 
   Teuchos::ParameterList& stt_ic = stt_list.sublist("initial conditions");
   //
   // --- gravity
+  //  
   Teuchos::Array<double> gravity(spatial_dimension_);
   for (int i = 0; i != spatial_dimension_-1; ++i) gravity[i] = 0.0;
   gravity[spatial_dimension_-1] = -GRAVITY_MAGNITUDE;
@@ -31,12 +33,16 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
   // --- viscosity
   //
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
-  double viscosity = phase_list.sublist(phases_[0].name).sublist("Phase Properties").sublist("Viscosity: Uniform").get<double>("Viscosity");
+  double viscosity = phase_list.sublist(phases_[0].name)
+                               .sublist("Phase Properties")
+                               .sublist("Viscosity: Uniform").get<double>("Viscosity");
   stt_ic.sublist("fluid_viscosity").set<double>("value", viscosity);
   //
   // --- density
   //
-  double density = phase_list.sublist(phases_[0].name).sublist("Phase Properties").sublist("Density: Uniform").get<double>("Density");
+  double density = phase_list.sublist(phases_[0].name)
+                             .sublist("Phase Properties")
+                             .sublist("Density: Uniform").get<double>("Density");
   stt_ic.sublist("fluid_density").set<double>("value", density);
   // this is stupid, but for some reason we also have an array for water density, so here it goes...
   stt_ic.sublist("water_density").sublist("function").sublist("All")
@@ -84,7 +90,8 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
     if (matprop_list.sublist(matprop_list.name(i)).isSublist("Porosity: Uniform")) {
       porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
     } else {
-      Exceptions::amanzi_throw(Errors::Message("Porosity must be specified as Intrinsic Porosity: Uniform, for every region."));
+      msg << "Porosity must be specified as Intrinsic Porosity: Uniform, for every region.";
+      Exceptions::amanzi_throw(msg);
     }
     Teuchos::ParameterList &porosity_ic = stt_ic.sublist("porosity");
     porosity_ic.sublist("function").sublist(reg_str)
@@ -102,7 +109,9 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
 	 mplist.isSublist("Intrinsic Permeability: Anisotropic Uniform")) && 
 	(mplist.isSublist("Hydraulic Conductivity: Uniform") || 
 	 mplist.isSublist("Hydraulic Conductivity: Anisotropic Uniform"))) {
-      Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified either Intrinsic Permeability or Hydraulic Conductivity, but not both."));
+      msg << "Permeability can only be specified either \"Intrinsic Permeability\"" 
+          << " or \"Hydraulic Conductivity\", but not both.";
+      Exceptions::amanzi_throw(msg);
     }
 
     if (mplist.isSublist("Intrinsic Permeability: Uniform")) {
@@ -114,7 +123,9 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
         if (spatial_dimension_ == 3) {
           perm_z = mplist.sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("z");
         } else {
-          Exceptions::amanzi_throw(Errors::Message("Intrinsic Permeability: Anisotropic Uniform defines a value for z, while the spatial dimension of the problem not 3."));
+          msg << "Intrinsic Permeability: Anisotropic Uniform defines a value for z,"
+              << " while the spatial dimension of the problem not 3.";
+          Exceptions::amanzi_throw(msg);
         }
       }
     } else if (mplist.isSublist("Hydraulic Conductivity: Uniform")) {
@@ -130,7 +141,9 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
         if (spatial_dimension_ == 3) {
           perm_z = mplist.sublist("Hydraulic Conductivity: Anisotropic Uniform").get<double>("z");
         } else {
-          Exceptions::amanzi_throw(Errors::Message("Hydraulic Conductivity: Anisotropic Uniform defines a value for z, while the spatial dimension of the problem not 3."));
+          msg << "Hydraulic Conductivity: Anisotropic Uniform defines a value for z,"
+              << " while the spatial dimension of the problem not 3.";
+          Exceptions::amanzi_throw(msg);
         }
       }
       // now scale with rho, g and mu to get correct permeablity values
@@ -180,24 +193,31 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
           std::string par_file_w_ext = boost::str(boost::format(fmt) % perm_file_par % numproc_ % rank);
           p = par_file_w_ext;
           if (!boost::filesystem::exists(p)) {
-            Exceptions::amanzi_throw(Errors::Message("Permeability initialization from file: not all the partitioned files '" + perm_file_par + ".<numranks>.<rank>' exist, and possibly none of them exist."));
+            msg << "Permeability initialization from file: not all the partitioned files \"" 
+                << perm_file_par << ".<numranks>.<rank>\" exist, and possibly none of them exist.";
+            Exceptions::amanzi_throw(msg);
           }
           perm_file = perm_file_par;
         } else { // numproc_ == 1
           std::string suffix = perm_file.substr(perm_file.size()-4);
           if (suffix != std::string(".exo")) {          
-            Exceptions::amanzi_throw(Errors::Message("Permeability initialization from file: in serial the exodus mesh file must have the suffix .exo"));
+            msg << "Permeability initialization from file: in serial the exodus mesh file"
+                << " must have the suffix .exo";
+            Exceptions::amanzi_throw(msg);
           }
           p = perm_file;
           if (!boost::filesystem::exists(p)) {
-            Exceptions::amanzi_throw(Errors::Message("Permeability initialization from file: the file '" + perm_file + "' does not exist."));
+            msg << "Permeability initialization from file: the file \"" << perm_file << "\" does not exist.";
+            Exceptions::amanzi_throw(msg);
           }
         }
         permeability_ic.sublist("exodus file initialization")
             .set<std::string>("file",perm_file)
             .set<std::string>("attribute",perm_attribute);
       } else {
-        Exceptions::amanzi_throw(Errors::Message("Permeabily initialization from file, incompatible format specified: '" + perm_format + "', only 'exodus' is supported."));
+        msg << "Permeabily initialization from file, incompatible format specified: \"" 
+            << perm_format << "\", only \"exodus\" is supported.";
+        Exceptions::amanzi_throw(msg);
       }
      
     } else {
@@ -223,7 +243,8 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
     // specific_yield...
     if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Yield: Uniform")) {
       Teuchos::ParameterList& spec_yield_ic = stt_ic.sublist("specific_yield");
-      double specific_yield = matprop_list.sublist(matprop_list.name(i)).sublist("Specific Yield: Uniform").get<double>("Value");
+      double specific_yield = matprop_list.sublist(matprop_list.name(i))
+                                          .sublist("Specific Yield: Uniform").get<double>("Value");
       spec_yield_ic.sublist("function").sublist(reg_str)
           .set<Teuchos::Array<std::string> >("regions",regions)
           .set<std::string>("component","cell")
@@ -234,7 +255,8 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
     // specific_storage...
     if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Storage: Uniform")) {
       Teuchos::ParameterList& spec_stor_ic = stt_ic.sublist("specific_storage");
-      double specific_storage = matprop_list.sublist(matprop_list.name(i)).sublist("Specific Storage: Uniform").get<double>("Value");
+      double specific_storage = matprop_list.sublist(matprop_list.name(i))
+                                            .sublist("Specific Storage: Uniform").get<double>("Value");
       spec_stor_ic.sublist("function").sublist(reg_str)
           .set<Teuchos::Array<std::string> >("regions",regions)
           .set<std::string>("component","cell")
@@ -245,7 +267,8 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
     // particle_density...
     if (matprop_list.sublist(matprop_list.name(i)).isSublist("Particle Density: Uniform")) {
       Teuchos::ParameterList& part_dens_ic = stt_ic.sublist("particle_density");
-      double particle_density = matprop_list.sublist(matprop_list.name(i)).sublist("Particle Density: Uniform").get<double>("Value");
+      double particle_density = matprop_list.sublist(matprop_list.name(i))
+                                            .sublist("Particle Density: Uniform").get<double>("Value");
       part_dens_ic.sublist("function").sublist(reg_str)
           .set<Teuchos::Array<std::string> >("regions",regions)
           .set<std::string>("component","cell")
@@ -311,7 +334,8 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
               .set<Teuchos::Array<double> >("gradient",grad_with_time);
 
         } else if (ic_for_region->isSublist("IC: File Pressure")) {
-          Exceptions::amanzi_throw(Errors::Message("IC: File Pressure cannot currently be used to initialize pressure in a region."));
+          msg << "IC: File Pressure cannot currently be used to initialize pressure in a region.";
+          Exceptions::amanzi_throw(msg);
         }
       }
 
@@ -352,7 +376,8 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
               .set<Teuchos::Array<double> >("x0",refcoord_with_time)
               .set<Teuchos::Array<double> >("gradient",grad_with_time);
         } else if (ic_for_region->isSublist("IC: File Saturation")) {
-          Exceptions::amanzi_throw(Errors::Message("IC: File Saturation cannot currently be used to initialize saturation in a region."));
+          msg << "IC: File Saturation cannot currently be used to initialize saturation in a region.";
+          Exceptions::amanzi_throw(msg);
         }
       }
 
@@ -362,7 +387,9 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
         Teuchos::Array<double> vel_vec = ic_for_region->sublist("IC: Uniform Velocity").get<Teuchos::Array<double> >("Velocity Vector");
 
         if (vel_vec.size() != spatial_dimension_) {
-          Exceptions::amanzi_throw(Errors::Message("The velocity vector defined in in the IC: Uniform Velocity list does not match the spatial dimension of the problem."));
+          msg << "The velocity vector defined in in the IC: Uniform Velocity list"
+              << " does not match the spatial dimension of the problem.";
+          Exceptions::amanzi_throw(msg);
         }
 
         Teuchos::ParameterList& d_list =
@@ -433,6 +460,10 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
                   dof_str << "DoF " << ii + 1 << " Function";
                   dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", conc);
                 }
+              }
+              else {
+                msg << "An initial value has to be specified for solute \"" << name << "\"";
+                Exceptions::amanzi_throw(msg);
               }
             }
           }
