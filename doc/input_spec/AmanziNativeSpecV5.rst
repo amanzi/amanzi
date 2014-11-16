@@ -1114,7 +1114,7 @@ The remaining `"Flow`" parameters are
 
 * `"relative permeability`" [string] defines a method for calculating the *upwinded* 
   relative permeability. The available options are: `"upwind: gravity`", 
-  `"upwind: darcy velocity`" (default), `"upwind: amanzi`" (experimental), 
+  `"upwind: darcy velocity`" (default), `"upwind: amanzi", `"upwind: artificial diffusion`" (experimental), 
   `"other: harmonic average`", and `"other: arithmetic average`".
 
 * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside

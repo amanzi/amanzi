@@ -257,10 +257,10 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   std::string upw_method("none");
   if (name == "upwind: darcy velocity" || name == "upwind: gravity") {
     upw_method = "standard";
-  } else if (name == "upwind: amanzi") {
+  } else if (name == "upwind: artificial diffusion") {
     upw_method = "amanzi: artificial diffusion";
     oplist_pc.set<std::string>("upwind method", "artificial diffusion");
-  } else if (name == "upwind: mfd") {
+  } else if (name == "upwind: amanzi") {
     upw_method = "amanzi: mfd";
   }
   oplist_matrix.set<std::string>("upwind method", upw_method);
@@ -284,7 +284,8 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Create RCP pointer to upwind flux.
   if (rel_perm_->method() == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
-      rel_perm_->method() == FLOW_RELATIVE_PERM_AMANZI) {
+      rel_perm_->method() == FLOW_RELATIVE_PERM_AMANZI_ARTIFICIAL_DIFFUSION ||
+      rel_perm_->method() == FLOW_RELATIVE_PERM_AMANZI_MFD) {
     darcy_flux_upwind = darcy_flux_copy;
   } else if (rel_perm_->method() == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
     darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));
@@ -424,6 +425,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
         << vo_->reset() << std::endl << std::endl;
     *vo_->os() << "T=" << T0 / FLOW_YEAR << " [y] dT=" << dT0 << " [sec]" << std::endl
         << "EC:" << error_control_ << " Src:" << src_sink_distribution
+        << " Upwind:" << rel_perm_->method() << op_matrix_->upwind_
         << " PC:\"" << ti_specs.preconditioner_name.c_str() << "\"" << std::endl;
   }
 

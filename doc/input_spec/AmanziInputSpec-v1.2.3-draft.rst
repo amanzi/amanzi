@@ -281,7 +281,8 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"Relative Permeability`" [string]: Defines a method for calculating the *upwinded*
        relative permeability. The available options are: `"Upwind: Gravity`", `"Upwind: Darcy Velocity`" (default),
-       `"Upwind: Amanzi`" (experimental), `"Other: Arithmetic Average`", and `"Other: Harmonic Average`". 
+       `"Upwind: Amanzi`", `"Upwind: Artificial Diffusion`" (experimental), `"Other: Arithmetic Average`",
+       and `"Other: Harmonic Average`". 
 
      * [U] `"atmospheric pressure`" [double]: Defines the atmospheric pressure, [Pa].   
 

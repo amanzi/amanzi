@@ -149,24 +149,26 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     }
 
-    double matsum = 0.0;  // elimination of mass matrix
-    for (int n = 0; n < nfaces; n++) {
-      double rowsum = 0.0;
-      for (int m = 0; m < nfaces; m++) {
-        double tmp = Wff(n, m) * kf[n];
-        rowsum += tmp;
-        Acell(n, m) = tmp;
+    if (upwind_ != OPERATOR_UPWIND_AMANZI_MFD) {
+      double matsum = 0.0;  // elimination of mass matrix
+      for (int n = 0; n < nfaces; n++) {
+        double rowsum = 0.0;
+        for (int m = 0; m < nfaces; m++) {
+          double tmp = Wff(n, m) * kf[n];
+          rowsum += tmp;
+          Acell(n, m) = tmp;
+        }
+
+        Acell(n, nfaces) = -rowsum;
+        matsum += rowsum;
       }
+      Acell(nfaces, nfaces) = matsum;
 
-      Acell(n, nfaces) = -rowsum;
-      matsum += rowsum;
-    }
-    Acell(nfaces, nfaces) = matsum;
-
-    for (int n = 0; n < nfaces; n++) {
-      double colsum = 0.0;
-      for (int m = 0; m < nfaces; m++) colsum += Acell(m, n);
-      Acell(nfaces, n) = -colsum;
+      for (int n = 0; n < nfaces; n++) {
+        double colsum = 0.0;
+        for (int m = 0; m < nfaces; m++) colsum += Acell(m, n);
+        Acell(nfaces, n) = -colsum;
+      }
     }
 
     // Amanzi's first upwind: add additional flux 
@@ -184,8 +186,9 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
       }
     }
 
-    // Amanzi's second upwind: replace the matrix (FIXME: lipnikov@lanl.gov) 
+    // Amanzi's second upwind: replace the matrix
     if (upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+      double matsum = 0.0; 
       for (int n = 0; n < nfaces; n++) {
         double rowsum = 0.0;
         for (int m = 0; m < nfaces; m++) {

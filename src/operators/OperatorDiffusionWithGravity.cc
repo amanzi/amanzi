@@ -53,6 +53,7 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
     for (int c = 0; c < ncells_owned; c++) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
+      double zc = (mesh_->cell_centroid(c))[dim - 1];
 
       WhetStone::DenseMatrix& Wff = Wff_cells_[c];
 
@@ -72,32 +73,53 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
       }
 
-      WhetStone::Tensor& Kc = (*K_)[c]; 
-      for (int n = 0; n < nfaces; n++) {
-        int f = faces[n];
-        const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-        double tmp;
+      if (upwind_ != OPERATOR_UPWIND_AMANZI_MFD) {
+        WhetStone::Tensor& Kc = (*K_)[c]; 
+        for (int n = 0; n < nfaces; n++) {
+          int f = faces[n];
+          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+          double tmp, zf = (mesh_->face_centroid(f))[dim - 1];
 
-        if (gravity_special_projection_) {
-          const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
-          double sign = normal * xcc;
+          if (gravity_special_projection_) {
+            const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
+            double sign = normal * xcc;
 
-          tmp = ((Kc * rho_g) * xcc) * kf[n] * dirs[n];
-          tmp *= copysign(norm(normal) / norm(xcc), sign);
-        } else {
-          tmp = ((Kc * rho_g) * normal) * kf[n] * dirs[n];
-        }
-
-        if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
-          double alpha = (*k_face)[0][f] - kc;
-          if (alpha > 0) {
-            alpha *= Wff(n, n) * rho_ * norm(g_);
-            tmp -= alpha * (mesh_->face_centroid(f)[dim - 1] - mesh_->cell_centroid(c)[dim - 1]);
+            tmp = ((Kc * rho_g) * xcc) * kf[n] * dirs[n];
+            tmp *= copysign(norm(normal) / norm(xcc), sign);
+          } else {
+            tmp = ((Kc * rho_g) * normal) * kf[n] * dirs[n];
           }
+
+          if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
+            double alpha = (*k_face)[0][f] - kc;
+            if (alpha > 0) {
+              alpha *= Wff(n, n) * rho_ * norm(g_);
+              tmp -= alpha * (zf - zc);
+            }
+          }
+
+          rhs_face[0][f] += tmp; 
+          rhs_cell[0][c] -= tmp; 
+        }
+      }
+
+      if (upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+        WhetStone::DenseVector v(nfaces), av(nfaces);
+        for (int n = 0; n < nfaces; n++) {
+          int f = faces[n];
+          double zf = (mesh_->face_centroid(f))[dim - 1];
+          v(n) = -(zf - zc) * kf[n] * rho_ * norm(g_) / kc;
         }
 
-        rhs_face[0][f] += tmp; 
-        rhs_cell[0][c] -= tmp; 
+        Wff.Multiply(v, av, false);
+
+        for (int n = 0; n < nfaces; n++) {
+          int f = faces[n];
+          double tmp = av(n) * kf[n];
+
+          rhs_face[0][f] += tmp; 
+          rhs_cell[0][c] -= tmp; 
+        }
       }
     }
 
@@ -159,30 +181,56 @@ void OperatorDiffusionWithGravity::UpdateFlux(
     }
 
     double zc = mesh_->cell_centroid(c)[dim - 1];
-    WhetStone::Tensor& Kc = (*K_)[c];
-    AmanziGeometry::Point Kg(Kc * rho_g);
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      if (f < nfaces_owned && !flag[f]) {
-        const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-        if (gravity_special_projection_) {
-          const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
-          double sign = normal * xcc;
-          double tmp = copysign(norm(normal) / norm(xcc), sign);
-          flux_data[0][f] += (Kg * xcc) * kf[n] * tmp;
-        } else {
-          flux_data[0][f] += (Kg * normal) * kf[n];
-        }
+    if (upwind_ != OPERATOR_UPWIND_AMANZI_MFD) {
+      WhetStone::Tensor& Kc = (*K_)[c];
+      AmanziGeometry::Point Kg(Kc * rho_g);
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        if (f < nfaces_owned && !flag[f]) {
+          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-        if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
-          double alpha = (*k_face)[0][f] - kc;
-          if (alpha > 0) {
-            double zf = mesh_->face_centroid(f)[dim - 1];
-            alpha *= Wff(n, n) * rho_ * norm(g_);
-            flux_data[0][f] -= alpha * (zf - zc);
+          if (gravity_special_projection_) {
+            const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
+            double sign = normal * xcc;
+            double tmp = copysign(norm(normal) / norm(xcc), sign);
+            flux_data[0][f] += (Kg * xcc) * kf[n] * tmp;
+          } else {
+            flux_data[0][f] += (Kg * normal) * kf[n];
           }
+
+          if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
+            double alpha = (*k_face)[0][f] - kc;
+            if (alpha > 0) {
+              int dir;
+              const AmanziGeometry::Point& exterior = mesh_->face_normal(f, false, c, &dir);
+              double zf = mesh_->face_centroid(f)[dim - 1];
+              alpha *= Wff(n, n) * rho_ * norm(g_);
+              flux_data[0][f] -= alpha * (zf - zc) * dir;
+            }
+          }
+
+          flag[f] = 1;
         }
+      }
+    }
+
+    if (upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+      WhetStone::DenseVector v(nfaces), av(nfaces);
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        double zf = (mesh_->face_centroid(f))[dim - 1];
+        v(n) = -(zf - zc) * kf[n] * rho_ * norm(g_) / kc;
+      }
+
+      Wff.Multiply(v, av, false);
+
+      for (int n = 0; n < nfaces; n++) {
+        int dir, f = faces[n];
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+
+        double tmp = av(n) * kf[n] * dir;
+        flux_data[0][f] += tmp;
 
         flag[f] = 1;
       }
