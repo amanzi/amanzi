@@ -443,7 +443,7 @@ void OperatorDiffusionTPFA::ComputeJacobianLocal_(
       if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dkdp_cell[0];
         dKrel_dp[1] = 0.0;
-      } else if ( flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
+      } else if (flux0to1 < -OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
         dKrel_dp[0] = 0.0;
         dKrel_dp[1] = dkdp_cell[1];
       } else if (fabs(flux0to1) < OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind

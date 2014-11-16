@@ -42,7 +42,9 @@ void OperatorDiffusion::InitOperator(
   scalar_rho_mu_ = true;
 
   // compatibility
-  if (upwind_ == OPERATOR_UPWIND_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) { 
+  if (upwind_ == OPERATOR_UPWIND_FLUX || 
+      upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION ||
+      upwind_ == OPERATOR_UPWIND_AMANZI_MFD) { 
     ASSERT(k->HasComponent("face"));
   }
 
@@ -114,7 +116,9 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
-  if (upwind_ == OPERATOR_UPWIND_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) {
+  if (upwind_ == OPERATOR_UPWIND_FLUX || 
+      upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION ||
+      upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
     k_face = k_->ViewComponent("face", true);
   }
 
@@ -132,9 +136,12 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
     // Update terms due to nonlinear coefficient
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0); 
-    if (upwind_ == OPERATOR_UPWIND_AMANZI) {
+    if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
+    } else if (upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+      kc = (*k_cell)[0][c];
+      for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
@@ -162,8 +169,8 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
       Acell(nfaces, n) = -colsum;
     }
 
-    // Amanzi's upwind: add additional flux 
-    if (upwind_ == OPERATOR_UPWIND_AMANZI) {
+    // Amanzi's first upwind: add additional flux 
+    if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         double alpha = (*k_face)[0][f] - kc;
@@ -175,6 +182,23 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
           Acell(nfaces, nfaces) += alpha;
         }
       }
+    }
+
+    // Amanzi's second upwind: replace the matrix (FIXME: lipnikov@lanl.gov) 
+    if (upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+      for (int n = 0; n < nfaces; n++) {
+        double rowsum = 0.0;
+        for (int m = 0; m < nfaces; m++) {
+          double tmp = Wff(n, m) * kf[n] * kf[m] / kc;
+          rowsum += tmp;
+          Acell(n, m) = tmp;
+        }
+
+        Acell(n, nfaces) = -rowsum;
+        Acell(nfaces, n) = -rowsum;
+        matsum += rowsum;
+      }
+      Acell(nfaces, nfaces) = matsum;
     }
 
     if (flag) {
@@ -1018,20 +1042,22 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   factor_ = 1.0;
 
   // upwind options
-  std::string name = plist.get<std::string>("upwind", "none");
-  if (name == "with flux") {
+  std::string name = plist.get<std::string>("upwind method", "none");
+  if (name == "standard") {
     upwind_ = OPERATOR_UPWIND_FLUX;
-  } else if (name == "amanzi") {  // New upwind for unstructured meshes.
-    upwind_ = OPERATOR_UPWIND_AMANZI;
-  } else {
+  } else if (name == "amanzi: artificial diffusion") {  
+    upwind_ = OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION;
+  } else if (name == "amanzi: mfd") {  
+    upwind_ = OPERATOR_UPWIND_AMANZI_MFD;
+  } else if (name == "none") {
     upwind_ = OPERATOR_UPWIND_NONE;  // cell-centered scheme.
+  } else {
+    ASSERT(false);
   }
 
   // experimental options
   nonstandard_symbolic_ = plist.get<int>("nonstandard symbolic assembling", 0);
 }
-
-
 
 }  // namespace Operators
 }  // namespace Amanzi

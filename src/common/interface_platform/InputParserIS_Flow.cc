@@ -990,7 +990,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(const std::string&
 
   op_list.sublist("diffusion operator").set<std::string>("upwind method", "standard");
   op_list.sublist("diffusion operator")
-         .sublist("upwind standard parameter").set<std::string>("type", "upwind with flux");
+         .sublist("upwind standard parameter").set<double>("tolerance", 1e-12);
 
   return op_list;
 }

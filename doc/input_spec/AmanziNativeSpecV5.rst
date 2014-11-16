@@ -603,6 +603,8 @@ Diffusion operators
 
 Operators sublist describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
+Temporarily, there is redundant information for *upwinded* nonlinear coefficient.
+Consistency of parameters `"upwind method`" is supported internally.
 
 * `"matrix`" [sublist] defines parameters for generating and assembling diffusion matrix.
 
@@ -631,6 +633,10 @@ scheme, and selects assembling schemas for matrices and preconditioners.
     It is used for experiments with preconditioners.
     Default is 0.
 
+  * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
+    Available options are `"standard`" (default), `"amanzi: mfd`", `"amanzi: artificial diffusion`",
+    and `"none`".
+
 
 * `"preconditioner`" [sublist] defines parameters for generating and assembling diffusion 
   matrix that is used to create preconditioner. Since update of preconditioner can be lag,
@@ -641,8 +647,8 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 
   * `"upwind standard parameters`" [sublist] defines parameters for this upwind method.
 
-    * `"type`" [string] refined standard upwinf method. Available options are `"upwind with flux`"
-      (default).
+    * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
+      a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
 
 .. code-block:: xml
 
@@ -654,6 +660,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
           <Parameter name="gravity" type="bool" value="true"/>
+          <Parameter name="upwind method" type="string" value="standard"/>
         </ParameterList>
         <ParameterList name="preconditioner">
           <Parameter name="discretization primary" type="string" value="monotone mfd"/>
@@ -661,11 +668,12 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
           <Parameter name="gravity" type="bool" value="true"/>
+          <Parameter name="upwind method" type="string" value="standard"/>
         </ParameterList>
 
         <Parameter name="upwind method" type="string" value="standard"/>
         <ParameterList name="upwind standard parameters">
-           <Parameter name="type" type="string" value="upwind with flux"/>
+           <Parameter name="tolerance" type="double" value="1e-12"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

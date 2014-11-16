@@ -37,7 +37,9 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
     Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
     Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
     if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
-    if (upwind_ == OPERATOR_UPWIND_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) {
+    if (upwind_ == OPERATOR_UPWIND_FLUX || 
+        upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION ||
+        upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
       k_face = k_->ViewComponent("face", true);
     }
 
@@ -57,9 +59,12 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
       // Update terms due to nonlinear coefficient
       double kc(1.0);
       std::vector<double> kf(nfaces, 1.0);
-      if (upwind_ == OPERATOR_UPWIND_AMANZI) {
+      if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = kc;
+      } else if (upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+        kc = (*k_cell)[0][c];
+        for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
       } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = kc;
@@ -83,7 +88,7 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
           tmp = ((Kc * rho_g) * normal) * kf[n] * dirs[n];
         }
 
-        if (upwind_ == OPERATOR_UPWIND_AMANZI) {
+        if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
           double alpha = (*k_face)[0][f] - kc;
           if (alpha > 0) {
             alpha *= Wff(n, n) * rho_ * norm(g_);
@@ -115,7 +120,9 @@ void OperatorDiffusionWithGravity::UpdateFlux(
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
-  if (upwind_ == OPERATOR_UPWIND_FLUX || upwind_ == OPERATOR_UPWIND_AMANZI) {
+  if (upwind_ == OPERATOR_UPWIND_FLUX || 
+      upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION ||
+      upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
     k_face = k_->ViewComponent("face", true);
   }
 
@@ -138,9 +145,12 @@ void OperatorDiffusionWithGravity::UpdateFlux(
     // Update terms due to nonlinear coefficient
     double kc(1.0);
     std::vector<double> kf(nfaces, 1.0);
-    if (upwind_ == OPERATOR_UPWIND_AMANZI) {
+    if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
+    } else if (upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+      kc = (*k_cell)[0][c];
+      for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
@@ -165,7 +175,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
           flux_data[0][f] += (Kg * normal) * kf[n];
         }
 
-        if (upwind_ == OPERATOR_UPWIND_AMANZI) {
+        if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
           double alpha = (*k_face)[0][f] - kc;
           if (alpha > 0) {
             double zf = mesh_->face_centroid(f)[dim - 1];

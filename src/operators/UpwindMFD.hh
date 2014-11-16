@@ -51,6 +51,7 @@ class UpwindMFD : public Upwind<Model> {
 
  private:
   int method_, order_;
+  double tolerance_;
 };
 
 
@@ -63,13 +64,14 @@ void UpwindMFD<Model>::Init(Teuchos::ParameterList& plist)
   vo_ = Teuchos::rcp(new VerboseObject("UpwindMFD", plist));
 
   method_ = Operators::OPERATOR_UPWIND_FLUX;
+  tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
 
   order_ = plist.get<int>("order", 1);
 }
 
 
 /* ******************************************************************
-* Flux-based upwind.
+* Flux-based upwind consistent with mimetic discretization.
 ****************************************************************** */
 template<class Model>
 void UpwindMFD<Model>::Compute(
@@ -96,32 +98,42 @@ void UpwindMFD<Model>::Compute(
   double umin, umax;
   u.MinValue(&umin);
   u.MaxValue(&umax);
-  double tol = OPERATOR_UPWIND_RELATIVE_TOLERANCE * std::max(fabs(umin), fabs(umax));
+  double tol = tolerance_ * std::max(fabs(umin), fabs(umax));
+
+  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_List faces;
+  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-     int nfaces = faces.size();
+    int nfaces = faces.size();
+    double kc(fcells[0][c]);
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       bool flag = (u[0][f] * dirs[n] < -tol);  // upwind flag
       
+      // Internal faces. We average field on almost vertical faces. 
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
-        upw[0][f] += fcells[0][c] / 2;  // Almost vertical face.
+        upw[0][f] += kc / 2;
+      // Boundary faces. We upwind only on inflow dirichlet faces.
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         upw[0][f] = ((*model_).*Value)(c, bc_value[f]);
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN && flag) {
         // upw[0][f] = ((*model_).*Value)(c, ffaces[0][f]);
-        upw[0][f] = fcells[0][c];
+        upw[0][f] = kc;
       } else if (bc_model[f] == OPERATOR_BC_MIXED && flag) {
-        // upw[0][f] = ((*model_).*Value)(c, ffaces[0][f]);
-        upw[0][f] = fcells[0][c];
+        upw[0][f] = kc;
+      // Internal and boundary faces. 
       } else if (!flag) {
-        upw[0][f] = fcells[0][c];
+        int c2 = mfd3d.cell_get_face_adj_cell(c, f);
+        if (c2 >= 0) {
+          double kc2(fcells[0][c2]);
+          upw[0][f] = std::pow(kc * (kc + kc2) / 2, 0.5);
+        } else {
+          upw[0][f] = kc;
+        }
       }
     }
   }

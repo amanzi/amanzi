@@ -254,13 +254,17 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
   std::string name = rp_list_.get<std::string>("relative permeability");
+  std::string upw_method("none");
   if (name == "upwind: darcy velocity" || name == "upwind: gravity") {
-    oplist_matrix.set<std::string>("upwind", "with flux");
-    oplist_pc.set<std::string>("upwind", "with flux");
+    upw_method = "standard";
   } else if (name == "upwind: amanzi") {
-    oplist_matrix.set<std::string>("upwind", "amanzi");
-    oplist_pc.set<std::string>("upwind", "amanzi");
+    upw_method = "amanzi: artificial diffusion";
+    oplist_pc.set<std::string>("upwind method", "artificial diffusion");
+  } else if (name == "upwind: mfd") {
+    upw_method = "amanzi: mfd";
   }
+  oplist_matrix.set<std::string>("upwind method", upw_method);
+  oplist_pc.set<std::string>("upwind method", upw_method);
 
   Operators::OperatorDiffusionFactory opfactory;
   op_matrix_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, gravity_);
@@ -714,7 +718,7 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epet
   const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell", false);
 
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
+  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -727,7 +731,7 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epet
     wsmin = wsmax = ws[c];
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      int c2 = mfd.cell_get_face_adj_cell(c, f);
+      int c2 = mfd3d.cell_get_face_adj_cell(c, f);
       if (c2 >= 0) {
         wsmin = std::min(wsmin, ws[c2]);
         wsmax = std::max(wsmax, ws[c2]);
