@@ -166,7 +166,7 @@ TEST(MASHAK_NONLINEAR_WAVE) {
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(*cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
 
-  Point velocity(1.0, 0.0);
+  Point velocity(0.0, 0.0);
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& normal = mesh->face_normal(f);
     flx[0][f] = velocity * normal;

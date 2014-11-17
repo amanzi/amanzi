@@ -111,7 +111,7 @@ void UpwindStandard<Model>::Compute(
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      bool flag = (u[0][f] * dirs[n] < -tol);  // upwind flag
+      bool flag = (u[0][f] * dirs[n] <= -tol);  // upwind flag
       
       // Internal faces. We average field on almost vertical faces. 
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
