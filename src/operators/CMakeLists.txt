@@ -106,6 +106,10 @@ if ( BUILD_TESTS )
                         KIND unit
                         SOURCE test/Main.cc test/operator_nonlinear_surface.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(operators_marshak operators_marshak
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_marshak.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     else()
         add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
                         KIND unit
