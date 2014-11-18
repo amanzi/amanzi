@@ -36,7 +36,7 @@
 #include "UpwindStandard.hh"
 
 const double TemperatureSource = 100.0; 
-const double TemperatureFloor = 0.5; 
+const double TemperatureFloor = 0.02; 
 
 namespace Amanzi{
 
@@ -87,6 +87,12 @@ typedef double(HeatConduction::*ModelUpwindFn)(int c, double T) const;
 }  // namespace Amanzi
 
 
+double exact(double t, const Amanzi::AmanziGeometry::Point& p) {
+  double x = p[0], c = 0.4;
+  return std::pow(3 * c * (c * t - x), 1.0 / 3);
+}
+
+
 /* *****************************************************************
 * This test replaves tensor and boundary conditions by continuous
 * functions. This is a prototype forheat conduction solvers.
@@ -119,7 +125,7 @@ TEST(MASHAK_NONLINEAR_WAVE) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 100, 20, gm);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 200, 10, gm);
   RCP<const Mesh> mesh = meshfactory("test/marshak.exo", gm);
 
   /* modify diffusion coefficient */
@@ -129,7 +135,7 @@ TEST(MASHAK_NONLINEAR_WAVE) {
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
-    Kc(0, 0) = 1e-6;
+    Kc(0, 0) = 1.0;
     K.push_back(Kc);
   }
   double rho(1.0), mu(1.0);
@@ -188,9 +194,15 @@ TEST(MASHAK_NONLINEAR_WAVE) {
 
   // MAIN LOOP
   int step(0);
-  double T(0.0), dT(0.01);
-  while (T < 5.0) {
+  double T(0.0), dT(1e-4);
+  while (T < 1.0) {
     solution.ScatterMasterToGhosted();
+
+    // update bc
+    for (int f = 0; f < nfaces_wghost; f++) {
+      const Point& xf = mesh->face_centroid(f);
+      if(fabs(xf[0]) < 1e-6) bc_value[f] = exact(T + dT, xf);
+    }
 
     // upwind heat conduction coefficient
     knc->UpdateValues(solution);
@@ -224,6 +236,9 @@ TEST(MASHAK_NONLINEAR_WAVE) {
     Teuchos::RCP<AmanziSolvers::LinearOperator<OperatorDiffusion, CompositeVector, CompositeVectorSpace> >
        solver = factory.Create("Amanzi GMRES", lop_list, op);
 
+    Epetra_MultiVector& sol_new = *solution.ViewComponent("cell");
+    Epetra_MultiVector sol_old(sol_new);
+
     CompositeVector rhs = *op->rhs();
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
     int ierr = solver->ApplyInverse(rhs, solution);
@@ -239,10 +254,17 @@ TEST(MASHAK_NONLINEAR_WAVE) {
           step, solver->residual(), solver->num_itrs(), snorm, T, dT);
     }
 
-    // chaneg time step
-    if (solver->num_itrs() < 5) {
+    // change time step
+    Epetra_MultiVector sol_diff(sol_old);
+    sol_diff.Update(1.0, sol_new, -1.0);
+
+    double ds_max, ds_rel(0.0);
+    for (int c = 0; c < ncells_owned; c++) {
+      ds_rel = std::max(ds_rel, sol_diff[0][c] / (1e-3 + sol_old[0][c] + sol_new[0][c]));
+    }
+    if (ds_rel < 0.05) {
       dT *= 1.2;
-    } else if (solver->num_itrs() > 10) {
+    } else if (ds_rel > 0.10) {
       dT *= 0.8;
     }
   }
