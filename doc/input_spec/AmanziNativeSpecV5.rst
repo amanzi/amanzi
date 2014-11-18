@@ -1793,6 +1793,113 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
   </ParameterList>
 
 
+Standard math functions
+-----------------------
+Amanzi supports a set of standard functions `f(x) = f(x[0])`. 
+In Amanzi, the first index of vector `x` corresponds to time.
+These functions allow to set up non-trivial time-depedent boundary conditions 
+which increases a set of analytic solutions that can be used in convergence 
+analysis tests.
+
+* `"operator`" [string] specifies the name of a standard mathematical function.
+  Avaivable options are `"cos`", `"sin`", `"tan`", `"acos`", `"asin`", `"atan`", 
+  `"cosh`", `"sinh`", `"tanh`", `"exp`", `"log`", `"log10`", `"sqrt`", `"ceil`",
+  `"fabs`", `"floor`", `"mod`", and `"pow`".
+
+* `"amplitude`" [double] specifies a multiplication factor `a` in formula `a f(x)`. 
+  The multiplication factor is ignored by function `mod`. Default value is 1.
+
+* `"parameter`" [double] specifies additional parameter `p` for math functions 
+  with two arguments. These functions are `"a pow(x[0], p)`" and `"a mod(x[0], p)`".
+  Defualt value is 0.
+
+.. code-block:: xml
+
+  <ParameterList name="function-standard-math">
+    <Parameter name="operator" type="string" value="sqrt"/>
+    <Parameter name="amplitude" type="double" value="1e-7"/>
+    <Parameter name="parameter" type="double" value="0.5"/>
+  </ParameterList>
+
+This example defines function `1e-7 sqrt(t)`.
+
+
+Additive function
+-----------------
+To increase calculus of standard math functions, we support a few basic operations
+with them. The first one is the sum of two functions, `f(t) = f1(t) + f2(t)`.
+This function requires two sublists `"function1`" and `"function2`".
+
+.. code-block:: xml
+
+  <ParameterList name="function-additive">
+    <ParameterList name="function1">
+      <ParameterList name="function-standard-math">
+        <Parameter name="operator" type="string" value="sqrt"/>
+        <Parameter name="parameter" type="double" value="0.5"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="function2">
+      <ParameterList name="function-standard-math">
+        <Parameter name="operator" type="string" value="sin"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+This example defines function `srqt(t) + sin(t)`.
+
+
+Composition function
+--------------------
+To increase calculus of standard math functions, we support a few basic operations
+with them. The second one is the composition of two functions, `f(t) = f1(f2(t))`.
+This function requires two sublists `"function1`" and `"function2`".
+
+.. code-block:: xml
+
+  <ParameterList name="function-composition">
+    <ParameterList name="function1">
+      <ParameterList name="function-standard-math">
+        <Parameter name="operator" type="string" value="sqrt"/>
+        <Parameter name="parameter" type="double" value="0.5"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="function2">
+      <ParameterList name="function-linear">
+        <Parameter name="y0" type="double" value="1.0"/>
+        <Parameter name="gradient" type="Array(double)" value="{1.0, 2.0, 1.0}"/>
+        <Parameter name="x0" type="Array(double)" value="{3.0, 2.0, 1.0}"/>
+    </ParameterList>
+  </ParameterList>
+
+In two dimensions, this example defines function `srqt((t-3) + 2(x-2) + 3(y-1))`.
+In three dimension, we have to add one additional argument to the `gradient` and `x0`.
+
+
+Multiplicative function
+-----------------------
+To increase calculus of standard math functions, we support a few basic operations
+with them. The third one is the multiplication of two functions, `f(t) = f1(t) * f2(t)`.
+This function requires two sublists `"function1`" and `"function2`".
+
+.. code-block:: xml
+
+  <ParameterList name="function-multiplicative">
+    <ParameterList name="function1">
+      <ParameterList name="function-standard-math">
+        <Parameter name="operator" type="string" value="sqrt"/>
+        <Parameter name="parameter" type="double" value="0.5"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="function2">
+      <ParameterList name="function-standard-math">
+        <Parameter name="operator" type="string" value="sin"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+This example defines function `srqt(t) * sin(t)`.
+
 
 Linear Solvers
 ==============

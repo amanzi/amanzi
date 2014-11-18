@@ -27,10 +27,8 @@
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
-#include "TabularFunction.hh"
 
 #include "Transport_PK.hh"
-
 
 namespace Amanzi {
 namespace Transport {
