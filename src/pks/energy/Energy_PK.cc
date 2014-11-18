@@ -105,7 +105,7 @@ void Energy_PK::Initialize()
   AmanziGeometry::Point g(dim);
 
   Operators::OperatorDiffusionFactory opfactory;
-  op_matrix_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, g);
+  op_matrix_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, g, 0);
 
   op_matrix_->Init();
   op_matrix_->InitOperator(K, Teuchos::null, Teuchos::null, 1.0, 1.0);

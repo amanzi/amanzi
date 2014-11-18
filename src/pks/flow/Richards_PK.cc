@@ -254,21 +254,28 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
   std::string name = rp_list_.get<std::string>("relative permeability");
+  int upw_id(Operators::OPERATOR_UPWIND_FLUX);
   std::string upw_method("none");
-  if (name == "upwind: darcy velocity" || name == "upwind: gravity") {
+  if (name == "upwind: darcy velocity") {
     upw_method = "standard";
+  } else if (name == "upwind: gravity") {
+    upw_method = "standard";
+    upw_id = Operators::OPERATOR_UPWIND_CONSTANT_VECTOR;
   } else if (name == "upwind: artificial diffusion") {
     upw_method = "amanzi: artificial diffusion";
     oplist_pc.set<std::string>("upwind method", "artificial diffusion");
   } else if (name == "upwind: amanzi") {
     upw_method = "amanzi: mfd";
+  } else if (name == "other: arithmetic average") {
+    upw_method = "standard";
+    upw_id = Operators::OPERATOR_UPWIND_ARITHMETIC_AVERAGE;
   }
   oplist_matrix.set<std::string>("upwind method", upw_method);
   oplist_pc.set<std::string>("upwind method", upw_method);
 
   Operators::OperatorDiffusionFactory opfactory;
-  op_matrix_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, gravity_);
-  op_preconditioner_ = opfactory.Create(mesh_, op_bc_, oplist_pc, gravity_);
+  op_matrix_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, gravity_, upw_id);
+  op_preconditioner_ = opfactory.Create(mesh_, op_bc_, oplist_pc, gravity_, upw_id);
 
   // Create the solution (pressure) vector and auxiliary vector for time history.
   solution = Teuchos::rcp(new CompositeVector(op_matrix_->DomainMap()));

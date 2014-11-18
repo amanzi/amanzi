@@ -441,7 +441,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
     AmanziGeometry::Point g;
 
     Operators::OperatorDiffusionFactory opfactory;
-    Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list, g);
+    Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list, g, 0);
 
     const CompositeVectorSpace& cvs = op1->DomainMap();
     CompositeVector sol(cvs), factor(cvs), source(cvs), zero(cvs);

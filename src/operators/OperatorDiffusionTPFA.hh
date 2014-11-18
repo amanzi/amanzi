@@ -54,6 +54,7 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
   void ComputeNegativeResidual(const CompositeVector& v, CompositeVector& r);
 
   void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
+  void SetUpwind(int upwind_method) { upwind_ = upwind_method; }
 
   template <class WRM> 
   double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const WRM&);
