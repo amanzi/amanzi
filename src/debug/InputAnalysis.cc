@@ -122,9 +122,10 @@ void InputAnalysis::RegionAnalysis()
             volume += mesh_->cell_volume(block[n]);
       } 
       else {
+        nblock = 0;
         std::string name(regions[i]);
         name.resize(std::min(40, (int)name.size()));
-        *vo_->os() << "obs region: \"" << name << "\" has unknown type." << std::endl;
+        *vo_->os() << "Observation region: \"" << name << "\" has unknown type." << std::endl;
       }
 
 #ifdef HAVE_MPI

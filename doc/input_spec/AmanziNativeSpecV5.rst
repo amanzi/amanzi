@@ -14,11 +14,18 @@ Changes V4 -> V5
 ================
 
 * Molecular diffusion is defined for solutes instead of materials. 
-  The "Dispersivity" transport sublist was replaced by "matrial properties" sublist.
+  The "Dispersivity" transport sublist was replaced by "material properties" 
+  sublist.
 
 * Enforcement of lower-case names in transport, flow, and energy PKs (e.g. cfl) 
   except for proper names (e.g. Moulton).
   Upper-case names are used for user-defined names (e.g. SOIL).
+
+* Documented a set of standard math functions supported by the spec.
+
+* More clear naming of discretization and upwind options.
+
+* Added more details on creating and populating data for Amanzi's chemistry kernel.
 
 
 ParameterList XML
