@@ -198,14 +198,21 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
                     compss << *i;
                     if (comps.sublist(*i).isSublist("BC: Uniform Concentration")) {
                       Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Uniform Concentration");
+                      Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
+                      Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
 
-                      if (bcsub.isParameter("Geochemical Condition")) { 
+                      if (bcsub.isParameter("Geochemical Conditions")) { 
+                        Teuchos::Array<std::string> cond_names = bcsub.get<Teuchos::Array<std::string> >("Geochemical Conditions");
+
                         // Add an entry to Transport->boundary conditions->geochemical conditions.
                         Teuchos::ParameterList& gc_list = trp_list.sublist("boundary conditions")
                             .sublist("geochemical conditions");
-                        std::string geochem_cond_name = bcsub.get<std::string>("Geochemical Condition");
-                        Teuchos::ParameterList& geochem_cond = gc_list.sublist(geochem_cond_name);
-                        geochem_cond.set<Teuchos::Array<std::string> >("regions", regs);
+
+                        // Fill it with stuff.
+                        gc_list.set<Teuchos::Array<double> >("Times", times);
+                        gc_list.set<Teuchos::Array<std::string> >("Time Functions", time_fns);
+                        gc_list.set<Teuchos::Array<std::string> >("Geochemical Conditions", cond_names);
+                        gc_list.set<Teuchos::Array<std::string> >("regions", regs);
                       }
                       else { // ordinary Transport BCs.
                         Teuchos::ParameterList& tbc_list = trp_list.sublist("boundary conditions").sublist("concentration");
@@ -213,9 +220,6 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
                         bc.set<Teuchos::Array<std::string> >("regions",regs);
 
                         Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
-                        Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
-                        Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
-
                         Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
                         bcfn.set<Teuchos::Array<double> >("y values", values);
                         bcfn.set<Teuchos::Array<double> >("x values", times);

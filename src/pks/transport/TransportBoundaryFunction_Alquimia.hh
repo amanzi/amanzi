@@ -31,7 +31,8 @@ namespace Transport {
 
 class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
  public:
-  TransportBoundaryFunction_Alquimia(const std::string& cond_name, 
+  TransportBoundaryFunction_Alquimia(const std::vector<double>& times,
+                                     const std::vector<std::string>& cond_names, 
                                      const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
                                      Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
                                      Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
@@ -47,8 +48,9 @@ class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
   // The computational mesh.
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  // The geochemical condition we are enforcing.
-  std::string cond_name_;
+  // The geochemical conditions we are enforcing, and the times we are enforcing them at.
+  std::vector<double> times_;
+  std::vector<std::string> cond_names_;
 
   // Chemistry state and engine.
   Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state_;

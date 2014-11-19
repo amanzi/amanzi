@@ -133,55 +133,33 @@ void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBo
     Exceptions::amanzi_throw(msg);
   }
   Teuchos::ParameterList& clist = list_->get<Teuchos::ParameterList>("geochemical conditions");
+  std::vector<std::string> cond_names = clist.get<Teuchos::Array<std::string> >("Geochemical Conditions").toVector();
+  std::vector<double> times = clist.get<Teuchos::Array<double> >("Times").toVector();
+  std::vector<std::string> time_funcs = clist.get<Teuchos::Array<std::string> >("Time Functions").toVector();
 
-  for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
-    std::string cond_name = it->first;
-    if (clist.isSublist(cond_name)) {
-      Teuchos::ParameterList& spec = clist.sublist(cond_name);
-      try {
-        TransportBoundaryFunction_Alquimia* bc = 
-          new TransportBoundaryFunction_Alquimia(cond_name, mesh_, chem_state_, chem_engine_);
-        ProcessGeochemicalConditionSpec(spec, bc);
-
-        TransportBoundaryFunction* bc_base = bc;
-        bcs.push_back(bc_base);
-      } catch (Errors::Message& m) {
-        msg << "in sublist \"" << cond_name << "\": " << m.what();
-        Exceptions::amanzi_throw(msg);
-      }
-    } else {
-      msg << "parameter \"" << cond_name << "\" is not a sublist.\n";
+  // Make sure that the Time Functions are all "Constant".
+  for (int i = 0; i < time_funcs.size(); ++i)
+  {
+    if (time_funcs[i] != "Constant")
+    {
+      msg << "Only Constant time functions are supported for Geochemical Conditions!\n";
       Exceptions::amanzi_throw(msg);
     }
   }
+
+  // Construct the Alquimia-savvy BC.
+  TransportBoundaryFunction_Alquimia* bc = 
+    new TransportBoundaryFunction_Alquimia(times, cond_names, mesh_, chem_state_, chem_engine_);
+
+  // Associate it with the given regions.
+  std::vector<std::string> regions = clist.get<Teuchos::Array<std::string> >("regions").toVector();
+  bc->Define(regions);
+
+  // Add it to the list.
+  TransportBoundaryFunction* bc_base = bc;
+  bcs.push_back(bc_base);
 #endif
 }
-
-
-/* ******************************************************************
-* Process a geochemical condition.
-****************************************************************** */
-#ifdef ALQUIMIA_ENABLED
-void TransportBCFactory::ProcessGeochemicalConditionSpec(
-    Teuchos::ParameterList& spec, TransportBoundaryFunction_Alquimia* bc) const
-{
-  Errors::Message msg;
-  std::vector<std::string> regions;
-
-  if (spec.isParameter("regions")) {
-    if (spec.isType<Teuchos::Array<std::string> >("regions")) {
-      regions = spec.get<Teuchos::Array<std::string> >("regions").toVector();
-      bc->Define(regions);
-    } else {
-      msg << "parameter \"regions\" is not of type \"Array string\"";
-      Exceptions::amanzi_throw(msg);
-    }
-  } else {
-    msg << "parameter \"regions\" is missing";
-    Exceptions::amanzi_throw(msg);
-  }
-}
-#endif
 
 }  // namespace Transport
 }  // namespace Amanzi
