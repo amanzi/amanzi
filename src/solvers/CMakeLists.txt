@@ -78,4 +78,8 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/solver_nka.cc
                     LINK_LIBS error_handling whetstone atk ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
+    add_amanzi_test(solver_continuation solver_continuation
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_continuation.cc
+                    LINK_LIBS error_handling whetstone atk ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 endif()
