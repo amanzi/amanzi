@@ -15,8 +15,10 @@ class Operator:
         self.oatts = oatts
 
 class Plot:
-    def __init__(self, pname, ptype, patts):
+    def __init__(self, pname, ptype, patts, varname=None):
+        """Plot class"""
         self.pname = pname
+        self.varname = varname
         self.ptype = ptype
         self.patts = patts
         self.operators = []
@@ -27,6 +29,14 @@ class Plot:
         self.annot.xScale = vrc.rcParams['legend.scale'][0]
         self.annot.yScale = vrc.rcParams['legend.scale'][1]
         self.annot.position = vrc.rcParams['legend.position']
+
+        if varname is not None:
+            self.annot.drawTitle = 0
+            self.title = v.CreateAnnotationObject("Text2D")
+            self.title.text = varname
+            self.title.fontFamily = vrc.getDefaultFont()
+            self.title.height = vrc.rcParams['legend.title.fontheight']
+            self.title.position = vrc.rcParams['legend.title.position']
 
     def getLimits(self):
         assert self.ptype == 'Pseudocolor'
@@ -116,7 +126,7 @@ class VisItWindow:
                     
 
     def createPseudocolor(self, varname, display_name=None, cmap=None, 
-                          limits=None, linewidth=None, legend=True):
+                          limits=None, linewidth=None, legend=True, alpha=False):
         """Generic creation of pseudocolor"""
         if display_name is None:
             display_name = vrc.renameScalar(varname)
@@ -147,8 +157,9 @@ class VisItWindow:
                 pa.max = max
 
         # opacity
-        pa.opacity = 0
-        pa.opacityType = pa.ColorTable
+        if alpha:
+            pa.opacity = 0
+            pa.opacityType = pa.ColorTable
 
         # colormap
         if cmap is not None:
@@ -169,7 +180,10 @@ class VisItWindow:
 
         v.SetPlotOptions(pa)
         pname = v.GetPlotList().GetPlots(v.GetNumPlots()-1).plotName
-        plot = Plot(pname, 'Pseudocolor', pa)
+        if legend:
+            plot = Plot(pname, 'Pseudocolor', pa, display_name)
+        else:
+            plot = Plot(pname, 'Pseudocolor', pa)
         self.plots.append(plot)
         return plot
 
@@ -385,21 +399,21 @@ class ATSVis(Vis):
         return self.createSurfacePseudocolor("surface_pressure.cell.0", limits=limits, window=window)
 
 
-    def plotLiquidSaturation(self, window=None, limits=None):
+    def plotLiquidSaturation(self, window=None, limits=None, cmap="saturation_liquid_r"):
         """Adds a plot of subsurface pressure"""
 
         return self.createSubsurfacePseudocolor("saturation_liquid.cell.0", limits=limits,
-                                                cmap="saturation_liquid_r", window=window)
+                                                cmap=cmap, window=window)
 
     def plotGasSaturation(self, window=None, limits=None):
         """Adds a plot of subsurface pressure"""
         return self.createSubsurfacePseudocolor("saturation_gas.cell.0", limits=limits,
                                                 window=window)
 
-    def plotIceSaturation(self, window=None, limits=None):
+    def plotIceSaturation(self, window=None, limits=None, cmap="saturation_ice_r"):
         """Adds a plot of subsurface pressure"""
         return self.createSubsurfacePseudocolor("saturation_ice.cell.0", limits=limits,
-                                                cmap="saturation_ice_r", window=window)
+                                                cmap=cmap, window=window)
 
     def plotTemperature(self, window=None, limits=None):
         """Adds a plot of subsurface temperature"""
@@ -456,6 +470,16 @@ class ATSVis(Vis):
         return self.createSnowPseudocolor("snow_depth.cell.0", limits=limits,
                                           cmap="Set3_r", window=window)
 
+    def _getIndexByTime(self, time):
+        pass
+
+    def plotALD(self, yr_start, yr_end):
+        """Adds a plot of contours of ALD from year start to year end, inclusive"""
+        # find the time slice that starts the full period
+        # for yr in range(yr_start, yr_end+1):
+        #     # find the time slice that starts the year
+        pass        
+    
     def writeTime(self, round=None):
         self.setActiveWindow(vrc.rcParams['time.window'])
 
