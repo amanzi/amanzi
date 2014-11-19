@@ -88,8 +88,12 @@ class Operator {
   void CreateCheckPoint();
   void RestoreCheckPoint();
 
-  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss, double dT);
-  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss);
+  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& s0, 
+                           const CompositeVector& ss, double dT, const std::string& name);
+  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss, 
+                           double dT, const std::string& name);
+  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss,
+                           const std::string& name);
 
   // preconditioners
   virtual void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);

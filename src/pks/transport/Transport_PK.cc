@@ -444,7 +444,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
     Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list, g, 0);
 
     const CompositeVectorSpace& cvs = op1->DomainMap();
-    CompositeVector sol(cvs), factor(cvs), source(cvs), zero(cvs);
+    CompositeVector sol(cvs), factor(cvs), factor0(cvs), source(cvs), zero(cvs);
     zero.PutScalar(0.0);
   
     // instantiale solver
@@ -494,7 +494,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
         for (int c = 0; c < ncells_owned; c++) {
           fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
         }
-        op1->AddAccumulationTerm(sol, factor, dT_MPC);
+        op1->AddAccumulationTerm(sol, factor, dT_MPC, "cell");
  
         int schema_prec_dofs = op1->schema_prec_dofs();
         op1->SymbolicAssembleMatrix(schema_prec_dofs);
@@ -561,12 +561,15 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
       op1->ApplyBCs();
 
       // add accumulation term
-      Epetra_MultiVector& fac = *factor.ViewComponent("cell");
+      Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");
+      Epetra_MultiVector& fac0 = *factor0.ViewComponent("cell");
+
       for (int c = 0; c < ncells_owned; c++) {
-        fac[0][c] = (*phi)[0][c] * (1.0 - (*ws)[0][c]);
-        if ((*ws)[0][c] == 1.0) fac[0][c] = 1.0;  // hack so far
+        fac1[0][c] = (*phi)[0][c] * (1.0 - (*ws)[0][c]);
+        fac0[0][c] = (*phi)[0][c] * (1.0 - (*ws_prev)[0][c]);
+        if ((*ws)[0][c] == 1.0) fac1[0][c] = 1.0;  // hack so far
       }
-      op1->AddAccumulationTerm(sol, factor, dT_MPC);
+      op1->AddAccumulationTerm(sol, factor0, factor, dT_MPC, "cell");
  
       int schema_prec_dofs = op1->schema_prec_dofs();
       op1->SymbolicAssembleMatrix(schema_prec_dofs);

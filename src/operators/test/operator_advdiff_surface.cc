@@ -131,7 +131,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   phi.PutScalar(0.2);
 
   double dT = 0.02;
-  op1->AddAccumulationTerm(solution, phi, dT);
+  op1->AddAccumulationTerm(solution, phi, dT, "cell");
 
   // initialize velocity
   // add the diffusion operator. It is the last due to BCs.

@@ -450,8 +450,8 @@ int Darcy_PK::Advance(double dT_MPC, double& dT_actual)
   sy_g.Scale(factor);
 
   op_->RestoreCheckPoint();
-  op_->AddAccumulationTerm(*solution, ss_g, dT);
-  op_->AddAccumulationTerm(*solution, sy_g);
+  op_->AddAccumulationTerm(*solution, ss_g, dT, "cell");
+  op_->AddAccumulationTerm(*solution, sy_g, "cell");
   op_->ApplyBCs();
 
   int schema_prec_dofs = op_->schema_prec_dofs();
