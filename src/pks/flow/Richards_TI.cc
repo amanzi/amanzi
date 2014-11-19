@@ -132,7 +132,7 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
   dSdP.Multiply(rho_, phi, dSdP, 0.0);
 
   if (dTp > 0.0) {
-    op_preconditioner_->AddAccumulationTerm(*u, dSdP, dTp);
+    op_preconditioner_->AddAccumulationTerm(*u, dSdP, dTp, "cell");
   }
 
   // finalize preconditioner

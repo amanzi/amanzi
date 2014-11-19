@@ -224,7 +224,7 @@ TEST(MASHAK_NONLINEAR_WAVE) {
     op->AssembleMatrix(schema_prec_dofs);
 
     // add accumulation terms
-    op->AddAccumulationTerm(solution, heat_capacity, dT);
+    op->AddAccumulationTerm(solution, heat_capacity, dT, "cell");
 
     // create preconditoner
     ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");

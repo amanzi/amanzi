@@ -121,7 +121,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   phi.PutScalar(0.2);
 
   double dT = 10.0;
-  op1->AddAccumulationTerm(solution, phi, dT);
+  op1->AddAccumulationTerm(solution, phi, dT, "cell");
 
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
@@ -162,7 +162,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   op1->UpdateMatrices(source);
 
   solution.PutScalar(0.0); 
-  op1->AddAccumulationTerm(solution, phi, dT);
+  op1->AddAccumulationTerm(solution, phi, dT, "cell");
 
   op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);

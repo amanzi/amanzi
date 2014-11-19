@@ -177,7 +177,7 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
     op1->UpdateMatrices(source);
 
     // add accumulation terms
-    op1->AddAccumulationTerm(solution, phi, dT);
+    op1->AddAccumulationTerm(solution, phi, dT, "cell");
 
     // add diffusion operator
     solution.ScatterMasterToGhosted();
