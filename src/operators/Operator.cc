@@ -1118,7 +1118,7 @@ int Operator::FindMatrixBlock(int schema_dofs, int matching_rule, bool action) c
 
 
 /* ******************************************************************
-* Extension of Mesh API. 
+* Find BC matching the integer tag type. 
 ****************************************************************** */
 const Teuchos::RCP<BCs> Operator::GetBCofType(int type) const
 {

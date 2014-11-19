@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code.  
+  This is the opeartors component of the Amanzi code.  
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -54,6 +54,7 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
   void ComputeNegativeResidual(const CompositeVector& v, CompositeVector& r);
 
   void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
+  void SetUpwind(int upwind_method) { upwind_ = upwind_method; }
 
   template <class WRM> 
   double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const WRM&);

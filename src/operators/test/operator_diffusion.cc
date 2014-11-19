@@ -153,6 +153,13 @@ Amanzi::AmanziGeometry::Point velocity_exact_linear(const Amanzi::AmanziGeometry
   return v;
 }
 
+int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
+{
+  Amanzi::AmanziMesh::Entity_ID_List cells;
+  mesh.face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
+  return cells[0];
+}
+
 /* *****************************************************************
 * This test diffusion solver with full tensor and source term.
 * **************************************************************** */
@@ -224,7 +231,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g);
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g, 0);
   const CompositeVectorSpace& cvs = op->DomainMap();
   
   // populate the diffusion operator
@@ -374,8 +381,9 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
-    const Point& normal = mesh->face_normal(f);
     double area = mesh->face_area(f);
+    int dir, c = BoundaryFaceGetCell(*mesh, f);
+    const Point& normal = mesh->face_normal(f, false, c, &dir);
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -397,7 +405,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g);
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g, 0);
   const CompositeVectorSpace& cvs = op->DomainMap();
   
   // populate the diffusion operator
@@ -585,7 +593,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_v, op_list, g);
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_v, op_list, g, 0);
   op->AddBCs(bc_f);
   
   // populate the diffusion operator
@@ -731,7 +739,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator cell");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_f, op_list, g);
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_f, op_list, g, 0);
   
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_CELL;

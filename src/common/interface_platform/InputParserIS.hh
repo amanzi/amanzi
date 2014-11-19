@@ -55,7 +55,7 @@ class InputParserIS {
   Teuchos::ParameterList CreateFlowList_(Teuchos::ParameterList* plist);
   Teuchos::ParameterList CreateFlowSrcList_(Teuchos::ParameterList* plist);
   Teuchos::ParameterList CreateSS_FlowBC_List_(Teuchos::ParameterList* plist);
-  Teuchos::ParameterList CreateFlowOperatorList_(const std::string& disc_method);
+  Teuchos::ParameterList CreateFlowOperatorList_(const std::string& disc_method, const std::string& rel_perm);
   Teuchos::ParameterList CreateWRM_List_(Teuchos::ParameterList* plist);
 
   // transport
@@ -117,6 +117,7 @@ class InputParserIS {
   int spatial_dimension_;  
   bool flow_single_phase, use_picard_;
   bool need_dispersion_;
+  std::vector<std::string> transport_diagnostics_;
 
   std::string verbosity_level;
   int numproc_;

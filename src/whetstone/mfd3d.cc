@@ -615,7 +615,7 @@ void MFD3D::GrammSchmidt(DenseMatrix& N)
 /* ******************************************************************
 * Extension of Mesh API. 
 ****************************************************************** */
-int MFD3D::cell_get_face_adj_cell(const int cell, const int face)
+int MFD3D::cell_get_face_adj_cell(int cell, int face)
 {
   Entity_ID_List cells;
   mesh_->face_get_cells(face, (ParallelTypeCast)WhetStone::USED, &cells);

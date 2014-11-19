@@ -358,7 +358,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   Teuchos::ParameterList& oplist = dp_list_.sublist("operators").sublist("diffusion operator").sublist("matrix");
   Operators::OperatorDiffusionFactory opfactory;
-  op_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_);
+  op_ = opfactory.Create(mesh_, op_bc_, oplist, gravity_, 0);  // The last 0 means no upwind
   op_->InitOperator(K, Teuchos::null, Teuchos::null, rho_, mu_);
   op_->UpdateMatrices(Teuchos::null, Teuchos::null);
 

@@ -1,0 +1,13 @@
+Observation Name, Region, Functional, Variable, Time, Value
+===========================================================
+observation-2:water, Point25, Observation Data: Point, Hydraulic Head, 9.4672800000000000e+10, 2.4313867951103692e+01
+observation-4:water, Point125, Observation Data: Point, Hydraulic Head, 9.4672800000000000e+10, 2.3978285819740314e+01
+observation-6:water, Point225, Observation Data: Point, Hydraulic Head, 9.4672800000000000e+10, 2.3535052640425093e+01
+observation-8:water, Point325, Observation Data: Point, Hydraulic Head, 9.4672800000000000e+10, 2.2972186438154949e+01
+observation-10:water, Point425, Observation Data: Point, Hydraulic Head, 9.4672800000000000e+10, 2.2280183933236323e+01
+observation-12:water, Point525, Observation Data: Point, Hydraulic Head, 9.4672800000000000e+10, 2.1458517171042917e+01
+observation-14:water, Point625, Observation Data: Point, Hydraulic Head, 9.4672800000000000e+10, 2.0464903109676129e+01
+observation-16:water, Point725, Observation Data: Point, Hydraulic Head, 9.4672800000000000e+10, 1.9308697297698195e+01
+observation-18:water, Point825, Observation Data: Point, Hydraulic Head, 9.4672800000000000e+10, 1.7929364975148182e+01
+observation-20:water, Point925, Observation Data: Point, Hydraulic Head, 9.4672800000000000e+10, 1.6388267060046385e+01
+observation-22:water, Point975, Observation Data: Point, Hydraulic Head, 9.4672800000000000e+10, 1.5624546941741876e+01

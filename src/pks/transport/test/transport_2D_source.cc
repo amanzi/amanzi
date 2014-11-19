@@ -113,7 +113,7 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
     }
   }
 
-  TPK.CheckTracerBounds(*tcc, 0, 0.0, 1.0, Transport::TRANSPORT_LIMITER_TOLERANCE);
+  TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, Transport::TRANSPORT_LIMITER_TOLERANCE);
  
   delete comm;
 }

@@ -281,7 +281,8 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"Relative Permeability`" [string]: Defines a method for calculating the *upwinded*
        relative permeability. The available options are: `"Upwind: Gravity`", `"Upwind: Darcy Velocity`" (default),
-       `"Upwind: Amanzi`" (experimental), `"Other: Arithmetic Average`", and `"Other: Harmonic Average`". 
+       `"Upwind: Amanzi`", `"Upwind: Artificial Diffusion`" (experimental), `"Other: Arithmetic Average`",
+       and `"Other: Harmonic Average`". 
 
      * [U] `"atmospheric pressure`" [double]: Defines the atmospheric pressure, [Pa].   
 
@@ -1504,7 +1505,19 @@ The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"
 
   * [SU] `"Engine`" [string] The name of the backend chemistry engine (e.g. `"PFloTran`").
   * [SU] `"Engine Input File`" [string] The file specifying the input for the backend chemistry engine.
+
+  * [SU] `"Initial Time Step (s)`" [double] The initial time step that chemistry will ask the MPC to take.  
   * [SU] `"Max Time Step (s)`" [double] The maximum time step that chemistry will allow the MPC to take.
+
+  * [SU] `"Time Step Control Method`" [string]: (default: `"fixed`") Time step control method for chemistry subcycling. Choose one of `"fixed`" or `"simple`"
+
+    * [SU] `"fixed`": Time step is fixed.
+    * [SU] `"simple`" : Time step is adjusted in response to stiffness of system of equations based on a simple scheme. If specified the following fields are required: `"Time Step Cut Threshold`", `"Time Step Cut Factor`", `"Time Step Increase Threshold`", and `"Time Step Increase Factor`".
+
+  * [SU] `"Time Step Cut Threshold`" [int]: (default=8) Number of Netwon iterations that if exceeded will trigger a time step cut.
+  * [SU] `"Time Step Cut Factor`" [double]: (default=2.0) Factor by which the time step is cut.
+  * [SU] `"Time Step Increase Threshold`" [int]: (default=4) Number of consectuive successful time steps that will trigger a time step increase.
+  * [SU] `"Time Step Increase Factor`" [double]: (default=1.2) Factor by which the time step is increased.
 
   * [SU] `"Geochemical Conditions`" [list] (*optional*, allows definition of geochemical conditions within XML.)
 
@@ -1536,7 +1549,19 @@ The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"
   * [SU] `"Output File Name`" [string] (Optional) A file name that the chemistry library should use to write simulation information and debugging info. An empty string (default) indicates that the chemistry library should not write to a file.
   * [SU] `"Use Standard Out`" [bool] A flag indicating whether the chemistry library can write simulation information and debugging info to standard out. Default is true, so the amanzi u/s drivers will need to set this appropriately on mpi/openmp processes.
   * [SU] `"Auxiliary Data`" [string array] Additional chemistry related data that the user can request be saved to vis files. Currently "pH" is the only variable supported.
+  
+    * [SU] `"Initial Time Step (s)`" [double] The initial time step that chemistry will ask the MPC to take.  
   * [SU] `"Max Time Step (s)`" [double] The maximum time step that chemistry will allow the MPC to take.
+
+  * [SU] `"Time Step Control Method`" [string]: (default: `"fixed`") Time step control method for chemistry subcycling. Choose one of `"fixed`" or `"simple`"
+
+    * [SU] `"fixed`": Time step is fixed.
+    * [SU] `"simple`" : Time step is adjusted in response to stiffness of system of equations based on a simple scheme. If specified the following fields are required: `"Time Step Cut Threshold`", `"Time Step Cut Factor`", `"Time Step Increase Threshold`", and `"Time Step Increase Factor`".
+
+  * [SU] `"Time Step Cut Threshold`" [int]: (default=8) Number of Netwon iterations that if exceeded will trigger a time step cut.
+  * [SU] `"Time Step Cut Factor`" [double]: (default=2.0) Factor by which the time step is cut.
+  * [SU] `"Time Step Increase Threshold`" [int]: (default=4) Number of consectuive successful time steps that will trigger a time step increase.
+  * [SU] `"Time Step Increase Factor`" [double]: (default=1.2) Factor by which the time step is increased.
 
 
 Output
@@ -1569,7 +1594,7 @@ The user must specify when the various types of output are desired.  For Observa
  * Aqueous saturation [volume water / volume pore space]
  * Aqueous pressure [Pa]
  * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
- * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
+ * X-, Y-, Z- Aqueous volumetric flux [m/s]
  * MaterialID
  * Gravimetric water content [volumetric water content * water density / bulk density, in kg/m^3]
  * Hydraulic Head [ (aqueous pressure - atmospheric pressure)/(rho * gravity) + z ]

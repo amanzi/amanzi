@@ -355,7 +355,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
       TPK.CommitState(dT, S.ptr());
       T += dT;
       if (TPK.internal_tests) {
-        TPK.CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
+        TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
       }
       iter++;
     }

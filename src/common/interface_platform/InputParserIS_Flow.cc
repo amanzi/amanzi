@@ -97,7 +97,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 
         // insert operator sublist
         Teuchos::ParameterList op_list;
-        op_list = CreateFlowOperatorList_(disc_method);
+        op_list = CreateFlowOperatorList_(disc_method, rel_perm);
         flow_list->sublist("operators") = op_list;
 
         // insert the flow BC sublist
@@ -808,6 +808,9 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
           Teuchos::Array<std::string> forms = forms_;
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
         }
+
+        // hack: select one region for transport diagnostics
+        transport_diagnostics_.insert(transport_diagnostics_.end(), regions.begin(), regions.end());
       }
       // TODO...
       // add the rest of the boundary conditions
@@ -955,7 +958,8 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
 /* ******************************************************************
 * Flow operators sublist
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(const std::string& disc_method)
+Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
+    const std::string& disc_method, const std::string& rel_perm)
 {
   Teuchos::ParameterList op_list;
 
@@ -984,6 +988,16 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(const std::string&
 
   op_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
   op_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
+
+  if (rel_perm == "Upwind: Amanzi") {
+    op_list.sublist("diffusion operator").set<std::string>("upwind method", "mfd");
+    op_list.sublist("diffusion operator")
+           .sublist("upwind mfd parameter").set<double>("tolerance", 1e-12);
+  } else {
+    op_list.sublist("diffusion operator").set<std::string>("upwind method", "standard");
+    op_list.sublist("diffusion operator")
+           .sublist("upwind standard parameter").set<double>("tolerance", 1e-12);
+  }
 
   return op_list;
 }

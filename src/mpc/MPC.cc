@@ -247,7 +247,7 @@ void MPC::mpc_init() {
       CPK->InitializeChemistry();
     } catch (const Errors::Message& chem_error) {
       std::ostringstream error_message;
-      error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
+      error_message << "MPC:mpc_init(): Chemistry_PK.InitializeChemistry returned an error status:\n";
       error_message << chem_error.what();
 
       Errors::Message message(error_message.str());

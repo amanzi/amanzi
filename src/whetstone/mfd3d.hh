@@ -70,7 +70,7 @@ class MFD3D {
   int simplex_num_itrs() { return simplex_num_itrs_; }
 
   // extension of the mesh API (must be removed lipnikov@lanl.gov)
-  int cell_get_face_adj_cell(const int cell, const int face);
+  int cell_get_face_adj_cell(int cell, int face);
 
  protected:
   // supporting stability methods (add matrix Ms in M = Mc + Ms)

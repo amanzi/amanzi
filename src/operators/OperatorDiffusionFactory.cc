@@ -27,7 +27,8 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     Teuchos::RCP<const AmanziMesh::Mesh> mesh, 
     Teuchos::RCP<BCs> bc, 
     Teuchos::ParameterList& oplist,
-    const AmanziGeometry::Point& g)
+    const AmanziGeometry::Point& g,
+    int upwind_method)
 {
   std::vector<std::string> names;
   names = oplist.get<Teuchos::Array<std::string> > ("schema").toVector();
@@ -58,6 +59,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
   if (name == "fv: default") {
     Teuchos::RCP<OperatorDiffusionTPFA> op = Teuchos::rcp(new OperatorDiffusionTPFA(cvs, oplist, bc));
     op->Init();
+    op->SetUpwind(upwind_method);
     op->SetGravity(g);
     return op;
   }

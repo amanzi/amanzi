@@ -7,7 +7,7 @@ SUITE (Data)
 
     TEST (Construct)
     {
-        Amanzi::AmanziMesh::Data::Data mesh ();
+        Amanzi::AmanziMesh::Data::Data mesh;
     }
 
 }

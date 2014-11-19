@@ -104,7 +104,7 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  // create an SIMPLE mesh framework
+  // create an MSTK mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Closed");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 

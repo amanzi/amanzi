@@ -63,7 +63,10 @@ set(operators_inc_files
     OperatorSource.hh
     Reconstruction.hh
     ReconstructionCell.hh
-    Upwind.hh)
+    Upwind.hh
+    UpwindFactory.hh
+    UpwindStandard.hh
+    UpwindMFD.hh)
 
 add_amanzi_library(operators
                    SOURCE Operator.cc 
@@ -102,6 +105,10 @@ if ( BUILD_TESTS )
         add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
                         KIND unit
                         SOURCE test/Main.cc test/operator_nonlinear_surface.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(operators_marshak operators_marshak
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_marshak.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     else()
         add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
