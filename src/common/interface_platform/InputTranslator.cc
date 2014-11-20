@@ -1066,7 +1066,25 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             else {
               throw_error_missattr("execution_controls", "attribute", "level", "verbosity");
             }
-            list.set<std::string>("Verbosity",textContent);
+            // This is a hack since structured requires uppercase first character
+            if (strcmp(textContent,"none")==0) {
+              list.set<std::string>("Verbosity","None");
+            }
+            else if (strcmp(textContent,"low")==0) {
+              list.set<std::string>("Verbosity","Low");
+            }
+            else if (strcmp(textContent,"medium")==0) {
+              list.set<std::string>("Verbosity","Medium");
+            }
+            else if (strcmp(textContent,"high")==0) {
+              list.set<std::string>("Verbosity","High");
+            }
+            else if (strcmp(textContent,"extreme")==0) {
+              list.set<std::string>("Verbosity","Extreme");
+            }
+            else {
+              list.set<std::string>("Verbosity",textContent);
+            }
             simPL.set<std::string>("verbosity",textContent);
             XMLString::release(&textContent);
 
@@ -2848,6 +2866,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                 }
               }
+            }
+            else if (strcmp(nodeName,"max_n_subcycle_transport")==0) {
+              textContent = XMLString::transcode(tmpNode->getTextContent());
+              expertPL.set<int>("max_n_subcycle_transport",get_int_constant(textContent,*def_list));
+              XMLString::release(&textContent);
             }
           }
         }

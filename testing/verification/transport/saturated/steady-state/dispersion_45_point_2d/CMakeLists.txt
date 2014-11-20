@@ -11,12 +11,12 @@ if (ENABLE_TESTS)
     add_amanzi_test(run_${test_name} KIND AMANZI AMANZI_INPUT ${DISPERSION_45_POINT_2D_SOURCE_DIR}/amanzi_${test_name}.xml)
     add_test(NAME compare_${test_name} 
 	     COMMAND diff ${DISPERSION_45_POINT_2D_BINARY_DIR}/${compfile}
-	                  ${DISPERSION_45_POINT_2D_SOURCE_DIR}/golden_output/${compfile})
-			  #${dataset}/${step}  ${dataset}/${step} )
+	                  ${DISPERSION_45_POINT_2D_SOURCE_DIR}/golden_output/${compfile} 
+			  #${dataset}/${step}  ${dataset}/${step} 
+			  )
     set_tests_properties( compare_${test_name} PROPERTIES DEPENDS run_${test_name} )
     #set_tests_properties( compare_${test_name} PROPERTIES FAIL_REGULAR_EXPRSSION "differences found" )
     set_tests_properties( compare_${test_name} PROPERTIES FAIL_REGULAR_EXPRSSION "differs from" )
     _append_test_label(compare_${test_name} REG)
     _append_test_label(run_${test_name} REG)
 endif()
-
