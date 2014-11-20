@@ -95,10 +95,10 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
 
   std::ifstream input(file_name.c_str());
   if (!input) {
-    std::ostringstream error_stream;
-    error_stream << "SimpleThermoDatabase::ReadFile(): \n";
-    error_stream << "file could not be opened.... '" << file_name << "'\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    std::stringstream msg;
+    msg << "SimpleThermoDatabase cannot open file \"" << file_name << "\"\n";
+    chem_out->WriteWarning(Teuchos::VERB_NONE, msg);
+    Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
   }
 
   enum LineType { kCommentLine, kPrimarySpeciesLine,
