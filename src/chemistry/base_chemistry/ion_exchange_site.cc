@@ -2,17 +2,16 @@
 #include "ion_exchange_site.hh"
 
 #include <cmath>
-
 #include <iostream>
 #include <sstream>
 #include <iomanip>
 
-#include "chemistry_output.hh"
+#include "VerboseObject.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern ChemistryOutput* chem_out;
+extern VerboseObject* chem_out;
 
 IonExchangeSite::IonExchangeSite()
     : name_(),
@@ -47,7 +46,7 @@ void IonExchangeSite::Display(void) const {
           << std::setw(10) << std::fixed << charge()
           << std::setw(10) << std::scientific << cation_exchange_capacity()
           << std::fixed << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end Display()
 
 void IonExchangeSite::DisplayResultsHeader(void) const {
@@ -55,7 +54,7 @@ void IonExchangeSite::DisplayResultsHeader(void) const {
   message << std::setw(15) << "Name"
           << std::setw(15) << "CEC"
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayResultsHeader()
 
 void IonExchangeSite::DisplayResults(void) const {
@@ -63,7 +62,7 @@ void IonExchangeSite::DisplayResults(void) const {
   message << std::setw(15) << name()
           << std::setw(15) << cation_exchange_capacity()
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayResults()
 
 }  // namespace AmanziChemistry

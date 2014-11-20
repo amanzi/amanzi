@@ -7,13 +7,10 @@
 #include <iostream>
 #include <iomanip>
 
-#include "chemistry_output.hh"
 #include "matrix_block.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-extern ChemistryOutput* chem_out;
 
 GeneralRxn::GeneralRxn() {
   ncomp_ = 0;
@@ -181,7 +178,7 @@ void GeneralRxn::display(void) const {
   message << std::endl;
   message << "        forward_rate = " << std::exp(lnQkf_) << std::endl;
   message << "        backward_rate = " << std::exp(lnQkb_) << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end display()
 
 void GeneralRxn::Display(void) const {
@@ -241,7 +238,7 @@ void GeneralRxn::Display(void) const {
       }
     }
   }
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end Display()
 
 }  // namespace AmanziChemistry

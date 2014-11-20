@@ -11,12 +11,12 @@
 // Common stand alone utility functions
 //
 
-#include "chemistry_output.hh"
+#include "VerboseObject.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern ChemistryOutput* chem_out;
+extern VerboseObject* chem_out;
 
 namespace utilities {
 
@@ -72,7 +72,7 @@ void PrintVector(const std::string& name,
     }
   }
   output << " }\n";
-  chem_out->Write(kVerbose, output);
+  chem_out->Write(Teuchos::VERB_HIGH, output);
 }  // end PrintVector
 
 

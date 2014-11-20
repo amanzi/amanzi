@@ -13,11 +13,11 @@
 
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
-#include "chemistry_output.hh"
 #include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 
 #include "Mesh.hh"
+#include "VerboseObject.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 
@@ -64,9 +64,9 @@ namespace AmanziChemistry {
  **
  ******************************************************************************/
 
-// global ChemistryOutput object in the Amanzi::chemisry
-// namespace that will be used by the chemistry library
-extern ChemistryOutput* chem_out;
+// global ChemistryOutput object in the Amanzi::AmanziChemisry is deprecated
+// extern ChemistryOutput* chem_out;
+VerboseObject* chem_out = NULL;
 
 Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
                            Teuchos::RCP<Chemistry_State> chem_state)
@@ -79,17 +79,13 @@ Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
       current_time_(0.0),
       saved_time_(0.0) {
 
-  // NOTE: we want the chemistry_pk and chem lib verbose by default so
-  // we can debug them. add the "silent" level to the input file or
-  // have the MPC do an if (my_mpi_process) to prevent generating a
-  // lot of output in parallel machines.
-  SetupDefaultChemistryOutput();
-  chem_out->AddLevel("verbose");
+  // create verbosity object
+  chem_out = new VerboseObject("ChemistryPK", const_cast<Teuchos::ParameterList&>(param_list)); 
 }  // end Chemistry_PK()
 
 Chemistry_PK::~Chemistry_PK() {
   delete chem_;
-  delete chem_out;
+  if (chem_out != NULL) delete chem_out;
 }  // end ~Chemistry_PK()
 
 void Chemistry_PK::InitializeChemistry(void) {
@@ -98,19 +94,6 @@ void Chemistry_PK::InitializeChemistry(void) {
   }
 
   XMLParameters();
-
-  // modify output levels based on xml input
-  // for (levels) {chem_out->AddLevel()}
-  // debugging
-  if (false) {
-    chem_out->RemoveLevel("silent");
-    chem_out->AddLevel("some debug level");
-    chem_out->set_use_stdout(true);
-  }
-
-  // TODO/NOTE(bandre): Turning off warnings to silence charge balance
-  // warnings. Need a better way to do this...
-  chem_out->RemoveLevel("warning");
 
   // TODO: some sort of check of the state object to see if mineral_ssa,
   // CEC, site density, etc is present.
@@ -141,14 +124,14 @@ void Chemistry_PK::InitializeChemistry(void) {
   int ierr(0);
   try {
     chem_->set_debug(false);
-    chem_out->Write(kVerbose, "ChemistryPK: Initializing chemistry in cell 0...\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "Initializing chemistry in cell 0...\n");
     chem_->Setup(beaker_components_, beaker_parameters_);
     chem_->Display();
     // solve for initial free-ion concentrations
-    chem_out->Write(kVerbose, "ChemistryPK: Initial speciation calculations in cell 0...\n");
+    chem_out->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
     chem_->Speciate(&beaker_components_, beaker_parameters_);
     if (debug()) {
-      chem_out->Write(kVerbose, "\nTest solution of initial conditions in cell 0:\n");
+      chem_out->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
       chem_->DisplayResults();
     }
   } catch (ChemistryException& geochem_error) {
@@ -171,7 +154,7 @@ void Chemistry_PK::InitializeChemistry(void) {
   SetupAuxiliaryOutput();
 
   // now loop through all the cells and initialize
-  chem_out->Write(kVerbose, "ChemistryPK: Initializing chemistry in all cells...\n");
+  chem_out->Write(Teuchos::VERB_HIGH, "Initializing chemistry in all cells...\n");
   int num_cells = chemistry_state_->porosity()->MyLength();
   ierr = 0;
   for (cell = 0; cell < num_cells; ++cell) {
@@ -212,9 +195,7 @@ void Chemistry_PK::InitializeChemistry(void) {
     Exceptions::amanzi_throw(geochem_error); 
   }  
 
-
-
-  chem_out->Write(kVerbose, "ChemistryPK::InitializeChemistry(): initialization was successful.\n");
+  chem_out->Write(Teuchos::VERB_HIGH, "InitializeChemistry(): initialization was successful.\n");
 }  // end InitializeChemistry()
 
 /*******************************************************************************
@@ -229,13 +210,6 @@ void Chemistry_PK::XMLParameters(void) {
     set_debug(true);
   }
 
-  if (parameter_list_.isParameter("Verbosity")) {
-    Teuchos::Array<std::string> verbosity_list = parameter_list_.get<Teuchos::Array<std::string> >("Verbosity");
-    Teuchos::Array<std::string>::const_iterator name;
-    for (name = verbosity_list.begin(); name != verbosity_list.end(); ++name) {
-      chem_out->AddLevel(*name);
-    }
-  }
   //--------------------------------------------------------------------------
   //
   // thermo file name and format, then create the database!
@@ -330,9 +304,9 @@ void Chemistry_PK::XMLParameters(void) {
         aux_names_.push_back(*name);
       } else {
         std::stringstream message;
-        message << "ChemistryPK::XMLParameters(): unknown value in 'Auxiliary Data' list: " 
+        message << "XMLParameters(): unknown value in 'Auxiliary Data' list: " 
                 << *name << std::endl;
-        chem_out->Write(kWarning, message);
+        chem_out->WriteWarning(Teuchos::VERB_LOW, message);
       }
     }
   }
@@ -680,9 +654,9 @@ Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_total_component_concentration
 void Chemistry_PK::Advance(
     const double& delta_time,
     Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star) {
-  if (debug()) {
-    chem_out->Write(kVerbose, "  Chemistry_PK::Advance() : advancing the chemistry process model...\n");
-  }
+  std::stringstream msg;
+  msg << "advancing, time step [sec] = " << delta_time << std::endl;
+  chem_out->Write(Teuchos::VERB_LOW, msg);
 
   current_time_ = saved_time_ + delta_time;
 
@@ -791,10 +765,7 @@ void Chemistry_PK::Advance(
 // possible auxilary state variables here
 void Chemistry_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
                                 const double& time) {
-  if (debug() == kDebugChemistryProcessKernel) {
-    chem_out->Write(kVerbose,
-                    "  Chemistry_PK::CommitState() : Committing internal state.\n");
-  }
+  chem_out->Write(Teuchos::VERB_EXTREME, "Committing internal state.\n");
 
   saved_time_ = time;
 

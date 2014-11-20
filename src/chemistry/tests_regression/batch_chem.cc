@@ -22,11 +22,13 @@
 #include <string>
 #include <stdexcept>
 
+#include "VerboseObject_objs.hh"
+#include "VerboseObject.hh"
+
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
 #include "activity_model_factory.hh"
 #include "chemistry_verbosity.hh"
-#include "chemistry_output.hh"
 #include "chemistry_containers.hh"
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
@@ -36,7 +38,7 @@
 // namespace that can be used by an other chemistry object
 namespace Amanzi {
 namespace AmanziChemistry {
-extern ChemistryOutput* chem_out;
+VerboseObject* chem_out = NULL;
 }  // end namespace AmanziChemistry
 }  // end namespace Amanzi
 
@@ -64,7 +66,6 @@ int main(int argc, char** argv) {
 #endif
 #endif
 
-  ac::SetupDefaultChemistryOutput();
   std::stringstream message;
 
   bool debug_batch_driver(false);
@@ -94,14 +95,16 @@ int main(int argc, char** argv) {
   if (components.total.size() == 0) {
     message.str("");
     message << "Must have a non-zero number of total component values.\n";
-    ac::chem_out->Write(ac::kError, message);
+    ac::chem_out->WriteWarning(Teuchos::VERB_LOW, message);
     abort();
   }
 
   // if verbosity was specified on the command line, add the level on chem_out
-  if (!verbosity_name.empty()) {
-    ac::chem_out->AddLevel(verbosity_name);
-  }
+  Amanzi::VerboseObject::hide_line_prefix = false;  // two default value
+  Amanzi::VerboseObject::global_default_level = Teuchos::VERB_MEDIUM;
+
+  Teuchos::ParameterList plist;
+  ac::chem_out = new Amanzi::VerboseObject("Chemistry PK", plist);
 
   // if verbosity levels were specified in the input file, add the levels
   std::vector<std::string>::const_iterator name;
@@ -110,7 +113,6 @@ int main(int argc, char** argv) {
        ++name) {
     std::string data = *name;
     ac::utilities::RemoveLeadingAndTrailingWhitespace(&data);
-    ac::chem_out->AddLevel(data);
   }
 
   if (debug_batch_driver) {
@@ -164,7 +166,7 @@ int main(int argc, char** argv) {
       if (simulation_params.num_time_steps != 0) {
         message.str("");
         message << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
-        ac::chem_out->Write(ac::kVerbose, message);
+        ac::chem_out->Write(Teuchos::VERB_HIGH, message);
 
         // write out the headers info and initial conditions
         chem->DisplayTotalColumnHeaders(simulation_params.display_free_columns);
@@ -193,33 +195,33 @@ int main(int argc, char** argv) {
             message << "    number of jacobian evaluations: " << status.num_jacobian_evaluations << std::endl;
             message << "    number of newton iterations: " << status.num_newton_iterations << std::endl;
             message << "    solution converged: " << status.converged << std::endl;
-            ac::chem_out->Write(ac::kVerbose, message);
+            ac::chem_out->Write(Teuchos::VERB_HIGH, message);
           }
         }
-        ac::chem_out->Write(ac::kVerbose, "---- Final Speciation\n");
+        ac::chem_out->Write(Teuchos::VERB_HIGH, "---- Final Speciation\n");
         chem->Speciate(&components, parameters);
         if (simulation_params.verbosity >= ac::kTerse) {
           chem->DisplayResults();
         }
       }
     } else {
-      ac::chem_out->Write(ac::kVerbose, "No database file specified in input file.\n");
+      ac::chem_out->Write(Teuchos::VERB_HIGH, "No database file specified in input file.\n");
     }
   } catch (const ac::ChemistryException& geochem_error) {
-    ac::chem_out->Write(ac::kError, geochem_error.what());
+    ac::chem_out->WriteWarning(Teuchos::VERB_LOW, geochem_error.what());
     error = EXIT_FAILURE;
   } catch (const std::runtime_error& rt_error) {
-    ac::chem_out->Write(ac::kError, rt_error.what());
+    ac::chem_out->WriteWarning(Teuchos::VERB_LOW, rt_error.what());
     error = EXIT_FAILURE;
   } catch (const std::logic_error& lg_error) {
-    ac::chem_out->Write(ac::kError, lg_error.what());
+    ac::chem_out->WriteWarning(Teuchos::VERB_LOW, lg_error.what());
     error = EXIT_FAILURE;
   }
 
   if (!error) {
-    ac::chem_out->Write(ac::kVerbose, "Success!\n");
+    ac::chem_out->Write(Teuchos::VERB_HIGH, "Success!\n");
   } else {
-    ac::chem_out->Write(ac::kVerbose, "Failed!\n");
+    ac::chem_out->Write(Teuchos::VERB_HIGH, "Failed!\n");
   }
 
   text_output.close();
@@ -329,7 +331,7 @@ int CommandLineOptions(int argc, char** argv,
     message << "\tverbosity name: " << *verbosity_name << std::endl;
     message << "----------------------------------------------- Command Line Options -" << std::endl;
     message << std::endl << std::endl;
-    ac::chem_out->Write(ac::kDebugDriver, message);
+    ac::chem_out->Write(Teuchos::VERB_EXTREME, message);
   }
   return error;
 }  // end commandLineOptions()
@@ -351,7 +353,7 @@ void ReadInputFile(const std::string& file_name,
     message << "batch_chem: \n";
     message << "input file \'" << file_name
               << "\' could not be opened." << std::endl;
-    ac::chem_out->Write(ac::kError, message);
+    ac::chem_out->WriteWarning(Teuchos::VERB_LOW, message);
     abort();
   }
 
@@ -424,7 +426,7 @@ void ReadInputFile(const std::string& file_name,
         message << "batch_chem::ReadInputFile(): ";
         message << "unknown section found on line " << count << ":";
         message << "\'" << raw_line << "\'"<< std::endl;
-        ac::chem_out->Write(ac::kDebugInputFile, message);
+        ac::chem_out->Write(Teuchos::VERB_LOW, message);
       }
     } else if (line_type == kParameter) {
       // assume parameter line, but it may be empty (just spaces or missing an = )...
@@ -566,7 +568,7 @@ void WriteTemplateFile(const std::string& file_name)
     message << "batch_chem: \n";
     message << "template file \'" << file_name
               << "\' could not be opened." << std::endl;
-    ac::chem_out->Write(ac::kError, message);
+    ac::chem_out->WriteWarning(Teuchos::VERB_LOW, message);
     abort();
   }
   template_file << "[" << kSimulationSection << "]" << std::endl;
@@ -682,10 +684,10 @@ void WriteTextOutput(std::fstream* text_output, const double time,
 void PrintInput(const SimulationParameters& params,
                 const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components)
 {
-  ac::chem_out->Write(ac::kVerbose, "- Input File ---------------------------------------------------------\n");
+  ac::chem_out->Write(Teuchos::VERB_HIGH, "- Input File ---------------------------------------------------------\n");
   PrintSimulationParameters(params);
   components.Display("-- Input components: \n");
-  ac::chem_out->Write(ac::kVerbose, "--------------------------------------------------------- Input File -\n");
+  ac::chem_out->Write(Teuchos::VERB_HIGH, "--------------------------------------------------------- Input File -\n");
 }  // end PrintInput()
 
 
@@ -694,7 +696,7 @@ void PrintSimulationParameters(const SimulationParameters& params)
   std::stringstream message;
   message << "-- Simulation parameters:" << std::endl;
   message << "\tdescription: " << params.description << std::endl;
-  ac::chem_out->Write(ac::kVerbose, message);
+  ac::chem_out->Write(Teuchos::VERB_HIGH, message);
   ac::utilities::PrintVector("\tverbosity names", params.verbosity_names, true);
   message.str("");
   message << "\tverbosity enum: " << params.verbosity << std::endl;
@@ -710,7 +712,7 @@ void PrintSimulationParameters(const SimulationParameters& params)
   message << "\toutput interval: " << params.output_interval << std::endl;
   message << "\tmax iterations: " << params.max_iterations << std::endl;
   message << "\ttolerance: " << params.tolerance << std::endl;
-  ac::chem_out->Write(ac::kVerbose, message);
+  ac::chem_out->Write(Teuchos::VERB_HIGH, message);
 }
 
 

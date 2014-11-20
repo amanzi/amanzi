@@ -7,13 +7,10 @@
 #include <iostream>
 #include <iomanip>
 
-#include "chemistry_output.hh"
 #include "matrix_block.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-extern ChemistryOutput* chem_out;
 
 AqueousEquilibriumComplex::AqueousEquilibriumComplex()
     : SecondarySpecies() {
@@ -107,7 +104,7 @@ void AqueousEquilibriumComplex::display(void) const {
   message << "        logK = " << logK_ << std::endl;
   message << "        charge = " << charge() << std::endl;
   message << "        mol wt = " << gram_molecular_weight() << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end display()
 
 void AqueousEquilibriumComplex::Display(void) const {
@@ -135,7 +132,7 @@ void AqueousEquilibriumComplex::Display(void) const {
           << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
           << std::setprecision(2) << std::setw(8) << ion_size_parameter()
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end Display()
 
 void AqueousEquilibriumComplex::DisplayResultsHeader(void) const {
@@ -145,7 +142,7 @@ void AqueousEquilibriumComplex::DisplayResultsHeader(void) const {
           << std::setw(15) << "Activity Coeff"
           << std::setw(15) << "Activity"
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayResultsHeader()
 
 void AqueousEquilibriumComplex::DisplayResults(void) const {
@@ -156,7 +153,7 @@ void AqueousEquilibriumComplex::DisplayResults(void) const {
           << std::setw(15) << act_coef()
           << std::setw(15) << activity()
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayResults()
 
 }  // namespace AmanziChemistry

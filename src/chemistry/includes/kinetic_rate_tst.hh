@@ -21,17 +21,18 @@
  *******************************************************************************/
 #include <vector>
 
+#include "VerboseObject.hh"
+
 #include "kinetic_rate.hh"
 #include "species.hh"
 #include "secondary_species.hh"
 #include "mineral.hh"
 #include "string_tokenizer.hh"
-#include "chemistry_output.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern ChemistryOutput* chem_out;
+extern VerboseObject* chem_out;
 
 class MatrixBlock;
 

@@ -8,8 +8,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "chemistry_pk_base.hh"
 #include "beaker.hh"
+#include "chemistry_pk_base.hh"
 #include "chemistry_exception.hh"
 #include "chemistry_verbosity.hh"
 
@@ -24,8 +24,6 @@ namespace AmanziChemistry {
 // Trilinos based chemistry process kernel for the unstructured mesh
 class Chemistry_PK: public Chemistry_PK_Base {
  public:
-
-
   Chemistry_PK(const Teuchos::ParameterList& param_list,
                Teuchos::RCP<Chemistry_State> chem_state);
 

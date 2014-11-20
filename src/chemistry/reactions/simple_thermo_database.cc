@@ -436,7 +436,7 @@ void SimpleThermoDatabase::ParseSorptionIsotherm(const std::string& data) {
   std::stringstream message;
   message << "SimpleThermoDatabase::ParseSorptionIsotherm()...." << std::endl
           << "  data: " << data << std::endl;
-  chem_out->Write(kDebugInputFile, message);
+  chem_out->Write(Teuchos::VERB_EXTREME, message);
 
   std::string semicolon(";");
   std::string space(" ");
@@ -699,7 +699,7 @@ void SimpleThermoDatabase::ParseRadioactiveDecay(const std::string& data) {
   std::stringstream message;
   message << "SimpleThermoDatabase::ParseRadioactiveDecay()....\n"
           << "  data: " << data << std::endl;
-  chem_out->Write(kDebugInputFile, message);
+  chem_out->Write(Teuchos::VERB_EXTREME, message);
   
   std::string semicolon(";");
   std::string space(" ");
