@@ -74,6 +74,13 @@ int main(int argc, char** argv) {
   std::string template_file_name("");
   int error = EXIT_SUCCESS;
 
+  // if verbosity was specified on the command line, add the level on chem_out
+  Amanzi::VerboseObject::hide_line_prefix = false;  // two default value
+  Amanzi::VerboseObject::global_default_level = Teuchos::VERB_MEDIUM;
+
+  Teuchos::ParameterList plist;
+  ac::chem_out = new Amanzi::VerboseObject("Chemistry PK", plist);
+
   error = CommandLineOptions(argc, argv,
                              &verbosity_name,
                              &input_file_name,
@@ -93,18 +100,10 @@ int main(int argc, char** argv) {
   }
 
   if (components.total.size() == 0) {
-    message.str("");
     message << "Must have a non-zero number of total component values.\n";
     ac::chem_out->WriteWarning(Teuchos::VERB_LOW, message);
     abort();
   }
-
-  // if verbosity was specified on the command line, add the level on chem_out
-  Amanzi::VerboseObject::hide_line_prefix = false;  // two default value
-  Amanzi::VerboseObject::global_default_level = Teuchos::VERB_MEDIUM;
-
-  Teuchos::ParameterList plist;
-  ac::chem_out = new Amanzi::VerboseObject("Chemistry PK", plist);
 
   // if verbosity levels were specified in the input file, add the levels
   std::vector<std::string>::const_iterator name;
