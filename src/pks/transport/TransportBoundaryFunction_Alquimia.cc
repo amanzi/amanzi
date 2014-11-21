@@ -104,6 +104,7 @@ void TransportBoundaryFunction_Alquimia::Compute(double time)
   {
     if (times_.at(time_index+1) > time)
       break;
+    ++time_index;
   }
   std::string cond_name = cond_names_.at(time_index);
 
