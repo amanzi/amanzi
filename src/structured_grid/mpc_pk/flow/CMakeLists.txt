@@ -82,13 +82,11 @@ if (BUILD_TESTS)
               ${my_common_libs})
   set(my_tpl_libs ${amanzi_mesh_libs}
                   ${Teuchos_LIBRARIES}
-                  ${ExodusII_LIBRARIES}
                   ${Epetra_LIBRARIES}
                   ${Boost_LIBRARIES}
                   ${XERCES_LIBRARIES}
                   ${XERCES_ICU_LIBRARIES}
                   ${PETSC_LIBRARIES})
-message("Exhodus: ${my_tpl_libs}")
 
   list(APPEND my_tpl_libs ${CCSE_EXT_LIBRARIES})
 
@@ -107,7 +105,7 @@ message("Exhodus: ${my_tpl_libs}")
     add_amanzi_test(tRS tRS "tRS.in"
                     KIND unit
                     SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} ${F77_source_files_1}
-                    LINK_LIBS ${my_libs} ${my_tpl_libs} ${my_libs})
+                    LINK_LIBS ${structured_grid_libs} ${GEOCHEM_LIBS} error_handling atk ${my_tpl_libs})
   else()
     # (seems to require redundant lib listing to resolve everything....not sure why
     add_amanzi_test(tRS tRS "tRS_3D.in"

@@ -1,6 +1,10 @@
 
 #include <AmanziChemHelper_Structured.H>
 
+#ifdef _OPENMP
+#include "omp.h"
+#endif
+
 #include <cmath>
 #include <Utility.H>
 #include <ParallelDescriptor.H>
