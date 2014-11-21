@@ -66,7 +66,7 @@ namespace AmanziChemistry {
 
 // global ChemistryOutput object in the Amanzi::AmanziChemisry is deprecated
 // extern ChemistryOutput* chem_out;
-VerboseObject* chem_out = NULL;
+extern VerboseObject* chem_out;
 
 Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
                            Teuchos::RCP<Chemistry_State> chem_state)

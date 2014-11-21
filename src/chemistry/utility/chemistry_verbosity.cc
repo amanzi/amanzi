@@ -9,11 +9,15 @@
 #include <string>
 #include <map>
 
+#include "VerboseObject.hh"
+
 #include "chemistry_utilities.hh"
 #include "chemistry_strings.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
+
+VerboseObject* chem_out = NULL;
 
 VerbosityMap CreateVerbosityMap(void)
 {

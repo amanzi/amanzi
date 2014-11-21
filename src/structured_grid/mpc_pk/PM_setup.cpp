@@ -1649,7 +1649,7 @@ void  PorousMedia::read_comp()
 }
 
 using PMAMR::RlabelDEF;
-Amanzi::VerboseObject* Amanzi::AmanziChemistry::chem_out;
+extern Amanzi::VerboseObject* Amanzi::AmanziChemistry::chem_out;
 void  PorousMedia::read_tracer()
 {
   //

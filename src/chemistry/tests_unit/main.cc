@@ -12,7 +12,7 @@
 // namespace that can be used by an other chemistry object
 namespace Amanzi {
 namespace AmanziChemistry {
-VerboseObject* chem_out = NULL;
+extern VerboseObject* chem_out;
 }  // end namespace AmanziChemistry
 }  // end namespace Amanzi
 
