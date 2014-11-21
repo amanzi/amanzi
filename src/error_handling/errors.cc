@@ -1,14 +1,13 @@
 #include "errors.hh"
 #include <cstdio>
 
-namespace Errors
-{
+namespace Errors {
 
-Message::~Message () throw() {  }
+Message::~Message() throw() {};
 
-Message& operator<<(Message &message, const char* data) { message.add_data (data); return message; }
+Message& operator<<(Message &message, const char* data) { message.add_data(data); return message; }
 
-Message& operator<<(Message &message, const std::string& data) { message.add_data (data); return message; }
+Message& operator<<(Message &message, const std::string& data) { message.add_data(data); return message; }
 
 Message& operator<<(Message &message, int datum) { 
   char number[24];
@@ -24,5 +23,5 @@ Message& operator<<(Message &message, double datum) {
   return message; 
 }
 
-}
+}  // namespace Errors
 

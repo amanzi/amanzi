@@ -5,26 +5,23 @@
 
 #include <sstream>
 
-namespace Errors
-{
+namespace Errors {
 
 class Message : public Exceptions::Amanzi_exception
 {
+ public:
+  explicit Message() : message_() {};
+  explicit Message(const char* message) : message_(message) {};
+  explicit Message(const std::string& message) : message_(message) {};
+  ~Message() throw();
 
-    std::string message_;
+  const char* what() const throw() { return message_.c_str(); }
 
-public:
+  void add_data(const char* data) { message_ += data; }
+  void add_data(const std::string& data) { message_ += data; }
 
-    explicit Message () : message_ () {  }
-    explicit Message (const char* message) : message_ (message) { }
-    explicit Message (const std::string& message) : message_ (message) { }
-    ~Message () throw ();
-
-    const char* what () const throw () { return message_.c_str (); }
-
-    void add_data (const char* data) { message_ += data;  }
-    void add_data (const std::string& data) { message_ += data;  }
-
+ public:
+  std::string message_;
 };
 
 Message& operator<<(Message &message, const char* data);
@@ -34,5 +31,5 @@ Message& operator<<(Message &message, int datum);
 
 class CutTimeStep : public Exceptions::Amanzi_exception {};
 
-}
+}  // namespace Errors
 #endif /* _ERRORS_H_ */

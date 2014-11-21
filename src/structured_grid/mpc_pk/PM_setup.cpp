@@ -40,7 +40,6 @@
 
 #include "simple_thermo_database.hh"
 #include "activity_model_factory.hh"
-#include "chemistry_output.hh"
 #include "beaker.hh"
 
 #include <TabularFunction.H>
@@ -1650,6 +1649,7 @@ void  PorousMedia::read_comp()
 }
 
 using PMAMR::RlabelDEF;
+extern Amanzi::VerboseObject* Amanzi::AmanziChemistry::chem_out;
 void  PorousMedia::read_tracer()
 {
   //
@@ -1710,12 +1710,14 @@ void  PorousMedia::read_tracer()
 
       if (chemistry_model_name == "Amanzi") {
 
-        Amanzi::AmanziChemistry::SetupDefaultChemistryOutput();
+        Teuchos::ParameterList plist;
+        Amanzi::AmanziChemistry::chem_out = new Amanzi::VerboseObject("Chemistry", plist); 
         ParmParse pb("prob.amanzi");
         std::string verbose_chemistry_init = "silent"; ppc.query("verbose_chemistry_init",verbose_chemistry_init);      
-        if (verbose_chemistry_init == "silent") {
-          Amanzi::AmanziChemistry::chem_out->AddLevel("silent");
-        }
+        // ChemistryOutput class is obsolete
+        // if (verbose_chemistry_init == "silent") {
+        //  Amanzi::AmanziChemistry::chem_out->AddLevel("silent");
+        //}
 
         const std::string thermo_str = "Thermodynamic_Database";
         const std::string thermo_fmt_str = thermo_str + "_Format";

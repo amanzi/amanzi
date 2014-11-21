@@ -18,6 +18,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 include_directories(${CHEM_SOURCE_DIR}/includes)
 include_directories(${DBC_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${SFLOW_SOURCE_DIR})
@@ -74,7 +75,7 @@ if (BUILD_TESTS)
   endif()
 
   get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
-  set(my_common_libs error_handling ${GEOCHEM_LIBS} interface atk)
+  set(my_common_libs ${GEOCHEM_LIBS} error_handling interface atk)
 
   set(my_libs ${structured_grid_libs}
               ${unstructured_grid_libs}
@@ -104,7 +105,7 @@ if (BUILD_TESTS)
     add_amanzi_test(tRS tRS "tRS.in"
                     KIND unit
                     SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} ${F77_source_files_1}
-                    LINK_LIBS ${my_libs} ${my_tpl_libs} ${my_libs})
+                    LINK_LIBS ${structured_grid_libs} ${GEOCHEM_LIBS} error_handling atk ${my_tpl_libs})
   else()
     # (seems to require redundant lib listing to resolve everything....not sure why
     add_amanzi_test(tRS tRS "tRS_3D.in"

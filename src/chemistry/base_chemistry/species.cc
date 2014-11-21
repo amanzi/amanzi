@@ -7,15 +7,15 @@
 #include <iostream>
 #include <iomanip>
 
-#include "chemistry_output.hh"
 #include "chemistry_exception.hh"
 
+#include "VerboseObject.hh"
 #include "exceptions.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern ChemistryOutput* chem_out;
+extern VerboseObject* chem_out;
 
 Species::Species()
     : molality_(1.e-9),
@@ -103,7 +103,7 @@ void Species::Display(void) const {
           << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
           << std::setprecision(2) << std::setw(10) << ion_size_parameter()
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end Display()
 
 void Species::DisplayResultsHeader(void) const {
@@ -113,7 +113,7 @@ void Species::DisplayResultsHeader(void) const {
           << std::setw(15) << "Activity Coeff"
           << std::setw(15) << "Activity"
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayResultsHeader()
 
 void Species::DisplayResults(void) const {
@@ -124,7 +124,7 @@ void Species::DisplayResults(void) const {
           << std::setw(15) << act_coef()
           << std::setw(15) << activity()
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayResults()
 
 }  // namespace AmanziChemistry

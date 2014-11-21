@@ -1,5 +1,9 @@
 #ifdef ALQUIMIA_ENABLED
 
+#ifdef _OPENMP
+#include "omp.h"
+#endif
+
 #include <AlquimiaHelper_Structured.H>
 
 #include <cmath>

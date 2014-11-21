@@ -3,27 +3,25 @@
 
 #include "exceptions.hh"
 
-namespace DBC
-{
-
+namespace DBC {
 
 /* DBC_assertion
  *
  * An exception class for DBC asserion volations.
  * 
  */
-class Assertion : public Exceptions::Amanzi_exception
-{
-    const char* assertion_;
-    const char* filename_;
-    unsigned int line_number_;
-
+class Assertion : public Exceptions::Amanzi_exception {
 public:
-    Assertion (const char* condition, const char* file, unsigned int line);
-    const char* what () const throw ();
+  Assertion (const char* condition, const char* file, unsigned int line);
+  const char* what () const throw ();
+
+ public:
+  const char* assertion_;
+  const char* filename_;
+  unsigned int line_number_;
 };
 
-void amanzi_assert (const char * cond, const char * file,  unsigned int line);
+void amanzi_assert(const char * cond, const char * file, unsigned int line);
 
 } // namespace DBC
 

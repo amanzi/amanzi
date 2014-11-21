@@ -10,6 +10,8 @@
 
 #include <BoxLib.H>
 
+#include <algorithm>
+
 using Teuchos::Array;
 using Teuchos::ParameterList;
 using Teuchos::ParameterEntry;
@@ -61,6 +63,20 @@ namespace Amanzi {
         AMR_to_Amanzi_label_map[ss[i]] = instrings[i];
       }
       return ss;
+    }
+
+    std::string lc(const std::string& in)
+    {
+      std::string out;
+      std::transform(in.begin(), in.end(), std::back_inserter(out), ::tolower);
+      return out;
+    }
+
+    std::string uc(const std::string& in)
+    {
+      std::string out;
+      std::transform(in.begin(), in.end(), std::back_inserter(out), ::toupper);
+      return out;
     }
 
     //
@@ -663,22 +679,21 @@ namespace Amanzi {
       //
       // Verbosity implementation
       //
-      if (v_val == "None") {
+      if (lc(v_val) == "none") {
         prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0; fab_v = 0;
       }
-      else if (v_val == "Low") {
+      else if (lc(v_val) == "low") {
         prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0; io_v = 0; fab_v = 0;
       }
-      else if (v_val == "Medium") {
+      else if (lc(v_val) == "medium") {
         prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0; fab_v = 0;
       }
-      else if (v_val == "High") {
+      else if (lc(v_val) == "high") {
         prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 3;  diffuse_v = 0; io_v = 0; fab_v = 0;
       }
-      else if (v_val == "Extreme") {
+      else if (lc(v_val) == "extreme") {
         prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
       }
-
       // 
       // Optional lists
       //

@@ -7,8 +7,6 @@
 #include <sstream>
 #include <vector>
 
-#include "chemistry_output.hh"
-
 namespace Amanzi {
 namespace AmanziChemistry {
 namespace utilities {

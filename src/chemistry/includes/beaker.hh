@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "VerboseObject.hh"
+
 #include "activity_model.hh"
 #include "aqueous_equilibrium_complex.hh"
 #include "general_rxn.hh"
@@ -20,7 +22,6 @@
 #include "surface_complexation_rxn.hh"
 #include "lu_solver.hh"
 #include "matrix_block.hh"
-#include "chemistry_output.hh"
 #include "chemistry_verbosity.hh"
 #include "chemistry_utilities.hh"
 
@@ -31,6 +32,8 @@
 
 namespace Amanzi {
 namespace AmanziChemistry {
+
+extern VerboseObject* chem_out;
 
 class KineticRate;
 
@@ -59,7 +62,7 @@ class Beaker {
     std::vector<double> isotherm_langmuir_b;
 
     void Display(const std::string& message) const {
-      chem_out->Write(kVerbose, message);
+      chem_out->Write(Teuchos::VERB_HIGH, message);
       utilities::PrintVector("Totals", total, 16, true);
       utilities::PrintVector("Total sorbed", total_sorbed, 16, true);
       utilities::PrintVector("Free Ion", free_ion, 16, true);
@@ -90,7 +93,7 @@ class Beaker {
       for (int i = 0; i < free_ion.size(); ++i) {
         message << names.at(i) << " = " << free_ion.at(i) << "\n";
       }
-      chem_out->Write(kVerbose, message);
+      chem_out->Write(Teuchos::VERB_HIGH, message);
     }
   };
 

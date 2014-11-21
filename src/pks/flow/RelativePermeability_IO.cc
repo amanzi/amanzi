@@ -31,7 +31,7 @@ void RelativePermeability::ProcessParameterList_(Teuchos::ParameterList& plist)
 
   // create verbosity object
   Teuchos::ParameterList vlist;
-  vo_ = new VerboseObject("Flow::RelativePerm", vlist); 
+  vo_ = new VerboseObject("FlowPK::RelPerm", vlist); 
 
   int nblocks = 0;  // Find out how many WRM entries there are.
   for (Teuchos::ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++) {

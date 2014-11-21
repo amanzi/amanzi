@@ -5,13 +5,13 @@
 #include <iostream>
 #include <iomanip>
 
-#include "chemistry_output.hh"
+#include "VerboseObject.hh"
 #include "block.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern ChemistryOutput* chem_out;
+extern VerboseObject* chem_out;
 
 SurfaceSite::SurfaceSite()
     : name_(""),
@@ -78,7 +78,7 @@ void SurfaceSite::Display(void) const {
   message << std::setw(15) << name()
           << std::setw(15) << std::scientific << molar_density()
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end Display()
 
 void SurfaceSite::DisplayResultsHeader(void) const {
@@ -89,7 +89,7 @@ void SurfaceSite::DisplayResultsHeader(void) const {
   message << std::setw(15) << " "
           << std::setw(15) << "[mol/m^3 bulk]"
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayResultsHeader()
 
 void SurfaceSite::DisplayResults(void) const {
@@ -98,7 +98,7 @@ void SurfaceSite::DisplayResults(void) const {
           << std::scientific << std::setprecision(5)
           << std::setw(15) << free_site_concentration()
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayResults()
 
 }  // namespace AmanziChemistry

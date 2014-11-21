@@ -317,7 +317,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           // pressure-lambda constraints
           Teuchos::ParameterList& tti_plamb = tti_list.sublist("pressure-lambda constraints");
           tti_plamb.set<std::string>("method", "projection");
-          tti_plamb.set<bool>("inflow krel correction", true);
+          tti_plamb.set<bool>("inflow krel correction", false);
           tti_plamb.set<std::string>("linear solver", TR_PLAMB_SOLVER);
 
           // time integration method

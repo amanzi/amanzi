@@ -166,7 +166,6 @@ SUITE(GeochemistryTestsChemistryPK) {
     // object correctly based on the xml input....
     try {
       cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
-      Amanzi::AmanziChemistry::chem_out->AddLevel("debug");
       cpk_->InitializeChemistry();
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
@@ -179,7 +178,6 @@ SUITE(GeochemistryTestsChemistryPK) {
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
     try {
       cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
-      Amanzi::AmanziChemistry::chem_out->AddLevel("silent");
       cpk_->InitializeChemistry();
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;

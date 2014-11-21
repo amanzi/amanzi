@@ -71,6 +71,13 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   // Get the stream (errors if !os_OK()).
   inline Teuchos::RCP<Teuchos::FancyOStream> os() const;
 
+  // Simple one-line wrapper
+  inline void Write(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const;
+  inline void Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
+
+  inline void WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const;
+  inline void WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::string& data) const;
+
  public:
   // The default global verbosity level.
   static Teuchos::EVerbosityLevel global_default_level;
@@ -82,8 +89,8 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   static unsigned int line_prefix_size;
 
   // Color output for developers
-  std::string color(std::string name);
-  std::string reset();
+  std::string color(std::string name) const;
+  std::string reset() const;
 
   void set_name(std::string name);
 
@@ -103,6 +110,37 @@ bool VerboseObject::os_OK(Teuchos::EVerbosityLevel verbosity) const {
 Teuchos::RCP<Teuchos::FancyOStream> VerboseObject::os() const {
   return out_;
 };
+
+
+void VerboseObject::Write(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const {
+  if (getVerbLevel() >= verbosity) {
+    Teuchos::OSTab tab = getOSTab();
+    *os() << data.str();
+  }
+}
+
+
+void VerboseObject::Write(Teuchos::EVerbosityLevel verbosity, const std::string& data) const {
+  if (getVerbLevel() >= verbosity) {
+    Teuchos::OSTab tab = getOSTab();
+    *os() << data;
+  }
+}
+
+void VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const {
+  if (getVerbLevel() >= verbosity) {
+    Teuchos::OSTab tab = getOSTab();
+    *os() << color("yellow") << data.str() << reset();
+  }
+}
+
+
+void VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::string& data) const {
+  if (getVerbLevel() >= verbosity) {
+    Teuchos::OSTab tab = getOSTab();
+    *os() << color("yellow") << data << reset();
+  }
+}
 
 }  // namespace Amanzi
 

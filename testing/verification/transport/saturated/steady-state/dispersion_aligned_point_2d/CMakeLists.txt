@@ -12,7 +12,8 @@ if (ENABLE_TESTS)
     add_test(NAME compare_${test_name} 
 	     COMMAND diff ${DISPERSION_ALIGNED_POINT_2D_BINARY_DIR}/${compfile}
 	                  ${DISPERSION_ALIGNED_POINT_2D_SOURCE_DIR}/golden_output/${compfile} 
-			  #${dataset}/${step}  ${dataset}/${step} )
+			  #${dataset}/${step}  ${dataset}/${step} 
+			  )
     set_tests_properties( compare_${test_name} PROPERTIES DEPENDS run_${test_name} )
     #set_tests_properties( compare_${test_name} PROPERTIES FAIL_REGULAR_EXPRSSION "differences found" )
     set_tests_properties( compare_${test_name} PROPERTIES FAIL_REGULAR_EXPRSSION "differs from" )
