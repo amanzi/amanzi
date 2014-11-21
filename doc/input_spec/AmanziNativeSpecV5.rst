@@ -1670,25 +1670,34 @@ This function is continuous and linear between two consecutive points.
 This behavior can be changed using parameter `"forms`".
 This parameter is optional.
 If specified it must be an array of length equal to one less than the length 
-of `x values`.  
-Each value is either `"linear`" to indicate linear interpolation on that 
-interval, or `"constant`" to use the left endpoint value for that interval.
-The example defines function that is zero on interval :math:`(-\infty,\,0]`,
-linear on interval :math:`(0,\,1]`, constant (`f(x)=1`) on interval :math:`(1,\,2]`,
-and constant (`f(x)=2`) on interval :math:`(2,\,\infty]`.
-The parameter `"x coordinate`" defines whether the `"x values`" refers to time `"t`",
-x-coordinate `"x`", y-coordinate `"y`", or z-coordinate `"z`".
+of `"x values`".  
+Each value in `"forms`" is either `"linear`" to indicate linear interpolation on that 
+interval, `"constant`" to use the left endpoint value for that interval, or `"FUNCTION`"
+to indicate an arbitrary user function, usually a math function. 
 The default value for `"x coordinate`" is `"t`".
 
 .. code-block:: xml
 
   <ParameterList name="function-tabular">
-    <Parameter name="x values" type="Array(double)" value="{0.0, 1.0, 2.0}"/>
+    <Parameter name="x values" type="Array(double)" value="{0.0, 1.0, 2.0, 3.0}"/>
     <Parameter name="x coordinate" type="string" value="t"/>
-    <Parameter name="y values" type="Array(double)" value="{0.0, 1.0, 2.0}"/>
-    <Parameter name="forms" type="Array(string)" value="{linear, constant}"/>
+    <Parameter name="y values" type="Array(double)" value="{0.0, 1.0, 2.0, 2.0}"/>
+    <Parameter name="forms" type="Array(string)" value="{linear, constant, USER_FUNC}"/>
+
+    <ParameterList name="USER_FUNC">
+      <ParameterList name="function-standard-math">
+        <Parameter name="operator" type="string" value="sqrt"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
   
+The example defines function that is zero on interval :math:`(-\infty,\,0]`,
+linear on interval :math:`(0,\,1]`, constant (`f(x)=1`) on interval :math:`(1,\,2]`, 
+square root of `t` on interval :math:`(2,\,3]`,
+and constant (`f(x)=2`) on interval :math:`(3,\,\infty]`.
+The parameter `"x coordinate`" defines whether the `"x values`" refers to time `"t`",
+x-coordinate `"x`", y-coordinate `"y`", or z-coordinate `"z`".
+
 
 Bilinear function
 -----------------

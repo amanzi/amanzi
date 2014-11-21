@@ -3,22 +3,29 @@
 
 namespace Amanzi {
 
-TabularFunction::TabularFunction(const std::vector<double> &x, const std::vector<double> &y,
+TabularFunction::TabularFunction(const std::vector<double>& x, const std::vector<double>& y,
 		const int xi)
     : x_(x), y_(y), xi_(xi)
 {
-  form_.assign(x.size()-1,LINEAR);
+  form_.assign(x.size() - 1, LINEAR);
   check_args(x, y, form_);
 }
 
-TabularFunction::TabularFunction(const std::vector<double> &x, const std::vector<double> &y,
-    const int xi, const std::vector<Form> &form) : x_(x), y_(y), xi_(xi), form_(form)
+TabularFunction::TabularFunction(const std::vector<double>& x, const std::vector<double>& y,
+    const int xi, const std::vector<Form>& form) : x_(x), y_(y), xi_(xi), form_(form)
 {
   check_args(x, y, form);
 }
 
-void TabularFunction::check_args(const std::vector<double> &x, const std::vector<double> &y,
-                                 const std::vector<Form> &form) const
+TabularFunction::TabularFunction(const std::vector<double>& x, const std::vector<double>& y,
+    const int xi, const std::vector<Form>& form, const std::vector<Function*>& func) 
+    : x_(x), y_(y), xi_(xi), form_(form), func_(func)
+{
+  check_args(x, y, form);
+}
+
+void TabularFunction::check_args(const std::vector<double>& x, const std::vector<double>& y,
+                                 const std::vector<Form>& form) const
 {
   if (x.size() != y.size()) {
     Errors::Message m;
@@ -75,6 +82,8 @@ double TabularFunction::operator()(const std::vector<double>& x) const
     case CONSTANT:
       y = y_[j1];
       break;
+    default:
+      y = (*func_[j1])(x);
     }
   }
   return y;
