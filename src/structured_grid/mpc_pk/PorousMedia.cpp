@@ -1791,6 +1791,8 @@ PorousMedia::ml_step_driver(Real  time,
 	advect_tracers = react_tracers = false;
       }
 
+      solute_transport_limits_dt = advect_tracers;
+
       if (time < switch_time) {
 	if (mode_status != mode_steady) {
 	  mode_status = mode_steady;
@@ -2292,7 +2294,8 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
     int n_subtr = 0;
 
     bool summary_transport_out = true;
-    bool full_transport_out = false;
+    //bool full_transport_out = false;
+    bool full_transport_out = true;
 
     while (continue_subtr) {
 
@@ -4308,46 +4311,41 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
 
   if (solute_transport_limits_dt) {
 
-      if (dt_eig != 0.0)
-      {
-        estdt = dt_eig;
-      } 
-      else 
-      {
-          int making_new_umac = 0;
-          
-          // Need to define the MAC velocities in order to define the initial dt 
-          if (u_mac == 0) 
-          {
-            making_new_umac = 1;
-              
-            u_mac = new MultiFab[BL_SPACEDIM];
-            for (int dir = 0; dir < BL_SPACEDIM; dir++)
-            {
-              BoxArray edge_grids(grids);
-              edge_grids.surroundingNodes(dir);
-              u_mac[dir].define(edge_grids,1,0,Fab_allocate);
-              u_mac[dir].setVal(0.);
-            }
-            if (model != PM_RICHARDS) {
-              if ( (model == PM_STEADY_SATURATED)
-                   || (model == PM_SATURATED) ) {
-                set_vel_from_bcs(PMParent()->startTime(),u_mac);
-	      }
-            }
-          }
-          
-          predictDT(u_mac,cur_time);
-          if (diffuse_tracers && be_cn_theta_trac==0) {
-            Real dt_diff = predictDT_diffusion_explicit(cur_time);
-            dt_eig = std::min(dt_diff, dt_eig);
-          }
-          
-          estdt = dt_eig;
+    int making_new_umac = 0;
+      
+    // Need to define the MAC velocities in order to define the initial dt 
+    if (u_mac == 0)  {
 
-          if (making_new_umac)
-              delete [] u_mac;
+      making_new_umac = 1;
+
+      u_mac = new MultiFab[BL_SPACEDIM];
+      for (int dir = 0; dir < BL_SPACEDIM; dir++) {
+        BoxArray edge_grids(grids);
+        edge_grids.surroundingNodes(dir);
+        u_mac[dir].define(edge_grids,1,0,Fab_allocate);
+        u_mac[dir].setVal(0.);
       }
+
+      if (model != PM_RICHARDS
+          && model != PM_STEADY_SATURATED
+          && model != PM_SATURATED) {
+        set_vel_from_bcs(PMParent()->startTime(),u_mac);
+      }
+    }
+
+    // Update dt_eig
+    predictDT(u_mac,cur_time);
+    if (diffuse_tracers && be_cn_theta_trac==0) {
+      Real dt_diff = predictDT_diffusion_explicit(cur_time);
+      dt_eig = std::min(dt_diff, dt_eig);
+    }
+
+    estdt = dt_eig;
+
+    if (making_new_umac)
+      delete [] u_mac;
+
+    estdt *= ( max_n_subcycle_transport > 0  ?  max_n_subcycle_transport : 1);
   }
 
   // 
@@ -4567,7 +4565,7 @@ PorousMedia::GetUserInputInitDt()
     {
         Real cum_time = parent->cumTime(); // Time evolved to so far
         Real start_time = parent->startTime(); // Time simulation started from
-        if (switch_time <= start_time  || cum_time > switch_time ) {
+        if (switch_time <= start_time  || cum_time >= switch_time ) {
           user_input_dt_init = dt_init;
         } else {
           user_input_dt_init = steady_init_time_step;
@@ -4706,6 +4704,7 @@ PorousMedia::computeNewDt (int                   finest_level,
       if (solute_transport_limits_dt && dt_eig_local>0) {
           dt_0 = std::min(dt_0, dt_eig_local);
       }
+
   }
 
   int n_factor = 1;
