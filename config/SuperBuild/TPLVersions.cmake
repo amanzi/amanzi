@@ -51,6 +51,7 @@
 #   0.92.7       - update CCSE to version 1.2.8 
 #   0.92.8       - update ExodussII 5.22 -> 6.06
 #   0.92.9       - update MSTK to v 2.21 (incompatible -DWITH_MSTK_2_21rc1_OR_NEWER=TRUE)
+#   0.92.10      - update MSTK to v 2.22rc1
 #
 
 include(CMakeParseArguments)
@@ -101,7 +102,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 9)
+set (AMANZI_TPLS_VERSION_PATCH 10)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -261,12 +262,12 @@ set(ExodusII_MD5_SUM       cfd240dbc1251b08fb1d0ee2de40a44c)
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 2)
-set(MSTK_VERSION_MINOR 21)
-set(MSTK_VERSION_PATCH )
+set(MSTK_VERSION_MINOR 22)
+set(MSTK_VERSION_PATCH rc1)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        ade89e184da04040d5e106bc20fc04ff)
+set(MSTK_MD5_SUM        ca838f3c0ffa92abc3437ef530e21000)
 
 #
 # TPL: MOAB
