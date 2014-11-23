@@ -308,7 +308,6 @@ Teuchos::ParameterList InputParserIS::CreateTransportSrcList_(Teuchos::Parameter
 
                 // create time function (two different case are considered)
                 Teuchos::ParameterList& src_out_fn = src_out.sublist("sink");
-std::cout << src_fn << std::endl;
                 if (src_fn.isParameter("Values")) {
                   Teuchos::Array<double> values = src_fn.get<Teuchos::Array<double> >("Values");
                   // write the native time function
