@@ -64,7 +64,7 @@ class Richards_PK : public Flow_PK {
   double ErrorNormPicardExperimental(const CompositeVector& uold, const CompositeVector& unew);
  
   // methods required for time integration
-  void Functional(const double Told, double Tnew, 
+  void Functional(const double T0, double T1, 
                   Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
                   Teuchos::RCP<CompositeVector> f);
   void ApplyPreconditioner(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<CompositeVector> Hu);
@@ -81,11 +81,11 @@ class Richards_PK : public Flow_PK {
 
   // other main methods
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void UpdateSourceBoundaryData(double Tp, const CompositeVector& u);
+  void UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u);
 
   // linear problems and solvers
-  void SolveFullySaturatedProblem(double T, CompositeVector& u, const std::string& solver_name);
-  void EnforceConstraints(double Tp, CompositeVector& u);
+  void SolveFullySaturatedProblem(double T0, CompositeVector& u, const std::string& solver_name);
+  void EnforceConstraints(double T1, CompositeVector& u);
 
   // water retention models
   void DeriveSaturationFromPressure(const Epetra_MultiVector& p, Epetra_MultiVector& s);

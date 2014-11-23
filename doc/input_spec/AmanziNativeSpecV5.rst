@@ -811,6 +811,8 @@ The external sources and sinks are typically pumping wells. The structure
 of sublist `"source terms`" mimics that of boundary conditions. 
 Again, constant functions can be replaced by any of the available time-functions.
 
+* `"regions`" [Array(string)] list of regions where source is defined.
+
 * `"spatial distribution method`" [string] identifies a method for distributing
   source Q over the specified regions. The available options are `"volume`",
   `"none`", and `"permeability`". For option `"none`" the source term Q is measured
@@ -818,12 +820,17 @@ Again, constant functions can be replaced by any of the available time-functions
   is defined over a few regions, Q will be distributed independently over each region.
   Default is `"none`".
 
+* `"submodel`" [string] refines definition of source. Available options are `"rate`"
+  and `"integrand`". The first option defines rate of change `q`, the second one 
+  defines integrand `Q` of a rate `Q = dq/dt`. Default is `"rate`".
+
 .. code-block:: xml
 
      <ParameterList name="source terms">
        <ParameterList name="SRC 0">
          <Parameter name="regions" type="Array(string)" value="{WELL_EAST}"/>
          <Parameter name="spatial distribution method" type="string" value="volume"/>
+         <Parameter name="submodel" type="string" value="rate"/>
          <ParameterList name="sink">
            <ParameterList name="function-constant">
              <Parameter name="value" type="double" value="-0.1"/>
@@ -1354,6 +1361,10 @@ Note that the source values are set up separately for each component.
       is defined over a few regions, Q will be distributed independently over each region.
       Default value is `"none`".
 
+    * `"submodel`" [string] refines definition of source. Available options are `"rate`"
+      and `"integrand`". The first option defines rate of change `q`, the second one 
+      defines integrand `Q` of a rate `Q = dq/dt`. Default is `"rate`".
+
 This example defines one well and one sink.
 
 .. code-block:: xml
@@ -1364,6 +1375,7 @@ This example defines one well and one sink.
            <ParameterList name="SOURCE: EAST WELL">   <!-- user defined name -->
 	     <Parameter name="regions" type="Array(string)" value="{EAST_WELL}"/>
              <Parameter name="spatial distribution method" type="string" value="volume"/>
+             <Parameter name="submodel" type="string" value="rate"/>
              <ParameterList name="sink">   <!-- keyword, do not change -->
                <ParameterList name="function-constant">
                  <Parameter name="value" type="double" value="-0.01"/>
@@ -1829,15 +1841,18 @@ analysis tests.
   with two arguments. These functions are `"a pow(x[0], p)`" and `"a mod(x[0], p)`".
   Defualt value is 0.
 
+* `"shift`" [double] specifies shift of the function argument. Default is 0.
+
 .. code-block:: xml
 
   <ParameterList name="function-standard-math">
     <Parameter name="operator" type="string" value="sqrt"/>
     <Parameter name="amplitude" type="double" value="1e-7"/>
     <Parameter name="parameter" type="double" value="0.5"/>
+    <Parameter name="shift" type="double" value="0.1"/>
   </ParameterList>
 
-This example defines function `1e-7 sqrt(t)`.
+This example defines function `1e-7 sqrt(t-0.1)`.
 
 
 Additive function

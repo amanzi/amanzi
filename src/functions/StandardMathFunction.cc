@@ -6,8 +6,8 @@
 namespace Amanzi {
 
 StandardMathFunction::StandardMathFunction(std::string op,
-        double amplitude, double parameter) :
-    op_(op), amplitude_(amplitude), parameter_(parameter) {
+        double amplitude, double parameter, double shift) :
+    op_(op), amplitude_(amplitude), parameter_(parameter), shift_(shift) {
   if (!((op_ == "cos") ||
         (op_ == "sin") ||
         (op_ == "tan") ||
@@ -35,50 +35,53 @@ StandardMathFunction::StandardMathFunction(std::string op,
 
 double StandardMathFunction::operator()(const std::vector<double>& x) const
 {
+  double x0 = x[0] - shift_;
   if (op_ == "cos") {
-    return amplitude_ * cos(x[0]);
+    return amplitude_ * cos(x0);
   } else if (op_ == "sin") {
-    return amplitude_ * sin(x[0]);
+    return amplitude_ * sin(x0);
   } else if (op_ == "tan") {
-    return amplitude_ * tan(x[0]);
+    return amplitude_ * tan(x0);
   } else if (op_ == "acos") {
-    return amplitude_ * acos(x[0]);
+    return amplitude_ * acos(x0);
   } else if (op_ == "asin") {
-    return amplitude_ * asin(x[0]);
+    return amplitude_ * asin(x0);
   } else if (op_ == "atan") {
-    return amplitude_ * atan(x[0]);
+    return amplitude_ * atan(x0);
   } else if (op_ == "cosh") {
-    return amplitude_ * cosh(x[0]);
+    return amplitude_ * cosh(x0);
   } else if (op_ == "sinh") {
-    return amplitude_ * sinh(x[0]);
+    return amplitude_ * sinh(x0);
   } else if (op_ == "tanh") {
-    return amplitude_ * tanh(x[0]);
+    return amplitude_ * tanh(x0);
   } else if (op_ == "exp") {
-    return amplitude_ * exp(x[0]);
+    return amplitude_ * exp(x0);
   } else if (op_ == "log") {
-    return amplitude_ * log(x[0]);
+    if (x0 <= 0) InvalidDomainError_(x[0]);
+    return amplitude_ * log(x0);
   } else if (op_ == "log10") {
-    return amplitude_ * log10(x[0]);
+    if (x0 <= 0) InvalidDomainError_(x[0]);
+    return amplitude_ * log10(x0);
   } else if (op_ == "sqrt") {
-    if (x[0] < 0) InvalidDomainError_(x[0]);
-    return amplitude_ * sqrt(x[0]);
+    if (x0 < 0) InvalidDomainError_(x[0]);
+    return amplitude_ * sqrt(x0);
   } else if (op_ == "ceil") {
-    return amplitude_ * ceil(x[0]);
+    return amplitude_ * ceil(x0);
   } else if (op_ == "fabs") {
-    return amplitude_ * fabs(x[0]);
+    return amplitude_ * fabs(x0);
   } else if (op_ == "floor") {
-    return amplitude_ * floor(x[0]);
+    return amplitude_ * floor(x0);
   } else if (op_ == "pow") {
-    return amplitude_ * pow(x[0], parameter_);
+    return amplitude_ * pow(x0, parameter_);
   } else if (op_ == "mod") {
-    return fmod(x[0], parameter_);
+    return fmod(x0, parameter_);
   } else {
     std::stringstream m;
     m << "Invalid or unknown standard math function " << op_;
     Errors::Message message(m.str());
     Exceptions::amanzi_throw(message);
   }
-  return 0.;
+  return 0.0;
 }
 
 void StandardMathFunction::InvalidDomainError_(double x) const {
