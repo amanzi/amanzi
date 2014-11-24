@@ -50,6 +50,9 @@ class PKBDFBase : public virtual PKDefaultBase,
   // -- Commit any secondary (dependent) variables.
   virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
 
+  // update the continuation parameter
+  virtual void UpdateContinuationParameter(double lambda);
+
   // -- Check the admissibility of a solution.
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) { return true; }
 

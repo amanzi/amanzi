@@ -28,6 +28,15 @@ void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
 
   // preconditioner assembly
   assemble_preconditioner_ = plist_->get<bool>("assemble preconditioner", true);
+
+  if (!plist_->get<bool>("strongly coupled PK", false)) {
+    Teuchos::ParameterList& bdf_plist = plist_->sublist("time integrator");
+    // -- check if continuation method
+    // -- ETC Note this needs fixed if more than one continuation method used
+    if (bdf_plist.isSublist("continuation parameters")) {
+      S->RequireScalar("continuation_parameter", name_);
+    }
+  }
 };
 
 
@@ -41,6 +50,12 @@ void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
     Teuchos::ParameterList& bdf_plist = plist_->sublist("time integrator");
     bdf_plist.set("initial time", S->time());
     time_stepper_ = Teuchos::rcp(new BDF1_TI<TreeVector,TreeVectorSpace>(*this, bdf_plist, solution_));
+
+    // initialize continuation parameter if needed.
+    if (bdf_plist.isSublist("continuation parameters")) {
+      *S->GetScalarData("continuation_parameter", name_) = 1.;
+      S->GetField("continuation_parameter", name_)->set_initialized();
+    }
 
     // -- initialize time derivative
     Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
@@ -109,5 +124,11 @@ bool PKBDFBase::advance(double dt) {
   return fail;
 };
 
+
+// update the continuation parameter
+void PKBDFBase::UpdateContinuationParameter(double lambda) {
+  *S_next_->GetScalarData("continuation_parameter", name_) = lambda;
+  ChangedSolution();
+}
 
 } // namespace

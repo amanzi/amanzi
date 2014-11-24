@@ -56,6 +56,9 @@ void PCIceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
   Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
+  double lambda = S->HasField("continuation_parameter") ?
+    std::pow(10., -2*(*S->GetScalarData("continuation_parameter"))) : 1.;
+  
 
   // evaluate pc
   for (CompositeVector::name_iterator comp=result->begin();
@@ -66,7 +69,7 @@ void PCIceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     int count = result->size(*comp);
     for (int id=0; id!=count; ++id) {
-      result_v[0][id] = model_->CapillaryPressure(temp_v[0][id], dens_v[0][id]);
+      result_v[0][id] = lambda * model_->CapillaryPressure(temp_v[0][id], dens_v[0][id]);
     }
   }
 }
@@ -79,6 +82,8 @@ void PCIceEvaluator::EvaluateFieldPartialDerivative_(
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
   Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
+  double lambda = S->HasField("continuation_parameter") ?
+    std::pow(10., -2*(*S->GetScalarData("continuation_parameter"))) : 1.;
 
   if (wrt_key == temp_key_) {
     // evaluate d/dT( pc )
@@ -90,7 +95,7 @@ void PCIceEvaluator::EvaluateFieldPartialDerivative_(
 
       int count = result->size(*comp);
       for (int id=0; id!=count; ++id) {
-        result_v[0][id] = model_->DCapillaryPressureDT(temp_v[0][id], dens_v[0][id]);
+        result_v[0][id] = lambda * model_->DCapillaryPressureDT(temp_v[0][id], dens_v[0][id]);
       }
     }
   } else if (wrt_key == dens_key_) {
@@ -103,7 +108,7 @@ void PCIceEvaluator::EvaluateFieldPartialDerivative_(
 
       int count = result->size(*comp);
       for (int id=0; id!=count; ++id) {
-        result_v[0][id] = model_->DCapillaryPressureDRho(temp_v[0][id], dens_v[0][id]);
+        result_v[0][id] = lambda * model_->DCapillaryPressureDRho(temp_v[0][id], dens_v[0][id]);
       }
     }
   } else {
