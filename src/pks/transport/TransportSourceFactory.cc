@@ -108,7 +108,11 @@ void TransportSourceFactory::ProcessSourceSpec(
   std::string action_name = list.get<std::string>("spatial distribution method", "none");
   ProcessStringActions(action_name, &method);
 
-  src->Define(regions, f, method, name);
+  std::string submodel_name = list.get<std::string>("submodel", "rate");
+  int submodel(TransportActions::DOMAIN_FUNCTION_SUBMODEL_RATE);
+  if (submodel_name == "integrand") submodel = TransportActions::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND;
+
+  src->Define(regions, f, method, submodel, name);
 }
 
 

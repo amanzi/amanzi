@@ -1161,8 +1161,9 @@ Example:
         <Parameter name="Value" type="double" value="2.8e3"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="2.05e-8"/>
-        <Parameter name="Vertical" type="double" value="2.05e-9"/>
+        <Parameter name="x" type="double" value="2.05e-8"/>
+        <Parameter name="y" type="double" value="2.05e-8"/>
+        <Parameter name="z" type="double" value="2.05e-9"/>
       </ParameterList>
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.38"/>
@@ -1364,7 +1365,7 @@ Finally, we specify sources.  Support is provided for specifying sources on the 
 
     * COMPONENT [list] can accept SOLUTE (label of solute defined above), or keyword `"Alquimia`" to support geochemical conditions
 
-     * Source function [list] Parameterized model to specify the concentration profile, `"Source: Uniform Concentration`" and `"Source: Flow Weighted Concentration`" are supported (see below) in units of molarity (moles/volume).
+     * Source function [list] Parameterized model to specify the concentration profile, `"Source: Uniform Concentration`" and `"Source: Flow Weighted Concentration`", `"Source: Diffusion Dominated Release Model`" are supported (see below) in units of molarity (typically, moles/volume).
 
 The following initial condition parameterizations are supported:
 
@@ -1459,7 +1460,10 @@ The following source parameterizations are supported.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
   * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
   * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
+ 
+* [U] `"Source: Diffusion Dominated Release Model`" uses a volume weighting to distribute the source uniformally over the specified region(s). Requires `"Total Inventory`" [double], `"Mixing Length`" [double], `"Effective Diffusion Coefficient`" [double], and `"Times`" [Array(double)]. 
 
+  * `"Times`" [Array(double)], release start and end times. 
 
 Time Functions
 ~~~~~~~~~~~~~~
@@ -2230,8 +2234,9 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
        
              <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-               <Parameter name="Horizontal" type="double" value="2.05e-8"/>
-               <Parameter name="Vertical" type="double" value="2.05e-9"/>
+               <Parameter name="x" type="double" value="2.05e-8"/>
+               <Parameter name="y" type="double" value="2.05e-8"/>
+               <Parameter name="z" type="double" value="2.05e-9"/>
              </ParameterList>
        
              <!-- GEH: Pressure-saturation function: van Genuchten-->
@@ -2253,8 +2258,9 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
        
              <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-               <Parameter name="Horizontal" type="double" value="4.84e-8"/>
-               <Parameter name="Vertical" type="double" value="4.84e-9"/>
+               <Parameter name="x" type="double" value="4.84e-8"/>
+               <Parameter name="y" type="double" value="4.84e-8"/>
+               <Parameter name="z" type="double" value="4.84e-9"/>
              </ParameterList>
        
              <ParameterList name="Capillary Pressure: van Genuchten">
@@ -2275,8 +2281,9 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
        
              <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-               <Parameter name="Horizontal" type="double" value="3.00e-9"/>
-               <Parameter name="Vertical" type="double" value="3.00e-10"/>
+               <Parameter name="x" type="double" value="3.00e-9"/>
+               <Parameter name="y" type="double" value="3.00e-9"/>
+               <Parameter name="z" type="double" value="3.00e-10"/>
              </ParameterList>
 
              <ParameterList name="Capillary Pressure: van Genuchten">

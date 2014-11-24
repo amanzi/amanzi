@@ -10,7 +10,7 @@ namespace Amanzi {
 
 class TabularFunction : public Function {
  public:
-  enum Form { LINEAR, CONSTANT };
+  enum Form { LINEAR, CONSTANT, FUNCTION };
  
  public:
   TabularFunction(const std::vector<double>& x, const std::vector<double>& y,

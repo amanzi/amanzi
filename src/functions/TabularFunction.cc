@@ -82,7 +82,7 @@ double TabularFunction::operator()(const std::vector<double>& x) const
     case CONSTANT:
       y = y_[j1];
       break;
-    default:
+    case FUNCTION:
       y = (*func_[j1])(x);
     }
   }

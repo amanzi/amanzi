@@ -173,6 +173,7 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
           else if (form_strings[i] == "constant")
             form[i] = TabularFunction::CONSTANT;
           else {
+            form[i] = TabularFunction::FUNCTION;
             if (params.isSublist(form_strings[i])) {
               Teuchos::ParameterList& f1_params = params.sublist(form_strings[i]);
 
@@ -438,7 +439,8 @@ Function* FunctionFactory::create_standard_math(Teuchos::ParameterList& params) 
     std::string op = params.get<std::string>("operator");
     double amplitude = params.get<double>("amplitude", 1.0);
     double param = params.get<double>("parameter", 0.0);
-    f = new StandardMathFunction(op, amplitude, param);
+    double shift = params.get<double>("shift", 0.0);
+    f = new StandardMathFunction(op, amplitude, param, shift);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-standard-math parameter error: " << msg.what();

@@ -175,8 +175,8 @@ Teuchos::ParameterList get_verbosity(DOMDocument* xmlDoc) {
                         nodeAttr = attrMap->getNamedItem(XMLString::transcode("level"));
 			if (nodeAttr) {
                           textContent = XMLString::transcode(nodeAttr->getNodeValue());
-                          simPL.sublist("VerboseObject").set<std::string>("Verbosity Level",textContent);
-                          simPL.set<std::string>("verbosity",textContent);
+                          simPL.sublist("VerboseObject").set<std::string>("Verbosity Level",trim_string(textContent));
+                          simPL.set<std::string>("verbosity",trim_string(textContent));
                           
 			} else {
                           throw_error_illformed("verbosity", "value", "level");
@@ -271,7 +271,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 		}
 		// add to list
 		Teuchos::ParameterList tmp;
-		tmp.set<std::string>("type",type);
+		tmp.set<std::string>("type",trim_string(type));
 		tmp.set<double>("value",time);
 		list.sublist("constants").sublist(name) = tmp;
                 XMLString::release(&name);
@@ -502,7 +502,7 @@ Teuchos::ParameterList get_model_description(DOMDocument* xmlDoc, Teuchos::Param
     DOMNode* nodeGD = nodeList->item(0);
     DOMElement* elementGD = static_cast<DOMElement*>(nodeGD);
     char* model_name = XMLString::transcode(elementGD->getAttribute(XMLString::transcode("name")));
-    list.set<std::string>("model_name",model_name);
+    list.set<std::string>("model_name",trim_string(model_name));
 
     DOMNodeList* childern = nodeGD->getChildNodes();
     for (int i=0; i<childern->getLength(); i++) {
@@ -512,7 +512,7 @@ Teuchos::ParameterList get_model_description(DOMDocument* xmlDoc, Teuchos::Param
         DOMNode::NodeType type = currentNode->getNodeType();
         if (strcmp(tagname,"units")!=0) {
           char* textContent = XMLString::transcode(currentNode->getTextContent());
-          list.set<std::string>(tagname,textContent);
+          list.set<std::string>(tagname,trim_string(textContent));
           XMLString::release(&textContent);
         }
         XMLString::release(&tagname);
@@ -701,7 +701,7 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
 	  char* filename = XMLString::transcode(elementRead->getElementsByTagName(
 				  XMLString::transcode("file"))->item(0)->getTextContent());
 	  if (strlen(filename) > 0) {
-              mesh_list.set<std::string>("File",filename);
+              mesh_list.set<std::string>("File",trim_string(filename));
 	      goodname = true;
 	  }
 	  XMLString::release(&format);
@@ -716,7 +716,7 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
 	  generate = false;
 	  char* filename = XMLString::transcode(currentNode->getTextContent());
 	  if (strlen(filename) > 0) {
-            mesh_list.set<std::string>("File",filename);
+            mesh_list.set<std::string>("File",trim_string(filename));
 	    mesh_list.set<std::string>("Format","Exodus II");
 	    all_good = true;
 	    std::cout << "Amanzi::InputTranslator: Warning - " << std::endl;
@@ -1083,9 +1083,9 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               list.set<std::string>("Verbosity","Extreme");
             }
             else {
-              list.set<std::string>("Verbosity",textContent);
+              list.set<std::string>("Verbosity",trim_string(textContent));
             }
-            simPL.set<std::string>("verbosity",textContent);
+            simPL.set<std::string>("verbosity",trim_string(textContent));
             XMLString::release(&textContent);
 
 	  }
@@ -1095,7 +1095,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               nodeAttr = attrMap->item(k);
               attrName =XMLString::transcode(nodeAttr->getNodeName());
               textContent = XMLString::transcode(nodeAttr->getNodeValue());
-              defPL.set<std::string>(attrName,textContent);
+              defPL.set<std::string>(attrName,trim_string(textContent));
               // EIB:: only include default mode if > 1 EC
               //if (strcmp(attrName,"mode")==0) {
               //  if (strcmp(textContent,"steady")==0) {
@@ -1116,7 +1116,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               nodeAttr = attrMap->item(k);
               attrName =XMLString::transcode(nodeAttr->getNodeName());
               textContent = XMLString::transcode(nodeAttr->getNodeValue());
-              ecPL.set<std::string>(attrName,textContent);
+              ecPL.set<std::string>(attrName,trim_string(textContent));
               if (strcmp(attrName,"start")==0) {
                 if (saveName) name=textContent;
                 double time = get_time_value(textContent, *def_list);
@@ -1875,7 +1875,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                       }
                       else if (strcmp(tag,"control_options")==0) {
                         textContent = XMLString::transcode(curNode->getTextContent());
-                        ptiPL.set<std::string>("pseudo time integrator error control options",textContent);
+                        ptiPL.set<std::string>("pseudo time integrator error control options",trim_string(textContent));
                         XMLString::release(&textContent);
                       }
                       else if (strcmp(tag,"max_iterations")==0) {
@@ -2159,7 +2159,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                 char* tagname = XMLString::transcode(currentNode->getNodeName());
                 if (strcmp(tagname,"method")==0) {
                   textContent = XMLString::transcode(currentNode->getTextContent());
-                  lsPL.set<std::string>("linear solver preconditioner",textContent);
+                  lsPL.set<std::string>("linear solver preconditioner",trim_string(textContent));
                   XMLString::release(&textContent);
                 }
                 else if (strcmp(tagname,"max_iterations")==0) {
@@ -2325,7 +2325,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
     	          char* tagname = XMLString::transcode(currentNode->getNodeName());
                   if (strcmp(tagname,"nonlinear_solver_type")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    nlsPL.set<std::string>("Nonlinear Solver Type",textContent);
+                    nlsPL.set<std::string>("Nonlinear Solver Type",trim_string(textContent));
                     XMLString::release(&textContent);
 		  }
                 }
@@ -2782,7 +2782,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         char* tagname = XMLString::transcode(currentKid->getNodeName());
                         if (strcmp(tagname,"field_name")==0) {
                           textContent = XMLString::transcode(currentKid->getNodeValue());
-                          refinePL.set<std::string>("Field Name",textContent);
+                          refinePL.set<std::string>("Field Name",trim_string(textContent));
                           XMLString::release(&textContent);
                         }
                         else if (strcmp(tagname,"regions")==0) {
@@ -2793,7 +2793,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         }
                         else if (strcmp(attrName,"max_refinement_level")==0) {
                           textContent = XMLString::transcode(currentKid->getNodeValue());
-                          refinePL.set<std::string>("Maximum Refinement Level",textContent);
+                          refinePL.set<std::string>("Maximum Refinement Level",trim_string(textContent));
                           XMLString::release(&textContent);
                         }
                         else if (strcmp(tagname,"start_time")==0) {
@@ -3200,7 +3200,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
 	      } else {
                 throw_error_missattr("Regions","attribute","name","region_file");
 	      }
-	      rfPL.set<std::string>("File",textContent2);
+	      rfPL.set<std::string>("File",trim_string(textContent2));
 	      XMLString::release(&textContent2);
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("type"));
               if (nodeAttr) {
@@ -3227,7 +3227,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
 	        } else {
                   throw_error_missattr("Regions","attribute","label","labeled set");
 	        }
-	        rfPL.set<std::string>("Label",value);
+	        rfPL.set<std::string>("Label",trim_string(value));
 	        XMLString::release(&value);
                 nodeAttr = attrMap->getNamedItem(XMLString::transcode("format"));
 		if (nodeAttr) {
@@ -3245,7 +3245,7 @@ Teuchos::ParameterList get_regions(DOMDocument* xmlDoc, Teuchos::ParameterList* 
 	        } else {
                   throw_error_missattr("Regions","attribute","entity","labeled set");
 	        }
-	        rfPL.set<std::string>("Entity",value);
+	        rfPL.set<std::string>("Entity",trim_string(value));
 	        XMLString::release(&value);
                 list.sublist(textContent).sublist("Region: Labeled Set") = rfPL;
 	      }
@@ -5618,7 +5618,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
             textContent  = XMLString::transcode(curKid->getNodeName());
             if (strcmp(textContent,"base_filename")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
-              visPL.set<std::string>("File Name Base",textContent2);
+              visPL.set<std::string>("File Name Base",trim_string(textContent2));
               XMLString::release(&textContent2);
 	    }
             else if (strcmp(textContent,"num_digits")==0) {
@@ -5657,7 +5657,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
             textContent  = XMLString::transcode(curKid->getNodeName());
             if (strcmp(textContent,"base_filename")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
-              chkPL.set<std::string>("File Name Base",textContent2);
+              chkPL.set<std::string>("File Name Base",trim_string(textContent2));
               XMLString::release(&textContent2);
 	    }
             else if (strcmp(textContent,"num_digits")==0) {
@@ -5689,7 +5689,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
             textContent  = XMLString::transcode(curKid->getNodeName());
             if (strcmp(textContent,"base_filename")==0) {
 	      textContent2 = XMLString::transcode(curKid->getTextContent());
-              chkPL.set<std::string>("File Name Base",textContent2);
+              chkPL.set<std::string>("File Name Base",trim_string(textContent2));
               XMLString::release(&textContent2);
 	    }
             else if (strcmp(textContent,"num_digits")==0) {
@@ -5721,7 +5721,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
               textContent  = XMLString::transcode(curNode->getNodeName());
               if (strcmp(textContent,"filename")==0) {
 	        textContent2 = XMLString::transcode(curNode->getTextContent());
-                obsPL.set<std::string>("Observation Output Filename",textContent2);
+                obsPL.set<std::string>("Observation Output Filename",trim_string(textContent2));
 	        XMLString::release(&textContent2);
               }
               else if (strcmp(textContent,"liquid_phase")==0) {
@@ -5889,7 +5889,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	                  }
                           obPL.set<Teuchos::Array<std::string> >("Region",regs);
 		          */
-                          obPL.set<std::string>("Region",Value);
+                          obPL.set<std::string>("Region",trim_string(Value));
 		        }
                         else if (strcmp(Elem,"functional")==0) {
 	                  if (strcmp(Value,"point")==0) {
@@ -5903,7 +5903,7 @@ Teuchos::ParameterList get_output(DOMDocument* xmlDoc, Teuchos::ParameterList de
 	                  }
 		        }
                         else if (strcmp(Elem,"time_macro")==0) {
-	                  obPL.set<std::string>("Time Macro",Value);
+	                  obPL.set<std::string>("Time Macro",trim_string(Value));
 		        }
                         XMLString::release(&Elem);
                         XMLString::release(&Value);
@@ -6042,6 +6042,18 @@ Teuchos::Array<std::string> make_regions_list(char* char_array)
   }
 
   return regs;
+}
+
+/* 
+ ******************************************************************
+ * Empty
+ ******************************************************************
+ */
+std::string trim_string(char* tmp)
+{
+    std::string str(tmp);
+    boost::algorithm::trim(str);
+    return str;
 }
 
 /* 

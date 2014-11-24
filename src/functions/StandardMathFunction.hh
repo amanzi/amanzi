@@ -11,7 +11,7 @@ namespace Amanzi {
 class StandardMathFunction : public Function {
 
 public:
-  StandardMathFunction(std::string op, double amplitude, double parameter);
+  StandardMathFunction(std::string op, double amplitude, double parameter, double shift);
   ~StandardMathFunction() {}
   StandardMathFunction* Clone() const { return new StandardMathFunction(*this); }
   double operator()(const std::vector<double>& x) const;
@@ -22,6 +22,7 @@ private:
 private:
   double parameter_;
   double amplitude_;
+  double shift_;
   std::string op_;
 };
 

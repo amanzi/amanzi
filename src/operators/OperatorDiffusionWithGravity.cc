@@ -242,8 +242,8 @@ void OperatorDiffusionWithGravity::UpdateFlux(
 
 
 /* ******************************************************************
-* Compute non-normalized direction to the next cell needed to 
-* project gravity vector in the MFD-TPFA discretization method.
+* Compute non-normalized unsigned direction to the next cell needed
+* to project gravity vector in the MFD-TPFA discretization method.
 * **************************************************************** */
 inline AmanziGeometry::Point OperatorDiffusionWithGravity::GravitySpecialDirection_(int f) const
 {
