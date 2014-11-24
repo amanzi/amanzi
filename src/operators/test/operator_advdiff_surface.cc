@@ -89,6 +89,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // create boundary data
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
   std::vector<double> bc_value(nfaces_wghost);
+  std::vector<double> bc_mixed;
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = surfmesh->face_centroid(f);
@@ -98,7 +99,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create operator map 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());

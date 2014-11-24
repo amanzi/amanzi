@@ -85,7 +85,7 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
   std::vector<WhetStone::Tensor> K; 
 
   std::vector<int> bc_model_, bc_submodel_; 
-  std::vector<double> bc_value_; 
+  std::vector<double> bc_value_, bc_mixed_; 
 
  protected:
   Teuchos::ParameterList plist_;

@@ -434,10 +434,11 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
     // default boundary conditions (none inside domain and Neumann on its boundary)
     std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
     std::vector<double> bc_value(nfaces_wghost, 0.0);
+    std::vector<double> bc_mixed;
     PopulateBoundaryData(bc_model, bc_value, -1);
 
     Teuchos::RCP<Operators::BCs> bc_dummy = 
-        Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value));
+        Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
     AmanziGeometry::Point g;
 
     Operators::OperatorDiffusionFactory opfactory;
