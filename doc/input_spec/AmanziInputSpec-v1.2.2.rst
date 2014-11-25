@@ -140,6 +140,24 @@ Example:
     <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
   </ParameterList>
 
+
+PETSc
+=====
+
+Amanzi uses PETSc (TODO: insert link here to Amanzi TPL list) for access to specialized solvers for flow and chemistry evolution.  PETSc implements its own flexible approach to runtime selection of solver options; the list of available options changes considerably between library versions.  Input of PETSc-specific  options at runtime is managed via an optional string parameter, which names an auxiliary text file.  By default, no file is included.
+
+* [S] "Petsc Options File" [string] Relative path naming a text file with PETSc parameters included
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Main">
+    <Parameter name="Petsc Options File" type="string" value=".petsc"/>
+  </ParameterList>
+
+See the PETSc documentation for details of the format of this file, and the available parameters.  At this time, PETSc is used by the flow solvers supporting structured-grid AMR Amanzi runs, and the pFloTran chemistry process kernal (see usage notes below).
+
 General Description
 ===================
 
@@ -534,7 +552,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [S] `"cfl`" [double]: Fraction of stability-limited maximum time step allowed by the advective transport scheme. (default: "1", suggested values: .01 ... 1)
 
-   * [S] `"Adaptive Mesh Refinement`" [list] (Optional) Additional details related to the adaptive mesh refinement algorithm. 
+   * [S] `"Adaptive Mesh Refinement Control`" [list] (Optional) Additional details related to the adaptive mesh refinement algorithm. 
 
      * [S] `"Number Of AMR Levels`" [int] Maximum number of adaptive levels, including the base grid (default=1)
 
@@ -552,7 +570,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [S] `"Refinement Indicators`" [list] A list of user-labeled refinement indicators, REFINE.  Criteria will be applied in the order listed.
 
-      * [S] REFINE [list] A user-defined label for a single refinement criteria indicator function.  Definition of the criteria must indicate `"Field Name`" (the name of a known derive field), `"Regions`" (a list of user-named regions over which this criteria is to apply) and one of the following parameters:
+      * [S] REFINE [list] A user-defined label for a single refinement criteria indicator function.  For all criteria except `"Inside Region`" definition must indicate a `"Field Name`" selected from the list of known available field quantities (defined under "Time and Cycle specification").  Additionally, one must specify `"Regions`" (a list of user-named regions over which this criteria is to apply) and one of the following parameters refinement rules:
 
        * [S] `"Value Greater`" [double] The threshold value.  For each coarse cell, if the value of the given field is larger than this value, tag the cell for refinement
 
@@ -562,7 +580,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
        * [S] `"Inside Region`" [bool] Set this TRUE if all coarse cells in the identified list of regions should be tagged for refinement.
 
-       Additionally, the following optional parameters are available:
+       The following optional parameters are available in order to fine-tune the refinement strategy:
 
        * [S] `"Maximum Refinement Level`" [int] If set, this identifies the highest level of refinement that will be triggered by this indicator
 
@@ -1371,8 +1389,7 @@ The following initial condition parameterizations are supported:
 
 The following boundary condition parameterizations are supported:
 
-* [SU] `"BC: Flux`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] 
-  (see the note below) and one of the following: 
+* [SU] `"BC: Flux`" requires a TIME FUNCTION (see below), where VALUE_NAME is one of the following: 
 
     * [SU]  `"Inward Volumetric Flux`" [Array(double)], 
 
@@ -1393,66 +1410,51 @@ The following boundary condition parameterizations are supported:
       to the gravity vector and the actual influx depends on boundary
       slope (default value is "false").
 
-* [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [SU] `"BC: Uniform Pressure`" requires a TIME FUNCTION (see below), where VALUE_NAME is `"Values`" [Array(double)].
 
 * [SU] `"BC: Linear Pressure`" [list] requires `"Reference Value`" [double] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
 
-* [U] `"BC: Seepage`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and one of `"Inward Mass Flux`" [Array(double)] or `"Inward Volumetric Flux`" [Array(double)].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
+* [U] `"BC: Seepage`" [list] requires a TIME FUNCTION (see below), where VALUE_NAME is one of `"Inward Mass Flux`" [Array(double)] or `"Inward Volumetric Flux`" [Array(double)].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively.
     * [U] "rainfall" [bool] indicates that the mass flux is defined with respect
       to the gravity vector and the actual influx depends on boundary
       slope (default value is "false").
 
-* [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Coordinate System`" [string] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"), `"Submodel`" [string] (available option is `"No Flow Above Water Table`", this parameter is optional with a default of `"None`"), and `"Water Table Height`" [Array(double)] (see below)
+* [SU] `"BC: Hydrostatic`" [list] requires a TIME FUNCTION (see below), where VALUE_NAME is `"Water Table Height`" [Array(double)].  Optional parameters supported by the unstructured framework include: `"Coordinate System`" [string] (available options: `"Relative`", `"Absolute`" [DEFAULT]), and `"Submodel`" [string] (available options: `"No Flow Above Water Table`", `"None`" [DEFAULT])
 
 * [U] `"BC: Linear Hydrostatic`" [list] requires `"Reference Water Table Height`" [double] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
 
 * `"BC: Impermeable`"  requires no parameters
 
-* [SU] `"BC: Zero Flow`"  [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [SU] `"BC: Zero Flow`"  [list] takes no additional parameters
 
-* [S] `"BC: Zero Gradient`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [S] `"BC: Zero Gradient`" [list] takes no additional parameters
 
-* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`" if Alquimia provides boundary condition data.
-
-  * `"Times`" [Array(double)], list of times used by the time function.
-  * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
-  * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
-  * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
+* [SU] `"BC: Uniform Concentration`" [list] requires a TIME FUNCTION (see below), where VALUE_NAME is `"Geochemical Condition`" [Array(string)] (if using Alquimia, names of geochemical conditions defined in Alquimia's chemistry engine input file), or `"Values`" [Array(double)] otherwise.  
 
 The following source parameterizations are supported.
 
-* [SU] `"Source: Uniform`" [kg/s/m^3] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [SU] `"Source: Uniform`" [kg/s/m^3] requires a TIME FUNCTION (see below), where VALUE_NAME is `"Values`" [Array(double)].
 
-* [SU] `"Source: Volume Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [SU] `"Source: Volume Weighted`" [kg/s] requires a TIME FUNCTION (see below), where VALUE_NAME is `"Values`" [Array(double)].
 
-* [SU] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [SU] `"Source: Permeability Weighted`" [kg/s] requires a TIME FUNCTION (see below), where VALUE_NAME is `"Values`" [Array(double)].
 
-* [SU] `"Source: Uniform Concentration`" [mol/s/m^3] uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)],  and `"Values`" [Array(double)] OR `"Geochemical Condition`"
+* [SU] `"Source: Uniform Concentration`" [mol/s/m^3] uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires a TIME FUNCTION (see below), where VALUE_NAME is `"Geochemical Condition`" [Array(string)] (if using Alquimia, names of geochemical conditions defined in Alquimia's chemistry engine input file), or `"Values`" [Array(double)] otherwise.  
 
-  * `"Times`" [Array(double)], list of times used by the time function.
-  * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
-  * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
-  * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
-
-* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`". Units are either [mol/m^3/s] or [mol/s] depending on definition of the flow source.
-
-  * `"Times`" [Array(double)], list of times used by the time function.
-  * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
-  * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
-  * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
+* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires a TIME FUNCTION (see below), where VALUE_NAME is `"Geochemical Condition`" [Array(string)] (if using Alquimia, names of geochemical conditions defined in Alquimia's chemistry engine input file), or `"Values`" [Array(double)] otherwise.
 
 
-Time Functions
+
+TIME FUNCTIONS
 ~~~~~~~~~~~~~~
 
-Boundary condition functions utilize a parameterized model for time variations that is either piecewise constant or piecewise linear.  For example:
+Boundary condition functions utilize a parameterized model for time variations that is either piecewise constant or piecewise linear, where data values are specified via the parameter VALUE_NAME (see above).  For example, in the case that VALUE_NAME=`"Values`" [Array(double)]:
 
 .. code-block:: xml
 
       <Parameter name="Times" type="Array(double)" value="{1, 2, 3}"/>
-      <Parameter name="Time Values" type="Array(double)" value="{10, 20, 30}"/>
+      <Parameter name="Values" type="Array(double)" value="{10, 20, 30}"/>
       <Parameter name="Time Functions" type="Array(string)" value="{Constant, Linear}"/>    
-
 
 This defines two time intervals, [1,2) and [2,3), three <time,time value> pairs, <1,10>, <2,20>, and <3,30>, and
 two time functions, `"Constant`" and `"Linear`" that correspond to the intervals [1,2) and [2,3) respectively.
@@ -1472,6 +1474,13 @@ For a particular interval it can be either `"Linear`" or `"Constant`".
 
   - f(x) = 10, for x <1, specified by the first <time,time value> pair, and
   - f(x) = 30, for x >= 3, specified by the last <time,time value> pair. 
+
+NOTE: If a single constant value is to be applied over all time, an abbreviated form is available:
+
+.. code-block:: xml
+
+      <Parameter name="Values" type="Array(double)" value="{10}"/>
+
 
 Example Phase Definition
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1597,7 +1606,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
   * [SU] OBSERVATION [list] user-defined label, can accept values for `"Variable`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
 
-    * [SU] `"Variable`" [string] name of field quantities taken from the list of "Available field quantities" defined above
+    * [SU] `"Variable`" [string] name of field quantities taken from the list of "Available field quantities" defined under "Time and Cycle specification"
 
     * [SU] `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 

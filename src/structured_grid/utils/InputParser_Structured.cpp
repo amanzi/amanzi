@@ -1,6 +1,5 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
-#include "Teuchos_MPISession.hpp"
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -27,14 +26,21 @@ namespace Amanzi {
     static int require_static_velocity = -1; // <0 means it has not yet been set
 
     void MyAbort(const std::string& m) {
-      if (Teuchos::MPISession::getRank() == 0) {
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
         std::cerr << m << std::endl;
         throw std::exception();
       }
     }
 
+    void MyWarning(const std::string& m) {
+
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
+        std::cerr << "WARNING::" << m << "!!!" << std::endl;
+      }
+    }
+
     void MyAbort(const Array<std::string>& m) {
-      if (Teuchos::MPISession::getRank() == 0) {
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
         for (int i=0; i<m.size(); ++i) {
           std::cerr << m[i] << " ";
         }
@@ -628,6 +634,13 @@ namespace Amanzi {
       // NOTE: Can now set this AFTER discovering time integration mode
       prob_out_list.set("model_name",model_name);
 
+      // Generate a useful warning
+      
+      double start_time = struc_out_list.get<double>("strt_time");
+      double stop_time = struc_out_list.get<double>("stop_time");
+      if (stop_time <= start_time) {
+        MyWarning("End <= Start, code will halt immediately after initializing data");
+      }
 
       // Deal with optional settings
       const Array<std::string> optL = ECopt.OptLists();
@@ -1439,7 +1452,7 @@ namespace Amanzi {
         const ParameterEntry& entry = rlist.getEntry(label);
         
         if ( !entry.isList() ) {
-          if (Teuchos::MPISession::getRank() == 0) {
+          if (Teuchos::GlobalMPISession::getRank() == 0) {
             std::cerr << "Region section must define only regions. \"" 
                       << label << "\" is not a valid region definition." << std::endl;
           }
@@ -4168,7 +4181,7 @@ namespace Amanzi {
                 vis_cMacroNames.push_back(label);
               }
               else {
-                if (Teuchos::MPISession::getRank() == 0) {
+                if (Teuchos::GlobalMPISession::getRank() == 0) {
                   std::cerr << "Unrecognized cycle macro in \""+vis_data_str+"\": \""
                             << vcMacros[i] << "\"" << std::endl;
                                     
@@ -4201,7 +4214,7 @@ namespace Amanzi {
                 vis_tMacroNames.push_back(label);
               }
               else {
-                if (Teuchos::MPISession::getRank() == 0) {
+                if (Teuchos::GlobalMPISession::getRank() == 0) {
                   std::cerr << "Unrecognized time macro in \""+vis_data_str+"\": \""
                             << vtMacros[i] << "\"" << std::endl;
                                     
@@ -4281,7 +4294,7 @@ namespace Amanzi {
                 chk_cMacroNames.push_back(label);
               }
               else {
-                if (Teuchos::MPISession::getRank() == 0) {
+                if (Teuchos::GlobalMPISession::getRank() == 0) {
                   std::cerr << "Unrecognized cycle macro in \""+chk_data_str+"\": \""
                             << ccMacros[i] << "\"" << std::endl;
                                     
