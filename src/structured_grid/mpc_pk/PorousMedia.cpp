@@ -1535,7 +1535,11 @@ PorousMedia::richard_init_to_steady()
 
       ParallelDescriptor::Barrier();
       Real time_after_init = p->StopTime();
-      for (int lev = 0; lev <= finest_level; lev++) {
+      for (int lev = finest_level; lev >= 0; lev--) {
+        if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+          std::cout << tag << " Averaging down level " << lev << std::endl;
+        }
+        getLevel(lev).avgDown();
         getLevel(lev).setTimeLevel(time_after_init,dt_save[lev],dt_save[lev]);
       }
 
@@ -2576,6 +2580,9 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
   if (level != 0) {
     return true;
   }
+
+  const std::string tag = "  FLOW: ";
+
   bool step_ok = false;
   dt_flow_new = dt_flow;
   // Lazily build structure to save state at time=t.  If we must subcycle, the
@@ -2630,7 +2637,7 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
 
   std::ios_base::fmtflags oldflags = std::cout.flags(); std::cout << std::scientific << std::setprecision(10);
   if (richard_solver_verbose > 1 && ParallelDescriptor::IOProcessor())
-    std::cout << "  FLOW: Level " << level
+    std::cout << tag << "Level " << level
               << " TIME = " << told_flow_output.first << told_flow_output.second
               << " : "      << tnew_flow_output.first << tnew_flow_output.second
               << ", DT: "   << dt_flow_output.first   << dt_flow_output.second
@@ -2745,12 +2752,19 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     std::string resultStr = (step_ok ? "SUCCESS" : "FAIL");
         
     std::ios_base::fmtflags oldflags = std::cout.flags(); std::cout << std::scientific << std::setprecision(10);
-    std::cout << "  FLOW: " << resultStr << ". (iters: " << richard_solver_control->NLIterationsTaken()
+    std::cout << tag << resultStr << ". (iters: " << richard_solver_control->NLIterationsTaken()
               << "). Suggest next dt: " << dt_new_flow_output.first << dt_new_flow_output.second << std::endl;
     std::cout.flags(oldflags);
   }
   
-  if (!step_ok) {
+  if (step_ok) {
+    for (int lev = finest_level; lev >= 0; lev--) {
+      if (richard_solver_verbose && ParallelDescriptor::IOProcessor()) {
+        std::cout << tag << " Averaging down level " << lev << std::endl;
+      }
+      getLevel(lev).avgDown();
+    }
+  } else {
     // Restore the state data structures
     for (int lev=0; lev<=finest_level; ++lev) {
       PorousMedia& pm = getLevel(lev);        
@@ -6862,13 +6876,13 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
               }
             }
 
-            const Real* ref_loc = problo;
+            const Array<Real> ref_loc(BL_SPACEDIM,0);
             Real ref_val = head_val;
             Real* p_ptr = prdat.dataPtr();
             const int* p_lo = prdat.loVect();
             const int* p_hi = prdat.hiVect();
             FORT_LINEAR_PRESSURE(p_lo, p_hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
-                                 dx, glo.dataPtr(), ghi.dataPtr(), &ref_val, ref_loc, gradp.dataPtr());
+                                 dx, glo.dataPtr(), ghi.dataPtr(), &ref_val, ref_loc.dataPtr(), gradp.dataPtr());
 
           }
           else if (face_bc.Type() == "linear_pressure") {
