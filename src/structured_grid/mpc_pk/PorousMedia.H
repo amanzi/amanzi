@@ -1039,22 +1039,20 @@ protected:
   static int  initial_step;  // flag for initial iterations
   static Real dt_cutoff;     // minimum dt allowed
   static int  sum_interval;  // number of timesteps for conservation stats
-  static int  full_cycle;
   static Real dt_init; // if >0, initial time step size
   static int max_n_subcycle_transport; // maximum number of subcycled transport steps
   static int max_dt_iters_flow; // maximum number of tries to reduce dt and retry to solve Richards flow
   static bool abort_on_chem_fail; // do not recover from chemistry failure
-  static int verbose_chemistry; // dump detailed chemistry output 
-  static int show_selected_runtimes; // dump wall-clock times for selected sections
-  static Real max_chemistry_time_step;
+  static bool show_selected_runtimes; // dump wall-clock times for selected sections
+  static Real max_chemistry_time_step; // Largest dt for chem, triggers subcycling otherwise (-1 means not active)
   //
   // Internal parameters for options.
   //
-  static int        verbose;
-  static Real       gravity;
-  static int        gravity_dir;
-  static int        NUM_SCALARS;      // number of non-velocity components
-  static int        NUM_STATE;        // total number of state variables
+  static int  verbose;
+  static Real gravity;
+  static int  gravity_dir;
+  static int  NUM_SCALARS;      // number of non-velocity components
+  static int  NUM_STATE;        // total number of state variables
   //
   // Viscosity parameters.
   //
@@ -1064,12 +1062,11 @@ protected:
   static Real        visc_tol;
   static Real        visc_abs_tol;
   static Real        be_cn_theta;
-  static int         variable_scal_diff;
-  static int         have_capillary;
+  static bool        variable_scal_diff;
   static Real        atmospheric_pressure_atm;
   static std::map<std::string,bool> use_gauge_pressure; // On bc_tag string
   static Real        z_location;
-  //  
+  //
   // Chemistry/solute/tracer parameters 
   //
   static bool do_tracer_chemistry; // Does the user want to react tracers
@@ -1080,24 +1077,15 @@ protected:
   static bool react_tracers; // Should the tracers be reacted now
   static bool diffuse_tracers; // Should the tracers be diffused now
   static bool tensor_tracer_diffusion; // Use tensor operator (includes dispersion) rather than diffusion-only ABec
-  static int  do_full_strang;
-  static int  n_chem_interval;
+  static bool do_full_strang;
+  static int  n_chem_interval; // Number of transport steps taken per chemistry solve.  Unused if <= 0
   static int  it_chem;
   static Real dt_chem;
   static Real be_cn_theta_trac;
   //
   // Internal switches.
   //
-  static int  do_simple;
-  static int  do_sync_proj;
-  static int  do_reflux;
-  static int  do_correct;
-  static int  no_corrector;
-  static int  do_kappa_refine;
-  static int  n_pressure_interval;
-  static int  it_pressure;
-  static bool do_any_diffuse;
-  static int  do_cpl_advect;
+  static bool do_reflux;
   static ExecutionMode execution_mode;
   static Real switch_time;
   static Real ic_chem_relax_dt;

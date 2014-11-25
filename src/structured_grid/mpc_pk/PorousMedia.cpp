@@ -2432,7 +2432,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	  step_ok_chem = advance_chemistry(t_subtr,dt_subtr/2,0);
 	  BL_ASSERT(step_ok_chem);
 	} else {
-	  if (n_chem_interval == 0) {
+	  if (n_chem_interval <= 0) {
 	    if (do_write) {
 	      std::cout << t_subtr
 			<< " : " << t_subtr+dt_subtr << std::endl;
@@ -2556,7 +2556,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
     dt_new = (do_subcycle ? max_n_subcycle_transport : 1) * dt_cfl;
   }
 
-  if (show_selected_runtimes > 0 && ParallelDescriptor::IOProcessor()) {
+  if (show_selected_runtimes && ParallelDescriptor::IOProcessor()) {
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
     Real      run_time = ParallelDescriptor::second() - strt_time - run_time_chem;
     ParallelDescriptor::ReduceRealMax(run_time,IOProc);
@@ -3122,7 +3122,7 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
   FillStateBndry(cur_time,State_Type,first_tracer,ntracers);
 #endif
 
-  if (show_selected_runtimes > 0)
+  if (show_selected_runtimes)
   {
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
     Real      run_time = ParallelDescriptor::second() - strt_time;
@@ -3661,7 +3661,7 @@ PorousMedia::advance_chemistry (Real time,
     state[*it].setTimeLevel(time+dt,dt,dt);
   }
 
-  if (show_selected_runtimes > 0 && ParallelDescriptor::IOProcessor()) {
+  if (show_selected_runtimes && ParallelDescriptor::IOProcessor()) {
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
     Real      run_time = ParallelDescriptor::second() - strt_time;
     ParallelDescriptor::ReduceRealMax(run_time,IOProc);
@@ -7825,7 +7825,7 @@ PorousMedia::fill_from_plotfile (MultiFab&          mf,
   if (verbose>1 && ParallelDescriptor::IOProcessor())
     std::cout << "fill_from_plotfile(): finished init from plotfile" << '\n';
 
-  if (show_selected_runtimes > 0)
+  if (show_selected_runtimes)
   {
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
     Real      run_time = ParallelDescriptor::second() - strt_time;
