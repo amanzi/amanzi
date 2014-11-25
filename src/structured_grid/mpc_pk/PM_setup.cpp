@@ -172,13 +172,11 @@ int  PorousMedia::initial_iter;
 int  PorousMedia::sum_interval;
 int  PorousMedia::NUM_SCALARS;
 int  PorousMedia::NUM_STATE;
-int  PorousMedia::full_cycle;
 Real PorousMedia::dt_init;
 int  PorousMedia::max_n_subcycle_transport;
 int  PorousMedia::max_dt_iters_flow;
-int  PorousMedia::verbose_chemistry;
 bool PorousMedia::abort_on_chem_fail;
-int  PorousMedia::show_selected_runtimes;
+bool PorousMedia::show_selected_runtimes;
 
 //
 // Viscosity parameters.
@@ -190,14 +188,13 @@ bool PorousMedia::def_harm_avg_cen2edge;
 //
 // Capillary pressure flag.
 //
-int  PorousMedia::have_capillary;
 Real PorousMedia::atmospheric_pressure_atm;
 std::map<std::string,bool> PorousMedia::use_gauge_pressure;
 
 //
 // Molecular diffusion flag.
 //
-int  PorousMedia::variable_scal_diff;
+bool PorousMedia::variable_scal_diff;
 
 Array<int>  PorousMedia::is_diffusive;
 Array<Real> PorousMedia::visc_coef;
@@ -216,9 +213,9 @@ bool PorousMedia::solute_transport_limits_dt;
 //
 // Chemistry flag.
 //
-bool  PorousMedia::do_tracer_chemistry;
-bool  PorousMedia::react_tracers;
-int  PorousMedia::do_full_strang;
+bool PorousMedia::do_tracer_chemistry;
+bool PorousMedia::react_tracers;
+bool PorousMedia::do_full_strang;
 int  PorousMedia::n_chem_interval;
 int  PorousMedia::it_chem;
 Real PorousMedia::dt_chem;
@@ -253,15 +250,7 @@ std::string PorousMedia::amanzi_activity_model;
 //
 // Internal switches.
 //
-int  PorousMedia::do_simple;
-int  PorousMedia::do_reflux;
-int  PorousMedia::do_correct;
-int  PorousMedia::no_corrector;
-int  PorousMedia::do_kappa_refine;
-int  PorousMedia::n_pressure_interval;
-int  PorousMedia::it_pressure;
-bool PorousMedia::do_any_diffuse;
-int  PorousMedia::do_cpl_advect;
+bool PorousMedia::do_reflux;
 Real PorousMedia::ic_chem_relax_dt;
 int  PorousMedia::nGrowHYP;
 int  PorousMedia::nGrowMG;
@@ -546,17 +535,15 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::sum_interval = 1;
   PorousMedia::NUM_SCALARS  = 0;
   PorousMedia::NUM_STATE    = 0;
-  PorousMedia::full_cycle   = 0;
 
   PorousMedia::be_cn_theta           = 0.5;
   PorousMedia::visc_tol              = 1.0e-10;  
   PorousMedia::visc_abs_tol          = 1.0e-10;  
   PorousMedia::def_harm_avg_cen2edge = true;
 
-  PorousMedia::have_capillary = 0;
   PorousMedia::atmospheric_pressure_atm = 1;
 
-  PorousMedia::variable_scal_diff = 1; 
+  PorousMedia::variable_scal_diff = true; 
 
   PorousMedia::do_tracer_chemistry = false;
   PorousMedia::do_tracer_advection = false;
@@ -565,7 +552,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::advect_tracers     = false;
   PorousMedia::diffuse_tracers    = false;
   PorousMedia::tensor_tracer_diffusion = false;
-  PorousMedia::do_full_strang     = 0;
+  PorousMedia::do_full_strang     = false;
   PorousMedia::n_chem_interval    = 0;
   PorousMedia::it_chem            = 0;
   PorousMedia::dt_chem            = 0;
@@ -574,15 +561,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::use_funccount      = false;
   PorousMedia::max_chemistry_time_step = -1;
 
-  PorousMedia::do_simple           = 0;
-  PorousMedia::do_reflux           = 1;
-  PorousMedia::do_correct          = 0;
-  PorousMedia::no_corrector        = 0;
-  PorousMedia::do_kappa_refine     = 0;
-  PorousMedia::n_pressure_interval = 0;
-  PorousMedia::it_pressure         = 0;  
-  PorousMedia::do_any_diffuse      = false;
-  PorousMedia::do_cpl_advect       = 0;
+  PorousMedia::do_reflux           = true;
   PorousMedia::execution_mode      = PorousMedia::INVALID;
   PorousMedia::switch_time         = 0;
   PorousMedia::ic_chem_relax_dt    = -1; // < 0 implies not done
@@ -593,9 +572,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::nGrowEIGEST = 1;
   PorousMedia::max_n_subcycle_transport = 10;
   PorousMedia::max_dt_iters_flow = 20;
-  PorousMedia::verbose_chemistry = 0;
   PorousMedia::abort_on_chem_fail = true;
-  PorousMedia::show_selected_runtimes = 0;
+  PorousMedia::show_selected_runtimes = false;
   PorousMedia::be_cn_theta_trac = 0.5;
   //PorousMedia::do_output_flow_time_in_years = true;
   PorousMedia::do_output_flow_time_in_years = false;
@@ -1039,7 +1017,6 @@ void PorousMedia::read_prob()
   pb.query("max_n_subcycle_transport",max_n_subcycle_transport);
 
   pb.query("max_dt_iters_flow",max_dt_iters_flow);
-  pb.query("verbose_chemistry",verbose_chemistry);
   pb.query("show_selected_runtimes",show_selected_runtimes);
   pb.query("abort_on_chem_fail",abort_on_chem_fail);
 
@@ -1113,15 +1090,7 @@ void PorousMedia::read_prob()
   }
 
   // Get algorithmic flags and options
-  pb.query("full_cycle", full_cycle);
-  //pb.query("algorithm", algorithm);
-  pb.query("do_simple",  do_simple );
   pb.query("do_reflux",  do_reflux );
-  pb.query("do_correct", do_correct);
-  pb.query("do_cpl_advect", do_cpl_advect);
-  pb.query("no_corrector",no_corrector);
-  pb.query("do_kappa_refine",do_kappa_refine);
-  pb.query("n_pressure_interval",n_pressure_interval);
 
   // Get solver tolerances
   pb.query("visc_tol",visc_tol);
@@ -1133,22 +1102,6 @@ void PorousMedia::read_prob()
   if (be_cn_theta > 1.0 || be_cn_theta < 0)
     BoxLib::Abort("PorousMedia::Must have be_cn_theta_trac <= 1.0 && >= 0");   
   pb.query("harm_avg_cen2edge", def_harm_avg_cen2edge);
-
-  // if capillary pressure flag is true, then we make sure 
-  // the problem can handle capillary pressure.
-  pb.query("have_capillary",have_capillary);
-  if (have_capillary == 1) 
-    {
-      if (nphases != 2 && ncomps !=nphases) 
-	{
-	  if (ParallelDescriptor::IOProcessor())
-	    {
-	      std::cerr << "PorousMedia::read_prob: nphases != 2 && ncomps !=nphases "
-			<< "although have_capillary == 1.\n ";
-	      BoxLib::Abort("PorousMedia::read_prob()");
-	    }
-	}
-    }
 }
 
 //
@@ -1218,11 +1171,10 @@ void  PorousMedia::read_comp()
       // Tracer diffusion handled during tracer read
       if (visc_coef.back() > 0)
       {
-	  do_any_diffuse = true;
 	  is_diffusive[visc_coef.size()-1] = 1;
       }
       else {
-          variable_scal_diff = 0;
+          variable_scal_diff = false;
       }
       ++ndiff;
 
@@ -1687,7 +1639,7 @@ void  PorousMedia::read_tracer()
   ppp.query("n_chem_interval",n_chem_interval);
   ppp.query("ic_chem_relax_dt",ic_chem_relax_dt);
   if (n_chem_interval > 0) {
-    do_full_strang = 0;
+    do_full_strang = false;
   }
 
 #if ALQUIMIA_ENABLED
@@ -1780,7 +1732,7 @@ void  PorousMedia::read_tracer()
           }
         }
 
-        verbose_chemistry = 2;
+        int verbose_chemistry = 2;
         chemistry_helper = new AmanziChemHelper_Structured(tNames,sorbedPrimarySpecies,minerals,sorption_sites,hasCationExchangeCapacity,
                                                            isothermNames,tNames,amanzi_thermo_file,amanzi_thermo_fmt,activity_model,
                                                            verbose_chemistry);
