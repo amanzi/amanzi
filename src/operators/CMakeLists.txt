@@ -90,7 +90,7 @@ if ( BUILD_TESTS )
           copy_directory ${OPERATORS_SOURCE_DIR}/test ${OPERATORS_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs geometry atk mesh mesh_audit mesh_factory data_structures operators whetstone output)
+    set(amanzi_libs geometry atk mesh mesh_factory data_structures operators whetstone output)
 
     # Test: matrices for diffusion
     if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )

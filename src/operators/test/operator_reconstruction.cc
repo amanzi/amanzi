@@ -72,7 +72,7 @@ TEST(RECONSTRUCTION_LINEAR) {
   lifting.Compute(); 
 
   // calculate gradient error
-  Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+  const Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
   grad_exact.Update(-1.0, grad_computed, 1.0);
 
   double error;

@@ -31,7 +31,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 
       // get the expert parameters
       std::string disc_method("MFD: Optimized for Sparsity");
-      std::string rel_perm("Upwind: Darcy Velocity");
+      std::string rel_perm("Upwind: Amanzi");
       std::string update_upwind("every timestep");
       double atm_pres(ATMOSPHERIC_PRESSURE);
       std::string nonlinear_solver("NKA");
