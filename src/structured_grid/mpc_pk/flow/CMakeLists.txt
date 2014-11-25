@@ -70,8 +70,6 @@ if (BUILD_TESTS)
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
     endif()
-  else()
-    set(structured_grid_libs)
   endif()
 
   get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)

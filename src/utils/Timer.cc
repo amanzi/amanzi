@@ -107,10 +107,8 @@ void Timer::stop()
  */
 clock_t Timer::getTicks()
 {
-  if ( _running )
-  {
-    switch (_type)
-    {
+  if ( _running ) {
+    switch (_type) {
       case ACCUMULATE:
         return ( _runningTotal+(clock() - _startTime) );
         break;
@@ -122,10 +120,8 @@ clock_t Timer::getTicks()
         break;
     }
   }
-  else
-  {
-    switch (_type)
-    {
+  else {
+    switch (_type) {
       case AVERAGE:
         return ( _runningTotal / _numInvocations );
         break;
