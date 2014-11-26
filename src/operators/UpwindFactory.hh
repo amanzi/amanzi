@@ -62,6 +62,8 @@ Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
     Errors::Message msg(msgstream.str());
     Exceptions::amanzi_throw(msg);
   }
+
+  return Teuchos::null;
 }
 
 }  // namespace Operators

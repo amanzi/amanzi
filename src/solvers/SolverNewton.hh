@@ -136,7 +136,6 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
   // initialize the iteration counter
   num_itrs_ = 0;
 
- 
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
   Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
@@ -175,7 +174,6 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       u->Norm2(&u_norm);
       *vo_->os() <<"sol "<<u_norm<<" resid "<<l2_error<<" error "<<error<<"\n";
 
-
       // attempt to catch non-convergence early
       if (num_itrs_ == 1) {
         l2_error_initial = l2_error;
@@ -202,8 +200,6 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     r->Norm2(&res_l2);  r->NormInf(&res_inf);
     fn_->ApplyPreconditioner(r, du);
     du->Norm2(&du_l2);  du->NormInf(&du_inf);
-    //*vo_->os() <<"res_l2 "<<res_l2<<" res_inf "<<res_inf<<" du_l2 "<<du_l2<<" du_inf "<<du_inf<<"\n";
-
 
     // Hack the correction
     if (modify_correction_) {
