@@ -140,6 +140,25 @@ Example:
     <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
   </ParameterList>
 
+
+PETSc
+=====
+
+Amanzi uses PETSc (TODO: insert link here to Amanzi TPL list) for access to specialized solvers for flow and chemistry evolution.  PETSc implements its own flexible approach to runtime selection of solver options; the list of available options changes considerably between library versions.  Input of PETSc-specific  options at runtime is managed via an optional string parameter, which names an auxiliary text file.  By default, no file is included.
+
+* [S] "Petsc Options File" [string] Relative path naming a text file with PETSc parameters included
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Main">
+    <Parameter name="Petsc Options File" type="string" value=".petsc"/>
+  </ParameterList>
+
+See the PETSc documentation for details of the format of this file, and the available parameters.  At this time, PETSc is used by the flow solvers supporting structured-grid AMR Amanzi runs, and the pFloTran chemistry process kernal (see usage notes below).
+
+
 General Description
 ===================
 
@@ -225,7 +244,7 @@ Usage:
 
    * [SU] `"Maximum Cycle Number`" [int]: (Optional) The maximum allowed cycle number.
 
-  * [U] `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
+  * [SU] `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
 
    * [SU] `"Start`" [double]: Initial value for time to generate a steady solution
 
@@ -538,7 +557,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [S] `"cfl`" [double]: Fraction of stability-limited maximum time step allowed by the advective transport scheme. (default: "1", suggested values: .01 ... 1)
 
-   * [S] `"Adaptive Mesh Refinement`" [list] (Optional) Additional details related to the adaptive mesh refinement algorithm. 
+   * [S] `"Adaptive Mesh Refinement Control`" [list] (Optional) Additional details related to the adaptive mesh refinement algorithm. 
 
      * [S] `"Number Of AMR Levels`" [int] Maximum number of adaptive levels, including the base grid (default=1)
 
@@ -556,7 +575,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [S] `"Refinement Indicators`" [list] A list of user-labeled refinement indicators, REFINE.  Criteria will be applied in the order listed.
 
-      * [S] REFINE [list] A user-defined label for a single refinement criteria indicator function.  Definition of the criteria must indicate `"Field Name`" (the name of a known derive field), `"Regions`" (a list of user-named regions over which this criteria is to apply) and one of the following parameters:
+      * [S] REFINE [list] A user-defined label for a single refinement criteria indicator function.   For all criteria except `"Inside Region`" definition must indicate a `"Field Name`" selected from the list of known available field quantities (defined under "Time and Cycle specification").  Additionally, one must specify `"Regions`" (a list of user-named regions over which this criteria is to apply) and one of the following parameters refinement rules:
 
        * [S] `"Value Greater`" [double] The threshold value.  For each coarse cell, if the value of the given field is larger than this value, tag the cell for refinement
 
@@ -566,7 +585,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
        * [S] `"Inside Region`" [bool] Set this TRUE if all coarse cells in the identified list of regions should be tagged for refinement.
 
-       Additionally, the following optional parameters are available:
+       The following optional parameters are available in order to fine-tune the refinement strategy:
 
        * [S] `"Maximum Refinement Level`" [int] If set, this identifies the highest level of refinement that will be triggered by this indicator
 
@@ -765,7 +784,7 @@ using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`
 
 User-defined regions are constructed using the following syntax
 
- * [U][S] "Regions" [list] can accept a number of lists for named regions (REGION)
+ * [SU] "Regions" [list] can accept a number of lists for named regions (REGION)
 
    * Shape [list] Geometric model primitive, choose exactly one of the
      following [see table below]: `"Region: Point`", `"Region: Box`",
@@ -967,7 +986,7 @@ the following set of physical properties using the supported models described be
 
  * [SU] MATERIAL [list] can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
 
-  The flow related matrial properties *Intrinsic Permeability* or *Hydraulic Conductivity* must be specified, but not both:  
+  The flow related material properties *Intrinsic Permeability* or *Hydraulic Conductivity* must be specified, but not both:  
 
   * [SU] Intrinsic Permeability [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`" (see below)
 
@@ -977,13 +996,13 @@ the following set of physical properties using the supported models described be
 
   * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" (see below)
 
-  * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or [U only] `"Brooks Corey`" (see below)
+  * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or `"Brooks Corey`" (see below)
 
-  * [U] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
+  * [SU] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
 
-  * [U] Specific Storage [list] Parameterized model for Specific Storage [L^-1]. Choose exactly one of the following: `"Specific Storage: Uniform`".
+  * [SU] Specific Storage [list] Parameterized model for Specific Storage [L^-1]. Choose exactly one of the following: `"Specific Storage: Uniform`".
 
-  * [U] Specific Yield [list] Parameterized model for Specific Yield [-]. Choose exactly one of the following: `"Specific Yield: Uniform`".
+  * [SU] Specific Yield [list] Parameterized model for Specific Yield [-]. Choose exactly one of the following: `"Specific Yield: Uniform`".
 
   Material properties related to transport (dispersion and tortuosity):
 
@@ -1428,9 +1447,9 @@ The following boundary condition parameterizations are supported:
 
 * `"BC: Impermeable`"  requires no parameters
 
-* [SU] `"BC: Zero Flow`"  [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [SU] `"BC: Zero Flow`"  [list]  takes no additional parameters
 
-* [S] `"BC: Zero Gradient`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [S] `"BC: Zero Gradient`" [list]  takes no additional parameters
 
 * [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`" if Alquimia provides boundary condition data.
 
@@ -1473,7 +1492,7 @@ Boundary condition functions utilize a parameterized model for time variations t
 .. code-block:: xml
 
       <Parameter name="Times" type="Array(double)" value="{1, 2, 3}"/>
-      <Parameter name="Time Values" type="Array(double)" value="{10, 20, 30}"/>
+      <Parameter name="Values" type="Array(double)" value="{10, 20, 30}"/>
       <Parameter name="Time Functions" type="Array(string)" value="{Constant, Linear}"/>    
 
 
@@ -1495,6 +1514,15 @@ For a particular interval it can be either `"Linear`" or `"Constant`".
 
   - f(x) = 10, for x <1, specified by the first <time,time value> pair, and
   - f(x) = 30, for x >= 3, specified by the last <time,time value> pair. 
+
+NOTE 1: If a single constant value is to be applied over all time, an abbreviated form is available:
+
+.. code-block:: xml
+
+      <Parameter name="Values" type="Array(double)" value="{10}"/>
+
+NOTE 2: Amanzi's simulator supports a complex variety of standard mathematical functions that are pending implemenation of a user interface.
+
 
 Example Phase Definition
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1644,7 +1672,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
   * [SU] OBSERVATION [list] user-defined label, can accept values for `"Variable`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
 
-    * [SU] `"Variable`" [string] name of field quantities taken from the list of "Available field quantities" defined above
+    * [SU] `"Variable`" [string] name of field quantities taken from the list of "Available field quantities" defined under `"Time and Cycle specification`"
 
     * [SU] `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 

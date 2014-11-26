@@ -154,6 +154,7 @@ TEST_FIXTURE(test_data, JFNK_SOLVER) {
   plist.sublist("nonlinear solver").sublist("Newton parameters").set("max divergent iterations", 3);
   plist.sublist("JF matrix parameters");
   plist.sublist("linear operator").set("iterative method", "gmres");
+  plist.sublist("linear operator").sublist("gmres parameters").set("size of Krylov space", 2);
   plist.sublist("linear operator").sublist("VerboseObject").set("Verbosity Level", "extreme");
 
   // create the Solver
