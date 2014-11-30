@@ -1020,7 +1020,8 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   } else if (primary == "fv: default") {
     mfd_primary_ = -1;  // not a mfd scheme
   } else {
-    Errors::Message msg("OperatorDiffusion: primary discretization method is not supported.");
+    Errors::Message msg;
+    msg << "OperatorDiffusion: primary discretization method \"" << primary << "\" is not supported.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -1031,12 +1032,13 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
     mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
   } else if (secondary == "mfd: support operator") {
     mfd_secondary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
-  } else if (primary == "mfd: default") {
-    mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
-  } else if (primary == "fv: default") {
-    mfd_primary_ = -1;  // not a mfd schems
+  } else if (secondary == "mfd: default") {
+    mfd_secondary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
+  } else if (secondary == "fv: default") {
+    mfd_secondary_ = -1;  // not a mfd schems
   } else {
-    Errors::Message msg("OperatorDiffusion: secondary discretization method is not supported.");
+    Errors::Message msg;
+    msg << "OperatorDiffusion: secondary discretization method \"" << secondary << "\" is not supported.";
     Exceptions::amanzi_throw(msg);
   }
 

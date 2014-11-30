@@ -223,20 +223,20 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   else update_upwind = FLOW_UPWIND_UPDATE_TIMESTEP;  
 
   // Initialize times.
-  double time = S->time();
-  if (time >= 0.0) T_physics = time;
+  double T1 = S->time(), T0 = T1 - dT;
+  if (T1 >= 0.0) T_physics = T1;
 
   // Initialize actions on boundary condtions. 
   ProcessShiftWaterTableList(rp_list_);
 
-  time = T_physics;
-  bc_pressure->Compute(time);
-  bc_flux->Compute(time);
-  bc_seepage->Compute(time);
+  T1 = T_physics;
+  bc_pressure->Compute(T1);
+  bc_flux->Compute(T1);
+  bc_seepage->Compute(T1);
   if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(time);
+    bc_head->Compute(T1);
   else
-    bc_head->ComputeShift(time, shift_water_table_->Values());
+    bc_head->ComputeShift(T1, shift_water_table_->Values());
 
   // Process other fundamental structures.
   K.resize(ncells_wghost);
@@ -285,7 +285,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Initialize boundary and source data. 
   CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
-  UpdateSourceBoundaryData(time, pressure);
+  UpdateSourceBoundaryData(T0, T1, pressure);
 
   darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S->GetFieldData("darcy_flux", passwd_)));
 
@@ -322,8 +322,8 @@ void Richards_PK::InitializeAuxiliaryData()
 
   DeriveFaceValuesFromCellValues(p_cell, p_face);
 
-  double time = T_physics;
-  UpdateSourceBoundaryData(time, pressure);
+  double T1 = T_physics, T0 = T1 - dT;
+  UpdateSourceBoundaryData(T0, T1, pressure);
 
   // saturations
   Epetra_MultiVector& ws = *S_->GetFieldData("water_saturation", passwd_)->ViewComponent("cell");
@@ -343,8 +343,8 @@ void Richards_PK::InitializeSteadySaturated()
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "initializing with a saturated steady state..." << std::endl;
   }
-  double T = S_->time();
-  SolveFullySaturatedProblem(T, *solution, ti_specs->solver_name_ini);
+  double T0 = S_->time();
+  SolveFullySaturatedProblem(T0, *solution, ti_specs->solver_name_ini);
 }
 
 
@@ -523,16 +523,16 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   op_matrix_->UpdateFlux(*solution, *darcy_flux_copy);
 
   // re-initialize lambda
-  double Tp = T0 + dT0;
+  double T1 = T0 + dT0;
   if (flag_face && ti_specs.pressure_lambda_constraints) {
-    EnforceConstraints(Tp, *solution);
+    EnforceConstraints(T1, *solution);
     // update mass flux
     op_matrix_->Init();
     op_matrix_->UpdateMatrices(Teuchos::null, solution);
     op_matrix_->UpdateFlux(*solution, *darcy_flux_copy);
   } else {
     CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
-    UpdateSourceBoundaryData(Tp, *solution);
+    UpdateSourceBoundaryData(T0, T1, *solution);
     rel_perm_->Compute(pressure);
 
     RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
@@ -544,7 +544,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     if (ti_specs.inflow_krel_correction) {
       Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face", true);
       AmanziMesh::Entity_ID_List cells;
-	
+
       for (int f = 0; f < nfaces_wghost; f++) {
         if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
              bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
@@ -691,23 +691,23 @@ void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
 /* ******************************************************************
  * * A wrapper for updating boundary conditions.
  * ****************************************************************** */
-void Richards_PK::UpdateSourceBoundaryData(double Tp, const CompositeVector& u)
+void Richards_PK::UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u)
 {
   if (src_sink != NULL) {
     if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(Tp, Kxy->Values());
+      src_sink->ComputeDistribute(T0, T1, Kxy->Values());
     } else {
-      src_sink->ComputeDistribute(Tp, NULL);
+      src_sink->ComputeDistribute(T0, T1, NULL);
     }
   }
 
-  bc_pressure->Compute(Tp);
-  bc_flux->Compute(Tp);
-  bc_seepage->Compute(Tp);
+  bc_pressure->Compute(T1);
+  bc_flux->Compute(T1);
+  bc_seepage->Compute(T1);
   if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(Tp);
+    bc_head->Compute(T1);
   else
-    bc_head->ComputeShift(Tp, shift_water_table_->Values());
+    bc_head->ComputeShift(T1, shift_water_table_->Values());
 
   ComputeBCs(u);
 }

@@ -124,9 +124,9 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   // update steady state source conditons
   if (src_sink != NULL) {
     if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(time, Kxy->Values()); 
+      src_sink->ComputeDistribute(time, time, Kxy->Values()); 
     } else {
-      src_sink->ComputeDistribute(time, NULL);
+      src_sink->ComputeDistribute(time, time, NULL);
     }
   }
 

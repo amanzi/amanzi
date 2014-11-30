@@ -178,9 +178,9 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: Newton
-    add_amanzi_test(flow_richards_newton_TPFA flow_richards_newton_TPFA
+    add_amanzi_test(flow_richards_newton_tpfa flow_richards_newton_tpfa
                     KIND unit
-                    SOURCE test/Main.cc test/flow_richards_newton_TPFA.cc
+                    SOURCE test/Main.cc test/flow_richards_newton_tpfa.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
     # Test: miscaleneous Darcy flow routines

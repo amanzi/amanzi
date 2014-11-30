@@ -1,8 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-ATS
-
-License: see $ATS_DIR/COPYRIGHT
+Licenses: see $ATS_DIR/COPYRIGHT
+              $ASCEM_DIR/COPYRIGHT
 Author: Ethan Coon
 
 Function applied to a mesh component.
@@ -24,8 +23,7 @@ namespace Amanzi {
 namespace Functions {
 
 class MeshFunction {
-
-public:
+ public:
   // Tuple of a region plus a mesh entity provides the domain on which a
   // function can be evaluated.
   typedef std::vector<std::string> RegionList;
@@ -36,7 +34,7 @@ public:
   typedef std::vector<Teuchos::RCP<Spec> > SpecList;
 
   // constructor
-  MeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh) {}
+  MeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh) {};
 
   // add a spec -- others may inherit this and overload to do some checking?
   virtual void AddSpec(const Teuchos::RCP<Spec>& spec) {
@@ -52,7 +50,7 @@ public:
   // access mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
 
-protected:
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   SpecList spec_list_;
 };

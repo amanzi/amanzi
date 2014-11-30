@@ -529,10 +529,6 @@ void Operator::ApplyBCs()
   Errors::Message msg;
   bool applied_bc(false);
 
-  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
-  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
-  const std::vector<double>& bc_mixed = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_mixed();
-
   // clean ghosted values
   for (CompositeVector::name_iterator name = rhs_->begin(); name != rhs_->end(); ++name) {
     Epetra_MultiVector& rhs_g = *rhs_->ViewComponent(*name, true);

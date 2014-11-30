@@ -92,7 +92,11 @@ void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, Function
   std::string action_name = list.get<std::string>("spatial distribution method", "none");
   ProcessStringActions(action_name, &method);
 
-  src->Define(regions, f, method);
+  int submodel(Functions::DOMAIN_FUNCTION_SUBMODEL_RATE);
+  std::string submodel_name = list.get<std::string>("submodel", "rate");
+  if (submodel_name == "integrad") submodel = Functions::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND;
+
+  src->Define(regions, f, method, submodel);
 }
 
 

@@ -287,51 +287,81 @@ Teuchos::ParameterList InputParserIS::CreateTransportSrcList_(Teuchos::Parameter
 
                 // create src sublist
                 Teuchos::ParameterList& src_out = src_list.sublist("concentration").sublist(pc_name).sublist(name);
-                src_out.set<Teuchos::Array<std::string> >("regions",regions);
+                src_out.set<Teuchos::Array<std::string> >("regions", regions);
 
                 // get source function
                 Teuchos::ParameterList src_fn;
                 if (solute_src.isSublist("Source: Uniform Concentration")) {
-                  src_out.set<std::string>("spatial distribution method","none");
+                  src_out.set<std::string>("spatial distribution method", "none");
                   src_fn = solute_src.sublist("Source: Uniform Concentration");
                 }
                 else if (solute_src.isSublist("Source: Flow Weighted Concentration")) {
                   src_out.set<std::string>("spatial distribution method", dist_method);
                   src_fn = solute_src.sublist("Source: Flow Weighted Concentration");
                 }
+                else if (solute_src.isSublist("Source: Diffusion Dominated Release Model")) {
+                  src_out.set<std::string>("spatial distribution method", dist_method);
+                  src_fn = solute_src.sublist("Source: Diffusion Dominated Release Model");
+                }
                 else {
                   msg << "In the definition of Sources: you must either specify 'Source: Uniform"
-                      << " Concentration' or 'Source: Flow Weighted Concentration'.";
+                      << " Concentration', 'Source: Diffusion Dominated Release Model', or"
+                      << " 'Source: Flow Weighted Concentration'.";
                   Exceptions::amanzi_throw(msg);
                 }
 
-                // create time function
+                // create time function (two different case are considered)
                 Teuchos::ParameterList& src_out_fn = src_out.sublist("sink");
-                Teuchos::Array<double> values = src_fn.get<Teuchos::Array<double> >("Values");
-                // write the native time function
-                if (values.size() == 1) {
-                  src_out_fn.sublist("function-constant").set<double>("value", values[0]);
-                } else if (values.size() > 1) {
+                if (src_fn.isParameter("Values")) {
+                  Teuchos::Array<double> values = src_fn.get<Teuchos::Array<double> >("Values");
+                  // write the native time function
+                  if (values.size() == 1) {
+                    src_out_fn.sublist("function-constant").set<double>("value", values[0]);
+                  } else if (values.size() > 1) {
+                    Teuchos::Array<double> times = src_fn.get<Teuchos::Array<double> >("Times");
+                    Teuchos::Array<std::string> time_fns = src_fn.get<Teuchos::Array<std::string> >("Time Functions");
+
+                    Teuchos::ParameterList& ssofn = src_out_fn.sublist("function-tabular");
+
+                    ssofn.set<Teuchos::Array<double> >("x values", times);
+                    ssofn.set<Teuchos::Array<double> >("y values", values);
+
+                    Teuchos::Array<std::string> forms_(time_fns.size());
+                    for (int i = 0; i < time_fns.size(); i++) {
+                      if (time_fns[i] == "Linear") {
+                        forms_[i] = "linear";
+                      } else if (time_fns[i] == "Constant") {
+                        forms_[i] = "constant";
+                      } else {
+                        msg << "In the definition of Sources: time function can only be 'Linear' or 'Constant'";
+                        Exceptions::amanzi_throw(msg);
+                      }
+                    }
+                    ssofn.set<Teuchos::Array<std::string> >("forms", forms_);
+                  } else {
+                    msg << "In the definition of Sources: something is wrong with the input";
+                    Exceptions::amanzi_throw(msg);
+                  }
+                } else if (src_fn.isParameter("Total Inventory")) {
+                  double total = src_fn.get<double>("Total Inventory");
+                  double diff = src_fn.get<double>("Effective Diffusion Coefficient");
+                  double length = src_fn.get<double>("Mixing Length");
                   Teuchos::Array<double> times = src_fn.get<Teuchos::Array<double> >("Times");
-                  Teuchos::Array<std::string> time_fns = src_fn.get<Teuchos::Array<std::string> >("Time Functions");
+
+                  std::vector<double> values(2, 0.0);
+                  std::vector<std::string> forms(1, "SQRT");
+                  double amplitude = 2 * total / length * std::pow(diff / M_PI, 0.5); 
 
                   Teuchos::ParameterList& ssofn = src_out_fn.sublist("function-tabular");
-
                   ssofn.set<Teuchos::Array<double> >("x values", times);
                   ssofn.set<Teuchos::Array<double> >("y values", values);
+                  ssofn.set<Teuchos::Array<std::string> >("forms", forms);
 
-                  Teuchos::Array<std::string> forms_(time_fns.size());
-                  for (int i = 0; i < time_fns.size(); i++) {
-                    if (time_fns[i] == "Linear") {
-                      forms_[i] = "linear";
-                    } else if (time_fns[i] == "Constant") {
-                      forms_[i] = "constant";
-                    } else {
-                      msg << "In the definition of Sources: time function can only be 'Linear' or 'Constant'";
-                      Exceptions::amanzi_throw(msg);
-                    }
-                  }
-                  ssofn.set<Teuchos::Array<std::string> >("forms", forms_);
+                  Teuchos::ParameterList& func = ssofn.sublist("SQRT").sublist("function-standard-math");
+                  func.set<std::string>("operator", "sqrt");
+                  func.set<double>("parameter", 0.5);
+                  func.set<double>("amplitude", amplitude);
+                  func.set<double>("shift", times[0]);
                 } else {
                   msg << "In the definition of Sources: something is wrong with the input";
                   Exceptions::amanzi_throw(msg);

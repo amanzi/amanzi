@@ -20,16 +20,16 @@ namespace Amanzi {
 namespace Flow {
 
 /* ******************************************************************
-* Solve single phase problem using boundary conditions at time Tp.
+* Solve single phase problem using boundary conditions at time T0.
 * We populate both matrix and preconditoner here but use only the
 * preconditioner. Matrix may be used in external flux calculation. 
 * Moving flux calculation here impose restrictions on multiple 
 * possible scenarios of data flow.
 ****************************************************************** */
 void Richards_PK::SolveFullySaturatedProblem(
-    double Tp, CompositeVector& u, const std::string& solver_name)
+    double T0, CompositeVector& u, const std::string& solver_name)
 {
-  UpdateSourceBoundaryData(Tp, u);
+  UpdateSourceBoundaryData(T0, T0, u);
   rel_perm_->Krel()->PutScalar(1.0);
   rel_perm_->dKdP()->PutScalar(0.0);
 
@@ -80,7 +80,7 @@ void Richards_PK::SolveFullySaturatedProblem(
 ****************************************************************** */
 void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
 {
-  UpdateSourceBoundaryData(Tp, u);
+  UpdateSourceBoundaryData(Tp, Tp, u);
 
   CompositeVector utmp(u);
   Epetra_MultiVector& utmp_face = *utmp.ViewComponent("face");

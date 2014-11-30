@@ -27,6 +27,9 @@ namespace TransportActions {
 const int DOMAIN_FUNCTION_ACTION_NONE = 0;
 const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME = 1;
 const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY = 2;
+
+const int DOMAIN_FUNCTION_SUBMODEL_RATE = 0;
+const int DOMAIN_FUNCTION_SUBMODEL_INTEGRAND = 1;
 }
 
 class TransportDomainFunction : public Functions::UniqueMeshFunction {
@@ -37,19 +40,19 @@ class TransportDomainFunction : public Functions::UniqueMeshFunction {
   
   void Define(const std::vector<std::string>& regions,
               const Teuchos::RCP<const MultiFunction>& f,
-              int action, 
+              int action, int submodel,
               const std::string& name);
 
   void Define(const std::string region,
               const Teuchos::RCP<const MultiFunction>& f,
-              int action,
+              int action, int submodel,
               const std::string& name);
   
-  void Compute(double time);
-  void ComputeDistribute(double T);
-  void ComputeDistribute(double T, double* weight);
-  void ComputeDistributeMultiValue(double T);
-  void ComputeDistributeMultiValue(double T, double* weight);
+  void Compute(double t0, double t1);
+  void ComputeDistribute(double t0, double t1);
+  void ComputeDistribute(double t0, double t1, double* weight);
+  void ComputeDistributeMultiValue(double t0, double t1);
+  void ComputeDistributeMultiValue(double t0, double t1, double* weight);
   
   void Finalize() {}
  
@@ -69,6 +72,7 @@ class TransportDomainFunction : public Functions::UniqueMeshFunction {
 
  private:
   std::vector<int> actions_;
+  std::vector<int> submodel_;
   std::string tcc_name_;
   int tcc_index_; // index the global list of components
 

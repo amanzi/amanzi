@@ -896,11 +896,12 @@ void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp,
     int imap = i;
     if (num_vectors == 1) imap = 0;
 
+    double T0 = Tp - dTp;
     int distribution = srcs[m]->CollectActionsList();
     if (distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      srcs[m]->ComputeDistributeMultiValue(Tp, Kxy->Values()); 
+      srcs[m]->ComputeDistributeMultiValue(T0, Tp, Kxy->Values()); 
     } else {
-      srcs[m]->ComputeDistributeMultiValue(Tp, NULL);
+      srcs[m]->ComputeDistributeMultiValue(T0, Tp, NULL);
     }
 
     TransportDomainFunction::Iterator it;
