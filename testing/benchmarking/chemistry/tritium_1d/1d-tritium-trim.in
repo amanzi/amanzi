@@ -41,6 +41,6 @@ END
 
 CONSTRAINT east
   CONCENTRATIONS
-    Tritium  1.d-20      T
+    Tritium  1.d-15      T
   /
 END
