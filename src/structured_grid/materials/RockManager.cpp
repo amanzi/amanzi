@@ -50,7 +50,9 @@ static Real Kr_smoothing_max_pcap_DEF = -1;
 static Real Kr_smoothing_min_seff_DEF = 2;
 
 // Interpolators
-static int NUM_INIT_INTERP_EVAL_PTS_DEF = 5001;
+static int NUM_INIT_INTERP_EVAL_PTS_DEF = 101;
+static int NUM_ADD_INTERP_EVAL_PTS_DEF = 0;
+static Real ERR_FOR_ADAPTIVE_INTERPS_DEF = 1.e-10;
 static Real pc_at_Sr = 1.e11;
 
 static int Rock_Mgr_ID_ctr=0;
@@ -59,7 +61,7 @@ static std::vector<std::pair<bool,Real> > Kr_smoothing_min_seff; // Bool says wh
 
 RockManager::RockManager(const RegionManager*     _region_manager,
                          const Array<std::string>* solute_names)
-  : region_manager(_region_manager), interps_built(false)
+  : region_manager(_region_manager), finalized(false)
 {
   BL_PROFILE("RockManager::RockManager()");
 
@@ -123,8 +125,8 @@ RockManager::NComp(const std::string& property_name) const
   return nc;
 }
 
-const Material&
-RockManager::FindMaterial(const std::string& name) const
+int
+RockManager::FindMaterialNum(const std::string& name) const
 {
   BL_PROFILE("RockManager::FindMaterial()");
 
@@ -142,7 +144,36 @@ RockManager::FindMaterial(const std::string& name) const
     std::string m = "Named material not found " + name;
     BoxLib::Abort(m.c_str());
   }
-  return mats[iMat];
+  return iMat;
+}
+
+const Material&
+RockManager::FindMaterial(const std::string& name) const
+{
+  return GetMaterials()[FindMaterialNum(name)];
+}
+
+const MonotCubicInterpolator&
+RockManager::CPInterpolator(const std::string& name) const
+{
+  return CP_s_interps[FindMaterialNum(name)];
+}
+
+const MonotCubicInterpolator&
+RockManager::KrInterpolator(const std::string& name) const
+{
+  return Kr_s_interps[FindMaterialNum(name)];
+}
+
+const Array<std::string>
+RockManager::MaterialNames() const
+{
+  const PArray<Material>& mats = GetMaterials();
+  Array<std::string> names(mats.size());
+  for (int i=0; i<mats.size(); ++i) {
+    names[i] = mats[i].Name();
+  }
+  return names;
 }
 
 const Material&
@@ -189,6 +220,7 @@ RockManager::BuildInterpolators()
   BL_PROFILE("RockManager::BuildInterpolators()");
 
   CP_s_interps.resize(rock.size(),PArrayManage);
+  Kr_s_interps.resize(rock.size(),PArrayManage);
 
   int nComp = materialFiller->NComp(CapillaryPressureName);
   static IntVect iv(D_DECL(0,0,0));
@@ -198,7 +230,6 @@ RockManager::BuildInterpolators()
   int dComp=0;
   Real time = 0;
 
-#if 0
   for (int n=0; n<rock.size(); ++n) {
 
     Array<Real> s(NUM_INIT_INTERP_EVAL_PTS_DEF);
@@ -218,10 +249,28 @@ RockManager::BuildInterpolators()
 
     Array<Real> kr(s.size());
     RelativePermeability(s.dataPtr(),mat.dataPtr(),time,kr.dataPtr(),Npts);
-    Kr_s_interps.set(n, new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(kr)));
+
+    int NaddMAX = NUM_ADD_INTERP_EVAL_PTS_DEF;
+    Real errForAdapt = ERR_FOR_ADAPTIVE_INTERPS_DEF;
+    if (NaddMAX > 0) {
+      MonotCubicInterpolator* t = new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(kr));
+      Real diff;
+      for (int i=0; i<NaddMAX; ++i) {
+        std::pair<double,double> newval = t->getMissingX();
+	Real interpval = (*t)(newval.first);
+	RelativePermeability(&newval.first,mat.dataPtr(),time,&newval.second,1);
+	diff = std::abs(newval.second-interpval);
+	if (diff < errForAdapt) {
+	  i=NaddMAX;
+        }
+	t->addPair(newval.first,newval.second);
+      }
+      //std::cout << n << " last err " << diff << std::endl;
+      Kr_s_interps.set(n, t);
+    } else {
+      Kr_s_interps.set(n, new MonotCubicInterpolator(std::vector<Real>(s),std::vector<Real>(kr)));
+    }
   }
-#endif
-  interps_built = true;
 
   for (int n=0; n<rock.size(); ++n) {
     int Npts = WRM_plot_file[n].first;
@@ -318,8 +367,7 @@ RockManager::Porosity(Real      time,
                       int       nGrow) const
 {
   BL_PROFILE("RockManager::Porosity()");
-
-  if (!interps_built) {
+  if (!finalized) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
   bool ignore_mixed = true;
@@ -371,6 +419,7 @@ RockManager::FinalizeBuild(const Array<Geometry>& geomArray,
     }
   }
   materialFiller = new MatFiller(geomArray,refRatio,rock);
+  finalized = true;
   BuildInterpolators();
 }
 
@@ -1027,8 +1076,7 @@ void
 RockManager::GetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed) const
 {
   BL_PROFILE("RockManager::GetMaterialID()");
-
-  if (!interps_built) {
+  if (!finalized) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
   return materialFiller->SetMaterialID(level,mf,nGrow,ignore_mixed);
@@ -1072,8 +1120,7 @@ void
 RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Real* capillaryPressure, int npts) const
 {
   BL_PROFILE("RockManager::CapillaryPressure()");
-
-  if (!interps_built) {
+  if (!finalized) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
@@ -1127,9 +1174,10 @@ RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Re
         }
       }
       else {
-        if (ParallelDescriptor::IOProcessor()) {
-          std::cerr << "Invalid Capillary Presure model " << std::endl;
-        } BoxLib::Abort();
+        for (int i=0; i<N; ++i) {
+          int idx = mat_pts[j][i];
+	  capillaryPressure[idx] = 0;
+	}
       }
     }
   }
@@ -1145,8 +1193,7 @@ RockManager::CapillaryPressure(const MultiFab&  saturation,
                                int              nGrow) const
 {
   BL_PROFILE("RockManager::CapillaryPressure1()");
-
-  if (!interps_built) {
+  if (!finalized) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
   BL_ASSERT(saturation.boxArray() == capillaryPressure.boxArray());
@@ -1181,8 +1228,7 @@ void
 RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID, Real time, Real* saturation, int npts) const
 {
   BL_PROFILE("RockManager::InverseCapillaryPressure()");
-
-  if (!interps_built) {
+  if (!finalized) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
@@ -1224,9 +1270,10 @@ RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID,
       }
     }
     else {
-      if (ParallelDescriptor::IOProcessor()) {
-        std::cerr << "Invalid Capillary Presure model " << std::endl;
-      } BoxLib::Abort();
+      for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
+        int idx = mat_pts[j][i];
+	saturation[idx] = 1.0;
+      }
     }
   }
 }
@@ -1241,8 +1288,7 @@ RockManager::InverseCapillaryPressure(const MultiFab&  capillaryPressure,
                                       int              nGrow) const
 {
   BL_PROFILE("RockManager::InverseCapillaryPressure1()");
-
-  if (!interps_built) {
+  if (!finalized) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
   BL_ASSERT(saturation.boxArray() == capillaryPressure.boxArray());
@@ -1265,8 +1311,7 @@ void
 RockManager::DInverseCapillaryPressure(const Real* saturation, int* matID, Real time, Real* DsaturationDpressure, int npts) const
 {
   BL_PROFILE("RockManager::DInverseCapillaryPressure()");
-
-  if (!interps_built) {
+  if (!finalized) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
@@ -1324,8 +1369,7 @@ RockManager::DInverseCapillaryPressure(const MultiFab&  saturation,
                                        int              nGrow) const
 {
   BL_PROFILE("RockManager::DInverseCapillaryPressure1()");
-
-  if (!interps_built) {
+  if (!finalized) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
   BL_ASSERT(saturation.boxArray() == DsaturationDpressure.boxArray());
@@ -1353,8 +1397,7 @@ void
 RockManager::RelativePermeability(const Real* saturation, int* matID, Real time, Real* kappa, int npts) const
 {
   BL_PROFILE("RockManager::RelativePermeability()");
-
-  if (!interps_built) {
+  if (!finalized) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
@@ -1476,8 +1519,7 @@ RockManager::RelativePermeability(const MultiFab&  saturation,
                                   int              nGrow) const
 {
   BL_PROFILE("RockManager::RelativePermeability1()");
-
-  if (!interps_built) {
+  if (!finalized) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
   BL_ASSERT(saturation.boxArray() == kappa.boxArray());
@@ -1500,8 +1542,7 @@ void
 RockManager::ResidualSaturation(int* matID, Real time, Real* Sr, int npts) const
 {
   BL_PROFILE("RockManager::ResidualSaturation()");
-
-  if (!interps_built) {
+  if (!finalized) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
   Array<Array<int> > mat_pts = SortPtsByMaterial(matID,npts);
@@ -1538,8 +1579,7 @@ RockManager::ResidualSaturation(const iMultiFab& matID,
                                 int              nGrow) const
 {
   BL_PROFILE("RockManager::ResidualSaturation1()");
-
-  if (!interps_built) {
+  if (!finalized) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
   BL_ASSERT(dComp < Sr.nComp());
