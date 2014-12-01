@@ -67,7 +67,7 @@ SolverFactory<Vector,VectorSpace>::Create(
 ****************************************************************** */
 template<class Vector,class VectorSpace>
 Teuchos::RCP<Solver<Vector, VectorSpace> >
-SolverFactory<Vector,VectorSpace>::Create(Teuchos::ParameterList& slist)
+SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
 {
   if (slist.isParameter("solver type")) {
     std::string type = slist.get<std::string>("solver type");
@@ -113,9 +113,9 @@ SolverFactory<Vector,VectorSpace>::Create(Teuchos::ParameterList& slist)
         Errors::Message msg("SolverFactory: missing sublist \"JFNK parameters\"");
         Exceptions::amanzi_throw(msg);
       }
-      Teuchos::ParameterList nka_list = slist.sublist("JFNK parameters");
+      Teuchos::ParameterList jfnk_list = slist.sublist("JFNK parameters");
       Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
-          Teuchos::rcp(new SolverJFNK<Vector,VectorSpace>(nka_list));
+          Teuchos::rcp(new SolverJFNK<Vector,VectorSpace>(jfnk_list));
       return solver;
     } else if (type == "continuation") {
       if (!slist.isSublist("continuation parameters")) {

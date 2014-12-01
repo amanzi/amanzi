@@ -121,7 +121,7 @@ if (BUILD_TESTS)
     # Add the flow directory to the include paths
     include_directories(${FLOW_SOURCE_DIR})
 
-    set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow operators whetstone data_structures)
+    set(amanzi_libs geometry mesh mesh_factory state flow operators whetstone data_structures)
 
     # Test: transient Darcy flow 
     add_amanzi_test(flow_darcy_transient flow_darcy_transient
