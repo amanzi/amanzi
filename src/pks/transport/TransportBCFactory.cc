@@ -133,31 +133,39 @@ void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBo
     Exceptions::amanzi_throw(msg);
   }
   Teuchos::ParameterList& clist = list_->get<Teuchos::ParameterList>("geochemical conditions");
-  std::vector<std::string> cond_names = clist.get<Teuchos::Array<std::string> >("Geochemical Conditions").toVector();
-  std::vector<double> times = clist.get<Teuchos::Array<double> >("Times").toVector();
-  std::vector<std::string> time_funcs = clist.get<Teuchos::Array<std::string> >("Time Functions").toVector();
+  for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
+    std::string spec_name = it->first;
+    if (clist.isSublist(spec_name)) {
+      Teuchos::ParameterList& bclist = clist.sublist(spec_name);
+      for (Teuchos::ParameterList::ConstIterator it1 = bclist.begin(); it1 != bclist.end(); ++it1) {
+        std::string bc_name = it1->first;
+        Teuchos::ParameterList& bc_params = bclist.sublist(bc_name);
+        std::vector<std::string> cond_names = bc_params.get<Teuchos::Array<std::string> >("Geochemical Conditions").toVector();
+        std::vector<double> times = bc_params.get<Teuchos::Array<double> >("Times").toVector();
+        std::vector<std::string> time_funcs = bc_params.get<Teuchos::Array<std::string> >("Time Functions").toVector();
 
-  // Make sure that the Time Functions are all "Constant".
-  for (int i = 0; i < time_funcs.size(); ++i)
-  {
-    if (time_funcs[i] != "Constant")
-    {
-      msg << "Only Constant time functions are supported for Geochemical Conditions!\n";
-      Exceptions::amanzi_throw(msg);
+        // Make sure that the Time Functions are all "Constant".
+        for (int i = 0; i < time_funcs.size(); ++i) {
+          if (time_funcs[i] != "Constant") {
+            msg << "Only Constant time functions are supported for Geochemical Conditions!\n";
+            Exceptions::amanzi_throw(msg);
+          }
+        }
+
+        // Construct the Alquimia-savvy BC.
+        TransportBoundaryFunction_Alquimia* bc = 
+          new TransportBoundaryFunction_Alquimia(times, cond_names, mesh_, chem_state_, chem_engine_);
+
+        // Associate it with the given regions.
+        std::vector<std::string> regions = bc_params.get<Teuchos::Array<std::string> >("regions").toVector();
+        bc->Define(regions);
+
+        // Add it to the list.
+        TransportBoundaryFunction* bc_base = bc;
+        bcs.push_back(bc_base);
+      }
     }
   }
-
-  // Construct the Alquimia-savvy BC.
-  TransportBoundaryFunction_Alquimia* bc = 
-    new TransportBoundaryFunction_Alquimia(times, cond_names, mesh_, chem_state_, chem_engine_);
-
-  // Associate it with the given regions.
-  std::vector<std::string> regions = clist.get<Teuchos::Array<std::string> >("regions").toVector();
-  bc->Define(regions);
-
-  // Add it to the list.
-  TransportBoundaryFunction* bc_base = bc;
-  bcs.push_back(bc_base);
 #endif
 }
 

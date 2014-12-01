@@ -207,12 +207,13 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
                         // Add an entry to Transport->boundary conditions->geochemical conditions.
                         Teuchos::ParameterList& gc_list = trp_list.sublist("boundary conditions")
                             .sublist("geochemical conditions");
+                        Teuchos::ParameterList& bc = gc_list.sublist(compss.str()).sublist(name);
 
                         // Fill it with stuff.
-                        gc_list.set<Teuchos::Array<double> >("Times", times);
-                        gc_list.set<Teuchos::Array<std::string> >("Time Functions", time_fns);
-                        gc_list.set<Teuchos::Array<std::string> >("Geochemical Conditions", cond_names);
-                        gc_list.set<Teuchos::Array<std::string> >("regions", regs);
+                        bc.set<Teuchos::Array<double> >("Times", times);
+                        bc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);
+                        bc.set<Teuchos::Array<std::string> >("Geochemical Conditions", cond_names);
+                        bc.set<Teuchos::Array<std::string> >("regions", regs);
                       }
                       else { // ordinary Transport BCs.
                         Teuchos::ParameterList& tbc_list = trp_list.sublist("boundary conditions").sublist("concentration");
