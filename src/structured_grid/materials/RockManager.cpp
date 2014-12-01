@@ -61,6 +61,8 @@ RockManager::RockManager(const RegionManager*     _region_manager,
                          const Array<std::string>* solute_names)
   : region_manager(_region_manager), interps_built(false)
 {
+  BL_PROFILE("RockManager::RockManager()");
+
   Initialize(solute_names);
 
   rock_mgr_ID = Rock_Mgr_ID_ctr++;
@@ -112,6 +114,8 @@ EnsureFolderExists(const std::string& full_path)
 int
 RockManager::NComp(const std::string& property_name) const
 {
+  BL_PROFILE("RockManager::NComp()");
+
   int nc = 0;
   if (materialFiller->CanDerive(property_name)) {
     nc = materialFiller->NComp(property_name);
@@ -122,6 +126,8 @@ RockManager::NComp(const std::string& property_name) const
 const Material&
 RockManager::FindMaterial(const std::string& name) const
 {
+  BL_PROFILE("RockManager::FindMaterial()");
+
   bool found=false;
   int iMat = -1;
   const PArray<Material>& mats = GetMaterials();
@@ -142,6 +148,8 @@ RockManager::FindMaterial(const std::string& name) const
 const Material&
 RockManager::FindMaterialInRegions(const Array<std::string>& region_names) const
 {
+  BL_PROFILE("RockManager::FindMaterialInRegions()");
+
   int iMat = -1;
   const PArray<Material>& mats = GetMaterials();
   for (int i=0; i<mats.size() && iMat<0; ++i) {
@@ -178,6 +186,8 @@ RockManager::FindMaterialInRegions(const Array<std::string>& region_names) const
 void
 RockManager::BuildInterpolators()
 {
+  BL_PROFILE("RockManager::BuildInterpolators()");
+
   CP_s_interps.resize(rock.size(),PArrayManage);
 
   int nComp = materialFiller->NComp(CapillaryPressureName);
@@ -257,6 +267,8 @@ RockManager::FillBoundary(Real      time,
                           int       nComp,
                           int       nGrow) const
 {
+  BL_PROFILE("RockManager::FillBoundary()");
+
   const Geometry& geom = materialFiller->Geom(level);
 
   if (nGrow>0) {
@@ -305,6 +317,8 @@ RockManager::Porosity(Real      time,
                       int       dComp,
                       int       nGrow) const
 {
+  BL_PROFILE("RockManager::Porosity()");
+
   if (!interps_built) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
@@ -343,6 +357,8 @@ RockManager::FinalizeBuild(const Array<Geometry>& geomArray,
                            const Array<IntVect>&  refRatio,
                            int                    nGrow)
 {
+  BL_PROFILE("RockManager::FinalizeBuild()");
+
   for (int i=0; i<rock.size(); ++i) {
     Array<std::string> propNames = rock[i].PropertyNames();
     for (int j=0; j<propNames.size(); ++j) {      
@@ -361,6 +377,8 @@ RockManager::FinalizeBuild(const Array<Geometry>& geomArray,
 void
 RockManager::Initialize(const Array<std::string>* solute_names)
 {
+  BL_PROFILE("RockManager::Initialize()");
+
   if (solute_names != 0) {
     int num_solutes = solute_names->size();
     known_solutes.resize(num_solutes);
@@ -977,12 +995,16 @@ RockManager::Initialize(const Array<std::string>* solute_names)
 
 RockManager::~RockManager()
 {
+  BL_PROFILE("RockManager::~RockManager()");
+
   delete materialFiller;
 }
 
 bool
 RockManager::CanDerive(const std::string& property_name) const
 {
+  BL_PROFILE("RockManager::CanDerive()");
+
   return materialFiller->CanDerive(property_name);
 }
 
@@ -996,12 +1018,16 @@ RockManager::GetProperty(Real               time,
                          void*              ctx,
                          bool               ignore_mixed) const
 {
+  BL_PROFILE("RockManager::GetProperty()");
+
   return materialFiller->SetProperty(time,level,mf,pname,dComp,nGrow,ctx,ignore_mixed);
 }
 
 void
 RockManager::GetMaterialID(int level, iMultiFab& mf, int nGrow, bool ignore_mixed) const
 {
+  BL_PROFILE("RockManager::GetMaterialID()");
+
   if (!interps_built) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
@@ -1045,6 +1071,8 @@ static Real bcPcInv(Real pc, Real lambda, Real alpha) {
 void
 RockManager::CapillaryPressure(const Real* saturation, int* matID, Real time, Real* capillaryPressure, int npts) const
 {
+  BL_PROFILE("RockManager::CapillaryPressure()");
+
   if (!interps_built) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
@@ -1116,6 +1144,8 @@ RockManager::CapillaryPressure(const MultiFab&  saturation,
                                int              dComp,
                                int              nGrow) const
 {
+  BL_PROFILE("RockManager::CapillaryPressure1()");
+
   if (!interps_built) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
@@ -1137,6 +1167,8 @@ RockManager::CapillaryPressure(const MultiFab&  saturation,
 Array<Array<int> >
 RockManager::SortPtsByMaterial(int* matID, int npts) const
 {
+  BL_PROFILE("RockManager::SortPtsByMaterial()");
+
   Array<Array<int> > mat_pts(rock.size());
   for (int i=0; i<npts; ++i) {
     mat_pts[matID[i]].push_back(i);
@@ -1148,6 +1180,8 @@ RockManager::SortPtsByMaterial(int* matID, int npts) const
 void
 RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID, Real time, Real* saturation, int npts) const
 {
+  BL_PROFILE("RockManager::InverseCapillaryPressure()");
+
   if (!interps_built) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
@@ -1206,6 +1240,8 @@ RockManager::InverseCapillaryPressure(const MultiFab&  capillaryPressure,
                                       int              dComp,
                                       int              nGrow) const
 {
+  BL_PROFILE("RockManager::InverseCapillaryPressure1()");
+
   if (!interps_built) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
@@ -1228,6 +1264,8 @@ RockManager::InverseCapillaryPressure(const MultiFab&  capillaryPressure,
 void
 RockManager::DInverseCapillaryPressure(const Real* saturation, int* matID, Real time, Real* DsaturationDpressure, int npts) const
 {
+  BL_PROFILE("RockManager::DInverseCapillaryPressure()");
+
   if (!interps_built) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
@@ -1285,6 +1323,8 @@ RockManager::DInverseCapillaryPressure(const MultiFab&  saturation,
                                        int              dComp,
                                        int              nGrow) const
 {
+  BL_PROFILE("RockManager::DInverseCapillaryPressure1()");
+
   if (!interps_built) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
@@ -1312,6 +1352,8 @@ static Real KrInterp(Real se, Real seth, Real m_th, Real m_int) {
 void
 RockManager::RelativePermeability(const Real* saturation, int* matID, Real time, Real* kappa, int npts) const
 {
+  BL_PROFILE("RockManager::RelativePermeability()");
+
   if (!interps_built) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
@@ -1433,6 +1475,8 @@ RockManager::RelativePermeability(const MultiFab&  saturation,
                                   int              dComp,
                                   int              nGrow) const
 {
+  BL_PROFILE("RockManager::RelativePermeability1()");
+
   if (!interps_built) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
@@ -1455,6 +1499,8 @@ RockManager::RelativePermeability(const MultiFab&  saturation,
 void 
 RockManager::ResidualSaturation(int* matID, Real time, Real* Sr, int npts) const
 {
+  BL_PROFILE("RockManager::ResidualSaturation()");
+
   if (!interps_built) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
@@ -1491,6 +1537,8 @@ RockManager::ResidualSaturation(const iMultiFab& matID,
                                 int              dComp,
                                 int              nGrow) const
 {
+  BL_PROFILE("RockManager::ResidualSaturation1()");
+
   if (!interps_built) {
     BoxLib::Abort("RockManager not yet functional, must call RockManager::FinalizeBuild");
   }
@@ -1533,6 +1581,8 @@ RockManager::RockChemistryProperties(FArrayBox&  fab,
                                      const Real* dx,
                                      const std::map<std::string,int>& aux_chem_variables_map)
 {
+  BL_PROFILE("RockManager::RockChemistryProperties()");
+
   int nSolutes = known_solutes.size();
   if (nSolutes>0) {
 
@@ -1653,6 +1703,8 @@ RockManager::RockChemistryProperties(FArrayBox&         fab,
                                      const std::string& material_name,
                                      const std::map<std::string,int>& aux_chem_variables_map)
 {
+  BL_PROFILE("RockManager::RockChemistryProperties1()");
+
   int nSolutes = known_solutes.size();
   if (nSolutes>0) {
 
