@@ -159,8 +159,10 @@ RStdata::SetUpMemory(NLScontrol& nlsc)
 
   Porosity = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs); SetPorosity(t);
   KappaCCavg = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
-  Lambda = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
-  PCapParams = new MFTower(layout,IndexType(IntVect::TheZeroVector()),5,1,nLevs); SetPCapParams(t);
+  if (!is_saturated) {
+    Lambda = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
+    PCapParams = new MFTower(layout,IndexType(IntVect::TheZeroVector()),5,1,nLevs); SetPCapParams(t);
+  }
   SpecificStorage = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs); SetSpecificStorage(t);
   Source = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
   KappaCCdir = new MFTower(layout,IndexType(IntVect::TheZeroVector()),BL_SPACEDIM,1,nLevs);
