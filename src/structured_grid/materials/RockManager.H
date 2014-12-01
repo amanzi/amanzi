@@ -186,8 +186,13 @@ public:
   bool DoDiffusion() const {return do_diffusion;}
   bool DoTensorDiffusion() const {return do_tensor_diffusion;}
 
+  const Array<std::string> MaterialNames() const;
+  const MonotCubicInterpolator& CPInterpolator(const std::string& name) const;
+  const MonotCubicInterpolator& KrInterpolator(const std::string& name) const;
+
 protected:
   void Initialize(const Array<std::string>* soluteNames);
+  int FindMaterialNum(const std::string& name) const;
 
   Array<Array<int> > SortPtsByMaterial(int* matID, int npts) const;
   void BuildInterpolators();
@@ -208,7 +213,7 @@ protected:
   PArray<MonotCubicInterpolator> CP_s_interps;
   PArray<MonotCubicInterpolator> Kr_s_interps;
   Array<std::pair<int,std::string> > WRM_plot_file;
-  bool interps_built;
+  bool finalized;
 
   int rock_mgr_ID;
 
