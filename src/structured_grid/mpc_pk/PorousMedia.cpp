@@ -171,6 +171,8 @@ PorousMedia::variableCleanUp ()
 void
 PorousMedia::RegisterPhysicsBasedEvents()
 {
+  BL_PROFILE("PorousMedia::RegisterPhysicsBasedEvents()");
+
   // Finalize the rock_manager setup, now that the Amr has the required info
   if (ParallelDescriptor::IOProcessor()) {
     std::cout << "Finalizing the RockManager" << std::endl;
@@ -210,6 +212,7 @@ PorousMedia::RegisterPhysicsBasedEvents()
 
 PorousMedia::PorousMedia ()
 {
+  BL_PROFILE("PorousMedia::PorousMedia()");
   if (!initialized) {
     BoxLib::ExecOnFinalize(PorousMedia::CleanupStatics);
     initialized = true;
@@ -256,6 +259,7 @@ PorousMedia::PorousMedia ()
 void
 PorousMedia::setup_bound_desc()
 {
+  BL_PROFILE("PorousMedia::setup_bound_desc()");
   bc_descriptor_map.clear();
   const Real* dx   = geom.CellSize();
   const Box& domain = geom.Domain();
@@ -363,6 +367,7 @@ PorousMedia::PorousMedia (Amr&            papa,
   :
   AmrLevel(papa,lev,level_geom,bl,time)
 {
+  BL_PROFILE("PorousMedia::PorousMedia1()");
   if (!initialized) {
     BoxLib::ExecOnFinalize(CleanupStatics);
     initialized = true;
@@ -538,6 +543,7 @@ PorousMedia::PorousMedia (Amr&            papa,
 
 PorousMedia::~PorousMedia ()
 {
+  BL_PROFILE("PorousMedia::~PorousMedia()");
   delete Ssync;
   delete advflux_reg;
   delete viscflux_reg;
@@ -585,6 +591,7 @@ PorousMedia::~PorousMedia ()
 void
 PorousMedia::allocOldData ()
 {
+  BL_PROFILE("PorousMedia::allocOldData()");
   for (int k = 0; k < num_state_type; k++)
     {
       state[k].allocOldData();
@@ -596,6 +603,7 @@ PorousMedia::restart (Amr&          papa,
                       std::istream& is,
                       bool          bReadSpecial)
 {
+  BL_PROFILE("PorousMedia::restart()");
   AmrLevel::restart(papa,is,bReadSpecial);
   is >> dt_eig;
 
@@ -771,6 +779,7 @@ PorousMedia::restart (Amr&          papa,
 void
 PorousMedia::buildMetrics ()
 {
+  BL_PROFILE("PorousMedia::buildMetrics()");
   //
   // Build volume and face area arrays.
   //
@@ -791,6 +800,7 @@ PorousMedia::resetState (Real time,
                          Real dt_old,
                          Real dt_new)
 {
+  BL_PROFILE("PorousMedia::resetState()");
   for (int k = 0; k < num_state_type; k++)
     {
       state[k].reset();
@@ -806,6 +816,7 @@ PorousMedia::setTimeLevel (Real time,
                            Real dt_old,
                            Real dt_new)
 {
+  BL_PROFILE("PorousMedia::setTimeLevel()");
   for (int k = 0; k < num_state_type; k++)
     state[k].setTimeLevel(time,dt_old,dt_new);
 }
@@ -814,6 +825,7 @@ void
 PorousMedia::set_vel_from_bcs(Real      time,
 			      MultiFab* vel)
 {
+  BL_PROFILE("PorousMedia::set_vel_from_bcs()");
   FArrayBox inflow;
   for (OrientationIter oitr; oitr; ++oitr) {
     Orientation face = oitr();
@@ -844,7 +856,7 @@ typedef RockManager::ICLabelParmPair ICLabelParmPair;
 void
 PorousMedia::initData ()
 {
-    BL_PROFILE(BL_PROFILE_THIS_NAME() + "::initData()");
+    BL_PROFILE("PorousMedia::initData()");
     // 
     // Initialize rock properties
     //
@@ -1175,6 +1187,7 @@ PorousMedia::BuildNLScontrolData(NLScontrol&        nlsc,
                                  RSdata&            rs_data,
                                  const std::string& IDstring)
 {
+  BL_PROFILE("PorousMedia::BuildNLScontrolData()");
   // For the moment, ignore IDstring: all solver setups identical
 
   rs_data.upwind_krel = richard_upwind_krel;
@@ -1230,6 +1243,7 @@ PorousMedia::BuildNLScontrolData(NLScontrol&        nlsc,
 void
 PorousMedia::richard_init_to_steady()
 {
+  BL_PROFILE("PorousMedia::richard_init_to_steady()");
   //
   // Richard initialization
   //
@@ -1569,6 +1583,7 @@ PorousMedia::richard_init_to_steady()
 void
 PorousMedia::init (AmrLevel& old)
 {
+  BL_PROFILE("PorousMedia::init(old)");
   init_rock_properties();
 
   PorousMedia*  oldns     = (PorousMedia*) &old;
@@ -1663,6 +1678,7 @@ PorousMedia::init (AmrLevel& old)
 void
 PorousMedia::init ()
 {
+  BL_PROFILE("PorousMedia::init()");
   init_rock_properties();
 
   BL_ASSERT(level > 0);
@@ -1726,6 +1742,7 @@ PorousMedia::ml_step_driver(Real  time,
                             Real& dt_suggest,
 			    bool  attempt_to_recover_failed_step)
 {
+  BL_PROFILE("PorousMedia::ml_step_driver()");
     // Short-circuit time-stepping framework and do steady flow solve directly
     if (execution_mode == STEADY) {
         advect_tracers = react_tracers = false;
@@ -1865,7 +1882,7 @@ PorousMedia::multilevel_advance (Real  time,
 				 int   ncycle,
                                  Real& dt_new)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::multilevel_advance()");
+  BL_PROFILE("PorousMedia::multilevel_advance()");
 
   bool step_ok = true;
   if (level != 0) {
@@ -2035,6 +2052,7 @@ PorousMedia::multilevel_advance (Real  time,
 MultiFab*
 PorousMedia::AllocateUMacG() const
 {
+  BL_PROFILE("PorousMedia::AllocateUMacG()");
   MultiFab* u_macG = new MultiFab[BL_SPACEDIM];
   for (int dir = 0; dir < BL_SPACEDIM; dir++) {
     BoxArray edge_grids = BoxArray(grids);
@@ -2050,6 +2068,7 @@ PorousMedia::AllocateUMacG() const
 void
 PorousMedia::get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow)
 {
+  BL_PROFILE("PorousMedia::get_fillpatched_rhosat()");
   BL_ASSERT(RhoSat.boxArray()== grids);
   BL_ASSERT(kappa->boxArray()== grids);
   BL_ASSERT(rock_phi->boxArray()== grids);
@@ -2092,6 +2111,7 @@ PorousMedia::get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow)
 void
 PorousMedia::cache_component_saturations(int nGrow)
 {
+  BL_PROFILE("PorousMedia::cache_component_saturations()");
   component_saturations_cached = true;
   if (sat_old_cached == 0 || sat_old_cached->nGrow()<nGrow || sat_old_cached->boxArray()!=grids) {
     delete sat_old_cached;
@@ -2117,6 +2137,7 @@ PorousMedia::cache_component_saturations(int nGrow)
 void
 PorousMedia::reinstate_component_saturations()
 {
+  BL_PROFILE("PorousMedia::reinstate_component_saturations()");
   component_saturations_cached = false;
   BL_ASSERT(sat_old_cached && sat_old_cached->boxArray() == grids);
   MultiFab& S_old = get_old_data(State_Type);
@@ -2140,6 +2161,7 @@ void
 PorousMedia::advance_richards_transport_dt(Real      t,
                                            MultiFab* saturation)
 {
+  BL_PROFILE("PorousMedia::advance_richards_transport_dt()");
   int finest_level = parent->finestLevel();
   Real dt_min = 1e20;
   for (int lev=level; lev<=finest_level; ++lev) {
@@ -2161,6 +2183,7 @@ PorousMedia::advance_richards_transport_dt(Real      t,
 void
 PorousMedia::set_saturated_velocity()
 {
+  BL_PROFILE("PorousMedia::set_saturated_velocity()");
   BL_ASSERT(model == PM_STEADY_SATURATED);
   BL_ASSERT(do_constant_vel);
 
@@ -2195,6 +2218,7 @@ PorousMedia::set_saturated_velocity()
 void 
 PorousMedia::advance_flow_nochange(Real time, Real dt)
 {
+  BL_PROFILE("PorousMedia::advance_flow_nochange()");
   int finest_level = parent->finestLevel();
   for (int lev=level; lev<=finest_level; ++lev) {
     PorousMedia& pml = getLevel(lev);
@@ -2239,6 +2263,7 @@ PorousMedia::advance_flow_nochange(Real time, Real dt)
 void
 PorousMedia::advance_saturated_transport_dt(Real time)
 {
+  BL_PROFILE("PorousMedia::advance_saturated_transport_dt()");
   // Based on velocity fields in u_macG_trac at all levels, set dt_eig on all levels to satisfy
   // cfl restriction, accounting for recursive subcycling.
   //
@@ -2271,7 +2296,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 						   bool  do_recursive,
                                                    bool  use_cached_sat)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richards_transport_chemistry()");
+  BL_PROFILE("PorousMedia::richards_transport_chemistry()");
   const Real strt_time = ParallelDescriptor::second();
   Real run_time_chem = 0;
 
@@ -2577,6 +2602,7 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
                                                Real  dt_flow,
                                                Real& dt_flow_new)
 {
+  BL_PROFILE("PorousMedia::advance_multilevel_richards_flow()");
   if (level != 0) {
     return true;
   }
@@ -2785,6 +2811,7 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
                                  FArrayBox&         mask,
                                  Real               t)
 {
+  BL_PROFILE("PorousMedia::get_inflow_velocity()");
     bool ret = false;
     if (pbc_descriptor_map.find(face) != pbc_descriptor_map.end()) 
     {
@@ -2884,7 +2911,7 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
                                bool use_cached_sat,
                                const MultiFab& F)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::tracer_diffusion()");
+  BL_PROFILE("PorousMedia::tracer_diffusion()");
   BL_ASSERT(diffuse_tracers);
 
   if (verbose > 2 && ParallelDescriptor::IOProcessor())
@@ -3158,7 +3185,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
                                bool use_cached_sat,
                                MultiFab* F)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::tracer_advection()");
+  BL_PROFILE("PorousMedia::tracer_advection()");
 
   BL_ASSERT(advect_tracers > 0);
   BL_ASSERT(ntracers > 0);
@@ -3304,13 +3331,13 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
 DistributionMapping
 PorousMedia::getFuncCountDM (const BoxArray& bxba, int ngrow)
 {
+  BL_PROFILE("PorousMedia::getFuncCountDM()");
   //
   // Sometimes "mf" is the valid region of the State.
   // Sometimes it's the region covered by AuxBoundaryData.
   // When ngrow>0 were doing AuxBoundaryData with nGrow()==ngrow.
   // Taken from LMC/HeatTransfer.cpp
   //
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::getFuncCountDM()");
 
   DistributionMapping rr;
   rr.RoundRobinProcessorMap(bxba.size(),ParallelDescriptor::NProcs());
@@ -3480,7 +3507,7 @@ PorousMedia::advance_chemistry (Real time,
 				Real dt,
 				int  ngrow)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::advance_chemistry()");
+  BL_PROFILE("PorousMedia::advance_chemistry()");
   const Real strt_time = ParallelDescriptor::second();
 
   bool chem_ok = true;
@@ -3691,6 +3718,7 @@ PorousMedia::advance_chemistry (Real time,
 void
 coarsenMask(FArrayBox& crse, const FArrayBox& fine, const IntVect& ratio)
 {
+  BL_PROFILE("PorousMedia::coarsenMask()");
     const Box& fbox = fine.box();
     const Box cbox = BoxLib::coarsen(fbox,ratio);
     crse.resize(cbox,1); crse.setVal(0);
@@ -3769,6 +3797,7 @@ PorousMedia::errorEst (TagBoxArray& tags,
 		       int         n_error_buf, 
 		       int         ngrow)
 {
+  BL_PROFILE("PorousMedia::errorEst()");
   const int*  domain_lo = geom.Domain().loVect();
   const int*  domain_hi = geom.Domain().hiVect();
   const Real* dx        = geom.CellSize();
@@ -3914,6 +3943,7 @@ PorousMedia::errorEst (TagBoxArray& tags,
 Real
 PorousMedia::sumDerive (const std::string& name, Real time)
 {
+  BL_PROFILE("PorousMedia::sumDerive()");
     Real      sum = 0.0;
     MultiFab* mf  = derive(name,time,0);
 
@@ -3955,6 +3985,7 @@ Real
 PorousMedia::volWgtSum (const std::string& name,
 			Real           time)
 {
+  BL_PROFILE("PorousMedia::volWgtSum()");
   Real        sum     = 0;
   const Real* dx      = geom.CellSize();
   MultiFab*   mf      = derive(name,time,0);
@@ -4005,6 +4036,7 @@ PorousMedia::volWgtSum (const std::string& name,
 void
 PorousMedia::sum_integrated_quantities ()
 {
+  BL_PROFILE("PorousMedia::sum_integrated_quantities()");
   const int finest_level = parent->finestLevel();
 
   Real time = state[State_Type].curTime();
@@ -4035,6 +4067,7 @@ PorousMedia::sum_integrated_quantities ()
 void
 PorousMedia::setPlotVariables()
 {
+  BL_PROFILE("PorousMedia::setPlotVariables()");
     ParmParse pp("amr");
 
     // By default, do not add state variables
@@ -4110,6 +4143,7 @@ PorousMedia::writePlotFile (const std::string& dir,
 			    std::ostream&  os,
 			    VisMF::How     how)
 {
+  BL_PROFILE("PorousMedia::writePlotFile()");
   if ( ! Amr::Plot_Files_Output() ) return;
   int i, n;
   //
@@ -4304,6 +4338,7 @@ PorousMedia::writePlotFile (const std::string& dir,
 Real
 PorousMedia::estTimeStep (MultiFab* u_mac)
 {
+  BL_PROFILE("PorousMedia::estTimeStep()");
   if (fixed_dt > 0.0)
     {
       Real factor = 1.0;
@@ -4380,6 +4415,7 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
 Real
 PorousMedia::initialTimeStep (MultiFab* u_mac)
 {
+  BL_PROFILE("PorousMedia::initialTimeStep()");
     Real dt_0;
 
     if (dt_init>0) {
@@ -4401,7 +4437,7 @@ PorousMedia::initialTimeStep (MultiFab* u_mac)
 void
 PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::predictDT()");
+  BL_PROFILE("PorousMedia::predictDT()");
 
   const Real* dx       = geom.CellSize();
 
@@ -4507,7 +4543,7 @@ Real
 PorousMedia::predictDT_diffusion_explicit (Real      t_eval,
                                            MultiFab* saturation)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::predictDT_diffusion_explicit()");
+  BL_PROFILE("PorousMedia::predictDT_diffusion_explicit()");
   BL_ASSERT(diffuse_tracers);
 
   int first_tracer = ncomps;
@@ -4603,6 +4639,7 @@ PorousMedia::computeNewDt (int                   finest_level,
                            Real                  stop_time,
                            int                   post_regrid_flag)
 {
+  BL_PROFILE("PorousMedia::computeNewDt()");
   //
   // We are at the end of a coarse grid timecycle.
   // Compute the timesteps for the next iteration.
@@ -4738,6 +4775,7 @@ PorousMedia::computeInitialDt (int                   finest_level,
                                Array<Real>&          dt_level, 
                                Real                  stop_time)
 {
+  BL_PROFILE("PorousMedia::computeInitialDt()");
   //
   // Grids have been constructed, compute dt for all levels.
   //
@@ -4794,6 +4832,7 @@ PorousMedia::post_init_estDT (Real&        dt_init_local,
                               Array<Real>& dt_save,
                               Real         stop_time)
 {
+  BL_PROFILE("PorousMedia::post_init_estDT()");
   const Real strt_time    = parent->startTime();
   const int  finest_level = parent->finestLevel();
 
@@ -4855,6 +4894,7 @@ PorousMedia::post_init_estDT (Real&        dt_init_local,
 int
 PorousMedia::okToContinue ()
 {
+  BL_PROFILE("PorousMedia::okToContinue()");
   bool ret = true;
   std::string reason_for_stopping = "n/a";
   bool successfully_completed = false;
@@ -4905,7 +4945,7 @@ PorousMedia::okToContinue ()
 void
 PorousMedia::post_timestep (int crse_iteration)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::post_timestep()");
+  BL_PROFILE("PorousMedia::post_timestep()");
 
   if (do_reflux) {
       
@@ -4950,6 +4990,7 @@ PorousMedia::PMParent() const
 //
 void PorousMedia::post_restart()
 {
+  BL_PROFILE("PorousMedia::post_restart()");
   init_rock_properties();
 
   if (level == 0) {
@@ -4987,7 +5028,7 @@ void
 PorousMedia::post_regrid (int lbase,
                           int new_finest)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::post_regrid()");
+  BL_PROFILE("PorousMedia::post_regrid()");
 
   if (level == lbase) {
 
@@ -5031,6 +5072,7 @@ PorousMedia::post_regrid (int lbase,
 void 
 PorousMedia::init_rock_properties ()
 {
+  BL_PROFILE("PorousMedia::init_rock_properties()");
   int nGrow = materialID->nGrow();
   bool ignore_mixed = true;
   rock_manager->GetMaterialID(level,*materialID,nGrow,ignore_mixed);
@@ -5125,7 +5167,7 @@ PorousMedia::init_rock_properties ()
 void
 PorousMedia::post_init (Real stop_time)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::post_init()");
+  BL_PROFILE("PorousMedia::post_init()");
 
   if (level > 0)
     //
@@ -5185,7 +5227,7 @@ PorousMedia::post_init (Real stop_time)
 void
 PorousMedia::post_init_state ()
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::post_init_state()");
+  BL_PROFILE("PorousMedia::post_init_state()");
 
   int  finest_level = parent->finestLevel();
   for (int lev=0;lev<= finest_level;lev++)
@@ -5339,6 +5381,7 @@ PorousMedia::SyncInterp (MultiFab&      CrseSync,
 			 SyncInterpType which_interp,
 			 int            state_comp)
 {
+  BL_PROFILE("PorousMedia::SyncInterp()");
   BL_ASSERT(which_interp >= 0 && which_interp <= 5);
 
   Interpolater* interpolater = 0;
@@ -5511,7 +5554,6 @@ PorousMedia::avgDown (const BoxArray& cgrids,
   BL_ASSERT(S_crse.nComp() == S_fine.nComp());
   BL_ASSERT(fvolume.nComp() == 1 && cvolume.nComp() == 1);
 
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::avgDown()");
   //
   // Coarsen() the fine stuff on processors owning the fine data.
   //
@@ -5575,6 +5617,7 @@ PorousMedia::avgDown_doit (const FArrayBox& fine_fab,
 			   int              ncomp,
 			   const IntVect&   fratio)
 {
+  BL_PROFILE("PorousMedia::avgDown()");
   //
   //  NOTE: We copy from component scomp of the fine fab into component 0 of the crse fab
   //        because the crse fab is a temporary which was made starting at comp 0, it is
@@ -5608,7 +5651,7 @@ PorousMedia::avgDown_doit (const FArrayBox& fine_fab,
 void
 PorousMedia::mac_sync ()
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::mac_sync()");
+  BL_PROFILE("PorousMedia::mac_sync()");
 
   bool do_explicit_tracer_sync_only = 
     ( (model == PM_STEADY_SATURATED)
@@ -5846,6 +5889,7 @@ PorousMedia::mac_sync ()
 void
 PorousMedia::reflux ()
 {
+  BL_PROFILE("PorousMedia::reflux()");
   bool do_tracer_advection_reflux = 
     advect_tracers &&
     ( (model == PM_STEADY_SATURATED)
@@ -5891,7 +5935,7 @@ PorousMedia::reflux (FluxRegister& fr, int sComp, int nComp)
   if (level == parent->finestLevel())
     return;
 
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::reflux()");
+  BL_PROFILE("PorousMedia::reflux1()");
 
   BL_ASSERT(do_reflux);
   //
@@ -5929,6 +5973,7 @@ PorousMedia::reflux (FluxRegister& fr, int sComp, int nComp)
 void
 PorousMedia::avgDown ()
 {
+  BL_PROFILE("PorousMedia::avgDown1()");
   if (level == parent->finestLevel())
     return;
 
@@ -6016,6 +6061,7 @@ PorousMedia::getForce (MultiFab& force,
 		       Real      time,
 		       bool      do_rho_scale)
 {
+  BL_PROFILE("PorousMedia::getForce()");
   BL_ASSERT(strt_comp+num_comp <= ncomps + ntracers);
   BL_ASSERT(force.nGrow()>=nGrow);
   BL_ASSERT(force.boxArray()==grids);
@@ -6119,6 +6165,7 @@ PorousMedia::FillStateBndry (Real time,
                              int  src_comp, 
                              int  ncomp) 
 {
+  BL_PROFILE("PorousMedia::FillStateBndry()");
   MultiFab& S = get_data(state_idx,time);
 
   if (S.nGrow() == 0)
@@ -6153,7 +6200,7 @@ PorousMedia::calcDiffusivity (const Real time,
 			      const int  ncomp,
                               MultiFab*  saturation)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::calcDiffusivity()");
+  BL_PROFILE("PorousMedia::calcDiffusivity()");
 
   if (ncomp == 0) return;
   if (nphases>1) {
@@ -6266,7 +6313,7 @@ PorousMedia::getDiffusivity (MultiFab*  diffusivity[BL_SPACEDIM],
 			     const int  dst_comp,
 			     const int  ncomp)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::getDiffusivity()");
+  BL_PROFILE("PorousMedia::getDiffusivity()");
 
   //
   // Pick correct diffusivity component
@@ -6299,6 +6346,7 @@ PorousMedia::getTensorDiffusivity (MultiFab*  diagonal_diffusivity[BL_SPACEDIM],
                                    MultiFab*  off_diagonal_diffusivity[BL_SPACEDIM],
                                    const Real time)
 {
+  BL_PROFILE("PorousMedia::getTensorDiffusivity()");
   const TimeLevel whichTime = which_time(State_Type,time);    
   BL_ASSERT(whichTime == AmrOldTime || whichTime == AmrNewTime);
 
@@ -6375,6 +6423,7 @@ PorousMedia::calc_richard_alpha (MultiFab&       alpha,
                                  int             dComp,
                                  int             nGrow) const
 {
+  BL_PROFILE("PorousMedia::calc_richard_alpha()");
   BL_ASSERT(N.nGrow() >= nGrow); // Assumes that boundary cells have been properly filled
   BL_ASSERT(alpha.nGrow() >= nGrow); // Fill boundary cells (in F)
   BL_ASSERT(N.nComp()>=sComp+ncomps && alpha.nComp()>=dComp+ncomps);
@@ -6396,6 +6445,7 @@ PorousMedia::calc_richard_velbc (MultiFab& res,
 				 MultiFab* u_phase,
 				 const Real dt)  
 { 
+  BL_PROFILE("PorousMedia::calc_richard_velbc()");
   //
   // Add boundary condition to residual
   //
@@ -6440,6 +6490,7 @@ PorousMedia::calcCapillary (MultiFab&       pc,
                             int             dComp,
 			    int             nGrow) const
 {
+  BL_PROFILE("PorousMedia::calcCapillary()");
   BL_ASSERT(N.nGrow() >= nGrow); // Assumes that boundary cells have been properly filled
   BL_ASSERT(pc.nGrow() >= nGrow); // Fill boundary cells (in F)
   BL_ASSERT(N.nComp()>=ncomps && pc.nComp()>=ncomps);
@@ -6462,6 +6513,7 @@ PorousMedia::calcInvCapillary (MultiFab&       N,
                                int             dComp,
                                int             nGrow) const
 {
+  BL_PROFILE("PorousMedia::calcInvCapillary()");
   BL_ASSERT(N.nGrow() >= nGrow); // Assumes that boundary cells have been properly filled
   BL_ASSERT(pc.nGrow() >= nGrow); // Fill boundary cells (in F)
   BL_ASSERT(N.nComp() >= dComp+ncomps && pc.nComp() >= sComp+ncomps);
@@ -6483,6 +6535,7 @@ PorousMedia::calcInvPressure (MultiFab&       N,
                               int             dComp,
                               int             nGrow) const
 {
+  BL_PROFILE("PorousMedia::calcInvPressure()");
   //
   // Pcap = Pgas - Pwater, then get N=s.rho from Pcap(s)^{-1}
   //
@@ -6503,6 +6556,7 @@ PorousMedia::calcLambda (MultiFab&       lambda,
                          int             dComp,
                          int             nGrow) const
 {
+  BL_PROFILE("PorousMedia::calcLambda()");
   BL_ASSERT(N.nGrow() >= nGrow); // Assumes that boundary cells have been properly filled
   BL_ASSERT(lambda.nGrow() >= nGrow); // Fill boundary cells (in F)
   BL_ASSERT(N.nComp()>=ncomps && lambda.nComp()>=ncomps);
@@ -6533,6 +6587,7 @@ PorousMedia::calcLambda (const Real time)
 void 
 PorousMedia::calcDLambda (const Real time, MultiFab* dlbd_cc)
 {
+  BL_PROFILE("PorousMedia::calcDLambda()");
   MultiFab& S = get_data(State_Type,time);
 
   MultiFab* dlcc;
@@ -6582,7 +6637,7 @@ PorousMedia::center_to_edge_plain (const FArrayBox& ccfab,
 				   int              dComp,
 				   int              nComp)
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::center_to_edge_plain()");
+  BL_PROFILE("PorousMedia::center_to_edge_plain()");
 
   //
   // This routine fills an edge-centered FAB from a cell-centered FAB.
@@ -6638,6 +6693,7 @@ PorousMedia::setPhysBoundaryValues (FArrayBox& dest,
                                     int        src_comp,
                                     int        num_comp)
 {
+  BL_PROFILE("PorousMedia::setPhysBoundaryValues()");
     // The default behavior of an AmrLevel, for reference:
     state[state_indx].FillBoundary(dest,time,geom.CellSize(),
                                    geom.ProbDomain(),dest_comp,src_comp,num_comp);
@@ -6674,6 +6730,7 @@ PorousMedia::getDirichletFaces (Array<Orientation>& Faces,
 				const int           comp_Type,
 				const BCRec&        _bc)
 {
+  BL_PROFILE("PorousMedia::getDirichletFaces()");
   Faces.resize(0);
   for (int idir = 0; idir < BL_SPACEDIM; idir++)
     {
@@ -6701,6 +6758,7 @@ PorousMedia::grids_on_side_of_domain (const BoxArray&    _grids,
 				      const Box&         _domain,
 				      const Orientation& _Face) 
 {
+  BL_PROFILE("PorousMedia::grids_on_side_of_domain()");
   // FIXME: this should use the intersections code
     const int idir = _Face.coordDir();
 
@@ -6729,7 +6787,8 @@ Real
 PorousMedia::AdjustBCevalTime(int  state_idx,
                               Real time,
                               bool tadj_verbose)
-{                              
+{
+  BL_PROFILE("PorousMedia::AdjustBCevalTime()");
     // HACK
     // If exec_mode is INIT_TO_STEADY, then build an adjusted eval time such that
     // if t^n+1 = switch_time, we are approaching switch_time, eval bcs just prior
@@ -6767,6 +6826,7 @@ PorousMedia::AdjustBCevalTime(int  state_idx,
 void
 PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, int nComp)
 {
+  BL_PROFILE("PorousMedia::dirichletStateBC()");
   if (model == PM_RICHARDS) { // FIXME: Support solving Richards in saturation form?
     if (! (geom.Domain().contains(fab.box())) ) {
       if (ParallelDescriptor::IOProcessor()) {
@@ -6779,6 +6839,7 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
 void
 PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp, int nComp)
 {
+  BL_PROFILE("PorousMedia::dirichletTracerBC()");
   BL_ASSERT(setup_tracer_transport > 0);
 
   Real t_eval = AdjustBCevalTime(State_Type,time,false);
@@ -6814,6 +6875,7 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp,
 void
 PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
 {
+  BL_PROFILE("PorousMedia::dirichletPressBC()");
   Array<int> bc(BL_SPACEDIM*2,0); // FIXME: Never set, why do we need this
   if (pbc_descriptor_map.size()) 
   {
@@ -6918,6 +6980,7 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
 void
 PorousMedia::dirichletDefaultBC (FArrayBox& fab, Real time)
 {
+  BL_PROFILE("PorousMedia::dirichletDefaultBC()");
     int nComp = fab.nComp();
     FArrayBox bndFab;
 
@@ -7474,6 +7537,7 @@ void
 PorousMedia::manual_tags_placement (TagBoxArray&    tags,
 				    Array<IntVect>& bf_lev)
 {
+  BL_PROFILE("PorousMedia::manual_tags_placement()");
   //
   // Tag inflow and outflow faces for refinement
   // 
@@ -7523,7 +7587,7 @@ PorousMedia::create_umac_grown (MultiFab* u_mac, MultiFab* u_macG)
 
   // This complicated copy handles the periodic boundary condition properly.
 
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::create_umac_grown1()");
+  BL_PROFILE("PorousMedia::create_umac_grown1()");
   BL_ASSERT(level==0);
 	    
   for (int n = 0; n < BL_SPACEDIM; ++n)
@@ -7545,7 +7609,7 @@ PorousMedia::create_umac_grown (MultiFab* u_mac,
 				PArray<MultiFab>& u_mac_crse, 
 				MultiFab* u_macG) 
 {
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::create_umac_grown2()");
+  BL_PROFILE("PorousMedia::create_umac_grown2()");
 
   BL_ASSERT(level>0);
 
@@ -7678,6 +7742,7 @@ void
 PorousMedia::GetCrseUmac(PArray<MultiFab>& u_mac_crse,
                          Real              time          ) const
 {
+  BL_PROFILE("PorousMedia::GetCrseUmac()");
   BL_ASSERT(level>0);
   BL_ASSERT(u_mac_crse.size() == BL_SPACEDIM);
 
@@ -7729,6 +7794,7 @@ void
 PorousMedia::GetCrsePressure (MultiFab& phi_crse,
                               Real      time      ) const
 {
+  BL_PROFILE("PorousMedia::GetCrsePressure()");
   if (level==0) return;
 
   const PorousMedia* pm = dynamic_cast<const PorousMedia*>(&parent->getLevel(level-1));
@@ -7792,6 +7858,7 @@ PorousMedia::fill_from_plotfile (MultiFab&          mf,
                                  const std::string& pltfile,
                                  const std::string& varname)
 {
+  BL_PROFILE("PorousMedia::fill_from_plotfile()");
   const Real strt_time = ParallelDescriptor::second();
 
   if (pltfile.empty())
@@ -7860,6 +7927,7 @@ PorousMedia::checkPoint (const std::string& dir,
                          VisMF::How     how,
                          bool           dump_old)
 {
+  BL_PROFILE("PorousMedia::checkPoint()");
   for (int i=0; i<num_state_type; ++i) {
     if (state[i].hasOldData()) {
       get_old_data(i).setBndry(0);
@@ -7910,6 +7978,7 @@ PorousMedia::checkPoint (const std::string& dir,
 void 
 PorousMedia::check_sum()
 {
+  BL_PROFILE("PorousMedia::check_sum()");
   // gathering some statistics of the solutions.
 
   Real minmax[2] = {1,1};
@@ -7950,6 +8019,7 @@ PorousMedia::check_sum()
 void 
 PorousMedia::check_minmax()
 {
+  BL_PROFILE("PorousMedia::check_minmax()");
   MultiFab* rho;
   MultiFab& S_new = get_new_data(State_Type);
   
@@ -8008,6 +8078,7 @@ PorousMedia::check_minmax()
 void 
 PorousMedia::check_minmax(int fscalar, int lscalar)
 {
+  BL_PROFILE("PorousMedia::check_minmax1()");
   MultiFab& S_new = get_new_data(State_Type);
   
   const int nscal = lscalar - fscalar + 1;
@@ -8041,6 +8112,7 @@ PorousMedia::check_minmax(int fscalar, int lscalar)
 void 
 PorousMedia::check_minmax(MultiFab& mf)
 {
+  BL_PROFILE("PorousMedia::check_minmax2()");
   const int ncomp = mf.nComp();
   Array<Real> smin(ncomp,1.e20), smax(ncomp,-1.e20);
 
@@ -8070,6 +8142,7 @@ PorousMedia::check_minmax(MultiFab& mf)
 void 
 PorousMedia::check_minmax(MultiFab* u_mac)
 {
+  BL_PROFILE("PorousMedia::check_minmax3()");
   //
   // Write out the min and max of the MAC velocities.
   //
@@ -8106,6 +8179,7 @@ PorousMedia::check_minmax(MultiFab* u_mac)
 void
 PorousMedia::umac_edge_to_cen(MultiFab* u_mac, MultiFab& U_cc, bool do_upwind)
 {
+  BL_PROFILE("PorousMedia::umac_edge_to_cen()");
   int upwind_flag = (do_upwind ? 1 : 0);
   // average velocity onto cell center
   for (MFIter mfi(U_cc); mfi.isValid(); ++mfi)
@@ -8143,6 +8217,7 @@ PorousMedia::umac_edge_to_cen(MultiFab* u_mac, MultiFab& U_cc, bool do_upwind)
 void
 PorousMedia::umac_cpy_edge_to_cen(MultiFab* u_mac, int idx_type, int ishift)
 {
+  BL_PROFILE("PorousMedia::umac_cpy_edge_to_cen()");
   // average velocity onto cell center
   MultiFab&  U_cor  = get_new_data(idx_type);
   for (MFIter mfi(U_cor); mfi.isValid(); ++mfi)

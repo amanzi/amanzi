@@ -117,6 +117,8 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 
     BoxLib::Initialize(argc,argv,false,mpi_comm);
 
+    BL_PROFILE_VAR("main()", pmain);
+
     // Check version number
     std::string amanzi_version_str = "Amanzi Input Format Version";
     if (!input_parameter_list.isParameter(amanzi_version_str))
@@ -264,6 +266,8 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
         std::cout << "Run time = " << run_stop << std::endl;
 	std::cout << "SCOMPLETED\n";
       }
+
+    BL_PROFILE_VAR_STOP(pmain);
 
     BoxLib::Finalize(false); // Calling routine responsible for MPI_Finalize call
 #ifdef BL_USE_PETSC
