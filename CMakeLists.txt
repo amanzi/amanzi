@@ -20,7 +20,7 @@ endif()
 
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
-enable_testing()
+#enable_testing()
 
 # Define the project name
 # This command will define
@@ -84,7 +84,7 @@ add_subdirectory(src)
 
 # Adding verification tests
 # EIB - uncommenting this will include the verification/benchmarking tests
-#include(CTest)
+include(CTest)
 # add_subdirectory(testing) 
 
 

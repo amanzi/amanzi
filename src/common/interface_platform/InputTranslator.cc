@@ -2537,7 +2537,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                   else if (strcmp(tagname,"limit_function_evals")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<double>("steady_limit_function_evals",get_double_constant(textContent,*def_list));
+                    expertPL.set<int>("steady_limit_function_evals",get_int_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"do_grid_sequence")==0) {
