@@ -615,7 +615,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
   double L2rate = Amanzi::Transport::bestLSfit(h, L2error);
   printf("convergence rates: %5.2f %17.2f\n", L1rate, L2rate);
 
-  CHECK_CLOSE(2.0, L1rate, 0.3);
+  CHECK_CLOSE(2.0, L1rate, 0.4);
   CHECK_CLOSE(2.0, L2rate, 0.5);
 
   delete comm;

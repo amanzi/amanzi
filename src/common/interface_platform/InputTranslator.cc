@@ -2467,7 +2467,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   char* tagname = XMLString::transcode(currentNode->getNodeName());
                   if (strcmp(tagname,"max_pseudo_time")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<int>("steady_max_pseudo_time",get_double_constant(textContent,*def_list));
+                    expertPL.set<double>("steady_max_pseudo_time",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"min_iterations")==0) {
@@ -2485,9 +2485,14 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     expertPL.set<int>("steady_min_iterations_2",get_int_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
+                  else if (strcmp(tagname,"time_step_increase_factor_2")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    expertPL.set<double>("steady_time_step_increase_factor_2",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                  }
                   else if (strcmp(tagname,"time_step_increase_factor")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<int>("steady_time_step_increase_factor",get_double_constant(textContent,*def_list));
+                    expertPL.set<double>("steady_time_step_increase_factor",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"max_consecutive_failures_1")==0) {
@@ -2497,7 +2502,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                   else if (strcmp(tagname,"time_step_retry_factor_1")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<int>("steady_time_step_retry_factor_1",get_double_constant(textContent,*def_list));
+                    expertPL.set<double>("steady_time_step_retry_factor_1",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"max_consecutive_failures_2")==0) {
@@ -2507,12 +2512,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                   else if (strcmp(tagname,"time_step_retry_factor_2")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<int>("steady_time_step_retry_factor_2",get_double_constant(textContent,*def_list));
+                    expertPL.set<double>("steady_time_step_retry_factor_2",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"time_step_retry_factor_f")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<int>("steady_time_step_retry_factor_f",get_double_constant(textContent,*def_list));
+                    expertPL.set<double>("steady_time_step_retry_factor_f",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"max_num_consecutive_success")==0) {
@@ -2522,7 +2527,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                   else if (strcmp(tagname,"extra_time_step_increase_factor")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<int>("steady_extra_time_step_increase_factor",get_double_constant(textContent,*def_list));
+                    expertPL.set<double>("steady_extra_time_step_increase_factor",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"abort_on_psuedo_timestep_failure")==0) {
@@ -2530,14 +2535,9 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     expertPL.set<int>("steady_abort_on_psuedo_timestep_failure",get_int_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
-                  else if (strcmp(tagname,"use_PETSc_snes")==0) {
-                    textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<int>("steady_use_PETSc_snes",get_int_constant(textContent,*def_list));
-                    XMLString::release(&textContent);
-                  }
                   else if (strcmp(tagname,"limit_function_evals")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<int>("steady_limit_function_evals",get_double_constant(textContent,*def_list));
+                    expertPL.set<double>("steady_limit_function_evals",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"do_grid_sequence")==0) {
@@ -2581,17 +2581,17 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                   else if (strcmp(tagname,"ls_reduction_factor")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<int>("richard_ls_reduction_factor",get_double_constant(textContent,*def_list));
+                    expertPL.set<double>("richard_ls_reduction_factor",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"min_ls_factor")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<int>("richard_min_ls_factor",get_double_constant(textContent,*def_list));
+                    expertPL.set<double>("richard_min_ls_factor",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"ls_acceptance_factor")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<int>("richard_ls_acceptance_factor",get_double_constant(textContent,*def_list));
+                    expertPL.set<double>("richard_ls_acceptance_factor",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"monitor_line_search")==0) {
@@ -2616,7 +2616,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                   else if (strcmp(tagname,"perturbation_scale_for_J")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<int>("richard_perturbation_scale_for_J",get_double_constant(textContent,*def_list));
+                    expertPL.set<double>("richard_perturbation_scale_for_J",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"use_dense_Jacobian")==0) {

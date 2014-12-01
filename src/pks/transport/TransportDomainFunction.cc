@@ -64,6 +64,9 @@ void TransportDomainFunction::Compute(double t0, double t1)
   
   if (specs_and_ids_.size() == 0) return;
 
+  double dt = t1 - t0;
+  if (dt > 0.0) dt = 1.0 / dt;
+
   // create the input tuple (time + space)
   int dim = mesh_->space_dimension();
   std::vector<double> args(1 + dim);
@@ -88,6 +91,7 @@ void TransportDomainFunction::Compute(double t0, double t1)
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
         value_[*c] -= (*(*spec_ids)->first->second)(args)[0];
+        value_[*c] *= dt;
       }
     }
 
@@ -106,6 +110,9 @@ void TransportDomainFunction::ComputeDistribute(double t0, double t1)
   if (!finalized_) {
     Finalize();
   }
+
+  double dt = t1 - t0;
+  if (dt > 0.0) dt = 1.0 / dt;
 
   // create the input tuple (time + space)
   int dim = mesh_->space_dimension();
@@ -141,6 +148,7 @@ void TransportDomainFunction::ComputeDistribute(double t0, double t1)
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
         value_[*c] -= (*(*spec_ids)->first->second)(args)[0] / domain_volume;
+        value_[*c] *= dt;
       }
     }
 
@@ -159,6 +167,9 @@ void TransportDomainFunction::ComputeDistribute(double t0, double t1, double* we
   if (!finalized_) {
     Finalize();
   }
+
+  double dt = t1 - t0;
+  if (dt > 0.0) dt = 1.0 / dt;
 
   // create the input tuple (time + space)
   int dim = mesh_->space_dimension();
@@ -198,6 +209,7 @@ void TransportDomainFunction::ComputeDistribute(double t0, double t1, double* we
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
           for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
           value_[*c] -= (*(*spec_ids)->first->second)(args)[0] / domain_volume;
+          value_[*c] *= dt;
         }
       }
     }
@@ -221,6 +233,7 @@ void TransportDomainFunction::ComputeDistribute(double t0, double t1, double* we
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
           for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
           value_[*c] -= (*(*spec_ids)->first->second)(args)[0] * weight[*c] / domain_volume;
+          value_[*c] *= dt;
         }
       }
     }
@@ -238,6 +251,7 @@ void TransportDomainFunction::ComputeDistribute(double t0, double t1, double* we
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
           for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
           value_[*c] -= (*(*spec_ids)->first->second)(args)[0];
+          value_[*c] *= dt;
         }
       }
     }
@@ -256,6 +270,9 @@ void TransportDomainFunction::ComputeDistributeMultiValue(double t0, double t1)
   if (!finalized_) {
     Finalize();
   }
+
+  double dt = t1 - t0;
+  if (dt > 0.0) dt = 1.0 / dt;
 
   // create the input tuple (time + space)
   int dim = mesh_->space_dimension();
@@ -293,6 +310,7 @@ void TransportDomainFunction::ComputeDistributeMultiValue(double t0, double t1)
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
         value_[*c] -= (*(*spec_ids)->first->second)(args)[0] / domain_volume;
+        value_[*c] *= dt;
       }
     }
 
@@ -310,6 +328,9 @@ void TransportDomainFunction::ComputeDistributeMultiValue(double t0, double t1, 
   if (!finalized_) {
     Finalize();
   }
+
+  double dt = t1 - t0;
+  if (dt > 0.0) dt = 1.0 / dt;
 
   // create the input tuple (time + space)
   int dim = mesh_->space_dimension();
@@ -351,6 +372,7 @@ void TransportDomainFunction::ComputeDistributeMultiValue(double t0, double t1, 
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
           for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
           value_[*c] -= (*(*spec_ids)->first->second)(args)[0] / domain_volume;
+          value_[*c] *= dt;
         }
       }
     } 
@@ -375,6 +397,7 @@ void TransportDomainFunction::ComputeDistributeMultiValue(double t0, double t1, 
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
           for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
           value_[*c] -= (*(*spec_ids)->first->second)(args)[0] * weight[*c] / domain_volume;
+          value_[*c] *= dt;
         }
       }
     }
@@ -392,6 +415,7 @@ void TransportDomainFunction::ComputeDistributeMultiValue(double t0, double t1, 
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
           for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
           value_[*c] -= (*(*spec_ids)->first->second)(args)[0];
+          value_[*c] *= dt;
         }
       }
     }
