@@ -1410,11 +1410,17 @@ void  PorousMedia::read_comp()
           }
           else if (bc_type == "pressure_head")
           {              
-            Array<Real> vals;
+            Array<Real> vals, times;
+            Array<std::string> forms;
             std::string val_name = "vals";
             int nv = ppr.countval(val_name.c_str());
-            if (nv) {
-              ppr.getarr(val_name.c_str(),vals,0,nv);
+            BL_ASSERT(nv>0);
+            ppr.getarr(val_name.c_str(),vals,0,nv);
+
+            times.resize(nv,0);
+            if (nv>1) {
+              ppr.getarr("times",times,0,nv);
+              ppr.getarr("forms",forms,0,nv-1);
             }
 
             if (pp.countval("normalization")>0) {
@@ -1437,8 +1443,6 @@ void  PorousMedia::read_comp()
             }
             pressure_bc = 2;
 
-	    Array<Real> times(1,0);
-	    Array<std::string> forms(0);
 	    bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,vals.size()));
           }
           else if (bc_type == "linear_pressure")
