@@ -73,13 +73,14 @@ TEST(RECONSTRUCTION_LINEAR) {
 
   // calculate gradient error
   const Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
-  grad_exact.Update(-1.0, grad_computed, 1.0);
+  int ierr = grad_exact.Update(-1.0, grad_computed, 1.0);
 
-  double error;
-  grad_exact.Norm2(&error);
-  CHECK_CLOSE(error, 0.0, 1.0e-14);
+  double error[2];
+  grad_exact.Norm2(error);
+  CHECK_CLOSE(0.0, error[0], 1.0e-12);
+  CHECK_CLOSE(0.0, error[1], 1.0e-12);
   
-  printf("error=%8.4f\n", error);
+  printf("errors: %8.4f %8.4f\n", error[0], error[1]);
 }
 
 

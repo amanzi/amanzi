@@ -116,7 +116,7 @@ double WRM_vanGenuchten::dSdPc(double pc)
 double WRM_vanGenuchten::capillaryPressure(double s)
 {
   double se = (s - sr_) / (1.0 - sr_);
-  return (pow(pow(se, -1.0/m_) - 1.0, 1/n_)) / alpha_;
+  return (pow(pow(se, -1.0/m_) - 1.0, 1.0/n_)) / alpha_;
 }
 
 
@@ -126,12 +126,11 @@ double WRM_vanGenuchten::capillaryPressure(double s)
 double WRM_vanGenuchten::dKdPc(double pc)
 {
   if (pc >= pc0_) {
-  //  if (pc >= tol_) {
     double se = pow(1.0 + pow(alpha_*pc, n_), -m_);
     double dsdp = dSdPc(pc);
 
     double x = pow(se, 1.0 / m_);
-    if (fabs(1-x) < tol_) return 0.;
+    if (fabs(1.0 - x) < tol_) return 0.0;
 
     double y = pow(1.0 - x, m_);
     double dkdse;
@@ -140,16 +139,15 @@ double WRM_vanGenuchten::dKdPc(double pc)
     else
       dkdse = (2 * (1.0 - y) + x / (1.0 - x)) * se; 
 
-    return dkdse * dsdp / (1 - sr_);
+    return dkdse * dsdp / (1.0 - sr_);
 
-  } else if (pc <=0){
+  } else if (pc <= 0.0) {
     return 0.0;
   }
   else {
     return 2*a_*pc + 3*b_*pc*pc; 
   }
 }
-
 
 }  // namespace Flow
 }  // namespace Amanzi

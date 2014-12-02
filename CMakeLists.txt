@@ -84,7 +84,7 @@ add_subdirectory(src)
 
 # Adding verification tests
 # EIB - uncommenting this will include the verification/benchmarking tests
-#include(CTest)
+include(CTest)
 # add_subdirectory(testing) 
 
 

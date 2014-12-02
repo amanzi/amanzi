@@ -49,6 +49,8 @@ struct CheckCtx
 PetscErrorCode
 CheckForLargeResidual(SNES snes,PetscReal new_res_norm,bool* res_is_large,void *ctx)
 {
+  BL_PROFILE("RichardSolver::CheckForLargeResidual()");
+
   if (norm0<=0) {
     if (ParallelDescriptor::IOProcessor()) {
       std::cout << "****************** Initial residual not properly set " << std::endl;
@@ -65,6 +67,8 @@ CheckForLargeResidual(SNES snes,PetscReal new_res_norm,bool* res_is_large,void *
 PetscErrorCode
 CheckForSmallDt(PetscReal dt,bool* dt_is_small,void *ctx)
 {
+  BL_PROFILE("RichardSolver::CheckForSmallDt()");
+
   *dt_is_small = (dt > 0 && dt < min_dt);
   PetscFunctionReturn(0);
 }
@@ -75,6 +79,8 @@ CheckForSmallDt(PetscReal dt,bool* dt_is_small,void *ctx)
 RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
   : rs_data(_rs_data), nlsc(_nlsc)
 {
+  BL_PROFILE("RichardSolver::RichardSolver()");
+
   Layout& layout = GetLayout();
   mftfp = new MFTFillPatch(layout);
 
@@ -123,14 +129,14 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
     ierr = MatGetColoring(Jac,MATCOLORINGSL,&iscoloring); CHKPETSC(ierr);
     ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
     if (rs_data.semi_analytic_J) {
-        ierr = MatFDColoringSetFunction(matfdcoloring,
-                                        (PetscErrorCode (*)(void))RichardR2,
-                                        (void*)(this)); CHKPETSC(ierr);
+      ierr = MatFDColoringSetFunction(matfdcoloring,
+                                      (PetscErrorCode (*)(void))RichardR2,
+                                      (void*)(this)); CHKPETSC(ierr);
     }
     else {
-        ierr = MatFDColoringSetFunction(matfdcoloring,
-                                        (PetscErrorCode (*)(void))RichardRes_DpDt,
-                                        (void*)(this)); CHKPETSC(ierr);
+      ierr = MatFDColoringSetFunction(matfdcoloring,
+                                      (PetscErrorCode (*)(void))RichardRes_DpDt,
+                                      (void*)(this)); CHKPETSC(ierr);
     }
     ierr = MatFDColoringSetFromOptions(matfdcoloring); CHKPETSC(ierr);
     ierr = MatFDColoringSetParameters(matfdcoloring,nlsc.errfd,PETSC_DEFAULT);CHKPETSC(ierr);
@@ -147,6 +153,8 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
 BoxArray
 ComplementIn(const BoxArray& ba, const BoxArray& ba_in, bool do_simplify = false)
 {
+  BL_PROFILE("RichardSolver::ComplementIn()");
+
   BoxList bl;
   for (int i=0; i<ba_in.size(); ++i) {
     bl.join(BoxList(BoxLib::complementIn(ba_in[i],ba)));
@@ -160,6 +168,8 @@ ComplementIn(const BoxArray& ba, const BoxArray& ba_in, bool do_simplify = false
 BoxArray
 Join(const BoxArray& ba1, const BoxArray& ba2, bool do_simplify = false)
 {
+  BL_PROFILE("RichardSolver::Join()");
+
   BoxList bl(ba1);
   bl.join(ba2.boxList());
   if (do_simplify) {
@@ -172,21 +182,23 @@ Join(const BoxArray& ba1, const BoxArray& ba2, bool do_simplify = false)
 #define __FUNCT__ "RichardSolverDtr"
 RichardSolver::~RichardSolver()
 {
-    PetscErrorCode ierr;
+  BL_PROFILE("RichardSolver::~RichardSolver()");
 
-    ierr = MatFDColoringDestroy(&matfdcoloring); CHKPETSC(ierr);
-    ierr = ISColoringDestroy(&iscoloring);
-    ierr = SNESDestroy(&snes); CHKPETSC(ierr);
-    ierr = MatDestroy(&Jac); CHKPETSC(ierr);
+  PetscErrorCode ierr;
 
-    ierr = VecDestroy(&AlphaV); CHKPETSC(ierr);
-    ierr = VecDestroy(&GV); CHKPETSC(ierr);
-    ierr = VecDestroy(&SolnTypInvV); CHKPETSC(ierr);
-    ierr = VecDestroy(&SolnTypV); CHKPETSC(ierr);
-    ierr = VecDestroy(&SolnV); CHKPETSC(ierr);
-    ierr = VecDestroy(&RhsV); CHKPETSC(ierr);
+  ierr = MatFDColoringDestroy(&matfdcoloring); CHKPETSC(ierr);
+  ierr = ISColoringDestroy(&iscoloring);
+  ierr = SNESDestroy(&snes); CHKPETSC(ierr);
+  ierr = MatDestroy(&Jac); CHKPETSC(ierr);
 
-    delete mftfp;
+  ierr = VecDestroy(&AlphaV); CHKPETSC(ierr);
+  ierr = VecDestroy(&GV); CHKPETSC(ierr);
+  ierr = VecDestroy(&SolnTypInvV); CHKPETSC(ierr);
+  ierr = VecDestroy(&SolnTypV); CHKPETSC(ierr);
+  ierr = VecDestroy(&SolnV); CHKPETSC(ierr);
+  ierr = VecDestroy(&RhsV); CHKPETSC(ierr);
+
+  delete mftfp;
 }
 
 static int dump_cnt = 0;
@@ -197,59 +209,69 @@ PetscErrorCode Richard_SNESConverged(SNES snes, PetscInt it,PetscReal xnew_norm,
                                      PetscReal dx_norm, PetscReal fnew_norm,
                                      SNESConvergedReason *reason, void *ctx)
 {
-    CheckCtx *check_ctx = (CheckCtx *) ctx;
-    RichardSolver* rs = check_ctx->rs;
-    const NLScontrol& nlsc = rs->GetNLScontrol();
+  BL_PROFILE("RichardSolver::Richard_SNESConverged()");
 
-    PetscErrorCode ierr;
-    if (!nlsc.ls_success) {
-      *reason = SNES_DIVERGED_LINE_SEARCH;
-      ierr = PETSC_ERR_NOT_CONVERGED;
-    }
-    else {
-      PetscReal atol, rtol, stol;
-      PetscInt maxit, maxf;
-      ierr = SNESGetTolerances(snes,&atol,&rtol,&stol,&maxit,&maxf); CHKPETSC(ierr);
+  CheckCtx *check_ctx = (CheckCtx *) ctx;
+  RichardSolver* rs = check_ctx->rs;
+  const NLScontrol& nlsc = rs->GetNLScontrol();
+
+  PetscErrorCode ierr;
+  if (!nlsc.ls_success) {
+    *reason = SNES_DIVERGED_LINE_SEARCH;
+    ierr = PETSC_ERR_NOT_CONVERGED;
+  }
+  else {
+    PetscReal atol, rtol, stol;
+    PetscInt maxit, maxf;
+    ierr = SNESGetTolerances(snes,&atol,&rtol,&stol,&maxit,&maxf); CHKPETSC(ierr);
 #if PETSC_VERSION_LT(3,4,3)
-      ierr = SNESDefaultConverged(snes,it,xnew_norm,dx_norm,fnew_norm,reason,ctx); CHKPETSC(ierr);
+    ierr = SNESDefaultConverged(snes,it,xnew_norm,dx_norm,fnew_norm,reason,ctx); CHKPETSC(ierr);
 #else
-      ierr = SNESConvergedDefault(snes,it,xnew_norm,dx_norm,fnew_norm,reason,ctx); CHKPETSC(ierr);
+    ierr = SNESConvergedDefault(snes,it,xnew_norm,dx_norm,fnew_norm,reason,ctx); CHKPETSC(ierr);
 #endif
-    }
+  }
 
-    if (*reason > 0) {
-        dump_cnt = 0;
-    }
+  if (*reason > 0) {
+    dump_cnt = 0;
+  }
 
-    PetscFunctionReturn(ierr);
+  PetscFunctionReturn(ierr);
 }
 
 void
 RichardSolver::ResetRemainingJacobianReuses()
 {
-    num_remaining_Jacobian_reuses = GetRSdata().max_num_Jacobian_reuses;
+  BL_PROFILE("RichardSolver::ResetRemainingJacobianReuses()");
+
+  num_remaining_Jacobian_reuses = GetRSdata().max_num_Jacobian_reuses;
 }
 
 void
 RichardSolver::UnsetRemainingJacobianReuses()
 {
-    num_remaining_Jacobian_reuses = 0;
+  BL_PROFILE("RichardSolver::UnsetRemainingJacobianReuses()");
+
+  num_remaining_Jacobian_reuses = 0;
 }
 
 bool
 RichardSolver::ReusePreviousJacobian()
 {
-    --num_remaining_Jacobian_reuses;
-    if (ParallelDescriptor::IOProcessor() && num_remaining_Jacobian_reuses > 0) {
-        std::cout << "Reusing J, " << num_remaining_Jacobian_reuses << " reuses left." << std::endl;
-    }
-    return (num_remaining_Jacobian_reuses > 0);
+  BL_PROFILE("RichardSolver::ReusePreviousJacobian()");
+
+  --num_remaining_Jacobian_reuses;
+  if (ParallelDescriptor::IOProcessor() && num_remaining_Jacobian_reuses > 0) {
+    std::cout << "Reusing J, " << num_remaining_Jacobian_reuses << " reuses left." << std::endl;
+  }
+  return (num_remaining_Jacobian_reuses > 0);
 }
 
 #undef __FUNCT__  
 #define __FUNCT__ "RecordSolve"
 void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* check_ctx)
 {
+  BL_PROFILE("RichardSolver::RecordSolve()");
+
   RichardSolver* rs = check_ctx->rs;
   const std::string& record_file = rs->GetRecordFile();
   BL_ASSERT(!record_file.empty());
@@ -344,160 +366,162 @@ void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* c
 #undef __FUNCT__  
 #define __FUNCT__ "PostCheck"
 /*
-   PostCheck - User-defined routine that checks the validity of
-   candidate steps of a line search method.  Set by SNESLineSearchSetPostCheck().
-   In:
-   snes 	- nonlinear context
-   checkctx 	- optional user-defined context for use by step checking routine
-   x     	- previous iterate
-   y 	        - new search direction and length
-   w 	        - current candidate iterate
+  PostCheck - User-defined routine that checks the validity of
+  candidate steps of a line search method.  Set by SNESLineSearchSetPostCheck().
+  In:
+  snes 	- nonlinear context
+  checkctx 	- optional user-defined context for use by step checking routine
+  x     	- previous iterate
+  y 	        - new search direction and length
+  w 	        - current candidate iterate
    
-   Out:
-   y            - search direction (possibly changed)
-   w            - current iterate (possibly modified)
-   changed_y 	- indicates search direction was changed by this routine
-   changed_w 	- indicates current iterate was changed by this routine 
+  Out:
+  y            - search direction (possibly changed)
+  w            - current iterate (possibly modified)
+  changed_y 	- indicates search direction was changed by this routine
+  changed_w 	- indicates current iterate was changed by this routine 
 
- */
+*/
 PetscErrorCode
 #if PETSC_VERSION_LT(3,4,3)
 PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w)
 #else
-PostCheck(SNESLineSearch ls,Vec x,Vec y,Vec w,PetscBool  *changed_y,PetscBool *changed_w,void *ctx)
+  PostCheck(SNESLineSearch ls,Vec x,Vec y,Vec w,PetscBool  *changed_y,PetscBool *changed_w,void *ctx)
 #endif
 {
-    std::string tag = "       Newton step: ";
-    std::string tag_ls = "  line-search:  ";
-    CheckCtx* check_ctx = (CheckCtx*)ctx;
-    RichardSolver* rs = check_ctx->rs;
-    NLScontrol* nlsc = check_ctx->nlsc;
+  BL_PROFILE("RichardSolver::PostCheck()");
+
+  std::string tag = "       Newton step: ";
+  std::string tag_ls = "  line-search:  ";
+  CheckCtx* check_ctx = (CheckCtx*)ctx;
+  RichardSolver* rs = check_ctx->rs;
+  NLScontrol* nlsc = check_ctx->nlsc;
 #if PETSC_VERSION_GE(3,4,3)
-    SNES snes = check_ctx->snes;
+  SNES snes = check_ctx->snes;
 #endif
-    if (rs==0) {
-        BoxLib::Abort("Context cast failed in PostCheck");
+  if (rs==0) {
+    BoxLib::Abort("Context cast failed in PostCheck");
+  }
+
+  nlsc->ls_success = true;
+  nlsc->ls_reason = "In Progress";
+
+  PetscErrorCode ierr;
+  PetscReal fnorm, xnorm, ynorm, gnorm;
+
+  PetscErrorCode (*func)(SNES,Vec,Vec,void*);
+  void *fctx;
+
+  ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx); CHKPETSC(ierr);
+
+  Vec& F = rs->GetResidualV();
+  Vec& G = rs->GetTrialResV();
+    
+  ierr = (*func)(snes,x,F,fctx); CHKPETSC(ierr);
+  ierr = VecNorm(F,NORM_2,&fnorm); CHKPETSC(ierr);
+
+  ierr = (*func)(snes,w,G,fctx); CHKPETSC(ierr);
+  ierr = VecNorm(G,NORM_2,&gnorm); CHKPETSC(ierr);
+
+  bool res_is_large;
+  ierr = CheckForLargeResidual(snes,gnorm,&res_is_large,ctx); CHKPETSC(ierr);
+  if (res_is_large) {
+    std::string reason = "Solution rejected.  Norm of residual has grown too large";
+    if (ParallelDescriptor::IOProcessor() && nlsc->monitor_line_search) {
+      std::cout << tag << tag_ls << reason << std::endl;
+    }
+    nlsc->ls_success = false;
+    nlsc->ls_reason = reason;
+    PetscFunctionReturn(0);
+  }
+
+  Vec y_orig;
+  if (!(rs->GetRecordFile().empty())) {
+    ierr = VecDuplicate(y,&y_orig); CHKPETSC(ierr);
+    ierr = VecCopy(y,y_orig); CHKPETSC(ierr);
+  }
+
+  bool norm_acceptable = gnorm < fnorm * nlsc->ls_acceptance_factor;
+  int ls_iterations = 0;
+  Real ls_factor = 1;
+  bool finished = norm_acceptable 
+    || ls_iterations > nlsc->max_ls_iterations
+    || ls_factor <= nlsc->min_ls_factor;
+
+  Real gnorm_0 = gnorm;
+  while (!finished) 
+  {
+    ls_factor *= nlsc->ls_reduction_factor;
+    if (ls_factor < nlsc->min_ls_factor) {
+      ls_factor = nlsc->min_ls_factor;
     }
 
-    nlsc->ls_success = true;
-    nlsc->ls_reason = "In Progress";
-
-    PetscErrorCode ierr;
-    PetscReal fnorm, xnorm, ynorm, gnorm;
-
-    PetscErrorCode (*func)(SNES,Vec,Vec,void*);
-    void *fctx;
-
-    ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx); CHKPETSC(ierr);
-
-    Vec& F = rs->GetResidualV();
-    Vec& G = rs->GetTrialResV();
-    
-    ierr = (*func)(snes,x,F,fctx); CHKPETSC(ierr);
-    ierr = VecNorm(F,NORM_2,&fnorm); CHKPETSC(ierr);
-
+    PetscReal mone = -1;
+    ierr=VecWAXPY(w,mone*ls_factor,y,x); CHKPETSC(ierr); /* w = -y + x */
+    *changed_w = PETSC_TRUE;
+        
     ierr = (*func)(snes,w,G,fctx); CHKPETSC(ierr);
-    ierr = VecNorm(G,NORM_2,&gnorm); CHKPETSC(ierr);
-
-    bool res_is_large;
-    ierr = CheckForLargeResidual(snes,gnorm,&res_is_large,ctx); CHKPETSC(ierr);
-    if (res_is_large) {
-      std::string reason = "Solution rejected.  Norm of residual has grown too large";
-      if (ParallelDescriptor::IOProcessor() && nlsc->monitor_line_search) {
-        std::cout << tag << tag_ls << reason << std::endl;
-      }
-      nlsc->ls_success = false;
-      nlsc->ls_reason = reason;
-      PetscFunctionReturn(0);
-    }
-
-    Vec y_orig;
-    if (!(rs->GetRecordFile().empty())) {
-      ierr = VecDuplicate(y,&y_orig); CHKPETSC(ierr);
-      ierr = VecCopy(y,y_orig); CHKPETSC(ierr);
-    }
-
-    bool norm_acceptable = gnorm < fnorm * nlsc->ls_acceptance_factor;
-    int ls_iterations = 0;
-    Real ls_factor = 1;
-    bool finished = norm_acceptable 
-        || ls_iterations > nlsc->max_ls_iterations
-        || ls_factor <= nlsc->min_ls_factor;
-
-    Real gnorm_0 = gnorm;
-    while (!finished) 
+    ierr=VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr); CHKPETSC(ierr);
+    norm_acceptable = gnorm < fnorm * nlsc->ls_acceptance_factor;
+        
+    if (ls_factor < 1 
+        && nlsc->monitor_line_search 
+        && ParallelDescriptor::IOProcessor())
     {
-        ls_factor *= nlsc->ls_reduction_factor;
-        if (ls_factor < nlsc->min_ls_factor) {
-            ls_factor = nlsc->min_ls_factor;
-        }
-
-        PetscReal mone = -1;
-        ierr=VecWAXPY(w,mone*ls_factor,y,x); CHKPETSC(ierr); /* w = -y + x */
-        *changed_w = PETSC_TRUE;
-        
-        ierr = (*func)(snes,w,G,fctx); CHKPETSC(ierr);
-        ierr=VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr); CHKPETSC(ierr);
-        norm_acceptable = gnorm < fnorm * nlsc->ls_acceptance_factor;
-        
-        if (ls_factor < 1 
-            && nlsc->monitor_line_search 
-            && ParallelDescriptor::IOProcessor())
-	{
-            std::cout << tag << tag_ls
-                      << "iter=" << ls_iterations
-                      << ", step length=" << ls_factor
-                      << ", Newton norm=" << gnorm_0
-                      << ", damped norm=" << gnorm << '\n';
-	}
-        
-        finished = norm_acceptable 
-            || ls_iterations > nlsc->max_ls_iterations
-            || ls_factor <= nlsc->min_ls_factor;      
-        ls_iterations++;
+      std::cout << tag << tag_ls
+                << "iter=" << ls_iterations
+                << ", step length=" << ls_factor
+                << ", Newton norm=" << gnorm_0
+                << ", damped norm=" << gnorm << '\n';
     }
+        
+    finished = norm_acceptable 
+      || ls_iterations > nlsc->max_ls_iterations
+      || ls_factor <= nlsc->min_ls_factor;      
+    ls_iterations++;
+  }
     
-    if (ls_iterations > nlsc->max_ls_iterations) 
-    {
-        std::string reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
-        if (ParallelDescriptor::IOProcessor() && nlsc->monitor_line_search) {
-            std::cout << tag << tag_ls << reason << std::endl;
-        }
-        nlsc->ls_success = false;
-        nlsc->ls_reason = reason;
+  if (ls_iterations > nlsc->max_ls_iterations) 
+  {
+    std::string reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
+    if (ParallelDescriptor::IOProcessor() && nlsc->monitor_line_search) {
+      std::cout << tag << tag_ls << reason << std::endl;
     }
-    else if (ls_factor <= nlsc->min_ls_factor) {
-        std::string reason = "Solution rejected.  Linear system solved, but ls_factor too small";
-        if (ParallelDescriptor::IOProcessor() && nlsc->monitor_line_search) {
-            std::cout << tag << tag_ls << reason << std::endl;
-        }
-        nlsc->ls_success = false;
-        nlsc->ls_reason = reason;
+    nlsc->ls_success = false;
+    nlsc->ls_reason = reason;
+  }
+  else if (ls_factor <= nlsc->min_ls_factor) {
+    std::string reason = "Solution rejected.  Linear system solved, but ls_factor too small";
+    if (ParallelDescriptor::IOProcessor() && nlsc->monitor_line_search) {
+      std::cout << tag << tag_ls << reason << std::endl;
+    }
+    nlsc->ls_success = false;
+    nlsc->ls_reason = reason;
+  }
+  else {
+    if (ls_factor == 1) {
+      nlsc->ls_reason = std::string("Full linear step accepted");
+      if (ParallelDescriptor::IOProcessor() && nlsc->monitor_line_search>1) {
+        std::cout << tag << tag_ls << nlsc->ls_reason << std::endl;
+      }
     }
     else {
-        if (ls_factor == 1) {
-          nlsc->ls_reason = std::string("Full linear step accepted");
-          if (ParallelDescriptor::IOProcessor() && nlsc->monitor_line_search>1) {
-            std::cout << tag << tag_ls << nlsc->ls_reason << std::endl;
-          }
-        }
-        else {
-            // Set update to the one actually used
-            ierr=VecScale(y,ls_factor); CHKPETSC(ierr);
-            *changed_y = PETSC_TRUE;
-            nlsc->ls_reason = "Damped step successful";
-        }
-        nlsc->ls_success = true;
-
-        int iters = nlsc->NLIterationsTaken() + 1;
+      // Set update to the one actually used
+      ierr=VecScale(y,ls_factor); CHKPETSC(ierr);
+      *changed_y = PETSC_TRUE;
+      nlsc->ls_reason = "Damped step successful";
     }
+    nlsc->ls_success = true;
 
-    if (!(rs->GetRecordFile().empty())) {
-      RecordSolve(x,y,y_orig,w,F,G,check_ctx);
-      ierr = VecDestroy(&y_orig); CHKPETSC(ierr);
-    }
+    int iters = nlsc->NLIterationsTaken() + 1;
+  }
+
+  if (!(rs->GetRecordFile().empty())) {
+    RecordSolve(x,y,y_orig,w,F,G,check_ctx);
+    ierr = VecDestroy(&y_orig); CHKPETSC(ierr);
+  }
     
-    PetscFunctionReturn(0);
+  PetscFunctionReturn(0);
 }
 
 #if PETSC_VERSION_LT(3,4,3)
@@ -511,90 +535,92 @@ PostCheck(SNESLineSearch ls,Vec x,Vec y,Vec w,PetscBool  *changed_y,PetscBool *c
 PetscErrorCode
 AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *changed_dp,PetscBool *changed_pkp1)
 {
-    PetscErrorCode ierr;
-    CheckCtx* check_ctx = (CheckCtx*)ctx;
-    RichardSolver* rs = check_ctx->rs;
+  BL_PROFILE("RichardSolver::AltUpdate()");
 
-    if (rs==0) {
-        BoxLib::Abort("Context cast failed in AltUpdate");
+  PetscErrorCode ierr;
+  CheckCtx* check_ctx = (CheckCtx*)ctx;
+  RichardSolver* rs = check_ctx->rs;
+
+  if (rs==0) {
+    BoxLib::Abort("Context cast failed in AltUpdate");
+  }
+  NLScontrol& nlsc = rs->GetNLScontrol();
+
+  nlsc.ls_success = true;
+  nlsc.ls_reason = "In Progress";
+
+  if (rs->GetNLScontrol().scale_soln_before_solve) {
+    Vec& Ptyp = rs->GetSolnTypV();
+    ierr = VecPointwiseMult(dp,dp,Ptyp); CHKPETSC(ierr);
+    ierr = VecPointwiseMult(pk,pk,Ptyp); CHKPETSC(ierr);
+  }
+
+  MFTower& P_MFT = rs->GetPressureNp1();
+  MFTower& RS_MFT = rs->GetRhoSatNp1();
+  MFTower& DP_MFT = rs->GetLambda(); //Handy data container
+  const MFTower& K_MFT = rs->GetKappaCCavg();
+
+  Layout& layout = rs->GetLayout();
+  ierr = layout.VecToMFTower(P_MFT,pk,0); CHKPETSC(ierr);
+  ierr = layout.VecToMFTower(DP_MFT,dp,0); CHKPETSC(ierr);
+
+  Real cur_time = rs->GetTime();
+  Real dt = rs->GetDt();
+
+  // Fill (rho.sat)^{n+1,k} from p^{n+1,k}
+  rs->GetRSdata().calcInvPressure(RS_MFT,P_MFT,cur_time,0,0,0);
+
+  int nLevs = layout.NumLevels();
+
+  MFTower& ALPHA_MFT = rs->GetAlpha();
+  const MFTower& PHI_MFT= rs->GetPorosity();
+  rs->GetRSdata().calcInvPressure(RS_MFT,P_MFT,cur_time,0,0,0);
+  rs->GetRSdata().calcRichardAlpha(ALPHA_MFT,RS_MFT,cur_time,0,0,0); // ALPHA == d(phi.rho.sat)/dPw
+  const RockManager* rm = rs->GetRSdata().GetRockManager();
+  int rmID = rm->ID();
+
+  // Compute the "Alternating Update" according to Krabbenhoft, AWR30 p.483
+  const Real sThresh = rs->GetRSdata().variable_switch_saturation_threshold;
+  for (int lev=0; lev<nLevs; ++lev) {
+
+    const iMultiFab& MatID = rs->GetMaterialID(lev);
+    for (MFIter mfi(P_MFT[lev]); mfi.isValid(); ++mfi) {
+      const Box& vbox = mfi.validbox();
+      FArrayBox& rsf = RS_MFT[lev][mfi];
+      FArrayBox& dpf = DP_MFT[lev][mfi];
+      const FArrayBox& alf = ALPHA_MFT[lev][mfi];
+      const FArrayBox& phi = PHI_MFT[lev][mfi];
+      const IArrayBox& mat = MatID[mfi];
+
+      FORT_RS_ALTUP(rsf.dataPtr(),ARLIM(rsf.loVect()), ARLIM(rsf.hiVect()),
+                    dpf.dataPtr(),ARLIM(dpf.loVect()), ARLIM(dpf.hiVect()),
+                    alf.dataPtr(),ARLIM(alf.loVect()), ARLIM(alf.hiVect()),
+                    phi.dataPtr(),ARLIM(phi.loVect()), ARLIM(phi.hiVect()),
+                    mat.dataPtr(),ARLIM(mat.loVect()), ARLIM(mat.hiVect()),
+                    &ls_factor, &sThresh, &rmID, &cur_time,
+                    vbox.loVect(), vbox.hiVect());
     }
-    NLScontrol& nlsc = rs->GetNLScontrol();
+  }
 
-    nlsc.ls_success = true;
-    nlsc.ls_reason = "In Progress";
+  // Put modified dp into Vec
+  ierr = layout.MFTowerToVec(dp,DP_MFT,0); CHKPETSC(ierr);
 
-    if (rs->GetNLScontrol().scale_soln_before_solve) {
-        Vec& Ptyp = rs->GetSolnTypV();
-        ierr = VecPointwiseMult(dp,dp,Ptyp); CHKPETSC(ierr);
-        ierr = VecPointwiseMult(pk,pk,Ptyp); CHKPETSC(ierr);
-    }
+  // Compute new p = p - dp, then scale all p, pnew and dt
+  ierr = VecWAXPY(pkp1,-1.0,dp,pk);CHKPETSC(ierr);
 
-    MFTower& P_MFT = rs->GetPressureNp1();
-    MFTower& RS_MFT = rs->GetRhoSatNp1();
-    MFTower& DP_MFT = rs->GetLambda(); //Handy data container
-    const MFTower& K_MFT = rs->GetKappaCCavg();
+  if (rs->GetNLScontrol().scale_soln_before_solve) {
+    Vec& PtypInv = rs->GetSolnTypInvV();
+    ierr = VecPointwiseMult(dp,dp,PtypInv); CHKPETSC(ierr);
+    ierr = VecPointwiseMult(pk,pk,PtypInv); CHKPETSC(ierr);
+    ierr = VecPointwiseMult(pkp1,pkp1,PtypInv); CHKPETSC(ierr);
+  }
+  *changed_dp = PETSC_FALSE; // We changed dp and pnew, but we took care of the update already
+  *changed_pkp1 = PETSC_TRUE;
 
-    Layout& layout = rs->GetLayout();
-    ierr = layout.VecToMFTower(P_MFT,pk,0); CHKPETSC(ierr);
-    ierr = layout.VecToMFTower(DP_MFT,dp,0); CHKPETSC(ierr);
+  nlsc.ls_success = true;
+  nlsc.ls_reason = "Damped step successful";
 
-    Real cur_time = rs->GetTime();
-    Real dt = rs->GetDt();
-
-    // Fill (rho.sat)^{n+1,k} from p^{n+1,k}
-    rs->GetRSdata().calcInvPressure(RS_MFT,P_MFT,cur_time,0,0,0);
-
-    int nLevs = layout.NumLevels();
-
-    MFTower& ALPHA_MFT = rs->GetAlpha();
-    const MFTower& PHI_MFT= rs->GetPorosity();
-    rs->GetRSdata().calcInvPressure(RS_MFT,P_MFT,cur_time,0,0,0);
-    rs->GetRSdata().calcRichardAlpha(ALPHA_MFT,RS_MFT,cur_time,0,0,0); // ALPHA == d(phi.rho.sat)/dPw
-    const RockManager* rm = rs->GetRSdata().GetRockManager();
-    int rmID = rm->ID();
-
-    // Compute the "Alternating Update" according to Krabbenhoft, AWR30 p.483
-    const Real sThresh = rs->GetRSdata().variable_switch_saturation_threshold;
-    for (int lev=0; lev<nLevs; ++lev) {
-
-      const iMultiFab& MatID = rs->GetMaterialID(lev);
-      for (MFIter mfi(P_MFT[lev]); mfi.isValid(); ++mfi) {
-        const Box& vbox = mfi.validbox();
-        FArrayBox& rsf = RS_MFT[lev][mfi];
-        FArrayBox& dpf = DP_MFT[lev][mfi];
-        const FArrayBox& alf = ALPHA_MFT[lev][mfi];
-        const FArrayBox& phi = PHI_MFT[lev][mfi];
-        const IArrayBox& mat = MatID[mfi];
-
-        FORT_RS_ALTUP(rsf.dataPtr(),ARLIM(rsf.loVect()), ARLIM(rsf.hiVect()),
-                      dpf.dataPtr(),ARLIM(dpf.loVect()), ARLIM(dpf.hiVect()),
-                      alf.dataPtr(),ARLIM(alf.loVect()), ARLIM(alf.hiVect()),
-                      phi.dataPtr(),ARLIM(phi.loVect()), ARLIM(phi.hiVect()),
-                      mat.dataPtr(),ARLIM(mat.loVect()), ARLIM(mat.hiVect()),
-                      &ls_factor, &sThresh, &rmID, &cur_time,
-                      vbox.loVect(), vbox.hiVect());
-      }
-    }
-
-    // Put modified dp into Vec
-    ierr = layout.MFTowerToVec(dp,DP_MFT,0); CHKPETSC(ierr);
-
-    // Compute new p = p - dp, then scale all p, pnew and dt
-    ierr = VecWAXPY(pkp1,-1.0,dp,pk);CHKPETSC(ierr);
-
-    if (rs->GetNLScontrol().scale_soln_before_solve) {
-        Vec& PtypInv = rs->GetSolnTypInvV();
-        ierr = VecPointwiseMult(dp,dp,PtypInv); CHKPETSC(ierr);
-        ierr = VecPointwiseMult(pk,pk,PtypInv); CHKPETSC(ierr);
-        ierr = VecPointwiseMult(pkp1,pkp1,PtypInv); CHKPETSC(ierr);
-    }
-    *changed_dp = PETSC_FALSE; // We changed dp and pnew, but we took care of the update already
-    *changed_pkp1 = PETSC_TRUE;
-
-    nlsc.ls_success = true;
-    nlsc.ls_reason = "Damped step successful";
-
-    PetscFunctionReturn(0);
+  PetscFunctionReturn(0);
 }
 
 #undef __FUNCT__  
@@ -603,133 +629,135 @@ PetscErrorCode
 #if PETSC_VERSION_LT(3,4,3)
 PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,PetscBool  *changed_pnew)
 #else
-PostCheckAlt(SNESLineSearch ls,Vec p,Vec dp,Vec pnew,PetscBool  *changed_dp,PetscBool  *changed_pnew,void *ctx)
+  PostCheckAlt(SNESLineSearch ls,Vec p,Vec dp,Vec pnew,PetscBool  *changed_dp,PetscBool  *changed_pnew,void *ctx)
 #endif
 {
-    std::string tag = "       Newton step: ";
-    std::string tag_ls = "  line-search:  ";
-    CheckCtx* check_ctx = (CheckCtx*)ctx;
-    RichardSolver* rs = check_ctx->rs;
-    NLScontrol* nlsc = check_ctx->nlsc;
-    SNES snes = check_ctx->snes;
+  BL_PROFILE("RichardSolver::PostCheckAlt()");
 
-    if (rs==0) {
-        BoxLib::Abort("Context cast failed in PostCheckAlt");
+  std::string tag = "       Newton step: ";
+  std::string tag_ls = "  line-search:  ";
+  CheckCtx* check_ctx = (CheckCtx*)ctx;
+  RichardSolver* rs = check_ctx->rs;
+  NLScontrol* nlsc = check_ctx->nlsc;
+  SNES snes = check_ctx->snes;
+
+  if (rs==0) {
+    BoxLib::Abort("Context cast failed in PostCheckAlt");
+  }
+
+  nlsc->ls_success = true;
+  nlsc->ls_reason = "In Progress";
+
+  PetscErrorCode ierr;
+  PetscReal fnorm, xnorm, ynorm, gnorm;
+  PetscErrorCode (*func)(SNES,Vec,Vec,void*);
+  void *fctx;
+
+  Real ls_factor = 1;
+  ierr = AltUpdate(snes,p,dp,pnew,ctx,ls_factor,changed_dp,changed_pnew);CHKPETSC(ierr);
+  ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);CHKPETSC(ierr);
+
+  Vec& F = rs->GetResidualV();
+  Vec& G = rs->GetTrialResV();
+    
+  ierr = (*func)(snes,p,F,fctx);CHKPETSC(ierr);
+  ierr = VecNorm(F,NORM_2,&fnorm);CHKPETSC(ierr);
+
+  ierr = (*func)(snes,pnew,G,fctx);CHKPETSC(ierr);
+  ierr = VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
+
+  bool res_is_large;
+  ierr = CheckForLargeResidual(snes,gnorm,&res_is_large,ctx); CHKPETSC(ierr);
+  if (res_is_large) {
+    std::string reason = "Solution rejected.  Norm of residual has grown too large";
+    if (ParallelDescriptor::IOProcessor() && nlsc->monitor_line_search) {
+      std::cout << tag << tag_ls << reason << std::endl;
+    }
+    nlsc->ls_success = false;
+    nlsc->ls_reason = reason;
+    PetscFunctionReturn(0);
+  }
+
+  Vec dp_orig;
+  if (!(rs->GetRecordFile().empty())) {
+    ierr = VecDuplicate(dp,&dp_orig);
+    ierr = VecCopy(dp,dp_orig);
+  }
+    
+  bool norm_acceptable = gnorm < fnorm * nlsc->ls_acceptance_factor;
+  int ls_iterations = 0;
+  bool finished = norm_acceptable 
+    || ls_iterations > nlsc->max_ls_iterations
+    || ls_factor <= nlsc->min_ls_factor;
+
+  Real gnorm_0 = gnorm;
+  while (!finished) 
+  {
+    ls_factor *= nlsc->ls_reduction_factor;
+    if (ls_factor < nlsc->min_ls_factor) {
+      ls_factor = nlsc->min_ls_factor;
     }
 
-    nlsc->ls_success = true;
-    nlsc->ls_reason = "In Progress";
-
-    PetscErrorCode ierr;
-    PetscReal fnorm, xnorm, ynorm, gnorm;
-    PetscErrorCode (*func)(SNES,Vec,Vec,void*);
-    void *fctx;
-
-    Real ls_factor = 1;
     ierr = AltUpdate(snes,p,dp,pnew,ctx,ls_factor,changed_dp,changed_pnew);CHKPETSC(ierr);
-    ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);CHKPETSC(ierr);
-
-    Vec& F = rs->GetResidualV();
-    Vec& G = rs->GetTrialResV();
-    
-    ierr = (*func)(snes,p,F,fctx);CHKPETSC(ierr);
-    ierr = VecNorm(F,NORM_2,&fnorm);CHKPETSC(ierr);
-
     ierr = (*func)(snes,pnew,G,fctx);CHKPETSC(ierr);
     ierr = VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
-
-    bool res_is_large;
-    ierr = CheckForLargeResidual(snes,gnorm,&res_is_large,ctx); CHKPETSC(ierr);
-    if (res_is_large) {
-      std::string reason = "Solution rejected.  Norm of residual has grown too large";
-      if (ParallelDescriptor::IOProcessor() && nlsc->monitor_line_search) {
+    norm_acceptable = gnorm < fnorm * nlsc->ls_acceptance_factor;
+        
+    if (ls_factor < 1 
+        && nlsc->monitor_line_search 
+        && ParallelDescriptor::IOProcessor())
+    {
+      std::cout << tag << tag_ls
+                << "iter=" << ls_iterations
+                << ", step length=" << ls_factor
+                << ", Newton norm=" << gnorm_0
+                << ", damped norm=" << gnorm << '\n';
+    }
+        
+    finished = norm_acceptable 
+      || ls_iterations > nlsc->max_ls_iterations
+      || ls_factor <= nlsc->min_ls_factor;      
+    ls_iterations++;
+  }
+    
+  if (ls_iterations > nlsc->max_ls_iterations) 
+  {
+    std::string reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << tag << tag_ls << reason << std::endl;
+    }
+    snes->reason = SNES_DIVERGED_LINE_SEARCH;
+    nlsc->ls_success = false;
+    nlsc->ls_reason = reason;
+  }
+  else if (ls_factor <= nlsc->min_ls_factor) {
+    std::string reason = "Solution rejected.  Linear system solved, but ls_factor too small";
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << tag << tag_ls << reason << std::endl;
+    }
+    snes->reason = SNES_DIVERGED_LINE_SEARCH;
+    nlsc->ls_success = false;
+    nlsc->ls_reason = reason;
+  }
+  else {
+    if (ls_factor == 1) {
+      std::string reason = "Full linear step accepted";
+      if (ParallelDescriptor::IOProcessor() && nlsc->monitor_line_search>1) {
         std::cout << tag << tag_ls << reason << std::endl;
       }
-      nlsc->ls_success = false;
       nlsc->ls_reason = reason;
-      PetscFunctionReturn(0);
     }
+    nlsc->ls_success = true;
 
-    Vec dp_orig;
-    if (!(rs->GetRecordFile().empty())) {
-      ierr = VecDuplicate(dp,&dp_orig);
-      ierr = VecCopy(dp,dp_orig);
-    }
-    
-    bool norm_acceptable = gnorm < fnorm * nlsc->ls_acceptance_factor;
-    int ls_iterations = 0;
-    bool finished = norm_acceptable 
-        || ls_iterations > nlsc->max_ls_iterations
-        || ls_factor <= nlsc->min_ls_factor;
+    int iters = nlsc->NLIterationsTaken() + 1;
+  }
 
-    Real gnorm_0 = gnorm;
-    while (!finished) 
-    {
-        ls_factor *= nlsc->ls_reduction_factor;
-        if (ls_factor < nlsc->min_ls_factor) {
-            ls_factor = nlsc->min_ls_factor;
-        }
+  if (!(rs->GetRecordFile().empty())) {
+    RecordSolve(p,dp,dp_orig,pnew,F,G,check_ctx);
+    ierr = VecDestroy(&dp_orig);CHKPETSC(ierr);
+  }
 
-        ierr = AltUpdate(snes,p,dp,pnew,ctx,ls_factor,changed_dp,changed_pnew);CHKPETSC(ierr);
-        ierr = (*func)(snes,pnew,G,fctx);CHKPETSC(ierr);
-        ierr = VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
-        norm_acceptable = gnorm < fnorm * nlsc->ls_acceptance_factor;
-        
-        if (ls_factor < 1 
-            && nlsc->monitor_line_search 
-            && ParallelDescriptor::IOProcessor())
-	{
-            std::cout << tag << tag_ls
-                      << "iter=" << ls_iterations
-                      << ", step length=" << ls_factor
-                      << ", Newton norm=" << gnorm_0
-                      << ", damped norm=" << gnorm << '\n';
-	}
-        
-        finished = norm_acceptable 
-            || ls_iterations > nlsc->max_ls_iterations
-            || ls_factor <= nlsc->min_ls_factor;      
-        ls_iterations++;
-    }
-    
-    if (ls_iterations > nlsc->max_ls_iterations) 
-    {
-        std::string reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
-        if (ParallelDescriptor::IOProcessor()) {
-            std::cout << tag << tag_ls << reason << std::endl;
-        }
-        snes->reason = SNES_DIVERGED_LINE_SEARCH;
-        nlsc->ls_success = false;
-        nlsc->ls_reason = reason;
-    }
-    else if (ls_factor <= nlsc->min_ls_factor) {
-        std::string reason = "Solution rejected.  Linear system solved, but ls_factor too small";
-        if (ParallelDescriptor::IOProcessor()) {
-            std::cout << tag << tag_ls << reason << std::endl;
-        }
-        snes->reason = SNES_DIVERGED_LINE_SEARCH;
-        nlsc->ls_success = false;
-        nlsc->ls_reason = reason;
-    }
-    else {
-        if (ls_factor == 1) {
-            std::string reason = "Full linear step accepted";
-            if (ParallelDescriptor::IOProcessor() && nlsc->monitor_line_search>1) {
-                std::cout << tag << tag_ls << reason << std::endl;
-            }
-            nlsc->ls_reason = reason;
-        }
-        nlsc->ls_success = true;
-
-        int iters = nlsc->NLIterationsTaken() + 1;
-    }
-
-    if (!(rs->GetRecordFile().empty())) {
-      RecordSolve(p,dp,dp_orig,pnew,F,G,check_ctx);
-      ierr = VecDestroy(&dp_orig);CHKPETSC(ierr);
-    }
-
-    PetscFunctionReturn(0);
+  PetscFunctionReturn(0);
 }
 
 #include <VisMF.H>
@@ -739,6 +767,9 @@ PostCheckAlt(SNESLineSearch ls,Vec p,Vec dp,Vec pnew,PetscBool  *changed_dp,Pets
 int
 RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nlsc)
 {
+  BL_PROFILE("RichardSolver::Solve()");
+
+  BL_PROFILE_VAR("RichardSolver::Solve::prep", p_prep); 
   CheckCtx check_ctx;
   check_ctx.rs = this;
   check_ctx.nlsc = &nlsc;
@@ -786,7 +817,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
   }
 
   if (nlsc.scale_soln_before_solve) {
-      ierr = VecPointwiseMult(SolnV,SolnV,SolnTypInvV); // Mult(w,x,y): w=x.y  -- Scale IC
+    ierr = VecPointwiseMult(SolnV,SolnV,SolnTypInvV); // Mult(w,x,y): w=x.y  -- Scale IC
   }
   ierr = VecCopy(SolnTypInvV,SolnTypV); // Copy(x,y): y <- x
   ierr = VecReciprocal(SolnTypV); // Create vec to unscale as needed
@@ -796,7 +827,7 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
 
 #if PETSC_VERSION_LT(3,4,3)
   if (rs_data.variable_switch_saturation_threshold>0) {
-      ierr = SNESLineSearchSetPostCheck(snes,PostCheckAlt,(void *)(&check_ctx));CHKPETSC(ierr);
+    ierr = SNESLineSearchSetPostCheck(snes,PostCheckAlt,(void *)(&check_ctx));CHKPETSC(ierr);
   } else {
     ierr = SNESLineSearchSetPostCheck(snes,PostCheck,(void *)(&check_ctx));CHKPETSC(ierr);
   }
@@ -832,7 +863,11 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
   RichardSolver::SetTheRichardSolver(this);
   dump_cnt = 0;
   nlsc.ls_success = true;
+  BL_PROFILE_VAR_STOP(p_prep);
+
+  BL_PROFILE_VAR("RichardSolver::Solve::SNESSolve", p_solve); 
   ierr = SNESSolve(snes,PETSC_NULL,SolnV);// CHKPETSC(ierr);
+  BL_PROFILE_VAR_STOP(p_solve);
   RichardSolver::SetTheRichardSolver(0);
 
   int iters;
@@ -843,11 +878,11 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
   ierr = SNESGetConvergedReason(snes,&reason); CHKPETSC(ierr);
 
   if (nlsc.scale_soln_before_solve) {
-      ierr = VecPointwiseMult(SolnV,SolnV,GetSolnTypV()); // Unscale current candidate solution
+    ierr = VecPointwiseMult(SolnV,SolnV,GetSolnTypV()); // Unscale current candidate solution
   }
 
   if (reason <= 0) {
-      return reason;
+    return reason;
   }
 
   // Copy solution from Vec back into state
@@ -861,6 +896,8 @@ RichardSolver::Solve(Real prev_time, Real cur_time, int timestep, NLScontrol& nl
 void
 RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
 {
+  BL_PROFILE("RichardSolver::BuildOpSkel()");
+
   int num_rows = 1;
   int rows[1]; // At the moment, only set one row at a time
   Array<Real> vals;
@@ -892,227 +929,227 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
   }
 
   for (int lev=nLevs-1; lev>=0; --lev) 
-    {
-      const Array<IVSMap>& growCellStencilLev = growCellStencil[lev];
-      const Layout::MultiNodeFab& nodeLev = nodes[lev];
-      const Layout::MultiIntFab& nodeIdsLev = nodeIds[lev];
+  {
+    const Array<IVSMap>& growCellStencilLev = growCellStencil[lev];
+    const Layout::MultiNodeFab& nodeLev = nodes[lev];
+    const Layout::MultiIntFab& nodeIdsLev = nodeIds[lev];
 
-      Layout::MultiIntFab crseIds; // coarse cell ids at fine grid, distributed per fine patches
-      crseContribs.set(lev,new MultiSetFab);
-      if (lev>0) {
-	BoxArray bacg = BoxArray(gridArray[lev]).coarsen(refRatio[lev-1]).grow(1);
-	crseIds.define(bacg,1,0,Fab_allocate);
+    Layout::MultiIntFab crseIds; // coarse cell ids at fine grid, distributed per fine patches
+    crseContribs.set(lev,new MultiSetFab);
+    if (lev>0) {
+      BoxArray bacg = BoxArray(gridArray[lev]).coarsen(refRatio[lev-1]).grow(1);
+      crseIds.define(bacg,1,0,Fab_allocate);
             
-	const Layout::MultiIntFab& crseIds_orig = nodeIds[lev-1]; // crse cells through periodic boundary
-	BoxArray gcba = BoxArray(crseIds_orig.boxArray()).grow(crseIds_orig.nGrow());
-	Layout::MultiIntFab tmp(gcba,1,0);
-	for (MFIter mfi(crseIds_orig); mfi.isValid(); ++mfi) {
-	  tmp[mfi].copy(crseIds_orig[mfi]); // NOTE: Assumes grow cells already filled
-	}
-	crseIds.copy(tmp); // Parallel copy
-
-	crseContribs[lev].define(bacg,1,0,Fab_allocate);
+      const Layout::MultiIntFab& crseIds_orig = nodeIds[lev-1]; // crse cells through periodic boundary
+      BoxArray gcba = BoxArray(crseIds_orig.boxArray()).grow(crseIds_orig.nGrow());
+      Layout::MultiIntFab tmp(gcba,1,0);
+      for (MFIter mfi(crseIds_orig); mfi.isValid(); ++mfi) {
+        tmp[mfi].copy(crseIds_orig[mfi]); // NOTE: Assumes grow cells already filled
       }
+      crseIds.copy(tmp); // Parallel copy
 
-      std::map<IntVect,std::set<int>,IntVect::Compare> stencil;
-      if (lev<nLevs-1) {
-	// Pack up the crseContribs for a parallel copy
-	const BoxArray& ba = gridArray[lev];
-	MultiSetFab& crseContribsFine = crseContribs[lev+1];
-        const DistributionMapping& dm = nodeLev.DistributionMap();
-	std::map<int,Array<int> > ccArrays;
-	for (MFIter mfi(crseContribsFine); mfi.isValid(); ++mfi) {
-	  const ISetFab& ccFab = crseContribsFine[mfi];
-	  const Box& vbox = mfi.validbox();
-	  std::vector< std::pair<int,Box> > isects = ba.intersections(vbox);
-	  for (int i=0; i<isects.size(); ++i) {
-            int dst_proc = dm[isects[i].first];
+      crseContribs[lev].define(bacg,1,0,Fab_allocate);
+    }
 
-            // HACK  This was originally written for parallel, but when I tried it in serial, the entire 
-            // crseContribs structure was ignored!!  For now, set this up as a communication, even if 
-            // serial...probably an easy logic issue to clear up....famous last words...
-	    if (1 || dst_proc != myproc) {
-	      for (IntVect iv(vbox.smallEnd()), iEnd=vbox.bigEnd(); iv<=iEnd; vbox.next(iv))
-		{
-		  const std::set<int>& ids = ccFab(iv,0);
-		  int thisSize = ids.size();
-		  if (thisSize) {
-		    Array<int>& ints = ccArrays[dst_proc];
-		    int old_cc_size = ints.size();
-		    int delta_cc = BL_SPACEDIM + 1 + ids.size();
-		    int new_cc_size = old_cc_size + delta_cc;
+    std::map<IntVect,std::set<int>,IntVect::Compare> stencil;
+    if (lev<nLevs-1) {
+      // Pack up the crseContribs for a parallel copy
+      const BoxArray& ba = gridArray[lev];
+      MultiSetFab& crseContribsFine = crseContribs[lev+1];
+      const DistributionMapping& dm = nodeLev.DistributionMap();
+      std::map<int,Array<int> > ccArrays;
+      for (MFIter mfi(crseContribsFine); mfi.isValid(); ++mfi) {
+        const ISetFab& ccFab = crseContribsFine[mfi];
+        const Box& vbox = mfi.validbox();
+        std::vector< std::pair<int,Box> > isects = ba.intersections(vbox);
+        for (int i=0; i<isects.size(); ++i) {
+          int dst_proc = dm[isects[i].first];
 
-		    ints.resize(new_cc_size);
-		    for (int d=0; d<BL_SPACEDIM; ++d) {
-		      ints[old_cc_size+d] = iv[d];
-		    }
-		    ints[old_cc_size+BL_SPACEDIM] = ids.size();
-		    int cnt=0;
-		    for (std::set<int>::const_iterator it=ids.begin(), End=ids.end(); it!=End; ++it, ++cnt) {
-		      ints[old_cc_size+BL_SPACEDIM+1+cnt] = *it;
-		    }
-		  }
-		}
-	    }
-	  }
-	}
+          // HACK  This was originally written for parallel, but when I tried it in serial, the entire 
+          // crseContribs structure was ignored!!  For now, set this up as a communication, even if 
+          // serial...probably an easy logic issue to clear up....famous last words...
+          if (1 || dst_proc != myproc) {
+            for (IntVect iv(vbox.smallEnd()), iEnd=vbox.bigEnd(); iv<=iEnd; vbox.next(iv))
+            {
+              const std::set<int>& ids = ccFab(iv,0);
+              int thisSize = ids.size();
+              if (thisSize) {
+                Array<int>& ints = ccArrays[dst_proc];
+                int old_cc_size = ints.size();
+                int delta_cc = BL_SPACEDIM + 1 + ids.size();
+                int new_cc_size = old_cc_size + delta_cc;
 
-	int total_num_to_send = 0;
-	Array<int> sends(numprocs,0);
-	Array<int> soffsets(numprocs,0);
-	for (int i=0; i<numprocs; ++i) {
-	  sends[i] = ccArrays[i].size();
-	  total_num_to_send += sends[i];
-	  if (i>0) {
-	    soffsets[i] = soffsets[i-1] + ccArrays[i-1].size();
-	  }
-	}
-	Array<int> sbuf(total_num_to_send);
-	for (int i=0; i<numprocs; ++i) {
-	  for (int j=0; j<ccArrays[i].size(); ++j) {
-	    sbuf[soffsets[i] + j] = ccArrays[i][j];
-	  }
-	}
-
-	Array<int> recvs(numprocs);
-	BL_MPI_REQUIRE( MPI_Alltoall(sends.dataPtr(),
-				     1,
-				     ParallelDescriptor::Mpi_typemap<int>::type(),
-				     recvs.dataPtr(),
-				     1,
-				     ParallelDescriptor::Mpi_typemap<int>::type(),
-				     ParallelDescriptor::Communicator()) );
-            
-	int total_num_to_recv = 0;
-	Array<int> roffsets(numprocs,0);
-	for (int i=0; i<numprocs; ++i) {
-	  total_num_to_recv += recvs[i];
-	  if (i>0) {
-	    roffsets[i] = roffsets[i-1] + recvs[i-1];
-	  }
-	}
-	Array<int> rbuf(total_num_to_recv);
-	BL_MPI_REQUIRE( MPI_Alltoallv(total_num_to_send == 0 ? 0 : sbuf.dataPtr(),
-				      sends.dataPtr(),
-				      soffsets.dataPtr(),
-				      ParallelDescriptor::Mpi_typemap<int>::type(),
-				      total_num_to_recv == 0 ? 0 : rbuf.dataPtr(),
-				      recvs.dataPtr(),
-				      roffsets.dataPtr(),
-				      ParallelDescriptor::Mpi_typemap<int>::type(),
-				      ParallelDescriptor::Communicator()) );
-            
-	for (int i=0; i<numprocs; ++i) {
-	  int jcnt = roffsets[i];
-	  while (jcnt < roffsets[i] + recvs[i]) {
-	    IntVect iv(&(rbuf[jcnt]));
-	    int size = rbuf[jcnt+BL_SPACEDIM];
-	    std::set<int>& iset = stencil[iv];
-	    for (int k=0; k<size; ++k) {
-	      iset.insert(rbuf[jcnt+BL_SPACEDIM+1+k]);
-	    }
-	    jcnt += BL_SPACEDIM+1+size;
-	  }
-	}
-      }
-
-      for (MFIter mfi(nodeLev); mfi.isValid(); ++mfi) {
-	const Layout::NodeFab& nodeFab = nodeLev[mfi];
-	const Layout::IntFab& nodeIdFab = nodeIdsLev[mfi];
-	const Layout::IntFab* crseIdFab = (lev>0  ?  &(crseIds[mfi])  : 0);
-	const Box& vbox = mfi.validbox();
-	Box gbox = Box(vbox).grow(1);
-
-	for (IntVect iv(vbox.smallEnd()), iEnd=vbox.bigEnd(); iv<=iEnd; vbox.next(iv))
-	  {
-	    const Node& nC = nodeFab(iv,0);
-	    if (nC.type==Node::VALID) {
-	      rows[0] = nodeIdFab(iv,0);
-	      neighbors.clear();
-
-	      std::map<IntVect,std::set<int>,IntVect::Compare>::const_iterator sit=stencil.find(iv);
-	      if (sit!=stencil.end()) {
-		const std::set<int>& iset = sit->second;
-		neighbors.insert(iset.begin(),iset.end());
-	      }
-	      neighbors.insert(rows[0]);
-
-	      for (int d=0; d<BL_SPACEDIM; ++d) {
-		for (int pm = -1; pm<2; pm+=2) {
-		  std::set<int> nd;
-		  IntVect ivA = iv  +  pm * BoxLib::BASISV(d);
-		  IVScit it=growCellStencilLev[d].find(ivA);
-		  if (it!=growCellStencilLev[d].end()) {
-		    const Stencil& s = it->second;
-		    for (Stencil::const_iterator it=s.begin(), End=s.end(); it!=End; ++it) {
-		      const Node& node = it->first;
-		      const IntVect& ivs = node.iv;
-		      int slev = node.level;
-		      if (slev==lev) {
-			BL_ASSERT(nodeIdFab.box().contains(ivs));
-			int idx = nodeIdFab(ivs,0);
-			if (ivs != iv && idx>=0) { // idx<0 is Dirichlet data, iv added above
-			  nd.insert(idx);
-			}
-		      }
-		      else if (slev==lev-1) {
-			BL_ASSERT(crseIdFab);
-			BL_ASSERT(crseIdFab->box().contains(ivs));
-			nd.insert((*crseIdFab)(ivs,0));
-		      }
-		      else {
-			std::cout << "stencil: " << s << std::endl;
-			BoxLib::Abort("Bad stencil");
-		      }
-		    }
-
-		    // contribute to coarse cell stencil, if appropriate
-		    const Node& offcenter_node = nodeFab(ivA,0);
-		    if (offcenter_node.type==Node::VALID  &&  offcenter_node.level==lev-1) {
-		      crseContribs[lev][mfi](offcenter_node.iv,0).insert(rows[0]);
-		      crseContribs[lev][mfi](offcenter_node.iv,0).insert(nd.begin(),nd.end());
-		    }
-		  }
-		  else {
-		    int idx = nodeIdFab(ivA,0);
-		    if (idx>=0) { // idx<0 is a covered cell
-		      neighbors.insert(idx);
-		    }
-		  }
-
-		  // Merge this arm into full set
-		  neighbors.insert(nd.begin(),nd.end());
-
-		}
-	      }
-
-	      int num_cols = -1;
-	      if (nlsc.use_dense_Jacobian) 
-		{
-		  num_cols = layout.NumberOfGlobalNodeIds();
-		  cols.resize(num_cols);
-		  vals.resize(num_cols,0);
-		  for (int i=0; i<num_cols; ++i) cols[i] = i;
-		}
-	      else
-		{
-		  num_cols = neighbors.size();
-		  cols.resize(num_cols);
-		  vals.resize(num_cols,0);
-		  int cnt = 0;
-		  for (std::set<int>::const_iterator it=neighbors.begin(), End=neighbors.end(); it!=End; ++it) {
-		    cols[cnt++] = *it;
-		  }
-		}
-              if (calcSpace) {
-                MAX_NUM_COLS = std::max(MAX_NUM_COLS,num_cols);
-              } else {
-                ierr = MatSetValues(J,num_rows,rows,num_cols,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
+                ints.resize(new_cc_size);
+                for (int d=0; d<BL_SPACEDIM; ++d) {
+                  ints[old_cc_size+d] = iv[d];
+                }
+                ints[old_cc_size+BL_SPACEDIM] = ids.size();
+                int cnt=0;
+                for (std::set<int>::const_iterator it=ids.begin(), End=ids.end(); it!=End; ++it, ++cnt) {
+                  ints[old_cc_size+BL_SPACEDIM+1+cnt] = *it;
+                }
               }
-	    }
-	  }
+            }
+          }
+        }
+      }
+
+      int total_num_to_send = 0;
+      Array<int> sends(numprocs,0);
+      Array<int> soffsets(numprocs,0);
+      for (int i=0; i<numprocs; ++i) {
+        sends[i] = ccArrays[i].size();
+        total_num_to_send += sends[i];
+        if (i>0) {
+          soffsets[i] = soffsets[i-1] + ccArrays[i-1].size();
+        }
+      }
+      Array<int> sbuf(total_num_to_send);
+      for (int i=0; i<numprocs; ++i) {
+        for (int j=0; j<ccArrays[i].size(); ++j) {
+          sbuf[soffsets[i] + j] = ccArrays[i][j];
+        }
+      }
+
+      Array<int> recvs(numprocs);
+      BL_MPI_REQUIRE( MPI_Alltoall(sends.dataPtr(),
+                                   1,
+                                   ParallelDescriptor::Mpi_typemap<int>::type(),
+                                   recvs.dataPtr(),
+                                   1,
+                                   ParallelDescriptor::Mpi_typemap<int>::type(),
+                                   ParallelDescriptor::Communicator()) );
+            
+      int total_num_to_recv = 0;
+      Array<int> roffsets(numprocs,0);
+      for (int i=0; i<numprocs; ++i) {
+        total_num_to_recv += recvs[i];
+        if (i>0) {
+          roffsets[i] = roffsets[i-1] + recvs[i-1];
+        }
+      }
+      Array<int> rbuf(total_num_to_recv);
+      BL_MPI_REQUIRE( MPI_Alltoallv(total_num_to_send == 0 ? 0 : sbuf.dataPtr(),
+                                    sends.dataPtr(),
+                                    soffsets.dataPtr(),
+                                    ParallelDescriptor::Mpi_typemap<int>::type(),
+                                    total_num_to_recv == 0 ? 0 : rbuf.dataPtr(),
+                                    recvs.dataPtr(),
+                                    roffsets.dataPtr(),
+                                    ParallelDescriptor::Mpi_typemap<int>::type(),
+                                    ParallelDescriptor::Communicator()) );
+            
+      for (int i=0; i<numprocs; ++i) {
+        int jcnt = roffsets[i];
+        while (jcnt < roffsets[i] + recvs[i]) {
+          IntVect iv(&(rbuf[jcnt]));
+          int size = rbuf[jcnt+BL_SPACEDIM];
+          std::set<int>& iset = stencil[iv];
+          for (int k=0; k<size; ++k) {
+            iset.insert(rbuf[jcnt+BL_SPACEDIM+1+k]);
+          }
+          jcnt += BL_SPACEDIM+1+size;
+        }
       }
     }
+
+    for (MFIter mfi(nodeLev); mfi.isValid(); ++mfi) {
+      const Layout::NodeFab& nodeFab = nodeLev[mfi];
+      const Layout::IntFab& nodeIdFab = nodeIdsLev[mfi];
+      const Layout::IntFab* crseIdFab = (lev>0  ?  &(crseIds[mfi])  : 0);
+      const Box& vbox = mfi.validbox();
+      Box gbox = Box(vbox).grow(1);
+
+      for (IntVect iv(vbox.smallEnd()), iEnd=vbox.bigEnd(); iv<=iEnd; vbox.next(iv))
+      {
+        const Node& nC = nodeFab(iv,0);
+        if (nC.type==Node::VALID) {
+          rows[0] = nodeIdFab(iv,0);
+          neighbors.clear();
+
+          std::map<IntVect,std::set<int>,IntVect::Compare>::const_iterator sit=stencil.find(iv);
+          if (sit!=stencil.end()) {
+            const std::set<int>& iset = sit->second;
+            neighbors.insert(iset.begin(),iset.end());
+          }
+          neighbors.insert(rows[0]);
+
+          for (int d=0; d<BL_SPACEDIM; ++d) {
+            for (int pm = -1; pm<2; pm+=2) {
+              std::set<int> nd;
+              IntVect ivA = iv  +  pm * BoxLib::BASISV(d);
+              IVScit it=growCellStencilLev[d].find(ivA);
+              if (it!=growCellStencilLev[d].end()) {
+                const Stencil& s = it->second;
+                for (Stencil::const_iterator it=s.begin(), End=s.end(); it!=End; ++it) {
+                  const Node& node = it->first;
+                  const IntVect& ivs = node.iv;
+                  int slev = node.level;
+                  if (slev==lev) {
+                    BL_ASSERT(nodeIdFab.box().contains(ivs));
+                    int idx = nodeIdFab(ivs,0);
+                    if (ivs != iv && idx>=0) { // idx<0 is Dirichlet data, iv added above
+                      nd.insert(idx);
+                    }
+                  }
+                  else if (slev==lev-1) {
+                    BL_ASSERT(crseIdFab);
+                    BL_ASSERT(crseIdFab->box().contains(ivs));
+                    nd.insert((*crseIdFab)(ivs,0));
+                  }
+                  else {
+                    std::cout << "stencil: " << s << std::endl;
+                    BoxLib::Abort("Bad stencil");
+                  }
+                }
+
+                // contribute to coarse cell stencil, if appropriate
+                const Node& offcenter_node = nodeFab(ivA,0);
+                if (offcenter_node.type==Node::VALID  &&  offcenter_node.level==lev-1) {
+                  crseContribs[lev][mfi](offcenter_node.iv,0).insert(rows[0]);
+                  crseContribs[lev][mfi](offcenter_node.iv,0).insert(nd.begin(),nd.end());
+                }
+              }
+              else {
+                int idx = nodeIdFab(ivA,0);
+                if (idx>=0) { // idx<0 is a covered cell
+                  neighbors.insert(idx);
+                }
+              }
+
+              // Merge this arm into full set
+              neighbors.insert(nd.begin(),nd.end());
+
+            }
+          }
+
+          int num_cols = -1;
+          if (nlsc.use_dense_Jacobian) 
+          {
+            num_cols = layout.NumberOfGlobalNodeIds();
+            cols.resize(num_cols);
+            vals.resize(num_cols,0);
+            for (int i=0; i<num_cols; ++i) cols[i] = i;
+          }
+          else
+          {
+            num_cols = neighbors.size();
+            cols.resize(num_cols);
+            vals.resize(num_cols,0);
+            int cnt = 0;
+            for (std::set<int>::const_iterator it=neighbors.begin(), End=neighbors.end(); it!=End; ++it) {
+              cols[cnt++] = *it;
+            }
+          }
+          if (calcSpace) {
+            MAX_NUM_COLS = std::max(MAX_NUM_COLS,num_cols);
+          } else {
+            ierr = MatSetValues(J,num_rows,rows,num_cols,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
+          }
+        }
+      }
+    }
+  }
 
   if (calcSpace) {
     ParallelDescriptor::ReduceIntMax(MAX_NUM_COLS);
@@ -1130,6 +1167,8 @@ RichardSolver::CenterToEdgeUpwind(PArray<MFTower>&       mfte,
 				  int                    nComp,
                                   const BCRec&           bc) const
 {
+  BL_PROFILE("RichardSolver::CenterToEdgeUpwind()");
+
   int nLevs = rs_data.nLevs;
   for (int lev=0; lev<nLevs; ++lev) {
     MultiFab& clev = mftc[lev];
@@ -1170,6 +1209,8 @@ RichardSolver::XmultYZ(MFTower&       X,
 		       int            nComp,
 		       int            nGrow)
 {
+  BL_PROFILE("RichardSolver::XmultYZ()");
+
   Layout& layout = GetLayout();
   BL_ASSERT(layout.IsCompatible(X));
   BL_ASSERT(layout.IsCompatible(Y));
@@ -1187,44 +1228,44 @@ RichardSolver::XmultYZ(MFTower&       X,
   FArrayBox tfabY, tfabZ;
   int nLevs = rs_data.nLevs;
   for (int lev=0; lev<nLevs; ++lev)
+  {
+    MultiFab& Xlev = X[lev];
+    const MultiFab& Ylev = Y[lev];
+    const MultiFab& Zlev = Z[lev];
+    BoxArray fba;
+    if (lev<nLevs-1) {
+      fba = BoxArray(X[lev+1].boxArray()).coarsen(refRatio[lev]);
+    }
+
+    for (MFIter mfi(Y[lev]); mfi.isValid(); ++mfi)
     {
-      MultiFab& Xlev = X[lev];
-      const MultiFab& Ylev = Y[lev];
-      const MultiFab& Zlev = Z[lev];
-      BoxArray fba;
+      const Box& vbox = mfi.validbox();
+      Box gbox = Box(vbox).grow(nGrow);
+      FArrayBox& Xfab = Xlev[mfi];
+      const FArrayBox& Yfab = Ylev[mfi];
+      const FArrayBox& Zfab = Zlev[mfi];
+
+      tfabY.resize(gbox,nComp);
+      tfabZ.resize(gbox,nComp);
+      tfabY.copy(Yfab,sCompY,0,nComp);
+      tfabZ.copy(Zfab,sCompZ,0,nComp);
+
+      // Zero out parts of Y,Z covered by fine grid (to ensure valid data)
       if (lev<nLevs-1) {
-	fba = BoxArray(X[lev+1].boxArray()).coarsen(refRatio[lev]);
+        std::vector< std::pair<int,Box> > isects = fba.intersections(gbox);
+        for (int i = 0; i < isects.size(); i++)
+        {
+          tfabY.setVal(0,isects[i].second,0,nComp);
+          tfabZ.setVal(0,isects[i].second,0,nComp);
+        }
       }
 
-      for (MFIter mfi(Y[lev]); mfi.isValid(); ++mfi)
-        {
-	  const Box& vbox = mfi.validbox();
-	  Box gbox = Box(vbox).grow(nGrow);
-	  FArrayBox& Xfab = Xlev[mfi];
-	  const FArrayBox& Yfab = Ylev[mfi];
-	  const FArrayBox& Zfab = Zlev[mfi];
-
-	  tfabY.resize(gbox,nComp);
-	  tfabZ.resize(gbox,nComp);
-	  tfabY.copy(Yfab,sCompY,0,nComp);
-	  tfabZ.copy(Zfab,sCompZ,0,nComp);
-
-	  // Zero out parts of Y,Z covered by fine grid (to ensure valid data)
-	  if (lev<nLevs-1) {
-	    std::vector< std::pair<int,Box> > isects = fba.intersections(gbox);
-	    for (int i = 0; i < isects.size(); i++)
-	      {
-		tfabY.setVal(0,isects[i].second,0,nComp);
-		tfabZ.setVal(0,isects[i].second,0,nComp);
-	      }
-	  }
-
-	  FORT_RS_XMULTYZ(Xfab.dataPtr(dComp),ARLIM(Xfab.loVect()), ARLIM(Xfab.hiVect()),
-			  tfabY.dataPtr(),ARLIM(tfabY.loVect()), ARLIM(tfabY.hiVect()),
-			  tfabZ.dataPtr(),ARLIM(tfabZ.loVect()), ARLIM(tfabZ.hiVect()),
-			  gbox.loVect(), gbox.hiVect(), &nComp);
-        }
+      FORT_RS_XMULTYZ(Xfab.dataPtr(dComp),ARLIM(Xfab.loVect()), ARLIM(Xfab.hiVect()),
+                      tfabY.dataPtr(),ARLIM(tfabY.loVect()), ARLIM(tfabY.hiVect()),
+                      tfabZ.dataPtr(),ARLIM(tfabZ.loVect()), ARLIM(tfabZ.hiVect()),
+                      gbox.loVect(), gbox.hiVect(), &nComp);
     }
+  }
 }
 
 
@@ -1240,6 +1281,8 @@ RichardSolver::CCtoECgradAdd(PArray<MFTower>&            mfte,
                              int                         dComp,
                              int                         nComp) const
 {
+  BL_PROFILE("RichardSolver::CCtoECgradAdd()");
+
   const Layout& layout = GetLayout();
   for (int d=0; d<BL_SPACEDIM; ++d) {            
     BL_ASSERT(layout.IsCompatible(mfte[d]));
@@ -1277,15 +1320,18 @@ RichardSolver::FillPatch(MFTower& mft,
 			 int nComp,
 			 bool do_piecewise_constant)
 {
+  BL_PROFILE("RichardSolver::FillPatch()");
+
   int nLevs = rs_data.nLevs;
   mftfp->FillGrowCells(mft,sComp,nComp,do_piecewise_constant,nLevs);
 }
 
-#include <VisMF.H>
 void 
 RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
                                     Real     t)
 {
+  BL_PROFILE("RichardSolver::ComputeDarcyVelocity()");
+
   // On Dirichlet boundaries, the grow cells of pressure will hold the value to apply at
   // the cell wall.  Note that since we use "calcInvPressure" to fill rho.sat, these
   // are then values on the wall as well.  As a result, the lambda values computed
@@ -1398,12 +1444,14 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
 
 Real TotalVolume()
 {
-    const RealBox& rb = Geometry::ProbDomain();
-    Real vol = 1;
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-        vol *= rb.length(d);
-    }
-    return vol;
+  BL_PROFILE("RichardSolver::TotalVolume()");
+
+  const RealBox& rb = Geometry::ProbDomain();
+  Real vol = 1;
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    vol *= rb.length(d);
+  }
+  return vol;
 }
 
 void
@@ -1411,6 +1459,8 @@ RichardSolver::DivRhoU(MFTower& DivRhoU,
                        MFTower& pressure,
                        Real     t)
 {
+  BL_PROFILE("RichardSolver::DivRhoU()");
+
   // Get the Darcy flux
   ComputeDarcyVelocity(pressure,t);
 
@@ -1428,6 +1478,8 @@ RichardSolver::CalcResidual(MFTower& residual,
 			    Real     t,
 			    Real     dt)
 {
+  BL_PROFILE("RichardSolver::CalcResidual()");
+
   DivRhoU(residual,pressure,t);
 
   if (dt>0) {
@@ -1499,6 +1551,8 @@ void RichardSolver::CreateJac(Mat& J,
                               Real t,
 			      Real dt)
 {
+  BL_PROFILE("RichardSolver::CreateJac()");
+
   Layout& layout = GetLayout();
   const Array<BoxArray>& gridArray = layout.GridArray();
   const Array<IntVect>& refRatio   = layout.RefRatio();
@@ -1614,42 +1668,42 @@ void RichardSolver::CreateJac(Mat& J,
 
       for (IntVect iv(vbox.smallEnd()), iEnd=vbox.bigEnd(); iv<=iEnd; vbox.next(iv))
       {
-	  cols[0] = nodeNums(iv,0);
-          if (cols[0]>=0) {
-              rows[0] = cols[0];
-              vals[0] = dalpha(iv,0);
-              Real rdt = (dt>0  ?  rho[nc]*dt : 1); // The "b" factor
-              int cnt = 1;
-              for (int d=0; d<BL_SPACEDIM; ++d) {
-                  vals[0] -= rdt * jacflux[d][mfi](iv,2);
-                  IntVect ivp = iv + BoxLib::BASISV(d);
-                  int np = nodeNums(ivp,0);
-                  if (np>=0) {
-                      cols[cnt]  = np; 
-                      vals[cnt]  = -rdt * jacflux[d][mfi](iv,0);
-                      cnt++;
-                  }
-                  else {
-                      if (theBC.hi()[d]==FOEXTRAP) {
-                          vals[0] -= rdt * jacflux[d][mfi](iv,0);
-                      }
-                  }
-                  
-                  IntVect ivn = iv - BoxLib::BASISV(d);
-                  int nn = nodeNums(ivn,0);
-                  if (nn>=0) {
-                      cols[cnt]  = nn; 
-                      vals[cnt]  = -rdt * jacflux[d][mfi](iv,1);
-                      cnt++;
-                  }
-                  else {
-                      if (theBC.lo()[d]==FOEXTRAP) {
-                          vals[0] -= rdt * jacflux[d][mfi](iv,1);
-                      }
-                  }
+        cols[0] = nodeNums(iv,0);
+        if (cols[0]>=0) {
+          rows[0] = cols[0];
+          vals[0] = dalpha(iv,0);
+          Real rdt = (dt>0  ?  rho[nc]*dt : 1); // The "b" factor
+          int cnt = 1;
+          for (int d=0; d<BL_SPACEDIM; ++d) {
+            vals[0] -= rdt * jacflux[d][mfi](iv,2);
+            IntVect ivp = iv + BoxLib::BASISV(d);
+            int np = nodeNums(ivp,0);
+            if (np>=0) {
+              cols[cnt]  = np; 
+              vals[cnt]  = -rdt * jacflux[d][mfi](iv,0);
+              cnt++;
+            }
+            else {
+              if (theBC.hi()[d]==FOEXTRAP) {
+                vals[0] -= rdt * jacflux[d][mfi](iv,0);
               }
-              ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
-	  }
+            }
+                  
+            IntVect ivn = iv - BoxLib::BASISV(d);
+            int nn = nodeNums(ivn,0);
+            if (nn>=0) {
+              cols[cnt]  = nn; 
+              vals[cnt]  = -rdt * jacflux[d][mfi](iv,1);
+              cnt++;
+            }
+            else {
+              if (theBC.lo()[d]==FOEXTRAP) {
+                vals[0] -= rdt * jacflux[d][mfi](iv,1);
+              }
+            }
+          }
+          ierr = MatSetValues(J,rows.size(),rows.dataPtr(),cnt,cols.dataPtr(),vals.dataPtr(),INSERT_VALUES); CHKPETSC(ierr);
+        }
       }
     }
   }
@@ -1662,44 +1716,46 @@ void RichardSolver::CreateJac(Mat& J,
 PetscErrorCode 
 RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
 {
-    PetscErrorCode ierr; 
-    RichardSolver* rs = static_cast<RichardSolver*>(dummy);
-    if (!rs) {
-        BoxLib::Abort("Bad cast in RichardRes_DpDt");
-    }
+  BL_PROFILE("RichardSolver::RichardRes_DpDt()");
 
-    if (rs->GetNLScontrol().scale_soln_before_solve) {
-        ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); CHKPETSC(ierr); // Unscale solution
-    }
+  PetscErrorCode ierr; 
+  RichardSolver* rs = static_cast<RichardSolver*>(dummy);
+  if (!rs) {
+    BoxLib::Abort("Bad cast in RichardRes_DpDt");
+  }
 
-    MFTower& xMFT = rs->GetPressureNp1();
-    MFTower& fMFT = rs->GetResidual();
+  if (rs->GetNLScontrol().scale_soln_before_solve) {
+    ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); CHKPETSC(ierr); // Unscale solution
+  }
 
-    Layout& layout = rs->GetLayout();
-    ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
+  MFTower& xMFT = rs->GetPressureNp1();
+  MFTower& fMFT = rs->GetResidual();
 
-    Real t = rs->GetTime();
-    Real dt = rs->GetDt();
-    rs->CalcResidual(fMFT,xMFT,t,dt);
+  Layout& layout = rs->GetLayout();
+  ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
+
+  Real t = rs->GetTime();
+  Real dt = rs->GetDt();
+  rs->CalcResidual(fMFT,xMFT,t,dt);
 
 #if 0
-    // Scale residual by cell volume/sqrt(total volume)
-    Real sqrt_total_volume_inv = std::sqrt(1/TotalVolume());
-    int nComp = 1;
-    int nLevs = rs->GetNumLevels();
-    for (int lev=0; lev<nLevs; ++lev)
-    {
-      MultiFab::Multiply(fMFT[lev],layout.Volume(lev),0,0,nComp,0);
-      fMFT[lev].mult(sqrt_total_volume_inv,0,1);
-    }
+  // Scale residual by cell volume/sqrt(total volume)
+  Real sqrt_total_volume_inv = std::sqrt(1/TotalVolume());
+  int nComp = 1;
+  int nLevs = rs->GetNumLevels();
+  for (int lev=0; lev<nLevs; ++lev)
+  {
+    MultiFab::Multiply(fMFT[lev],layout.Volume(lev),0,0,nComp,0);
+    fMFT[lev].mult(sqrt_total_volume_inv,0,1);
+  }
 #endif
 
-    ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
+  ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
 
-    if (rs->GetNLScontrol().scale_soln_before_solve) {
-        ierr = VecPointwiseMult(x,x,rs->GetSolnTypInvV()); CHKPETSC(ierr); // Reset solution scaling
-    }
-    PetscFunctionReturn(0);
+  if (rs->GetNLScontrol().scale_soln_before_solve) {
+    ierr = VecPointwiseMult(x,x,rs->GetSolnTypInvV()); CHKPETSC(ierr); // Reset solution scaling
+  }
+  PetscFunctionReturn(0);
 }
 
 #undef __FUNCT__  
@@ -1707,31 +1763,33 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
 PetscErrorCode 
 RichardR2(SNES snes,Vec x,Vec f,void *dummy)
 {
-    PetscErrorCode ierr; 
-    RichardSolver* rs = static_cast<RichardSolver*>(dummy);
-    if (!rs) {
-        BoxLib::Abort("Bad cast in RichardR2");
-    }
+  BL_PROFILE("RichardSolver::RichardR2()");
 
-    if (rs->GetNLScontrol().scale_soln_before_solve) {
-        ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); CHKPETSC(ierr); // Unscale solution
-    }
+  PetscErrorCode ierr; 
+  RichardSolver* rs = static_cast<RichardSolver*>(dummy);
+  if (!rs) {
+    BoxLib::Abort("Bad cast in RichardR2");
+  }
 
-    MFTower& xMFT = rs->GetPressureNp1();
-    MFTower& fMFT = rs->GetResidual();
+  if (rs->GetNLScontrol().scale_soln_before_solve) {
+    ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); CHKPETSC(ierr); // Unscale solution
+  }
 
-    Layout& layout = rs->GetLayout();
-    ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
+  MFTower& xMFT = rs->GetPressureNp1();
+  MFTower& fMFT = rs->GetResidual();
 
-    Real t = rs->GetTime();
-    rs->DivRhoU(fMFT,xMFT,t);
+  Layout& layout = rs->GetLayout();
+  ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
 
-    ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
+  Real t = rs->GetTime();
+  rs->DivRhoU(fMFT,xMFT,t);
 
-    if (rs->GetNLScontrol().scale_soln_before_solve) {
-        ierr = VecPointwiseMult(x,x,rs->GetSolnTypInvV()); CHKPETSC(ierr); // Reset solution scaling
-    }
-    PetscFunctionReturn(0);
+  ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
+
+  if (rs->GetNLScontrol().scale_soln_before_solve) {
+    ierr = VecPointwiseMult(x,x,rs->GetSolnTypInvV()); CHKPETSC(ierr); // Reset solution scaling
+  }
+  PetscFunctionReturn(0);
 }
 
 #undef __FUNCT__  
@@ -1739,6 +1797,8 @@ RichardR2(SNES snes,Vec x,Vec f,void *dummy)
 PetscErrorCode 
 RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, void *dummy)
 {
+  BL_PROFILE("RichardSolver::RichardJacFromPM()");
+
   PetscErrorCode ierr;
   RichardSolver* rs = static_cast<RichardSolver*>(dummy);
   if (!rs) {
@@ -1769,6 +1829,8 @@ RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, vo
 PetscErrorCode  
 RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx)
 {
+  BL_PROFILE("RichardSolver::RichardMatFDColoringApply()");
+
   PetscErrorCode ierr;
   PetscInt       k,start,end,l,row,col,srow,**vscaleforrow,m1,m2;
   PetscScalar    dx,*y,*w3_array;
@@ -1843,38 +1905,38 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
   }
   w3 = coloring->w3;
 
-    /* Compute all the local scale factors, including ghost points */
+  /* Compute all the local scale factors, including ghost points */
   ierr = VecGetLocalSize(x1_tmp,&N);CHKPETSC(ierr);
 
   if (rs->GetNLScontrol().scale_soln_before_solve) {
-      ierr = VecSet(coloring->vscale,1);
-      ierr = VecScale(coloring->vscale,1/epsilon);
+    ierr = VecSet(coloring->vscale,1);
+    ierr = VecScale(coloring->vscale,1/epsilon);
   }
   else {
-      Vec& SolnTypV = rs->GetSolnTypV();
-      ierr = VecGetArray(SolnTypV,&solnTyp_array);CHKPETSC(ierr);
-      ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
-      if (ctype == IS_COLORING_GHOSTED){
-          col_start = 0; col_end = N;
-      } else if (ctype == IS_COLORING_GLOBAL){
-          solnTyp_array = solnTyp_array - start;
-          vscale_array = vscale_array - start;
-          col_start = start; col_end = N + start;
-      }
-      for (col=col_start; col<col_end; col++) { 
-          vscale_array[col] = (PetscScalar)(1.0 / (solnTyp_array[col] * epsilon));
-      } 
-      if (ctype == IS_COLORING_GLOBAL)  {
-          vscale_array = vscale_array + start;      
-          solnTyp_array = solnTyp_array + start;      
-      }
-      ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
-      ierr = VecRestoreArray(SolnTypV,&solnTyp_array);CHKPETSC(ierr);
+    Vec& SolnTypV = rs->GetSolnTypV();
+    ierr = VecGetArray(SolnTypV,&solnTyp_array);CHKPETSC(ierr);
+    ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
+    if (ctype == IS_COLORING_GHOSTED){
+      col_start = 0; col_end = N;
+    } else if (ctype == IS_COLORING_GLOBAL){
+      solnTyp_array = solnTyp_array - start;
+      vscale_array = vscale_array - start;
+      col_start = start; col_end = N + start;
+    }
+    for (col=col_start; col<col_end; col++) { 
+      vscale_array[col] = (PetscScalar)(1.0 / (solnTyp_array[col] * epsilon));
+    } 
+    if (ctype == IS_COLORING_GLOBAL)  {
+      vscale_array = vscale_array + start;      
+      solnTyp_array = solnTyp_array + start;      
+    }
+    ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
+    ierr = VecRestoreArray(SolnTypV,&solnTyp_array);CHKPETSC(ierr);
   }
 
   if (ctype == IS_COLORING_GLOBAL){
-      ierr = VecGhostUpdateBegin(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
-      ierr = VecGhostUpdateEnd(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
+    ierr = VecGhostUpdateBegin(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
+    ierr = VecGhostUpdateEnd(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
   }
   
   if (coloring->vscaleforrow) {
@@ -1886,91 +1948,91 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
   */
   int p = ParallelDescriptor::MyProc();
   if (rs->GetNLScontrol().scale_soln_before_solve) {
-      //
-      // In this case, since the soln is scaled, the perturbation is a simple constant, epsilon
-      // Compared to the case where dx=dx_i, the logic cleans up quite a bit here.
-      //
-      for (k=0; k<coloring->ncolors; k++) { 
-          coloring->currentcolor = k;
+    //
+    // In this case, since the soln is scaled, the perturbation is a simple constant, epsilon
+    // Compared to the case where dx=dx_i, the logic cleans up quite a bit here.
+    //
+    for (k=0; k<coloring->ncolors; k++) { 
+      coloring->currentcolor = k;
 
-          ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
-          ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
-          if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;          
-          for (l=0; l<coloring->ncolumns[k]; l++) {
-              col = coloring->columns[k][l];    /* local column of the matrix we are probing for */
-              w3_array[col] += epsilon;
-          } 
-          if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array + start;
-          ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
+      ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
+      ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
+      if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;          
+      for (l=0; l<coloring->ncolumns[k]; l++) {
+        col = coloring->columns[k][l];    /* local column of the matrix we are probing for */
+        w3_array[col] += epsilon;
+      } 
+      if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array + start;
+      ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
           
-          // w2 = F(w3) - F(x1) = F(x1 + dx) - F(x1)
-          ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-          ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
-          ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-          ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+      // w2 = F(w3) - F(x1) = F(x1 + dx) - F(x1)
+      ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+      ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
           
-          // Insert (w2_j / dx) into J_ij
-          PetscReal epsilon_inv = 1/epsilon;
-          ierr = VecGetArray(w2,&y);CHKPETSC(ierr);          
-          for (l=0; l<coloring->nrows[k]; l++) {
-              row    = coloring->rows[k][l];             /* local row index */
-              col    = coloring->columnsforrow[k][l];    /* global column index */
-              y[row] *= epsilon_inv;                     /* dx = epsilon */
-              srow   = row + start;                      /* global row index */
-              ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
-          }
-          ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
+      // Insert (w2_j / dx) into J_ij
+      PetscReal epsilon_inv = 1/epsilon;
+      ierr = VecGetArray(w2,&y);CHKPETSC(ierr);          
+      for (l=0; l<coloring->nrows[k]; l++) {
+        row    = coloring->rows[k][l];             /* local row index */
+        col    = coloring->columnsforrow[k][l];    /* global column index */
+        y[row] *= epsilon_inv;                     /* dx = epsilon */
+        srow   = row + start;                      /* global row index */
+        ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
+      }
+      ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
           
-      } /* endof for each color */
+    } /* endof for each color */
 
   }
   else {
-      ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
-      if (ctype == IS_COLORING_GLOBAL) {vscale_array = vscale_array - start;}
+    ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
+    if (ctype == IS_COLORING_GLOBAL) {vscale_array = vscale_array - start;}
       
-      for (k=0; k<coloring->ncolors; k++) { 
-          coloring->currentcolor = k;
-          ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
-          ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
-          if (ctype == IS_COLORING_GLOBAL) {w3_array = w3_array - start;}
+    for (k=0; k<coloring->ncolors; k++) { 
+      coloring->currentcolor = k;
+      ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
+      ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
+      if (ctype == IS_COLORING_GLOBAL) {w3_array = w3_array - start;}
           
-          /*
-            Loop over each column associated with color 
-            adding the perturbation to the vector w3.
-          */
-          int sgn_diff = -1;
-          for (l=0; l<coloring->ncolumns[k]; l++) {
-            col = coloring->columns[k][l]; // Global column number
-            w3_array[col] += sgn_diff/vscale_array[col];
-          } 
-          if (ctype == IS_COLORING_GLOBAL) {w3_array = w3_array + start;}
-          ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
+      /*
+        Loop over each column associated with color 
+        adding the perturbation to the vector w3.
+      */
+      int sgn_diff = -1;
+      for (l=0; l<coloring->ncolumns[k]; l++) {
+        col = coloring->columns[k][l]; // Global column number
+        w3_array[col] += sgn_diff/vscale_array[col];
+      } 
+      if (ctype == IS_COLORING_GLOBAL) {w3_array = w3_array + start;}
+      ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
           
-          /*
-            Evaluate function at w3 = x1 + dx (here dx is a vector of perturbations)
-            w2 = F(x1 + dx) - F(x1)
-          */
-          ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-          ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
-          ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-          ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+      /*
+        Evaluate function at w3 = x1 + dx (here dx is a vector of perturbations)
+        w2 = F(x1 + dx) - F(x1)
+      */
+      ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+      ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
 
-          /*
-            Loop over rows of vector, putting results into Jacobian matrix
-          */
-          ierr = VecGetArray(w2,&y);CHKPETSC(ierr);
-          for (l=0; l<coloring->nrows[k]; l++) {
-              row    = coloring->rows[k][l];             /* local row index */
-              col    = coloring->columnsforrow[k][l];    /* global column index */
-              y[row] *= (sgn_diff * vscale_array[coloring->columnsforrow[k][l]]);
-              srow   = row + start;
-              ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
-          }
-          ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
+      /*
+        Loop over rows of vector, putting results into Jacobian matrix
+      */
+      ierr = VecGetArray(w2,&y);CHKPETSC(ierr);
+      for (l=0; l<coloring->nrows[k]; l++) {
+        row    = coloring->rows[k][l];             /* local row index */
+        col    = coloring->columnsforrow[k][l];    /* global column index */
+        y[row] *= (sgn_diff * vscale_array[coloring->columnsforrow[k][l]]);
+        srow   = row + start;
+        ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
+      }
+      ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
                     
-      } /* endof for each color */
-      if (ctype == IS_COLORING_GLOBAL) {vscale_array = vscale_array + start;}
-      ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
+    } /* endof for each color */
+    if (ctype == IS_COLORING_GLOBAL) {vscale_array = vscale_array + start;}
+    ierr = VecRestoreArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
   }
    
   coloring->currentcolor = -1;
@@ -2019,6 +2081,8 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
 void
 RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure,Real t)
 {
+  BL_PROFILE("RichardSolver::ComputeRichardAlpha()");
+
   MFTower& PCapParamsMFT = GetPCapParams();
   MFTower& PMFT = GetPressureNp1();
   MFTower& aMFT = GetAlpha();
@@ -2037,6 +2101,8 @@ RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure,Real t)
 PetscErrorCode  
 SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx)
 {
+  BL_PROFILE("RichardSolver::SemiAnalyticMatFDColoringApply()");
+
   PetscErrorCode (*f)(void*,Vec,Vec,void*) = (PetscErrorCode (*)(void*,Vec,Vec,void *))coloring->f;
   PetscErrorCode ierr;
   PetscInt       k,start,end,l,row,col,srow,**vscaleforrow,m1,m2;
@@ -2093,12 +2159,12 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   Vec& press = rs->GetTrialResV(); // A handy Vec to use
   ierr = VecCopy(x1_tmp,press); CHKPETSC(ierr);
   if (rs->GetNLScontrol().scale_soln_before_solve) {
-      ierr = VecPointwiseMult(press,x1_tmp,rs->GetSolnTypV()); CHKPETSC(ierr); // Mult(w,x,y): w=x.y, p=pbar.ptyp
+    ierr = VecPointwiseMult(press,x1_tmp,rs->GetSolnTypV()); CHKPETSC(ierr); // Mult(w,x,y): w=x.y, p=pbar.ptyp
   }
   rs->ComputeRichardAlpha(AlphaV,press,rs->GetTime());
 
   if (rs->GetNLScontrol().scale_soln_before_solve) {
-      ierr = VecPointwiseMult(AlphaV,AlphaV,rs->GetSolnTypV()); CHKPETSC(ierr); // Mult(w,x,y): w=x.y, alphabar=alpha.ptyp
+    ierr = VecPointwiseMult(AlphaV,AlphaV,rs->GetSolnTypV()); CHKPETSC(ierr); // Mult(w,x,y): w=x.y, alphabar=alpha.ptyp
   }
 
   Real dt_inv = 1/rs->GetDt();
@@ -2125,15 +2191,15 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   }
   w3 = coloring->w3;
 
-    /* Compute all the local scale factors, including ghost points */
+  /* Compute all the local scale factors, including ghost points */
   ierr = VecGetLocalSize(x1_tmp,&N);CHKPETSC(ierr);
 
   ierr = VecSet(coloring->vscale,1); CHKPETSC(ierr);
   ierr = VecScale(coloring->vscale,1/epsilon); CHKPETSC(ierr);
 
   if (ctype == IS_COLORING_GLOBAL){
-      ierr = VecGhostUpdateBegin(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
-      ierr = VecGhostUpdateEnd(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
+    ierr = VecGhostUpdateBegin(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
+    ierr = VecGhostUpdateEnd(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
   }
   
   if (coloring->vscaleforrow) {
@@ -2151,80 +2217,80 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   Vec& w4 = rs->GetTrialResV(); // A handy Vec to use if centered diff for J
 
   for (k=0; k<coloring->ncolors; k++) { 
-      coloring->currentcolor = k;
+    coloring->currentcolor = k;
       
-      ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
-      ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
-      if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;          
+    ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
+    ierr = VecGetArray(w3,&w3_array);CHKPETSC(ierr);
+    if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array - start;          
 
-      ierr = VecCopy(x1_tmp,w4);CHKPETSC(ierr);
-      PetscReal *w4_array;
-      ierr = VecGetArray(w4,&w4_array);CHKPETSC(ierr);
-      if (ctype == IS_COLORING_GLOBAL) w4_array = w4_array - start;          
+    ierr = VecCopy(x1_tmp,w4);CHKPETSC(ierr);
+    PetscReal *w4_array;
+    ierr = VecGetArray(w4,&w4_array);CHKPETSC(ierr);
+    if (ctype == IS_COLORING_GLOBAL) w4_array = w4_array - start;          
 
-      for (l=0; l<coloring->ncolumns[k]; l++) {
-          col = coloring->columns[k][l];    /* global column of the matrix we are probing for */
-          w3_array[col] += epsilon;
-          w4_array[col] -= epsilon;
-      } 
-      if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array + start;
-      ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
+    for (l=0; l<coloring->ncolumns[k]; l++) {
+      col = coloring->columns[k][l];    /* global column of the matrix we are probing for */
+      w3_array[col] += epsilon;
+      w4_array[col] -= epsilon;
+    } 
+    if (ctype == IS_COLORING_GLOBAL) w3_array = w3_array + start;
+    ierr = VecRestoreArray(w3,&w3_array);CHKPETSC(ierr);
       
-      if (ctype == IS_COLORING_GLOBAL) w4_array = w4_array + start;
-      ierr = VecRestoreArray(w4,&w4_array);CHKPETSC(ierr);
+    if (ctype == IS_COLORING_GLOBAL) w4_array = w4_array + start;
+    ierr = VecRestoreArray(w4,&w4_array);CHKPETSC(ierr);
 
-      PetscReal epsilon_inv;
-      if (rs->GetNLScontrol().centered_diff_J) {
-          // w2 <- w2 - w1 = F(w3) - F(w4) = F(x1 + dx) - F(x1 - dx)
-          ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-          ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
-          ierr = (*f)(sctx,w4,w1,fctx);CHKPETSC(ierr);        
-          ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-          ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
-          epsilon_inv = 0.5/epsilon;
-      }
-      else {
+    PetscReal epsilon_inv;
+    if (rs->GetNLScontrol().centered_diff_J) {
+      // w2 <- w2 - w1 = F(w3) - F(w4) = F(x1 + dx) - F(x1 - dx)
+      ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+      ierr = (*f)(sctx,w4,w1,fctx);CHKPETSC(ierr);        
+      ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+      epsilon_inv = 0.5/epsilon;
+    }
+    else {
 #if 1 // Forward
-          // w2 = F(w3) - F(x1) = F(x1 + dx) - F(x1) = (1/eps)*(w2 - w1)
-          ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-          ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
-          ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-          ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
-          epsilon_inv = 1/epsilon;
+      // w2 = F(w3) - F(x1) = F(x1 + dx) - F(x1) = (1/eps)*(w2 - w1)
+      ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
+      ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+      epsilon_inv = 1/epsilon;
 #else // backward
-          // w2 = F(w1) - F(w4) = F(x1) - F(x1 - dx) = -(1/eps)*(w2 - w1)
-          ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-          ierr = (*f)(sctx,w4,w2,fctx);CHKPETSC(ierr);        
-          ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-          ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
-          epsilon_inv = -1/epsilon;
+      // w2 = F(w1) - F(w4) = F(x1) - F(x1 - dx) = -(1/eps)*(w2 - w1)
+      ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = (*f)(sctx,w4,w2,fctx);CHKPETSC(ierr);        
+      ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
+      ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
+      epsilon_inv = -1/epsilon;
 #endif
-      }
+    }
       
-      // Insert (w2_j / dx) into J_ij [include diagonal term, dR1_i/dpbar_i = alphabar
-      ierr = VecGetArray(w2,&y);CHKPETSC(ierr);          
-      ierr = VecGetArray(AlphaV,&a_array);CHKPETSC(ierr);          
+    // Insert (w2_j / dx) into J_ij [include diagonal term, dR1_i/dpbar_i = alphabar
+    ierr = VecGetArray(w2,&y);CHKPETSC(ierr);          
+    ierr = VecGetArray(AlphaV,&a_array);CHKPETSC(ierr);          
 
-      for (l=0; l<coloring->nrows[k]; l++) {
-          row    = coloring->rows[k][l];             /* local row index */
-          col    = coloring->columnsforrow[k][l];    /* global column index */
-          y[row] *= epsilon_inv;                     /* dx = epsilon */
-          srow   = row + start;                      /* global row index */
+    for (l=0; l<coloring->nrows[k]; l++) {
+      row    = coloring->rows[k][l];             /* local row index */
+      col    = coloring->columnsforrow[k][l];    /* global column index */
+      y[row] *= epsilon_inv;                     /* dx = epsilon */
+      srow   = row + start;                      /* global row index */
 
-          // Add diagonal term
-          if (dt_inv>0 && srow == col) {y[row] += a_array[row] * dt_inv;}
+      // Add diagonal term
+      if (dt_inv>0 && srow == col) {y[row] += a_array[row] * dt_inv;}
 
-          ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
-      }
-      ierr = VecRestoreArray(AlphaV,&a_array);CHKPETSC(ierr);
-      ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
+      ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
+    }
+    ierr = VecRestoreArray(AlphaV,&a_array);CHKPETSC(ierr);
+    ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
       
   } /* end of for each color */
    
   coloring->currentcolor = -1;
   ierr  = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
   ierr  = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
-      ParallelDescriptor::Barrier();
+  ParallelDescriptor::Barrier();
   ierr = PetscLogEventEnd(MAT_FDColoringApply,coloring,J,x1,0);CHKPETSC(ierr);
 
   static int Jcnt = 0;
@@ -2266,6 +2332,8 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
 PetscErrorCode 
 RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,void *ctx)
 {
+  BL_PROFILE("RichardSolver::RichardComputeJacobianColor()");
+
   MatFDColoring  color = (MatFDColoring) ctx;
   PetscErrorCode ierr;
   Vec            f;
@@ -2279,7 +2347,7 @@ RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,vo
   PetscValidHeaderSpecific(color,MAT_FDCOLORING_CLASSID,6);
 
   if (rs->ReusePreviousJacobian()) {
-      PetscFunctionReturn(0);
+    PetscFunctionReturn(0);
   }
 
   *flag = SAME_NONZERO_PATTERN;
@@ -2289,10 +2357,10 @@ RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,vo
     ierr  = MatFDColoringSetF(color,f);CHKPETSC(ierr);
   }
   if (rs->GetRSdata().semi_analytic_J) {
-      ierr = SemiAnalyticMatFDColoringApply(*B,color,x1,flag,snes);CHKPETSC(ierr);
+    ierr = SemiAnalyticMatFDColoringApply(*B,color,x1,flag,snes);CHKPETSC(ierr);
   } 
   else {
-      ierr = RichardMatFDColoringApply(*B,color,x1,flag,snes);CHKPETSC(ierr);
+    ierr = RichardMatFDColoringApply(*B,color,x1,flag,snes);CHKPETSC(ierr);
   }
   if (*J != *B) {
     ierr = MatAssemblyBegin(*J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
@@ -2310,6 +2378,8 @@ static void
 MatSqueeze(Mat& J,
 	   Layout& layout) 
 {
+  BL_PROFILE("RichardSolver::MatSqueeze()");
+
   PetscErrorCode ierr;
   Mat A;
   MatCreate(PETSC_COMM_WORLD,&A);

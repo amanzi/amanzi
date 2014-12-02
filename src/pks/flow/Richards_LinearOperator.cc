@@ -109,7 +109,8 @@ void Richards_PK::EnforceConstraints(double Tp, CompositeVector& u)
         const AmanziGeometry::Point& normal = mesh_->face_normal(f);
         double area = mesh_->face_area(f);
         double Knn = ((K[cells[0]] * normal) * normal) / (area * area);
-        k_face[0][f] = std::min(1.0, -bc_value[f] * mu_ / (Knn * rho_ * rho_ * g_));
+        double save = 3.0;
+        k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_ / (Knn * rho_ * rho_ * g_));
       } 
     }
   }
