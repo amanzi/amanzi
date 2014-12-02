@@ -2531,9 +2531,17 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"abort_on_psuedo_timestep_failure")==0) {
-                    textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<int>("steady_abort_on_psuedo_timestep_failure",get_int_constant(textContent,*def_list));
+		    textContent = XMLString::transcode(currentNode->getTextContent());
+                    if (strcmp(textContent,"true")==0) {
+                      expertPL.set<bool>("steady_abort_on_psuedo_timestep_failure",true);
+                    }
+                    else  {
+                      expertPL.set<bool>("steady_abort_on_psuedo_timestep_failure",false);
+                    }
                     XMLString::release(&textContent);
+                    //textContent = XMLString::transcode(currentNode->getTextContent());
+                    //expertPL.set<int>("steady_abort_on_psuedo_timestep_failure",get_int_constant(textContent,*def_list));
+                    //XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"limit_function_evals")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());

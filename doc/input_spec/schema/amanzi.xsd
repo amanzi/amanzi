@@ -746,6 +746,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
     <xs:element name="min_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
     <xs:element name="limit_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
     <xs:element name="min_iterations_2" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
+    <xs:element name="time_step_increase_factor" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
     <xs:element name="time_step_increase_factor_2" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
     <xs:element name="max_consecutive_failures_1" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
     <xs:element name="time_step_retry_factor_1" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
@@ -754,9 +755,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
     <xs:element name="time_step_retry_factor_f" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
     <xs:element name="max_num_consecutive_success" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
     <xs:element name="extra_time_step_increase_factor" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
-    <xs:element name="abort_on_psuedo_timestep_failure" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
-    <xs:element name="use_PETSc_snes" type="xs:boolean" minOccurs = "0" maxOccurs = "1"/>
-    <xs:element name="limit_function_evals" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
+    <xs:element name="abort_on_psuedo_timestep_failure" type="xs:boolean" minOccurs = "0" maxOccurs = "1"/>
+    <xs:element name="limit_function_evals" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
     <xs:element name="do_grid_sequence" type="xs:boolean" minOccurs = "0" maxOccurs = "1"/>
     <xs:element name="grid_sequence_new_level_dt_factor" type="typedef_grid_sequence" minOccurs = "0" maxOccurs = "1"/>
   </xs:all>
