@@ -6272,34 +6272,30 @@ PorousMedia::calcDiffusivity (const Real time,
 
       BL_ASSERT(dComp_tracs + num_tracs <= diff_cc->nComp());
 
-      // FIXME: D and tau are n-dimensional because they may have come from averaging down, and if so 
+      // FIXME: tau is n-dimensional because it may have come from averaging down, and if so 
       // should use harmonic/arith formulas.  However, at the moment, the cell-centered diffusion coefficient has
-      // only a single component per species. As a HACK we will take just the first component of these vectors
+      // only a single component per species. As a HACK we will take just the first component of the tau vector
       // but this should be fixed by having an n-dim vector of these things.
 
-      MultiFab tmp(grids,BL_SPACEDIM,nGrow);
-      bool retD = rock_manager->GetProperty(time,level,tmp,"molecular_diffusion_coefficient",0,nGrow);
-      MultiFab::Copy(*diff_cc,tmp,0,dComp_tracs,1,nGrow);
-
-      bool retT = rock_manager->GetProperty(time,level,tmp,"tortuosity",0,nGrow);
-      MultiFab tau(grids,1,nGrow);
-      MultiFab::Copy(tau,tmp,0,0,1,nGrow);
-
-      if (!retD || !retT) {
-        diff_cc->setVal(0,dComp_tracs,num_tracs,nGrow);
+      for (int i=0; i<num_tracs; ++i) {
+        int tcomp = dComp_tracs + i;
+        diff_cc->setVal(molecular_diffusivity[i],tcomp,1,nGrow);
       }
-      else {
-        // Set D_eff <- D * tau * sat * phi / rho, copy out to all tracers
-        diff_cc->mult(1/density[0],dComp_tracs,1,nGrow);
-        for (MFIter mfi(*satp); mfi.isValid(); ++mfi) {
-          const Box& box = (*satp)[mfi].box();
-          FArrayBox& fab = (*diff_cc)[mfi];
-          fab.mult((*satp)[mfi],0,dComp_tracs,1);
-          fab.mult((*rock_phi)[mfi],0,dComp_tracs,1);
+      MultiFab tau(grids,BL_SPACEDIM,nGrow);
+      bool retT = rock_manager->GetProperty(time,level,tau,"tortuosity",0,nGrow); // if !retT, tau == 1
+
+      // Set D_eff <- D * tau * sat * phi / rho, copy out to all tracers
+      diff_cc->mult(1/density[0],dComp_tracs,1,nGrow);
+      for (MFIter mfi(*satp); mfi.isValid(); ++mfi) {
+        const Box& box = (*satp)[mfi].box();
+        FArrayBox& fab = (*diff_cc)[mfi];
+        fab.mult((*satp)[mfi],0,dComp_tracs,1);
+        fab.mult((*rock_phi)[mfi],0,dComp_tracs,1);
+        if (retT) {
           fab.mult(tau[mfi],0,dComp_tracs,1);
-          for (int n=1; n<num_tracs; ++n) {
-            fab.copy(fab,dComp_tracs,dComp_tracs+n,1);
-          }
+        }
+        for (int n=1; n<num_tracs; ++n) {
+          fab.copy(fab,dComp_tracs,dComp_tracs+n,1);
         }
       }
     }
@@ -7258,25 +7254,6 @@ PorousMedia::derive_Intrinsic_Permeability(Real      time,
 }
 
 void
-PorousMedia::derive_Molecular_Diffusion_Coefficient(Real      time,
-                                                    MultiFab& mf,
-                                                    int       dcomp,
-                                                    int       dir)
-{
-  MultiFab Dtmp(grids,BL_SPACEDIM,0);
-  bool ret = rock_manager->GetProperty(state[State_Type].curTime(),level,Dtmp,
-                                  "molecular_diffusion_coefficient",dcomp,mf.nGrow());
-  if (!ret) {
-    // Assume one component, return def
-    Real molecular_diffusion_coefficient_DEF = 0;
-    mf.setVal(molecular_diffusion_coefficient_DEF,dcomp,1);
-  }
-  else {
-    MultiFab::Copy(mf,Dtmp,dir,dcomp,1,0);
-  }
-}
-
-void
 PorousMedia::derive_Tortuosity(Real      time,
                                MultiFab& mf,
                                int       dcomp,
@@ -7361,27 +7338,6 @@ PorousMedia::derive_CationExchangeCapacity(Real      time,
   }
 }
 
-void
-PorousMedia::derive_Dispersivity(Real      time,
-                                 MultiFab& mf,
-                                 int       dcomp,
-                                 int       dir)
-{
-  std::string name = (dir == 0  ? "Dispersivity_L" : "Dispersivity_T" );
-  std::string pName = "dispersivity";
-  int nComp = rock_manager->NComp(pName);
-  if (nComp > 0) {
-    MultiFab dtmp(grids,nComp,0);
-    bool ret = rock_manager->GetProperty(state[State_Type].curTime(),level,dtmp,
-                                    "dispersivity",0,mf.nGrow());
-    MultiFab::Copy(mf,dtmp,dir,dcomp,1,0);
-  } else {
-    // Assume one component, return def
-    Real dispersivity_DEF = 0;
-    mf.setVal(dispersivity_DEF,dcomp,1);
-  }
-}
-
 MultiFab*
 PorousMedia::derive (const std::string& name,
                      Real               time,
@@ -7460,18 +7416,6 @@ PorousMedia::derive (const std::string& name,
       int dir = ( name == "Intrinsic_Permeability_X"  ?  0  :
                   name == "Intrinsic_Permeability_Y" ? 1 : 2);
       derive_Intrinsic_Permeability(time,mf,dcomp,dir);
-    }
-    else if (name == "Molecular_Diffusion_Coefficient_X" ||
-        name == "Molecular_Diffusion_Coefficient_Y" ||
-        name == "Molecular_Diffusion_Coefficient_Z") {
-      int dir = ( name == "Molecular_Diffusion_Coefficient_X"  ?  0  :
-                  name == "Molecular_Diffusion_Coefficient_Y" ? 1 : 2);
-      derive_Molecular_Diffusion_Coefficient(time,mf,dcomp,dir);
-    }
-    else if (name == "Dispersivity_L" ||
-             name == "Dispersivity_T") {
-      int dir = ( name == "Dispersivity_L"  ?  0  : 1);
-      derive_Dispersivity(time,mf,dcomp,dir);
     }
     else if (name == "Tortuosity_X" ||
              name == "Tortuosity_Y" ||

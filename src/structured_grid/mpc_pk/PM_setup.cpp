@@ -198,7 +198,7 @@ bool PorousMedia::variable_scal_diff;
 
 Array<int>  PorousMedia::is_diffusive;
 Array<Real> PorousMedia::visc_coef;
-Array<Real> PorousMedia::diff_coef;
+Array<Real> PorousMedia::molecular_diffusivity;
 //
 // Transport flags
 //
@@ -223,6 +223,7 @@ int  PorousMedia::max_grid_size_chem;
 bool PorousMedia::no_initial_values;
 bool PorousMedia::use_funccount;
 Real PorousMedia::max_chemistry_time_step;
+Array<Real> PorousMedia::first_order_decay_constant;
 //
 // Lists.
 //
@@ -1651,6 +1652,7 @@ void  PorousMedia::read_tracer()
 #endif
   chemistry_helper = 0;
 
+  first_order_decay_constant.resize(ntracers,0);
   if (do_tracer_chemistry) {
     const std::string chemistry_str = "Chemistry";
 
@@ -1662,6 +1664,15 @@ void  PorousMedia::read_tracer()
       max_chemistry_time_step = -1;
       if (int nmts = ppc.countval(Chemistry_Max_Time_Step_str.c_str())) {
         ppc.get(Chemistry_Max_Time_Step_str.c_str(),max_chemistry_time_step);
+      }
+
+      for (int i = 0; i<ntracers; i++) {
+        const std::string prefix("tracer." + tNames[i]);
+        ParmParse ppr(prefix.c_str());
+        if (ppr.countval("firstOrderDecayConstant") > 0) {
+          BoxLib::Abort("Radioactive decay constants cannot yet be specified in Amanzi input");
+        }
+        ppr.query("firstOrderDecayConstant",first_order_decay_constant[i]); 
       }
 
       if (chemistry_model_name == "Amanzi") {
@@ -1778,7 +1789,7 @@ void  PorousMedia::read_tracer()
   ppp.query("max_grid_size_chem",max_grid_size_chem);
   BL_ASSERT(max_grid_size_chem > 0);
 
-
+  molecular_diffusivity.resize(ntracers,0);
   if (ntracers > 0)
   {
     int Nimmobile = 0;
@@ -2053,6 +2064,8 @@ void  PorousMedia::read_tracer()
         }
         set_tracer_bc(trac_bc,phys_bc_trac);
       }
+
+      ppr.query("molecularDiffusivity",molecular_diffusivity[i]); 
     }
     ndiff += ntracers;
   }

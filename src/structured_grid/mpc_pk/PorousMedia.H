@@ -823,11 +823,6 @@ public:
                                      int       dcomp,
                                      int       dir);
 
-  void derive_Molecular_Diffusion_Coefficient(Real      time,
-                                              MultiFab& mf,
-                                              int       dcomp,
-                                              int       dir);
-
   void derive_Tortuosity(Real      time,
                          MultiFab& mf,
                          int       dcomp,
@@ -1058,7 +1053,7 @@ protected:
   //
   static Array<int>  is_diffusive;    // does variable diffuse?
   static Array<Real> visc_coef;       // const coef viscosity terms
-  static Array<Real> diff_coef;       // const coef molecular diffusion coefficients (for tracers)
+  static Array<Real> molecular_diffusivity; // for tracers
   static Real        visc_tol;
   static Real        visc_abs_tol;
   static Real        be_cn_theta;
@@ -1082,6 +1077,7 @@ protected:
   static int  it_chem;
   static Real dt_chem;
   static Real be_cn_theta_trac;
+  static Array<Real> first_order_decay_constant;
   //
   // Internal switches.
   //
