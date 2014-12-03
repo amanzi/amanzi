@@ -2980,11 +2980,11 @@ namespace Amanzi {
         fPLout.set<Array<double> >("loc",fPLin.get<Array<double> >(ref_name));
         fPLout.set<std::string>("type","linear_pressure");
       }
-      else if ((Amanzi_type == "BC: Uniform Pressure Head")
+      else if ((Amanzi_type == "BC: Uniform Hydraulic Head")
                || (Amanzi_type == "BC: Hydrostatic"))
       {
         const std::string val_name
-          = (Amanzi_type == "BC: Uniform Pressure Head" ?  "Values" : "Water Table Height");
+          = (Amanzi_type == "BC: Uniform Hydraulic Head" ?  "Values" : "Water Table Height");
         reqP.push_back(val_name);
         const std::string time_name="Times"; reqP.push_back(time_name);
         const std::string form_name="Time Functions"; reqP.push_back(form_name);
@@ -3016,7 +3016,7 @@ namespace Amanzi {
           fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
           fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
         }
-        fPLout.set<std::string>("type","pressure_head");
+        fPLout.set<std::string>("type","hydraulic_head");
         fPLout.set<std::string>("normalization",absolute_or_relative);
       }
       else if (Amanzi_type == "BC: Uniform Pressure")
@@ -3204,7 +3204,7 @@ namespace Amanzi {
           convert_BCSaturation(fPLin,Amanzi_type,fPLout);
         }
         else if ( (Amanzi_type == "BC: Uniform Pressure")
-                  || (Amanzi_type == "BC: Uniform Pressure Head")
+                  || (Amanzi_type == "BC: Uniform Hydraulic Head")
                   || (Amanzi_type == "BC: Hydrostatic")
                   || (Amanzi_type == "BC: Linear Pressure") )
         {
@@ -3285,7 +3285,7 @@ namespace Amanzi {
               }
             }
             if (orient_type == "pressure"
-                     || orient_type == "pressure_head"
+                     || orient_type == "hydraulic_head"
                      || orient_type == "linear_pressure"
                      || orient_type == "hydrostatic") {
               // Must set components by name, and phase press set by press_XX(scalar) or hydro 

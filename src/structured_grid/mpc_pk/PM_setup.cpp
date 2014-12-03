@@ -1409,7 +1409,7 @@ void  PorousMedia::read_comp()
               pressure_bc = 2;
               bc_array.set(ibc, new RegionData(bcname,bc_regions,bc_type,vals));
           }
-          else if (bc_type == "pressure_head")
+          else if (bc_type == "hydraulic_head")
           {              
             Array<Real> vals, times;
             Array<std::string> forms;
@@ -1431,7 +1431,7 @@ void  PorousMedia::read_comp()
               } else if (norm_str == "Relative") {
                 use_gauge_pressure[bcname] = true;
               } else {
-                BoxLib::Abort("pressure_head BC normalization must be \"Absolute\" or \"Relative\"");
+                BoxLib::Abort("hydraulic_head BC normalization must be \"Absolute\" or \"Relative\"");
               }
             }
 

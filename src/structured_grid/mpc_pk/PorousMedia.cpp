@@ -6905,7 +6905,7 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
             }
             face_bc.apply(prdat,dx,0,ncomps,t_eval);
           }
-          else if (face_bc.Type() == "pressure_head") {
+          else if (face_bc.Type() == "hydraulic_head") {
             for (int j=0; j<regions.size(); ++j) {
               regions[j]->setVal(mask,1,0,dx,0);
             }
