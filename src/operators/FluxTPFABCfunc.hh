@@ -86,9 +86,9 @@ double OperatorDiffusionTPFA::DeriveBoundaryFaceValue(
     const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
     const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
 
-    if (bc_model[f] == OPERATOR_BC_DIRICHLET){
+    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
       return bc_value[f];
-    } else if (bc_model[f] == OPERATOR_BC_NEUMANN){
+    } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       AmanziMesh::Entity_ID_List cells, faces;
       std::vector<int> dirs;
       const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");      

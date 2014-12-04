@@ -1,12 +1,12 @@
 /*
   This is the Operator component of the Amanzi code.
 
-  License: BSD
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-  The operators can be initialized from other operators.
-  Since data are never copied by default, we have to track 
-  down the ownership of data.
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_OPERATOR_HH_
@@ -53,12 +53,13 @@ representing interation between face-based unknowns.
 a preconditioner. This operation cannot be applied to a subset of
 defining operators. 
  
+Note. The operators can be initialized from other operators.
+    Since data are never copied by default, we have to track 
+    down the ownership of data.
 ****************************************************************** */ 
 
 namespace Amanzi {
 namespace Operators {
-
-// This is the old way to assemble matrices. (lipnikov@lanl.gov)
 
 class Operator {
  public:
