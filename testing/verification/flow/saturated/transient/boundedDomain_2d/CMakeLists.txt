@@ -8,7 +8,7 @@ set(dataset "")
 set(step 1)
 
 if (ENABLE_TESTS)
-    add_amanzi_test(run_${test_name} KIND AMANZI AMANZI_INPUT ${BOUNDEDDOMAIN_2D_SOURCE_DIR}/amanzi_${test_name}.xml)
+    add_amanzi_test(run_${test_name} KIND AMANZI AMANZI_INPUT ${BOUNDEDDOMAIN_2D_SOURCE_DIR}/amanzi_${test_name}.xml NPROC 4)
     add_test(NAME compare_${test_name} 
 	     COMMAND diff ${BOUNDEDDOMAIN_2D_BINARY_DIR}/${compfile}
 	                  ${BOUNDEDDOMAIN_2D_SOURCE_DIR}/golden_output/${compfile} 

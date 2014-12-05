@@ -2148,80 +2148,80 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
           }
             else if (strcmp(nodeName,"unstr_linear_solver")==0) {
-            Teuchos::ParameterList lsPL;
-            Teuchos::ParameterList pcPL;
-            bool usePCPL=false;
-            // loop through children and deal with them
-            DOMNodeList* children = tmpNode->getChildNodes();
-            for (int k=0; k<children->getLength(); k++) {
-              DOMNode* currentNode = children->item(k) ;
-              if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
-                char* tagname = XMLString::transcode(currentNode->getNodeName());
-                if (strcmp(tagname,"method")==0) {
-                  textContent = XMLString::transcode(currentNode->getTextContent());
-                  lsPL.set<std::string>("linear solver preconditioner",trim_string(textContent));
-                  XMLString::release(&textContent);
-                }
-                else if (strcmp(tagname,"max_iterations")==0) {
-                  textContent = XMLString::transcode(currentNode->getTextContent());
-                  lsPL.set<int>("linear solver maximum iterations",get_int_constant(textContent,*def_list));
-                  XMLString::release(&textContent);
-                }
-                else if (strcmp(tagname,"tolerance")==0) {
-                  textContent = XMLString::transcode(currentNode->getTextContent());
-                  lsPL.set<double>("linear solver tolerance",get_double_constant(textContent,*def_list));
-                  XMLString::release(&textContent);
-                }
-                else if (strcmp(tagname,"cfl")==0) {
-                  textContent = XMLString::transcode(currentNode->getTextContent());
-                  lsPL.set<double>("CFL",get_double_constant(textContent,*def_list));
-                  XMLString::release(&textContent);
-                }
-                else if (strcmp(tagname,"preconditioner")==0) {
-                  // which precondition is stored in attribute, options are: trilinos_ml, hypre_amg, block_ilu
-                  attrMap = currentNode->getAttributes();
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-                  if (nodeAttr) {
-                    textContent = XMLString::transcode(nodeAttr->getNodeValue());
+              Teuchos::ParameterList lsPL;
+              Teuchos::ParameterList pcPL;
+              bool usePCPL=false;
+              // loop through children and deal with them
+              DOMNodeList* children = tmpNode->getChildNodes();
+              for (int k=0; k<children->getLength(); k++) {
+                DOMNode* currentNode = children->item(k) ;
+                if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+                  char* tagname = XMLString::transcode(currentNode->getNodeName());
+                  if (strcmp(tagname,"method")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    lsPL.set<std::string>("linear solver preconditioner",trim_string(textContent));
+                    XMLString::release(&textContent);
                   }
-                  else {
-                    throw_error_missattr("linear_solver", "attribute", "name", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
+                  else if (strcmp(tagname,"max_iterations")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    lsPL.set<int>("linear solver maximum iterations",get_int_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
                   }
-                  usePCPL = true;
-                  if (strcmp(textContent,"hypre_amg")==0) {
-                    // TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag
-                    //              so this doesn't get overwritten later when the list actually gets created.
-                    list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Hypre AMG");
-                    // loop through children and deal with them
-                    DOMNodeList* preconChildren= currentNode->getChildNodes();
-                    for (int l=0; l<preconChildren->getLength();l++) {
-                      DOMNode* currentKid = preconChildren->item(l) ;
-                      if (DOMNode::ELEMENT_NODE == currentKid->getNodeType()) {
-                        char* kidname = XMLString::transcode(currentKid->getNodeName());
-                        if (strcmp(kidname,"hypre_cycle_applications")==0) {
-                          elemContent = XMLString::transcode(currentKid->getTextContent());
-                          pcPL.sublist("Hypre AMG").set<int>("Hypre AMG cycle applications",get_int_constant(elemContent,*def_list));
-                          XMLString::release(&elemContent);
-                        }
-                        else if (strcmp(kidname,"hypre_smoother_sweeps")==0) {
-                          elemContent = XMLString::transcode(currentKid->getTextContent());
-                          pcPL.sublist("Hypre AMG").set<int>("Hypre AMG smoother sweeps",get_int_constant(elemContent,*def_list));
-                          XMLString::release(&elemContent);
-                        }
-                        else if (strcmp(kidname,"hypre_tolerance")==0) {
-                          elemContent = XMLString::transcode(currentKid->getTextContent());
-                          pcPL.sublist("Hypre AMG").set<double>("Hypre AMG tolerance",get_double_constant(elemContent,*def_list));
-                          XMLString::release(&elemContent);
-                        }
-                        else if (strcmp(kidname,"hypre_strong_threshold")==0) {
-                          elemContent = XMLString::transcode(currentKid->getTextContent());
-                          pcPL.sublist("Hypre AMG").set<double>("Hypre AMG strong threshold",get_double_constant(elemContent,*def_list));
-                          XMLString::release(&elemContent);
+                  else if (strcmp(tagname,"tolerance")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    lsPL.set<double>("linear solver tolerance",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                  }
+                  else if (strcmp(tagname,"cfl")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    lsPL.set<double>("CFL",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                  }
+                  else if (strcmp(tagname,"preconditioner")==0) {
+                    // which precondition is stored in attribute, options are: trilinos_ml, hypre_amg, block_ilu
+                    attrMap = currentNode->getAttributes();
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+                    if (nodeAttr) {
+                      textContent = XMLString::transcode(nodeAttr->getNodeValue());
+                    }
+                    else {
+                      throw_error_missattr("linear_solver", "attribute", "name", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
+                    }
+                    usePCPL = true;
+                    if (strcmp(textContent,"hypre_amg")==0) {
+                      // TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag
+                      //              so this doesn't get overwritten later when the list actually gets created.
+                      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Hypre AMG");
+                      // loop through children and deal with them
+                      DOMNodeList* preconChildren= currentNode->getChildNodes();
+                      for (int l=0; l<preconChildren->getLength();l++) {
+                        DOMNode* currentKid = preconChildren->item(l) ;
+                        if (DOMNode::ELEMENT_NODE == currentKid->getNodeType()) {
+                          char* kidname = XMLString::transcode(currentKid->getNodeName());
+                          if (strcmp(kidname,"hypre_cycle_applications")==0) {
+                            elemContent = XMLString::transcode(currentKid->getTextContent());
+                            pcPL.sublist("Hypre AMG").set<int>("Hypre AMG cycle applications",get_int_constant(elemContent,*def_list));
+                            XMLString::release(&elemContent);
+                          }
+                          else if (strcmp(kidname,"hypre_smoother_sweeps")==0) {
+                            elemContent = XMLString::transcode(currentKid->getTextContent());
+                            pcPL.sublist("Hypre AMG").set<int>("Hypre AMG smoother sweeps",get_int_constant(elemContent,*def_list));
+                            XMLString::release(&elemContent);
+                          }
+                          else if (strcmp(kidname,"hypre_tolerance")==0) {
+                            elemContent = XMLString::transcode(currentKid->getTextContent());
+                            pcPL.sublist("Hypre AMG").set<double>("Hypre AMG tolerance",get_double_constant(elemContent,*def_list));
+                            XMLString::release(&elemContent);
+                          }
+                          else if (strcmp(kidname,"hypre_strong_threshold")==0) {
+                            elemContent = XMLString::transcode(currentKid->getTextContent());
+                            pcPL.sublist("Hypre AMG").set<double>("Hypre AMG strong threshold",get_double_constant(elemContent,*def_list));
+                            XMLString::release(&elemContent);
+                          }
                         }
                       }
                     }
-                  }
-                  else if (strcmp(textContent,"trilinos_ml")==0) {
+                    else if (strcmp(textContent,"trilinos_ml")==0) {
                       // TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag
                       //              so this doesn't get overwritten later when the list actually gets created.
                       list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Trilinos ML");
@@ -2262,7 +2262,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         }
                       }
 		    }
-                  else if (strcmp(textContent,"block_ilu")==0) {
+                    else if (strcmp(textContent,"block_ilu")==0) {
                       // TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag
                       //              so this doesn't get overwritten later when the list actually gets created.
                       list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Block ILU");
@@ -2300,21 +2300,14 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         }
                       }
 		    }
-                  XMLString::release(&textContent);
+                    XMLString::release(&textContent);
+                  }
                 }
               }
+              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Linear Solver") = lsPL;
+              if (usePCPL)
+                list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners") = pcPL;
             }
-            list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Linear Solver") = lsPL;
-            if (usePCPL)
-              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners") = pcPL;
-            if (flowON)
-              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Flow Process Kernel") = fpkPL;
-            if (transportON)
-              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transport Process Kernel") = tpkPL;
-            if (chemistryON)
-              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Chemistry Process Kernel") = cpkPL;
-            list.sublist("Numerical Control Parameters").sublist("Common Controls") = commonPL;
-          }
             else if (strcmp(nodeName,"nonlinear_solver")==0) {
             // EIB: creating sub for section that doesn't actually exist yet in the New Schema, but does in the Input Spec
             Teuchos::ParameterList nlsPL;
@@ -2432,6 +2425,13 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         }
       }
     }
+    if (flowON)
+      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Flow Process Kernel") = fpkPL;
+    if (transportON)
+      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transport Process Kernel") = tpkPL;
+    if (chemistryON)
+      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Chemistry Process Kernel") = cpkPL;
+    list.sublist("Numerical Control Parameters").sublist("Common Controls") = commonPL;
     list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration") = ssPL;
     list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transient Implicit Time Integration") = tcPL;
   }
@@ -2530,17 +2530,17 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     expertPL.set<double>("steady_extra_time_step_increase_factor",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
-                  else if (strcmp(tagname,"abort_on_psuedo_timestep_failure")==0) {
+                  else if (strcmp(tagname,"abort_on_pseudo_timestep_failure")==0) {
 		    textContent = XMLString::transcode(currentNode->getTextContent());
                     if (strcmp(textContent,"true")==0) {
-                      expertPL.set<bool>("steady_abort_on_psuedo_timestep_failure",true);
+                      expertPL.set<bool>("steady_abort_on_pseudo_timestep_failure",true);
                     }
                     else  {
-                      expertPL.set<bool>("steady_abort_on_psuedo_timestep_failure",false);
+                      expertPL.set<bool>("steady_abort_on_pseudo_timestep_failure",false);
                     }
                     XMLString::release(&textContent);
                     //textContent = XMLString::transcode(currentNode->getTextContent());
-                    //expertPL.set<int>("steady_abort_on_psuedo_timestep_failure",get_int_constant(textContent,*def_list));
+                    //expertPL.set<int>("steady_abort_on_pseudo_timestep_failure",get_int_constant(textContent,*def_list));
                     //XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"limit_function_evals")==0) {

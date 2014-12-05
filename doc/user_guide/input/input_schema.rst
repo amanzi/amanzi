@@ -357,6 +357,7 @@ The ``structured_controls`` sections is divided in the the subsections: ``str_st
       <limit_iterations> Value </limit_iterations>
       <min_iterations> Value </min_iterations>
       <min_iterations_2> Value </min_iterations_2>
+      <time_step_increase_factor> Value </time_step_increase_factor>
       <time_step_increase_factor_2> Value </time_step_increase_factor_2>
       <max_consecutive_failures_1> Value </max_consecutive_failures_1>
       <time_step_retry_factor_1> Value </time_step_retry_factor_1>
@@ -366,7 +367,6 @@ The ``structured_controls`` sections is divided in the the subsections: ``str_st
       <max_num_consecutive_success> Value </max_num_consecutive_success>
       <extra_time_step_increase_factor> Value </extra_time_step_increase_factor>
       <abort_on_psuedo_timestep_failure> Value </abort_on_psuedo_timestep_failure>
-      <use_PETSc_snes> true | false </use_PETSc_snes>
       <limit_function_evals> Value </limit_function_evals>
       <do_grid_sequence> true | false </do_grid_sequence>
       <grid_sequence_new_level_dt_factor>
@@ -659,11 +659,10 @@ A ``material`` element can contain the following:
         <exp value="Value"/>
     </rel_perm>
     <sorption_isotherms>
-        <!-- Three kd models available plus molecular diffusion -->
+        <!-- Three kd models available -->
         <!-- Note: all solutes should be listed under all materials, value="0" indicates the solute isn't present/active -->
 	<solute name="Name of Solute" >
             <kd_model model="linear" kd = "Value" />
-            <molecular_diffusion value="Value" />
         </solute>
 	<solute name="Name of Solute" >
             <kd_model model="langmuir" kd="Value" b="Value"/>
@@ -705,12 +704,25 @@ Amanzi current employees three process kernels that need to be defined in the in
 
   <process_kernels>
     <comments>Comment text here</comments>
-    <flow state = "on | off" model = "richards | saturated | constant"/>
+    <flow state = "on | off" 
+          model = "richards | saturated | constant"
+          discretization_method = "fv-default | fv-monotone | fv-multi_point_flux_approximation | 
+                                   fv-extended_to_boundary_edges | 
+                                   mfd-default | mfd-optimized_for_sparsity | mfd-support_operator | 
+                                   mfd-optimized_for_monotonicity | mfd-two_point_flux_approximation"
+          rel_perm_method = "upwind-darcy_velocity | upwind-gravity | upwind-amanzi | 
+                             other-arithmetic_average | other-harmonic_average" />
     <transport state = "on | off" algorithm = "explicit first-order | explicit second-order | implicit upwind | none" sub_cycling = "on | off"/>
     <chemistry state = "on | off" engine = "amanzi | pflotran | none" process_model="implicit operator split | none"/>
   </process_kernels>
 
 Currently three scenerios are avaiable for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to the a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
+
+The attributes `"discretization_method`" and `"rel_perm_method`" are only relevant for the unstructured algorithm.
+
+`"discretization_method`" specifies the spatial discretization method. The available options options for the finite volume method: "fv-default", "fv-monotone", "fv-multi_point_flux_approximation", and "fv-extended_to_boundary_edges". The available option for the mimetic finite difference method are "mfd-default", "mfd-optimized_for_sparsity", "mfd-support_operator", "mfd-optimized_for_monotonicity", and "mfd-two_point_flux_approximation". The option "mfd-optimized_for_sparsity" cannot be applied to all meshes. When it is not acceptable, the discretization method falls back to "mfd-optimized_for_sparsity".
+
+`"rel_perm_method`" defines a method for calculating the upwinded relative permeability. The available options are:"upwind-darcy_velocity" (default), "upwind-gravity", "upwind-amanzi", "other-arithmetic_average"  and "other-harmonic_average".
 
 For `"transport`" a combination of `"state`" and `"algorithm`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the integration algorithm must be specified.  Whether sub-cycling is to be utilized within the transport algorithm is also specified here.
 
