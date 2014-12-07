@@ -39,7 +39,7 @@ this class.
 
 2. Operator is an un-ordered additive collection of lower-rank (or 
 equal) simple operators. During its construction, an operator can 
-only grow by assimulating more operators. 
+only grow by assimilating more operators. 
 
 At the moment, an operator cannot be split into two operators, but
 there are no desing restriction for doing it in the future.

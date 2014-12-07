@@ -116,7 +116,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
     int f = bc->first;
     if (bc_submodel[f] & FLOW_BC_SUBMODEL_NOFLOW_ABOVE_WATER_TABLE) {
-      if (bc->second < FLOW_PRESSURE_ATMOSPHERIC) {
+      if (bc->second < atm_pressure_) {
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value[f] = 0.0;
         continue;

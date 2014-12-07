@@ -145,7 +145,6 @@ double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
 * coefficients.
 * **************************************************************** */
 TEST(OPERATOR_MIXED_DIFFUSION) {
-  using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -158,13 +157,13 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  Teuchos::ParameterList plist = xmlreader.getParameters();
 
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -173,8 +172,8 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
-  RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // create diffusion coefficient
   std::vector<WhetStone::Tensor> K;
@@ -259,11 +258,11 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     op2->SymbolicAssembleMatrix(schema_prec_dofs);
     op2->AssembleMatrix(schema_prec_dofs);
     
-    ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
     op2->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+    Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
     solution.PutScalar(0.0);
     AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >

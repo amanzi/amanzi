@@ -28,15 +28,18 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of basic parameters.
 ****************************************************************** */
-void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field)
+void ReconstructionCell::Init(
+    Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist)
 {
   field_ = field;
 
-  const Epetra_Map& cmap = mesh_->cell_map(true);
-  const Epetra_Map& fmap = mesh_->face_map(true);
-
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   dim = mesh_->space_dimension();
 
@@ -46,6 +49,13 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field)
   cv_space.SetComponent("cell", AmanziMesh::CELL, dim);
 
   gradient_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
+
+  // process parameters for limiters
+  bc_scaling_ = 0.0;
+
+  std::string name = plist.get<std::string>("limiter", "none");
+  limiter_id_ = 0;
+  if (name == "Barth-Jespersen") limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN;
 }
 
 
@@ -104,7 +114,21 @@ void ReconstructionCell::Compute()
 
 
 /* ******************************************************************
- * The limiter must be between 0 and 1
+* Apply internal limiter.
+****************************************************************** */
+void ReconstructionCell::ApplyLimiter(
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value)
+{
+  if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
+    Teuchos::RCP<Epetra_Vector> limiter = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
+    LimiterBarthJespersen_(bc_model, bc_value, limiter);
+    ApplyLimiter(limiter);
+  }
+}
+
+
+/* ******************************************************************
+* The limiter must be between 0 and 1
 ****************************************************************** */
 void ReconstructionCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
 {

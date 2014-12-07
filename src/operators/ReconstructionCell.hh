@@ -14,6 +14,7 @@
 
 #include <vector>
 
+#include "Epetra_IntVector.h"
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
@@ -36,12 +37,18 @@ class ReconstructionCell : public Reconstruction {
   ~ReconstructionCell() {};
 
   // main members for base class
-  void Init(Teuchos::RCP<const Epetra_MultiVector> field);
+  void Init(Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist);
   void Compute();
+
+  // internal and external limiters
+  void InitLimiter(Teuchos::RCP<const Epetra_MultiVector> flux);
+  void ApplyLimiter(const std::vector<int>& bc_model, const std::vector<double>& bc_value);
   void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter);
+
+  // estimate value of a reconstructed piece-wise smooth function
   double getValue(int cell, const AmanziGeometry::Point& p);
 
-  // main members
+  // estimate value of a reconstructed linear function with prescribed gradient. 
   double getValue(AmanziGeometry::Point& gradient, int cell, const AmanziGeometry::Point& p);
 
   // access
@@ -56,10 +63,42 @@ class ReconstructionCell : public Reconstruction {
   void PrintLeastSquareSystem(WhetStone::DenseMatrix& matrix,
                               WhetStone::DenseVector& rhs);
 
+  // internal limiters and supporting routines
+  void LimiterBarthJespersen_(
+      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+      Teuchos::RCP<Epetra_Vector> limiter);
+
+  void LimiterTensorial_(
+      const std::vector<int>& bc_model, const std::vector<double>& bc_value);
+
+  void LimiterKuzmin_(
+      const std::vector<int>& bc_model, const std::vector<double>& bc_value);
+
+  void CalculateDescentDirection_(std::vector<AmanziGeometry::Point>& normals,
+                                  AmanziGeometry::Point& normal_new,
+                                  double& L22normal_new, 
+                                  AmanziGeometry::Point& direction);
+
+  void ApplyDirectionalLimiter_(AmanziGeometry::Point& normal, 
+                                AmanziGeometry::Point& p,
+                                AmanziGeometry::Point& direction, 
+                                AmanziGeometry::Point& gradient);
+
+  void IdentifyUpwindCells_();
+
  private:
-  int ncells_owned, nfaces_owned;
   int dim;
+  int ncells_owned, nfaces_owned, nnodes_owned;
+  int ncells_wghost, nfaces_wghost, nnodes_wghost;
+
   Teuchos::RCP<CompositeVector> gradient_;
+
+ private: 
+  Teuchos::RCP<const Epetra_MultiVector> flux_;  // for limiters
+  std::vector<int> upwind_cell_, downwind_cell_;
+
+  double bc_scaling_;
+  int limiter_id_;
 };
 
 }  // namespace Operators

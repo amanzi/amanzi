@@ -31,8 +31,11 @@ class Reconstruction {
   ~Reconstruction() {};
 
   // main members
-  virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field) { field_ = field; }
+  virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist) { field_ = field; }
   virtual void Compute() = 0;
+
+  // apply internal or extrnal limiter.
+  virtual void ApplyLimiter(const std::vector<int>& bc_model, const std::vector<double>& bc_values) {};
   virtual void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter) {};
 
   virtual double getValue(int id, const AmanziGeometry::Point& p) = 0;

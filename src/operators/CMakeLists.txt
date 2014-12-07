@@ -74,7 +74,7 @@ add_amanzi_library(operators
                    OperatorDiffusionWithGravity.cc OperatorDiffusionFactory.cc
                    OperatorDiffusionTPFA.cc OperatorSource.cc 
                    OperatorAdvection.cc 
-                   ReconstructionCell.cc
+                   ReconstructionCell.cc ReconstructionCell_Limiters.cc
                    HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
 
