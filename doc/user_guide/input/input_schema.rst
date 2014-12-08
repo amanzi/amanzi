@@ -647,6 +647,9 @@ A ``material`` element can contain the following:
         <tortuosity value="Value"/>
     </mechanical_properties>
     <permeability x="Value" y="Value" z="Value"/>
+    <!-- Optional file read from permeability from Exodus II file as attributes -->
+    <!--permeability filename="file name" type="file" attribute="attribute name"/-->
+    <!-- NOTE: specify permeability or hydraulic_conductivity -->
     <hydraulic_conductivity x="Value" y="Value" z="Value"/>
     <cap_pressure model="van_genuchten | brooks_corey | none">
         <!-- for van_genuchten -->
@@ -836,34 +839,46 @@ Boundary conditions are defined in a similar manor to the initial conditions.  U
 
 Under the ``liquid_component`` and ``solute_component`` elements a time series of boundary conditions is defined using the boundary condition elements available in the table below.  Each component element can only contain one type of boundary condition.  Both elements also accept a *name* attribute to indicate the phase associated with the boundary condition.
 
-+-------------------------+--------------------+------------------------------------+
-|Boundary Condition Type  | Attributes         | Value Type                         |
-+=========================+====================+====================================+
-|inward_mass_flux         | | name             | | string                           |
-|inward_volumetric_flux   | | start            | | double/time_constant/constant    |
-|outward_mass_flux        | | value            | | double                           |
-|outward_volumetric_flux  | | function         | | 'linear','uniform','constant'    |
-+-------------------------+--------------------+------------------------------------+
-|uniform_pressure         | | name             | | string                           |
-|                         | | start            | | double/time_constant/constant    |
-|                         | | value            | | double                           |
-|                         | | function         | | 'uniform','constant'             |
-+-------------------------+--------------------+------------------------------------+
-|hydrostatic              | | name             | | string                           |
-|                         | | start            | | double/time_constant/constant    |
-|                         | | value            | | double                           |
-|                         | | function         | | 'uniform','constant'             |
-|                         | | coordinate_system| | 'absolute','relative to mesh top'|
-+-------------------------+--------------------+------------------------------------+ 
-|seepage_face             | | name             | | string                           |
-|(unstructured only)      | | start            | | double/time_constant/constant    |
-|                         | | inward_mass_flux | | double/time_constant/constant    |
-|                         | | function         | | 'linear','uniform','constant'    |
-+-------------------------+--------------------+------------------------------------+
-|no_flow                  | | name             | | string                           |
-|                         | | start            | | double/time_constant/constant    |
-|                         | | function         | | 'linear','uniform','constant'    |
-+-------------------------+--------------------+------------------------------------+
++-------------------------+--------------------------------+-------------------------------------+
+|Boundary Condition Type  | Attributes                     | Value Type                          |
++=========================+================================+=====================================+
+|inward_mass_flux         | | name                         | | string                            |
+|inward_volumetric_flux   | | start                        | | double/time_constant/constant     |
+|outward_mass_flux        | | value                        | | double                            |
+|outward_volumetric_flux  | | function                     | | 'linear','uniform','constant'     |
++-------------------------+--------------------------------+-------------------------------------+
+|uniform_pressure         | | name                         | | string                            |
+|                         | | start                        | | double/time_constant/constant     |
+|                         | | value                        | | double                            |
+|                         | | function                     | | 'uniform','constant'              |
++-------------------------+--------------------------------+-------------------------------------+
+|linear_pressure          | | name                         | | string                            |
+|                         | | gradient_value               | | coordinate                        |
+|                         | | reference_point              | | coordinate                        |
+|                         | | reference_value              | | double                            |
++-------------------------+--------------------------------+-------------------------------------+ 
+|hydrostatic              | | name                         | | string                            |
+|                         | | start                        | | double/time_constant/constant     |
+|                         | | value                        | | double                            |
+|                         | | function                     | | 'uniform','constant'              |
+|                         | | coordinate_system            | | 'absolute','relative to mesh top' |
+|                         | | submodel                     | | 'no_flow_above_water_table','none'|
++-------------------------+--------------------------------+-------------------------------------+ 
+|linear_hydrostatic       | | name                         | | string                            |
+|                         | | gradient_value               | | coordinate                        |
+|                         | | reference_point              | | coordinate                        |
+|                         | | reference_water_table_height | | double                            |
+|                         | | submodel                     | | 'no_flow_above_water_table','none'|
++-------------------------+--------------------------------+-------------------------------------+ 
+|seepage_face             | | name                         | | string                            |
+|(unstructured only)      | | start                        | | double/time_constant/constant     |
+|                         | | inward_mass_flux             | | double/time_constant/constant     |
+|                         | | function                     | | 'linear','uniform','constant'     |
++-------------------------+--------------------------------+-------------------------------------+
+|no_flow                  | | name                         | | string                            |
+|                         | | start                        | | double/time_constant/constant     |
+|                         | | function                     | | 'linear','uniform','constant'     |
++-------------------------+--------------------------------+-------------------------------------+
 
 For the solute component, the boundary condition available is ``aqueous_conc`` which has the attributes *name*, *value*, *function*, and *start*.  The function options available are *uniform*, *linear*, and *constant*.
 

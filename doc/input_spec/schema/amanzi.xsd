@@ -325,7 +325,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_property_file">
 	<xs:attribute name="filename" type="xs:string"/>
-	<xs:attribute name="type" type="typedef_property_file_formats"/>	
+        <xs:attribute name="type" type="typedef_property_file_formats"/>
+        <xs:attribute name="attribute" type="xs:string"/>
 </xs:complexType>
 
 <xs:simpleType name="typedef_property_file_formats">
@@ -1108,7 +1109,10 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="mechanical_properties" type="typedef_mechanical_properties" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="sorption_isotherms" type="typedef_sorption_isotherms" minOccurs="0" maxOccurs="1"/>
 		<!-- We need either permeability or hydraulic conductivity, need to add a check with a choice? -->
-		<xs:element name="permeability" type="typedef_permeability" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="permeability" minOccurs="0" maxOccurs="1">
+                  <xs:alternative test="@type='file'" type="typedef_property_file"/>
+                  <xs:alternative type="typedef_permeability"/>
+                </xs:element>
 		<xs:element name="hydraulic_conductivity" type="typedef_hydraulic_conductivity" minOccurs="0" maxOccurs="1"/>
 		<!-- cap_pressure and rel_perm are not needed if flow model = "saturated"; can we validate this? -->
 		<xs:element name="cap_pressure" minOccurs="0" maxOccurs="1">
@@ -1667,19 +1671,23 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_bc_hydrostatic">
 	<xs:attribute name="name" type="xs:string"/>
-	<xs:attribute name="coordinate_system" type="xs:string"/>
+        <xs:attribute name="coordinate_system" type="xs:string"/>
+        <xs:attribute name="submodel" type="xs:string"/>
 	<xs:attribute name="start" type="xs:string" use="required"/>
 	<xs:attribute name="function" type="xs:string" use="required"/>
 	<xs:attribute name="value" type="xs:string" use="required"/>
 	<xs:assert  test="@function = ('linear', 'constant')"/>	
-	<xs:assert  test="not(exists(@coordinate_system)) or @coordinate_system = ('absolute','relative to mesh top')"/>	
+	<xs:assert  test="not(exists(@coordinate_system)) or @coordinate_system = ('absolute','relative to mesh top')"/>
+        <xs:assert  test="not(exists(@submodel)) or @submodel = ('no_flow_above_water_table', 'none')"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_bc_linear_hydrostatic">
 	<xs:attribute name="name" type="xs:string"/>
 	<xs:attribute name="gradient_value" type="xs:string" use="required"/>
 	<xs:attribute name="reference_point" type="typedef_coordinate" use="required"/>
-	<xs:attribute name="reference_water_table_height" type="xs:string" use="required"/>
+        <xs:attribute name="reference_water_table_height" type="xs:string" use="required"/>
+        <xs:attribute name="submodel" type="xs:string"/>
+        <xs:assert  test="not(exists(@submodel)) or @submodel = ('no_flow_above_water_table', 'none')"/>
 </xs:complexType>
 
 

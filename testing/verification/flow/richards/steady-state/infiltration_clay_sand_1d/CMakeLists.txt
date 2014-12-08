@@ -4,7 +4,7 @@ project (INFILTRATION_CLAY_SAND_1D)
 
 set(test_name infiltration_clay_sand_1d)
 set(h5file case_2c_plot_data.h5)
-set(dataset "/hydraulic_head.cell.0")
+set(dataset "/pressure.cell.0")
 set(step 370)
 
 if (ENABLE_TESTS)

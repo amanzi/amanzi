@@ -740,9 +740,7 @@ Within the Materials block an unbounded number of `"material`" elements can be d
       Required Elements: mechanical_properties, permeability or hydraulic_conductivity, assigned_regions
       Optional Elements: comments, cap_pressure, rel_perm, sorption_isotherms 
   </material>
-
-`"mechanical_properties`" has six elements that can be either values or specified as files.  It has the following requirements.
-
+ 
 .. code-block:: xml
 
   <mechanical_properties>
@@ -750,68 +748,53 @@ Within the Materials block an unbounded number of `"material`" elements can be d
       Optional Elements: specific_storage, specific_yield, dispersion_tensor, tortuosity
   </mechanical_properties>
 
-* `"porosity`" is defined inline using attributes.  Either it is specified as a value between 0 and 1 using `"value`" or it specified through a file using `"filename`" and `"type`". NOTE - FILE OPTION NOT IMPLEMENTED YET.
+* `"mechanical_properties`" has six elements that can be either values or specified as files.  It has the following requirements.
+
+    * `"porosity`" is defined inline using attributes.  Either it is specified as a value between 0 and 1 using `"value`" or it specified through a file using `"filename`" and `"type`". NOTE - FILE OPTION NOT IMPLEMENTED YET.
+
+    * `"particle_density`" is defined inline using attributes.  Either it is specified as a value greater than 0 using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+
+    * `"specific_storage`" is defined inline using attributes.  Either it is specified as a value greater than 0 using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+
+    * `"specific_yield`" is defined inline using attributes.  Either it is specified as a value using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+
+    * `"dispersion_tensor`" is defined inline using attributes.  Either it is specified as values using `"alpha_l`" and `"alpha_t`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+
+    * `"tortuosity`" is defined inline using attributes.  Either it is specified as a value using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+
 
 .. code-block:: xml
 
-  <porosity value="exponential"/>
-  <porosity filename="file name" type="file"/>
+  <mechanical_properties>
+      <porosity value="exponential"/>
+      <particle_density value="exponential"/>
+      <specific_storage value="exponential"/>
+      <specific_yield value="exponential"/>
+      <dispersion_tensor alpha_l="exponential" alpha_t="exponential"/>
+      <tortuosity value="exponential"/>
+  </mechanical_properties>
 
-* `"particle_density`" is defined inline using attributes.  Either it is specified as a value greater than 0 using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
-
-.. code-block:: xml
-
-  <particle_density value="exponential"/>
-  <particle_density filename="file name" type="file"/>
-
-* `"specific_storage`" is defined inline using attributes.  Either it is specified as a value greater than 0 using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
-
-.. code-block:: xml
-
-  <specific_storage value="exponential"/>
-  <specific_storage filename="file name" type="file"/>
-
-* `"specific_yield`" is defined inline using attributes.  Either it is specified as a value using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
-
-.. code-block:: xml
-
-  <specific_yield value="exponential"/>
-  <specific_yield filename="file name" type="file"/>
-
-* `"dispersion_tensor`" is defined inline using attributes.  Either it is specified as values using `"alpha_l`" and `"alpha_t`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
-
-.. code-block:: xml
-
-  <dispersion_tensor alpha_l="exponential" alpha_t="exponential"/>
-  <dispersion_tensor filename="file name" type="file"/>
-
-* `"tortuosity`" is defined inline using attributes.  Either it is specified as a value using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
-
-.. code-block:: xml
-
-  <tortuosity value="exponential"/>
-  <tortuosity filename="file name" type="file"/>
-
-
-`"assigned_regions`" is a comma seperated list of region names for which this material is to be assigned.  Region names must be from the regions defined in the `"regions`" sections.  Region names can contain spaces.
+* `"assigned_regions`" is a comma seperated list of region names for which this material is to be assigned.  Region names must be from the regions defined in the `"regions`" sections.  Region names can contain spaces.
 
 .. code-block:: xml
 
     <assigned_regions>Region1, Region_2, Region 3</assigned_regions>
 
-`"permeability`" is the permiability and has the attributes `"x`", `"y`", and `"z`". Permeability or hydraulic_conductivity must be specified but not both.
+* `"permeability`" is the permiability and has the attributes `"x`", `"y`", and `"z`". Permeability or hydraulic_conductivity must be specified but not both.  Reading permeability from the attributes of an Exodus II file is also available.
 
 .. code-block:: xml
 
   <permeability x="exponential" y="exponential" z="exponential" />
+  or
+  <permeability filename="file name" type="file" attribute="attribute name"/>
 
-`"hydraulic_conductivity`" is the hydraulic conductivity and has the attributes `"x`", `"y`", and `"z`". Permeability or hydraulic_conductivity must be specified but not both.
+* `"hydraulic_conductivity`" is the hydraulic conductivity and has the attributes `"x`", `"y`", and `"z`". Permeability or hydraulic_conductivity must be specified but not both.
 
 .. code-block:: xml
 
   <hydraulic_conductivity x="exponential" y="exponential" z="exponential" />
 
-`"cap_pressure`" is an optional element.  The available models are `"van_genuchten`", `"brooks_corey`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
+*  `"cap_pressure`" is an optional element.  The available models are `"van_genuchten`", `"brooks_corey`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
 
 * `"van_genuchten`" parameters include `"alpha`", `"sr`", `"m`", and `"optional_krel_smoothing_interval`".  `"brooks_corey`" parameters include `"alpha`", `"sr`", `"m`", and `"optional_krel_smoothing_interval`".
 
@@ -822,7 +805,7 @@ Within the Materials block an unbounded number of `"material`" elements can be d
       Optional Elements: optional_krel_smoothing_interval (van_genuchten and brooks_corey only)
   </cap_pressure>
 
-`"rel_perm`" is an optional element.  The available models are `"mualem`", `"burdine`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
+*  `"rel_perm`" is an optional element.  The available models are `"mualem`", `"burdine`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
 
 * `"mualem`" has no parameters.  `"burdine`" parameters include `"exp`".
 
@@ -833,7 +816,7 @@ Within the Materials block an unbounded number of `"material`" elements can be d
       Optional Elements: exp (burdine only)
   </rel_perm>
 
-`"sorption_isotherms`" is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All solutes should be listed under each material.  Values of 0 indicate that the solute is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
+*  `"sorption_isotherms`" is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All solutes should be listed under each material.  Values of 0 indicate that the solute is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
 
 .. code-block:: xml
 
@@ -843,7 +826,8 @@ Within the Materials block an unbounded number of `"material`" elements can be d
             Optional Elements: kd_model
     </sorption_isotherms>
 
-The subelement kd_model takes the following form:
+.
+    * `"kd_model`" takes the following form:
 
 .. code-block:: xml
  
@@ -981,32 +965,29 @@ The `"initial_conditions`" section contains at least 1 and up to an unbounded nu
       Optional Elements: solute_component (, geochemistry  - SKIPPED)
   </liquid_phase>
 
-Here is more info on the `"liquid_phase`" elements:
+*  Here is more info on the `"liquid_component`" elements:
 
-    * `"liquid_component`" is an element with the possible subelements: `"uniform_pressure`", `"linear_pressure`", `"uniform_saturation`", `"linear_saturation`", and `"velocity`".  They would like the following: 
+    * `"uniform_pressure`" is defined inline using attributes.  Uniform specifies that the initial condition is uniform in space.  Value specifies the value of the pressure.  
+      
+    * `"linear_pressure`" is defined inline using attributes.  Linear specifies that the initial condition is linear in space.  Gradient specifies the gradient value in each direction in the form of a coordinate (grad_x, grad_y, grad_z).  Reference_coord specifies a reference location as a coordinate.  Value specifies the value of the pressure.
+      
+    * `"uniform_saturation`" is defined inline using attributes.  See `"uniform_pressure`" for details.
+      
+    * `"linear_saturation`" is defined inline using attributes. See `"linear_pressure`" for details.
+      
+    * `"velocity`" is defined inline using attributes.  Specifiy the velocity is each direction using the appriopriate attributes x, y, and z.
 
 .. code-block:: xml
 
     <uniform_pressure name="some name" value="exponential" />
+    <linear_pressure name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
+    <uniform_saturation name="some name" value="exponential" />
+    <linear_saturation name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
+    <velocity name="some name" x="exponential" y="exponential" z="exponential"/>
 
-.. code-block:: xml
+*  Here is more info on the `"solute_component`" elements:
 
-            <linear_pressure name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
-
-.. code-block:: xml
-
-            <uniform_saturation name="some name" value="exponential" />
-
-.. code-block:: xml
-
-            <linear_saturation name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
-
-.. code-block:: xml
-
-            <velocity name="some name" x="exponential" y="exponential" z="exponential"/>
-
-.
-    * `"solute_component`" is an element with the following attributes: 
+    * `"solute_component`" is defined inline using attributes.  The attributes include "function", "value", and "name". Function specifies linear or constant temporal functional form during each time interval.  Value is the value of the `"solute_component`".  Name is the name of the solute component.
 
 .. code-block:: xml
 
@@ -1016,9 +997,9 @@ Here is more info on the `"liquid_phase`" elements:
 
 NOTE: Reading from a file is not yet implemeneted.  Also, the reference_coord and gradient attributes are only needed for the "linear" function type, which is also not yet implemeneted.
 
-    * `"geochemistry`" is an element with the following subelement: NOT IMPLEMENTED YET
+* `"geochemistry`" is an element with the following subelement: NOT IMPLEMENTED YET
 
-        * `"constraint`" is an element with the following attributes: ONLY UNIFORM, for now
+   * `"constraint`" is an element with the following attributes: ONLY UNIFORM, for now
 
 .. code-block:: xml
 
@@ -1068,57 +1049,52 @@ The `"boundary_conditions`" section contains at least 1 and up to an unbounded n
       Optional Elements: solute_component (, geochemistry - SKIPPED)
   </liquid_phase>
 
-Here is more info on the `"liquid_phase`" elements:
+*  Here is more info on the `"liquid_component`" elements:
 
-    * `"liquid_component`" is an element with the following subelement: 
+    * `"inward_mass_flux`" is defined inline using attributes.  The attributes include "function", "start", and "value". Function specifies linear or constant temporal functional form during each time interval.  Start is a series of time values at which time intervals start.  Value is the value of the `"inward_mass_flux`" during the time interval. 
 
-        * `"inward_mass_flux`" is an element with the following attributes: 
+    * `"outward_mass_flux`" is defined inline using attributes.  See `"inward_mass_flux`" for details.
+
+    * `"inward_volumetric_flux`" is defined inline using attributes.  See `"inward_mass_flux`" for details.
+
+    * `"outward_volumetric_flux`" is defined inline using attributes.  See `"inward_mass_flux`" for details.
+
+    * `"uniform_pressure`" is defined inline using attributes.  Uniform refers to uniform in spatial dimension.  See `"inward_mass_flux`" for details.
+
+    * `"linear_pressure`" is defined inline using attributes.  Linear refers to linear in spatial dimension. Gradient_value specifies the gradient value in each direction in the form of a coordinate (grad_x, grad_y, grad_z).  Reference_point specifies a reference location as a coordinate.  Reference_value specifies a reference value for the boundary condition. 
+
+    * `"seepage_face`"is defined inline using attributes.  The attributes include "function", "start", and "value". Function specifies linear or constant temporal functional form during each time interval.  Start is a series of time values at which time intervals start.  inward_mass_flux is the value of the inward_mass_flux during the time interval.
+ 
+    * `"hydrostatic`" is an element with the attributes below.  By default the coordinate_system is set to "absolute".  Not specifing the attribute will result in the default value being used.  The attribute submodel is optional.  If not specified the submodel options will not be utilized.
+
+    * `"linear_hydrostatic`" is defined inline using attributes.  Linear refers to linear in spatial dimension. Gradient_value specifies the gradient value in each direction in the form of a coordinate (grad_x, grad_y, grad_z).  Reference_point specifies a reference location as a coordinate.  Reference_water_table_height specifies a reference value for the water table.  Optionally, the attribute "submodel" can be used to specify no flow above the water table height.
+
+    * `"no_flow`" is defined inline using attributes.  The attributes include "function" and "start". Function specifies linear or constant temporal functional form during each time interval.  Start is a series of time values at which time intervals start.  
 
 .. code-block:: xml
 
-     <inward_mass_flux value="exponential" function="linear | uniform | constant" start="time" />
-
-.
-        * `"inward_volumetric_flux`" is an element with the following attributes: 
-
-.. code-block:: xml
-
-     <inward_volumetric_flux value="exponential" function="linear | uniform | constant" start="time" />
-
-.
-        * `"uniform_pressure`" is an element with the following attributes: 
-
-.. code-block:: xml
-
+     <inward_mass_flux value="exponential" function="linear | constant" start="time" />
+     <outward_mass_flux value="exponential" function="linear | constant" start="time" />
+     <inward_volumetric_flux value="exponential" function="linear | constant" start="time" />
+     <outward_volumetric_flux value="exponential" function="linear | constant" start="time" />
      <uniform_pressure name="some name" value="exponential" function="uniform | constant" start="time" />
+     <linear_pressure name="some name" gradient_value="coordinate" reference_point="coordinate" reference_value="exponential" />
+     <seepage_face name="some name" inward_mass_flux="exponential" function="linear | constant" start="time" />
+     <hydrostatic name="some name" value="exponential" function="uniform | constant" start="time" coordinate_system="absolute | relative to mesh top" submodel="no_flow_above_water_table | none"/>
+     <linear_hydrostatic name="some name" gradient_value="exponential" reference_point="coordinate" reference_water_table_height="exponential" submodel="no_flow_above_water_table | none"/>
+     <no_flow function="linear | constant" start="time" />
 
-.
-        * `"seepage_face`" is an element with the following attributes (unstructured ONLY):
+*  Here is more info on the `"solute_component`" elements:
 
-.. code-block:: xml
-
-     <seepage_face name="some name" inward_mass_flux="exponential" function="linear | uniform | constant" start="time" />
-
-.
-        * `"hydrostatic`" is an element with the following attributes: ONLY CONSTANT, for now
-
-.. code-block:: xml
-
-     <hydrostatic name="some name" value="exponential" function="uniform | constant" start="time" coordinate_system="absolute | relative to mesh top"/>
-
-.
-    * `"solute_component`" is an element with the following subelement: 
-
-        * `"aqueous_conc`" is an element with the following attributes: ONLY CONTANT, for now
+    * `"aqueous_conc`" is an element with the following attributes: ONLY CONTANT, for now
 
 .. code-block:: xml
 
      <aqueous_conc name="some name" value="exponential" function="linear | uniform | constant" start="time" />
 
-.
-    * `"geochemistry`" is an element with the following subelement: NOT IMPLEMENTED YET
+*  Here is more info on the `"geochemistry`" elements:
 
-        * `"constraint`" is an element with the following attributes: ONLY UNIFORM, for now
+    * `"constraint`" is an element with the following attributes: ONLY UNIFORM, for now
 
 .. code-block:: xml
 

@@ -1205,7 +1205,7 @@ status_message "Amanzi build complete"
 # Amanzi Test Suite
 if [ "${test_suite}" -eq "${TRUE}" ]; then
   status_message "Run Amanzi test suite"
-  ${ctest_binary} --output-on-failure --output-log amanzi-test-results.log -j ${parallel_jobs}
+  ${ctest_binary} --output-on-failure --output-log amanzi-test-results.log #-j ${parallel_jobs}
   status_message "Test results in amanzi-test-results.log"
   if [ $? -ne 0 ]; then
     error_message "Amanzi test suite failed"

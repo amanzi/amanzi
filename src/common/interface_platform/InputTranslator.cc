@@ -3921,51 +3921,76 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
             }
 	  }
           else if  (strcmp("permeability",tagName)==0){
-            // loop over attributes to get x,y,z
-            hasPerm = true;
-            char *x,*y,*z;
-            attrMap = curkid->getAttributes();
+            DOMElement* permElem = static_cast<DOMElement*>(curkid);
             Teuchos::ParameterList perm;
             Teuchos::ParameterList permTmp;
-            for (int k=0; k<attrMap->getLength(); k++) {
-              DOMNode* attrNode = attrMap->item(k) ;
-              if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
-                char* attrName = XMLString::transcode(attrNode->getNodeName());
-                if (strcmp("x",attrName)==0){
-                  x = XMLString::transcode(attrNode->getNodeValue());
-                  permTmp.set<double>("x",get_double_constant(x,def_list));
-                  XMLString::release(&x);
-                } else if (strcmp("y",attrName)==0){
-                  y = XMLString::transcode(attrNode->getNodeValue());
-                  permTmp.set<double>("y",get_double_constant(y,def_list));
-                  XMLString::release(&y);
-                } else if (strcmp("z",attrName)==0){
-                  z = XMLString::transcode(attrNode->getNodeValue());
-                  permTmp.set<double>("z",get_double_constant(z,def_list));
-                  XMLString::release(&z);
+            hasPerm = true;
+            if (permElem->hasAttribute(XMLString::transcode("filename"))) {
+              textContent2 = XMLString::transcode(permElem->getAttribute(XMLString::transcode("filename")));
+              perm.set<std::string>("File",trim_string(textContent2));
+              XMLString::release(&textContent2);
+              if (permElem->hasAttribute(XMLString::transcode("type"))) {
+                textContent2 = XMLString::transcode(permElem->getAttribute(XMLString::transcode("type")));
+                perm.set<std::string>("Format","Exodus II");
+                XMLString::release(&textContent2);
+              }
+              else {
+                throw_error_missattr("materials", "attribute", "type", "permeability");
+              }
+              if (permElem->hasAttribute(XMLString::transcode("attribute"))) {
+                textContent2 = XMLString::transcode(permElem->getAttribute(XMLString::transcode("attribute")));
+                perm.set<std::string>("Attribute",trim_string(textContent2));
+                XMLString::release(&textContent2);
+              }
+              else {
+                throw_error_missattr("materials", "attribute", "attribute", "permeability");
+              }
+            }
+            else {
+              // loop over attributes to get x,y,z
+              char *x,*y,*z;
+              attrMap = curkid->getAttributes();
+              for (int k=0; k<attrMap->getLength(); k++) {
+                DOMNode* attrNode = attrMap->item(k) ;
+                if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+                  char* attrName = XMLString::transcode(attrNode->getNodeName());
+                  if (strcmp("x",attrName)==0){
+                    x = XMLString::transcode(attrNode->getNodeValue());
+                    permTmp.set<double>("x",get_double_constant(x,def_list));
+                    XMLString::release(&x);
+                  } else if (strcmp("y",attrName)==0){
+                    y = XMLString::transcode(attrNode->getNodeValue());
+                    permTmp.set<double>("y",get_double_constant(y,def_list));
+                    XMLString::release(&y);
+                  } else if (strcmp("z",attrName)==0){
+                    z = XMLString::transcode(attrNode->getNodeValue());
+                    permTmp.set<double>("z",get_double_constant(z,def_list));
+                    XMLString::release(&z);
+                  }
+                }
+              }
+              bool checkY = true , checkZ = true;
+              if (permTmp.isParameter("y")) {
+                if (permTmp.get<double>("x") != permTmp.get<double>("y")) checkY = false;
+              }
+              if (permTmp.isParameter("z")) {
+                if (permTmp.get<double>("x") != permTmp.get<double>("z")) checkZ = false;
+              }
+              if (checkY && checkZ) {
+                perm.set<double>("Value",permTmp.get<double>("x"));
+                matlist.sublist("Intrinsic Permeability: Uniform") = perm;
+              }
+              else {
+                perm.set<double>("x",permTmp.get<double>("x"));
+                if (permTmp.isParameter("y")) {
+                  perm.set<double>("y",permTmp.get<double>("y")) ;
+                }
+                if (permTmp.isParameter("z")) {
+                  perm.set<double>("z",permTmp.get<double>("z")) ;
                 }
               }
             }
-            bool checkY = true , checkZ = true;
-            if (permTmp.isParameter("y")) {
-              if (permTmp.get<double>("x") != permTmp.get<double>("y")) checkY = false;
-            }
-            if (permTmp.isParameter("z")) {
-              if (permTmp.get<double>("x") != permTmp.get<double>("z")) checkZ = false;
-            }
-            if (checkY && checkZ) {
-              perm.set<double>("Value",permTmp.get<double>("x"));
-              matlist.sublist("Intrinsic Permeability: Uniform") = perm;
-            } else {
-              perm.set<double>("x",permTmp.get<double>("x"));
-              if (permTmp.isParameter("y")) {
-                perm.set<double>("y",permTmp.get<double>("y")) ;
-              }
-              if (permTmp.isParameter("z")) {
-                perm.set<double>("z",permTmp.get<double>("z")) ;
-              }
-              matlist.sublist("Intrinsic Permeability: Anisotropic Uniform") = perm;
-            }
+            matlist.sublist("Intrinsic Permeability: Anisotropic Uniform") = perm;
 	  }
           else if  (strcmp("hydraulic_conductivity",tagName)==0){
             // loop over attributes to get x,y,z
@@ -3982,11 +4007,13 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                   x = XMLString::transcode(attrNode->getNodeValue());
                   hydcondTmp.set<double>("x",get_double_constant(x,def_list));
                   XMLString::release(&x);
-                } else if (strcmp("y",attrName)==0){
+                }
+                else if (strcmp("y",attrName)==0){
                   y = XMLString::transcode(attrNode->getNodeValue());
                   hydcondTmp.set<double>("y",get_double_constant(y,def_list));
                   XMLString::release(&y);
-                } else if (strcmp("z",attrName)==0){
+                }
+                else if (strcmp("z",attrName)==0){
                   z = XMLString::transcode(attrNode->getNodeValue());
                   hydcondTmp.set<double>("z",get_double_constant(z,def_list));
                   XMLString::release(&z);
@@ -4003,7 +4030,8 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
             if (checkY && checkZ) {
               hydcond.set<double>("Value",hydcondTmp.get<double>("x"));
               matlist.sublist("Hydraulic Conductivity: Uniform") = hydcond;
-            } else {
+            }
+            else {
               hydcond.set<double>("x",hydcondTmp.get<double>("x"));
               if (hydcondTmp.isParameter("y")) {
                 hydcond.set<double>("y",hydcondTmp.get<double>("y")) ;
@@ -4615,7 +4643,9 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 	        std::string bcname;
 	        std::string valname;
 	        bool hasCoordsys = false;
-	        std::string coordsys = "Absolute";
+                std::string coordsys("Absolute");
+                bool hasSubmodel = false;
+                std::string submodel;
                 Teuchos::Array<double> grad;
                 Teuchos::Array<double> ref_pt;
                 double ref_val;
@@ -4786,6 +4816,14 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                         success = false;
                         errmsg << "  Missing 'reference_water_table_height' for BC linear_hydrostatic " << std::endl ;
                       }
+                      if (bcElem->hasAttribute(XMLString::transcode("submodel"))) {
+                        textContent2 = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("submodel")));
+                        hasSubmodel = true;
+                        if (strcmp(textContent2,"no_flow_above_water_table")==0){
+                          submodel = "No Flow Above Water Table";
+                        }
+                        XMLString::release(&textContent2);
+                      }
                     }
                     else if (strcmp(bcChildName,"linear_pressue")==0) {
                       xmlBCName = "linear_pressue";
@@ -4866,14 +4904,22 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		        bcname = "BC: Hydrostatic";
 		        valname = "Water Table Height";
 		        //TODO: EIB - update if necessary
-		        if (bcElem->hasAttribute(XMLString::transcode("coordinate_system"))) {
-                          textContent2 = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("coordinate_system")));
-		          hasCoordsys = true;
-		          if (strcmp(textContent2,"relative to mesh top")==0){
-			    coordsys = "Relative";
+		        if (bcElem->hasAttribute(XMLString::transcode("submodel"))) {
+                          textContent2 = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("submodel")));
+		          hasSubmodel = true;
+		          if (strcmp(textContent2,"no_flow_above_water_table")==0){
+			    submodel = "No Flow Above Water Table";
 		          }
                           XMLString::release(&textContent2);
 		        }
+                        if (bcElem->hasAttribute(XMLString::transcode("coordinate_system"))) {
+                          textContent2 = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("coordinate_system")));
+                          hasCoordsys = true;
+                          if (strcmp(textContent2,"relative to mesh top")==0){
+                            coordsys = "Relative";
+                          }
+                          XMLString::release(&textContent2);
+                        }
 		      }
                       // get function type
                       if (bcElem->hasAttribute(XMLString::transcode("function"))) {
@@ -5017,6 +5063,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                   newbclist.set<Teuchos::Array<double> >("Gradient Value",grad);
                   newbclist.set<Teuchos::Array<double> >("Reference Point",ref_pt);
                   newbclist.set<double>("Reference Water Table Height",ref_val);
+                  if (hasSubmodel) newbclist.set<std::string>("Submodel",submodel);
                 }
                 else if (bcname == "BC: Linear Pressure") {
                   newbclist.set<Teuchos::Array<double> >("Gradient Value",grad);
@@ -5029,6 +5076,8 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 	          newbclist.set<Teuchos::Array<std::string> >("Time Functions",funcs);
 	          if (bcname != "BC: Zero Flow") newbclist.set<Teuchos::Array<double> >(valname,vals);
 	          if (bcname == "BC: Hydrostatic" && hasCoordsys) newbclist.set<std::string>("Coordinate System",coordsys);
+                  if (bcname == "BC: Hydrostatic" && hasSubmodel) newbclist.set<std::string>("Submodel",submodel);
+
                 }
                 bclist.sublist(bcname) = newbclist;
 	      }
