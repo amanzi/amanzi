@@ -1804,13 +1804,15 @@ PorousMedia::ml_step_driver(Real  time,
       if (ntracers>0) {
 	if (execution_mode==INIT_TO_STEADY) {
 	  advect_tracers = do_tracer_advection && (time >= switch_time);
+	  diffuse_tracers = do_tracer_diffusion && (time >= switch_time);
 	  react_tracers = do_tracer_chemistry && (time >= switch_time);
 	} else {
 	  advect_tracers = do_tracer_advection;
+	  diffuse_tracers = do_tracer_diffusion;
 	  react_tracers = do_tracer_chemistry;
 	}
       } else {
-	advect_tracers = react_tracers = false;
+	advect_tracers = diffuse_tracers = react_tracers = false;
       }
 
       solute_transport_limits_dt = advect_tracers;
