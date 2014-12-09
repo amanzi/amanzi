@@ -55,7 +55,13 @@ void ReconstructionCell::Init(
 
   std::string name = plist.get<std::string>("limiter", "none");
   limiter_id_ = 0;
-  if (name == "Barth-Jespersen") limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN;
+  if (name == "Barth-Jespersen") {
+    limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN;
+  } else if (name == "tensorial") {
+    limiter_id_ = OPERATOR_LIMITER_TENSORIAL;
+  } else if (name == "Kuzmin") {
+    limiter_id_ = OPERATOR_LIMITER_KUZMIN;
+  }
 }
 
 
@@ -123,6 +129,10 @@ void ReconstructionCell::ApplyLimiter(
     Teuchos::RCP<Epetra_Vector> limiter = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
     LimiterBarthJespersen_(bc_model, bc_value, limiter);
     ApplyLimiter(limiter);
+  } else if (limiter_id_ == OPERATOR_LIMITER_TENSORIAL) {
+    LimiterTensorial_(bc_model, bc_value);
+  } else if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
+    LimiterKuzmin_(bc_model, bc_value);
   }
 }
 

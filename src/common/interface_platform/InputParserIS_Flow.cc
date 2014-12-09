@@ -675,6 +675,7 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
         Teuchos::Array<double> grad = bc_dir.get<Teuchos::Array<double> >("Gradient Value");
         Teuchos::Array<double> refcoord = bc_dir.get<Teuchos::Array<double> >("Reference Point");
         double refval = bc_dir.get<double>("Reference Water Table Height");
+        std::string submodel = bc_dir.get<std::string>("Submodel", "None");
 
         Teuchos::Array<double> grad_with_time(grad.size() + 1);
         grad_with_time[0] = 0.0;
@@ -699,6 +700,13 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
         tbcs.set<Teuchos::Array<double> >("x0", refcoord_with_time);
         tbcs.set<Teuchos::Array<double> >("gradient", grad_with_time);
 
+        if (submodel == "No Flow Above Water Table") {
+          tbc.set<bool>("no flow above water table", true);
+        } else if (submodel != "None") {
+          msg << "In 'BC: Linear Hydrostatic': optional parameter 'Submodel': valid values are 'No Flow"
+              << " Above Water Table' or 'None'";
+          Exceptions::amanzi_throw(msg);
+        } 
       }
       else if (bc.isSublist("BC: Hydrostatic")) {
         Teuchos::ParameterList& bc_dir = bc.sublist("BC: Hydrostatic");

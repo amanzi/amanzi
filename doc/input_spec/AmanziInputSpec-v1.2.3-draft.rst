@@ -1441,9 +1441,9 @@ The following boundary condition parameterizations are supported:
       to the gravity vector and the actual influx depends on boundary
       slope (default value is "false").
 
-* [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Coordinate System`" [string] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"), `"Submodel`" [string] (available option is `"No Flow Above Water Table`", this parameter is optional with a default of `"None`"), and `"Water Table Height`" [Array(double)] (see below)
+* [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Coordinate System`" [string] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"), `"Submodel`" [string] (available option is `"No Flow Above Water Table`", this parameter is optional with a default of `"None`"), and `"Water Table Height`" [Array(double)].
 
-* [U] `"BC: Linear Hydrostatic`" [list] requires `"Reference Water Table Height`" [double] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
+* [U] `"BC: Linear Hydrostatic`" [list] requires `"Reference Water Table Height`" [double], `"Reference Point`" [Array(double)], `"Gradient Value`" [Array(double)], `"Submodel`" [string] (available option is `"No Flow Above Water Table`", this parameter is optional with a default of `"None`").
 
 * `"BC: Impermeable`"  requires no parameters
 

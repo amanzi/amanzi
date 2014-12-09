@@ -140,26 +140,35 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER) {
   }
 
   // Compute reconstruction
-  Teuchos::ParameterList plist;
-  plist.set<std::string>("limiter", "Barth-Jespersen");
+  for (int i = 0; i < 1; i++) {
+    Teuchos::ParameterList plist;
+    if (i == 0) {
+      plist.set<std::string>("limiter", "Barth-Jespersen");
+    } else if (i == 1) {
+      plist.set<std::string>("limiter", "tensorial");
+    } else if (i == 2) {
+      plist.set<std::string>("limiter", "Kuzmin");
+    }
 
-  ReconstructionCell lifting(mesh);
-  lifting.Init(field, plist);
-  lifting.Compute(); 
+    ReconstructionCell lifting(mesh);
+    lifting.Init(field, plist);
+    lifting.Compute(); 
 
-  // Apply limiter
-  lifting.InitLimiter(flux);
-  lifting.ApplyLimiter(bc_model, bc_value);
+    // Apply limiter
+    lifting.InitLimiter(flux);
+    lifting.ApplyLimiter(bc_model, bc_value);
 
-  // calculate gradient error
-  const Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
-  int ierr = grad_exact.Update(-1.0, grad_computed, 1.0);
+    // calculate gradient error
+    Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
+std::cout << grad_computed << std::endl;
+    int ierr = grad_computed.Update(-1.0, grad_exact, 1.0);
 
-  double error[2];
-  grad_exact.Norm2(error);
-  CHECK_CLOSE(0.0, error[0], 1.0e-12);
-  CHECK_CLOSE(0.0, error[1], 1.0e-12);
+    double error[2];
+    grad_computed.Norm2(error);
+    CHECK_CLOSE(0.0, error[0], 1.0e-12);
+    CHECK_CLOSE(0.0, error[1], 1.0e-12);
   
-  printf("errors: %8.4f %8.4f\n", error[0], error[1]);
+    printf("Loop %d: errors: %8.4f %8.4f\n", i, error[0], error[1]);
+  }
 }
 
