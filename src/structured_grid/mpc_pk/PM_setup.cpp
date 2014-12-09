@@ -1955,14 +1955,21 @@ void  PorousMedia::read_tracer()
               if ( !(chemistry_model_name == "Alquimia" && do_tracer_chemistry) ) {
                 BoxLib::Abort("Cannot use geochemical conditions if chemistry model not Alquimia");
               }
-              int nv = ppri.countval("times");
-              ppri.getarr("times",times,0,nv);
-              ppri.getarr("forms",forms,0,nv-1);
+              int nv = ppri.countval("geochemical_conditions");
               Array<std::string> geoconds; ppri.getarr("geochemical_conditions",geoconds,0,nv);
-              for (int ti = 0; ti < times.size(); ++ti)
+
+              if (nv > 1) {
+                ppri.getarr("times",times,0,nv);
+                ppri.getarr("forms",forms,0,nv-1);
+              }
+              else {
+                times.resize(1,0);
+              }
+
+              for (int ti = 0; ti < geoconds.size(); ++ti)
               {
-                Real cur_time = times[i]; 
-                std::string geocond = geoconds[i];
+                Real cur_time = 0.; // A dummy variable
+                std::string geocond = geoconds[ti];
                 Box boxTMP(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(0,0,0)));
                 const std::map<std::string,int>& auxChemVariablesMap = chemistry_helper->AuxChemVariablesMap();
                 FArrayBox primTMP(boxTMP,Nmobile);
