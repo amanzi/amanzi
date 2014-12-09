@@ -95,9 +95,6 @@
           <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
           <max_divergent_iterations>3</max_divergent_iterations>
           <unstr_pseudo_time_integrator>
-            <pseudo_time_integrator>
-              
-				
               <initialize_with_darcy>true</initialize_with_darcy>
               
 				
@@ -120,9 +117,6 @@
               
 				
               <max_iterations>100</max_iterations>
-              
-			
-            </pseudo_time_integrator>
           </unstr_pseudo_time_integrator>
         </unstr_steady-state_controls>
       </unstructured_controls>

@@ -881,6 +881,14 @@ void OperatorDiffusion::UpdateFlux(const CompositeVector& u, CompositeVector& fl
 
 
 /* ******************************************************************
+* Modify operator by addition approximation of NEwton corection.
+****************************************************************** */
+void OperatorDiffusion::AddNewtonCorrection(Teuchos::RCP<const CompositeVector> flux)
+{
+}
+
+
+/* ******************************************************************
 * Calculate elemental inverse mass matrices.
 ****************************************************************** */
 void OperatorDiffusion::CreateMassMatrices_()

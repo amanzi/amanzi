@@ -319,7 +319,7 @@ Teuchos::ParameterList InputParserIS::CreateStateList_(Teuchos::ParameterList* p
             grad_with_time[j + 1] = grad[j];
           }
 
-          Teuchos::Array<double> refcoord_with_time(refcoord.size()+1);
+          Teuchos::Array<double> refcoord_with_time(refcoord.size() + 1);
           refcoord_with_time[0] = 0.0;
           for (int j = 0; j != refcoord.size(); ++j) {
             refcoord_with_time[j + 1] = refcoord[j];

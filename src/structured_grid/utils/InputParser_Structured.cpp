@@ -1711,25 +1711,6 @@ namespace Amanzi {
       }
     }
 
-    bool convert_MolecularDiffusionUniform(const ParameterList& fPLin,
-                                           ParameterList&       fPLout)
-    {
-      Array<std::string> nullList, reqP;
-      if (fPLin.isParameter("Value")) {
-        const std::string val_name="Value"; reqP.push_back(val_name);
-        PLoptions opt(fPLin,nullList,reqP,true,true);
-        double val = fPLin.get<double>(val_name);
-        if (val == 0) return false;
-        fPLout.set<double>("val",val);
-      }
-      else {
-        std::string str = "Unrecognized molecular diffusion parameters";
-        std::cerr << fPLin << std::endl;
-        BoxLib::Abort(str.c_str());
-      }
-      return true;
-    }
-
     void convert_TortuosityUniform(const ParameterList& fPLin,
                                    ParameterList&       fPLout)
     {
@@ -1878,7 +1859,6 @@ namespace Amanzi {
       const std::string perm_file_str = "Intrinsic Permeability: Input File";
       const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
       const std::string perm_anisotropic_uniform_str = "Intrinsic Permeability: Anisotropic Uniform";
-      const std::string molec_diff_uniform_str = "Molecular Diffusion: Uniform";
       const std::string tortuosity_str = "Tortuosity: Uniform";
       const std::string dispersivity_str = "Dispersion Tensor: Uniform Isotropic";
       const std::string specific_storage_uniform_str = "Specific Storage: Uniform";
@@ -1991,14 +1971,6 @@ namespace Amanzi {
                 rsublist.set("permeability",psublist);
                 rsublist.set("permeability_dist","uniform");
                 mtest["Intrinsic_Permeability"] = true;
-              }
-              else if (rlabel==molec_diff_uniform_str) {
-                ParameterList dsublist;
-                bool is_nonzero = convert_MolecularDiffusionUniform(rsslist,dsublist);
-                if (is_nonzero) {
-                  rsublist.set("molecular_diffusion",dsublist);
-                  do_tracer_diffusion = do_tracer_advection; 
-                }
               }
               else if (rlabel==tortuosity_str) {
                 ParameterList dsublist;
@@ -3008,11 +2980,11 @@ namespace Amanzi {
         fPLout.set<Array<double> >("loc",fPLin.get<Array<double> >(ref_name));
         fPLout.set<std::string>("type","linear_pressure");
       }
-      else if ((Amanzi_type == "BC: Uniform Pressure Head")
+      else if ((Amanzi_type == "BC: Uniform Hydraulic Head")
                || (Amanzi_type == "BC: Hydrostatic"))
       {
         const std::string val_name
-          = (Amanzi_type == "BC: Uniform Pressure Head" ?  "Values" : "Water Table Height");
+          = (Amanzi_type == "BC: Uniform Hydraulic Head" ?  "Values" : "Water Table Height");
         reqP.push_back(val_name);
         const std::string time_name="Times"; reqP.push_back(time_name);
         const std::string form_name="Time Functions"; reqP.push_back(form_name);
@@ -3044,7 +3016,7 @@ namespace Amanzi {
           fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
           fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
         }
-        fPLout.set<std::string>("type","pressure_head");
+        fPLout.set<std::string>("type","hydraulic_head");
         fPLout.set<std::string>("normalization",absolute_or_relative);
       }
       else if (Amanzi_type == "BC: Uniform Pressure")
@@ -3241,7 +3213,7 @@ namespace Amanzi {
           convert_BCSaturation(fPLin,Amanzi_type,fPLout);
         }
         else if ( (Amanzi_type == "BC: Uniform Pressure")
-                  || (Amanzi_type == "BC: Uniform Pressure Head")
+                  || (Amanzi_type == "BC: Uniform Hydraulic Head")
                   || (Amanzi_type == "BC: Hydrostatic")
                   || (Amanzi_type == "BC: Linear Pressure") )
         {
@@ -3322,7 +3294,7 @@ namespace Amanzi {
               }
             }
             if (orient_type == "pressure"
-                     || orient_type == "pressure_head"
+                     || orient_type == "hydraulic_head"
                      || orient_type == "linear_pressure"
                      || orient_type == "hydrostatic") {
               // Must set components by name, and phase press set by press_XX(scalar) or hydro 
@@ -3611,15 +3583,6 @@ namespace Amanzi {
                                 bool&                do_tracer_diffusion,
                                 bool&                do_chem)
     {
-      // FIXME: Molecular diffusivities should be specified as a property of
-      //        solutes (and tortuosity as a property of the materials)
-      //        The arguments to this function are to suggest that if Dmolec
-      //        is specified for any solute, diffusion should be turned on
-      //        (if transport is on....checked here by looking at do_tracer_advection)
-      //
-      // However, this is not implemented yet in the Amanzi input spec (v1.2.1 so far)
-      // Rather, tau.D is specified for all solutes as a material property
-      //
       ParameterList& phase_list  = struc_list.sublist("phase");
       ParameterList& comp_list   = struc_list.sublist("comp"); 
       ParameterList& solute_list = struc_list.sublist("tracer"); 
@@ -3642,9 +3605,9 @@ namespace Amanzi {
       }
     
       StateDef::Phases& phases = stateDef.getPhases();
-      for (StateDef::Phases::const_iterator pit = phases.begin(); pit!=phases.end(); ++pit) 
+      for (StateDef::Phases::const_iterator pit = phases.begin(); pit!=phases.end(); ++pit)
       {
-        const std::string& phaseLabel = pit->first;                
+        const std::string& phaseLabel = pit->first;
         std::string _phaseLabel = underscore(phaseLabel);
         PHASE& phase = stateDef.getPhases()[phaseLabel];
 
@@ -3655,7 +3618,7 @@ namespace Amanzi {
         
         Array<std::string> arraycomp;  
         const CompMap comp_map = stateDef[phaseLabel];
-        for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end(); ++cit) 
+        for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end(); ++cit)
         {
           const std::string& compLabel = cit->first;
           std::string _compLabel = underscore(compLabel);
@@ -3707,6 +3670,38 @@ namespace Amanzi {
         Array<std::string> regions;
         solutePLs[soluteName].set<Array<std::string> >("regions",regions);
         solutePLs[soluteName].set<Array<std::string> >("tinits",icLabels);
+
+        // Find solute in phase defs in order to extract solute-specific properties
+        bool found_solute = false;
+        for (StateDef::Phases::const_iterator pit = phases.begin(); pit!=phases.end() && !found_solute; ++pit) 
+        {
+          const std::string& phaseLabel = pit->first;                
+          PHASE& phase = stateDef.getPhases()[phaseLabel];
+          const CompMap comp_map = stateDef[phaseLabel];
+          for (CompMap::const_iterator cit = comp_map.begin(); cit!=comp_map.end() && !found_solute; ++cit) 
+          {
+            const std::string& compLabel = cit->first;
+            const Array<TRACER>& solutes = cit->second.getTracerArray();
+            for (int i=0; i<solutes.size(); ++i)
+            {
+              std::string _soluteLabel = underscore(solutes[i].name);
+              if (_soluteLabel == soluteName) {
+                found_solute = true;
+
+                double D = solutes[i].molecularDiffusivity;
+                if (D != 0) {
+                  solutePLs[soluteName].set<double>("molecularDiffusivity",D);
+                  do_tracer_diffusion = do_tracer_advection;
+                }
+
+                double lambda = solutes[i].firstOrderDecayConstant;
+                if (lambda != 0) {
+                  solutePLs[soluteName].set<double>("firstOrderDecayConstant",lambda);
+                }
+              }
+            }
+          }
+        }
       }
 
       // Only do solute BCs if do_tracer_transport
@@ -3915,20 +3910,12 @@ namespace Amanzi {
       user_derive_list.push_back(underscore("Aqueous Volumetric Flux Z"));
 #endif
 
-      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient X"));
-      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient Y"));
-#if BL_SPACEDIM==3
-      user_derive_list.push_back(underscore("Molecular Diffusion Coefficient Z"));
-#endif
-
       user_derive_list.push_back(underscore("Tortuosity X"));
       user_derive_list.push_back(underscore("Tortuosity Y"));
 #if BL_SPACEDIM==3
       user_derive_list.push_back(underscore("Tortuosity Z"));
 #endif
 
-      user_derive_list.push_back(underscore("Dispersivity L"));
-      user_derive_list.push_back(underscore("Dispersivity T"));
       user_derive_list.push_back(underscore("Specific Storage"));
       user_derive_list.push_back(underscore("Specific Yield"));
       user_derive_list.push_back(underscore("Particle Density"));

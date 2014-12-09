@@ -2148,80 +2148,80 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
           }
             else if (strcmp(nodeName,"unstr_linear_solver")==0) {
-            Teuchos::ParameterList lsPL;
-            Teuchos::ParameterList pcPL;
-            bool usePCPL=false;
-            // loop through children and deal with them
-            DOMNodeList* children = tmpNode->getChildNodes();
-            for (int k=0; k<children->getLength(); k++) {
-              DOMNode* currentNode = children->item(k) ;
-              if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
-                char* tagname = XMLString::transcode(currentNode->getNodeName());
-                if (strcmp(tagname,"method")==0) {
-                  textContent = XMLString::transcode(currentNode->getTextContent());
-                  lsPL.set<std::string>("linear solver preconditioner",trim_string(textContent));
-                  XMLString::release(&textContent);
-                }
-                else if (strcmp(tagname,"max_iterations")==0) {
-                  textContent = XMLString::transcode(currentNode->getTextContent());
-                  lsPL.set<int>("linear solver maximum iterations",get_int_constant(textContent,*def_list));
-                  XMLString::release(&textContent);
-                }
-                else if (strcmp(tagname,"tolerance")==0) {
-                  textContent = XMLString::transcode(currentNode->getTextContent());
-                  lsPL.set<double>("linear solver tolerance",get_double_constant(textContent,*def_list));
-                  XMLString::release(&textContent);
-                }
-                else if (strcmp(tagname,"cfl")==0) {
-                  textContent = XMLString::transcode(currentNode->getTextContent());
-                  lsPL.set<double>("CFL",get_double_constant(textContent,*def_list));
-                  XMLString::release(&textContent);
-                }
-                else if (strcmp(tagname,"preconditioner")==0) {
-                  // which precondition is stored in attribute, options are: trilinos_ml, hypre_amg, block_ilu
-                  attrMap = currentNode->getAttributes();
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-                  if (nodeAttr) {
-                    textContent = XMLString::transcode(nodeAttr->getNodeValue());
+              Teuchos::ParameterList lsPL;
+              Teuchos::ParameterList pcPL;
+              bool usePCPL=false;
+              // loop through children and deal with them
+              DOMNodeList* children = tmpNode->getChildNodes();
+              for (int k=0; k<children->getLength(); k++) {
+                DOMNode* currentNode = children->item(k) ;
+                if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+                  char* tagname = XMLString::transcode(currentNode->getNodeName());
+                  if (strcmp(tagname,"method")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    lsPL.set<std::string>("linear solver preconditioner",trim_string(textContent));
+                    XMLString::release(&textContent);
                   }
-                  else {
-                    throw_error_missattr("linear_solver", "attribute", "name", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
+                  else if (strcmp(tagname,"max_iterations")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    lsPL.set<int>("linear solver maximum iterations",get_int_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
                   }
-                  usePCPL = true;
-                  if (strcmp(textContent,"hypre_amg")==0) {
-                    // TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag
-                    //              so this doesn't get overwritten later when the list actually gets created.
-                    list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Hypre AMG");
-                    // loop through children and deal with them
-                    DOMNodeList* preconChildren= currentNode->getChildNodes();
-                    for (int l=0; l<preconChildren->getLength();l++) {
-                      DOMNode* currentKid = preconChildren->item(l) ;
-                      if (DOMNode::ELEMENT_NODE == currentKid->getNodeType()) {
-                        char* kidname = XMLString::transcode(currentKid->getNodeName());
-                        if (strcmp(kidname,"hypre_cycle_applications")==0) {
-                          elemContent = XMLString::transcode(currentKid->getTextContent());
-                          pcPL.sublist("Hypre AMG").set<int>("Hypre AMG cycle applications",get_int_constant(elemContent,*def_list));
-                          XMLString::release(&elemContent);
-                        }
-                        else if (strcmp(kidname,"hypre_smoother_sweeps")==0) {
-                          elemContent = XMLString::transcode(currentKid->getTextContent());
-                          pcPL.sublist("Hypre AMG").set<int>("Hypre AMG smoother sweeps",get_int_constant(elemContent,*def_list));
-                          XMLString::release(&elemContent);
-                        }
-                        else if (strcmp(kidname,"hypre_tolerance")==0) {
-                          elemContent = XMLString::transcode(currentKid->getTextContent());
-                          pcPL.sublist("Hypre AMG").set<double>("Hypre AMG tolerance",get_double_constant(elemContent,*def_list));
-                          XMLString::release(&elemContent);
-                        }
-                        else if (strcmp(kidname,"hypre_strong_threshold")==0) {
-                          elemContent = XMLString::transcode(currentKid->getTextContent());
-                          pcPL.sublist("Hypre AMG").set<double>("Hypre AMG strong threshold",get_double_constant(elemContent,*def_list));
-                          XMLString::release(&elemContent);
+                  else if (strcmp(tagname,"tolerance")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    lsPL.set<double>("linear solver tolerance",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                  }
+                  else if (strcmp(tagname,"cfl")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    lsPL.set<double>("CFL",get_double_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                  }
+                  else if (strcmp(tagname,"preconditioner")==0) {
+                    // which precondition is stored in attribute, options are: trilinos_ml, hypre_amg, block_ilu
+                    attrMap = currentNode->getAttributes();
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+                    if (nodeAttr) {
+                      textContent = XMLString::transcode(nodeAttr->getNodeValue());
+                    }
+                    else {
+                      throw_error_missattr("linear_solver", "attribute", "name", "preconditioner", "trilinos_ml, hypre_amg, block_ilu");
+                    }
+                    usePCPL = true;
+                    if (strcmp(textContent,"hypre_amg")==0) {
+                      // TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag
+                      //              so this doesn't get overwritten later when the list actually gets created.
+                      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Hypre AMG");
+                      // loop through children and deal with them
+                      DOMNodeList* preconChildren= currentNode->getChildNodes();
+                      for (int l=0; l<preconChildren->getLength();l++) {
+                        DOMNode* currentKid = preconChildren->item(l) ;
+                        if (DOMNode::ELEMENT_NODE == currentKid->getNodeType()) {
+                          char* kidname = XMLString::transcode(currentKid->getNodeName());
+                          if (strcmp(kidname,"hypre_cycle_applications")==0) {
+                            elemContent = XMLString::transcode(currentKid->getTextContent());
+                            pcPL.sublist("Hypre AMG").set<int>("Hypre AMG cycle applications",get_int_constant(elemContent,*def_list));
+                            XMLString::release(&elemContent);
+                          }
+                          else if (strcmp(kidname,"hypre_smoother_sweeps")==0) {
+                            elemContent = XMLString::transcode(currentKid->getTextContent());
+                            pcPL.sublist("Hypre AMG").set<int>("Hypre AMG smoother sweeps",get_int_constant(elemContent,*def_list));
+                            XMLString::release(&elemContent);
+                          }
+                          else if (strcmp(kidname,"hypre_tolerance")==0) {
+                            elemContent = XMLString::transcode(currentKid->getTextContent());
+                            pcPL.sublist("Hypre AMG").set<double>("Hypre AMG tolerance",get_double_constant(elemContent,*def_list));
+                            XMLString::release(&elemContent);
+                          }
+                          else if (strcmp(kidname,"hypre_strong_threshold")==0) {
+                            elemContent = XMLString::transcode(currentKid->getTextContent());
+                            pcPL.sublist("Hypre AMG").set<double>("Hypre AMG strong threshold",get_double_constant(elemContent,*def_list));
+                            XMLString::release(&elemContent);
+                          }
                         }
                       }
                     }
-                  }
-                  else if (strcmp(textContent,"trilinos_ml")==0) {
+                    else if (strcmp(textContent,"trilinos_ml")==0) {
                       // TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag
                       //              so this doesn't get overwritten later when the list actually gets created.
                       list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Trilinos ML");
@@ -2262,7 +2262,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         }
                       }
 		    }
-                  else if (strcmp(textContent,"block_ilu")==0) {
+                    else if (strcmp(textContent,"block_ilu")==0) {
                       // TODO:: EIB - this is hacky, really need to check if list exist, if it doesn't need to flag
                       //              so this doesn't get overwritten later when the list actually gets created.
                       list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration").set<std::string>("steady preconditioner","Block ILU");
@@ -2300,21 +2300,14 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         }
                       }
 		    }
-                  XMLString::release(&textContent);
+                    XMLString::release(&textContent);
+                  }
                 }
               }
+              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Linear Solver") = lsPL;
+              if (usePCPL)
+                list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners") = pcPL;
             }
-            list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Linear Solver") = lsPL;
-            if (usePCPL)
-              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners") = pcPL;
-            if (flowON)
-              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Flow Process Kernel") = fpkPL;
-            if (transportON)
-              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transport Process Kernel") = tpkPL;
-            if (chemistryON)
-              list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Chemistry Process Kernel") = cpkPL;
-            list.sublist("Numerical Control Parameters").sublist("Common Controls") = commonPL;
-          }
             else if (strcmp(nodeName,"nonlinear_solver")==0) {
             // EIB: creating sub for section that doesn't actually exist yet in the New Schema, but does in the Input Spec
             Teuchos::ParameterList nlsPL;
@@ -2432,6 +2425,13 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
         }
       }
     }
+    if (flowON)
+      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Flow Process Kernel") = fpkPL;
+    if (transportON)
+      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transport Process Kernel") = tpkPL;
+    if (chemistryON)
+      list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Chemistry Process Kernel") = cpkPL;
+    list.sublist("Numerical Control Parameters").sublist("Common Controls") = commonPL;
     list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration") = ssPL;
     list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transient Implicit Time Integration") = tcPL;
   }
@@ -2530,17 +2530,17 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                     expertPL.set<double>("steady_extra_time_step_increase_factor",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
-                  else if (strcmp(tagname,"abort_on_psuedo_timestep_failure")==0) {
+                  else if (strcmp(tagname,"abort_on_pseudo_timestep_failure")==0) {
 		    textContent = XMLString::transcode(currentNode->getTextContent());
                     if (strcmp(textContent,"true")==0) {
-                      expertPL.set<bool>("steady_abort_on_psuedo_timestep_failure",true);
+                      expertPL.set<bool>("steady_abort_on_pseudo_timestep_failure",true);
                     }
                     else  {
-                      expertPL.set<bool>("steady_abort_on_psuedo_timestep_failure",false);
+                      expertPL.set<bool>("steady_abort_on_pseudo_timestep_failure",false);
                     }
                     XMLString::release(&textContent);
                     //textContent = XMLString::transcode(currentNode->getTextContent());
-                    //expertPL.set<int>("steady_abort_on_psuedo_timestep_failure",get_int_constant(textContent,*def_list));
+                    //expertPL.set<int>("steady_abort_on_pseudo_timestep_failure",get_int_constant(textContent,*def_list));
                     //XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"limit_function_evals")==0) {
@@ -3921,51 +3921,76 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
             }
 	  }
           else if  (strcmp("permeability",tagName)==0){
-            // loop over attributes to get x,y,z
-            hasPerm = true;
-            char *x,*y,*z;
-            attrMap = curkid->getAttributes();
+            DOMElement* permElem = static_cast<DOMElement*>(curkid);
             Teuchos::ParameterList perm;
             Teuchos::ParameterList permTmp;
-            for (int k=0; k<attrMap->getLength(); k++) {
-              DOMNode* attrNode = attrMap->item(k) ;
-              if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
-                char* attrName = XMLString::transcode(attrNode->getNodeName());
-                if (strcmp("x",attrName)==0){
-                  x = XMLString::transcode(attrNode->getNodeValue());
-                  permTmp.set<double>("x",get_double_constant(x,def_list));
-                  XMLString::release(&x);
-                } else if (strcmp("y",attrName)==0){
-                  y = XMLString::transcode(attrNode->getNodeValue());
-                  permTmp.set<double>("y",get_double_constant(y,def_list));
-                  XMLString::release(&y);
-                } else if (strcmp("z",attrName)==0){
-                  z = XMLString::transcode(attrNode->getNodeValue());
-                  permTmp.set<double>("z",get_double_constant(z,def_list));
-                  XMLString::release(&z);
+            hasPerm = true;
+            if (permElem->hasAttribute(XMLString::transcode("filename"))) {
+              textContent2 = XMLString::transcode(permElem->getAttribute(XMLString::transcode("filename")));
+              perm.set<std::string>("File",trim_string(textContent2));
+              XMLString::release(&textContent2);
+              if (permElem->hasAttribute(XMLString::transcode("type"))) {
+                textContent2 = XMLString::transcode(permElem->getAttribute(XMLString::transcode("type")));
+                perm.set<std::string>("Format","Exodus II");
+                XMLString::release(&textContent2);
+              }
+              else {
+                throw_error_missattr("materials", "attribute", "type", "permeability");
+              }
+              if (permElem->hasAttribute(XMLString::transcode("attribute"))) {
+                textContent2 = XMLString::transcode(permElem->getAttribute(XMLString::transcode("attribute")));
+                perm.set<std::string>("Attribute",trim_string(textContent2));
+                XMLString::release(&textContent2);
+              }
+              else {
+                throw_error_missattr("materials", "attribute", "attribute", "permeability");
+              }
+            }
+            else {
+              // loop over attributes to get x,y,z
+              char *x,*y,*z;
+              attrMap = curkid->getAttributes();
+              for (int k=0; k<attrMap->getLength(); k++) {
+                DOMNode* attrNode = attrMap->item(k) ;
+                if (DOMNode::ATTRIBUTE_NODE == attrNode->getNodeType()) {
+                  char* attrName = XMLString::transcode(attrNode->getNodeName());
+                  if (strcmp("x",attrName)==0){
+                    x = XMLString::transcode(attrNode->getNodeValue());
+                    permTmp.set<double>("x",get_double_constant(x,def_list));
+                    XMLString::release(&x);
+                  } else if (strcmp("y",attrName)==0){
+                    y = XMLString::transcode(attrNode->getNodeValue());
+                    permTmp.set<double>("y",get_double_constant(y,def_list));
+                    XMLString::release(&y);
+                  } else if (strcmp("z",attrName)==0){
+                    z = XMLString::transcode(attrNode->getNodeValue());
+                    permTmp.set<double>("z",get_double_constant(z,def_list));
+                    XMLString::release(&z);
+                  }
+                }
+              }
+              bool checkY = true , checkZ = true;
+              if (permTmp.isParameter("y")) {
+                if (permTmp.get<double>("x") != permTmp.get<double>("y")) checkY = false;
+              }
+              if (permTmp.isParameter("z")) {
+                if (permTmp.get<double>("x") != permTmp.get<double>("z")) checkZ = false;
+              }
+              if (checkY && checkZ) {
+                perm.set<double>("Value",permTmp.get<double>("x"));
+                matlist.sublist("Intrinsic Permeability: Uniform") = perm;
+              }
+              else {
+                perm.set<double>("x",permTmp.get<double>("x"));
+                if (permTmp.isParameter("y")) {
+                  perm.set<double>("y",permTmp.get<double>("y")) ;
+                }
+                if (permTmp.isParameter("z")) {
+                  perm.set<double>("z",permTmp.get<double>("z")) ;
                 }
               }
             }
-            bool checkY = true , checkZ = true;
-            if (permTmp.isParameter("y")) {
-              if (permTmp.get<double>("x") != permTmp.get<double>("y")) checkY = false;
-            }
-            if (permTmp.isParameter("z")) {
-              if (permTmp.get<double>("x") != permTmp.get<double>("z")) checkZ = false;
-            }
-            if (checkY && checkZ) {
-              perm.set<double>("Value",permTmp.get<double>("x"));
-              matlist.sublist("Intrinsic Permeability: Uniform") = perm;
-            } else {
-              perm.set<double>("x",permTmp.get<double>("x"));
-              if (permTmp.isParameter("y")) {
-                perm.set<double>("y",permTmp.get<double>("y")) ;
-              }
-              if (permTmp.isParameter("z")) {
-                perm.set<double>("z",permTmp.get<double>("z")) ;
-              }
-              matlist.sublist("Intrinsic Permeability: Anisotropic Uniform") = perm;
-            }
+            matlist.sublist("Intrinsic Permeability: Anisotropic Uniform") = perm;
 	  }
           else if  (strcmp("hydraulic_conductivity",tagName)==0){
             // loop over attributes to get x,y,z
@@ -3982,11 +4007,13 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                   x = XMLString::transcode(attrNode->getNodeValue());
                   hydcondTmp.set<double>("x",get_double_constant(x,def_list));
                   XMLString::release(&x);
-                } else if (strcmp("y",attrName)==0){
+                }
+                else if (strcmp("y",attrName)==0){
                   y = XMLString::transcode(attrNode->getNodeValue());
                   hydcondTmp.set<double>("y",get_double_constant(y,def_list));
                   XMLString::release(&y);
-                } else if (strcmp("z",attrName)==0){
+                }
+                else if (strcmp("z",attrName)==0){
                   z = XMLString::transcode(attrNode->getNodeValue());
                   hydcondTmp.set<double>("z",get_double_constant(z,def_list));
                   XMLString::release(&z);
@@ -4003,7 +4030,8 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
             if (checkY && checkZ) {
               hydcond.set<double>("Value",hydcondTmp.get<double>("x"));
               matlist.sublist("Hydraulic Conductivity: Uniform") = hydcond;
-            } else {
+            }
+            else {
               hydcond.set<double>("x",hydcondTmp.get<double>("x"));
               if (hydcondTmp.isParameter("y")) {
                 hydcond.set<double>("y",hydcondTmp.get<double>("y")) ;
@@ -4615,7 +4643,9 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 	        std::string bcname;
 	        std::string valname;
 	        bool hasCoordsys = false;
-	        std::string coordsys = "Absolute";
+                std::string coordsys("Absolute");
+                bool hasSubmodel = false;
+                std::string submodel;
                 Teuchos::Array<double> grad;
                 Teuchos::Array<double> ref_pt;
                 double ref_val;
@@ -4786,6 +4816,14 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                         success = false;
                         errmsg << "  Missing 'reference_water_table_height' for BC linear_hydrostatic " << std::endl ;
                       }
+                      if (bcElem->hasAttribute(XMLString::transcode("submodel"))) {
+                        textContent2 = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("submodel")));
+                        hasSubmodel = true;
+                        if (strcmp(textContent2,"no_flow_above_water_table")==0){
+                          submodel = "No Flow Above Water Table";
+                        }
+                        XMLString::release(&textContent2);
+                      }
                     }
                     else if (strcmp(bcChildName,"linear_pressue")==0) {
                       xmlBCName = "linear_pressue";
@@ -4866,14 +4904,22 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 		        bcname = "BC: Hydrostatic";
 		        valname = "Water Table Height";
 		        //TODO: EIB - update if necessary
-		        if (bcElem->hasAttribute(XMLString::transcode("coordinate_system"))) {
-                          textContent2 = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("coordinate_system")));
-		          hasCoordsys = true;
-		          if (strcmp(textContent2,"relative to mesh top")==0){
-			    coordsys = "Relative";
+		        if (bcElem->hasAttribute(XMLString::transcode("submodel"))) {
+                          textContent2 = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("submodel")));
+		          hasSubmodel = true;
+		          if (strcmp(textContent2,"no_flow_above_water_table")==0){
+			    submodel = "No Flow Above Water Table";
 		          }
                           XMLString::release(&textContent2);
 		        }
+                        if (bcElem->hasAttribute(XMLString::transcode("coordinate_system"))) {
+                          textContent2 = XMLString::transcode(bcElem->getAttribute(XMLString::transcode("coordinate_system")));
+                          hasCoordsys = true;
+                          if (strcmp(textContent2,"relative to mesh top")==0){
+                            coordsys = "Relative";
+                          }
+                          XMLString::release(&textContent2);
+                        }
 		      }
                       // get function type
                       if (bcElem->hasAttribute(XMLString::transcode("function"))) {
@@ -5017,6 +5063,7 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
                   newbclist.set<Teuchos::Array<double> >("Gradient Value",grad);
                   newbclist.set<Teuchos::Array<double> >("Reference Point",ref_pt);
                   newbclist.set<double>("Reference Water Table Height",ref_val);
+                  if (hasSubmodel) newbclist.set<std::string>("Submodel",submodel);
                 }
                 else if (bcname == "BC: Linear Pressure") {
                   newbclist.set<Teuchos::Array<double> >("Gradient Value",grad);
@@ -5029,6 +5076,8 @@ Teuchos::ParameterList get_boundary_conditions(DOMDocument* xmlDoc, Teuchos::Par
 	          newbclist.set<Teuchos::Array<std::string> >("Time Functions",funcs);
 	          if (bcname != "BC: Zero Flow") newbclist.set<Teuchos::Array<double> >(valname,vals);
 	          if (bcname == "BC: Hydrostatic" && hasCoordsys) newbclist.set<std::string>("Coordinate System",coordsys);
+                  if (bcname == "BC: Hydrostatic" && hasSubmodel) newbclist.set<std::string>("Submodel",submodel);
+
                 }
                 bclist.sublist(bcname) = newbclist;
 	      }

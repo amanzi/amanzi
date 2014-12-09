@@ -730,94 +730,110 @@ For geochemisty simulated through PFLOTRAN, the user defines a reaction network 
 Material
 ========
 
-TODO - general description of the material section
+The "material" in this context is meant to represent the media through with fluid phases are transported. In the literature, this is also referred to as the "soil", "rock", "matrix", etc. Properties of the material must be specified over the entire simulation domain, and is carried out using the Region constructs defined above. For example, a single material may be defined over the "All" region (see above), or a set of materials can be defined over subsets of the domain via user-defined regions. If multiple regions are used for this purpose, they should be disjoint, but should collectively tile the entire domain. 
 
-Within the Materials block an unbounded number of `"material`" elements can be defined.  Each material has the following requirements.
+Within the Materials block an unbounded number of `"material`" elements can be defined.  Each material requires a label and has the following requirements.
 
 .. code-block:: xml
 
   <material>
-      Required Elements: mechanical_properties, permeability, hydraulic_conductivity, assigned_regions
-      Optional Elements: comments, cap_pressure, rel_perm 
+      Required Elements: mechanical_properties, permeability or hydraulic_conductivity, assigned_regions
+      Optional Elements: comments, cap_pressure, rel_perm, sorption_isotherms 
   </material>
-
-`"mechanical_properties`" has two elements that can be either values or specified as files.  It has the following requirements.
-
+ 
 .. code-block:: xml
 
   <mechanical_properties>
       Required Elements: porosity, particle_density   (FILE OPTION NOT IMPLEMENTED) 
+      Optional Elements: specific_storage, specific_yield, dispersion_tensor, tortuosity
   </mechanical_properties>
 
-* `"porosity`" is defined inline using attributes.  Either it is specified as a value between 0 and 1 using `"value`" or it specified through a file using `"filename`" and `"type`". NOTE - FILE OPTION NOT IMPLEMENTED YET.
+* `"mechanical_properties`" has six elements that can be either values or specified as files.  It has the following requirements.
+
+    * `"porosity`" is defined inline using attributes.  Either it is specified as a value between 0 and 1 using `"value`" or it specified through a file using `"filename`" and `"type`". NOTE - FILE OPTION NOT IMPLEMENTED YET.
+
+    * `"particle_density`" is defined inline using attributes.  Either it is specified as a value greater than 0 using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+
+    * `"specific_storage`" is defined inline using attributes.  Either it is specified as a value greater than 0 using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+
+    * `"specific_yield`" is defined inline using attributes.  Either it is specified as a value using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+
+    * `"dispersion_tensor`" is defined inline using attributes.  Either it is specified as values using `"alpha_l`" and `"alpha_t`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+
+    * `"tortuosity`" is defined inline using attributes.  Either it is specified as a value using `"value`" or it specified through a file using `"filename`" and `"type`".  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+
 
 .. code-block:: xml
 
-  <porosity value="decimal value"/>
-  <porosity filename="file name" type="file"/>
+  <mechanical_properties>
+      <porosity value="exponential"/>
+      <particle_density value="exponential"/>
+      <specific_storage value="exponential"/>
+      <specific_yield value="exponential"/>
+      <dispersion_tensor alpha_l="exponential" alpha_t="exponential"/>
+      <tortuosity value="exponential"/>
+  </mechanical_properties>
 
-* `"particle_density`" is defined inline using attributes.  Either it is specified as a value greater than 0 using `"value`" or it specified through a file using `"filename`" and `"type`".  See porosity for example.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+* `"assigned_regions`" is a comma seperated list of region names for which this material is to be assigned.  Region names must be from the regions defined in the `"regions`" sections.  Region names can contain spaces.
 
-* `"assigned_regions`" is a comma seperated list of region names for which this material is to be assigned.
+.. code-block:: xml
 
-* `"permeability`" is the permiability and has the attributes `"x`", `"y`", and `"z`".
+    <assigned_regions>Region1, Region_2, Region 3</assigned_regions>
+
+* `"permeability`" is the permiability and has the attributes `"x`", `"y`", and `"z`". Permeability or hydraulic_conductivity must be specified but not both.  Reading permeability from the attributes of an Exodus II file is also available.
 
 .. code-block:: xml
 
   <permeability x="exponential" y="exponential" z="exponential" />
+  or
+  <permeability filename="file name" type="file" attribute="attribute name"/>
 
-* `"hydraulic_conductivity`" is the hydraulic conductivity and has the attributes `"x`", `"y`", and `"z`".
-
-.. code-block:: xml
-
-  hydraulic_conductivity x="exponential" y="exponential" z="exponential" />
-
-* `"cap_pressure`" is an optional element.  The available models are `"van_genuchten`", `"brooks_corey`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
-
-  * `"van_genuchten`" parameters include `"alpha`", `"sr`", `"m`", and `"optional_krel_smoothing_interval`".  `"brooks_corey`" parameters include `"alpha`", `"sr`", `"m`", and `"optional_krel_smoothing_interval`".
+* `"hydraulic_conductivity`" is the hydraulic conductivity and has the attributes `"x`", `"y`", and `"z`". Permeability or hydraulic_conductivity must be specified but not both.
 
 .. code-block:: xml
 
-  <cap_pressure name="van_genuchten | brooks_corey | none )" >
-      Required Elements: parameters
+  <hydraulic_conductivity x="exponential" y="exponential" z="exponential" />
+
+*  `"cap_pressure`" is an optional element.  The available models are `"van_genuchten`", `"brooks_corey`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
+
+* `"van_genuchten`" parameters include `"alpha`", `"sr`", `"m`", and `"optional_krel_smoothing_interval`".  `"brooks_corey`" parameters include `"alpha`", `"sr`", `"m`", and `"optional_krel_smoothing_interval`".
+
+.. code-block:: xml
+
+  <cap_pressure model="van_genuchten | brooks_corey | none" >
+      Required Elements: alpha, Sr, m (van_genuchten and brooks_corey only)
+      Optional Elements: optional_krel_smoothing_interval (van_genuchten and brooks_corey only)
   </cap_pressure>
 
-* `"rel_perm`" is an optional element.  The available models are `"mualem`", `"burdine`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
+*  `"rel_perm`" is an optional element.  The available models are `"mualem`", `"burdine`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
 
-  * `"mualem`" has no parameters.  `"burdine`" parameters include `"exp`".
+* `"mualem`" has no parameters.  `"burdine`" parameters include `"exp`".
 
 .. code-block:: xml
 
-  <rel_perm name="mualem | burdine | none )" >
+  <rel_perm model="mualem | burdine | none )" >
       Required Elements: none 
       Optional Elements: exp (burdine only)
   </rel_perm>
 
-* `"<sorption_isotherms>`" is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All solutes should be listed under each material.  Values of 0 indicate that the solute is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
+*  `"sorption_isotherms`" is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All solutes should be listed under each material.  Values of 0 indicate that the solute is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
 
 .. code-block:: xml
 
     <sorption_isotherms>
 	<solute name="string" />
-        model="linear | langmuir | langmuir" kd="exponential" b="exponential" n="exponential"/>
             Required Elements: none
-            Optional Elements: kd_model, molecular_diffusion
+            Optional Elements: kd_model
     </sorption_isotherms>
 
-The subelements kd_model and molecular_diffusion that the following forms:
+.
+    * `"kd_model`" takes the following form:
 
 .. code-block:: xml
  
     <kd_model model="linear|langmuir|freundlich" kd="Value" b="Value (langmuir only)" n="Value (freundlich only)" />
   
     
-.. code-block:: xml
-   
-    <molecular_diffusion value="Value" />
-    or
-    <molecular_diffusion type="exodus ii" filename="file" />
-
-
 Process Kernels
 ===============
 
@@ -830,15 +846,25 @@ Process Kernels
 
 For each process kernel the element `"state`" indicates whether the solution is being calculated or not.  
 
-* `"flow`" has two attributes, `"state`" and `"model`".
+* `"flow`" has the following attributes, 
       
       * `"state`" = "on | off"
 
       *  `"model`" = " richards | saturated | constant" 
 
+      *  `"discretization_method`" = "fv-default | fv-monotone | fv-multi_point_flux_approximation | fv-extended_to_boundary_edges | mfd-default | mfd-optimized_for_sparsity | mfd-support_operator | mfd-optimized_for_monotonicity | mfd-two_point_flux_approximation"
+
+      *  `"rel_perm_method`" = "upwind-darcy_velocity | upwind-gravity | upwind-amanzi | other-arithmetic_average | other-harmonic_average" 
+
 Currently three scenerios are avaiable for calculated the flow field.  `"richards`" is a single phase, variably saturated flow assuming constant gas pressure.  `"saturated`" is a single phase, fully saturated flow.  `"constant`" is equivalent to the a flow model of single phase (saturated) with the time integration mode of transient with static flow in the version 1.2.1 input specification.  This flow model indicates that the flow field is static so no flow solver is called during time stepping. During initialization the flow field is set in one of two ways: (1) A constant Darcy velocity is specified in the initial condition; (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
-* `"transport`" has two attributes, `"state`" and `"algorithm`".
+The attributes `"discretization_method`" and `"rel_perm_method`" are only relevant for the unstructured algorithm.
+
+`"discretization_method`" specifies the spatial discretization method. The available options options for the finite volume method: "fv-default", "fv-monotone", "fv-multi_point_flux_approximation", and "fv-extended_to_boundary_edges". The available option for the mimetic finite difference method are "mfd-default", "mfd-optimized_for_sparsity", "mfd-support_operator", "mfd-optimized_for_monotonicity", and "mfd-two_point_flux_approximation". The option "mfd-optimized_for_sparsity" cannot be applied to all meshes. When it is not acceptable, the discretization method falls back to "mfd-optimized_for_sparsity".
+
+`"rel_perm_method`" defines a method for calculating the upwinded relative permeability. The available options are:"upwind-darcy_velocity" (default), "upwind-gravity", "upwind-amanzi", "other-arithmetic_average"  and "other-harmonic_average".
+
+* `"transport`" has the following attributes,
       
       * `"state`" = "on | off"
 
@@ -848,7 +874,7 @@ Currently three scenerios are avaiable for calculated the flow field.  `"richard
 
 For `"transport`" a combination of `"state`" and `"algorithm`" must be specified.  If `"state`" is `"off`" then `"algorithm`" is set to `"none`".  Otherwise the integration algorithm must be specified.  Whether sub-cycling is to be utilized within the transport algorithm is also specified here.
 
-* `"chemistry`" has three attributes, `"state`", `"engine`", and `"process_model`".
+* `"chemistry`" has the following attributes,
       
       * `"state`" = "on | off"
       
@@ -939,32 +965,29 @@ The `"initial_conditions`" section contains at least 1 and up to an unbounded nu
       Optional Elements: solute_component (, geochemistry  - SKIPPED)
   </liquid_phase>
 
-Here is more info on the `"liquid_phase`" elements:
+*  Here is more info on the `"liquid_component`" elements:
 
-    * `"liquid_component`" is an element with the possible subelements: `"uniform_pressure`", `"linear_pressure`", `"uniform_saturation`", `"linear_saturation`", and `"velocity`".  They would like the following: 
+    * `"uniform_pressure`" is defined inline using attributes.  Uniform specifies that the initial condition is uniform in space.  Value specifies the value of the pressure.  
+      
+    * `"linear_pressure`" is defined inline using attributes.  Linear specifies that the initial condition is linear in space.  Gradient specifies the gradient value in each direction in the form of a coordinate (grad_x, grad_y, grad_z).  Reference_coord specifies a reference location as a coordinate.  Value specifies the value of the pressure.
+      
+    * `"uniform_saturation`" is defined inline using attributes.  See `"uniform_pressure`" for details.
+      
+    * `"linear_saturation`" is defined inline using attributes. See `"linear_pressure`" for details.
+      
+    * `"velocity`" is defined inline using attributes.  Specifiy the velocity is each direction using the appriopriate attributes x, y, and z.
 
 .. code-block:: xml
 
     <uniform_pressure name="some name" value="exponential" />
+    <linear_pressure name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
+    <uniform_saturation name="some name" value="exponential" />
+    <linear_saturation name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
+    <velocity name="some name" x="exponential" y="exponential" z="exponential"/>
 
-.. code-block:: xml
+*  Here is more info on the `"solute_component`" elements:
 
-            <linear_pressure name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
-
-.. code-block:: xml
-
-            <uniform_saturation name="some name" value="exponential" />
-
-.. code-block:: xml
-
-            <linear_saturation name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
-
-.. code-block:: xml
-
-            <velocity name="some name" x="exponential" y="exponential" z="exponential"/>
-
-.
-    * `"solute_component`" is an element with the following attributes: 
+    * `"solute_component`" is defined inline using attributes.  The attributes include "function", "value", and "name". Function specifies linear or constant temporal functional form during each time interval.  Value is the value of the `"solute_component`".  Name is the name of the solute component.
 
 .. code-block:: xml
 
@@ -974,9 +997,9 @@ Here is more info on the `"liquid_phase`" elements:
 
 NOTE: Reading from a file is not yet implemeneted.  Also, the reference_coord and gradient attributes are only needed for the "linear" function type, which is also not yet implemeneted.
 
-    * `"geochemistry`" is an element with the following subelement: NOT IMPLEMENTED YET
+* `"geochemistry`" is an element with the following subelement: NOT IMPLEMENTED YET
 
-        * `"constraint`" is an element with the following attributes: ONLY UNIFORM, for now
+   * `"constraint`" is an element with the following attributes: ONLY UNIFORM, for now
 
 .. code-block:: xml
 
@@ -1026,57 +1049,52 @@ The `"boundary_conditions`" section contains at least 1 and up to an unbounded n
       Optional Elements: solute_component (, geochemistry - SKIPPED)
   </liquid_phase>
 
-Here is more info on the `"liquid_phase`" elements:
+*  Here is more info on the `"liquid_component`" elements:
 
-    * `"liquid_component`" is an element with the following subelement: 
+    * `"inward_mass_flux`" is defined inline using attributes.  The attributes include "function", "start", and "value". Function specifies linear or constant temporal functional form during each time interval.  Start is a series of time values at which time intervals start.  Value is the value of the `"inward_mass_flux`" during the time interval. 
 
-        * `"inward_mass_flux`" is an element with the following attributes: 
+    * `"outward_mass_flux`" is defined inline using attributes.  See `"inward_mass_flux`" for details.
+
+    * `"inward_volumetric_flux`" is defined inline using attributes.  See `"inward_mass_flux`" for details.
+
+    * `"outward_volumetric_flux`" is defined inline using attributes.  See `"inward_mass_flux`" for details.
+
+    * `"uniform_pressure`" is defined inline using attributes.  Uniform refers to uniform in spatial dimension.  See `"inward_mass_flux`" for details.
+
+    * `"linear_pressure`" is defined inline using attributes.  Linear refers to linear in spatial dimension. Gradient_value specifies the gradient value in each direction in the form of a coordinate (grad_x, grad_y, grad_z).  Reference_point specifies a reference location as a coordinate.  Reference_value specifies a reference value for the boundary condition. 
+
+    * `"seepage_face`"is defined inline using attributes.  The attributes include "function", "start", and "value". Function specifies linear or constant temporal functional form during each time interval.  Start is a series of time values at which time intervals start.  inward_mass_flux is the value of the inward_mass_flux during the time interval.
+ 
+    * `"hydrostatic`" is an element with the attributes below.  By default the coordinate_system is set to "absolute".  Not specifing the attribute will result in the default value being used.  The attribute submodel is optional.  If not specified the submodel options will not be utilized.
+
+    * `"linear_hydrostatic`" is defined inline using attributes.  Linear refers to linear in spatial dimension. Gradient_value specifies the gradient value in each direction in the form of a coordinate (grad_x, grad_y, grad_z).  Reference_point specifies a reference location as a coordinate.  Reference_water_table_height specifies a reference value for the water table.  Optionally, the attribute "submodel" can be used to specify no flow above the water table height.
+
+    * `"no_flow`" is defined inline using attributes.  The attributes include "function" and "start". Function specifies linear or constant temporal functional form during each time interval.  Start is a series of time values at which time intervals start.  
 
 .. code-block:: xml
 
-     <inward_mass_flux value="exponential" function="linear | uniform | constant" start="time" />
-
-.
-        * `"inward_volumetric_flux`" is an element with the following attributes: 
-
-.. code-block:: xml
-
-     <inward_volumetric_flux value="exponential" function="linear | uniform | constant" start="time" />
-
-.
-        * `"uniform_pressure`" is an element with the following attributes: 
-
-.. code-block:: xml
-
+     <inward_mass_flux value="exponential" function="linear | constant" start="time" />
+     <outward_mass_flux value="exponential" function="linear | constant" start="time" />
+     <inward_volumetric_flux value="exponential" function="linear | constant" start="time" />
+     <outward_volumetric_flux value="exponential" function="linear | constant" start="time" />
      <uniform_pressure name="some name" value="exponential" function="uniform | constant" start="time" />
+     <linear_pressure name="some name" gradient_value="coordinate" reference_point="coordinate" reference_value="exponential" />
+     <seepage_face name="some name" inward_mass_flux="exponential" function="linear | constant" start="time" />
+     <hydrostatic name="some name" value="exponential" function="uniform | constant" start="time" coordinate_system="absolute | relative to mesh top" submodel="no_flow_above_water_table | none"/>
+     <linear_hydrostatic name="some name" gradient_value="exponential" reference_point="coordinate" reference_water_table_height="exponential" submodel="no_flow_above_water_table | none"/>
+     <no_flow function="linear | constant" start="time" />
 
-.
-        * `"seepage_face`" is an element with the following attributes (unstructured ONLY):
+*  Here is more info on the `"solute_component`" elements:
 
-.. code-block:: xml
-
-     <seepage_face name="some name" inward_mass_flux="exponential" function="linear | uniform | constant" start="time" />
-
-.
-        * `"hydrostatic`" is an element with the following attributes: ONLY CONSTANT, for now
-
-.. code-block:: xml
-
-     <hydrostatic name="some name" value="exponential" function="uniform | constant" start="time" coordinate_system="absolute | relative to mesh top"/>
-
-.
-    * `"solute_component`" is an element with the following subelement: 
-
-        * `"aqueous_conc`" is an element with the following attributes: ONLY CONTANT, for now
+    * `"aqueous_conc`" is an element with the following attributes: ONLY CONTANT, for now
 
 .. code-block:: xml
 
      <aqueous_conc name="some name" value="exponential" function="linear | uniform | constant" start="time" />
 
-.
-    * `"geochemistry`" is an element with the following subelement: NOT IMPLEMENTED YET
+*  Here is more info on the `"geochemistry`" elements:
 
-        * `"constraint`" is an element with the following attributes: ONLY UNIFORM, for now
+    * `"constraint`" is an element with the following attributes: ONLY UNIFORM, for now
 
 .. code-block:: xml
 
@@ -1240,4 +1258,200 @@ Example:
      <cycle_macro>Every_100_steps</cycle_macro>
   </walkabout>
 
+Full Example
+------------
+
+.. code-block:: xml
+
+  <amanzi_input type="unstructured" version="2.1.0">
+    <model_description name="example of full unstructured schema">
+      <comments>comments here</comments>
+      <model_id>XXX</model_id>
+      <author>Erin Barker</author>
+      <units>
+        <length_unit>m</length_unit>
+        <time_unit>s</time_unit>
+        <mass_unit>kg</mass_unit>
+        <conc_unit>molar</conc_unit>
+      </units>
+    </model_description>
+    <definitions>
+      <macros>
+        <time_macro name="time macro">
+          <time>3.0e+10</time>
+        </time_macro>
+        <cycle_macro name="Every_20">
+          <start>0</start>
+          <timestep_interval>20</timestep_interval>
+          <stop>-1</stop>
+        </cycle_macro>
+      </macros>
+    </definitions>
+    <process_kernels>
+      <comments>Variably saturated flow</comments>
+      <flow model="richards" state="on" discretization_method="fv-default" rel_perm_method="upwind-darcy_velocity"/>
+      <transport algorithm="none" state="off" sub_cycling="off"/>
+      <chemistry engine="none" process_model="none" state="off"/>
+    </process_kernels>
+    <phases>
+      <liquid_phase name="water">
+        <eos>false</eos>
+        <viscosity>1.002E-03</viscosity>
+        <density>998.2</density>
+        <dissolved_components>
+            <solutes>
+                <solute coefficient_of_diffusion="1e-9" first_order_decay_constant="1.0">Tc-99</solute>
+            </solutes>
+        </dissolved_components>
+      </liquid_phase>
+      <solid_phase>
+          <minerals>
+              <mineral>Calcium</mineral>
+          </minerals>
+      </solid_phase>
+    </phases>
+    <execution_controls>
+      <verbosity level="medium"/>
+      <execution_control_defaults method="bdf1" mode="steady"/>
+      <execution_control end="3.0e+10" init_dt="0.01" method="bdf1" mode="steady" reduction_factor="0.5" start="0.0"/>
+    </execution_controls>
+    <numerical_controls>
+      <unstructured_controls>
+        <unstr_linear_solver>
+          <max_iterations>100</max_iterations>
+          <tolerance>1.0e-17</tolerance>
+          <method>gmres</method>
+          <cfl>1</cfl>
+          <preconditioner name="hypre_amg">
+            <hypre_cycle_applications>5</hypre_cycle_applications>
+            <hypre_smoother_sweeps>3</hypre_smoother_sweeps>
+            <hypre_tolerance>0.0</hypre_tolerance>
+            <hypre_strong_threshold>0.5</hypre_strong_threshold>
+          </preconditioner>
+        </unstr_linear_solver>
+        <unstr_steady-state_controls>
+          <initialize_with_darcy>true</initialize_with_darcy>
+          <min_iterations>10</min_iterations>
+          <max_iterations>15</max_iterations>
+          <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+          <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+          <limit_iterations>20</limit_iterations>
+          <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+          <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+          <max_divergent_iterations>3</max_divergent_iterations>
+          <unstr_pseudo_time_integrator>
+              <initialize_with_darcy>true</initialize_with_darcy>
+              <clipping_saturation>0.9</clipping_saturation>
+              <method>picard</method>
+              <preconditioner>hypre_amg</preconditioner>
+              <linear_solver>aztec00</linear_solver>
+              <control_options>pressure</control_options>
+              <convergence_tolerance>1.0e-8</convergence_tolerance>
+              <max_iterations>100</max_iterations>
+          </unstr_pseudo_time_integrator>
+        </unstr_steady-state_controls>
+      </unstructured_controls>
+    </numerical_controls>
+    <mesh framework="mstk">
+      <comments>Two-dimensional box 499.872m x 73.152m</comments>
+      <dimension>2</dimension>
+      <generate>
+        <number_of_cells nx="164" ny="120"/>
+        <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 0.0"/>
+      </generate>
+    </mesh>
+    <regions>
+      <comments/>
+      <region name="Aquifer">
+        <comments>One region comprising the entire domain</comments>
+        <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 0.0"/>
+      </region>
+      <region name="Left">
+        <box high_coordinates="(0.0, 49.9872)" low_coordinates="(0.0, 0.0)"/>
+      </region>
+      <region name="Right">
+        <box high_coordinates="(499.872, 73.152)" low_coordinates="(499.872, 0.0)"/>
+      </region>
+      <region name="Top">
+        <box high_coordinates="(499.872, 73.152)" low_coordinates="(0.0, 73.152)"/>
+      </region>
+      <point coordinate="1.5240, 0.3048" name="Point5ft"/>
+      <point coordinate="32.0040, 0.3048" name="Point105ft"/>
+      <point coordinate="62.4840, 0.3048" name="Point205ft"/>
+      <point coordinate="92.9640, 0.3048" name="Point305ft"/>
+      <point coordinate="123.4440, 0.3048" name="Point405ft"/>
+      <point coordinate="153.9240, 0.3048" name="Point505ft"/>
+      <point coordinate="184.4040, 0.3048" name="Point605ft"/>
+      <point coordinate="214.8840, 0.3048" name="Point705ft"/>
+      <point coordinate="245.3640, 0.3048" name="Point805ft"/>
+      <point coordinate="275.8440, 0.3048" name="Point905ft"/>
+      <point coordinate="303.2760, 0.3048" name="Point1005ft"/>
+      <point coordinate="336.8040, 0.3048" name="Point1105ft"/>
+      <point coordinate="367.2840, 0.3048" name="Point1205ft"/>
+      <point coordinate="397.7640, 0.3048" name="Point1305ft"/>
+      <point coordinate="428.2440, 0.3048" name="Point1405ft"/>
+      <point coordinate="458.7240, 0.3048" name="Point1505ft"/>
+      <point coordinate="489.2040, 0.3048" name="Point1605ft"/>
+      <point coordinate="498.3480, 0.3048" name="Point1635ft"/>
+    </regions>
+    <materials>
+      <material name="Aquifer">
+        <comments>Aquifer</comments>
+        <mechanical_properties>
+          <porosity value="0.43"/>
+	  <particle_density value="2650.0"/>
+        </mechanical_properties>
+        <permeability x="1.1844e-12" y="1.1844e-12"/>
+        <cap_pressure model="van_genuchten">
+          <parameters alpha="1.46e-3" m="0.314" optional_krel_smoothing_interval="100.0" sr="0.052"/>
+        </cap_pressure>
+	<rel_perm model="mualem"/>
+        <assigned_regions>Aquifer</assigned_regions>
+        <sorption_isotherms>
+            <solute name="Tc-99">
+                <kd_model model="linear" kd="10.0"/>
+            </solute>
+        </sorption_isotherms>
+      </material>
+    </materials>
+    <initial_conditions>
+      <initial_condition name="Initial Condition">
+        <comments>Aquifer</comments>
+        <assigned_regions>Aquifer</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <uniform_pressure value="101325.0"/>
+          </liquid_component>
+        </liquid_phase>
+      </initial_condition>
+    </initial_conditions>
+    <boundary_conditions>
+      <comments/>
+      <boundary_condition name="LeftBC">
+        <comments>Boundary condition at x=0</comments>
+        <assigned_regions>Left</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <hydrostatic function="constant" start="0.0" value="49.9872"/>
+          </liquid_component>
+        </liquid_phase>
+      </boundary_condition>
+      <boundary_condition name="TopBC">
+        <comments>Boundary condition at y=73.152</comments>
+        <assigned_regions>Top</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <inward_mass_flux function="constant" start="0.0" value="1.1550e-4"/>
+          </liquid_component>
+        </liquid_phase>
+      </boundary_condition>
+    </boundary_conditions>
+    <output>
+       <vis>
+        <base_filename>steady-flow</base_filename>
+        <num_digits>5</num_digits>
+        <time_macros>Steady State</time_macros>
+      </vis>
+    </output>
+  </amanzi_input>
 

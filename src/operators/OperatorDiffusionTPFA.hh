@@ -56,13 +56,12 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
   void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
   void SetUpwind(int upwind_method) { upwind_ = upwind_method; }
 
-  template <class WRM> 
-  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const WRM&);
+  template <class Model> 
+  double DeriveBoundaryFaceValue(int f, const CompositeVector& u, const Model& model);
 
   //access function
-  const Epetra_Vector transmissibilities() { return *transmissibility_;}
-  const Epetra_Vector gravity_terms() { return *gravity_term_;}
-
+  const Epetra_Vector transmissibilities() { return *transmissibility_; }
+  const Epetra_Vector gravity_terms() { return *gravity_term_; }
 
  private:
   void ComputeTransmissibilities_();
@@ -84,7 +83,7 @@ class OperatorDiffusionTPFA : public OperatorDiffusion {
 }  // namespace Operators
 }  // namespace Amanzi
 
-// Description of templated function DeriveBoundaryFaceValue
+// Description of templated function DeriveBoundaryFaceValue(f, u, model)
 #include "FluxTPFABCfunc.hh"
 
 #endif

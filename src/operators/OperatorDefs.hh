@@ -58,6 +58,13 @@ const double OPERATOR_UPWIND_RELATIVE_TOLERANCE = 1e-12;
 // reconstruction options
 const double OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION = 1e-15;
 
+// limiting options
+const int OPERATOR_LIMITER_BARTH_JESPERSEN = 1; 
+const int OPERATOR_LIMITER_TENSORIAL = 2;
+const int OPERATOR_LIMITER_KUZMIN = 3;
+const double OPERATOR_LIMITER_TOLERANCE = 1e-14;
+const double OPERATOR_LIMITER_INFINITY = 1e+99;
+
 }  // namespace Operators
 }  // namespace Amanzi
 

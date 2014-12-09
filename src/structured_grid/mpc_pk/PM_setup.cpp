@@ -198,7 +198,7 @@ bool PorousMedia::variable_scal_diff;
 
 Array<int>  PorousMedia::is_diffusive;
 Array<Real> PorousMedia::visc_coef;
-Array<Real> PorousMedia::diff_coef;
+Array<Real> PorousMedia::molecular_diffusivity;
 //
 // Transport flags
 //
@@ -223,6 +223,7 @@ int  PorousMedia::max_grid_size_chem;
 bool PorousMedia::no_initial_values;
 bool PorousMedia::use_funccount;
 Real PorousMedia::max_chemistry_time_step;
+Array<Real> PorousMedia::first_order_decay_constant;
 //
 // Lists.
 //
@@ -1408,13 +1409,19 @@ void  PorousMedia::read_comp()
               pressure_bc = 2;
               bc_array.set(ibc, new RegionData(bcname,bc_regions,bc_type,vals));
           }
-          else if (bc_type == "pressure_head")
+          else if (bc_type == "hydraulic_head")
           {              
-            Array<Real> vals;
+            Array<Real> vals, times;
+            Array<std::string> forms;
             std::string val_name = "vals";
             int nv = ppr.countval(val_name.c_str());
-            if (nv) {
-              ppr.getarr(val_name.c_str(),vals,0,nv);
+            BL_ASSERT(nv>0);
+            ppr.getarr(val_name.c_str(),vals,0,nv);
+
+            times.resize(nv,0);
+            if (nv>1) {
+              ppr.getarr("times",times,0,nv);
+              ppr.getarr("forms",forms,0,nv-1);
             }
 
             if (pp.countval("normalization")>0) {
@@ -1424,7 +1431,7 @@ void  PorousMedia::read_comp()
               } else if (norm_str == "Relative") {
                 use_gauge_pressure[bcname] = true;
               } else {
-                BoxLib::Abort("pressure_head BC normalization must be \"Absolute\" or \"Relative\"");
+                BoxLib::Abort("hydraulic_head BC normalization must be \"Absolute\" or \"Relative\"");
               }
             }
 
@@ -1437,8 +1444,6 @@ void  PorousMedia::read_comp()
             }
             pressure_bc = 2;
 
-	    Array<Real> times(1,0);
-	    Array<std::string> forms(0);
 	    bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,vals.size()));
           }
           else if (bc_type == "linear_pressure")
@@ -1647,6 +1652,7 @@ void  PorousMedia::read_tracer()
 #endif
   chemistry_helper = 0;
 
+  first_order_decay_constant.resize(ntracers,0);
   if (do_tracer_chemistry) {
     const std::string chemistry_str = "Chemistry";
 
@@ -1658,6 +1664,15 @@ void  PorousMedia::read_tracer()
       max_chemistry_time_step = -1;
       if (int nmts = ppc.countval(Chemistry_Max_Time_Step_str.c_str())) {
         ppc.get(Chemistry_Max_Time_Step_str.c_str(),max_chemistry_time_step);
+      }
+
+      for (int i = 0; i<ntracers; i++) {
+        const std::string prefix("tracer." + tNames[i]);
+        ParmParse ppr(prefix.c_str());
+        if (ppr.countval("firstOrderDecayConstant") > 0) {
+          BoxLib::Abort("Radioactive decay constants cannot yet be specified in Amanzi input");
+        }
+        ppr.query("firstOrderDecayConstant",first_order_decay_constant[i]); 
       }
 
       if (chemistry_model_name == "Amanzi") {
@@ -1774,7 +1789,7 @@ void  PorousMedia::read_tracer()
   ppp.query("max_grid_size_chem",max_grid_size_chem);
   BL_ASSERT(max_grid_size_chem > 0);
 
-
+  molecular_diffusivity.resize(ntracers,0);
   if (ntracers > 0)
   {
     int Nimmobile = 0;
@@ -2062,6 +2077,8 @@ void  PorousMedia::read_tracer()
         }
         set_tracer_bc(trac_bc,phys_bc_trac);
       }
+
+      ppr.query("molecularDiffusivity",molecular_diffusivity[i]); 
     }
     ndiff += ntracers;
   }

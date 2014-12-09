@@ -100,8 +100,6 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
 {
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
   
-  int flag_essential_bc = 0;
-  dirichlet_bc_faces_ = 0;
   for (int n = 0; n < bc_model.size(); n++) {
     bc_model[n] = Operators::OPERATOR_BC_NONE;
     bc_value[n] = 0.0;
@@ -113,14 +111,12 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     int f = bc->first;
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     bc_value[f] = bc->second;
-    flag_essential_bc = 1;
-    dirichlet_bc_faces_++;
   }
 
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
     int f = bc->first;
     if (bc_submodel[f] & FLOW_BC_SUBMODEL_NOFLOW_ABOVE_WATER_TABLE) {
-      if (bc->second < FLOW_PRESSURE_ATMOSPHERIC) {
+      if (bc->second < atm_pressure_) {
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value[f] = 0.0;
         continue;
@@ -128,8 +124,6 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     }
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     bc_value[f] = bc->second;
-    flag_essential_bc = 1;
-    dirichlet_bc_faces_++;
   }
 
   for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
@@ -143,13 +137,11 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
   double area_add, area_seepage = 0.0;
 
   bool done = SeepageFacePFloTran(u, &nseepage_add, &area_add);
-  if (nseepage_add > 0) flag_essential_bc = 1;
   nseepage += nseepage_add;
   area_seepage += area_add;
 
   if (!done) {
     done = SeepageFaceFACT(u, &nseepage_add, &area_add);
-    if (nseepage_add > 0) flag_essential_bc = 1;
     nseepage += nseepage_add;
     area_seepage += area_add;
   }
@@ -171,6 +163,12 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     }
   }
 
+  dirichlet_bc_faces_ = 0;
+  for (int f = 0; f < nfaces_owned; ++f) {
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) dirichlet_bc_faces_++;
+  }
+  int flag_essential_bc = (dirichlet_bc_faces_ > 0) ? 1 : 0;
+
   // verify that the algebraic problem is consistent
 #ifdef HAVE_MPI
   int flag = flag_essential_bc;
@@ -189,7 +187,6 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
 #endif
     if (MyPID == 0 && nseepage > 0 && nseepage != nseepage_prev) {
-    //if (MyPID == 0 && nseepage > 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "seepage face: " << area_seepage << " [m^2], from "
                  << nseepage_prev << " to " << nseepage << " faces" << std::endl;

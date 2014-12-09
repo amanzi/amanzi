@@ -696,7 +696,9 @@ Boundary conditions
 -------------------
 
 Boundary conditions are defined in sublist `"boundary conditions`". Four types of boundary 
-conditions are supported:
+conditions are supported.
+In addition, a boundary condition may support a submodel. 
+A submodel is defined by additional parameters as described below. 
 
 * `"pressure`" [list] Dirichlet boundary condition, a pressure is prescribed on a surface region. 
 
@@ -704,13 +706,34 @@ conditions are supported:
   This is the default boundary condition. If no condition is specified on a mesh face, zero flux 
   boundary condition is used. 
 
+  * `"rainfall`" [bool] indicates that the mass flux is defined with respect to the gravity 
+    vector and the actual influx depends on boundary slope. Default value is `"false`".
+
 * `"static head`" [list] Dirichlet boundary condition, the hydrostatic pressure is prescribed on a surface region.
+
+  * `"relative to top`" [bool] indicates that the static head is defined with respect
+    to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
+    Default value is `"false`". 
+
+  * `"no flow above water table`" [bool] indicates that no-flow (Neumann) boundary condition 
+    has to be used above the water table. This switch uses the pressure value at a face
+    centroid. Default is `"false`".
 
 * `"seepage face`" [list] Seepage face boundary condition, a dynamic combination of the `"pressure`" and 
   `"mass flux`" boundary conditions on a region. 
   The atmospheric pressure is prescribed if internal pressure is higher. Otherwise, the outward mass flux is prescribed. 
 
   * `"reference pressure`" [double] defaults to the atmospheric pressure. 
+
+  * `"rainfall`" [bool] indicates that the mass flux is defined with respect to the gravity 
+    vector and the actual influx depends on boundary slope. Default value is `"false`".
+
+  * `"submodel`" [string] indicates different models for the seepage face boundary condition.
+    It can take values `"PFloTran`" and `"FACT`". The first option leads to a 
+    discontinuous change of the boundary condition type from the infiltration to pressure. 
+    The second option is described in the document on mathematical models. 
+    It employs a smooth transition from the infiltration 
+    to mixed boundary condition. Default is `"PFloTran`".
 
 .. code-block:: xml
 
@@ -754,6 +777,8 @@ conditions are supported:
          <Parameter name="reference pressure" type="double" value="101325.0"/>
          <ParameterList name="BC 3">
            <Parameter name="regions" type="Array(string)" value="{EAST_SIDE_BOTTOM}"/>
+           <Parameter name="rainfall" type="bool" value="true"/>
+           <Parameter name="submodel" type="string" value="PFloTran"/>
            <ParameterList name="outward mass flux">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="1.0"/>
@@ -767,42 +792,6 @@ This example includes all four types of boundary conditions. The boundary of a s
 is split into six pieces. Constant function is used for simplicity and can be replaced by any
 of the other available functions.
 
-The above boundary conditions are the four major models supported by Amanzi. In addition to
-that each model may support a few submodels. A submodel is defined by additional
-parameters described below. Mix and match of parameters is allowed.
-
-* `"rainfall`" [bool] indicates that the mass flux is defined with respect to the gravity 
-  vector and the actual influx depends on boundary slope. Default value is `"false`".
-
-* `"relative to top`" [bool] indicates that the static head is defined with respect
-  to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
-  Default value is `"false`". 
-
-* `"no flow above water table`" [bool] indicates that no-flow (Neumann) boundary condition 
-  has to be used above the water table. This switch uses the pressure value at a face
-  centroid. Default is `"false`".
-
-* `"submodel`" [string] indicates different models for the seepage face boundary condition.
-  It can take values `"PFloTran`" and `"FACT`". The first option leads to a 
-  discontinuous change of the boundary condition type from the infiltration to pressure. 
-  The second option is described
-  in the document on mathematical models. It employs a smooth transition from the infiltration 
-  to mixed boundary condition. Default is `"PFloTran`".
-
-.. code-block:: xml
-
-       <ParameterList name="seepage face">
-         <ParameterList name="BC 3">
-           <Parameter name="regions" type="Array(string)" value="{CALIFORNIA}"/>
-           <Parameter name="rainfall" type="bool" value="true"/>
-           <Parameter name="submodel" type="string" value="PFloTran"/>
-           <ParameterList name="outward mass flux">
-             <ParameterList name="function-constant">
-               <Parameter name="value" type="double" value="1.0"/>
-             </ParameterList>
-           </ParameterList>
-         </ParameterList>
-       </ParameterList>
 
 
 Sources and sinks

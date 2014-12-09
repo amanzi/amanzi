@@ -98,6 +98,7 @@ mstk_mesh=$TRUE
 moab_mesh=$FALSE
 amanzi_branch=
 test_suite=$FALSE
+reg_tests=$FALSE
 netcdf4=${TRUE}
 petsc=${TRUE}
 hypre=${TRUE}
@@ -285,6 +286,7 @@ Value in brackets indicates default setting.
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
+  reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${test_suite}"']
 
 Tool definitions:
@@ -370,6 +372,7 @@ Build Features:
     mstk_mesh           ='"${mstk_mesh}"'
     moab_mesh           ='"${moab_mesh}"'
     test_suite          ='"${test_suite}"'
+    reg_tests           ='"${reg_tests}"'
     netcdf4             ='"${netcdf4}"'
     hypre               ='"${hypre}"'
     petsc               ='"${petsc}"'
@@ -957,6 +960,7 @@ function check_tools
   if [ ! -e "${ctest_binary}" ]; then
     error_message "CTest binary does not exist. Will deactivate the test suite."
     test_suite=${FALSE}
+    reg_tests=${FALSE}
   fi
   status_message "CMake binary: ${cmake_binary}"
   status_message "CTest binary: ${ctest_binary}"
@@ -1180,6 +1184,7 @@ ${cmake_binary} \
               -DENABLE_PFLOTRAN:BOOL=${plotran} \
               -DBUILD_SHARED_LIBS:BOOL=${shared} \
               -DCCSE_BL_SPACEDIM:INT=${spacedim} \
+	      -DENABLE_Regression_Tests:BOOL=${reg_tests} \
               ${amanzi_source_dir}
 
 
@@ -1200,7 +1205,7 @@ status_message "Amanzi build complete"
 # Amanzi Test Suite
 if [ "${test_suite}" -eq "${TRUE}" ]; then
   status_message "Run Amanzi test suite"
-  ${ctest_binary} --output-on-failure --output-log amanzi-test-results.log -j ${parallel_jobs}
+  ${ctest_binary} --output-on-failure --output-log amanzi-test-results.log #-j ${parallel_jobs}
   status_message "Test results in amanzi-test-results.log"
   if [ $? -ne 0 ]; then
     error_message "Amanzi test suite failed"
