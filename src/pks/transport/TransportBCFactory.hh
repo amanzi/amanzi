@@ -61,10 +61,6 @@ class TransportBCFactory {
 
   // reactive components
   void ProcessGeochemicalConditionList(std::vector<TransportBoundaryFunction*>& bcs) const;
-#ifdef ALQUIMIA_ENABLED
-  void ProcessGeochemicalConditionSpec(
-      Teuchos::ParameterList& spec, TransportBoundaryFunction_Alquimia* bc) const;
-#endif
 
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;

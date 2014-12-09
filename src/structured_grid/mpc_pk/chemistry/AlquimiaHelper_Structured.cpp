@@ -161,7 +161,7 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
   chem_state.aqueous_pressure = aqueous_pressure(iv,sPress);
 
   for (int i=0; i<Nmobile; ++i) {
-    chem_state.total_mobile.data[i] = primary_species_mobile(iv,sPrimMob+i);
+    chem_state.total_mobile.data[i] = std::max(0.,primary_species_mobile(iv,sPrimMob+i));
   }
 
   if (using_sorption) {

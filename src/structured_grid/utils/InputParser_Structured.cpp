@@ -3124,13 +3124,21 @@ namespace Amanzi {
       const std::string& solute_bc_label = solute_bc.Label();
 
       const std::string geo_name="Geochemical Condition";
+      const std::string geos_name="Geochemical Conditions";
       const std::string val_name="Value";
       const std::string vals_name="Values";
       const std::string time_name="Times";
       const std::string form_name="Time Functions";
 
       if (fPLin.isParameter(geo_name)) {
-        fPLout.set<std::string>("geochemical_condition",fPLin.get<std::string>(geo_name));
+        fPLout.set<std::string>("geochemical_conditions",fPLin.get<std::string>(geo_name));
+      } else if (fPLin.isParameter(geos_name)) {
+        const Array<std::string>& geo_names = fPLin.get<Array<std::string> >(geos_name);
+        if (geo_names.size() > 1) {
+          fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
+          fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
+        }
+        fPLout.set<Array<std::string> >("geochemical_conditions",geo_names);
       } else if (fPLin.isParameter(val_name)) {
         fPLout.set<double>("vals",fPLin.get<double>(val_name));
       } else if (fPLin.isParameter(vals_name)) {
@@ -3141,7 +3149,8 @@ namespace Amanzi {
           fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
         }
       } else {
-        const std::string str = "Solute Concentration for BC \""+solute_bc_label+"\" must be specified using \""+geo_name+"\", \""+val_name+"\" or \""+vals_name;
+        const std::string str = "Solute Concentration for BC \""+solute_bc_label
+          +"\" must be specified using \""+geo_name+"\", \""+val_name+"\" or \""+vals_name;
         MyAbort(str);
       }
 

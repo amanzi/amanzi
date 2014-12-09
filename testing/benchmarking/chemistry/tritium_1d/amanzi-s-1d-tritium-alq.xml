@@ -1,6 +1,7 @@
 <ParameterList name="Main">
   <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
   <Parameter name="Petsc Options File" type="string" value=".petsc"/>
+  <Parameter name="Dump ParmParse Table" type="string" value="ppfile"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="1D Flow and Transport with tritium decay"/>
   </ParameterList>
@@ -97,7 +98,9 @@
           <ParameterList name="Water">
             <ParameterList name="Tritium">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Geochemical Condition" type="string" value="west"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 7.889e8, 1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
+                <Parameter name="Geochemical Conditions" type="Array(string)" value="{west, westhi, westhi}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

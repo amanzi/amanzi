@@ -13,12 +13,27 @@
 namespace Amanzi {
 namespace Transport {
 
-TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(const std::string& cond_name,
+TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(const std::vector<double>& times,
+                                                                       const std::vector<std::string>& cond_names,
                                                                        const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
                                                                        Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
                                                                        Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine):
-  TransportBoundaryFunction(mesh), mesh_(mesh), cond_name_(cond_name), chem_state_(chem_state), chem_engine_(chem_engine)
+  TransportBoundaryFunction(mesh), mesh_(mesh), times_(times), cond_names_(cond_names), chem_state_(chem_state), chem_engine_(chem_engine)
 {
+  // Check arguments.
+  if (times_.size() != cond_names_.size())
+  {
+    Errors::Message msg;
+    msg << "times and conditions arrays must be of equal size.";
+    Exceptions::amanzi_throw(msg); 
+  }
+  if (times_.size() < 2)
+  {
+    Errors::Message msg;
+    msg << "times and conditions arrays must contain at least two elements.";
+    Exceptions::amanzi_throw(msg); 
+  }
+
   if (chem_engine_ != Teuchos::null)
   {
     chem_engine_->InitState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
@@ -30,6 +45,8 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(const std
     msg << "Geochemistry is off, but a geochemical condition was requested.";
     Exceptions::amanzi_throw(msg); 
   }
+
+  // NOTE: For now, we assume the times are sorted in ascending order.
 }
 
 TransportBoundaryFunction_Alquimia::~TransportBoundaryFunction_Alquimia()
@@ -81,6 +98,16 @@ void TransportBoundaryFunction_Alquimia::Define(std::string region)
 ****************************************************************** */
 void TransportBoundaryFunction_Alquimia::Compute(double time) 
 {
+  // Find the condition that corresponds to the given time.
+  int time_index = 0;
+  while (time_index < (times_.size()-1))
+  {
+    if (times_.at(time_index+1) > time)
+      break;
+    ++time_index;
+  }
+  std::string cond_name = cond_names_.at(time_index);
+
   // Loop over sides and evaluate values.
   for (int n = 0; n < faces_.size(); n++) {
     // Find the index of the cell we're in.
@@ -90,7 +117,7 @@ void TransportBoundaryFunction_Alquimia::Compute(double time)
     chem_state_->CopyToAlquimia(cell, alq_mat_props_, alq_state_, alq_aux_data_);
 
     // Enforce the condition.
-    chem_engine_->EnforceCondition(cond_name_, time, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+    chem_engine_->EnforceCondition(cond_name, time, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 
     // Move the concentrations into place.
     for (int i = 0; i < values_[n].size(); i++) {

@@ -1451,12 +1451,16 @@ The following boundary condition parameterizations are supported:
 
 * [S] `"BC: Zero Gradient`" [list]  takes no additional parameters
 
-* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`" if Alquimia provides boundary condition data.
+* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and EITHER `"Values`" [Array(double)] OR `"Geochemical Conditions`" [Array(string)] (if Alquimia provides boundary condition data).
 
   * `"Times`" [Array(double)], list of times used by the time function.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
   * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
-  * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
+  * `"Geochemical Conditions`" [Array(string)], list of names of geochemical conditions defined in Alquimia's chemistry engine input file or in the Chemistry block.
+
+  Alternatively, if a single geochemical condition is desired for the entire simulation, a single `"Geochemical Condition`" [string] entry may be provided:
+  
+  * `"Geochemical Condition`" [string], name of a single geochemical condition defined in Alquimia's chemistry engine input or in the Chemistry block.
 
 The following source parameterizations are supported.
 

@@ -147,7 +147,9 @@
           <ParameterList name="Water">
             <ParameterList name="Tritium">
               <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Geochemical Condition" type="string" value="west"/>
+                <Parameter name="Times" type="Array(double)" value="{0.0, 7.889e8, 1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
+                <Parameter name="Geochemical Conditions" type="Array(string)" value="{west, westhi, westhi}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
@@ -166,10 +168,11 @@
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tritium">
-              <ParameterList name="BC: Zero Gradient">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/>
+              <ParameterList name="BC: Uniform Concentration">
+                <Parameter name="Times" type="Array(double)" value="{0.0, 7.889e8, 1.5778463e9}"/>
+                <Parameter name="Time Functions" type="Array(string)" value="{Constant,Constant}"/>
+            <!--    <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/> -->
+                <Parameter name="Geochemical Conditions" type="Array(string)" value="{east, east, east}"/>
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>

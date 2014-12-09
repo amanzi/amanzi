@@ -1966,24 +1966,37 @@ void  PorousMedia::read_tracer()
             Array<Real> times, vals;
             Array<std::string> forms;
 
-            if (ppri.countval("geochemical_condition")) {
+            if (ppri.countval("geochemical_conditions")) {
               if ( !(chemistry_model_name == "Alquimia" && do_tracer_chemistry) ) {
                 BoxLib::Abort("Cannot use geochemical conditions if chemistry model not Alquimia");
               }
-              std::string geocond; ppri.get("geochemical_condition",geocond);
-              Real cur_time = 0; // FIXME
-              Box boxTMP(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(0,0,0)));
-              const std::map<std::string,int>& auxChemVariablesMap = chemistry_helper->AuxChemVariablesMap();
-              FArrayBox primTMP(boxTMP,Nmobile);
-              int Naux = auxChemVariablesMap.size();
-              FArrayBox auxTMP(boxTMP,Naux);
+              int nv = ppri.countval("geochemical_conditions");
+              Array<std::string> geoconds; ppri.getarr("geochemical_conditions",geoconds,0,nv);
 
-              const std::string& material_name = rock_manager->FindMaterialInRegions(tbc_region_names).Name();
-              const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
-              rock_manager->RockChemistryProperties(auxTMP,material_name,aux_chem_variables_map);
-              chemistry_helper->EnforceCondition(primTMP,0,auxTMP,boxTMP,geocond,cur_time);
-              times.resize(1,0);
-              vals.resize(1,primTMP.dataPtr()[i]);
+              if (nv > 1) {
+                ppri.getarr("times",times,0,nv);
+                ppri.getarr("forms",forms,0,nv-1);
+              }
+              else {
+                times.resize(1,0);
+              }
+
+              for (int ti = 0; ti < geoconds.size(); ++ti)
+              {
+                Real cur_time = 0.; // A dummy variable
+                std::string geocond = geoconds[ti];
+                Box boxTMP(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(0,0,0)));
+                const std::map<std::string,int>& auxChemVariablesMap = chemistry_helper->AuxChemVariablesMap();
+                FArrayBox primTMP(boxTMP,Nmobile);
+                int Naux = auxChemVariablesMap.size();
+                FArrayBox auxTMP(boxTMP,Naux);
+
+                const std::string& material_name = rock_manager->FindMaterialInRegions(tbc_region_names).Name();
+                const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
+                rock_manager->RockChemistryProperties(auxTMP,material_name,aux_chem_variables_map);
+                chemistry_helper->EnforceCondition(primTMP,0,auxTMP,boxTMP,geocond,cur_time);
+                vals.push_back(primTMP.dataPtr()[i]);
+              }
             }
             else {
               int nv = ppri.countval("vals");
