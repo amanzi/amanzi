@@ -53,6 +53,7 @@
 #   0.92.9       - update MSTK to v 2.21 (incompatible -DWITH_MSTK_2_21rc1_OR_NEWER=TRUE)
 #   0.92.10      - update MSTK to v 2.22rc1
 #   0.92.11      - update MSTK to v 2.22rc3 (fixed parallel mesh partitioning bug)
+#   0.92.12      - update PETSc to 3.5.2.
 
 include(CMakeParseArguments)
 
@@ -325,13 +326,13 @@ set(SuperLUDist_MD5_SUM        b72c6309f25e9660133007b82621ba7c)
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  4)
-set(PETSc_VERSION_PATCH  3)
+set(PETSc_VERSION_MINOR  5)
+set(PETSc_VERSION_PATCH  2)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(PETSc_ARCHIVE_FILE   petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        db40d8f811f5445ac510dc85ae738573)
+set(PETSc_MD5_SUM        ad170802b3b058b5deb9cd1f968e7e13)
 
 #
 # TPL: Trilinos
