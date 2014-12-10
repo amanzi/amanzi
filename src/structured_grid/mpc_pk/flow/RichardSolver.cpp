@@ -23,9 +23,9 @@ RichardSolver::SetTheRichardSolver(RichardSolver* ptr)
 
 // Forward declaration of local helper functions
 static void MatSqueeze(Mat& J);
-PetscErrorCode RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,void *ctx);
-PetscErrorCode RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx);
-PetscErrorCode SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx);
+PetscErrorCode RichardComputeJacobianColor(SNES snes,Vec x1,Mat J,Mat B,void *ctx);
+PetscErrorCode RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx);
+PetscErrorCode SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx);
 #if PETSC_VERSION_LT(3,4,3)
 PetscErrorCode PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w);
 PetscErrorCode PostCheckAlt(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w);
@@ -33,7 +33,7 @@ PetscErrorCode PostCheckAlt(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *ch
 PetscErrorCode PostCheck(SNESLineSearch ls,Vec x,Vec y,Vec w,PetscBool  *changed_y,PetscBool  *changed_w,void *ctx);
 PetscErrorCode PostCheckAlt(SNESLineSearch ls,Vec x,Vec y,Vec w,PetscBool  *changed_y,PetscBool  *changed_w,void *ctx);
 #endif
-PetscErrorCode RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, void *dummy);
+PetscErrorCode RichardJacFromPM(SNES snes, Vec x, Mat jac, Mat jacpre, void *dummy);
 PetscErrorCode RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy);
 PetscErrorCode RichardR2(SNES snes,Vec x,Vec f,void *dummy);
 
@@ -126,7 +126,11 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
   ierr = SNESSetFunction(snes,RhsV,RichardRes_DpDt,(void*)(this)); CHKPETSC(ierr);
 
   if (nlsc.use_fd_jac) {
-    ierr = MatGetColoring(Jac,MATCOLORINGSL,&iscoloring); CHKPETSC(ierr);
+    MatColoring matcoloring;
+    ierr = MatColoringCreate(Jac, &matcoloring); CHKPETSC(ierr);
+    ierr = MatColoringSetType(matcoloring, MATCOLORINGSL); CHKPETSC(ierr);
+    ierr = MatColoringApply(matcoloring, &iscoloring); CHKPETSC(ierr);
+    MatColoringDestroy(&matcoloring);
     ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
     if (rs_data.semi_analytic_J) {
       ierr = MatFDColoringSetFunction(matfdcoloring,
@@ -1795,7 +1799,7 @@ RichardR2(SNES snes,Vec x,Vec f,void *dummy)
 #undef __FUNCT__  
 #define __FUNCT__ "RichardJacFromPM"
 PetscErrorCode 
-RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, void *dummy)
+RichardJacFromPM(SNES snes, Vec x, Mat jac, Mat jacpre, void *dummy)
 {
   BL_PROFILE("RichardSolver::RichardJacFromPM()");
 
@@ -1810,10 +1814,10 @@ RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, vo
   ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
   Real dt = rs->GetDt();
   Real t = rs->GetTime();
-  rs->CreateJac(*jacpre,xMFT,t,dt);
-  if (*jac != *jacpre) {
-    ierr = MatAssemblyBegin(*jac,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
-    ierr = MatAssemblyEnd(*jac,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+  rs->CreateJac(jacpre,xMFT,t,dt);
+  if (jac != jacpre) {
+    ierr = MatAssemblyBegin(jac,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+    ierr = MatAssemblyEnd(jac,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
   }
   PetscFunctionReturn(0);
 } 
@@ -1827,18 +1831,19 @@ RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, vo
 #undef __FUNCT__  
 #define __FUNCT__ "RichardMatFDColoringApply"
 PetscErrorCode  
-RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx)
+RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
 {
   BL_PROFILE("RichardSolver::RichardMatFDColoringApply()");
 
   PetscErrorCode ierr;
-  PetscInt       k,start,end,l,row,col,srow,**vscaleforrow,m1,m2;
+  PetscInt       k,start,end,l,row,col,srow,m1,m2;
   PetscScalar    dx,*y,*w3_array;
   PetscScalar    *vscale_array, *solnTyp_array;
   PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm; 
   Vec            w1=coloring->w1,w2=coloring->w2,w3;
   PetscBool      flg = PETSC_FALSE;
   PetscInt       ctype=coloring->ctype,N,col_start=0,col_end=0;
+  MatEntry       *Jentry=coloring->matentry;
   Vec            x1_tmp;
 
   PetscFunctionBegin;    
@@ -1901,7 +1906,7 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
       
   if (!coloring->w3) {
     ierr = VecDuplicate(x1_tmp,&coloring->w3);CHKPETSC(ierr);
-    ierr = PetscLogObjectParent(coloring,coloring->w3);CHKPETSC(ierr);
+    ierr = PetscLogObjectParent((PetscObject)coloring,(PetscObject)coloring->w3);CHKPETSC(ierr);
   }
   w3 = coloring->w3;
 
@@ -1939,10 +1944,6 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
     ierr = VecGhostUpdateEnd(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
   }
   
-  if (coloring->vscaleforrow) {
-    vscaleforrow = coloring->vscaleforrow;
-  } else SETERRQ(((PetscObject)J)->comm,PETSC_ERR_ARG_NULL,"Null Object: coloring->vscaleforrow");
-
   /*
     Loop over each color
   */
@@ -1952,6 +1953,7 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
     // In this case, since the soln is scaled, the perturbation is a simple constant, epsilon
     // Compared to the case where dx=dx_i, the logic cleans up quite a bit here.
     //
+    PetscInt nz = 0;
     for (k=0; k<coloring->ncolors; k++) { 
       coloring->currentcolor = k;
 
@@ -1975,11 +1977,10 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
       PetscReal epsilon_inv = 1/epsilon;
       ierr = VecGetArray(w2,&y);CHKPETSC(ierr);          
       for (l=0; l<coloring->nrows[k]; l++) {
-        row    = coloring->rows[k][l];             /* local row index */
-        col    = coloring->columnsforrow[k][l];    /* global column index */
+        row    = Jentry[nz].row;                   /* local row index */
         y[row] *= epsilon_inv;                     /* dx = epsilon */
-        srow   = row + start;                      /* global row index */
-        ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
+        *(Jentry[nz].valaddr) = y[row];            /* Set entry directly. */
+        ++nz;
       }
       ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
           
@@ -1990,6 +1991,7 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
     ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
     if (ctype == IS_COLORING_GLOBAL) {vscale_array = vscale_array - start;}
       
+    PetscInt nz = 0;
     for (k=0; k<coloring->ncolors; k++) { 
       coloring->currentcolor = k;
       ierr = VecCopy(x1_tmp,w3);CHKPETSC(ierr);
@@ -2022,11 +2024,10 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
       */
       ierr = VecGetArray(w2,&y);CHKPETSC(ierr);
       for (l=0; l<coloring->nrows[k]; l++) {
-        row    = coloring->rows[k][l];             /* local row index */
-        col    = coloring->columnsforrow[k][l];    /* global column index */
-        y[row] *= (sgn_diff * vscale_array[coloring->columnsforrow[k][l]]);
-        srow   = row + start;
-        ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
+        row    = Jentry[nz].row;                   /* local row index */               
+        y[row] *= (sgn_diff * vscale_array[Jentry[nz].col]);
+        *(Jentry[nz].valaddr) = y[row];            /* Set entry directly. */
+        ++nz;
       }
       ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
                     
@@ -2099,13 +2100,13 @@ RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure,Real t)
 #undef __FUNCT__  
 #define __FUNCT__ "SemiAnalyticMatFDColoringApply"
 PetscErrorCode  
-SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx)
+SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
 {
   BL_PROFILE("RichardSolver::SemiAnalyticMatFDColoringApply()");
 
   PetscErrorCode (*f)(void*,Vec,Vec,void*) = (PetscErrorCode (*)(void*,Vec,Vec,void *))coloring->f;
   PetscErrorCode ierr;
-  PetscInt       k,start,end,l,row,col,srow,**vscaleforrow,m1,m2;
+  PetscInt       k,start,end,l,row,col,srow,m1,m2;
   PetscScalar    dx,*y,*w3_array;
   PetscScalar    *vscale_array, *solnTyp_array, *a_array;
   PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm; 
@@ -2113,6 +2114,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   void           *fctx = coloring->fctx;
   PetscBool      flg = PETSC_FALSE;
   PetscInt       ctype=coloring->ctype,N,col_start=0,col_end=0;
+  MatEntry       *Jentry=coloring->matentry;
   Vec            x1_tmp;
 
   PetscFunctionBegin;    
@@ -2187,7 +2189,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
       
   if (!coloring->w3) {
     ierr = VecDuplicate(x1_tmp,&coloring->w3);CHKPETSC(ierr);
-    ierr = PetscLogObjectParent(coloring,coloring->w3);CHKPETSC(ierr);
+    ierr = PetscLogObjectParent((PetscObject)coloring,(PetscObject)coloring->w3);CHKPETSC(ierr);
   }
   w3 = coloring->w3;
 
@@ -2202,10 +2204,6 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
     ierr = VecGhostUpdateEnd(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
   }
   
-  if (coloring->vscaleforrow) {
-    vscaleforrow = coloring->vscaleforrow;
-  } else SETERRQ(((PetscObject)J)->comm,PETSC_ERR_ARG_NULL,"Null Object: coloring->vscaleforrow");
-
   /*
     Loop over each color
   */
@@ -2216,6 +2214,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   //
   Vec& w4 = rs->GetTrialResV(); // A handy Vec to use if centered diff for J
 
+  PetscInt nz = 0;
   for (k=0; k<coloring->ncolors; k++) { 
     coloring->currentcolor = k;
       
@@ -2272,15 +2271,14 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
     ierr = VecGetArray(AlphaV,&a_array);CHKPETSC(ierr);          
 
     for (l=0; l<coloring->nrows[k]; l++) {
-      row    = coloring->rows[k][l];             /* local row index */
-      col    = coloring->columnsforrow[k][l];    /* global column index */
+      row    = Jentry[nz].row;                   /* local row index */
       y[row] *= epsilon_inv;                     /* dx = epsilon */
-      srow   = row + start;                      /* global row index */
 
       // Add diagonal term
       if (dt_inv>0 && srow == col) {y[row] += a_array[row] * dt_inv;}
 
-      ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);
+      *(Jentry[nz].valaddr) = y[row];            /* Set entry directly. */
+      ++nz;
     }
     ierr = VecRestoreArray(AlphaV,&a_array);CHKPETSC(ierr);
     ierr = VecRestoreArray(w2,&y);CHKPETSC(ierr);
@@ -2330,7 +2328,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
 #undef __FUNCT__  
 #define __FUNCT__ "RichardComputeJacobianColor"
 PetscErrorCode 
-RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,void *ctx)
+RichardComputeJacobianColor(SNES snes,Vec x1,Mat J,Mat B,void *ctx)
 {
   BL_PROFILE("RichardSolver::RichardComputeJacobianColor()");
 
@@ -2350,21 +2348,20 @@ RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,vo
     PetscFunctionReturn(0);
   }
 
-  *flag = SAME_NONZERO_PATTERN;
   ierr  = SNESGetFunction(snes,&f,(PetscErrorCode (**)(SNES,Vec,Vec,void*))&ff,0);CHKPETSC(ierr);
   ierr  = MatFDColoringGetFunction(color,&fd,PETSC_NULL);CHKPETSC(ierr);
   if (fd == ff) { /* reuse function value computed in SNES */
     ierr  = MatFDColoringSetF(color,f);CHKPETSC(ierr);
   }
   if (rs->GetRSdata().semi_analytic_J) {
-    ierr = SemiAnalyticMatFDColoringApply(*B,color,x1,flag,snes);CHKPETSC(ierr);
+    ierr = SemiAnalyticMatFDColoringApply(B,color,x1,snes);CHKPETSC(ierr);
   } 
   else {
-    ierr = RichardMatFDColoringApply(*B,color,x1,flag,snes);CHKPETSC(ierr);
+    ierr = RichardMatFDColoringApply(B,color,x1,snes);CHKPETSC(ierr);
   }
-  if (*J != *B) {
-    ierr = MatAssemblyBegin(*J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
-    ierr = MatAssemblyEnd(*J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+  if (J != B) {
+    ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
+    ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKPETSC(ierr);
   }
 
   rs->ResetRemainingJacobianReuses();
