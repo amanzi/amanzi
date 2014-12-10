@@ -24,11 +24,13 @@ include_directories(${PMAMR_INCLUDE_DIRS})
 
 set(CXX_source_files Region.cpp 
                      RegionManager.cpp 
-                     RegionData.cpp)
+                     RegionData.cpp
+                     IdxRegionData.cpp)
 
 set(CXX_header_files RegionData.H
                      Region.H 
-                     RegionManager.H)
+                     RegionManager.H
+                     IdxRegionData.H)
 
 set(F90_source_files )
 set(F77_source_files )
@@ -70,6 +72,11 @@ if (BUILD_TESTS)
   add_amanzi_test(tRegion tRegion
                   KIND unit
                   SOURCE test/tRegion.cpp
+                  LINK_LIBS ${structured_grid_libs} ${common_libs} ${tpl_libs})
+
+  add_amanzi_test(IndexedRegionData tIdxRegionData "tR.in"
+                  KIND unit
+                  SOURCE test/tIdxRegionData.cpp
                   LINK_LIBS ${structured_grid_libs} ${common_libs} ${tpl_libs})
 
   if(${AMANZI_SPACEDIM} EQUAL 2)
