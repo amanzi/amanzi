@@ -329,6 +329,8 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation. (default: `"1.0e-5`", suggested range: 1.0e-8 ... 1.0e-6)
 
+     * [U] `"steady error control options"` [Array(string)] Control convergence of nonlinear iterations using multiple error criteria. Available options are `"pressure`" (controls of pressure increment) and `"residual`" (control of residual). Default: is `"{pressure}`".
+
      * [U] `"steady nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping). (default: `"1.0`", suggested range: 0.1 ... 1.0)
  
      * [U] `"steady time step reduction factor"` [double] When time step reduction is necessary during the steady calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
@@ -362,6 +364,8 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
      * [U] `"transient limit iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. (default: `"20`", suggested range: 20 ... 50)
 
      * [U] `"transient nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the transient computation. (default: `"1.0e-5`", suggested range: 1.0e-6 ... 1.0e-5)
+
+     * [U] `"transient error control options"` [Array(string)] Control convergence of nonlinear iterations using multiple error criteria. Available options are `"pressure`" (controls of pressure increment) and `"residual`" (control of residual). Default: is `"{pressure, residual}`".
 
      * [U] `"transient nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping). (default: `"1.0`", suggested range: 0.1 ... 1.0)
 
