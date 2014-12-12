@@ -1103,7 +1103,7 @@ The `"boundary_conditions`" section contains at least 1 and up to an unbounded n
 Output
 ======
 
-Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", `"Observations`", and `"Walkabout Data`".  Each of these is controlled in different ways, reflecting their intended use.
+Output data from Amanzi is currently organized into four specific elements: `"Vis`", `"Checkpoint`", `"Observations`", and `"Walkabout Data`".  Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Vis`" is intended to represent snapshots of the solution at defined instances during the simulation to be visualized.  The ''vis'' element defines the naming and frequencing of saving the visualization files.  The visualizatoin files may include only a fraction of the state data, and may contiain auxiliary "derived" information (see *elsewhere* for more discussion).
 
@@ -1113,8 +1113,7 @@ Output data from Amanzi is currently organized into three specific elements: `"V
 
 * `"Walkabout Data`" is intended to be used as input to the particle tracking software Walkabout.
 
-*EIB NOTE* - All three of the above are REQUIRED!!
-For the obserservations I understand how to leave that empty.  But how do I execute without writing a checkpoint? If I'm running a dinky test am I really required to specify a checkpoint?  Will need to test this will validator.  Talk to Ellen about this.
+NOTE: Each output type allows the user to specify the base_filename or filename for the output to be written to.  The string format of the element allows the user to specify the relative path of the file.  It should be noted that the Amanzi I/O library does not create any new directories.  Therefore, if a relative path to a location other than the current directory is specified Amanzi assumes the user (or the Agni controller) has already created any new directories.  If the relative path does not exist the user will see error meesages from the HDF5 library indicating failure to create and open the output file.
 
 Vis
 ---
@@ -1128,7 +1127,7 @@ The ''vis'' element defines the visualization filenaming scheme and how often to
       Optional Elements: time_macros, cycle_macros
   </vis>
 
-The *base_filename* element contain the text component of the how the visualization files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the visualization files.  The *num_digits* elements indicates how many digits to use for the index. 
+The *base_filename* element contains the text component of the how the visualization files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the visualization files.  The *num_digits* elements indicates how many digits to use for the index. See the about NOTE about specifing a file location other than the current working directory.
 
 The presence of the ''vis'' element means that visualization files will be written out after cycle 0 and the final cycle of the simulation.  The optional elements *time_macros* or *cycle_macros* indicate additional points during the simulation at which visualization files are to be written out.  Both elements allow one or more of the appropriate type of macro to be listed.  These macros will be determine the appropriate times or cycles to write out visualization files.  See the `Definitions`_ section for defining individual macros.
 
@@ -1157,7 +1156,7 @@ The ''checkpoint'' element deines the filenaming scheme and frequency for writin
       Optional Elements: NONE
   </checkpoint>
 
-The *base_filename* element contain the text component of the how the checkpoint files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the checkpoint files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or interation id)  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determin the frequency at which to write the checkpoint files.
+The *base_filename* element contain the text component of the how the checkpoint files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the checkpoint files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or interation id)  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determin the frequency at which to write the checkpoint files. See the about NOTE about specifing a file location other than the current working directory.
 
 Example:
 
@@ -1182,7 +1181,7 @@ The Observations element holds all the observations that the user is requesting 
      Optional Elements: NONE
    </observations>
 
-The *filename* element contains the filename for the observation output, and may include the full path.  Currently, all observations are written to the same file.  
+The *filename* element contains the filename for the observation output, and may include the full path.  Currently, all observations are written to the same file.  See the about NOTE about specifing a file location other than the current working directory.
 
 The *liquid_phase* element requires that the name of the phase be specified as an attribute and at least one observaton.  The observation element is named according to what is being observed.  The observations elements available are as follows:
 
@@ -1246,7 +1245,7 @@ The ''walkabout'' element deines the filenaming scheme and frequency for writing
       Optional Elements: NONE
   </walkabout>
 
-The *base_filename* element contain the text component of the how the walkabout files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the walkabout files.  The *num_digits* elements indicates how many digits to use for the index.  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files.
+The *base_filename* element contain the text component of the how the walkabout files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the walkabout files.  The *num_digits* elements indicates how many digits to use for the index.  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files. See the about NOTE about specifing a file location other than the current working directory.
 
 Example:
 

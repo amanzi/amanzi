@@ -170,7 +170,7 @@ Teuchos::ParameterList get_verbosity(DOMDocument* xmlDoc) {
                 DOMNode* currentNode = children->item(j) ;
                 if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
                     char* tagname = XMLString::transcode(currentNode->getNodeName());
-                    if (strcmp(tagname,"verbosity")==0) {
+                    if (std::string(tagname) == "verbosity") {
                         attrMap = currentNode->getAttributes();
                         nodeAttr = attrMap->getNamedItem(XMLString::transcode("level"));
 			if (nodeAttr) {
@@ -225,14 +225,14 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
       if (DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
         char* tagname = XMLString::transcode(currentNode->getNodeName());
 	// deal with: constants, named_times, macros
-        if (strcmp(tagname,"constants")==0) {
+        if (std::string(tagname) == "constants") {
           DOMNodeList* kids = currentNode->getChildNodes();
           for (int j=0; j<kids->getLength(); j++) {
             DOMNode* currentKid = kids->item(j) ;
             if (DOMNode::ELEMENT_NODE == currentKid->getNodeType()) {
               char* kidname = XMLString::transcode(currentKid->getNodeName());
               // types: constant, time_constant, numerical_constant, area_mass_flux_constant
-              if (strcmp(kidname,"constant")==0) {
+              if (std::string(kidname) == "constant") {
 	        attrMap = currentKid->getAttributes();
 	        namedNode = attrMap->getNamedItem(XMLString::transcode("name"));
 		if (namedNode) {
@@ -255,17 +255,12 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
                 else {
                   throw_error_illformed("definitions", "value", name);
 		}
-		if (strcmp(type,"time")==0) {
+		if (std::string(type) == "time") {
 		  // check if time and convert to seconds - year = 365.25
 		  // TODO: EIB - verify this works with spaces
 		  // TODO: EIB - expect Akuna to move to no deliminator, need to test for this
-		  char_array = strtok(value,";, ");
-		  time = atof(char_array);
-		  char_array = strtok(NULL,";,");
-		  if (strcmp(char_array,"y")==0) { time = time*365.25*24.0*60.0*60.0; }
-		  else if (strcmp(char_array,"d")==0) { time = time*24.0*60.0*60.0; }
-		  else if (strcmp(char_array,"h")==0) { time = time*60.0*60.0; }
-		}
+                  time = convert_time_value(value);
+                }
                 else {
 		  time = atof(value);
 		}
@@ -278,7 +273,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
                 XMLString::release(&type);
                 XMLString::release(&value);
 	      }
-              else if (strcmp(kidname,"time_constant")==0) {
+              else if (std::string(kidname) == "time_constant") {
 	        attrMap = currentKid->getAttributes();
 	        namedNode = attrMap->getNamedItem(XMLString::transcode("name"));
 		if (namedNode) {
@@ -310,7 +305,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
                 XMLString::release(&name);
                 XMLString::release(&value);
 	      }
-              else if (strcmp(kidname,"numerical_constant")==0) {
+              else if (std::string(kidname) == "numerical_constant") {
 	        attrMap = currentKid->getAttributes();
 	        namedNode = attrMap->getNamedItem(XMLString::transcode("name"));
 		if (namedNode) {
@@ -333,7 +328,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
                 XMLString::release(&name);
                 XMLString::release(&value);
 	      }
-              else if (strcmp(kidname,"area_mass_flux_constant")==0) {
+              else if (std::string(kidname) == "area_mass_flux_constant") {
 	        attrMap = currentKid->getAttributes();
 	        namedNode = attrMap->getNamedItem(XMLString::transcode("name"));
 		if (namedNode) {
@@ -360,7 +355,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 	    }
 	  }
 	}
-        else if (strcmp(tagname,"named_times")==0) {
+        else if (std::string(tagname) == "named_times") {
 	  //TODO: EIB - deal with named times
           DOMNodeList* kids = currentNode->getChildNodes();
           for (int j=0; j<kids->getLength(); j++) {
@@ -368,7 +363,7 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
             if (DOMNode::ELEMENT_NODE == currentKid->getNodeType()) {
               char* kidname = XMLString::transcode(currentKid->getNodeName());
               // types: time
-              if (strcmp(kidname,"time")==0) {
+              if (std::string(kidname) == "time") {
 	      }
               XMLString::release(&kidname);
 	    }
@@ -393,10 +388,10 @@ Teuchos::ParameterList get_constants(DOMDocument* xmlDoc, Teuchos::ParameterList
 std::string get_amanzi_version(DOMDocument* xmlDoc, Teuchos::ParameterList def_list) {
   std::stringstream old_version;
   
-  XMLCh* tag = XMLString::transcode("amanzi_input");
+  //XMLCh* tag = XMLString::transcode("amanzi_input");
 
-  DOMNodeList* nodeList = xmlDoc->getElementsByTagName(tag);  
-  XMLString::release(&tag);
+  DOMNodeList* nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("amanzi_input"));
+  //XMLString::release(&tag);
 
   const XMLSize_t nodeCount = nodeList->getLength();  
   if (nodeList->getLength() > 0) {
@@ -550,6 +545,8 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
       *voI_->os() << "Getting Mesh" << std::endl;
   }
 
+  Teuchos::RCP<Teuchos::StringValidator> meshfileValidator = rcp (new Teuchos::StringValidator(meshfileStrings));
+  
   // read in new stuff
   XMLCh* tag = XMLString::transcode("mesh");
   DOMNodeList* nodeList = xmlDoc->getElementsByTagName(tag);
@@ -687,16 +684,19 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
 	  bool goodname = false;
 	  DOMElement* elementRead = static_cast<DOMElement*>(currentNode);
 
-	  char* format = XMLString::transcode(elementRead->getElementsByTagName(
+	  char* value = XMLString::transcode(elementRead->getElementsByTagName(
 				  XMLString::transcode("format"))->item(0)->getTextContent());
-          if (strcmp(format,"exodus ii")==0 || strcmp(format,"exodus II")==0 || 
-	      strcmp(format,"Exodus II")==0 || strcmp(format,"Exodus ii")==0) {
-	      mesh_list.set<std::string>("Format","Exodus II");
-	      goodtype = true;
+          std::string format(trim_string(value));
+          if (boost::iequals(format, "exodus ii")) {
+            mesh_list.set<std::string>("Format","Exodus II");
+            goodtype = true;
 	  }
-          else if (strcmp(format,"h5m") == 0 || strcmp(format,"H5M") == 0) {
+          else if (boost::iequals(format, "h5m")) {
             mesh_list.set<std::string>("Format","H5M");
             goodtype = true;
+          }
+          else {
+            mesh_list.set<std::string>("Format",format,"Format of meshfile",meshfileValidator);
           }
 	  char* filename = XMLString::transcode(elementRead->getElementsByTagName(
 				  XMLString::transcode("file"))->item(0)->getTextContent());
@@ -704,7 +704,7 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
               mesh_list.set<std::string>("File",trim_string(filename));
 	      goodname = true;
 	  }
-	  XMLString::release(&format);
+	  XMLString::release(&value);
 	  XMLString::release(&filename);
 	  if (goodtype && goodname) all_good = true;
 
@@ -1048,6 +1048,8 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
   double sim_end=-1.;
   Teuchos::ParameterList simPL;
 
+  Teuchos::RCP<Teuchos::StringValidator> verbosityValidator = rcp (new Teuchos::StringValidator(verbosityStrings));
+  
   for (int i=0; i<nodeList->getLength(); i++) {
     DOMNode* ecNode = nodeList->item(i);
     if (DOMNode::ELEMENT_NODE == ecNode->getNodeType()) {
@@ -1067,25 +1069,13 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
               throw_error_missattr("execution_controls", "attribute", "level", "verbosity");
             }
             // This is a hack since structured requires uppercase first character
-            if (strcmp(textContent,"none")==0) {
-              list.set<std::string>("Verbosity","None");
+            std::string value(trim_string(textContent));
+            value[0] = std::toupper(value[0]);
+            if (value == "Default") {
+              value = VERBOSITY_DEFAULT;
             }
-            else if (strcmp(textContent,"low")==0) {
-              list.set<std::string>("Verbosity","Low");
-            }
-            else if (strcmp(textContent,"medium")==0) {
-              list.set<std::string>("Verbosity","Medium");
-            }
-            else if (strcmp(textContent,"high")==0) {
-              list.set<std::string>("Verbosity","High");
-            }
-            else if (strcmp(textContent,"extreme")==0) {
-              list.set<std::string>("Verbosity","Extreme");
-            }
-            else {
-              list.set<std::string>("Verbosity",trim_string(textContent));
-            }
-            simPL.set<std::string>("verbosity",trim_string(textContent));
+            list.set<std::string>("Verbosity",value,"Verbosity level",verbosityValidator);
+            simPL.set<std::string>("verbosity",value);
             XMLString::release(&textContent);
 
 	  }
@@ -1810,6 +1800,12 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   ssPL.set<double>("steady nonlinear tolerance",get_double_constant(textContent,*def_list));
                   XMLString::release(&textContent);
                 }
+                else if (strcmp(tagname,"error_control_options")==0) { //default = 'pressure' options = 'pressure','residual'
+                  textContent = XMLString::transcode(currentNode->getTextContent());
+                  Teuchos::Array<std::string> err_opts = make_regions_list(textContent);
+                  ssPL.set<Teuchos::Array<std::string> >("steady error control options",err_opts);
+                  XMLString::release(&textContent);
+                }
                 else if (strcmp(tagname,"error_rel_tol")==0) {
                   textContent = XMLString::transcode(currentNode->getTextContent());
                   ssPL.set<double>("steady error rel tol",get_double_constant(textContent,*def_list));
@@ -1873,9 +1869,10 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                         }
                         XMLString::release(&textContent);
                       }
-                      else if (strcmp(tag,"control_options")==0) {
+                      else if (strcmp(tag,"error_control_options")==0) { //default = 'pressure'
                         textContent = XMLString::transcode(curNode->getTextContent());
-                        ptiPL.set<std::string>("pseudo time integrator error control options",trim_string(textContent));
+                        Teuchos::Array<std::string> err_opts = make_regions_list(textContent);
+                        ptiPL.set<Teuchos::Array<std::string> >("pseudo time integrator error control options",err_opts);
                         XMLString::release(&textContent);
                       }
                       else if (strcmp(tag,"max_iterations")==0) {
@@ -1996,7 +1993,13 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   std::string(textContent) == "1" ? iwd = true : iwd = false;
 		tcPL.set<bool>("transient initialize with darcy",iwd);
                 XMLString::release(&textContent);
-	      }
+              }
+              if (bdfElement->hasAttribute(XMLString::transcode("error_control_options"))){
+                textContent = XMLString::transcode(bdfElement->getAttribute(XMLString::transcode("error_control_options")));
+                Teuchos::Array<std::string> err_opts = make_regions_list(textContent);
+                tcPL.set<Teuchos::Array<std::string> >("transient error control options",err_opts);
+                XMLString::release(&textContent);
+              }
 	    }
 
 	    // grab preconditioner node and loop through it's childern to get information
@@ -6011,21 +6014,39 @@ double get_time_value(std::string time_value, Teuchos::ParameterList def_list)
   }
   else {
     char* tmp = strcpy(new char[time_value.size() + 1], time_value.c_str());
-    char* char_array = strtok(tmp,";, ");
-    time = atof(char_array);
-    char_array = strtok(NULL,";, ");
-    if (char_array!=NULL) {
-      if (strcmp(char_array,"y")==0) { time = time*365.25*24.0*60.0*60.0; }
-      else if (strcmp(char_array,"d")==0) { time = time*24.0*60.0*60.0; }
-      else if (strcmp(char_array,"h")==0) { time = time*60.0*60.0; }
-    }
+    time = convert_time_value(tmp);
     delete[] tmp;
   }
 
   return time;
 }
 
-/* 
+/*
+******************************************************************
+* Empty
+******************************************************************
+*/
+  
+//TODO: EIB - get default time unit from units, convert plain time values if not seconds.
+  
+double convert_time_value(char* time_value)
+{
+  double time;
+  char*  char_array;
+  
+  char_array = strtok(time_value,";, ");
+  time = atof(char_array);
+  char_array = strtok(NULL,";,");
+  if (char_array!=NULL) {
+    if (strcmp(char_array,"y")==0) { time = time*365.25*24.0*60.0*60.0; }
+    else if (strcmp(char_array,"d")==0) { time = time*24.0*60.0*60.0; }
+    else if (strcmp(char_array,"h")==0) { time = time*60.0*60.0; }
+  }
+  
+  return time;
+}
+  
+/*
  ******************************************************************
  * Empty
  ******************************************************************
