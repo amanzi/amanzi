@@ -2544,6 +2544,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
 * `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
 
   * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
+    The file name can contain relative or absolute path to an *existing* directory only. 
 
   * OBSERVATION [list] user-defined label, can accept values for `"variables`", `"functional`", `"region`", `"times`", and TSPS (see below).
 
@@ -2664,9 +2665,11 @@ A user may request periodic dumps of Walkabout Data. Output controls for Walkabo
 * `"Walkabout Data`" [list] can accept a file name base [string] and cycle data [list] 
   used to generate the file base name or directory base name that is used in writing Checkpoint Data. 
 
-  * `"file name base`" [string] ("walkabout")
+  * `"file name base`" [string] The file name can contain relative or absolute path to an *existing* 
+    directory only.  Default is `"walkabout`".
   
-  * `"file name digits`" [int] (5)
+  * `"file name digits`" [int] specify the number of digits that should be appended to the file 
+    name for the cycle number. Default is 5.
 
   * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
@@ -2705,7 +2708,10 @@ Visualization Data
 A user may request periodic writes of field data for the purposes of visualization.  The user will specify explicitly what is to be included in the file at each snapshot.  Visualization files can only be written 
 at intervals corresponding to the numerical time step values or intervals corresponding to the cycle number; writes are controlled by time step cycle number.
 
-* `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] that is used to generate the file base name or directory base name that is used in writing visualization data.  It can also accept a set of lists to specify which field quantities to write
+* `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] 
+  that is used to generate the file base name or directory base name that is used in writing visualization data.
+  It can also accept a set of lists to specify which field quantities to write.
+  The file name can contain relative or absolute path to an *existing* directory only. 
 
   * `"file name base`" [string] ("amanzi_vis")
   
