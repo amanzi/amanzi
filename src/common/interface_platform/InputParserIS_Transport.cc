@@ -90,10 +90,30 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
                     mat_list.get<Teuchos::Array<std::string> >("Assigned Regions"));
 
                 if (mat_list.isSublist("Dispersion Tensor: Uniform Isotropic")) {
-                  disp_list.set<double>("alphaL", 
+                  disp_list.sublist("parameters for Bear").set<double>("alphaL", 
                       mat_list.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaL"));
-                  disp_list.set<double>("alphaT",
+                  disp_list.sublist("parameters for Bear").set<double>("alphaT",
                       mat_list.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaT"));
+                }
+                else if (mat_list.isSublist("Dispersion Tensor: Burnett-Frind")) {
+                  disp_list.set<std::string>("model", "Burnett-Frind");
+                  disp_list.sublist("parameters for Burnett-Frind").set<double>("alphaL", 
+                      mat_list.sublist("Dispersion Tensor: Burnett-Frind").get<double>("alphaL"));
+                  disp_list.sublist("parameters for Burnett-Frind").set<double>("alphaTH",
+                      mat_list.sublist("Dispersion Tensor: Burnett-Frind").get<double>("alphaTH"));
+                  disp_list.sublist("parameters for Burnett-Frind").set<double>("alphaTV",
+                      mat_list.sublist("Dispersion Tensor: Burnett-Frind").get<double>("alphaTV"));
+                }
+                else if (mat_list.isSublist("Dispersion Tensor: Lichtner-Kelkar-Robinson")) {
+                  disp_list.set<std::string>("model", "Lichtner-Kelkar-Robinson");
+                  disp_list.sublist("parameters for Lichtner-Kelkar-Robinson").set<double>("alphaLH", 
+                      mat_list.sublist("Dispersion Tensor: Lichtner-Kelkar-Robinson").get<double>("alphaLH"));
+                  disp_list.sublist("parameters for Lichtner-Kelkar-Robinson").set<double>("alphaLV", 
+                      mat_list.sublist("Dispersion Tensor: Lichtner-Kelkar-Robinson").get<double>("alphaLV"));
+                  disp_list.sublist("parameters for Lichtner-Kelkar-Robinson").set<double>("alphaTH",
+                      mat_list.sublist("Dispersion Tensor: Lichtner-Kelkar-Robinson").get<double>("alphaTH"));
+                  disp_list.sublist("parameters for Lichtner-Kelkar-Robinson").set<double>("alphaTV",
+                      mat_list.sublist("Dispersion Tensor: Lichtner-Kelkar-Robinson").get<double>("alphaTV"));
                 }
 
                 if (mat_list.isSublist("Tortuosity Aqueous: Uniform")) {

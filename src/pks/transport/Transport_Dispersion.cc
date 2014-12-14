@@ -37,8 +37,12 @@ void Transport_PK::CalculateDispersionTensor_(
   D.resize(ncells_owned);
   for (int c = 0; c < ncells_owned; c++) D[c].Init(dim, 2);
 
-  for (int mb = 0; mb < material_properties_.size(); mb++) {
-    Teuchos::RCP<MaterialProperties> spec = material_properties_[mb]; 
+  AmanziGeometry::Point velocity(dim), omega(dim);
+  AmanziMesh::Entity_ID_List faces;
+  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
+
+  for (int mb = 0; mb < mat_properties_.size(); mb++) {
+    Teuchos::RCP<MaterialProperties> spec = mat_properties_[mb]; 
 
     std::vector<AmanziMesh::Entity_ID> block;
     for (int r = 0; r < (spec->regions).size(); r++) {
@@ -46,18 +50,19 @@ void Transport_PK::CalculateDispersionTensor_(
       mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
       AmanziMesh::Entity_ID_List::iterator c;
-      for (c = block.begin(); c != block.end(); c++) {
-        D[*c].PutScalar(0.0); 
-        if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
+      if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_SCALAR) {
+        for (c = block.begin(); c != block.end(); c++) {
+          D[*c].PutScalar(0.0); 
           for (int i = 0; i < dim; i++) {
-            D[*c](i, i) = spec->alphaL;
+            D[*c](i, i) = spec->alphaLH;
           }
           D[*c] *= porosity[0][*c] * saturation[0][*c];
-        } else {
-          WhetStone::MFD3D_Diffusion mfd3d(mesh_);
-
-          AmanziMesh::Entity_ID_List faces;
-          AmanziGeometry::Point velocity(dim);
+        }
+      // Isotropic dispersitivity model.
+      // Darcy velocity is reconstructed for its normal components.
+      } else if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_BEAR) {
+        for (c = block.begin(); c != block.end(); c++) {
+          D[*c].PutScalar(0.0); 
 
           mesh_->cell_get_faces(*c, &faces);
           int nfaces = faces.size();
@@ -67,15 +72,78 @@ void Transport_PK::CalculateDispersionTensor_(
           mfd3d.RecoverGradient_MassMatrix(*c, flux, velocity);
           velocity /= porosity[0][*c];  // pore velocity
 
-          double velocity_value = norm(velocity);
-          double anisotropy = spec->alphaL - spec->alphaT;
+          double vel_norm = norm(velocity);
+          if (vel_norm == 0.0) continue;
 
+          double anisotropy = (spec->alphaLH - spec->alphaTH) / vel_norm;
           for (int i = 0; i < dim; i++) {
-            D[*c](i, i) = spec->alphaT * velocity_value;
+            D[*c](i, i) = spec->alphaTH * vel_norm;
             for (int j = i; j < dim; j++) {
               double s = anisotropy * velocity[i] * velocity[j];
-              if (velocity_value) s /= velocity_value;
               D[*c](j, i) = D[*c](i, j) += s;
+            }
+          }
+
+          D[*c] *= porosity[0][*c] * saturation[0][*c];
+        }
+      // Anisotropic dispersitivity model.
+      // This model assumes that space is 3D which is checked in Transport_IO.cc.
+      // and that permeability tensor is diagonal. 
+      } else if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_BURNETT_FRIND ||
+                 spec->model == TRANSPORT_DISPERSIVITY_MODEL_LICHTNER_KELKAR_ROBINSON) {
+        const Epetra_MultiVector& perm = *S_->GetFieldData("permeability")->ViewComponent("cell");
+
+        for (c = block.begin(); c != block.end(); c++) {
+          D[*c].PutScalar(0.0); 
+
+          int k = axi_symmetry_[*c];
+          if (k == -1) {
+            Errors::Message msg;
+            msg << "Transport PK: dispersivity model \"Burnett-Frind\" or \n" 
+                << "\"Lichtner-Kelkar_Robinson\" can be applied only to an axi-symmetric material.\n";
+            Exceptions::amanzi_throw(msg);  
+          }
+
+          // Reconstruct Darcy velocity for its normal components.
+          mesh_->cell_get_faces(*c, &faces);
+          int nfaces = faces.size();
+
+          std::vector<double> flux(nfaces);
+          for (int n = 0; n < nfaces; n++) flux[n] = darcy_flux[0][faces[n]];
+          mfd3d.RecoverGradient_MassMatrix(*c, flux, velocity);
+          velocity /= porosity[0][*c];  // pore velocity
+
+          double vel_norm = norm(velocity);
+          if (vel_norm == 0.0) continue;
+
+          double theta = velocity[k] / vel_norm;  // cosine of angle theta
+          double theta2 = theta * theta; 
+
+          // define direction orthogonal to symmetry axis
+          omega = velocity * (-theta / vel_norm);
+          omega[k] += 1.0;
+
+          double a1, a2, a3;
+          if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_BURNETT_FRIND) {
+            double alphaT = spec->alphaTH + theta2 * (spec->alphaTV - spec->alphaTH);
+            double alphaL = spec->alphaLH;  // use it for code readibility.
+
+            a1 = alphaT * vel_norm;
+            a2 = (alphaL - alphaT) / vel_norm;
+            a3 = (spec->alphaTH - alphaT) * vel_norm / (1.0 - theta2);
+          } else if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_LICHTNER_KELKAR_ROBINSON) {
+            double alphaL = spec->alphaLH + theta2 * (spec->alphaLV - spec->alphaLH);  
+            double alphaT = spec->alphaTV + theta2 * (spec->alphaTH - spec->alphaTV);  
+            a1 = spec->alphaTH * vel_norm;
+            a2 = (alphaL - spec->alphaTH) / vel_norm;
+            a3 = (alphaT - spec->alphaTH) * vel_norm / (1.0 - theta2);
+          }
+
+          for (int i = 0; i < dim; i++) {
+            D[*c](i, i) = a1;
+            for (int j = i; j < dim; j++) {
+              D[*c](i, j) += a2 * velocity[i] * velocity[j] + a3 * omega[i] * omega[j];
+              D[*c](j, i) = D[*c](i, j);
             }
           }
 
@@ -99,8 +167,8 @@ void Transport_PK::CalculateDiffusionTensor_(
     for (int c = 0; c < ncells_owned; c++) D[c].Init(dim, 1);
   }
 
-  for (int mb = 0; mb < material_properties_.size(); mb++) {
-    Teuchos::RCP<MaterialProperties> spec = material_properties_[mb]; 
+  for (int mb = 0; mb < mat_properties_.size(); mb++) {
+    Teuchos::RCP<MaterialProperties> spec = mat_properties_[mb]; 
 
     std::vector<AmanziMesh::Entity_ID> block;
     for (int r = 0; r < (spec->regions).size(); r++) {
@@ -139,6 +207,28 @@ int Transport_PK::FindDiffusionValue(const std::string& tcc_name, double* md, in
   *md = 0.0;
   *phase = -1;
   return -1;
+}
+
+
+/* ******************************************************************
+*  Find direction of axi-symmetry.                                               
+****************************************************************** */
+void Transport_PK::CalculateAxiSymmetryDirection()
+{
+  axi_symmetry_.clear();
+  const Epetra_MultiVector& perm = *S_->GetFieldData("permeability")->ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; c++) {
+    int k(-1);
+    if (perm[0][c] != perm[1][c] && perm[1][c] == perm[2][c]) {
+      k = 0;
+    } else if (perm[1][c] != perm[2][c] && perm[2][c] == perm[0][c]) {
+      k = 1;
+    } else if (perm[2][c] != perm[0][c] && perm[0][c] == perm[1][c]) {
+      k = 2;
+    }
+    axi_symmetry_.push_back(k);
+  }
 }
 
 }  // namespace Transport

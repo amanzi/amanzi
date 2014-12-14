@@ -17,6 +17,8 @@ Changes V4 -> V5
   The "Dispersivity" transport sublist was replaced by "material properties" 
   sublist.
 
+* Added two dispersivity models `"Burnett-Frind`" and `"Lichtner-Kelkar-Robinson`".
+
 * Enforcement of lower-case names in transport, flow, and energy PKs (e.g. cfl) 
   except for proper names (e.g. Moulton).
   Upper-case names are used for user-defined names (e.g. SOIL).
@@ -1206,16 +1208,43 @@ Material properties
 -------------------
 The material properties include dispersivity model and diffusion parameters 
 for aqueous and gaseous phases.
-Two dispersivity models have been implemented: `"isotropic`" and `"Bear`". 
 The dispersivity is defined as a soil property. 
 The diffusivity is defined independently for each solute.
 
 * SOIL [list] Defines material properties.
   
   * `"region`" [Array(string)] Defines geometric regions for material SOIL.
-  * `"model`" [string] Defines dispersivity model, choose eactly one of the following `"isotropic`" or `"Bear`".
-  * `"alphaL`" [double] Defines dispersion in the direction of Darcy velocity.
-  * `"alphaT`" [double] Defines dispersion in the orthogonal directions.
+  * `"model`" [string] Defines dispersivity model, choose eactly one of the following: `"scalar`", `"Bear`",
+    `"Burnett-Frind`", or `"Lichtner-Kelkar-Robinson`".
+  * `"parameters for MODEL`" [sublist] where `"MODEL`" is the model name.
+    For model `"scalar`", the following options must be specified:
+
+      * `"alpha`" [double] defines dispersion in all directions. 
+
+    For model `"Bear`", the following options must be specified:
+
+      * `"alphaL`" [double] defines dispersion in the direction of Darcy velocity.
+      * `"alphaT`" [double] defines dispersion in the orthogonal direction.
+    
+    For model `"Burnett-Frind`", the following options must be specified:
+
+      * `"alphaL`" [double] defines the longitudinal dispersion in the direction of Darcy velocity.
+      * `"alphaTH`" [double] Defines the transverse dispersion in the horizonla direction orthogonal directions.
+      * `"alphaTV`" [double] Defines dispersion in the orthogonal directions.
+        When `"alphaTH`" equals to `"alphaTV`", we obtain dispersion in the direction of the Darcy velocity.
+        This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelkar-Robinson`" models.
+
+    For model `"Lichtner-Kelker-Robinson`", the following options must be specified:
+
+      * `"alphaLH`" [double] defines the longitudinal dispersion in the horizontal direction.
+      * `"alphaLV`" [double] Defines the longitudinal dispersion in the vertical direction.
+        When `"alphaLH`" equals to `"alphaLV`", we obtain dispersion in the direction of the Darcy velocity.
+        This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelker-Robinson`" models.
+      * `"alphaTH`" [double] Defines the transverse dispersion in the horizonla direction orthogonal directions.
+      * `"alphaTV`" [double] Defines dispersion in the orthogonal directions.
+        When `"alphaTH`" equals to `"alphaTV`", we obtain dispersion in the direction of the Darcy velocity.
+        This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelker-Robinson`" models.
+
   * `"aqueous tortuosity`" [double] Defines tortuosity for calculating diffusivity of liquid solutes.
   * `"gaseous tortuosity`" [double] Defines tortuosity for calculating diffusivity of gas solutes.
  
@@ -1227,17 +1256,22 @@ Three examples are below:
      <ParameterList name="WHITE SOIL">
        <Parameter name="regions" type="Array(string)" value="{TOP_REGION, BOTTOM_REGION}"/>
        <Parameter name="model" type="string" value="Bear"/>
-       <Parameter name="alphaL" type="double" value="1e-2"/>
-       <Parameter name="alphaT" type="double" value="1e-5"/>
+       <ParameterList name="parameters for Bear">
+         <Parameter name="alphaL" type="double" value="1e-2"/>
+         <Parameter name="alphaT" type="double" value="1e-5"/>
+       <ParameterList>
        <Parameter name="aqueous tortuosity" type="double" value="1.0"/>       
        <Parameter name="gaseous tortuosity" type="double" value="1.0"/>       
      </ParameterList>  
      
      <ParameterList name="GREY SOIL">
        <Parameter name="regions" type="Array(string)" value="{MIDDLE_REGION}"/>
-       <Parameter name="model" type="string" value="Bear"/>
-       <Parameter name="alphaL" type="double" value="1e-2"/>
-       <Parameter name="alphaT" type="double" value="1e-5"/>
+       <Parameter name="model" type="string" value="Burnett-Frind"/>
+       <ParameterList name="parameters for Burnett-Frind">
+         <Parameter name="alphaL" type="double" value="1e-2"/>
+         <Parameter name="alphaTH" type="double" value="1e-3"/>
+         <Parameter name="alphaTV" type="double" value="2e-3"/>
+       <ParameterList>
        <Parameter name="aqueous tortuosity" type="double" value="0.5"/>
        <Parameter name="gaseous tortuosity" type="double" value="1.0"/>       
      </ParameterList>  

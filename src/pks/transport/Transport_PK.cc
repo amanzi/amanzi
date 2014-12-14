@@ -98,6 +98,10 @@ void Transport_PK::Construct_(Teuchos::ParameterList& glist,
   passwd_ = "state";  //  state password
 
   // require state variables when Flow is off
+  if (!S->HasField("permeability")) {
+    S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, dim);
+  }
   if (!S->HasField("porosity")) {
     S->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -221,6 +225,9 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     int distribution = srcs[i]->CollectActionsList();
     if (distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+      Errors::Message msg;
+      msg << "Transport PK: missing capability: permeability-based source distribution.\n";
+      Exceptions::amanzi_throw(msg);  
       break;
     }
   }

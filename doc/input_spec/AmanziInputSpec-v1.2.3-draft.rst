@@ -1010,7 +1010,7 @@ the following set of physical properties using the supported models described be
 
   Material properties related to transport (dispersion and tortuosity):
 
-  * [SU] Dispersion Tensor [list] Parameterized model for Dispersion Tensor. Choose exactly one of the following: `"Dispersion Tensor:  Uniform Isotropic`".
+  * [SU] Dispersion Tensor [list] Parameterized model for Dispersion Tensor. Choose exactly one of the following: `"Dispersion Tensor: Uniform Isotropic`", `"Dispersion Tensor: Burnett-Frind`", `"Dispersion Tensor: Lichtner-Kelkar-Robinson`" (see below)
 
   * [SU] Tortuosity [list] Parameterized model for the Tortuosity [-]. For aqueous phase choose exactly one of the following: `"Tortuosity Aqueous: Uniform`". For gaseous phase choose exactly one of the following: `"Tortuosity Gaseous: Uniform`".
 
@@ -1160,8 +1160,23 @@ in transport
 
 * [SU] `"Dispersion Tensor: Uniform Isotropic`" (see Equation 4.9) [list] requires
 
- * [SU] `"alphaL`" [m]  the longitudinal dispersion  (default 0)
- * [SU] `"alphaT`" [m]  the transverse dispersion    (default 0)
+ * [SU] `"alphaL`" [m]  the longitudinal dispersion (default 0)
+ * [SU] `"alphaT`" [m]  the transverse dispersion   (default 0)
+
+* [U] `"Dispersion Tensor: Burnett-Frind`" [list] can be applied in three dimensions to 
+  materials with axi-symmetric absolute permeability. It requires
+
+ * [U] `"alphaL`" [m]   the longitudinal dispersion (default 0)
+ * [U] `"alphaTH`" [m]  the transverse dispersion in the horizontal direction (default 0)
+ * [U] `"alphaTV`" [m]  the transverse dispersion in the vertical direction (default 0)
+
+* [U] `"Dispersion Tensor: Lichtner-Kelkar-Robinson`" [list] can be applied in three dimensions to 
+  materials with axi-symmetric absolute permeability. It requires
+
+ * [U] `"alphaLH`" [m]  the longitudinal dispersion in the horizontal direction (default 0)
+ * [U] `"alphaLV`" [m]  the longitudinal dispersion in the vertical direction (default 0)
+ * [U] `"alphaTH`" [m]  the transverse dispersion in the horizontal direction (default 0)
+ * [U] `"alphaTV`" [m]  the transverse dispersion in the vertical direction (default 0)
 
 The following models are currently supported for Tortuosity.
 
