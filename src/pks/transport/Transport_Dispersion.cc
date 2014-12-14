@@ -96,14 +96,6 @@ void Transport_PK::CalculateDispersionTensor_(
         for (c = block.begin(); c != block.end(); c++) {
           D[*c].PutScalar(0.0); 
 
-          int k = axi_symmetry_[*c];
-          if (k == -1) {
-            Errors::Message msg;
-            msg << "Transport PK: dispersivity model \"Burnett-Frind\" or \n" 
-                << "\"Lichtner-Kelkar_Robinson\" can be applied only to an axi-symmetric material.\n";
-            Exceptions::amanzi_throw(msg);  
-          }
-
           // Reconstruct Darcy velocity for its normal components.
           mesh_->cell_get_faces(*c, &faces);
           int nfaces = faces.size();
@@ -116,6 +108,7 @@ void Transport_PK::CalculateDispersionTensor_(
           double vel_norm = norm(velocity);
           if (vel_norm == 0.0) continue;
 
+          int k = axi_symmetry_[*c];
           double theta = velocity[k] / vel_norm;  // cosine of angle theta
           double theta2 = theta * theta; 
 
@@ -215,19 +208,38 @@ int Transport_PK::FindDiffusionValue(const std::string& tcc_name, double* md, in
 ****************************************************************** */
 void Transport_PK::CalculateAxiSymmetryDirection()
 {
-  axi_symmetry_.clear();
+  axi_symmetry_.resize(ncells_owned, -1);
   const Epetra_MultiVector& perm = *S_->GetFieldData("permeability")->ViewComponent("cell");
 
-  for (int c = 0; c < ncells_owned; c++) {
-    int k(-1);
-    if (perm[0][c] != perm[1][c] && perm[1][c] == perm[2][c]) {
-      k = 0;
-    } else if (perm[1][c] != perm[2][c] && perm[2][c] == perm[0][c]) {
-      k = 1;
-    } else if (perm[2][c] != perm[0][c] && perm[0][c] == perm[1][c]) {
-      k = 2;
+  for (int mb = 0; mb < mat_properties_.size(); mb++) {
+    Teuchos::RCP<MaterialProperties> spec = mat_properties_[mb];
+
+    std::vector<AmanziMesh::Entity_ID> block;
+    for (int r = 0; r < (spec->regions).size(); r++) {
+      std::string region = (spec->regions)[r];
+      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+
+      if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_BURNETT_FRIND ||
+          spec->model == TRANSPORT_DISPERSIVITY_MODEL_LICHTNER_KELKAR_ROBINSON) {
+        AmanziMesh::Entity_ID_List::iterator c;
+        for (c = block.begin(); c != block.end(); c++) {
+          int k;
+          if (perm[0][*c] != perm[1][*c] && perm[1][*c] == perm[2][*c]) {
+            k = 0;
+          } else if (perm[1][*c] != perm[2][*c] && perm[2][*c] == perm[0][*c]) {
+            k = 1;
+          } else if (perm[2][*c] != perm[0][*c] && perm[0][*c] == perm[1][*c]) {
+            k = 2;
+          } else {
+            Errors::Message msg;
+            msg << "Transport PK: Dispersivity model \"Burnett-Frind\" or " 
+                << "\"Lichtner-Kelkar_Robinson\" can be applied only to an axi-symmetric materials.\n";
+            Exceptions::amanzi_throw(msg);  
+          }
+          axi_symmetry_[*c] = k;
+        }
+      }
     }
-    axi_symmetry_.push_back(k);
   }
 }
 

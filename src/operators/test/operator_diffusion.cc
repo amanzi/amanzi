@@ -252,11 +252,12 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   CHECK(solver->num_itrs() < 10);
 }
 
+
 /* *****************************************************************
 * Tests DivK diffusion solver with full tensor and source term.
+* The model for kf is arithmetic average.
 ***************************************************************** */
-TEST(OPERATOR_DIFFUSION_DIVK) {
-  using namespace Teuchos;
+TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -265,15 +266,15 @@ TEST(OPERATOR_DIFFUSION_DIVK) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D steady-state elliptic solver, divK discretization" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 2D steady-state elliptic solver, divK discretization, average" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  Teuchos::ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -284,7 +285,7 @@ TEST(OPERATOR_DIFFUSION_DIVK) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 5, gm);
-  RCP<const Mesh> mesh = meshfactory("test/mesh10.exo", gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory("test/random20.exo", gm);
 
   /* modify diffusion coefficient */
   std::vector<WhetStone::Tensor> K;
@@ -317,7 +318,7 @@ TEST(OPERATOR_DIFFUSION_DIVK) {
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator divk");
+  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator divk");
   OperatorDiffusionFactory opfactory;
   Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g, 0);
   const CompositeVectorSpace& cvs = op->DomainMap();
@@ -336,7 +337,7 @@ TEST(OPERATOR_DIFFUSION_DIVK) {
   Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh));
 
   // Create upwind model
-  ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
+  Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
   UpwindStandard<HeatConduction> upwind(mesh, knc);
   upwind.Init(ulist);
 
@@ -366,11 +367,11 @@ TEST(OPERATOR_DIFFUSION_DIVK) {
   op1->UpdateMatrices(source);
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create("AztecOO CG", lop_list, op);
@@ -403,7 +404,7 @@ TEST(OPERATOR_DIFFUSION_DIVK) {
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
         pl2_err, pinf_err, ul2_err, uinf_err, solver->num_itrs());
 
-    // CHECK(pl2_err < 1e-12 && ul2_err < 1e-12);
+    CHECK(pl2_err < 0.03 && ul2_err < 0.1);
     CHECK(solver->num_itrs() < 10);
   }
 }
@@ -411,7 +412,7 @@ TEST(OPERATOR_DIFFUSION_DIVK) {
 
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
-* **************************************************************** */
+***************************************************************** */
 TEST(OPERATOR_DIFFUSION_MIXED) {
   using namespace Teuchos;
   using namespace Amanzi;

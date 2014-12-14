@@ -76,6 +76,7 @@ void Transport_PK::ProcessParameterList()
     dispersion_models_ = TRANSPORT_DISPERSIVITY_MODEL_NULL;
 
     int iblock = 0, iblock0 = 0;
+    bool flag_axi_symmetry(false);
     for (Teuchos::ParameterList::ConstIterator i = dlist.begin(); i != dlist.end(); i++) {
       if (dlist.isSublist(dlist.name(i))) {
         mat_properties_[iblock] = Teuchos::rcp(new MaterialProperties());
@@ -108,8 +109,7 @@ void Transport_PK::ProcessParameterList()
             msg << "Transport PK: dispersivity model \"" << model_name << "\" works in 3D only.\n";
             Exceptions::amanzi_throw(msg);  
           }
-
-          CalculateAxiSymmetryDirection();
+          flag_axi_symmetry = true;
 
           // The models require different number of parameters.
           Teuchos::ParameterList& model_parm = model_list.sublist("parameters for " + model_name);
@@ -143,6 +143,7 @@ void Transport_PK::ProcessParameterList()
       }
     }
     if (iblock0 == iblock) dispersion_models_ = TRANSPORT_DISPERSIVITY_MODEL_NULL;
+    if (flag_axi_symmetry) CalculateAxiSymmetryDirection();
   }
 
   // transport diffusion (default is none)

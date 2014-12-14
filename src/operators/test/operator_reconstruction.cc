@@ -127,20 +127,28 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER) {
   std::vector<int> bc_model(nfaces_wghost, 0);
   std::vector<double> bc_value(nfaces_wghost, 0.0);
 
-  AmanziGeometry::Point velocity(1.0, 2.0);
-  for (int f = 0; f < nfaces_wghost; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
+  int dir;
+  Amanzi::AmanziMesh::Entity_ID_List cells;
+  AmanziGeometry::Point velocity(1.0, 2.0), center(0.5, 0.5);
 
+  for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[1]) < 1e-6) {
+    if (fabs(xf[0]) < 1e-6 || fabs(1.0 - xf[0]) < 1e-6 ||
+        fabs(xf[1]) < 1e-6 || fabs(1.0 - xf[1]) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = xf[0] + 2 * xf[1];
     }
+
+    // Since limiters do not allow maximum on the outflow bounadry, 
+    // we use this trick: re-entering flow everywhere.
+    velocity = center - xf;
+    mesh->face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
+    const AmanziGeometry::Point& normal = mesh->face_normal(f, false, cells[0], &dir);
+    (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
   }
 
   // Compute reconstruction
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < 2; i++) {
     Teuchos::ParameterList plist;
     if (i == 0) {
       plist.set<std::string>("limiter", "Barth-Jespersen");
@@ -160,7 +168,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER) {
 
     // calculate gradient error
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
-std::cout << grad_computed << std::endl;
+    // std::cout << grad_computed << std::endl;
     int ierr = grad_computed.Update(-1.0, grad_exact, 1.0);
 
     double error[2];

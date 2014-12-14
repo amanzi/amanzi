@@ -57,7 +57,7 @@ void ReconstructionCell::LimiterTensorial_(
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i = 0; i < dim; i++) gradient_c1[i] = grad[i][c];
 
-    normals.clear();  // normals to planes the define the feasiable set
+    normals.clear();  // normals to planes that define a feasiable set
     for (int loop = 0; loop < 2; loop++) {
       for (int i = 0; i < nfaces; i++) {
         int f = faces[i];

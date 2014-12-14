@@ -35,9 +35,9 @@ class Analytic03 : public AnalyticBase {
     double x = p[0];
     double y = p[1];
     if (x < 0.5) { 
-      return a1 * x * x;
+      return a1 * x * x + y * y;
     } else {
-      return a2 * x * x + b2;
+      return a2 * x * x + y * y + b2;
     }
   }
 
@@ -47,10 +47,10 @@ class Analytic03 : public AnalyticBase {
     Amanzi::AmanziGeometry::Point v(2);
     if (x < 0.5) { 
       v[0] = -2 * a1 * k1 * x;
-      v[1] = 0.0;
+      v[1] = -2 * k1 * y;
     } else {
       v[0] = -2 * a2 * k2 * x;
-      v[1] = 0.0;
+      v[1] = -2 * k2 * y;
     }
     return v;
   }
@@ -61,10 +61,10 @@ class Analytic03 : public AnalyticBase {
     Amanzi::AmanziGeometry::Point v(2);
     if (x < 0.5) { 
       v[0] = 2 * a1 * x;
-      v[1] = 0.0;
+      v[1] = 2 * k1 * y;
     } else {
       v[0] = 2 * a2 * x;
-      v[1] = 0.0;
+      v[1] = 2 * k2 * y;
     }
     return v;
   }
@@ -72,9 +72,9 @@ class Analytic03 : public AnalyticBase {
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
     if (x < 0.5) { 
-      return -2 * a1 * k1;
+      return -2 * a1 * k1 - 2 * k1;
     } else {
-      return -2 * a2 * k2;
+      return -2 * a2 * k2 - 2 * k2;
     }
   }
 
