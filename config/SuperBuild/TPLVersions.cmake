@@ -53,7 +53,7 @@
 #   0.92.9       - update MSTK to v 2.21 (incompatible -DWITH_MSTK_2_21rc1_OR_NEWER=TRUE)
 #   0.92.10      - update MSTK to v 2.22rc1
 #   0.92.11      - update MSTK to v 2.22rc3 (fixed parallel mesh partitioning bug)
-#   0.92.12      - update PETSc to 3.5.2.
+#   0.92.12      - update PETSc to 3.5.2, Alquimia to 0.2, and PFlotran to commit 611092f80ddb.
 
 include(CMakeParseArguments)
 
@@ -361,15 +361,15 @@ set(SEACAS_MD5_SUM        b97d882535fd1856599b1c7338f5b45a)
 #
 set(PFLOTRAN_VERSION_MAJOR 0)
 set(PFLOTRAN_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-1afe88d.tar.gz)
-set(PFLOTRAN_MD5_SUM        92a157f947f6508ac701358d77cd0412)
+set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-611092f80ddb.tar.gz)
+set(PFLOTRAN_MD5_SUM        e18997dd7de5523c9bef8489a0a2dd24)
 
 #
 # TPL: Alquimia
 #
 set(ALQUIMIA_VERSION_MAJOR 0)
-set(ALQUIMIA_VERSION_MINOR 1)
-set(ALQUIMIA_VERSION_PATCH 1)
+set(ALQUIMIA_VERSION_MINOR 2)
+set(ALQUIMIA_VERSION_PATCH 0)
 set(ALQUIMIA_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(ALQUIMIA_ARCHIVE_FILE   alquimia-0.1.1a.tar.gz)
-set(ALQUIMIA_MD5_SUM        0e0bb9fea4ba96e42b9f4cdcd530e6fc)
+set(ALQUIMIA_ARCHIVE_FILE   alquimia-0.2.tar.gz)
+set(ALQUIMIA_MD5_SUM        ee7dee337eb0c856723bd57bd0f4edc7)
