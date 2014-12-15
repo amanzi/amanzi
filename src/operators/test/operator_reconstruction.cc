@@ -120,35 +120,28 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER) {
   }
 
   // create and initialize flux
+  // Since limiters do not allow maximum on the outflow bounadry, 
+  // we use this trick: re-entering flow everywhere.
   const Epetra_Map& fmap = mesh->face_map(true);
   Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  std::vector<int> bc_model(nfaces_wghost, 0);
-  std::vector<double> bc_value(nfaces_wghost, 0.0);
-
   int dir;
-  Amanzi::AmanziMesh::Entity_ID_List cells;
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
   AmanziGeometry::Point velocity(1.0, 2.0), center(0.5, 0.5);
+  Amanzi::AmanziMesh::Entity_ID_List cells;
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-    if (fabs(xf[0]) < 1e-6 || fabs(1.0 - xf[0]) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(1.0 - xf[1]) < 1e-6) {
-      bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = xf[0] + 2 * xf[1];
-    }
-
-    // Since limiters do not allow maximum on the outflow bounadry, 
-    // we use this trick: re-entering flow everywhere.
     velocity = center - xf;
     mesh->face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
     const AmanziGeometry::Point& normal = mesh->face_normal(f, false, cells[0], &dir);
     (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
   }
 
-  // Compute reconstruction
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
+    std::vector<int> bc_model;
+    std::vector<double> bc_value;
     Teuchos::ParameterList plist;
     if (i == 0) {
       plist.set<std::string>("limiter", "Barth-Jespersen");
@@ -158,6 +151,34 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER) {
       plist.set<std::string>("limiter", "Kuzmin");
     }
 
+    if (i < 2) {
+      bc_model.assign(nfaces_wghost, 0);
+      bc_value.assign(nfaces_wghost, 0.0);
+
+      for (int f = 0; f < nfaces_wghost; f++) {
+        const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+        if (fabs(xf[0]) < 1e-6 || fabs(1.0 - xf[0]) < 1e-6 ||
+            fabs(xf[1]) < 1e-6 || fabs(1.0 - xf[1]) < 1e-6) {
+          bc_model[f] = OPERATOR_BC_DIRICHLET;
+          bc_value[f] = xf[0] + 2 * xf[1];
+        }
+      }
+    } else {
+      bc_model.assign(nnodes_wghost, 0);
+      bc_value.assign(nnodes_wghost, 0.0);
+      AmanziGeometry::Point xv(2);
+
+      for (int v = 0; v < nnodes_wghost; v++) {
+        mesh->node_get_coordinates(v, &xv);
+        if (fabs(xv[0]) < 1e-6 || fabs(1.0 - xv[0]) < 1e-6 ||
+            fabs(xv[1]) < 1e-6 || fabs(1.0 - xv[1]) < 1e-6) {
+          bc_model[v] = OPERATOR_BC_DIRICHLET;
+          bc_value[v] = xv[0] + 2 * xv[1];
+        }
+      }
+    }
+
+    // Compute reconstruction
     ReconstructionCell lifting(mesh);
     lifting.Init(field, plist);
     lifting.Compute(); 
@@ -173,8 +194,10 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER) {
 
     double error[2];
     grad_computed.Norm2(error);
-    CHECK_CLOSE(0.0, error[0], 1.0e-12);
-    CHECK_CLOSE(0.0, error[1], 1.0e-12);
+    if (i < 2) { 
+      CHECK_CLOSE(0.0, error[0], 1.0e-12);
+      CHECK_CLOSE(0.0, error[1], 1.0e-12);
+    }
   
     printf("Loop %d: errors: %8.4f %8.4f\n", i, error[0], error[1]);
   }
