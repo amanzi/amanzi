@@ -167,7 +167,8 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
   if (using_sorption) {
     for (int i=0; i<primarySpeciesNames.size(); ++i) {
       const std::string label=primarySpeciesNames[i] + "_Sorbed_Concentration"; 
-      chem_state.total_immobile.data[i] = aux_data(iv,aux_chem_variables[label]);
+      //chem_state.total_immobile.data[i] = aux_data(iv,aux_chem_variables[label]);
+      chem_state.total_immobile.data[i] = std::max(1.e-20,aux_data(iv,aux_chem_variables[label]));
     }
   }
 

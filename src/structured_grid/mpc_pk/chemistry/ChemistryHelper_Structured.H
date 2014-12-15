@@ -37,6 +37,8 @@ public:
 
   void SetupAuxVariables();
 
+  int NumMobile() const {return Nmobile;}
+
 protected:
   std::map<std::string,int> aux_chem_variables;
   std::map<std::string,Real> aux_chem_defaults;

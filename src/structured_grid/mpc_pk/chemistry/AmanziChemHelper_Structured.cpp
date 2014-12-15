@@ -275,7 +275,8 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
       if (NfreeIonSpecies > 0) {
         for (int i=0; i<primarySpeciesNames.size(); ++i) {
           const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
-          TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+          //TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+          TheComponent.free_ion[i] = 1.e-20;
         }
       }
       
@@ -447,7 +448,8 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
       if (NfreeIonSpecies > 0) {
         for (int i=0; i<primarySpeciesNames.size(); ++i) {
           const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
-          TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+          //TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+          TheComponent.free_ion[i] = 1.e-20;
         }
       }
       

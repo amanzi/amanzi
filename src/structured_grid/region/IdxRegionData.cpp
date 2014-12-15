@@ -3,13 +3,39 @@
 IdxRegionData::IdxRegionData(const std::string&          label,
                              const Array<const Region*>& regions,
                              const std::string&          typeStr,
-                             IdxRDEval*                  eval)
-  : mLabel(label), mType(typeStr), mEvaluator(eval)
+                             const IdxRDEval&            eval)
+  : mLabel(label), mType(typeStr)
 {
-  BL_ASSERT(mEvaluator != 0);
+  mEvaluator = eval.clone();
   SetRegions(regions);
 }
 
+IdxRegionData::IdxRegionData(const std::string&          label,
+                             const Array<const Region*>& regions,
+                             const std::string&          typeStr,
+                             Real                        val)
+  : mLabel(label), mType(typeStr)
+{
+  mEvaluator = new IdxRDEval(val);
+  SetRegions(regions);
+}
+
+IdxRegionData::IdxRegionData(const std::string&          label,
+			     const Array<const Region*>& regions,
+			     const std::string&          typeStr,
+			     const Array<Real>&          vals,
+			     const Array<Real>&          times,
+			     const Array<std::string>&   forms)
+  : mLabel(label), mType(typeStr)
+{
+  mEvaluator = new IdxRDEval(vals,times,forms);
+  SetRegions(regions);
+}
+
+IdxRegionData::~IdxRegionData()
+{
+  delete mEvaluator;
+}
 
 void
 IdxRegionData::SetRegions(const Array<const Region*>& regions)
@@ -28,8 +54,6 @@ IdxRegionData::apply(FArrayBox&       fab,
                      int              dcomp,
                      Real             time) const
 {
-  BL_ASSERT(mEvaluator != 0);
-
   const Box& box = fab.box();
   FArrayBox mask(box,1); mask.setVal(-1);
   for (int j=0; j<mRegions.size(); ++j) { 
@@ -44,3 +68,47 @@ IdxRegionData::apply(FArrayBox&       fab,
   }
 }
 
+Array<Real>
+IdxRegionData::IdxRDEval::Time() const
+{
+  return mFunc.x_;
+};
+
+Array<Real>
+IdxRegionData::Time() const
+{
+  return mEvaluator->Time();
+};
+
+IdxRegionData::IdxRDEval::~IdxRDEval() {}
+
+IdxRegionData::IdxRDEval *
+IdxRegionData::IdxRDEval::clone () const
+{
+  return new IdxRDEval(*this);
+}
+
+IdxRegionData::IdxRDEval::IdxRDEval() {}
+
+IdxRegionData::IdxRDEval::IdxRDEval(const IdxRDEval& rhs)
+{
+  mFunc = rhs.mFunc;
+}
+
+IdxRegionData::IdxRDEval::IdxRDEval(const Array<Real>&        vals,
+				    const Array<Real>&        times,
+				    const Array<std::string>& forms)
+  : mFunc(times,vals,forms)
+{
+}
+
+IdxRegionData::IdxRDEval::IdxRDEval(Real val)
+  : mFunc(Array<Real>(1,0),Array<Real>(1,val),Array<std::string>(0))
+{
+}
+
+Real
+IdxRegionData::IdxRDEval::operator()(int i, Real t) const
+{
+  return mFunc(t);
+}

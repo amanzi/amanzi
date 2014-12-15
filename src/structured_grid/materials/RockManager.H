@@ -145,6 +145,7 @@ public:
   int NComp(const std::string& property_name) const;
   int FinestLevel() const {return materialFiller->NumLevels()-1;}
   const PArray<Material>& GetMaterials() const {return rock;}
+  const Material& GetMaterial(int i) const {return rock[i];}
   const Material& FindMaterial(const std::string& name) const;
   const Material& FindMaterialInRegions(const Array<std::string>& region_names) const;
 
