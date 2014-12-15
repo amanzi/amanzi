@@ -643,7 +643,7 @@ A ``material`` element can contain the following:
         <particle_density value="Value"/>
         <specific_storage value="Value"/>
         <specific_yield value="Value"/>
-        <dispersion_tensor alpha_l="Value" alpha_t="Value"/>
+        <dispersion_tensor type="uniform_isotropic" alpha_l="Value" alpha_t="Value"/>
         <tortuosity value="Value"/>
     </mechanical_properties>
     <permeability x="Value" y="Value" z="Value"/>

@@ -3887,25 +3887,111 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                 }
                 else if  (strcmp("dispersion_tensor",propName)==0){
                   // TODO: EIB - not handling file case
-                  attrMap = curkiddy->getAttributes();
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("alpha_l"));
-                  if (nodeAttr) {
-                    textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
+                  DOMElement* dispElem = static_cast<DOMElement*>(curkiddy);
+                  if (dispElem->hasAttribute(XMLString::transcode("type"))) {
+                    textContent2 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("type")));
+                    char* textContent3;
+                    if (std::string(textContent2) == "uniform_isotropic") {
+                      if (dispElem->hasAttribute(XMLString::transcode("alpha_l"))) {
+                        textContent3 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("alpha_l")));
+                        matlist.sublist("Dispersion Tensor: Uniform Isotropic").set<double>("alphaL",get_double_constant(textContent3,def_list));
+                        XMLString::release(&textContent3);
+                      }else {
+                        throw_error_missattr("material", "attribute", "alpha_l", "dispersion_tensor");
+                      }
+                      if (dispElem->hasAttribute(XMLString::transcode("alpha_t"))) {
+                        textContent3 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("alpha_t")));
+                        matlist.sublist("Dispersion Tensor: Uniform Isotropic").set<double>("alphaT",get_double_constant(textContent3,def_list));
+                        XMLString::release(&textContent3);
+                      }else {
+                        throw_error_missattr("material", "attribute", "alpha_t", "dispersion_tensor");
+                      }
+                    }
+                    else if (std::string(textContent2) == "burnett_frind") {
+                      if (dispElem->hasAttribute(XMLString::transcode("alpha_l"))) {
+                        textContent3 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("alpha_l")));
+                        matlist.sublist("Dispersion Tensor: Burnett-Frind").set<double>("alphaL",get_double_constant(textContent3,def_list));
+                        XMLString::release(&textContent3);
+                      }else {
+                        throw_error_missattr("material", "attribute", "alpha_l", "dispersion_tensor");
+                      }
+                      if (dispElem->hasAttribute(XMLString::transcode("alpha_th"))) {
+                        textContent3 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("alpha_th")));
+                        matlist.sublist("Dispersion Tensor: Burnett-Frind").set<double>("alphaTH",get_double_constant(textContent3,def_list));
+                        XMLString::release(&textContent3);
+                      }else {
+                        throw_error_missattr("material", "attribute", "alpha_th", "dispersion_tensor");
+                      }
+                      if (dispElem->hasAttribute(XMLString::transcode("alpha_tv"))) {
+                        textContent3 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("alpha_tv")));
+                        matlist.sublist("Dispersion Tensor: Burnett-Frind").set<double>("alphaTV",get_double_constant(textContent3,def_list));
+                        XMLString::release(&textContent3);
+                      }else {
+                        throw_error_missattr("material", "attribute", "alpha_tv", "dispersion_tensor");
+                      }
+                    }
+                    else if (std::string(textContent2) == "lichtner_kelkar_robinson") {
+                      if (dispElem->hasAttribute(XMLString::transcode("alpha_lh"))) {
+                        textContent3 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("alpha_lh")));
+                        matlist.sublist("Dispersion Tensor: Burnett-Frind").set<double>("alphaLH",get_double_constant(textContent3,def_list));
+                        XMLString::release(&textContent3);
+                      }
+                      else {
+                        throw_error_missattr("material", "attribute", "alpha_lh", "dispersion_tensor");
+                      }
+                      if (dispElem->hasAttribute(XMLString::transcode("alpha_lv"))) {
+                        textContent3 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("alpha_lv")));
+                        matlist.sublist("Dispersion Tensor: Burnett-Frind").set<double>("alphaLV",get_double_constant(textContent3,def_list));
+                        XMLString::release(&textContent3);
+                      }
+                      else {
+                        throw_error_missattr("material", "attribute", "alpha_lv", "dispersion_tensor");
+                      }
+                      if (dispElem->hasAttribute(XMLString::transcode("alpha_th"))) {
+                        textContent3 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("alpha_th")));
+                        matlist.sublist("Dispersion Tensor: Lichtner-Kelkar-Robinson").set<double>("alphaTH",get_double_constant(textContent3,def_list));
+                        XMLString::release(&textContent3);
+                      }
+                      else {
+                        throw_error_missattr("material", "attribute", "alpha_th", "dispersion_tensor");
+                      }
+                      if (dispElem->hasAttribute(XMLString::transcode("alpha_tv"))) {
+                        textContent3 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("alpha_tv")));
+                        matlist.sublist("Dispersion Tensor: Lichtner-Kelkar-Robinson").set<double>("alphaTV",get_double_constant(textContent3,def_list));
+                        XMLString::release(&textContent3);
+                      }else {
+                        throw_error_missattr("material", "attribute", "alpha_tv", "dispersion_tensor");
+                      }
+                    }
+                    XMLString::release(&textContent2);
                     dispersionON = true;
-                  } else {
-                    throw_error_missattr("material", "attribute", "alpha_l", "dispersion_tensor");
                   }
-                  matlist.sublist("Dispersion Tensor: Uniform Isotropic").set<double>("alphaL",get_double_constant(textContent2,def_list));
-                  XMLString::release(&textContent2);
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("alpha_t"));
-                  if (nodeAttr) {
-                    textContent2 = XMLString::transcode(nodeAttr->getNodeValue());
+                  else {
+                    char* textContent3;
+                    if (dispElem->hasAttribute(XMLString::transcode("alpha_l"))) {
+                      textContent3 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("alpha_l")));
+                      matlist.sublist("Dispersion Tensor: Uniform Isotropic").set<double>("alphaL",get_double_constant(textContent3,def_list));
+                      XMLString::release(&textContent3);
+                    }
+                    else {
+                      throw_error_missattr("material", "attribute", "alpha_l", "dispersion_tensor");
+                    }
+                    if (dispElem->hasAttribute(XMLString::transcode("alpha_t"))) {
+                      textContent3 = XMLString::transcode(dispElem->getAttribute(XMLString::transcode("alpha_t")));
+                      matlist.sublist("Dispersion Tensor: Uniform Isotropic").set<double>("alphaT",get_double_constant(textContent3,def_list));
+                      XMLString::release(&textContent3);
+                    }
+                    else {
+                      throw_error_missattr("material", "attribute", "alpha_t", "dispersion_tensor");
+                    }
                     dispersionON = true;
-                  } else {
-                    throw_error_missattr("material", "attribute", "alpha_t", "dispersion_tensor");
+                    std::cout << "Amanzi::InputTranslator: Warning - " << std::endl;
+                    std::cout << "    Please note - the XML Schema for specifing dispersion_tensor has been updated." << std::endl;
+                    std::cout << "    See the Amanzi User Guide for the latest information." << std::endl;
+                    std::cout <<"     The legacy format is being handled for now.  Please update input files for future versions." << std::endl;
+                    //TODO: EIB - once synced with Akuna, remove above and just have error below.
+                    //throw_error_missattr("material", "attribute", "type", "dispersion_tensor");
                   }
-                  matlist.sublist("Dispersion Tensor: Uniform Isotropic").set<double>("alphaT",get_double_constant(textContent2,def_list));
-                  XMLString::release(&textContent2);
                 }
                 else if  (strcmp("tortuosity",propName)==0){
                   // TODO: EIB - not handling file case
@@ -3917,7 +4003,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                   } else {
                     throw_error_missattr("material", "attribute", "value", "tortuosity");
                   }
-                  matlist.sublist("Tortuosity: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
+                  matlist.sublist("Tortuosity Aqueous: Uniform").set<double>("Value",get_double_constant(textContent2,def_list));
                   XMLString::release(&textContent2);
                 }
               }
