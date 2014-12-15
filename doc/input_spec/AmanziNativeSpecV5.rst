@@ -644,7 +644,7 @@ Consistency of parameters `"upwind method`" is supported internally.
 
   * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
     Available options are `"standard`" (default), `"amanzi: mfd`", `"amanzi: artificial diffusion`",
-    and `"none`".
+    `"amanzi: mfd second-order`", and `"none`".
 
 
 * `"preconditioner`" [sublist] defines parameters for generating and assembling diffusion 
@@ -652,12 +652,16 @@ Consistency of parameters `"upwind method`" is supported internally.
   we need two objects called `"matrix`" and `"preconditioner`".
 
 * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
-  Available options are `"standard`" (default) and `"mfd`" (experimental). 
+  Available options are `"standard`", `"mfd`" (default), and `"mfd second-order`" (experimental). 
 
-  * `"upwind standard parameters`" [sublist] defines parameters for this upwind method.
+  * `"upwind NAME parameters`" [sublist] defines parameters for upwind method `"NAME`".
 
     * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
       a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
+
+    * `"reconstruction method`" [string] defines a reconstruction method for the second-order upwind.
+
+    * `"limiting method`" [string] defines limiting method for the second-order upwind.
 
 .. code-block:: xml
 

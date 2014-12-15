@@ -84,6 +84,14 @@
       <Parameter name="upwind method" type="string" value="amanzi: mfd"/>
     </ParameterList>
 
+    <ParameterList name="diffusion operator divk second-order">
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="upwind method" type="string" value="amanzi: mfd second-order"/>
+    </ParameterList>
+
     <ParameterList name="upwind">
       <Parameter name="upwind method" type="string" value="mfd"/>
       <ParameterList name="upwind mfd parameter">

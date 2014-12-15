@@ -31,6 +31,20 @@ class Analytic03 : public AnalyticBase {
     return K;
   }
 
+  // gradient of scalar factor of the tensor
+  Amanzi::AmanziGeometry::Point ScalarTensorGradient(const Amanzi::AmanziGeometry::Point& p, double t) {
+    double x = p[0];
+    Amanzi::AmanziGeometry::Point v(2);
+    if (x < 0.5) { 
+      v[0] = 0.0;
+      v[1] = 0.0;
+    } else {
+      v[0] = 0.0;
+      v[1] = 0.0;
+    }
+    return v;
+  }
+
   double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
     double y = p[1];
