@@ -233,8 +233,7 @@ void Flow_PK::CalculatePoreVelocity(
 ****************************************************************** */
 void Flow_PK::WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk)
 {
-  if ( !wlk->is_disabled() ) {
-
+  if (!wlk->is_disabled()) {
     wlk->CreateFile(S_->cycle());
 
     std::vector<AmanziGeometry::Point> xyz;
@@ -272,7 +271,6 @@ void Flow_PK::WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk)
     if (dim > 2) name.push_back("z");
     wlk->WriteVector(*aux, name);
        
-
     for (it = velocity.begin(), i = 0; it != velocity.end(); ++it, ++i) {
       (*(*aux)(0))[i] = (*it)[0];
       (*(*aux)(1))[i] = (*it)[1];
@@ -306,6 +304,32 @@ void Flow_PK::WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk)
     name.push_back("pressure");    
     name.push_back("water density");
     wlk->WriteVector(*aux, name);
+
+    // reallocate aux for cell-centered "bulk density" and "isotherm kd"
+    const Epetra_Map& cmap = mesh_->cell_map("false");
+    aux = Teuchos::rcp(new Epetra_MultiVector(map, 1));
+
+    if (S_->HasField("isotherm_kd")) {
+      const Epetra_MultiVector& kd = *S_->GetFieldData("isotherm_kd")->ViewComponent("cell");
+      for (int c = 0; c < ncells_owned; c++) {    
+        (*(*aux)(0))[c] = kd[0][c];
+      }
+
+      name.resize(0);
+      name.push_back("isotherm kd");    
+      wlk->WriteVector(*aux, name);
+    } 
+
+    if (S_->HasField("particle_density")) {
+      const Epetra_MultiVector& particle_density = *S_->GetFieldData("particle_density")->ViewComponent("cell");
+      for (int c = 0; c < ncells_owned; c++) {    
+        (*(*aux)(0))[c] =  particle_density[0][c] * (1.0 - porosity[c]);
+      }
+
+      name.resize(0);
+      name.push_back("bulk density");    
+      wlk->WriteVector(*aux, name);
+    } 
 
     wlk->WriteAttributes(S_->time(), S_->cycle());    
     wlk->Finalize();
