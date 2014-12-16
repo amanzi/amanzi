@@ -73,6 +73,13 @@ CheckForSmallDt(PetscReal dt,bool* dt_is_small,void *ctx)
   PetscFunctionReturn(0);
 }
 
+// We need this to get at the guts of the MatFDColoring type.
+#if PETSC_VERSION_LT(3,4,3)
+#include <private/matimpl.h>
+#else
+#include <petsc-private/matimpl.h> 
+#endif
+
 
 #undef __FUNCT__
 #define __FUNCT__ "RichardSolverCtr"
@@ -132,6 +139,8 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
     ierr = MatColoringApply(matcoloring, &iscoloring); CHKPETSC(ierr);
     MatColoringDestroy(&matcoloring);
     ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
+    matfdcoloring->htype = "ds"; // Give me column info, please.
+    ierr = MatFDColoringSetFromOptions(matfdcoloring); CHKPETSC(ierr);
     if (rs_data.semi_analytic_J) {
       ierr = MatFDColoringSetFunction(matfdcoloring,
                                       (PetscErrorCode (*)(void))RichardR2,
@@ -142,8 +151,8 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
                                       (PetscErrorCode (*)(void))RichardRes_DpDt,
                                       (void*)(this)); CHKPETSC(ierr);
     }
-    ierr = MatFDColoringSetFromOptions(matfdcoloring); CHKPETSC(ierr);
     ierr = MatFDColoringSetParameters(matfdcoloring,nlsc.errfd,PETSC_DEFAULT);CHKPETSC(ierr);
+    ierr = MatFDColoringSetUp(Jac, iscoloring, matfdcoloring); CHKPETSC(ierr);
     ierr = SNESSetJacobian(snes,Jac,Jac,RichardComputeJacobianColor,matfdcoloring);CHKPETSC(ierr);
   }
   else {
@@ -1822,12 +1831,6 @@ RichardJacFromPM(SNES snes, Vec x, Mat jac, Mat jacpre, void *dummy)
   PetscFunctionReturn(0);
 } 
 
-#if PETSC_VERSION_LT(3,4,3)
-#include <private/matimpl.h>
-#else
-#include <petsc-private/matimpl.h> 
-#endif
-
 #undef __FUNCT__  
 #define __FUNCT__ "RichardMatFDColoringApply"
 PetscErrorCode  
@@ -2024,8 +2027,9 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
       */
       ierr = VecGetArray(w2,&y);CHKPETSC(ierr);
       for (l=0; l<coloring->nrows[k]; l++) {
-        row    = Jentry[nz].row;                   /* local row index */               
-        y[row] *= (sgn_diff * vscale_array[Jentry[nz].col]);
+        row    = Jentry[nz].row;                   /* local row index */
+        col    = Jentry[nz].col;                   /* local column index */
+        y[row] *= (sgn_diff * vscale_array[col]);
         *(Jentry[nz].valaddr) = y[row];            /* Set entry directly. */
         ++nz;
       }
@@ -2108,7 +2112,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   PetscErrorCode ierr;
   PetscInt       k,start,end,l,row,col,srow,m1,m2;
   PetscScalar    dx,*y,*w3_array;
-  PetscScalar    *vscale_array, *solnTyp_array, *a_array;
+  PetscScalar    *solnTyp_array, *a_array;
   PetscReal      epsilon = coloring->error_rel,umin = coloring->umin,unorm; 
   Vec            w1=coloring->w1,w2=coloring->w2,w3;
   void           *fctx = coloring->fctx;
@@ -2272,10 +2276,12 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
 
     for (l=0; l<coloring->nrows[k]; l++) {
       row    = Jentry[nz].row;                   /* local row index */
+      col    = Jentry[nz].col;                   /* local col index */
+printf("%d -> (%d, %d)\n", nz, row, col);
       y[row] *= epsilon_inv;                     /* dx = epsilon */
 
       // Add diagonal term
-      if (dt_inv>0 && srow == col) {y[row] += a_array[row] * dt_inv;}
+      if (dt_inv>0 && row == col) {y[row] += a_array[row] * dt_inv;}
 
       *(Jentry[nz].valaddr) = y[row];            /* Set entry directly. */
       ++nz;
