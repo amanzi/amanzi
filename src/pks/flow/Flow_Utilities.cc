@@ -149,15 +149,24 @@ void Flow_PK::CalculatePoreVelocity(
     std::vector<AmanziGeometry::Point>& xyz, 
     std::vector<AmanziGeometry::Point>& velocity,
     std::vector<double>& porosity, std::vector<double>& saturation,
-    std::vector<double>& pressure, std::vector<double>& water_density)
+    std::vector<double>& pressure, std::vector<double>& isotherm_kd)
 {
   S_->GetFieldData("porosity")->ScatterMasterToGhosted();
   S_->GetFieldData("water_saturation")->ScatterMasterToGhosted();
 
-  const Epetra_MultiVector& flux = *(S_->GetFieldData("darcy_flux")->ViewComponent("face", true));
-  const Epetra_MultiVector& phi = *(S_->GetFieldData("porosity")->ViewComponent("cell", true));
-  const Epetra_MultiVector& ws = *(S_->GetFieldData("water_saturation")->ViewComponent("cell", true));
-  const Epetra_MultiVector& p = *(S_->GetFieldData("pressure")->ViewComponent("cell", true));
+  const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
+  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell", true);
+  const Epetra_MultiVector& ws = *S_->GetFieldData("water_saturation")->ViewComponent("cell", true);
+  const Epetra_MultiVector& p = *S_->GetFieldData("pressure")->ViewComponent("cell", true);
+
+  // process non-flow state variables
+  bool flag(false);
+  Teuchos::RCP<const Epetra_MultiVector> kd;
+  if (S_->HasField("isotherm_kd")) {
+    flag = true;
+    S_->GetFieldData("isotherm_kd")->ScatterMasterToGhosted();
+    kd = S_->GetFieldData("isotherm_kd")->ViewComponent("cell", true);
+  }
 
   CalculateDarcyVelocity(xyz, velocity);
 
@@ -184,17 +193,17 @@ void Flow_PK::CalculatePoreVelocity(
   porosity.clear();
   saturation.clear();
   pressure.clear();
-  water_density.clear();
+  isotherm_kd.clear();
 
   for (int c = 0; c < ncells_owned; c++) {
     porosity.push_back(phi[0][c]);
     saturation.push_back(ws[0][c]);
     pressure.push_back(p[0][c]);
-    water_density.push_back(rho_);
+    if (flag) isotherm_kd.push_back((*kd)[0][c]);
   }
     
   // STEP 2: recover porosity and saturation at boundary nodes
-  double local_phi, local_ws, local_p;
+  double local_phi, local_ws, local_p, local_kd;
 
   for (int v = 0; v < nnodes_owned; v++) {
     if (node_marker[v] > 0) {
@@ -204,11 +213,13 @@ void Flow_PK::CalculatePoreVelocity(
       local_phi = 0.0;
       local_ws = 0.0;
       local_p = 0.0;
+      local_kd = 0.0;
       for (int n = 0; n < ncells; n++) {
         int c = cells[n];
         local_phi += phi[0][c];
         local_ws += ws[0][c];
         local_p += p[0][c];
+        if (flag) local_kd += (*kd)[0][c];
       }
       local_phi /= ncells;
       porosity.push_back(local_phi);
@@ -219,7 +230,10 @@ void Flow_PK::CalculatePoreVelocity(
       local_p /= ncells;
       pressure.push_back(local_p);
 
-      water_density.push_back(rho_);
+      if (flag) {
+        local_kd /= ncells;
+        isotherm_kd.push_back(local_kd);
+      }
     }
   }
 
@@ -239,42 +253,39 @@ void Flow_PK::WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk)
     std::vector<AmanziGeometry::Point> xyz;
     std::vector<AmanziGeometry::Point> velocity;
     std::vector<double> porosity, saturation;
-    std::vector<double> pressure, water_density;
-    CalculatePoreVelocity(xyz, velocity, porosity, saturation, pressure, water_density);
+    std::vector<double> pressure, isotherm_kd;
+    CalculatePoreVelocity(xyz, velocity, porosity, saturation, pressure, isotherm_kd);
     
     int n_loc = xyz.size();
     int n_glob;
 
-    // create an epetra block map that we can use to create an appropriate
-    // epetra multi vector
+    // create a block map that we can use to create an Epetra_MultiVector
     const AmanziMesh::Mesh& mesh = *S_->GetMesh();
     mesh.get_comm()->SumAll(&n_loc, &n_glob, 1);
     
     Epetra_BlockMap map(n_glob, n_loc, 1, 0, *mesh.get_comm());
     
+    // create an auxiliary vector that will hold the centroid and velocity
     int dim = mesh.space_dimension();
-    // create an auxiliary vector that will hold the centrod and velocity, this is a cell based vector
-    Teuchos::RCP<Epetra_MultiVector> aux =
-        Teuchos::rcp(new Epetra_MultiVector(map, dim));
+    Teuchos::RCP<Epetra_MultiVector> aux = Teuchos::rcp(new Epetra_MultiVector(map, dim));
     
-    std::vector<AmanziGeometry::Point>::const_iterator it;
-    int i;
-    for (it = xyz.begin(), i = 0; it != xyz.end(); ++it, ++i) {      
-      (*(*aux)(0))[i] = (*it)[0];
-      (*(*aux)(1))[i] = (*it)[1];
-      if (dim > 2) (*(*aux)(2))[i] = (*it)[2];
+    int ndata = xyz.size();
+    for (int n = 0; n < ndata; n++) {      
+      for (int i = 0; i < dim; i++) {
+        (*(*aux)(i))[n] = xyz[n][i];
+      }
     }
-    std::vector<std::string>  name;
+    std::vector<std::string> name;
     name.resize(0);
     name.push_back("x");
     name.push_back("y");
     if (dim > 2) name.push_back("z");
     wlk->WriteVector(*aux, name);
        
-    for (it = velocity.begin(), i = 0; it != velocity.end(); ++it, ++i) {
-      (*(*aux)(0))[i] = (*it)[0];
-      (*(*aux)(1))[i] = (*it)[1];
-      if (dim > 2) (*(*aux)(2))[i] = (*it)[2];
+    for (int n = 0; n < ndata; n++) {
+      for (int i = 0; i < dim; i++) {
+        (*(*aux)(i))[n] = velocity[n][i];
+      }
     }
     name.resize(0);
     name.push_back("pore velocity x");
@@ -283,51 +294,32 @@ void Flow_PK::WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk)
     wlk->WriteVector(*aux, name);
     
     // reallocate a new aux vector only if we need to 
-    if (dim != 2) aux = Teuchos::rcp(new Epetra_MultiVector(map, 2));
+    if (dim != 3) aux = Teuchos::rcp(new Epetra_MultiVector(map, 3));
     
-    std::vector<double>::const_iterator it0, it1;
-    
-    for (it0 = saturation.begin(), it1 = porosity.begin(), i = 0; it0 != saturation.end(); ++it0, ++it1, ++i) {    
-      (*(*aux)(0))[i] = *it0;
-      (*(*aux)(1))[i] = *it1;
+    for (int n = 0; n < ndata; n++) {
+      (*(*aux)(0))[n] = saturation[n];
+      (*(*aux)(1))[n] = porosity[n];
+      (*(*aux)(2))[n] = pressure[n];
     }
     name.resize(0);
     name.push_back("saturation");    
     name.push_back("porosity");
+    name.push_back("pressure");
     wlk->WriteVector(*aux, name);
 
-    for (it0 = pressure.begin(), it1 = water_density.begin(), i = 0; it0 != pressure.end(); ++it0, ++it1, ++i) {    
-      (*(*aux)(0))[i] = *it0;
-      (*(*aux)(1))[i] = *it1;
-    }
-    name.resize(0);
-    name.push_back("pressure");    
-    name.push_back("water density");
-    wlk->WriteVector(*aux, name);
+    // dump other parameters: "bulk density" and "isotherm kd"
+    if (isotherm_kd.size() > 0) {
+      aux = Teuchos::rcp(new Epetra_MultiVector(map, 1));
+      // aux = Teuchos::rcp(new Epetra_MultiVector(map, 2));
 
-    // reallocate aux for cell-centered "bulk density" and "isotherm kd"
-    const Epetra_Map& cmap = mesh_->cell_map("false");
-    aux = Teuchos::rcp(new Epetra_MultiVector(map, 1));
-
-    if (S_->HasField("isotherm_kd")) {
-      const Epetra_MultiVector& kd = *S_->GetFieldData("isotherm_kd")->ViewComponent("cell");
-      for (int c = 0; c < ncells_owned; c++) {    
-        (*(*aux)(0))[c] = kd[0][c];
+      for (int n = 0; n < ndata; n++) {    
+        (*(*aux)(0))[n] = isotherm_kd[n];
+        // (*(*aux)(1))[n] =  particle_density[n] * (1.0 - porosity[n]);
       }
 
       name.resize(0);
-      name.push_back("isotherm kd");    
-      wlk->WriteVector(*aux, name);
-    } 
-
-    if (S_->HasField("particle_density")) {
-      const Epetra_MultiVector& particle_density = *S_->GetFieldData("particle_density")->ViewComponent("cell");
-      for (int c = 0; c < ncells_owned; c++) {    
-        (*(*aux)(0))[c] =  particle_density[0][c] * (1.0 - porosity[c]);
-      }
-
-      name.resize(0);
-      name.push_back("bulk density");    
+      name.push_back("isotherm kd");
+      // name.push_back("bulk density");    
       wlk->WriteVector(*aux, name);
     } 
 
