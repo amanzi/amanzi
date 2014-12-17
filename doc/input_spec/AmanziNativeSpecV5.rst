@@ -612,56 +612,36 @@ Diffusion operators
 
 Operators sublist describes the PDE structure of the flow, specifies a discretization
 scheme, and selects assembling schemas for matrices and preconditioners.
-Temporarily, there is redundant information for *upwinded* nonlinear coefficient.
-Consistency of parameters `"upwind method`" is supported internally.
 
-* `"matrix`" [sublist] defines parameters for generating and assembling diffusion matrix.
+* `"operators`" [sublist] 
 
-  * `"discretization primary`" [string] specifies an advanced discretization method that
-    has useful properties under some a priori conditions on the mesh and/or permeability tensor.
-    The available options are `"mfd: optimized for sparsity`", `"mfd: optimized for monotonicity`",
-    `"mfd: default`", `"mfd: support operator`", `"mfd: two-point flux approximation`",
-    and `"fv: default`". 
-    The first option is recommended for general meshes.
-    The second option is recommended for orthogonal meshes and diagonal absolute 
-    permeability tensor. 
+  * `"diffusion operator`" [sublist] defines parameters for generating and assembling diffusion matrix.
 
-  * `"discretization secondary`" [string] specifies the most robust discretization method
-    that is used when the primary selection fails to satisfy all a priori conditions.
+    * `"matrix`" [sublist] defines parameters for generating and assembling diffusion matrix. See section
+      describing operators. 
 
-  * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
-    geometric objects.
+    * `"preconditioner`" [sublist] defines parameters for generating and assembling diffusion 
+      matrix that is used to create preconditioner. 
+      This sublist is ignored inside sublist `"Darcy problem`".
+      Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
 
-  * `"preconditioner schema`" [Array(string)] defines the preconditioner stencil.
-    It is needed only when the default assembling procedure is not desirable. If skipped,
-    the `"schema`" is used instead. 
+    * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
+      Available options are `"standard`", `"mfd`" (default), and `"mfd second-order`" (experimental). 
+      This sublist is ignored inside sublist `"Darcy problem`".
 
-  * `"gravity`" [bool] specifies if flow is driven also by the gravity.
+    * `"upwind`" [sublist] defines upwind method for relative permeability.
 
-  * `"nonstandard symbolic assembling`" [int] specifies a nonstandard treatment of schemas.
-    It is used for experiments with preconditioners.
-    Default is 0.
+      * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
+        Available options are `"standard`", `"mfd`" (default), and `"mfd second-order`" (experimental). 
 
-  * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
-    Available options are `"standard`" (default), `"amanzi: mfd`", `"amanzi: artificial diffusion`",
-    `"amanzi: mfd second-order`", and `"none`".
+      * `"upwind NAME parameters`" [sublist] defines parameters for upwind method `"NAME`".
 
+        * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
+          a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
 
-* `"preconditioner`" [sublist] defines parameters for generating and assembling diffusion 
-  matrix that is used to create preconditioner. Since update of preconditioner can be lag,
-  we need two objects called `"matrix`" and `"preconditioner`".
+        * `"reconstruction method`" [string] defines a reconstruction method for the second-order upwind.
 
-* `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
-  Available options are `"standard`", `"mfd`" (default), and `"mfd second-order`" (experimental). 
-
-  * `"upwind NAME parameters`" [sublist] defines parameters for upwind method `"NAME`".
-
-    * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
-      a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
-
-    * `"reconstruction method`" [string] defines a reconstruction method for the second-order upwind.
-
-    * `"limiting method`" [string] defines limiting method for the second-order upwind.
+        * `"limiting method`" [string] defines limiting method for the second-order upwind.
 
 .. code-block:: xml
 
@@ -684,9 +664,11 @@ Consistency of parameters `"upwind method`" is supported internally.
           <Parameter name="upwind method" type="string" value="standard"/>
         </ParameterList>
 
-        <Parameter name="upwind method" type="string" value="standard"/>
-        <ParameterList name="upwind standard parameters">
-           <Parameter name="tolerance" type="double" value="1e-12"/>
+        <ParameterList name="upwind">
+          <Parameter name="upwind method" type="string" value="standard"/>
+          <ParameterList name="upwind standard parameters">
+             <Parameter name="tolerance" type="double" value="1e-12"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -1620,42 +1602,76 @@ Operators
 Operators are discrete forms of linearized PDEs operators.
 They form a layer between physical process kernels and solvers
 and include diffusion, advection, and source operators.
-At the moment, a PK decides which collection of operators to be used to build 
-a preconditioner.
+A PK decides which collection of operators must be used to build a preconditioner.
 
-* `"discretization primary`" [string] identifies a primary discretization method.
-  Advanced discretization methods may have limitations due to mesh geometry and/or
-  problem coefficients. In such a case the second discretization method is needed.
+Diffusion operator
+------------------
 
-* `"discretization secondary`" [string] identifies a fallback discretization method.
+* `"OPERATOR_NAME`" [sublist] a PK specific name for the diffusion operator.
 
-* `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
-  geometric objects.
+  * `"discretization primary`" [string] specifies an advanced discretization method that
+    has useful properties under some a priori conditions on the mesh and/or permeability tensor.
+    The available options are `"mfd: optimized for sparsity`", `"mfd: optimized for monotonicity`",
+    `"mfd: default`", `"mfd: support operator`", `"mfd: two-point flux approximation`",
+    and `"fv: default`". 
+    The first option is recommended for general meshes.
+    The second option is recommended for orthogonal meshes and diagonal absolute 
+    permeability tensor. 
 
-* `"preconditioner schema`" [Array(string)] defines the preconditioner stencil.
-  It is needed only when the default assembling procedure is not desirable.
+  * `"discretization secondary`" [string] specifies the most robust discretization method
+    that is used when the primary selection fails to satisfy all a priori conditions.
+
+  * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
+    geometric objects.
+
+  * `"preconditioner schema`" [Array(string)] defines the preconditioner stencil.
+    It is needed only when the default assembling procedure is not desirable. If skipped,
+    the `"schema`" is used instead. 
+
+  * `"gravity`" [bool] specifies if flow is driven also by the gravity.
+
+  * `"nonstandard symbolic assembling`" [int] specifies a nonstandard treatment of schemas.
+    It is used for experiments with preconditioners.
+    Default is 0.
+
+  * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
+    Available options are `"standard`" (default), `"amanzi: mfd`", `"amanzi: artificial diffusion`",
+    `"amanzi: mfd second-order`", and `"none`".
 
 .. code-block:: xml
 
-  <ParameterList name="PK operator">
-    <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-
-    <ParameterList name="diffusion operator">
-      <Parameter name="discretization primary" type="string" value="mfd monotone"/>
-      <Parameter name="discretization secondary" type="string" value="mfd optimized scaled"/>
-      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
-      <Parameter name="preconditioner schema" type="Array(string)" value="{cell,face}"/>
+    <ParameterList name="OPERATOR_NAME">
+      <Parameter name="discretization primary" type="string" value="monotone mfd"/>
+      <Parameter name="discretization secondary" type="string" value="optimized mfd scaled"/>
+      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="gravity" type="bool" value="true"/>
+      <Parameter name="upwind method" type="string" value="standard"/>
     </ParameterList>
 
-    <ParameterList name="advection operator">
-      <Parameter name="discretization primary" type="string" value="upwind"/>
-      <Parameter name="reconstruction order" type="int" value="0"/>
-    </ParameterList>
+This example creates a p-lambda system, i.e. the pressure is
+discretized in mesh cells and on mesh faces. 
+The preconditioner is defined on faces only, i.e. cell-based unknowns
+are elliminated explicitly and the preconditioner is applied to the
+Schur complement.
+
+
+Advection operator
+------------------
+
+* `"OPERATOR_NAME`" [sublist] a PK specific name for the advection operator.
+
+  * `"discretization primary`" defines a discretization method. The only aiavalble option is `"upwind`".
+
+  * `"reconstruction order`" defines accuracy of this discrete operator.
+
+.. code-block:: xml
+
+  <ParameterList name="OPERATOR_NAME">
+    <Parameter name="discretization primary" type="string" value="upwind"/>
+    <Parameter name="reconstruction order" type="int" value="0"/>
   </ParameterList>
 
-In this example, the diffusion matrix is defined on mesh faces and cells.
-The corresponding preconditioner is defined on the same objects. 
-This discretization scheme corresponds to a p-lambda system.
 
 
 Functions

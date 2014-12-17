@@ -214,7 +214,9 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   rel_perm_->ProcessStringRelativePermeability(krel_method_name);
 
   // parameter which defines when update direction of update
-  Teuchos::ParameterList upw_list = rp_list_.sublist("operators").sublist("diffusion operator");
+  Teuchos::ParameterList upw_list = rp_list_.sublist("operators")
+                                            .sublist("diffusion operator")
+                                            .sublist("upwind");
   Operators::UpwindFactory<RelativePermeability> upwind_factory;
   upwind_ = upwind_factory.Create(mesh_, rel_perm_, upw_list);
 
