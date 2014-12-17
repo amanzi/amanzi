@@ -37,10 +37,12 @@ public:
     virtual IdxRDEval * clone () const;
 
     Array<Real> Time() const;
-    virtual Real operator()(int i, Real t) const;
+    virtual const std::vector<Real>& operator()(int i, Real t) const;
+    virtual int NComp() const {return 1;}
 
   protected:
     TabularFunction mFunc;
+    mutable std::vector<Real> mRetData;
   };
 
   IdxRegionData(const std::string&          label,

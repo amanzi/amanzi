@@ -1849,8 +1849,8 @@ void  PorousMedia::read_tracer()
               BoxLib::Abort("Cannot use geochemical conditions if chemistry model not Alquimia");
             }
             std::string geocond; ppri.get("geochemical_condition",geocond);
-            tic_array[i].set(n, new IdxRegionData(tNames[i],tic_regions,tic_type,
-						  ChemConstraintEval(geocond,i,rock_manager,chemistry_helper)));
+            tic_array[i].set(n, new ChemConstraint(tNames[i],tic_regions,tic_type,
+                                                   ChemConstraintEval(geocond,i,rock_manager,chemistry_helper)));
           }
           else {
             int nv = ppri.countval("val");
@@ -1966,29 +1966,8 @@ void  PorousMedia::read_tracer()
               else {
                 times.resize(1,0);
               }
-#if 0
-              for (int ti = 0; ti < geoconds.size(); ++ti)
-              {
-                Real cur_time = 0.; // A dummy variable
-                std::string geocond = geoconds[ti];
-                Box boxTMP(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(0,0,0)));
-                const std::map<std::string,int>& auxChemVariablesMap = chemistry_helper->AuxChemVariablesMap();
-                FArrayBox primTMP(boxTMP,Nmobile);
-                int Naux = auxChemVariablesMap.size();
-                FArrayBox auxTMP(boxTMP,Naux);
-
-                //const std::string& material_name = rock_manager->FindMaterialInRegions(tbc_region_names).Name();
-                const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
-		BoxLib::Warning("Fix geocond BC");
-                //rock_manager->RockChemistryProperties(auxTMP,material_name,aux_chem_variables_map);
-                //chemistry_helper->EnforceCondition(primTMP,0,auxTMP,boxTMP,geocond,cur_time);
-                //vals.push_back(primTMP.dataPtr()[i]);
-		vals.push_back(0);
-              }
-#else
-              tbc_array[i].set(tbc_cnt++, new IdxRegionData(tbc_names[n],tbc_regions,tbc_type,
-							    ChemConstraintEval(geoconds,times,i,rock_manager,chemistry_helper)));
-#endif
+              tbc_array[i].set(tbc_cnt++, new ChemConstraint(tbc_names[n],tbc_regions,tbc_type,
+                                                             ChemConstraintEval(geoconds,times,i,rock_manager,chemistry_helper)));
             }
             else {
               int nv = ppri.countval("vals");

@@ -26,7 +26,7 @@ public:
   virtual ~VecEvaluator();
   virtual VecEvaluator * clone () const;
 
-  virtual Real operator()(int i, Real time) const;
+  virtual const std::vector<Real>& operator()(int i, Real time) const;
   bool Initialized(const std::string& color) const;
 
 protected:
@@ -36,6 +36,7 @@ protected:
   std::vector<std::string> mColors;
   mutable std::vector<Real> mVals;
   mutable std::vector<bool> mInit;
+  mutable std::vector<Real> mRetVal;
 };
 
 VecEvaluator::VecEvaluator(const std::vector<std::string>& colors)
@@ -101,13 +102,17 @@ VecEvaluator::Initialized(const std::string& color) const
 }
 
 
-Real
+const std::vector<Real>&
 VecEvaluator::operator()(int i, Real time) const
 {
   if (!mInit[i]) {
     Initialize(i);
   }
-  return mVals[i];
+  mRetVal.resize(NComp());
+  for (int i=0; i<mRetVal.size(); ++i) {
+    mRetVal[i] = mVals[i];
+  }
+  return mRetVal;
 }
 
 
@@ -167,7 +172,7 @@ main (int   argc,
 
   // If all went well, every point in fab should have been set
 
-  Real correct_result = VE2(2,time) * fab.box().numPts();
+  Real correct_result = VE2(2,time)[0] * fab.box().numPts();
   Real result = fab.sum(0);
 
   Real error = (correct_result - result)/correct_result;

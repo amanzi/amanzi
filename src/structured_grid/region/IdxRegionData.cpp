@@ -62,8 +62,10 @@ IdxRegionData::apply(FArrayBox&       fab,
 
   for (IntVect iv=box.smallEnd(); iv<=box.bigEnd(); box.next(iv)) {
     if (mask(iv,0) > 0) {
-      Real val = (*mEvaluator)(idx(iv,0),time);
-      fab(iv,dcomp) = val;
+      const std::vector<Real>& val = (*mEvaluator)(idx(iv,0),time);
+      for (int i=0; i<val.size(); ++i) {
+        fab(iv,dcomp+i) = val[i];
+      }
     }
   }
 }
@@ -107,8 +109,12 @@ IdxRegionData::IdxRDEval::IdxRDEval(Real val)
 {
 }
 
-Real
+const std::vector<Real>&
 IdxRegionData::IdxRDEval::operator()(int i, Real t) const
 {
-  return mFunc(t);
+  mRetData.resize(NComp());
+  for (int i=0; i<NComp(); ++i) {
+    mRetData[i] = mFunc(t);
+  }
+  return mRetData;
 }

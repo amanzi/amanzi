@@ -19,6 +19,7 @@ static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::Aman
 #include <RSAMRdata.H>
 #include <Advection.H>
 #include <AmanziChemHelper_Structured.H>
+#include <ChemConstraintEval.H>
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -1060,7 +1061,7 @@ PorousMedia::initData ()
               const IdxRegionData& tic = rds[i];
               const Array<const Region*>& tic_regions = tic.Regions();
               const std::string& tic_type = tic.Type();
-                    
+
               if (tic_type == "file") 
               {
                 std::cerr << "Initialization of initial condition based on "
@@ -1068,7 +1069,15 @@ PorousMedia::initData ()
                 BoxLib::Abort("PorousMedia::initData()");
               }
               else if (tic_type == "concentration") {
-                tic.apply(sdat,mdat,dx,ncomps+iTracer,0);
+                const ChemConstraint* cc = dynamic_cast<const ChemConstraint*>(&tic);
+                if (cc!=0) {
+                  FArrayBox& aux = get_new_data(Aux_Chem_Type)[mfi];
+                  const Box vbox = sdat.box() & aux.box();
+                  cc->apply(sdat,aux,mdat,dx,ncomps+iTracer,0,vbox,0);
+                }
+                else {
+                  tic.apply(sdat,mdat,dx,ncomps+iTracer,0);
+                }
               }
               else {
                 std::string m = "Unrecognized tracer ic type: " + tic_type;
@@ -6838,11 +6847,11 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, Real tim
 
   Real t_eval = AdjustBCevalTime(State_Type,time,false);
 
-  FArrayBox bndFab;
+  FArrayBox bndFab, auxFab;
   for (int n=0; n<nComp; ++n) 
   {
     int tracer_idx = sComp+n-ncomps;
-    if (tbc_descriptor_map[tracer_idx].size()) 
+    if (tbc_descriptor_map.size() > tracer_idx  && tbc_descriptor_map[tracer_idx].size())
     {
       const Box domain = geom.Domain();
       const Real* dx   = geom.CellSize();
@@ -6857,7 +6866,15 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, Real tim
           const Array<int>& face_bc_idxs = it->second.second;
           for (int i=0; i<face_bc_idxs.size(); ++i) {
             const IdxRegionData& face_tbc = tbc_array[tracer_idx][face_bc_idxs[i]];
-            face_tbc.apply(bndFab,matID,dx,0,t_eval);
+
+            const ChemConstraint* cc = dynamic_cast<const ChemConstraint*>(&face_tbc);
+            if (cc!=0) {
+              auxFab.resize(bndBox,cc->Evaluator().NComp());
+              cc->apply(bndFab,auxFab,matID,dx,0,0,bndBox,t_eval);
+            }
+            else {
+              face_tbc.apply(bndFab,matID,dx,0,t_eval);
+            }
           }
           fab.copy(bndFab,0,dComp+n,1);
         }
