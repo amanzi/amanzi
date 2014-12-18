@@ -51,8 +51,8 @@ Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
     Teuchos::RCP<UpwindStandard<Model> > upwind = Teuchos::rcp(new UpwindStandard<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
-  } else if (name == "mfd") {
-    Teuchos::ParameterList sublist = plist.sublist("upwind mfd parameters");
+  } else if (name == "divk") {
+    Teuchos::ParameterList sublist = plist.sublist("upwind divk parameters");
     Teuchos::RCP<UpwindMFD<Model> > upwind = Teuchos::rcp(new UpwindMFD<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;

@@ -267,7 +267,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     upw_method = "amanzi: artificial diffusion";
     oplist_pc.set<std::string>("upwind method", "artificial diffusion");
   } else if (name == "upwind: amanzi") {
-    upw_method = "amanzi: mfd";
+    upw_method = "divk";
   } else if (name == "other: arithmetic average") {
     upw_method = "standard";
     upw_id = Operators::OPERATOR_UPWIND_ARITHMETIC_AVERAGE;

@@ -619,20 +619,20 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 
     * `"matrix`" [sublist] defines parameters for generating and assembling diffusion matrix. See section
       describing operators. 
+      When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
+      this sublist.
 
     * `"preconditioner`" [sublist] defines parameters for generating and assembling diffusion 
       matrix that is used to create preconditioner. 
       This sublist is ignored inside sublist `"Darcy problem`".
       Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
-
-    * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
-      Available options are `"standard`", `"mfd`" (default), and `"mfd second-order`" (experimental). 
-      This sublist is ignored inside sublist `"Darcy problem`".
+      When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
+      this sublist.
 
     * `"upwind`" [sublist] defines upwind method for relative permeability.
 
       * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
-        Available options are `"standard`", `"mfd`" (default), and `"mfd second-order`" (experimental). 
+        Available options are `"standard`", `"divk`" (default), and `"divk second-order`" (experimental). 
 
       * `"upwind NAME parameters`" [sublist] defines parameters for upwind method `"NAME`".
 
@@ -653,7 +653,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
           <Parameter name="gravity" type="bool" value="true"/>
-          <Parameter name="upwind method" type="string" value="standard"/>
+          <!--Parameter name="upwind method" type="string" value="standard"/-->  <!--redefined internally-->
         </ParameterList>
         <ParameterList name="preconditioner">
           <Parameter name="discretization primary" type="string" value="monotone mfd"/>
@@ -661,7 +661,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
           <Parameter name="gravity" type="bool" value="true"/>
-          <Parameter name="upwind method" type="string" value="standard"/>
+          <!--Parameter name="upwind method" type="string" value="standard"/-->  <!--redefined internally-->
         </ParameterList>
 
         <ParameterList name="upwind">
@@ -1635,8 +1635,8 @@ Diffusion operator
     Default is 0.
 
   * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
-    Available options are `"standard`" (default), `"amanzi: mfd`", `"amanzi: artificial diffusion`",
-    `"amanzi: mfd second-order`", and `"none`".
+    Available options are `"standard`" (default), `"divk`", `"artificial diffusion`",
+    `"divk second-order`", and `"none`".
 
 .. code-block:: xml
 
