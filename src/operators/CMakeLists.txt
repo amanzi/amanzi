@@ -66,7 +66,8 @@ set(operators_inc_files
     Upwind.hh
     UpwindFactory.hh
     UpwindStandard.hh
-    UpwindMFD.hh)
+    UpwindDivK.hh
+    UpwindSecondOrder.hh)
 
 add_amanzi_library(operators
                    SOURCE Operator.cc 

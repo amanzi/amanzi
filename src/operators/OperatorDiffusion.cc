@@ -48,7 +48,7 @@ void OperatorDiffusion::InitOperator(
     ASSERT(k->HasComponent("face"));
   }
 
-  if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK_SECOND_ORDER) {
+  if (upwind_ == OPERATOR_UPWIND_AMANZI_SECOND_ORDER) {
     ASSERT(k->HasComponent("face"));
     ASSERT(k->HasComponent("grad"));
   }
@@ -90,7 +90,7 @@ void OperatorDiffusion::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux,
   if (schema_dofs_ == OPERATOR_SCHEMA_DOFS_NODE) {
     UpdateMatricesNodal_();
   } else if (schema_dofs_ == OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE) {
-    if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK_SECOND_ORDER) {
+    if (upwind_ == OPERATOR_UPWIND_AMANZI_SECOND_ORDER) {
       UpdateMatricesMixedWithGrad_(flux);
     } else {
       UpdateMatricesMixed_(flux);
@@ -1151,8 +1151,8 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
     upwind_ = OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION;
   } else if (name == "divk") {  
     upwind_ = OPERATOR_UPWIND_AMANZI_DIVK;
-  } else if (name == "divk second-order") {  
-    upwind_ = OPERATOR_UPWIND_AMANZI_DIVK_SECOND_ORDER;
+  } else if (name == "second-order") {  
+    upwind_ = OPERATOR_UPWIND_AMANZI_SECOND_ORDER;
   } else if (name == "none") {
     upwind_ = OPERATOR_UPWIND_NONE;  // cell-centered scheme.
   } else {

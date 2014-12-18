@@ -84,17 +84,24 @@
       <Parameter name="upwind method" type="string" value="divk"/>
     </ParameterList>
 
-    <ParameterList name="diffusion operator divk second-order">
+    <ParameterList name="upwind">
+      <Parameter name="upwind method" type="string" value="divk"/>
+      <ParameterList name="upwind divk parameters">
+        <Parameter name="tolerance" type="double" value="1e-12"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator second-order">
       <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-      <Parameter name="upwind method" type="string" value="divk second-order"/>
+      <Parameter name="upwind method" type="string" value="second-order"/>
     </ParameterList>
 
-    <ParameterList name="upwind">
-      <Parameter name="upwind method" type="string" value="divk"/>
-      <ParameterList name="upwind divk parameters">
+    <ParameterList name="upwind second-order">
+      <Parameter name="upwind method" type="string" value="second-order"/>
+      <ParameterList name="upwind second-order parameters">
         <Parameter name="tolerance" type="double" value="1e-12"/>
       </ParameterList>
     </ParameterList>

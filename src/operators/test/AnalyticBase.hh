@@ -58,15 +58,16 @@ class AnalyticBase {
 
     int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED);
     for (int f = 0; f < nfaces; f++) {
+      double area = mesh_->face_area(f);
       const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
       const Amanzi::AmanziGeometry::Point& xf = mesh_->face_centroid(f);
       const Amanzi::AmanziGeometry::Point& velocity = velocity_exact(xf, t);
       double tmp = velocity * normal;
 
       // std::cout << f << " " << tmp << " " << flux[0][f] << std::endl;
-      l2_err += std::pow(tmp - u[0][f], 2.0);
-      inf_err = std::max(inf_err, fabs(tmp - u[0][f]));
-      unorm += std::pow(tmp, 2.0);
+      l2_err += std::pow((tmp - u[0][f]) / area, 2.0);
+      inf_err = std::max(inf_err, fabs(tmp - u[0][f]) / area);
+      unorm += std::pow(tmp / area, 2.0);
     }
 #ifdef HAVE_MPI
     double tmp = unorm;

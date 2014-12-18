@@ -632,7 +632,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
     * `"upwind`" [sublist] defines upwind method for relative permeability.
 
       * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
-        Available options are `"standard`", `"divk`" (default), and `"divk second-order`" (experimental). 
+        Available options are `"standard`", `"divk`" (default), and `"second-order`" (experimental). 
 
       * `"upwind NAME parameters`" [sublist] defines parameters for upwind method `"NAME`".
 
@@ -1636,7 +1636,7 @@ Diffusion operator
 
   * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
     Available options are `"standard`" (default), `"divk`", `"artificial diffusion`",
-    `"divk second-order`", and `"none`".
+    `"second-order`", and `"none`".
 
 .. code-block:: xml
 

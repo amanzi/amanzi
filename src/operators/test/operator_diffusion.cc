@@ -31,6 +31,7 @@
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorSource.hh"
+#include "UpwindSecondOrder.hh"
 #include "UpwindStandard.hh"
 
 #include "Analytic01.hh"
@@ -425,7 +426,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE) {
 * Tests DivK diffusion solver with full tensor and source term.
 * The model for kf is second-order upwind with arithmetic average.
 ***************************************************************** */
-TEST(OPERATOR_DIFFUSION_DIVK_SECOND_ORDER) {
+TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -487,7 +488,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_SECOND_ORDER) {
 
   // create diffusion operator 
   Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
-                                        .sublist("diffusion operator divk second-order");
+                                        .sublist("diffusion operator second-order");
   OperatorDiffusionFactory opfactory;
   Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g, 0);
   const CompositeVectorSpace& cvs = op->DomainMap();
@@ -506,8 +507,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_SECOND_ORDER) {
   Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh));
 
   // Create upwind model
-  Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
-  UpwindStandard<HeatConduction> upwind(mesh, knc);
+  Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind second-order");
+  UpwindSecondOrder<HeatConduction> upwind(mesh, knc);
   upwind.Init(ulist);
 
   knc->UpdateValues(*flux);  // argument is not used

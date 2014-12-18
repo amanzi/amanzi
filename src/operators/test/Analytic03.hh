@@ -22,11 +22,12 @@ class Analytic03 : public AnalyticBase {
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
     double x = p[0];
+    double y = p[1];
     Amanzi::WhetStone::Tensor K(2, 1);
     if (x < 0.5) { 
-      K(0, 0) = k1;
+      K(0, 0) = k1 * (1.0 + x * sin(y));
     } else {
-      K(0, 0) = k2;
+      K(0, 0) = k2 * (1.0 + 2 * x * x * sin(y));
     }
     return K;
   }
@@ -34,13 +35,14 @@ class Analytic03 : public AnalyticBase {
   // gradient of scalar factor of the tensor
   Amanzi::AmanziGeometry::Point ScalarTensorGradient(const Amanzi::AmanziGeometry::Point& p, double t) {
     double x = p[0];
+    double y = p[1];
     Amanzi::AmanziGeometry::Point v(2);
     if (x < 0.5) { 
-      v[0] = 0.0;
-      v[1] = 0.0;
+      v[0] = k1 * sin(y);
+      v[1] = k1 * x * cos(y);
     } else {
-      v[0] = 0.0;
-      v[1] = 0.0;
+      v[0] = k2 * 4 * x * sin(y);
+      v[1] = k2 * 2 * x * x * cos(y);
     }
     return v;
   }
@@ -58,15 +60,12 @@ class Analytic03 : public AnalyticBase {
   Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
     double y = p[1];
+    double kmean;
     Amanzi::AmanziGeometry::Point v(2);
-    if (x < 0.5) { 
-      v[0] = -2 * a1 * k1 * x;
-      v[1] = -2 * k1 * y;
-    } else {
-      v[0] = -2 * a2 * k2 * x;
-      v[1] = -2 * k2 * y;
-    }
-    return v;
+
+    kmean = (Tensor(p, t))(0, 0);
+    v = gradient_exact(p, t); 
+    return -kmean * v;
   }
  
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
@@ -75,21 +74,34 @@ class Analytic03 : public AnalyticBase {
     Amanzi::AmanziGeometry::Point v(2);
     if (x < 0.5) { 
       v[0] = 2 * a1 * x;
-      v[1] = 2 * k1 * y;
+      v[1] = 2 * y;
     } else {
       v[0] = 2 * a2 * x;
-      v[1] = 2 * k2 * y;
+      v[1] = 2 * y;
     }
     return v;
   }
 
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
+    double y = p[1];
+
+    double plaplace, pmean, kmean;
+    Amanzi::AmanziGeometry::Point pgrad(2), kgrad(2);
+
+    kmean = (Tensor(p, t))(0, 0);
+    kgrad = ScalarTensorGradient(p, t);
+
+    pmean = pressure_exact(p, t);
+    pgrad = gradient_exact(p, t);
+
     if (x < 0.5) { 
-      return -2 * a1 * k1 - 2 * k1;
+      plaplace = 2 * (1.0 + a1);
     } else {
-      return -2 * a2 * k2 - 2 * k2;
+      plaplace = 2 * (1.0 + a2);
     }
+
+    return -kgrad * pgrad - kmean * plaplace;
   }
 
  private:
