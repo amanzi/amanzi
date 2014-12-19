@@ -1177,11 +1177,11 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 </xs:complexType>
 
 <xs:complexType name="typedef_specific_storage">
-	<xs:attribute name="value" use="required" type="typedef_exponential"/>
+	<xs:attribute name="value" type="typedef_exponential"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_specific_yield">
-	<xs:attribute name="value" use="required" type="typedef_exponential"/>
+	<xs:attribute name="value" type="typedef_exponential"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_dispersion_tensor_uniform_isotropic">

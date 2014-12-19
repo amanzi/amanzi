@@ -496,8 +496,8 @@ Teuchos::ParameterList get_model_description(DOMDocument* xmlDoc, Teuchos::Param
   if (nodeList->getLength() > 0) {
     DOMNode* nodeGD = nodeList->item(0);
     DOMElement* elementGD = static_cast<DOMElement*>(nodeGD);
-    char* model_name = XMLString::transcode(elementGD->getAttribute(XMLString::transcode("name")));
-    list.set<std::string>("model_name",trim_string(model_name));
+    char* model_id = XMLString::transcode(elementGD->getAttribute(XMLString::transcode("name")));
+    list.set<std::string>("model_id",trim_string(model_id));
 
     DOMNodeList* childern = nodeGD->getChildNodes();
     for (int i=0; i<childern->getLength(); i++) {
@@ -2470,7 +2470,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   char* tagname = XMLString::transcode(currentNode->getNodeName());
                   if (strcmp(tagname,"max_pseudo_time")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    expertPL.set<double>("steady_max_pseudo_time",get_double_constant(textContent,*def_list));
+                    expertPL.set<double>("steady_max_psuedo_time",get_double_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"min_iterations")==0) {
@@ -2481,6 +2481,11 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   else if (strcmp(tagname,"limit_iterations")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
                     expertPL.set<int>("steady_limit_iterations",get_int_constant(textContent,*def_list));
+                    XMLString::release(&textContent);
+                  }
+                  else if (strcmp(tagname,"max_iterations")==0) {
+                    textContent = XMLString::transcode(currentNode->getTextContent());
+                    expertPL.set<int>("steady_max_iterations",get_int_constant(textContent,*def_list));
                     XMLString::release(&textContent);
                   }
                   else if (strcmp(tagname,"min_iterations_2")==0) {
@@ -3773,6 +3778,7 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
   char* char_array;
   char* attrName;
   char* attrValue;
+  std::string matName;
   bool hasPerm = false;
   bool hasHC = false;
 
@@ -3794,18 +3800,21 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
     bool tortuosityON = false;
     Teuchos::ParameterList caplist;
     std::string capname;
+    hasPerm = false;
+    hasHC = false;
     DOMNode* cur = childern->item(i) ;
     if (DOMNode::ELEMENT_NODE == cur->getNodeType()) {
       attrMap = cur->getAttributes();
       nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
       if (nodeAttr) {
         textContent = XMLString::transcode(nodeAttr->getNodeValue());
+        matName = std::string(textContent);
       }
       else {
         throw_error_missattr("materials", "attribute", "name", "material");
       }
 
-      Teuchos::ParameterList matlist(textContent);
+      Teuchos::ParameterList matlist(matName);
       DOMNodeList* kids = cur->getChildNodes();
       for (int j=0; j<kids->getLength(); j++) {
         DOMNode* curkid = kids->item(j) ;
@@ -4013,6 +4022,14 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
             DOMElement* permElem = static_cast<DOMElement*>(curkid);
             Teuchos::ParameterList perm;
             Teuchos::ParameterList permTmp;
+            std::string permName("Intrinsic Permeability: Anisotropic Uniform");
+            if (hasHC || hasPerm) {
+              Errors::Message msg;
+              msg << "Amanzi::InputTranslator: ERROR - can only specify one of ";
+              msg << "'permeability' or 'hydraulic_conductivity' per material. Material - " << matName << "\n";
+              msg << "  Please correct and try again \n" ;
+              Exceptions::amanzi_throw(msg);
+            }
             hasPerm = true;
             if (permElem->hasAttribute(XMLString::transcode("filename"))) {
               textContent2 = XMLString::transcode(permElem->getAttribute(XMLString::transcode("filename")));
@@ -4067,7 +4084,8 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
               }
               if (checkY && checkZ) {
                 perm.set<double>("Value",permTmp.get<double>("x"));
-                matlist.sublist("Intrinsic Permeability: Uniform") = perm;
+                //matlist.sublist("Intrinsic Permeability: Uniform") = perm;
+                permName = "Intrinsic Permeability: Uniform";
               }
               else {
                 perm.set<double>("x",permTmp.get<double>("x"));
@@ -4079,11 +4097,18 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
                 }
               }
             }
-            matlist.sublist("Intrinsic Permeability: Anisotropic Uniform") = perm;
+            matlist.sublist(permName) = perm;
 	  }
           else if  (strcmp("hydraulic_conductivity",tagName)==0){
             // loop over attributes to get x,y,z
             char *x,*y,*z;
+            if (hasHC || hasPerm) {
+              Errors::Message msg;
+              msg << "Amanzi::InputTranslator: ERROR - can only specify one of ";
+              msg << "'permeability' or 'hydraulic_conductivity' per material. Material - " << matName;
+              msg << "  Please correct and try again \n" ;
+              Exceptions::amanzi_throw(msg);
+            }
             hasHC = true;
             attrMap = curkid->getAttributes();
             Teuchos::ParameterList hydcond;
@@ -4358,14 +4383,14 @@ Teuchos::ParameterList get_materials(DOMDocument* xmlDoc, Teuchos::ParameterList
 	}
       }
       if(cappressON) matlist.sublist(capname) = caplist;
-      list.sublist(textContent) = matlist;
+      list.sublist(matName) = matlist;
     }
 
   }
   if (!hasPerm and !hasHC){
     Teuchos::ParameterList perm;
     perm.set<double>("Value",0.0);
-    list.sublist(textContent).sublist("Intrinsic Permeability: Uniform") = perm;
+    list.sublist(matName).sublist("Intrinsic Permeability: Uniform") = perm;
   }
   XMLString::release(&textContent);
 
