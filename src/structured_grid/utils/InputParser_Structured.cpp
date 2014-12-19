@@ -2705,12 +2705,12 @@ namespace Amanzi {
                                   ParameterList&       fPLout)
     {
       Array<std::string> nullList, reqP;
-      const std::string phase_name="Phase";reqP.push_back(phase_name);
+      //const std::string phase_name="Phase";reqP.push_back(phase_name);
       const std::string val_name="Value";reqP.push_back(val_name);
       PLoptions opt(fPLin,nullList,reqP,true,true);      
       fPLout.set<std::string>("type","pressure");
       fPLout.set<double>("val",fPLin.get<double>(val_name));
-      fPLout.set<std::string>("phase",fPLin.get<std::string>(phase_name));
+      //fPLout.set<std::string>("phase",fPLin.get<std::string>(phase_name));
     }
 
     void convert_IC_LinPressure(const ParameterList& fPLin,
@@ -2718,7 +2718,7 @@ namespace Amanzi {
                                 ParameterList&       fPLout)
     {
       Array<std::string> reqP, nullList;
-      const std::string phase_name="Phase";reqP.push_back(phase_name);
+      //const std::string phase_name="Phase";reqP.push_back(phase_name);
       const std::string rval_name="Reference Value";reqP.push_back(rval_name);
       const std::string grad_name="Gradient Value";reqP.push_back(grad_name);
       const std::string ref_name="Reference Point";reqP.push_back(ref_name);
@@ -2734,7 +2734,7 @@ namespace Amanzi {
                         const std::string&   Amanzi_type,
                         ParameterList&       fPLout)
     {
-      const std::string phase_name="Phase";
+      //const std::string phase_name="Phase";
       const std::string val_name="Reference Value";
       const std::string grad_name="Gradient Value";
       const std::string ref_name="Reference Point";
@@ -2743,7 +2743,7 @@ namespace Amanzi {
       Array<std::string> reqP, nullList;
       reqP.push_back(val_name);
       if (Amanzi_type == "IC: Flow") {
-        reqP.push_back(phase_name);
+        //reqP.push_back(phase_name);
         reqP.push_back(grad_name);
         reqP.push_back(ref_name);
         reqP.push_back(vel_name);
