@@ -76,9 +76,11 @@
             <Parameter name="gravity" type="bool" value="true"/>
           </ParameterList>
 
-          <Parameter name="upwind method" type="string" value="standard"/>
-          <ParameterList name="upwind standard parameter">
-            <Parameter name="type" type="string" value="upwind with flux"/>
+          <ParameterList name="upwind">
+            <Parameter name="upwind method" type="string" value="standard"/>
+            <ParameterList name="upwind standard parameters">
+              <Parameter name="tolerance" type="double" value="1e-12"/>
+            </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>

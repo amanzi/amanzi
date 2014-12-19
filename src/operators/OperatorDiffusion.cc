@@ -44,8 +44,13 @@ void OperatorDiffusion::InitOperator(
   // compatibility
   if (upwind_ == OPERATOR_UPWIND_FLUX || 
       upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION ||
-      upwind_ == OPERATOR_UPWIND_AMANZI_MFD) { 
+      upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
     ASSERT(k->HasComponent("face"));
+  }
+
+  if (upwind_ == OPERATOR_UPWIND_AMANZI_SECOND_ORDER) {
+    ASSERT(k->HasComponent("face"));
+    ASSERT(k->HasComponent("grad"));
   }
 
   if (schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL) {
@@ -85,9 +90,93 @@ void OperatorDiffusion::UpdateMatrices(Teuchos::RCP<const CompositeVector> flux,
   if (schema_dofs_ == OPERATOR_SCHEMA_DOFS_NODE) {
     UpdateMatricesNodal_();
   } else if (schema_dofs_ == OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE) {
-    UpdateMatricesMixed_(flux);
+    if (upwind_ == OPERATOR_UPWIND_AMANZI_SECOND_ORDER) {
+      UpdateMatricesMixedWithGrad_(flux);
+    } else {
+      UpdateMatricesMixed_(flux);
+    }
   } else if (schema_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
     UpdateMatricesTPFA_();
+  }
+}
+
+
+/* ******************************************************************
+* Second-order upwind. Mass matrices are recalculated.
+****************************************************************** */
+void OperatorDiffusion::UpdateMatricesMixedWithGrad_(Teuchos::RCP<const CompositeVector> flux)
+{
+  // find location of matrix blocks
+  int schema_dofs = OPERATOR_SCHEMA_DOFS_CELL + OPERATOR_SCHEMA_DOFS_FACE;
+  int m = FindMatrixBlock(schema_dofs, OPERATOR_SCHEMA_RULE_EXACT, false);
+  bool flag = (m >= 0); 
+
+  if (flag == false) { 
+    m = blocks_.size();
+    blocks_schema_.push_back(OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_FACE + OPERATOR_SCHEMA_DOFS_CELL);
+    blocks_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
+    blocks_shadow_.push_back(Teuchos::rcp(new std::vector<WhetStone::DenseMatrix>));
+  }
+  std::vector<WhetStone::DenseMatrix>& matrix = *blocks_[m];
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
+  WhetStone::DenseMatrix null_matrix;
+
+  // preparing upwind data
+  Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
+  Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+  Teuchos::RCP<const Epetra_MultiVector> k_grad = Teuchos::null;
+  if (k_ != Teuchos::null) {
+    k_cell = k_->ViewComponent("cell");
+    k_face = k_->ViewComponent("face");
+    k_grad = k_->ViewComponent("grad");
+  }
+
+  // update matrix blocks
+  int dim = mesh_->space_dimension();
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    // mean value and gradient of nonlinear factor
+    double kc = (*k_cell)[0][c];
+    AmanziGeometry::Point kgrad(dim);
+    for (int i = 0; i < dim; i++) kgrad[i] = (*k_grad)[i][c];
+ 
+    // upwinded values of nonlinear factor
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+    std::vector<double> kf(nfaces, 1.0); 
+    for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+
+    WhetStone::DenseMatrix Wff(nfaces, nfaces);
+    WhetStone::Tensor& Kc = (*K_)[c];
+    mfd.MassMatrixInverseDivKScaled(c, Kc, kc, kgrad, Wff);
+
+    WhetStone::DenseMatrix Acell(nfaces + 1, nfaces + 1);
+
+    double matsum = 0.0; 
+    for (int n = 0; n < nfaces; n++) {
+      double rowsum = 0.0;
+      for (int m = 0; m < nfaces; m++) {
+        double tmp = Wff(n, m) * kf[n] * kf[m];
+        rowsum += tmp;
+        Acell(n, m) = tmp;
+      }
+
+      Acell(n, nfaces) = -rowsum;
+      Acell(nfaces, n) = -rowsum;
+      matsum += rowsum;
+    }
+    Acell(nfaces, nfaces) = matsum;
+
+    if (flag) {
+      matrix[c] += Acell;
+    } else {
+      matrix.push_back(Acell);
+      matrix_shadow.push_back(null_matrix);
+    }
   }
 }
 
@@ -118,7 +207,7 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
   if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
   if (upwind_ == OPERATOR_UPWIND_FLUX || 
       upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION ||
-      upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+      upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
     k_face = k_->ViewComponent("face", true);
   }
 
@@ -139,7 +228,7 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
     if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
-    } else if (upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+    } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
@@ -149,7 +238,7 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     }
 
-    if (upwind_ != OPERATOR_UPWIND_AMANZI_MFD) {
+    if (upwind_ != OPERATOR_UPWIND_AMANZI_DIVK) {
       double matsum = 0.0;  // elimination of mass matrix
       for (int n = 0; n < nfaces; n++) {
         double rowsum = 0.0;
@@ -187,7 +276,7 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
     }
 
     // Amanzi's second upwind: replace the matrix
-    if (upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+    if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
       double matsum = 0.0; 
       for (int n = 0; n < nfaces; n++) {
         double rowsum = 0.0;
@@ -1058,10 +1147,12 @@ void OperatorDiffusion::InitDiffusion_(Teuchos::RCP<BCs> bc, Teuchos::ParameterL
   std::string name = plist.get<std::string>("upwind method", "none");
   if (name == "standard") {
     upwind_ = OPERATOR_UPWIND_FLUX;
-  } else if (name == "amanzi: artificial diffusion") {  
+  } else if (name == "artificial diffusion") {  
     upwind_ = OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION;
-  } else if (name == "amanzi: mfd") {  
-    upwind_ = OPERATOR_UPWIND_AMANZI_MFD;
+  } else if (name == "divk") {  
+    upwind_ = OPERATOR_UPWIND_AMANZI_DIVK;
+  } else if (name == "second-order") {  
+    upwind_ = OPERATOR_UPWIND_AMANZI_SECOND_ORDER;
   } else if (name == "none") {
     upwind_ = OPERATOR_UPWIND_NONE;  // cell-centered scheme.
   } else {

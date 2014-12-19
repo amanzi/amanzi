@@ -1004,14 +1004,13 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
   op_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
   op_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
 
+  Teuchos::ParameterList& upw_list = op_list.sublist("diffusion operator").sublist("upwind");
   if (rel_perm == "Upwind: Amanzi") {
-    op_list.sublist("diffusion operator").set<std::string>("upwind method", "mfd");
-    op_list.sublist("diffusion operator")
-           .sublist("upwind mfd parameter").set<double>("tolerance", 1e-12);
+    upw_list.set<std::string>("upwind method", "divk");
+    upw_list.sublist("upwind divk parameters").set<double>("tolerance", 1e-12);
   } else {
-    op_list.sublist("diffusion operator").set<std::string>("upwind method", "standard");
-    op_list.sublist("diffusion operator")
-           .sublist("upwind standard parameter").set<double>("tolerance", 1e-12);
+    upw_list.set<std::string>("upwind method", "standard");
+    upw_list.sublist("upwind standard parameters").set<double>("tolerance", 1e-12);
   }
 
   return op_list;

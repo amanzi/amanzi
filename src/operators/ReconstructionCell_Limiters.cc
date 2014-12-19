@@ -57,7 +57,7 @@ void ReconstructionCell::LimiterTensorial_(
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i = 0; i < dim; i++) gradient_c1[i] = grad[i][c];
 
-    normals.clear();  // normals to planes the define the feasiable set
+    normals.clear();  // normals to planes that define a feasiable set
     for (int loop = 0; loop < 2; loop++) {
       for (int i = 0; i < nfaces; i++) {
         int f = faces[i];
@@ -361,13 +361,13 @@ void ReconstructionCell::LimiterKuzmin_(
   Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
 
   // Step 1: local extrema are calculated here at nodes and updated later
-  std::vector<double> component_node_min(nnodes_wghost);
-  std::vector<double> component_node_max(nnodes_wghost);
+  std::vector<double> field_node_min(nnodes_wghost);
+  std::vector<double> field_node_max(nnodes_wghost);
 
   AmanziMesh::Entity_ID_List nodes;
 
-  component_node_min.assign(nnodes_wghost,  OPERATOR_LIMITER_INFINITY);
-  component_node_max.assign(nnodes_wghost, -OPERATOR_LIMITER_INFINITY);
+  field_node_min.assign(nnodes_wghost,  OPERATOR_LIMITER_INFINITY);
+  field_node_max.assign(nnodes_wghost, -OPERATOR_LIMITER_INFINITY);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_nodes(c, &nodes);
@@ -375,24 +375,26 @@ void ReconstructionCell::LimiterKuzmin_(
     double value = (*field_)[0][c];
     for (int i = 0; i < nodes.size(); i++) {
       int v = nodes[i];
-      component_node_min[v] = std::min(component_node_min[v], value);
-      component_node_max[v] = std::max(component_node_max[v], value);
+      field_node_min[v] = std::min(field_node_min[v], value);
+      field_node_max[v] = std::max(field_node_max[v], value);
     }
   }
 
   // Update min/max at nodes from influx boundary data
   for (int f = 0; f < nfaces_owned; ++f) {
-    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      int c2 = downwind_cell_[f];
+    int c1 = upwind_cell_[f];
+    int c2 = downwind_cell_[f];
 
-      if (c2 >= 0) {
-        mesh_->face_get_nodes(f, &nodes);
-        double value = (*field_)[0][c2];
+    if (c2 >= 0 && c1 < 0) {
+      mesh_->face_get_nodes(f, &nodes);
+      int nnodes = nodes.size();
 
-        for (int k = 0; k < nodes.size(); k++) {
-          int v = nodes[k];
-          component_node_min[v] = std::min(component_node_min[v], value);
-          component_node_max[v] = std::max(component_node_max[v], value);
+      for (int i = 0; i < nnodes; i++) {
+        int v = nodes[i];
+        if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
+          double value = bc_value[v];
+          field_node_min[v] = std::min(field_node_min[v], value);
+          field_node_max[v] = std::max(field_node_max[v], value);
         }
       }
     }
@@ -414,13 +416,12 @@ void ReconstructionCell::LimiterKuzmin_(
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i = 0; i < dim; i++) gradient_c[i] = (*grad)[i][c];
 
-    double umin = component_node_min[c];
-    double umax = component_node_max[c];
-
     normals.clear();  // normals to planes the define the feasiable set
     for (int loop = 0; loop < 2; loop++) {
       for (int i = 0; i < nnodes; i++) {
         int v = nodes[i];
+        double umin = field_node_min[v];
+        double umax = field_node_max[v];
 
         mesh_->node_get_coordinates(v, &xp);
         up = getValue(gradient_c, c, xp);
@@ -460,8 +461,8 @@ void ReconstructionCell::LimiterKuzmin_(
 
     for (int i = 0; i < nodes.size(); i++) {
       int v = nodes[i];
-      field_local_min[c] = std::min(field_local_min[c], component_node_min[v]);
-      field_local_max[c] = std::max(field_local_max[c], component_node_max[v]);
+      field_local_min[c] = std::min(field_local_min[c], field_node_min[v]);
+      field_local_max[c] = std::max(field_local_max[c], field_node_max[v]);
     }
   }
 

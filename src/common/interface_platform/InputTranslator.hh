@@ -1,6 +1,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include <xercesc/dom/DOM.hpp>
 #include "VerboseObject.hh"
 
@@ -11,8 +12,10 @@ namespace AmanziNewInput {
 #define AMANZI_INPUT_VERSION_MINOR 1
 #define AMANZI_INPUT_VERSION_MICRO 0
 
-
-
+// validate sets
+  const Teuchos::Array<std::string> verbosityStrings = Teuchos::tuple<std::string>("None", "Low", "Medium", "High", "Extreme");
+  const Teuchos::Array<std::string> meshfileStrings = Teuchos::tuple<std::string>("exodus ii", "exodus II", "Exodus II", "Exodus ii", "H5M", "h5m");
+  
 //Teuchos::ParameterList translate (const std::string& xmlfilename, const std::string& xmlSchemafile);
 Teuchos::ParameterList translate (const std::string& xmlfilename);
 
@@ -32,6 +35,7 @@ Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 
 double get_time_value(std::string time_value, Teuchos::ParameterList def_list);
+double convert_time_value(char* time_value);
 double get_double_constant(std::string pos_name, Teuchos::ParameterList def_list);
 int get_int_constant(std::string pos_name, Teuchos::ParameterList def_list);
 Teuchos::Array<std::string> make_regions_list(char* char_array);
@@ -52,6 +56,8 @@ static bool isUnstr_ ;
 static int dimension_;
 static Teuchos::Array<std::string> regionNames_string_;
 static Teuchos::RCP<VerboseObject> voI_;
+
+
 
 }
 }

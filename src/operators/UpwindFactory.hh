@@ -15,8 +15,9 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Upwind.hh"
+#include "UpwindDivK.hh"
+#include "UpwindSecondOrder.hh"
 #include "UpwindStandard.hh"
-#include "UpwindMFD.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -51,9 +52,14 @@ Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
     Teuchos::RCP<UpwindStandard<Model> > upwind = Teuchos::rcp(new UpwindStandard<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
-  } else if (name == "mfd") {
-    Teuchos::ParameterList sublist = plist.sublist("upwind mfd parameters");
-    Teuchos::RCP<UpwindMFD<Model> > upwind = Teuchos::rcp(new UpwindMFD<Model>(mesh, model));
+  } else if (name == "divk") {
+    Teuchos::ParameterList sublist = plist.sublist("upwind divk parameters");
+    Teuchos::RCP<UpwindDivK<Model> > upwind = Teuchos::rcp(new UpwindDivK<Model>(mesh, model));
+    upwind->Init(sublist);
+    return upwind;
+  } else if (name == "second-order") {
+    Teuchos::ParameterList sublist = plist.sublist("upwind second-order parameters");
+    Teuchos::RCP<UpwindSecondOrder<Model> > upwind = Teuchos::rcp(new UpwindSecondOrder<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
   } else {

@@ -173,6 +173,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   int FindDiffusionValue(const std::string& tcc_name, double* md, int* phase);
 
+  void CalculateAxiSymmetryDirection();
+
   // I/O methods
   void ProcessParameterList();
   void ProcessStringDispersionModel(const std::string name, int* model);
@@ -235,11 +237,12 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
-  std::vector<Teuchos::RCP<MaterialProperties> > material_properties_;  // vector of materials
+  std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
   std::vector<Teuchos::RCP<DiffusionPhase> >  diffusion_phase_;   // vector of phases
 
   std::vector<WhetStone::Tensor> D;
   int dispersion_models_;
+  std::vector<int> axi_symmetry_;  // axi symmetry direction of permeability tensor
   std::string dispersion_preconditioner;
   std::string dispersion_solver;
 

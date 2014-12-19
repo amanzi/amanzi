@@ -643,7 +643,7 @@ A ``material`` element can contain the following:
         <particle_density value="Value"/>
         <specific_storage value="Value"/>
         <specific_yield value="Value"/>
-        <dispersion_tensor alpha_l="Value" alpha_t="Value"/>
+        <dispersion_tensor type="uniform_isotropic" alpha_l="Value" alpha_t="Value"/>
         <tortuosity value="Value"/>
     </mechanical_properties>
     <permeability x="Value" y="Value" z="Value"/>
@@ -944,7 +944,7 @@ An example ``sources`` element looks like the following.
 Outputs
 -------
 
-Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", `"Observations`", and `"Walkabout Data`".  Each of these is controlled in different ways, reflecting their intended use.
+Output data from Amanzi is currently organized into four specific elements: `"Vis`", `"Checkpoint`", `"Observations`", and `"Walkabout Data`".  Each of these is controlled in different ways, reflecting their intended use.
 
 * `"Visualization`" is intended to represent snapshots of the solution at defined instances during the simulation to be visualized.  The ``vis`` element defines the naming and frequency of saving the visualization files.  The visualization files may include only a fraction of the state data, and may contain auxiliary "derived" information.
 
@@ -954,10 +954,12 @@ Output data from Amanzi is currently organized into three specific elements: `"V
 
 * `"Walkabout Data`" is intended to be used as input to the particle tracking software Walkabout.
 
+NOTE: Each output type allows the user to specify the base_filename or filename for the output to be written to.  The string format of the element allows the user to specify the relative path of the file.  It should be noted that the Amanzi I/O library does not create any new directories.  Therefore, if a relative path to a location other than the current directory is specified Amanzi assumes the user (or the Agni controller) has already created any new directories.  If the relative path does not exist the user will see error meesages from the HDF5 library indicating failure to create and open the output file.
+
 Viz
 ---
 
-The ``vis`` element defines the visualization file naming scheme and how often to write out the files.  The ``base_filename`` element contain the text component of the how the visualization files will be named.  The ``base_filename`` is appended with an index number to indicate the sequential order of the visualization files.  The ``num_digits`` elements indicates how many digits to use for the index.  Finally, the ``time_macros`` or ``cycle_macros`` element indicates previously defined time_macros or cycle_macros to be used to determine the frequency at which to write the visualization files.  One or more macro can be listed in a comma separated list.  Amanzi will converted the list of macros to a single list of times or cycles contained by all of the macros listed and output accordingly.
+The ``vis`` element defines the visualization file naming scheme and how often to write out the files.  The ``base_filename`` element contain the text component of the how the visualization files will be named.  The ``base_filename`` is appended with an index number to indicate the sequential order of the visualization files.  The ``num_digits`` elements indicates how many digits to use for the index.  See the about NOTE about specifing a file location other than the current working directory. Finally, the ``time_macros`` or ``cycle_macros`` element indicates previously defined time_macros or cycle_macros to be used to determine the frequency at which to write the visualization files.  One or more macro can be listed in a comma separated list.  Amanzi will converted the list of macros to a single list of times or cycles contained by all of the macros listed and output accordingly.
 
 An example ``vis`` element looks like the following.
 
@@ -972,7 +974,7 @@ An example ``vis`` element looks like the following.
 Checkpoint
 ----------
 
-The ``checkpoint`` element defines the file naming scheme and frequency for writing out the checkpoint files.  The ``base_filename`` element contains the text component of the how the checkpoint files will be named.  The ``base_filename`` is appended with an index number to indicate the sequential order of the checkpoint files.  The ``num_digits`` elements indicates how many digits to use for the index.  Finally, the ``cycle_macro`` element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the checkpoint files.
+The ``checkpoint`` element defines the file naming scheme and frequency for writing out the checkpoint files.  The ``base_filename`` element contains the text component of the how the checkpoint files will be named.  The ``base_filename`` is appended with an index number to indicate the sequential order of the checkpoint files.  The ``num_digits`` elements indicates how many digits to use for the index.  See the about NOTE about specifing a file location other than the current working directory.  Finally, the ``cycle_macro`` element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the checkpoint files.
 
 An example ``checkpoint`` element looks like the following.
 
@@ -987,7 +989,7 @@ An example ``checkpoint`` element looks like the following.
 Observations
 ------------
 
-The ``observations`` element defines the the file for writing observations to and specifies individual observations to be made.  At this time, all observations are written to a single file defined in the ``filename`` element.  Also, observations are only available for the liquid phases.  Therefore individual observations are defined in subelements under the ``liquid_phase`` tag.  The ``liquid_phase`` tag takes an attribute ``name`` to identify which phase the observations are associated with.
+The ``observations`` element defines the the file for writing observations to and specifies individual observations to be made.  At this time, all observations are written to a single file defined in the ``filename`` element.  See the about NOTE about specifing a file location other than the current working directory. Also, observations are only available for the liquid phases.  Therefore individual observations are defined in subelements under the ``liquid_phase`` tag.  The ``liquid_phase`` tag takes an attribute ``name`` to identify which phase the observations are associated with.
 
 The element name of individual observations indicate the quantity being observed.  Below is a list of currently available observations.  Individual observations require the subelements ``assigned_regions``, ``functional``, and ``time_macro``.  ``aqueous_conc`` observations also take an attribute ``name`` which indicates the name of the solute being observed.
 

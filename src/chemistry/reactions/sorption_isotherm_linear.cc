@@ -3,11 +3,15 @@
 
 #include <iostream>
 #include <iomanip>
+#include <string>
 
+#include "VerboseObject.hh"
 #include "sorption_isotherm.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
+
+extern VerboseObject* chem_out;
 
 SorptionIsothermLinear::SorptionIsothermLinear()
     : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
@@ -55,9 +59,11 @@ double SorptionIsothermLinear::EvaluateDerivative(const Species& primarySpecies)
 }  // end EvaluateDerivative()
 
 void SorptionIsothermLinear::Display(void) const {
-  std::cout << std::setw(5) << "KD:"
-            << std::scientific << std::setprecision(5)
-            << std::setw(15) << KD() << std::endl;
+  std::stringstream message;
+  message << std::setw(5) << "KD:"
+          << std::scientific << std::setprecision(5)
+          << std::setw(15) << KD() << std::endl;
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end Display()
 
 }  // namespace AmanziChemistry

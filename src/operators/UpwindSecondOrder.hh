@@ -9,8 +9,8 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_UPWIND_MFD_HH_
-#define AMANZI_UPWIND_MFD_HH_
+#ifndef AMANZI_UPWIND_SECOND_ORDER_HH_
+#define AMANZI_UPWIND_SECOND_ORDER_HH_
 
 #include <string>
 #include <vector>
@@ -30,12 +30,12 @@ namespace Amanzi {
 namespace Operators {
 
 template<class Model>
-class UpwindMFD : public Upwind<Model> {
+class UpwindSecondOrder : public Upwind<Model> {
  public:
-  UpwindMFD(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+  UpwindSecondOrder(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                  Teuchos::RCP<const Model> model)
       : Upwind<Model>(mesh, model) {};
-  ~UpwindMFD() {};
+  ~UpwindSecondOrder() {};
 
   // main methods
   void Init(Teuchos::ParameterList& plist);
@@ -60,14 +60,14 @@ class UpwindMFD : public Upwind<Model> {
 * Public init method. It is not yet used.
 ****************************************************************** */
 template<class Model>
-void UpwindMFD<Model>::Init(Teuchos::ParameterList& plist)
+void UpwindSecondOrder<Model>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("UpwindMFD", plist));
+  vo_ = Teuchos::rcp(new VerboseObject("UpwindSecondOrder", plist));
 
   method_ = Operators::OPERATOR_UPWIND_FLUX;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
 
-  order_ = plist.get<int>("order", 1);
+  order_ = plist.get<int>("order", 2);
 }
 
 
@@ -75,13 +75,14 @@ void UpwindMFD<Model>::Init(Teuchos::ParameterList& plist)
 * Flux-based upwind consistent with mimetic discretization.
 ****************************************************************** */
 template<class Model>
-void UpwindMFD<Model>::Compute(
+void UpwindSecondOrder<Model>::Compute(
     const CompositeVector& flux,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
     const CompositeVector& field, CompositeVector& field_upwind,
     double (Model::*Value)(int, double) const)
 {
   ASSERT(field.HasComponent("cell"));
+  ASSERT(field.HasComponent("grad"));
   ASSERT(field_upwind.HasComponent("face"));
 
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -92,6 +93,7 @@ void UpwindMFD<Model>::Compute(
   const Epetra_MultiVector& u = *flux.ViewComponent("face", true);
   const Epetra_MultiVector& fcells = *field.ViewComponent("cell", true);
   const Epetra_MultiVector& ffaces = *field.ViewComponent("face", true);
+  const Epetra_MultiVector& fgrads = *field.ViewComponent("grad", true);
 
   Epetra_MultiVector& upw = *field_upwind.ViewComponent("face", true);
   upw.PutScalar(0.0);
@@ -101,7 +103,9 @@ void UpwindMFD<Model>::Compute(
   u.MaxValue(&umax);
   double tol = tolerance_ * std::max(fabs(umin), fabs(umax));
 
+  int dim = mesh_->space_dimension();
   std::vector<int> dirs;
+  AmanziGeometry::Point grad(dim);
   AmanziMesh::Entity_ID_List faces;
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
@@ -109,7 +113,10 @@ void UpwindMFD<Model>::Compute(
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
+
     double kc(fcells[0][c]);
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    for (int i = 0; i < dim; i++) grad[i] = fgrads[i][c];
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
@@ -117,7 +124,8 @@ void UpwindMFD<Model>::Compute(
       
       // Internal faces. We average field on almost vertical faces. 
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
-        upw[0][f] += kc / 2;
+        const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+        upw[0][f] += (kc + grad * (xf - xc)) / 2;
       // Boundary faces. We upwind only on inflow dirichlet faces.
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         upw[0][f] = ((*model_).*Value)(c, bc_value[f]);
@@ -128,13 +136,8 @@ void UpwindMFD<Model>::Compute(
         upw[0][f] = kc;
       // Internal and boundary faces. 
       } else if (!flag) {
-        int c2 = mfd3d.cell_get_face_adj_cell(c, f);
-        if (c2 >= 0) {
-          double kc2(fcells[0][c2]);
-          upw[0][f] = std::pow(kc * (kc + kc2) / 2, 0.5);
-        } else {
-          upw[0][f] = kc;
-        }
+        const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+        upw[0][f] = kc + grad * (xf - xc);
       }
     }
   }
