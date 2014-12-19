@@ -32,7 +32,6 @@
 #include "OperatorDefs.hh"
 #include "Operator.hh"
 #include "OperatorDiffusionSurface.hh"
-#include "OperatorSource.hh"
 #include "UpwindStandard.hh"
 
 const double TemperatureSource = 100.0; 
@@ -75,8 +74,7 @@ class HeatConduction {
 
   Teuchos::RCP<CompositeVector> values() { return values_; }
   Teuchos::RCP<CompositeVector> derivatives() { return derivatives_; }
-   
-
+ 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<CompositeVector> values_, derivatives_;

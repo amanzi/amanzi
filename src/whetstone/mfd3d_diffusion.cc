@@ -493,7 +493,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-    v1 = K * normal;
+    v1 = (K * normal) / kmean;
 
     for (int j = i; j < num_faces; j++) {
       f = faces[j];

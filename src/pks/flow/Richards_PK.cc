@@ -214,7 +214,9 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   rel_perm_->ProcessStringRelativePermeability(krel_method_name);
 
   // parameter which defines when update direction of update
-  Teuchos::ParameterList upw_list = rp_list_.sublist("operators").sublist("diffusion operator");
+  Teuchos::ParameterList upw_list = rp_list_.sublist("operators")
+                                            .sublist("diffusion operator")
+                                            .sublist("upwind");
   Operators::UpwindFactory<RelativePermeability> upwind_factory;
   upwind_ = upwind_factory.Create(mesh_, rel_perm_, upw_list);
 
@@ -265,7 +267,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     upw_method = "amanzi: artificial diffusion";
     oplist_pc.set<std::string>("upwind method", "artificial diffusion");
   } else if (name == "upwind: amanzi") {
-    upw_method = "amanzi: mfd";
+    upw_method = "divk";
   } else if (name == "other: arithmetic average") {
     upw_method = "standard";
     upw_id = Operators::OPERATOR_UPWIND_ARITHMETIC_AVERAGE;

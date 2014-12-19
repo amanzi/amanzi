@@ -183,7 +183,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           // error control options
           Teuchos::Array<std::string> err_opts;
           err_opts.push_back(std::string("pressure"));
-          sti_list.set<Teuchos::Array<std::string> >("error control options",err_opts);
+          sti_list.set<Teuchos::Array<std::string> >("error control options", err_opts);
 
           // linear solver
           sti_list.set<std::string>("linear solver", ST_SOLVER);
@@ -276,6 +276,9 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                 sti_bdf1_solver->set<double>("max du growth factor",
                     num_list.get<double>("steady nonlinear iteration divergence factor", ST_DIVERG_FACT));
 
+                sti_list.set<Teuchos::Array<std::string> >("error control options",
+                    num_list.get<Teuchos::Array<std::string> >("steady error control options",
+                    err_opts));
                 sti_list.set<std::string>("preconditioner",
                     num_list.get<std::string>("steady preconditioner", ST_PRECOND));
 
@@ -308,6 +311,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           // error control options
           Teuchos::Array<std::string> err_opts;
           err_opts.push_back(std::string("pressure"));
+          err_opts.push_back(std::string("residual"));
           tti_list.set<Teuchos::Array<std::string> >("error control options", err_opts);
 
           // linear solver
@@ -402,6 +406,9 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                 tti_bdf1_nka->set<double>("max du growth factor",
                     num_list.get<double>("transient nonlinear iteration divergence factor", TR_DIVERG_FACT));
 
+                tti_list.set<Teuchos::Array<std::string> >("error control options",
+                    num_list.get<Teuchos::Array<std::string> >("transient error control options",
+                    err_opts));
                 tti_list.set<std::string>("preconditioner",
                     num_list.get<std::string>("transient preconditioner", TR_PRECOND));
 
@@ -997,14 +1004,13 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
   op_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
   op_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
 
+  Teuchos::ParameterList& upw_list = op_list.sublist("diffusion operator").sublist("upwind");
   if (rel_perm == "Upwind: Amanzi") {
-    op_list.sublist("diffusion operator").set<std::string>("upwind method", "mfd");
-    op_list.sublist("diffusion operator")
-           .sublist("upwind mfd parameter").set<double>("tolerance", 1e-12);
+    upw_list.set<std::string>("upwind method", "divk");
+    upw_list.sublist("upwind divk parameters").set<double>("tolerance", 1e-12);
   } else {
-    op_list.sublist("diffusion operator").set<std::string>("upwind method", "standard");
-    op_list.sublist("diffusion operator")
-           .sublist("upwind standard parameter").set<double>("tolerance", 1e-12);
+    upw_list.set<std::string>("upwind method", "standard");
+    upw_list.sublist("upwind standard parameters").set<double>("tolerance", 1e-12);
   }
 
   return op_list;

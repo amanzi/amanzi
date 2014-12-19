@@ -329,6 +329,8 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation. (default: `"1.0e-5`", suggested range: 1.0e-8 ... 1.0e-6)
 
+     * [U] `"steady error control options"` [Array(string)] Control convergence of nonlinear iterations using multiple error criteria. Available options are `"pressure`" (controls of pressure increment) and `"residual`" (control of residual). Default: is `"{pressure}`".
+
      * [U] `"steady nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping). (default: `"1.0`", suggested range: 0.1 ... 1.0)
  
      * [U] `"steady time step reduction factor"` [double] When time step reduction is necessary during the steady calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
@@ -362,6 +364,8 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
      * [U] `"transient limit iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. (default: `"20`", suggested range: 20 ... 50)
 
      * [U] `"transient nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the transient computation. (default: `"1.0e-5`", suggested range: 1.0e-6 ... 1.0e-5)
+
+     * [U] `"transient error control options"` [Array(string)] Control convergence of nonlinear iterations using multiple error criteria. Available options are `"pressure`" (controls of pressure increment) and `"residual`" (control of residual). Default: is `"{pressure, residual}`".
 
      * [U] `"transient nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping). (default: `"1.0`", suggested range: 0.1 ... 1.0)
 
@@ -1006,7 +1010,7 @@ the following set of physical properties using the supported models described be
 
   Material properties related to transport (dispersion and tortuosity):
 
-  * [SU] Dispersion Tensor [list] Parameterized model for Dispersion Tensor. Choose exactly one of the following: `"Dispersion Tensor:  Uniform Isotropic`".
+  * [SU] Dispersion Tensor [list] Parameterized model for Dispersion Tensor. Choose exactly one of the following: `"Dispersion Tensor: Uniform Isotropic`", `"Dispersion Tensor: Burnett-Frind`", `"Dispersion Tensor: Lichtner-Kelkar-Robinson`" (see below)
 
   * [SU] Tortuosity [list] Parameterized model for the Tortuosity [-]. For aqueous phase choose exactly one of the following: `"Tortuosity Aqueous: Uniform`". For gaseous phase choose exactly one of the following: `"Tortuosity Gaseous: Uniform`".
 
@@ -1156,8 +1160,23 @@ in transport
 
 * [SU] `"Dispersion Tensor: Uniform Isotropic`" (see Equation 4.9) [list] requires
 
- * [SU] `"alphaL`" [m]  the longitudinal dispersion  (default 0)
- * [SU] `"alphaT`" [m]  the transverse dispersion    (default 0)
+ * [SU] `"alphaL`" [m]  the longitudinal dispersion (default 0)
+ * [SU] `"alphaT`" [m]  the transverse dispersion   (default 0)
+
+* [U] `"Dispersion Tensor: Burnett-Frind`" [list] can be applied in three dimensions to 
+  materials with axi-symmetric absolute permeability. It requires
+
+ * [U] `"alphaL`" [m]   the longitudinal dispersion (default 0)
+ * [U] `"alphaTH`" [m]  the transverse dispersion in the horizontal direction (default 0)
+ * [U] `"alphaTV`" [m]  the transverse dispersion in the vertical direction (default 0)
+
+* [U] `"Dispersion Tensor: Lichtner-Kelkar-Robinson`" [list] can be applied in three dimensions to 
+  materials with axi-symmetric absolute permeability. It requires
+
+ * [U] `"alphaLH`" [m]  the longitudinal dispersion in the horizontal direction (default 0)
+ * [U] `"alphaLV`" [m]  the longitudinal dispersion in the vertical direction (default 0)
+ * [U] `"alphaTH`" [m]  the transverse dispersion in the horizontal direction (default 0)
+ * [U] `"alphaTV`" [m]  the transverse dispersion in the vertical direction (default 0)
 
 The following models are currently supported for Tortuosity.
 

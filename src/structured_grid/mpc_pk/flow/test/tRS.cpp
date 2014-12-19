@@ -270,9 +270,10 @@ main (int   argc,
 
   Real dt_new;
   NLSstatus ret;
+  int retCode;
   for (step++ ; step <= Niter; ++step) {
     bool cont = true;
-    int retCode = -1;
+    retCode = -1;
     while (cont && retCode < 0) {
       rs_data.SetCurrentTimestep(step+1);
       rs_data.new_time = rs_data.old_time+dt;
@@ -328,9 +329,9 @@ main (int   argc,
   layout.Clear();
 
 #ifdef BL_USE_PETSC
-    PetscFinalize();
+  PetscFinalize();
 #endif
 
   ParallelDescriptor::EndParallel();
-  return 0;
+  return (retCode < 0 ? 1 : 0);
 }

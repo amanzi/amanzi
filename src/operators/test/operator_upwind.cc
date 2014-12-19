@@ -25,7 +25,7 @@
 
 #include "OperatorDefs.hh"
 #include "UpwindStandard.hh"
-#include "UpwindMFD.hh"
+#include "UpwindDivK.hh"
 
 namespace Amanzi{
 
@@ -150,7 +150,7 @@ TEST(UPWIND) {
     ModelUpwindFn func = &Model::Value;
     upwind1.Compute(flux, bc_model, bc_value, field, upw_field1, func);
 
-    UpwindMFD<Model> upwind2(mesh, model);
+    UpwindDivK<Model> upwind2(mesh, model);
     upwind2.Init(ulist);
     upwind2.Compute(flux, bc_model, bc_value, field, upw_field2, func);
 

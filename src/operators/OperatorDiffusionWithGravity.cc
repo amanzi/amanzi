@@ -39,7 +39,7 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
     if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
     if (upwind_ == OPERATOR_UPWIND_FLUX || 
         upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION ||
-        upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+        upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
       k_face = k_->ViewComponent("face", true);
     }
 
@@ -63,7 +63,7 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
       if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = kc;
-      } else if (upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+      } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
         kc = (*k_cell)[0][c];
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
       } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
@@ -73,7 +73,7 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
       }
 
-      if (upwind_ != OPERATOR_UPWIND_AMANZI_MFD) {
+      if (upwind_ != OPERATOR_UPWIND_AMANZI_DIVK) {
         WhetStone::Tensor& Kc = (*K_)[c]; 
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
@@ -103,7 +103,7 @@ void OperatorDiffusionWithGravity::UpdateMatrices(Teuchos::RCP<const CompositeVe
         }
       }
 
-      if (upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+      if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
         WhetStone::DenseVector v(nfaces), av(nfaces);
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
@@ -144,7 +144,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
   if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
   if (upwind_ == OPERATOR_UPWIND_FLUX || 
       upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION ||
-      upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+      upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
     k_face = k_->ViewComponent("face", true);
   }
 
@@ -170,7 +170,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
     if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
-    } else if (upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+    } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
@@ -182,7 +182,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
 
     double zc = mesh_->cell_centroid(c)[dim - 1];
 
-    if (upwind_ != OPERATOR_UPWIND_AMANZI_MFD) {
+    if (upwind_ != OPERATOR_UPWIND_AMANZI_DIVK) {
       WhetStone::Tensor& Kc = (*K_)[c];
       AmanziGeometry::Point Kg(Kc * rho_g);
       for (int n = 0; n < nfaces; n++) {
@@ -215,7 +215,7 @@ void OperatorDiffusionWithGravity::UpdateFlux(
       }
     }
 
-    if (upwind_ == OPERATOR_UPWIND_AMANZI_MFD) {
+    if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
       WhetStone::DenseVector v(nfaces), av(nfaces);
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];

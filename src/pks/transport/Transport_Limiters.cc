@@ -427,13 +427,12 @@ void Transport_PK::LimiterKuzmin(const int component,
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i = 0; i < dim; i++) gradient_c[i] = (*grad)[i][c];
 
-    double umin = component_node_min[c];
-    double umax = component_node_max[c];
-
     normals.clear();  // normals to planes the define the feasiable set
     for (int loop = 0; loop < 2; loop++) {
       for (int i = 0; i < nnodes; i++) {
         int v = nodes[i];
+        double umin = component_node_min[v];
+        double umax = component_node_max[v];
 
         mesh_->node_get_coordinates(v, &xp);
         up = lifting_->getValue(gradient_c, c, xp);

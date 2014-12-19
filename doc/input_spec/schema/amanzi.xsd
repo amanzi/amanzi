@@ -591,7 +591,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
         <xs:element name="limit_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
 	<xs:element name="max_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
 	<xs:element name="max_preconditioner_lag_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
-	<xs:element name="nonlinear_tolerance" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
+        <xs:element name="nonlinear_tolerance" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
+        <xs:element name="error_control_options" type="xs:string" minOccurs = "0" maxOccurs = "1"/>
 	<xs:element name="unstr_pseudo_time_integrator" type="typedef_unstr_pseudo_time_integrator" minOccurs = "0" maxOccurs = "1"/>
 	<xs:element name="nonlinear_iteration_damping_factor" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
 	<xs:element name="nonlinear_iteration_divergence_factor" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
@@ -599,6 +600,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:element name="initialize_with_darcy" type="xs:boolean" minOccurs = "0" maxOccurs = "1"/>
 	<xs:element name="restart_tolerance_factor" type="typedef_exponential"/>
 	<xs:element name="restart_tolerance_relaxation_factor" type="typedef_exponential"/>
+        <xs:assert  test="@error_control_options = ('pressure','residual')"/>
     </xs:all>
 </xs:complexType>
 
@@ -609,9 +611,10 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="method" type="typedef_unstr_pseudo_time_method" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="preconditioner" type="typedef_unstr_pseudo_time_preconditioner" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="linear_solver" type="typedef_unstr_pseudo_time_linear_solver" minOccurs = "0" maxOccurs = "1"/>
-		<xs:element name="control_options" type="xs:string" minOccurs = "0" maxOccurs = "1"/>
+		<xs:element name="error_control_options" type="xs:string" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="convergence_tolerance" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
-		<xs:element name="max_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
+                <xs:element name="max_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
+                <xs:assert  test="@error_control_options = ('pressure')"/>
 	</xs:all>
 </xs:complexType>
 
@@ -650,16 +653,17 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:complexType name="typedef_unstr_bdf1_integration_method">
 	<xs:attribute name="min_iterations" type="xs:integer"/>   
-    <xs:attribute name="max_iterations" type="xs:integer"/>   
-    <xs:attribute name="limit_iterations" type="xs:integer"/>   
-    <xs:attribute name="nonlinear_tolerance" type="typedef_exponential"/>   
+        <xs:attribute name="max_iterations" type="xs:integer"/>
+        <xs:attribute name="limit_iterations" type="xs:integer"/>
+        <xs:attribute name="nonlinear_tolerance" type="typedef_exponential"/>
 	<xs:attribute name="nonlinear_iteration_damping_factor" type="typedef_exponential"/>
 	<xs:attribute name="max_preconditioner_lag_iterations" type="xs:integer"/> 
 	<xs:attribute name="max_divergent_iterations" type="xs:integer"/>   
 	<xs:attribute name="nonlinear_iteration_divergence_factor" type="typedef_exponential"/>
 	<xs:attribute name="restart_tolerance_factor" type="typedef_exponential"/>
 	<xs:attribute name="restart_tolerance_relaxation_factor" type="typedef_exponential"/>
-	<xs:attribute name="initialize_with_darcy" type="xs:boolean" />
+        <xs:attribute name="initialize_with_darcy" type="xs:boolean" />
+        <xs:attribute name="error_control_options" type="xs:string" />
 </xs:complexType>
 
 <xs:complexType name="typedef_unstr_nonlinear_solver">
@@ -1151,8 +1155,10 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 			<xs:alternative type="typedef_specific_yield"/>
 		</xs:element>
 		<xs:element name="dispersion_tensor" minOccurs="0" maxOccurs="1">			
-			<xs:alternative test="@type='file'" type="typedef_property_file"/>
-			<xs:alternative type="typedef_dispersion_tensor"/>
+                        <xs:alternative test="@type='file'" type="typedef_property_file"/>
+                        <xs:alternative test="@type='uniform_isotropic'" type="typedef_dispersion_tensor_uniform_isotropic"/>
+                        <xs:alternative test="@type='burnett_frind'" type="typedef_dispersion_tensor_burnett_frind"/>
+                        <xs:alternative test="@type='lichtner_kelkar_robinson'" type="typedef_dispersion_tensor_lichtner_kelkar_robinson"/>
 		</xs:element>
 		<xs:element name="tortuosity" minOccurs="0" maxOccurs="1">			
 			<xs:alternative test="@type='file'" type="typedef_property_file"/>
@@ -1178,9 +1184,20 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="value" use="required" type="typedef_exponential"/>
 </xs:complexType>
 
-<xs:complexType name="typedef_dispersion_tensor">
+<xs:complexType name="typedef_dispersion_tensor_uniform_isotropic">
 	<xs:attribute name="alpha_l" use="required" type="typedef_exponential"/>
 	<xs:attribute name="alpha_t" use="required" type="typedef_exponential"/>
+</xs:complexType>
+<xs:complexType name="typedef_dispersion_tensor_burnett_frind">
+        <xs:attribute name="alpha_l" use="required" type="typedef_exponential"/>
+        <xs:attribute name="alpha_th" use="required" type="typedef_exponential"/>
+        <xs:attribute name="alpha_tv" use="required" type="typedef_exponential"/>
+</xs:complexType>
+<xs:complexType name="typedef_dispersion_tensor_lichtner_kelkar_robinson">
+        <xs:attribute name="alpha_lh" use="required" type="typedef_exponential"/>
+        <xs:attribute name="alpha_lv" use="required" type="typedef_exponential"/>
+        <xs:attribute name="alpha_th" use="required" type="typedef_exponential"/>
+        <xs:attribute name="alpha_tv" use="required" type="typedef_exponential"/>
 </xs:complexType>
 
 <xs:complexType name="typedef_tortuosity">
