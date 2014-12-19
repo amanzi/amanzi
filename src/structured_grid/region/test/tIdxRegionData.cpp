@@ -22,7 +22,11 @@ class VecEvaluator
 {
 public:
   VecEvaluator(const std::vector<std::string>& colors);
-  virtual Real operator()(int i, Real time) const;
+  VecEvaluator(const VecEvaluator& rhs);
+  virtual ~VecEvaluator();
+  virtual VecEvaluator * clone () const;
+
+  virtual const std::vector<Real>& operator()(int i, Real time) const;
   bool Initialized(const std::string& color) const;
 
 protected:
@@ -32,6 +36,7 @@ protected:
   std::vector<std::string> mColors;
   mutable std::vector<Real> mVals;
   mutable std::vector<bool> mInit;
+  mutable std::vector<Real> mRetVal;
 };
 
 VecEvaluator::VecEvaluator(const std::vector<std::string>& colors)
@@ -43,6 +48,21 @@ VecEvaluator::VecEvaluator(const std::vector<std::string>& colors)
     mInit[i] = false;
   }
 }
+
+VecEvaluator::VecEvaluator(const VecEvaluator& rhs)
+{
+  mColors = rhs.mColors;
+  mVals = rhs.mVals;
+  mInit = rhs.mInit;
+}
+
+VecEvaluator *
+VecEvaluator::clone () const
+{
+  return new VecEvaluator(*this);
+}
+
+VecEvaluator::~VecEvaluator() {}
 
 int
 VecEvaluator::ColorIdx(const std::string& color) const {
@@ -82,13 +102,17 @@ VecEvaluator::Initialized(const std::string& color) const
 }
 
 
-Real
+const std::vector<Real>&
 VecEvaluator::operator()(int i, Real time) const
 {
   if (!mInit[i]) {
     Initialize(i);
   }
-  return mVals[i];
+  mRetVal.resize(NComp());
+  for (int i=0; i<mRetVal.size(); ++i) {
+    mRetVal[i] = mVals[i];
+  }
+  return mRetVal;
 }
 
 
@@ -122,7 +146,7 @@ main (int   argc,
    */
   std::string label = "label"; // Remnant bit of info handy for Amanzi implementation
   std::string typeStr = "type"; // --ditto--
-  IdxRegionData idxRegionData(label,regarr,typeStr,&VE);
+  IdxRegionData idxRegionData(label,regarr,typeStr,VE);
 
   Box domain(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(31,31,0)));
   IArrayBox idx(domain,1);
@@ -141,19 +165,26 @@ main (int   argc,
 
   VecEvaluator VE2(v);
   Array<const Region*> regarr2 = rm.RegionPtrArray(); // All of them
-  IdxRegionData idxRegionData2(label,regarr2,typeStr,&VE2);
+  IdxRegionData idxRegionData2(label,regarr2,typeStr,VE2);
   idx.setVal(2);
   fab.setVal(0);
   idxRegionData2.apply(fab,idx,dx.dataPtr(),0,time);
 
   // If all went well, every point in fab should have been set
 
-  Real correct_result = VE2(2,time) * fab.box().numPts();
+  Real correct_result = VE2(2,time)[0] * fab.box().numPts();
   Real result = fab.sum(0);
 
   Real error = (correct_result - result)/correct_result;
 
-  if (std::abs(error) > 1.e-14 || VE2.Initialized("brown") || VE2.Initialized("red") ) {
+  const IdxRegionData::IdxRDEval& E = idxRegionData2.Evaluator();
+  const VecEvaluator* ve = static_cast<const VecEvaluator*>(&E);
+  if (ve==0) {
+    BoxLib::Abort("Upcast of evaluator failed");
+    return 1;
+  }
+
+  if (std::abs(error) > 1.e-14 || ve->Initialized("brown") || ve->Initialized("red") ) {
     BoxLib::Abort("Something went wrong in tIdxRegionData");
     return 1;
   }

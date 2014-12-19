@@ -19,6 +19,7 @@ static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::Aman
 #include <RSAMRdata.H>
 #include <Advection.H>
 #include <AmanziChemHelper_Structured.H>
+#include <ChemConstraintEval.H>
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -205,7 +206,7 @@ PorousMedia::RegisterPhysicsBasedEvents()
       BL_ASSERT(tbc_array.size()>n);
       BL_ASSERT(tbc_array[n].size()>i);
       const std::string& event_name = tbc_array[n][i].Label() + "_" + soluteNames()[n];
-      pmamr.RegisterEvent(event_name,new EventCoord::TimeEvent(tbc_array[n][i].time()));
+      pmamr.RegisterEvent(event_name,new EventCoord::TimeEvent(tbc_array[n][i].Time()));
     }
   }
 }
@@ -291,7 +292,7 @@ PorousMedia::setup_bound_desc()
         const std::string& purpose = PMAMR::RpurposeDEF[idx];
         
         for (int n=0; n<ntracers; ++n) {
-          const PArray<RegionData>& tbcs = PorousMedia::TBCs(n);
+          const PArray<IdxRegionData>& tbcs = PorousMedia::TBCs(n);
           Array<int> myTBCs;
           for (int i=0; i<tbcs.size(); ++i) {
             const Array<const Region*>& tregions = tbcs[i].Regions();
@@ -987,6 +988,7 @@ PorousMedia::initData ()
           const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
           const std::map<std::string,Real>& aux_chem_defaults_map = chemistry_helper->AuxChemDefaultsMap();
           FArrayBox& fab = get_new_data(Aux_Chem_Type)[mfi];
+          fab.setVal(0);
           for (std::map<std::string,int>::const_iterator it=aux_chem_variables_map.begin(); it!=aux_chem_variables_map.end(); ++it) {
             const std::string& parameter = it->first;
             int comp = it->second;
@@ -1037,7 +1039,7 @@ PorousMedia::initData ()
                   }
                   int comp = it3->second;
                   Real value = it2->second;
-                  const PArray<RegionData>& rds = tic_array[iTracer];
+                  const PArray<IdxRegionData>& rds = tic_array[iTracer];
                   for (int k=0; k<rds.size(); ++k) {
                     const Array<const Region*>& rock_regions = rds[k].Regions();
                     for (int j=0; j<rock_regions.size(); ++j) {
@@ -1049,16 +1051,17 @@ PorousMedia::initData ()
             }
           }
 
+          IArrayBox& mdat = (*materialID)[mfi];
           for (int iTracer=0; iTracer<ntracers; ++iTracer)
           {
-            const PArray<RegionData>& rds = tic_array[iTracer];
+            const PArray<IdxRegionData>& rds = tic_array[iTracer];
 
             for (int i=0; i<rds.size(); ++i)
             {
-              const RegionData& tic = rds[i];
+              const IdxRegionData& tic = rds[i];
               const Array<const Region*>& tic_regions = tic.Regions();
               const std::string& tic_type = tic.Type();
-                    
+
               if (tic_type == "file") 
               {
                 std::cerr << "Initialization of initial condition based on "
@@ -1066,22 +1069,14 @@ PorousMedia::initData ()
                 BoxLib::Abort("PorousMedia::initData()");
               }
               else if (tic_type == "concentration") {
-                Array<Real> val = tic();
-                for (int jt=0; jt<tic_regions.size(); ++jt) {
-                  BL_ASSERT(val.size()>=1);
-                  BL_ASSERT(sdat.nComp()>ncomps+iTracer);
-                  BL_ASSERT(tic_regions.size()>jt);
-                  tic_regions[jt]->setVal(sdat,val[val.size()-1],ncomps+iTracer,dx,0);
-                  if (chemistry_model_name=="Alquimia" && do_tracer_chemistry>0) 
-                  {
-                    FArrayBox& aux =  get_new_data(Aux_Chem_Type)[mfi];
-                    BL_ASSERT(chemistry_helper != 0);
-                    int Naux = chemistry_helper->AuxChemVariablesMap().size();
-                    BL_ASSERT(val.size() == Naux + 1);
-                    for (int iAux=0; iAux<Naux; ++iAux) {
-                      tic_regions[jt]->setVal(aux,val[iAux],iAux,dx,0);
-                    }
-                  }
+                const ChemConstraint* cc = dynamic_cast<const ChemConstraint*>(&tic);
+                if (cc!=0) {
+                  FArrayBox& aux = get_new_data(Aux_Chem_Type)[mfi];
+                  const Box vbox = sdat.box() & aux.box();
+                  cc->apply(sdat,aux,mdat,dx,ncomps+iTracer,0,vbox,0);
+                }
+                else {
+                  tic.apply(sdat,mdat,dx,ncomps+iTracer,0);
                 }
               }
               else {
@@ -1126,6 +1121,7 @@ PorousMedia::initData ()
     } else {
       calcInvPressure(S_new,P_new,cur_time,0,0,0); // Set sat from p, no grow cells
     }
+
     U_vcr.setVal(0.);
     //
     // compute lambda
@@ -1605,13 +1601,13 @@ PorousMedia::init (AmrLevel& old)
   //Get best state data: from old. 
   int nGrow = 0;
   get_fillpatched_rhosat(cur_time,S_new,nGrow);
-  for (FillPatchIterator fpi(old,S_new,nGrow,cur_time,State_Type,ncomps,ntracers);
+  for (PMFillPatchIterator fpi(old,S_new,nGrow,cur_time,State_Type,ncomps,ntracers);
        fpi.isValid();
        ++fpi) 
   {
     S_new[fpi.index()].copy(fpi(),0,ncomps,ntracers);
   }
-  for (FillPatchIterator fpi(old,P_new,0,cur_time,Press_Type,0,1);
+  for (PMFillPatchIterator fpi(old,P_new,0,cur_time,Press_Type,0,1);
        fpi.isValid();
        ++fpi)
   {
@@ -1657,14 +1653,14 @@ PorousMedia::init (AmrLevel& old)
     MultiFab& Aux_new = get_new_data(Aux_Chem_Type);
     MultiFab& Aux_old = oldns->get_new_data(Aux_Chem_Type);
     int Aux_ncomp = Aux_new.nComp();
-    for (FillPatchIterator fpi(old,Aux_new,0,cur_time,Aux_Chem_Type,0,Aux_ncomp);
+    for (PMFillPatchIterator fpi(old,Aux_new,0,cur_time,Aux_Chem_Type,0,Aux_ncomp);
          fpi.isValid();
          ++fpi) {
       Aux_new[fpi.index()].copy(fpi(),0,0,Aux_ncomp);
     }
 
     MultiFab& FC_new  = get_new_data(FuncCount_Type); 
-    for (FillPatchIterator fpi(old,FC_new,FC_new.nGrow(),cur_time,FuncCount_Type,0,1);
+    for (PMFillPatchIterator fpi(old,FC_new,FC_new.nGrow(),cur_time,FuncCount_Type,0,1);
          fpi.isValid();
          ++fpi) {
       FC_new[fpi.index()].copy(fpi());
@@ -2087,7 +2083,7 @@ PorousMedia::get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow)
     }
 
     MultiFab P(grids,ncomps,nGrow); P.setVal(0,0,ncomps,nGrow);
-    for (FillPatchIterator fpi(*this,P,nGrow,t_eval,Press_Type,0,ncomps); fpi.isValid(); ++fpi) {
+    for (PMFillPatchIterator fpi(*this,P,nGrow,t_eval,Press_Type,0,ncomps); fpi.isValid(); ++fpi) {
       for (BoxList::const_iterator it = dbox.begin(); it !=dbox.end(); ++it) {
         Box ovlp = fpi().box() & *it;
         if (ovlp.ok()) {
@@ -2104,7 +2100,7 @@ PorousMedia::get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow)
     }
   }
   else {
-    for (FillPatchIterator S_fpi(*this,RhoSat,nGrow,t_eval,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi) {
+    for (PMFillPatchIterator S_fpi(*this,RhoSat,nGrow,t_eval,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi) {
       RhoSat[S_fpi].copy(S_fpi());
     }
   }
@@ -2987,12 +2983,12 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
     PorousMedia& pmc = getLevel(level-1);
     int nGrowDiffC = 2; // To accomodate sliding stencil (if max_order==3)
     Sc_old.define(pmc.boxArray(),ntracers,nGrowDiffC,Fab_allocate);
-    for (FillPatchIterator fpi(pmc,Sc_old,nGrowDiffC,prev_time,State_Type,
+    for (PMFillPatchIterator fpi(pmc,Sc_old,nGrowDiffC,prev_time,State_Type,
                                first_tracer,ntracers); fpi.isValid(); ++fpi) {
       Sc_old[fpi].copy(fpi(),0,0,ntracers);
     }
     Sc_new.define(pmc.boxArray(),ntracers,nGrowDiffC,Fab_allocate);
-    for (FillPatchIterator fpi(pmc,Sc_new,nGrowDiffC,cur_time,State_Type,
+    for (PMFillPatchIterator fpi(pmc,Sc_new,nGrowDiffC,cur_time,State_Type,
                                first_tracer,ntracers); fpi.isValid(); ++fpi) {
       Sc_new[fpi].copy(fpi(),0,0,ntracers);
     }
@@ -3257,7 +3253,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
     BL_ASSERT(sat_old.nGrow()==sat_new.nGrow());
 
     FArrayBox SRCext, divu;
-    for (FillPatchIterator C_old_fpi(*this,get_old_data(State_Type),NGROWHYP,
+    for (PMFillPatchIterator C_old_fpi(*this,get_old_data(State_Type),NGROWHYP,
                                      prev_time,State_Type,first_tracer,ntracers),
            C_new_fpi(*this,get_new_data(State_Type),nGrowHYP,
                      cur_time,State_Type,first_tracer,ntracers);
@@ -4559,7 +4555,7 @@ PorousMedia::predictDT_diffusion_explicit (Real      t_eval,
     MultiFab Slocal(grids,ncomps,nGrowEIGEST);
     // FIXME: Note only one component (water) assumed here
     int wComp = 0;
-    for (FillPatchIterator S_fpi(*this,get_new_data(State_Type),nGrowEIGEST,
+    for (PMFillPatchIterator S_fpi(*this,get_new_data(State_Type),nGrowEIGEST,
                                  t_eval,State_Type,wComp,1); S_fpi.isValid(); ++S_fpi) {
       FArrayBox& psv = Slocal[S_fpi];
       int i = S_fpi.index();
@@ -6173,7 +6169,7 @@ PorousMedia::FillStateBndry (Real time,
   if (S.nGrow() == 0)
     return;
 
-  for (FillPatchIterator fpi(*this,S,S.nGrow(),time,state_idx,src_comp,ncomp);
+  for (PMFillPatchIterator fpi(*this,S,S.nGrow(),time,state_idx,src_comp,ncomp);
        fpi.isValid();
        ++fpi)
     {
@@ -6236,7 +6232,7 @@ PorousMedia::calcDiffusivity (const Real time,
     MultiFab Slocal;
     if (saturation==0) {
       Slocal.define(grids,1,nGrow,Fab_allocate);
-      for (FillPatchIterator fpi(*this,Slocal,nGrow,time,State_Type,0,ncomps);
+      for (PMFillPatchIterator fpi(*this,Slocal,nGrow,time,State_Type,0,ncomps);
            fpi.isValid();
            ++fpi)
       {
@@ -6596,7 +6592,7 @@ PorousMedia::calcDLambda (const Real time, MultiFab* dlbd_cc)
 
   const int nGrow = 1;    
   const int n_kr_coef = kr_coef->nComp();
-  for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
+  for (PMFillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
        fpi.isValid();
        ++fpi)
     {
@@ -6691,36 +6687,45 @@ PorousMedia::setPhysBoundaryValues (FArrayBox& dest,
                                     int        src_comp,
                                     int        num_comp)
 {
+  state[state_indx].FillBoundary(dest,time,geom.CellSize(),
+                                 geom.ProbDomain(),dest_comp,src_comp,num_comp);
+}
+
+void
+PorousMedia::PMsetPhysBoundaryValues (FArrayBox& dest,
+                                      const IArrayBox& matID,
+                                      int        state_indx,
+                                      Real       time,
+                                      int        dest_comp,
+                                      int        src_comp,
+                                      int        num_comp)
+{
   BL_PROFILE("PorousMedia::setPhysBoundaryValues()");
-    // The default behavior of an AmrLevel, for reference:
-    state[state_indx].FillBoundary(dest,time,geom.CellSize(),
-                                   geom.ProbDomain(),dest_comp,src_comp,num_comp);
+  if (state_indx==State_Type) {
+    int last_comp = src_comp + num_comp - 1;
+    int n_t = 0;
+    int n_c = 0;
+    int s_t = -1;
 
-    if (state_indx==State_Type) {
-      int last_comp = src_comp + num_comp - 1;
-      int n_t = 0;
-      int n_c = 0;
-      int s_t = -1;
-
-      if (src_comp >= 0 && src_comp < ncomps) {
-	n_c = std::min(last_comp, ncomps-1) - src_comp + 1;
-      }
-
-      if (last_comp >= ncomps) {
-	s_t = std::max(ncomps, src_comp);
-	n_t = std::min(ncomps+ntracers-1,last_comp) - s_t + 1;
-      }
-
-      if (n_c > 0) {
-	dirichletStateBC(dest,time,src_comp,dest_comp,n_c);
-      }
-      if (n_t > 0) {
-	dirichletTracerBC(dest,time,s_t,dest_comp+n_c,n_t);
-      }
+    if (src_comp >= 0 && src_comp < ncomps) {
+      n_c = std::min(last_comp, ncomps-1) - src_comp + 1;
     }
-    else if (state_indx==Press_Type) {
-      dirichletPressBC(dest,time);
+
+    if (last_comp >= ncomps) {
+      s_t = std::max(ncomps, src_comp);
+      n_t = std::min(ncomps+ntracers-1,last_comp) - s_t + 1;
     }
+
+    if (n_c > 0) {
+      dirichletStateBC(dest,matID,time,src_comp,dest_comp,n_c);
+    }
+    if (n_t > 0) {
+      dirichletTracerBC(dest,matID,time,s_t,dest_comp+n_c,n_t);
+    }
+  }
+  else if (state_indx==Press_Type) {
+    dirichletPressBC(dest,matID,time);
+  }
 }
 
 void
@@ -6822,7 +6827,7 @@ PorousMedia::AdjustBCevalTime(int  state_idx,
 }
 
 void
-PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, int nComp)
+PorousMedia::dirichletStateBC (FArrayBox& fab, const IArrayBox& matID, Real time,int sComp, int dComp, int nComp)
 {
   BL_PROFILE("PorousMedia::dirichletStateBC()");
   if (model == PM_RICHARDS) { // FIXME: Support solving Richards in saturation form?
@@ -6835,22 +6840,22 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
 }  
 
 void
-PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp, int nComp)
+PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, Real time, int sComp, int dComp, int nComp)
 {
   BL_PROFILE("PorousMedia::dirichletTracerBC()");
   BL_ASSERT(setup_tracer_transport > 0);
 
   Real t_eval = AdjustBCevalTime(State_Type,time,false);
 
-  FArrayBox bndFab;
+  FArrayBox bndFab, auxFab;
   for (int n=0; n<nComp; ++n) 
   {
     int tracer_idx = sComp+n-ncomps;
-    if (tbc_descriptor_map[tracer_idx].size()) 
+    if (tbc_descriptor_map.size() > tracer_idx  && tbc_descriptor_map[tracer_idx].size())
     {
       const Box domain = geom.Domain();
       const Real* dx   = geom.CellSize();
-            
+
       for (std::map<Orientation,BCDesc>::const_iterator
              it=tbc_descriptor_map[tracer_idx].begin(); it!=tbc_descriptor_map[tracer_idx].end(); ++it) 
       {
@@ -6860,8 +6865,16 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp,
           bndFab.copy(fab,dComp+n,0,1);
           const Array<int>& face_bc_idxs = it->second.second;
           for (int i=0; i<face_bc_idxs.size(); ++i) {
-            const RegionData& face_tbc = tbc_array[tracer_idx][face_bc_idxs[i]];
-            face_tbc.apply(bndFab,dx,0,1,t_eval);
+            const IdxRegionData& face_tbc = tbc_array[tracer_idx][face_bc_idxs[i]];
+
+            const ChemConstraint* cc = dynamic_cast<const ChemConstraint*>(&face_tbc);
+            if (cc!=0) {
+              auxFab.resize(bndBox,cc->Evaluator().NComp());
+              cc->apply(bndFab,auxFab,matID,dx,0,0,bndBox,t_eval);
+            }
+            else {
+              face_tbc.apply(bndFab,matID,dx,0,t_eval);
+            }
           }
           fab.copy(bndFab,0,dComp+n,1);
         }
@@ -6871,7 +6884,7 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp,
 }
 
 void
-PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
+PorousMedia::dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, Real time)
 {
   BL_PROFILE("PorousMedia::dirichletPressBC()");
   Array<int> bc(BL_SPACEDIM*2,0); // FIXME: Never set, why do we need this
@@ -6976,7 +6989,7 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
 }
 
 void
-PorousMedia::dirichletDefaultBC (FArrayBox& fab, Real time)
+PorousMedia::dirichletDefaultBC (FArrayBox& fab, const IArrayBox& matID,  Real time)
 {
   BL_PROFILE("PorousMedia::dirichletDefaultBC()");
     int nComp = fab.nComp();
@@ -7095,7 +7108,7 @@ PorousMedia::derive_Volumetric_Water_Content(Real      time,
     BL_ASSERT(mf.nGrow()<=rock_phi->nGrow());
 
     int ncomp = 1; // Just water
-    FillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
+    PMFillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
     for ( ; fpi.isValid(); ++fpi) {
       mf[fpi].copy(fpi(),0,dcomp,ncomp);
       mf[fpi].mult((*rock_phi)[fpi],0,dcomp,ncomp);
@@ -7106,7 +7119,7 @@ PorousMedia::derive_Volumetric_Water_Content(Real      time,
       BL_ASSERT(ntrac < ntracers);
       int ncompt = 1;
       int scompt = ncomps + ntrac;
-      FillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scompt,ncompt);
+      PMFillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scompt,ncompt);
       for ( ; fpi.isValid(); ++fpi) {
         mf[fpi].mult(fpi(),0,dcomp,ncompt);
       }
@@ -7138,7 +7151,7 @@ PorousMedia::derive_Aqueous_Saturation(Real      time,
     int ngrow = mf.nGrow();
     BL_ASSERT(mf.nGrow()<=1); // state only has this many
     int ncomp = 1; // Just aqueous
-    FillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
+    PMFillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
     for ( ; fpi.isValid(); ++fpi)
     {
       mf[fpi].copy(fpi(),0,dcomp,ncomp);
@@ -7465,7 +7478,7 @@ PorousMedia::derive (const std::string& name,
       if (it != aux_chem_variables_map.end()) {
         int ncompt = 1;
         int scompt = it->second;
-        FillPatchIterator fpi(*this,mf,mf.nGrow(),time,Aux_Chem_Type,scompt,ncompt);
+        PMFillPatchIterator fpi(*this,mf,mf.nGrow(),time,Aux_Chem_Type,scompt,ncompt);
         for ( ; fpi.isValid(); ++fpi) {
           mf[fpi].copy(fpi(),0,dcomp,ncompt);
         }
@@ -8197,4 +8210,61 @@ PorousMedia::umac_cpy_edge_to_cen(MultiFab* u_mac, int idx_type, int ishift)
 		    udat ,ARLIM( u_lo),ARLIM( u_hi),lo,hi, &ishift); 
     }
 }
+
+PMFillPatchIterator::PMFillPatchIterator (AmrLevel& amrlevel,
+                                          MultiFab& leveldata)
+  :
+  FillPatchIterator(amrlevel,leveldata),
+  m_pmlevel(dynamic_cast<PorousMedia&>(amrlevel))
+{}
+
+PMFillPatchIterator::PMFillPatchIterator (AmrLevel& amrlevel,
+                                          MultiFab& leveldata,
+                                          int       boxGrow,
+                                          Real      time,
+                                          int       index,
+                                          int       scomp,
+                                          int       ncomp)
+  :
+  FillPatchIterator(amrlevel,leveldata,boxGrow,time,index,scomp,ncomp),
+  m_pmlevel(dynamic_cast<PorousMedia&>(amrlevel)),
+  m_time(time),
+  m_stateIndex(index),
+  m_scomp(scomp),
+  m_ncomp(ncomp)
+{
+  Initialize(boxGrow,leveldata.boxArray(),amrlevel);
+}
+
+void
+PMFillPatchIterator::Initialize (int             boxGrow,
+                                 const BoxArray& grids,
+                                 AmrLevel&       amrlevel)
+{
+  if (m_stateIndex == State_Type) {
+    m_matID.define(grids,1,boxGrow,Fab_allocate);
+    const iMultiFab& levelMatID = m_pmlevel.MaterialID();
+    if (grids == levelMatID.boxArray() && boxGrow <= levelMatID.nGrow()) {
+      for (MFIter mfi(levelMatID); mfi.isValid(); ++mfi) {
+        const IArrayBox& smat = levelMatID[mfi];
+        const Box& box = smat.box();
+        m_matID[mfi].copy(smat,box,0,box,0,1);
+      }
+    }
+    else {
+      bool ignore_mixed = true;
+      PorousMedia::GetRockManager()->GetMaterialID(amrlevel.Level(),m_matID,boxGrow,ignore_mixed);
+    }
+  }
+}
+
+FArrayBox&
+PMFillPatchIterator::operator() ()
+{
+  FArrayBox& this_fab = FillPatchIterator::operator()();
+  m_pmlevel.PMsetPhysBoundaryValues(this_fab,m_matID[FillPatchIterator::index()],m_stateIndex,m_time,0,m_scomp,m_ncomp);
+  return this_fab;
+}
+
+PMFillPatchIterator::~PMFillPatchIterator () {}
 

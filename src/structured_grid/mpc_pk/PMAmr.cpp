@@ -837,6 +837,7 @@ PMAmr::FinalizeInit (Real              strt_time,
     station.findGrid(amr_level,geom);
 #endif
 
+#if 0
     // Write initial plts and checkpoints no matter what
     {
         int file_name_digits_tmp = file_name_digits;
@@ -851,7 +852,7 @@ PMAmr::FinalizeInit (Real              strt_time,
         writePlotFile();
         file_name_digits = file_name_digits_tmp;
     }
-
+#endif
 
 }
 

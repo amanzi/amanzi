@@ -780,7 +780,7 @@
 
     <ParameterList name="West BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XLOBC}"/>
-      <ParameterList name="BC: Uniform Pressure Head">
+      <ParameterList name="BC: Uniform Hydraulic Head">
         <Parameter name="Values" type="Array(double)" value="{30.5}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
@@ -808,7 +808,7 @@
 
     <ParameterList name="East BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XHIBC}"/>
-      <ParameterList name="BC: Uniform Pressure Head">
+      <ParameterList name="BC: Uniform Hydraulic Head">
         <Parameter name="Values" type="Array(double)" value="{30}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
