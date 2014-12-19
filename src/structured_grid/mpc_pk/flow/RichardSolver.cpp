@@ -138,6 +138,12 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
     ierr = MatColoringSetType(matcoloring, MATCOLORINGSL); CHKPETSC(ierr);
     ierr = MatColoringApply(matcoloring, &iscoloring); CHKPETSC(ierr);
     MatColoringDestroy(&matcoloring);
+
+    // NOTE: The finite difference coloring code here is rather brittle, because
+    // NOTE: it uses unpublished fields in the MatFDColoring data structure.
+    // NOTE: In order to bring it in line with PETSc 3.5.2, it was necessary 
+    // NOTE: to use the 'ds' method and set the block size to 1. It is possible
+    // NOTE: that a future version of PETSc will break this again. :-/ JNJ
     ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
     matfdcoloring->htype = "ds"; // Give me column info, please.
     ierr = MatFDColoringSetBlockSize(matfdcoloring, 1, 1); CHKPETSC(ierr);
