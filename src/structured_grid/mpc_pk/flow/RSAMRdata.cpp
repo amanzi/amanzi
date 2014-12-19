@@ -292,7 +292,7 @@ RSAMRdata::FillStateBndry (MFTower& press,
   for (int lev=0; lev<nLevs; ++lev) {
     MultiFab& mf(press[lev]);
     const BoxArray& grids = mf.boxArray();
-    for (FillPatchIterator fpi(pm[lev],mf,mf.nGrow(),time,state_indx,src_comp,num_comp);
+    for (PMFillPatchIterator fpi(pm[lev],mf,mf.nGrow(),time,state_indx,src_comp,num_comp);
        fpi.isValid();
        ++fpi) {
       BoxList boxes = BoxLib::boxDiff(fpi().box(),grids[fpi.index()]);

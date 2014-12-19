@@ -8,14 +8,15 @@
 #include <DataServices.H>
 #include <AmrData.H>
 #include <Utility.H>
-#include <time.h> 
+#include <time.h>
 
 #include <PorousMedia.H>
 #include <PMAMR_Labels.H>
-#include <RegType.H> 
+#include <RegType.H>
 #include <Prob_PM_F.H>
 #include <PMAMR_Labels.H>
-#include <PMAmr.H> 
+#include <PMAmr.H>
+#include <ChemConstraintEval.H>
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -119,8 +120,8 @@ Array<std::string>  PorousMedia::tNames;
 int                 PorousMedia::ntracers;
 Array<int>          PorousMedia::tType; 
 Array<Real>         PorousMedia::tDen;
-Array<PArray<RegionData> > PorousMedia::tic_array;
-Array<PArray<RegionData> > PorousMedia::tbc_array;
+Array<PArray<IdxRegionData> > PorousMedia::tic_array;
+Array<PArray<IdxRegionData> > PorousMedia::tbc_array;
 Array<PArray<RegionData> > PorousMedia::tsource_array;
 std::map<std::string,Array<int> > PorousMedia::group_map;
 RockManager::ChemICMap       PorousMedia::solute_chem_ics; // sc[icname][solute][property] = val
@@ -516,7 +517,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::wt_lo = 0;
   PorousMedia::wt_hi = 0;
 
-  PorousMedia::temperature = 300;
+  PorousMedia::temperature = 0;
 
   PorousMedia::verbose      = 0;
   PorousMedia::cfl          = 0.8;
@@ -1848,21 +1849,9 @@ void  PorousMedia::read_tracer()
               BoxLib::Abort("Cannot use geochemical conditions if chemistry model not Alquimia");
             }
             std::string geocond; ppri.get("geochemical_condition",geocond);
-            Real cur_time = 0; // FIXME
-            Box boxTMP(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(0,0,0)));
-            const std::map<std::string,int>& auxChemVariablesMap = chemistry_helper->AuxChemVariablesMap();
-            FArrayBox primTMP(boxTMP,Nmobile);
-            int Naux = auxChemVariablesMap.size();
-            FArrayBox auxTMP(boxTMP,Naux);
-
-            const std::string& material_name = rock_manager->FindMaterialInRegions(region_names).Name();
-            const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
-            rock_manager->RockChemistryProperties(auxTMP,material_name,aux_chem_variables_map);
-            chemistry_helper->EnforceCondition(primTMP,0,auxTMP,boxTMP,geocond,cur_time);
-
-            Array<Real> vals(auxTMP.dataPtr(),Naux);
-            vals.resize(Naux+1); vals[Naux] = primTMP.dataPtr()[i];
-            tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,vals));
+            tic_array[i].set(n, new ChemConstraint(tNames[i],tic_regions,tic_type,
+                                                   ChemConstraintEval(geocond,i,rock_manager,chemistry_helper,
+                                                                      PorousMedia::Density()[0],PorousMedia::Temperature())));
           }
           else {
             int nv = ppri.countval("val");
@@ -1872,7 +1861,7 @@ void  PorousMedia::read_tracer()
               BoxLib::Abort(m.c_str());
             }
             Real val = 0; ppri.query("val",val);
-            tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,val));
+            tic_array[i].set(n, new IdxRegionData(tNames[i],tic_regions,tic_type,val));
           }
 
           // Check for "Free_Ion_Guess", load structure used to set aux_chem components
@@ -1972,31 +1961,16 @@ void  PorousMedia::read_tracer()
               }
               int nv = ppri.countval("geochemical_conditions");
               Array<std::string> geoconds; ppri.getarr("geochemical_conditions",geoconds,0,nv);
-
               if (nv > 1) {
                 ppri.getarr("times",times,0,nv);
-                ppri.getarr("forms",forms,0,nv-1);
               }
               else {
                 times.resize(1,0);
               }
+              tbc_array[i].set(tbc_cnt++, new ChemConstraint(tbc_names[n],tbc_regions,tbc_type,
+                                                             ChemConstraintEval(geoconds,times,i,rock_manager,chemistry_helper,
+                                                                                PorousMedia::Density()[0],PorousMedia::Temperature())));
 
-              for (int ti = 0; ti < geoconds.size(); ++ti)
-              {
-                Real cur_time = 0.; // A dummy variable
-                std::string geocond = geoconds[ti];
-                Box boxTMP(IntVect(D_DECL(0,0,0)),IntVect(D_DECL(0,0,0)));
-                const std::map<std::string,int>& auxChemVariablesMap = chemistry_helper->AuxChemVariablesMap();
-                FArrayBox primTMP(boxTMP,Nmobile);
-                int Naux = auxChemVariablesMap.size();
-                FArrayBox auxTMP(boxTMP,Naux);
-
-                const std::string& material_name = rock_manager->FindMaterialInRegions(tbc_region_names).Name();
-                const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
-                rock_manager->RockChemistryProperties(auxTMP,material_name,aux_chem_variables_map);
-                chemistry_helper->EnforceCondition(primTMP,0,auxTMP,boxTMP,geocond,cur_time);
-                vals.push_back(primTMP.dataPtr()[i]);
-              }
             }
             else {
               int nv = ppri.countval("vals");
@@ -2015,21 +1989,20 @@ void  PorousMedia::read_tracer()
                 times.resize(1,0);
                 forms.resize(0);
               }
+	      tbc_array[i].set(tbc_cnt++, new IdxRegionData(tbc_names[n],tbc_regions,tbc_type,vals,times,forms));
             }
-            int nComp = 1;
-            tbc_array[i].set(tbc_cnt++, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
             AMR_BC_tID = 1; // Inflow
           }
           else if (tbc_type == "noflow")
           {
-            Array<Real> val(1,0);
-            tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+            Real val = 0;
+            tbc_array[i].set(tbc_cnt++, new IdxRegionData(tbc_names[n],tbc_regions,tbc_type,val));
             AMR_BC_tID = 2;
           }
           else if (tbc_type == "outflow")
           {
-            Array<Real> val(1,0);
-            tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+            Real val=0;
+            tbc_array[i].set(tbc_cnt++, new IdxRegionData(tbc_names[n],tbc_regions,tbc_type,val));
             AMR_BC_tID = 3; // Outflow
           }
           else {

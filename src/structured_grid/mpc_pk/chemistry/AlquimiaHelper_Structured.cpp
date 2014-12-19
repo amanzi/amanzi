@@ -161,13 +161,15 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
   chem_state.aqueous_pressure = aqueous_pressure(iv,sPress);
 
   for (int i=0; i<Nmobile; ++i) {
-    chem_state.total_mobile.data[i] = std::max(0.,primary_species_mobile(iv,sPrimMob+i));
+    Real moles_per_Liter = primary_species_mobile(iv,sPrimMob+i) * chem_state.water_density * 1.e-3;
+    chem_state.total_mobile.data[i] = std::max(0.,moles_per_Liter);
   }
 
   if (using_sorption) {
     for (int i=0; i<primarySpeciesNames.size(); ++i) {
       const std::string label=primarySpeciesNames[i] + "_Sorbed_Concentration"; 
-      chem_state.total_immobile.data[i] = aux_data(iv,aux_chem_variables[label]);
+      //chem_state.total_immobile.data[i] = aux_data(iv,aux_chem_variables[label]);
+      chem_state.total_immobile.data[i] = std::max(1.e-20,aux_data(iv,aux_chem_variables[label]));
     }
   }
 
@@ -253,7 +255,8 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
 
 void
 AlquimiaHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
-                                            FArrayBox& auxiliary_data, const Box& box, const std::string& condition_name, Real time)
+                                            FArrayBox& auxiliary_data, Real water_density, Real temperature,
+                                            const Box& box, const std::string& condition_name, Real time)
 {
 #if (BL_SPACEDIM == 3) && defined(_OPENMP)
 #pragma omp parallel for schedule(dynamic,1) 
@@ -267,8 +270,6 @@ AlquimiaHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,  
   FArrayBox dumP(box,1); dumP.setVal(101325); int sDumP=0;
   FArrayBox dumPhi(box,1); dumPhi.setVal(1); int sDumPhi=0;
   FArrayBox dumV(box,1); dumV.setVal(1); int sDumV=0;
-  Real dumRho = 998.2;
-  Real dumTemp = 295;
   
   for (int tli=thread_outer_lo; tli<=thread_outer_hi && chem_ok; tli++) {
 #if (BL_SPACEDIM == 3) && defined(_OPENMP)
@@ -285,12 +286,17 @@ AlquimiaHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,  
       
       BL_to_Alquimia(dumS,sDumS,dumP,sDumP,dumPhi,sDumPhi,dumV,sDumV,
                      primary_species_mobile,sPrimMob,
-		     auxiliary_data,iv,dumRho,dumTemp,
+		     auxiliary_data,iv,water_density,temperature,
                      alquimia_material_properties[threadid],
                      alquimia_state[threadid],
                      alquimia_aux_in[threadid],
                      alquimia_aux_out[threadid]);
 
+      if (NauxDoubles > 0) {
+	for (int i=0; i<NauxDoubles; ++i) {
+          alquimia_aux_in[0].aux_doubles.data[i] = 0;
+	}
+      }
       engine->EnforceCondition(condition_name,time,
                                alquimia_material_properties[threadid],
                                alquimia_state[threadid],
@@ -374,7 +380,8 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
                                           AlquimiaAuxiliaryOutputData& aux_output)
 {
   for (int i=0; i<Nmobile; ++i) {
-    primary_species_mobile(iv,sPrimMob+i) = chem_state.total_mobile.data[i];
+    Real moles_per_kg = chem_state.total_mobile.data[i] * 1.e3 / chem_state.water_density;
+    primary_species_mobile(iv,sPrimMob+i) = moles_per_kg;
   }
 
   if (using_sorption) {

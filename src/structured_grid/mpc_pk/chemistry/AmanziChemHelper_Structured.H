@@ -36,7 +36,8 @@ public:
                        const Box& box, Real dt);
 
   virtual void EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
-                                FArrayBox& auxiliary_data, const Box& box, const std::string& condition_name, Real time);
+                                FArrayBox& auxiliary_data, Real water_density, Real temperature,
+                                const Box& box, const std::string& condition_name, Real time);
 
   void Initialize(const FArrayBox& aqueous_saturation,       int sSat,
                   const FArrayBox& aqueous_pressure,         int sPress,

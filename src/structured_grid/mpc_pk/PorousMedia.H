@@ -25,6 +25,7 @@
 #include <PMAmr.H>
 #include <RichardSolver.H>
 #include <RockManager.H>
+#include <IdxRegionData.H>
 
 #ifdef ALQUIMIA_ENABLED
 #include <ChemistryEngine.hh>
@@ -122,6 +123,7 @@ class PorousMedia
 {
 public:
   friend class Observation;
+  friend class PMFillPatchIterator;
 
   enum ExecutionMode {INIT_TO_STEADY, STEADY, TRANSIENT, INVALID};
 
@@ -354,8 +356,9 @@ public:
 
   static const Array<std::string>& UserDerives() {return user_derive_list;}
 
-  static const Array<Real>& Density() {return density;}
-  static const Array<Real>& Viscosity() {return muval;}
+  static Real& Temperature() {return temperature;}
+  static Array<Real>& Density() {return density;}
+  static Array<Real>& Viscosity() {return muval;}
   static int numComponents() {return ncomps;}
   static const Array<std::string>& componentNames() {return cNames;}
   static const Array<std::string>& phaseNames() {return pNames;}
@@ -363,7 +366,7 @@ public:
   static bool DoSoluteChemistry() {return do_tracer_chemistry;}
 
   static PArray<RegionData>& BCs() {return bc_array;}
-  static PArray<RegionData>& TBCs(int iTrac) {return tbc_array[iTrac];}
+  static PArray<IdxRegionData>& TBCs(int iTrac) {return tbc_array[iTrac];}
 
   static int echo_inputs;
 
@@ -650,10 +653,17 @@ public:
                               int        dest_comp,
                               int        src_comp,
                               int        num_comp);
-  void dirichletStateBC (FArrayBox& fab, Real time, int sComp, int dComp, int nComp);
-  void dirichletTracerBC(FArrayBox& fab, Real time, int sComp, int dComp, int nComp);
-  void dirichletPressBC (FArrayBox& fab, Real time);
-  void dirichletDefaultBC (FArrayBox& fab, Real time);
+  void PMsetPhysBoundaryValues (FArrayBox&       dest,
+                                const IArrayBox& matID,
+                                int              state_indx,
+                                Real             time,
+                                int              dest_comp,
+                                int              src_comp,
+                                int              num_comp);
+  void dirichletStateBC (FArrayBox& fab, const IArrayBox& matID, Real time, int sComp, int dComp, int nComp);
+  void dirichletTracerBC(FArrayBox& fab, const IArrayBox& matID, Real time, int sComp, int dComp, int nComp);
+  void dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, Real time);
+  void dirichletDefaultBC (FArrayBox& fab, const IArrayBox& matID, Real time);
   bool get_inflow_velocity(const Orientation& face,
                            FArrayBox&         ccBndFab,
                            FArrayBox&         mask,
@@ -853,6 +863,8 @@ public:
   void BuildNLScontrol(NLScontrol&        nlsc,
 		       const std::string& IDstring);
 
+  const iMultiFab& MaterialID() const {return *materialID;}
+
 protected:
 
   static void InitializeStaticVariables();
@@ -889,8 +901,8 @@ protected:
   static int  ntracers; 
   static Array<int> tType; 
   static Array<Real> tDen;
-  static Array<PArray<RegionData> > tic_array;
-  static Array<PArray<RegionData> > tbc_array;
+  static Array<PArray<IdxRegionData> > tic_array;
+  static Array<PArray<IdxRegionData> > tbc_array;
   static Array<PArray<RegionData> > tsource_array;
   static std::map<std::string,Array<int> > group_map;
 
@@ -1176,6 +1188,154 @@ protected:
   Real t_sat_old_cached, t_sat_new_cached;
 
   static Teuchos::ParameterList input_parameter_list;
+};
+
+/*
+class PMFillPatchIterator
+  :
+  public MFIter
+{
+public:
+
+  friend class PorousMedia;
+
+  PMFillPatchIterator (AmrLevel& amrlevel,
+                       MultiFab& leveldata);
+
+  PMFillPatchIterator (AmrLevel&  amrlevel,
+                       MultiFab&  leveldata,
+                       int        boxGrow,
+                       Real       time,
+                       int        state_indx,
+                       int        scomp,
+                       int        ncomp);
+
+  void Initialize (int             boxGrow,
+                   const BoxArray& grids,
+                   AmrLevel&       amrlevel);
+  
+  ~PMFillPatchIterator ();
+
+  FArrayBox& operator() ();
+  const IArrayBox& MatID() const { return m_matID[m_fpi.index()]; }
+
+  const Box& UngrownBox () const { return MFIter::validbox(); }
+
+  // From MFIter
+  //
+  // Returns the valid Box that current tile resides.
+  //
+  const Box& validbox () const { return m_fpi.validbox(); }
+  //
+  // Returns the Box of the FAB at which we currently point.
+  //
+  const Box fabbox () const { return m_fpi.fabbox(); }
+  //
+  // Increments iterator to the next tile we own.
+  //
+  void operator++ () { ++m_fpi;}
+  //
+  // Is the iterator valid i.e. is it associated with a FAB?
+  //
+  //bool isValid () { return m_fpi.isValid(); }
+  bool isValid ();
+  //
+  // The index into the underlying BoxArray of the current FAB.
+  //
+  int index () const { return m_fpi.index(); }
+
+private:
+  //
+  // Disallowed.
+  //
+  PMFillPatchIterator ();
+  PMFillPatchIterator (const PMFillPatchIterator& rhs);
+  PMFillPatchIterator& operator= (const PMFillPatchIterator& rhs);
+  //
+  // The data.
+  //
+  FillPatchIterator m_fpi;
+  PorousMedia& m_pmlevel;
+  iMultiFab m_matID;
+
+  Real m_time;
+  int m_stateIndex,m_scomp,m_ncomp;
+};
+
+*/
+
+class PMFillPatchIterator
+  :
+  public FillPatchIterator
+{
+public:
+
+  friend class PorousMedia;
+
+  PMFillPatchIterator (AmrLevel& amrlevel,
+                       MultiFab& leveldata);
+
+  PMFillPatchIterator (AmrLevel&  amrlevel,
+                       MultiFab&  leveldata,
+                       int        boxGrow,
+                       Real       time,
+                       int        state_indx,
+                       int        scomp,
+                       int        ncomp);
+
+  ~PMFillPatchIterator ();
+
+  const IArrayBox& MatID() const { return m_matID[FillPatchIterator::index()]; }
+
+  void Initialize (int             boxGrow,
+                   const BoxArray& grids,
+                   AmrLevel&       amrlevel);
+
+  FArrayBox& operator() ();
+#if 0
+  
+  const Box& UngrownBox () const { return MFIter::validbox(); }
+
+  // From MFIter
+  //
+  // Returns the valid Box that current tile resides.
+  //
+  const Box& validbox () const { return m_fpi.validbox(); }
+  //
+  // Returns the Box of the FAB at which we currently point.
+  //
+  const Box fabbox () const { return m_fpi.fabbox(); }
+  //
+  // Increments iterator to the next tile we own.
+  //
+  void operator++ () { ++m_fpi;}
+  //
+  // Is the iterator valid i.e. is it associated with a FAB?
+  //
+  //bool isValid () { return m_fpi.isValid(); }
+  bool isValid ();
+  //
+  // The index into the underlying BoxArray of the current FAB.
+  //
+  int index () const { return m_fpi.index(); }
+#endif
+
+private:
+  //
+  // Disallowed.
+  //
+  PMFillPatchIterator ();
+  PMFillPatchIterator (const PMFillPatchIterator& rhs);
+  PMFillPatchIterator& operator= (const PMFillPatchIterator& rhs);
+  //
+  // The data.
+  //
+  //FillPatchIterator m_fpi;
+  PorousMedia& m_pmlevel;
+  iMultiFab m_matID;
+
+  Real m_time;
+  int m_stateIndex,m_scomp,m_ncomp;
 };
 
 #endif /*_PorousMedia_H_*/

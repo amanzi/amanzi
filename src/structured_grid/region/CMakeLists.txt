@@ -25,12 +25,14 @@ include_directories(${PMAMR_INCLUDE_DIRS})
 set(CXX_source_files Region.cpp 
                      RegionManager.cpp 
                      RegionData.cpp
-                     IdxRegionData.cpp)
+                     IdxRegionData.cpp
+                     ChemConstraintEval.cpp) 
 
-set(CXX_header_files RegionData.H
-                     Region.H 
+set(CXX_header_files Region.H 
                      RegionManager.H
-                     IdxRegionData.H)
+                     RegionData.H
+                     IdxRegionData.H
+                     ChemConstraintEval.H) 
 
 set(F90_source_files )
 set(F77_source_files )
