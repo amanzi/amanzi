@@ -140,6 +140,7 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
     MatColoringDestroy(&matcoloring);
     ierr = MatFDColoringCreate(Jac,iscoloring,&matfdcoloring); CHKPETSC(ierr);
     matfdcoloring->htype = "ds"; // Give me column info, please.
+    ierr = MatFDColoringSetBlockSize(matfdcoloring, 1, 1); CHKPETSC(ierr);
     ierr = MatFDColoringSetFromOptions(matfdcoloring); CHKPETSC(ierr);
     if (rs_data.semi_analytic_J) {
       ierr = MatFDColoringSetFunction(matfdcoloring,
@@ -2277,7 +2278,6 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
     for (l=0; l<coloring->nrows[k]; l++) {
       row    = Jentry[nz].row;                   /* local row index */
       col    = Jentry[nz].col;                   /* local col index */
-printf("%d -> (%d, %d)\n", nz, row, col);
       y[row] *= epsilon_inv;                     /* dx = epsilon */
 
       // Add diagonal term
