@@ -356,8 +356,9 @@ public:
 
   static const Array<std::string>& UserDerives() {return user_derive_list;}
 
-  static const Array<Real>& Density() {return density;}
-  static const Array<Real>& Viscosity() {return muval;}
+  static Real& Temperature() {return temperature;}
+  static Array<Real>& Density() {return density;}
+  static Array<Real>& Viscosity() {return muval;}
   static int numComponents() {return ncomps;}
   static const Array<std::string>& componentNames() {return cNames;}
   static const Array<std::string>& phaseNames() {return pNames;}

@@ -517,7 +517,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::wt_lo = 0;
   PorousMedia::wt_hi = 0;
 
-  PorousMedia::temperature = 300;
+  PorousMedia::temperature = 0;
 
   PorousMedia::verbose      = 0;
   PorousMedia::cfl          = 0.8;
@@ -1850,7 +1850,8 @@ void  PorousMedia::read_tracer()
             }
             std::string geocond; ppri.get("geochemical_condition",geocond);
             tic_array[i].set(n, new ChemConstraint(tNames[i],tic_regions,tic_type,
-                                                   ChemConstraintEval(geocond,i,rock_manager,chemistry_helper)));
+                                                   ChemConstraintEval(geocond,i,rock_manager,chemistry_helper,
+                                                                      PorousMedia::Density()[0],PorousMedia::Temperature())));
           }
           else {
             int nv = ppri.countval("val");
@@ -1967,7 +1968,9 @@ void  PorousMedia::read_tracer()
                 times.resize(1,0);
               }
               tbc_array[i].set(tbc_cnt++, new ChemConstraint(tbc_names[n],tbc_regions,tbc_type,
-                                                             ChemConstraintEval(geoconds,times,i,rock_manager,chemistry_helper)));
+                                                             ChemConstraintEval(geoconds,times,i,rock_manager,chemistry_helper,
+                                                                                PorousMedia::Density()[0],PorousMedia::Temperature())));
+
             }
             else {
               int nv = ppri.countval("vals");

@@ -174,7 +174,8 @@ AmanziChemHelper_Structured::~AmanziChemHelper_Structured()
 
 void
 AmanziChemHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
-                                              FArrayBox& aux_data, const Box& box, const std::string& condition_name, Real time)
+                                              FArrayBox& auxiliary_data, Real water_density, Real temperature,
+                                              const Box& box, const std::string& condition_name, Real time)
 {
   BoxLib::Abort("Geochemical conditions/constraints not currently support in Amanzi native chemistry engine");
 }

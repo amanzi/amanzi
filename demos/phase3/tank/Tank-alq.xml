@@ -74,8 +74,7 @@
       </ParameterList>
 
       <ParameterList name="Adaptive Mesh Refinement Control">
-        <!-- <Parameter name="Number Of AMR Levels" type="int" value="5"/> -->
-        <Parameter name="Number Of AMR Levels" type="int" value="2"/>
+        <Parameter name="Number Of AMR Levels" type="int" value="5"/>
         <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4, 2, 2}"/>
         <Parameter name="Regrid Interval" type="Array(int)" value="{200000}"/>
         <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2, 2, 2}"/>
@@ -330,6 +329,9 @@
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value="1.e-11"/>
       </ParameterList>
+      <ParameterList name="Molecular Diffusion: Uniform">
+        <Parameter name="Value" type="double" value="5.e-12"/>
+      </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
       </ParameterList>
@@ -361,6 +363,9 @@
       <!-- </ParameterList> -->
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value="1.e-11"/>
+      </ParameterList>
+      <ParameterList name="Molecular Diffusion: Uniform">
+        <Parameter name="Value" type="double" value="5.e-12"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
@@ -394,6 +399,9 @@
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value="1.e-6"/>
       </ParameterList>
+      <ParameterList name="Molecular Diffusion: Uniform">
+        <Parameter name="Value" type="double" value="5.e-10"/>
+      </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
       </ParameterList>
@@ -425,6 +433,9 @@
       <!-- </ParameterList> -->
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value=".15e-2"/>
+      </ParameterList>
+      <ParameterList name="Molecular Diffusion: Uniform">
+        <Parameter name="Value" type="double" value="5.e-10"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
@@ -458,6 +469,9 @@
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value=".15e-2"/>
       </ParameterList>
+      <ParameterList name="Molecular Diffusion: Uniform">
+        <Parameter name="Value" type="double" value="5.e-10"/>
+      </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
       </ParameterList>
@@ -489,6 +503,9 @@
       <!-- </ParameterList> -->
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value=".15e-2"/>
+      </ParameterList>
+      <ParameterList name="Molecular Diffusion: Uniform">
+        <Parameter name="Value" type="double" value="5.e-10"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
@@ -522,6 +539,9 @@
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value=".15e-2"/>
       </ParameterList>
+      <ParameterList name="Molecular Diffusion: Uniform">
+        <Parameter name="Value" type="double" value="5.e-10"/>
+      </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
       </ParameterList>
@@ -553,6 +573,9 @@
       <!-- </ParameterList> -->
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value="1.e-14"/>
+      </ParameterList>
+      <ParameterList name="Molecular Diffusion: Uniform">
+        <Parameter name="Value" type="double" value="5.e-15"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
@@ -590,15 +613,15 @@
         <ParameterList name="Water">
           <Parameter name="Component Solutes" type="Array(string)" value="{Tracer, Sr90, Cs137}"/>
           <ParameterList name="Tracer">
-            <Parameter name="Molecular Diffusivity" type="double" value="5.e-12"/>
+            <Parameter name="Molecular Diffusivity" type="double" value="0"/>
             <Parameter name="First Order Decay Constant" type="double" value="0"/>
           </ParameterList>
           <ParameterList name="Sr90">
-            <Parameter name="Molecular Diffusivity" type="double" value="5.e-12"/>
+            <Parameter name="Molecular Diffusivity" type="double" value="0"/>
             <Parameter name="First Order Decay Constant" type="double" value="0"/>
           </ParameterList>
           <ParameterList name="Cs137">
-            <Parameter name="Molecular Diffusivity" type="double" value="5.e-12"/>
+            <Parameter name="Molecular Diffusivity" type="double" value="0"/>
             <Parameter name="First Order Decay Constant" type="double" value="0"/>
           </ParameterList>
         </ParameterList>
@@ -608,7 +631,7 @@
 
   <ParameterList name="Initial Conditions">
     <ParameterList name="Initial Condition NonSources">
-    <Parameter name="Assigned Regions" type="Array(string)" value="{NonSources}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{NonSources}"/>
       <ParameterList name="IC: Uniform Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Value" type="double" value="101325.0"/>
