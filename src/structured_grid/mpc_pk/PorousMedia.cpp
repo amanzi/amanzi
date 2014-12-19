@@ -8247,7 +8247,7 @@ PMFillPatchIterator::Initialize (int             boxGrow,
     if (grids == levelMatID.boxArray() && boxGrow <= levelMatID.nGrow()) {
       for (MFIter mfi(levelMatID); mfi.isValid(); ++mfi) {
         const IArrayBox& smat = levelMatID[mfi];
-        const Box& box = smat.box();
+        const Box box = smat.box() & m_matID[mfi].box();
         m_matID[mfi].copy(smat,box,0,box,0,1);
       }
     }
