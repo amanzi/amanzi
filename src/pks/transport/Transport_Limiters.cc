@@ -50,8 +50,8 @@ void Transport_PK::LimiterTensorial(const int component,
         int c2 = (*downwind_cell_)[f];
 
         if (c1 >= 0 && c2 >= 0) {
-          u1 = (*scalar_field)[c1];
-          u2 = (*scalar_field)[c2];
+          u1 = (*scalar_field)[c];
+          u2 = (*scalar_field)[c1 + c2 - c];
         } else if (c1 == c) {
           u1 = u2 = (*scalar_field)[c1];
         } else {

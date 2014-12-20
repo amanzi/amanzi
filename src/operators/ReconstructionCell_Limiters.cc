@@ -65,8 +65,8 @@ void ReconstructionCell::LimiterTensorial_(
         int c2 = downwind_cell_[f];
 
         if (c1 >= 0 && c2 >= 0) {
-          u1 = (*field_)[0][c1];
-          u2 = (*field_)[0][c2];
+          u1 = (*field_)[0][c];
+          u2 = (*field_)[0][c1 + c2 - c];
         } else if (c1 == c) {
           u1 = u2 = (*field_)[0][c1];
         } else {
@@ -590,7 +590,12 @@ void ReconstructionCell::IdentifyUpwindCells_()
 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      if ((*flux_)[0][f] * dirs[i] >= 0) {
+      double tmp = (*flux_)[0][f] * dirs[i];
+      if (tmp > 0.0) {
+        upwind_cell_[f] = c;
+      } else if (tmp < 0.0) {
+        downwind_cell_[f] = c;
+      } else if (dirs[i] > 0){
         upwind_cell_[f] = c;
       } else {
         downwind_cell_[f] = c;

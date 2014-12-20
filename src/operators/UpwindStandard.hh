@@ -21,6 +21,7 @@
 
 #include "CompositeVector.hh"
 #include "Mesh.hh"
+#include "mfd3d_diffusion.hh"
 #include "VerboseObject.hh"
 
 #include "Upwind.hh"
@@ -101,8 +102,9 @@ void UpwindStandard<Model>::Compute(
   double tol = tolerance_ * std::max(fabs(umin), fabs(umax));
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
+  AmanziMesh::Entity_ID_List faces;
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
 
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -115,7 +117,14 @@ void UpwindStandard<Model>::Compute(
       
       // Internal faces. We average field on almost vertical faces. 
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
-        upw[0][f] += kc / 2; 
+        double tmp(0.5);
+        int c2 = mfd.cell_get_face_adj_cell(c, f);
+        if (c2 >= 0) { 
+          double v1 = mesh_->cell_volume(c);
+          double v2 = mesh_->cell_volume(c2);
+          tmp = v2 / (v1 + v2);
+        }
+        upw[0][f] += kc * tmp; 
       // Boundary faces. We upwind only on inflow dirichlet faces.
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         upw[0][f] = ((*model_).*Value)(c, bc_value[f]);

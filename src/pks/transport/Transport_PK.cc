@@ -982,14 +982,19 @@ void Transport_PK::IdentifyUpwindCells()
   }
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
+  std::vector<int> dirs;
 
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
-      if ((*darcy_flux)[0][f] * fdirs[i] >= 0) {
+      double tmp = (*darcy_flux)[0][f] * dirs[i];
+      if (tmp > 0.0) {
+        (*upwind_cell_)[f] = c;
+      } else if (tmp < 0.0) {
+        (*downwind_cell_)[f] = c;
+      } else if (dirs[i] > 0) {
         (*upwind_cell_)[f] = c;
       } else {
         (*downwind_cell_)[f] = c;
