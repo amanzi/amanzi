@@ -413,6 +413,8 @@ void ReconstructionCell::LimiterKuzmin_(
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
+    u1 = (*field_)[0][c];
+
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i = 0; i < dim; i++) gradient_c[i] = (*grad)[i][c];
 
@@ -431,13 +433,13 @@ void ReconstructionCell::LimiterKuzmin_(
           normal_new = xp - xc;
           CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
 
-          p = ((umin - up) / sqrt(L22normal_new)) * direction;
+          p = ((umin - u1) / sqrt(L22normal_new)) * direction;
           ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c);
         } else if (up > umax) {
           normal_new = xp - xc;
           CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
 
-          p = ((umax - up) / sqrt(L22normal_new)) * direction;
+          p = ((umax - u1) / sqrt(L22normal_new)) * direction;
           ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c);
         }
       }
