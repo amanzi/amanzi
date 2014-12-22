@@ -2285,6 +2285,31 @@ PorousMedia::advance_saturated_transport_dt(Real time)
   }
 }
 
+static void
+print_time_data(std::ostream& os, int level, bool output_in_years, Real t_sub, Real dt_sub, int n_sub,
+                const std::string label, Real tmax_sub, Real t_eps) 
+{
+  for (int lev=0; lev<=level; ++lev) {
+    os << "  ";
+  }
+  std::string units_str = output_in_years ? "Y" : "s";
+  std::pair<Real,std::string> told_sub_output = PMAmr::convert_time_units(t_sub,units_str);
+  std::pair<Real,std::string> tnew_sub_output = PMAmr::convert_time_units(t_sub+dt_sub,units_str);
+  std::pair<Real,std::string> dt_sub_output = PMAmr::convert_time_units(dt_sub,units_str);
+  std::ios_base::fmtflags oldflags = os.flags();
+  os << std::scientific << std::setprecision(10);
+
+  os << label << ": Level: " << level;
+  //if (n_sub!=0 || (t_sub+dt_sub < tmax_sub - t_eps)) {
+  //  os << " Subcycle: " << n_sub << " ";
+  //}
+  os << " TIME = " << told_sub_output.first << told_sub_output.second
+     << " : " << tnew_sub_output.first << tnew_sub_output.second
+     << " (DT: " << dt_sub_output.first << dt_sub_output.second << ")";
+  os << std::endl;
+  os.flags(oldflags);
+}
+
 bool
 PorousMedia::advance_richards_transport_chemistry (Real  t,
 						   Real  dt,
@@ -2307,7 +2332,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       if (!do_subcycle && dt-dt_cfl > t_eps) {
 	dt_new = dt_cfl;
         if (ParallelDescriptor::IOProcessor()) {
-          std::cout << "  TRANSPORT: dt (=" << dt << ") > CFL but !do_subcycle.  Suggest next dt: " << dt_new << std::endl;
+          std::cout << "  TRAN: dt (=" << dt << ") > CFL but !do_subcycle.  Suggest next dt: " << dt_new << std::endl;
         }
 	return false;
       }
@@ -2321,8 +2346,8 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
     std::map<int,MultiFab*> saved_states;
     int n_subtr = 0;
 
-    bool summary_transport_out = true;
-    //bool full_transport_out = false;
+    //bool summary_transport_out = true;
+    bool summary_transport_out = false;
     bool full_transport_out = true;
 
     while (continue_subtr) {
@@ -2339,18 +2364,8 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       if (react_tracers  &&  do_full_strang) {
 	const Real strt_time_chem = ParallelDescriptor::second();
 	if (verbose > 0 && full_transport_out && ParallelDescriptor::IOProcessor() && n_subtr>1) {
-	  for (int lev=0; lev<=level; ++lev) {
-	    std::cout << "  ";
-	  }
-          std::string units_str = do_output_chemistry_time_in_years ? "Y" : "s";
-          std::pair<Real,std::string> told_subtr_output = PMAmr::convert_time_units(t_subtr,units_str);
-          std::pair<Real,std::string> tnew_subtr_output = PMAmr::convert_time_units(t_subtr+dt_subtr,units_str);
-          std::pair<Real,std::string> dt_subtr_output = PMAmr::convert_time_units(dt_subtr,units_str);
-          std::ios_base::fmtflags oldflags = std::cout.flags(); std::cout << std::scientific << std::setprecision(10);
-	  std::cout << "CHEMISTRY:  FIRST HALF: Level: " << level
-		    << " TIME = " << told_subtr_output.first << told_subtr_output.second
-		    << " : " << tnew_subtr_output.first << tnew_subtr_output.second << std::endl;
-          std::cout.flags(oldflags);
+          print_time_data(std::cout,level,do_output_chemistry_time_in_years,t_subtr,dt_subtr,n_subtr,
+                          "CHEM",tmax_subtr,t_eps); 
 	}
 	int nGrow_chem = 0;
 	//int nGrow_chem = nGrowHYP; // FIXME: Have no code for chem-advancing grow cells
@@ -2360,29 +2375,13 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       }
 
       if (verbose > 0 && full_transport_out &&  ParallelDescriptor::IOProcessor()) {
-	for (int lev=0; lev<=level; ++lev) {
-	  std::cout << "  ";
-	}
-
-        std::string units_str = do_output_transport_time_in_years ? "Y" : "s";
-        std::pair<Real,std::string> told_subtr_output = PMAmr::convert_time_units(t_subtr,units_str);
-        std::pair<Real,std::string> tnew_subtr_output = PMAmr::convert_time_units(t_subtr+dt_subtr,units_str);
-        std::pair<Real,std::string> dt_subtr_output = PMAmr::convert_time_units(dt_subtr,units_str);
-        std::ios_base::fmtflags oldflags = std::cout.flags(); std::cout << std::scientific << std::setprecision(10);
-	std::cout << "TRANSPORT: Level: " << level;
-        if (n_subtr!=0 || (t_subtr+dt_subtr < tmax_subtr - t_eps)) {
-          std::cout << " Subcycle: " << n_subtr << " ";
-        }
-        std::cout << " TIME = " << told_subtr_output.first << told_subtr_output.second
-		  << " : " << tnew_subtr_output.first << tnew_subtr_output.second
-		  << " (DT: " << dt_subtr_output.first << dt_subtr_output.second << ")";
-        std::cout << std::endl;
-        std::cout.flags(oldflags);
+        print_time_data(std::cout,level,do_output_transport_time_in_years,t_subtr,dt_subtr,n_subtr,
+                        "TRAN",tmax_subtr,t_eps); 
       }
       n_subtr++;
       if (n_subtr > max_n_subcycle_transport) {
 	if (ParallelDescriptor::IOProcessor()) {
-	  std::cout << "TRANSPORT: Level: "
+	  std::cout << "TRAN: Level: "
 		    << level
 		    << " time stepping bust!!  # substeps required for dt interval surpassed max_n_subcycle_transport (= "
 		    << max_n_subcycle_transport
@@ -2390,7 +2389,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 		    << std::endl;
 	}
 	if (PMParent()->levelSteps(level)==0  && ParallelDescriptor::IOProcessor()) {
-	  std::cout << "TRANSPORT: Level: "
+	  std::cout << "TRAN: Level: "
 		    << level
 		    << ". Either reduce the initial time step or increase max_n_subcycle_transport and re-run"
 		    << std::endl;
@@ -2446,25 +2445,19 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       if (react_tracers > 0) {
 	const Real strt_time_chem = ParallelDescriptor::second();
 	bool do_write = verbose > 0 &&  ParallelDescriptor::IOProcessor();
-	if (do_write) {
-	  for (int lev=0; lev<=level; ++lev) {
-	    std::cout << "  ";
-	  }
-	  std::cout << "CHEMISTRY: Level: " << level << " TIME = ";
-	}
 	if (do_full_strang) {
 	  if (do_write) {
-	    std::cout << t_subtr+dt_subtr/2
-		      << " : " << t_subtr+dt_subtr << std::endl;
-	  }
+            print_time_data(std::cout,level,do_output_chemistry_time_in_years,t_subtr,dt_subtr/2,n_subtr,
+                            "CHEM",tmax_subtr,t_eps);
+          }
 	  step_ok_chem = advance_chemistry(t_subtr,dt_subtr/2,0);
 	  BL_ASSERT(step_ok_chem);
 	} else {
 	  if (n_chem_interval <= 0) {
-	    if (do_write) {
-	      std::cout << t_subtr
-			<< " : " << t_subtr+dt_subtr << std::endl;
-	    }
+            if (do_write) {
+              print_time_data(std::cout,level,do_output_chemistry_time_in_years,t_subtr,dt_subtr,n_subtr,
+                              "CHEM",tmax_subtr,t_eps);
+            }
 	    step_ok_chem = advance_chemistry(t_subtr,dt_subtr,0);
 	    BL_ASSERT(step_ok_chem);
 	  } else {
@@ -2473,8 +2466,8 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
             
 	    if (it_chem == n_chem_interval) {
 	      if (do_write) {
-		std::cout << t_subtr + dt_subtr - dt_chem
-			  << " : " << t_subtr+dt_subtr << std::endl;
+                print_time_data(std::cout,level,do_output_chemistry_time_in_years,t_subtr,dt_chem,n_subtr,
+                                "CHEM",tmax_subtr,t_eps);
 	      }
 	      step_ok_chem = advance_chemistry(t_subtr,dt_chem,0);      
 	      BL_ASSERT(step_ok_chem);
@@ -2565,7 +2558,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       for (int lev=0; lev<=level; ++lev) {
         std::cout << "  ";
       }
-      std::cout << "TRANSPORT: Level: " << level
+      std::cout << "TRAN: Level: " << level
                 << " TIME: " << t_output.first << t_output.second
                 << " : " << tnew_output.first << tnew_output.second
                 << " (DT: " << dt_output.first << dt_output.second << ")" << std::endl;
@@ -8241,7 +8234,7 @@ PMFillPatchIterator::Initialize (int             boxGrow,
                                  const BoxArray& grids,
                                  AmrLevel&       amrlevel)
 {
-  if (m_stateIndex == State_Type) {
+  if (m_stateIndex == State_Type || m_stateIndex == Press_Type) {
     m_matID.define(grids,1,boxGrow,Fab_allocate);
     const iMultiFab& levelMatID = m_pmlevel.MaterialID();
     if (grids == levelMatID.boxArray() && boxGrow <= levelMatID.nGrow()) {
@@ -8262,7 +8255,9 @@ FArrayBox&
 PMFillPatchIterator::operator() ()
 {
   FArrayBox& this_fab = FillPatchIterator::operator()();
-  m_pmlevel.PMsetPhysBoundaryValues(this_fab,m_matID[FillPatchIterator::index()],m_stateIndex,m_time,0,m_scomp,m_ncomp);
+  if (m_stateIndex == State_Type || m_stateIndex == Press_Type) {
+    m_pmlevel.PMsetPhysBoundaryValues(this_fab,m_matID[FillPatchIterator::index()],m_stateIndex,m_time,0,m_scomp,m_ncomp);
+  }
   return this_fab;
 }
 
