@@ -54,7 +54,6 @@ static int
 which_constraint(Real time, const std::vector<Real>& times)
 {
   int Ntimes = times.size();
-  BL_ASSERT(Ntimes>1);
   int i = 0;
   if (Ntimes > 1) {
     for ( ; i<Ntimes-1; ++i) {
