@@ -463,7 +463,6 @@ RockManager::Initialize(const Array<std::string>* solute_names)
 
   // Scan rock for properties that must be defined for all
   //   if defined for one. 
-  bool user_specified_molecular_diffusion_coefficient = false;
   bool user_specified_dispersivity = false;
   bool user_specified_tortuosity = false;
   bool user_specified_specific_storage = false;
@@ -471,7 +470,6 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     const std::string& rname = r_names[i];
     const std::string prefix("rock." + rname);
     ParmParse ppr(prefix.c_str());
-    user_specified_molecular_diffusion_coefficient = ppr.countval("molecular_diffusion.val");
     user_specified_tortuosity = ppr.countval("tortuosity.val");
     user_specified_dispersivity = ppr.countval("dispersivity.alphaL");
     user_specified_specific_storage = ppr.countval("specific_storage.val");
@@ -481,7 +479,7 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     user_specified_specific_storage = true; // Will use default if not specified
   }
 
-  do_diffusion = ( user_specified_molecular_diffusion_coefficient || user_specified_dispersivity);
+  do_diffusion = ( user_specified_tortuosity || user_specified_dispersivity);
   
   do_tensor_diffusion = do_diffusion && user_specified_dispersivity;
 
@@ -505,16 +503,7 @@ RockManager::Initialize(const Array<std::string>* solute_names)
 
     Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
 
-    Array<Real> rDmolec(BL_SPACEDIM,0);
     Property* Dmolec_func = 0;
-    if (user_specified_molecular_diffusion_coefficient) {
-      ppr.query("molecular_diffusion.val",rDmolec[0]);
-      for (int d=1; d<BL_SPACEDIM; ++d) {
-        rDmolec[d] = rDmolec[0];
-      }
-      std::string Dmolec_str = "molecular_diffusion_coefficient";
-      Dmolec_func = new ConstantProperty(Dmolec_str,rDmolec,harm_crsn,pc_refine);
-    }
 
     Array<Real> rDispersivity(2,0);
     Property* Dispersivity_func = 0;
