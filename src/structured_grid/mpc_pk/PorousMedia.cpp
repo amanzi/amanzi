@@ -870,12 +870,17 @@ PorousMedia::initData ()
     MultiFab&   S_new    = get_new_data(   State_Type);
     MultiFab&   P_new    = get_new_data(   Press_Type);
     MultiFab&   U_vcr    = get_new_data(     Vcr_Type);
-    MultiFab&   A_new    = get_new_data(Aux_Chem_Type);
+    MultiFab*   A_new    = 0;
+    if (chemistry_helper != 0) {
+      A_new = &(get_new_data(Aux_Chem_Type));
+    }
 
     const Real  cur_time = state[State_Type].curTime();
     S_new.setVal(0.);
     P_new.setVal(0.);
-    A_new.setVal(0.);
+    if (A_new) {
+      A_new->setVal(0.);
+    }
 
     //
     // Initialized only based on solutions at the current level
@@ -1072,8 +1077,8 @@ PorousMedia::initData ()
               }
               else if (tic_type == "concentration") {
                 const ChemConstraint* cc = dynamic_cast<const ChemConstraint*>(&tic);
-                if (cc!=0) {
-                  FArrayBox& aux = A_new[mfi];
+                if (cc!=0 && A_new!=0) {
+                  FArrayBox& aux = (*A_new)[mfi];
                   const Box vbox = sdat.box() & aux.box();
                   cc->apply(sdat,aux,mdat,dx,ncomps+iTracer,0,vbox,0);
                 }
@@ -6786,6 +6791,10 @@ PorousMedia::AdjustBCevalTime(int  state_idx,
 void
 PorousMedia::dirichletStateBC (FArrayBox& fab, const IArrayBox& matID, Real time,int sComp, int dComp, int nComp)
 {
+  if (geom.Domain().contains(fab.box()) ) {
+    return;
+  }
+
   BL_PROFILE("PorousMedia::dirichletStateBC()");
   if (model == PM_RICHARDS) { // FIXME: Support solving Richards in saturation form?
     if (! (geom.Domain().contains(fab.box())) ) {
@@ -6800,6 +6809,11 @@ void
 PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, Real time, int sComp, int dComp, int nComp)
 {
   BL_PROFILE("PorousMedia::dirichletTracerBC()");
+
+  if (geom.Domain().contains(fab.box()) ) {
+    return;
+  }
+
   BL_ASSERT(setup_tracer_transport > 0);
 
   Real t_eval = AdjustBCevalTime(State_Type,time,false);
@@ -6843,6 +6857,10 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const IArrayBox& matID, Real tim
 void
 PorousMedia::dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, Real time)
 {
+  if (geom.Domain().contains(fab.box()) ) {
+    return;
+  }
+
   BL_PROFILE("PorousMedia::dirichletPressBC()");
   Array<int> bc(BL_SPACEDIM*2,0); // FIXME: Never set, why do we need this
   if (pbc_descriptor_map.size()) 
