@@ -7,7 +7,12 @@ RSAMRdata::RSAMRdata(int slev, int nlevs, Layout& _layout, PMAmr* amrp, NLScontr
   nLevs = layout.NumLevels();
   pm.resize(pm_amr->finestLevel()+1,PArrayNoManage);
   for (int lev = 0; lev < pm.size(); lev++)  {
-    pm.set(lev,dynamic_cast<PorousMedia*>(&pm_amr->getLevel(lev)));
+    PorousMedia* porous_media = dynamic_cast<PorousMedia*>(&pm_amr->getLevel(lev));
+    if (porous_media == 0) {
+      BoxLib::Abort("AmrLevel structure hosed");
+    }
+    pm.clear(lev);
+    pm.set(lev,porous_media);
   }
 
   // Get boundary conditions for pressure

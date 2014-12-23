@@ -579,7 +579,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::be_cn_theta_trac = 0.5;
   //PorousMedia::do_output_flow_time_in_years = true;
   PorousMedia::do_output_flow_time_in_years = false;
-  PorousMedia::do_output_chemistry_time_in_years = true;
+  PorousMedia::do_output_chemistry_time_in_years = false;
   PorousMedia::do_output_transport_time_in_years = false;
 
   PorousMedia::richard_solver_verbose = 2;
@@ -1631,7 +1631,6 @@ void  PorousMedia::read_tracer()
   rock_manager = new RockManager(region_manager,&tNames);
 
   if (do_tracer_diffusion) {
-    BL_ASSERT(rock_manager->DoDiffusion());
     tensor_tracer_diffusion = rock_manager->DoTensorDiffusion();
   }
 
