@@ -918,6 +918,22 @@ RockManager::Initialize(const Array<std::string>* solute_names)
       }
     }
 
+    // Make a final pass to be sure that if any isotherm paramters are set for a material, they are defaulted for all remaining materials
+    if (using_sorption) {
+      for (int k=0; k<known_solutes.size(); ++k) {
+	for (ICParmPair::const_iterator it=sorption_isotherm_options.begin();
+	     it!=sorption_isotherm_options.end(); ++it) {
+	  const std::string& str = it->first;
+	  nsorption_isotherms = known_solutes.size();
+	  for (int i=0; i<nrock; ++i) {
+	    if (sorption_isotherm_ics[r_names[i]][known_solutes[k]].count(str) == 0) {
+              sorption_isotherm_ics[r_names[i]][known_solutes[k]][str] = it->second; // set to default value
+            }
+          }
+	}
+      }
+    }
+
     ICParmPair cation_exchange_options;
     cation_exchange_options["Cation_Exchange_Capacity"] = 0;
     cation_exchange_options["Ion_Exchange_Reference_Cation_Concentration_0"] = 1.e-9;

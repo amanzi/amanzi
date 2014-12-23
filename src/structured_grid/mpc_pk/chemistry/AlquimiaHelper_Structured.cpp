@@ -433,6 +433,21 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
     }
   }
 
+  if (using_isotherms) {
+    for (int i=0; i<Nisotherms; ++i) {
+      const std::string label=primarySpeciesNames[i] + "_Isotherm_Kd";
+      aux_data(iv,aux_chem_variables[label]) = mat_props.isotherm_kd.data[i];
+    }
+    for (int i=0; i<Nisotherms; ++i) {
+      const std::string label=primarySpeciesNames[i] + "_Isotherm_Freundlich_n";
+      aux_data(iv,aux_chem_variables[label]) = mat_props.freundlich_n.data[i];
+    }
+    for (int i=0; i<Nisotherms; ++i) {
+      const std::string label=primarySpeciesNames[i] + "_Isotherm_Langmuir_b";
+      aux_data(iv,aux_chem_variables[label]) = mat_props.langmuir_b.data[i];
+    }
+  }
+
   for (int i=0; i<NauxInts; ++i) {
     int ndigits_ints = std::log(NauxInts + 1) + 1;
     const std::string label=BoxLib::Concatenate("Auxiliary_Integers_",i,ndigits_ints); 
