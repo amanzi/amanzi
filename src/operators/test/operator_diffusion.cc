@@ -31,126 +31,80 @@
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorSource.hh"
+#include "UpwindSecondOrder.hh"
+#include "UpwindStandard.hh"
+
+#include "Analytic01.hh"
+#include "Analytic02.hh"
+#include "Analytic03.hh"
+
+namespace Amanzi{
+
+// This class wraps scalar diffusion coefficient Analytic03.
+class HeatConduction {
+ public:
+  HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh), ana_(mesh) { 
+    int dim = mesh_->space_dimension();
+    CompositeVectorSpace cvs;
+    cvs.SetMesh(mesh_);
+    cvs.SetGhosted(true);
+    cvs.SetComponent("cell", AmanziMesh::CELL, 1);
+    cvs.SetOwned(false);
+    cvs.AddComponent("face", AmanziMesh::FACE, 1);
+    cvs.AddComponent("grad", AmanziMesh::CELL, dim);
+
+    values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
+    derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
+  }
+  ~HeatConduction() {};
+
+  // main members
+  void UpdateValues(const CompositeVector& u) { 
+    const Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true); 
+    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+
+    for (int c = 0; c < ncells; c++) {
+      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+      const WhetStone::Tensor& Kc = ana_.Tensor(xc, 0.0);
+      values_c[0][c] = Kc(0, 0);
+    }
+
+    int dim = mesh_->space_dimension();
+    const Epetra_MultiVector& values_g = *values_->ViewComponent("grad", true); 
+
+    for (int c = 0; c < ncells; c++) {
+      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+      AmanziGeometry::Point grad = ana_.ScalarTensorGradient(xc, 0.0);
+      for (int i = 0; i < dim; i++) values_g[i][c] = grad[i];
+    }
+
+    derivatives_->PutScalar(1.0);
+  }
+
+  double Conduction(int c, double T) const {
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const WhetStone::Tensor& Kc = ana_.Tensor(xc, 0.0);
+    return Kc(0, 0);
+  }
+
+  Teuchos::RCP<CompositeVector> values() { return values_; }
+  Teuchos::RCP<CompositeVector> derivatives() { return derivatives_; }
+   
+ private:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<CompositeVector> values_, derivatives_;
+  mutable Analytic03 ana_;
+};
+
+typedef double(HeatConduction::*ModelUpwindFn)(int c, double T) const; 
+}  // namespace Amanzi
 
 
-double Kxx(const Amanzi::AmanziGeometry::Point& p, double t) {
-  double x = p[0];
-  double y = p[1]; 
-  return (x + 1) * (x + 1) + y * y;
-}
-double Kyy(const Amanzi::AmanziGeometry::Point& p, double t) { 
-  double x = p[0];
-  double y = p[1];
-  return (x + 1) * (x + 1);
-}
-double Kxy(const Amanzi::AmanziGeometry::Point& p, double t) { 
-  double x = p[0];
-  double y = p[1];
-  return -x * y;
-}
-double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-  double x = p[0];
-  double y = p[1];
-  double xy = x * y;
-  return x * xy * xy + x * sin(2 * M_PI * xy) * sin(2 * M_PI * y);
-}
-Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-  double x = p[0];
-  double y = p[1];
-
-  double t01, t02, t03, t12, t13, t04, t05, t06; 
-  double px, py;
-
-  t01 = x*x*y;
-  t02 = sin(2*M_PI*x*y);
-  t03 = sin(2*M_PI*y);
-
-  t12 = cos(2*M_PI*x*y);
-  t13 = cos(2*M_PI*y);
-
-  px = 3*y*t01 + t03*(t02 + 2*M_PI*y*x*t12);
-  py = 2*x*t01 + x*2*M_PI*(x*t12*t03 + t02*t13);
-
-  t04 = Kxx(p, t);
-  t05 = Kxy(p, t);
-  t06 = Kyy(p, t);
-
-  Amanzi::AmanziGeometry::Point v(2);
-  v[0] = -(t04 * px + t05 * py);
-  v[1] = -(t05 * px + t06 * py);
-  return v;
-}
-Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-  double x = p[0];
-  double y = p[1];
-
-  double t01, t02, t03, t12, t13, t04, t05, t06; 
-  double px, py;
-
-  t01 = x*x*y;
-  t02 = sin(2*M_PI*x*y);
-  t03 = sin(2*M_PI*y);
-
-  t12 = cos(2*M_PI*x*y);
-  t13 = cos(2*M_PI*y);
-
-  px = 3*y*t01 + t03*(t02 + 2*M_PI*y*x*t12);
-  py = 2*x*t01 + x*2*M_PI*(x*t12*t03 + t02*t13);
-
-  Amanzi::AmanziGeometry::Point v(2);
-  v[0] = px;
-  v[1] = py;
-  return v;
-}
-double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-  double x = p[0];
-  double y = p[1];
-
-  double t01, t02, t03, t12, t13;
-  double px, py, pxx, pxy, pyy;
-  double t04, t05, t06, tx4, ty4, tx5, ty5, tx6;
-
-  t01 = x*x*y;
-  t02 = sin(2*M_PI*x*y);
-  t03 = sin(2*M_PI*y);
-
-  t12 = cos(2*M_PI*x*y);
-  t13 = cos(2*M_PI*y);
-
-  px = 3*y*t01 + t03*(t02 + 2*M_PI*y*x*t12);
-  py = 2*x*t01 + x*2*M_PI*(x*t12*t03 + t02*t13);
-
-  pxx = 6*x*y*y + 4*M_PI*t03*(y*t12 - M_PI*y*y*x*t02); 
-  pxy = 6*x*x*y + 2*M_PI*(t13*t02 + 2*x*t03*t12 + x*y*2*M_PI*(t13*t12-x*t03*t02));
-  pyy = 2*x*x*x + x*4*M_PI*M_PI*(-x*x*t02*t03 + 2*x*t12*t13 - t02*t03);
-
-  t04 = Kxx(p, t);
-  t05 = Kxy(p, t);
-  t06 = Kyy(p, t);
-
-  tx4 = 2*(x+1);  // d/dx (Kxx)
-  ty4 = 2*y;      // d/dy (Kxx)
-
-  tx5 = -y;  // d/dx (Kxy)  
-  ty5 = -x;  // d/dy (Kxy)
-  
-  tx6 = 2*(x+1);  // d/dy (Kxy)
-  return -(tx4 + ty5)*px - tx5*py - t04*pxx - 2*t05*pxy - t06*pyy;
-}
-
-double pressure_exact_linear(const Amanzi::AmanziGeometry::Point& p, double t) { 
-  double x = p[0];
-  double y = p[1];
-  return x + 2 * y;
-}
-Amanzi::AmanziGeometry::Point velocity_exact_linear(const Amanzi::AmanziGeometry::Point& p, double t) { 
-  double x = p[0];
-  double y = p[1];
-
-  Amanzi::AmanziGeometry::Point v(2);
-  v[0] = -5.0;
-  v[1] = -3.0;
-  return v;
+int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
+{
+  Amanzi::AmanziMesh::Entity_ID_List cells;
+  mesh.face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
+  return cells[0];
 }
 
 /* *****************************************************************
@@ -192,15 +146,11 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
+  Analytic01 ana(mesh);
+
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    WhetStone::Tensor Kc(2, 2);
-
-    Kc(0, 0) = Kxx(xc, 0.0);
-    Kc(1, 1) = Kyy(xc, 0.0);
-    Kc(0, 1) = Kxy(xc, 0.0);
-    Kc(1, 0) = Kxy(xc, 0.0);
-
+    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
     K.push_back(Kc);
   }
   double rho(1.0), mu(1.0);
@@ -210,21 +160,22 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   Point xv(2);
   std::vector<int> bc_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value(nnodes_wghost);
+  std::vector<double> bc_mixed;
 
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
     if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
         fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
       bc_model[v] = OPERATOR_BC_DIRICHLET;
-      bc_value[v] = pressure_exact(xv, 0.0);
+      bc_value[v] = ana.pressure_exact(xv, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_NODE, bc_model, bc_value));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_NODE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g);
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g, 0);
   const CompositeVectorSpace& cvs = op->DomainMap();
   
   // populate the diffusion operator
@@ -250,7 +201,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
     for (int k = 0; k < nnodes; k++) {
       int v = nodes[k];
-      src[0][v] += source_exact(xc, 0.0) * volume / nnodes;
+      src[0][v] += ana.source_exact(xc, 0.0) * volume / nnodes;
     }
   }
   source.GatherGhostedToMaster();
@@ -315,8 +266,323 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
 
 /* *****************************************************************
+* Tests DivK diffusion solver with full tensor and source term.
+* The model for kf is arithmetic average.
+***************************************************************** */
+TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Operators;
+
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+
+  if (MyPID == 0) std::cout << "\nTest: 2D steady-state elliptic solver, divK discretization, average" << std::endl;
+
+  // read parameter list
+  std::string xmlFileName = "test/operator_diffusion.xml";
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  Teuchos::ParameterList plist = xmlreader.getParameters();
+
+  // create an SIMPLE mesh framework
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+  pref.push_back(STKMESH);
+
+  MeshFactory meshfactory(&comm);
+  meshfactory.preference(pref);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 5, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory("test/random20.exo", gm);
+
+  /* modify diffusion coefficient */
+  std::vector<WhetStone::Tensor> K;
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+
+  Analytic03 ana(mesh);
+
+  const WhetStone::Tensor Kc(2, 1);
+  Kc(0, 0) = 1.0;
+  for (int c = 0; c < ncells; c++) {
+    K.push_back(Kc);
+  }
+  double rho(1.0), mu(1.0);
+  AmanziGeometry::Point g(0.0, -1.0);
+
+  // create boundary data
+  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
+
+  for (int f = 0; f < nfaces_wghost; f++) {
+    const Point& xf = mesh->face_centroid(f);
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
+      bc_value[f] = ana.pressure_exact(xf, 0.0);
+    }
+  }
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
+
+  // create diffusion operator 
+  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator divk");
+  OperatorDiffusionFactory opfactory;
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g, 0);
+  const CompositeVectorSpace& cvs = op->DomainMap();
+
+  // create and initialize state variables.
+  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
+  Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
+
+  Point velocity(0.0, 0.0);
+  for (int f = 0; f < nfaces_wghost; f++) {
+    const Point& normal = mesh->face_normal(f);
+    flx[0][f] = velocity * normal;
+  }
+  
+  // Create nonlinear coefficient.
+  Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh));
+
+  // Create upwind model
+  Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
+  UpwindStandard<HeatConduction> upwind(mesh, knc);
+  upwind.Init(ulist);
+
+  knc->UpdateValues(*flux);  // argument is not used
+  ModelUpwindFn func = &HeatConduction::Conduction;
+  upwind.Compute(*flux, bc_model, bc_value, *knc->values(), *knc->values(), func);
+
+  // populate the diffusion operator
+  int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE;
+  op->InitOperator(K, knc->values(), knc->derivatives(), rho, mu);
+  op->UpdateMatrices(flux, Teuchos::null);
+  op->ApplyBCs();
+  op->SymbolicAssembleMatrix(schema);
+  op->AssembleMatrix(schema);
+
+  // create source 
+  CompositeVector source(cvs);
+  Epetra_MultiVector& src = *source.ViewComponent("cell");
+
+  for (int c = 0; c < ncells; c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    src[0][c] = ana.source_exact(xc, 0.0);
+  }
+
+  // dirty trick: add source to operator
+  Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(*op));
+  op1->UpdateMatrices(source);
+
+  // create preconditoner using the base operator class
+  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+  op->InitPreconditioner("Hypre AMG", slist);
+
+  // solve the problem
+  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
+     solver = factory.Create("AztecOO CG", lop_list, op);
+
+  CompositeVector rhs = *op->rhs();
+  CompositeVector solution(rhs);
+  solution.PutScalar(0.0);
+
+  int ierr = solver->ApplyInverse(rhs, solution);
+
+  if (MyPID == 0) {
+    std::cout << "pressure solver (" << solver->name() 
+              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+              << " code=" << solver->returned_code() << std::endl;
+  }
+
+  // compute pressure error
+  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  double pnorm, pl2_err, pinf_err;
+  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
+
+  // calculate flux error
+  op->UpdateFlux(solution, *flux);
+  double unorm, ul2_err, uinf_err;
+  ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
+
+  if (MyPID == 0) {
+    pl2_err /= pnorm; 
+    ul2_err /= unorm;
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
+        pl2_err, pinf_err, ul2_err, uinf_err, solver->num_itrs());
+
+    CHECK(pl2_err < 0.03 && ul2_err < 0.1);
+    CHECK(solver->num_itrs() < 10);
+  }
+}
+
+
+/* *****************************************************************
+* Tests DivK diffusion solver with full tensor and source term.
+* The model for kf is second-order upwind with arithmetic average.
+***************************************************************** */
+TEST(OPERATOR_DIFFUSION_SECOND_ORDER) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Operators;
+
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+
+  if (MyPID == 0) std::cout << "\nTest: 2D steady-state elliptic solver, divK discretization, 2nd-order" << std::endl;
+
+  // read parameter list
+  std::string xmlFileName = "test/operator_diffusion.xml";
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  Teuchos::ParameterList plist = xmlreader.getParameters();
+
+  // create an SIMPLE mesh framework
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+  pref.push_back(STKMESH);
+
+  MeshFactory meshfactory(&comm);
+  meshfactory.preference(pref);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 5, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory("test/random20.exo", gm);
+
+  /* modify diffusion coefficient */
+  std::vector<WhetStone::Tensor> K;
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+
+  Analytic03 ana(mesh);
+
+  const WhetStone::Tensor Kc(2, 1);
+  Kc(0, 0) = 1.0;
+  for (int c = 0; c < ncells; c++) {
+    K.push_back(Kc);
+  }
+  double rho(1.0), mu(1.0);
+  AmanziGeometry::Point g(0.0, -1.0);
+
+  // create boundary data
+  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
+
+  for (int f = 0; f < nfaces_wghost; f++) {
+    const Point& xf = mesh->face_centroid(f);
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
+      bc_value[f] = ana.pressure_exact(xf, 0.0);
+    }
+  }
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
+
+  // create diffusion operator 
+  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
+                                        .sublist("diffusion operator second-order");
+  OperatorDiffusionFactory opfactory;
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g, 0);
+  const CompositeVectorSpace& cvs = op->DomainMap();
+
+  // create and initialize state variables.
+  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
+  Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
+
+  Point velocity(0.0, 0.0);
+  for (int f = 0; f < nfaces_wghost; f++) {
+    const Point& normal = mesh->face_normal(f);
+    flx[0][f] = velocity * normal;
+  }
+  
+  // Create nonlinear coefficient.
+  Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh));
+
+  // Create upwind model
+  Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind second-order");
+  UpwindSecondOrder<HeatConduction> upwind(mesh, knc);
+  upwind.Init(ulist);
+
+  knc->UpdateValues(*flux);  // argument is not used
+  ModelUpwindFn func = &HeatConduction::Conduction;
+  upwind.Compute(*flux, bc_model, bc_value, *knc->values(), *knc->values(), func);
+
+  // populate the diffusion operator
+  int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE;
+  op->InitOperator(K, knc->values(), knc->derivatives(), rho, mu);
+  op->UpdateMatrices(flux, Teuchos::null);
+  op->ApplyBCs();
+  op->SymbolicAssembleMatrix(schema);
+  op->AssembleMatrix(schema);
+
+  // create source 
+  CompositeVector source(cvs);
+  Epetra_MultiVector& src = *source.ViewComponent("cell");
+
+  for (int c = 0; c < ncells; c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    src[0][c] = ana.source_exact(xc, 0.0);
+  }
+
+  // dirty trick: add source to operator
+  Teuchos::RCP<OperatorSource> op1 = Teuchos::rcp(new OperatorSource(*op));
+  op1->UpdateMatrices(source);
+
+  // create preconditoner using the base operator class
+  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+  op->InitPreconditioner("Hypre AMG", slist);
+
+  // solve the problem
+  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
+     solver = factory.Create("AztecOO CG", lop_list, op);
+
+  CompositeVector rhs = *op->rhs();
+  CompositeVector solution(rhs);
+  solution.PutScalar(0.0);
+
+  int ierr = solver->ApplyInverse(rhs, solution);
+
+  if (MyPID == 0) {
+    std::cout << "pressure solver (" << solver->name() 
+              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+              << " code=" << solver->returned_code() << std::endl;
+  }
+
+  // compute pressure error
+  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  double pnorm, pl2_err, pinf_err;
+  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
+
+  // calculate flux error
+  op->UpdateFlux(solution, *flux);
+  double unorm, ul2_err, uinf_err;
+  ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
+
+  if (MyPID == 0) {
+    pl2_err /= pnorm; 
+    ul2_err /= unorm;
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
+        pl2_err, pinf_err, ul2_err, uinf_err, solver->num_itrs());
+
+    CHECK(pl2_err < 0.03 && ul2_err < 0.1);
+    CHECK(solver->num_itrs() < 10);
+  }
+}
+
+
+/* *****************************************************************
 * Exactness test for mixed diffusion solver.
-* **************************************************************** */
+***************************************************************** */
 TEST(OPERATOR_DIFFUSION_MIXED) {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -354,15 +620,11 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
+  Analytic02 ana(mesh);
+
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    WhetStone::Tensor Kc(2, 2);
-
-    Kc(0, 0) = 3.0;
-    Kc(1, 1) = 1.0;
-    Kc(0, 1) = 1.0;
-    Kc(1, 0) = 1.0;
-
+    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
     K.push_back(Kc);
   }
   double rho(1.0), mu(1.0);
@@ -374,22 +636,23 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
-    const Point& normal = mesh->face_normal(f);
     double area = mesh->face_area(f);
+    int dir, c = BoundaryFaceGetCell(*mesh, f);
+    const Point& normal = mesh->face_normal(f, false, c, &dir);
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_value[f] = velocity_exact_linear(xf, 0.0) * normal / area;  // We assume exterior normal.
+      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;  // We assume exterior normal.
     } else if(fabs(xf[1]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_MIXED;
-      bc_value[f] = velocity_exact_linear(xf, 0.0) * normal / area;  // We assume exterior normal.
+      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;  // We assume exterior normal.
 
-      double tmp = pressure_exact_linear(xf, 0.0);
+      double tmp = ana.pressure_exact(xf, 0.0);
       bc_mixed[f] = 1.0;
       bc_value[f] -= bc_mixed[f] * tmp;
     } else if(fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value[f] = pressure_exact_linear(xf, 0.0);
+      bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
@@ -397,7 +660,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g);
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, op_list, g, 0);
   const CompositeVectorSpace& cvs = op->DomainMap();
   
   // populate the diffusion operator
@@ -454,39 +717,23 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   // compute pressure error
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
-
-  double p_norm(0.0), p_error(0.0);
-  for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    double tmp = pressure_exact_linear(xc, 0.0);
-    double volume = mesh->cell_volume(c);
-
-    // std::cout << c << " " << tmp << " " << p[0][c] << std::endl;
-    p_error += std::pow(tmp - p[0][c], 2.0) * volume;
-    p_norm += std::pow(tmp, 2.0) * volume;
-  }
+  double pnorm, pl2_err, pinf_err;
+  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   // calculate flux error
   Epetra_MultiVector& flx = *flux.ViewComponent("face", true);
+  double unorm, ul2_err, uinf_err;
+
   op->UpdateFlux(solution, flux);
-
-  double flux_norm(0.0), flux_error(0.0);
-  for (int f = 0; f < nfaces; f++) {
-    const Point& normal = mesh->face_normal(f);
-    const Point& xf = mesh->face_centroid(f);
-    const AmanziGeometry::Point& velocity = velocity_exact_linear(xf, 0.0);
-    double tmp = velocity * normal;
-
-    flux_error += std::pow(tmp - flx[0][f], 2.0);
-    flux_norm += std::pow(tmp, 2.0);
-  }
+  ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
   if (MyPID == 0) {
-    p_error = pow(p_error / p_norm, 0.5);
-    flux_error = pow(flux_error / flux_norm, 0.5);
-    printf("Err(p) = %9.6f  Err(flux) = %9.6g  itr=%3d\n", p_error, flux_error, solver->num_itrs());
+    pl2_err /= pnorm; 
+    ul2_err /= unorm;
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
+        pl2_err, pinf_err, ul2_err, uinf_err, solver->num_itrs());
 
-    CHECK(p_error < 1e-12 && flux_error < 1e-12);
+    CHECK(pl2_err < 1e-12 && ul2_err < 1e-12);
     CHECK(solver->num_itrs() < 10);
   }
 }
@@ -535,33 +782,30 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
+  Analytic02 ana(mesh);
+
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    WhetStone::Tensor Kc(2, 2);
-
-    Kc(0, 0) = 3.0;
-    Kc(1, 1) = 1.0;
-    Kc(0, 1) = 1.0;
-    Kc(1, 0) = 1.0;
-
+    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
     K.push_back(Kc);
   }
   double rho(1.0), mu(1.0);
   AmanziGeometry::Point g(0.0, -1.0);
 
-  // create boundary data.
+  // create boundary data (no mixed bc)
   Point xv(2);
   std::vector<int> bc_model_v(nnodes_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value_v(nnodes_wghost, 0.0);
+  std::vector<double> bc_mixed_v;
 
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
     if(fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
       bc_model_v[v] = OPERATOR_BC_DIRICHLET;
-      bc_value_v[v] = pressure_exact_linear(xv, 0.0);
+      bc_value_v[v] = ana.pressure_exact(xv, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_NODE, bc_model_v, bc_value_v));
+  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_NODE, bc_model_v, bc_value_v, bc_mixed_v));
 
   std::vector<int> bc_model_f(nfaces_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value_f(nfaces_wghost, 0.0), bc_mixed_f(nfaces_wghost, 0.0);
@@ -570,12 +814,12 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
     const Point& xf = mesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6) {
       bc_model_f[f] = OPERATOR_BC_NEUMANN;
-      bc_value_f[f] = -(velocity_exact_linear(xf, 0.0))[0];  // We assume exterior normal.
+      bc_value_f[f] = -(ana.velocity_exact(xf, 0.0))[0];  // We assume exterior normal.
     } else if (fabs(xf[1]) < 1e-6) {
       bc_model_f[f] = OPERATOR_BC_MIXED;
-      bc_value_f[f] = -(velocity_exact_linear(xf, 0.0))[1];  // We assume exterior normal.
+      bc_value_f[f] = -(ana.velocity_exact(xf, 0.0))[1];  // We assume exterior normal.
 
-      double tmp = pressure_exact_linear(xf, 0.0);
+      double tmp = ana.pressure_exact(xf, 0.0);
       bc_mixed_f[f] = 1.0;
       bc_value_f[f] -= bc_mixed_f[f] * tmp;
     }
@@ -585,7 +829,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_v, op_list, g);
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_v, op_list, g, 0);
   op->AddBCs(bc_f);
   
   // populate the diffusion operator
@@ -621,30 +865,15 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   // compute pressure error
   Epetra_MultiVector& p = *solution.ViewComponent("node", false);
 
-  AmanziMesh::Entity_ID_List nodes;
-  double p_norm(0.0), p_error(0.0);
-
-  for (int c = 0; c < ncells; c++) {
-    mesh->cell_get_nodes(c, &nodes);
-    int nnodes = nodes.size();
-    double volume = mesh->cell_volume(c);
-
-    for (int n = 0; n < nnodes; n++) {
-      int v = nodes[n];
-      mesh->node_get_coordinates(v, &xv);
-      double tmp = pressure_exact_linear(xv, 0.0);
-
-      // std::cout << v << " " << tmp << " " << p[0][v] << std::endl;
-      p_error += std::pow(tmp - p[0][v], 2.0) * volume / nnodes;
-      p_norm += std::pow(tmp, 2.0) * volume / nnodes;
-    }
-  }
+  double pnorm, pl2_err, pinf_err, hnorm, ph1_err;
+  ana.ComputeNodeError(p, 0.0, pnorm, pl2_err, pinf_err, hnorm, ph1_err);
 
   if (MyPID == 0) {
-    p_error = pow(p_error / p_norm, 0.5);
-    printf("Err(p) = %9.6f itr=%3d\n", p_error, solver->num_itrs());
+    pl2_err /= pnorm;
+    ph1_err /= hnorm;
+    printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver->num_itrs());
 
-    CHECK(p_error < 1e-5);
+    CHECK(pl2_err < 1e-5 && ph1_err < 2e-5);
     CHECK(solver->num_itrs() < 10);
   }
 }
@@ -689,6 +918,8 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
+  Analytic02 ana(mesh);
+
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     WhetStone::Tensor Kc(2, 2);
@@ -718,12 +949,12 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
       bc_model[f] = Operators::OPERATOR_BC_MIXED;
       bc_value[f] = 2.0;
 
-      double tmp = pressure_exact_linear(xf, 0.0);
+      double tmp = ana.pressure_exact(xf, 0.0);
       bc_mixed[f] = 1.0;
       bc_value[f] -= bc_mixed[f] * tmp;
     } else if(fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value[f] = pressure_exact_linear(xf, 0.0);
+      bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
   Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
@@ -731,7 +962,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator cell");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_f, op_list, g);
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_f, op_list, g, 0);
   
   // populate the diffusion operator
   int schema = Operators::OPERATOR_SCHEMA_DOFS_CELL;
@@ -765,23 +996,14 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   // compute pressure error
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
-
-  double p_norm(0.0), p_error(0.0);
-  for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    double tmp = pressure_exact_linear(xc, 0.0);
-    double volume = mesh->cell_volume(c);
-
-    // std::cout << c << " " << tmp << " " << p[0][c] << std::endl;
-    p_error += std::pow(tmp - p[0][c], 2.0) * volume;
-    p_norm += std::pow(tmp, 2.0) * volume;
-  }
+  double pnorm, pl2_err, pinf_err;
+  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   if (MyPID == 0) {
-    p_error = pow(p_error / p_norm, 0.5);
-    printf("Err(p) = %9.6f itr=%3d\n", p_error, solver->num_itrs());
+    pl2_err /= pnorm; 
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver->num_itrs());
 
-    CHECK(p_error < 1e-5);
+    CHECK(pl2_err < 1e-5);
     CHECK(solver->num_itrs() < 10);
   }
 }

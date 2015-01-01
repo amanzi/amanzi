@@ -124,6 +124,7 @@ double TimestepControllerAdaptive<Vector>::get_timestep(double dt, int iteration
   std::string msg = "TimestepControllerAdaptive is implemented for a limited set of vectors.";
   Errors::Message m(msg);
   Exceptions::amanzi_throw(m);
+  return 0.0;
 }
 
 template<> inline

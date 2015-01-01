@@ -18,8 +18,8 @@ namespace Functions {
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-void FlowBoundaryFunction::Define(const std::vector<std::string> &regions,
-                                  const Teuchos::RCP<const MultiFunction> &f, 
+void FlowBoundaryFunction::Define(const std::vector<std::string>& regions,
+                                  const Teuchos::RCP<const MultiFunction>& f, 
                                   int method) 
 {
   // Create the domain
@@ -40,8 +40,8 @@ void FlowBoundaryFunction::Define(const std::vector<std::string> &regions,
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-void FlowBoundaryFunction::Define(std::string region,
-                                  const Teuchos::RCP<const MultiFunction> &f,
+void FlowBoundaryFunction::Define(std::string& region,
+                                  const Teuchos::RCP<const MultiFunction>& f,
                                   int method) 
 {
   RegionList regions(1,region);
@@ -83,7 +83,7 @@ void FlowBoundaryFunction::Compute(double time) {
     // the most general case.
     Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
     for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
-      AmanziGeometry::Point xc = mesh_->face_centroid(*id);
+      const AmanziGeometry::Point& xc = mesh_->face_centroid(*id);
       for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
       // Careful tracing of the typedefs is required here: spec_and_ids->first
       // is a RCP<Spec>, and the Spec's second is an RCP to the function.
@@ -123,7 +123,7 @@ void FlowBoundaryFunction::ComputeShift(double time, double* shift)
     // the most general case.
     Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
     for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
-      AmanziGeometry::Point xc = mesh_->face_centroid(*id);
+      const AmanziGeometry::Point& xc = mesh_->face_centroid(*id);
       for (int i = 0; i != dim; ++i) args[i+1] = xc[i];
       // Careful tracing of the typedefs is required here: spec_and_ids->first
       //  is a RCP<Spec>, and the Spec's second is an RCP to the function.

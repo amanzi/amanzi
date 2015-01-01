@@ -25,11 +25,11 @@ namespace Flow {
 /* ******************************************************************
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
-void Richards_PK::Functional(double Told, double Tnew, 
+void Richards_PK::Functional(double T0, double T1, 
                              Teuchos::RCP<CompositeVector> u_old, Teuchos::RCP<CompositeVector> u_new, 
                              Teuchos::RCP<CompositeVector> f)
 { 
-  double Tp(Tnew), dTp(Tnew - Told);
+  double dTp(T1 - T0);
 
   const Epetra_MultiVector& uold_cell = *u_old->ViewComponent("cell");
   const Epetra_MultiVector& unew_cell = *u_new->ViewComponent("cell");
@@ -43,7 +43,7 @@ void Richards_PK::Functional(double Told, double Tnew,
 
   RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
   upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
-  UpdateSourceBoundaryData(Tp, *u_new);
+  UpdateSourceBoundaryData(T0, T1, *u_new);
   
   // assemble residual for diffusion operator
   op_matrix_->Init();
@@ -112,7 +112,8 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
   RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
   upwind_->Compute(*darcy_flux_upwind, bc_model, bc_value, *rel_perm_->dKdP(), *rel_perm_->dKdP(), func2);
 
-  UpdateSourceBoundaryData(Tp, *u);
+  double T0 = Tp - dTp;
+  UpdateSourceBoundaryData(T0, Tp, *u);
 
   // create diffusion operators
   op_preconditioner_->Init();
@@ -132,7 +133,7 @@ void Richards_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const CompositeVe
   dSdP.Multiply(rho_, phi, dSdP, 0.0);
 
   if (dTp > 0.0) {
-    op_preconditioner_->AddAccumulationTerm(*u, dSdP, dTp);
+    op_preconditioner_->AddAccumulationTerm(*u, dSdP, dTp, "cell");
   }
 
   // finalize preconditioner

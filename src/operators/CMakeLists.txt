@@ -63,7 +63,11 @@ set(operators_inc_files
     OperatorSource.hh
     Reconstruction.hh
     ReconstructionCell.hh
-    Upwind.hh)
+    Upwind.hh
+    UpwindFactory.hh
+    UpwindStandard.hh
+    UpwindDivK.hh
+    UpwindSecondOrder.hh)
 
 add_amanzi_library(operators
                    SOURCE Operator.cc 
@@ -71,7 +75,7 @@ add_amanzi_library(operators
                    OperatorDiffusionWithGravity.cc OperatorDiffusionFactory.cc
                    OperatorDiffusionTPFA.cc OperatorSource.cc 
                    OperatorAdvection.cc 
-                   ReconstructionCell.cc
+                   ReconstructionCell.cc ReconstructionCell_Limiters.cc
                    HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
 
@@ -87,7 +91,7 @@ if ( BUILD_TESTS )
           copy_directory ${OPERATORS_SOURCE_DIR}/test ${OPERATORS_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs geometry atk mesh mesh_audit mesh_factory data_structures operators whetstone output)
+    set(amanzi_libs geometry atk mesh mesh_factory data_structures operators whetstone output)
 
     # Test: matrices for diffusion
     if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )
@@ -102,6 +106,10 @@ if ( BUILD_TESTS )
         add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
                         KIND unit
                         SOURCE test/Main.cc test/operator_nonlinear_surface.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(operators_marshak operators_marshak
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_marshak.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     else()
         add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami

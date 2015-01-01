@@ -14,6 +14,7 @@ project(SAMR)
 
 include_directories(${CHEM_SOURCE_DIR}/includes)
 include_directories(${DBC_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${PMAMR_INCLUDE_DIRS})

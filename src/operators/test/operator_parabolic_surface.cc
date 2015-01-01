@@ -87,10 +87,11 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   }
   double rho(1.0), mu(1.0);
 
-  // create boundary data
+  // create boundary data (no mixed bc)
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
   std::vector<double> bc_value(nfaces_wghost);
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value));
+  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -121,7 +122,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   phi.PutScalar(0.2);
 
   double dT = 10.0;
-  op1->AddAccumulationTerm(solution, phi, dT);
+  op1->AddAccumulationTerm(solution, phi, dT, "cell");
 
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
@@ -162,7 +163,7 @@ TEST(LAPLACE_BELTRAMI_CLOSED) {
   op1->UpdateMatrices(source);
 
   solution.PutScalar(0.0); 
-  op1->AddAccumulationTerm(solution, phi, dT);
+  op1->AddAccumulationTerm(solution, phi, dT, "cell");
 
   op2->InitOperator(K, Teuchos::null, Teuchos::null, rho, mu);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);

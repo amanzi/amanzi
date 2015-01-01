@@ -76,14 +76,11 @@
 #include "matrix_block.hh"
 #include "string_tokenizer.hh"
 #include "chemistry_verbosity.hh"
-#include "chemistry_output.hh"
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-extern ChemistryOutput* chem_out;
 
 KineticRateTST::KineticRateTST(void)
     : KineticRate(),
@@ -117,7 +114,7 @@ void KineticRateTST::Setup(const SecondarySpecies& reaction,
   set_identifier(reaction.identifier());
 
   // copy the reactant species, ids and stoichiometry from the reaction species
-  chem_out->Write(kDebugMineralKinetics, 
+  chem_out->Write(Teuchos::VERB_EXTREME, 
                   "  KineticRateTST::Setup(): Searching for reactant species ids...\n");
   reactant_names = reaction.species_names();
   reactant_stoichiometry = reaction.stoichiometry();
@@ -133,7 +130,7 @@ void KineticRateTST::Setup(const SecondarySpecies& reaction,
   ParseParameters(reaction_data);
 
   // determine the species ids for the modifying species
-  chem_out->Write(kDebugMineralKinetics,
+  chem_out->Write(Teuchos::VERB_EXTREME,
                   "  KineticRateTST::Setup(): Searching for modifying species ids...\n");
 
   SetSpeciesIds(primary_species, species_type,
@@ -167,7 +164,7 @@ void KineticRateTST::Update(const SpeciesArray& primary_species,
       std::stringstream message;
       message << "  Update: p: " << p << "  coeff: " << primary_stoichiometry.at(p)
               << "  ln_a: " << primary_species.at(p).ln_activity() << std::endl;
-      chem_out->Write(kDebugMineralKinetics, message);
+      chem_out->Write(Teuchos::VERB_EXTREME, message);
     }
   }
   double Q = std::exp(lnQ);
@@ -198,7 +195,7 @@ void KineticRateTST::Update(const SpeciesArray& primary_species,
             << "    1-Q/K: " << 1.0 - Q_over_Keq() << " [--]\n"
             << std::fixed
             << std::endl;
-    chem_out->Write(kDebugMineralKinetics, message);
+    chem_out->Write(Teuchos::VERB_EXTREME, message);
   }
 }  // end Update()
 
@@ -232,7 +229,7 @@ void KineticRateTST::AddContributionToResidual(const std::vector<Mineral>&  mine
         message << "  AddToResidual p: " << p
                 << "  coeff: " << reactant_stoichiometry.at(p)
                 << "  rate: " << rate / bulk_volume << "  redsidual: " << residual->at(p) << std::endl;
-        chem_out->Write(kDebugMineralKinetics, message);
+        chem_out->Write(Teuchos::VERB_EXTREME, message);
       }
     }
   }
@@ -308,7 +305,7 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
                 << "\ttemp_Q: " << temp_Q
                 << "\trow: " << dRdC_row.at(p)
                 << std::endl;
-        chem_out->Write(kDebugMineralKinetics, message);
+        chem_out->Write(Teuchos::VERB_EXTREME, message);
       }
     }
 
@@ -374,7 +371,7 @@ void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {
 }  // end ParseParameters()
 
 void KineticRateTST::Display(void) const {
-  chem_out->Write(kVerbose, "    Rate law: TST\n");
+  chem_out->Write(Teuchos::VERB_HIGH, "    Rate law: TST\n");
   this->DisplayReaction();
   std::stringstream message;
   message << "    Parameters:" << std::endl;
@@ -389,7 +386,7 @@ void KineticRateTST::Display(void) const {
     message << "^" << this->modifying_exponents.at(mod) << " " << std::endl;
   }
   message << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end Display()
 
 }  // namespace AmanziChemistry

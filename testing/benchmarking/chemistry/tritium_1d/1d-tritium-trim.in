@@ -16,6 +16,7 @@ CHEMISTRY
   ACTIVITY_COEFFICIENTS OFF
   OUTPUT
     All
+    TOTAL
   /
   MAX_RESIDUAL_TOLERANCE 1.d-40
 END
@@ -33,8 +34,14 @@ CONSTRAINT west
   /
 END
 
+CONSTRAINT westhi
+  CONCENTRATIONS
+    Tritium  1.d-2      T
+  /
+END
+
 CONSTRAINT east
   CONCENTRATIONS
-    Tritium  1.d-20      T
+    Tritium  1.d-15      T
   /
 END

@@ -27,10 +27,8 @@
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
-#include "TabularFunction.hh"
 
 #include "Transport_PK.hh"
-
 
 namespace Amanzi {
 namespace Transport {
@@ -100,6 +98,10 @@ void Transport_PK::Construct_(Teuchos::ParameterList& glist,
   passwd_ = "state";  //  state password
 
   // require state variables when Flow is off
+  if (!S->HasField("permeability")) {
+    S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, dim);
+  }
   if (!S->HasField("porosity")) {
     S->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -216,13 +218,16 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     bcs[i]->Compute(time);
   }
 
-  CheckInfluxBC();
+  VV_CheckInfluxBC();
 
   // source term initialization
   for (int i =0; i < srcs.size(); i++) {
     int distribution = srcs[i]->CollectActionsList();
     if (distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+      Errors::Message msg;
+      msg << "Transport PK: missing capability: permeability-based source distribution.\n";
+      Exceptions::amanzi_throw(msg);  
       break;
     }
   }
@@ -436,17 +441,18 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
     // default boundary conditions (none inside domain and Neumann on its boundary)
     std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
     std::vector<double> bc_value(nfaces_wghost, 0.0);
+    std::vector<double> bc_mixed;
     PopulateBoundaryData(bc_model, bc_value, -1);
 
     Teuchos::RCP<Operators::BCs> bc_dummy = 
-        Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value));
+        Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
     AmanziGeometry::Point g;
 
     Operators::OperatorDiffusionFactory opfactory;
-    Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list, g);
+    Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(mesh_, bc_dummy, op_list, g, 0);
 
     const CompositeVectorSpace& cvs = op1->DomainMap();
-    CompositeVector sol(cvs), factor(cvs), source(cvs), zero(cvs);
+    CompositeVector sol(cvs), factor(cvs), factor0(cvs), source(cvs), zero(cvs);
     zero.PutScalar(0.0);
   
     // instantiale solver
@@ -496,7 +502,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
         for (int c = 0; c < ncells_owned; c++) {
           fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
         }
-        op1->AddAccumulationTerm(sol, factor, dT_MPC);
+        op1->AddAccumulationTerm(sol, factor, dT_MPC, "cell");
  
         int schema_prec_dofs = op1->schema_prec_dofs();
         op1->SymbolicAssembleMatrix(schema_prec_dofs);
@@ -563,12 +569,15 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
       op1->ApplyBCs();
 
       // add accumulation term
-      Epetra_MultiVector& fac = *factor.ViewComponent("cell");
+      Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");
+      Epetra_MultiVector& fac0 = *factor0.ViewComponent("cell");
+
       for (int c = 0; c < ncells_owned; c++) {
-        fac[0][c] = (*phi)[0][c] * (1.0 - (*ws)[0][c]);
-        if ((*ws)[0][c] == 1.0) fac[0][c] = 1.0;  // hack so far
+        fac1[0][c] = (*phi)[0][c] * (1.0 - (*ws)[0][c]);
+        fac0[0][c] = (*phi)[0][c] * (1.0 - (*ws_prev)[0][c]);
+        if ((*ws)[0][c] == 1.0) fac1[0][c] = 1.0;  // hack so far
       }
-      op1->AddAccumulationTerm(sol, factor, dT_MPC);
+      op1->AddAccumulationTerm(sol, factor0, factor, dT_MPC, "cell");
  
       int schema_prec_dofs = op1->schema_prec_dofs();
       op1->SymbolicAssembleMatrix(schema_prec_dofs);
@@ -607,31 +616,7 @@ int Transport_PK::Advance(double dT_MPC, double& dT_actual)
     *vo_->os() << ncycles << " sub-cycles, dT_stable=" << dT_original 
                << " [sec]  dT_MPC=" << dT_MPC << " [sec]" << std::endl;
 
-    double tccmin_vec[num_components];
-    double tccmax_vec[num_components];
-
-    tcc_next.MinValue(tccmin_vec);
-    tcc_next.MaxValue(tccmax_vec);
-
-    double tccmin, tccmax;
-    tcc_next.Comm().MinAll(tccmin_vec, &tccmin, 1);  // find the global extrema
-    tcc_next.Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
-
-    mass_tracer_exact += TracerVolumeChangePerSecond(0) * dT_MPC;
-    double mass_tracer = 0.0;
-    for (int c = 0; c < ncells_owned; c++) {
-      double vol = mesh_->cell_volume(c);
-      mass_tracer += (*ws)[0][c] * (*phi)[0][c] * tcc_next[0][c] * vol;
-    }
-
-    double mass_tracer_tmp = mass_tracer, mass_exact_tmp = mass_tracer_exact, mass_exact;
-    mesh_->get_comm()->SumAll(&mass_tracer_tmp, &mass_tracer, 1);
-    mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_exact, 1);
-
-    double mass_loss = mass_exact - mass_tracer;
-    *vo_->os() << "species #0: " << tccmin << " <= concentration <= " << tccmax << std::endl;
-    *vo_->os() << "species #0: reservoir mass=" << mass_tracer 
-               << " [kg], mass left=" << mass_loss << " [kg]" << std::endl;
+    VV_PrintSoluteExtrema(tcc_next, dT_MPC);
   }
 
   return 0;
@@ -744,7 +729,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   mass_tracer_exact += mass_tracer_source * dT;
 
   if (internal_tests) {
-    CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
+    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 }
 
@@ -790,7 +775,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
   mass_tracer_exact += mass_tracer_source * dT;
 
   if (internal_tests) {
-    CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
+    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 }
 
@@ -853,7 +838,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
   mass_tracer_exact += mass_tracer_source * dT / 2;
 
   if (internal_tests) {
-    CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
+    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 }
 
@@ -919,11 +904,12 @@ void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp,
     int imap = i;
     if (num_vectors == 1) imap = 0;
 
+    double T0 = Tp - dTp;
     int distribution = srcs[m]->CollectActionsList();
     if (distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      srcs[m]->ComputeDistributeMultiValue(Tp, Kxy->Values()); 
+      srcs[m]->ComputeDistributeMultiValue(T0, Tp, Kxy->Values()); 
     } else {
-      srcs[m]->ComputeDistributeMultiValue(Tp, NULL);
+      srcs[m]->ComputeDistributeMultiValue(T0, Tp, NULL);
     }
 
     TransportDomainFunction::Iterator it;
@@ -996,14 +982,19 @@ void Transport_PK::IdentifyUpwindCells()
   }
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
+  std::vector<int> dirs;
 
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
-      if ((*darcy_flux)[0][f] * fdirs[i] >= 0) {
+      double tmp = (*darcy_flux)[0][f] * dirs[i];
+      if (tmp > 0.0) {
+        (*upwind_cell_)[f] = c;
+      } else if (tmp < 0.0) {
+        (*downwind_cell_)[f] = c;
+      } else if (dirs[i] > 0) {
         (*upwind_cell_)[f] = c;
       } else {
         (*downwind_cell_)[f] = c;

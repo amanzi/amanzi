@@ -50,8 +50,8 @@ void Transport_PK::LimiterTensorial(const int component,
         int c2 = (*downwind_cell_)[f];
 
         if (c1 >= 0 && c2 >= 0) {
-          u1 = (*scalar_field)[c1];
-          u2 = (*scalar_field)[c2];
+          u1 = (*scalar_field)[c];
+          u2 = (*scalar_field)[c1 + c2 - c];
         } else if (c1 == c) {
           u1 = u2 = (*scalar_field)[c1];
         } else {
@@ -427,13 +427,12 @@ void Transport_PK::LimiterKuzmin(const int component,
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i = 0; i < dim; i++) gradient_c[i] = (*grad)[i][c];
 
-    double umin = component_node_min[c];
-    double umax = component_node_max[c];
-
     normals.clear();  // normals to planes the define the feasiable set
     for (int loop = 0; loop < 2; loop++) {
       for (int i = 0; i < nnodes; i++) {
         int v = nodes[i];
+        double umin = component_node_min[v];
+        double umax = component_node_max[v];
 
         mesh_->node_get_coordinates(v, &xp);
         up = lifting_->getValue(gradient_c, c, xp);

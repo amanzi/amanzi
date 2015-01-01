@@ -9,6 +9,12 @@
 
 namespace
 {
+    const std::string CheckPointVersion("CheckPointVersion_1.0");
+
+    bool initialized = false;
+}
+namespace
+{
   //
   // These are all ParmParse'd in, as variables with the same name are
   // not accessible to this derived class...should fix
@@ -19,38 +25,50 @@ namespace
   int  use_efficient_regrid;
   int  compute_new_dt_on_regrid;
   int  plotfile_on_restart;
+  int  mffile_nstreams;
 }
 
 EventCoord PMAmr::event_coord;
 std::map<std::string,EventCoord::Event*> PMAmr::defined_events;
 bool PMAmr::do_output_time_in_years;
 bool PMAmr::attempt_to_recover_failed_step;
+int PMAmr::plot_file_digits;
+int PMAmr::chk_file_digits;
 
 void
-PMAmr::CleanupStatics ()
+PMAmr::Initialize ()
 {
-    pmamr_initialized = false;
+  if (initialized) return;
+  //
+  // Set all defaults here!!!
+  //
+  mffile_nstreams          = 1;
+  regrid_on_restart        = 0;
+  use_efficient_regrid     = 0;
+  plotfile_on_restart      = 0;
+  compute_new_dt_on_regrid = 1;
+  plot_file_digits         = 5;
+  chk_file_digits          = 5;
+  do_output_time_in_years  = true;
+  attempt_to_recover_failed_step = true;
+  
+  BoxLib::ExecOnFinalize(PMAmr::Finalize);
+  
+  VisMF::Initialize();
+  
+  initialized = true;
 }
 
-static bool initialized = false;
+void
+PMAmr::Finalize ()
+{
+  initialized = false;
+}
 
 PMAmr::PMAmr()
   : Amr()
 {
-    if (!pmamr_initialized) {
-        regrid_on_restart        = 0;
-        use_efficient_regrid     = 0;
-        plotfile_on_restart      = 0;
-        compute_new_dt_on_regrid = 1;
-        plot_file_digits         = file_name_digits;
-        chk_file_digits          = file_name_digits;
-        do_output_time_in_years  = true;
-        attempt_to_recover_failed_step = true;
-
-        BoxLib::ExecOnFinalize(PMAmr::CleanupStatics);
-        pmamr_initialized = true;
-    }
-
+    Initialize();
     ParmParse ppa("amr");
     ppa.query("plot_file_digits",plot_file_digits);
     ppa.query("chk_file_digits",chk_file_digits);
@@ -680,7 +698,7 @@ PMAmr::initialInit (Real              strt_time,
 		    const Array<int>* pmap)
 {
   setStartTime(strt_time);
-  Amr::InitializeInit(strt_time, stop_time, lev0_grids, pmap);
+  InitializeInit(strt_time, stop_time, lev0_grids, pmap);
 
   // This is a subtlety, but in the case where we are initializing the data
   //   from a plotfile, we want to use the time read in from the plotfile as
@@ -697,7 +715,41 @@ PMAmr::InitializeInit(Real              strt_time,
 		      const BoxArray*   lev0_grids,
 		      const Array<int>* pmap)
 {
-  Amr::InitializeInit(strt_time,stop_time,lev0_grids,pmap);
+  //Amr::InitializeInit(strt_time,stop_time,lev0_grids,pmap);
+    BL_COMM_PROFILE_NAMETAG("PMAmr::initialInit TOP");
+    checkInput();
+    //
+    // Generate internal values from user-supplied values.
+    //
+    finest_level = 0;
+    //
+    // Init problem dependent data.
+    //
+    int init = true;
+
+    if (!probin_file.empty()) {
+      //readProbinFile(init);
+    }
+
+#ifdef BL_SYNC_RANTABLES
+    int iGet(0), iSet(1);
+    const int iTableSize(64);
+    Real *RanAmpl = new Real[iTableSize];
+    Real *RanPhase = new Real[iTableSize];
+    FORT_SYNC_RANTABLES(RanPhase, RanAmpl, &iGet);
+    ParallelDescriptor::Bcast(RanPhase, iTableSize);
+    ParallelDescriptor::Bcast(RanAmpl, iTableSize);
+    FORT_SYNC_RANTABLES(RanPhase, RanAmpl, &iSet);
+    delete [] RanAmpl;
+    delete [] RanPhase;
+#endif
+
+    cumtime = strt_time;
+    //
+    // Define base level grids.  Note that if we are restarting from a plotfile, this
+    //    routine will call the level 0 AmrLevel initialization which will overwrite cumtime.
+    //
+    defBaseLevel(strt_time, lev0_grids, pmap);
 }
 
 void
@@ -784,6 +836,319 @@ PMAmr::FinalizeInit (Real              strt_time,
     station.init(amr_level, finestLevel());
     station.findGrid(amr_level,geom);
 #endif
+
+#if 0
+    // Write initial plts and checkpoints no matter what
+    {
+        int file_name_digits_tmp = file_name_digits;
+        file_name_digits = chk_file_digits;
+        checkPoint();
+        file_name_digits = file_name_digits_tmp;
+    }
+
+    {
+        int file_name_digits_tmp = file_name_digits;
+        file_name_digits = plot_file_digits;
+        writePlotFile();
+        file_name_digits = file_name_digits_tmp;
+    }
+#endif
+
+}
+
+// FIXME: HACK  This is copied from Amr.cpp and inserted here.  IT IS NOT A VIRTUAL FUNCTION, SO BEWARE.
+// We wanted to avoid reading the probin file, and this is the only way to do everything else but that part.
+void
+PMAmr::restart (const std::string& filename)
+{
+    BL_PROFILE("PMAmr::restart()");
+
+    // Just initialize this here for the heck of it
+    which_level_being_advanced = -1;
+
+    Real dRestartTime0 = ParallelDescriptor::second();
+
+    DistributionMapping::Initialize();
+
+#if 0
+// HACK: Incompatible with slightly older BoxLib version currently distributed with Amanzi....
+    if(DistributionMapping::strategy() == DistributionMapping::PFC) {
+      Array<IntVect> refRatio;
+      Array<BoxArray> allBoxes;
+      DistributionMapping::ReadCheckPointHeader(filename, refRatio, allBoxes);
+      DistributionMapping::PFCMultiLevelMap(refRatio, allBoxes);
+    }
+#endif
+
+    if(ParallelDescriptor::IOProcessor()) {
+      std::cout << "DMCache size = " << DistributionMapping::CacheSize() << std::endl;
+      DistributionMapping::CacheStats(std::cout);
+    }
+    ParallelDescriptor::Barrier();
+
+
+    VisMF::SetMFFileInStreams(mffile_nstreams);
+
+    int i;
+
+    if (verbose > 0 && ParallelDescriptor::IOProcessor())
+        std::cout << "restarting calculation from file: " << filename << std::endl;
+
+    if (record_run_info && ParallelDescriptor::IOProcessor())
+        runlog << "RESTART from file = " << filename << '\n';
+    //
+    // Init problem dependent data.
+    //
+    int init = false;
+
+    // THE WHOLE READON FOR THIS ABOMINATION IS THE FOLLOWING COMMENT
+    // readProbinFile(init);
+    //
+    // Start calculation from given restart file.
+    //
+    if (record_run_info && ParallelDescriptor::IOProcessor())
+        runlog << "RESTART from file = " << filename << '\n';
+    //
+    // Open the checkpoint header file for reading.
+    //
+    std::string File = filename;
+
+    File += '/';
+    File += "Header";
+
+    VisMF::IO_Buffer io_buffer(VisMF::IO_Buffer_Size);
+
+    Array<char> fileCharPtr;
+    ParallelDescriptor::ReadAndBcastFile(File, fileCharPtr);
+    std::string fileCharPtrString(fileCharPtr.dataPtr());
+    std::istringstream is(fileCharPtrString, std::istringstream::in);
+    //
+    // Read global data.
+    //
+    // Attempt to differentiate between old and new CheckPointFiles.
+    //
+    int         spdim;
+    bool        new_checkpoint_format = false;
+    std::string first_line;
+
+    std::getline(is,first_line);
+
+    if (first_line == CheckPointVersion)
+    {
+        new_checkpoint_format = true;
+        is >> spdim;
+    }
+    else
+    {
+        spdim = atoi(first_line.c_str());
+    }
+
+    if (spdim != BL_SPACEDIM)
+    {
+        std::cerr << "PMAmr::restart(): bad spacedim = " << spdim << '\n';
+        BoxLib::Abort();
+    }
+
+    is >> cumtime;
+    int mx_lev;
+    is >> mx_lev;
+    is >> finest_level;
+
+    Array<Box> inputs_domain(max_level+1);
+    for (int lev = 0; lev <= max_level; lev++)
+    {
+       Box bx(geom[lev].Domain().smallEnd(),geom[lev].Domain().bigEnd());
+       inputs_domain[lev] = bx;
+    }
+
+    if (max_level >= mx_lev) {
+
+       for (i = 0; i <= mx_lev; i++) is >> geom[i];
+       for (i = 0; i <  mx_lev; i++) is >> ref_ratio[i];
+       for (i = 0; i <= mx_lev; i++) is >> dt_level[i];
+
+       if (new_checkpoint_format)
+       {
+           for (i = 0; i <= mx_lev; i++) is >> dt_min[i];
+       }
+       else
+       {
+           for (i = 0; i <= mx_lev; i++) dt_min[i] = dt_level[i];
+       }
+
+       Array<int>  n_cycle_in;
+       n_cycle_in.resize(mx_lev+1);  
+       for (i = 0; i <= mx_lev; i++) is >> n_cycle_in[i];
+       bool any_changed = false;
+
+       for (i = 0; i <= mx_lev; i++) 
+           if (n_cycle[i] != n_cycle_in[i])
+           {
+               any_changed = true;
+               if (verbose > 0 && ParallelDescriptor::IOProcessor())
+                   std::cout << "Warning: n_cycle has changed at level " << i << 
+                                " from " << n_cycle_in[i] << " to " << n_cycle[i] << std::endl;;
+           }
+
+       // If we change n_cycle then force a full regrid from level 0 up
+       if (max_level > 0 && any_changed)
+       {
+           level_count[0] = regrid_int[0];
+           if ((verbose > 0) && ParallelDescriptor::IOProcessor())
+               std::cout << "Warning: This forces a full regrid " << std::endl;
+       }
+
+
+       for (i = 0; i <= mx_lev; i++) is >> level_steps[i];
+       for (i = 0; i <= mx_lev; i++) is >> level_count[i];
+
+       //
+       // Set bndry conditions.
+       //
+       if (max_level > mx_lev)
+       {
+           for (i = mx_lev+1; i <= max_level; i++)
+           {
+               dt_level[i]    = dt_level[i-1]/n_cycle[i];
+               level_steps[i] = n_cycle[i]*level_steps[i-1];
+               level_count[i] = 0;
+           }
+
+           // This is just an error check
+           if (!sub_cycle)
+           {
+               for (i = 1; i <= finest_level; i++)
+               {
+                   if (dt_level[i] != dt_level[i-1])
+                      BoxLib::Error("restart: must have same dt at all levels if not subcycling");
+               }
+           }
+       }
+
+       if (regrid_on_restart && max_level > 0)
+       {
+           if (regrid_int[0] > 0) 
+               level_count[0] = regrid_int[0];
+           else
+               BoxLib::Error("restart: can't have regrid_on_restart and regrid_int <= 0");
+       }
+
+       checkInput();
+       //
+       // Read levels.
+       //
+       int lev;
+       for (lev = 0; lev <= finest_level; lev++)
+       {
+           amr_level.set(lev,(*levelbld)());
+           amr_level[lev].restart(*this, is);
+       }
+       //
+       // Build any additional data structures.
+       //
+       for (lev = 0; lev <= finest_level; lev++)
+           amr_level[lev].post_restart();
+
+    } else {
+
+       if (ParallelDescriptor::IOProcessor())
+          BoxLib::Warning("PMAmr::restart(): max_level is lower than before");
+
+       int new_finest_level = std::min(max_level,finest_level);
+
+       finest_level = new_finest_level;
+ 
+       // These are just used to hold the extra stuff we have to read in.
+       Geometry   geom_dummy;
+       Real       real_dummy;
+       int         int_dummy;
+       IntVect intvect_dummy;
+
+       for (i = 0          ; i <= max_level; i++) is >> geom[i];
+       for (i = max_level+1; i <= mx_lev   ; i++) is >> geom_dummy;
+
+       for (i = 0        ; i <  max_level; i++) is >> ref_ratio[i];
+       for (i = max_level; i <  mx_lev   ; i++) is >> intvect_dummy;
+
+       for (i = 0          ; i <= max_level; i++) is >> dt_level[i];
+       for (i = max_level+1; i <= mx_lev   ; i++) is >> real_dummy;
+
+       if (new_checkpoint_format)
+       {
+           for (i = 0          ; i <= max_level; i++) is >> dt_min[i];
+           for (i = max_level+1; i <= mx_lev   ; i++) is >> real_dummy;
+       }
+       else
+       {
+           for (i = 0; i <= max_level; i++) dt_min[i] = dt_level[i];
+       }
+
+       for (i = 0          ; i <= max_level; i++) is >> n_cycle[i];
+       for (i = max_level+1; i <= mx_lev   ; i++) is >> int_dummy;
+
+       for (i = 0          ; i <= max_level; i++) is >> level_steps[i];
+       for (i = max_level+1; i <= mx_lev   ; i++) is >> int_dummy;
+
+       for (i = 0          ; i <= max_level; i++) is >> level_count[i];
+       for (i = max_level+1; i <= mx_lev   ; i++) is >> int_dummy;
+
+       if (regrid_on_restart && max_level > 0)
+       {
+           if (regrid_int[0] > 0) 
+               level_count[0] = regrid_int[0];
+           else
+               BoxLib::Error("restart: can't have regrid_on_restart and regrid_int <= 0");
+       }
+
+       checkInput();
+
+       //
+       // Read levels.
+       //
+       int lev;
+       for (lev = 0; lev <= new_finest_level; lev++)
+       {
+           amr_level.set(lev,(*levelbld)());
+           amr_level[lev].restart(*this, is);
+       }
+       //
+       // Build any additional data structures.
+       //
+       for (lev = 0; lev <= new_finest_level; lev++)
+           amr_level[lev].post_restart();
+
+    }
+
+    for (int lev = 0; lev <= finest_level; lev++)
+    {
+       Box restart_domain(geom[lev].Domain());
+       if (! (inputs_domain[lev] == restart_domain) )
+       {
+          if (ParallelDescriptor::IOProcessor())
+          {
+             std::cout << "Problem at level " << lev << '\n';
+             std::cout << "Domain according to     inputs file is " <<  inputs_domain[lev] << '\n';
+             std::cout << "Domain according to checkpoint file is " << restart_domain      << '\n';
+             std::cout << "PMAmr::restart() failed -- box from inputs file does not equal box from restart file" << std::endl;
+          }
+          BoxLib::Abort();
+       }
+    }
+
+#ifdef USE_STATIONDATA
+    station.init(amr_level, finestLevel());
+    station.findGrid(amr_level,geom);
+#endif
+
+    if (verbose > 0)
+    {
+        Real dRestartTime = ParallelDescriptor::second() - dRestartTime0;
+
+        ParallelDescriptor::ReduceRealMax(dRestartTime,ParallelDescriptor::IOProcessorNumber());
+
+        if (ParallelDescriptor::IOProcessor())
+            std::cout << "Restart time = " << dRestartTime << " seconds." << '\n';
+    }
 }
 
 void PMAmr::InitializeControlEvents()

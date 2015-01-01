@@ -27,6 +27,9 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 
+# External (TPL) include directories
+include_directories(${Teuchos_INCLUDE_DIRS})
+
 # Chemistry includes directory
 # The set will define the variable in the chemistry scope
 # The global property will allow other directories (MPC) to

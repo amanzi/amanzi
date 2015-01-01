@@ -7,7 +7,7 @@
 
 # Require cmake 2.8.8 or higher
 cmake_minimum_required(VERSION 2.8.8)
-set(CMAKE_CTEST_COMMAND ${CMAKE_CTEST_COMMAND} -E examples)  
+set(CMAKE_CTEST_COMMAND ${CMAKE_CTEST_COMMAND})  
 
 if ("${CMAKE_PATCH_VERSION}" GREATER 11)
   cmake_policy(SET CMP0022 NEW)
@@ -21,7 +21,6 @@ endif()
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
 enable_testing()
-
 
 # Define the project name
 # This command will define
@@ -82,6 +81,14 @@ add_subdirectory(src)
 
 # Examples added as tests
 # add_subdirectory(examples) 
+
+# Adding verification tests
+# EIB - uncommenting this will include the verification/benchmarking tests
+include(CTest)
+if (ENABLE_Regression_Tests)
+    add_subdirectory(testing) 
+endif()
+
 
 # Python modules
 add_subdirectory(tools/py_lib)

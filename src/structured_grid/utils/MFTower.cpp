@@ -12,6 +12,7 @@ MFTower::MFTower(const Layout&    _layout,
 		 int              _nLevs)
     : layout(_layout), iType(t), nComp(_nComp), nGrow(_nGrow), nLevs(_nLevs)
 {
+  BL_PROFILE("MFTower::MFTower()");
   if (nLevs<0) nLevs = layout.NumLevels();
   BL_ASSERT(nLevs <= layout.NumLevels());
   define_alloc();
@@ -22,6 +23,7 @@ MFTower::MFTower(Layout&           _layout,
 		 int               _nLevs)
     : layout(_layout), nComp(pamf[0].nComp()), nGrow(pamf[0].nGrow()), nLevs(_nLevs)  
 {
+  BL_PROFILE("MFTower::MFTower1()");
   if (nLevs<0) nLevs = layout.NumLevels();
   BL_ASSERT(nLevs <= layout.NumLevels());
   define_noalloc(pamf);
@@ -70,30 +72,32 @@ MFTower::ixType() const
 void
 MFTower::define_alloc()
 {
-    mft.resize(nLevs,PArrayManage);
-    const Array<BoxArray>& gridArray = layout.GridArray();
-    for (int lev=0; lev<nLevs; ++lev)
-    {
-        BoxArray ba = gridArray[lev];
-        if (iType!=CC) {
-            if (iType == NC) {
-                ba.surroundingNodes();
-            }
-            else {
-                for (int d=0; d<BL_SPACEDIM; ++d) {
-                    if (iType == EC[d]) {
-                        ba.surroundingNodes(d);
-                    }
-                }
-            }            
+  BL_PROFILE("MFTower::define_alloc()");
+  mft.resize(nLevs,PArrayManage);
+  const Array<BoxArray>& gridArray = layout.GridArray();
+  for (int lev=0; lev<nLevs; ++lev)
+  {
+    BoxArray ba = gridArray[lev];
+    if (iType!=CC) {
+      if (iType == NC) {
+        ba.surroundingNodes();
+      }
+      else {
+        for (int d=0; d<BL_SPACEDIM; ++d) {
+          if (iType == EC[d]) {
+            ba.surroundingNodes(d);
+          }
         }
-        mft.set(lev,new MultiFab(ba,nComp,nGrow));
+      }            
     }
+    mft.set(lev,new MultiFab(ba,nComp,nGrow));
+  }
 }
 
 void
 MFTower::define_noalloc(PArray<MultiFab>& pamf)
 {
+  BL_PROFILE("MFTower::define_noalloc()");
     iType = pamf[0].boxArray()[0].ixType();
     mft.resize(nLevs,PArrayNoManage);
     const Array<BoxArray>& gridArray = layout.GridArray();
@@ -113,6 +117,7 @@ MFTower::define_noalloc(PArray<MultiFab>& pamf)
 Real
 MFTower::norm(int numLevs) const // currently only max norm supported
 {
+  BL_PROFILE("MFTower::norm()");
     if (numLevs<0) numLevs=nLevs;
     BL_ASSERT(numLevs<=nLevs);
     FArrayBox fab;
@@ -147,6 +152,7 @@ MFTower::norm(int numLevs) const // currently only max norm supported
 void
 MFTower::SetValCovered(Real value)
 {
+  BL_PROFILE("MFTower::SetValCovered()");
   const Array<IntVect>& refRatio = layout.RefRatio();
   const Array<BoxArray>& gridArray = layout.GridArray();
   for (int lev=0; lev<nLevs-1; ++lev) {
@@ -167,6 +173,7 @@ MFTower::SetValCovered(Real value)
 bool
 MFTower::IsCompatible(const MFTower& rhs) const
 {
+  BL_PROFILE("MFTower::IsCompatible()");
     int numLevs = rhs.NumLevels();
     bool isok = numLevs<=rhs.GetLayout().NumLevels();
     const Array<IntVect>& refRatio = layout.RefRatio();
@@ -190,6 +197,7 @@ MFTower::CCtoECgrad(PArray<MFTower>& mfte,
                     int              nComp,
 		    int              numLevs)
 {
+  BL_PROFILE("MFTower::CCtoECgrad()");
     // Note: Assumes that grow cells of mftc have been filled "properly":
     //    f-f: COI
     //    c-f: Parallel interp of coarse data to plane parallel to c-f, then perp interp to fine cc in grow
@@ -238,6 +246,7 @@ MFTower::CCtoECavg(PArray<MFTower>& mfte,
                    int              do_harmonic,
                    int              numLevs)
 {
+  BL_PROFILE("MFTower::CCtoECavg()");
     // Note: Assumes that grow cells of mftc have been filled "properly":
     //    f-f: COI
     //    c-f: Parallel interp of coarse data to plane parallel to c-f, then perp interp to fine cc in grow
@@ -286,6 +295,7 @@ MFTower::ECtoCCdiv(MFTower&               mftc,
                    int                    nComp,
 		   int                    numLevs)
 {
+  BL_PROFILE("MFTower::ECtoCCdiv()");
     if (numLevs<0) numLevs = mftc.NumLevels();
     const Layout& theLayout = mftc.GetLayout();
     BL_ASSERT(theLayout.NumLevels()>=numLevs);
@@ -331,6 +341,7 @@ MFTower::AverageDown(MFTower& mft,
                      int      nComp,
 		     int      numLevs)
 {
+  BL_PROFILE("MFTower::AverageDown()");
     if (numLevs<0) numLevs = mft.NumLevels();
     BL_ASSERT(mft.NumLevels()>=numLevs);
 
@@ -951,6 +962,7 @@ MFTower::SetVal(Real     val,
 		int      nComp,
 		int      numLevs)
 {
+  BL_PROFILE("MFTower::SetVal()");
     if (numLevs<0) numLevs=nLevs;
     BL_ASSERT(numLevs <= nLevs);
     const Layout& layout = GetLayout();
@@ -966,6 +978,7 @@ MFTower::Write(const std::string& fileName,
 	       const std::string& varname,
 	       Real               time) const
 {
+  BL_PROFILE("MFTower::Write()");
   Array<MFTower*> mfta(1,(MFTower*)this);
   Array<std::string> varnames(1,std::string(varname));
   if (NComp()>1) {
@@ -983,6 +996,7 @@ MFTower::WriteSet(const std::string&          fileName,
 		  const Array<std::string>&   varnames,
 		  Real                        time)
 {
+  BL_PROFILE("MFTower::WriteSet()");
   std::string pfversion = "MFTowerData-0.1";
   int ncomps = 0;
   for (int i=0; i<mfta.size(); ++i) {

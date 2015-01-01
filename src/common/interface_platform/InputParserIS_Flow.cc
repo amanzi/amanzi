@@ -31,7 +31,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 
       // get the expert parameters
       std::string disc_method("MFD: Optimized for Sparsity");
-      std::string rel_perm("Upwind: Darcy Velocity");
+      std::string rel_perm("Upwind: Amanzi");
       std::string update_upwind("every timestep");
       double atm_pres(ATMOSPHERIC_PRESSURE);
       std::string nonlinear_solver("NKA");
@@ -97,7 +97,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
 
         // insert operator sublist
         Teuchos::ParameterList op_list;
-        op_list = CreateFlowOperatorList_(disc_method);
+        op_list = CreateFlowOperatorList_(disc_method, rel_perm);
         flow_list->sublist("operators") = op_list;
 
         // insert the flow BC sublist
@@ -183,7 +183,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           // error control options
           Teuchos::Array<std::string> err_opts;
           err_opts.push_back(std::string("pressure"));
-          sti_list.set<Teuchos::Array<std::string> >("error control options",err_opts);
+          sti_list.set<Teuchos::Array<std::string> >("error control options", err_opts);
 
           // linear solver
           sti_list.set<std::string>("linear solver", ST_SOLVER);
@@ -276,6 +276,9 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                 sti_bdf1_solver->set<double>("max du growth factor",
                     num_list.get<double>("steady nonlinear iteration divergence factor", ST_DIVERG_FACT));
 
+                sti_list.set<Teuchos::Array<std::string> >("error control options",
+                    num_list.get<Teuchos::Array<std::string> >("steady error control options",
+                    err_opts));
                 sti_list.set<std::string>("preconditioner",
                     num_list.get<std::string>("steady preconditioner", ST_PRECOND));
 
@@ -308,6 +311,7 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
           // error control options
           Teuchos::Array<std::string> err_opts;
           err_opts.push_back(std::string("pressure"));
+          err_opts.push_back(std::string("residual"));
           tti_list.set<Teuchos::Array<std::string> >("error control options", err_opts);
 
           // linear solver
@@ -402,6 +406,9 @@ Teuchos::ParameterList InputParserIS::CreateFlowList_(Teuchos::ParameterList* pl
                 tti_bdf1_nka->set<double>("max du growth factor",
                     num_list.get<double>("transient nonlinear iteration divergence factor", TR_DIVERG_FACT));
 
+                tti_list.set<Teuchos::Array<std::string> >("error control options",
+                    num_list.get<Teuchos::Array<std::string> >("transient error control options",
+                    err_opts));
                 tti_list.set<std::string>("preconditioner",
                     num_list.get<std::string>("transient preconditioner", TR_PRECOND));
 
@@ -675,6 +682,7 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
         Teuchos::Array<double> grad = bc_dir.get<Teuchos::Array<double> >("Gradient Value");
         Teuchos::Array<double> refcoord = bc_dir.get<Teuchos::Array<double> >("Reference Point");
         double refval = bc_dir.get<double>("Reference Water Table Height");
+        std::string submodel = bc_dir.get<std::string>("Submodel", "None");
 
         Teuchos::Array<double> grad_with_time(grad.size() + 1);
         grad_with_time[0] = 0.0;
@@ -699,6 +707,13 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
         tbcs.set<Teuchos::Array<double> >("x0", refcoord_with_time);
         tbcs.set<Teuchos::Array<double> >("gradient", grad_with_time);
 
+        if (submodel == "No Flow Above Water Table") {
+          tbc.set<bool>("no flow above water table", true);
+        } else if (submodel != "None") {
+          msg << "In 'BC: Linear Hydrostatic': optional parameter 'Submodel': valid values are 'No Flow"
+              << " Above Water Table' or 'None'";
+          Exceptions::amanzi_throw(msg);
+        } 
       }
       else if (bc.isSublist("BC: Hydrostatic")) {
         Teuchos::ParameterList& bc_dir = bc.sublist("BC: Hydrostatic");
@@ -808,6 +823,9 @@ Teuchos::ParameterList InputParserIS::CreateSS_FlowBC_List_(Teuchos::ParameterLi
           Teuchos::Array<std::string> forms = forms_;
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
         }
+
+        // hack: select one region for transport diagnostics
+        transport_diagnostics_.insert(transport_diagnostics_.end(), regions.begin(), regions.end());
       }
       // TODO...
       // add the rest of the boundary conditions
@@ -955,7 +973,8 @@ Teuchos::ParameterList InputParserIS::CreateWRM_List_(Teuchos::ParameterList* pl
 /* ******************************************************************
 * Flow operators sublist
 ****************************************************************** */
-Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(const std::string& disc_method)
+Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(
+    const std::string& disc_method, const std::string& rel_perm)
 {
   Teuchos::ParameterList op_list;
 
@@ -984,6 +1003,15 @@ Teuchos::ParameterList InputParserIS::CreateFlowOperatorList_(const std::string&
 
   op_list.sublist("diffusion operator").sublist("matrix") = tmp_list;
   op_list.sublist("diffusion operator").sublist("preconditioner") = tmp_list;
+
+  Teuchos::ParameterList& upw_list = op_list.sublist("diffusion operator").sublist("upwind");
+  if (rel_perm == "Upwind: Amanzi") {
+    upw_list.set<std::string>("upwind method", "divk");
+    upw_list.sublist("upwind divk parameters").set<double>("tolerance", 1e-12);
+  } else {
+    upw_list.set<std::string>("upwind method", "standard");
+    upw_list.sublist("upwind standard parameters").set<double>("tolerance", 1e-12);
+  }
 
   return op_list;
 }

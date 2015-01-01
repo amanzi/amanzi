@@ -6,12 +6,9 @@
 #include <iomanip>
 
 #include "matrix_block.hh"
-#include "chemistry_output.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-extern ChemistryOutput* chem_out;
 
 SurfaceComplex::SurfaceComplex() {
   species_names_.clear();
@@ -161,7 +158,7 @@ void SurfaceComplex::Display(void) const {
             << std::setw(10) << logK_
             << std::setw(10) << charge()
             << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end Display()
 
 void SurfaceComplex::display(void) const {
@@ -180,7 +177,7 @@ void SurfaceComplex::display(void) const {
   message << std::endl;
   message << "     log K: " << logK_
             << "\n     charge: " << charge() << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end Display()
 
 void SurfaceComplex::DisplayResultsHeader(void) const {
@@ -191,7 +188,7 @@ void SurfaceComplex::DisplayResultsHeader(void) const {
   message << std::setw(15) << " "
             << std::setw(15) << "[mol/m^3]"
             << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayResultsHeader()
 
 void SurfaceComplex::DisplayResults(void) const {
@@ -200,7 +197,7 @@ void SurfaceComplex::DisplayResults(void) const {
           << std::scientific << std::setprecision(5)
           << std::setw(15) << surface_concentration()
           << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end DisplayResults()
 
 }  // namespace AmanziChemistry

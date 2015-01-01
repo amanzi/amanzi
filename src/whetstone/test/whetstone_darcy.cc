@@ -172,13 +172,98 @@ TEST(DARCY_INVERSE_MASS_3D) {
 
 
 /* **************************************************************** */
-TEST(DARCY_FULL_TENSOR) {
-  using namespace Teuchos;
+TEST(DARCY_FULL_TENSOR_2D) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Inverse mass matrix and full tensor" << std::endl;
+  std::cout << "\nTest: Inverse mass matrix and full tensor in 2D" << std::endl;
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+
+  MeshFactory factory(comm);
+  factory.preference(pref);
+  Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 3, 2); 
+ 
+  MFD3D_Diffusion mfd(mesh);
+
+  int nfaces = 4, cell = 0;
+  Tensor T(2, 2);  // tensor of rank 2
+  T(0, 0) = 1.0;
+  T(1, 1) = 2.0;
+  T(0, 1) = T(1, 0) = 1.0;
+
+  DenseMatrix W(nfaces, nfaces);
+  for (int method = 0; method < 7; method++) {
+    if (method == 0) {
+      mfd.MassMatrixInverse(cell, T, W);
+    } else if (method == 1) {
+      mfd.MassMatrixInverseScaled(cell, T, W);
+    } else if (method == 2) {
+      mfd.MassMatrixInverseOptimizedScaled(cell, T, W);
+    } else if (method == 3) {
+      mfd.MassMatrixInverseSO(cell, T, W);
+    } else if (method == 4) {
+      mfd.MassMatrixInverseMMatrixHex(cell, T, W);
+    } else if (method == 5) {
+      mfd.MassMatrixInverseMMatrix(cell, T, W);
+      std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
+      std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
+    } else if (method == 6) {
+      double kmean = 1.0;
+      AmanziGeometry::Point kgrad(0.1, 0.2);
+      mfd.MassMatrixInverseDivKScaled(cell, T, kmean, kgrad, W);
+    }
+
+    printf("Inverse of mass matrix for method=%d\n", method);
+    for (int i=0; i<4; i++) {
+      for (int j=0; j<4; j++ ) printf("%8.4f ", W(i, j)); 
+      printf("\n");
+    }
+
+    // verify SPD propery
+    for (int i=0; i<nfaces; i++) CHECK(W(i, i) > 0.0);
+
+    // verify exact integration property
+    W.Inverse();
+
+    AmanziMesh::Entity_ID_List faces;
+    std::vector<int> dirs;
+    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+    
+    AmanziGeometry::Point v(1.0, 2.0);
+    double xi, xj;
+    double vxx = 0.0, volume = mesh->cell_volume(cell); 
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      xi = (v * mesh->face_normal(f)) * dirs[i];
+      for (int j = 0; j < nfaces; j++) {
+        f = faces[j];
+        xj = (v * mesh->face_normal(f)) * dirs[j];
+        vxx += W(i, j) * xi * xj;
+      }
+    }
+    CHECK_CLOSE(vxx, 2 * volume, 1e-10);
+  }
+
+  delete comm;
+}
+
+
+/* **************************************************************** */
+TEST(DARCY_FULL_TENSOR_3D) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: Inverse mass matrix and full tensor in 3D" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -191,7 +276,7 @@ TEST(DARCY_FULL_TENSOR) {
 
   MeshFactory factory(comm);
   factory.preference(pref);
-  RCP<Mesh> mesh = factory(0.0, 0.0, 0.0, 1.1, 1.0, 1.0, 3, 2, 1); 
+  Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 0.0, 1.1, 1.0, 1.0, 3, 2, 1); 
  
   MFD3D_Diffusion mfd(mesh);
 

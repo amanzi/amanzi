@@ -1,8 +1,12 @@
 /*
   This is the Operator component of the Amanzi code.
 
-  License: BSD
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include "Epetra_Map.h"
@@ -529,10 +533,6 @@ void Operator::ApplyBCs()
   Errors::Message msg;
   bool applied_bc(false);
 
-  const std::vector<int>& bc_model = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_model();
-  const std::vector<double>& bc_value = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_value();
-  const std::vector<double>& bc_mixed = GetBCofType(OPERATOR_BC_TYPE_FACE)->bc_mixed();
-
   // clean ghosted values
   for (CompositeVector::name_iterator name = rhs_->begin(); name != rhs_->end(); ++name) {
     Epetra_MultiVector& rhs_g = *rhs_->ViewComponent(*name, true);
@@ -973,28 +973,26 @@ void Operator::InitPreconditioner(const std::string& prec_name, const Teuchos::P
 
 
 /* ******************************************************************
-* Adds time derivative ss * (u - u0) / dT.
+* Adds time derivative (ss * u - s0 * u0) / dT.
 ****************************************************************** */
 void Operator::AddAccumulationTerm(
-    const CompositeVector& u0, const CompositeVector& ss, double dT)
+    const CompositeVector& u0, const CompositeVector& s0, 
+    const CompositeVector& ss, double dT, const std::string& name)
 {
   AmanziMesh::Entity_ID_List nodes;
 
-  std::string name;
   CompositeVector entity_volume(ss);
 
-  if (ss.HasComponent("cell")) {
-    name = "cell";
+  if (name == "cell" && ss.HasComponent("cell")) {
     Epetra_MultiVector& volume = *entity_volume.ViewComponent(name); 
 
     for (int c = 0; c < ncells_owned; c++) {
       volume[0][c] = mesh_->cell_volume(c); 
     }
-  } else if (ss.HasComponent("face")) {
-    name = "face";
+  } else if (name == "face" && ss.HasComponent("face")) {
     // Missing code.
-  } else if (ss.HasComponent("node")) {
-    name = "node";
+    ASSERT(false);
+  } else if (name == "node" && ss.HasComponent("node")) {
     Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
     volume.PutScalar(0.0);
 
@@ -1008,6 +1006,63 @@ void Operator::AddAccumulationTerm(
     }
 
     entity_volume.GatherGhostedToMaster(name);
+  } else {
+    ASSERT(false);
+  }
+
+  const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
+  const Epetra_MultiVector& s0c = *s0.ViewComponent(name);
+  const Epetra_MultiVector& ssc = *ss.ViewComponent(name);
+
+  Epetra_MultiVector& volume = *entity_volume.ViewComponent(name); 
+  Epetra_MultiVector& diag = *diagonal_->ViewComponent(name);
+  Epetra_MultiVector& rhs = *rhs_->ViewComponent(name);
+
+  int n = u0c.MyLength();
+  for (int i = 0; i < n; i++) {
+    double factor = volume[0][i] / dT;
+    diag[0][i] += factor * ssc[0][i];
+    rhs[0][i] += factor * s0c[0][i] * u0c[0][i];
+  }
+}
+
+
+/* ******************************************************************
+* Adds time derivative ss * (u - u0) / dT.
+****************************************************************** */
+void Operator::AddAccumulationTerm(
+    const CompositeVector& u0, const CompositeVector& ss, 
+    double dT, const std::string& name)
+{
+  AmanziMesh::Entity_ID_List nodes;
+
+  CompositeVector entity_volume(ss);
+
+  if (name == "cell" && ss.HasComponent("cell")) {
+    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name); 
+
+    for (int c = 0; c < ncells_owned; c++) {
+      volume[0][c] = mesh_->cell_volume(c); 
+    }
+  } else if (name == "face" && ss.HasComponent("face")) {
+    // Missing code.
+    ASSERT(false);
+  } else if (name == "node" && ss.HasComponent("node")) {
+    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
+    volume.PutScalar(0.0);
+
+    for (int c = 0; c < ncells_owned; c++) {
+      mesh_->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();
+
+      for (int i = 0; i < nnodes; i++) {
+        volume[0][nodes[i]] += mesh_->cell_volume(c) / nnodes; 
+      }
+    }
+
+    entity_volume.GatherGhostedToMaster(name);
+  } else {
+    ASSERT(false);
   }
 
   const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
@@ -1029,17 +1084,11 @@ void Operator::AddAccumulationTerm(
 /* ******************************************************************
 * Adds time derivative ss * (u - u0).
 ****************************************************************** */
-void Operator::AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss)
+void Operator::AddAccumulationTerm(
+    const CompositeVector& u0, const CompositeVector& ss,
+    const std::string& name)
 {
-  std::string name;
-  if (ss.HasComponent("cell")) {
-    name = "cell";
-  } else if (ss.HasComponent("face")) {
-    name = "face";
-    // Missing code.
-  } else if (ss.HasComponent("node")) {
-    name = "node";
-  }
+  if (!ss.HasComponent(name)) ASSERT(false);
 
   const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
   const Epetra_MultiVector& ssc = *ss.ViewComponent(name);
@@ -1118,7 +1167,7 @@ int Operator::FindMatrixBlock(int schema_dofs, int matching_rule, bool action) c
 
 
 /* ******************************************************************
-* Extension of Mesh API. 
+* Find BC matching the integer tag type. 
 ****************************************************************** */
 const Teuchos::RCP<BCs> Operator::GetBCofType(int type) const
 {

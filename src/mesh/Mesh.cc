@@ -640,7 +640,7 @@ AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid, const bool reco
 
     ASSERT(found);
 
-    *orientation = dir;
+    if (orientation) *orientation = dir;
     if (dir == 1) {
       ASSERT(L22(normal0) != 0.0);
       return normal0;              // Copy to output

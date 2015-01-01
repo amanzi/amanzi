@@ -89,10 +89,6 @@
         <Parameter name="alphaT" type="double" value="0.0001"/>
       </ParameterList>
       
-      <ParameterList name="Molecular Diffusion: Uniform">
-        <Parameter name="Value" type="double" value="0.0"/>
-      </ParameterList>
-      
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>

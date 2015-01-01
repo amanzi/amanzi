@@ -315,6 +315,9 @@ Teuchos::ParameterList InputParserIS::CreateChemistryList_(Teuchos::ParameterLis
       }
     }
   }
+
+  chem_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);
+
   return chem_list;
 }
 

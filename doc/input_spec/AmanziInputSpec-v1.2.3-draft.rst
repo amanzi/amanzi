@@ -140,6 +140,25 @@ Example:
     <Parameter name="Amanzi Input Format Version" type="string" value="1.2.1"/>
   </ParameterList>
 
+
+PETSc
+=====
+
+Amanzi uses PETSc (TODO: insert link here to Amanzi TPL list) for access to specialized solvers for flow and chemistry evolution.  PETSc implements its own flexible approach to runtime selection of solver options; the list of available options changes considerably between library versions.  Input of PETSc-specific  options at runtime is managed via an optional string parameter, which names an auxiliary text file.  By default, no file is included.
+
+* [S] "Petsc Options File" [string] Relative path naming a text file with PETSc parameters included
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Main">
+    <Parameter name="Petsc Options File" type="string" value=".petsc"/>
+  </ParameterList>
+
+See the PETSc documentation for details of the format of this file, and the available parameters.  At this time, PETSc is used by the flow solvers supporting structured-grid AMR Amanzi runs, and the pFloTran chemistry process kernal (see usage notes below).
+
+
 General Description
 ===================
 
@@ -225,7 +244,7 @@ Usage:
 
    * [SU] `"Maximum Cycle Number`" [int]: (Optional) The maximum allowed cycle number.
 
-  * [U] `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
+  * [SU] `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
 
    * [SU] `"Start`" [double]: Initial value for time to generate a steady solution
 
@@ -281,7 +300,8 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [U] `"Relative Permeability`" [string]: Defines a method for calculating the *upwinded*
        relative permeability. The available options are: `"Upwind: Gravity`", `"Upwind: Darcy Velocity`" (default),
-       `"Upwind: Amanzi`" (experimental), `"Other: Arithmetic Average`", and `"Other: Harmonic Average`". 
+       `"Upwind: Amanzi`", `"Upwind: Artificial Diffusion`" (experimental), `"Other: Arithmetic Average`",
+       and `"Other: Harmonic Average`". 
 
      * [U] `"atmospheric pressure`" [double]: Defines the atmospheric pressure, [Pa].   
 
@@ -308,6 +328,8 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
      * [U] `"steady limit iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. (default: `"20`", suggested range: 20 ... 50)
 
      * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation. (default: `"1.0e-5`", suggested range: 1.0e-8 ... 1.0e-6)
+
+     * [U] `"steady error control options"` [Array(string)] Control convergence of nonlinear iterations using multiple error criteria. Available options are `"pressure`" (controls of pressure increment) and `"residual`" (control of residual). Default: is `"{pressure}`".
 
      * [U] `"steady nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping). (default: `"1.0`", suggested range: 0.1 ... 1.0)
  
@@ -342,6 +364,8 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
      * [U] `"transient limit iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. (default: `"20`", suggested range: 20 ... 50)
 
      * [U] `"transient nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the transient computation. (default: `"1.0e-5`", suggested range: 1.0e-6 ... 1.0e-5)
+
+     * [U] `"transient error control options"` [Array(string)] Control convergence of nonlinear iterations using multiple error criteria. Available options are `"pressure`" (controls of pressure increment) and `"residual`" (control of residual). Default: is `"{pressure, residual}`".
 
      * [U] `"transient nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping). (default: `"1.0`", suggested range: 0.1 ... 1.0)
 
@@ -537,7 +561,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [S] `"cfl`" [double]: Fraction of stability-limited maximum time step allowed by the advective transport scheme. (default: "1", suggested values: .01 ... 1)
 
-   * [S] `"Adaptive Mesh Refinement`" [list] (Optional) Additional details related to the adaptive mesh refinement algorithm. 
+   * [S] `"Adaptive Mesh Refinement Control`" [list] (Optional) Additional details related to the adaptive mesh refinement algorithm. 
 
      * [S] `"Number Of AMR Levels`" [int] Maximum number of adaptive levels, including the base grid (default=1)
 
@@ -555,7 +579,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
      * [S] `"Refinement Indicators`" [list] A list of user-labeled refinement indicators, REFINE.  Criteria will be applied in the order listed.
 
-      * [S] REFINE [list] A user-defined label for a single refinement criteria indicator function.  Definition of the criteria must indicate `"Field Name`" (the name of a known derive field), `"Regions`" (a list of user-named regions over which this criteria is to apply) and one of the following parameters:
+      * [S] REFINE [list] A user-defined label for a single refinement criteria indicator function.   For all criteria except `"Inside Region`" definition must indicate a `"Field Name`" selected from the list of known available field quantities (defined under "Time and Cycle specification").  Additionally, one must specify `"Regions`" (a list of user-named regions over which this criteria is to apply) and one of the following parameters refinement rules:
 
        * [S] `"Value Greater`" [double] The threshold value.  For each coarse cell, if the value of the given field is larger than this value, tag the cell for refinement
 
@@ -565,7 +589,7 @@ S Note: If unspecified, Amanzi will compute this value based on numerical stabil
 
        * [S] `"Inside Region`" [bool] Set this TRUE if all coarse cells in the identified list of regions should be tagged for refinement.
 
-       Additionally, the following optional parameters are available:
+       The following optional parameters are available in order to fine-tune the refinement strategy:
 
        * [S] `"Maximum Refinement Level`" [int] If set, this identifies the highest level of refinement that will be triggered by this indicator
 
@@ -764,7 +788,7 @@ using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`
 
 User-defined regions are constructed using the following syntax
 
- * [U][S] "Regions" [list] can accept a number of lists for named regions (REGION)
+ * [SU] "Regions" [list] can accept a number of lists for named regions (REGION)
 
    * Shape [list] Geometric model primitive, choose exactly one of the
      following [see table below]: `"Region: Point`", `"Region: Box`",
@@ -966,7 +990,7 @@ the following set of physical properties using the supported models described be
 
  * [SU] MATERIAL [list] can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
 
-  The flow related matrial properties *Intrinsic Permeability* or *Hydraulic Conductivity* must be specified, but not both:  
+  The flow related material properties *Intrinsic Permeability* or *Hydraulic Conductivity* must be specified, but not both:  
 
   * [SU] Intrinsic Permeability [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`" (see below)
 
@@ -976,17 +1000,17 @@ the following set of physical properties using the supported models described be
 
   * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" (see below)
 
-  * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or [U only] `"Brooks Corey`" (see below)
+  * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or `"Brooks Corey`" (see below)
 
-  * [U] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
+  * [SU] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
 
-  * [U] Specific Storage [list] Parameterized model for Specific Storage [L^-1]. Choose exactly one of the following: `"Specific Storage: Uniform`".
+  * [SU] Specific Storage [list] Parameterized model for Specific Storage [L^-1]. Choose exactly one of the following: `"Specific Storage: Uniform`".
 
-  * [U] Specific Yield [list] Parameterized model for Specific Yield [-]. Choose exactly one of the following: `"Specific Yield: Uniform`".
+  * [SU] Specific Yield [list] Parameterized model for Specific Yield [-]. Choose exactly one of the following: `"Specific Yield: Uniform`".
 
   Material properties related to transport (dispersion and tortuosity):
 
-  * [SU] Dispersion Tensor [list] Parameterized model for Dispersion Tensor. Choose exactly one of the following: `"Dispersion Tensor:  Uniform Isotropic`".
+  * [SU] Dispersion Tensor [list] Parameterized model for Dispersion Tensor. Choose exactly one of the following: `"Dispersion Tensor: Uniform Isotropic`", `"Dispersion Tensor: Burnett-Frind`", `"Dispersion Tensor: Lichtner-Kelkar-Robinson`" (see below)
 
   * [SU] Tortuosity [list] Parameterized model for the Tortuosity [-]. For aqueous phase choose exactly one of the following: `"Tortuosity Aqueous: Uniform`". For gaseous phase choose exactly one of the following: `"Tortuosity Gaseous: Uniform`".
 
@@ -1136,8 +1160,23 @@ in transport
 
 * [SU] `"Dispersion Tensor: Uniform Isotropic`" (see Equation 4.9) [list] requires
 
- * [SU] `"alphaL`" [m]  the longitudinal dispersion  (default 0)
- * [SU] `"alphaT`" [m]  the transverse dispersion    (default 0)
+ * [SU] `"alphaL`" [m]  the longitudinal dispersion (default 0)
+ * [SU] `"alphaT`" [m]  the transverse dispersion   (default 0)
+
+* [U] `"Dispersion Tensor: Burnett-Frind`" [list] can be applied in three dimensions to 
+  materials with axi-symmetric absolute permeability. It requires
+
+ * [U] `"alphaL`" [m]   the longitudinal dispersion (default 0)
+ * [U] `"alphaTH`" [m]  the transverse dispersion in the horizontal direction (default 0)
+ * [U] `"alphaTV`" [m]  the transverse dispersion in the vertical direction (default 0)
+
+* [U] `"Dispersion Tensor: Lichtner-Kelkar-Robinson`" [list] can be applied in three dimensions to 
+  materials with axi-symmetric absolute permeability. It requires
+
+ * [U] `"alphaLH`" [m]  the longitudinal dispersion in the horizontal direction (default 0)
+ * [U] `"alphaLV`" [m]  the longitudinal dispersion in the vertical direction (default 0)
+ * [U] `"alphaTH`" [m]  the transverse dispersion in the horizontal direction (default 0)
+ * [U] `"alphaTV`" [m]  the transverse dispersion in the vertical direction (default 0)
 
 The following models are currently supported for Tortuosity.
 
@@ -1160,8 +1199,9 @@ Example:
         <Parameter name="Value" type="double" value="2.8e3"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="2.05e-8"/>
-        <Parameter name="Vertical" type="double" value="2.05e-9"/>
+        <Parameter name="x" type="double" value="2.05e-8"/>
+        <Parameter name="y" type="double" value="2.05e-8"/>
+        <Parameter name="z" type="double" value="2.05e-9"/>
       </ParameterList>
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.38"/>
@@ -1363,7 +1403,7 @@ Finally, we specify sources.  Support is provided for specifying sources on the 
 
     * COMPONENT [list] can accept SOLUTE (label of solute defined above), or keyword `"Alquimia`" to support geochemical conditions
 
-     * Source function [list] Parameterized model to specify the concentration profile, `"Source: Uniform Concentration`" and `"Source: Flow Weighted Concentration`" are supported (see below) in units of molarity (moles/volume).
+     * Source function [list] Parameterized model to specify the concentration profile, `"Source: Uniform Concentration`" and `"Source: Flow Weighted Concentration`", `"Source: Diffusion Dominated Release Model`" are supported (see below) in units of molarity (typically, moles/volume).
 
 The following initial condition parameterizations are supported:
 
@@ -1420,22 +1460,26 @@ The following boundary condition parameterizations are supported:
       to the gravity vector and the actual influx depends on boundary
       slope (default value is "false").
 
-* [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Coordinate System`" [string] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"), `"Submodel`" [string] (available option is `"No Flow Above Water Table`", this parameter is optional with a default of `"None`"), and `"Water Table Height`" [Array(double)] (see below)
+* [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], `"Coordinate System`" [string] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"), `"Submodel`" [string] (available option is `"No Flow Above Water Table`", this parameter is optional with a default of `"None`"), and `"Water Table Height`" [Array(double)].
 
-* [U] `"BC: Linear Hydrostatic`" [list] requires `"Reference Water Table Height`" [double] `"Reference Point`" [Array(double)] `"Gradient Value`" [Array(double)]
+* [U] `"BC: Linear Hydrostatic`" [list] requires `"Reference Water Table Height`" [double], `"Reference Point`" [Array(double)], `"Gradient Value`" [Array(double)], `"Submodel`" [string] (available option is `"No Flow Above Water Table`", this parameter is optional with a default of `"None`").
 
 * `"BC: Impermeable`"  requires no parameters
 
-* [SU] `"BC: Zero Flow`"  [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [SU] `"BC: Zero Flow`"  [list]  takes no additional parameters
 
-* [S] `"BC: Zero Gradient`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)] and `"Values`" [Array(double)]
+* [S] `"BC: Zero Gradient`" [list]  takes no additional parameters
 
-* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and `"Values`" [Array(double)] OR `"Geochemical Condition`" if Alquimia provides boundary condition data.
+* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array(double)], `"Time Functions`" [Array(string)], and EITHER `"Values`" [Array(double)] OR `"Geochemical Conditions`" [Array(string)] (if Alquimia provides boundary condition data).
 
   * `"Times`" [Array(double)], list of times used by the time function.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
   * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
-  * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
+  * `"Geochemical Conditions`" [Array(string)], list of names of geochemical conditions defined in Alquimia's chemistry engine input file or in the Chemistry block.
+
+  Alternatively, if a single geochemical condition is desired for the entire simulation, a single `"Geochemical Condition`" [string] entry may be provided:
+  
+  * `"Geochemical Condition`" [string], name of a single geochemical condition defined in Alquimia's chemistry engine input or in the Chemistry block.
 
 The following source parameterizations are supported.
 
@@ -1458,7 +1502,10 @@ The following source parameterizations are supported.
   * `"Time Functions`" [Array(string)], list of functions for the time intervals listed in `"Times`"
   * `"Values`" [Array(double)], list of concentrations at the times listed in `"Times`" (units are specified in Concentration Units above).
   * `"Geochemical Condition`" [String], name of a geochemical condition defined in Alquimia's chemistry engine input file or in the Chemistry block.
+ 
+* [U] `"Source: Diffusion Dominated Release Model`" uses a volume weighting to distribute the source uniformally over the specified region(s). Requires `"Total Inventory`" [double], `"Mixing Length`" [double], `"Effective Diffusion Coefficient`" [double], and `"Times`" [Array(double)]. 
 
+  * `"Times`" [Array(double)], release start and end times. 
 
 Time Functions
 ~~~~~~~~~~~~~~
@@ -1468,7 +1515,7 @@ Boundary condition functions utilize a parameterized model for time variations t
 .. code-block:: xml
 
       <Parameter name="Times" type="Array(double)" value="{1, 2, 3}"/>
-      <Parameter name="Time Values" type="Array(double)" value="{10, 20, 30}"/>
+      <Parameter name="Values" type="Array(double)" value="{10, 20, 30}"/>
       <Parameter name="Time Functions" type="Array(string)" value="{Constant, Linear}"/>    
 
 
@@ -1491,6 +1538,15 @@ For a particular interval it can be either `"Linear`" or `"Constant`".
   - f(x) = 10, for x <1, specified by the first <time,time value> pair, and
   - f(x) = 30, for x >= 3, specified by the last <time,time value> pair. 
 
+NOTE 1: If a single constant value is to be applied over all time, an abbreviated form is available:
+
+.. code-block:: xml
+
+      <Parameter name="Values" type="Array(double)" value="{10}"/>
+
+NOTE 2: Amanzi's simulator supports a complex variety of standard mathematical functions that are pending implemenation of a user interface.
+
+
 Example Phase Definition
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Due to its length, an XML example of the `"Phases`" parameter list appears in the example appended to this specification.
@@ -1504,7 +1560,19 @@ The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"
 
   * [SU] `"Engine`" [string] The name of the backend chemistry engine (e.g. `"PFloTran`").
   * [SU] `"Engine Input File`" [string] The file specifying the input for the backend chemistry engine.
+
+  * [SU] `"Initial Time Step (s)`" [double] The initial time step that chemistry will ask the MPC to take.  
   * [SU] `"Max Time Step (s)`" [double] The maximum time step that chemistry will allow the MPC to take.
+
+  * [SU] `"Time Step Control Method`" [string]: (default: `"fixed`") Time step control method for chemistry subcycling. Choose one of `"fixed`" or `"simple`"
+
+    * [SU] `"fixed`": Time step is fixed.
+    * [SU] `"simple`" : Time step is adjusted in response to stiffness of system of equations based on a simple scheme. If specified the following fields are required: `"Time Step Cut Threshold`", `"Time Step Cut Factor`", `"Time Step Increase Threshold`", and `"Time Step Increase Factor`".
+
+  * [SU] `"Time Step Cut Threshold`" [int]: (default=8) Number of Netwon iterations that if exceeded will trigger a time step cut.
+  * [SU] `"Time Step Cut Factor`" [double]: (default=2.0) Factor by which the time step is cut.
+  * [SU] `"Time Step Increase Threshold`" [int]: (default=4) Number of consectuive successful time steps that will trigger a time step increase.
+  * [SU] `"Time Step Increase Factor`" [double]: (default=1.2) Factor by which the time step is increased.
 
   * [SU] `"Geochemical Conditions`" [list] (*optional*, allows definition of geochemical conditions within XML.)
 
@@ -1536,7 +1604,19 @@ The chemistry list is needed if the Chemistry model is set to `"Alquimia`" or `"
   * [SU] `"Output File Name`" [string] (Optional) A file name that the chemistry library should use to write simulation information and debugging info. An empty string (default) indicates that the chemistry library should not write to a file.
   * [SU] `"Use Standard Out`" [bool] A flag indicating whether the chemistry library can write simulation information and debugging info to standard out. Default is true, so the amanzi u/s drivers will need to set this appropriately on mpi/openmp processes.
   * [SU] `"Auxiliary Data`" [string array] Additional chemistry related data that the user can request be saved to vis files. Currently "pH" is the only variable supported.
+  
+    * [SU] `"Initial Time Step (s)`" [double] The initial time step that chemistry will ask the MPC to take.  
   * [SU] `"Max Time Step (s)`" [double] The maximum time step that chemistry will allow the MPC to take.
+
+  * [SU] `"Time Step Control Method`" [string]: (default: `"fixed`") Time step control method for chemistry subcycling. Choose one of `"fixed`" or `"simple`"
+
+    * [SU] `"fixed`": Time step is fixed.
+    * [SU] `"simple`" : Time step is adjusted in response to stiffness of system of equations based on a simple scheme. If specified the following fields are required: `"Time Step Cut Threshold`", `"Time Step Cut Factor`", `"Time Step Increase Threshold`", and `"Time Step Increase Factor`".
+
+  * [SU] `"Time Step Cut Threshold`" [int]: (default=8) Number of Netwon iterations that if exceeded will trigger a time step cut.
+  * [SU] `"Time Step Cut Factor`" [double]: (default=2.0) Factor by which the time step is cut.
+  * [SU] `"Time Step Increase Threshold`" [int]: (default=4) Number of consectuive successful time steps that will trigger a time step increase.
+  * [SU] `"Time Step Increase Factor`" [double]: (default=1.2) Factor by which the time step is increased.
 
 
 Output
@@ -1569,7 +1649,7 @@ The user must specify when the various types of output are desired.  For Observa
  * Aqueous saturation [volume water / volume pore space]
  * Aqueous pressure [Pa]
  * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
- * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
+ * X-, Y-, Z- Aqueous volumetric flux [m/s]
  * MaterialID
  * Gravimetric water content [volumetric water content * water density / bulk density, in kg/m^3]
  * Hydraulic Head [ (aqueous pressure - atmospheric pressure)/(rho * gravity) + z ]
@@ -1615,7 +1695,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
   * [SU] OBSERVATION [list] user-defined label, can accept values for `"Variable`", `"Functional`", `"Region`", `"Time Macro`", and `"Cycle Macro`".
 
-    * [SU] `"Variable`" [string] name of field quantities taken from the list of "Available field quantities" defined above
+    * [SU] `"Variable`" [string] name of field quantities taken from the list of "Available field quantities" defined under `"Time and Cycle specification`"
 
     * [SU] `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 
@@ -2205,8 +2285,9 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
        
              <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-               <Parameter name="Horizontal" type="double" value="2.05e-8"/>
-               <Parameter name="Vertical" type="double" value="2.05e-9"/>
+               <Parameter name="x" type="double" value="2.05e-8"/>
+               <Parameter name="y" type="double" value="2.05e-8"/>
+               <Parameter name="z" type="double" value="2.05e-9"/>
              </ParameterList>
        
              <!-- GEH: Pressure-saturation function: van Genuchten-->
@@ -2228,8 +2309,9 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
        
              <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-               <Parameter name="Horizontal" type="double" value="4.84e-8"/>
-               <Parameter name="Vertical" type="double" value="4.84e-9"/>
+               <Parameter name="x" type="double" value="4.84e-8"/>
+               <Parameter name="y" type="double" value="4.84e-8"/>
+               <Parameter name="z" type="double" value="4.84e-9"/>
              </ParameterList>
        
              <ParameterList name="Capillary Pressure: van Genuchten">
@@ -2250,8 +2332,9 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
        
              <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-               <Parameter name="Horizontal" type="double" value="3.00e-9"/>
-               <Parameter name="Vertical" type="double" value="3.00e-10"/>
+               <Parameter name="x" type="double" value="3.00e-9"/>
+               <Parameter name="y" type="double" value="3.00e-9"/>
+               <Parameter name="z" type="double" value="3.00e-10"/>
              </ParameterList>
 
              <ParameterList name="Capillary Pressure: van Genuchten">

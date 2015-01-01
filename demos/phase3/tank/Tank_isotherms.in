@@ -13,18 +13,14 @@ CHEMISTRY
     ISOTHERM_REACTIONS
       Tracer
         TYPE LINEAR
-        : Csorb = KD Caq
-        DISTRIBUTION_COEFFICIENT 1.e-6 ! kg water/m^3 bulk
+        DISTRIBUTION_COEFFICIENT 1.e-6
       /
       Sr90
         TYPE LINEAR
-        : Csorb = KD Caq
         DISTRIBUTION_COEFFICIENT 0
-        LANGMUIR_B 0.1
       /
       Cs137
         TYPE LINEAR
-        : Csorb = KD Caq
         DISTRIBUTION_COEFFICIENT 0
       /
     /
@@ -35,7 +31,7 @@ CHEMISTRY
   ACTIVITY_COEFFICIENTS OFF
   OUTPUT
     All
-    TOTAL_SORBED
+    TOTAL
   /
 END
 

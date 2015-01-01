@@ -37,16 +37,16 @@ typedef std::pair<std::string, int> Action;
 
 class FlowBoundaryFunction : public UniqueMeshFunction {
  public:
-  FlowBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :
+  FlowBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       UniqueMeshFunction(mesh),
       finalized_(false), 
       global_size_(0) {};
   
-  void Define(const std::vector<std::string> &regions,
-              const Teuchos::RCP<const MultiFunction> &f, 
+  void Define(const std::vector<std::string>& regions,
+              const Teuchos::RCP<const MultiFunction>& f, 
               int method);
-  void Define(std::string region,
-              const Teuchos::RCP<const MultiFunction> &f,
+  void Define(std::string& region,
+              const Teuchos::RCP<const MultiFunction>& f,
               int method);
 
   void Compute(double time);

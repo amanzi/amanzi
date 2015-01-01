@@ -31,7 +31,7 @@ void RelativePermeability::ProcessParameterList_(Teuchos::ParameterList& plist)
 
   // create verbosity object
   Teuchos::ParameterList vlist;
-  vo_ = new VerboseObject("Flow::RelativePerm", vlist); 
+  vo_ = new VerboseObject("FlowPK::RelPerm", vlist); 
 
   int nblocks = 0;  // Find out how many WRM entries there are.
   for (Teuchos::ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++) {
@@ -135,8 +135,10 @@ void RelativePermeability::ProcessStringRelativePermeability(const std::string n
     method_ = Flow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
   } else if (name == "upwind: darcy velocity") {
     method_ = Flow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
+  } else if (name == "upwind: artificial diffusion") {
+    method_ = Flow::FLOW_RELATIVE_PERM_AMANZI_ARTIFICIAL_DIFFUSION;
   } else if (name == "upwind: amanzi") {
-    method_ = Flow::FLOW_RELATIVE_PERM_AMANZI;
+    method_ = Flow::FLOW_RELATIVE_PERM_AMANZI_MFD;
   } else if (name == "other: arithmetic average") {
     method_ = Flow::FLOW_RELATIVE_PERM_ARITHMETIC_AVERAGE;
   } else if (name == "other: harmonic average") {

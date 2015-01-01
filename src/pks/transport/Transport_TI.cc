@@ -26,7 +26,8 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
   // transport routines need an RCP pointer
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
 
-  lifting_->Init(component_rcp);
+  Teuchos::ParameterList plist;
+  lifting_->Init(component_rcp, plist);
   lifting_->Compute();
   Teuchos::RCP<CompositeVector> gradient = lifting_->gradient();
 

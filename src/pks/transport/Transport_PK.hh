@@ -91,17 +91,17 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   inline double cfl() { return cfl_; }
 
   // control members
+  void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents);
   void Policy(Teuchos::Ptr<State> S);
   void PrintStatistics() const;
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 
-  void CheckDivergenceProperty();
-  void CheckGEDproperty(Epetra_MultiVector& tracer) const; 
-  void CheckTracerBounds(Epetra_MultiVector& tracer, int component,
-                         double lower_bound, double upper_bound, double tol = 0.0) const;
-  void CheckInfluxBC() const;
-
-  void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents);
+  void VV_CheckGEDproperty(Epetra_MultiVector& tracer) const; 
+  void VV_CheckTracerBounds(Epetra_MultiVector& tracer, int component,
+                            double lower_bound, double upper_bound, double tol = 0.0) const;
+  void VV_CheckInfluxBC() const;
+  void VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, double dT_MPC);
+  double VV_TracerVolumeChangePerSecond(int idx_tracer);
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
 
@@ -173,6 +173,8 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   int FindDiffusionValue(const std::string& tcc_name, double* md, int* phase);
 
+  void CalculateAxiSymmetryDirection();
+
   // I/O methods
   void ProcessParameterList();
   void ProcessStringDispersionModel(const std::string name, int* model);
@@ -180,7 +182,6 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
 
   // miscaleneous methods
   int FindComponentNumber(const std::string component_name);
-  double TracerVolumeChangePerSecond(int idx_tracer);
 
  public:
   Teuchos::ParameterList parameter_list;
@@ -236,17 +237,20 @@ class Transport_PK : public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
-  std::vector<Teuchos::RCP<MaterialProperties> > material_properties_;  // vector of materials
+  std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
   std::vector<Teuchos::RCP<DiffusionPhase> >  diffusion_phase_;   // vector of phases
 
   std::vector<WhetStone::Tensor> D;
   int dispersion_models_;
+  std::vector<int> axi_symmetry_;  // axi symmetry direction of permeability tensor
   std::string dispersion_preconditioner;
   std::string dispersion_solver;
 
   double cfl_, dT, dT_debug, T_physics;  
 
-  double mass_tracer_exact, mass_tracer_source;  // statistics for tracer
+  double mass_tracer_exact, mass_tracer_source;  // statistics for tracers or solutes
+  std::vector<std::string> runtime_solutes_;
+  std::vector<std::string> runtime_regions_;
 
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;

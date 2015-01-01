@@ -24,7 +24,8 @@
 #include "GMVMesh.hh"
 
 #include "OperatorDefs.hh"
-#include "Upwind.hh"
+#include "UpwindStandard.hh"
+#include "UpwindDivK.hh"
 
 namespace Amanzi{
 
@@ -34,10 +35,6 @@ class Model {
   ~Model() {};
 
   // main members
-  double Value(int c, double pc, std::string name) const { 
-    return analytic(pc); 
-  }
-
   double Value(int c, double pc) const { 
     return analytic(pc); 
   }
@@ -67,7 +64,7 @@ TEST(UPWIND) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Upwind models" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Upwind models: first-order convergence" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_upwind.xml";
@@ -123,11 +120,11 @@ TEST(UPWIND) {
 
     for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      fcells[0][c] = model->Value(c, xc[0], " "); 
+      fcells[0][c] = model->Value(c, xc[0]); 
     }
     for (int f = 0; f < nfaces_wghost; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-      ffaces[0][f] = model->Value(0, xf[0], " "); 
+      ffaces[0][f] = model->Value(0, xf[0]); 
     }
 
     // create and initialize face-based flux field
@@ -136,7 +133,7 @@ TEST(UPWIND) {
     cvs->SetGhosted(true);
     cvs->SetComponent("face", AmanziMesh::FACE, 1);
 
-    CompositeVector flux(*cvs), upw_field(*cvs);
+    CompositeVector flux(*cvs), upw_field1(*cvs), upw_field2(*cvs);
     Epetra_MultiVector& u = *flux.ViewComponent("face", true);
   
     Point vel(1.0, 2.0, 3.0);
@@ -145,27 +142,37 @@ TEST(UPWIND) {
       u[0][f] = vel * normal;
     }
 
-    // Create upwind
-    Upwind<Model> upwind(mesh, model);
-
+    // Create two upwind models
     ParameterList& ulist = plist.sublist("upwind");
-    upwind.Init(ulist);
-    // upwind.Compute(flux, bc_model, bc_value, field, upw_field, " ");
-    ModelUpwindFn func = &Model::Value;
-    upwind.Compute(flux, bc_model, bc_value, field, upw_field, func);
+    UpwindStandard<Model> upwind1(mesh, model);
+    upwind1.Init(ulist);
 
-    // calculate error
-    Epetra_MultiVector& upw = *upw_field.ViewComponent("face");
-    double error(0.0);
+    ModelUpwindFn func = &Model::Value;
+    upwind1.Compute(flux, bc_model, bc_value, field, upw_field1, func);
+
+    UpwindDivK<Model> upwind2(mesh, model);
+    upwind2.Init(ulist);
+    upwind2.Compute(flux, bc_model, bc_value, field, upw_field2, func);
+
+    // calculate errors
+    Epetra_MultiVector& upw1 = *upw_field1.ViewComponent("face");
+    Epetra_MultiVector& upw2 = *upw_field2.ViewComponent("face");
+
+    double error1(0.0), error2(0.0);
     for (int f = 0; f < nfaces_owned; f++) {
       const Point& xf = mesh->face_centroid(f);
       double exact = model->analytic(xf[0]);
-      error += pow(exact - upw[0][f], 2.0);
-      CHECK(upw[0][f] >= 0.0);
+
+      error1 += pow(exact - upw1[0][f], 2.0);
+      error2 += pow(exact - upw2[0][f], 2.0);
+
+      CHECK(upw1[0][f] >= 0.0);
+      CHECK(upw2[0][f] >= 0.0);
     }
-    error = sqrt(error / nfaces_owned);
+    error1 = sqrt(error1 / nfaces_owned);
+    error2 = sqrt(error2 / nfaces_owned);
   
-    printf("error=%8.4f\n", error);
+    printf("errors: standard=%8.4f  mfd=%8.4f\n", error1, error2);
   }
 }
 

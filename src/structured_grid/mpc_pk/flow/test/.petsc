@@ -70,7 +70,7 @@
 -snes_linesearch_type l2
 
 -snes_max_it 15
--snes_atol 1.e-10
+-snes_atol 1.e-13
 -snes_rtol 1.e-10
 -snes_stol 1.e-20
 #-snes_converged_reason

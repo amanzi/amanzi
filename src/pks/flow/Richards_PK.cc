@@ -29,6 +29,7 @@
 #include "mfd3d_diffusion.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "Point.hh"
+#include "UpwindFactory.hh"
 
 #include "darcy_velocity_evaluator.hh"
 #include "Flow_BC_Factory.hh"
@@ -213,29 +214,31 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   rel_perm_->ProcessStringRelativePermeability(krel_method_name);
 
   // parameter which defines when update direction of update
-  Teuchos::ParameterList aux_list;
-  upwind_ = Teuchos::rcp(new Operators::Upwind<RelativePermeability>(mesh_, rel_perm_));
-  upwind_->Init(aux_list);
+  Teuchos::ParameterList upw_list = rp_list_.sublist("operators")
+                                            .sublist("diffusion operator")
+                                            .sublist("upwind");
+  Operators::UpwindFactory<RelativePermeability> upwind_factory;
+  upwind_ = upwind_factory.Create(mesh_, rel_perm_, upw_list);
 
   std::string upw_upd = rp_list_.get<std::string>("upwind update", "every timestep");
   if (upw_upd == "every nonlinear iteration") update_upwind = FLOW_UPWIND_UPDATE_ITERATION;
   else update_upwind = FLOW_UPWIND_UPDATE_TIMESTEP;  
 
   // Initialize times.
-  double time = S->time();
-  if (time >= 0.0) T_physics = time;
+  double T1 = S->time(), T0 = T1 - dT;
+  if (T1 >= 0.0) T_physics = T1;
 
   // Initialize actions on boundary condtions. 
   ProcessShiftWaterTableList(rp_list_);
 
-  time = T_physics;
-  bc_pressure->Compute(time);
-  bc_flux->Compute(time);
-  bc_seepage->Compute(time);
+  T1 = T_physics;
+  bc_pressure->Compute(T1);
+  bc_flux->Compute(T1);
+  bc_seepage->Compute(T1);
   if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(time);
+    bc_head->Compute(T1);
   else
-    bc_head->ComputeShift(time, shift_water_table_->Values());
+    bc_head->ComputeShift(T1, shift_water_table_->Values());
 
   // Process other fundamental structures.
   K.resize(ncells_wghost);
@@ -253,17 +256,28 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
   std::string name = rp_list_.get<std::string>("relative permeability");
-  if (name == "upwind: darcy velocity" || name == "upwind: gravity") {
-    oplist_matrix.set<std::string>("upwind", "with flux");
-    oplist_pc.set<std::string>("upwind", "with flux");
+  int upw_id(Operators::OPERATOR_UPWIND_FLUX);
+  std::string upw_method("none");
+  if (name == "upwind: darcy velocity") {
+    upw_method = "standard";
+  } else if (name == "upwind: gravity") {
+    upw_method = "standard";
+    upw_id = Operators::OPERATOR_UPWIND_CONSTANT_VECTOR;
+  } else if (name == "upwind: artificial diffusion") {
+    upw_method = "amanzi: artificial diffusion";
+    oplist_pc.set<std::string>("upwind method", "artificial diffusion");
   } else if (name == "upwind: amanzi") {
-    oplist_matrix.set<std::string>("upwind", "amanzi");
-    oplist_pc.set<std::string>("upwind", "amanzi");
+    upw_method = "divk";
+  } else if (name == "other: arithmetic average") {
+    upw_method = "standard";
+    upw_id = Operators::OPERATOR_UPWIND_ARITHMETIC_AVERAGE;
   }
+  oplist_matrix.set<std::string>("upwind method", upw_method);
+  oplist_pc.set<std::string>("upwind method", upw_method);
 
   Operators::OperatorDiffusionFactory opfactory;
-  op_matrix_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, gravity_);
-  op_preconditioner_ = opfactory.Create(mesh_, op_bc_, oplist_pc, gravity_);
+  op_matrix_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, gravity_, upw_id);
+  op_preconditioner_ = opfactory.Create(mesh_, op_bc_, oplist_pc, gravity_, upw_id);
 
   // Create the solution (pressure) vector and auxiliary vector for time history.
   solution = Teuchos::rcp(new CompositeVector(op_matrix_->DomainMap()));
@@ -273,13 +287,14 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Initialize boundary and source data. 
   CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
-  UpdateSourceBoundaryData(time, pressure);
+  UpdateSourceBoundaryData(T0, T1, pressure);
 
   darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S->GetFieldData("darcy_flux", passwd_)));
 
   // Create RCP pointer to upwind flux.
   if (rel_perm_->method() == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
-      rel_perm_->method() == FLOW_RELATIVE_PERM_AMANZI) {
+      rel_perm_->method() == FLOW_RELATIVE_PERM_AMANZI_ARTIFICIAL_DIFFUSION ||
+      rel_perm_->method() == FLOW_RELATIVE_PERM_AMANZI_MFD) {
     darcy_flux_upwind = darcy_flux_copy;
   } else if (rel_perm_->method() == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
     darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));
@@ -309,8 +324,8 @@ void Richards_PK::InitializeAuxiliaryData()
 
   DeriveFaceValuesFromCellValues(p_cell, p_face);
 
-  double time = T_physics;
-  UpdateSourceBoundaryData(time, pressure);
+  double T1 = T_physics, T0 = T1 - dT;
+  UpdateSourceBoundaryData(T0, T1, pressure);
 
   // saturations
   Epetra_MultiVector& ws = *S_->GetFieldData("water_saturation", passwd_)->ViewComponent("cell");
@@ -330,8 +345,8 @@ void Richards_PK::InitializeSteadySaturated()
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "initializing with a saturated steady state..." << std::endl;
   }
-  double T = S_->time();
-  SolveFullySaturatedProblem(T, *solution, ti_specs->solver_name_ini);
+  double T0 = S_->time();
+  SolveFullySaturatedProblem(T0, *solution, ti_specs->solver_name_ini);
 }
 
 
@@ -419,6 +434,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
         << vo_->reset() << std::endl << std::endl;
     *vo_->os() << "T=" << T0 / FLOW_YEAR << " [y] dT=" << dT0 << " [sec]" << std::endl
         << "EC:" << error_control_ << " Src:" << src_sink_distribution
+        << " Upwind:" << rel_perm_->method() << op_matrix_->upwind_
         << " PC:\"" << ti_specs.preconditioner_name.c_str() << "\"" << std::endl;
   }
 
@@ -509,16 +525,16 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   op_matrix_->UpdateFlux(*solution, *darcy_flux_copy);
 
   // re-initialize lambda
-  double Tp = T0 + dT0;
+  double T1 = T0 + dT0;
   if (flag_face && ti_specs.pressure_lambda_constraints) {
-    EnforceConstraints(Tp, *solution);
+    EnforceConstraints(T1, *solution);
     // update mass flux
     op_matrix_->Init();
     op_matrix_->UpdateMatrices(Teuchos::null, solution);
     op_matrix_->UpdateFlux(*solution, *darcy_flux_copy);
   } else {
     CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
-    UpdateSourceBoundaryData(Tp, *solution);
+    UpdateSourceBoundaryData(T0, T1, *solution);
     rel_perm_->Compute(pressure);
 
     RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
@@ -530,7 +546,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     if (ti_specs.inflow_krel_correction) {
       Epetra_MultiVector& k_face = *rel_perm_->Krel()->ViewComponent("face", true);
       AmanziMesh::Entity_ID_List cells;
-	
+
       for (int f = 0; f < nfaces_wghost; f++) {
         if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
              bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
@@ -677,23 +693,23 @@ void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
 /* ******************************************************************
  * * A wrapper for updating boundary conditions.
  * ****************************************************************** */
-void Richards_PK::UpdateSourceBoundaryData(double Tp, const CompositeVector& u)
+void Richards_PK::UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u)
 {
   if (src_sink != NULL) {
     if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(Tp, Kxy->Values());
+      src_sink->ComputeDistribute(T0, T1, Kxy->Values());
     } else {
-      src_sink->ComputeDistribute(Tp, NULL);
+      src_sink->ComputeDistribute(T0, T1, NULL);
     }
   }
 
-  bc_pressure->Compute(Tp);
-  bc_flux->Compute(Tp);
-  bc_seepage->Compute(Tp);
+  bc_pressure->Compute(T1);
+  bc_flux->Compute(T1);
+  bc_seepage->Compute(T1);
   if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(Tp);
+    bc_head->Compute(T1);
   else
-    bc_head->ComputeShift(Tp, shift_water_table_->Values());
+    bc_head->ComputeShift(T1, shift_water_table_->Values());
 
   ComputeBCs(u);
 }
@@ -713,7 +729,7 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epet
   const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell", false);
 
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
+  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -726,7 +742,7 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& ws_prev, Epet
     wsmin = wsmax = ws[c];
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      int c2 = mfd.cell_get_face_adj_cell(c, f);
+      int c2 = mfd3d.cell_get_face_adj_cell(c, f);
       if (c2 >= 0) {
         wsmin = std::min(wsmin, ws[c2]);
         wsmax = std::max(wsmax, ws[c2]);

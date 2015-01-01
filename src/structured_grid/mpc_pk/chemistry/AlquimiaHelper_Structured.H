@@ -24,8 +24,9 @@ public:
                        const Box& box, Real dt);
 
   virtual void EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
-                                FArrayBox& auxiliary_data,
+                                FArrayBox& auxiliary_data, Real water_density, Real temperature,
                                 const Box& box, const std::string& condition_name, Real time);
+
 
 protected:
   void BL_to_Alquimia(const FArrayBox& aqueous_saturation,       int sSat,

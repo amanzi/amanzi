@@ -90,10 +90,30 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
                     mat_list.get<Teuchos::Array<std::string> >("Assigned Regions"));
 
                 if (mat_list.isSublist("Dispersion Tensor: Uniform Isotropic")) {
-                  disp_list.set<double>("alphaL", 
+                  disp_list.sublist("parameters for Bear").set<double>("alphaL", 
                       mat_list.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaL"));
-                  disp_list.set<double>("alphaT",
+                  disp_list.sublist("parameters for Bear").set<double>("alphaT",
                       mat_list.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaT"));
+                }
+                else if (mat_list.isSublist("Dispersion Tensor: Burnett-Frind")) {
+                  disp_list.set<std::string>("model", "Burnett-Frind");
+                  disp_list.sublist("parameters for Burnett-Frind").set<double>("alphaL", 
+                      mat_list.sublist("Dispersion Tensor: Burnett-Frind").get<double>("alphaL"));
+                  disp_list.sublist("parameters for Burnett-Frind").set<double>("alphaTH",
+                      mat_list.sublist("Dispersion Tensor: Burnett-Frind").get<double>("alphaTH"));
+                  disp_list.sublist("parameters for Burnett-Frind").set<double>("alphaTV",
+                      mat_list.sublist("Dispersion Tensor: Burnett-Frind").get<double>("alphaTV"));
+                }
+                else if (mat_list.isSublist("Dispersion Tensor: Lichtner-Kelkar-Robinson")) {
+                  disp_list.set<std::string>("model", "Lichtner-Kelkar-Robinson");
+                  disp_list.sublist("parameters for Lichtner-Kelkar-Robinson").set<double>("alphaLH", 
+                      mat_list.sublist("Dispersion Tensor: Lichtner-Kelkar-Robinson").get<double>("alphaLH"));
+                  disp_list.sublist("parameters for Lichtner-Kelkar-Robinson").set<double>("alphaLV", 
+                      mat_list.sublist("Dispersion Tensor: Lichtner-Kelkar-Robinson").get<double>("alphaLV"));
+                  disp_list.sublist("parameters for Lichtner-Kelkar-Robinson").set<double>("alphaTH",
+                      mat_list.sublist("Dispersion Tensor: Lichtner-Kelkar-Robinson").get<double>("alphaTH"));
+                  disp_list.sublist("parameters for Lichtner-Kelkar-Robinson").set<double>("alphaTV",
+                      mat_list.sublist("Dispersion Tensor: Lichtner-Kelkar-Robinson").get<double>("alphaTV"));
                 }
 
                 if (mat_list.isSublist("Tortuosity Aqueous: Uniform")) {
@@ -199,27 +219,59 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
                     if (comps.sublist(*i).isSublist("BC: Uniform Concentration")) {
                       Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Uniform Concentration");
 
+                      // If we only have one Geochemical condition, we don't need the Times and Time Functions
+                      // entries, and make up entries for the 
                       if (bcsub.isParameter("Geochemical Condition")) { 
+                        std::string cond_name = bcsub.get<std::string>("Geochemical Condition");
+
                         // Add an entry to Transport->boundary conditions->geochemical conditions.
                         Teuchos::ParameterList& gc_list = trp_list.sublist("boundary conditions")
                             .sublist("geochemical conditions");
-                        std::string geochem_cond_name = bcsub.get<std::string>("Geochemical Condition");
-                        Teuchos::ParameterList& geochem_cond = gc_list.sublist(geochem_cond_name);
-                        geochem_cond.set<Teuchos::Array<std::string> >("regions", regs);
-                      }
-                      else { // ordinary Transport BCs.
-                        Teuchos::ParameterList& tbc_list = trp_list.sublist("boundary conditions").sublist("concentration");
-                        Teuchos::ParameterList& bc = tbc_list.sublist(compss.str()).sublist(name);
-                        bc.set<Teuchos::Array<std::string> >("regions",regs);
+                        Teuchos::ParameterList& bc = gc_list.sublist(compss.str()).sublist(name);
 
-                        Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
+                        // Fill it with made-up entries.
+                        Teuchos::Array<double> times(2);
+                        times[0] = -FLT_MAX;
+                        times[1] = FLT_MAX;
+                        Teuchos::Array<std::string> time_fns(1, "Constant");
+                        Teuchos::Array<std::string> cond_names(2, cond_name);
+                        bc.set<Teuchos::Array<double> >("Times", times);
+                        bc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);
+                        bc.set<Teuchos::Array<std::string> >("regions", regs);
+                        bc.set<Teuchos::Array<std::string> >("Geochemical Conditions", cond_names);
+                      }
+
+                      // Otherwise, we parse these entries.
+                      else
+                      {
                         Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
                         Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
 
-                        Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
-                        bcfn.set<Teuchos::Array<double> >("y values", values);
-                        bcfn.set<Teuchos::Array<double> >("x values", times);
-                        bcfn.set<Teuchos::Array<std::string> >("forms", TranslateForms_(time_fns));
+                        if (bcsub.isParameter("Geochemical Conditions")) { 
+                          Teuchos::Array<std::string> cond_names = bcsub.get<Teuchos::Array<std::string> >("Geochemical Conditions");
+
+                          // Add an entry to Transport->boundary conditions->geochemical conditions.
+                          Teuchos::ParameterList& gc_list = trp_list.sublist("boundary conditions")
+                              .sublist("geochemical conditions");
+                          Teuchos::ParameterList& bc = gc_list.sublist(compss.str()).sublist(name);
+
+                          // Fill it with stuff.
+                          bc.set<Teuchos::Array<double> >("Times", times);
+                          bc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);
+                          bc.set<Teuchos::Array<std::string> >("Geochemical Conditions", cond_names);
+                          bc.set<Teuchos::Array<std::string> >("regions", regs);
+                        }
+                        else { // ordinary Transport BCs.
+                          Teuchos::ParameterList& tbc_list = trp_list.sublist("boundary conditions").sublist("concentration");
+                          Teuchos::ParameterList& bc = tbc_list.sublist(compss.str()).sublist(name);
+                          bc.set<Teuchos::Array<std::string> >("regions",regs);
+  
+                          Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
+                          Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
+                          bcfn.set<Teuchos::Array<double> >("y values", values);
+                          bcfn.set<Teuchos::Array<double> >("x values", times);
+                          bcfn.set<Teuchos::Array<std::string> >("forms", TranslateForms_(time_fns));
+                        }
                       }
                     }
                   }
@@ -283,51 +335,81 @@ Teuchos::ParameterList InputParserIS::CreateTransportSrcList_(Teuchos::Parameter
 
                 // create src sublist
                 Teuchos::ParameterList& src_out = src_list.sublist("concentration").sublist(pc_name).sublist(name);
-                src_out.set<Teuchos::Array<std::string> >("regions",regions);
+                src_out.set<Teuchos::Array<std::string> >("regions", regions);
 
                 // get source function
                 Teuchos::ParameterList src_fn;
                 if (solute_src.isSublist("Source: Uniform Concentration")) {
-                  src_out.set<std::string>("spatial distribution method","none");
+                  src_out.set<std::string>("spatial distribution method", "none");
                   src_fn = solute_src.sublist("Source: Uniform Concentration");
                 }
                 else if (solute_src.isSublist("Source: Flow Weighted Concentration")) {
                   src_out.set<std::string>("spatial distribution method", dist_method);
                   src_fn = solute_src.sublist("Source: Flow Weighted Concentration");
                 }
+                else if (solute_src.isSublist("Source: Diffusion Dominated Release Model")) {
+                  src_out.set<std::string>("spatial distribution method", dist_method);
+                  src_fn = solute_src.sublist("Source: Diffusion Dominated Release Model");
+                }
                 else {
                   msg << "In the definition of Sources: you must either specify 'Source: Uniform"
-                      << " Concentration' or 'Source: Flow Weighted Concentration'.";
+                      << " Concentration', 'Source: Diffusion Dominated Release Model', or"
+                      << " 'Source: Flow Weighted Concentration'.";
                   Exceptions::amanzi_throw(msg);
                 }
 
-                // create time function
+                // create time function (two different case are considered)
                 Teuchos::ParameterList& src_out_fn = src_out.sublist("sink");
-                Teuchos::Array<double> values = src_fn.get<Teuchos::Array<double> >("Values");
-                // write the native time function
-                if (values.size() == 1) {
-                  src_out_fn.sublist("function-constant").set<double>("value", values[0]);
-                } else if (values.size() > 1) {
+                if (src_fn.isParameter("Values")) {
+                  Teuchos::Array<double> values = src_fn.get<Teuchos::Array<double> >("Values");
+                  // write the native time function
+                  if (values.size() == 1) {
+                    src_out_fn.sublist("function-constant").set<double>("value", values[0]);
+                  } else if (values.size() > 1) {
+                    Teuchos::Array<double> times = src_fn.get<Teuchos::Array<double> >("Times");
+                    Teuchos::Array<std::string> time_fns = src_fn.get<Teuchos::Array<std::string> >("Time Functions");
+
+                    Teuchos::ParameterList& ssofn = src_out_fn.sublist("function-tabular");
+
+                    ssofn.set<Teuchos::Array<double> >("x values", times);
+                    ssofn.set<Teuchos::Array<double> >("y values", values);
+
+                    Teuchos::Array<std::string> forms_(time_fns.size());
+                    for (int i = 0; i < time_fns.size(); i++) {
+                      if (time_fns[i] == "Linear") {
+                        forms_[i] = "linear";
+                      } else if (time_fns[i] == "Constant") {
+                        forms_[i] = "constant";
+                      } else {
+                        msg << "In the definition of Sources: time function can only be 'Linear' or 'Constant'";
+                        Exceptions::amanzi_throw(msg);
+                      }
+                    }
+                    ssofn.set<Teuchos::Array<std::string> >("forms", forms_);
+                  } else {
+                    msg << "In the definition of Sources: something is wrong with the input";
+                    Exceptions::amanzi_throw(msg);
+                  }
+                } else if (src_fn.isParameter("Total Inventory")) {
+                  double total = src_fn.get<double>("Total Inventory");
+                  double diff = src_fn.get<double>("Effective Diffusion Coefficient");
+                  double length = src_fn.get<double>("Mixing Length");
                   Teuchos::Array<double> times = src_fn.get<Teuchos::Array<double> >("Times");
-                  Teuchos::Array<std::string> time_fns = src_fn.get<Teuchos::Array<std::string> >("Time Functions");
+
+                  std::vector<double> values(2, 0.0);
+                  std::vector<std::string> forms(1, "SQRT");
+                  double amplitude = 2 * total / length * std::pow(diff / M_PI, 0.5); 
 
                   Teuchos::ParameterList& ssofn = src_out_fn.sublist("function-tabular");
-
                   ssofn.set<Teuchos::Array<double> >("x values", times);
                   ssofn.set<Teuchos::Array<double> >("y values", values);
+                  ssofn.set<Teuchos::Array<std::string> >("forms", forms);
 
-                  Teuchos::Array<std::string> forms_(time_fns.size());
-                  for (int i = 0; i < time_fns.size(); i++) {
-                    if (time_fns[i] == "Linear") {
-                      forms_[i] = "linear";
-                    } else if (time_fns[i] == "Constant") {
-                      forms_[i] = "constant";
-                    } else {
-                      msg << "In the definition of Sources: time function can only be 'Linear' or 'Constant'";
-                      Exceptions::amanzi_throw(msg);
-                    }
-                  }
-                  ssofn.set<Teuchos::Array<std::string> >("forms", forms_);
+                  Teuchos::ParameterList& func = ssofn.sublist("SQRT").sublist("function-standard-math");
+                  func.set<std::string>("operator", "sqrt");
+                  func.set<double>("parameter", 0.5);
+                  func.set<double>("amplitude", amplitude);
+                  func.set<double>("shift", times[0]);
                 } else {
                   msg << "In the definition of Sources: something is wrong with the input";
                   Exceptions::amanzi_throw(msg);

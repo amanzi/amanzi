@@ -84,11 +84,11 @@ Alquimia_Chemistry_PK::~Alquimia_Chemistry_PK()
 
 // This helper performs initialization on a single cell within Amanzi's state.
 // It returns an error code that indicates success (0) or failure (1).
-int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex, const std::string& condition) 
+int Alquimia_Chemistry_PK::InitializeSingleCell(int cell_index, const std::string& condition) 
 {
   // Copy the state and material information from Amanzi's state within 
   // this cell to Alquimia.
-  CopyAmanziStateToAlquimia(cellIndex, 
+  CopyAmanziStateToAlquimia(cell_index, 
                             chemistry_state_->total_component_concentration(), 
                             alq_mat_props_, alq_state_, alq_aux_data_);
 
@@ -97,8 +97,7 @@ int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex, const std::string
                                  alq_state_, alq_aux_data_, alq_aux_output_);
 
   // Move the information back into Amanzi's state.
-  CopyAlquimiaStateToAmanzi(cellIndex, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_,
-                            chemistry_state_->total_component_concentration());
+  CopyAlquimiaStateToAmanzi(cell_index, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 
   return 0;
 }
@@ -424,10 +423,10 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
                                                       const AlquimiaMaterialProperties& mat_props,
                                                       const AlquimiaState& state,
                                                       const AlquimiaAuxiliaryData& aux_data,
-                                                      const AlquimiaAuxiliaryOutputData& aux_output,
-                                                      Teuchos::RCP<const Epetra_MultiVector> aqueous_components)
+                                                      const AlquimiaAuxiliaryOutputData& aux_output)
 {
-  chemistry_state_->CopyFromAlquimia(cell_id, mat_props, state, aux_data, aux_output, aqueous_components);
+  chemistry_state_->CopyFromAlquimia(cell_id, mat_props, state, aux_data, aux_output, 
+                                     chemistry_state_->total_component_concentration());
 
   // Auxiliary output.
   if (aux_output_ != Teuchos::null) 
@@ -539,11 +538,11 @@ Teuchos::RCP<Epetra_MultiVector> Alquimia_Chemistry_PK::get_total_component_conc
 // or -1 if an error occurred.
 int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time, 
                                              Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star,
-                                             int cellIndex)
+                                             int cell_index)
 {
   // Copy the state and material information from Amanzi's state within 
   // this cell to Alquimia.
-  CopyAmanziStateToAlquimia(cellIndex, 
+  CopyAmanziStateToAlquimia(cell_index, 
                             total_component_concentration_star, 
                             alq_mat_props_, alq_state_, alq_aux_data_);
 
@@ -555,8 +554,7 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time,
     return -1;
 
   // Move the information back into Amanzi's state, updating the given total concentration vector.
-  CopyAlquimiaStateToAmanzi(cellIndex, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_, 
-                            chemistry_state_->total_component_concentration());
+  CopyAlquimiaStateToAmanzi(cell_index, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 
   return num_iterations;
 }
@@ -582,9 +580,8 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time,
  **
  *******************************************************************************/
 
-void Alquimia_Chemistry_PK::Advance(
-    const double& delta_time,
-    Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star) 
+void Alquimia_Chemistry_PK::Advance(const double& delta_time,
+                                    Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star) 
 {
   Errors::Message msg;
 
@@ -599,8 +596,7 @@ void Alquimia_Chemistry_PK::Advance(
   }
 
   // shorter name for the state that came out of transport
-  Teuchos::RCP<const Epetra_MultiVector> tcc_star =
-      total_component_concentration_star;
+  Teuchos::RCP<const Epetra_MultiVector> tcc_star = total_component_concentration_star;
 
   // Get the number of owned (non-ghost) cells for the mesh.
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
@@ -618,11 +614,8 @@ void Alquimia_Chemistry_PK::Advance(
   for (int cell = 0; cell < num_cells; ++cell)
   {
     int num_iterations = AdvanceSingleCell(delta_time, tcc_star, cell);
-    if (num_iterations > 0)
+    if (num_iterations >= 0)
     {
-      //std::stringstream message;
-      //message << "--- " << cell << "\n";
-      //beaker_components_.Display(message.str().c_str());
       if (max_iterations < num_iterations) 
       {
         max_iterations = num_iterations;

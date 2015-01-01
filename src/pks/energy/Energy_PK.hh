@@ -43,7 +43,7 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
   void CommitStep(double t_old, double t_new) {};
   void CalculateDiagnostics() {};
 
-  double get_dt() {};
+  double get_dt() { return 0.0; }
   void SetState(const Teuchos::RCP<State>& S) { S_ = S; }
   std::string name() { return "energy"; }
 
@@ -60,7 +60,7 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
   double ErrorNorm(Teuchos::RCP<const CompositeVector> u, Teuchos::RCP<const CompositeVector> du) {};
   bool IsAdmissible(Teuchos::RCP<const CompositeVector> up) { return true; }
   bool ModifyPredictor(double dT, Teuchos::RCP<const CompositeVector> u0,
-                       Teuchos::RCP<CompositeVector> u) {};
+                       Teuchos::RCP<CompositeVector> u) { return false; }
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
       ModifyCorrection(double dT, Teuchos::RCP<const CompositeVector> res,
                        Teuchos::RCP<const CompositeVector> u,
@@ -85,7 +85,7 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<CompositeVector> {
   std::vector<WhetStone::Tensor> K; 
 
   std::vector<int> bc_model_, bc_submodel_; 
-  std::vector<double> bc_value_; 
+  std::vector<double> bc_value_, bc_mixed_; 
 
  protected:
   Teuchos::ParameterList plist_;

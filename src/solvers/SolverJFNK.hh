@@ -143,10 +143,9 @@ SolverJFNK<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& 
 
   // Init the nonlinear method with this wrapped SolverFnBase
   solver_->Init(jf_fnbase_, map);
-  
 }
 
-} // namespace
-} // namespace
+}  // namespace AmanziSolvers
+}  // namespace Amanzi
 
 #endif

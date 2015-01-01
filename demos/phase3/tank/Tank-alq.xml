@@ -29,7 +29,7 @@
     <Parameter name="Chemistry Model" type="string" value="Alquimia"/>
 
     <!-- <ParameterList name="Restart"> -->
-    <!--   <Parameter name="File Name" type="string" value="chkfile"/> -->
+    <!--   <Parameter name="File Name" type="string" value="run_data/chk00004"/> -->
     <!-- </ParameterList> -->
 
     <ParameterList name="Time Integration Mode">
@@ -76,11 +76,11 @@
       <ParameterList name="Adaptive Mesh Refinement Control">
         <Parameter name="Number Of AMR Levels" type="int" value="5"/>
         <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4, 2, 2}"/>
-        <Parameter name="Regrid Interval" type="Array(int)" value="{200000}"/>
+        <Parameter name="Regrid Interval" type="Array(int)" value="{2}"/>
         <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2, 2, 2}"/>
         <Parameter name="Maximum Grid Size" type="Array(int)" value="{32, 32, 32, 32, 32, 32}"/>
         <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1, 1, 1, 1}"/>
-	<Parameter name="Refinement Indicators" type="Array(string)" value="{Tank ref, Wall ref, FF ref, Liners ref, InletOutlet ref}"/>
+	<Parameter name="Refinement Indicators" type="Array(string)" value="{Tank ref, Wall ref, FF ref, Liners ref, InletOutlet ref, Sorbed ref}"/>
 
         <ParameterList name="Tank ref">
           <Parameter name="Regions" type="Array(string)" value="{Tank}"/>
@@ -110,6 +110,13 @@
           <Parameter name="Regions" type="Array(string)" value="{InletOutlet}"/>
           <Parameter name="Inside Region" type="bool" value="TRUE"/>
           <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+        </ParameterList>
+
+        <ParameterList name="Sorbed ref">
+          <Parameter name="Regions" type="Array(string)" value="{All}"/>
+          <Parameter name="Maximum Refinement Level" type="int" value="4"/>
+          <Parameter name="Field Name" type="string" value="Cs137 Sorbed Concentration"/>
+          <Parameter name="Value Greater" type="double" value="1.e4"/>
         </ParameterList>
 
         <ParameterList name="Expert Settings">
@@ -322,15 +329,8 @@
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.2"/>
       </ParameterList>
-      <!-- <ParameterList name="Intrinsic Permeability: Anisotropic Uniform"> -->
-      <!--   <Parameter name="x" type="double" value="1.03e-18"/> -->
-      <!--   <Parameter name="y" type="double" value="1.03e-18"/> -->
-      <!-- </ParameterList> -->
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value="1.e-11"/>
-      </ParameterList>
-      <ParameterList name="Molecular Diffusion: Uniform">
-        <Parameter name="Value" type="double" value="5.e-12"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
@@ -357,15 +357,8 @@
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.2"/>
       </ParameterList>
-      <!-- <ParameterList name="Intrinsic Permeability: Anisotropic Uniform"> -->
-      <!--   <Parameter name="x" type="double" value="1.03e-18"/> -->
-      <!--   <Parameter name="y" type="double" value="1.03e-18"/> -->
-      <!-- </ParameterList> -->
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value="1.e-11"/>
-      </ParameterList>
-      <ParameterList name="Molecular Diffusion: Uniform">
-        <Parameter name="Value" type="double" value="5.e-12"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
@@ -392,15 +385,8 @@
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.35"/>
       </ParameterList>
-      <!-- <ParameterList name="Intrinsic Permeability: Anisotropic Uniform"> -->
-      <!--   <Parameter name="x" type="double" value="1.03e-13"/> -->
-      <!--   <Parameter name="y" type="double" value="1.03e-13"/> -->
-      <!-- </ParameterList> -->
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value="1.e-6"/>
-      </ParameterList>
-      <ParameterList name="Molecular Diffusion: Uniform">
-        <Parameter name="Value" type="double" value="5.e-10"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
@@ -427,15 +413,8 @@
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.3"/>
       </ParameterList>
-      <!-- <ParameterList name="Intrinsic Permeability: Anisotropic Uniform"> -->
-      <!--   <Parameter name="x" type="double" value="1.54e-10"/> -->
-      <!--   <Parameter name="y" type="double" value="1.54e-10"/> -->
-      <!-- </ParameterList> -->
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value=".15e-2"/>
-      </ParameterList>
-      <ParameterList name="Molecular Diffusion: Uniform">
-        <Parameter name="Value" type="double" value="5.e-10"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
@@ -462,15 +441,8 @@
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.3"/>
       </ParameterList>
-      <!-- <ParameterList name="Intrinsic Permeability: Anisotropic Uniform"> -->
-      <!--   <Parameter name="x" type="double" value="1.54e-10"/> -->
-      <!--   <Parameter name="y" type="double" value="1.54e-10"/> -->
-      <!-- </ParameterList> -->
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value=".15e-2"/>
-      </ParameterList>
-      <ParameterList name="Molecular Diffusion: Uniform">
-        <Parameter name="Value" type="double" value="5.e-10"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
@@ -497,15 +469,8 @@
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.3"/>
       </ParameterList>
-      <!-- <ParameterList name="Intrinsic Permeability: Anisotropic Uniform"> -->
-      <!--   <Parameter name="x" type="double" value="1.54e-10"/> -->
-      <!--   <Parameter name="y" type="double" value="1.54e-10"/> -->
-      <!-- </ParameterList> -->
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value=".15e-2"/>
-      </ParameterList>
-      <ParameterList name="Molecular Diffusion: Uniform">
-        <Parameter name="Value" type="double" value="5.e-10"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
@@ -532,15 +497,8 @@
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.3"/>
       </ParameterList>
-      <!-- <ParameterList name="Intrinsic Permeability: Anisotropic Uniform"> -->
-      <!--   <Parameter name="x" type="double" value="1.54e-10"/> -->
-      <!--   <Parameter name="y" type="double" value="1.54e-10"/> -->
-      <!-- </ParameterList> -->
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value=".15e-2"/>
-      </ParameterList>
-      <ParameterList name="Molecular Diffusion: Uniform">
-        <Parameter name="Value" type="double" value="5.e-10"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
@@ -567,15 +525,8 @@
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.2"/>
       </ParameterList>
-      <!-- <ParameterList name="Intrinsic Permeability: Anisotropic Uniform"> -->
-      <!--   <Parameter name="x" type="double" value="1.03e-21"/> -->
-      <!--   <Parameter name="y" type="double" value="1.03e-21"/> -->
-      <!-- </ParameterList> -->
       <ParameterList name="Hydraulic Conductivity: Uniform">
         <Parameter name="Value" type="double" value="1.e-14"/>
-      </ParameterList>
-      <ParameterList name="Molecular Diffusion: Uniform">
-        <Parameter name="Value" type="double" value="5.e-15"/>
       </ParameterList>
       <ParameterList name="Tortuosity: Uniform">
         <Parameter name="Value" type="double" value="1."/>
@@ -613,15 +564,15 @@
         <ParameterList name="Water">
           <Parameter name="Component Solutes" type="Array(string)" value="{Tracer, Sr90, Cs137}"/>
           <ParameterList name="Tracer">
-            <Parameter name="Molecular Diffusivity" type="double" value="0"/>
+            <Parameter name="Molecular Diffusivity" type="double" value="5.e-12"/>
             <Parameter name="First Order Decay Constant" type="double" value="0"/>
           </ParameterList>
           <ParameterList name="Sr90">
-            <Parameter name="Molecular Diffusivity" type="double" value="0"/>
+            <Parameter name="Molecular Diffusivity" type="double" value="5.e-12"/>
             <Parameter name="First Order Decay Constant" type="double" value="0"/>
           </ParameterList>
           <ParameterList name="Cs137">
-            <Parameter name="Molecular Diffusivity" type="double" value="0"/>
+            <Parameter name="Molecular Diffusivity" type="double" value="5.e-12"/>
             <Parameter name="First Order Decay Constant" type="double" value="0"/>
           </ParameterList>
         </ParameterList>
@@ -633,7 +584,6 @@
     <ParameterList name="Initial Condition NonSources">
       <Parameter name="Assigned Regions" type="Array(string)" value="{NonSources}"/>
       <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Value" type="double" value="101325.0"/>
       </ParameterList>
       <ParameterList name="Solute IC">
@@ -662,7 +612,6 @@
     <ParameterList name="Initial Condition Waste Floor">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Waste Floor}"/>
       <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Value" type="double" value="101325.0"/>
       </ParameterList>
       <ParameterList name="Solute IC">
@@ -691,7 +640,6 @@
     <ParameterList name="Initial Condition Annulus Waste">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Waste Left, Waste Right}"/>
       <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Value" type="double" value="101325.0"/>
       </ParameterList>
       <ParameterList name="Solute IC">
@@ -720,7 +668,6 @@
     <ParameterList name="Initial Condition Primary Sand Pad">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Primary Sand Pad}"/>
       <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Value" type="double" value="101325.0"/>
       </ParameterList>
       <ParameterList name="Solute IC">
@@ -749,7 +696,6 @@
     <ParameterList name="Initial Condition Secondary Sand Pad">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Secondary Sand Pad}"/>
       <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Value" type="double" value="101325.0"/>
       </ParameterList>
       <ParameterList name="Solute IC">
@@ -780,7 +726,7 @@
 
     <ParameterList name="West BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XLOBC}"/>
-      <ParameterList name="BC: Uniform Pressure Head">
+      <ParameterList name="BC: Uniform Hydraulic Head">
         <Parameter name="Values" type="Array(double)" value="{30.5}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
@@ -808,7 +754,7 @@
 
     <ParameterList name="East BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{XHIBC}"/>
-      <ParameterList name="BC: Uniform Pressure Head">
+      <ParameterList name="BC: Uniform Hydraulic Head">
         <Parameter name="Values" type="Array(double)" value="{30}"/>
       </ParameterList>
       <ParameterList name="Solute BC">

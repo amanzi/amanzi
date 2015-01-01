@@ -25,15 +25,17 @@ class MaterialProperties {
  public:
   MaterialProperties() {
     model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
-    alphaL = 0.0;
-    alphaT = 0.0;
+    alphaLH = 0.0;
+    alphaLV = 0.0;
+    alphaTH = 0.0;
+    alphaTV = 0.0;
     tau.resize(TRANSPORT_NUMBER_PHASES, 0.0);
   }
   ~MaterialProperties() {};
 
  public:
   int model;
-  double alphaL, alphaT;
+  double alphaLH, alphaLV, alphaTH, alphaTV;
   std::vector<double> tau;
   std::vector<std::string> regions;
 };

@@ -13,7 +13,7 @@
 namespace Amanzi {
 namespace Operators {
 
-/* 
+/* *******************************************************************
 * Three types of BCs are supported by this class:
 *   [Dirichlet]                  u = u0 
 *   [Neumann]     -K(u) grad u . n = g0
@@ -35,31 +35,25 @@ namespace Operators {
 * on a processor, including the ghost nodes.
 *
 * NOTE. Arrays bc_value and bc_model may be empty when homogeneous
-* Neumann boundary conditions are imposed on the domain boundary.
+*   Neumann boundary conditions are imposed on the domain boundary.
 *
-* NOTE. suffient conditions for solution nnon-negativity are 
-* g0 <= 0, g1 <= 0 and c >=0.
-*/
+* NOTE. Suffient conditions for solution non-negativity are 
+*   g0 <= 0, g1 <= 0 and c >=0.
+*
+* NOTE. All data in input arrays are given with respect to exterior
+*   normal vector. Implementation of boundary conditions should take
+*   into account that actual mesh normal may be oriented arbitrarily.
+******************************************************************* */
 
 class BCs {
  public:
   BCs() : type_(0) {};
-  BCs(int type, std::vector<int>& bc_model, std::vector<double>& bc_value) {
-    Init(type, bc_model, bc_value);
-  }
   BCs(int type, std::vector<int>& bc_model, std::vector<double>& bc_value, std::vector<double>& bc_mixed) {
     Init(type, bc_model, bc_value, bc_mixed);
   }
   ~BCs() {};
 
   // main members
-  void Init(int type, std::vector<int>& bc_model, std::vector<double>& bc_value) {
-    type_ = type;
-    bc_model_ = &bc_model; 
-    bc_value_ = &bc_value; 
-    bc_mixed_ = NULL;
-  }
-
   void Init(int type, std::vector<int>& bc_model, std::vector<double>& bc_value, std::vector<double>& bc_mixed) {
     type_ = type;
     bc_model_ = &bc_model; 

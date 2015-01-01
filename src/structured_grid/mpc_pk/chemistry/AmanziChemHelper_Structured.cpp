@@ -1,6 +1,10 @@
 
 #include <AmanziChemHelper_Structured.H>
 
+#ifdef _OPENMP
+#include "omp.h"
+#endif
+
 #include <cmath>
 #include <Utility.H>
 #include <ParallelDescriptor.H>
@@ -170,7 +174,8 @@ AmanziChemHelper_Structured::~AmanziChemHelper_Structured()
 
 void
 AmanziChemHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,   int sPrimMob,
-                                              FArrayBox& aux_data, const Box& box, const std::string& condition_name, Real time)
+                                              FArrayBox& auxiliary_data, Real water_density, Real temperature,
+                                              const Box& box, const std::string& condition_name, Real time)
 {
   BoxLib::Abort("Geochemical conditions/constraints not currently support in Amanzi native chemistry engine");
 }
@@ -271,7 +276,8 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
       if (NfreeIonSpecies > 0) {
         for (int i=0; i<primarySpeciesNames.size(); ++i) {
           const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
-          TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+          //TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+          TheComponent.free_ion[i] = 1.e-20;
         }
       }
       
@@ -443,7 +449,8 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
       if (NfreeIonSpecies > 0) {
         for (int i=0; i<primarySpeciesNames.size(); ++i) {
           const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
-          TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+          //TheComponent.free_ion[i] = aux_data(iv,aux_chem_variables[label]);
+          TheComponent.free_ion[i] = 1.e-20;
         }
       }
       

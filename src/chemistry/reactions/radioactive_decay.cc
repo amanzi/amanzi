@@ -10,13 +10,10 @@
 
 #include "matrix_block.hh"
 #include "chemistry_utilities.hh"
-#include "chemistry_output.hh"
 #include "chemistry_exception.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-extern ChemistryOutput* chem_out;
 
 /*
 **
@@ -192,7 +189,7 @@ void RadioactiveDecay::Display(void) const {
   message << std::setw(10) << half_life_user_ << " [" << half_life_units_ << "]    ";
   message << std::setw(10) << std::scientific << half_life_seconds_ << std::fixed << " [seconds]" << std::endl;
   message << std::setw(20) << " k : " << std::scientific << rate_constant() << std::fixed << std::endl;
-  chem_out->Write(kVerbose, message);
+  chem_out->Write(Teuchos::VERB_HIGH, message);
 }  // end Display()
 
 }  // namespace AmanziChemistry
