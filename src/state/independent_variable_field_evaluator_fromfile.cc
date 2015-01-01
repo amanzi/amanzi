@@ -118,32 +118,40 @@ void IndependentVariableFieldEvaluatorFromFile::UpdateField_(const Teuchos::Ptr<
     std::vector<double> point(1,t);
     t = (*time_func_)(point);
   }
-  
+
+  // check if we are before the current interval
+  if (t < t_before_) {
+    // this should only be the case if we are somehow composing this function
+    // with a time function that is not monotonic, i.e. doing a cyclic steady
+    // state to repeat a year, and we have gone past the cycle.  Restart the interval.
+    t_before_ = -1;
+    t_after_ = times_[0];
+    current_interval_ = -1;
+    LoadFile_(0);
+  }
+
   // determine where we are relative to the currently stored interval
   if (t < t_before_) {
-    // this should never be the case
+    // should never be possible thanks to the previous check
     ASSERT(0);
-
   } else if (t == t_before_) {
     // at the start of the interval
     ASSERT(val_before_ != Teuchos::null);
     *cv = *val_before_;
 
   } else if (t < t_after_) {
-    // in the interval
-    if (val_before_ != Teuchos::null) {
-      if (val_after_ == Teuchos::null) {
-        // to the right of the last point
-        *cv = *val_before_;
-      } else {
-        // in the interval, interpolate
-        Interpolate_(t, cv.ptr());
-      }
-    } else {
+    if (t_before_ == -1) {
       // to the left of the first point
       ASSERT(val_after_ != Teuchos::null);
       *cv = *val_after_;
-    }      
+    } else if (val_after_ == Teuchos::null) {
+      // to the right of the last point
+      ASSERT(val_before_ != Teuchos::null);
+      *cv = *val_before_;
+    } else {
+      // in the interval, interpolate
+      Interpolate_(t, cv.ptr());
+    }
   } else if (t == t_after_) {
     // at the end of the interval
     ASSERT(val_after_ != Teuchos::null);

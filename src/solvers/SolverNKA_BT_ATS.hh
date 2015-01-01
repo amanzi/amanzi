@@ -87,12 +87,14 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
   int pc_lag_, update_pc_calls_;
   int nka_lag_iterations_;
 
+  bool fail_on_failed_backtrack_;
   double max_backtrack_;
   double max_total_backtrack_;
   double backtrack_lag_;
   double last_backtrack_iter_;
   double backtrack_factor_;
-  double backtrack_tol_;
+  double backtrack_atol_;
+  double backtrack_rtol_;
   BacktrackMonitor bt_monitor_;
 
   double residual_;  // defined by convergence criterion
@@ -143,7 +145,12 @@ void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_()
   backtrack_lag_ = plist_.get<int>("backtrack lag", 0);
   last_backtrack_iter_ = plist_.get<int>("last backtrack iteration", 1e6);
   backtrack_factor_ = plist_.get<double>("backtrack factor", 0.8);
-  backtrack_tol_ = plist_.get<double>("backtrack tolerance", 0.);
+
+  double backtrack_tol = plist_.get<double>("backtrack tolerance", 0.);
+  backtrack_rtol_ = plist_.get<double>("backtrack relative tolerance", backtrack_tol);
+  backtrack_atol_ = plist_.get<double>("backtrack absolute tolerance", backtrack_tol);
+
+  fail_on_failed_backtrack_ = plist_.get<bool>("fail on failed backtrack", false);
 
   std::string bt_monitor_string = plist_.get<std::string>("backtrack monitor",
           "monitor either");
@@ -315,11 +322,11 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
           // Check if we have improved
           if (bt_monitor_ == BT_MONITOR_ENORM ||
               bt_monitor_ == BT_MONITOR_EITHER) {
-            good_step |= error < previous_error + backtrack_tol_;
+            good_step |= error < previous_error * (1.+backtrack_rtol_) + backtrack_atol_;
           }
           if (bt_monitor_ == BT_MONITOR_L2 ||
               bt_monitor_ == BT_MONITOR_EITHER) {
-            good_step |= l2_error < previous_l2_error + backtrack_tol_;
+            good_step |= l2_error < previous_l2_error * (1. + backtrack_rtol_) + backtrack_atol_;
           }
         } // IsAdmissible()
 
@@ -414,11 +421,11 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
             // Check if we have improved
             if (bt_monitor_ == BT_MONITOR_ENORM ||
                 bt_monitor_ == BT_MONITOR_EITHER) {
-              good_step |= error < previous_error + backtrack_tol_;
+              good_step |= error < previous_error * (1.+backtrack_rtol_) + backtrack_atol_;
             }
             if (bt_monitor_ == BT_MONITOR_L2 ||
                 bt_monitor_ == BT_MONITOR_EITHER) {
-              good_step |= l2_error < previous_l2_error + backtrack_tol_;
+              good_step |= l2_error < previous_l2_error * (1. + backtrack_rtol_) + backtrack_atol_;
             }
           } // IsAdmissible()
 
@@ -429,7 +436,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
           }
 
           // Check for done
-          if (n_backtrack > max_backtrack_) {
+          if (fail_on_failed_backtrack_ && n_backtrack > max_backtrack_) {
             // fail, bad search direction
             if (vo_->os_OK(Teuchos::VERB_LOW)) {
               *vo_->os() << "Solution iterate search direction not downhill, FAIL." << std::endl;
