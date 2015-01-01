@@ -64,10 +64,10 @@ class AnalyticBase {
       const Amanzi::AmanziGeometry::Point& velocity = velocity_exact(xf, t);
       double tmp = velocity * normal;
 
-      // std::cout << f << " " << tmp << " " << flux[0][f] << std::endl;
       l2_err += std::pow((tmp - u[0][f]) / area, 2.0);
       inf_err = std::max(inf_err, fabs(tmp - u[0][f]) / area);
       unorm += std::pow(tmp / area, 2.0);
+      // std::cout << f << " " << tmp << " " << u[0][f] << std::endl;
     }
 #ifdef HAVE_MPI
     double tmp = unorm;

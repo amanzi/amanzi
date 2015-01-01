@@ -30,6 +30,22 @@ namespace Operators {
 
 /* ******************************************************************
 * The base class for all upwind methods. 
+* Currently only one use case is implemented. The input field
+* contains two components:
+*
+* "cell" - cell-centered values of the field.
+* "grad" - (optional) eatimate of the gradient of the input field.
+*          It is used in the second-order upwind schemes.
+*
+* The output field contains one or two components depending on a 
+* numerical scheme:
+*
+*  "face" - upwinded value of the component "cell" on mesh faces.
+*  "twin" - second upwinded value on mesh faces. It may be useful
+*           when the input field has physical (not numerical) 
+*           discontinuous, e.g. different permeability curves.
+*
+* Amanzi combines the input and outfield in one variable.
 ****************************************************************** */ 
 
 template<class Model>

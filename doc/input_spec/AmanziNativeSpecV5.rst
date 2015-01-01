@@ -36,7 +36,6 @@ ParameterList XML
 The Amanzi input file is an ASCII text XML-formatted file that must be framed 
 at the beginning and end by the following statements:
 
-
 .. code-block:: xml
 
   <ParameterList name="Main">
@@ -1147,8 +1146,8 @@ The remaining `"Flow`" parameters are
 
 
 
-Transport PK
-============
+Transport
+=========
 
 The transport component of Amanzi performs advection of aqueous and gaseous
 components and their dispersion and diffusion. 
@@ -1594,6 +1593,10 @@ Alquimia chemistry kernel reads initial conditions from the `"State`" list.
         </ParameterList>
       </ParameterList>
     </ParameterList>
+
+
+Energy
+======
 
 
 Operators

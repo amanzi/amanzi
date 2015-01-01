@@ -103,7 +103,7 @@ void UpwindDivK<Model>::Compute(
 
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces;
-  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   for (int c = 0; c < ncells_wghost; c++) {
@@ -117,7 +117,14 @@ void UpwindDivK<Model>::Compute(
       
       // Internal faces. We average field on almost vertical faces. 
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
-        upw[0][f] += kc / 2;
+        double tmp(0.5);
+        int c2 = mfd.cell_get_face_adj_cell(c, f);
+        if (c2 >= 0) { 
+          double v1 = mesh_->cell_volume(c);
+          double v2 = mesh_->cell_volume(c2);
+          tmp = v2 / (v1 + v2);
+        }
+        upw[0][f] += kc * tmp; 
       // Boundary faces. We upwind only on inflow dirichlet faces.
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         upw[0][f] = ((*model_).*Value)(c, bc_value[f]);
@@ -128,7 +135,7 @@ void UpwindDivK<Model>::Compute(
         upw[0][f] = kc;
       // Internal and boundary faces. 
       } else if (!flag) {
-        int c2 = mfd3d.cell_get_face_adj_cell(c, f);
+        int c2 = mfd.cell_get_face_adj_cell(c, f);
         if (c2 >= 0) {
           double kc2(fcells[0][c2]);
           upw[0][f] = std::pow(kc * (kc + kc2) / 2, 0.5);

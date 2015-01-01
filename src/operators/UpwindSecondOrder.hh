@@ -107,7 +107,7 @@ void UpwindSecondOrder<Model>::Compute(
   std::vector<int> dirs;
   AmanziGeometry::Point grad(dim);
   AmanziMesh::Entity_ID_List faces;
-  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   for (int c = 0; c < ncells_wghost; c++) {
@@ -124,8 +124,15 @@ void UpwindSecondOrder<Model>::Compute(
       
       // Internal faces. We average field on almost vertical faces. 
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(u[0][f]) <= tol) { 
+        double tmp(0.5);
+        int c2 = mfd.cell_get_face_adj_cell(c, f);
+        if (c2 >= 0) { 
+          double v1 = mesh_->cell_volume(c);
+          double v2 = mesh_->cell_volume(c2);
+          tmp = v2 / (v1 + v2);
+        }
         const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-        upw[0][f] += (kc + grad * (xf - xc)) / 2;
+        upw[0][f] += (kc + grad * (xf - xc)) * tmp;
       // Boundary faces. We upwind only on inflow dirichlet faces.
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         upw[0][f] = ((*model_).*Value)(c, bc_value[f]);

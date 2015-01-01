@@ -521,7 +521,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
       double km = k1 + k2;
       double tmp = areas[i] / 6;
       for (int k = 0; k < d; k++) {
-        double vm = (v1[k] + v2[k]) / 2;
+        double vm = v1[k] + v2[k];
         R(i, k) = (k1 * v1[k] + k2 * v2[k] + km * vm) * tmp;
       }
     } else {

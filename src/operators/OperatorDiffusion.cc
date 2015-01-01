@@ -125,17 +125,19 @@ void OperatorDiffusion::UpdateMatricesMixedWithGrad_(Teuchos::RCP<const Composit
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_grad = Teuchos::null;
+  Teuchos::RCP<const Epetra_MultiVector> k_twin = Teuchos::null;
   if (k_ != Teuchos::null) {
     k_cell = k_->ViewComponent("cell");
     k_face = k_->ViewComponent("face");
     k_grad = k_->ViewComponent("grad");
+    if (k_->HasComponent("twin")) k_twin = k_->ViewComponent("twin", true);
   }
 
   // update matrix blocks
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
-  AmanziMesh::Entity_ID_List faces;
+  AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -148,7 +150,15 @@ void OperatorDiffusion::UpdateMatricesMixedWithGrad_(Teuchos::RCP<const Composit
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
     std::vector<double> kf(nfaces, 1.0); 
-    for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+    if (k_twin == Teuchos::null) {
+      for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+    } else {
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        kf[n] = (c == cells[0]) ? (*k_face)[0][f] : (*k_twin)[0][f];
+      }
+    }
 
     WhetStone::DenseMatrix Wff(nfaces, nfaces);
     WhetStone::Tensor& Kc = (*K_)[c];
@@ -201,10 +211,14 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = *blocks_shadow_[m];
   WhetStone::DenseMatrix null_matrix;
 
-  // preparing upwind data
+  // un-rolling upwind data
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
-  if (k_ != Teuchos::null) k_cell = k_->ViewComponent("cell");
+  Teuchos::RCP<const Epetra_MultiVector> k_twin = Teuchos::null;
+  if (k_ != Teuchos::null) {
+    k_cell = k_->ViewComponent("cell");
+    if (k_->HasComponent("twin")) k_twin = k_->ViewComponent("twin", true);
+  }
   if (upwind_ == OPERATOR_UPWIND_FLUX || 
       upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION ||
       upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
@@ -212,7 +226,7 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
   }
 
   // update matrix blocks
-  AmanziMesh::Entity_ID_List faces;
+  AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -228,9 +242,16 @@ void OperatorDiffusion::UpdateMatricesMixed_(Teuchos::RCP<const CompositeVector>
     if (upwind_ == OPERATOR_UPWIND_AMANZI_ARTIFICIAL_DIFFUSION) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
-    } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK) {
+    } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK && k_twin == Teuchos::null) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+    } else if (upwind_ == OPERATOR_UPWIND_AMANZI_DIVK && k_twin != Teuchos::null) {
+      kc = (*k_cell)[0][c];
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        kf[n] = (c == cells[0]) ? (*k_face)[0][f] : (*k_twin)[0][f];
+      }
     } else if (upwind_ == OPERATOR_UPWIND_NONE && k_cell != Teuchos::null) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;

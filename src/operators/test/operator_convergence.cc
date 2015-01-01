@@ -68,7 +68,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
+  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // create diffusion coefficient
