@@ -37,7 +37,7 @@ bool Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
   double tol = ref_pressure * 1e-14;
 
   bool flag(true);
-  Functions::FlowBoundaryFunction::Iterator bc;
+  FlowBoundaryFunction::Iterator bc;
   for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
     int f = bc->first;
 
@@ -94,7 +94,7 @@ bool Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* a
   *area_seepage = 0.0;
 
   bool flag(true);
-  Functions::FlowBoundaryFunction::Iterator bc;
+  FlowBoundaryFunction::Iterator bc;
   for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
     int f = bc->first;
 

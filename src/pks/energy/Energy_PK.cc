@@ -27,14 +27,13 @@ namespace Energy {
 /* ******************************************************************
 * Default constructor for Energy PK.
 ****************************************************************** */
-Energy_PK::Energy_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
-    : vo_(NULL), passwd_("state")
+Energy_PK::Energy_PK(
+    Teuchos::RCP<const Teuchos::ParameterList>& glist, Teuchos::RCP<State> S)
+    : glist_(glist), vo_(NULL), passwd_("state")
 {
   S_ = S;
   mesh_ = S->GetMesh();
   dim = mesh_->space_dimension();
-
-  plist_ = glist.sublist("Energy");
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -86,7 +85,9 @@ void Energy_PK::Initialize()
   }
 
   // create verbosity object
-  vo_ = new VerboseObject("EnergyPK", plist_);
+  Teuchos::ParameterList vlist;
+  vlist.sublist("VerboseObject") = glist_->sublist("Energy").sublist("VerboseObject");
+  vo_ = new VerboseObject("EnergyPK", vlist);
 
   // Process Native XML.
   // ProcessParameterList(plist_);
@@ -97,7 +98,8 @@ void Energy_PK::Initialize()
   }
 
   // Select a proper matrix class. 
-  Teuchos::ParameterList& tmp_list = plist_.sublist("operators").sublist("diffusion operator");
+  Teuchos::ParameterList tmp_list = glist_->sublist("Energy")
+                                           .sublist("operators").sublist("diffusion operator");
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
@@ -108,7 +110,88 @@ void Energy_PK::Initialize()
   op_matrix_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, g, 0);
 
   op_matrix_->Init();
-  op_matrix_->InitOperator(K, Teuchos::null, Teuchos::null, 1.0, 1.0);
+  op_matrix_->Setup(K, Teuchos::null, Teuchos::null, 1.0, 1.0);
+}
+
+
+/* ******************************************************************
+* TBW.
+****************************************************************** */
+bool Energy_PK::UpdateConductivityData_(const Teuchos::Ptr<State>& S)
+{
+  bool update = S->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S, passwd_);
+  if (update) {
+    // upwinding_->Update(S);
+  }
+  return update;
+}
+
+
+/* ******************************************************************
+* A wrapper for updating boundary conditions.
+****************************************************************** */
+void Energy_PK::UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u)
+{
+  /* 
+  if (src_sink != NULL) {
+    if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+      src_sink->ComputeDistribute(T0, T1, Kxy->Values());
+    } else {
+      src_sink->ComputeDistribute(T0, T1, NULL);
+    }
+  }
+  */
+
+  bc_temperature->Compute(T1);
+  bc_flux->Compute(T1);
+
+  ComputeBCs(u);
+}
+
+
+/* ******************************************************************
+* Add a boundary marker to used faces.
+* WARNING: we can skip update of ghost boundary faces, b/c they 
+* should be always owned. 
+****************************************************************** */
+void Energy_PK::ComputeBCs(const CompositeVector& u)
+{
+  const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+  
+  for (int n = 0; n < bc_model_.size(); n++) {
+    bc_model_[n] = Operators::OPERATOR_BC_NONE;
+    bc_value_[n] = 0.0;
+    bc_mixed_[n] = 0.0;
+  }
+
+  EnergyBoundaryFunction::Iterator bc;
+  for (bc = bc_temperature->begin(); bc != bc_temperature->end(); ++bc) {
+    int f = bc->first;
+    bc_model_[f] = Operators::OPERATOR_BC_DIRICHLET;
+    bc_value_[f] = bc->second;
+  }
+
+  for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
+    int f = bc->first;
+    bc_model_[f] = Operators::OPERATOR_BC_NEUMANN;
+    bc_value_[f] = bc->second;
+  }
+
+  dirichlet_bc_faces_ = 0;
+  for (int f = 0; f < nfaces_owned; ++f) {
+    if (bc_model_[f] == Operators::OPERATOR_BC_DIRICHLET) dirichlet_bc_faces_++;
+  }
+  int flag_essential_bc = (dirichlet_bc_faces_ > 0) ? 1 : 0;
+
+  // verify that the algebraic problem is consistent
+#ifdef HAVE_MPI
+  int flag = flag_essential_bc;
+  mesh_->get_comm()->MaxAll(&flag, &flag_essential_bc, 1);  // find the global maximum
+#endif
+  if (! flag_essential_bc && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
+  }
 }
 
 }  // namespace Energy

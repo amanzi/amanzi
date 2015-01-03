@@ -50,6 +50,10 @@
 
   <!-- ENERGY -->
   <ParameterList name="Energy">
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="high"/>
+    </ParameterList>
+
     <ParameterList name="operators">
       <ParameterList name="diffusion operator">
         <ParameterList name="matrix">

@@ -17,20 +17,14 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "CommonDefs.hh"
 #include "Mesh.hh"
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {
-namespace Functions {
+namespace Flow {
 
-const int DOMAIN_FUNCTION_ACTION_NONE = 0;
-const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME = 1;
-const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY = 2;
-
-const int DOMAIN_FUNCTION_SUBMODEL_RATE = 0;
-const int DOMAIN_FUNCTION_SUBMODEL_INTEGRAND = 1;
-
-class FlowDomainFunction : public UniqueMeshFunction {
+class FlowDomainFunction : public Functions::UniqueMeshFunction {
  public:
   explicit FlowDomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
       UniqueMeshFunction(mesh),
@@ -70,7 +64,7 @@ class FlowDomainFunction : public UniqueMeshFunction {
   bool finalized_;
 };
 
-}  // namespace Functions
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

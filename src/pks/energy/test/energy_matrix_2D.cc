@@ -25,11 +25,10 @@
 #include "GMVMesh.hh"
 
 #include "State.hh"
-#include "Energy_PK.hh"
+#include "EnergyTwoPhase_PK.hh"
 
 /* **************************************************************** */
 TEST(ENERGY_2D) {
-  using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -42,11 +41,12 @@ TEST(ENERGY_2D) {
 
   /* read parameter list */
   std::string xmlFileName = "test/energy_matrix_2D.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  Teuchos::RCP<const Teuchos::ParameterList> plist = 
+      Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
 
   /* create a mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -56,16 +56,16 @@ TEST(ENERGY_2D) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 18, 18, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 18, 18, gm);
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  ParameterList state_list;
-  RCP<State> S = rcp(new State(state_list));
-  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+  Teuchos::ParameterList state_list;
+  Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
+  S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
-  Energy_PK* EPK = new Energy_PK(plist, S);
+  Energy_PK* EPK = new EnergyTwoPhase_PK(plist, S);
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();

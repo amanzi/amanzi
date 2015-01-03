@@ -17,20 +17,12 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "CommonDefs.hh"
 #include "Mesh.hh"
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {
 namespace Transport {
-
-namespace TransportActions {
-const int DOMAIN_FUNCTION_ACTION_NONE = 0;
-const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME = 1;
-const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY = 2;
-
-const int DOMAIN_FUNCTION_SUBMODEL_RATE = 0;
-const int DOMAIN_FUNCTION_SUBMODEL_INTEGRAND = 1;
-}
 
 class TransportDomainFunction : public Functions::UniqueMeshFunction {
  public:

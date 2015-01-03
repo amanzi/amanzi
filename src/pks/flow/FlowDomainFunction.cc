@@ -5,7 +5,7 @@
 #include "FlowDomainFunction.hh"
 
 namespace Amanzi {
-namespace Functions {
+namespace Flow {
 
 /* ******************************************************************
 * Calculate pairs <list of cells, function>
@@ -72,7 +72,7 @@ void FlowDomainFunction::Compute(double t0, double t1)
       value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
     }
    
-    if (submodel_[n] == DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+    if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
       args[0] = t0;
       for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
@@ -125,7 +125,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1)
       value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
     }
 
-    if (submodel_[n] == DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+    if (submodel_[n] == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
       args[0] = t0;
       for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
@@ -167,7 +167,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
     double domain_volume = 0.0;
     Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
 
-    if (action == DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
+    if (action == CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
       // calculate physical volume of region.
       for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
         if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
@@ -183,7 +183,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
         value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] / domain_volume;
       }      
 
-      if (submodel == DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
         args[0] = t0;
         for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
@@ -192,7 +192,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
         }
       }
     }
-    else if (action == DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+    else if (action == CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
         if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id);
       }
@@ -207,7 +207,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
         value_[*id] = (*(*spec_and_ids)->first->second)(args)[0] * weight[*id] / domain_volume;
       }      
 
-      if (submodel == DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
         args[0] = t0;
         for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
@@ -225,7 +225,7 @@ void FlowDomainFunction::ComputeDistribute(double t0, double t1, double* weight)
         value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
       }      
 
-      if (submodel == DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
+      if (submodel == CommonDefs::DOMAIN_FUNCTION_SUBMODEL_INTEGRAND) {
         args[0] = t0;
         for (SpecIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
           const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
@@ -251,6 +251,6 @@ int FlowDomainFunction::CollectActionsList()
   return list;
 }
 
-}  // namespace Functions
+}  // namespace Flow
 }  // namespace Amanzi
 

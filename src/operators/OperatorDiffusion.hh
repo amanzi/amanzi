@@ -38,12 +38,12 @@ class OperatorDiffusion : public Operator {
   ~OperatorDiffusion() {};
 
   // main members
-  virtual void InitOperator(std::vector<WhetStone::Tensor>& K,
-                            Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-                            double rho, double mu);
-  virtual void InitOperator(std::vector<WhetStone::Tensor>& K,
-                            Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
-                            Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu);
+  virtual void Setup(std::vector<WhetStone::Tensor>& K,
+                     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
+                     double rho, double mu);
+  virtual void Setup(std::vector<WhetStone::Tensor>& K,
+                     Teuchos::RCP<const CompositeVector> k, Teuchos::RCP<const CompositeVector> dkdp,
+                     Teuchos::RCP<const CompositeVector> rho, Teuchos::RCP<const CompositeVector> mu);
 
   virtual void UpdateMatrices(Teuchos::RCP<const CompositeVector> flux, Teuchos::RCP<const CompositeVector> u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);

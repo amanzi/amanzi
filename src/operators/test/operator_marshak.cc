@@ -216,7 +216,7 @@ TEST(MASHAK_NONLINEAR_WAVE) {
     int schema_dofs = op->schema_dofs();
     int schema_prec_dofs = op->schema_prec_dofs();
 
-    op->InitOperator(K, knc->values(), knc->derivatives(), rho, mu);
+    op->Setup(K, knc->values(), knc->derivatives(), rho, mu);
     op->UpdateMatrices(flux, Teuchos::null);
     op->ApplyBCs();
     op->SymbolicAssembleMatrix(schema_prec_dofs);

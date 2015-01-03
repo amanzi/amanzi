@@ -217,7 +217,7 @@ void Transport_PK::ProcessParameterList()
       srcs[m]->set_tcc_index(FindComponentNumber(srcs[m]->tcc_name()));
     
       int distribution = srcs[m]->CollectActionsList();
-      if (distribution & TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+      if (distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
         Errors::Message msg;
         msg << "Transport PK: support of permeability weighted source distribution is pending.\n";
         Exceptions::amanzi_throw(msg);  

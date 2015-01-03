@@ -165,10 +165,10 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   std::string coordinate_system;
 
   // boundary conditons
-  Functions::FlowBoundaryFunction* bc_pressure; 
-  Functions::FlowBoundaryFunction* bc_head;
-  Functions::FlowBoundaryFunction* bc_flux;
-  Functions::FlowBoundaryFunction* bc_seepage;
+  FlowBoundaryFunction* bc_pressure; 
+  FlowBoundaryFunction* bc_head;
+  FlowBoundaryFunction* bc_flux;
+  FlowBoundaryFunction* bc_seepage;
   int nseepage_prev;
 
   std::vector<int> bc_model, bc_submodel; 
@@ -178,7 +178,7 @@ class Flow_PK : public Amanzi::BDFFnBase<CompositeVector> {
   Teuchos::RCP<Epetra_Vector> shift_water_table_;
 
   // water balance
-  Functions::FlowDomainFunction* src_sink;
+  FlowDomainFunction* src_sink;
   int src_sink_distribution; 
   mutable double mass_bc, seepage_mass_;
 

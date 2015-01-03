@@ -193,7 +193,7 @@ TEST(NONLINEAR_HEAT_CONDUCTION) {
     int schema_prec_dofs = op2->schema_prec_dofs();
     CHECK(schema_prec_dofs == Operators::OPERATOR_SCHEMA_DOFS_FACE);
 
-    op2->InitOperator(K, knc->values(), knc->derivatives(), rho, mu);
+    op2->Setup(K, knc->values(), knc->derivatives(), rho, mu);
     op2->UpdateMatrices(flux, Teuchos::null);
     op2->ApplyBCs();
     op2->SymbolicAssembleMatrix(schema_prec_dofs);

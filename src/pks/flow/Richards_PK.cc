@@ -246,7 +246,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Allocate memory for wells.
   const Epetra_BlockMap& cmap_owned = mesh_->cell_map(false);
-  if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   }
 
@@ -453,12 +453,12 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   SetAbsolutePermeabilityTensor();
 
   op_matrix_->Init();
-  op_matrix_->InitOperator(K, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
+  op_matrix_->Setup(K, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
   op_matrix_->UpdateMatrices(Teuchos::null, solution);
   op_matrix_->ApplyBCs();
 
   op_preconditioner_->Init();
-  op_preconditioner_->InitOperator(K, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
+  op_preconditioner_->Setup(K, rel_perm_->Krel(), rel_perm_->dKdP(), rho_, mu_);
   op_preconditioner_->UpdateMatrices(Teuchos::null, solution);
   op_preconditioner_->ApplyBCs();
   int schema_prec_dofs = op_preconditioner_->schema_prec_dofs();
@@ -478,7 +478,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   }
 
   // Well modeling
-  if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     CalculatePermeabilityFactorInWell();
   }
 
@@ -696,7 +696,7 @@ void Richards_PK::CommitState(double dt, const Teuchos::Ptr<State>& S)
 void Richards_PK::UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u)
 {
   if (src_sink != NULL) {
-    if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       src_sink->ComputeDistribute(T0, T1, Kxy->Values());
     } else {
       src_sink->ComputeDistribute(T0, T1, NULL);

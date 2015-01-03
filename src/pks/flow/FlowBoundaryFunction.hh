@@ -23,19 +23,15 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "CommonDefs.hh"
 #include "Mesh.hh"
 #include "MultiFunction.hh"
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {
-namespace Functions {
+namespace Flow {
 
-const int BOUNDARY_FUNCTION_ACTION_NONE = 0;
-const int BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE = 1;
-
-typedef std::pair<std::string, int> Action;
-
-class FlowBoundaryFunction : public UniqueMeshFunction {
+class FlowBoundaryFunction : public Functions::UniqueMeshFunction {
  public:
   FlowBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       UniqueMeshFunction(mesh),
@@ -55,7 +51,7 @@ class FlowBoundaryFunction : public UniqueMeshFunction {
   void Finalize();
 
   // access / set
-  const std::vector<Action>& actions() { return actions_; } 
+  const std::vector<CommonDefs::Action>& actions() { return actions_; } 
   double reference_pressure() { return reference_pressure_; }
   int global_size() { return global_size_; }
   void set_reference_pressure(double p0) { reference_pressure_ = p0; }
@@ -72,12 +68,12 @@ class FlowBoundaryFunction : public UniqueMeshFunction {
   bool finalized_;
 
  private:
-  std::vector<Action> actions_;
+  std::vector<CommonDefs::Action> actions_;
   double reference_pressure_;
   int global_size_;  // number of data stored on all processors
 };
 
-}  // namespace Functions
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

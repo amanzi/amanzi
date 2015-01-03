@@ -106,7 +106,7 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     bc_mixed[n] = 0.0;
   }
 
-  Functions::FlowBoundaryFunction::Iterator bc;
+  FlowBoundaryFunction::Iterator bc;
   for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) {
     int f = bc->first;
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -273,7 +273,7 @@ void Flow_PK::CalculatePermeabilityFactorInWell()
 void Flow_PK::AddSourceTerms(CompositeVector& rhs)
 {
   Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
-  Functions::FlowDomainFunction::Iterator src;
+  FlowDomainFunction::Iterator src;
 
   for (src = src_sink->begin(); src != src_sink->end(); ++src) {
     int c = src->first;
