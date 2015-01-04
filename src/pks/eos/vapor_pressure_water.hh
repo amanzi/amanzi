@@ -11,9 +11,8 @@
   Saturated Vapor Pressure for vapor over water or ice, Sonntag (1990)
 */
 
-#ifndef AMANZI_RELATIONS_EOS_WATER_VAPOR_PRESSURE_HH_
-#define AMANZI_RELATIONS_EOS_WATER_VAPOR_PRESSURE_HH_
-
+#ifndef AMANZI_EOS_WATER_VAPOR_PRESSURE_HH_
+#define AMANZI_EOS_WATER_VAPOR_PRESSURE_HH_
 
 #include "Teuchos_ParameterList.hpp"
 #include "factory.hh"

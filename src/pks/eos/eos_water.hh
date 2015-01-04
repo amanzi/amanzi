@@ -12,8 +12,8 @@
   references and documentation of this EOS at:
 */
 
-#ifndef AMANZI_RELATIONS_EOS_WATER_HH_
-#define AMANZI_RELATIONS_EOS_WATER_HH_
+#ifndef AMANZI_EOS_LIQUID_WATER_HH_
+#define AMANZI_EOS_LIQUID_WATER_HH_
 
 #include "Teuchos_ParameterList.hpp"
 

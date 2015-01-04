@@ -12,7 +12,7 @@
 */
 
 #ifndef AMANZI_EOS_VAPOR_PRESSURE_MODEL_FACTORY_HH_
-#define AMANZI_ESO_VAPOR_PRESSURE_MODEL_FACTORY_HH_
+#define AMANZI_EOS_VAPOR_PRESSURE_MODEL_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

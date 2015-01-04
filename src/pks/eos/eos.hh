@@ -11,8 +11,8 @@
   EOS -- purely virtual base class for an EOS.
 */
 
-#ifndef AMANZI_RELATIONS_EOS_HH_
-#define AMANZI_RELATIONS_EOS_HH_
+#ifndef AMANZI_EOS_HH_
+#define AMANZI_EOS_HH_
 
 namespace Amanzi {
 namespace Relations {

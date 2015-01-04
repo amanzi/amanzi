@@ -40,7 +40,7 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
   virtual void Setup() = 0;
   virtual void Initialize();
 
-  bool AdvanceStep(double t_old, double t_new) {};
+  bool AdvanceStep(double t_old, double t_new) { return true; }
   void CommitStep(double t_old, double t_new) {};
   void CalculateDiagnostics() {};
 

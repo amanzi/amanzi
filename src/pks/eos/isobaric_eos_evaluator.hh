@@ -11,8 +11,8 @@
   EOSFieldEvaluator is the interface between state/data and the model, an EOS.
 */
 
-#ifndef AMANZI_RELATIONS_ISOBARIC_EOS_EVALUATOR_HH_
-#define AMANZI_RELATIONS_ISOBARIC_EOS_EVALUATOR_HH_
+#ifndef AMANZI_EOS_ISOBARIC_EOS_EVALUATOR_HH_
+#define AMANZI_EOS_ISOBARIC_EOS_EVALUATOR_HH_
 
 #include "eos.hh"
 #include "factory.hh"
