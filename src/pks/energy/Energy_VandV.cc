@@ -26,31 +26,16 @@ namespace Energy {
 void Energy_PK::InitializeFields()
 {
   // set popular default values
-  if (!S_->GetField("porosity", passwd_)->initialized()) {
-    S_->GetFieldData("porosity", passwd_)->PutScalar(0.2);
-    S_->GetField("porosity", passwd_)->set_initialized();
-  }
-
+  /*
   if (!S_->GetField("fluid_density", passwd_)->initialized()) {
     *(S_->GetScalarData("fluid_density", passwd_)) = 1000.0;
     S_->GetField("fluid_density", passwd_)->set_initialized();
   }
-
-  if (S_->HasField("water_saturation")) {
-    if (!S_->GetField("water_saturation", passwd_)->initialized()) {
-      S_->GetFieldData("water_saturation", passwd_)->PutScalar(1.0);
-      S_->GetField("water_saturation", passwd_)->set_initialized();
-    }
-  }
+  */
 
   if (!S_->GetField("temperature", passwd_)->initialized()) {
-    S_->GetFieldData("temperature", passwd_)->PutScalar(0.0);
+    S_->GetFieldData("temperature", passwd_)->PutScalar(300.0);
     S_->GetField("temperature", passwd_)->set_initialized();
-  }
-
-  if (!S_->GetField("darcy_flux", passwd_)->initialized()) {
-    S_->GetFieldData("darcy_flux", passwd_)->PutScalar(0.0);
-    S_->GetField("darcy_flux", passwd_)->set_initialized();
   }
 }
 

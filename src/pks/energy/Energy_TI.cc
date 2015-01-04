@@ -90,7 +90,7 @@ void Energy_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up
   UpdateSourceBoundaryData(t, t + h, *up->Data());
 
   // div K_e grad u
-  UpdateConductivityData_(S_.ptr());
+  UpdateConductivityData(S_.ptr());
   Teuchos::RCP<const CompositeVector> conductivity = S_->GetFieldData(uw_conductivity_key_);
 
   // assemble residual for diffusion operator

@@ -17,6 +17,7 @@
 #include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "mfd3d.hh"
+#include "primary_variable_field_evaluator.hh"
 #include "State.hh"
 
 #include "Energy_PK.hh"
@@ -29,7 +30,7 @@ namespace Energy {
 ****************************************************************** */
 Energy_PK::Energy_PK(
     Teuchos::RCP<const Teuchos::ParameterList>& glist, Teuchos::RCP<State> S)
-    : glist_(glist), vo_(NULL), passwd_("state")
+    : glist_(glist), vo_(NULL), passwd_("thermal")
 {
   S_ = S;
   mesh_ = S->GetMesh();
@@ -41,6 +42,10 @@ Energy_PK::Energy_PK(
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
+  energy_key_ = "energy";
+  enthalpy_key_ = "enthalpy";
+  conductivity_key_ = "thermal_conductivity";
+
   Initialize();
 }
 
@@ -50,25 +55,12 @@ Energy_PK::Energy_PK(
 ****************************************************************** */
 void Energy_PK::Initialize()
 {
-  // require state variables
-  if (!S_->HasField("porosity")) {
-    S_->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-  if (!S_->HasField("fluid_density")) {
-    S_->RequireScalar("fluid_density", passwd_);
-  }
-  if (!S_->HasField("darcy_flux")) {
-    S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-       ->SetComponent("face", AmanziMesh::FACE, 1);
-
-    // Teuchos::ParameterList elist;
-    // elist.set<std::string>("evaluator name", "darcy_flux");
-    // darcy_flux_eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    // S->SetFieldEvaluator("darcy_flux", darcy_flux_eval);
+  // require first-requested state variables
+  if (!S_->HasField("atmospheric_pressure")) {
+    S_->RequireScalar("atmospheric_pressure", passwd_);
   }
 
-  // for creating fields
+  // require primary state variables
   std::vector<std::string> names(2);
   names[0] = "cell";
   names[1] = "face";
@@ -82,6 +74,12 @@ void Energy_PK::Initialize()
   if (!S_->HasField("temperature")) {
     S_->RequireField("temperature", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", "temperature");
+    Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval = 
+        Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S_->SetFieldEvaluator("temperature", temperature_eval);
   }
 
   // create verbosity object
@@ -89,7 +87,6 @@ void Energy_PK::Initialize()
   vlist.sublist("VerboseObject") = glist_->sublist("Energy").sublist("VerboseObject");
   vo_ = new VerboseObject("EnergyPK", vlist);
 
-  // Process Native XML.
   // ProcessParameterList(plist_);
   K.resize(ncells_wghost);
   for (int c = 0; c < ncells_wghost; c++) {
@@ -117,11 +114,18 @@ void Energy_PK::Initialize()
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-bool Energy_PK::UpdateConductivityData_(const Teuchos::Ptr<State>& S)
+bool Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 {
   bool update = S->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S, passwd_);
   if (update) {
-    // upwinding_->Update(S);
+    const Epetra_MultiVector& conductivity = *S->GetFieldData(conductivity_key_)->ViewComponent("cell");
+    WhetStone::Tensor Ktmp(dim, 1);
+
+    K.clear();
+    for (int c = 0; c < ncells_owned; c++) {
+      Ktmp(0, 0) = conductivity[0][c];
+      K.push_back(Ktmp);
+    } 
   }
   return update;
 }

@@ -36,14 +36,12 @@ TwoPhaseEnergyEvaluator::TwoPhaseEnergyEvaluator(Teuchos::ParameterList& plist) 
   dependencies_.insert(std::string("molar_density_liquid"));
   dependencies_.insert(std::string("internal_energy_liquid"));
 
-  dependencies_.insert(std::string("saturation_gas"));
+  // dependencies_.insert(std::string("saturation_gas"));
   dependencies_.insert(std::string("molar_density_gas"));
   dependencies_.insert(std::string("internal_energy_gas"));
 
   dependencies_.insert(std::string("internal_energy_rock"));
   dependencies_.insert(std::string("density_rock"));
-
-  // dependencies_.insert(std::string("cell_volume"));
 };
 
 
@@ -74,23 +72,25 @@ void TwoPhaseEnergyEvaluator::EvaluateField_(
   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell",false);
   const Epetra_MultiVector& u_l = *S->GetFieldData("internal_energy_liquid")->ViewComponent("cell",false);
 
-  const Epetra_MultiVector& s_g = *S->GetFieldData("saturation_gas")->ViewComponent("cell",false);
+  // const Epetra_MultiVector& s_g = *S->GetFieldData("saturation_gas")->ViewComponent("cell",false);
   const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell",false);
   const Epetra_MultiVector& u_g = *S->GetFieldData("internal_energy_gas")->ViewComponent("cell",false);
 
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell",false);
   const Epetra_MultiVector& u_rock = *S->GetFieldData("internal_energy_rock")->ViewComponent("cell",false);
   const Epetra_MultiVector& rho_rock = *S->GetFieldData("density_rock")->ViewComponent("cell",false);
-  const Epetra_MultiVector& cell_volume = *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
   Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
+
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
 
   int ncells = result->size("cell", false);
   for (int c=0; c!=ncells; ++c) {
+    double s_g = 1.0 - s_l[0][c];
     result_v[0][c] = phi[0][c] * (
         s_l[0][c] * n_l[0][c] * u_l[0][c]
-        + s_g[0][c] * n_g[0][c] * u_g[0][c])
+        + s_g * n_g[0][c] * u_g[0][c])
         + (1.0 - phi[0][c]) * u_rock[0][c] * rho_rock[0][c];
-    result_v[0][c] *= cell_volume[0][c];
+    result_v[0][c] *= mesh->cell_volume(c);
   }
 };
 

@@ -1,5 +1,5 @@
 /*
-  This is the energy component of the Amanzi code. 
+  This is the energy component of the ATS and Amanzi codes. 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -9,12 +9,12 @@
   Author: Ethan Coon
 */
 
-#include "EnergyTwoPhase_PK.hh"
+#include "iem_linear.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-RegisteredPKFactory<TwoPhase> TwoPhase::reg_("two-phase energy");
+Utils::RegisteredFactory<IEM,IEMLinear> IEMLinear::factory_("linear");
 
 }  // namespace Energy
 }  // namespace Amanzi

@@ -37,8 +37,8 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
   virtual ~Energy_PK() {};
 
   // main PK methods
-  void Setup() {};
-  void Initialize();
+  virtual void Setup() = 0;
+  virtual void Initialize();
 
   bool AdvanceStep(double t_old, double t_new) {};
   void CommitStep(double t_old, double t_new) {};
@@ -72,14 +72,12 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
   void ChangedSolution() {};
 
   // other methods
+  bool UpdateConductivityData(const Teuchos::Ptr<State>& S);
   void UpdateSourceBoundaryData(double T0, double T1, const CompositeVector& u);
   void ComputeBCs(const CompositeVector& u);
 
- protected:
-  // These must be provided by the deriving PK.
-  // Setup the evaluators
-  virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) = 0;
-  bool UpdateConductivityData_(const Teuchos::Ptr<State>& S);
+  // access methods for unit tests
+  std::vector<WhetStone::Tensor>& get_K() { return K; } 
 
  public:
   int ncells_owned, ncells_wghost;
@@ -92,6 +90,9 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
   Teuchos::RCP<State> S_;
   std::string passwd_;
 
+  // conductivity tensor
+  std::vector<WhetStone::Tensor> K; 
+
   // boundary conditons
   EnergyBoundaryFunction* bc_temperature; 
   EnergyBoundaryFunction* bc_flux; 
@@ -100,11 +101,9 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
   std::vector<double> bc_value_, bc_mixed_; 
   int dirichlet_bc_faces_;
 
- protected:
+  // operators
   Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_, op_preconditioner_;
   Teuchos::RCP<Operators::BCs> op_bc_;
-
-  std::vector<WhetStone::Tensor> K; 
 
  protected:
   Teuchos::RCP<const Teuchos::ParameterList> glist_;

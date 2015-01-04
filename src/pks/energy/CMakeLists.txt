@@ -46,10 +46,41 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 # Energy registrations
 #
 register_evaluator_with_factory(
-  HEADERFILE energy_twophase_reg.hh
-  LISTNAME   ENERGY_TWO_PHASE_REG
+  HEADERFILE twophase_thermal_conductivity_factory_reg.hh
+  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
+  )
+register_evaluator_with_factory(
+  HEADERFILE twophase_thermal_conductivity_peterslidard_reg.hh
+  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
+  )
+generate_evaluators_registration_header(
+  HEADERFILE energy_thermal_conductivity_registration.hh
+  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
+  INSTALL    True
   )
 
+register_evaluator_with_factory(
+  HEADERFILE iem_evaluator_reg.hh
+  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
+  )
+register_evaluator_with_factory(
+  HEADERFILE iem_linear_reg.hh
+  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
+  )
+register_evaluator_with_factory(
+  HEADERFILE iem_water_vapor_evaluator_reg.hh
+  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
+  )
+generate_evaluators_registration_header(
+  HEADERFILE energy_internal_energy_registration.hh
+  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
+  INSTALL    True
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE EnergyTwoPhase_PK_reg.hh
+  LISTNAME   ENERGY_TWO_PHASE_REG
+  )
 generate_evaluators_registration_header(
   HEADERFILE energy_twophase_registration.hh
   LISTNAME   ENERGY_TWO_PHASE_REG
@@ -63,8 +94,12 @@ set(energy_src_files Energy_PK.cc Energy_TI.cc
                      EnergyBoundaryFunction.cc
                      EnergyTwoPhase_PK.cc 
                      Energy_VandV.cc
+                     iem_linear.cc
+                     iem_water_vapor.cc 
+                     iem_water_vapor_evaluator.cc
                      iem_factory.cc iem_evaluator.cc 
                      enthalpy_evaluator.cc
+                     twophase_thermal_conductivity_peterslidard.cc
                      twophase_energy_evaluator.cc 
                      twophase_thermal_conductivity_evaluator.cc
                      twophase_thermal_conductivity_factory.cc)
@@ -85,12 +120,18 @@ set(flow_inc_files
   EnergyTwoPhase_PK.hh
   energy_twophase_registration.hh
   iem.hh
+  iem_linear.hh
+  iem_water_vapor.hh
+  iem_water_vapor_evaluator.hh
   iem_factory.hh
   iem_evaluator.hh
+  energy_internal_energy_registration.hh
   twophase_energy_evaluator.hh
   twophase_thermal_conductivity.hh
   twophase_thermal_conductivity_evaluator.hh
   twophase_thermal_conductivity_factory.hh
+  twophase_thermal_conductivity_registration.hh
+  twophase_thermal_conductivity_peterslidard.hh
   enthalpy_evaluator.hh)
 
 add_install_include_file(${energy_inc_files})
@@ -110,7 +151,7 @@ if (BUILD_TESTS)
     # Add the flow directory to the include paths
     include_directories(${ENERGY_SOURCE_DIR})
 
-    set(amanzi_libs geometry mesh mesh_audit mesh_factory energy eos state operators whetstone data_structures)
+    set(amanzi_libs geometry mesh mesh_factory eos energy eos state operators whetstone data_structures)
 
     # Test: 1
     add_amanzi_test(energy_matrix_2D energy_matrix_2D

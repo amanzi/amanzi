@@ -30,12 +30,9 @@ public:
   virtual ~EnergyTwoPhase_PK() {};
 
   // Initialize owned (dependent) variables.
+  virtual void Setup();
   virtual void Initialize();
 
-protected:
-  // setup the evaluators
-  virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
- 
  protected:
   // models for evaluating enthalpy
   Teuchos::RCP<Relations::EOS> eos_liquid_;

@@ -18,6 +18,9 @@
 namespace Amanzi {
 namespace Energy {
 
+/* ******************************************************************
+* Constructor.
+****************************************************************** */
 ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
     Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
@@ -39,6 +42,9 @@ ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
 }
 
 
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
 ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
     const ThermalConductivityTwoPhaseEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
@@ -47,12 +53,18 @@ ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
     tc_(other.tc_) {};
 
 
+/* ******************************************************************
+* TBW.
+****************************************************************** */
 Teuchos::RCP<FieldEvaluator> ThermalConductivityTwoPhaseEvaluator::Clone() const
 {
   return Teuchos::rcp(new ThermalConductivityTwoPhaseEvaluator(*this));
 }
 
 
+/* ******************************************************************
+* Evaluator body.
+****************************************************************** */
 void ThermalConductivityTwoPhaseEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result)
 {
@@ -75,6 +87,9 @@ void ThermalConductivityTwoPhaseEvaluator::EvaluateField_(
 }
 
 
+/* ******************************************************************
+* Evaluator of derivarives.
+****************************************************************** */
 void ThermalConductivityTwoPhaseEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S, Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {

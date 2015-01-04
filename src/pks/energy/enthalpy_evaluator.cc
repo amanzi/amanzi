@@ -1,5 +1,5 @@
 /*
-  This is the energy component of the Amanzi code. 
+  This is the energy component of the ATS and Amanzi codes. 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -69,7 +69,6 @@ void EnthalpyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   Teuchos::OSTab tab = vo_->getOSTab();
   Teuchos::RCP<const CompositeVector> u_l = S->GetFieldData(ie_key_);
   *result = *u_l;
-
 
   if (include_work_) {
     Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
