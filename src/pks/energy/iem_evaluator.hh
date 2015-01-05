@@ -1,5 +1,5 @@
 /*
-  This is the energy component of the Amanzi code. 
+  This is the energy component of the ATS and Amanzi codes. 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -11,8 +11,8 @@
   The IEM Evaluator simply calls the IEM with the correct arguments.
 */
 
-#ifndef AMANZI_ENERGY_RELATIONS_IEM_EVALUATOR_
-#define AMANZI_ENERGY_RELATIONS_IEM_EVALUATOR_
+#ifndef AMANZI_ENERGY_IEM_EVALUATOR_HH_
+#define AMANZI_ENERGY_IEM_EVALUATOR_HH_
 
 #include "factory.hh"
 #include "iem.hh"

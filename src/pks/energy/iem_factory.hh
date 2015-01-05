@@ -1,5 +1,5 @@
 /*
-  This is the energy component of the Amanzi code. 
+  This is the energy component of the ATS and Amanzi codes. 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -11,8 +11,8 @@
   Self-registering factory for IEM implementations.
 */
 
-#ifndef AMANZI_ENERGYRELATIONS_IEM_FACTORY_
-#define AMANZI_ENERGYRELATIONS_IEM_FACTORY_
+#ifndef AMANZI_ENERGY_IEM_FACTORY_HH_
+#define AMANZI_ENERGY_IEM_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

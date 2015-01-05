@@ -1,5 +1,5 @@
 /*
-  This is the energy component of the Amanzi code. 
+  This is the energy component of the ATS and Amanzi codes. 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -11,8 +11,8 @@
   Interface for a thermal conductivity model with two phases.
 */
 
-#ifndef AMANZI_ENERGY_RELATIONS_TC_TWOPHASE_EVALUATOR_HH_
-#define AMANZI_ENERGY_RELATIONS_TC_TWOPHASE_EVALUATOR_HH_
+#ifndef AMANZI_ENERGY_TWOPHASE_THERMAL_CONDUCTIVITY_EVALUATOR_HH_
+#define AMANZI_ENERGY_TWOPHASE_THERMAL_CONDUCTIVITY_EVALUATOR_HH_
 
 #include "secondary_variable_field_evaluator.hh"
 #include "twophase_thermal_conductivity.hh"

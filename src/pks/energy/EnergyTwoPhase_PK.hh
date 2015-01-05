@@ -12,8 +12,8 @@
   Process kernel for thermal Richards' flow.
 */
 
-#ifndef AMANZI_ENERGY_TWO_PHASE_PK_HH_
-#define AMANZI_ENERGY_TWO_PHASE_PK_HH_
+#ifndef AMANZI_ENERGY_TWOPHASE_PK_HH_
+#define AMANZI_ENERGY_TWOPHASE_PK_HH_
 
 #include "eos.hh"
 #include "iem.hh"

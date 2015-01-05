@@ -12,8 +12,8 @@
   UNITS: J/{mol/kg}
 */
 
-#ifndef AMANZI_ENERGY_RELATIONS_IEM_LINEAR_
-#define AMANZI_ENERGY_RELATIONS_IEM_LINEAR_
+#ifndef AMANZI_ENERGY_IEM_LINEAR_HH_
+#define AMANZI_ENERGY_IEM_LINEAR_HH_
 
 #include "Teuchos_ParameterList.hpp"
 

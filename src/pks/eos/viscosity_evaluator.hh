@@ -11,47 +11,40 @@
   EOSFieldEvaluator is the interface between state/data and the model, an EOS.
 */
 
-#ifndef AMANZI_EOS_EVALUATOR_HH_
-#define AMANZI_EOS_EVALUATOR_HH_
+#ifndef AMANZI_EOS_VISC_EVALUATOR_HH_
+#define AMANZI_EOS_VISC_EVALUATOR_HH_
 
-#include "eos.hh"
-#include "factory.hh"
-#include "secondary_variables_field_evaluator.hh"
+#include "viscosity_relation.hh"
+#include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 namespace Relations {
 
-class EOSEvaluator : public SecondaryVariablesFieldEvaluator {
+class ViscosityEvaluator : public SecondaryVariableFieldEvaluator {
  public:
-  enum EOSMode { EOS_MODE_MASS, EOS_MODE_MOLAR, EOS_MODE_BOTH };
-
   // constructor format for all derived classes
   explicit
-  EOSEvaluator(Teuchos::ParameterList& plist);
+  ViscosityEvaluator(Teuchos::ParameterList& plist);
 
-  EOSEvaluator(const EOSEvaluator& other);
+  ViscosityEvaluator(const ViscosityEvaluator& other);
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const std::vector<Teuchos::Ptr<CompositeVector> >& results);
+          const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results);
-
-  Teuchos::RCP<EOS> get_EOS() { return eos_; }
+          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
   // the actual model
-  Teuchos::RCP<EOS> eos_;
-  EOSMode mode_;
+  Teuchos::RCP<ViscosityRelation> visc_;
 
   // Keys for fields
   // dependencies
   Key temp_key_;
-  Key pres_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,EOSEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,ViscosityEvaluator> factory_;
 };
 
 }  // namespace Relations

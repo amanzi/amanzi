@@ -6,29 +6,18 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors: Ethan Coon (ecoon@lanl.gov)
 
-  Self-registering factory for EOS implementations.
+  Constant density/viscosity EOS, defaults to reasonable values for water.
 */
 
-#ifndef AMANZI_PK_EOS_FACTORY_HH_
-#define AMANZI_PK_EOS_FACTORY_HH_
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
-
-#include "eos.hh"
-#include "factory.hh"
+#include "eos_constant.hh"
 
 namespace Amanzi {
 namespace Relations {
 
-class EOSFactory : public Utils::Factory<EOS> {
- public:
-  Teuchos::RCP<EOS> createEOS(Teuchos::ParameterList& plist);
-};
+// registry of method
+Utils::RegisteredFactory<EOS,EOSConstant> EOSConstant::factory_("constant");
 
 }  // namespace Relations
 }  // namespace Amanzi
-
-#endif

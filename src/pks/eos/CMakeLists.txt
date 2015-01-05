@@ -29,11 +29,23 @@ register_evaluator_with_factory(
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
+  HEADERFILE eos_constant_reg.hh
+  LISTNAME   EOS_EVALUATORS
+  )
+register_evaluator_with_factory(
   HEADERFILE eos_water_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
   HEADERFILE viscosity_water_reg.hh
+  LISTNAME   EOS_EVALUATORS
+  )
+register_evaluator_with_factory(
+  HEADERFILE viscosity_constant_reg.hh
+  LISTNAME   EOS_EVALUATORS
+  )
+register_evaluator_with_factory(
+  HEADERFILE viscosity_evaluator_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
@@ -70,9 +82,12 @@ set(eos_src_files eos_factory.cc
     molar_fraction_gas_evaluator.cc
     eos_ideal_gas.cc
     eos_vapor_in_gas.cc
+    eos_constant.cc
     eos_water.cc
     viscosity_water.cc
+    viscosity_constant.cc
     viscosity_relation_factory.cc
+    viscosity_evaluator.cc
     vapor_pressure_water.cc
     vapor_pressure_relation_factory.cc
     isobaric_eos_evaluator.cc
@@ -95,12 +110,15 @@ set(eos_inc_files
     isobaric_eos_evaluator.hh
     effective_pressure_evaluator.cc
     eos_ideal_gas.hh
+    eos_constant.hh
     eos_constant_molar_mass.hh
     eos_vapor_in_gas.hh
     eos_water.hh
     viscosity_water.hh
+    viscosity_constant.hh
     viscosity_relation.hh
     viscosity_relation_factory.hh
+    viscosity_evaluator.hh
     vapor_pressure_water.hh
     vapor_pressure_relation.hh
     vapor_pressure_relation_factory.hh)

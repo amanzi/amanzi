@@ -1,5 +1,5 @@
 /*
-  This is the energy component of the Amanzi code. 
+  This is the energy component of the ATS and Amanzi codes. 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -19,8 +19,8 @@
   This is simply the conserved quantity in the energy equation.
 */
 
-#ifndef AMANZI_TWO_PHASE_ENERGY_EVALUATOR_HH_
-#define AMANZI_TWO_PHASE_ENERGY_EVALUATOR_HH_
+#ifndef AMANZI_ENERGY_TWOPHASE_EVALUATOR_HH_
+#define AMANZI_ENERGY_TWOPHASE_EVALUATOR_HH_
 
 #include "Teuchos_ParameterList.hpp"
 

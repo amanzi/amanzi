@@ -53,6 +53,10 @@ register_evaluator_with_factory(
   HEADERFILE twophase_thermal_conductivity_peterslidard_reg.hh
   LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
   )
+register_evaluator_with_factory(
+  HEADERFILE twophase_thermal_conductivity_wetdry_reg.hh
+  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
+  )
 generate_evaluators_registration_header(
   HEADERFILE energy_thermal_conductivity_registration.hh
   LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
@@ -61,6 +65,10 @@ generate_evaluators_registration_header(
 
 register_evaluator_with_factory(
   HEADERFILE iem_evaluator_reg.hh
+  LISTNAME   ENERGY_INTERNAL_ENERGY_REG
+  )
+register_evaluator_with_factory(
+  HEADERFILE iem_factory_reg.hh
   LISTNAME   ENERGY_INTERNAL_ENERGY_REG
   )
 register_evaluator_with_factory(
@@ -99,6 +107,7 @@ set(energy_src_files Energy_PK.cc Energy_TI.cc
                      iem_water_vapor_evaluator.cc
                      iem_factory.cc iem_evaluator.cc 
                      enthalpy_evaluator.cc
+                     twophase_thermal_conductivity_wetdry.cc
                      twophase_thermal_conductivity_peterslidard.cc
                      twophase_energy_evaluator.cc 
                      twophase_thermal_conductivity_evaluator.cc
