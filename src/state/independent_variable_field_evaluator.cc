@@ -81,10 +81,8 @@ bool IndependentVariableFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State
 
   if (!computed_once_) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_->os() << "INDEPENDENT Variable requested by " << request
+      *vo_->os() << "Independent field \"" << my_key_ << "\" requested by " << request
             << " is updating for the first time." << std::endl;
-      *vo_->os() << "INDEPENDENT Variable requested by " << request
-            << " has changed." << std::endl;
     }
 
     // field DOES have to be computed at least once, even if it never changes.
@@ -95,7 +93,8 @@ bool IndependentVariableFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State
 
   if (temporally_variable_ && (S->time() != time_)) { // field is not current, update and clear requests
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_->os() << "INDEPENDENT Variable requested by " << request << " is updating." << std::endl;
+      *vo_->os() << "Independent field \"" << my_key_ << "\" requested by " << request 
+                 << " is updating." << std::endl;
     }
     UpdateField_(S);
     requests_.clear();
@@ -104,15 +103,15 @@ bool IndependentVariableFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State
   } else { // field is current, see if we have provided this request previously
     if (requests_.find(request) == requests_.end()) {
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_->os() << "INDEPENDENT Variable requested by " << request
-              << " has changed." << std::endl;
+        *vo_->os() << "Independent field \"" << vo_->color("green") << my_key_ 
+                   << vo_->reset() << "\" requested by " << request << " has changed." << std::endl;
       }
       requests_.insert(request);
       return true;
     } else {
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_->os() << "INDEPENDENT Variable requested by " << request
-              << " has not changed." << std::endl;
+        *vo_->os() << "Independent field \"" << my_key_ << "\" requested by " << request 
+                   << " has not changed." << std::endl;
       }
       return false;
     }

@@ -77,8 +77,7 @@ void Energy_PK::Initialize()
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", "temperature");
-    Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval = 
-        Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    temperature_eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
     S_->SetFieldEvaluator("temperature", temperature_eval);
   }
 

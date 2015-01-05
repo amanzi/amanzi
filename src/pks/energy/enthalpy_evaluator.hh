@@ -23,10 +23,8 @@ namespace Amanzi {
 namespace Energy {
 
 class EnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
-
  public:
-  explicit
-  EnthalpyEvaluator(Teuchos::ParameterList& plist);
+  explicit EnthalpyEvaluator(Teuchos::ParameterList& plist);
   EnthalpyEvaluator(const EnthalpyEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
@@ -38,7 +36,6 @@ class EnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-
   Key pres_key_;
   Key dens_key_;
   Key ie_key_;
@@ -46,10 +43,9 @@ class EnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,EnthalpyEvaluator> factory_;
-
 };
 
-} // namespace
-} // namespace
+}  // namespace Energy
+}  // namespace Amanzi
 
 #endif

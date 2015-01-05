@@ -78,6 +78,7 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
 
   // access methods for unit tests
   std::vector<WhetStone::Tensor>& get_K() { return K; } 
+  Teuchos::RCP<PrimaryVariableFieldEvaluator>& get_temperature_eval() { return temperature_eval; }
 
  public:
   int ncells_owned, ncells_wghost;
@@ -86,6 +87,7 @@ class Energy_PK : public PK, public Amanzi::BDFFnBase<TreeVector> {
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval;
 
   Teuchos::RCP<State> S_;
   std::string passwd_;

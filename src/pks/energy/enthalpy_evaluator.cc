@@ -16,8 +16,12 @@
 namespace Amanzi {
 namespace Energy {
 
+/* ******************************************************************
+* Constructor of a secondary evaluator.
+****************************************************************** */
 EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist) {
+    SecondaryVariableFieldEvaluator(plist)
+{
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<std::string>("enthalpy key", "enthalpy_liquid");
   }
@@ -47,10 +51,12 @@ EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
   ie_key_ = plist_.get<std::string>("internal energy key",
                                     domain_name+std::string("internal_energy_liquid"));
   dependencies_.insert(ie_key_);
-
 };
 
 
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
 EnthalpyEvaluator::EnthalpyEvaluator(const EnthalpyEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     pres_key_(other.pres_key_),
@@ -58,14 +64,22 @@ EnthalpyEvaluator::EnthalpyEvaluator(const EnthalpyEvaluator& other) :
     ie_key_(other.ie_key_),
     include_work_(other.include_work_) {};
 
-Teuchos::RCP<FieldEvaluator>
-EnthalpyEvaluator::Clone() const {
+
+/* ******************************************************************
+* TBW.
+****************************************************************** */
+Teuchos::RCP<FieldEvaluator> EnthalpyEvaluator::Clone() const {
   return Teuchos::rcp(new EnthalpyEvaluator(*this));
 };
 
 
-void EnthalpyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
-        const Teuchos::Ptr<CompositeVector>& result) {
+/* ******************************************************************
+* Evaluator's body.
+****************************************************************** */
+void EnthalpyEvaluator::EvaluateField_(
+    const Teuchos::Ptr<State>& S,
+    const Teuchos::Ptr<CompositeVector>& result)
+{
   Teuchos::OSTab tab = vo_->getOSTab();
   Teuchos::RCP<const CompositeVector> u_l = S->GetFieldData(ie_key_);
   *result = *u_l;
@@ -81,22 +95,26 @@ void EnthalpyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
       int ncomp = result->size(*comp, false);
-      for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] += pres_v[0][i]/nl_v[0][i];
+      for (int i = 0; i != ncomp; ++i) {
+        result_v[0][i] += pres_v[0][i] / nl_v[0][i];
         if (vo_->os_OK(Teuchos::VERB_EXTREME))
-          *vo_->os() << "h(p="<< pres_v[0][i] << ", n=" << nl_v[0][i] << ", u=" << (*u_l)("cell",0,i) << ") = " << result_v[0][i] << std::endl;
+          *vo_->os() << "h(p=" << pres_v[0][i] << ", n=" << nl_v[0][i] 
+                     << ", u=" << (*u_l)("cell",0,i) << ") = " << result_v[0][i] << std::endl;
       }
     }
   }
 };
 
 
-void EnthalpyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-        Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
+/* ******************************************************************
+* Evaluator for derivatives.
+****************************************************************** */
+void EnthalpyEvaluator::EvaluateFieldPartialDerivative_(
+    const Teuchos::Ptr<State>& S,
+    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
   // not implemented
-  result->PutScalar(0.);
+  result->PutScalar(0.0);
 };
 
-
-} //namespace
-} //namespace
+}  // namespace Energy
+}  // namespace Amanzi

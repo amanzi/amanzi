@@ -72,8 +72,7 @@ void ThermalConductivityTwoPhaseEvaluator::EvaluateField_(
   Teuchos::RCP<const CompositeVector> poro = S->GetFieldData(poro_key_);
   Teuchos::RCP<const CompositeVector> sat = S->GetFieldData(sat_key_);
 
-  for (CompositeVector::name_iterator comp=result->begin();
-       comp!=result->end(); ++comp) {
+  for (CompositeVector::name_iterator comp=result->begin(); comp!=result->end(); ++comp) {
     // much more efficient to pull out vectors first
     const Epetra_MultiVector& poro_v = *poro->ViewComponent(*comp,false);
     const Epetra_MultiVector& sat_v = *sat->ViewComponent(*comp,false);

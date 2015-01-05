@@ -57,7 +57,7 @@ TEST(ENERGY_2D_MATRIX) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
 
   // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
@@ -80,13 +80,13 @@ std::cout << "Passed EPK.InitilizeField()" << std::endl;
 std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
   S->WriteDependencyGraph();
   S->CheckAllFieldsInitialized();
-std::cout << "DONE" << std::endl;
 
   // modify the default state for the problem at hand 
   // create the initial temperature function 
   std::string passwd("thermal");
   Epetra_MultiVector& temperature = *S->GetFieldData("temperature", passwd)->ViewComponent("cell");
   temperature.PutScalar(273.0);
+  EPK->get_temperature_eval()->SetFieldAsChanged(S.ptr());
 
   // compute conductivity
   EPK->UpdateConductivityData(S.ptr());
@@ -102,7 +102,7 @@ std::cout << "DONE" << std::endl;
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value[f] = 0.0;
+      bc_value[f] = 200.0;
     }
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
@@ -124,6 +124,14 @@ std::cout << "DONE" << std::endl;
   op->ApplyBCs();
   op->SymbolicAssembleMatrix(schema);
   op->AssembleMatrix(schema);
+
+  // add accumulation term
+  double dT = 0.02;
+  CompositeVector solution(op->DomainMap());
+
+  S->GetFieldEvaluator("energy")->HasFieldDerivativeChanged(S.ptr(), passwd, "temperature");
+  const CompositeVector& dEdT = *S->GetFieldData("denergy_dtemperature");
+  op->AddAccumulationTerm(solution, dEdT, dT, "cell");
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"energy.gmv");

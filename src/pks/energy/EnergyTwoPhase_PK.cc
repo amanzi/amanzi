@@ -73,11 +73,7 @@ void EnergyTwoPhase_PK::Initialize()
   // Call the base class's initialize.
   Energy_PK::Initialize();
 
-  // For the boundary conditions, we currently hack in the enthalpy to
-  // the boundary faces to correctly advect in a Dirichlet temperature BC.
-  // This requires density and internal energy, which in turn require 
-  // a model based on p,T. This will be removed once boundary faces 
-  // are implemented.
+  // create evaluators
   Teuchos::RCP<FieldEvaluator> eos_fe = S_->GetFieldEvaluator("molar_density_liquid");
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval = Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
   ASSERT(eos_eval != Teuchos::null);

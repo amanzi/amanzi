@@ -300,21 +300,68 @@ Such a sublist can be added safely to various sublists of an XML file.
 State
 =====
 
-List `"State`" allows the user to initialize physical fields using a variety of tools. 
+List `"State`" allows the user to initialize various fields and field evaluators 
+using a variety of tools. 
+A field evaluator is a node in the Phalanx-like dependency tree.
+The corresponding sublist of the State is named `"field evaluators`"
+The initialization sublist of the State is named `"initial conditions`"
 
 .. code-block:: xml
 
   <ParameterList name="State">
+    <ParameterList name="field evaluators">
+       ... list of field evaluators
+    </ParameterList>
     <ParameterList name="initial conditions">
        ... initialization of fields
     </ParameterList>
   </ParameterList>
 
 
-Initialization of constant scalars
-----------------------------------
+Field evaluators
+----------------
 
-A constant scalar field is the global (with respect to the mesh) constant. 
+Independent field evaluator
+...........................
+
+An independent field evaluator has no dependencies and is specified by a function.
+It has the following fields.
+
+* `"field evaluator type`" [string] The value of this parameter is used by the factory
+  of evaluators. The available options `"independent variable`" ...
+
+* `"function`" [sublist]
+
+* `"VerboseObject`" [sublist]
+
+.. code-block:: xml
+
+    <ParameterList name="saturation_liquid">
+      <Parameter name="field evaluator type" type="string" value="independent variable"/>
+      <ParameterList name="function">
+        <ParameterList name="domain">
+          <Parameter name="region" type="string" value="Computational domain"/>
+          <Parameter name="component" type="string" value="cell"/>
+          <ParameterList name="function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.8"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      </ParameterList>
+    </ParameterList>
+
+
+Initial conditions
+------------------
+
+Constant scalar field
+.....................
+
+A constant field is the global (with respect to the mesh) constant. 
 At the moment, the set of such fields includes fluid density 
 and fluid viscosity.
 The initialization requires to provide a named sublist with a single
@@ -327,8 +374,8 @@ parameter `"value`".
   </ParameterList>
 
 
-Initialization of constant vectors
-----------------------------------
+Constant vector field
+.....................
 
 A constant vector field is the global (with respect to the mesh) vector constant. 
 At the moment, the set of such vector constants includes gravity.
@@ -342,8 +389,8 @@ parameter `"Array(double)`". In two dimensions, is looks like
   </ParameterList>
 
 
-Initialization of scalar fields
--------------------------------
+A scalar field
+..............
 
 A variable scalar field is defined by a few functions (labeled for instance,
 `"MESH BLOCK i`" with non-overlapping ranges. 
@@ -380,8 +427,8 @@ each mesh cell of region `"DOMAIN ``". The second mesh block will define
 porosity in other mesh regions.
 
 
-Initialization of vector and tensor fields
-------------------------------------------
+A vector or tensor field
+........................
 
 A variable tensor (or vector) field is defined similarly to 
 a variable scalar field. 
@@ -1597,6 +1644,12 @@ Alquimia chemistry kernel reads initial conditions from the `"State`" list.
 
 Energy
 ======
+
+Diffusion operator
+------------------
+
+Advection operator
+------------------
 
 
 Operators

@@ -48,13 +48,7 @@ void Energy_PK::Functional(
   // AddAccumulation_(res.ptr());
 
   // advection term, implicit by default, options for explicit
-  /*
-  if (explicit_advection_ && niter_ <= explicit_advection_iter_) {
-    AddAdvection_(S_inter_.ptr(), res.ptr(), true);
-  } else {
-    AddAdvection_(S_next_.ptr(), res.ptr(), true);
-  }
-  */
+  // AddAdvection_(S_next_.ptr(), res.ptr(), true);
 
   // source terms
   // AddSources_(S_next_.ptr(), res.ptr());
@@ -64,7 +58,8 @@ void Energy_PK::Functional(
 /* ******************************************************************
 * Apply the preconditioner to u and return the result in Pu.
 ****************************************************************** */
-void Energy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu)
+void Energy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
+                                    Teuchos::RCP<TreeVector> Pu)
 {
   op_preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 }
