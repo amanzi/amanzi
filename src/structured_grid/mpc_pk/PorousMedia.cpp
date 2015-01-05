@@ -2028,7 +2028,7 @@ PorousMedia::multilevel_advance (Real  time,
 
   if (dt_suggest_tc>0) {
     if (ParallelDescriptor::IOProcessor()) {
-      std::cout << "  TRANSPORT suggests next dt = " << dt_suggest_tc
+      std::cout << "  TRAN suggests next dt = " << dt_suggest_tc
                 << " (=" << dt_suggest_tc/(365.25*3600*24) << " y)" << std::endl;
     }
     dt_suggest = (dt_suggest > 0 ? std::min(dt_suggest,dt_suggest_tc) : dt_suggest_tc);
@@ -2386,7 +2386,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
                         "TRAN",tmax_subtr,t_eps); 
       }
       n_subtr++;
-      if (n_subtr > max_n_subcycle_transport) {
+      if (n_subtr > max_n_subcycle_transport + std::max(2.,.15*max_n_subcycle_transport)) {
 	if (ParallelDescriptor::IOProcessor()) {
 	  std::cout << "TRAN: Level: "
 		    << level
@@ -4476,7 +4476,7 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
   ParallelDescriptor::ReduceRealMin(dt_eig);
 
   if (ParallelDescriptor::IOProcessor() && verbose>0) {
-    std::cout << "  TRANSPORT: Level: " << level << " CFL dt limit = " << dt_eig << '\n';
+    std::cout << "  TRAN: Level: " << level << " CFL dt limit = " << dt_eig << '\n';
   }
 
   if (verbose > 3) {
