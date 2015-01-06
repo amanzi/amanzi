@@ -25,9 +25,13 @@
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 #include "OperatorDiffusionFactory.hh"
+#include "OperatorAdvection.hh"
 #include "State.hh"
 
-/* **************************************************************** */
+/* **************************************************************** 
+* Generates a preconditioner for the implicit discretization of
+* the thermal operator.
+* ************************************************************** */
 TEST(ENERGY_2D_MATRIX) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -38,7 +42,7 @@ TEST(ENERGY_2D_MATRIX) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "Test: 2D thermal, homogeneous medium" << std::endl;
+  if (MyPID == 0) std::cout << "Test: 2D homogeneous medium, preconditioner" << std::endl;
 
   // read parameter list 
   std::string xmlFileName = "test/energy_matrix_2D.xml";
@@ -57,7 +61,7 @@ TEST(ENERGY_2D_MATRIX) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 17, 17, gm);
 
   // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
@@ -95,7 +99,7 @@ std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
+  std::vector<double> bc_mixed(nfaces_wghost);
   
   for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
@@ -114,24 +118,62 @@ std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
                                        .sublist("preconditioner");
   OperatorDiffusionFactory opfactory;
   AmanziGeometry::Point g(2);
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc, oplist, g, 0);
+  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(mesh, bc, oplist, g, 0);
 
   // populate the diffusion operator
-  int schema = Operators::OPERATOR_SCHEMA_DOFS_FACE + Operators::OPERATOR_SCHEMA_DOFS_CELL;
   double rho(1.0), mu(1.0);
-  op->Setup(EPK->get_K(), Teuchos::null, Teuchos::null, rho, mu);
-  op->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op->ApplyBCs();
-  op->SymbolicAssembleMatrix(schema);
-  op->AssembleMatrix(schema);
+  op1->Setup(EPK->get_K(), Teuchos::null, Teuchos::null, rho, mu);
+  op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // add accumulation term
-  double dT = 0.02;
-  CompositeVector solution(op->DomainMap());
+  double dT = 1.0;
+  CompositeVector solution(op1->DomainMap());
 
   S->GetFieldEvaluator("energy")->HasFieldDerivativeChanged(S.ptr(), passwd, "temperature");
   const CompositeVector& dEdT = *S->GetFieldData("denergy_dtemperature");
-  op->AddAccumulationTerm(solution, dEdT, dT, "cell");
+  op1->AddAccumulationTerm(solution, dEdT, dT, "cell");
+
+  // add advection term: u = q_l n_l c_v
+  // we do not upwind n_l c_v  in this test.
+  S->GetFieldEvaluator("internal_energy_liquid")->HasFieldDerivativeChanged(S.ptr(), passwd, "temperature");
+  const Epetra_MultiVector& c_v = *S->GetFieldData("dinternal_energy_liquid_dtemperature")
+      ->ViewComponent("cell", true);
+  const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell", true);
+
+  CompositeVector flux(op1->DomainMap());
+  Epetra_MultiVector& q_l = *flux.ViewComponent("face");
+
+  AmanziMesh::Entity_ID_List cells;
+
+  AmanziGeometry::Point velocity(1e-4, 1e-4);
+  for (int f = 0; f < nfaces_wghost; f++) {
+    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    q_l[0][f] = velocity * normal;
+    
+    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+    double tmp(0.0);
+    for (int i = 0; i < ncells; i++) {
+      int c = cells[i];
+      tmp += n_l[0][c] * c_v[0][c];
+    }
+    q_l[0][f] *= tmp / ncells;
+  }
+
+  int schema_dofs = Operators::OPERATOR_SCHEMA_DOFS_FACE
+                  + Operators::OPERATOR_SCHEMA_DOFS_CELL;
+  Teuchos::RCP<OperatorAdvection> op2 = Teuchos::rcp(new OperatorAdvection(*op1));
+  op2->Setup(flux);
+  op2->UpdateMatrices(flux);
+  op2->ApplyBCs();
+  op2->SymbolicAssembleMatrix(schema_dofs);
+  op2->AssembleMatrix(schema_dofs);
+
+  // make preconditioner
+  // Teuchos::RCP<Operator> op3 = Teuchos::rcp(new Operator(*op2));
+
+  Teuchos::ParameterList slist = plist->sublist("Preconditioners");
+  op2->InitPreconditioner("Hypre AMG", slist);
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"energy.gmv");

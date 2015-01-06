@@ -49,6 +49,9 @@
     </ParameterList>
 
     <ParameterList name="enthalpy evaluator">
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="thermal conductivity evaluator">
@@ -323,25 +326,15 @@
 
   <!-- PRECONDITIONERS -->
   <ParameterList name="Preconditioners">
-    <ParameterList name="Trilinos ML">
-      <Parameter name="preconditioner type" type="string" value="ml"/>
-      <ParameterList name="ml parameters">
-        <Parameter name="ML output" type="int" value="0"/>
-        <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
-        <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
-        <Parameter name="aggregation: threshold" type="double" value="0"/>
-        <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
-        <Parameter name="coarse: max size" type="int" value="128"/>
-        <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
-        <Parameter name="cycle applications" type="int" value="2"/>
-        <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
-        <Parameter name="eigen-analysis: type" type="string" value="cg"/>
-        <Parameter name="max levels" type="int" value="40"/>
-        <Parameter name="prec type" type="string" value="MGW"/>
-        <Parameter name="smoother: damping factor" type="double" value="1"/>
-        <Parameter name="smoother: pre or post" type="string" value="both"/>
-        <Parameter name="smoother: sweeps" type="int" value="2"/>
-        <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+   <ParameterList name="Hypre AMG">
+      <Parameter name="discretization method" type="string" value="optimized mfd"/>
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="verbosity" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
