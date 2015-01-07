@@ -109,6 +109,7 @@ void ThermalRichardsModel::UpdateModel(const Teuchos::Ptr<State>& S) {
   // update scalars
   rho_rock_ = *S->GetScalarData("rho_rock");
   p_atm_ = *S->GetScalarData("atmospheric_pressure");
+  poro_ = (*S->GetFieldData("base_porosity")->ViewComponent("cell"))[0][c];
 
   ASSERT(IsSetUp_());
 }
