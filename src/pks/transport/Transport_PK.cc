@@ -209,7 +209,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // reconstruction initialization
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  limiter_ = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
+  // limiter_ = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
   // boundary conditions initialization

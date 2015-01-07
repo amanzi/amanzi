@@ -44,7 +44,7 @@ Teuchos::ParameterList InputParserIS::CreateTransportList_(Teuchos::ParameterLis
         trp_list.set<int>("temporal discretization order", 1);
         trp_list.set<double>("cfl", cfl);
         trp_list.set<std::string>("flow mode", "transient");
-        trp_list.set<std::string>("advection limiter", "Tensorial");
+        trp_list.set<std::string>("advection limiter", "tensorial");
 
         trp_list.set<std::string>("solver", "PCG with Hypre AMG");
         trp_list.sublist("VerboseObject") = CreateVerbosityList_(verbosity_level);

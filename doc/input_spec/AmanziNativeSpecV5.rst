@@ -1226,7 +1226,7 @@ and temporal accuracy, and verbosity:
      <Parameter name="cfl" type="double" value="1.0"/>
      <Parameter name="spatial discretization order" type="int" value="1"/>
      <Parameter name="temporal discretization order" type="int" value="1"/>
-     <Parameter name="advection limiter" type="string" value="Tensorial"/>
+     <Parameter name="advection limiter" type="string" value="tensorial"/>
 
      <Parameter name="solver" type="string" value="PCG_SOLVER"/>
 

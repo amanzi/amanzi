@@ -57,7 +57,7 @@
       <Parameter name="aqueous values" type="Array(double)" value="{1e-3}"/>
     </ParameterList>
 
-    <Parameter name="advection limiter" type="string" value="Tensorial"/>
+    <Parameter name="advection limiter" type="string" value="tensorial"/>
     <!-- developers parameters --> 
     <Parameter name="enable internal tests" type="string" value="yes"/>   
     <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   

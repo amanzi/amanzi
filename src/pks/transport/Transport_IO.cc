@@ -266,14 +266,14 @@ void Transport_PK::ProcessStringDispersionModel(const std::string name, int* mod
 void Transport_PK::ProcessStringAdvectionLimiter(const std::string name, int* method)
 {
   Errors::Message msg;
-  if (name == "BarthJespersen") {
+  if (name == "Barth-Jespersen") {
     advection_limiter = TRANSPORT_LIMITER_BARTH_JESPERSEN;
-  } else if (name == "Tensorial") {
+  } else if (name == "tensorial") {
     advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
   } else if (name == "Kuzmin") {
     advection_limiter = TRANSPORT_LIMITER_KUZMIN;
   } else {
-    msg << "Transport PK: unknown advection limiter (BarthJespersen, Tensorial, Kuzmin).\n";
+    msg << "Transport PK: unknown advection limiter (Barth-Jespersen, tensorial, Kuzmin).\n";
     Exceptions::amanzi_throw(msg);
   }
 }
