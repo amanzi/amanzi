@@ -110,7 +110,7 @@ struct mfd {
 
     // set up of block system
     C->SetOffDiagonals(offdiag->SubVector(0)->Data()->ViewComponent("cell",false),
-		       offdiag->SubVector(1)->Data()->ViewComponent("cell",false));
+                       offdiag->SubVector(1)->Data()->ViewComponent("cell",false), 1.0);
 
   }
 

@@ -48,6 +48,9 @@ class MatrixMFD_Coupled_TPFA : public MatrixMFD_Coupled {
 
   virtual int ApplyInverse(const TreeVector& X,
                             TreeVector& Y) const;
+  virtual void ApplyInverse(const TreeVector& X,
+                            const Teuchos::Ptr<TreeVector>& Y) const {
+    ApplyInverse(X, *Y); }
 
   virtual void SymbolicAssembleGlobalMatrices();
 

@@ -177,7 +177,8 @@ void Matrix_TPFA_Surf::AssembleRHS_() const{
 
 void Matrix_TPFA_Surf::ApplyBoundaryConditions(
     const std::vector<MatrixBC>& bc_markers,
-    const std::vector<double>& bc_values) {
+    const std::vector<double>& bc_values,
+    bool ADD_BC_FLUX) {
   // Ensure that none of the surface faces have a BC in them.
   std::vector<MatrixBC> new_markers(bc_markers);
 
@@ -187,7 +188,7 @@ void Matrix_TPFA_Surf::ApplyBoundaryConditions(
     new_markers[f] = MATRIX_BC_NULL;
   }
 
-  Matrix_TPFA::ApplyBoundaryConditions(new_markers, bc_values);
+  Matrix_TPFA::ApplyBoundaryConditions(new_markers, bc_values, ADD_BC_FLUX);
 }
 
 void Matrix_TPFA_Surf::ComputeNegativeResidual(const CompositeVector& solution,
